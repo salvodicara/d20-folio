@@ -334,6 +334,26 @@ export function conformNewMechanicOccurrence(
   }
 }
 
+/** Exact hostile-input boundary for one resolved occurrence end rule. */
+export function conformEndRule(value: unknown): Readonly<EndRule> | null {
+  const occurrence = conformNewMechanicOccurrence({
+    endRules: [value],
+    kind: "material-lifecycle",
+    parentId: "end-rule-validator",
+    target: {
+      entityId: "self",
+      material: {
+        characterId: "end-rule-validator",
+        kind: "character-play",
+        uid: "end-rule-validator",
+      },
+    },
+  });
+  return occurrence?.kind === "material-lifecycle" && occurrence.endRules.length === 1
+    ? occurrence.endRules[0]
+    : null;
+}
+
 /** Fail-closed JSON boundary for the active-only occurrence state. */
 export function parseOccurrenceState(value: unknown): OccurrenceStateParseResult {
   try {
@@ -380,6 +400,36 @@ export function addOccurrence(
   };
   const parsed = parseOccurrenceState(candidate);
   if (!parsed.ok) throw new TypeError("Invalid occurrence insertion");
+  return parsed.value;
+}
+
+/**
+ * Allocate a program root whose first phase transition is already committed.
+ * Program creation is one atomic kernel operation, so it cannot pass through
+ * the zero-execution `NewMechanicOccurrence` boundary used by authored effects.
+ */
+export function addTransitionedProgramOccurrence(
+  state: Readonly<OccurrenceState>,
+  id: string,
+  occurrence: Omit<ProgramOccurrence, "ending" | "ordinal">
+): Readonly<OccurrenceState> {
+  const current = parsedOrThrow(state);
+  if (!stableKey(id) || Object.hasOwn(current.occurrences, id)) {
+    throw new TypeError("Invalid program occurrence insertion");
+  }
+  const candidate = {
+    nextOccurrenceOrdinal: current.nextOccurrenceOrdinal + 1,
+    occurrences: {
+      ...current.occurrences,
+      [id]: {
+        ...structuredClone(occurrence),
+        ending: null,
+        ordinal: current.nextOccurrenceOrdinal,
+      },
+    },
+  };
+  const parsed = parseOccurrenceState(candidate);
+  if (!parsed.ok) throw new TypeError("Invalid program occurrence insertion");
   return parsed.value;
 }
 

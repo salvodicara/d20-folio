@@ -14,6 +14,7 @@ import type {
   MechanicsTransaction,
 } from "@/types/mechanics-operation";
 import type {
+  MechanicsBoundaryCommand,
   MechanicsCausalState,
   MechanicsWorld,
   MechanicsWorldSimulationRejection,
@@ -31,18 +32,40 @@ export interface ResolutionGroup {
   readonly proposals: readonly [Readonly<GroupProposal>, ...Readonly<GroupProposal>[]];
 }
 
+/** Opaque logical addresses touched by one terminal operation. */
+export interface MechanicsOperationAccessFootprint {
+  /** Dependencies inspected without mutation. Shared reads never conflict. */
+  readonly reads: readonly string[];
+  /** Rule-visible writes whose relative order belongs to the table. */
+  readonly semanticWrites: readonly string[];
+  /** Preallocated monotonic-ledger writes ordered canonically by the engine. */
+  readonly technicalWrites: readonly string[];
+}
+
 export interface OrderingObservation {
   readonly kind: "ordering";
-  readonly partitions: readonly {
-    readonly collisionKey: string;
-    readonly proposalIds: readonly string[];
-  }[];
+  readonly partitions: readonly OrderingRequestPartition[];
   readonly requestId: string;
+}
+
+/** One genuine table-ordering choice; allocator-only members are deliberately absent. */
+export interface OrderingRequestPartition {
+  readonly collisionKey: string;
+  readonly proposalIds: readonly string[];
+}
+
+export interface ResolutionPrecedence {
+  readonly afterProposalId: string;
+  readonly beforeProposalId: string;
 }
 
 export interface ResolutionPartition {
   readonly collisionKeys: readonly string[];
+  /** The genuine, independent semantic choices exposed to the table. */
+  readonly orderingPartitions: readonly OrderingRequestPartition[];
   readonly proposalIds: readonly string[];
+  /** Monotonic allocator order that no table observation may reverse. */
+  readonly technicalPrecedence: readonly ResolutionPrecedence[];
 }
 
 export type ResolutionGroupAnalysis =
@@ -103,7 +126,7 @@ export type ResolutionGroupSimulationResult =
       >;
       readonly request: {
         readonly kind: "ordering";
-        readonly partitions: readonly ResolutionPartition[];
+        readonly partitions: readonly OrderingRequestPartition[];
         readonly requestId: string;
       };
       readonly status: "needs-ordering";
@@ -120,6 +143,16 @@ export type ResolutionGroupSimulationResult =
       readonly orderedProposalIds: readonly string[];
       readonly requirement: Readonly<DiceRollRequirement>;
       readonly status: "needs-observation";
+      readonly transaction: Readonly<MechanicsTransaction>;
+    }
+  | {
+      readonly analysis: Exclude<ResolutionGroupAnalysis, { readonly kind: "rejected" }>;
+      readonly boundary: Readonly<
+        Extract<MechanicsBoundaryCommand, { readonly kind: "complete-turn" }>
+      >;
+      readonly operationId: string;
+      readonly orderedProposalIds: readonly string[];
+      readonly status: "needs-boundary";
       readonly transaction: Readonly<MechanicsTransaction>;
     }
   | {

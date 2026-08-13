@@ -104,6 +104,33 @@ verification is green (408 tests across 20 directly affected suites); by owner r
 global branch gate ran. The next active milestone is the single step compiler plus fixed-point
 subscriber/suspension coordinator and one final journal draft.
 
+**Exact physical-operation checkpoint CLOSED on branch (2026-08-12; compiler/coordinator ACTIVE):**
+program/effect/entity/item creation now carries exact preallocated generations and atomic lifecycle
+ownership; every allocator is monotonic high-water state that undo/redo cannot lower. Inventory
+transition/end uses exact generation leases and an explicit inbound enchantment-bearer CAS. Non-current
+entity dismissal removes its exact generation from local and shared encounters before closed-world
+validation and releases a final shared clock lease. Current-participant dismissal instead returns an
+exact `needs-boundary` command carrying that generation: the boundary emits the authentic end/time/start
+sequence while excluding it from successor selection (or returns a sole-participant encounter to
+initiative), then the retried operation owns the dismissal and membership removal. Historical cleanup may
+remove a current participant only inside that exact complete-turn continuation before a successor starts;
+every other boundary fails closed. Controller links are cross-document exact references, global cycles
+fail closed, and their complete graph dependency participates in collision ordering. The access model
+distinguishes shared reads, table-owned semantic writes and immutable allocator precedence; embedded
+effect, item and entity references are part of the footprint, so no hidden validation scan can make
+execution order-dependent. Program terminal turn steps are claim-only; encounter lifecycle alone may
+start/end a turn. Exact hostile boundaries reject accessor arrays and proxy traps without evaluating
+them or rereading stateful proxy values. Every cause is authorized against the same immutable action
+basis before mutation. Ordered terminal steps now produce transaction-local world projections and one
+final causal rebase, so newly satisfied end rules observe the atomic net result while already-latched
+waves remain readable; this closes the real create-source/assign-Temporary-HP lifecycle. Timeline-bound
+creation collides on the owning document's clock binding, and a persisted current combatant must be in
+`own-turn`. Transaction projection and causal rebase also preserve every document's journal
+epoch/revision/actions and a character's build revision. The independent P0/P1 audit's remaining gaps are closed. The focused kernel
+proof is 401 tests across 14 suites, with no global branch gate run.
+The active next milestone remains one per-material-ledger step compiler, one bounded fixed-point causal
+coordinator, and one final reversible journal draft.
+
 **Deterministic automation gap sweep — ACTIVE (2026-08-04):** six truth-gated milestones are closed and
 branch-pushed: persistent/reactive-effect lifecycle, target-bound on-hit retaliation, variable-level
 charged-item casts, activated-item tracker/timer lifecycle, bounded spell-pool execution, and variable

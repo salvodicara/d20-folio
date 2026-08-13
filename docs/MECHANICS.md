@@ -47,8 +47,31 @@ always derived from the receipt/frame, never accepted from command JSON.
 An operation cause carries only its invocation plus a digest. Installed invocations are resolved against
 the trusted authority snapshot; program invocations are resolved from the exact live root generation.
 The kernel recomputes the digest over that independently resolved receipt, requires the actor to equal the
-installation owner and contributes immutable definition/installation fact guards. No client-supplied
-authority can authorize itself.
+installation owner and contributes immutable definition/installation fact guards. Every cause is proved
+against the same pre-mutation action basis before any terminal step runs, so spending or ending its source
+cannot make a sibling operation's authority depend on operation order. No client-supplied authority can
+authorize itself.
+
+Every physical runtime value uses a generation, never a reusable storage id. Program/effect occurrences,
+non-self entities and inventory copies are allocated by monotonic high-water counters. Entity/item create
+steps atomically create exactly one `material-lifecycle`; a lifecycle cannot own two physical generations.
+Undo/redo restores game state but never lowers an allocator, so a deleted and recreated id cannot satisfy
+an old target, item, enchantment, lease or authority reference. Dismissal preserves the exact entity and
+its lifecycle. A non-current participant is removed atomically from local/shared encounters and orphaned
+clock leases are released; a current participant instead returns `needs-boundary` without mutation, so
+only the authenticated end-turn continuation may remove it before the coordinator starts its successor.
+Ordinary cleanup cannot silently advance current membership. Controller changes are exact cross-document
+links and the complete graph must remain acyclic.
+
+Program-authored turn work is exactly the claim-bearing subset of `TurnEconomyCommand`; lifecycle
+`start-turn`/`end-turn` commands belong only to the authoritative encounter boundary state machine.
+Operation collision footprints include every semantic read/write dependency: controller graph and
+encounter membership overlap requires table ordering, while allocator-only overlap follows the exact
+preallocated ordinal chain automatically. An item transition also names and compare-and-swaps its exact
+inbound enchantment bearer; zero quantity clears impossible carried state, retains lifecycle provenance
+and leases the source only until the enclosing causal action has finished ending it. A
+`temporary-hp-empty` lifetime reads the target's exact vitals, and every timeline-bound creation reads its
+owning material's clock binding, so shared-lease detachment cannot hide an order-dependent clock rebase.
 
 An occurrence ending is a causal protocol, not a deletion helper. The runtime keeps the ending source
 readable, latches its canonical causes on the exact occurrence generation, derives and delivers
@@ -62,14 +85,26 @@ ordinary post-events, source-ending delivery and the verified complete finalizat
 stages rather than hidden mutations. A boundary can advance only through a kernel-produced continuation,
 never through a callback that supplies replacement state. Its completion is bound to the entire
 continuation; if subscriber work creates or extends the wave, the kernel exposes a new readable checkpoint
-before any finalization.
+before any finalization. Inside one terminal transaction, ordered steps expose only transaction-local world
+projections and newly true end rules are deliberately not latched between steps. The kernel performs one
+causal rebase after the final step, preserving any already-latched wave and evaluating the transaction's
+net state. Creating a Temporary-HP source followed by its grant is therefore genuinely atomic rather than
+an impossible create-then-expire sequence. Projection and causal rebase may change mechanics data only:
+journal epoch/revision/actions and character build revision are protected invariants.
+
+Hostile commands, groups and observations are snapshotted once from own enumerable data descriptors;
+accessors are rejected and stateful proxy reads cannot change already-validated order or cardinality.
+Persisted turn phase likewise has one closed shape: the current participant is `own-turn`; only the
+authenticated boundary continuation may transiently carry `between-turns` while advancing initiative.
 
 Authentic events are not an open-ended change log. Applied operation stages alone emit `damage-taken`,
 `hit-points-zero` and `resource-depleted`; an exact readable wave alone emits `source-ending`. Terminal
 cleanup is represented by its proved world delta and the final reversible journal action, not generic
 condition/entity/inventory/register events that no authored trigger consumes.
-The compiler/coordinator and corpus transcription are still active work; legacy authoring/executors must
-not be treated as a second supported model and will be removed once the sole runtime consumes the full
+The compiler/coordinator and corpus transcription are still active work. The compiler must use one
+per-material allocation ledger, simulate each authored step against the projected world, and feed one
+bounded fixed-point coordinator that emits one journal action. Legacy authoring/executors are migration
+inputs only, never a second supported model, and are removed once the sole runtime consumes the full
 corpus.
 
 **Grant SOURCES** are assembled by `src/lib/resolve-grant-sources.ts → resolveAllGrantSources`:

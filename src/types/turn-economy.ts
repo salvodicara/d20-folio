@@ -474,6 +474,10 @@ export type TurnEconomyCommand = InferExactSchema<
   typeof TURN_ECONOMY_COMMAND_SCHEMA,
   TurnEconomySchemaCustomTypes
 >;
+export type TurnEconomyClaimCommand = Extract<
+  TurnEconomyCommand,
+  { readonly claimId: string }
+>;
 
 export interface TurnEconomyEffectiveScalar {
   readonly base: number;

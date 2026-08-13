@@ -14,6 +14,7 @@ import {
   isMechanicsEndWaveReceiptForWorld,
   latchMechanicsEndWave,
   parseMechanicsWorld,
+  projectMechanicsTransactionWorld,
   rebaseMechanicsCausalState,
 } from "@/lib/mechanics-world";
 import {
@@ -38,7 +39,7 @@ import type {
   MaterialRef,
   SharedMaterialRef,
 } from "@/types/mechanics-reference";
-import type { NewMechanicOccurrence } from "@/types/mechanic-occurrence";
+import type { EndRule, NewMechanicOccurrence } from "@/types/mechanic-occurrence";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
 import type {
   EncounterSeed,
@@ -60,6 +61,10 @@ const HERO = {
 const CAMPAIGN = {
   kind: "shared-combat",
   campaignId: "campaign-one",
+} as const satisfies SharedMaterialRef;
+const OTHER_CAMPAIGN = {
+  kind: "shared-combat",
+  campaignId: "campaign-two",
 } as const satisfies SharedMaterialRef;
 
 function self(material: CharacterMaterialRef = HERO) {
@@ -101,6 +106,7 @@ function monster(ordinal = 1): CreatureMaterialEntity {
   return {
     kind: "creature",
     ordinal,
+    controller: null,
     template: {
       kind: "catalogue-monster",
       monsterId: "goblin-warrior",
@@ -140,7 +146,7 @@ function item(ownerOccurrence: InventoryInstance["ownerOccurrence"]): InventoryI
     },
     resources: {},
     disposition: "magical",
-    enchantInstanceId: null,
+    enchantment: null,
   };
 }
 
@@ -148,6 +154,7 @@ function inventoryObject(instanceId: string): ObjectMaterialEntity {
   return {
     kind: "object",
     ordinal: 1,
+    controller: null,
     template: { kind: "inventory-item", owner: HERO, instanceId, instanceOrdinal: 1 },
     ownerOccurrence: null,
     availability: "present",
@@ -463,6 +470,71 @@ function turnsEncounter(
   };
 }
 
+function currentOwnedSummonWorld(
+  endRules: readonly EndRule[] = [
+    {
+      clock: { material: HERO, epoch: 1 },
+      combatant: { material: HERO, entityId: "summon", ordinal: 2 },
+      kind: "turn-boundary",
+      phase: "end",
+      round: 1,
+    },
+  ]
+): MechanicsWorld {
+  let hero = addRoot(character(), HERO);
+  hero = addToState(hero, "summon", {
+    endRules,
+    kind: "material-lifecycle",
+    parentId: "root",
+    target: { material: HERO, entityId: "summon", ordinal: 2 },
+  });
+  hero.nextEntityOrdinal = 3;
+  hero.entities = {
+    ally: monster(),
+    summon: {
+      ...monster(2),
+      ownerOccurrence: generation(hero, HERO, "summon"),
+    },
+  };
+  hero.nextEncounterEpoch = 2;
+  hero.encounter = {
+    epoch: 1,
+    nextCombatantOrdinal: 4,
+    participants: {
+      hero: {
+        ordinal: 1,
+        combatant: self(),
+        economy: betweenTurns("hero-waiting"),
+        initiativeRoll: 20,
+        skipped: false,
+      },
+      summon: {
+        ordinal: 2,
+        combatant: { material: HERO, entityId: "summon", ordinal: 2 },
+        economy: turn("summon-turn"),
+        initiativeRoll: 15,
+        skipped: false,
+      },
+      ally: {
+        ordinal: 3,
+        combatant: { material: HERO, entityId: "ally", ordinal: 1 },
+        economy: betweenTurns("ally-waiting"),
+        initiativeRoll: 10,
+        skipped: false,
+      },
+    },
+    phase: "turns",
+    round: 1,
+    order: ["hero", "summon", "ally"],
+    currentCombatantId: "summon",
+  };
+  hero.clockBinding.encounter = { material: HERO, epoch: 1 };
+  return {
+    scope: HERO,
+    documents: [{ kind: "character", material: HERO, state: hero }],
+  };
+}
+
 function programEndWaveWorld(): MechanicsWorld {
   let hero = character();
   hero = addRoot(hero, HERO);
@@ -488,6 +560,59 @@ function programEndWaveWorld(): MechanicsWorld {
 }
 
 describe("canonical mechanics world and clocks", () => {
+  it.each(["epoch", "revision", "actions", "buildRevision"] as const)(
+    "protects %s from transaction-projection mutation",
+    (field) => {
+      const prior = world(character());
+      const candidate = structuredClone(prior);
+      const document = candidate.documents.find(
+        (entry) => materialRefKey(entry.material) === materialRefKey(HERO)
+      );
+      if (document?.kind !== "character") throw new Error("character fixture");
+      if (field === "epoch") document.state.epoch = 1;
+      else if (field === "revision") document.state.revision = 1;
+      else if (field === "buildRevision") document.state.buildRevision = 2;
+      else {
+        document.state.actions = [
+          {
+            actor: self(),
+            generation: 1,
+            guards: {
+              documents: [
+                {
+                  epoch: document.state.epoch,
+                  material: HERO,
+                  revision: document.state.revision,
+                },
+              ],
+              facts: [],
+            },
+            id: "protected-action",
+            mutations: [
+              {
+                after: { present: true, value: "changed" },
+                before: { present: true, value: "" },
+                path: ["notes"],
+                target: HERO,
+              },
+            ],
+          },
+        ];
+      }
+
+      expect(projectMechanicsTransactionWorld(candidate, prior)).toEqual({
+        ok: false,
+        reason: "protected-state-mismatch",
+      });
+      const causal = beginMechanicsCausalState(prior);
+      if (!causal.ok) throw new Error("causal fixture");
+      expect(rebaseMechanicsCausalState(candidate, causal.value)).toEqual({
+        ok: false,
+        reason: "invalid-end-wave",
+      });
+    }
+  );
+
   it("scopes resolved program-phase endings to one exact execution", () => {
     const rule = {
       execution: 3,
@@ -661,7 +786,8 @@ describe("canonical mechanics world and clocks", () => {
         },
         kind: "complete-rest",
       },
-      { kind: "complete-turn", material: HERO, unexpected: true },
+      { excludeCurrent: null, kind: "complete-turn", material: HERO, unexpected: true },
+      { kind: "complete-turn", material: HERO },
     ]) {
       expect(beginMechanicsBoundary(initial, command)).toMatchObject({
         reason: "invalid-transition",
@@ -1026,6 +1152,184 @@ describe("canonical mechanics world and clocks", () => {
     });
   });
 
+  it.each([
+    [
+      "occurrence",
+      (state: CharacterMaterialState) => {
+        state.nextOccurrenceOrdinal -= 1;
+      },
+    ],
+    [
+      "entity",
+      (state: CharacterMaterialState) => {
+        state.nextEntityOrdinal -= 1;
+      },
+    ],
+    [
+      "inventory",
+      (state: CharacterMaterialState) => {
+        state.nextInventoryOrdinal -= 1;
+      },
+    ],
+    [
+      "encounter",
+      (state: CharacterMaterialState) => {
+        state.nextEncounterEpoch -= 1;
+      },
+    ],
+    [
+      "encounter participant",
+      (state: CharacterMaterialState) => {
+        if (!state.encounter) throw new Error("encounter fixture");
+        state.encounter.nextCombatantOrdinal -= 1;
+      },
+    ],
+  ] as const)("rejects a decrease of the %s allocation high-water", (_, mutate) => {
+    const hero = character();
+    hero.nextOccurrenceOrdinal = 5;
+    hero.nextEntityOrdinal = 5;
+    hero.nextInventoryOrdinal = 5;
+    hero.nextEncounterEpoch = 5;
+    hero.entities = { ally: monster() };
+    hero.encounter = turnsEncounter(1);
+    hero.encounter.nextCombatantOrdinal = 5;
+    hero.clockBinding.encounter = { material: HERO, epoch: 1 };
+    const begun = beginMechanicsCausalState(world(hero));
+    if (!begun.ok) throw new Error(`causal entry fixture: ${begun.reason}`);
+    const candidate = structuredClone(begun.value.world);
+    const document = candidate.documents.find(
+      (entry) =>
+        entry.kind === "character" &&
+        materialRefKey(entry.material) === materialRefKey(HERO)
+    );
+    if (document?.kind !== "character") throw new Error("character fixture");
+    mutate(document.state);
+
+    expect(rebaseMechanicsCausalState(candidate, begun.value)).toEqual({
+      ok: false,
+      reason: "invalid-end-wave",
+    });
+  });
+
+  it.each([
+    [
+      "occurrence",
+      (state: SharedMaterialState) => {
+        state.nextOccurrenceOrdinal -= 1;
+      },
+    ],
+    [
+      "entity",
+      (state: SharedMaterialState) => {
+        state.nextEntityOrdinal -= 1;
+      },
+    ],
+    [
+      "encounter",
+      (state: SharedMaterialState) => {
+        state.nextEncounterEpoch -= 1;
+      },
+    ],
+    [
+      "encounter participant",
+      (state: SharedMaterialState) => {
+        if (!state.encounter) throw new Error("encounter fixture");
+        state.encounter.nextCombatantOrdinal -= 1;
+      },
+    ],
+  ] as const)("rejects a shared-document decrease of the %s high-water", (_, mutate) => {
+    const hero = character();
+    hero.clockBinding = {
+      encounter: { material: CAMPAIGN, epoch: 1 },
+      timeline: { material: CAMPAIGN, epoch: 0 },
+    };
+    const campaign = shared();
+    campaign.nextOccurrenceOrdinal = 5;
+    campaign.nextEntityOrdinal = 5;
+    campaign.nextEncounterEpoch = 5;
+    campaign.encounter = {
+      currentCombatantId: null,
+      epoch: 1,
+      nextCombatantOrdinal: 5,
+      order: [],
+      participants: {
+        hero: {
+          combatant: self(),
+          economy: betweenTurns("shared-hero-wait"),
+          initiativeRoll: null,
+          ordinal: 1,
+          skipped: false,
+        },
+      },
+      phase: "initiative",
+      round: 1,
+    };
+    const begun = beginMechanicsCausalState(world(hero, campaign));
+    if (!begun.ok) throw new Error(`causal entry fixture: ${begun.reason}`);
+    const candidate = structuredClone(begun.value.world);
+    const document = candidate.documents.find(
+      (entry) =>
+        entry.kind === "shared" &&
+        materialRefKey(entry.material) === materialRefKey(CAMPAIGN)
+    );
+    if (document?.kind !== "shared") throw new Error("shared fixture");
+    mutate(document.state);
+
+    expect(rebaseMechanicsCausalState(candidate, begun.value)).toEqual({
+      ok: false,
+      reason: "invalid-end-wave",
+    });
+  });
+
+  it("rejects recreating an idle encounter at a historical epoch", () => {
+    const hero = character();
+    hero.nextEncounterEpoch = 5;
+    hero.nextEntityOrdinal = 2;
+    hero.entities = { ally: monster() };
+    const begun = beginMechanicsCausalState(world(hero));
+    if (!begun.ok) throw new Error(`causal entry fixture: ${begun.reason}`);
+    const candidate = structuredClone(begun.value.world);
+    const document = candidate.documents.find(
+      (entry) =>
+        entry.kind === "character" &&
+        materialRefKey(entry.material) === materialRefKey(HERO)
+    );
+    if (document?.kind !== "character") throw new Error("character fixture");
+    document.state.encounter = turnsEncounter(1);
+    document.state.nextEncounterEpoch = 6;
+    document.state.clockBinding.encounter = { material: HERO, epoch: 1 };
+
+    expect(rebaseMechanicsCausalState(candidate, begun.value)).toEqual({
+      ok: false,
+      reason: "invalid-end-wave",
+    });
+  });
+
+  it("rejects swapping one live encounter generation for another", () => {
+    const hero = character();
+    hero.nextEncounterEpoch = 5;
+    hero.nextEntityOrdinal = 2;
+    hero.entities = { ally: monster() };
+    hero.encounter = turnsEncounter(1);
+    hero.clockBinding.encounter = { material: HERO, epoch: 1 };
+    const begun = beginMechanicsCausalState(world(hero));
+    if (!begun.ok) throw new Error(`causal entry fixture: ${begun.reason}`);
+    const candidate = structuredClone(begun.value.world);
+    const document = candidate.documents.find(
+      (entry) =>
+        entry.kind === "character" &&
+        materialRefKey(entry.material) === materialRefKey(HERO)
+    );
+    if (document?.kind !== "character") throw new Error("character fixture");
+    document.state.encounter = turnsEncounter(2);
+    document.state.clockBinding.encounter = { material: HERO, epoch: 2 };
+
+    expect(rebaseMechanicsCausalState(candidate, begun.value)).toEqual({
+      ok: false,
+      reason: "invalid-end-wave",
+    });
+  });
+
   it("treats a reused entity id as a different physical generation", () => {
     let hero = addRoot(character(), HERO);
     hero = addToState(hero, "watcher", {
@@ -1039,7 +1343,7 @@ describe("canonical mechanics world and clocks", () => {
     campaign.nextEntityOrdinal = 2;
     campaign.entities = { ally: monster(1) };
     const initial = world(hero, campaign);
-    expect(parseMechanicsWorld(initial).ok).toBe(true);
+    expect(parseMechanicsWorld(initial)).toMatchObject({ ok: true });
 
     const replacement = structuredClone(initial);
     const replacementCampaign = replacement.documents.find(
@@ -1068,6 +1372,227 @@ describe("canonical mechanics world and clocks", () => {
         ],
       },
     });
+  });
+
+  it("resolves cross-document controllers by exact generation without requiring presence", () => {
+    const hero = character();
+    hero.nextEntityOrdinal = 2;
+    hero.entities = {
+      summon: {
+        ...monster(),
+        controller: { entityId: "ally", material: CAMPAIGN, ordinal: 1 },
+      },
+    };
+    const campaign = shared();
+    campaign.nextEntityOrdinal = 2;
+    campaign.entities = {
+      ally: { ...monster(), availability: "dismissed" },
+    };
+
+    expect(parseMechanicsWorld(world(hero, campaign)).ok).toBe(true);
+
+    const stale = structuredClone(hero);
+    const summon = stale.entities.summon;
+    if (!summon) throw new Error("summon fixture");
+    summon.controller = { entityId: "ally", material: CAMPAIGN, ordinal: 2 };
+    expect(parseMechanicsWorld(world(stale, campaign))).toEqual({
+      ok: false,
+      reason: "missing-reference",
+    });
+
+    const missing = structuredClone(campaign);
+    missing.entities = {};
+    expect(parseMechanicsWorld(world(hero, missing))).toEqual({
+      ok: false,
+      reason: "missing-reference",
+    });
+  });
+
+  it("rejects one physical combatant participating in two encounter coordinators", () => {
+    const hero = character();
+    hero.clockBinding = {
+      encounter: { epoch: 1, material: CAMPAIGN },
+      timeline: { epoch: 0, material: CAMPAIGN },
+    };
+    const first = shared();
+    first.nextEncounterEpoch = 2;
+    first.encounter = {
+      currentCombatantId: null,
+      epoch: 1,
+      nextCombatantOrdinal: 2,
+      order: [],
+      participants: {
+        hero: {
+          combatant: self(),
+          economy: betweenTurns("first-initiative"),
+          initiativeRoll: null,
+          ordinal: 1,
+          skipped: false,
+        },
+      },
+      phase: "initiative",
+      round: 1,
+    };
+    const second = shared();
+    second.nextEncounterEpoch = 2;
+    second.encounter = {
+      ...structuredClone(first.encounter),
+      participants: {
+        hero: {
+          ...structuredClone(first.encounter.participants.hero),
+          economy: betweenTurns("second-initiative"),
+        },
+      },
+    };
+
+    expect(
+      parseMechanicsWorld(
+        world(hero, first, [{ kind: "shared", material: OTHER_CAMPAIGN, state: second }])
+      )
+    ).toEqual({ ok: false, reason: "duplicate-exclusive-state" });
+  });
+
+  it("rejects two physical generations owned by one material lifecycle", () => {
+    let hero = addRoot(character(), HERO);
+    hero = addToState(hero, "single-owner", {
+      endRules: [],
+      kind: "material-lifecycle",
+      parentId: "root",
+      target: self(),
+    });
+    const owner = generation(hero, HERO, "single-owner");
+    hero.nextInventoryOrdinal = 3;
+    hero.inventory = {
+      first: item(owner),
+      second: { ...item(owner), ordinal: 2 },
+    };
+
+    expect(parseMechanicsWorld(world(hero))).toEqual({
+      ok: false,
+      reason: "duplicate-lifecycle-owner",
+    });
+  });
+
+  it("accepts an acyclic controller chain ending at a character root", () => {
+    const hero = character();
+    hero.nextEntityOrdinal = 2;
+    hero.entities = {
+      summon: {
+        ...monster(),
+        controller: { entityId: "ally", material: CAMPAIGN, ordinal: 1 },
+      },
+    };
+    const campaign = shared();
+    campaign.nextEntityOrdinal = 2;
+    campaign.entities = {
+      ally: { ...monster(), controller: self() },
+    };
+
+    expect(parseMechanicsWorld(world(hero, campaign)).ok).toBe(true);
+  });
+
+  it("rejects a self controller cycle", () => {
+    const hero = character();
+    hero.nextEntityOrdinal = 2;
+    hero.entities = {
+      summon: {
+        ...monster(),
+        controller: { entityId: "summon", material: HERO, ordinal: 1 },
+      },
+    };
+
+    expect(parseMechanicsWorld(world(hero))).toEqual({
+      ok: false,
+      reason: "controller-cycle",
+    });
+  });
+
+  it("rejects a local two-entity controller cycle", () => {
+    const hero = character();
+    hero.nextEntityOrdinal = 3;
+    hero.entities = {
+      first: {
+        ...monster(1),
+        controller: { entityId: "second", material: HERO, ordinal: 2 },
+      },
+      second: {
+        ...monster(2),
+        controller: { entityId: "first", material: HERO, ordinal: 1 },
+      },
+    };
+
+    expect(parseMechanicsWorld(world(hero))).toEqual({
+      ok: false,
+      reason: "controller-cycle",
+    });
+  });
+
+  it("rejects a cross-document controller cycle", () => {
+    const hero = character();
+    hero.nextEntityOrdinal = 2;
+    hero.entities = {
+      summon: {
+        ...monster(),
+        controller: { entityId: "ally", material: CAMPAIGN, ordinal: 1 },
+      },
+    };
+    const campaign = shared();
+    campaign.nextEntityOrdinal = 2;
+    campaign.entities = {
+      ally: {
+        ...monster(),
+        controller: { entityId: "summon", material: HERO, ordinal: 1 },
+      },
+    };
+
+    expect(parseMechanicsWorld(world(hero, campaign))).toEqual({
+      ok: false,
+      reason: "controller-cycle",
+    });
+  });
+
+  it("keeps a dismissed entity's own lifecycle active while ordinary effects end", () => {
+    let hero = addRoot(character(), HERO);
+    const ally = { entityId: "ally", material: HERO, ordinal: 1 } as const;
+    hero = addToState(hero, "ally-lifecycle", {
+      endRules: [],
+      kind: "material-lifecycle",
+      parentId: "root",
+      target: ally,
+    });
+    hero.nextEntityOrdinal = 2;
+    hero.entities = {
+      ally: {
+        ...monster(1),
+        availability: "dismissed",
+        ownerOccurrence: generation(hero, HERO, "ally-lifecycle"),
+      },
+    };
+
+    const initial = world(hero);
+    const parsed = parseMechanicsWorld(initial);
+    if (!parsed.ok) throw new Error(parsed.reason);
+    const discovery = discoverMechanicsEndWave(initial);
+    expect(discovery.status).toBe("discovered");
+    if (discovery.status !== "discovered") return;
+    expect(discovery.wave.candidates).toEqual([]);
+
+    const affectedHero = addToState(structuredClone(hero), "ally-effect", {
+      endRules: [],
+      fact: { key: "ally-effect", kind: "active-key" },
+      kind: "standing",
+      parentId: "root",
+      target: ally,
+    });
+    const affected = discoverMechanicsEndWave(world(affectedHero));
+    expect(affected.status).toBe("discovered");
+    if (affected.status !== "discovered") return;
+    expect(affected.wave.candidates).toEqual([
+      {
+        causes: [{ entity: ally, kind: "live-entity-missing" }],
+        occurrence: worldGeneration(affected.world, HERO, "ally-effect"),
+      },
+    ]);
   });
 
   it("requires an exact sorted closed document set and live cross-document refs", () => {
@@ -1286,6 +1811,7 @@ describe("canonical mechanics world and clocks", () => {
       documents: [{ kind: "character", material: HERO, state: hero }],
     } as const;
     const first = applyBoundary(localWorld, {
+      excludeCurrent: null,
       kind: "complete-turn",
       material: HERO,
     });
@@ -1326,6 +1852,7 @@ describe("canonical mechanics world and clocks", () => {
       ],
     };
     const second = applyBoundary(beforeSecond, {
+      excludeCurrent: null,
       kind: "complete-turn",
       material: HERO,
     });
@@ -1344,71 +1871,12 @@ describe("canonical mechanics world and clocks", () => {
   });
 
   it("selects the next live successor when end-turn closure removes the current combatant", () => {
-    let hero = addRoot(character(), HERO);
-    hero = addToState(hero, "summon", {
-      endRules: [
-        {
-          clock: { material: HERO, epoch: 1 },
-          combatant: { material: HERO, entityId: "summon", ordinal: 2 },
-          kind: "turn-boundary",
-          phase: "end",
-          round: 1,
-        },
-      ],
-      fact: { key: "summon", kind: "active-key" },
-      kind: "standing",
-      parentId: "root",
-      target: { material: HERO, entityId: "summon", ordinal: 2 },
-    });
-    hero.nextEntityOrdinal = 3;
-    hero.entities = {
-      ally: monster(),
-      summon: {
-        ...monster(2),
-        ownerOccurrence: generation(hero, HERO, "summon"),
-      },
-    };
-    hero.nextEncounterEpoch = 2;
-    hero.encounter = {
-      epoch: 1,
-      nextCombatantOrdinal: 4,
-      participants: {
-        hero: {
-          ordinal: 1,
-          combatant: self(),
-          economy: betweenTurns("hero-waiting"),
-          initiativeRoll: 20,
-          skipped: false,
-        },
-        summon: {
-          ordinal: 2,
-          combatant: { material: HERO, entityId: "summon", ordinal: 2 },
-          economy: turn("summon-turn"),
-          initiativeRoll: 15,
-          skipped: false,
-        },
-        ally: {
-          ordinal: 3,
-          combatant: { material: HERO, entityId: "ally", ordinal: 1 },
-          economy: betweenTurns("ally-waiting"),
-          initiativeRoll: 10,
-          skipped: false,
-        },
-      },
-      phase: "turns",
-      round: 1,
-      order: ["hero", "summon", "ally"],
-      currentCombatantId: "summon",
-    };
-    hero.clockBinding.encounter = { material: HERO, epoch: 1 };
-    const local = {
-      scope: HERO,
-      documents: [{ kind: "character", material: HERO, state: hero }],
-    } as const;
+    const local = currentOwnedSummonWorld();
     const checkpoints: MechanicsBoundaryCheckpoint[] = [];
     const result = applyBoundary(
       local,
       {
+        excludeCurrent: null,
         kind: "complete-turn",
         material: HERO,
       },
@@ -1440,6 +1908,78 @@ describe("canonical mechanics world and clocks", () => {
     );
   });
 
+  it("requires a turn boundary before ordinary cleanup removes the current combatant", () => {
+    const local = currentOwnedSummonWorld();
+    const result = finalizeDiscoveredWave(local, {
+      boundaries: [],
+      endRequests: [worldGeneration(local, HERO, "summon")],
+      inventorySourceLeases: [],
+    });
+    expect(result).toMatchObject({
+      reason: "encounter-conflict",
+      status: "rejected",
+    });
+  });
+
+  it.each([
+    {
+      command: {
+        clock: { material: HERO, epoch: 0 },
+        elapsedSeconds: 6,
+        kind: "advance-time",
+      },
+      endRules: [
+        {
+          clock: { material: HERO, epoch: 0 },
+          elapsedSeconds: 6,
+          kind: "time-reached",
+        },
+      ],
+      name: "advance-time",
+    },
+    {
+      command: {
+        input: { clock: { material: HERO, epoch: 0 }, phase: "dawn" },
+        kind: "observe-day-phase",
+      },
+      endRules: [
+        { clock: { material: HERO, epoch: 0 }, kind: "day-phase", phase: "dawn" },
+      ],
+      name: "dawn",
+    },
+    {
+      command: {
+        input: {
+          clock: { material: HERO, epoch: 0 },
+          combatant: { material: HERO, entityId: "summon", ordinal: 2 },
+          rest: "long",
+        },
+        kind: "complete-rest",
+      },
+      endRules: [
+        {
+          clock: { material: HERO, epoch: 0 },
+          combatant: { material: HERO, entityId: "summon", ordinal: 2 },
+          kind: "rest-completed",
+          rest: "long",
+        },
+      ],
+      name: "rest",
+    },
+  ] as const)(
+    "does not let a historical $name boundary remove the current combatant",
+    ({ command, endRules }) => {
+      const initial = currentOwnedSummonWorld(endRules);
+      const result = applyBoundary(initial, command);
+      expect(result).toMatchObject({
+        reason: "encounter-conflict",
+        status: "rejected",
+      });
+      expect(initial.documents[0]?.state.encounter?.currentCombatantId).toBe("summon");
+      expect(initial.documents[0]?.state.entities).toHaveProperty("summon");
+    }
+  );
+
   it("continues start-turn selection when an occurrence-owned combatant expires", () => {
     let hero = addRoot(character(), HERO);
     hero = addToState(hero, "vanishing-ally", {
@@ -1452,8 +1992,7 @@ describe("canonical mechanics world and clocks", () => {
           round: 1,
         },
       ],
-      fact: { key: "vanishing-ally", kind: "active-key" },
-      kind: "standing",
+      kind: "material-lifecycle",
       parentId: "root",
       target: { material: HERO, entityId: "ally", ordinal: 1 },
     });
@@ -1473,7 +2012,7 @@ describe("canonical mechanics world and clocks", () => {
         scope: HERO,
         documents: [{ kind: "character", material: HERO, state: hero }],
       },
-      { kind: "complete-turn", material: HERO },
+      { excludeCurrent: null, kind: "complete-turn", material: HERO },
       checkpoints
     );
 
@@ -1674,7 +2213,7 @@ describe("canonical mechanics world and clocks", () => {
         scope: HERO,
         documents: [{ kind: "character", material: HERO, state: hero }],
       },
-      { kind: "complete-turn", material: HERO }
+      { excludeCurrent: null, kind: "complete-turn", material: HERO }
     );
     if (begun.status !== "checkpoint") throw new Error("checkpoint fixture");
     const completion = {
@@ -1999,15 +2538,13 @@ describe("canonical mechanics world and clocks", () => {
     let hero = addRoot(character(), HERO);
     hero = addToState(hero, "child", {
       endRules: [],
-      fact: { kind: "active-key", key: "child" },
-      kind: "standing",
+      kind: "material-lifecycle",
       parentId: "root",
       target: { material: CAMPAIGN, entityId: "summon", ordinal: 1 },
     });
     hero = addToState(hero, "material-owner", {
       endRules: [],
-      fact: { kind: "active-key", key: "material-owner" },
-      kind: "standing",
+      kind: "material-lifecycle",
       parentId: "root",
       target: self(),
     });
@@ -2091,8 +2628,7 @@ describe("canonical mechanics world and clocks", () => {
     let hero = addRoot(character(), HERO);
     hero = addToState(hero, "summon", {
       endRules: [],
-      fact: { kind: "active-key", key: "summoned" },
-      kind: "standing",
+      kind: "material-lifecycle",
       parentId: "root",
       target: { material: HERO, entityId: "familiar", ordinal: 1 },
     });
@@ -2147,11 +2683,10 @@ describe("canonical mechanics world and clocks", () => {
   it("targets objects while keeping inventory-linked existence referential", () => {
     let hero = addRoot(character(), HERO);
     hero = addToState(hero, "conjure", {
-      kind: "standing",
+      kind: "material-lifecycle",
       parentId: "root",
       target: self(),
       endRules: [],
-      fact: { kind: "active-key", key: "conjured-blade" },
     });
     hero.nextInventoryOrdinal = 2;
     hero.inventory = {
@@ -2186,11 +2721,10 @@ describe("canonical mechanics world and clocks", () => {
   it("retains a consumed source as one zero-quantity tombstone until its last effect ends", () => {
     let hero = addRoot(character(), HERO, "conjured-root");
     hero = addToState(hero, "conjured-source", {
-      kind: "standing",
+      kind: "material-lifecycle",
       parentId: "conjured-root",
       target: self(),
       endRules: [],
-      fact: { kind: "active-key", key: "conjured-source" },
     });
     hero.nextInventoryOrdinal = 2;
     hero.inventory = {
@@ -2276,8 +2810,7 @@ describe("canonical mechanics world and clocks", () => {
     let hero = addRoot(character(), HERO, "conjured-root");
     hero = addToState(hero, "conjured-source", {
       endRules: [],
-      fact: { kind: "active-key", key: "conjured-source" },
-      kind: "standing",
+      kind: "material-lifecycle",
       parentId: "conjured-root",
       target: self(),
     });
@@ -2345,8 +2878,7 @@ describe("canonical mechanics world and clocks", () => {
     );
     hero = addToState(hero, "potion-owner", {
       endRules: [],
-      fact: { key: "potion-owner", kind: "active-key" },
-      kind: "standing",
+      kind: "material-lifecycle",
       parentId: "potion-root",
       target: self(),
     });
@@ -2359,7 +2891,7 @@ describe("canonical mechanics world and clocks", () => {
       },
     };
     const initial = world(hero);
-    const lease = { material: HERO, instanceId: "potion", instanceOrdinal: 1 } as const;
+    const lease = { owner: HERO, instanceId: "potion", instanceOrdinal: 1 } as const;
     const discovery = discoverMechanicsEndWave(initial, {
       endRequests: [worldGeneration(initial, HERO, "potion-root")],
       inventorySourceLeases: [lease],

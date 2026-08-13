@@ -16,8 +16,10 @@ import {
 } from "@/lib/mechanic-occurrences";
 import {
   conformEntityRef,
+  conformInventoryGenerationRef,
   conformOccurrenceGenerationRef,
   entityRefKey,
+  inventoryGenerationRefKey,
 } from "@/lib/mechanics-reference-schema";
 import { conformResourceCell, conformResourceSpec } from "@/lib/resources";
 import { conformTurnEconomyState } from "@/lib/turn-economy";
@@ -553,7 +555,8 @@ function parseItemOverrides(value: unknown): ItemInstanceOverrides | null {
   };
 }
 
-function parseInventoryInstance(value: unknown): InventoryInstance | null {
+/** Exact structural boundary for one physical inventory generation. */
+export function conformInventoryInstance(value: unknown): InventoryInstance | null {
   if (
     !isExactRecord(value, [
       "ordinal",
@@ -567,14 +570,13 @@ function parseInventoryInstance(value: unknown): InventoryInstance | null {
       "overrides",
       "resources",
       "disposition",
-      "enchantInstanceId",
+      "enchantment",
     ]) ||
     !isPositiveInteger(value.ordinal) ||
     typeof value.equipped !== "boolean" ||
     typeof value.attuned !== "boolean" ||
     !isText(value.notes) ||
-    (value.disposition !== "magical" && value.disposition !== "nonmagical") ||
-    !(value.enchantInstanceId === null || isId(value.enchantInstanceId))
+    (value.disposition !== "magical" && value.disposition !== "nonmagical")
   ) {
     return null;
   }
@@ -587,6 +589,8 @@ function parseInventoryInstance(value: unknown): InventoryInstance | null {
       : parseOccurrenceGenerationRef(value.ownerOccurrence);
   const overrides = parseItemOverrides(value.overrides);
   const resources = parseMap(value.resources, parseResourceCell);
+  const enchantment =
+    value.enchantment === null ? null : conformInventoryGenerationRef(value.enchantment);
   if (
     !definition ||
     !quantity ||
@@ -596,7 +600,8 @@ function parseInventoryInstance(value: unknown): InventoryInstance | null {
     !tags ||
     (value.ownerOccurrence !== null && !ownerOccurrence) ||
     !overrides ||
-    !resources
+    !resources ||
+    (value.enchantment !== null && !enchantment)
   ) {
     return null;
   }
@@ -604,15 +609,14 @@ function parseInventoryInstance(value: unknown): InventoryInstance | null {
     quantity.current > 1 &&
     (value.equipped ||
       value.attuned ||
-      ownerOccurrence !== null ||
       Object.keys(resources).length > 0 ||
-      value.enchantInstanceId !== null)
+      enchantment !== null)
   ) {
     return null;
   }
   if (
     quantity.current === 0 &&
-    (value.equipped || value.attuned || value.enchantInstanceId !== null)
+    (value.equipped || value.attuned || enchantment !== null)
   ) {
     return null;
   }
@@ -649,37 +653,45 @@ function parseInventoryInstance(value: unknown): InventoryInstance | null {
     overrides,
     resources,
     disposition: value.disposition,
-    enchantInstanceId: value.enchantInstanceId,
+    enchantment,
   };
 }
 
-function parseInventory(value: unknown): Record<string, InventoryInstance> | null {
-  const inventory = parseMap(value, parseInventoryInstance);
+function parseInventory(
+  value: unknown,
+  owner: CharacterMaterialRef
+): Record<string, InventoryInstance> | null {
+  const inventory = parseMap(value, conformInventoryInstance);
   if (!inventory) return null;
   const enchantOwners = new Set<string>();
   for (const [instanceId, instance] of Object.entries(inventory)) {
     if (instance.attuned && instance.disposition !== "magical") return null;
-    const enchantId = instance.enchantInstanceId;
-    if (enchantId !== null) {
-      const enchantment = inventory[enchantId];
+    const enchantmentRef = instance.enchantment;
+    if (enchantmentRef !== null) {
+      const enchantment = inventory[enchantmentRef.instanceId];
+      const enchantmentKey = inventoryGenerationRefKey(enchantmentRef);
       if (
-        enchantId === instanceId ||
+        materialRefKey(enchantmentRef.owner) !== materialRefKey(owner) ||
+        (enchantmentRef.instanceId === instanceId &&
+          enchantmentRef.instanceOrdinal === instance.ordinal) ||
         !enchantment ||
+        enchantment.ordinal !== enchantmentRef.instanceOrdinal ||
         enchantment.quantity.current !== 1 ||
         enchantment.disposition !== "magical" ||
-        enchantOwners.has(enchantId)
+        enchantOwners.has(enchantmentKey)
       )
         return null;
-      enchantOwners.add(enchantId);
+      enchantOwners.add(enchantmentKey);
     }
-    const seen = new Set([instanceId]);
-    let cursor = enchantId;
+    const seen = new Set([`${instanceId}\u0000${instance.ordinal}`]);
+    let cursor = enchantmentRef;
     while (cursor !== null) {
-      if (seen.has(cursor)) return null;
-      seen.add(cursor);
-      const linked = inventory[cursor];
-      if (!linked) return null;
-      cursor = linked.enchantInstanceId;
+      const key = `${cursor.instanceId}\u0000${cursor.instanceOrdinal}`;
+      if (seen.has(key)) return null;
+      seen.add(key);
+      const linked = inventory[cursor.instanceId];
+      if (!linked || linked.ordinal !== cursor.instanceOrdinal) return null;
+      cursor = linked.enchantment;
     }
   }
   return inventory;
@@ -1010,8 +1022,10 @@ function parseMaterialEntityBase(
   value: UnknownRecord
 ): Pick<
   MaterialEntity,
-  "ordinal" | "ownerOccurrence" | "availability" | "label" | "resources"
+  "ordinal" | "controller" | "ownerOccurrence" | "availability" | "label" | "resources"
 > | null {
+  const controller =
+    value.controller === null ? null : conformEntityRef(value.controller);
   const ownerOccurrence =
     value.ownerOccurrence === null
       ? null
@@ -1019,6 +1033,7 @@ function parseMaterialEntityBase(
   const resources = parseMap(value.resources, parseResourceCell);
   if (
     !isPositiveInteger(value.ordinal) ||
+    (value.controller !== null && !controller) ||
     (value.ownerOccurrence !== null && !ownerOccurrence) ||
     !resources ||
     (value.availability !== "present" && value.availability !== "dismissed") ||
@@ -1028,6 +1043,7 @@ function parseMaterialEntityBase(
   }
   return {
     ordinal: value.ordinal,
+    controller,
     ownerOccurrence,
     availability: value.availability,
     label: value.label,
@@ -1035,11 +1051,13 @@ function parseMaterialEntityBase(
   };
 }
 
-function parseMaterialEntity(value: unknown): MaterialEntity | null {
+/** Exact structural boundary for one non-self material entity generation. */
+export function conformMaterialEntity(value: unknown): MaterialEntity | null {
   const commonKeys = [
     "kind",
     "template",
     "ordinal",
+    "controller",
     "ownerOccurrence",
     "availability",
     "label",
@@ -1115,7 +1133,8 @@ function occurrenceRefTargets(
   reference: OccurrenceGenerationRef,
   currentMaterial: MaterialRef,
   occurrences: Readonly<Record<string, MechanicOccurrence>>,
-  matches: (ref: EntityRef) => boolean
+  matches: (ref: EntityRef) => boolean,
+  requiredKind: "material-lifecycle" | null = null
 ): boolean {
   if (materialRefKey(reference.occurrence.material) !== materialRefKey(currentMaterial))
     return true;
@@ -1124,6 +1143,7 @@ function occurrenceRefTargets(
     occurrence !== undefined &&
     occurrence.ordinal === reference.ordinal &&
     isEffectOccurrence(occurrence) &&
+    (requiredKind === null || occurrence.kind === requiredKind) &&
     matches(occurrence.target)
   );
 }
@@ -1327,8 +1347,8 @@ export function parseCharacterMaterialState(
   const resources = parseCharacterResources(value.resources);
   const selections = parseSelections(value.selections);
   const preferences = parsePreferences(value.preferences);
-  const inventory = parseInventory(value.inventory);
-  const entities = parseMap(value.entities, parseMaterialEntity);
+  const inventory = parseInventory(value.inventory, material);
+  const entities = parseMap(value.entities, conformMaterialEntity);
   const timeline = parseTimeline(value.timeline);
   const encounterResult = parseEncounter(
     value.encounter,
@@ -1415,7 +1435,8 @@ export function parseCharacterMaterialState(
           (ref) =>
             materialRefKey(ref.material) === materialRefKey(material) &&
             ref.entityId === instanceId &&
-            ref.ordinal === entity.ordinal
+            ref.ordinal === entity.ordinal,
+          "material-lifecycle"
         )) ||
       (entity.kind === "creature" &&
         !temporaryHitPointSourceTargets(
@@ -1441,7 +1462,8 @@ export function parseCharacterMaterialState(
           occurrenceResult.value.occurrences,
           (ref) =>
             materialRefKey(ref.material) === materialRefKey(material) &&
-            ref.entityId === "self"
+            ref.entityId === "self",
+          "material-lifecycle"
         )
     )
   ) {
@@ -1455,6 +1477,9 @@ export function parseCharacterMaterialState(
     (entities[ref.entityId]?.ordinal === ref.ordinal &&
       entities[ref.entityId]?.kind === "creature");
   if (
+    Object.values(entities).some(
+      ({ controller }) => controller !== null && !resolves(controller)
+    ) ||
     !allOccurrenceRefsResolve(occurrenceResult.value.occurrences, resolves) ||
     !creatureOnlyOccurrenceRefsAreValid(occurrenceResult.value.occurrences, isCreature) ||
     !temporaryHitPointSourceTargets(
@@ -1646,7 +1671,7 @@ export function parseSharedMaterialState(
     occurrences: value.occurrences,
   });
   if (!occurrenceResult.ok) return { ok: false };
-  const entities = parseMap(value.entities, parseMaterialEntity);
+  const entities = parseMap(value.entities, conformMaterialEntity);
   if (
     !entities ||
     !ordinalsAreValid(entities, value.nextEntityOrdinal) ||
@@ -1697,6 +1722,9 @@ export function parseSharedMaterialState(
       entities[ref.entityId]?.ordinal === ref.ordinal &&
       entities[ref.entityId]?.kind === "creature");
   if (
+    Object.values(entities).some(
+      ({ controller }) => controller !== null && !resolves(controller)
+    ) ||
     !allOccurrenceRefsResolve(occurrenceResult.value.occurrences, resolves) ||
     !creatureOnlyOccurrenceRefsAreValid(occurrenceResult.value.occurrences, isCreature)
   ) {

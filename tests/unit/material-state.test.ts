@@ -7,6 +7,11 @@ import {
   parseCharacterMaterialState,
   parseSharedMaterialState,
 } from "@/lib/material-state";
+import {
+  createBetweenTurnsEconomyState,
+  createTurnEconomyState,
+} from "@/lib/turn-economy";
+import { parseMechanicsWorld } from "@/lib/mechanics-world";
 import type {
   CharacterMaterialState,
   CreatureMaterialEntity,
@@ -39,7 +44,10 @@ const GHOST: EntityRef = {
 };
 
 type NewProgramOccurrence = Extract<NewMechanicOccurrence, { kind: "program" }>;
-type NewStandingOccurrence = Extract<NewMechanicOccurrence, { kind: "standing" }>;
+type NewMaterialLifecycleOccurrence = Extract<
+  NewMechanicOccurrence,
+  { kind: "material-lifecycle" }
+>;
 
 function livingVitals(current = 10): CreatureVitals {
   return {
@@ -164,11 +172,13 @@ function program(
   };
 }
 
-function standing(target: EntityRef, parentId = "root"): NewStandingOccurrence {
+function materialLifecycle(
+  target: EntityRef,
+  parentId = "root"
+): NewMaterialLifecycleOccurrence {
   return {
     endRules: [],
-    fact: { key: "owned", kind: "active-key" },
-    kind: "standing",
+    kind: "material-lifecycle",
     parentId,
     target,
   };
@@ -187,7 +197,7 @@ function withProgram<State extends CharacterMaterialState | SharedMaterialState>
     "root",
     program(authority)
   );
-  const child = addOccurrence(root, "child", standing(target));
+  const child = addOccurrence(root, "child", materialLifecycle(target));
   return { ...state, ...child };
 }
 
@@ -213,7 +223,7 @@ function item(ordinal: number, itemId = "longsword"): InventoryInstance {
     attuned: false,
     definition: { itemId, kind: "catalogue" },
     disposition: "nonmagical",
-    enchantInstanceId: null,
+    enchantment: null,
     equipped: false,
     notes: "",
     ordinal,
@@ -237,6 +247,7 @@ function creature(
 ): CreatureMaterialEntity {
   return {
     availability: "present",
+    controller: null,
     exhaustion: 0,
     kind: "creature",
     label: "",
@@ -265,6 +276,7 @@ function inventoryObject(
 ): ObjectMaterialEntity {
   return {
     availability: "present",
+    controller: null,
     kind: "object",
     label: "",
     ordinal,
@@ -344,6 +356,13 @@ describe("material state schema 3", () => {
     delete (missingEntityOrdinal.entities.goblin as unknown as { ordinal?: number })
       .ordinal;
     expect(parseSharedMaterialState(missingEntityOrdinal, SHARED)).toEqual({ ok: false });
+
+    const missingController = sharedState();
+    missingController.nextEntityOrdinal = 2;
+    missingController.entities.goblin = creature(1);
+    delete (missingController.entities.goblin as unknown as { controller?: EntityRef })
+      .controller;
+    expect(parseSharedMaterialState(missingController, SHARED)).toEqual({ ok: false });
   });
 
   it("enforces unique inventory ordinals below a monotonic high-water mark", () => {
@@ -366,6 +385,69 @@ describe("material state schema 3", () => {
     expect(afterDeletion.nextInventoryOrdinal).toBe(3);
   });
 
+  it("binds enchantments to one exact inventory generation", () => {
+    const valid = characterState();
+    valid.nextInventoryOrdinal = 3;
+    valid.inventory = {
+      blade: {
+        ...item(1),
+        enchantment: {
+          instanceId: "rune",
+          instanceOrdinal: 2,
+          owner: CHARACTER,
+        },
+      },
+      rune: { ...item(2, "magic-rune"), disposition: "magical" },
+    };
+    expect(parseCharacterMaterialState(valid, CHARACTER).ok).toBe(true);
+
+    const stale = structuredClone(valid);
+    const enchantment = stale.inventory.blade?.enchantment;
+    if (!enchantment) throw new Error("enchantment fixture");
+    enchantment.instanceOrdinal = 3;
+    expect(parseCharacterMaterialState(stale, CHARACTER)).toEqual({ ok: false });
+
+    const foreign = structuredClone(valid);
+    const foreignEnchantment = foreign.inventory.blade?.enchantment;
+    if (!foreignEnchantment) throw new Error("enchantment fixture");
+    foreignEnchantment.owner = {
+      characterId: "other-character",
+      kind: "character-play",
+      uid: CHARACTER.uid,
+    };
+    expect(parseCharacterMaterialState(foreign, CHARACTER)).toEqual({ ok: false });
+
+    const cycle = structuredClone(valid);
+    const rune = cycle.inventory.rune;
+    if (!rune) throw new Error("rune fixture");
+    rune.enchantment = {
+      instanceId: "blade",
+      instanceOrdinal: 1,
+      owner: CHARACTER,
+    };
+    expect(parseCharacterMaterialState(cycle, CHARACTER)).toEqual({ ok: false });
+  });
+
+  it("permits one occurrence-owned physical stack without weakening item state", () => {
+    const owned = withProgram(characterState(), SELF);
+    const child = owned.occurrences.child;
+    if (!child) throw new Error("owned stack fixture");
+    owned.nextInventoryOrdinal = 2;
+    owned.inventory.berries = {
+      ...item(1, "goodberry"),
+      ownerOccurrence: {
+        occurrence: { material: CHARACTER, occurrenceId: "child" },
+        ordinal: child.ordinal,
+      },
+      quantity: quantity(10),
+    };
+    expect(parseCharacterMaterialState(owned, CHARACTER).ok).toBe(true);
+
+    const equipped = structuredClone(owned);
+    if (equipped.inventory.berries) equipped.inventory.berries.equipped = true;
+    expect(parseCharacterMaterialState(equipped, CHARACTER)).toEqual({ ok: false });
+  });
+
   it("enforces unique entity ordinals below the existing monotonic high-water mark", () => {
     const valid = sharedState();
     valid.nextEntityOrdinal = 3;
@@ -384,6 +466,62 @@ describe("material state schema 3", () => {
     afterDeletion.entities = {};
     expect(parseSharedMaterialState(afterDeletion, SHARED).ok).toBe(true);
     expect(afterDeletion.nextEntityOrdinal).toBe(3);
+  });
+
+  it("requires entity controllers to resolve to an exact local generation", () => {
+    const valid = characterState();
+    valid.nextEntityOrdinal = 3;
+    valid.entities.leader = { ...creature(1), controller: SELF };
+    valid.entities.familiar = {
+      ...creature(2),
+      controller: { entityId: "leader", material: CHARACTER, ordinal: 1 },
+    };
+    expect(parseCharacterMaterialState(valid, CHARACTER)).toEqual({
+      ok: true,
+      value: valid,
+    });
+
+    const staleGeneration = structuredClone(valid);
+    const staleController = staleGeneration.entities.familiar?.controller;
+    if (!staleController || staleController.entityId === "self") {
+      throw new Error("expected material-entity controller fixture");
+    }
+    staleController.ordinal = 3;
+    expect(parseCharacterMaterialState(staleGeneration, CHARACTER)).toEqual({
+      ok: false,
+    });
+
+    const missingEntity = structuredClone(valid);
+    if (missingEntity.entities.familiar) {
+      missingEntity.entities.familiar.controller = {
+        entityId: "missing",
+        material: CHARACTER,
+        ordinal: 1,
+      };
+    }
+    expect(parseCharacterMaterialState(missingEntity, CHARACTER)).toEqual({ ok: false });
+
+    const shared = sharedState();
+    shared.nextEntityOrdinal = 3;
+    shared.entities.leader = creature(1);
+    shared.entities.familiar = {
+      ...creature(2),
+      controller: { entityId: "leader", material: SHARED, ordinal: 1 },
+    };
+    expect(parseSharedMaterialState(shared, SHARED)).toEqual({
+      ok: true,
+      value: shared,
+    });
+
+    const staleSharedGeneration = structuredClone(shared);
+    const staleSharedController = staleSharedGeneration.entities.familiar?.controller;
+    if (!staleSharedController || staleSharedController.entityId === "self") {
+      throw new Error("expected shared material-entity controller fixture");
+    }
+    staleSharedController.ordinal = 3;
+    expect(parseSharedMaterialState(staleSharedGeneration, SHARED)).toEqual({
+      ok: false,
+    });
   });
 
   it.each(["table", "environment"] as const)(
@@ -455,13 +593,17 @@ describe("material state schema 3", () => {
 
     const staleTarget = structuredClone(valid);
     const staleChild = staleTarget.occurrences.child;
-    if (staleChild?.kind !== "standing") throw new Error("expected owned effect fixture");
+    if (staleChild?.kind !== "material-lifecycle") {
+      throw new Error("expected owned lifecycle fixture");
+    }
     staleChild.target = { ...target, ordinal: 2 };
     expect(parseCharacterMaterialState(staleTarget, CHARACTER)).toEqual({ ok: false });
 
     const wrongTarget = structuredClone(valid);
     const child = wrongTarget.occurrences.child;
-    if (child?.kind !== "standing") throw new Error("expected owned effect fixture");
+    if (child?.kind !== "material-lifecycle") {
+      throw new Error("expected owned lifecycle fixture");
+    }
     child.target = SELF;
     expect(parseCharacterMaterialState(wrongTarget, CHARACTER)).toEqual({ ok: false });
   });
@@ -489,7 +631,9 @@ describe("material state schema 3", () => {
 
     const otherTarget = structuredClone(valid);
     const child = otherTarget.occurrences.child;
-    if (child?.kind !== "standing") throw new Error("expected owned effect fixture");
+    if (child?.kind !== "material-lifecycle") {
+      throw new Error("expected owned lifecycle fixture");
+    }
     child.target = GHOST;
     expect(parseCharacterMaterialState(otherTarget, CHARACTER)).toEqual({ ok: false });
   });
@@ -530,6 +674,50 @@ describe("material state schema 3", () => {
     expect(parseCharacterMaterialState(missingGeneration, CHARACTER)).toEqual({
       ok: false,
     });
+  });
+
+  it("keeps between-turns current state transient and rejects it as a closed world", () => {
+    const valid = characterState();
+    const ownTurn = createTurnEconomyState("turn:1:1:1");
+    const betweenTurns = createBetweenTurnsEconomyState("turn:1:pending:1");
+    if (!ownTurn || !betweenTurns) throw new Error("turn economy fixture");
+    valid.nextEncounterEpoch = 2;
+    valid.encounter = {
+      currentCombatantId: "hero",
+      epoch: 1,
+      nextCombatantOrdinal: 2,
+      order: ["hero"],
+      participants: {
+        hero: {
+          combatant: SELF,
+          economy: structuredClone(ownTurn),
+          initiativeRoll: 12,
+          ordinal: 1,
+          skipped: false,
+        },
+      },
+      phase: "turns",
+      round: 1,
+    };
+    valid.clockBinding.encounter = { epoch: 1, material: CHARACTER };
+    expect(
+      parseMechanicsWorld({
+        documents: [{ kind: "character", material: CHARACTER, state: valid }],
+        scope: CHARACTER,
+      }).ok
+    ).toBe(true);
+
+    const transient = structuredClone(valid);
+    const current = transient.encounter?.participants.hero;
+    if (!current) throw new Error("encounter fixture");
+    current.economy = structuredClone(betweenTurns);
+    expect(parseCharacterMaterialState(transient, CHARACTER).ok).toBe(true);
+    expect(
+      parseMechanicsWorld({
+        documents: [{ kind: "character", material: CHARACTER, state: transient }],
+        scope: CHARACTER,
+      })
+    ).toEqual({ ok: false, reason: "invalid-turn-state" });
   });
 
   it("rejects hostile roots without executing accessors", () => {

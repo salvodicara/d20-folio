@@ -16,8 +16,10 @@ import {
 import {
   conformClockRef,
   conformEntityRef,
+  conformInventoryGenerationRef,
   conformOccurrenceGenerationRef,
   entityRefKey,
+  inventoryGenerationRefKey,
   occurrenceGenerationRefKey,
 } from "@/lib/mechanics-reference-schema";
 import {
@@ -34,6 +36,7 @@ import type { MechanicsSourceRef } from "@/types/mechanics-authority-ref";
 import type {
   ClockRef,
   EntityRef,
+  MaterialEntityRef,
   MaterialRef,
   OccurrenceGenerationRef,
   OccurrenceRef,
@@ -47,7 +50,6 @@ import type {
 import type { CreatureVitals } from "@/types/vitals";
 import type {
   EncounterSeed,
-  InventorySourceLease,
   MechanicsBoundaryCheckpoint,
   MechanicsBoundaryCompletion,
   MechanicsBoundaryCommand,
@@ -73,6 +75,7 @@ import type {
 } from "@/types/mechanics-world";
 import type {
   CharacterMaterialRef,
+  InventoryGenerationRef,
   SharedMaterialRef,
 } from "@/types/mechanics-reference";
 
@@ -371,7 +374,28 @@ export function conformMechanicsBoundaryCommand(
         })
       : null;
   }
-  if (kind === "complete-turn" || kind === "end-encounter") {
+  if (kind === "complete-turn") {
+    if (
+      !isExactRecord(value, ["excludeCurrent", "kind", "material"]) ||
+      !isMaterialRef(value.material)
+    ) {
+      return null;
+    }
+    const excludeCurrent =
+      value.excludeCurrent === null ? null : conformEntityRef(value.excludeCurrent);
+    if (
+      value.excludeCurrent !== null &&
+      (!excludeCurrent || excludeCurrent.entityId === "self")
+    ) {
+      return null;
+    }
+    return freezeDeep({
+      excludeCurrent: excludeCurrent as MaterialEntityRef | null,
+      kind,
+      material: structuredClone(value.material),
+    });
+  }
+  if (kind === "end-encounter") {
     if (!isExactRecord(value, ["kind", "material"]) || !isMaterialRef(value.material)) {
       return null;
     }
@@ -447,15 +471,25 @@ function occurrenceAtGeneration(
   return occurrence?.ordinal === reference.ordinal ? occurrence : null;
 }
 
-function entityPresent(
+function entityGenerationResolves(
   world: Pick<MechanicsWorld, "documents"> | MutableWorld,
   entityRef: EntityRef
 ): boolean {
   const document = documentFor(world, entityRef.material);
   if (!document) return false;
   if (entityRef.entityId === "self") return document.kind === "character";
+  return document.state.entities[entityRef.entityId]?.ordinal === entityRef.ordinal;
+}
+
+function entityPresent(
+  world: Pick<MechanicsWorld, "documents"> | MutableWorld,
+  entityRef: EntityRef
+): boolean {
+  const document = documentFor(world, entityRef.material);
+  if (!document || !entityGenerationResolves(world, entityRef)) return false;
+  if (entityRef.entityId === "self") return true;
   const entity = document.state.entities[entityRef.entityId];
-  return entity?.ordinal === entityRef.ordinal && entity.availability === "present";
+  return entity?.availability === "present";
 }
 
 function creaturePresent(
@@ -463,14 +497,10 @@ function creaturePresent(
   entityRef: EntityRef
 ): boolean {
   const document = documentFor(world, entityRef.material);
-  if (!document) return false;
-  if (entityRef.entityId === "self") return document.kind === "character";
+  if (!document || !entityGenerationResolves(world, entityRef)) return false;
+  if (entityRef.entityId === "self") return true;
   const entity = document.state.entities[entityRef.entityId];
-  return (
-    entity?.ordinal === entityRef.ordinal &&
-    entity.kind === "creature" &&
-    entity.availability === "present"
-  );
+  return entity?.kind === "creature" && entity.availability === "present";
 }
 
 function clockResolves(
@@ -498,6 +528,16 @@ function occurrenceLiveEntities(occurrence: MechanicOccurrence): EntityRef[] {
   return refs;
 }
 
+function occurrenceLiveEntityResolves(
+  world: Pick<MechanicsWorld, "documents"> | MutableWorld,
+  occurrence: MechanicOccurrence,
+  entity: EntityRef
+): boolean {
+  return occurrence.kind === "material-lifecycle"
+    ? entityGenerationResolves(world, entity)
+    : entityPresent(world, entity);
+}
+
 type InventoryItemSource = Extract<MechanicsSourceRef, { kind: "inventory-item" }>;
 
 function inventoryItemSource(
@@ -512,7 +552,15 @@ function inventoryItemSource(
 }
 
 function inventorySourceKey(source: Readonly<InventoryItemSource>): string {
-  return `${materialRefKey(source.owner)}\u0000${source.instanceId}\u0000${source.instanceOrdinal}`;
+  return inventoryGenerationKey(source.owner, source.instanceId, source.instanceOrdinal);
+}
+
+function inventoryGenerationKey(
+  owner: CharacterMaterialRef,
+  instanceId: string,
+  instanceOrdinal: number
+): string {
+  return inventoryGenerationRefKey({ instanceId, instanceOrdinal, owner });
 }
 
 function activeInventorySourceKeys(
@@ -563,7 +611,7 @@ function occurrenceClocksResolve(
   });
 }
 
-function holderMatchesOccurrence(
+function effectTargetsHolder(
   world: MechanicsWorld,
   reference: OccurrenceGenerationRef,
   holder: EntityRef
@@ -576,13 +624,24 @@ function holderMatchesOccurrence(
   );
 }
 
+function materialLifecycleOwns(
+  world: MechanicsWorld,
+  reference: OccurrenceGenerationRef,
+  holder: EntityRef
+): boolean {
+  const occurrence = occurrenceAtGeneration(world, reference);
+  return (
+    occurrence?.kind === "material-lifecycle" && sameEntity(occurrence.target, holder)
+  );
+}
+
 function temporaryHitPointSourceValid(
   world: MechanicsWorld,
   vitals: CreatureVitals,
   holder: EntityRef
 ): boolean {
   const reference = vitals.hitPoints.temporary.sourceOccurrence;
-  return reference === null || holderMatchesOccurrence(world, reference, holder);
+  return reference === null || effectTargetsHolder(world, reference, holder);
 }
 
 function occurrenceCreatureSemanticsValid(
@@ -616,7 +675,9 @@ function validateReferences(
   inventorySourceLeases: ReadonlySet<string> = new Set()
 ): MechanicsWorldInvalidReason | null {
   const concentrations = new Set<string>();
+  const encounterCombatants = new Set<string>();
   const polymorphs = new Set<string>();
+  const ownedMaterialLifecycles = new Set<string>();
   const activeItemSources = activeInventorySourceKeys(world);
   for (const document of world.documents) {
     const self = { material: document.material, entityId: "self" } satisfies EntityRef;
@@ -627,17 +688,24 @@ function validateReferences(
       for (const [instanceId, instance] of Object.entries(document.state.inventory)) {
         if (
           instance.ownerOccurrence !== null &&
-          !holderMatchesOccurrence(world, instance.ownerOccurrence, self)
+          !materialLifecycleOwns(world, instance.ownerOccurrence, self)
         ) {
           return "missing-reference";
+        }
+        if (instance.ownerOccurrence !== null) {
+          const ownerKey = occurrenceGenerationRefKey(instance.ownerOccurrence);
+          if (ownedMaterialLifecycles.has(ownerKey)) {
+            return "duplicate-lifecycle-owner";
+          }
+          ownedMaterialLifecycles.add(ownerKey);
         }
         if (
           instance.quantity.current === 0 &&
           !inventorySourceLeases.has(
-            `${materialRefKey(document.material)}\u0000${instanceId}\u0000${instance.ordinal}`
+            inventoryGenerationKey(document.material, instanceId, instance.ordinal)
           ) &&
           !activeItemSources.has(
-            `${materialRefKey(document.material)}\u0000${instanceId}\u0000${instance.ordinal}`
+            inventoryGenerationKey(document.material, instanceId, instance.ordinal)
           )
         ) {
           return "missing-reference";
@@ -655,8 +723,10 @@ function validateReferences(
           ? documentFor(world, entity.template.owner)
           : null;
       if (
+        (entity.controller !== null &&
+          !entityGenerationResolves(world, entity.controller)) ||
         (entity.ownerOccurrence !== null &&
-          !holderMatchesOccurrence(world, entity.ownerOccurrence, holder)) ||
+          !materialLifecycleOwns(world, entity.ownerOccurrence, holder)) ||
         (entity.kind === "creature" &&
           !temporaryHitPointSourceValid(world, entity.vitals, holder)) ||
         (entity.kind === "object" &&
@@ -667,9 +737,20 @@ function validateReferences(
       ) {
         return "missing-reference";
       }
+      if (entity.ownerOccurrence !== null) {
+        const ownerKey = occurrenceGenerationRefKey(entity.ownerOccurrence);
+        if (ownedMaterialLifecycles.has(ownerKey)) {
+          return "duplicate-lifecycle-owner";
+        }
+        ownedMaterialLifecycles.add(ownerKey);
+      }
     }
     for (const [occurrenceId, occurrence] of Object.entries(document.state.occurrences)) {
-      if (!occurrenceLiveEntities(occurrence).every((ref) => entityPresent(world, ref))) {
+      if (
+        !occurrenceLiveEntities(occurrence).every((ref) =>
+          occurrenceLiveEntityResolves(world, occurrence, ref)
+        )
+      ) {
         return "missing-reference";
       }
       if (!occurrenceClocksResolve(world, occurrence)) return "invalid-clock";
@@ -691,13 +772,17 @@ function validateReferences(
       }
     }
     const encounter = document.state.encounter;
-    if (
-      encounter &&
-      !Object.values(encounter.participants).every((participant) =>
-        creaturePresent(world, participant.combatant)
-      )
-    ) {
-      return "missing-reference";
+    if (encounter) {
+      for (const participant of Object.values(encounter.participants)) {
+        const combatantKey = entityRefKey(participant.combatant);
+        if (encounterCombatants.has(combatantKey)) {
+          return "duplicate-exclusive-state";
+        }
+        encounterCombatants.add(combatantKey);
+        if (!creaturePresent(world, participant.combatant)) {
+          return "missing-reference";
+        }
+      }
     }
   }
   return null;
@@ -756,11 +841,58 @@ function validateLeases(world: MechanicsWorld): MechanicsWorldInvalidReason | nu
   return null;
 }
 
+function validateControllerGraph(
+  world: MechanicsWorld
+): MechanicsWorldInvalidReason | null {
+  const controllers = new Map<string, string>();
+  for (const document of world.documents) {
+    for (const [entityId, entity] of Object.entries(document.state.entities)) {
+      if (entity.controller === null) continue;
+      controllers.set(
+        entityRefKey({ material: document.material, entityId, ordinal: entity.ordinal }),
+        entityRefKey(entity.controller)
+      );
+    }
+  }
+
+  const visited = new Set<string>();
+  for (const start of controllers.keys()) {
+    const path = new Set<string>();
+    let current: string | undefined = start;
+    while (current !== undefined && !visited.has(current)) {
+      if (path.has(current)) return "controller-cycle";
+      path.add(current);
+      current = controllers.get(current);
+    }
+    path.forEach((key) => visited.add(key));
+  }
+  return null;
+}
+
+function validateClosedTurnState(
+  world: MechanicsWorld
+): MechanicsWorldInvalidReason | null {
+  for (const document of world.documents) {
+    const encounter = document.state.encounter;
+    if (encounter?.phase !== "turns" || encounter.currentCombatantId === null) {
+      continue;
+    }
+    if (
+      encounter.participants[encounter.currentCombatantId]?.economy.phase !== "own-turn"
+    ) {
+      return "invalid-turn-state";
+    }
+  }
+  return null;
+}
+
 function validateWorldInvariants(
   world: MechanicsWorld,
-  inventorySourceLeases: ReadonlySet<string> = new Set()
+  inventorySourceLeases: ReadonlySet<string> = new Set(),
+  allowLatchedEndings = false
 ): MechanicsWorldInvalidReason | null {
   if (
+    !allowLatchedEndings &&
     world.documents.some((document) =>
       Object.values(document.state.occurrences).some(
         (occurrence) => occurrence.ending !== null
@@ -769,7 +901,11 @@ function validateWorldInvariants(
   ) {
     return "invalid-ending";
   }
-  return validateReferences(world, inventorySourceLeases) ?? validateLeases(world);
+  return (
+    validateReferences(world, inventorySourceLeases) ??
+    validateControllerGraph(world) ??
+    validateLeases(world)
+  );
 }
 
 /** Parse exact physical documents without assuming their causal closure already ran. */
@@ -837,7 +973,7 @@ export function parseMechanicsWorld(value: unknown): MechanicsWorldParseResult {
   const structured = parseMechanicsWorldStructure(value);
   if (!structured.ok) return structured;
   const world = structured.value;
-  const invalid = validateWorldInvariants(world);
+  const invalid = validateClosedTurnState(world) ?? validateWorldInvariants(world);
   return invalid ? { ok: false, reason: invalid } : { ok: true, value: world };
 }
 
@@ -1034,10 +1170,47 @@ function nextSurvivingParticipant(
   return null;
 }
 
-function normalizeEncounter(world: MutableWorld, encounter: EncounterState): boolean {
+class CurrentCombatantRemovalRequiresBoundary extends Error {}
+
+interface CurrentCombatantRemovalAuthorization {
+  readonly combatant: EntityRef;
+  readonly encounterEpoch: number;
+  readonly material: MaterialRef;
+}
+
+function currentRemovalAuthorized(
+  authorization: Readonly<CurrentCombatantRemovalAuthorization> | null,
+  material: Readonly<MaterialRef>,
+  encounter: Readonly<EncounterState>,
+  combatant: Readonly<EntityRef>
+): boolean {
+  return (
+    authorization !== null &&
+    authorization.encounterEpoch === encounter.epoch &&
+    sameMaterial(authorization.material, material) &&
+    sameEntity(authorization.combatant, combatant)
+  );
+}
+
+function normalizeEncounter(
+  world: MutableWorld,
+  material: Readonly<MaterialRef>,
+  encounter: EncounterState,
+  currentRemoval: Readonly<CurrentCombatantRemovalAuthorization> | null = null
+): boolean {
   let changed = false;
   const priorOrder = [...encounter.order];
   const priorCurrentId = encounter.currentCombatantId;
+  const priorCurrent =
+    priorCurrentId === null ? null : encounter.participants[priorCurrentId];
+  if (
+    priorCurrent !== undefined &&
+    priorCurrent !== null &&
+    !creaturePresent(world, priorCurrent.combatant) &&
+    !currentRemovalAuthorized(currentRemoval, material, encounter, priorCurrent.combatant)
+  ) {
+    throw new CurrentCombatantRemovalRequiresBoundary();
+  }
   for (const [participantId, participant] of Object.entries(encounter.participants)) {
     if (!creaturePresent(world, participant.combatant)) {
       Reflect.deleteProperty(encounter.participants, participantId);
@@ -1106,9 +1279,37 @@ function detachOrphanedLeases(world: MutableWorld): boolean {
   return changed;
 }
 
+/**
+ * Project encounter membership after a trusted physical-entity mutation.
+ *
+ * This intentionally runs before the public world parser: an availability mutation may make an
+ * encounter reference transiently invalid, and the kernel must remove that reference (and release
+ * any now-orphaned shared clock lease) atomically with the mutation.
+ */
+export function reconcileMechanicsEncounterMembership(
+  candidate: Readonly<MechanicsWorld>
+): Readonly<MechanicsWorld> {
+  const world = mutableWorld(candidate);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const document of world.documents) {
+      if (
+        document.state.encounter !== null &&
+        normalizeEncounter(world, document.material, document.state.encounter)
+      ) {
+        changed = true;
+      }
+    }
+    if (detachOrphanedLeases(world)) changed = true;
+  }
+  return freezeDeep(world);
+}
+
 function cleanEndedMaterial(
   world: MutableWorld,
-  inventorySourceLeases: ReadonlySet<string>
+  inventorySourceLeases: ReadonlySet<string>,
+  currentRemoval: Readonly<CurrentCombatantRemovalAuthorization> | null = null
 ): void {
   let changed = true;
   while (changed) {
@@ -1129,7 +1330,11 @@ function cleanEndedMaterial(
             instance.ownerOccurrence !== null &&
             occurrenceAtGeneration(world, instance.ownerOccurrence) === null
           ) {
-            const sourceKey = `${materialRefKey(document.material)}\u0000${instanceId}\u0000${instance.ordinal}`;
+            const sourceKey = inventoryGenerationKey(
+              document.material,
+              instanceId,
+              instance.ordinal
+            );
             if (
               activeItemSources.has(sourceKey) ||
               inventorySourceLeases.has(sourceKey)
@@ -1146,10 +1351,10 @@ function cleanEndedMaterial(
           if (
             instance.quantity.current === 0 &&
             !inventorySourceLeases.has(
-              `${materialRefKey(document.material)}\u0000${instanceId}\u0000${instance.ordinal}`
+              inventoryGenerationKey(document.material, instanceId, instance.ordinal)
             ) &&
             !activeItemSources.has(
-              `${materialRefKey(document.material)}\u0000${instanceId}\u0000${instance.ordinal}`
+              inventoryGenerationKey(document.material, instanceId, instance.ordinal)
             )
           ) {
             Reflect.deleteProperty(document.state.inventory, instanceId);
@@ -1158,10 +1363,11 @@ function cleanEndedMaterial(
         }
         for (const instance of Object.values(document.state.inventory)) {
           if (
-            instance.enchantInstanceId !== null &&
-            !document.state.inventory[instance.enchantInstanceId]
+            instance.enchantment !== null &&
+            document.state.inventory[instance.enchantment.instanceId]?.ordinal !==
+              instance.enchantment.instanceOrdinal
           ) {
-            instance.enchantInstanceId = null;
+            instance.enchantment = null;
             changed = true;
           }
         }
@@ -1203,7 +1409,12 @@ function cleanEndedMaterial(
     for (const document of world.documents) {
       if (
         document.state.encounter &&
-        normalizeEncounter(world, document.state.encounter)
+        normalizeEncounter(
+          world,
+          document.material,
+          document.state.encounter,
+          currentRemoval
+        )
       ) {
         changed = true;
       }
@@ -1322,24 +1533,16 @@ function parseClosureRequest(
   if (new Set(boundaryKeys).size !== boundaryKeys.length) return null;
   const inventorySourceLeases = new Set<string>();
   for (const entry of request.inventorySourceLeases) {
-    if (
-      !isExactRecord(entry, ["material", "instanceId", "instanceOrdinal"]) ||
-      !isMaterialRef(entry.material) ||
-      entry.material.kind !== "character-play" ||
-      !isId(entry.instanceId) ||
-      !isCounter(entry.instanceOrdinal) ||
-      entry.instanceOrdinal === 0
-    ) {
-      return null;
-    }
-    const document = documentFor(world, entry.material);
+    const lease = conformInventoryGenerationRef(entry);
+    if (!lease) return null;
+    const document = documentFor(world, lease.owner);
     if (
       document?.kind !== "character" ||
-      document.state.inventory[entry.instanceId]?.ordinal !== entry.instanceOrdinal
+      document.state.inventory[lease.instanceId]?.ordinal !== lease.instanceOrdinal
     ) {
       return null;
     }
-    const key = `${materialRefKey(entry.material)}\u0000${entry.instanceId}\u0000${entry.instanceOrdinal}`;
+    const key = leaseKey(lease);
     if (inventorySourceLeases.has(key)) return null;
     inventorySourceLeases.add(key);
   }
@@ -1365,7 +1568,7 @@ function parseClosureRequest(
  */
 export function parseMechanicsWorldTransactionState(
   value: unknown,
-  inventorySourceLeases: readonly InventorySourceLease[] = []
+  inventorySourceLeases: readonly InventoryGenerationRef[] = []
 ): MechanicsWorldParseResult {
   const structured = parseMechanicsWorldStructure(value);
   if (!structured.ok) return structured;
@@ -1382,14 +1585,57 @@ export function parseMechanicsWorldTransactionState(
   return invalid ? { ok: false, reason: invalid } : { ok: true, value: structured.value };
 }
 
-function leaseKey(lease: Readonly<InventorySourceLease>): string {
-  return `${materialRefKey(lease.material)}\u0000${lease.instanceId}\u0000${lease.instanceOrdinal}`;
+/**
+ * Validate one intermediate mutation inside an atomic low-level transaction.
+ *
+ * This deliberately does not discover or latch newly satisfied end rules:
+ * another ordered operation in the same transaction may make the rule false
+ * again (for example, creating a temporary-HP source immediately before
+ * granting those temporary HP). Existing latched endings and every allocation
+ * high-water mark remain monotonic. The transaction kernel performs the one
+ * authoritative causal rebase after its final operation.
+ */
+export function projectMechanicsTransactionWorld(
+  value: unknown,
+  priorValue: unknown,
+  inventorySourceLeases: readonly InventoryGenerationRef[] = []
+): MechanicsWorldParseResult {
+  const prior = parseMechanicsWorldStructure(priorValue);
+  if (!prior.ok) return prior;
+  const candidate = parseMechanicsWorldStructure(value);
+  if (!candidate.ok) return candidate;
+  if (!protectedJournalsMatch(prior.value, candidate.value)) {
+    return { ok: false, reason: "protected-state-mismatch" };
+  }
+  const closure = parseClosureRequest(candidate.value, {
+    boundaries: [],
+    endRequests: [],
+    inventorySourceLeases,
+  });
+  if (!closure) return { ok: false, reason: "invalid-lease" };
+  const invalid = validateWorldInvariants(
+    candidate.value,
+    closure.inventorySourceLeases,
+    true
+  );
+  if (invalid) return { ok: false, reason: invalid };
+  if (!preservesLatchedEndings(prior.value, candidate.value)) {
+    return { ok: false, reason: "invalid-ending" };
+  }
+  if (!preservesAllocationHighWater(prior.value, candidate.value)) {
+    return { ok: false, reason: "invalid-order" };
+  }
+  return candidate;
+}
+
+function leaseKey(lease: Readonly<InventoryGenerationRef>): string {
+  return inventoryGenerationRefKey(lease);
 }
 
 function normalizeInventorySourceLeases(
   world: Readonly<MechanicsWorld>,
-  values: readonly Readonly<InventorySourceLease>[]
-): readonly Readonly<InventorySourceLease>[] | null {
+  values: readonly Readonly<InventoryGenerationRef>[]
+): readonly Readonly<InventoryGenerationRef>[] | null {
   try {
     const unique = [...new Map(values.map((lease) => [leaseKey(lease), lease])).values()];
     const normalized = normalizedClosureRequest({
@@ -1419,7 +1665,8 @@ type LatchedEndWaveResult =
 function latchAndRediscoverEndWave(
   world: Readonly<MechanicsWorld>,
   wave: Readonly<MechanicsEndWaveReceipt>,
-  historicalBasis: Readonly<MechanicsWorld> | null = null
+  historicalBasis: Readonly<MechanicsWorld> | null = null,
+  currentRemoval: Readonly<CurrentCombatantRemovalAuthorization> | null = null
 ): LatchedEndWaveResult {
   const latched = historicalBasis
     ? latchHistoricalMechanicsEndWave(historicalBasis, world, wave)
@@ -1437,7 +1684,12 @@ function latchAndRediscoverEndWave(
     return { ok: false, reason: "invalid-end-wave" };
   }
   const finalization = historicalBasis
-    ? finalizeHistoricalMechanicsEndWave(historicalBasis, current.world, current.wave)
+    ? finalizeHistoricalMechanicsEndWave(
+        historicalBasis,
+        current.world,
+        current.wave,
+        currentRemoval
+      )
     : finalizeMechanicsEndWave(current.world, current.wave);
   if (finalization.status === "rejected") {
     return { ok: false, reason: finalization.reason };
@@ -1503,6 +1755,41 @@ function preservesLatchedEndings(
   }
 }
 
+function preservesAllocationHighWater(
+  prior: Readonly<MechanicsWorld>,
+  candidate: Readonly<MechanicsWorld>
+): boolean {
+  return prior.documents.every((document) => {
+    const next = documentFor(candidate, document.material);
+    if (
+      !next ||
+      next.state.nextOccurrenceOrdinal < document.state.nextOccurrenceOrdinal ||
+      next.state.nextEntityOrdinal < document.state.nextEntityOrdinal ||
+      next.state.nextEncounterEpoch < document.state.nextEncounterEpoch ||
+      (document.kind === "character" &&
+        (next.kind !== "character" ||
+          next.state.nextInventoryOrdinal < document.state.nextInventoryOrdinal))
+    ) {
+      return false;
+    }
+    const encounter = document.state.encounter;
+    const nextEncounter = next.state.encounter;
+    if (encounter === null) {
+      if (nextEncounter === null) return true;
+      return (
+        document.state.nextEncounterEpoch < Number.MAX_SAFE_INTEGER &&
+        nextEncounter.epoch === document.state.nextEncounterEpoch &&
+        next.state.nextEncounterEpoch === document.state.nextEncounterEpoch + 1
+      );
+    }
+    return (
+      nextEncounter === null ||
+      (nextEncounter.epoch === encounter.epoch &&
+        nextEncounter.nextCombatantOrdinal >= encounter.nextCombatantOrdinal)
+    );
+  });
+}
+
 function kernelCausalState(
   world: Readonly<MechanicsWorld>,
   context: Readonly<MechanicsCausalState["context"]>
@@ -1535,7 +1822,7 @@ export function beginMechanicsCausalState(value: unknown): MechanicsCausalStateR
 export function rebaseMechanicsCausalState(
   value: Readonly<MechanicsWorld>,
   priorState: Readonly<MechanicsCausalState>,
-  additionalLeases: readonly Readonly<InventorySourceLease>[] = []
+  additionalLeases: readonly Readonly<InventoryGenerationRef>[] = []
 ): MechanicsCausalStateResult {
   const structured = parseMechanicsWorldStructure(value);
   if (!structured.ok) return { ok: false, reason: "invalid-world" };
@@ -1547,7 +1834,12 @@ export function rebaseMechanicsCausalState(
     return { ok: false, reason: "invalid-end-wave" };
   }
   const priorWorld = parseMechanicsWorldStructure(priorState.world);
-  if (!priorWorld.ok || !preservesLatchedEndings(priorWorld.value, structured.value)) {
+  if (
+    !priorWorld.ok ||
+    !protectedJournalsMatch(priorWorld.value, structured.value) ||
+    !preservesLatchedEndings(priorWorld.value, structured.value) ||
+    !preservesAllocationHighWater(priorWorld.value, structured.value)
+  ) {
     return { ok: false, reason: "invalid-end-wave" };
   }
   const priorValue = priorState.context.endWave;
@@ -1714,13 +2006,16 @@ function discoverCandidates(
   };
 
   for (const document of world.documents) {
-    const materialKey = materialRefKey(document.material);
     if (document.kind === "character") {
       const self = { entityId: "self", material: document.material } satisfies EntityRef;
       characterSelfKeys.add(entityRefKey(self));
       addTemporaryHitPoints(self, document.state.vitals);
       for (const [instanceId, instance] of Object.entries(document.state.inventory)) {
-        const key = `${materialKey}\u0000${instanceId}\u0000${instance.ordinal}`;
+        const key = inventoryGenerationKey(
+          document.material,
+          instanceId,
+          instance.ordinal
+        );
         const ownerKey = instance.ownerOccurrence
           ? occurrenceGenerationRefKey(instance.ownerOccurrence)
           : null;
@@ -1749,7 +2044,11 @@ function discoverCandidates(
         : null;
       const inventoryKey =
         entity.kind === "object" && entity.template.kind === "inventory-item"
-          ? `${materialRefKey(entity.template.owner)}\u0000${entity.template.instanceId}\u0000${entity.template.instanceOrdinal}`
+          ? inventoryGenerationKey(
+              entity.template.owner,
+              entity.template.instanceId,
+              entity.template.instanceOrdinal
+            )
           : null;
       entityNodes.set(key, {
         availability: entity.availability,
@@ -2021,7 +2320,13 @@ function discoverCandidates(
   }
   for (const node of occurrenceNodes.values()) {
     if (node.directCauses.size > 0) endOccurrence(node.key);
-    if (node.liveEntities.some((entity) => !entityIsPresent(entityRefKey(entity)))) {
+    if (
+      node.liveEntities.some((entity) =>
+        node.occurrence.kind === "material-lifecycle"
+          ? !entityExists(entityRefKey(entity))
+          : !entityIsPresent(entityRefKey(entity))
+      )
+    ) {
       endOccurrence(node.key);
     }
     if (
@@ -2111,7 +2416,11 @@ function discoverCandidates(
       causes.push({ kind: "temporary-hit-points-empty" });
     }
     for (const entity of node.liveEntities) {
-      if (!entityIsPresent(entityRefKey(entity))) {
+      const resolves =
+        node.occurrence.kind === "material-lifecycle"
+          ? entityExists(entityRefKey(entity))
+          : entityIsPresent(entityRefKey(entity));
+      if (!resolves) {
         causes.push({
           entity: structuredClone(entity),
           kind: "live-entity-missing",
@@ -2515,6 +2824,7 @@ export function finalizeMechanicsEndWave(
     value,
     wave,
     (world, receipt) => isMechanicsEndWaveReceiptForWorld(world, receipt),
+    null,
     null
   );
 }
@@ -2522,14 +2832,16 @@ export function finalizeMechanicsEndWave(
 function finalizeHistoricalMechanicsEndWave(
   basis: Readonly<MechanicsWorld>,
   value: Readonly<MechanicsWorld>,
-  wave: Readonly<MechanicsEndWaveReceipt>
+  wave: Readonly<MechanicsEndWaveReceipt>,
+  currentRemoval: Readonly<CurrentCombatantRemovalAuthorization> | null
 ): MechanicsWorldSimulationResult {
   return finalizeVerifiedMechanicsEndWave(
     value,
     wave,
     (world, receipt) =>
       isMechanicsEndWaveReceiptForHistoricalWorld(basis, world, receipt),
-    basis
+    basis,
+    currentRemoval
   );
 }
 
@@ -2540,7 +2852,8 @@ function finalizeVerifiedMechanicsEndWave(
     world: Readonly<MechanicsWorld>,
     wave: Readonly<MechanicsEndWaveReceipt>
   ) => boolean,
-  historicalBasis: Readonly<MechanicsWorld> | null
+  historicalBasis: Readonly<MechanicsWorld> | null,
+  currentRemoval: Readonly<CurrentCombatantRemovalAuthorization> | null
 ): MechanicsWorldSimulationResult {
   const parsed = parseMechanicsWorldStructure(value);
   if (!parsed.ok) return rejected(value, "invalid-world");
@@ -2573,9 +2886,12 @@ function finalizeVerifiedMechanicsEndWave(
     Reflect.deleteProperty(document.state.occurrences, reference.occurrence.occurrenceId);
   }
   try {
-    cleanEndedMaterial(candidate, closure.inventorySourceLeases);
+    cleanEndedMaterial(candidate, closure.inventorySourceLeases, currentRemoval);
   } catch (error) {
     if (error instanceof RangeError) return rejected(parsed.value, "overflow");
+    if (error instanceof CurrentCombatantRemovalRequiresBoundary) {
+      return rejected(parsed.value, "encounter-conflict");
+    }
     return rejected(parsed.value, "invalid-end-wave");
   }
   return finalize(parsed.value, candidate, closure.inventorySourceLeases);
@@ -2596,6 +2912,9 @@ export function finalizeMechanicsMaterialCleanup(
     cleanEndedMaterial(candidate, new Set());
   } catch (error) {
     if (error instanceof RangeError) return rejected(structured.value, "overflow");
+    if (error instanceof CurrentCombatantRemovalRequiresBoundary) {
+      return rejected(structured.value, "encounter-conflict");
+    }
     return rejected(structured.value, "invalid-transition");
   }
   return finalize(structured.value, candidate);
@@ -2750,6 +3069,7 @@ function conformBoundaryCursor(value: unknown): Readonly<MechanicsBoundaryCursor
   if (
     isExactRecord(value, [
       "encounter",
+      "excludeCurrent",
       "expectedRound",
       "expectedTimelineSeconds",
       "kind",
@@ -2767,6 +3087,8 @@ function conformBoundaryCursor(value: unknown): Readonly<MechanicsBoundaryCursor
     isPositiveCounter(value.scanOffset)
   ) {
     const encounter = conformBoundaryEncounterCursor(value.encounter);
+    const excludeCurrent =
+      value.excludeCurrent === null ? null : conformEntityRef(value.excludeCurrent);
     const lastSelected =
       value.lastSelected === null
         ? null
@@ -2775,6 +3097,8 @@ function conformBoundaryCursor(value: unknown): Readonly<MechanicsBoundaryCursor
       value.selected === null ? null : conformBoundaryParticipantCursor(value.selected);
     if (
       !encounter ||
+      (value.excludeCurrent !== null &&
+        (!excludeCurrent || excludeCurrent.entityId === "self")) ||
       (value.lastSelected !== null && !lastSelected) ||
       (value.selected !== null && !selected) ||
       (value.phase === "after-start") !== (selected !== null)
@@ -2783,6 +3107,7 @@ function conformBoundaryCursor(value: unknown): Readonly<MechanicsBoundaryCursor
     }
     return freezeDeep({
       encounter,
+      excludeCurrent: excludeCurrent as MaterialEntityRef | null,
       expectedRound: value.expectedRound,
       expectedTimelineSeconds: value.expectedTimelineSeconds,
       kind: value.kind,
@@ -2886,7 +3211,11 @@ function protectedJournalsMatch(
         candidate !== null &&
         candidate.state.epoch === document.state.epoch &&
         candidate.state.revision === document.state.revision &&
-        canonicalJson(candidate.state.actions) === canonicalJson(document.state.actions)
+        canonicalJson(candidate.state.actions) ===
+          canonicalJson(document.state.actions) &&
+        (document.kind !== "character" ||
+          (candidate.kind === "character" &&
+            candidate.state.buildRevision === document.state.buildRevision))
       );
     })
   );
@@ -3029,12 +3358,44 @@ function cursorMatchesCommand(
   command: MechanicsBoundaryCommand,
   cursor: MechanicsBoundaryCursor
 ): boolean {
-  if (command.kind === "complete-turn") return cursor.kind === "complete-turn";
+  if (command.kind === "complete-turn") {
+    return (
+      cursor.kind === "complete-turn" &&
+      ((command.excludeCurrent === null && cursor.excludeCurrent === null) ||
+        (command.excludeCurrent !== null &&
+          cursor.excludeCurrent !== null &&
+          sameEntity(command.excludeCurrent, cursor.excludeCurrent)))
+    );
+  }
   if (command.kind === "end-encounter") return cursor.kind === "end-encounter";
   if (command.kind === "start-encounter") {
     return cursor.kind === "finish" || cursor.kind === "start-shared-encounter";
   }
   return cursor.kind === "finish";
+}
+
+function currentCombatantRemovalAuthorization(
+  command: Readonly<MechanicsBoundaryCommand>,
+  cursor: Readonly<MechanicsBoundaryCursor>
+): Readonly<CurrentCombatantRemovalAuthorization> | null {
+  if (
+    command.kind !== "complete-turn" ||
+    cursor.kind !== "complete-turn" ||
+    cursor.phase === "after-start" ||
+    cursor.encounter.currentCombatantId === null
+  ) {
+    return null;
+  }
+  const current = cursor.encounter.participants.find(
+    ({ participantId }) => participantId === cursor.encounter.currentCombatantId
+  );
+  return current
+    ? {
+        combatant: structuredClone(current.combatant),
+        encounterEpoch: cursor.encounter.epoch,
+        material: structuredClone(command.material),
+      }
+    : null;
 }
 
 function continuationValid(
@@ -3093,7 +3454,12 @@ function emitBoundaryCheckpoint(
   if (discovery.status === "rejected") {
     return boundaryRejected(discovery.reason);
   }
-  const latched = latchAndRediscoverEndWave(discovery.world, discovery.wave, basis);
+  const latched = latchAndRediscoverEndWave(
+    discovery.world,
+    discovery.wave,
+    basis,
+    currentCombatantRemovalAuthorization(command, cursor)
+  );
   if (!latched.ok) return boundaryRejected(latched.reason);
   const state = kernelCausalState(latched.value.world, {
     endWave:
@@ -3181,7 +3547,8 @@ function completionWorld(
     const latched = latchAndRediscoverEndWave(
       discovery.world,
       discovery.wave,
-      continuation.basis
+      continuation.basis,
+      currentCombatantRemovalAuthorization(continuation.command, continuation.cursor)
     );
     if (!latched.ok) {
       return { ok: false, reason: latched.reason, world: discovery.world };
@@ -3206,7 +3573,8 @@ function completionWorld(
   const finalized = finalizeHistoricalMechanicsEndWave(
     continuation.basis,
     state.world,
-    wave
+    wave,
+    currentCombatantRemovalAuthorization(continuation.command, continuation.cursor)
   );
   return finalized.status === "rejected"
     ? { ok: false, reason: finalized.reason, world: finalized.world }
@@ -3253,6 +3621,12 @@ function nextParticipant(
     const expected = byId.get(participantId);
     if (!participant || !expected) continue;
     if (!sameParticipantCursor(participant, expected)) return { conflict: true };
+    if (
+      cursor.excludeCurrent !== null &&
+      sameEntity(cursor.excludeCurrent, participant.combatant)
+    ) {
+      continue;
+    }
     return {
       offset,
       participant: expected,
@@ -3297,8 +3671,6 @@ function continueCompleteTurn(
   ) {
     return boundaryRejected("invalid-transition");
   }
-  if (afterEncounter.phase === "initiative") return finishBoundary(basis, world);
-
   if (cursor.phase === "after-start") {
     const selected = cursor.selected;
     if (!selected) return boundaryRejected("invalid-transition");
@@ -3306,16 +3678,59 @@ function continueCompleteTurn(
     if (live && !sameParticipantCursor(live, selected)) {
       return boundaryRejected("invalid-transition");
     }
-    if (live && afterEncounter.order.includes(selected.participantId)) {
-      return afterEncounter.currentCombatantId === selected.participantId
-        ? finishBoundary(basis, world)
-        : boundaryRejected("invalid-transition");
+    if (live) {
+      const candidate = mutableWorld(world);
+      const encounter = documentFor(candidate, command.material)?.state.encounter;
+      if (!encounter) return boundaryRejected("invalid-transition");
+      if (encounter.phase === "initiative") {
+        encounter.order = cursor.encounter.order.filter((participantId) => {
+          const participant = encounter.participants[participantId];
+          return participant !== undefined && !participant.skipped;
+        });
+        if (!encounter.order.includes(selected.participantId)) {
+          return boundaryRejected("invalid-transition");
+        }
+        encounter.phase = "turns";
+      } else if (!encounter.order.includes(selected.participantId)) {
+        return boundaryRejected("invalid-transition");
+      }
+      for (const participant of Object.values(encounter.participants)) {
+        participant.economy = { ...participant.economy, phase: "between-turns" };
+      }
+      const mutableSelected = encounter.participants[selected.participantId];
+      if (!mutableSelected || !sameParticipantCursor(mutableSelected, selected)) {
+        return boundaryRejected("invalid-transition");
+      }
+      encounter.currentCombatantId = selected.participantId;
+      mutableSelected.economy = ownTurnEconomy(
+        encounter.epoch,
+        encounter.round,
+        mutableSelected.ordinal
+      );
+      const committed = finalize(world, candidate, leases);
+      return committed.status === "rejected"
+        ? boundaryRejected(committed.reason)
+        : finishBoundary(basis, committed.world);
     }
     const skippedCandidate = mutableWorld(world);
     const skippedEncounter = documentFor(skippedCandidate, command.material)?.state
       .encounter;
     if (!skippedEncounter || !setBetweenTurns(skippedEncounter, selected)) {
       return boundaryRejected("invalid-transition");
+    }
+    if (skippedEncounter.phase === "initiative") {
+      skippedEncounter.order = cursor.encounter.order.filter((participantId) => {
+        const participant = skippedEncounter.participants[participantId];
+        return participant !== undefined && !participant.skipped;
+      });
+      const placeholder =
+        (cursor.encounter.currentCombatantId !== null &&
+        skippedEncounter.order.includes(cursor.encounter.currentCombatantId)
+          ? cursor.encounter.currentCombatantId
+          : skippedEncounter.order[0]) ?? null;
+      if (placeholder === null) return finishBoundary(basis, world);
+      skippedEncounter.currentCombatantId = placeholder;
+      skippedEncounter.phase = "turns";
     }
     const cleaned = projectBoundaryMutation(world, skippedCandidate, leases);
     if (cleaned.status === "rejected") {
@@ -3345,7 +3760,27 @@ function continueCompleteTurn(
     }
     if (encounter.phase === "initiative") return finishBoundary(basis, world);
     const next = nextParticipant(cursor, encounter);
-    if (!next) return boundaryRejected("encounter-conflict");
+    if (!next) {
+      if (cursor.excludeCurrent === null) {
+        return boundaryRejected("encounter-conflict");
+      }
+      const candidate = mutableWorld(world);
+      const document = documentFor(candidate, command.material);
+      const mutableEncounter = document?.state.encounter;
+      if (!document || !mutableEncounter) {
+        return boundaryRejected("invalid-transition");
+      }
+      for (const participant of Object.values(mutableEncounter.participants)) {
+        participant.economy = { ...participant.economy, phase: "between-turns" };
+      }
+      mutableEncounter.currentCombatantId = null;
+      mutableEncounter.order = [];
+      mutableEncounter.phase = "initiative";
+      const suspended = finalize(world, candidate, leases);
+      return suspended.status === "rejected"
+        ? boundaryRejected(suspended.reason)
+        : finishBoundary(basis, suspended.world);
+    }
     if ("conflict" in next) return boundaryRejected("invalid-transition");
 
     if (next.wraps && cursor.expectedRound === cursor.encounter.round) {
@@ -3416,21 +3851,16 @@ function continueCompleteTurn(
     ) {
       return boundaryRejected("invalid-transition");
     }
-    mutableEncounter.currentCombatantId = next.participant.participantId;
-    selected.economy = ownTurnEconomy(
-      mutableEncounter.epoch,
-      mutableEncounter.round,
-      selected.ordinal
-    );
+    for (const participant of Object.values(mutableEncounter.participants)) {
+      participant.economy = { ...participant.economy, phase: "between-turns" };
+    }
+    mutableEncounter.currentCombatantId = null;
+    mutableEncounter.order = [];
+    mutableEncounter.phase = "initiative";
     const started = finalize(world, candidate, leases);
     if (started.status === "rejected") {
       return boundaryRejected(started.reason);
     }
-    const startedDocument = documentFor(started.world, command.material);
-    const boundary = startedDocument
-      ? currentTurnBoundary(startedDocument, "start")
-      : null;
-    if (!boundary) return boundaryRejected("encounter-conflict");
     return emitBoundaryCheckpoint(
       basis,
       started.world,
@@ -3442,7 +3872,13 @@ function continueCompleteTurn(
         selected: next.participant,
       }),
       request,
-      boundary,
+      {
+        clock: { epoch: mutableEncounter.epoch, material: document.material },
+        combatant: structuredClone(next.participant.combatant),
+        kind: "turn-boundary",
+        phase: "start",
+        round: mutableEncounter.round,
+      },
       ordinal
     );
   }
@@ -3498,7 +3934,7 @@ function startSharedEncounter(
   if (!sharedEncounterClock || !mutableShared.state.encounter) {
     return boundaryRejected("encounter-conflict");
   }
-  normalizeEncounter(candidate, mutableShared.state.encounter);
+  normalizeEncounter(candidate, mutableShared.material, mutableShared.state.encounter);
   if (
     mutableShared.state.encounter.phase === "turns" &&
     mutableShared.state.encounter.currentCombatantId !== null
@@ -3742,7 +4178,19 @@ export function beginMechanicsBoundary(
     const document = documentFor(basis, command.material);
     const boundary = document ? currentTurnBoundary(document, "end") : null;
     const encounter = document?.state.encounter;
-    if (!document || !boundary || !encounter || !encounter.currentCombatantId) {
+    const current =
+      encounter?.currentCombatantId === null ||
+      encounter?.currentCombatantId === undefined
+        ? null
+        : encounter.participants[encounter.currentCombatantId];
+    if (
+      !document ||
+      !boundary ||
+      !encounter ||
+      !current ||
+      (command.excludeCurrent !== null &&
+        !sameEntity(command.excludeCurrent, current.combatant))
+    ) {
       return boundaryRejected("encounter-conflict");
     }
     return emitBoundaryCheckpoint(
@@ -3751,6 +4199,7 @@ export function beginMechanicsBoundary(
       command,
       {
         encounter: encounterCursor(encounter),
+        excludeCurrent: structuredClone(command.excludeCurrent),
         expectedRound: encounter.round,
         expectedTimelineSeconds: document.state.timeline.elapsedSeconds,
         kind: "complete-turn",

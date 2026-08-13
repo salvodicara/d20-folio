@@ -13,7 +13,6 @@ The application work is here:
 /Users/salvatoredicara/Workspace/d20-folio-combat-automation-gaps
 branch: feat/combat-automation-gaps
 remote: origin/feat/combat-automation-gaps
-feature head before this handoff commit: 0034c99346e0b674e2df791950f9ffeb15d5683c
 ```
 
 The matching private content-pack work is here:
@@ -22,8 +21,11 @@ The matching private content-pack work is here:
 /Users/salvatoredicara/Workspace/d20-folio-content-automation-data
 branch: feat/automation-data
 remote: origin/feat/automation-data
-head: 81adb11b
 ```
+
+Do not duplicate a mutable branch head in this document: `git rev-parse HEAD` and
+`git rev-parse origin/feat/combat-automation-gaps` are the authorities. The paired pack checkpoint is
+currently pushed at `4931c47a`; verify its branch before composed work.
 
 The app worktree's `content-pack` symlink points at that pack worktree. Keep both branches paired.
 The Codex-generated worktree at
@@ -67,8 +69,9 @@ corpus and application cutover and deletion of every old effect-program/handwrit
 The operation cause no longer accepts an authority receipt. Installed authority is independently resolved
 from a trusted immutable snapshot; program authority comes from the exact persisted root generation; the
 kernel then binds the recomputed cause to the installation owner and adds definition/installation guards.
-Resolution groups simulate one ordered atomic transaction and retain a before/after causal context for
-every applied operation so ordinary post-events are derived from exact stages.
+Resolution groups simulate one ordered atomic transaction and retain exact before/after world projections
+for every applied operation so ordinary post-events are derived from exact stages; only the complete
+transaction result is a reusable causal-state receipt.
 
 The adversarial pass withheld closure until the final invariant became stricter:
 the only hostile entry begins from a closed world; ending causes are latched as explicit pure transient
@@ -92,6 +95,40 @@ table-declared two-failure Death Save separately from a natural 1. Focused verif
 across the 20 directly affected suites. The active work now moves to the single `MechanicsProgram` step
 compiler plus fixed-point coordinator, suspension replay and one final journal draft. By owner rule no
 global branch gate ran for this checkpoint.
+
+### 2026-08-12 exact physical operations — checkpoint closed
+
+Every program/effect/entity/inventory create operation now carries its exact preallocated generation and
+compares it with the material's monotonic allocator. Entity/item creation writes one dedicated
+`material-lifecycle` atomically; validation rejects duplicate ownership. Allocators are identity
+high-water state and therefore survive undo/redo even when ordinary timeline/encounter state reverses.
+Inventory transition/end addresses one exact copy, holds exact causal leases and compare-and-swaps any
+inbound enchantment bearer rather than relying on an order-sensitive world scan.
+
+Availability/controller changes operate on exact generations, including dismissed entities. Dismissal of
+a non-current participant atomically reconciles local/shared encounter membership before closed-world
+validation and releases a character's final shared clock lease. Dismissal of the current participant
+returns an exact `needs-boundary` continuation without mutation: only the authenticated end-turn
+continuation may finish the removal, ordinary cleanup fails closed, and the future coordinator owns the
+successor's start-turn observation. Controller validation spans the loaded world and rejects cycles,
+so every controller rewrite (and controlled create) shares one semantic graph collision address. Encounter
+membership has the same explicit semantic dependency; only allocator collisions are automatically ordered
+by generation.
+
+`turn-claim` authoring and terminal operations are now isomorphic to the claim-bearing canonical turn
+commands. `start-turn`/`end-turn` remain exclusive to `beginMechanicsBoundary` /
+`advanceMechanicsBoundary`. Exact hostile boundaries inspect only own enumerable data descriptors, so
+array accessors are rejected and stateful proxy values are snapshotted once before conformance. Every
+cause is pre-authorized against the common action basis, never against a world already mutated by an
+earlier operation. Ordered steps expose only transaction-local world projections; one final causal rebase
+preserves an existing latched wave and discovers the net new wave, making source-create + Temporary-HP
+grant atomic. Timeline-bound creation reads the owning material's clock binding, and the closed parser
+rejects a current combatant left in `between-turns`. Neither projection nor causal rebase can rewrite
+protected journal epoch/revision/actions or character build revision. The independent P0/P1 review's remaining gaps are all
+closed. The focused kernel proof is 401 tests across 14 suites; no global gate ran. Next: one
+`compileMechanicsFrame` with a per-material allocation
+ledger, one fixed-point subscriber/end-wave coordinator and one `planMechanicsWorldAction` call producing
+one journal draft.
 
 ## Product doctrine
 

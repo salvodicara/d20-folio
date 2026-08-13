@@ -30,6 +30,13 @@ const MAX_STRING_LENGTH = 1_024;
 const MAX_PATH_SEGMENT_LENGTH = 256;
 const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 const ENGINE_ROOTS = new Set(["schema", "buildRevision", "epoch", "revision", "actions"]);
+const HIGH_WATER_PATHS = [
+  ["nextOccurrenceOrdinal"],
+  ["nextEntityOrdinal"],
+  ["nextInventoryOrdinal"],
+  ["nextEncounterEpoch"],
+  ["encounter", "nextCombatantOrdinal"],
+] as const satisfies readonly JournalPath[];
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -212,6 +219,135 @@ function pathKey(path: JournalPath): string {
   return canonicalJson(path);
 }
 
+function pathStartsWith(path: readonly string[], prefix: readonly string[]): boolean {
+  return (
+    prefix.length <= path.length &&
+    prefix.every((segment, index) => path[index] === segment)
+  );
+}
+
+function highWatersWithin(path: JournalPath): readonly JournalPath[] {
+  return HIGH_WATER_PATHS.filter((highWater) => pathStartsWith(highWater, path));
+}
+
+function overlapsHighWater(path: JournalPath): boolean {
+  return HIGH_WATER_PATHS.some(
+    (highWater) => pathStartsWith(highWater, path) || pathStartsWith(path, highWater)
+  );
+}
+
+function storedHighWater(
+  stored: StoredValue,
+  mutationPath: JournalPath,
+  highWaterPath: JournalPath
+): StoredValue | null {
+  const relative = highWaterPath.slice(mutationPath.length);
+  if (relative.length === 0) return stored;
+  if (!stored.present) return null;
+  if (stored.value === null) return { present: false };
+
+  let current: JsonValue = stored.value;
+  for (const segment of relative) {
+    if (
+      typeof current !== "object" ||
+      current === null ||
+      Array.isArray(current) ||
+      !hasPlainPrototype(current) ||
+      !Object.hasOwn(current, segment)
+    ) {
+      return null;
+    }
+    current = (current as Readonly<Record<string, JsonValue>>)[segment] ?? null;
+  }
+  return { present: true, value: current };
+}
+
+function highWaterMutationIsValid(mutation: ActionMutation): boolean {
+  if (
+    HIGH_WATER_PATHS.some(
+      (highWater) =>
+        mutation.path.length > highWater.length &&
+        pathStartsWith(mutation.path, highWater)
+    )
+  ) {
+    return false;
+  }
+
+  for (const highWater of highWatersWithin(mutation.path)) {
+    const before = storedHighWater(mutation.before, mutation.path, highWater);
+    const after = storedHighWater(mutation.after, mutation.path, highWater);
+    if (!before || !after) return false;
+    const beforeCounter = before.present && isSafeCounter(before.value);
+    const afterCounter = after.present && isSafeCounter(after.value);
+    if (mutation.path.length === highWater.length) {
+      if (!beforeCounter || !afterCounter || after.value <= before.value) return false;
+      continue;
+    }
+    if (before.present && after.present) {
+      if (!beforeCounter || !afterCounter || after.value < before.value) return false;
+    } else if (before.present === after.present || (!beforeCounter && !afterCounter)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function encounterEpoch(stored: StoredValue): number | null {
+  if (
+    !stored.present ||
+    typeof stored.value !== "object" ||
+    stored.value === null ||
+    Array.isArray(stored.value) ||
+    !hasPlainPrototype(stored.value)
+  ) {
+    return null;
+  }
+  const epoch = (stored.value as Readonly<Record<string, JsonValue>>).epoch;
+  return isSafeCounter(epoch) ? epoch : null;
+}
+
+function encounterLifecyclesAreValid(mutations: readonly ActionMutation[]): boolean {
+  for (const mutation of mutations) {
+    if (mutation.path.length !== 1 || mutation.path[0] !== "encounter") continue;
+    const highWater = HIGH_WATER_PATHS[4];
+    const before = storedHighWater(mutation.before, mutation.path, highWater);
+    const after = storedHighWater(mutation.after, mutation.path, highWater);
+    if (!before || !after) return false;
+    const beforeEpoch = before.present ? encounterEpoch(mutation.before) : null;
+    const afterEpoch = after.present ? encounterEpoch(mutation.after) : null;
+    if (
+      (before.present && beforeEpoch === null) ||
+      (after.present && afterEpoch === null)
+    ) {
+      return false;
+    }
+    if (before.present && after.present) {
+      if (beforeEpoch !== afterEpoch) return false;
+      continue;
+    }
+    if (before.present) continue;
+
+    const epochMutation = mutations.find(
+      (candidate) =>
+        materialRefKey(candidate.target) === materialRefKey(mutation.target) &&
+        candidate.path.length === 1 &&
+        candidate.path[0] === "nextEncounterEpoch"
+    );
+    if (
+      !epochMutation?.before.present ||
+      !epochMutation.after.present ||
+      !isSafeCounter(epochMutation.before.value) ||
+      !isSafeCounter(epochMutation.after.value) ||
+      epochMutation.before.value === Number.MAX_SAFE_INTEGER ||
+      epochMutation.after.value !== epochMutation.before.value + 1 ||
+      afterEpoch !== epochMutation.before.value
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function factKey(fact: Pick<ActionFactGuard, "owner" | "address">): string {
   return `${journalActorRefKey(fact.owner)}\u0000${pathKey(fact.address)}`;
 }
@@ -251,15 +387,34 @@ export function conformActionFactGuard(value: unknown): Readonly<ActionFactGuard
 }
 
 function isMutation(value: unknown): value is ActionMutation {
-  return (
-    isExactRecord(value, ["target", "path", "before", "after"]) &&
-    isMaterialRef(value.target) &&
-    isPath(value.path) &&
-    !ENGINE_ROOTS.has(value.path[0]) &&
-    isStoredValue(value.before) &&
-    isStoredValue(value.after) &&
-    !storedValueEqual(value.before, value.after)
-  );
+  if (
+    !isExactRecord(value, ["target", "path", "before", "after"]) ||
+    !isMaterialRef(value.target) ||
+    !isPath(value.path) ||
+    ENGINE_ROOTS.has(value.path[0]) ||
+    !isStoredValue(value.before) ||
+    !isStoredValue(value.after) ||
+    storedValueEqual(value.before, value.after)
+  ) {
+    return false;
+  }
+  return highWaterMutationIsValid(value);
+}
+
+function hasInvalidHighWaterMutation(value: unknown): boolean {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const mutations = recordValue(value, "mutations");
+  if (!isDensePlainArray(mutations)) return false;
+  if (mutations.every(isMutation)) {
+    return !encounterLifecyclesAreValid(mutations);
+  }
+  return mutations.some((mutation) => {
+    if (typeof mutation !== "object" || mutation === null || Array.isArray(mutation)) {
+      return false;
+    }
+    const path = recordValue(mutation, "path");
+    return isPath(path) && overlapsHighWater(path) && !isMutation(mutation);
+  });
 }
 
 function ownerMaterialKey(owner: JournalActorRef): string {
@@ -267,11 +422,7 @@ function ownerMaterialKey(owner: JournalActorRef): string {
 }
 
 function pathsOverlap(left: JournalPath, right: JournalPath): boolean {
-  const short = Math.min(left.length, right.length);
-  for (let index = 0; index < short; index += 1) {
-    if (left[index] !== right[index]) return false;
-  }
-  return true;
+  return pathStartsWith(left, right) || pathStartsWith(right, left);
 }
 
 function isActionStructure(value: unknown): value is JournalAction {
@@ -295,6 +446,7 @@ function isActionStructure(value: unknown): value is JournalAction {
   ) {
     return false;
   }
+  if (!encounterLifecyclesAreValid(value.mutations)) return false;
 
   const documentKeys = new Set(
     value.guards.documents.map((guard) => materialRefKey(guard.material))
@@ -649,17 +801,132 @@ function validateFacts(
   return true;
 }
 
+function replaceStoredHighWater(
+  stored: StoredValue,
+  mutationPath: JournalPath,
+  highWaterPath: JournalPath,
+  replacement: StoredValue
+): StoredValue | null {
+  const relative = highWaterPath.slice(mutationPath.length);
+  if (relative.length === 0) return structuredClone(replacement);
+  if (!stored.present || !replacement.present) return null;
+  if (
+    typeof stored.value !== "object" ||
+    stored.value === null ||
+    Array.isArray(stored.value) ||
+    !hasPlainPrototype(stored.value)
+  ) {
+    return null;
+  }
+
+  const value = structuredClone(stored.value) as Record<string, JsonValue>;
+  let parent = value;
+  for (let index = 0; index < relative.length - 1; index += 1) {
+    const segment = relative[index];
+    if (!segment || !Object.hasOwn(parent, segment)) return null;
+    const child = parent[segment];
+    if (
+      typeof child !== "object" ||
+      child === null ||
+      Array.isArray(child) ||
+      !hasPlainPrototype(child)
+    ) {
+      return null;
+    }
+    parent = child as Record<string, JsonValue>;
+  }
+  const leaf = relative.at(-1);
+  if (!leaf || !Object.hasOwn(parent, leaf)) return null;
+  parent[leaf] = structuredClone(replacement.value);
+  return { present: true, value };
+}
+
+function expectedWithCurrentHighWaters(
+  mutation: ActionMutation,
+  actual: StoredValue,
+  expected: StoredValue
+): StoredValue | null {
+  let normalized = structuredClone(expected);
+  for (const highWater of highWatersWithin(mutation.path)) {
+    const before = storedHighWater(mutation.before, mutation.path, highWater);
+    const after = storedHighWater(mutation.after, mutation.path, highWater);
+    const current = storedHighWater(actual, mutation.path, highWater);
+    const planned = storedHighWater(expected, mutation.path, highWater);
+    if (!before || !after || !current || !planned) return null;
+    if (!planned.present) {
+      if (current.present) return null;
+      continue;
+    }
+    const reserved = [before, after]
+      .filter((value): value is Extract<StoredValue, { present: true }> => value.present)
+      .map(({ value }) => value);
+    if (
+      !current.present ||
+      !isSafeCounter(current.value) ||
+      reserved.some((value) => !isSafeCounter(value))
+    ) {
+      return null;
+    }
+    const floor = Math.max(...(reserved as number[]));
+    if (current.value < floor) return null;
+    const replacement = replaceStoredHighWater(
+      normalized,
+      mutation.path,
+      highWater,
+      current
+    );
+    if (!replacement) return null;
+    normalized = replacement;
+  }
+  return normalized;
+}
+
+function nextWithCurrentHighWaters(
+  mutation: ActionMutation,
+  actual: StoredValue,
+  planned: StoredValue,
+  transition: "commit" | "undo" | "redo"
+): StoredValue | null {
+  let next = structuredClone(planned);
+  for (const highWater of highWatersWithin(mutation.path)) {
+    const current = storedHighWater(actual, mutation.path, highWater);
+    const target = storedHighWater(next, mutation.path, highWater);
+    if (!current || !target) return null;
+    if (!current.present || !target.present) continue;
+    const plannedHighWater = storedHighWater(planned, mutation.path, highWater);
+    if (!plannedHighWater) return null;
+    const replacementValue =
+      transition === "commit" && plannedHighWater.present ? plannedHighWater : current;
+    const replacement = replaceStoredHighWater(
+      next,
+      mutation.path,
+      highWater,
+      replacementValue
+    );
+    if (!replacement) return null;
+    next = replacement;
+  }
+  return next;
+}
+
 function mutationConflict(
   documents: ReadonlyMap<string, JournalMaterialDocument>,
   mutations: readonly ActionMutation[],
-  direction: "forward" | "reverse"
+  transition: "commit" | "undo" | "redo"
 ): boolean {
   return mutations.some((mutation) => {
     const document = documents.get(materialRefKey(mutation.target));
     if (!document) return true;
     const actual = actualAtPath(document.data, mutation.path);
-    const expected = direction === "forward" ? mutation.before : mutation.after;
-    return actual === null || !storedValueEqual(actual, expected);
+    const expected = transition === "undo" ? mutation.after : mutation.before;
+    if (actual === null) return true;
+    const highWaters = highWatersWithin(mutation.path);
+    if (highWaters.length === 0) {
+      return !storedValueEqual(actual, expected);
+    }
+    if (transition === "commit") return !storedValueEqual(actual, expected);
+    const normalized = expectedWithCurrentHighWaters(mutation, actual, expected);
+    return normalized === null || !storedValueEqual(actual, normalized);
   });
 }
 
@@ -667,7 +934,7 @@ function applyTransition(
   world: ActionJournalWorld,
   actions: readonly JournalAction[],
   mutations: readonly ActionMutation[],
-  direction: "forward" | "reverse"
+  transition: "commit" | "undo" | "redo"
 ): ActionJournalWorld | null {
   const documents = documentMap(world);
   const touched = new Set<string>([materialRefKey(world.scope)]);
@@ -679,7 +946,14 @@ function applyTransition(
   for (const mutation of mutations) {
     const document = documents.get(materialRefKey(mutation.target));
     if (!document) return null;
-    const next = direction === "forward" ? mutation.after : mutation.before;
+    const actual = actualAtPath(document.data, mutation.path);
+    if (actual === null) return null;
+    const planned = transition === "undo" ? mutation.before : mutation.after;
+    const next =
+      highWatersWithin(mutation.path).length === 0
+        ? planned
+        : nextWithCurrentHighWaters(mutation, actual, planned, transition);
+    if (!next) return null;
     if (!setAtPath(document.data, mutation.path, next)) return null;
   }
   const scopeKey = materialRefKey(world.scope);
@@ -731,6 +1005,13 @@ export function reduceActionJournal(
 ): ActionJournalTransitionResult {
   if (!isActionJournalWorld(world)) return rejected(world, "invalid-world");
   if (!isResolvedFacts(facts)) return rejected(world, "invalid-facts");
+  if (
+    isExactRecord(transition, ["kind", "action"]) &&
+    transition.kind === "commit" &&
+    hasInvalidHighWaterMutation(transition.action)
+  ) {
+    return rejected(world, "invalid-action");
+  }
   if (!isTransition(transition)) return rejected(world, "invalid-transition");
 
   const scope = scopeDocument(world);
@@ -766,19 +1047,14 @@ export function reduceActionJournal(
     const documents = new Map(
       world.documents.map((document) => [materialRefKey(document.material), document])
     );
-    if (mutationConflict(documents, action.mutations, "forward")) {
+    if (mutationConflict(documents, action.mutations, "commit")) {
       return rejected(world, "mutation-conflict");
     }
     const boundary = transitionBoundary(scope.journal.actions);
     const branched = [...scope.journal.actions.slice(0, boundary), action];
     const bounded = boundedCommittedActions(scope, branched, action.id);
     if (!bounded) return rejected(world, "journal-overflow");
-    const nextWorld = applyTransition(
-      world,
-      bounded.actions,
-      action.mutations,
-      "forward"
-    );
+    const nextWorld = applyTransition(world, bounded.actions, action.mutations, "commit");
     if (!nextWorld) return rejected(world, "journal-overflow");
     return {
       status: "applied",
@@ -833,11 +1109,10 @@ export function reduceActionJournal(
       return rejected(world, "fact-conflict");
     }
   }
-  const direction = transition.kind === "undo" ? "reverse" : "forward";
   const documents = new Map(
     world.documents.map((document) => [materialRefKey(document.material), document])
   );
-  if (mutationConflict(documents, existing.mutations, direction)) {
+  if (mutationConflict(documents, existing.mutations, transition.kind)) {
     return rejected(world, "mutation-conflict");
   }
   const generation = existing.generation + 1;
@@ -850,7 +1125,7 @@ export function reduceActionJournal(
     actions,
   };
   if (!journalFits(candidateJournal)) return rejected(world, "journal-overflow");
-  const nextWorld = applyTransition(world, actions, existing.mutations, direction);
+  const nextWorld = applyTransition(world, actions, existing.mutations, transition.kind);
   if (!nextWorld) return rejected(world, "journal-overflow");
   return {
     status: "applied",

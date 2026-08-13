@@ -17,6 +17,7 @@ import { conformDamageResolution } from "@/lib/damage";
 import { conformDiceObservation } from "@/lib/dice-formula";
 import { exactConformer, type ExactSchemaContext } from "@/lib/exact-schema";
 import { conformIntegerBindings } from "@/lib/integer-expression";
+import { conformProgramRootReceipt } from "@/lib/mechanics-command-boundary";
 import {
   insertResolvedMaterialResource,
   locateResolvedMaterialResource,
@@ -24,7 +25,13 @@ import {
   replaceResolvedMaterialResource,
   resourceDefinitionFactGuard,
 } from "@/lib/material-resource";
-import { addOccurrence, conformNewMechanicOccurrence } from "@/lib/mechanic-occurrences";
+import { conformInventoryInstance, conformMaterialEntity } from "@/lib/material-state";
+import {
+  addOccurrence,
+  addTransitionedProgramOccurrence,
+  conformEndRule,
+  conformNewMechanicOccurrence,
+} from "@/lib/mechanic-occurrences";
 import {
   MECHANIC_OCCURRENCE_SCHEMA_REFS,
   type MechanicOccurrenceSchemaRefTypes,
@@ -38,10 +45,16 @@ import {
 import {
   MATERIAL_REF_SCHEMA,
   conformEntityRef,
+  conformInventoryGenerationRef,
   conformMaterialEntityId,
   conformOccurrenceGenerationRef,
+  inventoryGenerationRefKey,
 } from "@/lib/mechanics-reference-schema";
-import { rebaseMechanicsCausalState } from "@/lib/mechanics-world";
+import {
+  projectMechanicsTransactionWorld,
+  rebaseMechanicsCausalState,
+  reconcileMechanicsEncounterMembership,
+} from "@/lib/mechanics-world";
 import {
   conformResourceOperation,
   conformResourceRef,
@@ -49,6 +62,12 @@ import {
   initializeResource,
   reduceResource,
 } from "@/lib/resources";
+import {
+  conformTurnEconomyClaimCommand,
+  conformTurnEconomyProjection,
+  reduceTurnEconomy,
+  turnEconomyProjectionFactGuard,
+} from "@/lib/turn-economy";
 import {
   applyCreatureDamage,
   applyDeathSaveOutcome,
@@ -69,12 +88,16 @@ import type { ExhaustionLevel } from "@/types/condition";
 import type { NewMechanicOccurrence } from "@/types/mechanic-occurrence";
 import type {
   EntityRef,
+  InventoryGenerationRef,
+  MaterialEntityRef,
   MaterialRef,
   OccurrenceGenerationRef,
   OccurrenceRef,
 } from "@/types/mechanics-reference";
 import type {
   CreatureMaterialEntity,
+  EncounterParticipant,
+  InventoryInstance,
   MaterialEntity,
   ObjectMaterialEntity,
 } from "@/types/material-state";
@@ -91,6 +114,8 @@ import {
   type MechanicsOperationExecution,
   type MechanicsOperationNoChange,
   type MechanicsOperationNoChangeReasonByKind,
+  type NewInventoryInstance,
+  type NewMaterialEntity,
   type MechanicsOperationRejection,
   type MechanicsOperationSchemaCustomTypes,
   type MechanicsOperationStage,
@@ -99,13 +124,13 @@ import {
   type MechanicsTransactionSimulationResult,
 } from "@/types/mechanics-operation";
 import type {
-  InventorySourceLease,
-  MechanicsCausalState,
+  MechanicsBoundaryCommand,
   MechanicsDocument,
   MechanicsWorld,
 } from "@/types/mechanics-world";
 import type { MechanicsAuthoritySnapshot } from "@/types/mechanics-authority";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
+import type { ProgramOccurrence } from "@/types/mechanic-occurrence";
 import type { ResourceRef } from "@/types/resource";
 import type {
   CreatureVitals,
@@ -155,6 +180,75 @@ function exactRecord(value: unknown, keys: readonly string[]): value is UnknownR
     actual.length === expected.length &&
     actual.every((key, index) => key === expected[index])
   );
+}
+
+function conformMaterialEntityRef(value: unknown): Readonly<MaterialEntityRef> | null {
+  const reference = conformEntityRef(value);
+  return reference?.entityId === "self" ? null : reference;
+}
+
+function conformNewMaterialEntity(value: unknown): Readonly<NewMaterialEntity> | null {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    Array.isArray(value) ||
+    Object.hasOwn(value, "availability") ||
+    Object.hasOwn(value, "ordinal") ||
+    Object.hasOwn(value, "ownerOccurrence")
+  ) {
+    return null;
+  }
+  const entity = conformMaterialEntity({
+    ...value,
+    availability: "present",
+    ordinal: 1,
+    ownerOccurrence: null,
+  });
+  if (!entity) return null;
+  const common = {
+    controller: entity.controller,
+    kind: entity.kind,
+    label: entity.label,
+    overrides: entity.overrides,
+    resources: entity.resources,
+    template: entity.template,
+    vitals: entity.vitals,
+  };
+  return entity.kind === "creature"
+    ? { ...common, exhaustion: entity.exhaustion, kind: "creature" }
+    : { ...common, kind: "object" };
+}
+
+function conformNewInventoryInstance(
+  value: unknown
+): Readonly<NewInventoryInstance> | null {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    Array.isArray(value) ||
+    Object.hasOwn(value, "ordinal") ||
+    Object.hasOwn(value, "ownerOccurrence")
+  ) {
+    return null;
+  }
+  const instance = conformInventoryInstance({
+    ...value,
+    ordinal: 1,
+    ownerOccurrence: null,
+  });
+  if (!instance) return null;
+  return {
+    attuned: instance.attuned,
+    definition: instance.definition,
+    disposition: instance.disposition,
+    enchantment: instance.enchantment,
+    equipped: instance.equipped,
+    notes: instance.notes,
+    overrides: instance.overrides,
+    quantity: instance.quantity,
+    resources: instance.resources,
+    tags: instance.tags,
+  };
 }
 
 function journalActor(value: unknown): JournalActorRef | null {
@@ -214,7 +308,9 @@ const OPERATION_CONTEXT: ExactSchemaContext<
     "entity-ref": conformEntityRef,
     id: identifier,
     "integer-bindings": conformIntegerBindings,
+    "inventory-generation-ref": conformInventoryGenerationRef,
     "journal-actor": journalActor,
+    "material-entity-ref": conformMaterialEntityRef,
     "material-ref": conformMaterialRef,
     "material-entity-id": conformMaterialEntityId,
     "canonical-fingerprint": conformCanonicalFingerprint,
@@ -224,12 +320,18 @@ const OPERATION_CONTEXT: ExactSchemaContext<
       const occurrence = conformNewMechanicOccurrence(value);
       return occurrence?.kind === "program" ? null : occurrence;
     },
+    "new-material-entity": conformNewMaterialEntity,
+    "new-inventory-instance": conformNewInventoryInstance,
+    "end-rule": conformEndRule,
     "nonnegative-integer": (value) => integer(value, 0),
     "occurrence-generation-ref": conformOccurrenceGenerationRef,
     "positive-integer": (value) => integer(value, 1),
+    "program-root-receipt": conformProgramRootReceipt,
     "resource-operation": conformResourceOperation,
     "resource-ref": conformResourceRef,
     "resource-spec": conformResourceSpec,
+    "turn-economy-command": conformTurnEconomyClaimCommand,
+    "turn-economy-projection": conformTurnEconomyProjection,
   },
   refs: MECHANIC_OCCURRENCE_SCHEMA_REFS,
 };
@@ -249,6 +351,12 @@ export function conformMechanicsOperation(
 ): Readonly<MechanicsOperation> | null {
   const operation = conformOperationStructure(value);
   if (
+    operation?.kind === "program-state-transition" &&
+    (operation.receipt.kind === "create") !== (operation.expectedRegisters === null)
+  ) {
+    return null;
+  }
+  if (
     operation &&
     (operation.kind === "creature-damage" || operation.kind === "object-damage") &&
     operation.criticalHit &&
@@ -260,6 +368,16 @@ export function conformMechanicsOperation(
 }
 
 function transactionCausesAreValid(transaction: Readonly<MechanicsTransaction>): boolean {
+  const programTransitions = transaction.operations.filter(
+    ({ kind }) => kind === "program-state-transition"
+  );
+  if (
+    programTransitions.length > 1 ||
+    (programTransitions.length === 1 &&
+      transaction.operations[0].kind !== "program-state-transition")
+  ) {
+    return false;
+  }
   if (
     transaction.operations.length !== 1 &&
     transaction.operations.some(({ kind }) => kind === "occurrence-end")
@@ -287,16 +405,15 @@ function transactionCausesAreValid(transaction: Readonly<MechanicsTransaction>):
     if (!cause) return false;
     usedCauseIds.add(operation.causeId);
     if (
-      operation.kind !== "occurrence-create" ||
-      operation.occurrence.kind !== "program"
+      operation.kind === "program-state-transition" &&
+      operation.receipt.kind === "create"
     ) {
-      continue;
+      const createdRoots = (createdRootsByCause.get(operation.causeId) ?? 0) + 1;
+      if (cause.invocation.kind !== "installed-capability" || createdRoots > 1) {
+        return false;
+      }
+      createdRootsByCause.set(operation.causeId, createdRoots);
     }
-    const createdRoots = (createdRootsByCause.get(operation.causeId) ?? 0) + 1;
-    if (cause.invocation.kind !== "installed-capability" || createdRoots > 1) {
-      return false;
-    }
-    createdRootsByCause.set(operation.causeId, createdRoots);
   }
   return usedCauseIds.size === transaction.causes.length;
 }
@@ -490,13 +607,13 @@ function resolveOperationCause(
 
 function inventorySourceLease(
   authority: Readonly<MechanicsProgramAuthorityReceipt>
-): Readonly<InventorySourceLease> | null {
+): Readonly<InventoryGenerationRef> | null {
   const source = authority.source;
   return source.kind === "inventory-item"
     ? {
         instanceId: source.instanceId,
         instanceOrdinal: source.instanceOrdinal,
-        material: source.owner,
+        owner: source.owner,
       }
     : null;
 }
@@ -541,6 +658,14 @@ function operationTargetKind(
     case "creature-maximum-sync":
     case "exhaustion-transition":
       return "creature";
+    case "turn-economy-transition":
+    case "entity-create":
+    case "entity-availability":
+    case "entity-controller":
+    case "inventory-create":
+    case "inventory-transition":
+    case "inventory-end":
+    case "program-state-transition":
     case "occurrence-create":
     case "occurrence-end":
     case "resource-initialize":
@@ -793,6 +918,9 @@ function executeOperation(
         "maximum-already-synchronized",
         maximumFact(targetRef, operation.input.maximumHitPoints)
       );
+    case "inventory-create":
+    case "inventory-transition":
+    case "inventory-end":
     case "occurrence-create":
     case "occurrence-end":
     case "exhaustion-transition":
@@ -825,14 +953,14 @@ function withTargetVitals(
   return { documents, scope: world.scope };
 }
 
-function validatedCausalCandidate(
+function validatedTransactionCandidate(
   value: unknown,
-  causalState: Readonly<MechanicsCausalState>,
-  inventorySourceLeases: readonly Readonly<InventorySourceLease>[]
-): Readonly<MechanicsCausalState> | null {
-  const parsed = rebaseMechanicsCausalState(
-    value as Readonly<MechanicsWorld>,
-    causalState,
+  priorWorld: Readonly<MechanicsWorld>,
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
+): Readonly<MechanicsWorld> | null {
+  const parsed = projectMechanicsTransactionWorld(
+    value,
+    priorWorld,
     inventorySourceLeases
   );
   return parsed.ok ? parsed.value : null;
@@ -843,9 +971,8 @@ function withOccurrence(
   material: Readonly<MaterialRef>,
   occurrenceId: string,
   occurrence: Readonly<NewMechanicOccurrence>,
-  causalState: Readonly<MechanicsCausalState>,
-  inventorySourceLeases: readonly Readonly<InventorySourceLease>[]
-): Readonly<MechanicsCausalState> | null {
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
+): Readonly<MechanicsWorld> | null {
   const located = documentFor(world, material);
   if (!located) return null;
   let occurrenceState;
@@ -869,7 +996,7 @@ function withOccurrence(
         : document
     ),
   };
-  return validatedCausalCandidate(candidate, causalState, inventorySourceLeases);
+  return validatedTransactionCandidate(candidate, world, inventorySourceLeases);
 }
 
 function effectiveConditionImmunities(
@@ -909,7 +1036,9 @@ function sameNewOccurrence(
   existing: Readonly<import("@/types/mechanic-occurrence").MechanicOccurrence>,
   expected: Readonly<NewMechanicOccurrence>
 ): boolean {
+  if (existing.ending !== null) return false;
   const body = structuredClone(existing) as unknown as UnknownRecord;
+  Reflect.deleteProperty(body, "ending");
   Reflect.deleteProperty(body, "ordinal");
   return canonicalJson(body) === canonicalJson(expected);
 }
@@ -942,6 +1071,12 @@ function visibleFacts(
     case "creature-maximum-sync":
     case "object-maximum-sync":
       return facts as MechanicsOperationExecution["facts"];
+    case "entity-create":
+    case "entity-availability":
+    case "entity-controller":
+    case "inventory-create":
+    case "inventory-transition":
+    case "inventory-end":
     case "occurrence-create":
     case "occurrence-end":
     case "exhaustion-transition":
@@ -957,7 +1092,7 @@ type OperationSimulation =
       readonly actionFacts: readonly ActionFactGuard[];
       readonly consequences?: readonly Readonly<MechanicsOperationConsequence>[];
       readonly execution: MechanicsOperationExecution;
-      readonly state: Readonly<MechanicsCausalState>;
+      readonly world: Readonly<MechanicsWorld>;
       readonly status: "applied";
     }
   | {
@@ -968,6 +1103,12 @@ type OperationSimulation =
       readonly boundary: "capacity" | "initial" | "record-roll" | "recovery";
       readonly requirement: Readonly<import("@/types/dice-formula").DiceRollRequirement>;
       readonly status: "needs-observation";
+    }
+  | {
+      readonly boundary: Readonly<
+        Extract<MechanicsBoundaryCommand, { readonly kind: "complete-turn" }>
+      >;
+      readonly status: "needs-boundary";
     }
   | { readonly reason: MechanicsOperationRejection; readonly status: "rejected" };
 
@@ -1006,76 +1147,695 @@ function concentrationsForTarget(
   return references;
 }
 
+interface LocatedEncounterParticipant {
+  readonly documentIndex: number;
+  readonly participant: Readonly<EncounterParticipant>;
+  readonly participantId: string;
+}
+
+function locateEncounterParticipant(
+  world: Readonly<MechanicsWorld>,
+  combatant: Readonly<EntityRef>
+):
+  | { readonly located: LocatedEncounterParticipant; readonly status: "found" }
+  | {
+      readonly reason: "invalid-world" | "missing-target";
+      readonly status: "rejected";
+    } {
+  const combatantKey = entityRefKey(combatant);
+  let located: LocatedEncounterParticipant | null = null;
+  for (const [documentIndex, document] of world.documents.entries()) {
+    const encounter = document.state.encounter;
+    if (!encounter) continue;
+    for (const [participantId, participant] of Object.entries(encounter.participants)) {
+      if (entityRefKey(participant.combatant) !== combatantKey) continue;
+      if (located) return { reason: "invalid-world", status: "rejected" };
+      located = { documentIndex, participant, participantId };
+    }
+  }
+  return located
+    ? { located, status: "found" }
+    : { reason: "missing-target", status: "rejected" };
+}
+
+function withParticipantEconomy(
+  world: Readonly<MechanicsWorld>,
+  located: Readonly<LocatedEncounterParticipant>,
+  economy: Readonly<EncounterParticipant["economy"]>
+): unknown {
+  return {
+    scope: world.scope,
+    documents: world.documents.map((document, index) => {
+      if (index !== located.documentIndex) return document;
+      const encounter = document.state.encounter;
+      if (!encounter) return null;
+      return {
+        ...document,
+        state: {
+          ...document.state,
+          encounter: {
+            ...encounter,
+            participants: {
+              ...encounter.participants,
+              [located.participantId]: {
+                ...located.participant,
+                economy: structuredClone(economy),
+              },
+            },
+          },
+        },
+      };
+    }),
+  };
+}
+
+function simulateTurnEconomyTransition(
+  world: Readonly<MechanicsWorld>,
+  operation: Readonly<
+    Extract<MechanicsOperation, { readonly kind: "turn-economy-transition" }>
+  >,
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
+): OperationSimulation {
+  const lookup = locateEncounterParticipant(world, operation.combatant);
+  if (lookup.status === "rejected") return lookup;
+  const before = lookup.located.participant.economy;
+  const transition = reduceTurnEconomy(before, operation.projection, operation.command);
+  if (transition.status === "rejected") return transition;
+  if (transition.status === "no-change") {
+    return noChangeExecution(operation, transition.reason);
+  }
+  const after = validatedTransactionCandidate(
+    withParticipantEconomy(world, lookup.located, transition.after),
+    world,
+    inventorySourceLeases
+  );
+  if (!after) return { reason: "invalid-after", status: "rejected" };
+  return {
+    actionFacts: [
+      turnEconomyProjectionFactGuard(operation.combatant, operation.projection),
+    ],
+    execution: {
+      facts: { after: transition.after, before },
+      kind: operation.kind,
+      operation,
+      operationId: operation.operationId,
+      status: "applied",
+    },
+    world: after,
+    status: "applied",
+  };
+}
+
+function exactKeys(
+  value: Readonly<Record<string, unknown>>,
+  expected: readonly string[]
+): boolean {
+  const keys = Object.keys(value).sort(compareCodeUnits);
+  const canonicalExpected = [...expected].sort(compareCodeUnits);
+  return sameCanonical(keys, canonicalExpected);
+}
+
+function programPhaseEntry(receipt: {
+  readonly execution: number;
+  readonly triggerEventId: string | null;
+}) {
+  return {
+    execution: receipt.execution,
+    lastTriggerEventId: receipt.triggerEventId,
+  } as const;
+}
+
+function programRootIdentityMatches(
+  root: Readonly<ProgramOccurrence>,
+  authority: Readonly<MechanicsProgramAuthorityReceipt>
+): boolean {
+  const program = authority.snapshot.program;
+  return (
+    program !== null &&
+    sameCanonical(root.authority, authority) &&
+    exactKeys(
+      root.phaseState,
+      program.phases.map(({ phaseId }) => phaseId)
+    ) &&
+    exactKeys(
+      root.registers,
+      program.registers.map(({ registerId }) => registerId)
+    )
+  );
+}
+
+function withProgramOccurrence(
+  world: Readonly<MechanicsWorld>,
+  reference: Readonly<OccurrenceGenerationRef>,
+  occurrence: Readonly<ProgramOccurrence>,
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
+): Readonly<MechanicsWorld> | null {
+  const located = documentFor(world, reference.occurrence.material);
+  if (!located) return null;
+  const candidate = {
+    scope: world.scope,
+    documents: world.documents.map((document, index) =>
+      index === located.index
+        ? {
+            ...document,
+            state: {
+              ...document.state,
+              occurrences: {
+                ...document.state.occurrences,
+                [reference.occurrence.occurrenceId]: structuredClone(occurrence),
+              },
+            },
+          }
+        : document
+    ),
+  };
+  return validatedTransactionCandidate(candidate, world, inventorySourceLeases);
+}
+
+function withCreatedProgramOccurrence(
+  world: Readonly<MechanicsWorld>,
+  reference: Readonly<OccurrenceGenerationRef>,
+  occurrence: Omit<ProgramOccurrence, "ending" | "ordinal">,
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
+): Readonly<MechanicsWorld> | null {
+  const located = documentFor(world, reference.occurrence.material);
+  if (!located) return null;
+  let occurrenceState;
+  try {
+    occurrenceState = addTransitionedProgramOccurrence(
+      {
+        nextOccurrenceOrdinal: located.document.state.nextOccurrenceOrdinal,
+        occurrences: located.document.state.occurrences,
+      },
+      reference.occurrence.occurrenceId,
+      structuredClone(occurrence)
+    );
+  } catch {
+    return null;
+  }
+  const candidate = {
+    scope: world.scope,
+    documents: world.documents.map((document, index) =>
+      index === located.index
+        ? { ...document, state: { ...document.state, ...occurrenceState } }
+        : document
+    ),
+  };
+  return validatedTransactionCandidate(candidate, world, inventorySourceLeases);
+}
+
+function simulateProgramStateTransition(
+  world: Readonly<MechanicsWorld>,
+  operation: Readonly<
+    Extract<MechanicsOperation, { readonly kind: "program-state-transition" }>
+  >,
+  cause: Readonly<MechanicsOperationCause>,
+  authority: Readonly<MechanicsProgramAuthorityReceipt>,
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
+): OperationSimulation {
+  const { receipt } = operation;
+  const program = authority.snapshot.program;
+  const ownerMaterial = authority.installation.owner.material;
+  if (
+    !program ||
+    !sameMaterial(receipt.root.occurrence.material, ownerMaterial) ||
+    !exactKeys(
+      operation.nextRegisters,
+      program.registers.map(({ registerId }) => registerId)
+    ) ||
+    (operation.expectedRegisters !== null &&
+      !exactKeys(
+        operation.expectedRegisters,
+        program.registers.map(({ registerId }) => registerId)
+      ))
+  ) {
+    return { reason: "invalid-program-state", status: "rejected" };
+  }
+  const phase = program.phases.find(({ phaseId }) => phaseId === receipt.next.phaseId);
+  if (!phase) return { reason: "invalid-program-state", status: "rejected" };
+  const located = documentFor(world, receipt.root.occurrence.material);
+  if (!located) return { reason: "missing-target", status: "rejected" };
+  const existing =
+    located.document.state.occurrences[receipt.root.occurrence.occurrenceId];
+  const nextPhase = programPhaseEntry(receipt.next);
+
+  if (receipt.kind === "create") {
+    if (cause.invocation.kind !== "installed-capability") {
+      return { reason: "invalid-cause", status: "rejected" };
+    }
+    const phaseState = Object.fromEntries(
+      program.phases.map(({ phaseId }) => [
+        phaseId,
+        phaseId === receipt.next.phaseId
+          ? nextPhase
+          : { execution: 0, lastTriggerEventId: null },
+      ])
+    );
+    const expectedRoot = {
+      authority,
+      endRules: [],
+      phaseState,
+      registers: operation.nextRegisters,
+    };
+    if (existing) {
+      return existing.kind === "program" &&
+        existing.ordinal === receipt.root.ordinal &&
+        existing.ending === null &&
+        sameCanonical(
+          {
+            authority: existing.authority,
+            endRules: existing.endRules,
+            phaseState: existing.phaseState,
+            registers: existing.registers,
+          },
+          expectedRoot
+        )
+        ? noChangeExecution(operation, "program-state-already-committed")
+        : { reason: "program-root-collision", status: "rejected" };
+    }
+    if (
+      located.document.state.epoch !== receipt.materialEpoch ||
+      located.document.state.nextOccurrenceOrdinal !== receipt.root.ordinal
+    ) {
+      return { reason: "stale-program-state", status: "rejected" };
+    }
+    if (receipt.root.ordinal === Number.MAX_SAFE_INTEGER) {
+      return { reason: "overflow", status: "rejected" };
+    }
+    const after = withCreatedProgramOccurrence(
+      world,
+      receipt.root,
+      { ...expectedRoot, kind: "program" },
+      inventorySourceLeases
+    );
+    const created = after ? occurrenceAtGeneration(after, receipt.root) : undefined;
+    if (created?.kind !== "program") {
+      return { reason: "invalid-after", status: "rejected" };
+    }
+    return {
+      actionFacts: [],
+      execution: {
+        facts: {
+          after: { phase: nextPhase, registers: operation.nextRegisters },
+          before: null,
+          created: true,
+          root: receipt.root,
+        },
+        kind: operation.kind,
+        operation,
+        operationId: operation.operationId,
+        status: "applied",
+      },
+      world: after,
+      status: "applied",
+    };
+  }
+
+  if (
+    cause.invocation.kind !== "program-root" ||
+    !sameCanonical(cause.invocation.occurrence, receipt.root)
+  ) {
+    return { reason: "invalid-cause", status: "rejected" };
+  }
+  if (!existing || existing.ordinal !== receipt.root.ordinal) {
+    return { reason: "missing-program-root", status: "rejected" };
+  }
+  if (existing.kind !== "program" || !programRootIdentityMatches(existing, authority)) {
+    return { reason: "invalid-program-state", status: "rejected" };
+  }
+  const currentPhase = existing.phaseState[receipt.next.phaseId];
+  if (!currentPhase || operation.expectedRegisters === null) {
+    return { reason: "invalid-program-state", status: "rejected" };
+  }
+  if (
+    sameCanonical(currentPhase, nextPhase) &&
+    sameCanonical(existing.registers, operation.nextRegisters)
+  ) {
+    return noChangeExecution(operation, "program-state-already-committed");
+  }
+  if (
+    !sameCanonical(currentPhase, programPhaseEntry(receipt.expected)) ||
+    !sameCanonical(existing.registers, operation.expectedRegisters)
+  ) {
+    return { reason: "stale-program-state", status: "rejected" };
+  }
+  const nextRoot: ProgramOccurrence = {
+    ...existing,
+    phaseState: {
+      ...existing.phaseState,
+      [receipt.next.phaseId]: nextPhase,
+    },
+    registers: structuredClone(operation.nextRegisters),
+  };
+  const after = withProgramOccurrence(
+    world,
+    receipt.root,
+    nextRoot,
+    inventorySourceLeases
+  );
+  if (!after) return { reason: "invalid-after", status: "rejected" };
+  return {
+    actionFacts: [],
+    execution: {
+      facts: {
+        after: { phase: nextPhase, registers: operation.nextRegisters },
+        before: { phase: currentPhase, registers: existing.registers },
+        created: false,
+        root: receipt.root,
+      },
+      kind: operation.kind,
+      operation,
+      operationId: operation.operationId,
+      status: "applied",
+    },
+    world: after,
+    status: "applied",
+  };
+}
+
+interface LocatedMaterialEntity {
+  readonly documentIndex: number;
+  readonly entity: Readonly<MaterialEntity>;
+  readonly entityId: string;
+}
+
+function locateMaterialEntityGeneration(
+  world: Readonly<MechanicsWorld>,
+  reference: Readonly<MaterialEntityRef>
+): LocatedMaterialEntity | null {
+  const located = documentFor(world, reference.material);
+  const entity = located?.document.state.entities[reference.entityId];
+  return located && entity?.ordinal === reference.ordinal
+    ? { documentIndex: located.index, entity, entityId: reference.entityId }
+    : null;
+}
+
+function entityGenerationExists(
+  world: Readonly<MechanicsWorld>,
+  reference: Readonly<EntityRef>
+): boolean {
+  const document = documentFor(world, reference.material)?.document;
+  if (!document) return false;
+  if (reference.entityId === "self") return document.kind === "character";
+  return document.state.entities[reference.entityId]?.ordinal === reference.ordinal;
+}
+
+function controllerWouldCycle(
+  world: Readonly<MechanicsWorld>,
+  target: Readonly<MaterialEntityRef>,
+  controller: Readonly<EntityRef>
+): boolean {
+  const targetKey = entityRefKey(target);
+  const seen = new Set<string>();
+  let cursor: Readonly<EntityRef> | null = controller;
+  while (cursor !== null) {
+    const key = entityRefKey(cursor);
+    if (key === targetKey) return true;
+    if (seen.has(key) || cursor.entityId === "self") return false;
+    seen.add(key);
+    cursor = locateMaterialEntityGeneration(world, cursor)?.entity.controller ?? null;
+  }
+  return false;
+}
+
+function entityCandidate(
+  world: Readonly<MechanicsWorld>,
+  documentIndex: number,
+  entityId: string,
+  entity: Readonly<MaterialEntity>
+): Readonly<MechanicsWorld> {
+  return {
+    scope: world.scope,
+    documents: world.documents.map((document, index) =>
+      index === documentIndex
+        ? {
+            ...document,
+            state: {
+              ...document.state,
+              entities: { ...document.state.entities, [entityId]: entity },
+            },
+          }
+        : document
+    ),
+  };
+}
+
+function requiredCompleteTurnBoundary(
+  world: Readonly<MechanicsWorld>,
+  target: Readonly<MaterialEntityRef>
+): Readonly<
+  Extract<MechanicsBoundaryCommand, { readonly kind: "complete-turn" }>
+> | null {
+  const targetKey = entityRefKey(target);
+  for (const document of world.documents) {
+    const encounter = document.state.encounter;
+    if (encounter?.phase !== "turns" || encounter.currentCombatantId === null) {
+      continue;
+    }
+    const current = encounter.participants[encounter.currentCombatantId];
+    if (current && entityRefKey(current.combatant) === targetKey) {
+      return {
+        excludeCurrent: structuredClone(target),
+        kind: "complete-turn",
+        material: structuredClone(document.material),
+      };
+    }
+  }
+  return null;
+}
+
+function simulateEntityCreate(
+  world: Readonly<MechanicsWorld>,
+  operation: Readonly<Extract<MechanicsOperation, { readonly kind: "entity-create" }>>,
+  authority: Readonly<MechanicsProgramAuthorityReceipt>,
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
+): OperationSimulation {
+  const material = operation.entity.material;
+  const located = documentFor(world, material);
+  if (!located) return { reason: "missing-target", status: "rejected" };
+  if (
+    !sameMaterial(operation.lifecycle.occurrence.material, material) ||
+    !sameMaterial(operation.parent.occurrence.material, material)
+  ) {
+    return { reason: "invalid-transition", status: "rejected" };
+  }
+  const parent = occurrenceAtGeneration(world, operation.parent);
+  if (
+    parent?.kind !== "program" ||
+    parent.ending !== null ||
+    !sameCanonical(parent.authority, authority)
+  ) {
+    return { reason: "invalid-cause", status: "rejected" };
+  }
+  if (operation.value.controller !== null) {
+    if (sameCanonical(operation.value.controller, operation.entity)) {
+      return { reason: "controller-cycle", status: "rejected" };
+    }
+    if (!entityGenerationExists(world, operation.value.controller)) {
+      return { reason: "missing-controller", status: "rejected" };
+    }
+    if (controllerWouldCycle(world, operation.entity, operation.value.controller)) {
+      return { reason: "controller-cycle", status: "rejected" };
+    }
+  }
+
+  const expectedEntity: MaterialEntity = {
+    ...structuredClone(operation.value),
+    availability: "present",
+    ordinal: operation.entity.ordinal,
+    ownerOccurrence: structuredClone(operation.lifecycle),
+  };
+  const expectedLifecycle = {
+    endRules: structuredClone(operation.endRules),
+    ending: null,
+    kind: "material-lifecycle" as const,
+    ordinal: operation.lifecycle.ordinal,
+    parentId: operation.parent.occurrence.occurrenceId,
+    target: structuredClone(operation.entity),
+  };
+  const existingEntity = located.document.state.entities[operation.entity.entityId];
+  const existingLifecycle =
+    located.document.state.occurrences[operation.lifecycle.occurrence.occurrenceId];
+  if (existingEntity || existingLifecycle) {
+    return existingEntity &&
+      existingLifecycle &&
+      sameCanonical(existingEntity, expectedEntity) &&
+      sameCanonical(existingLifecycle, expectedLifecycle)
+      ? noChangeExecution(operation, "entity-already-created")
+      : { reason: "entity-collision", status: "rejected" };
+  }
+  if (
+    located.document.state.nextEntityOrdinal !== operation.entity.ordinal ||
+    located.document.state.nextOccurrenceOrdinal !== operation.lifecycle.ordinal
+  ) {
+    return { reason: "stale-allocation-state", status: "rejected" };
+  }
+  if (
+    operation.entity.ordinal === Number.MAX_SAFE_INTEGER ||
+    operation.lifecycle.ordinal === Number.MAX_SAFE_INTEGER
+  ) {
+    return { reason: "overflow", status: "rejected" };
+  }
+  const candidate = {
+    scope: world.scope,
+    documents: world.documents.map((document, index) =>
+      index === located.index
+        ? {
+            ...document,
+            state: {
+              ...document.state,
+              entities: {
+                ...document.state.entities,
+                [operation.entity.entityId]: expectedEntity,
+              },
+              nextEntityOrdinal: operation.entity.ordinal + 1,
+              nextOccurrenceOrdinal: operation.lifecycle.ordinal + 1,
+              occurrences: {
+                ...document.state.occurrences,
+                [operation.lifecycle.occurrence.occurrenceId]: expectedLifecycle,
+              },
+            },
+          }
+        : document
+    ),
+  };
+  const after = validatedTransactionCandidate(candidate, world, inventorySourceLeases);
+  if (!after) return { reason: "invalid-after", status: "rejected" };
+  return {
+    actionFacts: [],
+    execution: {
+      facts: { entity: operation.entity, lifecycle: operation.lifecycle },
+      kind: operation.kind,
+      operation,
+      operationId: operation.operationId,
+      status: "applied",
+    },
+    world: after,
+    status: "applied",
+  };
+}
+
+function simulateEntityAvailability(
+  world: Readonly<MechanicsWorld>,
+  operation: Readonly<
+    Extract<MechanicsOperation, { readonly kind: "entity-availability" }>
+  >,
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
+): OperationSimulation {
+  const located = locateMaterialEntityGeneration(world, operation.target);
+  if (!located) return { reason: "missing-target", status: "rejected" };
+  if (located.entity.availability === operation.availability) {
+    return noChangeExecution(operation, "entity-availability-unchanged");
+  }
+  if (operation.availability === "dismissed") {
+    const boundary = requiredCompleteTurnBoundary(world, operation.target);
+    if (boundary) return { boundary, status: "needs-boundary" };
+  }
+  const candidate = entityCandidate(world, located.documentIndex, located.entityId, {
+    ...located.entity,
+    availability: operation.availability,
+  });
+  const after = validatedTransactionCandidate(
+    reconcileMechanicsEncounterMembership(candidate),
+    world,
+    inventorySourceLeases
+  );
+  if (!after) return { reason: "invalid-after", status: "rejected" };
+  return {
+    actionFacts: [],
+    execution: {
+      facts: { after: operation.availability, before: located.entity.availability },
+      kind: operation.kind,
+      operation,
+      operationId: operation.operationId,
+      status: "applied",
+    },
+    world: after,
+    status: "applied",
+  };
+}
+
+function simulateEntityController(
+  world: Readonly<MechanicsWorld>,
+  operation: Readonly<
+    Extract<MechanicsOperation, { readonly kind: "entity-controller" }>
+  >,
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
+): OperationSimulation {
+  const located = locateMaterialEntityGeneration(world, operation.target);
+  if (!located) return { reason: "missing-target", status: "rejected" };
+  if (sameCanonical(located.entity.controller, operation.controller)) {
+    return noChangeExecution(operation, "entity-controller-unchanged");
+  }
+  if (operation.controller !== null) {
+    if (!entityGenerationExists(world, operation.controller)) {
+      return { reason: "missing-controller", status: "rejected" };
+    }
+    if (controllerWouldCycle(world, operation.target, operation.controller)) {
+      return { reason: "controller-cycle", status: "rejected" };
+    }
+  }
+  const after = validatedTransactionCandidate(
+    entityCandidate(world, located.documentIndex, located.entityId, {
+      ...located.entity,
+      controller: operation.controller,
+    }),
+    world,
+    inventorySourceLeases
+  );
+  if (!after) return { reason: "invalid-after", status: "rejected" };
+  return {
+    actionFacts: [],
+    execution: {
+      facts: { after: operation.controller, before: located.entity.controller },
+      kind: operation.kind,
+      operation,
+      operationId: operation.operationId,
+      status: "applied",
+    },
+    world: after,
+    status: "applied",
+  };
+}
+
 function simulateOccurrenceCreate(
   world: Readonly<MechanicsWorld>,
   operation: Readonly<
     Extract<MechanicsOperation, { readonly kind: "occurrence-create" }>
   >,
   authority: Readonly<MechanicsProgramAuthorityReceipt>,
-  invocation: Readonly<MechanicsOperationCause["invocation"]>,
-  causalState: Readonly<MechanicsCausalState>,
-  inventorySourceLeases: readonly Readonly<InventorySourceLease>[]
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
-  const document = documentFor(world, operation.material)?.document;
+  const { created } = operation;
+  const material = created.occurrence.material;
+  const document = documentFor(world, material)?.document;
   if (!document) return { reason: "missing-target", status: "rejected" };
-  if (operation.occurrence.kind === "program") {
-    if (invocation.kind !== "installed-capability") {
-      return { reason: "invalid-cause", status: "rejected" };
-    }
-  } else {
-    if (
-      !sameMaterial(operation.parent.occurrence.material, operation.material) ||
-      operation.parent.occurrence.occurrenceId !== operation.occurrence.parentId
-    ) {
-      return { reason: "invalid-cause", status: "rejected" };
-    }
-    const parent = occurrenceAtGeneration(world, operation.parent);
-    if (parent?.kind !== "program" || !sameCanonical(parent.authority, authority)) {
-      return { reason: "invalid-cause", status: "rejected" };
-    }
+  if (
+    !sameMaterial(operation.parent.occurrence.material, material) ||
+    operation.parent.occurrence.occurrenceId !== operation.occurrence.parentId
+  ) {
+    return { reason: "invalid-cause", status: "rejected" };
   }
-  const occurrence: NewMechanicOccurrence =
-    operation.occurrence.kind === "program"
-      ? { ...operation.occurrence, authority }
-      : operation.occurrence;
-  const existing = document.state.occurrences[operation.occurrenceId];
+  const parent = occurrenceAtGeneration(world, operation.parent);
+  if (
+    parent?.kind !== "program" ||
+    parent.ending !== null ||
+    !sameCanonical(parent.authority, authority)
+  ) {
+    return { reason: "invalid-cause", status: "rejected" };
+  }
+  const occurrence: NewMechanicOccurrence = operation.occurrence;
+  const existing = document.state.occurrences[created.occurrence.occurrenceId];
   if (existing) {
-    return sameNewOccurrence(existing, occurrence)
+    return existing.ordinal === created.ordinal && sameNewOccurrence(existing, occurrence)
       ? noChangeExecution(operation, "occurrence-already-active")
       : { reason: "occurrence-collision", status: "rejected" };
   }
-  if (operation.occurrence.kind === "program") {
-    const after = withOccurrence(
-      world,
-      operation.material,
-      operation.occurrenceId,
-      occurrence,
-      causalState,
-      inventorySourceLeases
-    );
-    if (!after) return { reason: "invalid-after", status: "rejected" };
-    const occurrenceRef = {
-      material: operation.material,
-      occurrenceId: operation.occurrenceId,
-    } satisfies OccurrenceRef;
-    const createdOccurrence = occurrenceAtAddress(after.world, occurrenceRef);
-    if (!createdOccurrence) return { reason: "invalid-after", status: "rejected" };
-    const created = {
-      occurrence: occurrenceRef,
-      ordinal: createdOccurrence.ordinal,
-    } satisfies OccurrenceGenerationRef;
-    return {
-      actionFacts: [],
-      execution: {
-        facts: { created },
-        kind: operation.kind,
-        operation,
-        operationId: operation.operationId,
-        status: "applied",
-      },
-      state: after,
-      status: "applied",
-    };
+  if (document.state.nextOccurrenceOrdinal !== created.ordinal) {
+    return { reason: "stale-allocation-state", status: "rejected" };
+  }
+  if (created.ordinal === Number.MAX_SAFE_INTEGER) {
+    return { reason: "overflow", status: "rejected" };
   }
   const target = locateTarget(world, operation.occurrence.target);
   if (target.status === "rejected") return target;
@@ -1117,23 +1877,14 @@ function simulateOccurrenceCreate(
   }
   const after = withOccurrence(
     world,
-    operation.material,
-    operation.occurrenceId,
+    material,
+    created.occurrence.occurrenceId,
     occurrence,
-    causalState,
     inventorySourceLeases
   );
   if (!after) return { reason: "invalid-after", status: "rejected" };
-  const occurrenceRef = {
-    material: operation.material,
-    occurrenceId: operation.occurrenceId,
-  } satisfies OccurrenceRef;
-  const createdOccurrence = occurrenceAtAddress(after.world, occurrenceRef);
+  const createdOccurrence = occurrenceAtGeneration(after, created);
   if (!createdOccurrence) return { reason: "invalid-after", status: "rejected" };
-  const created = {
-    occurrence: occurrenceRef,
-    ordinal: createdOccurrence.ordinal,
-  } satisfies OccurrenceGenerationRef;
   return {
     actionFacts: [],
     execution: {
@@ -1143,15 +1894,14 @@ function simulateOccurrenceCreate(
       operationId: operation.operationId,
       status: "applied",
     },
-    state: after,
+    world: after,
     status: "applied",
   };
 }
 
 function simulateOccurrenceEnd(
   world: Readonly<MechanicsWorld>,
-  operation: Readonly<Extract<MechanicsOperation, { readonly kind: "occurrence-end" }>>,
-  causalState: Readonly<MechanicsCausalState>
+  operation: Readonly<Extract<MechanicsOperation, { readonly kind: "occurrence-end" }>>
 ): OperationSimulation {
   if (!occurrenceAtGeneration(world, operation.occurrence)) {
     return noChangeExecution(operation, "occurrence-not-active");
@@ -1173,7 +1923,334 @@ function simulateOccurrenceEnd(
       operationId: operation.operationId,
       status: "applied",
     },
-    state: causalState,
+    world,
+    status: "applied",
+  };
+}
+
+function sameActiveOccurrence(
+  existing: Readonly<import("@/types/mechanic-occurrence").MechanicOccurrence>,
+  reference: Readonly<OccurrenceGenerationRef>,
+  expected: Readonly<NewMechanicOccurrence>
+): boolean {
+  if (existing.ordinal !== reference.ordinal || existing.ending !== null) return false;
+  const body = structuredClone(existing) as unknown as UnknownRecord;
+  Reflect.deleteProperty(body, "ending");
+  Reflect.deleteProperty(body, "ordinal");
+  return sameCanonical(body, expected);
+}
+
+function inventoryLifecycle(
+  operation: Readonly<Extract<MechanicsOperation, { readonly kind: "inventory-create" }>>
+): Extract<NewMechanicOccurrence, { readonly kind: "material-lifecycle" }> {
+  return {
+    endRules: operation.endRules,
+    kind: "material-lifecycle",
+    parentId: operation.parent.occurrence.occurrenceId,
+    target: { entityId: "self", material: operation.item.owner },
+  };
+}
+
+function simulateInventoryCreate(
+  world: Readonly<MechanicsWorld>,
+  operation: Readonly<Extract<MechanicsOperation, { readonly kind: "inventory-create" }>>,
+  authority: Readonly<MechanicsProgramAuthorityReceipt>,
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
+): OperationSimulation {
+  const located = documentFor(world, operation.item.owner);
+  if (!located || located.document.kind !== "character") {
+    return { reason: "missing-target", status: "rejected" };
+  }
+  if (
+    !sameMaterial(operation.lifecycle.occurrence.material, operation.item.owner) ||
+    !sameMaterial(operation.parent.occurrence.material, operation.item.owner)
+  ) {
+    return { reason: "invalid-transition", status: "rejected" };
+  }
+  const parent = occurrenceAtGeneration(world, operation.parent);
+  if (
+    parent?.kind !== "program" ||
+    parent.ending !== null ||
+    !sameCanonical(parent.authority, authority)
+  ) {
+    return { reason: "invalid-cause", status: "rejected" };
+  }
+
+  const lifecycle = inventoryLifecycle(operation);
+  const instance = conformInventoryInstance({
+    ...operation.instance,
+    ordinal: operation.item.instanceOrdinal,
+    ownerOccurrence: operation.lifecycle,
+  });
+  if (!instance || instance.quantity.current === 0) {
+    return { reason: "invalid-transition", status: "rejected" };
+  }
+  const existingInstance = located.document.state.inventory[operation.item.instanceId];
+  const existingLifecycle =
+    located.document.state.occurrences[operation.lifecycle.occurrence.occurrenceId];
+  if (existingInstance || existingLifecycle) {
+    if (
+      existingInstance &&
+      existingLifecycle &&
+      sameCanonical(existingInstance, instance) &&
+      sameActiveOccurrence(existingLifecycle, operation.lifecycle, lifecycle)
+    ) {
+      return noChangeExecution(operation, "inventory-already-created");
+    }
+    return {
+      reason: existingInstance ? "inventory-collision" : "occurrence-collision",
+      status: "rejected",
+    };
+  }
+  if (
+    located.document.state.nextInventoryOrdinal !== operation.item.instanceOrdinal ||
+    located.document.state.nextOccurrenceOrdinal !== operation.lifecycle.ordinal
+  ) {
+    return { reason: "stale-allocation-state", status: "rejected" };
+  }
+  if (
+    operation.item.instanceOrdinal === Number.MAX_SAFE_INTEGER ||
+    operation.lifecycle.ordinal === Number.MAX_SAFE_INTEGER
+  ) {
+    return { reason: "overflow", status: "rejected" };
+  }
+
+  let occurrenceState;
+  try {
+    occurrenceState = addOccurrence(
+      {
+        nextOccurrenceOrdinal: located.document.state.nextOccurrenceOrdinal,
+        occurrences: located.document.state.occurrences,
+      },
+      operation.lifecycle.occurrence.occurrenceId,
+      lifecycle
+    );
+  } catch {
+    return { reason: "invalid-transition", status: "rejected" };
+  }
+  const candidate = {
+    scope: world.scope,
+    documents: world.documents.map((document, index) =>
+      index === located.index && document.kind === "character"
+        ? {
+            ...document,
+            state: {
+              ...document.state,
+              ...occurrenceState,
+              inventory: {
+                ...document.state.inventory,
+                [operation.item.instanceId]: instance,
+              },
+              nextInventoryOrdinal: document.state.nextInventoryOrdinal + 1,
+            },
+          }
+        : document
+    ),
+  };
+  const after = validatedTransactionCandidate(candidate, world, inventorySourceLeases);
+  const createdDocument = after
+    ? documentFor(after, operation.item.owner)?.document
+    : null;
+  const createdInstance =
+    createdDocument?.kind === "character"
+      ? createdDocument.state.inventory[operation.item.instanceId]
+      : undefined;
+  if (!after || !createdInstance) {
+    return { reason: "invalid-after", status: "rejected" };
+  }
+  return {
+    actionFacts: [],
+    execution: {
+      facts: {
+        created: operation.item,
+        instance: createdInstance,
+        lifecycle: operation.lifecycle,
+      },
+      kind: operation.kind,
+      operation,
+      operationId: operation.operationId,
+      status: "applied",
+    },
+    world: after,
+    status: "applied",
+  };
+}
+
+interface LocatedInventoryInstance {
+  readonly documentIndex: number;
+  readonly instance: Readonly<InventoryInstance>;
+}
+
+function locateInventoryInstance(
+  world: Readonly<MechanicsWorld>,
+  item: Readonly<InventoryGenerationRef>
+): LocatedInventoryInstance | null {
+  const located = documentFor(world, item.owner);
+  const instance =
+    located?.document.kind === "character"
+      ? located.document.state.inventory[item.instanceId]
+      : undefined;
+  return located && instance?.ordinal === item.instanceOrdinal
+    ? { documentIndex: located.index, instance }
+    : null;
+}
+
+const ITEM_QUANTITY_SPEC = {
+  capacity: { kind: "unbounded" },
+  id: "item-quantity",
+  initial: { kind: "empty" },
+  kind: "count",
+  recoveries: [],
+} as const;
+
+type InventoryMutationOperation = Extract<
+  MechanicsOperation,
+  { readonly kind: "inventory-end" | "inventory-transition" }
+>;
+
+function simulateInventoryMutation(
+  world: Readonly<MechanicsWorld>,
+  operation: Readonly<InventoryMutationOperation>,
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
+): OperationSimulation {
+  const located = locateInventoryInstance(world, operation.item);
+  if (!located) {
+    return operation.kind === "inventory-end"
+      ? noChangeExecution(operation, "inventory-not-active")
+      : { reason: "missing-target", status: "rejected" };
+  }
+  const document = world.documents[located.documentIndex];
+  if (document?.kind !== "character") {
+    return { reason: "missing-target", status: "rejected" };
+  }
+  const before = located.instance;
+  let after: InventoryInstance;
+  if (operation.kind === "inventory-end" || operation.change.kind === "quantity") {
+    const value = operation.kind === "inventory-end" ? 0 : operation.change.value;
+    if (before.quantity.current === 0 && value > 0) {
+      return { reason: "invalid-transition", status: "rejected" };
+    }
+    const transition = reduceResource(
+      ITEM_QUANTITY_SPEC,
+      before.quantity,
+      {},
+      { kind: "set-count", value }
+    );
+    if (transition.status !== "applied") {
+      return { reason: "invalid-transition", status: "rejected" };
+    }
+    after = { ...before, quantity: transition.after as InventoryInstance["quantity"] };
+  } else if (operation.change.kind === "equipped") {
+    after = { ...before, equipped: operation.change.value };
+  } else {
+    after = { ...before, attuned: operation.change.value };
+  }
+
+  const shouldEnd =
+    operation.kind === "inventory-end" ||
+    (operation.change.kind === "quantity" && operation.change.value === 0);
+  if (after.quantity.current === 0) {
+    after = { ...after, attuned: false, enchantment: null, equipped: false };
+  }
+  const conformedAfter = conformInventoryInstance(after);
+  if (
+    !conformedAfter ||
+    (conformedAfter.attuned && conformedAfter.disposition !== "magical")
+  ) {
+    return { reason: "invalid-transition", status: "rejected" };
+  }
+
+  let detachedFrom: InventoryGenerationRef | null = null;
+  const inventory = {
+    ...document.state.inventory,
+    [operation.item.instanceId]: conformedAfter,
+  };
+  const bearer = operation.enchantmentBearer
+    ? locateInventoryInstance(world, operation.enchantmentBearer)
+    : null;
+  const inboundBearer = Object.entries(document.state.inventory).find(([, candidate]) =>
+    sameCanonical(candidate.enchantment, operation.item)
+  );
+  if (
+    (operation.enchantmentBearer === null) !== (inboundBearer === undefined) ||
+    (operation.enchantmentBearer !== null &&
+      (!bearer ||
+        !sameCanonical(bearer.instance.enchantment, operation.item) ||
+        inboundBearer?.[0] !== operation.enchantmentBearer.instanceId))
+  ) {
+    return { reason: "invalid-transition", status: "rejected" };
+  }
+  if (
+    conformedAfter.quantity.current === 0 &&
+    operation.enchantmentBearer !== null &&
+    bearer
+  ) {
+    detachedFrom = operation.enchantmentBearer;
+    inventory[operation.enchantmentBearer.instanceId] = {
+      ...bearer.instance,
+      enchantment: null,
+    };
+  } else if (
+    conformedAfter.quantity.current > 1 &&
+    operation.enchantmentBearer !== null
+  ) {
+    return { reason: "invalid-transition", status: "rejected" };
+  }
+
+  const lifecycle = shouldEnd ? before.ownerOccurrence : null;
+  const lifecycleOccurrence = lifecycle
+    ? occurrenceAtGeneration(world, lifecycle)
+    : undefined;
+  const lifecycleEndRequested =
+    lifecycleOccurrence?.kind === "material-lifecycle" &&
+    lifecycleOccurrence.ending === null
+      ? lifecycle
+      : null;
+  const physicalChanged = !sameCanonical(document.state.inventory, inventory);
+  if (!physicalChanged && lifecycleEndRequested === null) {
+    return noChangeExecution(
+      operation,
+      operation.kind === "inventory-end" ? "inventory-not-active" : "inventory-unchanged"
+    );
+  }
+
+  const candidate = {
+    scope: world.scope,
+    documents: world.documents.map((entry, index) =>
+      index === located.documentIndex && entry.kind === "character"
+        ? { ...entry, state: { ...entry.state, inventory } }
+        : entry
+    ),
+  };
+  const parsed = validatedTransactionCandidate(candidate, world, inventorySourceLeases);
+  if (!parsed) return { reason: "invalid-after", status: "rejected" };
+  const parsedInstance = locateInventoryInstance(parsed, operation.item)?.instance;
+  if (!parsedInstance) return { reason: "invalid-after", status: "rejected" };
+  return {
+    actionFacts: [],
+    consequences: lifecycleEndRequested
+      ? [
+          {
+            causeId: operation.causeId,
+            kind: "occurrence-end",
+            occurrence: lifecycleEndRequested,
+            operationId: operation.operationId,
+          },
+        ]
+      : [],
+    execution: {
+      facts: {
+        after: parsedInstance,
+        before,
+        detachedFrom,
+        lifecycleEndRequested,
+      },
+      kind: operation.kind,
+      operation,
+      operationId: operation.operationId,
+      status: "applied",
+    } as MechanicsOperationExecution,
+    world: parsed,
     status: "applied",
   };
 }
@@ -1224,8 +2301,7 @@ function simulateExhaustionTransition(
   operation: Readonly<
     Extract<MechanicsOperation, { readonly kind: "exhaustion-transition" }>
   >,
-  causalState: Readonly<MechanicsCausalState>,
-  inventorySourceLeases: readonly Readonly<InventorySourceLease>[]
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   const lookup = locateTarget(world, operation.target);
   if (lookup.status === "rejected") return lookup;
@@ -1251,9 +2327,9 @@ function simulateExhaustionTransition(
     }
     if (death.status === "applied") vitals = death.after;
   }
-  const parsed = validatedCausalCandidate(
+  const parsed = validatedTransactionCandidate(
     withTargetExhaustion(world, lookup.target, after, vitals),
-    causalState,
+    world,
     inventorySourceLeases
   );
   if (!parsed) {
@@ -1274,7 +2350,7 @@ function simulateExhaustionTransition(
       operationId: operation.operationId,
       status: "applied",
     },
-    state: parsed,
+    world: parsed,
     status: "applied",
   };
 }
@@ -1284,8 +2360,7 @@ function simulateResourceTransition(
   operation: Readonly<
     Extract<MechanicsOperation, { readonly kind: "resource-transition" }>
   >,
-  causalState: Readonly<MechanicsCausalState>,
-  inventorySourceLeases: readonly Readonly<InventorySourceLease>[]
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   const location = locateResolvedMaterialResource(world, operation.resource);
   if (!location) return { reason: "missing-target", status: "rejected" };
@@ -1311,7 +2386,7 @@ function simulateResourceTransition(
     transition.after
   );
   if (!candidate) return { reason: "invalid-after", status: "rejected" };
-  const parsed = validatedCausalCandidate(candidate, causalState, inventorySourceLeases);
+  const parsed = validatedTransactionCandidate(candidate, world, inventorySourceLeases);
   if (!parsed) {
     return { reason: "invalid-after", status: "rejected" };
   }
@@ -1324,7 +2399,7 @@ function simulateResourceTransition(
       operationId: operation.operationId,
       status: "applied",
     },
-    state: parsed,
+    world: parsed,
     status: "applied",
   };
 }
@@ -1338,8 +2413,7 @@ function simulateResourceInitialize(
   operation: Readonly<
     Extract<MechanicsOperation, { readonly kind: "resource-initialize" }>
   >,
-  causalState: Readonly<MechanicsCausalState>,
-  inventorySourceLeases: readonly Readonly<InventorySourceLease>[]
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   if (fixedShapeResource(operation.resource)) {
     return { reason: "resource-fixed-shape", status: "rejected" };
@@ -1370,7 +2444,7 @@ function simulateResourceInitialize(
     initialized.cell
   );
   if (!candidate) return { reason: "missing-target", status: "rejected" };
-  const parsed = validatedCausalCandidate(candidate, causalState, inventorySourceLeases);
+  const parsed = validatedTransactionCandidate(candidate, world, inventorySourceLeases);
   if (!parsed) {
     return { reason: "invalid-after", status: "rejected" };
   }
@@ -1386,7 +2460,7 @@ function simulateResourceInitialize(
       operationId: operation.operationId,
       status: "applied",
     },
-    state: parsed,
+    world: parsed,
     status: "applied",
   };
 }
@@ -1394,8 +2468,7 @@ function simulateResourceInitialize(
 function simulateResourceRemove(
   world: Readonly<MechanicsWorld>,
   operation: Readonly<Extract<MechanicsOperation, { readonly kind: "resource-remove" }>>,
-  causalState: Readonly<MechanicsCausalState>,
-  inventorySourceLeases: readonly Readonly<InventorySourceLease>[]
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   if (fixedShapeResource(operation.resource)) {
     return { reason: "resource-fixed-shape", status: "rejected" };
@@ -1404,7 +2477,7 @@ function simulateResourceRemove(
   if (!location) return { reason: "resource-missing", status: "rejected" };
   const candidate = removeResolvedMaterialResource(world, operation.resource);
   if (!candidate) return { reason: "invalid-after", status: "rejected" };
-  const parsed = validatedCausalCandidate(candidate, causalState, inventorySourceLeases);
+  const parsed = validatedTransactionCandidate(candidate, world, inventorySourceLeases);
   if (!parsed) {
     return { reason: "invalid-after", status: "rejected" };
   }
@@ -1417,7 +2490,7 @@ function simulateResourceRemove(
       operationId: operation.operationId,
       status: "applied",
     },
-    state: parsed,
+    world: parsed,
     status: "applied",
   };
 }
@@ -1427,48 +2500,52 @@ function simulateOperation(
   operation: Readonly<MechanicsOperation>,
   cause: Readonly<MechanicsOperationCause>,
   authority: Readonly<MechanicsProgramAuthorityReceipt>,
-  causalState: Readonly<MechanicsCausalState>,
-  inventorySourceLeases: readonly Readonly<InventorySourceLease>[] = []
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[] = []
 ): OperationSimulation {
-  if (operation.kind === "occurrence-create") {
-    return simulateOccurrenceCreate(
+  if (operation.kind === "turn-economy-transition") {
+    return simulateTurnEconomyTransition(world, operation, inventorySourceLeases);
+  }
+  if (operation.kind === "entity-create") {
+    return simulateEntityCreate(world, operation, authority, inventorySourceLeases);
+  }
+  if (operation.kind === "entity-availability") {
+    return simulateEntityAvailability(world, operation, inventorySourceLeases);
+  }
+  if (operation.kind === "entity-controller") {
+    return simulateEntityController(world, operation, inventorySourceLeases);
+  }
+  if (operation.kind === "inventory-create") {
+    return simulateInventoryCreate(world, operation, authority, inventorySourceLeases);
+  }
+  if (operation.kind === "inventory-transition" || operation.kind === "inventory-end") {
+    return simulateInventoryMutation(world, operation, inventorySourceLeases);
+  }
+  if (operation.kind === "program-state-transition") {
+    return simulateProgramStateTransition(
       world,
       operation,
+      cause,
       authority,
-      cause.invocation,
-      causalState,
       inventorySourceLeases
     );
+  }
+  if (operation.kind === "occurrence-create") {
+    return simulateOccurrenceCreate(world, operation, authority, inventorySourceLeases);
   }
   if (operation.kind === "occurrence-end") {
-    return simulateOccurrenceEnd(world, operation, causalState);
+    return simulateOccurrenceEnd(world, operation);
   }
   if (operation.kind === "exhaustion-transition") {
-    return simulateExhaustionTransition(
-      world,
-      operation,
-      causalState,
-      inventorySourceLeases
-    );
+    return simulateExhaustionTransition(world, operation, inventorySourceLeases);
   }
   if (operation.kind === "resource-transition") {
-    return simulateResourceTransition(
-      world,
-      operation,
-      causalState,
-      inventorySourceLeases
-    );
+    return simulateResourceTransition(world, operation, inventorySourceLeases);
   }
   if (operation.kind === "resource-initialize") {
-    return simulateResourceInitialize(
-      world,
-      operation,
-      causalState,
-      inventorySourceLeases
-    );
+    return simulateResourceInitialize(world, operation, inventorySourceLeases);
   }
   if (operation.kind === "resource-remove") {
-    return simulateResourceRemove(world, operation, causalState, inventorySourceLeases);
+    return simulateResourceRemove(world, operation, inventorySourceLeases);
   }
   const targetRef = operationTarget(operation);
   const lookup = locateTarget(world, targetRef);
@@ -1512,9 +2589,9 @@ function simulateOperation(
     return { reason: rejectedTransition(transition.reason), status: "rejected" };
   }
 
-  const parsed = validatedCausalCandidate(
+  const parsed = validatedTransactionCandidate(
     withTargetVitals(world, target, transition.after),
-    causalState,
+    world,
     inventorySourceLeases
   );
   if (!parsed) {
@@ -1529,7 +2606,7 @@ function simulateOperation(
       operationId: operation.operationId,
       status: "applied",
     } as MechanicsOperationExecution,
-    state: parsed,
+    world: parsed,
     status: "applied",
   };
 }
@@ -1589,6 +2666,35 @@ function rejected(
   return { operationId, reason, status: "rejected" };
 }
 
+function mergeInventorySourceLeases(
+  values: readonly Readonly<InventoryGenerationRef>[],
+  additions: readonly Readonly<InventoryGenerationRef>[]
+): readonly Readonly<InventoryGenerationRef>[] {
+  const byKey = new Map(
+    [...values, ...additions].map((lease) => [
+      inventoryGenerationRefKey(lease),
+      structuredClone(lease),
+    ])
+  );
+  return [...byKey.entries()]
+    .sort(([left], [right]) => compareCodeUnits(left, right))
+    .map(([, lease]) => lease);
+}
+
+function operationInventorySourceLease(
+  world: Readonly<MechanicsWorld>,
+  operation: Readonly<MechanicsOperation>
+): Readonly<InventoryGenerationRef> | null {
+  const item =
+    operation.kind === "inventory-end" ||
+    (operation.kind === "inventory-transition" &&
+      operation.change.kind === "quantity" &&
+      operation.change.value === 0)
+      ? operation.item
+      : null;
+  return item !== null && locateInventoryInstance(world, item) !== null ? item : null;
+}
+
 /**
  * Simulate every ordered operation and expose raw facts plus causal consequences.
  * Any rejection aborts the whole transaction; no partial plan can escape.
@@ -1612,7 +2718,8 @@ export function simulateMechanicsTransaction(
   );
   if (!parsedState.ok) return rejected("invalid-world");
   const before = parsedState.value;
-  let state = before;
+  let world = before.world;
+  let inventorySourceLeases = before.context.request.inventorySourceLeases;
   if (!entityExists(before.world, transaction.actor)) return rejected("missing-actor");
   const causesById = new Map(
     transaction.causes.map((cause) => [cause.causeId, cause] as const)
@@ -1628,33 +2735,80 @@ export function simulateMechanicsTransaction(
   const stages: MechanicsOperationStage[] = [];
   const noChanges: MechanicsOperationNoChange[] = [];
   const resolvedCauses = new Map<string, Readonly<ResolvedOperationCause>>();
+  const operationForCause = (causeId: string) =>
+    transaction.operations.find((operation) => operation.causeId === causeId);
+  for (const cause of transaction.causes.filter(
+    ({ invocation }) => invocation.kind === "installed-capability"
+  )) {
+    const resolved = resolveOperationCause(
+      before.world,
+      authoritySnapshot,
+      cause,
+      transaction.actor
+    );
+    if (!resolved) {
+      const firstOperation = operationForCause(cause.causeId);
+      return rejected("invalid-cause", firstOperation?.operationId ?? null);
+    }
+    resolvedCauses.set(cause.causeId, resolved);
+    actionFacts.push(...resolved.factGuards);
+  }
+  for (const cause of transaction.causes.filter(
+    ({ invocation }) => invocation.kind === "program-root"
+  )) {
+    let resolved = resolveOperationCause(
+      before.world,
+      authoritySnapshot,
+      cause,
+      transaction.actor
+    );
+    if (!resolved && cause.invocation.kind === "program-root") {
+      const creator = transaction.operations[0];
+      const creatorAuthority = resolvedCauses.get(creator.causeId)?.authority;
+      if (
+        creator.kind === "program-state-transition" &&
+        creator.receipt.kind === "create" &&
+        creatorAuthority &&
+        sameCanonical(creator.receipt.root, cause.invocation.occurrence) &&
+        sameCanonical(creatorAuthority.installation.owner, transaction.actor) &&
+        cause.causeId === mechanicsOperationCauseId(creatorAuthority, cause.invocation)
+      ) {
+        resolved = { authority: creatorAuthority, factGuards: [] };
+      }
+    }
+    if (!resolved) {
+      return rejected(
+        "invalid-cause",
+        operationForCause(cause.causeId)?.operationId ?? null
+      );
+    }
+    resolvedCauses.set(cause.causeId, resolved);
+  }
   for (const operation of transaction.operations) {
     const cause = causesById.get(operation.causeId);
     if (!cause) return rejected("invalid-cause", operation.operationId);
-    let resolvedCause = resolvedCauses.get(cause.causeId);
-    if (!resolvedCause) {
-      resolvedCause =
-        resolveOperationCause(state.world, authoritySnapshot, cause, transaction.actor) ??
-        undefined;
-      if (!resolvedCause) return rejected("invalid-cause", operation.operationId);
-      resolvedCauses.set(cause.causeId, resolvedCause);
-      actionFacts.push(...resolvedCause.factGuards);
-    }
-    const lease = inventorySourceLease(resolvedCause.authority);
-    const rebasedBefore = rebaseMechanicsCausalState(
-      state.world,
-      state,
-      lease ? [lease] : []
+    const resolvedCause = resolvedCauses.get(cause.causeId);
+    if (!resolvedCause) return rejected("invalid-cause", operation.operationId);
+    const authorityLease = inventorySourceLease(resolvedCause.authority);
+    const operationLease = operationInventorySourceLease(world, operation);
+    inventorySourceLeases = mergeInventorySourceLeases(
+      inventorySourceLeases,
+      [authorityLease, operationLease].filter(
+        (lease): lease is Readonly<InventoryGenerationRef> => lease !== null
+      )
     );
-    if (!rebasedBefore.ok) return rejected("invalid-after", operation.operationId);
-    const stageBefore = rebasedBefore.value;
+    const stageBefore = projectMechanicsTransactionWorld(
+      world,
+      world,
+      inventorySourceLeases
+    );
+    if (!stageBefore.ok) return rejected("invalid-after", operation.operationId);
     const result = simulateOperation(
-      stageBefore.world,
+      stageBefore.value,
       operation,
       cause,
       resolvedCause.authority,
-      stageBefore,
-      stageBefore.context.request.inventorySourceLeases
+      inventorySourceLeases
     );
     if (result.status === "rejected") {
       return rejected(result.reason, operation.operationId);
@@ -1668,20 +2822,28 @@ export function simulateMechanicsTransaction(
         transaction,
       };
     }
+    if (result.status === "needs-boundary") {
+      return {
+        boundary: result.boundary,
+        operationId: operation.operationId,
+        status: "needs-boundary",
+        transaction,
+      };
+    }
     executions.push(result.execution);
     if (result.status === "no-change") {
       noChanges.push(result.execution);
       continue;
     }
     const operationChanged =
-      canonicalJson(result.state.world) !== canonicalJson(stageBefore.world);
+      canonicalJson(result.world) !== canonicalJson(stageBefore.value);
     stages.push({
-      after: result.state,
-      before: stageBefore,
+      after: result.world,
+      before: stageBefore.value,
       execution: result.execution,
     });
     changed ||= operationChanged;
-    state = result.state;
+    world = result.world;
     actionFacts.push(...result.actionFacts);
     consequences.push(...(result.consequences ?? []));
   }
@@ -1699,13 +2861,20 @@ export function simulateMechanicsTransaction(
   }
   const facts = mergeActionFacts(actionFacts);
   if (!facts) return rejected("fact-conflict");
+  const finalState = rebaseMechanicsCausalState(world, before, inventorySourceLeases);
+  if (!finalState.ok) {
+    return rejected(
+      "invalid-after",
+      transaction.operations[transaction.operations.length - 1]?.operationId ?? null
+    );
+  }
 
   return {
     actionFacts: facts,
     consequences,
     executions,
     stages,
-    state,
+    state: finalState.value,
     status: "simulated",
     transaction,
   };

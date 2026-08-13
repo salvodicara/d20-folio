@@ -16,6 +16,8 @@ import {
   MECHANICS_COMMAND_SCHEMA,
   MECHANICS_COMMAND_SUSPENSION_SCHEMA,
   MECHANICS_EXECUTION_FRAME_SCHEMA,
+  PROGRAM_ROOT_RECEIPT_SCHEMA,
+  programRootReceiptIsCoherent,
   type MechanicsCommandSchemaCustomTypes,
 } from "@/lib/mechanics-command-schema";
 import { conformMechanicsInvocationRef } from "@/lib/mechanics-authority-ref";
@@ -124,6 +126,10 @@ const conformRequesterStructure = exactConformer(
 );
 const conformExecutionFrameStructure = exactConformer(
   MECHANICS_EXECUTION_FRAME_SCHEMA,
+  COMMAND_CONTEXT
+);
+const conformProgramRootReceiptStructure = exactConformer(
+  PROGRAM_ROOT_RECEIPT_SCHEMA,
   COMMAND_CONTEXT
 );
 const conformSuspensionStructure = exactConformer(
@@ -357,27 +363,10 @@ function phaseTriggerMatches(
   }
 }
 
-function expectedReceiptIsCoherent(receipt: Readonly<ProgramRootReceipt>): boolean {
-  if (receipt.kind === "create") {
-    return receipt.next.execution === 1 && receipt.next.triggerEventId === null;
-  }
-  const expectedEventIsCoherent =
-    receipt.expected.execution === 0
-      ? receipt.expected.triggerEventId === null
-      : receipt.expected.triggerEventId !== null;
-  return (
-    expectedEventIsCoherent &&
-    receipt.next.phaseId === receipt.expected.phaseId &&
-    receipt.next.execution === receipt.expected.execution + 1 &&
-    receipt.next.triggerEventId !== null &&
-    receipt.next.triggerEventId !== receipt.expected.triggerEventId
-  );
-}
-
 function frameSemantics(frame: Readonly<MechanicsExecutionFrame>): boolean {
   const { authority, invocation, rootReceipt, trigger } = frame;
   const program = authority.snapshot.program;
-  if (!program || !expectedReceiptIsCoherent(rootReceipt)) return false;
+  if (!program || !programRootReceiptIsCoherent(rootReceipt)) return false;
   const phase = program.phases.find(
     ({ phaseId }) => phaseId === rootReceipt.next.phaseId
   );
@@ -398,6 +387,14 @@ function frameSemantics(frame: Readonly<MechanicsExecutionFrame>): boolean {
     invocation.kind === "program-root" &&
     sameCanonical(invocation.occurrence, rootReceipt.root)
   );
+}
+
+/** Exact standalone program-root allocation/CAS receipt. */
+export function conformProgramRootReceipt(
+  value: unknown
+): Readonly<ProgramRootReceipt> | null {
+  const receipt = conformProgramRootReceiptStructure(value);
+  return receipt && programRootReceiptIsCoherent(receipt) ? receipt : null;
 }
 
 /** Exact standalone recoverable frame boundary shared by commands and execution. */

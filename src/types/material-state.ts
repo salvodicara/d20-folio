@@ -16,6 +16,7 @@ import type {
   CharacterMaterialRef,
   ClockRef,
   EntityRef,
+  InventoryGenerationRef,
   OccurrenceGenerationRef,
 } from "@/types/mechanics-reference";
 import type {
@@ -111,7 +112,7 @@ export interface InventoryInstance {
   overrides: ItemInstanceOverrides;
   resources: Record<string, ResourceCell>;
   disposition: "magical" | "nonmagical";
-  enchantInstanceId: string | null;
+  enchantment: InventoryGenerationRef | null;
 }
 
 export interface CustomCreatureDefinition {
@@ -144,6 +145,7 @@ export interface EntityStatOverrides {
 
 interface MaterialEntityBase {
   ordinal: number;
+  controller: EntityRef | null;
   ownerOccurrence: OccurrenceGenerationRef | null;
   availability: "present" | "dismissed";
   label: string;

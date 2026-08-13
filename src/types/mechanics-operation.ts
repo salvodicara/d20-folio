@@ -17,20 +17,32 @@ import type { DamageResolution } from "@/types/damage";
 import { EXHAUSTION_LEVEL_SCHEMA, type ExhaustionLevel } from "@/types/condition";
 import type { DiceObservation, DiceRollRequirement } from "@/types/dice-formula";
 import type { IntegerBindings } from "@/types/integer-expression";
-import type { NewMechanicOccurrence } from "@/types/mechanic-occurrence";
-import {
-  END_RULE_SCHEMA,
-  JSON_SCALAR_SCHEMA,
-  PROGRAM_PHASE_STATE_SCHEMA,
-} from "@/lib/mechanic-occurrence-schema";
+import type {
+  EndRule,
+  JsonScalar,
+  NewMechanicOccurrence,
+  ProgramPhaseStateEntry,
+} from "@/types/mechanic-occurrence";
+import { JSON_SCALAR_SCHEMA } from "@/lib/mechanic-occurrence-schema";
 import type { MechanicsInvocationRef } from "@/types/mechanics-authority-ref";
 import type { MechanicsAuthoritySnapshot } from "@/types/mechanics-authority";
+import type { ProgramRootReceipt } from "@/types/mechanics-command";
 import type {
   EntityRef,
-  MaterialRef,
+  InventoryGenerationRef,
+  MaterialEntityRef,
   OccurrenceGenerationRef,
 } from "@/types/mechanics-reference";
-import type { MechanicsCausalState } from "@/types/mechanics-world";
+import type {
+  CreatureMaterialEntity,
+  InventoryInstance,
+  ObjectMaterialEntity,
+} from "@/types/material-state";
+import type {
+  MechanicsBoundaryCommand,
+  MechanicsCausalState,
+  MechanicsWorld,
+} from "@/types/mechanics-world";
 import {
   RESOURCE_INITIALIZATION_OBSERVATIONS_SCHEMA,
   type ResourceCell,
@@ -41,6 +53,13 @@ import {
   type ResourceSpec,
   type ResourceTransitionFacts,
 } from "@/types/resource";
+import type {
+  TurnEconomyClaimCommand,
+  TurnEconomyNoChangeReason,
+  TurnEconomyProjection,
+  TurnEconomyRejection,
+  TurnEconomyState,
+} from "@/types/turn-economy";
 import {
   CREATURE_HEALING_INPUT_SCHEMA,
   CREATURE_MAXIMUM_SYNC_INPUT_SCHEMA,
@@ -62,21 +81,21 @@ import {
 
 const ID_SCHEMA = customSchema<"id", string>("id");
 const ENTITY_REF_SCHEMA = customSchema<"entity-ref", EntityRef>("entity-ref");
+const MATERIAL_ENTITY_REF_VALUE_SCHEMA = customSchema<
+  "material-entity-ref",
+  MaterialEntityRef
+>("material-entity-ref");
 const NULLABLE_ENTITY_REF_SCHEMA = unionSchema([ENTITY_REF_SCHEMA, literalSchema(null)]);
-const MATERIAL_REF_VALUE_SCHEMA = customSchema<"material-ref", MaterialRef>(
-  "material-ref"
-);
+const INVENTORY_GENERATION_REF_VALUE_SCHEMA = customSchema<
+  "inventory-generation-ref",
+  InventoryGenerationRef
+>("inventory-generation-ref");
 type NewEffectOccurrence = Exclude<NewMechanicOccurrence, { readonly kind: "program" }>;
 const NEW_EFFECT_OCCURRENCE_VALUE_SCHEMA = customSchema<
   "new-effect-occurrence",
   NewEffectOccurrence
 >("new-effect-occurrence");
-const NEW_PROGRAM_OCCURRENCE_SCHEMA = objectSchema({
-  endRules: arraySchema(END_RULE_SCHEMA),
-  kind: literalSchema("program"),
-  phaseState: PROGRAM_PHASE_STATE_SCHEMA,
-  registers: recordSchema("string", JSON_SCALAR_SCHEMA),
-});
+const PROGRAM_REGISTERS_SCHEMA = recordSchema("string", JSON_SCALAR_SCHEMA);
 const OCCURRENCE_GENERATION_REF_VALUE_SCHEMA = customSchema<
   "occurrence-generation-ref",
   OccurrenceGenerationRef
@@ -129,6 +148,43 @@ const DAMAGE_RESOLUTION_VALUE_SCHEMA = customSchema<
 const POSITIVE_INTEGER_SCHEMA = customSchema<"positive-integer", number>(
   "positive-integer"
 );
+const PROGRAM_ROOT_RECEIPT_VALUE_SCHEMA = customSchema<
+  "program-root-receipt",
+  ProgramRootReceipt
+>("program-root-receipt");
+const TURN_ECONOMY_COMMAND_VALUE_SCHEMA = customSchema<
+  "turn-economy-command",
+  TurnEconomyClaimCommand
+>("turn-economy-command");
+const TURN_ECONOMY_PROJECTION_VALUE_SCHEMA = customSchema<
+  "turn-economy-projection",
+  TurnEconomyProjection
+>("turn-economy-projection");
+const END_RULE_VALUE_SCHEMA = customSchema<"end-rule", EndRule>("end-rule");
+
+type MaterialRuntimeFields = "availability" | "ordinal" | "ownerOccurrence";
+export type NewMaterialEntity =
+  | Omit<CreatureMaterialEntity, MaterialRuntimeFields>
+  | Omit<ObjectMaterialEntity, MaterialRuntimeFields>;
+const NEW_MATERIAL_ENTITY_VALUE_SCHEMA = customSchema<
+  "new-material-entity",
+  NewMaterialEntity
+>("new-material-entity");
+
+export type NewInventoryInstance = Omit<InventoryInstance, "ordinal" | "ownerOccurrence">;
+const NEW_INVENTORY_INSTANCE_VALUE_SCHEMA = customSchema<
+  "new-inventory-instance",
+  NewInventoryInstance
+>("new-inventory-instance");
+
+const INVENTORY_CHANGE_SCHEMA = discriminatedUnionSchema("kind", {
+  attuned: objectSchema({ kind: literalSchema("attuned"), value: booleanSchema }),
+  equipped: objectSchema({ kind: literalSchema("equipped"), value: booleanSchema }),
+  quantity: objectSchema({
+    kind: literalSchema("quantity"),
+    value: customSchema<"nonnegative-integer", number>("nonnegative-integer"),
+  }),
+});
 
 export const HIT_POINT_MAXIMUM_FACT_ADDRESS = ["hit-point-maximum"] as const;
 
@@ -262,24 +318,77 @@ export const MECHANICS_OPERATION_SCHEMA = discriminatedUnionSchema("kind", {
     input: CREATURE_MAXIMUM_SYNC_INPUT_SCHEMA,
     kind: literalSchema("object-maximum-sync"),
   }),
-  "occurrence-create": unionSchema([
-    objectSchema({
-      ...OPERATION_COMMON_SCHEMA,
-      kind: literalSchema("occurrence-create"),
-      material: MATERIAL_REF_VALUE_SCHEMA,
-      occurrence: NEW_PROGRAM_OCCURRENCE_SCHEMA,
-      occurrenceId: ID_SCHEMA,
-    }),
-    objectSchema({
-      ...OPERATION_COMMON_SCHEMA,
-      conditionImmunityOverride: CONDITION_IMMUNITY_OVERRIDE_SCHEMA,
-      kind: literalSchema("occurrence-create"),
-      material: MATERIAL_REF_VALUE_SCHEMA,
-      occurrence: NEW_EFFECT_OCCURRENCE_VALUE_SCHEMA,
-      occurrenceId: ID_SCHEMA,
-      parent: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
-    }),
-  ]),
+  "turn-economy-transition": objectSchema({
+    ...OPERATION_COMMON_SCHEMA,
+    combatant: ENTITY_REF_SCHEMA,
+    command: TURN_ECONOMY_COMMAND_VALUE_SCHEMA,
+    kind: literalSchema("turn-economy-transition"),
+    projection: TURN_ECONOMY_PROJECTION_VALUE_SCHEMA,
+  }),
+  "entity-create": objectSchema({
+    ...OPERATION_COMMON_SCHEMA,
+    endRules: arraySchema(END_RULE_VALUE_SCHEMA),
+    entity: MATERIAL_ENTITY_REF_VALUE_SCHEMA,
+    kind: literalSchema("entity-create"),
+    lifecycle: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
+    parent: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
+    value: NEW_MATERIAL_ENTITY_VALUE_SCHEMA,
+  }),
+  "entity-availability": objectSchema({
+    ...OPERATION_COMMON_SCHEMA,
+    availability: unionSchema([literalSchema("present"), literalSchema("dismissed")]),
+    kind: literalSchema("entity-availability"),
+    target: MATERIAL_ENTITY_REF_VALUE_SCHEMA,
+  }),
+  "entity-controller": objectSchema({
+    ...OPERATION_COMMON_SCHEMA,
+    controller: NULLABLE_ENTITY_REF_SCHEMA,
+    kind: literalSchema("entity-controller"),
+    target: MATERIAL_ENTITY_REF_VALUE_SCHEMA,
+  }),
+  "inventory-create": objectSchema({
+    ...OPERATION_COMMON_SCHEMA,
+    endRules: arraySchema(END_RULE_VALUE_SCHEMA),
+    instance: NEW_INVENTORY_INSTANCE_VALUE_SCHEMA,
+    item: INVENTORY_GENERATION_REF_VALUE_SCHEMA,
+    kind: literalSchema("inventory-create"),
+    lifecycle: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
+    parent: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
+  }),
+  "inventory-transition": objectSchema({
+    ...OPERATION_COMMON_SCHEMA,
+    change: INVENTORY_CHANGE_SCHEMA,
+    enchantmentBearer: unionSchema([
+      INVENTORY_GENERATION_REF_VALUE_SCHEMA,
+      literalSchema(null),
+    ]),
+    item: INVENTORY_GENERATION_REF_VALUE_SCHEMA,
+    kind: literalSchema("inventory-transition"),
+  }),
+  "inventory-end": objectSchema({
+    ...OPERATION_COMMON_SCHEMA,
+    enchantmentBearer: unionSchema([
+      INVENTORY_GENERATION_REF_VALUE_SCHEMA,
+      literalSchema(null),
+    ]),
+    item: INVENTORY_GENERATION_REF_VALUE_SCHEMA,
+    kind: literalSchema("inventory-end"),
+  }),
+  "program-state-transition": objectSchema({
+    ...OPERATION_COMMON_SCHEMA,
+    expectedRegisters: unionSchema([PROGRAM_REGISTERS_SCHEMA, literalSchema(null)]),
+    kind: literalSchema("program-state-transition"),
+    nextRegisters: PROGRAM_REGISTERS_SCHEMA,
+    receipt: PROGRAM_ROOT_RECEIPT_VALUE_SCHEMA,
+  }),
+  "occurrence-create": objectSchema({
+    ...OPERATION_COMMON_SCHEMA,
+    conditionImmunityOverride: CONDITION_IMMUNITY_OVERRIDE_SCHEMA,
+    created: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
+    kind: literalSchema("occurrence-create"),
+    occurrence: NEW_EFFECT_OCCURRENCE_VALUE_SCHEMA,
+    parent: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
+  }),
   "occurrence-end": objectSchema({
     ...OPERATION_COMMON_SCHEMA,
     kind: literalSchema("occurrence-end"),
@@ -344,18 +453,24 @@ export type MechanicsOperationSchemaCustomTypes = {
   readonly "entity-ref": EntityRef;
   readonly id: string;
   readonly "integer-bindings": IntegerBindings;
+  readonly "inventory-generation-ref": InventoryGenerationRef;
   readonly "journal-actor": JournalActorRef;
-  readonly "material-ref": MaterialRef;
+  readonly "material-entity-ref": MaterialEntityRef;
   readonly "material-entity-id": string;
   readonly "mechanics-invocation-ref": MechanicsInvocationRef;
   readonly "mechanics-operation-cause": MechanicsOperationCause;
   readonly "new-effect-occurrence": NewEffectOccurrence;
+  readonly "new-material-entity": NewMaterialEntity;
+  readonly "new-inventory-instance": NewInventoryInstance;
   readonly "nonnegative-integer": number;
   readonly "occurrence-generation-ref": OccurrenceGenerationRef;
   readonly "positive-integer": number;
+  readonly "program-root-receipt": ProgramRootReceipt;
   readonly "resource-operation": ResourceOperation;
   readonly "resource-ref": ResourceRef;
   readonly "resource-spec": ResourceSpec;
+  readonly "turn-economy-command": TurnEconomyClaimCommand;
+  readonly "turn-economy-projection": TurnEconomyProjection;
 };
 
 export type MechanicsOperationRejection =
@@ -374,17 +489,40 @@ export type MechanicsOperationRejection =
   | "target-not-dying"
   | "invalid-transition"
   | "invalid-after"
+  | "entity-collision"
+  | "inventory-collision"
+  | "stale-allocation-state"
+  | "missing-controller"
+  | "controller-cycle"
+  | "program-root-collision"
+  | "missing-program-root"
+  | "stale-program-state"
+  | "invalid-program-state"
+  | "overflow"
   | "missing-resource-definition-fact"
   | "resource-collision"
   | "resource-fixed-shape"
   | "occurrence-collision"
   | "concentration-replacement-required"
   | "invalid-override"
+  | TurnEconomyRejection
   | `resource-${ResourceRejection}`
   | "fact-conflict";
 
 export interface OccurrenceCreateFacts {
   readonly created: Readonly<OccurrenceGenerationRef>;
+}
+
+export interface ProgramStateSnapshot {
+  readonly phase: Readonly<ProgramPhaseStateEntry>;
+  readonly registers: Readonly<Record<string, JsonScalar>>;
+}
+
+export interface ProgramStateTransitionFacts {
+  readonly after: Readonly<ProgramStateSnapshot>;
+  readonly before: Readonly<ProgramStateSnapshot> | null;
+  readonly created: boolean;
+  readonly root: Readonly<OccurrenceGenerationRef>;
 }
 
 export interface OccurrenceEndRequestFacts {
@@ -406,6 +544,39 @@ export interface ResourceRemovalFacts {
   readonly removed: Readonly<ResourceCell>;
 }
 
+export interface TurnEconomyTransitionFacts {
+  readonly after: Readonly<TurnEconomyState>;
+  readonly before: Readonly<TurnEconomyState>;
+}
+
+export interface EntityCreateFacts {
+  readonly entity: Readonly<MaterialEntityRef>;
+  readonly lifecycle: Readonly<OccurrenceGenerationRef>;
+}
+
+export interface EntityAvailabilityFacts {
+  readonly after: MaterialEntity["availability"];
+  readonly before: MaterialEntity["availability"];
+}
+
+export interface EntityControllerFacts {
+  readonly after: Readonly<EntityRef> | null;
+  readonly before: Readonly<EntityRef> | null;
+}
+
+export interface InventoryCreateFacts {
+  readonly created: Readonly<InventoryGenerationRef>;
+  readonly instance: Readonly<InventoryInstance>;
+  readonly lifecycle: Readonly<OccurrenceGenerationRef>;
+}
+
+export interface InventoryTransitionFacts {
+  readonly after: Readonly<InventoryInstance>;
+  readonly before: Readonly<InventoryInstance>;
+  readonly detachedFrom: Readonly<InventoryGenerationRef> | null;
+  readonly lifecycleEndRequested: Readonly<OccurrenceGenerationRef> | null;
+}
+
 export interface MechanicsOperationFactsByKind {
   readonly "creature-damage": Readonly<CreatureDamageFacts>;
   readonly "object-damage": Readonly<ObjectDamageFacts>;
@@ -420,6 +591,14 @@ export interface MechanicsOperationFactsByKind {
   readonly "creature-death-save": null;
   readonly "creature-maximum-sync": Readonly<CreatureMaximumSyncFacts>;
   readonly "object-maximum-sync": Readonly<ObjectMaximumSyncFacts>;
+  readonly "turn-economy-transition": Readonly<TurnEconomyTransitionFacts>;
+  readonly "entity-create": Readonly<EntityCreateFacts>;
+  readonly "entity-availability": Readonly<EntityAvailabilityFacts>;
+  readonly "entity-controller": Readonly<EntityControllerFacts>;
+  readonly "inventory-create": Readonly<InventoryCreateFacts>;
+  readonly "inventory-transition": Readonly<InventoryTransitionFacts>;
+  readonly "inventory-end": Readonly<InventoryTransitionFacts>;
+  readonly "program-state-transition": Readonly<ProgramStateTransitionFacts>;
   readonly "occurrence-create": Readonly<OccurrenceCreateFacts>;
   readonly "occurrence-end": Readonly<OccurrenceEndRequestFacts>;
   readonly "exhaustion-transition": Readonly<ExhaustionTransitionFacts>;
@@ -438,10 +617,14 @@ export type MechanicsOperationExecution = {
   };
 }[MechanicsOperation["kind"]];
 
-/** One applied terminal step and its exact transient state boundary. */
+/**
+ * One applied terminal step and its exact transaction-local world boundary.
+ * Newly satisfied end rules are discovered only after the final ordered step,
+ * so neither projection is itself a reusable causal-state receipt.
+ */
 export interface MechanicsOperationStage {
-  readonly after: Readonly<MechanicsCausalState>;
-  readonly before: Readonly<MechanicsCausalState>;
+  readonly after: Readonly<MechanicsWorld>;
+  readonly before: Readonly<MechanicsWorld>;
   readonly execution: Readonly<MechanicsOperationExecution>;
 }
 
@@ -475,6 +658,14 @@ export interface MechanicsOperationNoChangeReasonByKind {
   readonly "creature-death-save": never;
   readonly "creature-maximum-sync": "maximum-already-synchronized";
   readonly "object-maximum-sync": "maximum-already-synchronized";
+  readonly "turn-economy-transition": TurnEconomyNoChangeReason;
+  readonly "entity-create": "entity-already-created";
+  readonly "entity-availability": "entity-availability-unchanged";
+  readonly "entity-controller": "entity-controller-unchanged";
+  readonly "inventory-create": "inventory-already-created";
+  readonly "inventory-transition": "inventory-unchanged";
+  readonly "inventory-end": "inventory-not-active";
+  readonly "program-state-transition": "program-state-already-committed";
   readonly "occurrence-create":
     | "condition-immune"
     | "concentration-unsustainable"
@@ -523,6 +714,14 @@ export type MechanicsTransactionSimulationResult =
       readonly operationId: string;
       readonly requirement: Readonly<DiceRollRequirement>;
       readonly status: "needs-observation";
+      readonly transaction: Readonly<MechanicsTransaction>;
+    }
+  | {
+      readonly boundary: Readonly<
+        Extract<MechanicsBoundaryCommand, { readonly kind: "complete-turn" }>
+      >;
+      readonly operationId: string;
+      readonly status: "needs-boundary";
       readonly transaction: Readonly<MechanicsTransaction>;
     }
   | {

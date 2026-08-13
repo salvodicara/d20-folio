@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { conformActionFactGuard } from "@/lib/action-journal";
+import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import {
   conformTurnEconomyCommand,
   conformTurnEconomyProjection,
@@ -6,7 +8,9 @@ import {
   createTurnEconomyState,
   deriveTurnEconomyBudget,
   reduceTurnEconomy,
+  turnEconomyProjectionFactGuard,
 } from "@/lib/turn-economy";
+import type { EntityRef } from "@/types/mechanics-reference";
 import {
   TURN_ACTION_KINDS,
   type TurnAttackOption,
@@ -17,6 +21,11 @@ import {
 } from "@/types/turn-economy";
 
 const ACTION_SURGE_ACTIONS = TURN_ACTION_KINDS.filter((kind) => kind !== "magic");
+
+const OWNER: EntityRef = {
+  entityId: "self",
+  material: { characterId: "character.1", kind: "character-play", uid: "user.1" },
+};
 
 function weaponAttackOption(
   optionId: string,
@@ -131,6 +140,29 @@ function claimAttackAction(
 }
 
 describe("turn-economy hostile boundaries", () => {
+  it("guards the complete live projection on commit and redo", () => {
+    const owner = structuredClone(OWNER);
+    const capabilities = projection();
+    const guard = turnEconomyProjectionFactGuard(owner, capabilities);
+
+    expect(guard).toEqual({
+      address: ["turn-economy-projection"],
+      expected: { present: true, value: canonicalFingerprint(capabilities) },
+      lifecycle: "commit-redo",
+      owner: OWNER,
+    });
+    expect(conformActionFactGuard(guard)).toEqual(guard);
+    expect(guard.owner).not.toBe(owner);
+    Reflect.set(owner, "entityId", "changed");
+    expect("entityId" in guard.owner && guard.owner.entityId).toBe("self");
+    expect(
+      turnEconomyProjectionFactGuard(OWNER, {
+        ...capabilities,
+        incapacitated: true,
+      }).expected
+    ).not.toEqual(guard.expected);
+  });
+
   it("conforms exact, cloned, frozen projections, states, and commands", () => {
     const source = projection();
     const conformed = conformTurnEconomyProjection(source);

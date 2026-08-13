@@ -18,10 +18,12 @@ import {
   conformResolutionGroup,
   deriveMechanicsSourceEndingEvents,
   finalizeMechanicsEndWaveWithEvents,
+  mechanicsOperationAccessFootprint,
   orderResolutionPartitions,
   simulateResolutionGroup,
 } from "@/lib/mechanics-execution";
 import { createEmptyCharacterMaterialState } from "@/lib/material-state";
+import { createTurnEconomyState } from "@/lib/turn-economy";
 import {
   beginMechanicsCausalState,
   discoverMechanicsEndWave,
@@ -46,6 +48,7 @@ import type {
   MechanicsWorld,
 } from "@/types/mechanics-world";
 import type { ResourceRef, ResourceSpec } from "@/types/resource";
+import type { TurnEconomyProjection } from "@/types/turn-economy";
 import type { CreatureVitals } from "@/types/vitals";
 
 const MATERIAL = {
@@ -53,6 +56,7 @@ const MATERIAL = {
   kind: "character-play",
   uid: "user-1",
 } as const;
+const SHARED = { campaignId: "campaign-1", kind: "shared-combat" } as const;
 const SELF = { entityId: "self", material: MATERIAL } as const satisfies EntityRef;
 const FIRST = {
   entityId: "first",
@@ -241,6 +245,7 @@ function world(): Readonly<MechanicsWorld> {
   const state = createEmptyCharacterMaterialState(1, MATERIAL, alive());
   const creature = (id: string, ordinal: number) => ({
     availability: "present" as const,
+    controller: null,
     exhaustion: 0 as const,
     kind: "creature" as const,
     label: id,
@@ -275,6 +280,170 @@ function world(): Readonly<MechanicsWorld> {
     scope: MATERIAL,
   });
   if (!parsed.ok) throw new Error(`invalid fixture: ${parsed.reason}`);
+  return parsed.value;
+}
+
+function turnProjection(): TurnEconomyProjection {
+  return {
+    actions: { extraSlots: [], override: null },
+    attacks: { options: [], perAttackAction: { base: 1, override: null } },
+    bonusActions: {
+      dualWielder: false,
+      limit: { base: 1, override: null },
+      requirements: [],
+    },
+    freeInteractions: { limit: { base: 1, override: null } },
+    incapacitated: false,
+    movement: {
+      costPerFoot: { base: 1, override: null },
+      modes: [{ mode: "walk", speedFt: { base: 30, override: null } }],
+      requirements: [],
+    },
+    reactions: { limit: { base: 1, override: null }, requirements: [] },
+  };
+}
+
+function turnEconomyOperation(
+  operationId: string,
+  claimId: string,
+  combatant: EntityRef = SELF
+): Extract<MechanicsOperation, { readonly kind: "turn-economy-transition" }> {
+  return {
+    causeId: INSTALLED_CAUSE.causeId,
+    combatant,
+    command: { action: { kind: "magic" }, claimId, kind: "claim-action" },
+    kind: "turn-economy-transition",
+    operationId,
+    projection: turnProjection(),
+  };
+}
+
+function entityAvailabilityOperation(
+  operationId: string,
+  target: Exclude<EntityRef, { readonly entityId: "self" }>
+): Extract<MechanicsOperation, { readonly kind: "entity-availability" }> {
+  return {
+    availability: "dismissed",
+    causeId: INSTALLED_CAUSE.causeId,
+    kind: "entity-availability",
+    operationId,
+    target,
+  };
+}
+
+function entityCreateOperation(
+  operationId: string,
+  target: Exclude<EntityRef, { readonly entityId: "self" }>,
+  lifecycleOrdinal: number
+): Extract<MechanicsOperation, { readonly kind: "entity-create" }> {
+  return {
+    causeId: INSTALLED_CAUSE.causeId,
+    endRules: [],
+    entity: target,
+    kind: "entity-create",
+    lifecycle: {
+      occurrence: {
+        material: target.material,
+        occurrenceId: `${target.entityId}-lifecycle`,
+      },
+      ordinal: lifecycleOrdinal,
+    },
+    operationId,
+    parent: {
+      occurrence: { material: target.material, occurrenceId: "root" },
+      ordinal: 1,
+    },
+    value: {
+      controller: null,
+      exhaustion: 0,
+      kind: "creature",
+      label: target.entityId,
+      overrides: {
+        armorClass: null,
+        hitPointMaximum: 10,
+        initiativeBonus: null,
+        speedFt: null,
+      },
+      resources: {},
+      template: {
+        creatureTypeOverride: null,
+        kind: "catalogue-monster",
+        monsterId: target.entityId,
+      },
+      vitals: alive(),
+    },
+  };
+}
+
+function occurrenceCreateOperation(
+  operationId: string,
+  occurrenceId: string,
+  ordinal: number
+): Extract<MechanicsOperation, { readonly kind: "occurrence-create" }> {
+  return {
+    causeId: INSTALLED_CAUSE.causeId,
+    conditionImmunityOverride: null,
+    created: {
+      occurrence: { material: MATERIAL, occurrenceId },
+      ordinal,
+    },
+    kind: "occurrence-create",
+    occurrence: {
+      endRules: [],
+      fact: { key: `fact-${occurrenceId}`, kind: "active-key" },
+      kind: "standing",
+      parentId: "root",
+      target: FIRST,
+    },
+    operationId,
+    parent: {
+      occurrence: { material: MATERIAL, occurrenceId: "root" },
+      ordinal: 1,
+    },
+  };
+}
+
+function encounterWorld(combatant: EntityRef = SELF): Readonly<MechanicsWorld> {
+  const basis = world();
+  const document = basis.documents[0];
+  const economy = createTurnEconomyState("turn:1:1:1");
+  if (document?.kind !== "character" || !economy) {
+    throw new Error("encounter fixture");
+  }
+  const parsed = parseMechanicsWorld({
+    ...basis,
+    documents: [
+      {
+        ...document,
+        state: {
+          ...document.state,
+          clockBinding: {
+            ...document.state.clockBinding,
+            encounter: { epoch: 1, material: MATERIAL },
+          },
+          encounter: {
+            currentCombatantId: "hero",
+            epoch: 1,
+            nextCombatantOrdinal: 2,
+            order: ["hero"],
+            participants: {
+              hero: {
+                combatant,
+                economy,
+                initiativeRoll: 15,
+                ordinal: 1,
+                skipped: false,
+              },
+            },
+            phase: "turns",
+            round: 1,
+          },
+          nextEncounterEpoch: 2,
+        },
+      },
+    ],
+  });
+  if (!parsed.ok) throw new Error(`invalid encounter fixture: ${parsed.reason}`);
   return parsed.value;
 }
 
@@ -435,19 +604,22 @@ function context(
 
 function programRootCreateOperation(
   occurrenceId = "root"
-): Extract<MechanicsOperation, { kind: "occurrence-create" }> {
+): Extract<MechanicsOperation, { kind: "program-state-transition" }> {
   return {
     causeId: INSTALLED_CAUSE.causeId,
-    kind: "occurrence-create",
-    material: MATERIAL,
-    occurrence: {
-      endRules: [],
-      kind: "program",
-      phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
-      registers: {},
-    },
-    occurrenceId,
+    expectedRegisters: null,
+    kind: "program-state-transition",
+    nextRegisters: {},
     operationId: `create-${occurrenceId}`,
+    receipt: {
+      kind: "create",
+      materialEpoch: 0,
+      next: { execution: 1, phaseId: "invoke", triggerEventId: null },
+      root: {
+        occurrence: { material: MATERIAL, occurrenceId },
+        ordinal: 1,
+      },
+    },
   };
 }
 
@@ -464,6 +636,527 @@ describe("simultaneous resolution groups", () => {
     const result = analyzeResolutionGroup(value);
     expect(result.kind).toBe("disjoint");
     expect(JSON.stringify(basis)).toBe(JSON.stringify(world()));
+  });
+
+  it("collides turn claims on the one combatant ledger and emits no post-event", () => {
+    const first = turnEconomyOperation("turn-a", "cast-a");
+    const second = turnEconomyOperation("turn-b", "cast-b");
+    expect(
+      analyzeResolutionGroup(
+        group([
+          { operation: first, proposalId: "a" },
+          { operation: second, proposalId: "b" },
+        ])
+      )
+    ).toMatchObject({
+      kind: "needs-ordering",
+      partitions: [{ proposalIds: ["a", "b"] }],
+    });
+
+    const basis = encounterWorld();
+    const result = simulateResolutionGroup(
+      group([{ operation: first, proposalId: "a" }]),
+      context(null, [INSTALLED_CAUSE], { state: causalState(basis) })
+    );
+    expect(result).toMatchObject({ events: [], status: "simulated" });
+  });
+
+  it("orders a null-controller entity creation before a link to that generation", () => {
+    const created = {
+      entityId: "created",
+      material: MATERIAL,
+      ordinal: 3,
+    } as const;
+    const create = entityCreateOperation("create-null-controller", created, 2);
+    const link = {
+      causeId: INSTALLED_CAUSE.causeId,
+      controller: SELF,
+      kind: "entity-controller",
+      operationId: "link-created",
+      target: created,
+    } as const satisfies MechanicsOperation;
+
+    expect(
+      analyzeResolutionGroup(
+        group([
+          { operation: create, proposalId: "create" },
+          { operation: link, proposalId: "link" },
+        ])
+      )
+    ).toMatchObject({ kind: "needs-ordering" });
+  });
+
+  it("orders damage and turn claims against dismissal dependencies", () => {
+    const dismissal = entityAvailabilityOperation("dismiss-first", FIRST);
+    expect(
+      analyzeResolutionGroup(
+        group([
+          { operation: damageOperation("damage-first", FIRST), proposalId: "damage" },
+          { operation: dismissal, proposalId: "dismiss" },
+        ])
+      )
+    ).toMatchObject({ kind: "needs-ordering" });
+    expect(
+      analyzeResolutionGroup(
+        group([
+          {
+            operation: turnEconomyOperation("turn-first", "claim-first", FIRST),
+            proposalId: "claim",
+          },
+          { operation: dismissal, proposalId: "dismiss" },
+        ])
+      )
+    ).toMatchObject({ kind: "needs-ordering" });
+  });
+
+  it("orders shared-lease dismissal against persistent clock-bound creation", () => {
+    const dismissal = entityAvailabilityOperation("dismiss-shared-participant", FIRST);
+    const timed = occurrenceCreateOperation("create-timed", "timed-effect", 2);
+    const timedCreate = {
+      ...timed,
+      occurrence: {
+        ...timed.occurrence,
+        endRules: [
+          {
+            clock: { epoch: 1, material: SHARED },
+            elapsedSeconds: 60,
+            kind: "time-reached",
+          },
+        ],
+      },
+    } as const satisfies MechanicsOperation;
+    expect(
+      analyzeResolutionGroup(
+        group([
+          { operation: dismissal, proposalId: "dismiss" },
+          { operation: timedCreate, proposalId: "create" },
+        ])
+      )
+    ).toMatchObject({ kind: "needs-ordering" });
+  });
+
+  it("propagates the exact complete-turn boundary before current dismissal", () => {
+    const basis = encounterWorld(FIRST);
+    const result = simulateResolutionGroup(
+      group([
+        {
+          operation: entityAvailabilityOperation("dismiss-current", FIRST),
+          proposalId: "dismiss-current",
+        },
+      ]),
+      context(null, [INSTALLED_CAUSE], { state: causalState(basis) })
+    );
+    expect(result).toMatchObject({
+      boundary: { excludeCurrent: FIRST, kind: "complete-turn", material: MATERIAL },
+      operationId: "dismiss-current",
+      orderedProposalIds: ["dismiss-current"],
+      status: "needs-boundary",
+    });
+  });
+
+  it("keeps shared availability reads disjoint when their write slots differ", () => {
+    const damage = damageOperation("damage-reader", FIRST);
+    const claim = turnEconomyOperation("turn-reader", "claim-reader", FIRST);
+    const damageAccess = mechanicsOperationAccessFootprint(damage);
+    const claimAccess = mechanicsOperationAccessFootprint(claim);
+    expect(
+      damageAccess.reads.filter((key) => claimAccess.reads.includes(key))
+    ).not.toHaveLength(0);
+    expect(
+      damageAccess.semanticWrites.filter((key) =>
+        claimAccess.semanticWrites.includes(key)
+      )
+    ).toEqual([]);
+
+    expect(
+      analyzeResolutionGroup(
+        group([
+          { operation: damage, proposalId: "damage-reader" },
+          { operation: claim, proposalId: "turn-reader" },
+        ])
+      )
+    ).toMatchObject({ collisionKeys: [], kind: "disjoint" });
+  });
+
+  it("canonically orders allocator writes without requesting a table decision", () => {
+    const first = programRootCreateOperation("first-root");
+    const second = {
+      ...programRootCreateOperation("second-root"),
+      receipt: {
+        ...programRootCreateOperation("second-root").receipt,
+        root: {
+          occurrence: { material: MATERIAL, occurrenceId: "second-root" },
+          ordinal: 2,
+        },
+      },
+    } as const satisfies MechanicsOperation;
+    const result = analyzeResolutionGroup(
+      group([
+        { operation: second, proposalId: "z-second" },
+        { operation: first, proposalId: "a-first" },
+      ])
+    );
+    expect(result).toMatchObject({
+      kind: "disjoint",
+      partitions: [
+        {
+          proposalIds: ["a-first", "z-second"],
+        },
+      ],
+    });
+
+    const effects = analyzeResolutionGroup(
+      group([
+        {
+          operation: occurrenceCreateOperation("effect-second", "effect-second", 3),
+          proposalId: "z-effect-second",
+        },
+        {
+          operation: occurrenceCreateOperation("effect-first", "effect-first", 2),
+          proposalId: "a-effect-first",
+        },
+      ])
+    );
+    expect(effects).toMatchObject({
+      kind: "disjoint",
+      partitions: [
+        {
+          proposalIds: ["a-effect-first", "z-effect-second"],
+        },
+      ],
+    });
+    if (effects.kind !== "disjoint") return;
+    expect(effects.partitions[0]?.collisionKeys).toHaveLength(1);
+  });
+
+  it("keeps allocator precedence inside a mixed semantic component", () => {
+    const first = occurrenceCreateOperation("create-a", "effect-a", 2);
+    const second = occurrenceCreateOperation("create-b", "effect-b", 3);
+    const endFirst = {
+      causeId: INSTALLED_CAUSE.causeId,
+      kind: "occurrence-end",
+      occurrence: first.created,
+      operationId: "end-a",
+    } as const satisfies MechanicsOperation;
+    const value = group([
+      { operation: second, proposalId: "create-b" },
+      { operation: endFirst, proposalId: "end-a" },
+      { operation: first, proposalId: "create-a" },
+    ]);
+    const pending = analyzeResolutionGroup(value);
+    expect(pending.kind).toBe("needs-ordering");
+    if (pending.kind !== "needs-ordering") return;
+    expect(pending.partitions).toHaveLength(1);
+    expect(pending.partitions[0]).toMatchObject({
+      orderingPartitions: [{ proposalIds: ["create-a", "end-a"] }],
+      technicalPrecedence: [
+        { afterProposalId: "create-b", beforeProposalId: "create-a" },
+      ],
+    });
+    expect(pending.requestId).toBeDefined();
+
+    const request = pending.partitions[0]?.orderingPartitions[0];
+    if (!request) return;
+    const valid = orderResolutionPartitions(pending, {
+      kind: "ordering",
+      partitions: [
+        { collisionKey: request.collisionKey, proposalIds: ["create-a", "end-a"] },
+      ],
+      requestId: pending.requestId,
+    });
+    expect(valid?.[0]?.proposalIds).toEqual(["create-a", "create-b", "end-a"]);
+
+    const reversedSemantic = orderResolutionPartitions(pending, {
+      kind: "ordering",
+      partitions: [
+        { collisionKey: request.collisionKey, proposalIds: ["end-a", "create-a"] },
+      ],
+      requestId: pending.requestId,
+    });
+    expect(reversedSemantic?.[0]?.proposalIds).toEqual(["end-a", "create-a", "create-b"]);
+    expect(
+      orderResolutionPartitions(pending, {
+        kind: "ordering",
+        partitions: [
+          {
+            collisionKey: request.collisionKey,
+            proposalIds: ["create-b", "create-a", "end-a"],
+          },
+        ],
+        requestId: pending.requestId,
+      })
+    ).toBeNull();
+  });
+
+  it("orders effect creators that inspect or rewrite the same target projection", () => {
+    const create = (
+      operationId: string,
+      occurrenceId: string,
+      ordinal: number,
+      kind: "condition" | "concentration" | "polymorph-form"
+    ): Extract<MechanicsOperation, { readonly kind: "occurrence-create" }> => ({
+      causeId: INSTALLED_CAUSE.causeId,
+      conditionImmunityOverride: null,
+      created: {
+        occurrence: { material: MATERIAL, occurrenceId },
+        ordinal,
+      },
+      kind: "occurrence-create",
+      occurrence:
+        kind === "condition"
+          ? {
+              conditionId: "poisoned",
+              endRules: [],
+              kind,
+              parentId: "root",
+              target: FIRST,
+            }
+          : kind === "polymorph-form"
+            ? {
+                endRules: [],
+                formId: occurrenceId,
+                kind,
+                parentId: "root",
+                target: FIRST,
+              }
+            : {
+                endRules: [],
+                kind,
+                parentId: "root",
+                target: FIRST,
+              },
+      operationId,
+      parent: {
+        occurrence: { material: MATERIAL, occurrenceId: "root" },
+        ordinal: 1,
+      },
+    });
+    for (const pair of [
+      [
+        create("condition", "condition", 2, "condition"),
+        create("concentration", "concentration", 3, "concentration"),
+      ],
+      [
+        create("form-a", "form-a", 2, "polymorph-form"),
+        create("form-b", "form-b", 3, "polymorph-form"),
+      ],
+    ] as const) {
+      expect(
+        analyzeResolutionGroup(
+          group([
+            { operation: pair[0], proposalId: "a" },
+            { operation: pair[1], proposalId: "b" },
+          ])
+        )
+      ).toMatchObject({ kind: "needs-ordering" });
+    }
+  });
+
+  it("models temporary-hit-point sources and the whole enchantment graph", () => {
+    const source = {
+      occurrence: { material: MATERIAL, occurrenceId: "source" },
+      ordinal: 4,
+    } as const;
+    const grant = {
+      causeId: INSTALLED_CAUSE.causeId,
+      grant: { amount: 5, decision: "replace", sourceOccurrence: source },
+      kind: "temporary-hit-points-grant",
+      operationId: "grant-thp",
+      target: FIRST,
+    } as const satisfies MechanicsOperation;
+    const sourceEnd = {
+      causeId: INSTALLED_CAUSE.causeId,
+      kind: "occurrence-end",
+      occurrence: source,
+      operationId: "end-source",
+    } as const satisfies MechanicsOperation;
+    const sourceCreate = {
+      ...occurrenceCreateOperation("create-thp-source", "source", 4),
+      occurrence: {
+        ...occurrenceCreateOperation("create-thp-source", "source", 4).occurrence,
+        endRules: [{ kind: "temporary-hp-empty" }],
+      },
+    } as const satisfies MechanicsOperation;
+    expect(
+      analyzeResolutionGroup(
+        group([
+          { operation: sourceCreate, proposalId: "create" },
+          { operation: grant, proposalId: "grant" },
+        ])
+      )
+    ).toMatchObject({ kind: "needs-ordering" });
+    expect(
+      analyzeResolutionGroup(
+        group([
+          { operation: grant, proposalId: "grant" },
+          { operation: sourceEnd, proposalId: "end" },
+        ])
+      )
+    ).toMatchObject({ kind: "needs-ordering" });
+
+    const item = (instanceId: string, instanceOrdinal: number) => ({
+      instanceId,
+      instanceOrdinal,
+      owner: MATERIAL,
+    });
+    const transition = (
+      operationId: string,
+      target: ReturnType<typeof item>,
+      bearer: ReturnType<typeof item> | null,
+      value: number
+    ) =>
+      ({
+        causeId: INSTALLED_CAUSE.causeId,
+        change: { kind: "quantity", value },
+        enchantmentBearer: bearer,
+        item: target,
+        kind: "inventory-transition",
+        operationId,
+      }) as const satisfies MechanicsOperation;
+    const endX = transition("end-x", item("x", 1), item("y", 2), 0);
+    const mutateY = transition("mutate-y", item("y", 2), null, 2);
+    const equipY = {
+      ...mutateY,
+      change: { kind: "equipped", value: true },
+      operationId: "equip-y",
+    } as const satisfies MechanicsOperation;
+    expect(
+      analyzeResolutionGroup(
+        group([
+          { operation: endX, proposalId: "end-x" },
+          { operation: mutateY, proposalId: "mutate-y" },
+        ])
+      )
+    ).toMatchObject({ kind: "needs-ordering" });
+    expect(
+      analyzeResolutionGroup(
+        group([
+          { operation: endX, proposalId: "end-x" },
+          { operation: equipY, proposalId: "equip-y" },
+        ])
+      )
+    ).toMatchObject({ kind: "needs-ordering" });
+  });
+
+  it("models exact sources embedded in newly created entities", () => {
+    const source = {
+      occurrence: { material: MATERIAL, occurrenceId: "entity-thp-source" },
+      ordinal: 4,
+    } as const;
+    const creature = entityCreateOperation(
+      "create-sourced-creature",
+      {
+        entityId: "sourced-creature",
+        material: MATERIAL,
+        ordinal: 3,
+      },
+      5
+    );
+    const sourcedCreature = {
+      ...creature,
+      value: {
+        ...creature.value,
+        vitals: {
+          ...creature.value.vitals,
+          hitPoints: {
+            ...creature.value.vitals.hitPoints,
+            temporary: { current: 3, sourceOccurrence: source },
+          },
+        },
+      },
+    } as const satisfies MechanicsOperation;
+    const endSource = {
+      causeId: INSTALLED_CAUSE.causeId,
+      kind: "occurrence-end",
+      occurrence: source,
+      operationId: "end-entity-thp-source",
+    } as const satisfies MechanicsOperation;
+    expect(
+      analyzeResolutionGroup(
+        group([
+          { operation: sourcedCreature, proposalId: "create-creature" },
+          { operation: endSource, proposalId: "end-source" },
+        ])
+      )
+    ).toMatchObject({ kind: "needs-ordering" });
+
+    const linkedItem = {
+      instanceId: "animated-item",
+      instanceOrdinal: 9,
+      owner: MATERIAL,
+    } as const;
+    const linkedObject = {
+      ...entityCreateOperation(
+        "create-linked-object",
+        { entityId: "linked-object", material: MATERIAL, ordinal: 3 },
+        5
+      ),
+      value: {
+        controller: null,
+        kind: "object",
+        label: "linked-object",
+        overrides: {
+          armorClass: null,
+          damageDefenseProfile: null,
+          hitPointMaximum: null,
+          magical: null,
+          materials: null,
+          size: null,
+        },
+        resources: {},
+        template: { kind: "inventory-item", ...linkedItem },
+        vitals: { hitPoints: { current: 5 } },
+      },
+    } as const satisfies MechanicsOperation;
+    const mutateItem = {
+      causeId: INSTALLED_CAUSE.causeId,
+      change: { kind: "equipped", value: true },
+      enchantmentBearer: null,
+      item: linkedItem,
+      kind: "inventory-transition",
+      operationId: "equip-animated-item",
+    } as const satisfies MechanicsOperation;
+    expect(
+      analyzeResolutionGroup(
+        group([
+          { operation: linkedObject, proposalId: "create-object" },
+          { operation: mutateItem, proposalId: "mutate-item" },
+        ])
+      )
+    ).toMatchObject({ kind: "needs-ordering" });
+  });
+
+  it("orders every controller graph rewrite, including distinct target writes", () => {
+    const controller = SELF;
+    const change = (
+      operationId: string,
+      target: EntityRef
+    ): Extract<MechanicsOperation, { kind: "entity-controller" }> => {
+      if (target.entityId === "self") throw new Error("material target fixture");
+      return {
+        causeId: INSTALLED_CAUSE.causeId,
+        controller,
+        kind: "entity-controller",
+        operationId,
+        target,
+      };
+    };
+    expect(
+      analyzeResolutionGroup(
+        group([
+          { operation: change("first-controller", FIRST), proposalId: "first" },
+          { operation: change("second-controller", SECOND), proposalId: "second" },
+        ])
+      )
+    ).toMatchObject({ kind: "needs-ordering" });
+    expect(
+      analyzeResolutionGroup(
+        group([
+          { operation: change("first-controller-a", FIRST), proposalId: "a" },
+          { operation: change("first-controller-b", FIRST), proposalId: "b" },
+        ])
+      )
+    ).toMatchObject({ kind: "needs-ordering" });
   });
 
   it("orders Unicode partitions by code unit without consulting the host locale", () => {
@@ -507,7 +1200,7 @@ describe("simultaneous resolution groups", () => {
       },
       context(null, [INSTALLED_CAUSE], { state: causalState(basis) })
     );
-    expect(result.status).toBe("simulated");
+    expect(result).toMatchObject({ status: "simulated" });
     if (result.status !== "simulated") return;
     expect(result).not.toHaveProperty("action");
     expect(result.stages).toHaveLength(2);
@@ -533,7 +1226,7 @@ describe("simultaneous resolution groups", () => {
       },
       context()
     );
-    expect(result.status).toBe("simulated");
+    expect(result).toMatchObject({ status: "simulated" });
     if (result.status !== "simulated") return;
     expect(result.events).toEqual([]);
     const root = result.state.world.documents[0]?.state.occurrences.root;
@@ -584,8 +1277,11 @@ describe("simultaneous resolution groups", () => {
     const operation = {
       causeId: cause.causeId,
       conditionImmunityOverride: null,
+      created: {
+        occurrence: { material: MATERIAL, occurrenceId: "blind-first" },
+        ordinal: 2,
+      },
       kind: "occurrence-create",
-      material: MATERIAL,
       occurrence: {
         conditionId: "blinded",
         endRules: [],
@@ -593,7 +1289,6 @@ describe("simultaneous resolution groups", () => {
         parentId: "root",
         target: FIRST,
       },
-      occurrenceId: "blind-first",
       operationId: "create-blind-first",
       parent: occurrenceGeneration(basis, "root"),
     } as const satisfies MechanicsOperation;
@@ -644,7 +1339,7 @@ describe("simultaneous resolution groups", () => {
     const ordering = {
       kind: "ordering" as const,
       partitions: pending.request.partitions.map((partition) => ({
-        collisionKey: partition.collisionKeys[0] ?? "",
+        collisionKey: partition.collisionKey,
         proposalIds: ["b", "a"],
       })),
       requestId: pending.request.requestId,
@@ -784,11 +1479,11 @@ describe("simultaneous resolution groups", () => {
     expect(stage).toBeDefined();
     if (!stage) return;
     expect(stage.execution).toBe(result.executions[0]);
-    expect(stage.before.world).toEqual(basis);
-    expect(stage.after).toBe(result.state);
+    expect(stage.before).toEqual(basis);
+    expect(stage.after).toEqual(result.state.world);
     expect(stage.before).not.toEqual(stage.after);
     expect(stage.before).toEqual(result.stages[0]?.before);
-    expect(stage.after).toBe(result.state);
+    expect(stage.after).toEqual(result.state.world);
     expect(result.events).toMatchObject([
       {
         attacker: null,
@@ -1022,7 +1717,12 @@ describe("simultaneous resolution groups", () => {
 
   it("rejects invalid ordering permutations", () => {
     const request = {
-      partitions: [{ collisionKeys: ["vitals:x"], proposalIds: ["a", "b"] }],
+      partitions: [
+        {
+          collisionKey: "vitals:x",
+          proposalIds: ["a", "b"],
+        },
+      ],
       requestId: "ordering-request",
     };
     expect(
@@ -1061,6 +1761,16 @@ describe("simultaneous resolution groups", () => {
     expect(conformResolutionGroup(hostile)).toBeNull();
     const sparse = Array(1) as unknown[];
     expect(conformResolutionGroup({ groupId: "group", proposals: sparse })).toBeNull();
+    const proposalGetter = vi.fn(() => ({ operation, proposalId: "a" }));
+    const hostileProposals = Array(1) as unknown[];
+    Object.defineProperty(hostileProposals, "0", {
+      enumerable: true,
+      get: proposalGetter,
+    });
+    expect(
+      conformResolutionGroup({ groupId: "group", proposals: hostileProposals })
+    ).toBeNull();
+    expect(proposalGetter).not.toHaveBeenCalled();
     expect(
       conformResolutionGroup(
         group([
@@ -1078,6 +1788,176 @@ describe("simultaneous resolution groups", () => {
         })),
       })
     ).toBeNull();
+    const proxy = new Proxy(
+      {},
+      {
+        ownKeys() {
+          throw new Error("hostile group proxy");
+        },
+      }
+    );
+    expect(conformResolutionGroup(proxy)).toBeNull();
+    expect(analyzeResolutionGroup(proxy)).toEqual({
+      kind: "rejected",
+      reason: "invalid-group",
+    });
+    expect(simulateResolutionGroup(proxy, context())).toEqual({
+      operationId: null,
+      reason: "invalid-group",
+      status: "rejected",
+    });
+    const groupGet = vi.fn((_target: object, property: PropertyKey) =>
+      property === "proposals"
+        ? Array.from({ length: 513 }, (_, index) => ({
+            operation: damageOperation(`proxy-damage-${index}`, FIRST),
+            proposalId: `proxy-proposal-${index}`,
+          }))
+        : (Reflect.get(_target, property) as unknown)
+    );
+    const stableGroup = new Proxy(group([{ operation, proposalId: "a" }]), {
+      get: groupGet,
+    });
+    expect(conformResolutionGroup(stableGroup)).not.toBeNull();
+    expect(groupGet).not.toHaveBeenCalled();
+    expect(
+      simulateResolutionGroup(
+        group([{ operation, proposalId: "a" }]),
+        new Proxy(
+          {},
+          {
+            ownKeys() {
+              throw new Error("hostile context proxy");
+            },
+          }
+        )
+      )
+    ).toEqual({ operationId: null, reason: "invalid-context", status: "rejected" });
+  });
+
+  it("rejects hostile ordering arrays without invoking accessors", () => {
+    const request = {
+      partitions: [
+        {
+          collisionKey: "vitals:x",
+          proposalIds: ["a", "b"],
+        },
+      ],
+      requestId: "ordering-request",
+    };
+    const partitionGetter = vi.fn(() => ({
+      collisionKey: "vitals:x",
+      proposalIds: ["a", "b"],
+    }));
+    const hostilePartitions = Array(1) as unknown[];
+    Object.defineProperty(hostilePartitions, "0", {
+      enumerable: true,
+      get: partitionGetter,
+    });
+    expect(
+      conformOrderingObservation(
+        {
+          kind: "ordering",
+          partitions: hostilePartitions,
+          requestId: request.requestId,
+        },
+        request
+      )
+    ).toBeNull();
+    expect(partitionGetter).not.toHaveBeenCalled();
+
+    const proposalIdGetter = vi.fn(() => "a");
+    const hostileProposalIds = ["a", "b"] as unknown[];
+    Object.defineProperty(hostileProposalIds, "0", {
+      enumerable: true,
+      get: proposalIdGetter,
+    });
+    expect(
+      conformOrderingObservation(
+        {
+          kind: "ordering",
+          partitions: [{ collisionKey: "vitals:x", proposalIds: hostileProposalIds }],
+          requestId: request.requestId,
+        },
+        request
+      )
+    ).toBeNull();
+    expect(proposalIdGetter).not.toHaveBeenCalled();
+
+    const getTrap = vi.fn((_target: object, property: PropertyKey) =>
+      property === "proposalIds"
+        ? ["b", "a"]
+        : (Reflect.get(_target, property) as unknown)
+    );
+    const mutableView = new Proxy(
+      { collisionKey: "vitals:x", proposalIds: ["a", "b"] },
+      { get: getTrap }
+    );
+    expect(
+      conformOrderingObservation(
+        {
+          kind: "ordering",
+          partitions: [mutableView],
+          requestId: request.requestId,
+        },
+        request
+      )
+    ).toEqual({
+      kind: "ordering",
+      partitions: [{ collisionKey: "vitals:x", proposalIds: ["a", "b"] }],
+      requestId: request.requestId,
+    });
+    expect(getTrap).not.toHaveBeenCalled();
+  });
+
+  it("rejects a hostile nested ordering entry without invoking its getter", () => {
+    const value = group([
+      { operation: damageOperation("damage-a", FIRST), proposalId: "a" },
+      { operation: damageOperation("damage-b", FIRST), proposalId: "b" },
+    ]);
+    const pending = simulateResolutionGroup(value, context());
+    expect(pending.status).toBe("needs-ordering");
+    if (pending.status !== "needs-ordering") return;
+    const getter = vi.fn(() => {
+      throw new Error("hostile nested getter");
+    });
+    const hostile = {} as Record<string, unknown>;
+    Object.defineProperty(hostile, "collisionKey", {
+      enumerable: true,
+      get: getter,
+    });
+    Object.defineProperty(hostile, "proposalIds", {
+      enumerable: true,
+      value: ["a", "b"],
+    });
+    const result = simulateResolutionGroup(
+      value,
+      context({
+        kind: "ordering",
+        partitions: [hostile],
+        requestId: pending.request.requestId,
+      })
+    );
+    expect(result).toMatchObject({ reason: "invalid-ordering", status: "rejected" });
+    expect(getter).not.toHaveBeenCalled();
+
+    const proxy = new Proxy(
+      {},
+      {
+        ownKeys() {
+          throw new Error("hostile nested proxy");
+        },
+      }
+    );
+    expect(
+      simulateResolutionGroup(
+        value,
+        context({
+          kind: "ordering",
+          partitions: [proxy],
+          requestId: pending.request.requestId,
+        })
+      )
+    ).toMatchObject({ reason: "invalid-ordering", status: "rejected" });
   });
 
   it("returns a stable deterministic analysis", () => {

@@ -40,6 +40,7 @@ import {
   type ResourceSelector,
   type ResourceTerm,
 } from "@/types/resource";
+import { TURN_ECONOMY_COMMAND_SCHEMA } from "@/types/turn-economy";
 
 type ProgramJsonScalar = string | number | boolean | null;
 
@@ -612,6 +613,20 @@ const INVENTORY_CHANGE_SCHEMA = discriminatedUnionSchema("kind", {
   attuned: objectSchema({ attuned: booleanSchema, kind: literalSchema("attuned") }),
 });
 
+const TURN_CLAIM_SCHEMA = discriminatedUnionSchema("kind", {
+  "claim-action": TURN_ECONOMY_COMMAND_SCHEMA.variants["claim-action"],
+  "claim-attack": TURN_ECONOMY_COMMAND_SCHEMA.variants["claim-attack"],
+  "claim-bonus-action": TURN_ECONOMY_COMMAND_SCHEMA.variants["claim-bonus-action"],
+  "claim-reaction": TURN_ECONOMY_COMMAND_SCHEMA.variants["claim-reaction"],
+  move: TURN_ECONOMY_COMMAND_SCHEMA.variants.move,
+  "claim-movement-requirement":
+    TURN_ECONOMY_COMMAND_SCHEMA.variants["claim-movement-requirement"],
+  "claim-free-interaction":
+    TURN_ECONOMY_COMMAND_SCHEMA.variants["claim-free-interaction"],
+  "record-manual-boundary":
+    TURN_ECONOMY_COMMAND_SCHEMA.variants["record-manual-boundary"],
+});
+
 const COMMON_STEP_FIELDS = {
   stepId: ID_SCHEMA,
   when: NULLABLE_PREDICATE_SCHEMA,
@@ -772,15 +787,7 @@ export const MECHANICS_STEP_SCHEMA = discriminatedUnionSchema("kind", {
   }),
   "turn-claim": objectSchema({
     ...COMMON_STEP_FIELDS,
-    amount: INTEGER_EXPRESSION_SCHEMA,
-    claim: unionSchema([
-      literalSchema("action"),
-      literalSchema("bonus-action"),
-      literalSchema("reaction"),
-      literalSchema("attack"),
-      literalSchema("movement"),
-      literalSchema("dash"),
-    ]),
+    claim: TURN_CLAIM_SCHEMA,
     combatant: MECHANICS_ROLE_SCHEMA,
     kind: literalSchema("turn-claim"),
   }),

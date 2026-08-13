@@ -51,7 +51,7 @@ function state(instanceOrdinal = 1): CharacterMaterialState {
     attuned: false,
     definition: { itemId: "wand", kind: "catalogue" },
     disposition: "magical",
-    enchantInstanceId: null,
+    enchantment: null,
     equipped: false,
     notes: "",
     ordinal: instanceOrdinal,
@@ -70,6 +70,7 @@ function state(instanceOrdinal = 1): CharacterMaterialState {
   value.nextEntityOrdinal = 2;
   value.entities.familiar = {
     availability: "present",
+    controller: null,
     exhaustion: 0,
     kind: "creature",
     label: "",

@@ -7,6 +7,8 @@ import type {
   CharacterMaterialRef,
   ClockRef,
   EntityRef,
+  InventoryGenerationRef,
+  MaterialEntityRef,
   MaterialRef,
   OccurrenceGenerationRef,
   SharedMaterialRef,
@@ -44,8 +46,12 @@ export type MechanicsWorldInvalidReason =
   | "missing-scope"
   | "missing-reference"
   | "invalid-ending"
+  | "invalid-turn-state"
   | "invalid-clock"
   | "invalid-lease"
+  | "protected-state-mismatch"
+  | "controller-cycle"
+  | "duplicate-lifecycle-owner"
   | "duplicate-exclusive-state";
 
 export type MechanicsWorldParseResult =
@@ -80,17 +86,10 @@ export type MechanicsEndWaveLatchResult =
       world: Readonly<MechanicsWorld>;
     };
 
-/** One inventory tombstone kept only until the surrounding transaction finishes. */
-export interface InventorySourceLease {
-  material: CharacterMaterialRef;
-  instanceId: string;
-  instanceOrdinal: number;
-}
-
 export interface MechanicsClosureRequest {
   boundaries?: readonly ObservedMechanicsBoundary[];
   endRequests?: readonly OccurrenceGenerationRef[];
-  inventorySourceLeases?: readonly InventorySourceLease[];
+  inventorySourceLeases?: readonly InventoryGenerationRef[];
 }
 
 /**
@@ -128,7 +127,11 @@ export type MechanicsBoundaryCommand =
     }
   | { readonly input: RestBoundaryInput; readonly kind: "complete-rest" }
   | { readonly input: DayPhaseBoundaryInput; readonly kind: "observe-day-phase" }
-  | { readonly kind: "complete-turn"; readonly material: MaterialRef }
+  | {
+      readonly excludeCurrent: MaterialEntityRef | null;
+      readonly kind: "complete-turn";
+      readonly material: MaterialRef;
+    }
   | {
       readonly kind: "start-encounter";
       readonly material: MaterialRef;
@@ -157,6 +160,7 @@ export type MechanicsBoundaryCursor =
   | { readonly kind: "finish" }
   | {
       readonly encounter: MechanicsBoundaryEncounterCursor;
+      readonly excludeCurrent: MaterialEntityRef | null;
       readonly expectedRound: number;
       readonly expectedTimelineSeconds: number;
       readonly kind: "complete-turn";

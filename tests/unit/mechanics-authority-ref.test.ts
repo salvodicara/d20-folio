@@ -11,8 +11,10 @@ import {
 } from "@/lib/mechanics-authority-ref";
 import {
   conformEntityRef,
+  conformInventoryGenerationRef,
   conformOccurrenceGenerationRef,
   entityRefKey,
+  inventoryGenerationRefKey,
   occurrenceGenerationRefKey,
 } from "@/lib/mechanics-reference-schema";
 
@@ -72,6 +74,67 @@ describe("low-dependency mechanics authority references", () => {
     expect(
       conformOccurrenceGenerationRef({ occurrence: address, ordinal: 0 })
     ).toBeNull();
+  });
+
+  it("keys the exact inventory generation so a reused instance id cannot ABA", () => {
+    const first = { instanceId: "wand", instanceOrdinal: 1, owner: MATERIAL } as const;
+    const replacement = { ...first, instanceOrdinal: 2 } as const;
+    const reordered = {
+      owner: structuredClone(MATERIAL),
+      instanceOrdinal: 1,
+      instanceId: "wand",
+    } as const;
+
+    const conformed = conformInventoryGenerationRef(first);
+    if (!conformed) throw new Error("fixture must conform");
+
+    expect(conformed).toEqual(first);
+    expect(conformed).not.toBe(first);
+    expect(Object.isFrozen(conformed)).toBe(true);
+    expect(Object.isFrozen(conformed.owner)).toBe(true);
+    expect(inventoryGenerationRefKey(first)).toBe(inventoryGenerationRefKey(reordered));
+    expect(inventoryGenerationRefKey(first)).not.toBe(
+      inventoryGenerationRefKey(replacement)
+    );
+  });
+
+  it("rejects inexact and hostile inventory generation references", () => {
+    const valid = { instanceId: "wand", instanceOrdinal: 1, owner: MATERIAL } as const;
+    const inherited = Object.assign(
+      Object.create({ inherited: true }) as Record<string, unknown>,
+      valid
+    );
+    const accessor = { ...valid } as Record<string, unknown>;
+    Object.defineProperty(accessor, "instanceOrdinal", {
+      enumerable: true,
+      get: () => {
+        throw new Error("accessor must not run");
+      },
+    });
+    const unsafeKey = { ...valid };
+    Object.defineProperty(unsafeKey, "__proto__", { enumerable: true, value: {} });
+
+    for (const rejected of [
+      { ...valid, extra: true },
+      { instanceId: "wand", owner: MATERIAL },
+      { ...valid, instanceId: "self" },
+      { ...valid, instanceId: "__proto__" },
+      { ...valid, instanceOrdinal: 0 },
+      { ...valid, instanceOrdinal: -0 },
+      { ...valid, instanceOrdinal: 1.5 },
+      {
+        ...valid,
+        owner: { campaignId: "campaign-1", kind: "shared-combat" },
+      },
+      inherited,
+      accessor,
+      unsafeKey,
+    ]) {
+      expect(conformInventoryGenerationRef(rejected)).toBeNull();
+    }
+    expect(() => inventoryGenerationRefKey({ ...valid, instanceId: "self" })).toThrow(
+      TypeError
+    );
   });
 
   it("conforms exact immutable invocation identity and its canonical key", () => {

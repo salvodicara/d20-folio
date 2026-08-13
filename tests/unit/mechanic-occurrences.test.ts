@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   addOccurrence,
+  addTransitionedProgramOccurrence,
   conformNewMechanicOccurrence,
   createOccurrenceState,
   isEffectOccurrence,
@@ -62,6 +63,10 @@ const ENCOUNTER_CLOCK = { epoch: 1, material: MATERIAL } as const;
 
 type NewProgramOccurrence = Extract<NewMechanicOccurrence, { kind: "program" }>;
 type NewEffectOccurrence = Exclude<NewMechanicOccurrence, NewProgramOccurrence>;
+type NewMaterialLifecycleOccurrence = Extract<
+  NewEffectOccurrence,
+  { kind: "material-lifecycle" }
+>;
 type NewStandingOccurrence = Extract<NewEffectOccurrence, { kind: "standing" }>;
 
 function authoredProgram(id: string) {
@@ -187,6 +192,14 @@ function program(
   };
 }
 
+function transitionedProgram(): Omit<ProgramOccurrence, "ending" | "ordinal"> {
+  return {
+    ...program(),
+    phaseState: { invoke: { execution: 1, lastTriggerEventId: "event-1" } },
+    registers: { count: 1, mode: false },
+  };
+}
+
 function condition(
   conditionId: NonExhaustionConditionId,
   parentId = "root",
@@ -201,6 +214,13 @@ function standing(
   target: EntityRef = ACTOR
 ): NewStandingOccurrence {
   return { endRules: [], fact, kind: "standing", parentId, target };
+}
+
+function materialLifecycle(
+  parentId = "root",
+  target: EntityRef = ACTOR
+): NewMaterialLifecycleOccurrence {
+  return { endRules: [], kind: "material-lifecycle", parentId, target };
 }
 
 function damageSelector(
@@ -286,6 +306,36 @@ describe("one-model occurrence boundary", () => {
     const missingParent = { ...effect } as Record<string, unknown>;
     delete missingParent.parentId;
     expect(conformNewMechanicOccurrence(missingParent)).toBeNull();
+  });
+
+  it("conforms only the exact neutral material-lifecycle effect shape", () => {
+    const effect = materialLifecycle("root", MONSTER);
+    const conformed = conformNewMechanicOccurrence(effect);
+    expect(conformed).toEqual(effect);
+    expect(conformed && Object.keys(conformed).sort()).toEqual([
+      "endRules",
+      "kind",
+      "parentId",
+      "target",
+    ]);
+
+    for (const candidate of [
+      { ...effect, fact: { key: "lifecycle", kind: "active-key" } },
+      { ...effect, grantGroupId: "lifecycle" },
+      { ...effect, target: { ...MONSTER, forged: true } },
+    ]) {
+      expect(conformNewMechanicOccurrence(candidate)).toBeNull();
+    }
+
+    for (const key of ["parentId", "target"] as const) {
+      const missing = { ...effect } as Record<string, unknown>;
+      Reflect.deleteProperty(missing, key);
+      expect(conformNewMechanicOccurrence(missing)).toBeNull();
+    }
+
+    const hostile = Object.create({ inherited: true }) as Record<string, unknown>;
+    Object.assign(hostile, effect);
+    expect(conformNewMechanicOccurrence(hostile)).toBeNull();
   });
 
   it("requires exact authored phase/register keys and initials only on creation", () => {
@@ -473,6 +523,47 @@ describe("one-model occurrence boundary", () => {
 });
 
 describe("immutable allocation, ordinals and cascades", () => {
+  it("allocates an exact program root after its first committed transition", () => {
+    const transitioned = transitionedProgram();
+    const allocated = addTransitionedProgramOccurrence(
+      createOccurrenceState(),
+      "root",
+      transitioned
+    );
+
+    expect(allocated).toEqual({
+      nextOccurrenceOrdinal: 2,
+      occurrences: {
+        root: { ...transitioned, ending: null, ordinal: 1 },
+      },
+    });
+    expect(() => addOccurrence(createOccurrenceState(), "root", transitioned)).toThrow(
+      TypeError
+    );
+  });
+
+  it.each([
+    ["missing phase", { phaseState: {} }],
+    [
+      "extra phase",
+      {
+        phaseState: {
+          invoke: { execution: 1, lastTriggerEventId: "event-1" },
+          other: { execution: 0, lastTriggerEventId: null },
+        },
+      },
+    ],
+    ["missing register", { registers: { count: 1 } }],
+    ["extra register", { registers: { count: 1, extra: null, mode: false } }],
+  ])("rejects a transitioned root with an %s key set", (_case, replacement) => {
+    expect(() =>
+      addTransitionedProgramOccurrence(createOccurrenceState(), "root", {
+        ...transitionedProgram(),
+        ...replacement,
+      })
+    ).toThrow(TypeError);
+  });
+
   it("allocates unique monotonic ordinals and never rewinds", () => {
     const empty = createOccurrenceState();
     const root = addOccurrence(empty, "root", program());
@@ -617,6 +708,24 @@ describe("root authority and effect selectors", () => {
     });
     expect(child).toEqual(root);
     expect(resolveOccurrenceAuthority(state, "missing")).toBeNull();
+  });
+
+  it("routes material lifecycle through effect authority and the parent-child graph", () => {
+    let state = stateWithRoot(materialAuthority("environment"));
+    state = addOccurrence(state, "material", materialLifecycle("root", MONSTER));
+
+    expect(selectChildrenOf(state, "root").map(({ id }) => id)).toEqual(["material"]);
+    expect(selectOccurrencesForTarget(state, MONSTER).map(({ id }) => id)).toEqual([
+      "material",
+    ]);
+    expect(resolveOccurrenceAuthority(state, "material")).toEqual(
+      resolveOccurrenceAuthority(state, "root")
+    );
+    expect(Object.keys(removeOccurrences(state, "root").occurrences)).toEqual([]);
+
+    expect(() =>
+      addOccurrence(state, "nested", materialLifecycle("material", MONSTER))
+    ).toThrow(TypeError);
   });
 
   it("excludes roots from target selectors and narrows children to effects", () => {

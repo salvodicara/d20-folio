@@ -160,6 +160,38 @@ export function entityRefKey(value: Readonly<EntityRefSchemaShape>): string {
   return canonicalJson(reference);
 }
 
+/** Exact identity of one physical inventory instance generation. */
+export const INVENTORY_GENERATION_REF_SCHEMA = objectSchema({
+  instanceId: MATERIAL_ENTITY_ID_SCHEMA,
+  instanceOrdinal: POSITIVE_INTEGER_SCHEMA,
+  owner: CHARACTER_MATERIAL_REF_SCHEMA,
+});
+
+export type InventoryGenerationRefSchemaShape = InferExactSchema<
+  typeof INVENTORY_GENERATION_REF_SCHEMA
+>;
+
+const conformInventoryGenerationRefStructure = exactConformer(
+  INVENTORY_GENERATION_REF_SCHEMA,
+  ENTITY_REF_SCHEMA_CONTEXT
+);
+
+/** Strict anti-ABA inventory identity, independent of current material state. */
+export function conformInventoryGenerationRef(
+  value: unknown
+): Readonly<InventoryGenerationRefSchemaShape> | null {
+  return conformInventoryGenerationRefStructure(value);
+}
+
+/** Canonical collision/deduplication key for one inventory generation. */
+export function inventoryGenerationRefKey(
+  value: Readonly<InventoryGenerationRefSchemaShape>
+): string {
+  const reference = conformInventoryGenerationRef(value);
+  if (!reference) throw new TypeError("Invalid inventory generation reference");
+  return canonicalJson(reference);
+}
+
 export const OCCURRENCE_REF_SCHEMA = objectSchema({
   material: MATERIAL_REF,
   occurrenceId: ID_SCHEMA,

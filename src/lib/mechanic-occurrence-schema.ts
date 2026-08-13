@@ -230,6 +230,10 @@ function occurrenceSchema<
       },
       { hidden: objectSchema({ findDc: NONNEGATIVE_INTEGER_SCHEMA }) }
     ),
+    "material-lifecycle": objectSchema({
+      ...effect,
+      kind: literalSchema("material-lifecycle"),
+    }),
     "polymorph-form": objectSchema({
       ...effect,
       formId: ID_SCHEMA,

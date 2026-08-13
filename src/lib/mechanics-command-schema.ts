@@ -206,6 +206,27 @@ export type ProgramRootReceiptSchemaShape = InferExactSchema<
   MechanicsCommandSchemaCustomTypes
 >;
 
+/** One receipt grammar shared by frame validation and the atomic root CAS. */
+export function programRootReceiptIsCoherent(
+  receipt: Readonly<ProgramRootReceiptSchemaShape>
+): boolean {
+  if (receipt.kind === "create") {
+    return receipt.next.execution === 1 && receipt.next.triggerEventId === null;
+  }
+  const expectedEventIsCoherent =
+    receipt.expected.execution === 0
+      ? receipt.expected.triggerEventId === null
+      : receipt.expected.triggerEventId !== null;
+  return (
+    expectedEventIsCoherent &&
+    receipt.next.phaseId === receipt.expected.phaseId &&
+    receipt.next.execution === receipt.expected.execution + 1 &&
+    Number.isSafeInteger(receipt.next.execution) &&
+    receipt.next.triggerEventId !== null &&
+    receipt.next.triggerEventId !== receipt.expected.triggerEventId
+  );
+}
+
 export const MECHANICS_DOCUMENT_FENCE_SCHEMA = objectSchema({
   epoch: NONNEGATIVE_INTEGER_SCHEMA,
   material: MATERIAL_REF_SCHEMA,

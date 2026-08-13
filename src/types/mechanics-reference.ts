@@ -4,6 +4,7 @@ import type {
   CharacterMaterialRefSchemaShape,
   ClockRefSchemaShape,
   EntityRefSchemaShape,
+  InventoryGenerationRefSchemaShape,
   MaterialEntityRefSchemaShape,
   MaterialRefSchemaShape,
   OccurrenceGenerationRefSchemaShape,
@@ -19,5 +20,6 @@ export type ClockRef = ClockRefSchemaShape;
 export type EntityRef = EntityRefSchemaShape;
 export type SelfEntityRef = SelfEntityRefSchemaShape;
 export type MaterialEntityRef = MaterialEntityRefSchemaShape;
+export type InventoryGenerationRef = InventoryGenerationRefSchemaShape;
 export type OccurrenceRef = OccurrenceRefSchemaShape;
 export type OccurrenceGenerationRef = OccurrenceGenerationRefSchemaShape;

@@ -52,6 +52,13 @@ const ENVIRONMENT_AUTHORITY = {
 } as const satisfies JournalActorRef;
 
 const ABSENT = { present: false } as const satisfies StoredValue;
+const HIGH_WATER_PATHS = [
+  ["nextOccurrenceOrdinal"],
+  ["nextEntityOrdinal"],
+  ["nextInventoryOrdinal"],
+  ["nextEncounterEpoch"],
+  ["encounter", "nextCombatantOrdinal"],
+] as const;
 
 function present(value: JsonValue): StoredValue {
   return { present: true, value };
@@ -183,7 +190,535 @@ function journalOf(world: ActionJournalWorld): ActionJournal {
   return documentFor(world, world.scope).journal;
 }
 
+function isJsonRecord(
+  value: JsonValue | undefined
+): value is Readonly<Record<string, JsonValue>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function dataAt(
+  world: ActionJournalWorld,
+  path: readonly string[]
+): JsonValue | undefined {
+  let current: JsonValue | undefined = documentFor(world, CHARACTER).data;
+  for (const segment of path) {
+    if (!isJsonRecord(current)) return undefined;
+    current = current[segment];
+  }
+  return current;
+}
+
 describe("flat bounded action journal", () => {
+  it.each(HIGH_WATER_PATHS.map((path) => ({ path })))(
+    "never reverses the high-water path $path across undo and redo",
+    ({ path }) => {
+      const initial = localWorld({
+        encounter: { nextCombatantOrdinal: 1 },
+        nextEncounterEpoch: 1,
+        nextEntityOrdinal: 1,
+        nextInventoryOrdinal: 1,
+        nextOccurrenceOrdinal: 1,
+        records: {},
+      });
+      const draft = actionDraft(initial, {
+        mutations: [
+          {
+            target: CHARACTER,
+            path,
+            before: present(1),
+            after: present(2),
+          },
+          {
+            target: CHARACTER,
+            path: ["records", "created"],
+            before: ABSENT,
+            after: present({ ordinal: 1 }),
+          },
+        ],
+      });
+      const committed = applied(commit(initial, draft));
+      expect(dataAt(committed.world, path)).toBe(2);
+      expect(dataAt(committed.world, ["records", "created"])).toEqual({ ordinal: 1 });
+
+      const undone = applied(
+        reduceActionJournal(
+          committed.world,
+          {
+            kind: "undo",
+            action: draft,
+            expectedGeneration: 1,
+            documents: currentDocuments(committed.world, draft),
+          },
+          []
+        )
+      );
+      expect(dataAt(undone.world, path)).toBe(2);
+      expect(dataAt(undone.world, ["records", "created"])).toBeUndefined();
+      expect(journalOf(undone.world).revision).toBe(2);
+
+      const redone = applied(
+        reduceActionJournal(
+          undone.world,
+          {
+            kind: "redo",
+            action: draft,
+            expectedGeneration: 2,
+            documents: currentDocuments(undone.world, draft),
+          },
+          []
+        )
+      );
+      expect(dataAt(redone.world, path)).toBe(2);
+      expect(dataAt(redone.world, ["records", "created"])).toEqual({ ordinal: 1 });
+      expect(journalOf(redone.world).revision).toBe(3);
+    }
+  );
+
+  it("preserves a nested high-water when an ancestor allocation is undone and redone", () => {
+    const beforeEncounter = {
+      epoch: 1,
+      nextCombatantOrdinal: 2,
+      participants: { "combatant:1": { ordinal: 1 } },
+      round: 1,
+    };
+    const afterEncounter = {
+      epoch: 1,
+      nextCombatantOrdinal: 3,
+      participants: {
+        "combatant:1": { ordinal: 1 },
+        "combatant:2": { ordinal: 2 },
+      },
+      round: 1,
+    };
+    const initial = localWorld({ encounter: beforeEncounter });
+    const draft = actionDraft(initial, {
+      mutations: [
+        {
+          target: CHARACTER,
+          path: ["encounter"],
+          before: present(beforeEncounter),
+          after: present(afterEncounter),
+        },
+      ],
+    });
+    const committed = applied(commit(initial, draft));
+    expect(dataAt(committed.world, ["encounter", "nextCombatantOrdinal"])).toBe(3);
+
+    const undone = applied(
+      reduceActionJournal(
+        committed.world,
+        {
+          kind: "undo",
+          action: draft,
+          expectedGeneration: 1,
+          documents: currentDocuments(committed.world, draft),
+        },
+        []
+      )
+    );
+    expect(dataAt(undone.world, ["encounter", "nextCombatantOrdinal"])).toBe(3);
+    expect(dataAt(undone.world, ["encounter", "participants"])).toEqual(
+      beforeEncounter.participants
+    );
+
+    const staleReuse = actionDraft(undone.world, {
+      id: "combatant:stale-reuse",
+      mutations: [
+        {
+          target: CHARACTER,
+          path: ["encounter"],
+          before: present(beforeEncounter),
+          after: present(afterEncounter),
+        },
+      ],
+    });
+    expect(commit(undone.world, staleReuse)).toMatchObject({
+      reason: "mutation-conflict",
+      status: "rejected",
+    });
+
+    const redone = applied(
+      reduceActionJournal(
+        undone.world,
+        {
+          kind: "redo",
+          action: draft,
+          expectedGeneration: 2,
+          documents: currentDocuments(undone.world, draft),
+        },
+        []
+      )
+    );
+    expect(dataAt(redone.world, ["encounter", "nextCombatantOrdinal"])).toBe(3);
+    expect(dataAt(redone.world, ["encounter", "participants"])).toEqual(
+      afterEncounter.participants
+    );
+  });
+
+  it("keeps an encounter ancestor lifecycle reversible without reusing its material epoch", () => {
+    const encounter = {
+      epoch: 1,
+      nextCombatantOrdinal: 1,
+      participants: {},
+      round: 1,
+    };
+    const initial = localWorld({ encounter: null, nextEncounterEpoch: 1 });
+    const draft = actionDraft(initial, {
+      id: "encounter:start",
+      mutations: [
+        {
+          target: CHARACTER,
+          path: ["encounter"],
+          before: present(null),
+          after: present(encounter),
+        },
+        {
+          target: CHARACTER,
+          path: ["nextEncounterEpoch"],
+          before: present(1),
+          after: present(2),
+        },
+      ],
+    });
+    const committed = applied(commit(initial, draft));
+    expect(dataAt(committed.world, ["encounter"])).toEqual(encounter);
+    expect(dataAt(committed.world, ["nextEncounterEpoch"])).toBe(2);
+
+    const undone = applied(
+      reduceActionJournal(
+        committed.world,
+        {
+          kind: "undo",
+          action: draft,
+          expectedGeneration: 1,
+          documents: currentDocuments(committed.world, draft),
+        },
+        []
+      )
+    );
+    expect(dataAt(undone.world, ["encounter"])).toBeNull();
+    expect(dataAt(undone.world, ["nextEncounterEpoch"])).toBe(2);
+
+    const staleStart = actionDraft(undone.world, {
+      id: "encounter:stale-start",
+      mutations: [
+        {
+          target: CHARACTER,
+          path: ["encounter"],
+          before: present(null),
+          after: present(encounter),
+        },
+        {
+          target: CHARACTER,
+          path: ["nextEncounterEpoch"],
+          before: present(1),
+          after: present(2),
+        },
+      ],
+    });
+    expect(commit(undone.world, staleStart)).toMatchObject({
+      reason: "mutation-conflict",
+      status: "rejected",
+    });
+
+    const redone = applied(
+      reduceActionJournal(
+        undone.world,
+        {
+          kind: "redo",
+          action: draft,
+          expectedGeneration: 2,
+          documents: currentDocuments(undone.world, draft),
+        },
+        []
+      )
+    );
+    expect(dataAt(redone.world, ["encounter"])).toEqual(encounter);
+    expect(dataAt(redone.world, ["nextEncounterEpoch"])).toBe(2);
+  });
+
+  it.each([
+    {
+      name: "ancestor lowering",
+      path: ["encounter"],
+      before: present({ epoch: 1, nextCombatantOrdinal: 3, round: 1 }),
+      after: present({ epoch: 1, nextCombatantOrdinal: 2, round: 2 }),
+    },
+    {
+      name: "high-water descendant",
+      path: ["encounter", "nextCombatantOrdinal", "nested"],
+      before: present(1),
+      after: present(2),
+    },
+  ] as const)("rejects a $name mutation fail-closed", ({ path, before, after }) => {
+    const initial = localWorld({
+      encounter: { epoch: 1, nextCombatantOrdinal: 3, round: 1 },
+    });
+    const draft = actionDraft(initial, {
+      mutations: [{ target: CHARACTER, path, before, after }],
+    });
+    expect(commit(initial, draft)).toMatchObject({
+      reason: "invalid-action",
+      status: "rejected",
+    });
+  });
+
+  it("allows an ancestor mutation that leaves its nested high-water unchanged", () => {
+    const initial = localWorld({
+      encounter: { epoch: 1, nextCombatantOrdinal: 3, round: 1 },
+    });
+    const draft = actionDraft(initial, {
+      mutations: [
+        {
+          target: CHARACTER,
+          path: ["encounter"],
+          before: present({ epoch: 1, nextCombatantOrdinal: 3, round: 1 }),
+          after: present({ epoch: 1, nextCombatantOrdinal: 3, round: 2 }),
+        },
+      ],
+    });
+    const committed = applied(commit(initial, draft));
+    const undone = applied(
+      reduceActionJournal(
+        committed.world,
+        {
+          kind: "undo",
+          action: draft,
+          expectedGeneration: 1,
+          documents: currentDocuments(committed.world, draft),
+        },
+        []
+      )
+    );
+    const redone = applied(
+      reduceActionJournal(
+        undone.world,
+        {
+          kind: "redo",
+          action: draft,
+          expectedGeneration: 2,
+          documents: currentDocuments(undone.world, draft),
+        },
+        []
+      )
+    );
+    expect(dataAt(undone.world, ["encounter"])).toEqual({
+      epoch: 1,
+      nextCombatantOrdinal: 3,
+      round: 1,
+    });
+    expect(dataAt(redone.world, ["encounter"])).toEqual({
+      epoch: 1,
+      nextCombatantOrdinal: 3,
+      round: 2,
+    });
+  });
+
+  it("allocates from the preserved high-water mark after an undo branch", () => {
+    const initial = localWorld({ entities: {}, nextEntityOrdinal: 1 });
+    const first = actionDraft(initial, {
+      id: "create:one",
+      mutations: [
+        {
+          target: CHARACTER,
+          path: ["entities", "summon:1"],
+          before: ABSENT,
+          after: present({ ordinal: 1 }),
+        },
+        {
+          target: CHARACTER,
+          path: ["nextEntityOrdinal"],
+          before: present(1),
+          after: present(2),
+        },
+      ],
+    });
+    const committed = applied(commit(initial, first));
+    const undone = applied(
+      reduceActionJournal(
+        committed.world,
+        {
+          kind: "undo",
+          action: first,
+          expectedGeneration: 1,
+          documents: currentDocuments(committed.world, first),
+        },
+        []
+      )
+    );
+    const branch = actionDraft(undone.world, {
+      id: "create:two",
+      mutations: [
+        {
+          target: CHARACTER,
+          path: ["entities", "summon:2"],
+          before: ABSENT,
+          after: present({ ordinal: 2 }),
+        },
+        {
+          target: CHARACTER,
+          path: ["nextEntityOrdinal"],
+          before: present(2),
+          after: present(3),
+        },
+      ],
+    });
+    const branched = applied(commit(undone.world, branch));
+
+    expect(dataAt(branched.world, ["entities", "summon:1"])).toBeUndefined();
+    expect(dataAt(branched.world, ["entities", "summon:2"])).toEqual({ ordinal: 2 });
+    expect(dataAt(branched.world, ["nextEntityOrdinal"])).toBe(3);
+    expect(journalOf(branched.world).actions.map(({ id }) => id)).toEqual(["create:two"]);
+  });
+
+  it("undoes and redoes stacked allocations without lowering their shared high-water mark", () => {
+    const initial = localWorld({ entities: {}, nextEntityOrdinal: 1 });
+    const first = actionDraft(initial, {
+      id: "create:one",
+      mutations: [
+        {
+          target: CHARACTER,
+          path: ["entities", "summon:1"],
+          before: ABSENT,
+          after: present({ ordinal: 1 }),
+        },
+        {
+          target: CHARACTER,
+          path: ["nextEntityOrdinal"],
+          before: present(1),
+          after: present(2),
+        },
+      ],
+    });
+    const firstCommitted = applied(commit(initial, first));
+    const second = actionDraft(firstCommitted.world, {
+      id: "create:two",
+      mutations: [
+        {
+          target: CHARACTER,
+          path: ["entities", "summon:2"],
+          before: ABSENT,
+          after: present({ ordinal: 2 }),
+        },
+        {
+          target: CHARACTER,
+          path: ["nextEntityOrdinal"],
+          before: present(2),
+          after: present(3),
+        },
+      ],
+    });
+    const secondCommitted = applied(commit(firstCommitted.world, second));
+    const secondUndone = applied(
+      reduceActionJournal(
+        secondCommitted.world,
+        {
+          kind: "undo",
+          action: second,
+          expectedGeneration: 1,
+          documents: currentDocuments(secondCommitted.world, second),
+        },
+        []
+      )
+    );
+    const bothUndone = applied(
+      reduceActionJournal(
+        secondUndone.world,
+        {
+          kind: "undo",
+          action: first,
+          expectedGeneration: 1,
+          documents: currentDocuments(secondUndone.world, first),
+        },
+        []
+      )
+    );
+    expect(dataAt(bothUndone.world, ["nextEntityOrdinal"])).toBe(3);
+
+    const firstRedone = applied(
+      reduceActionJournal(
+        bothUndone.world,
+        {
+          kind: "redo",
+          action: first,
+          expectedGeneration: 2,
+          documents: currentDocuments(bothUndone.world, first),
+        },
+        []
+      )
+    );
+    const bothRedone = applied(
+      reduceActionJournal(
+        firstRedone.world,
+        {
+          kind: "redo",
+          action: second,
+          expectedGeneration: 2,
+          documents: currentDocuments(firstRedone.world, second),
+        },
+        []
+      )
+    );
+    expect(dataAt(bothRedone.world, ["nextEntityOrdinal"])).toBe(3);
+    expect(dataAt(bothRedone.world, ["entities", "summon:1"])).toEqual({
+      ordinal: 1,
+    });
+    expect(dataAt(bothRedone.world, ["entities", "summon:2"])).toEqual({
+      ordinal: 2,
+    });
+  });
+
+  it.each([
+    ["missing before", ABSENT, present(1)],
+    ["missing after", present(0), ABSENT],
+    ["negative", present(-1), present(1)],
+    ["negative zero", present(-0), present(1)],
+    ["fractional", present(0), present(1.5)],
+    ["unsafe", present(0), present(Number.MAX_SAFE_INTEGER + 1)],
+    ["equal", present(1), present(1)],
+    ["decreasing", present(2), present(1)],
+  ] as const)(
+    "rejects a %s high-water mutation as an invalid action",
+    (_, before, after) => {
+      const initial = localWorld({ nextEntityOrdinal: 1 });
+      const draft = actionDraft(initial, {
+        mutations: [{ target: CHARACTER, path: ["nextEntityOrdinal"], before, after }],
+      });
+      expect(commit(initial, draft)).toMatchObject({
+        reason: "invalid-action",
+        status: "rejected",
+      });
+    }
+  );
+
+  it("keeps the current timeline generation reversible", () => {
+    const initial = localWorld({ timeline: { epoch: 2 } });
+    const draft = actionDraft(initial, {
+      mutations: [
+        {
+          target: CHARACTER,
+          path: ["timeline", "epoch"],
+          before: present(2),
+          after: present(3),
+        },
+      ],
+    });
+    const committed = applied(commit(initial, draft));
+    const undone = applied(
+      reduceActionJournal(
+        committed.world,
+        {
+          kind: "undo",
+          action: draft,
+          expectedGeneration: 1,
+          documents: currentDocuments(committed.world, draft),
+        },
+        []
+      )
+    );
+    expect(dataAt(undone.world, ["timeline", "epoch"])).toBe(2);
+  });
+
   it("commits, undoes and redoes through one parity boundary", () => {
     const initial = localWorld();
     const draft = actionDraft(initial);

@@ -456,6 +456,15 @@ character `self` is identified by its already-physical character material, while
 entity carries its positive entity ordinal. A bare mutable entity id is only a storage slot and never a
 runtime reference.
 
+Physical material is governed by the same generation law. `InventoryGenerationRef` is the only runtime
+identity for an item copy; enchantment links and causal leases carry the complete owner + instance-id +
+ordinal reference. Every created entity or item atomically creates one dedicated
+`material-lifecycle` occurrence, and world validation proves that a lifecycle owns at most one physical
+generation. Dismissal changes availability, not identity: the dismissed entity and its own lifecycle stay
+addressable while ordinary effects that require its presence become eligible to end. Controller links are
+exact generation references, may cross loaded documents, and the world rejects every local or
+cross-document controller cycle.
+
 Public mechanics commands contain only invocation identity or answers to engine-issued requests. The
 trusted adapter constructs a complete, recoverable execution frame containing the authority receipt,
 invocation, exact root create/advance CAS receipt and typed trigger evidence. Terminal operations carry
@@ -463,25 +472,84 @@ one canonical cause id whose public cause contains only the invocation. The kern
 installed authority from the trusted `MechanicsAuthoritySnapshot`, or program authority from the exact
 persisted root generation, then recomputes the id over `(authority, invocation)`. It also binds every
 operation to the installation owner and injects definition/installation guards; authority is therefore
-never self-attested by command JSON. A transaction rejects missing, unused, duplicate or forged causes
-before simulation. The same envelope will produce one reversible `JournalActionDraft` for the whole
+never self-attested by command JSON. Every distinct cause is resolved against the same immutable action
+basis before the first operation mutates anything, so consuming a source cannot make a later operation
+from that already-authorized source depend on array order. A transaction rejects missing, unused,
+duplicate or forged causes before simulation. The same envelope will produce one reversible `JournalActionDraft` for the whole
 causal action, never one draft per reaction or target.
 
+The low-level operation union owns every deterministic physical transition. Program, effect, entity and
+inventory creation all carry their exact preallocated generation and compare it with the relevant
+`next*Ordinal` high-water mark; entity/item creation also writes its lifecycle in the same atomic
+candidate. Entity availability/controller changes and inventory quantity/equipped/attuned/end changes
+operate only on exact generations. Reducing an item to zero preserves its lifecycle ownership, clears
+impossible equipment/attunement/outgoing-enchantment state, leases the exact source for the surrounding
+causal action and requests lifecycle ending. If another item points at that enchantment, the operation
+must name that exact inbound bearer and compare-and-swap both copies—there is no world scan whose result
+can silently depend on execution order.
+
+Allocator counters are high-water identity, not reversible game state. The journal rejects descendants of
+a high-water path, requires a direct write to move strictly forward and requires an ancestor snapshot to
+preserve or raise every nested counter; undo/redo therefore cannot smuggle a rollback. Rebase likewise accepts only a monotonic
+counter transition: an idle encounter may be created only at the prior `nextEncounterEpoch` while
+incrementing it exactly once, a live encounter keeps its epoch and nondecreasing combatant allocator, and
+ending it cannot lower either high-water. Ordinary game state remains reversible. Every terminal
+operation exposes its complete read, semantic-write and technical-write footprint, including references
+embedded in entity vitals/templates, effects and inventory enchantments. Shared reads remain disjoint;
+read/write or semantic-write overlap forms connected table-ordering partitions. Allocator overlap instead
+adds immutable ordinal precedence, merged topologically with the table's genuine choices and never exposed
+as freedom the user can reverse. The compiler must allocate every generation in causal order; duplicate,
+skipped, reversed or stale allocation chains fail closed in kernel simulation. An end rule that observes
+Temporary HP reads its target's vitals, and a persistent timeline-bound creation reads the owning
+document's clock binding—not merely the clock currently written into the rule—because releasing a final
+shared-combat lease rebases every such rule in that document.
+
+Entity dismissal and encounter membership are one physical transition for a non-current participant:
+before the candidate is admitted back through the closed-world parser, the kernel removes that exact
+generation from every local/shared encounter, repairs initiative membership and releases any character
+whose final shared-combat lease has disappeared. Dismissing the current participant instead returns an
+exact `needs-boundary` command carrying the generation to exclude, without mutating the world. That
+authenticated complete-turn state machine emits the real end boundary, performs any round/time boundary,
+selects and emits start for the next surviving participant, or returns a sole-participant encounter to
+initiative. Only after it finishes does the retried operation own the entity dismissal and membership
+removal. Historical causal cleanup may remove the original current participant only inside this exact
+continuation before a successor starts; an unrelated, stale or post-start boundary fails closed.
+Controller writes (including controlled creation) share one semantic controller-graph address because
+cycle validation reads the whole loaded graph; encounter membership changes likewise share one semantic
+address. These real read dependencies
+must never be misclassified as disjoint target writes.
+
+The operation-level turn surface is claim-only: action, attack, Bonus Action, Reaction, movement,
+interaction and explicit table-boundary claims are isomorphic to the canonical `TurnEconomyClaimCommand`.
+`start-turn` and `end-turn` remain private lifecycle inputs to the encounter boundary state machine and
+cannot be forged by a program terminal step. All hostile arrays/records are accepted only through exact
+own enumerable data descriptors. The kernel snapshots descriptor values once and never rereads a hostile
+proxy after validation, so neither an accessor nor a stateful proxy trap can change a proposal or ordering
+answer between conformance and execution. A closed persisted encounter in turn phase must name exactly one
+current participant whose economy is `own-turn`; the boundary parser alone may carry the transitional
+`between-turns` shape while ending one turn and starting its successor.
+
 Operation mutation and causal closure are deliberately separate. A terminal change first preserves
-every active source so post-events and `source-end` subscribers can still resolve their authority. Only
-the coordinator may discover an end wave, deliver its subscribers, append the resulting consequences and
-then finalize dependent-first removals plus unreachable material cleanup. Concentration replacement is
-therefore an explicit barrier, not an eager delete hidden inside occurrence creation. Intermediate
-inventory tombstones are legal only under exact instance-id + ordinal leases and cannot escape as a
-persisted world.
+every active source so post-events and `source-end` subscribers can still resolve their authority. Each
+ordered operation produces only a transaction-local `MechanicsWorld` projection; it is not a reusable
+causal receipt, and both projection and causal rebase prove that document journal epoch/revision/actions
+plus character build revision are unchanged. After the final operation, the transaction kernel performs exactly one causal rebase and
+discovers/latches the complete net end wave. This lets one atomic transaction create a
+`temporary-hp-empty` source and grant its Temporary HP without observing an impossible intermediate
+expiry, while preserving any wave that was already latched when the transaction began. The coordinator
+then delivers subscribers, appends their consequences and finalizes dependent-first removals plus
+unreachable material cleanup. Concentration replacement remains an explicit barrier, not an eager delete
+hidden inside occurrence creation. Intermediate inventory tombstones are legal only under exact
+instance-id + ordinal leases and cannot escape as a persisted world.
 
 The only hostile causal entry begins from a closed `MechanicsWorld`; typed continuations are produced and
 advanced only by the kernel. Ending candidates are latched explicitly on their still-readable occurrences
 as canonical causes. One canonical closure request owns all observed boundaries, explicit end requests and
 inventory leases, including a checkpoint whose current wave is empty. This is pure serializable transient
 state—not a caller-supplied history, hidden object identity or persisted compatibility model—and the
-closed-world parser rejects it. After every operation the kernel monotonically extends that request and
-its latches, so newly due dependencies join the same causal action while ending sources remain readable. A
+closed-world parser rejects it. After every complete atomic transaction the kernel monotonically extends
+that request and its latches, so newly due dependencies join the same causal action while ending sources
+remain readable without treating an intermediate ordered step as a causal boundary. A
 suspension stores fenced inputs and observations and replays from the closed basis; it never serializes a
 purportedly trusted continuation. End discovery is one bounded indexed worklist over dependency, boundary,
 Concentration, ownership, inventory, live-entity and Temporary-HP edges; it emits a deterministic
@@ -501,10 +569,14 @@ cleanup do not invent generic semantic events because no authored trigger consum
 effect is the verified finalization delta and ultimately the single journal draft.
 
 This hardened foundation is implemented and covered by focused hostile-input tests, but the cutover is
-not yet a production runtime: the MechanicsProgram step compiler, fixed-point event/subscriber
-coordinator, complete suspension worklist, persistence adapters and corpus transcription remain open. The existing combat
-executors stay temporary migration inputs until those consumers move; they are deleted, not retained as
-fallbacks, at the one-model cutover.
+not yet a production runtime. The next single compiler, `compileMechanicsFrame`, owns one per-material
+in-memory allocation ledger, compiles one authored step against the actual projected world at a time and
+advances exact ordinals only after that step simulates. The single coordinator then runs trigger,
+subscriber and source-ending waves to a bounded fixed point, resumes only from fenced basis + typed
+answers, and calls `planMechanicsWorldAction` once to produce one reversible journal draft. No second
+executor, compatibility planner or final register-write lump is permitted. Persistence adapters and
+corpus transcription remain open; the existing combat executors are temporary migration inputs until
+their consumers move, then are deleted rather than retained as fallbacks.
 
 The action economy is **immediate-commit-per-action-with-undo** (the owner's binding decision —
 **not** batch select-and-commit), so a resource is deducted the instant it is used.

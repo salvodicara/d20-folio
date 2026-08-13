@@ -1,6 +1,9 @@
 /** Pure 2024 turn-economy planner: no RNG, localization, range, or line of sight. */
 
+import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { exactConformer, type ExactSchemaContext } from "@/lib/exact-schema";
+import type { ActionFactGuard } from "@/types/action-journal";
+import type { EntityRef } from "@/types/mechanics-reference";
 import {
   TURN_ECONOMY_COMMAND_SCHEMA,
   TURN_ECONOMY_PROJECTION_SCHEMA,
@@ -8,6 +11,7 @@ import {
   type TurnActionSlot,
   type TurnAttackOption,
   type TurnEconomyBudget,
+  type TurnEconomyClaimCommand,
   type TurnEconomyCommand,
   type TurnEconomyEffectiveScalar,
   type TurnEconomyProjection,
@@ -150,6 +154,19 @@ export function conformTurnEconomyProjection(
     return null;
   }
   return projection;
+}
+
+/** CAS evidence for the complete live capability projection used by a turn claim. */
+export function turnEconomyProjectionFactGuard(
+  owner: Readonly<EntityRef>,
+  projection: Readonly<TurnEconomyProjection>
+): ActionFactGuard {
+  return {
+    address: ["turn-economy-projection"],
+    expected: { present: true, value: canonicalFingerprint(projection) },
+    lifecycle: "commit-redo",
+    owner: structuredClone(owner),
+  };
 }
 
 function weaponOption(value: AttackOptionUse): WeaponAttackUse | null {
@@ -334,6 +351,14 @@ export function conformTurnEconomyCommand(
     return null;
   }
   return command;
+}
+
+/** Exact hostile-input boundary for a player-authored claim. */
+export function conformTurnEconomyClaimCommand(
+  value: unknown
+): Readonly<TurnEconomyClaimCommand> | null {
+  const command = conformTurnEconomyCommand(value);
+  return command && "claimId" in command ? command : null;
 }
 
 function effectiveScalar(value: {

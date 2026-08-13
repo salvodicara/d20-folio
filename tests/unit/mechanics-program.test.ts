@@ -122,6 +122,7 @@ function worldWithFamiliar(ordinal: number): MechanicsWorld {
           entities: {
             familiar: {
               availability: "present",
+              controller: null,
               exhaustion: 0,
               kind: "creature",
               label: "",

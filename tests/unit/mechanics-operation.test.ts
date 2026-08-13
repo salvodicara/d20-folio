@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { materialRefKey } from "@/lib/action-journal";
 import { canonicalFingerprint, canonicalJson } from "@/lib/canonical-fingerprint";
 import { resolveDamage, withDamageTableOverride } from "@/lib/damage";
 import { evaluateDiceFormula } from "@/lib/dice-formula";
@@ -17,17 +18,28 @@ import {
   locateResolvedMaterialResource,
   resourceDefinitionFactGuard,
 } from "@/lib/material-resource";
-import { createEmptyCharacterMaterialState } from "@/lib/material-state";
+import {
+  createEmptyCharacterMaterialState,
+  createEmptySharedMaterialState,
+} from "@/lib/material-state";
 import {
   conformMechanicsOperation,
   conformMechanicsTransaction,
   simulateMechanicsTransaction as simulateKernelTransaction,
 } from "@/lib/mechanics-operation";
 import {
+  advanceMechanicsBoundary,
   beginMechanicsCausalState,
+  beginMechanicsBoundary,
   discoverMechanicsEndWave,
   parseMechanicsWorld,
 } from "@/lib/mechanics-world";
+import {
+  createBetweenTurnsEconomyState,
+  createTurnEconomyState,
+  reduceTurnEconomy,
+  turnEconomyProjectionFactGuard,
+} from "@/lib/turn-economy";
 import type { ActionFactGuard } from "@/types/action-journal";
 import type { DamageDefenseRule, DamagePart, DamageResolution } from "@/types/damage";
 import type { DiceFormula, DiceObservation } from "@/types/dice-formula";
@@ -36,9 +48,15 @@ import type {
   MechanicsAuthorityDefinition,
   MechanicsAuthoritySnapshot,
 } from "@/types/mechanics-authority";
-import type { EntityRef, OccurrenceGenerationRef } from "@/types/mechanics-reference";
+import type {
+  EntityRef,
+  InventoryGenerationRef,
+  OccurrenceGenerationRef,
+} from "@/types/mechanics-reference";
 import type {
   CreatureMaterialEntity,
+  EncounterState,
+  InventoryInstance,
   MaterialEntity,
   ObjectMaterialEntity,
 } from "@/types/material-state";
@@ -49,18 +67,30 @@ import type {
   MechanicsTransactionSimulationResult,
 } from "@/types/mechanics-operation";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
-import type { MechanicsWorld } from "@/types/mechanics-world";
+import type {
+  MechanicsBoundaryCompletion,
+  MechanicsBoundaryCommand,
+  MechanicsWorld,
+} from "@/types/mechanics-world";
 import type {
   ResourceInitializationObservations,
   ResourceRef,
   ResourceSpec,
 } from "@/types/resource";
+import type {
+  TurnEconomyClaimCommand,
+  TurnEconomyProjection,
+} from "@/types/turn-economy";
 import type { CreatureVitals } from "@/types/vitals";
 
 const CHARACTER = {
   characterId: "character-1",
   kind: "character-play",
   uid: "user-1",
+} as const;
+const SHARED = {
+  campaignId: "campaign-1",
+  kind: "shared-combat",
 } as const;
 const SELF = { entityId: "self", material: CHARACTER } as const satisfies EntityRef;
 const MECHANICS_REVISION = canonicalFingerprint({ fixture: "mechanics-operation" });
@@ -295,6 +325,25 @@ function simulateMechanicsTransaction(
   );
 }
 
+function completeBoundary(
+  world: Readonly<MechanicsWorld>,
+  command: Readonly<MechanicsBoundaryCommand>
+): Readonly<MechanicsWorld> {
+  let result = beginMechanicsBoundary(world, command);
+  let remaining = 16;
+  while (result.status === "checkpoint" && remaining > 0) {
+    result = advanceMechanicsBoundary(result.continuation, {
+      continuation: canonicalFingerprint(result.continuation),
+      state: result.checkpoint.state,
+    } as unknown as MechanicsBoundaryCompletion);
+    remaining -= 1;
+  }
+  if (result.status !== "complete") {
+    throw new Error(`Boundary fixture failed: ${JSON.stringify(result)}`);
+  }
+  return result.world;
+}
+
 function operationCause(
   authority: MechanicsProgramAuthorityReceipt,
   invocation: MechanicsInvocationRef
@@ -457,6 +506,7 @@ function creature(
 ): CreatureMaterialEntity {
   return {
     availability: present ? "present" : "dismissed",
+    controller: null,
     exhaustion: 0,
     kind: "creature",
     label: "",
@@ -481,6 +531,7 @@ function creature(
 function object(current = 7, ordinal = 1): ObjectMaterialEntity {
   return {
     availability: "present",
+    controller: null,
     kind: "object",
     label: "",
     ordinal,
@@ -548,6 +599,150 @@ function resourceWorld(current = 3): Readonly<MechanicsWorld> {
   );
   material.resources.pools.focus = countResource(current);
   return parsedCharacterState(material);
+}
+
+function turnProjection(): TurnEconomyProjection {
+  return {
+    actions: { extraSlots: [], override: null },
+    attacks: { options: [], perAttackAction: { base: 1, override: null } },
+    bonusActions: {
+      dualWielder: false,
+      limit: { base: 1, override: null },
+      requirements: [],
+    },
+    freeInteractions: { limit: { base: 1, override: null } },
+    incapacitated: false,
+    movement: {
+      costPerFoot: { base: 1, override: null },
+      modes: [{ mode: "walk", speedFt: { base: 30, override: null } }],
+      requirements: [],
+    },
+    reactions: { limit: { base: 1, override: null }, requirements: [] },
+  };
+}
+
+function encounterWorld(): Readonly<MechanicsWorld> {
+  const material = createEmptyCharacterMaterialState(1, CHARACTER, alive(10));
+  const economy = createTurnEconomyState("turn:1:1:1");
+  if (!economy) throw new Error("turn-economy fixture");
+  return parsedCharacterState({
+    ...material,
+    clockBinding: {
+      ...material.clockBinding,
+      encounter: { epoch: 1, material: CHARACTER },
+    },
+    encounter: {
+      currentCombatantId: "hero",
+      epoch: 1,
+      nextCombatantOrdinal: 2,
+      order: ["hero"],
+      participants: {
+        hero: {
+          combatant: SELF,
+          economy,
+          initiativeRoll: 15,
+          ordinal: 1,
+          skipped: false,
+        },
+      },
+      phase: "turns",
+      round: 1,
+    },
+    nextEncounterEpoch: 2,
+  });
+}
+
+function entityEncounterWorld(
+  currentCombatantId: "ally" | "hero" | null,
+  location: "local" | "shared",
+  includeHero = true
+): Readonly<MechanicsWorld> {
+  const character = {
+    ...structuredClone(createEmptyCharacterMaterialState(1, CHARACTER, alive(10))),
+  };
+  character.entities = { ally: creature(alive(8)) };
+  character.nextEntityOrdinal = 2;
+  const own = (turnId: string) => {
+    const economy = createTurnEconomyState(turnId);
+    if (!economy) throw new Error("own-turn fixture");
+    return economy;
+  };
+  const waiting = (turnId: string) => {
+    const economy = createBetweenTurnsEconomyState(turnId);
+    if (!economy) throw new Error("between-turns fixture");
+    return economy;
+  };
+  const participants: EncounterState["participants"] = {
+    ...(includeHero
+      ? {
+          hero: {
+            combatant: SELF,
+            economy:
+              currentCombatantId === "hero" ? own("hero-turn") : waiting("hero-wait"),
+            initiativeRoll: 15,
+            ordinal: 1,
+            skipped: false,
+          },
+        }
+      : {}),
+    ally: {
+      combatant: { entityId: "ally", material: CHARACTER, ordinal: 1 },
+      economy: currentCombatantId === "ally" ? own("ally-turn") : waiting("ally-wait"),
+      initiativeRoll: 10,
+      ordinal: includeHero ? 2 : 1,
+      skipped: false,
+    },
+  };
+  const encounter: EncounterState = {
+    currentCombatantId,
+    epoch: 1,
+    nextCombatantOrdinal: includeHero ? 3 : 2,
+    order: currentCombatantId === null ? [] : includeHero ? ["hero", "ally"] : ["ally"],
+    participants,
+    phase: currentCombatantId === null ? "initiative" : "turns",
+    round: 1,
+  };
+  if (location === "local") {
+    character.clockBinding = {
+      ...character.clockBinding,
+      encounter: { epoch: 1, material: CHARACTER },
+    };
+    character.encounter = encounter;
+    character.nextEncounterEpoch = 2;
+    return parsedCharacterState(character);
+  }
+  character.clockBinding = {
+    encounter: { epoch: 1, material: SHARED },
+    timeline: { epoch: 0, material: SHARED },
+  };
+  const shared = { ...structuredClone(createEmptySharedMaterialState()) };
+  shared.encounter = encounter;
+  shared.nextEncounterEpoch = 2;
+  const documents = [
+    { kind: "character" as const, material: CHARACTER, state: character },
+    { kind: "shared" as const, material: SHARED, state: shared },
+  ].sort((left, right) => {
+    const leftKey = materialRefKey(left.material);
+    const rightKey = materialRefKey(right.material);
+    return leftKey < rightKey ? -1 : leftKey > rightKey ? 1 : 0;
+  });
+  const parsed = parseMechanicsWorld({ documents, scope: CHARACTER });
+  if (!parsed.ok) throw new Error(`Invalid shared encounter fixture: ${parsed.reason}`);
+  return parsed.value;
+}
+
+function turnEconomyOperation(
+  command: Readonly<TurnEconomyClaimCommand>,
+  projection: Readonly<TurnEconomyProjection> = turnProjection()
+): Extract<MechanicsOperation, { readonly kind: "turn-economy-transition" }> {
+  return {
+    causeId: INSTALLED_CAUSE.causeId,
+    combatant: SELF,
+    command,
+    kind: "turn-economy-transition",
+    operationId: "turn-economy",
+    projection,
+  };
 }
 
 function resourceDefinitionFact(
@@ -656,6 +851,7 @@ function conditionCreate(
   conditionImmunityOverride: { reasonId: string } | null = null,
   options: {
     cause?: MechanicsOperationCause;
+    createdOrdinal?: number;
     parentId?: string;
     parentOrdinal?: number;
   } = {}
@@ -665,8 +861,8 @@ function conditionCreate(
   return {
     causeId: cause.causeId,
     conditionImmunityOverride,
+    created: occurrenceGeneration(occurrenceId, options.createdOrdinal ?? 3),
     kind: "occurrence-create",
-    material: CHARACTER,
     occurrence: {
       conditionId,
       endRules: [],
@@ -674,7 +870,6 @@ function conditionCreate(
       parentId,
       target: SELF,
     },
-    occurrenceId,
     operationId,
     parent: occurrenceGeneration(parentId, options.parentOrdinal ?? 1),
   };
@@ -684,19 +879,19 @@ function programCreate(
   operationId: string,
   occurrenceId: string,
   cause: MechanicsOperationCause
-): Extract<MechanicsOperation, { readonly kind: "occurrence-create" }> {
+): Extract<MechanicsOperation, { readonly kind: "program-state-transition" }> {
   return {
     causeId: cause.causeId,
-    kind: "occurrence-create",
-    material: CHARACTER,
-    occurrence: {
-      endRules: [],
-      kind: "program",
-      phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
-      registers: {},
-    },
-    occurrenceId,
+    expectedRegisters: null,
+    kind: "program-state-transition",
+    nextRegisters: {},
     operationId,
+    receipt: {
+      kind: "create",
+      materialEpoch: 0,
+      next: { execution: 1, phaseId: "invoke", triggerEventId: null },
+      root: occurrenceGeneration(occurrenceId, 1),
+    },
   };
 }
 
@@ -710,8 +905,8 @@ function standingCreate(
   return {
     causeId: cause.causeId,
     conditionImmunityOverride: null,
+    created: occurrenceGeneration(occurrenceId, 2),
     kind: "occurrence-create",
-    material: CHARACTER,
     occurrence: {
       endRules: [],
       fact: { key: occurrenceId, kind: "active-key" },
@@ -719,7 +914,6 @@ function standingCreate(
       parentId,
       target: SELF,
     },
-    occurrenceId,
     operationId,
     parent: occurrenceGeneration(parentId, parentOrdinal),
   };
@@ -781,7 +975,742 @@ function state(world: Readonly<MechanicsWorld>) {
   return document.state;
 }
 
+function entityCreateOperation(
+  cause: MechanicsOperationCause,
+  ordinal = 1,
+  lifecycleOrdinal = 2
+): Extract<MechanicsOperation, { readonly kind: "entity-create" }> {
+  const value = creature(alive(8));
+  const newEntity = {
+    controller: value.controller,
+    exhaustion: value.exhaustion,
+    kind: value.kind,
+    label: value.label,
+    overrides: value.overrides,
+    resources: value.resources,
+    template: value.template,
+    vitals: value.vitals,
+  };
+  return {
+    causeId: cause.causeId,
+    endRules: [],
+    entity: { entityId: "summon", material: CHARACTER, ordinal },
+    kind: "entity-create",
+    lifecycle: occurrenceGeneration("summon-lifecycle", lifecycleOrdinal),
+    operationId: "create-summon",
+    parent: occurrenceGeneration("root", 1),
+    value: newEntity,
+  };
+}
+
+function inventoryRef(instanceId: string, instanceOrdinal: number) {
+  return {
+    instanceId,
+    instanceOrdinal,
+    owner: CHARACTER,
+  } as const satisfies InventoryGenerationRef;
+}
+
+function inventoryInstance(
+  ordinal: number,
+  quantity = 1,
+  overrides: Partial<InventoryInstance> = {}
+): InventoryInstance {
+  return {
+    attuned: false,
+    definition: { itemId: `item-${ordinal}`, kind: "catalogue" },
+    disposition: "magical",
+    enchantment: null,
+    equipped: false,
+    notes: "",
+    ordinal,
+    overrides: {
+      armorClass: null,
+      attackBonus: null,
+      damageFormula: null,
+      damageType: null,
+      name: null,
+    },
+    ownerOccurrence: null,
+    quantity: countResource(quantity),
+    resources: {},
+    tags: [],
+    ...overrides,
+  };
+}
+
+function inventoryCreateOperation(
+  cause: MechanicsOperationCause,
+  instanceId = "summoned-item",
+  instanceOrdinal = 1,
+  lifecycleOrdinal = 2
+): Extract<MechanicsOperation, { readonly kind: "inventory-create" }> {
+  const value = inventoryInstance(instanceOrdinal);
+  const instance = {
+    attuned: value.attuned,
+    definition: value.definition,
+    disposition: value.disposition,
+    enchantment: value.enchantment,
+    equipped: value.equipped,
+    notes: value.notes,
+    overrides: value.overrides,
+    quantity: value.quantity,
+    resources: value.resources,
+    tags: value.tags,
+  };
+  return {
+    causeId: cause.causeId,
+    endRules: [],
+    instance,
+    item: inventoryRef(instanceId, instanceOrdinal),
+    kind: "inventory-create",
+    lifecycle: occurrenceGeneration(`${instanceId}-lifecycle`, lifecycleOrdinal),
+    operationId: `create-${instanceId}`,
+    parent: occurrenceGeneration("root", 1),
+  };
+}
+
 describe("atomic mechanics transactions", () => {
+  it("creates one inventory generation and lifecycle atomically with exact replay", () => {
+    const rootCause = programRootCause(AUTHORITY, "root");
+    const operation = inventoryCreateOperation(rootCause);
+    expect(conformMechanicsOperation(operation)).toEqual(operation);
+    expect(conformMechanicsOperation({ ...operation, extra: true })).toBeNull();
+    expect(
+      conformMechanicsOperation({
+        ...operation,
+        instance: { ...operation.instance, ownerOccurrence: null },
+      })
+    ).toBeNull();
+
+    const before = worldWithRoots([["root", AUTHORITY]]);
+    const created = simulated(
+      simulateMechanicsTransaction(
+        before,
+        transaction([operation], { causes: [rootCause] })
+      )
+    );
+    expect(state(created.state.world)).toMatchObject({
+      nextInventoryOrdinal: 2,
+      nextOccurrenceOrdinal: 3,
+      inventory: {
+        "summoned-item": {
+          ordinal: 1,
+          ownerOccurrence: operation.lifecycle,
+          quantity: { current: 1 },
+        },
+      },
+      occurrences: {
+        "summoned-item-lifecycle": {
+          kind: "material-lifecycle",
+          ordinal: 2,
+          parentId: "root",
+          target: SELF,
+        },
+      },
+    });
+    expect(created.executions[0]).toMatchObject({
+      facts: {
+        created: operation.item,
+        lifecycle: operation.lifecycle,
+      },
+      kind: "inventory-create",
+      status: "applied",
+    });
+    expect(
+      simulateMechanicsTransaction(
+        created.state.world,
+        transaction([operation], { causes: [rootCause] })
+      )
+    ).toMatchObject({
+      executions: [{ kind: "inventory-create", reason: "inventory-already-created" }],
+      status: "no-change",
+    });
+  });
+
+  it("rejects stale inventory allocation state and partial collisions atomically", () => {
+    const rootCause = programRootCause(AUTHORITY, "root");
+    const before = worldWithRoots([["root", AUTHORITY]]);
+    const operation = inventoryCreateOperation(rootCause);
+    expect(
+      simulateMechanicsTransaction(
+        before,
+        transaction([{ ...operation, item: inventoryRef("summoned-item", 2) }], {
+          causes: [rootCause],
+        })
+      )
+    ).toEqual({
+      operationId: operation.operationId,
+      reason: "stale-allocation-state",
+      status: "rejected",
+    });
+    expect(state(before).inventory).toEqual({});
+
+    const material = structuredClone(state(before));
+    material.inventory[operation.item.instanceId] = inventoryInstance(1);
+    material.nextInventoryOrdinal = 2;
+    const collided = parsedCharacterState(material);
+    expect(
+      simulateMechanicsTransaction(
+        collided,
+        transaction([operation], { causes: [rootCause] })
+      )
+    ).toEqual({
+      operationId: operation.operationId,
+      reason: "inventory-collision",
+      status: "rejected",
+    });
+  });
+
+  it("uses one desired-state reducer for quantity, equipment, and attunement", () => {
+    const material = structuredClone(
+      createEmptyCharacterMaterialState(1, CHARACTER, alive(10))
+    );
+    material.inventory.item = inventoryInstance(1);
+    material.nextInventoryOrdinal = 2;
+    const before = parsedCharacterState(material);
+    const change = (
+      operationId: string,
+      desired: Extract<
+        Extract<MechanicsOperation, { kind: "inventory-transition" }>["change"],
+        { kind: "quantity" | "equipped" | "attuned" }
+      >
+    ): Extract<MechanicsOperation, { kind: "inventory-transition" }> => ({
+      causeId: INSTALLED_CAUSE.causeId,
+      change: desired,
+      enchantmentBearer: null,
+      item: inventoryRef("item", 1),
+      kind: "inventory-transition",
+      operationId,
+    });
+
+    const equipped = simulated(
+      simulateMechanicsTransaction(
+        before,
+        transaction([change("equip", { kind: "equipped", value: true })])
+      )
+    );
+    expect(state(equipped.state.world).inventory.item?.equipped).toBe(true);
+    const attuned = simulated(
+      simulateMechanicsTransaction(
+        equipped.state.world,
+        transaction([change("attune", { kind: "attuned", value: true })])
+      )
+    );
+    expect(state(attuned.state.world).inventory.item?.attuned).toBe(true);
+    expect(
+      simulateMechanicsTransaction(
+        attuned.state.world,
+        transaction([change("stack", { kind: "quantity", value: 2 })])
+      )
+    ).toEqual({
+      operationId: "stack",
+      reason: "invalid-transition",
+      status: "rejected",
+    });
+
+    const plain = structuredClone(material);
+    plain.inventory.item = inventoryInstance(1, 1, { disposition: "nonmagical" });
+    expect(
+      simulateMechanicsTransaction(
+        parsedCharacterState(plain),
+        transaction([change("attune-plain", { kind: "attuned", value: true })])
+      )
+    ).toEqual({
+      operationId: "attune-plain",
+      reason: "invalid-transition",
+      status: "rejected",
+    });
+    const stacked = simulated(
+      simulateMechanicsTransaction(
+        before,
+        transaction([change("stack-clean", { kind: "quantity", value: 3 })])
+      )
+    );
+    expect(state(stacked.state.world).inventory.item?.quantity.current).toBe(3);
+  });
+
+  it("zeroes an item under an exact lease, keeps ownership, and requests lifecycle end", () => {
+    const rootCause = programRootCause(AUTHORITY, "root");
+    const created = simulated(
+      simulateMechanicsTransaction(
+        worldWithRoots([["root", AUTHORITY]]),
+        transaction([inventoryCreateOperation(rootCause)], { causes: [rootCause] })
+      )
+    );
+    const operation = {
+      causeId: rootCause.causeId,
+      change: { kind: "quantity", value: 0 },
+      enchantmentBearer: null,
+      item: inventoryRef("summoned-item", 1),
+      kind: "inventory-transition",
+      operationId: "consume-summoned-item",
+    } as const satisfies MechanicsOperation;
+    const ended = simulated(
+      simulateMechanicsTransaction(
+        created.state.world,
+        transaction([operation], { causes: [rootCause] })
+      )
+    );
+    expect(state(ended.state.world).inventory["summoned-item"]).toMatchObject({
+      ownerOccurrence: occurrenceGeneration("summoned-item-lifecycle", 2),
+      quantity: { current: 0 },
+    });
+    expect(ended.state.context.request.inventorySourceLeases).toEqual([operation.item]);
+    expect(ended.consequences).toEqual([
+      {
+        causeId: operation.causeId,
+        kind: "occurrence-end",
+        occurrence: occurrenceGeneration("summoned-item-lifecycle", 2),
+        operationId: operation.operationId,
+      },
+    ]);
+  });
+
+  it("CAS-detaches the exact inbound enchantment bearer and rejects stale or omitted bearers", () => {
+    const material = structuredClone(
+      createEmptyCharacterMaterialState(1, CHARACTER, alive(10))
+    );
+    const enchantment = inventoryRef("rune", 2);
+    material.inventory.weapon = inventoryInstance(1, 1, { enchantment });
+    material.inventory.rune = inventoryInstance(2);
+    material.nextInventoryOrdinal = 3;
+    const before = parsedCharacterState(material);
+    const operation = {
+      causeId: INSTALLED_CAUSE.causeId,
+      enchantmentBearer: inventoryRef("weapon", 1),
+      item: enchantment,
+      kind: "inventory-end",
+      operationId: "end-rune",
+    } as const satisfies MechanicsOperation;
+    expect(conformMechanicsOperation(operation)).toEqual(operation);
+    expect(
+      simulateMechanicsTransaction(
+        before,
+        transaction([{ ...operation, enchantmentBearer: null }])
+      )
+    ).toEqual({
+      operationId: operation.operationId,
+      reason: "invalid-transition",
+      status: "rejected",
+    });
+    expect(
+      simulateMechanicsTransaction(
+        before,
+        transaction([{ ...operation, enchantmentBearer: inventoryRef("weapon", 99) }])
+      )
+    ).toEqual({
+      operationId: operation.operationId,
+      reason: "invalid-transition",
+      status: "rejected",
+    });
+
+    const ended = simulated(
+      simulateMechanicsTransaction(before, transaction([operation]))
+    );
+    expect(state(ended.state.world).inventory.weapon?.enchantment).toBeNull();
+    expect(state(ended.state.world).inventory.rune?.quantity.current).toBe(0);
+    expect(ended.executions[0]).toMatchObject({
+      facts: { detachedFrom: operation.enchantmentBearer },
+      kind: "inventory-end",
+    });
+  });
+
+  it("creates one entity generation and its lifecycle atomically with exact replay", () => {
+    const rootCause = programRootCause(AUTHORITY, "root");
+    const operation = entityCreateOperation(rootCause);
+    expect(conformMechanicsOperation(operation)).toEqual(operation);
+    expect(conformMechanicsOperation({ ...operation, ordinal: 1 })).toBeNull();
+    expect(
+      conformMechanicsOperation({
+        ...operation,
+        value: { ...operation.value, availability: "present" },
+      })
+    ).toBeNull();
+
+    const created = simulated(
+      simulateMechanicsTransaction(
+        worldWithRoots([["root", AUTHORITY]]),
+        transaction([operation], { causes: [rootCause] })
+      )
+    );
+    expect(created.executions).toEqual([
+      {
+        facts: { entity: operation.entity, lifecycle: operation.lifecycle },
+        kind: "entity-create",
+        operation,
+        operationId: operation.operationId,
+        status: "applied",
+      },
+    ]);
+    expect(state(created.state.world)).toMatchObject({
+      entities: {
+        summon: {
+          availability: "present",
+          ordinal: 1,
+          ownerOccurrence: operation.lifecycle,
+        },
+      },
+      nextEntityOrdinal: 2,
+      nextOccurrenceOrdinal: 3,
+      occurrences: {
+        "summon-lifecycle": {
+          ending: null,
+          kind: "material-lifecycle",
+          ordinal: 2,
+          parentId: "root",
+          target: operation.entity,
+        },
+      },
+    });
+
+    expect(
+      simulateMechanicsTransaction(
+        created.state.world,
+        transaction([operation], { causes: [rootCause] })
+      )
+    ).toMatchObject({
+      executions: [
+        {
+          kind: "entity-create",
+          operationId: operation.operationId,
+          reason: "entity-already-created",
+          status: "no-change",
+        },
+      ],
+      status: "no-change",
+    });
+  });
+
+  it("rejects stale entity allocation, partial collisions, and invalid controllers", () => {
+    const rootCause = programRootCause(AUTHORITY, "root");
+    const before = worldWithRoots([["root", AUTHORITY]]);
+    const stale = entityCreateOperation(rootCause, 2, 2);
+    expect(
+      simulateMechanicsTransaction(before, transaction([stale], { causes: [rootCause] }))
+    ).toEqual({
+      operationId: stale.operationId,
+      reason: "stale-allocation-state",
+      status: "rejected",
+    });
+
+    const collisionState = structuredClone(state(before));
+    collisionState.entities.summon = creature(alive(8));
+    collisionState.nextEntityOrdinal = 2;
+    const collisionWorld = parsedCharacterState(collisionState);
+    const collision = entityCreateOperation(rootCause);
+    expect(
+      simulateMechanicsTransaction(
+        collisionWorld,
+        transaction([collision], { causes: [rootCause] })
+      )
+    ).toEqual({
+      operationId: collision.operationId,
+      reason: "entity-collision",
+      status: "rejected",
+    });
+
+    const missingController = {
+      ...entityCreateOperation(rootCause),
+      value: {
+        ...entityCreateOperation(rootCause).value,
+        controller: { entityId: "missing", material: CHARACTER, ordinal: 99 },
+      },
+    } as const satisfies MechanicsOperation;
+    expect(
+      simulateMechanicsTransaction(
+        before,
+        transaction([missingController], { causes: [rootCause] })
+      )
+    ).toEqual({
+      operationId: missingController.operationId,
+      reason: "missing-controller",
+      status: "rejected",
+    });
+
+    const selfControlled = {
+      ...entityCreateOperation(rootCause),
+      value: {
+        ...entityCreateOperation(rootCause).value,
+        controller: entityCreateOperation(rootCause).entity,
+      },
+    } as const satisfies MechanicsOperation;
+    expect(
+      simulateMechanicsTransaction(
+        before,
+        transaction([selfControlled], { causes: [rootCause] })
+      )
+    ).toEqual({
+      operationId: selfControlled.operationId,
+      reason: "controller-cycle",
+      status: "rejected",
+    });
+  });
+
+  it("updates availability and controller on exact dismissed generations", () => {
+    const summon = creature(alive(8), false);
+    const ally = creature(alive(8), true, 2);
+    const before = parsedWorld(alive(10), { ally, summon });
+    const target = { entityId: "summon", material: CHARACTER, ordinal: 1 } as const;
+    const controller = { entityId: "ally", material: CHARACTER, ordinal: 2 } as const;
+    const setController = {
+      causeId: INSTALLED_CAUSE.causeId,
+      controller,
+      kind: "entity-controller",
+      operationId: "set-controller",
+      target,
+    } as const satisfies MechanicsOperation;
+    const present = {
+      availability: "present",
+      causeId: INSTALLED_CAUSE.causeId,
+      kind: "entity-availability",
+      operationId: "present-summon",
+      target,
+    } as const satisfies MechanicsOperation;
+    const result = simulated(
+      simulateMechanicsTransaction(before, transaction([setController, present]))
+    );
+    expect(result.executions).toMatchObject([
+      { facts: { after: controller, before: null }, status: "applied" },
+      { facts: { after: "present", before: "dismissed" }, status: "applied" },
+    ]);
+    expect(state(result.state.world).entities.summon).toMatchObject({
+      availability: "present",
+      controller,
+    });
+
+    const cycle = {
+      ...setController,
+      controller: target,
+      operationId: "self-cycle",
+      target: controller,
+    } as const satisfies MechanicsOperation;
+    expect(
+      simulateMechanicsTransaction(result.state.world, transaction([cycle]))
+    ).toEqual({
+      operationId: cycle.operationId,
+      reason: "controller-cycle",
+      status: "rejected",
+    });
+  });
+
+  it.each(["local", "shared"] as const)(
+    "atomically removes a dismissed non-current participant from a %s encounter",
+    (location) => {
+      const before = entityEncounterWorld("hero", location);
+      const dismiss = {
+        availability: "dismissed",
+        causeId: INSTALLED_CAUSE.causeId,
+        kind: "entity-availability",
+        operationId: `dismiss-${location}-noncurrent`,
+        target: { entityId: "ally", material: CHARACTER, ordinal: 1 },
+      } as const satisfies MechanicsOperation;
+      const result = simulated(
+        simulateMechanicsTransaction(before, transaction([dismiss]))
+      );
+      const character = result.state.world.documents.find(
+        (document) => document.kind === "character"
+      );
+      const encounterDocument = result.state.world.documents.find(
+        (document) => document.kind === (location === "local" ? "character" : "shared")
+      );
+      expect(character?.state.entities.ally?.availability).toBe("dismissed");
+      expect(encounterDocument?.state.encounter).toMatchObject({
+        currentCombatantId: "hero",
+        order: ["hero"],
+        participants: { hero: {} },
+      });
+      expect(encounterDocument?.state.encounter?.participants).not.toHaveProperty("ally");
+      expect(encounterDocument?.state.encounter?.participants.hero?.economy.phase).toBe(
+        "own-turn"
+      );
+    }
+  );
+
+  it.each([
+    ["local", CHARACTER],
+    ["shared", SHARED],
+  ] as const)(
+    "requires the authoritative %s turn boundary before dismissing the current participant",
+    (location, encounterMaterial) => {
+      const before = entityEncounterWorld("ally", location);
+      const dismiss = {
+        availability: "dismissed",
+        causeId: INSTALLED_CAUSE.causeId,
+        kind: "entity-availability",
+        operationId: `dismiss-${location}-current`,
+        target: { entityId: "ally", material: CHARACTER, ordinal: 1 },
+      } as const satisfies MechanicsOperation;
+      const suspended = simulateMechanicsTransaction(before, transaction([dismiss]));
+      expect(suspended).toMatchObject({
+        boundary: {
+          excludeCurrent: dismiss.target,
+          kind: "complete-turn",
+          material: encounterMaterial,
+        },
+        operationId: dismiss.operationId,
+        status: "needs-boundary",
+      });
+      const character = before.documents.find(
+        (document) => document.kind === "character"
+      );
+      expect(character?.state.entities.ally?.availability).toBe("present");
+      if (suspended.status !== "needs-boundary") throw new Error("boundary fixture");
+      const afterBoundary = completeBoundary(before, suspended.boundary);
+      const boundaryCharacter = afterBoundary.documents.find(
+        (document) => document.kind === "character"
+      );
+      const boundaryEncounter = afterBoundary.documents.find(
+        (document) => document.kind === (location === "local" ? "character" : "shared")
+      )?.state.encounter;
+      expect(boundaryCharacter?.state.entities.ally?.availability).toBe("present");
+      expect(boundaryEncounter).toMatchObject({ currentCombatantId: "hero" });
+      expect(boundaryEncounter?.participants).toHaveProperty("ally");
+
+      const retried = simulated(
+        simulateMechanicsTransaction(afterBoundary, transaction([dismiss]))
+      );
+      const retriedCharacter = retried.state.world.documents.find(
+        (document) => document.kind === "character"
+      );
+      const retriedEncounter = retried.state.world.documents.find(
+        (document) => document.kind === (location === "local" ? "character" : "shared")
+      )?.state.encounter;
+      expect(retriedCharacter?.state.entities.ally?.availability).toBe("dismissed");
+      expect(retriedEncounter).toMatchObject({ currentCombatantId: "hero" });
+      expect(retriedEncounter?.participants).not.toHaveProperty("ally");
+      expect(retriedEncounter?.participants.hero?.economy.phase).toBe("own-turn");
+    }
+  );
+
+  it.each(["local", "shared"] as const)(
+    "converges when dismissing the sole current participant from a %s encounter",
+    (location) => {
+      const before = entityEncounterWorld("ally", location, false);
+      const dismiss = {
+        availability: "dismissed",
+        causeId: INSTALLED_CAUSE.causeId,
+        kind: "entity-availability",
+        operationId: `dismiss-${location}-sole-current`,
+        target: { entityId: "ally", material: CHARACTER, ordinal: 1 },
+      } as const satisfies MechanicsOperation;
+      const suspended = simulateMechanicsTransaction(before, transaction([dismiss]));
+      if (suspended.status !== "needs-boundary") throw new Error("boundary fixture");
+
+      const afterBoundary = completeBoundary(before, suspended.boundary);
+      const boundaryCharacter = afterBoundary.documents.find(
+        (document) => document.kind === "character"
+      );
+      const boundaryEncounter = afterBoundary.documents.find(
+        (document) => document.kind === (location === "local" ? "character" : "shared")
+      )?.state.encounter;
+      expect(boundaryCharacter?.state.entities.ally?.availability).toBe("present");
+      expect(boundaryEncounter).toMatchObject({
+        currentCombatantId: null,
+        order: [],
+        phase: "initiative",
+      });
+      expect(boundaryEncounter?.participants).toHaveProperty("ally");
+
+      const retried = simulated(
+        simulateMechanicsTransaction(afterBoundary, transaction([dismiss]))
+      );
+      const retriedCharacter = retried.state.world.documents.find(
+        (document) => document.kind === "character"
+      );
+      const retriedEncounter = retried.state.world.documents.find(
+        (document) => document.kind === (location === "local" ? "character" : "shared")
+      )?.state.encounter;
+      expect(retriedCharacter?.state.entities.ally?.availability).toBe("dismissed");
+      expect(retriedEncounter).toMatchObject({
+        currentCombatantId: null,
+        order: [],
+        participants: {},
+        phase: "initiative",
+      });
+      if (location === "shared") {
+        expect(retriedCharacter?.state.clockBinding).toEqual({
+          encounter: null,
+          timeline: { epoch: 0, material: CHARACTER },
+        });
+      }
+    }
+  );
+
+  it("releases a shared encounter lease when dismissal removes its last participant", () => {
+    const before = entityEncounterWorld(null, "shared", false);
+    const dismiss = {
+      availability: "dismissed",
+      causeId: INSTALLED_CAUSE.causeId,
+      kind: "entity-availability",
+      operationId: "dismiss-last-shared-participant",
+      target: { entityId: "ally", material: CHARACTER, ordinal: 1 },
+    } as const satisfies MechanicsOperation;
+    const result = simulated(
+      simulateMechanicsTransaction(before, transaction([dismiss]))
+    );
+    const character = result.state.world.documents.find(
+      (document) => document.kind === "character"
+    );
+    const shared = result.state.world.documents.find(
+      (document) => document.kind === "shared"
+    );
+    expect(character?.state.clockBinding).toEqual({
+      encounter: null,
+      timeline: { epoch: 0, material: CHARACTER },
+    });
+    expect(shared?.state.encounter).toMatchObject({
+      currentCombatantId: null,
+      order: [],
+      participants: {},
+      phase: "initiative",
+    });
+  });
+
+  it("orders controller graph rewrites because breaking then linking is causal", () => {
+    const firstRef = {
+      entityId: "first",
+      material: CHARACTER,
+      ordinal: 1,
+    } as const;
+    const secondRef = {
+      entityId: "second",
+      material: CHARACTER,
+      ordinal: 2,
+    } as const;
+    const first = { ...creature(alive(8)), controller: secondRef };
+    const second = creature(alive(8), true, 2);
+    const before = parsedWorld(alive(10), { first, second });
+    const breakLink = {
+      causeId: INSTALLED_CAUSE.causeId,
+      controller: null,
+      kind: "entity-controller",
+      operationId: "break-first-controller",
+      target: firstRef,
+    } as const satisfies MechanicsOperation;
+    const reverseLink = {
+      causeId: INSTALLED_CAUSE.causeId,
+      controller: firstRef,
+      kind: "entity-controller",
+      operationId: "link-second-to-first",
+      target: secondRef,
+    } as const satisfies MechanicsOperation;
+    const ordered = simulated(
+      simulateMechanicsTransaction(before, transaction([breakLink, reverseLink]))
+    );
+    expect(state(ordered.state.world).entities).toMatchObject({
+      first: { controller: null },
+      second: { controller: firstRef },
+    });
+    expect(
+      simulateMechanicsTransaction(before, transaction([reverseLink, breakLink]))
+    ).toEqual({
+      operationId: reverseLink.operationId,
+      reason: "controller-cycle",
+      status: "rejected",
+    });
+  });
+
   it("accepts only the exact envelope and unique operation identities", () => {
     const operation = creatureDamage("damage", SELF, 1, {
       maximumHitPoints: { kind: "fact", value: 10 },
@@ -798,6 +1727,153 @@ describe("atomic mechanics transactions", () => {
     expect(
       conformMechanicsTransaction({ ...transaction([operation]), extra: true })
     ).toBeNull();
+  });
+
+  it("rejects hostile custom operation payloads without invoking accessors", () => {
+    const rootCause = programRootCause(AUTHORITY, "root");
+    const entity = entityCreateOperation(rootCause);
+    let entityGetterCalls = 0;
+    const hostileEntity = structuredClone(entity) as unknown as Record<string, unknown>;
+    const hostileEntityValue = hostileEntity.value as Record<string, unknown>;
+    Object.defineProperty(hostileEntityValue, "label", {
+      enumerable: true,
+      get() {
+        entityGetterCalls += 1;
+        return "hostile";
+      },
+    });
+    expect(conformMechanicsOperation(hostileEntity)).toBeNull();
+    expect(entityGetterCalls).toBe(0);
+
+    const inventory = inventoryCreateOperation(rootCause);
+    let inventoryGetterCalls = 0;
+    const hostileInventory = structuredClone(inventory) as unknown as Record<
+      string,
+      unknown
+    >;
+    const hostileInstance = hostileInventory.instance as Record<string, unknown>;
+    Object.defineProperty(hostileInstance, "notes", {
+      enumerable: true,
+      get() {
+        inventoryGetterCalls += 1;
+        return "hostile";
+      },
+    });
+    expect(conformMechanicsOperation(hostileInventory)).toBeNull();
+    expect(inventoryGetterCalls).toBe(0);
+  });
+
+  it("conforms one exact turn-economy payload through the canonical boundaries", () => {
+    const operation = turnEconomyOperation({
+      action: { kind: "magic" },
+      claimId: "cast",
+      kind: "claim-action",
+    });
+    expect(conformMechanicsOperation(operation)).toEqual(operation);
+    expect(conformMechanicsOperation({ ...operation, amount: 1 })).toBeNull();
+    expect(
+      conformMechanicsOperation({
+        ...operation,
+        command: { ...operation.command, amount: 1 },
+      })
+    ).toBeNull();
+    expect(
+      conformMechanicsOperation({
+        ...operation,
+        projection: { ...operation.projection, incapacitated: "false" },
+      })
+    ).toBeNull();
+  });
+
+  it("applies only the canonical turn reducer and guards its complete projection", () => {
+    const before = encounterWorld();
+    const projection = turnProjection();
+    const operation = turnEconomyOperation(
+      { action: { kind: "magic" }, claimId: "cast", kind: "claim-action" },
+      projection
+    );
+    const beforeEconomy = state(before).encounter?.participants.hero?.economy;
+    if (!beforeEconomy) throw new Error("encounter fixture");
+    const reduced = reduceTurnEconomy(beforeEconomy, projection, operation.command);
+    if (reduced.status !== "planned") throw new Error("turn transition fixture");
+
+    const result = simulated(
+      simulateMechanicsTransaction(before, transaction([operation]))
+    );
+    expect(state(result.state.world).encounter?.participants.hero?.economy).toEqual(
+      reduced.after
+    );
+    expect(result.executions).toEqual([
+      {
+        facts: { after: reduced.after, before: beforeEconomy },
+        kind: "turn-economy-transition",
+        operation,
+        operationId: operation.operationId,
+        status: "applied",
+      },
+    ]);
+    expect(result.actionFacts).toEqual(
+      expectedInstalledFacts([turnEconomyProjectionFactGuard(SELF, projection)])
+    );
+  });
+
+  it("rejects forged turn boundaries and propagates rejection and missing generations", () => {
+    const before = encounterWorld();
+    const validOperation = turnEconomyOperation({
+      action: { kind: "magic" },
+      claimId: "cast",
+      kind: "claim-action",
+    });
+    const forgedBoundary = {
+      ...validOperation,
+      command: { kind: "start-turn", turnId: "turn:1:1:1" },
+    } as const;
+    expect(conformMechanicsOperation(forgedBoundary)).toBeNull();
+    expect(
+      simulateMechanicsTransaction(before, {
+        ...transaction([validOperation]),
+        operations: [forgedBoundary],
+      })
+    ).toEqual({
+      operationId: null,
+      reason: "invalid-transaction",
+      status: "rejected",
+    });
+    expect(
+      simulateMechanicsTransaction(
+        before,
+        transaction([
+          turnEconomyOperation({
+            claimId: "reaction",
+            kind: "claim-reaction",
+            reaction: { kind: "program", requirementId: "missing" },
+          }),
+        ])
+      )
+    ).toEqual({
+      operationId: "turn-economy",
+      reason: "reaction-requirement-unavailable",
+      status: "rejected",
+    });
+    expect(
+      simulateMechanicsTransaction(
+        before,
+        transaction([
+          {
+            ...turnEconomyOperation({
+              action: { kind: "magic" },
+              claimId: "cast",
+              kind: "claim-action",
+            }),
+            combatant: { entityId: "missing", material: CHARACTER, ordinal: 1 },
+          },
+        ])
+      )
+    ).toEqual({
+      operationId: "turn-economy",
+      reason: "missing-target",
+      status: "rejected",
+    });
   });
 
   it("rejects forged, unordered, duplicate, unused, missing, and excessive causes", () => {
@@ -1040,16 +2116,22 @@ describe("atomic mechanics transactions", () => {
     const rootCause = programRootCause(authority, "root");
     const root = programCreate("create-root", "root", installed);
     expect(root).not.toHaveProperty("authority");
-    expect(root.occurrence).not.toHaveProperty("authority");
+    expect(root).not.toHaveProperty("occurrence");
     expect(root).not.toHaveProperty("conditionImmunityOverride");
     expect(
       conformMechanicsOperation({
         ...root,
-        occurrence: { ...root.occurrence, authority },
+        authority,
       })
     ).toBeNull();
     expect(
-      conformMechanicsOperation({ ...root, parent: occurrenceGeneration("root", 1) })
+      conformMechanicsOperation({
+        ...root,
+        receipt: {
+          ...root.receipt,
+          root: { ...root.receipt.root, authority },
+        },
+      })
     ).toBeNull();
     const effect = standingCreate("create-effect", "effect", "root", rootCause);
     expect(conformMechanicsOperation(effect)).toEqual(effect);
@@ -1068,7 +2150,48 @@ describe("atomic mechanics transactions", () => {
       parentId: "root",
     });
     expect(result.executions[0]).toMatchObject({
-      facts: { created: occurrenceGeneration("root", 1) },
+      facts: {
+        after: {
+          phase: { execution: 1, lastTriggerEventId: null },
+          registers: {},
+        },
+        before: null,
+        created: true,
+        root: occurrenceGeneration("root", 1),
+      },
+    });
+
+    expect(
+      simulateMechanicsTransaction(
+        result.state.world,
+        transaction([root, effect], { causes: orderedCauses(installed, rootCause) })
+      )
+    ).toMatchObject({
+      executions: [
+        { reason: "program-state-already-committed", status: "no-change" },
+        { reason: "occurrence-already-active", status: "no-change" },
+      ],
+      status: "no-change",
+    });
+
+    const staleEffect = {
+      ...effect,
+      created: occurrenceGeneration("stale-effect", 3),
+      operationId: "stale-effect",
+      occurrence: {
+        ...effect.occurrence,
+        fact: { key: "stale-effect", kind: "active-key" },
+      },
+    } as const satisfies MechanicsOperation;
+    expect(
+      simulateMechanicsTransaction(
+        worldWithRoots([["root", authority]]),
+        transaction([staleEffect], { causes: [rootCause] })
+      )
+    ).toEqual({
+      operationId: "stale-effect",
+      reason: "stale-allocation-state",
+      status: "rejected",
     });
   });
 
@@ -1086,8 +2209,8 @@ describe("atomic mechanics transactions", () => {
         )
       )
     ).toEqual({
-      operationId: "child-first",
-      reason: "invalid-cause",
+      operationId: null,
+      reason: "invalid-transaction",
       status: "rejected",
     });
 
@@ -1642,6 +2765,68 @@ describe("atomic mechanics transactions", () => {
     expect(objectResult.executions).toHaveLength(3);
   });
 
+  it("discovers end rules only after the complete atomic transaction", () => {
+    const rootCause = programRootCause(AUTHORITY, "root");
+    const source = occurrenceGeneration("temporary-hit-points", 2);
+    const createSource = {
+      causeId: rootCause.causeId,
+      conditionImmunityOverride: null,
+      created: source,
+      kind: "occurrence-create",
+      occurrence: {
+        endRules: [{ kind: "temporary-hp-empty" }],
+        fact: { key: "temporary-hit-points", kind: "active-key" },
+        kind: "standing",
+        parentId: "root",
+        target: SELF,
+      },
+      operationId: "create-temporary-hit-points-source",
+      parent: occurrenceGeneration("root", 1),
+    } as const satisfies MechanicsOperation;
+    const grant = {
+      causeId: rootCause.causeId,
+      grant: { amount: 6, decision: "replace", sourceOccurrence: source },
+      kind: "temporary-hit-points-grant",
+      operationId: "grant-sourced-temporary-hit-points",
+      target: SELF,
+    } as const satisfies MechanicsOperation;
+    const before = worldWithRoots([["root", AUTHORITY]]);
+
+    const result = simulated(
+      simulateMechanicsTransaction(
+        before,
+        transaction([createSource, grant], { causes: [rootCause] })
+      )
+    );
+
+    expect(
+      state(result.stages[0]?.after ?? before).occurrences["temporary-hit-points"]
+    ).toMatchObject({ ending: null });
+    expect(state(result.stages[0]?.after ?? before).vitals.hitPoints.temporary).toEqual({
+      current: 0,
+      sourceOccurrence: null,
+    });
+    expect(state(result.state.world).vitals.hitPoints.temporary).toEqual({
+      current: 6,
+      sourceOccurrence: source,
+    });
+    expect(state(result.state.world).occurrences["temporary-hit-points"]).toMatchObject({
+      ending: null,
+    });
+    expect(result.state.context.endWave).toBeNull();
+
+    expect(
+      simulateMechanicsTransaction(
+        before,
+        transaction([grant, createSource], { causes: [rootCause] })
+      )
+    ).toEqual({
+      operationId: "grant-sourced-temporary-hit-points",
+      reason: "invalid-after",
+      status: "rejected",
+    });
+  });
+
   it("models damage at zero, critical failures, and instant death from raw damage", () => {
     const target = { entityId: "foe", material: CHARACTER, ordinal: 1 } as const;
     const critical = simulated(
@@ -1707,6 +2892,32 @@ describe("atomic mechanics transactions", () => {
         candidates: [
           {
             causes: [{ kind: "concentration-broken" }],
+            occurrence: occurrenceGeneration("focus", 2),
+          },
+        ],
+      },
+    });
+
+    const followup = transaction([
+      {
+        causeId: INSTALLED_CAUSE.causeId,
+        grant: { amount: 2, decision: "replace", sourceOccurrence: null },
+        kind: "temporary-hit-points-grant",
+        operationId: "grant-while-ending-is-readable",
+        target: SELF,
+      },
+    ]);
+    const continued = simulated(
+      simulateMechanicsTransaction(result.state.world, followup, {
+        authoritySnapshot: authoritySnapshotFor(followup),
+        state: result.state,
+      })
+    );
+    expect(state(continued.state.world).vitals.hitPoints.temporary.current).toBe(2);
+    expect(continued.state.context.endWave).toMatchObject({
+      wave: {
+        candidates: [
+          {
             occurrence: occurrenceGeneration("focus", 2),
           },
         ],
@@ -1790,7 +3001,11 @@ describe("atomic mechanics transactions", () => {
     expect(
       simulateMechanicsTransaction(
         immuneWorld,
-        transaction([conditionCreate("poison", "poisoned", "poisoned")])
+        transaction([
+          conditionCreate("poison", "poisoned", "poisoned", null, {
+            createdOrdinal: 4,
+          }),
+        ])
       )
     ).toMatchObject({
       executions: [{ reason: "condition-immune", status: "no-change" }],
@@ -1801,9 +3016,15 @@ describe("atomic mechanics transactions", () => {
       simulateMechanicsTransaction(
         immuneWorld,
         transaction([
-          conditionCreate("poison-override", "poisoned", "poisoned", {
-            reasonId: "table-overrides-immunity",
-          }),
+          conditionCreate(
+            "poison-override",
+            "poisoned",
+            "poisoned",
+            {
+              reasonId: "table-overrides-immunity",
+            },
+            { createdOrdinal: 4 }
+          ),
         ])
       )
     ).toEqual({
@@ -1825,6 +3046,7 @@ describe("atomic mechanics transactions", () => {
               { reasonId: "table-overrides-immunity" },
               {
                 cause: tableCause,
+                createdOrdinal: 4,
                 parentId: "table-root",
                 parentOrdinal: 3,
               }
@@ -1841,15 +3063,14 @@ describe("atomic mechanics transactions", () => {
     const replacement: MechanicsOperation = {
       causeId: INSTALLED_CAUSE.causeId,
       conditionImmunityOverride: null,
+      created: occurrenceGeneration("new-focus", 3),
       kind: "occurrence-create",
-      material: CHARACTER,
       occurrence: {
         endRules: [],
         kind: "concentration",
         parentId: "root",
         target: SELF,
       },
-      occurrenceId: "new-focus",
       operationId: "replace-focus",
       parent: occurrenceGeneration("root", 1),
     };
@@ -2487,7 +3708,7 @@ describe("atomic mechanics transactions", () => {
       attuned: false,
       definition: { itemId: "potion-of-healing", kind: "catalogue" },
       disposition: "magical",
-      enchantInstanceId: null,
+      enchantment: null,
       equipped: false,
       notes: "",
       ordinal: 1,
@@ -2543,6 +3764,97 @@ describe("atomic mechanics transactions", () => {
     expect(result).not.toHaveProperty("action");
   });
 
+  it("authenticates every installed cause against the shared action basis", () => {
+    const material = structuredClone(
+      createEmptyCharacterMaterialState(1, CHARACTER, alive(10))
+    );
+    material.inventory.potion = inventoryInstance(1);
+    material.nextInventoryOrdinal = 2;
+    const before = parsedCharacterState(material);
+    const primaryAuthority = inventoryAuthority("potion", 1);
+    const secondaryCapability = {
+      ...primaryAuthority.snapshot.ref,
+      capabilityId: "secondary-item-capability",
+      definition: {
+        catalogueKind: "system",
+        entityId: "system.secondary-item-capability",
+        kind: "catalogue",
+        mechanicsRevision: canonicalFingerprint({ fixture: "secondary-item-capability" }),
+      },
+    };
+    const secondaryAuthority = {
+      ...primaryAuthority,
+      installation: {
+        ...primaryAuthority.installation,
+        capability: secondaryCapability,
+        installationId: "secondary-item-installation",
+      },
+      snapshot: {
+        ...primaryAuthority.snapshot,
+        program: primaryAuthority.snapshot.program
+          ? {
+              ...primaryAuthority.snapshot.program,
+              id: secondaryCapability.capabilityId,
+            }
+          : null,
+        ref: secondaryCapability,
+      },
+    } as const satisfies MechanicsProgramAuthorityReceipt;
+    const spendCause = installedCause(primaryAuthority);
+    const effectCause = installedCause(secondaryAuthority);
+    const causes = orderedCauses(spendCause, effectCause);
+    const resource = {
+      character: CHARACTER,
+      instanceId: "potion",
+      instanceOrdinal: 1,
+      kind: "item-quantity",
+    } as const satisfies ResourceRef;
+    const quantitySpec = {
+      ...COUNT_RESOURCE_SPEC,
+      id: "item-quantity",
+    } as const satisfies ResourceSpec;
+    const spend = {
+      bindings: {},
+      causeId: spendCause.causeId,
+      kind: "resource-transition",
+      operationId: "spend-final-item",
+      resource,
+      spec: quantitySpec,
+      transition: { amount: 1, kind: "spend" },
+    } as const satisfies MechanicsOperation;
+    const effect = {
+      ...creatureDamage("apply-item-effect", SELF, 1, {
+        maximumHitPoints: { kind: "fact", value: 10 },
+      }),
+      causeId: effectCause.causeId,
+    } as const satisfies MechanicsOperation;
+    const options = {
+      causes,
+      factGuards: [resourceDefinitionFact(before, resource, quantitySpec)],
+    } as const;
+
+    const spendFirst = simulated(
+      simulateMechanicsTransaction(before, transaction([spend, effect], options))
+    );
+    expect(state(spendFirst.state.world).inventory.potion?.quantity.current).toBe(0);
+    expect(state(spendFirst.state.world).vitals.hitPoints.current).toBe(9);
+
+    const effectFirst = simulated(
+      simulateMechanicsTransaction(
+        before,
+        transaction(
+          [
+            { ...effect, operationId: "apply-item-effect-first" },
+            { ...spend, operationId: "spend-final-item-second" },
+          ],
+          { ...options, actionId: "effect-before-spend" }
+        )
+      )
+    );
+    expect(state(effectFirst.state.world).inventory.potion?.quantity.current).toBe(0);
+    expect(state(effectFirst.state.world).vitals.hitPoints.current).toBe(9);
+  });
+
   it("rejects ABA reuse when one inventory id names a new physical ordinal", () => {
     const material = structuredClone(
       createEmptyCharacterMaterialState(1, CHARACTER, alive(10))
@@ -2551,7 +3863,7 @@ describe("atomic mechanics transactions", () => {
       attuned: false,
       definition: { itemId: "wand-of-magic-missiles", kind: "catalogue" },
       disposition: "magical",
-      enchantInstanceId: null,
+      enchantment: null,
       equipped: false,
       notes: "",
       ordinal: 2,
@@ -2596,7 +3908,7 @@ describe("atomic mechanics transactions", () => {
       attuned: false,
       definition: { itemId: "potion-of-speed", kind: "catalogue" },
       disposition: "magical",
-      enchantInstanceId: null,
+      enchantment: null,
       equipped: false,
       notes: "",
       ordinal: 1,
@@ -2631,6 +3943,7 @@ describe("atomic mechanics transactions", () => {
         before,
         transaction(
           [
+            programCreate("create-root", "potion-root", itemCause),
             {
               bindings: {},
               causeId: itemCause.causeId,
@@ -2642,24 +3955,9 @@ describe("atomic mechanics transactions", () => {
             },
             {
               causeId: itemCause.causeId,
-              kind: "occurrence-create",
-              material: CHARACTER,
-              occurrence: {
-                endRules: [],
-                kind: "program",
-                phaseState: {
-                  invoke: { execution: 0, lastTriggerEventId: null },
-                },
-                registers: {},
-              },
-              occurrenceId: "potion-root",
-              operationId: "create-root",
-            },
-            {
-              causeId: itemCause.causeId,
               conditionImmunityOverride: null,
+              created: occurrenceGeneration("potion-effect", 2),
               kind: "occurrence-create",
-              material: CHARACTER,
               occurrence: {
                 endRules: [],
                 fact: { key: "haste", kind: "active-key" },
@@ -2667,7 +3965,6 @@ describe("atomic mechanics transactions", () => {
                 parentId: "potion-root",
                 target: SELF,
               },
-              occurrenceId: "potion-effect",
               operationId: "apply-effect",
               parent: occurrenceGeneration("potion-root", 1),
             },
@@ -2900,8 +4197,8 @@ describe("atomic mechanics transactions", () => {
     );
     expect(
       result.stages.map(({ after, before: stageBefore }) => [
-        state(stageBefore.world).vitals.hitPoints.current,
-        state(after.world).vitals.hitPoints.current,
+        state(stageBefore).vitals.hitPoints.current,
+        state(after).vitals.hitPoints.current,
       ])
     ).toEqual([
       [10, 6],
