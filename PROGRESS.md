@@ -65,6 +65,28 @@ blocking on owner screenshots):
 > architecture diagnosis and definition of done. The deterministic audit below is substantial but
 > is **not** a corpus-wide completion certificate.
 
+> **Engine-model ratification (owner, 2026-08-12):** the destination is one canonical,
+> storage-aware deterministic action engine for solo, campaign, spells, features, items and every
+> other executable rule. Existing document or Firestore decisions remain only when they are still
+> optimal. Every knowable consequence is automatic; irreducible rolls/table facts enter as typed
+> observations; every result remains explicitly overrideable and reversible. No compatibility
+> architecture may survive the cutover: migrate and verify live data, then delete every superseded
+> field, parser, writer, fallback, test, script and reference so the repository and production data
+> expose exactly one current model.
+
+**Canonical engine foundation checkpoint CLOSED on branch (2026-08-12; runtime cutover ACTIVE):**
+the new core now has exact monotonic material identity, one targetless program-root authority carrier,
+direct child effects, immutable capability/authority receipts, recoverable create/advance execution
+frames, typed trigger evidence and cause-complete atomic transactions. Commands cannot inject actor,
+program, roles, source or bindings; item/resource identities include physical ordinals; forged, missing
+or unused causes and stale root CAS receipts fail closed. Terminal mutation no longer implicitly erases
+Concentration or other sources before their end subscribers can run, and Concentration replacement is an
+explicit causal barrier. Focused foundation verification is green. This is deliberately not the engine
+completion claim: the MechanicsProgram terminal compiler, subscriber/end-wave coordinator, multi-frame
+suspension replay, full SRD+pack transcription, UI/store/Firestore cutover, autonomous live migration and
+legacy deletion remain active. Branch checkpoints run no global gate; the sole authoritative gate stays
+reserved for the final rebased push to `main`.
+
 **Deterministic automation gap sweep — ACTIVE (2026-08-04):** six truth-gated milestones are closed and
 branch-pushed: persistent/reactive-effect lifecycle, target-bound on-hit retaliation, variable-level
 charged-item casts, activated-item tracker/timer lifecycle, bounded spell-pool execution, and variable
@@ -110,6 +132,62 @@ validated receipts in one Zustand mutation, and every undo/re-arm removes or res
 same mutation, so the persisted turn writer cannot observe an owner/fact half-state. Fixed and timed
 active states also share the same declarative `endsEarlyOn` trigger consumer. The separate campaign
 effect/inverse transaction remains the next orchestration seam described above.
+
+**Entered-D20 lifecycle vertical CLOSED for solo play on branch (2026-08-05):** one locale-free,
+JSON-plain kernel now validates the exact physical d20 face input, nets Advantage/Disadvantage, selects
+the natural face and resolves typed outcomes without rolling. Death Saves rebuild live all-save,
+Exhaustion and critical-threshold facts at every commit/replay. Damage while concentrating persists one
+FIFO prompt per authored packet with its exact capped DC; resolution rebuilds the live CON save and
+Concentration-only facts, then advances the queue or runs the canonical full teardown. Malformed or stale
+prompts fail closed, and Death Saves, save results and lethal damage all own causal compare-and-swap
+undo/replay across character, log, active effects and the persisted queue. The campaign-target bridge
+remains part of the shared resolver transaction: it must load the target PC's parent session, enqueue the
+same combat-subdocument prompt and reverse it with the campaign effect rather than adding a second rules
+path in `campaign-io`.
+
+**Physical magic-item resource architecture CLOSED on branch (2026-08-05; corpus migration ACTIVE):**
+mutable items now have exact physical-copy identity and a typed catalogue-defined counter model with
+strict persistence parsing, pure spend/gain/recovery planning, whole-item revisions, atomic multi-copy
+boundaries and causal fact-preserving undo/replay. Combat actions, item spell casts, alternate costs,
+Inventory controls and rests share one command/input/CAS provider; a cancelled roll, lost reaction,
+unequipped owner or stale state changes nothing. Dawn and Dusk are explicit Table Clock declarations,
+not Long Rest or device-time aliases, and exact recovery cadence renders in EN+IT. A disposed copy stops
+contributing every grant and intrinsic equipment calculation. The typed scalar proof set is now 30
+items: 26 public items plus the pack Spirit Board, Mythallar Cloak, Niko's Mace and Wave. The public
+set is the original Wand of Magic Missiles/Winged Boots pair plus the first 24-item source-verified
+counter wave; it includes variable-cost wands/staves, explicit last-charge rolls and their distinct
+destroyed/nonmagical outcomes. The pack closure removes three false Long-Rest/Dawn tracker aliases:
+Mythallar and Niko now recover their entered d10/d6 charge rolls at Dawn, while Wave owns an entered
+d3 charge pool and an independent full-at-Dawn Globe use. This closes exact counter ownership and payment
+for the casts/properties already structurally authored; it deliberately does **not** claim the same
+items' still-prose-only properties (for example Reflect Enchantment, Insect Cloud and Tree Form). The
+composed magic-item census is repairing those action clauses and migrating the remaining scalar,
+multi-resource and collection corpus in separate source-verified waves. Item-id trackers,
+`ref.charges`, the false Long-Rest/Dawn alias and the one-off live migration cannot be removed until the
+catalogue guard reaches zero and every live current doc + saved snapshot passes the post-migration check.
+The guarded one-off `scripts/migrate-item-resources.ts` is prepared and locally proved in composed and
+SRD-only modes: dry-run/check are read-only, apply requires a fresh private backup directory, every write
+uses the discovered `updateTime` precondition in one ≤500-document batch, and reread/global/idempotency
+checks follow. It has **not** been run against production; the autonomous snapshot-verified live apply
+and immediate superseded-path/script deletion remain open.
+
+**MechanicsCommand transaction seam — resource conversions CLOSED on branch (2026-08-05):** Font of
+Magic in both directions, Nature Magician and Pact-slot recovery no longer execute captured
+`CommitOp[]` through sequential clamping mutators. A locale-free `resource-conversion` command stores
+only the stable source, conversion and player's selected level/amount; every execute and redo re-resolves
+the live grant, class gate, affordability and headroom, rejects non-safe numeric facts, and compiles all
+touched owners into one canonical compare-and-swap plan. The character store validates every leg against
+one snapshot, mutates slot/tracker maps in one Zustand notification and schedules one persistence flush;
+undo applies the receipt's exact causal inverse and stays retryable on conflict. This is the first generic
+owner-state command member, not a claim that casts/actions or campaign-owned effects have migrated yet.
+
+**Composed spell-source census — first exact data wave CLOSED on branch (2026-08-05):** the audit
+started from the actual public + private spell catalogues and 2024 rules source rather than prior
+coverage claims. Feather Fall now carries its exact five-creature target ceiling, Hold Person models
+one additional target per upcast level, Slow carries its six-enemy ceiling, and Conjure Barrage /
+Conjure Volley now expose their exact Force-damage and Dexterity-save packets (including Barrage's
+upcast progression). Trigger eligibility, repeat-save lifecycles, geometry and material handling stay
+explicitly outside this narrow data correction and remain engine work, not falsely claimed automation.
 
 **Live-team truth audit — activation-scoped resources CLOSED on branch (2026-08-04):** Santaera's
 future Zealot progression exposed a false rest approximation: Fanatical Focus is once per Rage, not
@@ -2098,14 +2176,16 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   The supplied 1672×941 source is now the exact source of `public/assets/textures/parchment.webp`
   (WebP q50 + sharp_yuv, 17.5 KiB, no creative regrading); the earlier false shipment claim is no
   longer carried forward.
-- **Public share links: SHIPPED 2026-07-31 — CHARACTERS ONLY, industry standard.** The
-  decided LIVE model shipped as decided — a `shared: true` flag on the character doc + the unguessable doc id
-  as the URL; rules allow anonymous read-only when flagged; revoke = flip the flag; noindex;
-  reuses the MemberSheetView read-only rendering. Owner requirements folded in (2026-07-31): the
+- **Public share links: SHIPPED 2026-07-31; privacy-hardened 2026-08-12 — CHARACTERS ONLY.** The
+  private parent keeps the publication decision (`shared`), while anonymous reads are restricted to
+  an exact, sanitized, atomically maintained `public/sheet` projection at the unguessable character
+  path; revoke deletes the projection in the same transaction. Parent, play state, campaign metadata
+  and Storage bearer URLs are never anonymously readable. The public route is noindex and reuses the
+  established read-only sheet rendering. Owner requirements folded in (2026-07-31): the
   share affordance uses the state-of-the-art sharing surface — the **Web Share API native sheet on
   mobile** (WhatsApp/Telegram/iMessage for free) with **copy-link as the universal fallback**;
-  viewers need **NO account** (that is the point — friends off the app see the sheet read-only);
-  DB/auth stay maximally simple (one flag, one rules line, zero auth changes). **Campaigns
+  viewers need **NO account** (that is the point — friends off the app see the sheet read-only).
+  **Campaigns
   deliberately have NO share model** (industry standard — DDB/Roll20 campaigns are private member
   spaces): a table shares a campaign by each player sharing their own character, which keeps
   consent per-owner and adds zero rules surface; an opt-in campaign-surface design is noted as the
@@ -2119,14 +2199,14 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   invite · generic, owner gate 2026-07-31), all kept out of the precache),
   and **per-link dynamic tags on the two shared route families** (`/view/**`, `/join/**`) from a
   lightweight Cloud Function behind Hosting rewrites that serves the SPA shell with the entity's
-  tags injected — a shared character reads its `shared: true` doc (an unshared or unknown id gets
-  the shell's own baseline tags, never a leak), a campaign invite exposes the campaign NAME and
+  tags injected — a shared character is loaded only through the validated projection (an unshared,
+  stale or unknown id gets the shell's own baseline tags, never a leak), a campaign invite exposes the campaign NAME and
   nothing else, for a valid code whose joins are still open. Crawlers must get the tags with NO
   JavaScript.
-  **All of it shipped in the same wave.** What landed: `CharacterDoc.shared` (replacing the
-  never-implemented `shareId` scaffolding and the unused public `/shared` collection it pointed at);
-  ONE `allow get` arm in `firestore.rules`, deliberately `get` and not `read` so it can never widen
-  into an enumeration query; the public `/view/:uid/:charId` route reusing `CockpitView` through
+  **All of it shipped in the same wave; the 2026-08-12 hardening replaced direct-parent exposure.**
+  What now exists: `CharacterDoc.shared`; an exact `public/sheet` schema with atomic publication and
+  generation fences; an anonymous exact-document `get` rule that can never widen into an enumeration
+  or parent read; a projection-gated same-origin portrait endpoint; the public `/view/:uid/:charId` route reusing `CockpitView` through
   `loadReadonly`, with one quiet page for revoked / deleted / denied / offline and a per-route
   noindex; the sheet's ⋯ menu gaining ONE **Share** entry that opens the shared **share popover**
   (owner gate: the Docs/Notion shape — a visibility switch that IS share-and-revoke, no confirm, and

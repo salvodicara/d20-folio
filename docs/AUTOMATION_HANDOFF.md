@@ -34,6 +34,34 @@ created worktrees under `~/Workspace` from now on.
 Neither branch has been merged into `main` or deployed. Do neither without the owner's explicit
 approval. Do not modify or revert the AGPL/legal changes made by the other workstream.
 
+### 2026-08-05 continuation checkpoint
+
+The pushed app head has advanced locally to `ebc9359fd8896729f37b80c51d4d095844c7982b` and the paired
+pack head to `2b2abeadcc5b76d1a3db38fcf8f9c4db6d66da91`. The working trees after those heads contain the
+active physical-item resource slice described below; it is intentionally unpushed while the composed
+catalogue wave, migration proof and complete dual-build gate are still in progress. Preserve both
+working trees as one change set.
+
+### 2026-08-12 canonical-engine checkpoint
+
+The active continuation has ratified and implemented the first exact foundation for the one-model
+cutover: monotonic material/entity/item/occurrence identity; one program-root authority receipt; direct
+child effects; typed public command answers and trigger evidence; recoverable root/phase CAS frames; and
+cause-complete terminal transactions. `MechanicsIntent` now contains only action guards plus that frame,
+so program/source/roles/bindings cannot drift across command, suspension and execution. Root creation is
+targetless and post-event derivation discriminates it from effects.
+
+The operation layer has also stopped eagerly closing the world after ordinary damage, resource,
+vitality or occurrence-create mutations. Ending sources must remain readable for the future coordinator;
+Concentration replacement now requires an explicit end barrier. Exact inventory leases allow a final-use
+tombstone only during its originating transaction, and final material cleanup cannot discover or end an
+active occurrence. The focused foundation suites pass; no full branch gate was run, by owner rule.
+
+Do not mistake this checkpoint for an executor. `planMechanicsAction` still fails closed on every typed
+world operation, root/phase/register transition and ordered dependency. The next work is one causal
+coordinator that compiles all triggered frames and end waves into one transaction/draft, followed by the
+corpus and application cutover and deletion of every old effect-program/handwritten executor path.
+
 ## Product doctrine
 
 The target is a table companion, not a VTT:
@@ -122,7 +150,12 @@ The main delivered seams are:
 - equipment combat actions, inherited feat-spell-choice repair and Alert initiative swaps;
 - Divine Fury on weapon or Unarmed Strike, including ranged weapons and per-hit damage-type choice;
 - paired pack-side feature data for rolled healing/Temporary HP, condition removal and timed active
-  states.
+  states;
+- one locale-free entered-D20 kernel with live-character adapters for Death Saves and damage-triggered
+  Concentration saves, including exact physical-face input, natural-face policies, Exhaustion and
+  Advantage/Disadvantage netting;
+- a persisted per-character FIFO of Concentration saves (one row per authored damage packet), canonical
+  failure teardown, malformed/stale prompt rejection and whole-command causal undo/replay.
 
 This list means those specific regressions have structured implementations and tests. It does **not**
 mean the entire D&D corpus has been certified.
@@ -183,6 +216,110 @@ Do this incrementally; do not rewrite the application in one pass.
 Keep the existing stable seams while migrating: `ResolvedAction`, combat effect occurrence ids,
 combat-state subdocs, target snapshots, `campaign-io` transactions and the current undo fence are
 useful foundations.
+
+### Proved first transaction slice: physical item resources
+
+The current working tree proves the smallest version of that direction for one bounded domain rather
+than beginning with a speculative whole-engine rewrite:
+
+- every durable magic-item copy has a stable `instanceId`; a counter is addressed by
+  item + copy + resource, never by catalogue item id alone;
+- catalogue `ResourceSpec` data declares capacity, initial state, exact recovery events and depletion
+  consequences, while `session.itemResources` is the only mutable owner for a migrated item;
+- `lib/resources.ts` is a locale-free, roll-free planner. It either rejects, asks for irreducible
+  physical-roll facts, or returns one compare-and-swap operation plus a serializable receipt;
+- the shared provider collects every requested fact before mutation, revalidates the exact equipped /
+  attuned / magical copy, and commits one operation or one whole recovery batch;
+- undo is causal against the committed revision and redo replans the same entered facts against live
+  state. Stale state, cancellation, an unequipped owner or a lost Reaction claim mutates nothing;
+- Short Rest, Long Rest, Dawn and Dusk are distinct typed events. Dawn/Dusk are explicit Table Clock
+  declarations, never device-time inference or a Long Rest alias;
+- Inventory, the resource rail, rests, item casts, item actions and alternate action costs consume the
+  same planner/commit seam; disposed copies stop supplying both actions and passive grants.
+
+The proof catalogue began with Wand of Magic Missiles, Winged Boots and the paired-pack Spirit Board.
+It now also contains the first 24-item source-verified public scalar wave plus the pack Mythallar Cloak,
+Niko's Mace and Wave: 30 physical-resource items in all. Wave proves two independent pools on one copy;
+the pack trio also proves entered d10/d6/d3 Dawn recovery without a false Long-Rest alias. The composed
+migration catalogue fingerprint is pinned to the reviewed resource set, so adding or changing any item
+fails before a live document can be planned. That proves counter ownership/payment only for properties
+that already have structured executable authoring; several non-spell properties on the same items remain
+open and must not inherit a false green status from the counter. No legacy item-id tracker,
+`ref.charges` owner or Dawn/Long-Rest compatibility path may be deleted until the one-off migration has
+converted and verified every live current character **and every saved snapshot**. Complex item
+collections, linked meters, elapsed-time cooldowns and table-conditioned spends remain explicitly open;
+do not force them into the scalar counter merely to make a matrix green.
+
+The one-off is prepared at `scripts/migrate-item-resources.ts` but has **not** touched production. Its
+contract is deliberately fail-closed: it loads the pinned SRD-only or composed resource catalogue,
+discovers both current character documents and every `snapshots` subcollection, preserves unrelated raw
+Firestore values, reuses valid identities, assigns missing ids deterministically, rejects ambiguity, and
+plans the entire corpus before a write is possible. The modes are:
+
+```sh
+# read-only plan (default)
+node --import ./scripts/alias-loader.mjs scripts/migrate-item-resources.ts
+
+# read-only completion/idempotency assertion
+node --import ./scripts/alias-loader.mjs scripts/migrate-item-resources.ts --check
+
+# apply only after a green dry-run: fresh absolute directory, recoverable tagged backup first
+node --import ./scripts/alias-loader.mjs scripts/migrate-item-resources.ts \
+  --apply --backup /absolute/fresh/private/item-resource-backup
+```
+
+Production access requires an explicit service-account credential for exactly `d20-folio`; apply also
+requires a fresh `0700` backup directory, writes `0600` tagged-value documents plus hashes/update times,
+uses one ≤500-document batch with `lastUpdateTime` preconditions, then rereads every changed document and
+reruns global plus idempotency verification. After the owner runs apply and `--check` succeeds, remove the
+legacy owners/read paths and delete the spent script in the same closure wave (golden rules 10 and 22).
+
+### Current execution/persistence diagnosis
+
+The physical-item seam is not yet the application-wide transaction runtime. Production execution is
+still divided among four paths:
+
+1. `cost-engine.ts` plans serializable scalar mutations but is used mainly by conversions/tests;
+2. `TurnEconomyProvider` is the primary combat executor and hand-orchestrates payment, action economy,
+   effects, logs and closure-based undo;
+3. `SpellsTab` duplicates substantial cast/payment/concentration behavior outside combat;
+4. `characterStore` owns many composite resource/rest/state mutations and broad snapshot inverses.
+
+The first generic command member is now proved for `resource-conversion`. It captures only stable
+source/conversion ids plus the player's selected level or amount; every execute/redo re-resolves the live
+grant and legal option, canonicalizes every touched normal-slot/Pact-slot/tracker owner, and commits them
+through one whole-character Zustand compare-and-swap. One stale leg means zero mutation, notification or
+persistence flush. The serializable receipt supplies the exact reverse plan; source removal does not block
+undo, while any intervening owner/capacity change leaves undo retryable. `ResourceConversions` no longer
+calls the sequential low-level mutators or stores stale `CommitOp[]` closures.
+
+The first source-authored spell correction wave is also deliberately narrow and proved in both build
+modes: Feather Fall, Hold Person and Slow now carry exact target-cardinality facts; Conjure Barrage and
+Conjure Volley carry exact Force-damage/save facts and Barrage's upcast packet. This closes those data
+defects only. Reactive eligibility, repeat saves, geometry/materials and delayed or phased effects still
+require the shared cast/effect transaction architecture below.
+
+Owner-character autosave, the combat subdocument, local logs and campaign-owned peer/NPC effects also
+have different persistence boundaries, so a logical action cannot yet honestly claim cross-document
+atomicity. Extend the proved locale-free `MechanicsCommand` union incrementally: a future member may
+return `needs-input`, `rejected` or a serializable plan with expected state, owner operations, turn
+operations, log facts and explicit external intents. Local owner state must keep committing as one checked
+mutation and emitting a causal receipt. Campaign-owned external effects require idempotent intent delivery
+and compensation; they must not be described as a Firestore transaction with an unrelated owner doc.
+
+The entered-D20 kernel is intentionally below that future transaction runtime and never rolls dice.
+`lib/d20-test.ts` validates the exact one/two physical faces required by the net roll mode and resolves
+the selected natural face, total and policy outcome; `lib/character-d20-tests.ts` rebuilds Death Save or
+Concentration facts from the live character at commit/replay. Solo damage persists one
+`PendingConcentrationSave` for each ordered damage packet and resolves the FIFO head with causal undo.
+Campaign-target damage still needs the shared resolver to load the target PC's parent character session,
+enqueue the same prompt in that target's combat subdocument and include it in the campaign inverse; do
+not duplicate a second Concentration-save implementation inside `campaign-io`.
+
+Migration order is deliberately narrow: rail slots/trackers/inspiration and conversions first; then one
+Cast command shared by Spells and combat; then action-economy claims, attacks and Reactions; then combat
+outcome/external-effect intents; finally rests and turn boundaries. Delete each handwritten path only
+after parity tests prove the new consumer in SRD-only and composed builds.
 
 ## Corpus audit method
 

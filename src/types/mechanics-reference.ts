@@ -1,0 +1,17 @@
+/** Public projections of the universal mechanics-reference grammar. */
+
+import type {
+  CharacterMaterialRefSchemaShape,
+  ClockRefSchemaShape,
+  EntityRefSchemaShape,
+  MaterialRefSchemaShape,
+  OccurrenceRefSchemaShape,
+  SharedMaterialRefSchemaShape,
+} from "@/lib/mechanics-reference-schema";
+
+export type MaterialRef = MaterialRefSchemaShape;
+export type CharacterMaterialRef = CharacterMaterialRefSchemaShape;
+export type SharedMaterialRef = SharedMaterialRefSchemaShape;
+export type ClockRef = ClockRefSchemaShape;
+export type EntityRef = EntityRefSchemaShape;
+export type OccurrenceRef = OccurrenceRefSchemaShape;

@@ -1,0 +1,2116 @@
+/** Pure MechanicsProgram requirement, review and planning runtime. */
+
+import {
+  conformActionFactGuard,
+  entityRefKey,
+  materialRefKey,
+} from "@/lib/action-journal";
+import { canonicalJson } from "@/lib/canonical-fingerprint";
+import {
+  conformD20TestObservation,
+  conformD20TestRequest,
+  evaluateD20Test,
+  reviewD20Test,
+} from "@/lib/d20-test";
+import {
+  countAuthorizedDiceReplacementUses,
+  conformDiceObservation,
+  evaluateDiceReplacementPolicy,
+  evaluateDiceFormula,
+  resolveDiceObservation,
+} from "@/lib/dice-formula";
+import { exactConformer, type ExactSchemaContext } from "@/lib/exact-schema";
+import { evaluateIntegerExpression } from "@/lib/integer-expression";
+import { conformMechanicsExecutionFrame } from "@/lib/mechanics-command-boundary";
+import { conformEntityRef } from "@/lib/mechanics-reference-schema";
+import {
+  MECHANICS_ANSWERS_SCHEMA,
+  MECHANICS_INTENT_SCHEMA,
+  type MechanicsProgramSchemaCustomTypes,
+} from "@/lib/mechanics-program-schema";
+import {
+  mechanicsPhaseOrderedDependencies,
+  type MechanicsD20RequestSpec,
+} from "@/lib/mechanics-program-authoring";
+import { planMechanicsWorldAction } from "@/lib/mechanics-action";
+import { locateResolvedMaterialResource } from "@/lib/material-resource";
+import { parseMechanicsWorld } from "@/lib/mechanics-world";
+import { conformResourceRef, resourceRefKey } from "@/lib/resources";
+import type { JournalActorRef } from "@/types/action-journal";
+import type { D20TestObservation, D20TestRequest, D20TestResult } from "@/types/d20-test";
+import type {
+  DiceObservation,
+  ResolvedDiceReplacementRule,
+  ResolvedDiceTrail,
+} from "@/types/dice-formula";
+import type {
+  EffectOccurrence,
+  MechanicOccurrence,
+  ProgramOccurrence,
+  StandingFact,
+} from "@/types/mechanic-occurrence";
+import type {
+  CharacterMaterialRef,
+  EntityRef,
+  MaterialRef,
+  OccurrenceRef,
+} from "@/types/mechanics-reference";
+import type {
+  ManualInstruction,
+  MechanicsAnswer,
+  MechanicsAnswers,
+  MechanicsRequestIdentity,
+  MechanicsD20Requirement,
+  MechanicsDiceRequirement,
+  MechanicsIntent,
+  MechanicsPaymentRequirement,
+  MechanicsPlanResult,
+  MechanicsRequirement,
+  MechanicsRequirementsRejection,
+  MechanicsRequirementsResult,
+  MechanicsReviewRejection,
+  MechanicsReviewResult,
+  MechanicsWorldOperation,
+  MechanicsRoles,
+  ResolvedMechanicsAnswer,
+  ReviewedMechanicsIntent,
+  ReviewedMechanicsPayment,
+} from "@/types/mechanics-program";
+import type {
+  MechanicsEntitySelector,
+  MechanicsInput,
+  MechanicsPredicate,
+  MechanicsProgram,
+  MechanicsProgramPhase,
+  MechanicsRole,
+  MechanicsStep,
+} from "@/types/mechanics-program-authoring";
+import type { InventoryInstance, MaterialEntity } from "@/types/material-state";
+import type { MechanicsTriggerEvidence } from "@/types/mechanics-trigger";
+import type { MechanicsDocument, MechanicsWorld } from "@/types/mechanics-world";
+import type { ResourceRef, ResourceSelector, ResourceTerm } from "@/types/resource";
+
+export type {
+  ManualInstruction,
+  MechanicsAnswer,
+  MechanicsAnswers,
+  MechanicsRequestIdentity,
+  MechanicsD20Requirement,
+  MechanicsDiceRequirement,
+  MechanicsIntent,
+  MechanicsPlanRejection,
+  MechanicsPlanResult,
+  MechanicsRequirement,
+  MechanicsRequirementActivation,
+  MechanicsRequirementsRejection,
+  MechanicsRequirementsResult,
+  MechanicsReviewRejection,
+  MechanicsReviewResult,
+  MechanicsRoles,
+  MechanicsTriggerEvidence,
+  MechanicsWorldOperation,
+  ResolvedMechanicsAnswer,
+  ReviewedMechanicsIntent,
+  ReviewedMechanicsPayment,
+} from "@/types/mechanics-program";
+
+const MAX_FACT_GUARDS = 128;
+const MAX_PROGRAM_NODES = 512;
+const MAX_BINDINGS = 256;
+const MAX_TARGETS = 256;
+const MAX_PAYMENTS = 64;
+const MAX_RESOURCE_AMOUNT = 1_000_000_000;
+const ROLES = new Set<MechanicsRole>([
+  "owner",
+  "source",
+  "target",
+  "caster",
+  "activator",
+  "triggering-attacker",
+  "victim",
+]);
+function freezeDeep<T>(value: T): Readonly<T> {
+  const visited = new WeakSet<object>();
+  const visit = (entry: unknown): void => {
+    if (typeof entry !== "object" || entry === null || visited.has(entry)) return;
+    visited.add(entry);
+    Object.values(entry).forEach(visit);
+    if (!Object.isFrozen(entry)) Object.freeze(entry);
+  };
+  visit(value);
+  return value;
+}
+
+function safeInteger(value: unknown, minimum = Number.MIN_SAFE_INTEGER): number | null {
+  return Number.isSafeInteger(value) &&
+    !Object.is(value, -0) &&
+    (value as number) >= minimum
+    ? (value as number)
+    : null;
+}
+
+function characterMaterialRef(value: unknown): CharacterMaterialRef | null {
+  const reference = conformEntityRef({ material: value, entityId: "self" });
+  return reference?.material.kind === "character-play" ? reference.material : null;
+}
+
+const PROGRAM_SCHEMA_CONTEXT: ExactSchemaContext<
+  MechanicsProgramSchemaCustomTypes,
+  Record<never, never>
+> = {
+  customs: {
+    "action-fact": conformActionFactGuard,
+    "character-material-ref": characterMaterialRef,
+    "d20-observation": conformD20TestObservation,
+    "dice-observation": conformDiceObservation,
+    "entity-ref": conformEntityRef,
+    id: (value) =>
+      typeof value === "string" && value.length > 0 && value.trim() === value
+        ? value
+        : null,
+    "mechanics-execution-frame": conformMechanicsExecutionFrame,
+    "positive-integer": (value) => safeInteger(value, 1),
+    "resource-ref": conformResourceRef,
+    "signed-integer": (value) => safeInteger(value),
+  },
+  refs: {},
+};
+const conformIntentStructure = exactConformer(
+  MECHANICS_INTENT_SCHEMA,
+  PROGRAM_SCHEMA_CONTEXT
+);
+const conformAnswersStructure = exactConformer(
+  MECHANICS_ANSWERS_SCHEMA,
+  PROGRAM_SCHEMA_CONTEXT
+);
+
+function unique(values: readonly string[]): boolean {
+  return new Set(values).size === values.length;
+}
+
+function conformMechanicsIntent(value: unknown): Readonly<MechanicsIntent> | null {
+  const intent = conformIntentStructure(value);
+  return intent && intent.factGuards.length <= MAX_FACT_GUARDS ? intent : null;
+}
+
+function conformMechanicsAnswers(value: unknown): Readonly<MechanicsAnswers> | null {
+  const answers = conformAnswersStructure(value);
+  return answers &&
+    answers.length <= MAX_PROGRAM_NODES &&
+    answers.every(
+      (answer) =>
+        (answer.kind !== "entities" || answer.targets.length <= MAX_TARGETS) &&
+        ((answer.kind !== "d20" && answer.kind !== "dice") ||
+          (answer.requests.length <= MAX_TARGETS &&
+            answer.requests.every((request) => request.payments.length <= MAX_PAYMENTS)))
+    )
+    ? answers
+    : null;
+}
+
+function exactEqual(left: unknown, right: unknown): boolean {
+  return canonicalJson(left) === canonicalJson(right);
+}
+
+interface MechanicsExecutionContext {
+  readonly actor: JournalActorRef;
+  readonly authority: MechanicsIntent["frame"]["authority"];
+  readonly bindings: Readonly<Record<string, number>>;
+  readonly execution: number;
+  readonly intent: Readonly<MechanicsIntent>;
+  readonly phaseId: string;
+  readonly program: MechanicsProgram;
+  readonly roles: MechanicsRoles;
+  readonly rootOccurrence: OccurrenceRef;
+  readonly rootReceipt: MechanicsIntent["frame"]["rootReceipt"];
+  readonly trigger: MechanicsTriggerEvidence;
+  readonly triggerEventId: string | null;
+}
+
+function derivedRoles(
+  authority: MechanicsIntent["frame"]["authority"],
+  trigger: MechanicsTriggerEvidence
+): MechanicsRoles {
+  return {
+    ...authority.anchors,
+    "triggering-attacker": trigger.kind === "damage-taken" ? trigger.attacker : null,
+    victim:
+      trigger.kind === "damage-taken"
+        ? trigger.resolution.packet.target
+        : trigger.kind === "hit-points-zero"
+          ? trigger.target
+          : null,
+  };
+}
+
+function executionContext(
+  intent: Readonly<MechanicsIntent>
+): MechanicsExecutionContext | null {
+  const { authority, rootReceipt, trigger } = intent.frame;
+  const program = authority.snapshot.program;
+  const bindingKeys = Object.keys(authority.staticBindings);
+  if (
+    !program ||
+    bindingKeys.length > MAX_BINDINGS ||
+    bindingKeys.some(
+      (key) =>
+        key.startsWith("trigger.") ||
+        key.startsWith("register.") ||
+        key.startsWith("phase.") ||
+        key === "input-total"
+    )
+  ) {
+    return null;
+  }
+  return {
+    actor: authority.installation.owner,
+    authority,
+    bindings: authority.staticBindings,
+    execution: rootReceipt.next.execution,
+    intent,
+    phaseId: rootReceipt.next.phaseId,
+    program,
+    roles: derivedRoles(authority, trigger),
+    rootOccurrence: rootReceipt.root,
+    rootReceipt,
+    trigger,
+    triggerEventId: rootReceipt.next.triggerEventId,
+  };
+}
+
+function documentFor(
+  world: Pick<MechanicsWorld, "documents">,
+  material: MaterialRef
+): MechanicsDocument | null {
+  const key = materialRefKey(material);
+  return (
+    world.documents.find((document) => materialRefKey(document.material) === key) ?? null
+  );
+}
+
+type WorldEntity =
+  | {
+      readonly document: Extract<MechanicsDocument, { readonly kind: "character" }>;
+      readonly entity: null;
+      readonly kind: "creature";
+      readonly ref: EntityRef;
+    }
+  | {
+      readonly document: MechanicsDocument;
+      readonly entity: MaterialEntity;
+      readonly kind: MaterialEntity["kind"];
+      readonly ref: EntityRef;
+    };
+
+function worldEntity(world: MechanicsWorld, ref: EntityRef): WorldEntity | null {
+  const document = documentFor(world, ref.material);
+  if (!document) return null;
+  if (ref.entityId === "self") {
+    return document.kind === "character"
+      ? { document, entity: null, kind: "creature", ref }
+      : null;
+  }
+  const entity = document.state.entities[ref.entityId];
+  return entity?.availability === "present"
+    ? { document, entity, kind: entity.kind, ref }
+    : null;
+}
+
+function occurrenceFor(
+  world: MechanicsWorld,
+  reference: OccurrenceRef
+): MechanicOccurrence | null {
+  return (
+    documentFor(world, reference.material)?.state.occurrences[reference.occurrenceId] ??
+    null
+  );
+}
+
+function roleEntity(
+  intent: MechanicsExecutionContext,
+  role: MechanicsRole
+): EntityRef | null {
+  return intent.roles[role];
+}
+
+function requestIdentities(
+  bindings: readonly EntityRef[]
+): readonly MechanicsRequestIdentity[] {
+  const ordinalByBinding = new Map<string, number>();
+  return bindings.map((binding) => {
+    const key = entityRefKey(binding);
+    const ordinal = (ordinalByBinding.get(key) ?? 0) + 1;
+    ordinalByBinding.set(key, ordinal);
+    return { binding, ordinal };
+  });
+}
+
+function resolveTargets(
+  selector: MechanicsEntitySelector,
+  intent: MechanicsExecutionContext,
+  resolved: Readonly<Record<string, ResolvedMechanicsAnswer>>,
+  bindings: Readonly<Record<string, number>>
+): readonly MechanicsRequestIdentity[] | null {
+  if (selector.kind === "role") {
+    const target = roleEntity(intent, selector.role);
+    return target ? [{ binding: target, ordinal: 1 }] : null;
+  }
+  const answer = resolved[selector.inputId];
+  if (selector.kind === "input") {
+    return answer?.kind === "entities" ? requestIdentities(answer.targets) : null;
+  }
+  if (selector.kind === "dice-total") {
+    if (answer?.kind !== "dice") return null;
+    const value = evaluateIntegerExpression(selector.value, bindings);
+    if (value === null) return null;
+    const groups = new Map<
+      string,
+      { readonly binding: EntityRef; readonly requests: typeof answer.requests }
+    >();
+    for (const request of answer.requests) {
+      const key = entityRefKey(request.identity.binding);
+      const group = groups.get(key);
+      groups.set(
+        key,
+        group
+          ? { ...group, requests: [...group.requests, request] }
+          : { binding: request.identity.binding, requests: [request] }
+      );
+    }
+    const targets: MechanicsRequestIdentity[] = [];
+    for (const { binding, requests } of groups.values()) {
+      const matches = requests.map(({ resolution }) =>
+        comparison(resolution.total, selector.comparison, value)
+      );
+      if (quantifies(matches, selector.quantifier) !== true) continue;
+      if (selector.cardinality === "unique-entity") {
+        targets.push({ binding, ordinal: 1 });
+      } else {
+        requests.forEach((request, index) => {
+          if (matches[index]) targets.push(request.identity);
+        });
+      }
+    }
+    return targets;
+  }
+  if (answer?.kind !== "d20") return null;
+  const groups = new Map<
+    string,
+    {
+      readonly binding: EntityRef;
+      readonly requests: typeof answer.requests;
+    }
+  >();
+  for (const request of answer.requests) {
+    const key = entityRefKey(request.identity.binding);
+    const group = groups.get(key);
+    if (group) {
+      groups.set(key, { ...group, requests: [...group.requests, request] });
+    } else {
+      groups.set(key, { binding: request.identity.binding, requests: [request] });
+    }
+  }
+  const targets: MechanicsRequestIdentity[] = [];
+  for (const { binding, requests } of groups.values()) {
+    const matches = requests.map((request) =>
+      selector.outcomeIds.includes(request.result.outcome.outcomeId)
+    );
+    if (quantifies(matches, selector.quantifier) !== true) continue;
+    if (selector.cardinality === "unique-entity") {
+      targets.push({ binding, ordinal: 1 });
+    } else {
+      requests.forEach((request, index) => {
+        if (matches[index]) targets.push(request.identity);
+      });
+    }
+  }
+  return targets;
+}
+
+function entityHitPoints(entity: WorldEntity): number {
+  return entity.entity === null
+    ? entity.document.state.vitals.hitPoints.current
+    : entity.entity.vitals.hitPoints.current;
+}
+
+function quantifies(
+  values: readonly boolean[],
+  quantifier: "any" | "all"
+): boolean | null {
+  if (values.length === 0) return null;
+  return quantifier === "any" ? values.some(Boolean) : values.every(Boolean);
+}
+
+function comparison(
+  left: number,
+  operator: "eq" | "ne" | "lt" | "lte" | "gt" | "gte",
+  right: number
+): boolean {
+  switch (operator) {
+    case "eq":
+      return left === right;
+    case "ne":
+      return left !== right;
+    case "lt":
+      return left < right;
+    case "lte":
+      return left <= right;
+    case "gt":
+      return left > right;
+    case "gte":
+      return left >= right;
+  }
+}
+
+function sourceInventoryItem(execution: MechanicsExecutionContext): {
+  readonly instanceId: string;
+  readonly instanceOrdinal: number;
+  readonly owner: CharacterMaterialRef;
+} | null {
+  return execution.authority.source.kind === "inventory-item"
+    ? execution.authority.source
+    : null;
+}
+
+function itemFor(
+  world: MechanicsWorld,
+  owner: CharacterMaterialRef,
+  instanceId: string,
+  instanceOrdinal: number
+): InventoryInstance | null {
+  const document = documentFor(world, owner);
+  const item =
+    document?.kind === "character"
+      ? (document.state.inventory[instanceId] ?? null)
+      : null;
+  return item?.ordinal === instanceOrdinal ? item : null;
+}
+
+function selectorItem(
+  selector: Extract<
+    ResourceSelector,
+    { readonly kind: "item-resource" | "item-quantity" }
+  >,
+  intent: MechanicsExecutionContext,
+  resolved: Readonly<Record<string, ResolvedMechanicsAnswer>>
+): {
+  readonly instanceId: string;
+  readonly instanceOrdinal: number;
+  readonly owner: CharacterMaterialRef;
+} | null {
+  if (selector.item.kind === "source-item") {
+    return sourceInventoryItem(intent);
+  }
+  const answer = resolved[selector.item.inputId];
+  return answer?.kind === "item"
+    ? {
+        instanceId: answer.instanceId,
+        instanceOrdinal: answer.instanceOrdinal,
+        owner: answer.owner,
+      }
+    : null;
+}
+
+function resourceCandidates(
+  selector: ResourceSelector,
+  intent: MechanicsExecutionContext,
+  resolved: Readonly<Record<string, ResolvedMechanicsAnswer>>,
+  world: MechanicsWorld
+): readonly ResourceRef[] | null {
+  const owner = roleEntity(intent, selector.owner);
+  if (!owner || !worldEntity(world, owner)) return null;
+  if (selector.kind === "pool") {
+    return [{ kind: "pool", owner, resourceId: selector.resourceId }];
+  }
+  if (selector.kind === "spell-slot") {
+    if (owner.entityId !== "self" || owner.material.kind !== "character-play") {
+      return null;
+    }
+    const ownerMaterial = owner.material;
+    const character = documentFor(world, ownerMaterial);
+    if (character?.kind !== "character") return null;
+    const standard = Object.keys(character.state.resources.standardSpellSlots)
+      .map(Number)
+      .filter(
+        (level) =>
+          Number.isSafeInteger(level) &&
+          level >= selector.level.value &&
+          (selector.level.kind === "minimum" || level === selector.level.value)
+      )
+      .sort((left, right) => left - right)
+      .map(
+        (level) =>
+          ({
+            character: ownerMaterial,
+            kind: "standard-spell-slot",
+            level,
+          }) as const
+      );
+    const pact = character.state.resources.pactSpellSlot
+      ? ([{ character: ownerMaterial, kind: "pact-spell-slot" }] as const)
+      : [];
+    return selector.pool === "standard"
+      ? standard
+      : selector.pool === "pact"
+        ? pact
+        : [...standard, ...pact];
+  }
+  if (selector.kind === "hit-die") {
+    if (owner.entityId !== "self" || owner.material.kind !== "character-play") {
+      return null;
+    }
+    const ownerMaterial = owner.material;
+    const character = documentFor(world, ownerMaterial);
+    if (character?.kind !== "character") return null;
+    const dice = Object.keys(character.state.resources.hitDice).filter(
+      (die): die is "d4" | "d6" | "d8" | "d10" | "d12" =>
+        ["d4", "d6", "d8", "d10", "d12"].includes(die) &&
+        (selector.die.kind === "any" || selector.die.value === die)
+    );
+    return dice.map((die) => ({ character: ownerMaterial, die, kind: "hit-die" }));
+  }
+  if (selector.kind === "currency") {
+    if (owner.entityId !== "self" || owner.material.kind !== "character-play") {
+      return null;
+    }
+    const ownerMaterial = owner.material;
+    return [
+      {
+        character: ownerMaterial,
+        denomination: selector.denomination,
+        kind: "currency",
+      },
+    ];
+  }
+  const item = selectorItem(selector, intent, resolved);
+  if (
+    !item ||
+    owner.entityId !== "self" ||
+    !exactEqual(owner.material, item.owner) ||
+    !itemFor(world, item.owner, item.instanceId, item.instanceOrdinal)
+  ) {
+    return null;
+  }
+  return selector.kind === "item-resource"
+    ? [
+        {
+          character: item.owner,
+          instanceId: item.instanceId,
+          instanceOrdinal: item.instanceOrdinal,
+          kind: "item-resource",
+          resourceId: selector.resourceId,
+        },
+      ]
+    : [
+        {
+          character: item.owner,
+          instanceId: item.instanceId,
+          instanceOrdinal: item.instanceOrdinal,
+          kind: "item-quantity",
+        },
+      ];
+}
+
+function resourceRemaining(world: MechanicsWorld, ref: ResourceRef): number | null {
+  const cell = locateResolvedMaterialResource(world, ref)?.cell ?? null;
+  if (!cell || cell.disabled) return cell ? 0 : null;
+  return cell.kind === "count" ? cell.current : cell.values.length;
+}
+
+function bindingsFor(
+  intent: MechanicsExecutionContext,
+  root: ProgramOccurrence | null
+): Readonly<Record<string, number>> | null {
+  const bindings: Record<string, number> = { ...intent.bindings };
+  if (intent.trigger.kind === "damage-taken") {
+    bindings["trigger.damage"] = intent.trigger.resolution.effective.amount;
+    bindings["trigger.raw-damage"] = intent.trigger.resolution.computed.rawTotal;
+  }
+  const registers =
+    root?.registers ??
+    Object.fromEntries(
+      intent.program.registers.map((register) => [register.registerId, register.initial])
+    );
+  for (const [registerId, value] of Object.entries(registers)) {
+    if (typeof value === "number" && Number.isSafeInteger(value)) {
+      bindings[`register.${registerId}`] = value;
+    }
+  }
+  for (const phase of intent.program.phases) {
+    bindings[`phase.${phase.phaseId}.executions`] =
+      root?.phaseState[phase.phaseId]?.execution ?? 0;
+  }
+  return bindings;
+}
+
+function evaluatedAmount(
+  expression: unknown,
+  bindings: Readonly<Record<string, number>>
+) {
+  const value = evaluateIntegerExpression(expression, bindings);
+  return value !== null && value >= 0 && value <= MAX_RESOURCE_AMOUNT ? value : null;
+}
+
+type ProgramRootLookup =
+  | {
+      readonly kind: "absent";
+      readonly materialEpoch: number;
+      readonly nextOccurrenceOrdinal: number;
+      readonly root: null;
+    }
+  | { readonly kind: "present"; readonly root: ProgramOccurrence }
+  | { readonly kind: "invalid"; readonly root: null };
+
+type MechanicsExecutionMode = "new" | "replay";
+
+function phaseStateMatches(
+  state: ProgramOccurrence["phaseState"][string],
+  receipt: MechanicsExecutionContext["rootReceipt"]["next"]
+): boolean {
+  return (
+    state.execution === receipt.execution &&
+    state.lastTriggerEventId === receipt.triggerEventId
+  );
+}
+
+function programRoot(
+  intent: MechanicsExecutionContext,
+  world: MechanicsWorld
+): ProgramRootLookup {
+  const document = documentFor(world, intent.rootOccurrence.material);
+  if (!document) return { kind: "invalid", root: null };
+  const occurrence = document.state.occurrences[intent.rootOccurrence.occurrenceId];
+  if (!occurrence) {
+    return {
+      kind: "absent",
+      materialEpoch: document.state.epoch,
+      nextOccurrenceOrdinal: document.state.nextOccurrenceOrdinal,
+      root: null,
+    };
+  }
+  return occurrence.kind === "program"
+    ? { kind: "present", root: occurrence }
+    : { kind: "invalid", root: null };
+}
+
+function rootIdentityMatches(
+  intent: MechanicsExecutionContext,
+  root: ProgramOccurrence
+): boolean {
+  if (!exactEqual(root.authority, intent.authority)) return false;
+  const phaseIds = intent.program.phases.map((phase) => phase.phaseId).sort();
+  const registerIds = intent.program.registers
+    .map((register) => register.registerId)
+    .sort();
+  return (
+    exactEqual(Object.keys(root.phaseState).sort(), phaseIds) &&
+    exactEqual(Object.keys(root.registers).sort(), registerIds)
+  );
+}
+
+function executionMode(
+  intent: MechanicsExecutionContext,
+  phase: MechanicsProgramPhase,
+  lookup: ProgramRootLookup
+): MechanicsExecutionMode | null {
+  const receipt = intent.rootReceipt;
+  if (receipt.kind === "create") {
+    if (lookup.kind === "absent") {
+      return lookup.materialEpoch === receipt.materialEpoch &&
+        lookup.nextOccurrenceOrdinal === receipt.ordinal
+        ? "new"
+        : null;
+    }
+    if (
+      lookup.kind !== "present" ||
+      lookup.root.ordinal !== receipt.ordinal ||
+      !rootIdentityMatches(intent, lookup.root)
+    ) {
+      return null;
+    }
+    const state = lookup.root.phaseState[phase.phaseId];
+    return state && phaseStateMatches(state, receipt.next) ? "replay" : null;
+  }
+
+  if (lookup.kind !== "present" || !rootIdentityMatches(intent, lookup.root)) {
+    return null;
+  }
+  const state = lookup.root.phaseState[phase.phaseId];
+  if (!state) return null;
+  if (phaseStateMatches(state, receipt.expected)) return "new";
+  return phaseStateMatches(state, receipt.next) ? "replay" : null;
+}
+
+function resolvedPhase(intent: MechanicsExecutionContext): MechanicsProgramPhase | null {
+  return intent.program.phases.find((phase) => phase.phaseId === intent.phaseId) ?? null;
+}
+
+function resourceRefMatchesSelector(
+  ref: ResourceRef,
+  selector: ResourceSelector,
+  intent: MechanicsExecutionContext,
+  resolved: Readonly<Record<string, ResolvedMechanicsAnswer>>,
+  world: MechanicsWorld
+): boolean {
+  const candidates = resourceCandidates(selector, intent, resolved, world);
+  return (
+    candidates?.some((candidate) => resourceRefKey(candidate) === resourceRefKey(ref)) ??
+    false
+  );
+}
+
+function triggerMatches(
+  intent: MechanicsExecutionContext,
+  phase: MechanicsProgramPhase,
+  world: MechanicsWorld
+): boolean {
+  const trigger = phase.trigger;
+  const evidence = intent.trigger;
+  if (trigger.kind !== evidence.kind) return false;
+  switch (trigger.kind) {
+    case "invocation":
+      return evidence.kind === "invocation";
+    case "turn-boundary": {
+      if (evidence.kind !== "turn-boundary" || trigger.phase !== evidence.phase) {
+        return false;
+      }
+      const combatant = roleEntity(intent, trigger.combatant);
+      return combatant !== null && exactEqual(combatant, evidence.combatant);
+    }
+    case "resource-depleted":
+      return (
+        evidence.kind === "resource-depleted" &&
+        resourceRefMatchesSelector(
+          evidence.resource,
+          trigger.resource,
+          intent,
+          {},
+          world
+        ) &&
+        resourceRemaining(world, evidence.resource) === 0
+      );
+    case "hit-points-zero": {
+      if (evidence.kind !== "hit-points-zero") return false;
+      const target = roleEntity(intent, trigger.target);
+      const entity = target ? worldEntity(world, target) : null;
+      return (
+        target !== null &&
+        entity !== null &&
+        entity.kind === "creature" &&
+        exactEqual(target, evidence.target) &&
+        entityHitPoints(entity) === 0
+      );
+    }
+    case "damage-taken": {
+      if (evidence.kind !== "damage-taken") return false;
+      const target = roleEntity(intent, trigger.target);
+      const triggeringAttacker = roleEntity(intent, "triggering-attacker");
+      return (
+        target !== null &&
+        exactEqual(target, evidence.resolution.packet.target) &&
+        (!evidence.criticalHit || evidence.resolution.packet.delivery === "attack") &&
+        exactEqual(triggeringAttacker, evidence.attacker)
+      );
+    }
+    case "rest-completed": {
+      if (evidence.kind !== "rest-completed" || trigger.rest !== evidence.rest) {
+        return false;
+      }
+      const combatant = roleEntity(intent, trigger.combatant);
+      return combatant !== null && exactEqual(combatant, evidence.combatant);
+    }
+    case "day-phase":
+      return evidence.kind === "day-phase" && trigger.phase === evidence.phase;
+    case "source-end":
+      return evidence.kind === "source-end";
+    case "program-phase-end":
+      if (evidence.kind !== "program-phase-end" || trigger.phaseId !== evidence.phaseId) {
+        return false;
+      } else {
+        const sourceProgram = occurrenceFor(world, evidence.occurrence);
+        return (
+          sourceProgram?.kind === "program" &&
+          evidence.execution > 0 &&
+          sourceProgram.phaseState[evidence.phaseId]?.execution === evidence.execution
+        );
+      }
+    case "area-boundary": {
+      const area =
+        evidence.kind === "area-boundary" ? occurrenceFor(world, evidence.area) : null;
+      if (
+        evidence.kind !== "area-boundary" ||
+        trigger.boundary !== evidence.boundary ||
+        area?.kind !== "standing" ||
+        area.fact.kind !== "program-fact" ||
+        area.fact.factId !== trigger.areaId
+      ) {
+        return false;
+      }
+      const entity = roleEntity(intent, trigger.entity);
+      return entity !== null && exactEqual(entity, evidence.entity);
+    }
+    case "manual-table-event":
+      return (
+        evidence.kind === "manual-table-event" &&
+        trigger.eventId === evidence.eventId &&
+        "kind" in intent.actor &&
+        intent.actor.authority === evidence.authority
+      );
+  }
+}
+
+function validateIntentAgainstWorld(
+  intentValue: unknown,
+  snapshot: Readonly<MechanicsWorld>
+):
+  | {
+      readonly bindings: Readonly<Record<string, number>>;
+      readonly execution: MechanicsExecutionContext;
+      readonly executionMode: MechanicsExecutionMode;
+      readonly intent: Readonly<MechanicsIntent>;
+      readonly phase: MechanicsProgramPhase;
+      readonly root: ProgramOccurrence | null;
+      readonly world: Readonly<MechanicsWorld>;
+    }
+  | {
+      readonly reason: MechanicsRequirementsRejection;
+      readonly referenceId: string | null;
+    } {
+  const intent = conformMechanicsIntent(intentValue);
+  if (!intent) return { reason: "invalid-intent", referenceId: null };
+  const execution = executionContext(intent);
+  if (!execution) return { reason: "invalid-intent", referenceId: "frame" };
+  const parsed = parseMechanicsWorld(snapshot);
+  if (!parsed.ok) return { reason: "invalid-world", referenceId: null };
+  const world = parsed.value;
+  const phase = resolvedPhase(execution);
+  if (!phase) return { reason: "missing-phase", referenceId: execution.phaseId };
+  if (execution.roles.owner === null) {
+    return { reason: "missing-role", referenceId: "owner" };
+  }
+  const lookup = programRoot(execution, world);
+  const mode = executionMode(execution, phase, lookup);
+  if (mode === null) {
+    return {
+      reason: "invalid-root-occurrence",
+      referenceId: execution.rootOccurrence.occurrenceId,
+    };
+  }
+  const root = lookup.root;
+  for (const role of ROLES) {
+    const entity = roleEntity(execution, role);
+    if (entity !== null && !worldEntity(world, entity)) {
+      return { reason: "missing-entity", referenceId: role };
+    }
+  }
+  if (mode === "new" && !triggerMatches(execution, phase, world)) {
+    return { reason: "trigger-mismatch", referenceId: phase.phaseId };
+  }
+  const bindings = bindingsFor(execution, root);
+  if (!bindings) return { reason: "invalid-intent", referenceId: "bindings" };
+  return { bindings, execution, executionMode: mode, intent, phase, root, world };
+}
+
+type PredicateTruth = boolean | null;
+
+interface PredicateContext {
+  readonly bindings: Readonly<Record<string, number>>;
+  readonly intent: MechanicsExecutionContext;
+  readonly landedDamage?: Readonly<Record<string, Readonly<Record<string, number>>>>;
+  readonly resolved: Readonly<Record<string, ResolvedMechanicsAnswer>>;
+  readonly root: ProgramOccurrence | null;
+  readonly world: MechanicsWorld;
+}
+
+function occurrencesForTarget(
+  world: MechanicsWorld,
+  target: EntityRef
+): readonly EffectOccurrence[] {
+  return world.documents.flatMap((document) =>
+    Object.values(document.state.occurrences).filter(
+      (occurrence): occurrence is EffectOccurrence =>
+        occurrence.kind !== "program" && exactEqual(occurrence.target, target)
+    )
+  );
+}
+
+function standingMatches(
+  matcher: Extract<MechanicsPredicate, { readonly kind: "standing-present" }>["fact"],
+  fact: StandingFact
+): boolean {
+  if (matcher.kind !== fact.kind) return false;
+  switch (matcher.kind) {
+    case "active-key":
+      return fact.kind === "active-key" && matcher.key === fact.key;
+    case "condition-immunity":
+      return (
+        fact.kind === "condition-immunity" && matcher.conditionId === fact.conditionId
+      );
+    case "damage-defense":
+      return fact.kind === "damage-defense" && matcher.sourceId === fact.rule.sourceId;
+    case "grant-group":
+      return fact.kind === "grant-group" && matcher.groupId === fact.groupId;
+    case "program-fact":
+      return fact.kind === "program-fact" && matcher.factId === fact.factId;
+    case "target-mark":
+      return fact.kind === "target-mark" && matcher.markId === fact.markId;
+  }
+}
+
+function predicateExpression(
+  expression: unknown,
+  context: PredicateContext
+): number | null {
+  return evaluateIntegerExpression(expression, context.bindings);
+}
+
+function evaluatePredicate(
+  predicate: MechanicsPredicate,
+  context: PredicateContext
+): PredicateTruth {
+  switch (predicate.kind) {
+    case "not": {
+      const value = evaluatePredicate(predicate.predicate, context);
+      return value === null ? null : !value;
+    }
+    case "all": {
+      let unknown = false;
+      for (const child of predicate.predicates) {
+        const value = evaluatePredicate(child, context);
+        if (value === false) return false;
+        if (value === null) unknown = true;
+      }
+      return unknown ? null : true;
+    }
+    case "any": {
+      let unknown = false;
+      for (const child of predicate.predicates) {
+        const value = evaluatePredicate(child, context);
+        if (value === true) return true;
+        if (value === null) unknown = true;
+      }
+      return unknown ? null : false;
+    }
+    case "answer-boolean": {
+      const answer = context.resolved[predicate.inputId];
+      return answer?.kind === "boolean" ? answer.value === predicate.equals : null;
+    }
+    case "answer-choice": {
+      const answer = context.resolved[predicate.inputId];
+      return answer?.kind === "choice" ? answer.choiceId === predicate.choiceId : null;
+    }
+    case "answer-d20": {
+      const answer = context.resolved[predicate.inputId];
+      return answer?.kind === "d20"
+        ? quantifies(
+            answer.requests.map(
+              (request) => request.result.outcome.outcomeId === predicate.outcomeId
+            ),
+            predicate.quantifier
+          )
+        : null;
+    }
+    case "answer-dice-total": {
+      const answer = context.resolved[predicate.inputId];
+      const value = predicateExpression(predicate.value, context);
+      return answer?.kind === "dice" && value !== null
+        ? quantifies(
+            answer.requests.map(({ resolution }) =>
+              comparison(resolution.total, predicate.comparison, value)
+            ),
+            predicate.quantifier
+          )
+        : null;
+    }
+    case "answer-entity-count": {
+      const answer = context.resolved[predicate.inputId];
+      const value = predicateExpression(predicate.value, context);
+      return answer?.kind === "entities" && value !== null
+        ? comparison(answer.targets.length, predicate.comparison, value)
+        : null;
+    }
+    case "answer-integer": {
+      const answer = context.resolved[predicate.inputId];
+      const value = predicateExpression(predicate.value, context);
+      return answer?.kind === "integer" && value !== null
+        ? comparison(answer.value, predicate.comparison, value)
+        : null;
+    }
+    case "answer-table": {
+      const answer = context.resolved[predicate.inputId];
+      return answer?.kind === "table" ? answer.rowId === predicate.rowId : null;
+    }
+    case "binding": {
+      const left = context.bindings[predicate.bindingId];
+      const right = predicateExpression(predicate.value, context);
+      return left === undefined || right === null
+        ? null
+        : comparison(left, predicate.comparison, right);
+    }
+    case "register": {
+      const initial = context.intent.program.registers.find(
+        (register) => register.registerId === predicate.registerId
+      )?.initial;
+      const current = context.root?.registers[predicate.registerId] ?? initial;
+      const right = predicateExpression(predicate.value, context);
+      return typeof current === "number" && right !== null
+        ? comparison(current, predicate.comparison, right)
+        : null;
+    }
+    case "phase-executions": {
+      const current = context.root?.phaseState[predicate.phaseId]?.execution ?? 0;
+      const right = predicateExpression(predicate.value, context);
+      return right === null ? null : comparison(current, predicate.comparison, right);
+    }
+    case "entity-hit-points": {
+      const targets = resolveTargets(
+        predicate.target,
+        context.intent,
+        context.resolved,
+        context.bindings
+      );
+      const right = predicateExpression(predicate.value, context);
+      if (!targets || right === null) return null;
+      const checks: boolean[] = [];
+      for (const target of targets) {
+        const entity = worldEntity(context.world, target.binding);
+        if (!entity) return null;
+        checks.push(comparison(entityHitPoints(entity), predicate.comparison, right));
+      }
+      return quantifies(checks, predicate.quantifier);
+    }
+    case "entity-kind": {
+      const targets = resolveTargets(
+        predicate.target,
+        context.intent,
+        context.resolved,
+        context.bindings
+      );
+      if (!targets) return null;
+      const checks: boolean[] = [];
+      for (const target of targets) {
+        const entity = worldEntity(context.world, target.binding);
+        if (!entity) return null;
+        checks.push(entity.kind === predicate.entityKind);
+      }
+      return quantifies(checks, predicate.quantifier);
+    }
+    case "condition-present": {
+      const targets = resolveTargets(
+        predicate.target,
+        context.intent,
+        context.resolved,
+        context.bindings
+      );
+      if (!targets) return null;
+      const checks = targets.map((target) => {
+        const present = occurrencesForTarget(context.world, target.binding).some(
+          (occurrence) =>
+            occurrence.kind === "condition" &&
+            occurrence.conditionId === predicate.conditionId
+        );
+        return present === predicate.present;
+      });
+      return quantifies(checks, predicate.quantifier);
+    }
+    case "standing-present": {
+      const targets = resolveTargets(
+        predicate.target,
+        context.intent,
+        context.resolved,
+        context.bindings
+      );
+      if (!targets) return null;
+      const checks = targets.map((target) => {
+        const present = occurrencesForTarget(context.world, target.binding).some(
+          (occurrence) =>
+            occurrence.kind === "standing" &&
+            standingMatches(predicate.fact, occurrence.fact)
+        );
+        return present === predicate.present;
+      });
+      return quantifies(checks, predicate.quantifier);
+    }
+    case "resource": {
+      const candidates = resourceCandidates(
+        predicate.selector,
+        context.intent,
+        context.resolved,
+        context.world
+      );
+      const right = predicateExpression(predicate.value, context);
+      if (!candidates || right === null) return null;
+      const values = candidates
+        .map((candidate) => resourceRemaining(context.world, candidate))
+        .filter((value): value is number => value !== null);
+      return values.length === 0
+        ? false
+        : comparison(Math.max(...values), predicate.comparison, right);
+    }
+    case "landed-damage": {
+      const parts = context.landedDamage?.[predicate.stepId];
+      const right = predicateExpression(predicate.value, context);
+      if (!parts || right === null) return null;
+      const left =
+        predicate.partId === null
+          ? Object.values(parts).reduce((total, value) => total + value, 0)
+          : parts[predicate.partId];
+      return left === undefined ? null : comparison(left, predicate.comparison, right);
+    }
+    case "trigger-critical-hit":
+      return context.intent.trigger.kind === "damage-taken"
+        ? context.intent.trigger.criticalHit === predicate.equals
+        : false;
+    case "trigger-damage": {
+      const right = predicateExpression(predicate.value, context);
+      return context.intent.trigger.kind === "damage-taken" && right !== null
+        ? comparison(
+            context.intent.trigger.resolution.effective.amount,
+            predicate.comparison,
+            right
+          )
+        : false;
+    }
+    case "trigger-damage-delivery":
+      return context.intent.trigger.kind === "damage-taken"
+        ? context.intent.trigger.resolution.packet.delivery === predicate.delivery
+        : false;
+    case "trigger-damage-trait":
+      return context.intent.trigger.kind === "damage-taken"
+        ? context.intent.trigger.resolution.packet.traits.includes(predicate.trait) ===
+            predicate.present
+        : false;
+    case "trigger-damage-type":
+      return context.intent.trigger.kind === "damage-taken"
+        ? context.intent.trigger.resolution.packet.parts.some(
+            (part) => part.damageType === predicate.damageType
+          )
+        : false;
+  }
+}
+
+function materializeD20Request(
+  spec: MechanicsD20RequestSpec,
+  intent: MechanicsExecutionContext,
+  binding: EntityRef | null,
+  bind: "actor" | "target" | null
+): Readonly<D20TestRequest> | null {
+  const actor = bind === "actor" ? binding : roleEntity(intent, spec.actor);
+  if (!actor) return null;
+  const target =
+    bind === "target"
+      ? binding
+      : spec.target === null
+        ? null
+        : roleEntity(intent, spec.target);
+  if ((bind === "target" || spec.target !== null) && !target) return null;
+  return conformD20TestRequest({ ...spec, actor, target });
+}
+
+function expandedD20Identities(
+  input: Extract<MechanicsInput, { readonly kind: "d20" }>,
+  context: PredicateContext
+): {
+  readonly bind: "actor" | "target" | null;
+  readonly identities: readonly MechanicsRequestIdentity[];
+  readonly pendingEntityInputId: string | null;
+} | null {
+  if (input.expansion.kind === "single") {
+    const binding = roleEntity(context.intent, input.expansion.binding);
+    return binding
+      ? {
+          bind: null,
+          identities: [{ binding, ordinal: 1 }],
+          pendingEntityInputId: null,
+        }
+      : null;
+  }
+  const source = context.resolved[input.expansion.inputId];
+  if (!source) {
+    return {
+      bind: input.expansion.bind,
+      identities: [],
+      pendingEntityInputId: input.expansion.inputId,
+    };
+  }
+  if (source.kind !== "entities") return null;
+  return {
+    bind: input.expansion.bind,
+    identities: requestIdentities(source.targets),
+    pendingEntityInputId: null,
+  };
+}
+
+function expandedDiceIdentities(
+  input: Extract<MechanicsInput, { readonly kind: "dice" }>,
+  context: PredicateContext
+): {
+  readonly identities: readonly MechanicsRequestIdentity[];
+  readonly pendingInputId: string | null;
+} | null {
+  if (input.expansion.kind === "single") {
+    const binding = roleEntity(context.intent, input.expansion.binding);
+    return binding
+      ? { identities: [{ binding, ordinal: 1 }], pendingInputId: null }
+      : null;
+  }
+  const source = context.resolved[input.expansion.inputId];
+  if (!source) return { identities: [], pendingInputId: input.expansion.inputId };
+  if (input.expansion.kind === "entities") {
+    if (source.kind !== "entities") return null;
+    return {
+      identities: requestIdentities(source.targets),
+      pendingInputId: null,
+    };
+  }
+  if (input.expansion.kind === "d20-outcomes") {
+    return source.kind === "d20"
+      ? {
+          identities: source.requests.flatMap(({ identity, result }) =>
+            input.expansion.kind === "d20-outcomes" &&
+            input.expansion.outcomeIds.includes(result.outcome.outcomeId)
+              ? [identity]
+              : []
+          ),
+          pendingInputId: null,
+        }
+      : null;
+  }
+  if (source.kind !== "dice") return null;
+  const expansion = input.expansion;
+  const value = predicateExpression(expansion.value, context);
+  return value === null
+    ? null
+    : {
+        identities: source.requests.flatMap(({ identity, resolution }) =>
+          comparison(resolution.total, expansion.comparison, value) ? [identity] : []
+        ),
+        pendingInputId: null,
+      };
+}
+
+function paymentRequirements(
+  payments: readonly { readonly sourceId: string; readonly term: ResourceTerm }[],
+  bindings: Readonly<Record<string, number>>
+): readonly MechanicsPaymentRequirement[] | null {
+  const result: MechanicsPaymentRequirement[] = [];
+  for (const payment of payments) {
+    const amountPerUse = evaluatedAmount(payment.term.amount, bindings);
+    if (amountPerUse === null || amountPerUse < 1) return null;
+    result.push({
+      amountPerUse,
+      selector: payment.term.selector,
+      sourceId: payment.sourceId,
+    });
+  }
+  return result;
+}
+
+function requirementActivation(
+  predicate: MechanicsPredicate | null,
+  context: PredicateContext
+): MechanicsRequirement["activation"] {
+  if (predicate === null) return "required";
+  const active = evaluatePredicate(predicate, context);
+  return active === null ? "conditional" : active ? "required" : "omitted";
+}
+
+function requirementForInput(
+  input: MechanicsInput,
+  phaseId: string,
+  context: PredicateContext
+): MechanicsRequirement | null {
+  const base = {
+    activation: requirementActivation(input.when, context),
+    activeWhen: input.when,
+    inputId: input.inputId,
+    phaseId,
+  };
+  switch (input.kind) {
+    case "entities": {
+      const minimum = evaluatedAmount(input.minimum, context.bindings);
+      const maximum = evaluatedAmount(input.maximum, context.bindings);
+      return minimum !== null &&
+        maximum !== null &&
+        minimum <= maximum &&
+        maximum <= MAX_TARGETS
+        ? {
+            ...base,
+            eligibility: input.eligibility,
+            kind: "entities",
+            maximum,
+            minimum,
+            multiplicity: input.multiplicity,
+          }
+        : null;
+    }
+    case "d20": {
+      const expansion = expandedD20Identities(input, context);
+      const payments = paymentRequirements(input.payments, context.bindings);
+      if (!expansion || !payments) return null;
+      const requests: MechanicsD20Requirement[] = [];
+      for (const identity of expansion.identities) {
+        const request = materializeD20Request(
+          input.request,
+          context.intent,
+          identity.binding,
+          expansion.bind
+        );
+        const review = request ? reviewD20Test(request, context.bindings) : null;
+        if (!review) return null;
+        requests.push({ identity, payments, review });
+      }
+      return {
+        ...base,
+        kind: "d20",
+        pendingEntityInputId: expansion.pendingEntityInputId,
+        requests: Object.freeze(requests),
+      };
+    }
+    case "dice": {
+      const expansion = expandedDiceIdentities(input, context);
+      const payments = paymentRequirements(input.payments, context.bindings);
+      const roll = evaluateDiceFormula(
+        input.formula,
+        context.bindings,
+        input.acceptancePolicy
+      );
+      const replacementPolicy = evaluateDiceReplacementPolicy(
+        input.replacementPolicy,
+        context.bindings
+      );
+      if (!expansion || !roll || !payments || !replacementPolicy) return null;
+      const requests: MechanicsDiceRequirement[] = expansion.identities.map(
+        (identity) => ({ identity, payments, replacementPolicy, roll })
+      );
+      return {
+        ...base,
+        kind: "dice",
+        pendingInputId: expansion.pendingInputId,
+        requests: Object.freeze(requests),
+      };
+    }
+    case "choice":
+      return { ...base, kind: "choice", options: input.options };
+    case "integer": {
+      const minimum = evaluateIntegerExpression(input.minimum, context.bindings);
+      const maximum = evaluateIntegerExpression(input.maximum, context.bindings);
+      return minimum !== null && maximum !== null && minimum <= maximum
+        ? { ...base, kind: "integer", maximum, minimum }
+        : null;
+    }
+    case "boolean":
+      return { ...base, kind: "boolean" };
+    case "table":
+      return { ...base, kind: "table", rows: input.rows };
+    case "resource": {
+      const amount = evaluatedAmount(input.term.amount, context.bindings);
+      return amount !== null && amount >= 1
+        ? { ...base, amount, kind: "resource", term: input.term }
+        : null;
+    }
+    case "item": {
+      const owner = roleEntity(context.intent, input.owner);
+      return owner?.entityId === "self" && owner.material.kind === "character-play"
+        ? { ...base, kind: "item", owner }
+        : null;
+    }
+  }
+}
+
+/**
+ * Derive all table requirements without consuming answers. Conditions that depend
+ * on earlier answers remain explicit `conditional` requirements in authored order.
+ */
+export function deriveMechanicsRequirements(
+  intentValue: unknown,
+  snapshot: Readonly<MechanicsWorld>
+): MechanicsRequirementsResult {
+  const validated = validateIntentAgainstWorld(intentValue, snapshot);
+  if ("reason" in validated) {
+    return freezeDeep({
+      reason: validated.reason,
+      referenceId: validated.referenceId,
+      status: "rejected",
+    });
+  }
+  const context: PredicateContext = {
+    bindings: validated.bindings,
+    intent: validated.execution,
+    resolved: {},
+    root: validated.root,
+    world: validated.world,
+  };
+  const requirements: MechanicsRequirement[] = [];
+  for (const input of validated.phase.inputs) {
+    const requirement = requirementForInput(input, validated.phase.phaseId, context);
+    if (!requirement) {
+      return freezeDeep({
+        reason: "invalid-requirement" as const,
+        referenceId: input.inputId,
+        status: "rejected",
+      });
+    }
+    requirements.push(requirement);
+  }
+  return freezeDeep({
+    intent: validated.intent,
+    requirements: freezeDeep(requirements),
+    status: "derived",
+  });
+}
+
+type RollPaymentEvidence =
+  | {
+      readonly kind: "d20";
+      readonly observation: D20TestObservation;
+      readonly payments: Extract<
+        MechanicsAnswer,
+        { readonly kind: "d20" }
+      >["requests"][number]["payments"];
+    }
+  | {
+      readonly kind: "dice";
+      readonly observation: DiceObservation;
+      readonly payments: Extract<
+        MechanicsAnswer,
+        { readonly kind: "dice" }
+      >["requests"][number]["payments"];
+    };
+
+function resolvePayments(
+  answer: RollPaymentEvidence,
+  requirements: readonly MechanicsPaymentRequirement[],
+  context: PredicateContext,
+  usageBySource: Readonly<Record<string, number>>
+): readonly ReviewedMechanicsPayment[] | null {
+  if (!unique(answer.payments.map((payment) => payment.sourceId))) return null;
+  const result: ReviewedMechanicsPayment[] = [];
+  for (const requirement of requirements) {
+    const uses = usageBySource[requirement.sourceId] ?? 0;
+    const supplied = answer.payments.find(
+      (payment) => payment.sourceId === requirement.sourceId
+    );
+    if (uses === 0) {
+      if (supplied) return null;
+      continue;
+    }
+    if (
+      !supplied ||
+      !resourceRefMatchesSelector(
+        supplied.resource,
+        requirement.selector,
+        context.intent,
+        context.resolved,
+        context.world
+      )
+    ) {
+      return null;
+    }
+    const amount = requirement.amountPerUse * uses;
+    const remaining = resourceRemaining(context.world, supplied.resource);
+    if (!Number.isSafeInteger(amount) || remaining === null || remaining < amount) {
+      return null;
+    }
+    result.push({ amount, resource: supplied.resource, sourceId: requirement.sourceId });
+  }
+  if (
+    answer.payments.some(
+      (payment) => !result.some((reviewed) => reviewed.sourceId === payment.sourceId)
+    )
+  ) {
+    return null;
+  }
+  return result;
+}
+
+interface MechanicsResourceDebit {
+  readonly amount: number;
+  readonly resource: ResourceRef;
+}
+
+function resolvedResourceDebits(
+  resolved: Readonly<Record<string, ResolvedMechanicsAnswer>>
+): readonly MechanicsResourceDebit[] {
+  return Object.values(resolved).flatMap((answer) => {
+    if (answer.kind === "d20" || answer.kind === "dice") {
+      return answer.requests.flatMap(({ payments }) => payments);
+    }
+    return answer.kind === "resource"
+      ? [{ amount: answer.amount, resource: answer.resource }]
+      : [];
+  });
+}
+
+function reviewedPaymentsAreAffordable(
+  payments: readonly MechanicsResourceDebit[],
+  world: MechanicsWorld
+): boolean {
+  const totals = new Map<string, { amount: number; resource: ResourceRef }>();
+  for (const payment of payments) {
+    const key = resourceRefKey(payment.resource);
+    const prior = totals.get(key);
+    const amount = (prior?.amount ?? 0) + payment.amount;
+    if (!Number.isSafeInteger(amount)) return false;
+    totals.set(key, { amount, resource: payment.resource });
+  }
+  return [...totals.values()].every(
+    ({ amount, resource }) => (resourceRemaining(world, resource) ?? -1) >= amount
+  );
+}
+
+interface ReplacementAuthorizationBatch {
+  readonly rules: readonly ResolvedDiceReplacementRule[];
+  readonly trails: readonly ResolvedDiceTrail[];
+}
+
+function d20ReplacementAuthorizationBatches(
+  result: D20TestResult
+): ReplacementAuthorizationBatch[] | null {
+  const batches: ReplacementAuthorizationBatch[] = [];
+  const d20 = result.observation.d20;
+  if (d20 && "trails" in d20 && result.review.d20Requirement) {
+    const resolution = resolveDiceObservation(result.review.d20Requirement, d20);
+    if (!resolution) return null;
+    batches.push({
+      rules: result.review.replacements.map(({ rule }) => rule),
+      trails: resolution.trails,
+    });
+  }
+  for (const modifier of result.resolvedEnteredModifiers) {
+    if (modifier.kind !== "dice-formula") continue;
+    batches.push({
+      rules: result.review.replacements.flatMap(({ appliesTo, rule }) =>
+        appliesTo === "any-die" ? [rule] : []
+      ),
+      trails: modifier.resolution.trails,
+    });
+  }
+  return batches;
+}
+
+function resolveAnswer(
+  answer: MechanicsAnswer,
+  requirement: MechanicsRequirement,
+  context: PredicateContext
+): ResolvedMechanicsAnswer | null {
+  if (answer.kind !== requirement.kind || answer.inputId !== requirement.inputId) {
+    return null;
+  }
+  switch (requirement.kind) {
+    case "entities": {
+      if (answer.kind !== "entities") return null;
+      if (
+        answer.targets.length < requirement.minimum ||
+        answer.targets.length > requirement.maximum ||
+        (requirement.multiplicity === "set" && !unique(answer.targets.map(entityRefKey)))
+      ) {
+        return null;
+      }
+      for (const target of answer.targets) {
+        const entity = worldEntity(context.world, target);
+        if (
+          !entity ||
+          (requirement.eligibility !== "any" && entity.kind !== requirement.eligibility)
+        ) {
+          return null;
+        }
+      }
+      const targets =
+        requirement.multiplicity === "set"
+          ? [...answer.targets].sort((left, right) =>
+              entityRefKey(left).localeCompare(entityRefKey(right))
+            )
+          : answer.targets;
+      return { inputId: answer.inputId, kind: "entities", targets };
+    }
+    case "d20": {
+      if (answer.kind !== "d20") return null;
+      if (
+        requirement.pendingEntityInputId !== null ||
+        answer.requests.length !== requirement.requests.length
+      ) {
+        return null;
+      }
+      const requests: Extract<
+        ResolvedMechanicsAnswer,
+        { readonly kind: "d20" }
+      >["requests"][number][] = [];
+      const authorizationBatches: NonNullable<
+        ReturnType<typeof d20ReplacementAuthorizationBatches>
+      > = [];
+      const paymentEvidence: Array<{
+        readonly batches: readonly ReplacementAuthorizationBatch[];
+        readonly evidence: RollPaymentEvidence;
+        readonly requirements: readonly MechanicsPaymentRequirement[];
+      }> = [];
+      for (let index = 0; index < requirement.requests.length; index += 1) {
+        const expected = requirement.requests[index];
+        const supplied = answer.requests[index];
+        if (!expected || !supplied || !exactEqual(supplied.identity, expected.identity)) {
+          return null;
+        }
+        const result = evaluateD20Test(
+          expected.review.request,
+          context.bindings,
+          supplied.observation
+        );
+        if (!result) return null;
+        const batches = d20ReplacementAuthorizationBatches(result);
+        if (!batches) return null;
+        authorizationBatches.push(...batches);
+        paymentEvidence.push({
+          batches,
+          evidence: {
+            kind: "d20",
+            observation: supplied.observation,
+            payments: supplied.payments,
+          },
+          requirements: expected.payments,
+        });
+        requests.push({ identity: expected.identity, payments: [], result });
+      }
+      if (!countAuthorizedDiceReplacementUses(authorizationBatches)) return null;
+      for (let index = 0; index < paymentEvidence.length; index += 1) {
+        const evidence = paymentEvidence[index];
+        const request = requests[index];
+        if (!evidence || !request) return null;
+        const uses = countAuthorizedDiceReplacementUses(evidence.batches);
+        if (!uses) return null;
+        const payments = resolvePayments(
+          evidence.evidence,
+          evidence.requirements,
+          context,
+          uses
+        );
+        if (!payments) return null;
+        requests[index] = { ...request, payments };
+      }
+      return reviewedPaymentsAreAffordable(
+        [
+          ...resolvedResourceDebits(context.resolved),
+          ...requests.flatMap(({ payments }) => payments),
+        ],
+        context.world
+      )
+        ? { inputId: answer.inputId, kind: "d20", requests }
+        : null;
+    }
+    case "dice": {
+      if (answer.kind !== "dice") return null;
+      if (
+        requirement.pendingInputId !== null ||
+        answer.requests.length !== requirement.requests.length
+      ) {
+        return null;
+      }
+      const requests: Extract<
+        ResolvedMechanicsAnswer,
+        { readonly kind: "dice" }
+      >["requests"][number][] = [];
+      const batches: ReplacementAuthorizationBatch[] = [];
+      const evidence: Array<{
+        readonly answer: RollPaymentEvidence;
+        readonly batch: ReplacementAuthorizationBatch;
+        readonly requirements: readonly MechanicsPaymentRequirement[];
+      }> = [];
+      for (let index = 0; index < requirement.requests.length; index += 1) {
+        const expected = requirement.requests[index];
+        const supplied = answer.requests[index];
+        if (!expected || !supplied || !exactEqual(supplied.identity, expected.identity)) {
+          return null;
+        }
+        const resolution = resolveDiceObservation(expected.roll, supplied.observation);
+        if (!resolution) return null;
+        const batch = {
+          rules: expected.replacementPolicy,
+          trails: resolution.trails,
+        };
+        batches.push(batch);
+        evidence.push({
+          answer: {
+            kind: "dice",
+            observation: supplied.observation,
+            payments: supplied.payments,
+          },
+          batch,
+          requirements: expected.payments,
+        });
+        requests.push({ identity: expected.identity, payments: [], resolution });
+      }
+      if (!countAuthorizedDiceReplacementUses(batches)) return null;
+      for (let index = 0; index < evidence.length; index += 1) {
+        const current = evidence[index];
+        const request = requests[index];
+        if (!current || !request) return null;
+        const uses = countAuthorizedDiceReplacementUses([current.batch]);
+        if (!uses) return null;
+        const payments = resolvePayments(
+          current.answer,
+          current.requirements,
+          context,
+          uses
+        );
+        if (!payments) return null;
+        requests[index] = { ...request, payments };
+      }
+      return reviewedPaymentsAreAffordable(
+        [
+          ...resolvedResourceDebits(context.resolved),
+          ...requests.flatMap(({ payments }) => payments),
+        ],
+        context.world
+      )
+        ? { inputId: answer.inputId, kind: "dice", requests }
+        : null;
+    }
+    case "choice":
+      return answer.kind === "choice" && requirement.options.includes(answer.choiceId)
+        ? { choiceId: answer.choiceId, inputId: answer.inputId, kind: "choice" }
+        : null;
+    case "integer":
+      return answer.kind === "integer" &&
+        answer.value >= requirement.minimum &&
+        answer.value <= requirement.maximum
+        ? { inputId: answer.inputId, kind: "integer", value: answer.value }
+        : null;
+    case "boolean":
+      return answer.kind === "boolean"
+        ? { inputId: answer.inputId, kind: "boolean", value: answer.value }
+        : null;
+    case "table":
+      return answer.kind === "table" && requirement.rows.includes(answer.rowId)
+        ? {
+            authority: answer.authority,
+            inputId: answer.inputId,
+            kind: "table",
+            rowId: answer.rowId,
+          }
+        : null;
+    case "resource": {
+      if (
+        answer.kind !== "resource" ||
+        !resourceRefMatchesSelector(
+          answer.resource,
+          requirement.term.selector,
+          context.intent,
+          context.resolved,
+          context.world
+        ) ||
+        !reviewedPaymentsAreAffordable(
+          [
+            ...resolvedResourceDebits(context.resolved),
+            { amount: requirement.amount, resource: answer.resource },
+          ],
+          context.world
+        )
+      ) {
+        return null;
+      }
+      return {
+        amount: requirement.amount,
+        inputId: answer.inputId,
+        kind: "resource",
+        resource: answer.resource,
+      };
+    }
+    case "item": {
+      if (
+        answer.kind !== "item" ||
+        !exactEqual(answer.owner, requirement.owner.material) ||
+        !itemFor(context.world, answer.owner, answer.instanceId, answer.instanceOrdinal)
+      ) {
+        return null;
+      }
+      return {
+        inputId: answer.inputId,
+        instanceId: answer.instanceId,
+        instanceOrdinal: answer.instanceOrdinal,
+        kind: "item",
+        owner: answer.owner,
+      };
+    }
+  }
+}
+
+function reviewRejected(
+  reason: MechanicsReviewRejection,
+  referenceId: string | null,
+  requirement: MechanicsRequirement | null = null
+): MechanicsReviewResult {
+  return freezeDeep({ reason, referenceId, requirement, status: "rejected" as const });
+}
+
+/** Exact staged answer review; only active requirements consume answers. */
+export function reviewMechanicsIntent(
+  intentValue: unknown,
+  answersValue: unknown,
+  snapshot: Readonly<MechanicsWorld>
+): MechanicsReviewResult {
+  const validated = validateIntentAgainstWorld(intentValue, snapshot);
+  if ("reason" in validated) {
+    return reviewRejected(validated.reason, validated.referenceId);
+  }
+  const answers = conformMechanicsAnswers(answersValue);
+  if (!answers) return reviewRejected("invalid-answers", null);
+  if (!unique(answers.map((answer) => answer.inputId))) {
+    return reviewRejected("duplicate-answer", null);
+  }
+  const resolved: Record<string, ResolvedMechanicsAnswer> = {};
+  const requirements: MechanicsRequirement[] = [];
+  let answerIndex = 0;
+  const context: PredicateContext = {
+    bindings: validated.bindings,
+    intent: validated.execution,
+    resolved,
+    root: validated.root,
+    world: validated.world,
+  };
+
+  for (const input of validated.phase.inputs) {
+    const requirement = requirementForInput(input, validated.phase.phaseId, context);
+    if (!requirement) return reviewRejected("invalid-requirement", input.inputId);
+    const active = input.when === null ? true : evaluatePredicate(input.when, context);
+    if (active === null) return reviewRejected("unresolved-predicate", input.inputId);
+    const exactRequirement = {
+      ...requirement,
+      activation: active ? ("required" as const) : ("omitted" as const),
+    };
+    requirements.push(exactRequirement);
+    const answer = answers[answerIndex];
+    if (!active) {
+      if (answer?.inputId === input.inputId) {
+        return reviewRejected("unexpected-answer", input.inputId);
+      }
+      continue;
+    }
+    if (
+      (exactRequirement.kind === "d20" &&
+        exactRequirement.pendingEntityInputId !== null) ||
+      (exactRequirement.kind === "dice" && exactRequirement.pendingInputId !== null)
+    ) {
+      return reviewRejected(
+        "invalid-requirement",
+        exactRequirement.kind === "d20"
+          ? exactRequirement.pendingEntityInputId
+          : exactRequirement.pendingInputId
+      );
+    }
+    if (!answer) {
+      return reviewRejected("missing-answer", input.inputId, exactRequirement);
+    }
+    if (answer.inputId !== input.inputId) {
+      return reviewRejected("answer-order", answer.inputId);
+    }
+    const result = resolveAnswer(answer, exactRequirement, context);
+    if (!result) {
+      return reviewRejected(
+        answer.kind === exactRequirement.kind ? "invalid-answer" : "answer-kind-mismatch",
+        input.inputId,
+        exactRequirement
+      );
+    }
+    resolved[input.inputId] = result;
+    answerIndex += 1;
+  }
+  if (answerIndex !== answers.length) {
+    return reviewRejected("unexpected-answer", answers[answerIndex]?.inputId ?? null);
+  }
+  return freezeDeep({
+    reviewed: freezeDeep({
+      answers,
+      intent: validated.intent,
+      requirements,
+      resolved,
+    }),
+    status: "reviewed",
+  });
+}
+
+function operationForStep(step: MechanicsStep): MechanicsWorldOperation | null {
+  switch (step.kind) {
+    case "damage":
+      return "hit-point-damage";
+    case "heal":
+      return "hit-point-healing";
+    case "incoming-damage-adjustment":
+      return "incoming-damage-adjustment";
+    case "temporary-hit-points":
+    case "clear-temporary-hit-points":
+      return "temporary-hit-points";
+    case "condition":
+      return "condition-transition";
+    case "exhaustion-change":
+      return "exhaustion-transition";
+    case "standing":
+      return "standing-transition";
+    case "concentration":
+      return "concentration-transition";
+    case "polymorph":
+      return "polymorph-transition";
+    case "stabilize":
+    case "death":
+      return "death-transition";
+    case "resource-change":
+    case "resource-recover":
+    case "resource-state":
+      return "resource-transition";
+    case "occurrence-end":
+    case "end-program":
+      return "occurrence-transition";
+    case "entity-create":
+    case "entity-end":
+    case "entity-change":
+      return "entity-transition";
+    case "inventory-create":
+    case "inventory-end":
+    case "inventory-change":
+      return "inventory-transition";
+    case "turn-claim":
+      return "turn-claim-transition";
+    case "register":
+      return "program-register-transition";
+    case "manual-relocation":
+    case "manual-table":
+      return null;
+  }
+}
+
+function manualForStep(
+  step: Extract<MechanicsStep, { readonly kind: "manual-relocation" | "manual-table" }>,
+  reviewed: ReviewedMechanicsIntent,
+  bindings: Readonly<Record<string, number>>,
+  execution: MechanicsExecutionContext
+): readonly ManualInstruction[] | null {
+  if (step.kind === "manual-relocation") {
+    const targets = resolveTargets(step.target, execution, reviewed.resolved, bindings);
+    return targets
+      ? [
+          {
+            instructionId: step.instructionId,
+            kind: "relocation",
+            mode: step.mode,
+            stepId: step.stepId,
+            targets,
+          },
+        ]
+      : null;
+  }
+  const answer = reviewed.resolved[step.tableInputId];
+  return answer?.kind === "table"
+    ? [
+        {
+          authority: answer.authority,
+          instructionId: step.instructionId,
+          kind: "table",
+          rowId: answer.rowId,
+          stepId: step.stepId,
+        },
+      ]
+    : null;
+}
+
+function planRejected(
+  reason: Extract<MechanicsPlanResult, { readonly status: "rejected" }>["reason"],
+  manual: readonly ManualInstruction[] = [],
+  operations: readonly MechanicsWorldOperation[] = [],
+  stepIds: readonly string[] = []
+): MechanicsPlanResult {
+  return freezeDeep({ manual, operations, reason, status: "rejected", stepIds });
+}
+
+/**
+ * Re-review immediately before plan. Until typed world simulators exist for an
+ * active operation, fail with the exact missing operation instead of compiling a
+ * generic document mutation.
+ */
+export function planMechanicsAction(
+  reviewedValue: ReviewedMechanicsIntent,
+  snapshot: Readonly<MechanicsWorld>
+): MechanicsPlanResult {
+  if (typeof reviewedValue !== "object" || !Object.isFrozen(reviewedValue)) {
+    return planRejected("invalid-reviewed-intent");
+  }
+  const validated = validateIntentAgainstWorld(reviewedValue.intent, snapshot);
+  if ("reason" in validated) return planRejected("stale-review");
+  if (validated.executionMode === "replay") {
+    return freezeDeep({ action: null, manual: [], status: "planned" as const });
+  }
+  const rereview = reviewMechanicsIntent(
+    reviewedValue.intent,
+    reviewedValue.answers,
+    snapshot
+  );
+  if (rereview.status !== "reviewed") return planRejected("stale-review");
+  if (!exactEqual(rereview.reviewed, reviewedValue)) {
+    return planRejected("invalid-reviewed-intent");
+  }
+  const { bindings, execution, phase, root, world } = validated;
+  const context: PredicateContext = {
+    bindings,
+    intent: execution,
+    resolved: reviewedValue.resolved,
+    root,
+    world,
+  };
+  const orderedDependencies = mechanicsPhaseOrderedDependencies(phase);
+  if (orderedDependencies.length > 0) {
+    return planRejected(
+      "missing-world-operation",
+      [],
+      ["ordered-program-execution"],
+      orderedDependencies
+    );
+  }
+  const manual: ManualInstruction[] = [];
+  const missing: { operation: MechanicsWorldOperation; stepId: string }[] = [];
+  for (const step of phase.steps) {
+    const active = step.when === null ? true : evaluatePredicate(step.when, context);
+    if (active === null)
+      return planRejected("unresolved-predicate", manual, [], [step.stepId]);
+    if (!active) continue;
+    const operation = operationForStep(step);
+    if (operation) missing.push({ operation, stepId: step.stepId });
+    else if (step.kind === "manual-relocation" || step.kind === "manual-table") {
+      const instructions = manualForStep(step, reviewedValue, bindings, execution);
+      if (!instructions) {
+        return planRejected("invalid-reviewed-intent", manual, [], [step.stepId]);
+      }
+      manual.push(...instructions);
+    } else {
+      return planRejected("invalid-reviewed-intent", manual, [], [step.stepId]);
+    }
+  }
+
+  // Program state is one atomic receipt. Invocation creates the exact preallocated
+  // root and its complete phaseState; later phases atomically replace the selected
+  // {execution,lastTriggerEventId} pair. Neither transition derives an ordinal.
+  missing.push({
+    operation:
+      execution.rootReceipt.kind === "create"
+        ? "program-invocation-state-transition"
+        : "program-phase-state-transition",
+    stepId: phase.phaseId,
+  });
+  const operations = [...new Set(missing.map(({ operation }) => operation))];
+  if (operations.length > 0) {
+    return planRejected(
+      "missing-world-operation",
+      manual,
+      operations,
+      missing.map(({ stepId }) => stepId)
+    );
+  }
+
+  const adapter = planMechanicsWorldAction(world, world, {
+    actor: execution.actor,
+    facts: reviewedValue.intent.factGuards,
+    id: reviewedValue.intent.actionId,
+  });
+  if (adapter.status === "rejected") return planRejected("action-planner-rejected");
+  return freezeDeep({
+    action: adapter.status === "planned" ? adapter.action : null,
+    manual: Object.freeze(manual),
+    status: "planned",
+  });
+}

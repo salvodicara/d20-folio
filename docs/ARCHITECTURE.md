@@ -32,8 +32,9 @@ Vitest (unit) + Playwright (E2E)
 ESLint zero-warnings · Prettier · pre-commit + pre-push hooks (mandatory CI)
 ```
 
-The pre-push hook runs **typecheck + lint zero-warnings + the unit suite + coverage ≥ 80% +
-production build** before every push. Never `--no-verify`.
+Branch checkpoint pushes deliberately run no verification. The pre-push hook runs **typecheck +
+lint zero-warnings + the unit suite + coverage ≥ 80% + production build** exactly once, when the
+finished branch targets `main`. Never `--no-verify`.
 
 ---
 
@@ -281,6 +282,12 @@ equipped magic items + invocations + **maneuvers** + backgrounds — assembled b
 `AggregatedGrants` — the merged effect view (the `AggregatedGrants` interface in
 `src/lib/grants.ts` is the source of truth for its fields).
 
+Condition-disabled sources are removed at this same evaluator boundary, before a consumer can count
+them. A `save-bonus` may declare `suppressedByConditions`; Aura of Protection uses Incapacitated and
+Unconscious, so its Charisma bonus cannot leak onto the Paladin's own Death Save while the aura is
+inactive. This is typed source data plus the aggregate's effective-condition set, never a consumer-side
+name check.
+
 Sheet renderers consume `AggregatedGrants` instead of reading prose with regex. **No
 module in the codebase grep's English text to figure out what a feature does.** If it does,
 that's a refactor target.
@@ -345,9 +352,9 @@ action or a maintenance action cannot refresh it. Fanatical Focus is the first c
 data, so future features and homebrew use the same route. `recovery:"manual"` remains the honest rest
 cadence for such a pool; presenter copy names the activation trigger instead of exposing “Manual.”
 
-Some tracker rows are **DERIVED, not hand-declared** (golden rules 2 + 6). A magic item's charge
-pool comes from its cast grant or an activated `while-active.activation.tracker`
-(`resolveMagicItemTrackers`, S9); and a feat/feature that
+Some tracker rows are **DERIVED, not hand-declared** (golden rules 2 + 6). Legacy magic items still
+derive an item-id tracker temporarily, but every migrated mutable item instead declares catalogue
+`ResourceSpec` data and stores state under its physical `SrdEquipmentRef.instanceId`; and a feat/feature that
 grants **≥ 2 free-cast spells** (Fey/Shadow/Vampire-Touched, the multi-spell heritage feats) emits ONE
 INDEPENDENT 1/rest row PER SPELL via `resolveFreeCastFeatTrackers`, keyed `${featId}:${spellId}` — so
 casting one never locks the others (the prior shared-`total:2` counter deadlocked them). The row, the
@@ -357,33 +364,33 @@ A **single**-free-cast source keeps its bare-id `mechanics.tracker`. Spell SLOTS
 are now manually editable on the rail (tap a gem to spend, a spent socket to restore) — override-first
 (golden rule 8), so any mis-spend is correctable, not just within the cast's undo window.
 
-A charged single-spell item may declare `castLevels: [{ level, cost }]` on that same grant. The shared
+A charged single-spell item may declare `castLevels: [{ level, cost }]` plus
+`resourceCost: { resourceId }` on that grant. The shared
 `resolveSpellCastOptions` path expands only affordable rows, the cast-level modal shows the scaled spell
 facts plus the exact charge cost, and both Play and encounter commits debit/undo that cost through the
-same tracker transaction. Omitting the schedule preserves the ordinary fixed-level, one-use free cast.
+same physical-resource command. Omitting the schedule preserves the ordinary fixed-level, one-unit cast.
 An item-provided `always-prepared-spell` is only the visibility bridge for that item route: removing
 equipped items must leave the spell independently known before normal character slots are offered.
 
-A `free-cast-from-list` action carries both its spell-pool source id and its payment tracker id. The
-source id selects the exact eligible list even when homebrew pools share a resource; after the spell pick,
+A `free-cast-from-list` action carries both its spell-pool attribution and an explicit payment address.
+The source id selects the exact eligible list even when homebrew pools share a resource; after the spell pick,
 the provider materializes the ordinary resolved spell action and rejoins the same cast-level → target
 resolver → commit path. The selected turn record therefore names the spell and the actual charge payment,
 while action economy, effects, concentration, Chronicle provenance and undo are identical to an ordinary
-cast. Optional typed source overrides replace only the declared cast facts (fixed save DC, concentration,
-maximum duration). A concentration-free persistent source cast owns one source+spell active key and round
+cast. Optional typed source overrides replace only the declared cast facts (fixed save DC, fixed spell
+attack bonus, concentration, maximum duration) through `lib/cast-source-profile.ts`, shared by fixed-spell
+and list casts on both solo and encounter routes. A concentration-free persistent source cast owns one source+spell active key and round
 timer, so recurring actions remain available until deterministic expiry without pretending the spell still
 uses Concentration. Confirmation and redo revalidate the live eligible pool and remaining resource before
 mutating.
 
-An equipped magic item's activated property declares its action economy and optional charge/cooldown
-tracker on the existing `while-active` wrapper. `resolveMagicItemActivationActions` emits an ordinary
-Play action carrying the same item-id tracker and `activatesKey`; the standard commit/undo path spends
-the charge, lights the state, and arms its existing round timer atomically. Inventory, Resources, and
-the action card all read that one tracker. Variable dawn dice use `recovery:"dawn", autoRecover:false`
-and real-time cooldowns use `recovery:"manual"`, because the app neither rolls nor owns the table
-clock; Long Rest deliberately preserves both. A deterministic partial refill declares
-`longRestRecovery:N` and subtracts exactly N spent uses (Spirit Board: 1); omitting it keeps the full
-recovery default.
+An equipped magic item's activated property declares its action economy and optional
+`resourceCost` on the existing `while-active` wrapper. `resolveMagicItemActivationActions` emits an
+ordinary Play action carrying the exact item/copy/resource address and `activatesKey`; the standard
+target-review transaction spends the resource, lights the state and arms its timer atomically.
+Inventory, Resources, rests and cast/action surfaces resolve that same owner. Variable Dawn dice are
+typed `entered-roll` recovery amounts requested from the table before commit; deterministic partial/full
+recovery is likewise data, and explicit Dawn/Dusk controls prevent any Long-Rest or wall-clock alias.
 
 ### Riders (passive scaling chips)
 
@@ -436,12 +443,49 @@ character holds, every race trait, every known invocation, plus spells, plus wea
 > This section is the durable contract for the combat model. (The original standalone design
 > doc has been folded in here; the exploratory history lives in git.)
 
+### Canonical mechanics runtime cutover (active)
+
+The destination runtime has one exact physical state model, `MechanicsWorld`, spanning the loaded
+character and shared-combat documents. Every executable capability resolves to an immutable
+`MechanicsProgramAuthorityReceipt`; a durable program-root occurrence is the sole carrier of that
+authority, while every effect occurrence is a direct child identified by `parentId`. Roots never
+duplicate actor/source/target/program identity, and effects never carry a second authority. Inventory
+and entity references include monotonic physical ordinals so deleting and recreating an id cannot make
+an old command, resource address or occurrence authority valid again.
+
+Public mechanics commands contain only invocation identity or answers to engine-issued requests. The
+trusted adapter constructs a complete, recoverable execution frame containing the authority receipt,
+invocation, exact root create/advance CAS receipt and typed trigger evidence. Terminal operations carry
+one canonical cause id whose cause contains that authority and invocation; a transaction rejects missing,
+unused, duplicate or forged causes before simulation. The same envelope will produce one reversible
+`JournalActionDraft` for the whole causal action, never one draft per reaction or target.
+
+Operation mutation and causal closure are deliberately separate. A terminal change first preserves
+every active source so post-events and `source-end` subscribers can still resolve their authority. Only
+the coordinator may discover an end wave, deliver its subscribers, append the resulting consequences and
+then finalize dependent-first removals plus unreachable material cleanup. Concentration replacement is
+therefore an explicit barrier, not an eager delete hidden inside occurrence creation. Intermediate
+inventory tombstones are legal only under exact instance-id + ordinal leases and cannot escape as a
+persisted world.
+
+This foundation is implemented and covered by focused hostile-input tests, but the cutover is not yet a
+production runtime: the MechanicsProgram step compiler, event/subscriber coordinator, complete
+suspension worklist, persistence adapters and corpus transcription remain open. The existing combat
+executors stay temporary migration inputs until those consumers move; they are deleted, not retained as
+fallbacks, at the one-model cutover.
+
 The action economy is **immediate-commit-per-action-with-undo** (the owner's binding decision —
-**not** batch select-and-commit). Each action/cast/attack calls `planCommit` (pure, serializable
-`CommitOp[]`) + `applyCommitOps` (runs the mutation, returns a reverse-applier pushed into a 5 s
-undo toast), so the resource is deducted the instant it's used. `combatStore.endTurn()` is **pure
-bookkeeping** — advance round, restore reaction, reset movement, tick durations — so forgetting it
-is harmless. (In a campaign encounter, the sheet's End Turn ADVANCES the SHARED encounter turn only —
+**not** batch select-and-commit), so a resource is deducted the instant it is used.
+`cost-engine.ts` currently supplies a pure `CommitOp[]` planner only to resource conversions and
+tests; ordinary actions, attacks, casts and reactions still execute through handwritten composite
+branches in `TurnEconomyProvider`. Those branches revalidate several costs and compensate a failed
+later economy claim, but payment, character effects, turn ownership, logs and shared-target writes do
+not yet share one serializable transaction. The active automation epic is incrementally replacing
+that orchestration with the item-resource pattern: pure command planning, expected-state checks,
+one coordinated local commit and causal receipts. Until each caller migrates, do not describe
+`planCommit` as the production action engine or claim cross-store/shared atomicity.
+`combatStore.endTurn()` is **pure bookkeeping** — advance round, restore reaction, reset movement,
+tick durations — so forgetting it is harmless. (In a campaign encounter, the sheet's End Turn ADVANCES the SHARED encounter turn only —
 no private round bump; the per-turn economy resets at **turn-START**, when the shared pointer lands back
 on your PC, not on End Turn — so it is always fresh at the start of your turn even if you never formally
 end it. See the combat-subdoc + campaign section below.) The economy strip is a **budget meter derived
@@ -452,6 +496,34 @@ to fence action availability across navigation; it is never interpreted as a sec
 Slot/tracker mutators coalesce a parent-save flush in a microtask, after the whole synchronous cast
 has updated concentration/log/related resources. Play resources therefore do not wait behind the
 general 2 s edit debounce, while prose fields and other high-frequency edits still do.
+
+Resource conversions are the first migrated `MechanicsCommand` member. The command contains stable
+source/conversion ids and the chosen level/amount—not mutable counters or captured store operations. Its
+pure planner re-resolves the live grant, class gate, option legality and exact normal-slot/Pact-slot/
+tracker owners, then emits one canonical expected-state plan. `characterStore.applyMechanicsPlan`
+validates all legs against the same character snapshot and either replaces both resource maps in one
+Zustand mutation plus one persistence flush or changes nothing. The receipt plans causal undo without
+requiring the original grant to remain equipped/known; redo regenerates expectations from current state.
+This atomicity is limited to the owner character document and does not include campaign-owned effects.
+
+Physical magic-item resources use a stricter instance-owned transition seam. Catalogue
+`ResourceSpec` data declares each counter, capacity/initial facts, exact recovery triggers and
+depletion consequences; one durable `SrdEquipmentRef.instanceId` identifies each physical copy, and
+`session.itemResources[instanceId]` is its only mutable owner. `lib/resources.ts` plans a pure
+whole-item compare-and-swap operation from an exact command and table-entered facts. The shared
+`ItemResourceCommandProvider` resolves every required input before mutation, then the character store
+commits one operation or an entire recovery boundary atomically. Undo is causal LIFO, redo replans the
+same facts at a fresh revision, and a stale copy/attunement/state conflict mutates nothing. Short Rest,
+Long Rest, Dawn and Dusk are distinct typed boundaries: rests never impersonate sunrise, while the
+Table Clock exposes Dawn/Dusk as explicit story declarations rather than device-time events. A copy
+whose disposition becomes nonmagical, consumed or destroyed immediately stops contributing grants,
+casts, actions and intrinsic equipment bonuses. Legacy `ref.charges` and item-id session trackers are
+temporary corpus-migration inputs only; they are never fallback owners for a typed item.
+The pending owner-gated `scripts/migrate-item-resources.ts` one-off plans current documents and every
+snapshot together, backs up exact tagged Firestore values, commits the whole ≤500-document plan with
+per-document update-time preconditions, and requires reread/global/idempotency verification. Until that
+production check succeeds, compatibility inputs remain isolated at migration boundaries; afterward they
+and the spent script are deleted rather than becoming a permanent runtime projection.
 A committed action that ESTABLISHES a while-active state (Rage, Bladesong, an activated magic item — its resolved action
 carries an inferred `activatesKey`, see `docs/MECHANICS.md` "Activation seam") also flips that key
 into `session.activeFeatures` — the rail chip lights automatically, the state's grants (Rage's
@@ -1465,7 +1537,8 @@ produced by `serializeCharacterEnvelope` (`src/lib/character-codec.ts`, the shar
 ### Combat-mutable state lives in a per-character subdoc (`combat/state`)
 
 The character's combat-mutable state — HP `{ current, temp }`, `conditions[]`, held Bardic Inspiration
-die, held Heroic Inspiration, death saves, the SOLO `round`, and the SOLO `initiative` roll — has ONE persisted home: a
+die, held Heroic Inspiration, death saves, the SOLO `round`, the SOLO `initiative` roll, and the FIFO of
+unresolved damage-triggered Concentration saves — has ONE persisted home: a
 per-character Firestore subdoc at
 `users/{uid}/characters/{charId}/combat/state` (`CombatState`, `src/types/combat-state.ts`) — its SOLE
 representation (golden rule 10). A CAMPAIGN ENCOUNTER's initiative is NOT here — it lives in the
@@ -1490,6 +1563,18 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
   the actor's resolved PB allies; an offline PC or encounter-owned NPC receives the token and Chronicle
   provenance atomically. The optional subdoc boolean falls back to a legacy parent value only until the
   first explicit write, after which receive/spend/correction all use this one home.
+- **Entered D20 Tests** — `types/d20-test.ts` + `lib/d20-test.ts` are the locale-free universal kernel:
+  callers provide the physical d20 face(s), optional replacement/adjustment dice and consumed-resource
+  ids; the kernel validates JSON-plain input, nets Advantage/Disadvantage, selects one natural face and
+  resolves totals/outcomes without rolling. `lib/character-d20-tests.ts` is the live-character adapter.
+  Death Saves and Concentration maintenance are the first production consumers. Damage while a living
+  character concentrates appends one `PendingConcentrationSave` per ordered damage packet (never per
+  typed component) to `CombatState.pendingConcentrationSaves`; its stored spell ref, damage and capped DC
+  are trigger facts only. Commit rechecks the exact FIFO head + held spell, then rebuilds the live CON
+  save, Concentration-only modifiers, Exhaustion and net roll mode. Success removes one head; failure
+  routes through the canonical concentration teardown and clears the remainder; 0 HP clears it without a
+  prompt. Legacy absence is the empty queue, malformed/stale rows fail closed, and undo is a whole-command
+  CAS restoring character, local effects, log and queue exactly.
 - **In-memory** — `SessionState` still carries the trio, so every existing reader (compute /
   use-hp-controls / rest / level-up / smart-tracker) is unchanged. The store stays Firebase-free: it
   does the optimistic in-memory update (immediate UI) + side effects (concentration save, death-save
@@ -2017,11 +2102,14 @@ lands physically outside its owner's ref: dismissing on it unmounts the menu bet
 Signet's chain inert. A portaled surface manages its own dismissal (Radix's `DismissableLayer`), so
 nesting one inside a dismissable region is now safe by construction rather than per-consumer care.
 
-### Public share links — one boolean, one rules line, zero new infrastructure
+### Public share links — private aggregate + sanitized derived projection
 
 A player shares a CHARACTER (never a campaign — see the deliberate non-goal in
-`docs/POSITIONING.md`) by flipping ONE field on the character document: `shared: true`. There is no
-share collection, no mirror copy, no token table, no expiry, no server. The model in full:
+`docs/POSITIONING.md`) by flipping the private character metadata field `shared`. That flag is the
+publication decision; the anonymously readable object is the closed
+`users/{uid}/characters/{charId}/public/sheet` projection, never the private parent. The projection is
+a disposable read model, atomically rebuilt or deleted with every parent publication change; the
+private parent + canonical `combat/state` child remain the only engine truth. The model in full:
 
 - **The secret is the path.** The link is `/view/{uid}/{charId}` — literally the document's Firestore
   address. The auto-generated doc id is the unguessable half (the same "the unguessable id IS the
@@ -2031,35 +2119,37 @@ share collection, no mirror copy, no token table, no expiry, no server. The mode
   carries BOTH ids because a Firestore document is addressed by its full path; resolving a bare
   character id would need a collection-group query, an index and a broader rules grant, all of which
   the doc-path URL makes unnecessary.
-- **The grant.** `firestore.rules` gives the character document one extra arm:
-  `allow get: if resource.data.get("shared", false) == true` — with NO auth predicate, because the
-  entire point is a viewer with no account. It is `get`, deliberately never `read`: rules are not
-  filters, so a `read` grant would also satisfy an anonymous
-  `where("shared","==",true)` LIST over a known uid, i.e. an enumeration of everything that user has
-  ever shared. The subcollections (`snapshots`, `combat/state`) keep their own auth-requiring rules,
-  so the public view reads the parent document ONLY — which is also why it shows the BUILT character
-  and never live play state.
-- **Revoke is the same field.** Flipping `shared` back to `false` denies the very next read; there is
-  no cache to invalidate and no second surface to keep in sync. Pinned by the emulator rules suite
-  (`tests/rules/firestore-rules.test.ts` → "public share links"), which drives a genuinely
-  UNAUTHENTICATED context — a second signed-in uid would prove a different rule entirely.
+- **The anonymous grant is exact-document GET only.** `firestore.rules` grants unauthenticated `get`
+  solely on the literal `public/sheet` document after checking its exact allowlisted schema and exact
+  equality to the current private parent's publishable facts and `updatedAt` generation. Anonymous
+  `list` remains impossible, and the parent, `snapshots`, `combat/state`, every other public-doc id,
+  and every unknown future field remain private. The projection contains only `schema`, `build`, the
+  SRD-free roster `cache`, lifecycle `status`, a boolean portrait marker, a normalized crop, and the
+  source generation. It contains no play state, ownership/campaign metadata, Storage URL or share
+  flag.
+- **Publication is atomic.** Creating/revoking a share, metadata edits, full parent saves and deletion
+  write the parent and set/delete the exact projection in one batch or transaction. Rules use
+  `getAfter`/`existsAfter` to reject a shared parent without its matching projection, a revoked parent
+  with a surviving projection, or a stale projection from another parent generation. Revocation
+  therefore makes the next projection read unavailable without a read-time fallback to private data.
 - **The flag is DOC metadata, never codec payload.** `shared` lives beside `status`/`portraitUrl` on
   `CharacterDoc`, outside the `{ schema, build, state }` envelope, so an export cannot publish it and
   an import cannot inherit it (pinned in `tests/unit/character-io.test.ts`). It is derived at the read
   boundary (`readDocMeta`: `data.shared === true`), so every document written before the feature reads
   as `false` with no migration. The auto-save writes only `{ character, session }`, so a sheet edit can
   never clobber the flag.
-- **Portraits already work anonymously.** `portraitUrl` is a `getDownloadURL()` token URL, which
-  bypasses `storage.rules` by construction — so `storage.rules` needs no change and gains no public
-  arm.
+- **Portraits never expose Storage bearer URLs.** A shared projection records only `hasPortrait` and
+  the crop. The sheet receives the same-origin `/og/portrait/{uid}/{charId}.jpeg` URL; `ogImage`
+  revalidates the current projection before streaming the canonical Storage object with
+  `private, no-store` and `nosniff`. Revoked, stale, malformed and missing targets are identical 404s.
 - **The view reuses everything.** `SharedCharacterView` owns only the fetch, three states, and the
   noindex; the sheet itself is the SAME `CockpitView` the owner, the DM viewer and the admin viewer
   render, loaded through `characterStore.loadReadonly` so the `readonly` flag (glass-case CSS + the
   store's write guards + the Binder's Fob self-gate) makes it read-only by construction — there is no
-  second, "public" sheet to keep in step. The flag is re-checked CLIENT-side too, so the OWNER opening
-  their own revoked link sees the same honest dead-link page a stranger gets (their owner read arm
-  would otherwise hand them the sheet). A dead link — revoked, deleted, denied, or offline — resolves
-  to ONE quiet page, never four.
+  second, "public" sheet to keep in step. `parsePublicCharacterProjection` strictly validates the
+  projection, parses the build with an empty/default play state and presents full HP; it never reads
+  the private parent or combat child. A dead link — revoked, deleted, denied, or offline — resolves to
+  ONE quiet page, never four.
 - **The owner affordance is ONE ⋯ entry and ONE popover** (owner-ratified 2026-07-31 — the
   Docs / Notion / Drive shape every reader already knows). The Binder's Fob / Signet overflow carries
   a single **Share** item, which opens `SharePopover`
@@ -2078,19 +2168,21 @@ share collection, no mirror copy, no token table, no expiry, no server. The mode
     flip. It sets `onFocusOutside` to `preventDefault` because it opens FROM a menu, whose close
     returns focus to the trigger — a focus event outside the layer that would otherwise dismiss the
     popover the instant it appeared; outside CLICK and Escape still dismiss.
-    The write mirrors the portrait-metadata precedent: persist through `updateCharacter`, THEN reflect
-    on the store, so a failed write never leaves the sheet offering a link that does not work (it
-    toasts and the switch stays put). The item and the popover live in the shared `SheetExtrasCoin`, so
-    desktop and mobile cannot drift. The campaign card's ⋯ **Share invite link** opens the SAME
+    The write crosses `setCharacterSharing`, which compares the caller's parent generation and commits
+    the complete parent + projection atomically, THEN reflects on the store; a concurrent edit or
+    failed write can never leave the sheet offering a link for a different generation (it toasts and
+    the switch stays put). The item and the popover live in the shared `SheetExtrasCoin`, so desktop
+    and mobile cannot drift. The campaign card's ⋯ **Share invite link** opens the SAME
     component WITHOUT the switch — an invite is a functional join, not a visibility state (its kill
     switch is the hub's joins lock, beside the link it disables).
 - **noindex.** The route injects `<meta name="robots" content="noindex, nofollow">` while mounted and
   removes it on unmount. A static tag in `index.html` would deindex the whole app, and there is no
   server to vary the response per route; Google renders JS and honours a tag injected this way. The
   belt to that pair of braces is that a share URL is unguessable and linked from nowhere.
-- **Cost.** An anonymous view is one billed document read — a ONE-SHOT `getFullCharacter`, never a
-  listener (a public viewer has no use for one). At this scale that is free-tier noise, and SAFE-01
-  (the £1 kill switch) is the standing backstop.
+- **Cost.** An anonymous sheet view is one billed projection read — a ONE-SHOT `getPublicCharacter`,
+  never a listener. A portrait request additionally invokes the already-bounded `ogImage` function
+  and reads the Storage object only after publication validation. At this scale that is free-tier
+  noise, and SAFE-01 is the standing backstop.
 
 ### Link previews (Open Graph) — a static baseline plus one rewrite-fronted function
 
@@ -2122,7 +2214,7 @@ per-link previews on its own — every URL would unfurl as the same card. Two ti
   Cinzel + Alegreya, fetched by exact family + `font-weight`; system fonts are disabled). A character
   card shows the portrait (a circular medallion, or a per-seed tinted initial when there is none) with
   name / total level / class(es) / AC · HP; an invite shows the campaign name + party size. Every
-  drawn number is read STRAIGHT off the roster `cache` the gate already loaded — the engine is NEVER
+  drawn number is read STRAIGHT off the sanitized projection's roster `cache` — the engine is NEVER
   re-run server-side, so a wrong stat is structurally impossible; an unstamped stat (0) is omitted, not
   guessed. The renderer sits BEHIND the same gate as the tag (below), and `tryRender` folds any
   rasterise failure to the static-card redirect. `og-meta.ts` owns the image URLs (`characterImageUrl`
@@ -2143,15 +2235,16 @@ per-link previews on its own — every URL would unfurl as the same card. Two ti
   `127.0.0.1:8080` is the function's OWN container port, so a forged loopback host would make
   `ogShell` fetch itself, each leg hanging to timeout — self-SSRF, and billed time on a zero-budget
   project.
-- **What may be exposed, and nothing else.** A character: only when its document carries
-  `shared: true`, and then only name, total level, class, AC · HP (read off the SRD-free roster
-  `cache`) and — in the rendered image only — its portrait, fetched from Storage (`users/{uid}/
-portraits/{charId}.jpeg`) ONLY for a confirmed-shared doc that records one; a shared character's
-  portrait is fair game, the same grant the sheet itself rides. A campaign: only its NAME + party
+- **What may be exposed, and nothing else.** A character: only through a current, exact
+  `public/sheet` projection, and then only name, total level, class, AC · HP (read off its SRD-free
+  `cache`) and — in the rendered image or gated portrait response only — the canonical portrait
+  object when the projection records `hasPortrait`. The private parent and its Storage bearer URL
+  never enter an anonymous response. A campaign: only its NAME + party
   size, and only for an invite code that resolves to a campaign whose joins are still open — the code
   IS the campaign's document id, the same secret the join flow already treats as the grant. The Admin
-  SDK bypasses `firestore.rules`, so BOTH `ogShell` (the tag) and `ogImage` (the picture) re-check the
-  share flag and `joinsLocked` (the DM's kill switch for a leaked link) themselves. Every other case —
+  SDK bypasses `firestore.rules`, so BOTH `ogShell` (the tag) and `ogImage` (the picture/portrait)
+  revalidate the projection against a masked current parent; campaign previews re-check `joinsLocked`
+  (the DM's kill switch for a leaked link). Every other case —
   unshared, locked, unknown, malformed, lookup failed — is served the shell UNTOUCHED
   (`injectOgTags(shell, null)` returns it byte-for-byte, the baseline generic card) and the image route
   redirects to the static per-type card, so an unshared id is not even distinguishable from a
