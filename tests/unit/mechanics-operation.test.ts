@@ -25,12 +25,14 @@ import {
 import {
   conformMechanicsOperation,
   conformMechanicsTransaction,
+  projectMechanicsTransaction as projectKernelTransaction,
   simulateMechanicsTransaction as simulateKernelTransaction,
 } from "@/lib/mechanics-operation";
 import {
   advanceMechanicsBoundary,
   beginMechanicsCausalState,
   beginMechanicsBoundary,
+  completeMechanicsBoundaryCheckpoint,
   discoverMechanicsEndWave,
   parseMechanicsWorld,
 } from "@/lib/mechanics-world";
@@ -68,11 +70,7 @@ import type {
   MechanicsTransactionSimulationResult,
 } from "@/types/mechanics-operation";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
-import type {
-  MechanicsBoundaryCompletion,
-  MechanicsBoundaryCommand,
-  MechanicsWorld,
-} from "@/types/mechanics-world";
+import type { MechanicsBoundaryCommand, MechanicsWorld } from "@/types/mechanics-world";
 import type {
   ResourceInitializationObservations,
   ResourceRef,
@@ -126,7 +124,6 @@ const PROGRAM_STEPS = [
     lifetime: { kind: "manual" },
     operation: "start",
     stepId: STEP_IDS.concentration,
-    target: { kind: "role", role: "target" },
     when: null,
   },
   {
@@ -397,10 +394,12 @@ function completeBoundary(
   let result = beginMechanicsBoundary(world, command);
   let remaining = 16;
   while (result.status === "checkpoint" && remaining > 0) {
-    result = advanceMechanicsBoundary(result.continuation, {
-      continuation: canonicalFingerprint(result.continuation),
-      state: result.checkpoint.state,
-    } as unknown as MechanicsBoundaryCompletion);
+    const completion = completeMechanicsBoundaryCheckpoint(
+      result.continuation,
+      result.checkpoint.state
+    );
+    if (!completion) throw new Error("Invalid boundary-completion fixture");
+    result = advanceMechanicsBoundary(result.continuation, completion);
     remaining -= 1;
   }
   if (result.status !== "complete") {
@@ -1398,6 +1397,12 @@ describe("atomic mechanics transactions", () => {
       quantity: { current: 0 },
     });
     expect(ended.state.context.request.inventorySourceLeases).toEqual([operation.item]);
+    expect(ended.state.context.request.endRequests).toEqual([
+      occurrenceGeneration("summoned-item-lifecycle", 2),
+    ]);
+    expect(
+      state(ended.state.world).occurrences["summoned-item-lifecycle"]?.ending
+    ).toEqual({ causes: [{ kind: "requested" }] });
     expect(ended.consequences).toEqual([
       {
         causeId: operation.causeId,
@@ -2251,6 +2256,162 @@ describe("atomic mechanics transactions", () => {
     });
   });
 
+  it("keeps only an exact readable program root authoritative after its actor leaves", () => {
+    const actor = {
+      entityId: "source",
+      material: CHARACTER,
+      ordinal: 1,
+    } as const;
+    const otherActor = {
+      entityId: "other",
+      material: CHARACTER,
+      ordinal: 2,
+    } as const;
+    const authority = {
+      ...inventoryAuthority("focus", 1),
+      anchors: {
+        activator: actor,
+        caster: actor,
+        owner: actor,
+        source: actor,
+        target: SELF,
+      },
+      installation: { ...INSTALLATION, owner: actor },
+    } as const satisfies MechanicsProgramAuthorityReceipt;
+    const rootCause = programRootCause(authority, "source-root");
+    const installed = installedCause(authority);
+    const material = structuredClone(
+      createEmptyCharacterMaterialState(1, CHARACTER, alive(10))
+    );
+    material.entities.source = creature(alive(10), false);
+    material.entities.other = creature(alive(10), true, 2);
+    material.nextEntityOrdinal = 3;
+    material.inventory.focus = inventoryInstance(1);
+    material.nextInventoryOrdinal = 2;
+    const sourceRoot = addOccurrence(
+      {
+        nextOccurrenceOrdinal: material.nextOccurrenceOrdinal,
+        occurrences: material.occurrences,
+      },
+      "source-root",
+      {
+        authority,
+        endRules: [],
+        kind: "program",
+        phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
+        registers: {},
+      }
+    );
+    const roots = addOccurrence(sourceRoot, "target-root", {
+      authority: AUTHORITY,
+      endRules: [],
+      kind: "program",
+      phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
+      registers: {},
+    });
+    const invoked = structuredClone(roots);
+    for (const occurrenceId of ["source-root", "target-root"] as const) {
+      const root = invoked.occurrences[occurrenceId];
+      if (!root || root.kind !== "program") throw new Error("root fixture");
+      root.phaseState.invoke = { execution: 1, lastTriggerEventId: null };
+    }
+    const before = parsedCharacterState({ ...material, ...invoked });
+    const endSource = {
+      causeId: rootCause.causeId,
+      kind: "occurrence-end",
+      occurrence: occurrenceGeneration("source-root", 1),
+      operationId: "end-source-root",
+    } as const satisfies MechanicsOperation;
+    const first = simulated(
+      simulateMechanicsTransaction(
+        before,
+        transaction([endSource], { actor, causes: [rootCause] })
+      )
+    );
+    expect(state(first.state.world).occurrences["source-root"]?.ending).toEqual({
+      causes: [{ kind: "requested" }],
+    });
+
+    const endTarget = {
+      ...endSource,
+      occurrence: occurrenceGeneration("target-root", 2),
+      operationId: "end-from-latched-source",
+    } as const satisfies MechanicsOperation;
+    const ended = simulated(
+      simulateMechanicsTransaction(
+        first.state.world,
+        transaction([endTarget], { actor, causes: [rootCause] }),
+        {
+          authoritySnapshot: { definitions: [] },
+          state: first.state,
+        }
+      )
+    );
+    expect(state(ended.state.world).occurrences["target-root"]?.ending).toEqual({
+      causes: [{ kind: "requested" }],
+    });
+    expect(ended.state.context.request.inventorySourceLeases).toContainEqual(
+      inventoryRef("focus", 1)
+    );
+
+    const installedOperation = { ...endTarget, causeId: installed.causeId };
+    expect(
+      simulateMechanicsTransaction(
+        before,
+        transaction([installedOperation], { actor, causes: [installed] })
+      )
+    ).toEqual({ operationId: null, reason: "missing-actor", status: "rejected" });
+    expect(
+      simulateMechanicsTransaction(
+        before,
+        transaction([endTarget], { actor: otherActor, causes: [rootCause] })
+      )
+    ).toEqual({
+      operationId: endTarget.operationId,
+      reason: "invalid-cause",
+      status: "rejected",
+    });
+
+    const staleCause = programRootCause(authority, "source-root", 99);
+    expect(
+      simulateMechanicsTransaction(
+        before,
+        transaction([{ ...endTarget, causeId: staleCause.causeId }], {
+          actor,
+          causes: [staleCause],
+        })
+      )
+    ).toEqual({
+      operationId: endTarget.operationId,
+      reason: "invalid-cause",
+      status: "rejected",
+    });
+
+    const withoutSource = structuredClone(state(before));
+    delete withoutSource.occurrences["source-root"];
+    expect(
+      simulateMechanicsTransaction(
+        parsedCharacterState(withoutSource),
+        transaction([endTarget], { actor, causes: [rootCause] })
+      )
+    ).toEqual({
+      operationId: endTarget.operationId,
+      reason: "invalid-cause",
+      status: "rejected",
+    });
+
+    const present = structuredClone(state(before));
+    const presentActor = present.entities.source;
+    if (!presentActor) throw new Error("actor fixture");
+    presentActor.availability = "present";
+    expect(
+      simulateMechanicsTransaction(
+        parsedCharacterState(present),
+        transaction([installedOperation], { actor, causes: [installed] })
+      )
+    ).toMatchObject({ status: "simulated" });
+  });
+
   it("derives durable root authority from an installed cause before creating effects", () => {
     const authority = authorityVariant(7);
     const installed = installedCause(authority);
@@ -2450,6 +2611,46 @@ describe("atomic mechanics transactions", () => {
     });
   });
 
+  it.each([
+    ["past", 1],
+    ["future", 3],
+  ] as const)(
+    "rejects %s qualitative minima on newly created effects, entities, and inventory",
+    (_position, minimumBoundaryOrdinal) => {
+      const rootCause = programRootCause(AUTHORITY, "root");
+      const material = structuredClone(state(worldWithRoots([["root", AUTHORITY]])));
+      material.timeline.nextBoundaryOrdinal = 2;
+      const before = parsedCharacterState(material);
+      const endRules = [
+        {
+          clock: { material: CHARACTER, epoch: 0 },
+          kind: "day-phase",
+          minimumBoundaryOrdinal,
+          phase: "dawn",
+        },
+      ] as const;
+      const effect = standingCreate("create-effect", "effect", "root", rootCause);
+      const creations = [
+        { ...effect, occurrence: { ...effect.occurrence, endRules } },
+        { ...entityCreateOperation(rootCause), endRules },
+        { ...inventoryCreateOperation(rootCause), endRules },
+      ] as const satisfies readonly MechanicsOperation[];
+
+      for (const operation of creations) {
+        expect(
+          simulateMechanicsTransaction(
+            before,
+            transaction([operation], { causes: [rootCause] })
+          )
+        ).toEqual({
+          operationId: operation.operationId,
+          reason: "invalid-transition",
+          status: "rejected",
+        });
+      }
+    }
+  );
+
   it("rejects child-before-root, root creation from a root, and unrelated parents", () => {
     const cause = installedCause(AUTHORITY);
     expect(
@@ -2568,9 +2769,15 @@ describe("atomic mechanics transactions", () => {
         )
       )
     );
-    expect(ended.state.world).toEqual(before);
     expect(state(ended.state.world).occurrences).toHaveProperty("causing-root");
     expect(state(ended.state.world).occurrences).toHaveProperty("other-root");
+    expect(state(ended.state.world).occurrences["causing-root"]?.ending).toBeNull();
+    expect(state(ended.state.world).occurrences["other-root"]?.ending).toEqual({
+      causes: [{ kind: "requested" }],
+    });
+    expect(ended.state.context.request.endRequests).toEqual([
+      occurrenceGeneration("other-root", 2),
+    ]);
     expect(ended.transaction.operations[0].causeId).toBe(cause.causeId);
     expect(ended.executions[0]).toMatchObject({
       facts: { requested: occurrenceGeneration("other-root", 2) },
@@ -3424,7 +3631,7 @@ describe("atomic mechanics transactions", () => {
     });
   });
 
-  it("defers occurrence closure and material cleanup to the higher-level executor", () => {
+  it("latches occurrence closure while deferring final cleanup", () => {
     const replacement: MechanicsOperation = {
       causeId: INSTALLED_CAUSE.causeId,
       conditionImmunityOverride: null,
@@ -3499,22 +3706,47 @@ describe("atomic mechanics transactions", () => {
     if (!program || program.kind !== "program") throw new Error("root fixture");
     program.phaseState.invoke = { execution: 1, lastTriggerEventId: null };
     const cascadeWorld = parsedCharacterState({ ...rootState, ...invoked });
-    const ended = simulated(
-      simulateMechanicsTransaction(
-        cascadeWorld,
-        transaction([
-          {
-            causeId: INSTALLED_CAUSE.causeId,
-            kind: "occurrence-end",
-            occurrence: occurrenceGeneration("root", 1),
-            operationId: "end-root",
-          },
-        ])
-      )
+    const endTransaction = transaction([
+      {
+        causeId: INSTALLED_CAUSE.causeId,
+        kind: "occurrence-end",
+        occurrence: occurrenceGeneration("root", 1),
+        operationId: "end-root",
+      },
+    ]);
+    const projected = projectKernelTransaction(
+      endTransaction,
+      simulationContext(cascadeWorld, endTransaction)
     );
-    expect(ended.state.world).toEqual(cascadeWorld);
+    expect(projected.status).toBe("projected");
+    if (projected.status !== "projected") return;
+    expect(state(projected.world).occurrences.root?.ending).toBeNull();
+    expect(projected.consequences).toEqual([
+      {
+        causeId: INSTALLED_CAUSE.causeId,
+        kind: "occurrence-end",
+        occurrence: occurrenceGeneration("root", 1),
+        operationId: "end-root",
+      },
+    ]);
+
+    const ended = simulated(simulateMechanicsTransaction(cascadeWorld, endTransaction));
     expect(ended.stages[0]?.after).toBe(ended.stages[0]?.before);
     expect(Object.keys(state(ended.state.world).occurrences)).toEqual(["root", "child"]);
+    expect(state(ended.state.world).occurrences.root?.ending).toEqual({
+      causes: [{ kind: "requested" }],
+    });
+    expect(state(ended.state.world).occurrences.child?.ending).toEqual({
+      causes: [
+        {
+          dependency: occurrenceGeneration("root", 1),
+          kind: "dependency-ended",
+        },
+      ],
+    });
+    expect(ended.state.context.request.endRequests).toEqual([
+      occurrenceGeneration("root", 1),
+    ]);
     const endExecution = ended.executions[0];
     expect(endExecution?.status).toBe("applied");
     if (endExecution?.status !== "applied") return;
@@ -4392,10 +4624,20 @@ describe("atomic mechanics transactions", () => {
         )
       )
     );
-    expect(ended.state.world).toEqual(activated.state.world);
     expect(ended.stages[0]?.after).toBe(ended.stages[0]?.before);
     expect(state(ended.state.world).occurrences).toHaveProperty("potion-root");
     expect(state(ended.state.world).occurrences).toHaveProperty("potion-effect");
+    expect(state(ended.state.world).occurrences["potion-root"]?.ending).toEqual({
+      causes: [{ kind: "requested" }],
+    });
+    expect(state(ended.state.world).occurrences["potion-effect"]?.ending).toEqual({
+      causes: [
+        {
+          dependency: occurrenceGeneration("potion-root", 1),
+          kind: "dependency-ended",
+        },
+      ],
+    });
     expect(state(ended.state.world).inventory.potion?.quantity.current).toBe(0);
     expect(ended.consequences).toEqual([
       {

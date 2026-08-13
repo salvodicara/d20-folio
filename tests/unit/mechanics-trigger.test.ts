@@ -63,6 +63,7 @@ const TRIGGERS = [
     triggerEventId: "event-damage-taken",
   },
   {
+    boundaryOrdinal: 1,
     clock: CLOCK,
     combatant: TARGET,
     kind: "rest-completed",
@@ -70,6 +71,7 @@ const TRIGGERS = [
     triggerEventId: "event-rest-completed",
   },
   {
+    boundaryOrdinal: 1,
     clock: CLOCK,
     kind: "day-phase",
     phase: "dawn",

@@ -62,6 +62,7 @@ export const MECHANICS_TRIGGER_EVIDENCE_SCHEMA = discriminatedUnionSchema("kind"
     triggerEventId: ID_SCHEMA,
   }),
   "rest-completed": objectSchema({
+    boundaryOrdinal: POSITIVE_INTEGER_SCHEMA,
     clock: CLOCK_REF_SCHEMA,
     combatant: ENTITY_REF_SCHEMA,
     kind: literalSchema("rest-completed"),
@@ -69,6 +70,7 @@ export const MECHANICS_TRIGGER_EVIDENCE_SCHEMA = discriminatedUnionSchema("kind"
     triggerEventId: ID_SCHEMA,
   }),
   "day-phase": objectSchema({
+    boundaryOrdinal: POSITIVE_INTEGER_SCHEMA,
     clock: CLOCK_REF_SCHEMA,
     kind: literalSchema("day-phase"),
     phase: unionSchema([literalSchema("dawn"), literalSchema("dusk")]),

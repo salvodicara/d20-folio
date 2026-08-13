@@ -20,6 +20,7 @@ import {
   MECHANICS_PREDICATE_SCHEMA,
   MECHANICS_PROGRAM_SCHEMA,
   MECHANICS_PROGRAM_AUTHORING_SCHEMA_REFS,
+  mechanicsProgramStepChildKind,
   type D20RequestSpecSchemaShape,
   type MechanicsProgramAuthoringSchemaCustomTypes,
   type MechanicsProgramAuthoringSchemaRefTypes,
@@ -240,6 +241,68 @@ function phaseEndDependenciesAreAcyclic(
     return true;
   };
   return phases.every((phase) => visit(phase.phaseId));
+}
+
+function phaseEndReachability(
+  phases: readonly MechanicsProgramPhase[]
+): ReadonlyMap<string, ReadonlySet<string>> {
+  const successors = new Map<string, string[]>();
+  for (const phase of phases) {
+    if (phase.trigger.kind !== "program-phase-end") continue;
+    const values = successors.get(phase.trigger.phaseId);
+    if (values) values.push(phase.phaseId);
+    else successors.set(phase.trigger.phaseId, [phase.phaseId]);
+  }
+  return new Map(
+    phases.map((phase) => {
+      const reached = new Set<string>([phase.phaseId]);
+      const pending = [phase.phaseId];
+      while (pending.length > 0) {
+        const current = pending.pop();
+        if (!current) continue;
+        for (const successor of successors.get(current) ?? []) {
+          if (reached.has(successor)) continue;
+          reached.add(successor);
+          pending.push(successor);
+        }
+      }
+      return [phase.phaseId, reached] as const;
+    })
+  );
+}
+
+function phaseLifetimeLivenessIsValid(phases: readonly MechanicsProgramPhase[]): boolean {
+  const reachable = phaseEndReachability(phases);
+  const invocation = phases.find(({ trigger }) => trigger.kind === "invocation");
+  if (!invocation) return false;
+  const oneShot = reachable.get(invocation.phaseId);
+  if (!oneShot) return false;
+  const sourceEndPhases = phases.filter(({ trigger }) => trigger.kind === "source-end");
+
+  for (const creator of phases) {
+    const creatorReachable = reachable.get(creator.phaseId);
+    if (!creatorReachable) return false;
+    for (const step of creator.steps) {
+      const target = lifetimePhaseId(step);
+      if (target === null) continue;
+      if (
+        target !== creator.phaseId &&
+        oneShot.has(target) &&
+        !creatorReachable.has(target)
+      ) {
+        return false;
+      }
+      if (
+        creatorReachable.has(target) &&
+        sourceEndPhases.some((sourceEnd) =>
+          reachable.get(sourceEnd.phaseId)?.has(creator.phaseId)
+        )
+      ) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 function canonicalSubset<Value extends string>(
@@ -521,7 +584,8 @@ function programSemantics(program: MechanicsProgram): boolean {
     program.phases.filter((phase) => phase.trigger.kind === "invocation").length !== 1 ||
     !unique(program.phases.map((phase) => phase.phaseId)) ||
     !unique(program.registers.map((register) => register.registerId)) ||
-    !phaseEndDependenciesAreAcyclic(program.phases)
+    !phaseEndDependenciesAreAcyclic(program.phases) ||
+    !phaseLifetimeLivenessIsValid(program.phases)
   ) {
     return false;
   }
@@ -692,6 +756,8 @@ function programSemantics(program: MechanicsProgram): boolean {
             (step.lifetime !== null)) ||
         (lifetimePhaseId(step) !== null &&
           !phaseIds.has(lifetimePhaseId(step) as string)) ||
+        (step.kind === "occurrence-end" &&
+          mechanicsProgramStepChildKind(steps.get(step.childStepId)) === null) ||
         selectorReferencesOfStep(step).some(
           ({ inputId, kind }) => inputs.get(inputId)?.kind !== kind
         ) ||

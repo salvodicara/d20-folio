@@ -57,6 +57,7 @@ const HIGH_WATER_PATHS = [
   ["nextEntityOrdinal"],
   ["nextInventoryOrdinal"],
   ["nextEncounterEpoch"],
+  ["timeline", "nextBoundaryOrdinal"],
   ["encounter", "nextCombatantOrdinal"],
 ] as const;
 
@@ -219,6 +220,7 @@ describe("flat bounded action journal", () => {
         nextInventoryOrdinal: 1,
         nextOccurrenceOrdinal: 1,
         records: {},
+        timeline: { nextBoundaryOrdinal: 1 },
       });
       const draft = actionDraft(initial, {
         mutations: [

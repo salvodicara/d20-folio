@@ -599,10 +599,39 @@ const RESOURCE_STATE_OPERATION_SCHEMA = discriminatedUnionSchema("kind", {
   }),
 });
 
-const OCCURRENCE_SELECTOR_SCHEMA = discriminatedUnionSchema("kind", {
-  root: objectSchema({ kind: literalSchema("root") }),
-  child: objectSchema({ kind: literalSchema("child"), stepId: ID_SCHEMA }),
-});
+export type MechanicsProgramStepChildKind =
+  | "concentration"
+  | "condition"
+  | "material-lifecycle"
+  | "polymorph-form"
+  | "standing";
+
+/** The one authority mapping authored producers to their durable child kind. */
+export function mechanicsProgramStepChildKind(
+  step:
+    | Readonly<{ readonly kind: string; readonly operation?: unknown }>
+    | null
+    | undefined
+): MechanicsProgramStepChildKind | null {
+  if (!step) return null;
+  switch (step.kind) {
+    case "temporary-hit-points":
+      return "standing";
+    case "condition":
+      return step.operation === "apply" ? "condition" : null;
+    case "standing":
+      return step.operation === "start" ? "standing" : null;
+    case "concentration":
+      return step.operation === "start" ? "concentration" : null;
+    case "polymorph":
+      return step.operation === "start" ? "polymorph-form" : null;
+    case "entity-create":
+    case "inventory-create":
+      return "material-lifecycle";
+    default:
+      return null;
+  }
+}
 
 const INVENTORY_CHANGE_SCHEMA = discriminatedUnionSchema("kind", {
   quantity: objectSchema({
@@ -703,7 +732,6 @@ export const MECHANICS_STEP_SCHEMA = discriminatedUnionSchema("kind", {
     kind: literalSchema("concentration"),
     lifetime: unionSchema([LIFETIME_SPEC_SCHEMA, NULL_SCHEMA]),
     operation: unionSchema([literalSchema("start"), literalSchema("end")]),
-    target: ENTITY_SELECTOR_SCHEMA,
   }),
   polymorph: objectSchema({
     ...COMMON_STEP_FIELDS,
@@ -743,8 +771,8 @@ export const MECHANICS_STEP_SCHEMA = discriminatedUnionSchema("kind", {
   }),
   "occurrence-end": objectSchema({
     ...COMMON_STEP_FIELDS,
+    childStepId: ID_SCHEMA,
     kind: literalSchema("occurrence-end"),
-    occurrence: OCCURRENCE_SELECTOR_SCHEMA,
   }),
   "entity-create": objectSchema({
     ...COMMON_STEP_FIELDS,

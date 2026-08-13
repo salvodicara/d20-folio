@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { materialRefKey } from "@/lib/action-journal";
-import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import {
   addOccurrence,
   addTransitionedProgramOccurrence,
@@ -10,6 +9,7 @@ import {
   advanceMechanicsBoundary,
   beginMechanicsBoundary,
   beginMechanicsCausalState,
+  completeMechanicsBoundaryCheckpoint,
   discoverMechanicsEndWave,
   finalizeMechanicsEndWave,
   finalizeMechanicsMaterialCleanup,
@@ -40,6 +40,7 @@ import type { TurnEconomyState } from "@/types/turn-economy";
 import type {
   CharacterMaterialRef,
   MaterialRef,
+  OccurrenceGenerationRef,
   SharedMaterialRef,
 } from "@/types/mechanics-reference";
 import type {
@@ -222,7 +223,6 @@ function fixtureSteps() {
       lifetime: { kind: "manual" },
       operation: "start",
       stepId: "start-concentration",
-      target: { kind: "role", role: "target" },
       when: null,
     },
     {
@@ -550,10 +550,11 @@ function applyBoundary(
   let remaining = 32;
   while (result.status === "checkpoint" && remaining > 0) {
     checkpoints.push(result.checkpoint);
-    const completion = {
-      continuation: canonicalFingerprint(result.continuation),
-      state: result.checkpoint.state,
-    } as unknown as MechanicsBoundaryCompletion;
+    const completion = completeMechanicsBoundaryCheckpoint(
+      result.continuation,
+      result.checkpoint.state
+    );
+    if (!completion) throw new Error("invalid boundary-completion fixture");
     result = advanceMechanicsBoundary(result.continuation, completion);
     remaining -= 1;
   }
@@ -1362,6 +1363,76 @@ describe("canonical mechanics world and clocks", () => {
     });
   });
 
+  it("validates and monotonically unions exact causal end requests", () => {
+    let hero = addRoot(character(), HERO);
+    for (const occurrenceId of ["first", "second"]) {
+      hero = addToState(hero, occurrenceId, {
+        endRules: [],
+        fact: { key: occurrenceId, kind: "active-key" },
+        kind: "standing",
+        parentId: "root",
+        target: self(),
+      });
+    }
+    const initial = world(hero);
+    const begun = beginMechanicsCausalState(initial);
+    if (!begun.ok) throw new Error(`causal entry fixture: ${begun.reason}`);
+    const firstRequest = worldGeneration(initial, HERO, "first");
+    const secondRequest = worldGeneration(initial, HERO, "second");
+
+    const first = rebaseMechanicsCausalState(initial, begun.value, [], [firstRequest]);
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    expect(first.value.context.request.endRequests).toEqual([firstRequest]);
+    const firstDocument = first.value.world.documents.find(
+      (document) => document.kind === "character"
+    );
+    expect(firstDocument?.state.occurrences.first?.ending).toEqual({
+      causes: [{ kind: "requested" }],
+    });
+
+    const second = rebaseMechanicsCausalState(
+      first.value.world,
+      first.value,
+      [],
+      [secondRequest]
+    );
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    expect(second.value.context.request.endRequests).toEqual([
+      firstRequest,
+      secondRequest,
+    ]);
+    const secondDocument = second.value.world.documents.find(
+      (document) => document.kind === "character"
+    );
+    expect(secondDocument?.state.occurrences.first?.ending).toEqual({
+      causes: [{ kind: "requested" }],
+    });
+    expect(secondDocument?.state.occurrences.second?.ending).toEqual({
+      causes: [{ kind: "requested" }],
+    });
+
+    const invalidRequests = [
+      { ...firstRequest, extra: true },
+      { ...firstRequest, ordinal: firstRequest.ordinal + 1 },
+      {
+        occurrence: { material: HERO, occurrenceId: "missing" },
+        ordinal: 99,
+      },
+    ];
+    for (const request of invalidRequests) {
+      expect(
+        rebaseMechanicsCausalState(
+          initial,
+          begun.value,
+          [],
+          [request as unknown as OccurrenceGenerationRef]
+        )
+      ).toEqual({ ok: false, reason: "invalid-end-wave" });
+    }
+  });
+
   it.each([
     [
       "occurrence",
@@ -1856,9 +1927,8 @@ describe("canonical mechanics world and clocks", () => {
       kind: "observe-day-phase",
     });
     if (begun.status !== "checkpoint") throw new Error("checkpoint fixture");
-    const result = advanceMechanicsBoundary(begun.continuation, {
-      continuation: canonicalFingerprint(begun.continuation),
-      state: {
+    expect(
+      completeMechanicsBoundaryCheckpoint(begun.continuation, {
         ...begun.checkpoint.state,
         world: {
           scope: CAMPAIGN,
@@ -1867,10 +1937,8 @@ describe("canonical mechanics world and clocks", () => {
             { kind: "shared", material: CAMPAIGN, state: shared() },
           ]),
         },
-      },
-    } as unknown as MechanicsBoundaryCompletion);
-
-    expect(result).toMatchObject({ reason: "invalid-transition", status: "rejected" });
+      })
+    ).toBeNull();
   });
 
   it("rejects stale epochs, double combat leases, and global exclusive-state duplicates", () => {
@@ -2106,7 +2174,22 @@ describe("canonical mechanics world and clocks", () => {
     expect(encounter?.participants.ally?.economy.phase).toBe("own-turn");
     expect(result.world.documents[0]?.state.timeline.elapsedSeconds).toBe(0);
     expect(result.world.documents[0]?.state.entities).not.toHaveProperty("summon");
-    expect(checkpoints).toHaveLength(2);
+    expect(checkpoints.map(({ boundary }) => boundary)).toEqual([
+      {
+        clock: { material: HERO, epoch: 1 },
+        combatant: { material: HERO, entityId: "summon", ordinal: 2 },
+        kind: "turn-boundary",
+        phase: "end",
+        round: 1,
+      },
+      {
+        clock: { material: HERO, epoch: 1 },
+        combatant: { material: HERO, entityId: "ally", ordinal: 1 },
+        kind: "turn-boundary",
+        phase: "start",
+        round: 1,
+      },
+    ]);
     expect(checkpoints.at(-1)?.wave.request.boundaries).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -2158,7 +2241,12 @@ describe("canonical mechanics world and clocks", () => {
         kind: "observe-day-phase",
       },
       endRules: [
-        { clock: { material: HERO, epoch: 0 }, kind: "day-phase", phase: "dawn" },
+        {
+          clock: { material: HERO, epoch: 0 },
+          kind: "day-phase",
+          minimumBoundaryOrdinal: 1,
+          phase: "dawn",
+        },
       ],
       name: "dawn",
     },
@@ -2176,6 +2264,7 @@ describe("canonical mechanics world and clocks", () => {
           clock: { material: HERO, epoch: 0 },
           combatant: { material: HERO, entityId: "summon", ordinal: 2 },
           kind: "rest-completed",
+          minimumBoundaryOrdinal: 1,
           rest: "long",
         },
       ],
@@ -2233,18 +2322,7 @@ describe("canonical mechanics world and clocks", () => {
 
     expect(result.status === "rejected" ? result.reason : result.status).toBe("applied");
     if (result.status !== "applied") return;
-    const observed = new Set<string>();
-    expect(
-      checkpoints.map((checkpoint) => {
-        const boundary = checkpoint.wave.request.boundaries.find((candidate) => {
-          const key = JSON.stringify(candidate);
-          if (observed.has(key)) return false;
-          observed.add(key);
-          return true;
-        });
-        return boundary;
-      })
-    ).toEqual([
+    expect(checkpoints.map(({ boundary }) => boundary)).toEqual([
       {
         clock: { material: HERO, epoch: 1 },
         combatant: self(),
@@ -2280,7 +2358,7 @@ describe("canonical mechanics world and clocks", () => {
     expect(result.world.documents[0]?.state.timeline.elapsedSeconds).toBe(6);
   });
 
-  it("uses absolute deadlines and keeps rest and day observations distinct", () => {
+  it("uses absolute deadlines and matches qualitative rules at or after their global minimum", () => {
     let hero = addRoot(character(), HERO);
     const base = {
       parentId: "root",
@@ -2307,6 +2385,7 @@ describe("canonical mechanics world and clocks", () => {
           kind: "rest-completed",
           clock: { material: HERO, epoch: 0 },
           combatant: self(),
+          minimumBoundaryOrdinal: 1,
           rest: "long",
         },
       ],
@@ -2319,6 +2398,7 @@ describe("canonical mechanics world and clocks", () => {
         {
           kind: "day-phase",
           clock: { material: HERO, epoch: 0 },
+          minimumBoundaryOrdinal: 1,
           phase: "dawn",
         },
       ],
@@ -2348,6 +2428,7 @@ describe("canonical mechanics world and clocks", () => {
     if (rest.status !== "applied") return;
     expect(rest.world.documents[0]?.state.occurrences).not.toHaveProperty("rest");
     expect(rest.world.documents[0]?.state.occurrences).toHaveProperty("dawn");
+    expect(rest.world.documents[0]?.state.timeline.nextBoundaryOrdinal).toBe(2);
     const dawn = applyBoundary(rest.world, {
       input: { clock: { material: HERO, epoch: 0 }, phase: "dawn" },
       kind: "observe-day-phase",
@@ -2355,6 +2436,7 @@ describe("canonical mechanics world and clocks", () => {
     expect(dawn.status).toBe("applied");
     if (dawn.status !== "applied") return;
     expect(dawn.world.documents[0]?.state.occurrences).not.toHaveProperty("dawn");
+    expect(dawn.world.documents[0]?.state.timeline.nextBoundaryOrdinal).toBe(3);
     const deadline = applyBoundary(dawn.world, {
       clock: { material: HERO, epoch: 0 },
       elapsedSeconds: 6,
@@ -2365,6 +2447,87 @@ describe("canonical mechanics world and clocks", () => {
     );
     if (deadline.status !== "applied") return;
     expect(deadline.world.documents[0]?.state.occurrences).not.toHaveProperty("deadline");
+  });
+
+  it("allocates distinct qualitative boundary ordinals and rejects stale replay", () => {
+    const command = {
+      input: { clock: { material: CAMPAIGN, epoch: 0 }, phase: "dawn" },
+      kind: "observe-day-phase",
+    } as const satisfies MechanicsBoundaryCommand;
+    const firstCheckpoints: MechanicsBoundaryCheckpoint[] = [];
+    const first = applyBoundary(world(), command, firstCheckpoints);
+    expect(first.status).toBe("applied");
+    if (first.status !== "applied") return;
+    const secondCheckpoints: MechanicsBoundaryCheckpoint[] = [];
+    const second = applyBoundary(first.world, command, secondCheckpoints);
+    expect(second.status).toBe("applied");
+    if (second.status !== "applied") return;
+
+    const firstBoundary = firstCheckpoints[0]?.boundary;
+    const secondBoundary = secondCheckpoints[0]?.boundary;
+    if (!firstBoundary || !secondBoundary) throw new Error("boundary fixture");
+    expect([firstBoundary, secondBoundary]).toEqual([
+      {
+        boundaryOrdinal: 1,
+        clock: { material: CAMPAIGN, epoch: 0 },
+        kind: "day-phase",
+        phase: "dawn",
+      },
+      {
+        boundaryOrdinal: 2,
+        clock: { material: CAMPAIGN, epoch: 0 },
+        kind: "day-phase",
+        phase: "dawn",
+      },
+    ]);
+    expect(
+      discoverMechanicsEndWave(second.world, { boundaries: [firstBoundary] })
+    ).toMatchObject({ reason: "invalid-boundary", status: "rejected" });
+  });
+
+  it("rejects qualitative boundary allocation overflow without mutating the world", () => {
+    const campaign = shared();
+    campaign.timeline.nextBoundaryOrdinal = Number.MAX_SAFE_INTEGER;
+    const initial = world(character(), campaign);
+    const snapshot = structuredClone(initial);
+    const commands = [
+      {
+        input: { clock: { material: CAMPAIGN, epoch: 0 }, phase: "dawn" },
+        kind: "observe-day-phase",
+      },
+      {
+        input: {
+          clock: { material: CAMPAIGN, epoch: 0 },
+          combatant: self(),
+          rest: "long",
+        },
+        kind: "complete-rest",
+      },
+    ] as const satisfies readonly MechanicsBoundaryCommand[];
+
+    for (const command of commands) {
+      expect(beginMechanicsBoundary(initial, command)).toEqual({
+        reason: "overflow",
+        status: "rejected",
+      });
+      expect(initial).toEqual(snapshot);
+    }
+  });
+
+  it("rejects completion mutation of the boundary-owned ordinal allocator", () => {
+    const begun = beginMechanicsBoundary(world(), {
+      input: { clock: { material: CAMPAIGN, epoch: 0 }, phase: "dawn" },
+      kind: "observe-day-phase",
+    });
+    if (begun.status !== "checkpoint") throw new Error("checkpoint fixture");
+    const mutated = structuredClone(begun.checkpoint.state);
+    const campaign = mutated.world.documents.find(
+      (document) => document.kind === "shared"
+    );
+    if (campaign?.kind !== "shared") throw new Error("campaign fixture");
+    campaign.state.timeline.nextBoundaryOrdinal += 1;
+
+    expect(completeMechanicsBoundaryCheckpoint(begun.continuation, mutated)).toBeNull();
   });
 
   it.each(["epoch", "revision"] as const)(
@@ -2387,15 +2550,7 @@ describe("canonical mechanics world and clocks", () => {
       if (hero?.kind !== "character") throw new Error("character fixture");
       if (field === "epoch") hero.state.epoch = 1;
       else hero.state.revision = 1;
-      const result = advanceMechanicsBoundary(begun.continuation, {
-        continuation: canonicalFingerprint(begun.continuation),
-        state: mutated,
-      } as unknown as MechanicsBoundaryCompletion);
-
-      expect(result).toMatchObject({
-        reason: "invalid-transition",
-        status: "rejected",
-      });
+      expect(completeMechanicsBoundaryCheckpoint(begun.continuation, mutated)).toBeNull();
     }
   );
 
@@ -2405,15 +2560,41 @@ describe("canonical mechanics world and clocks", () => {
       kind: "observe-day-phase",
     });
     if (begun.status !== "checkpoint") throw new Error("checkpoint fixture");
-    const result = advanceMechanicsBoundary(begun.continuation, {
-      continuation: canonicalFingerprint({
-        ...begun.continuation,
-        checkpoint: { ...begun.checkpoint, ordinal: 1 },
-      }),
-      state: begun.checkpoint.state,
-    } as unknown as MechanicsBoundaryCompletion);
+    const other = beginMechanicsBoundary(world(), {
+      input: {
+        clock: { material: HERO, epoch: 0 },
+        combatant: self(),
+        rest: "long",
+      },
+      kind: "complete-rest",
+    });
+    if (other.status !== "checkpoint") throw new Error("other checkpoint fixture");
+    const completion = completeMechanicsBoundaryCheckpoint(
+      other.continuation,
+      other.checkpoint.state
+    );
+    if (!completion) throw new Error("completion fixture");
+    const result = advanceMechanicsBoundary(begun.continuation, completion);
 
     expect(result).toMatchObject({ reason: "invalid-transition", status: "rejected" });
+  });
+
+  it("rejects checkpoint boundary substitution before branding a completion", () => {
+    const begun = beginMechanicsBoundary(world(), {
+      input: { clock: { material: CAMPAIGN, epoch: 0 }, phase: "dawn" },
+      kind: "observe-day-phase",
+    });
+    if (begun.status !== "checkpoint") throw new Error("checkpoint fixture");
+
+    expect(
+      completeMechanicsBoundaryCheckpoint(
+        {
+          ...begun.continuation,
+          checkpoint: { ...begun.checkpoint, boundary: null },
+        },
+        begun.checkpoint.state
+      )
+    ).toBeNull();
   });
 
   it("rejects command and cursor substitution after a checkpoint", () => {
@@ -2431,10 +2612,11 @@ describe("canonical mechanics world and clocks", () => {
       { excludeCurrent: null, kind: "complete-turn", material: HERO }
     );
     if (begun.status !== "checkpoint") throw new Error("checkpoint fixture");
-    const completion = {
-      continuation: canonicalFingerprint(begun.continuation),
-      state: begun.checkpoint.state,
-    } as unknown as MechanicsBoundaryCompletion;
+    const completion = completeMechanicsBoundaryCheckpoint(
+      begun.continuation,
+      begun.checkpoint.state
+    );
+    if (!completion) throw new Error("completion fixture");
     if (begun.continuation.cursor.kind !== "complete-turn") {
       throw new Error("cursor fixture");
     }
@@ -2462,7 +2644,7 @@ describe("canonical mechanics world and clocks", () => {
     ).toEqual({ reason: "invalid-transition", status: "rejected" });
   });
 
-  it("carries an empty-wave boundary into event-created ending discovery", () => {
+  it("keeps an empty-wave handler's new dawn lifetime for the following dawn", () => {
     const initial = world();
     const begun = beginMechanicsBoundary(initial, {
       input: { clock: { material: CAMPAIGN, epoch: 0 }, phase: "dawn" },
@@ -2471,7 +2653,12 @@ describe("canonical mechanics world and clocks", () => {
     if (begun.status !== "checkpoint") throw new Error("checkpoint fixture");
     expect(begun.checkpoint.wave.candidates).toEqual([]);
     expect(begun.checkpoint.state.context.request.boundaries).toEqual([
-      { clock: { material: CAMPAIGN, epoch: 0 }, kind: "day-phase", phase: "dawn" },
+      {
+        boundaryOrdinal: 1,
+        clock: { material: CAMPAIGN, epoch: 0 },
+        kind: "day-phase",
+        phase: "dawn",
+      },
     ]);
 
     const mutated = structuredClone(begun.checkpoint.state.world);
@@ -2483,6 +2670,7 @@ describe("canonical mechanics world and clocks", () => {
         {
           clock: { material: CAMPAIGN, epoch: 0 },
           kind: "day-phase",
+          minimumBoundaryOrdinal: 2,
           phase: "dawn",
         },
       ],
@@ -2493,34 +2681,41 @@ describe("canonical mechanics world and clocks", () => {
     });
     const rebased = rebaseMechanicsCausalState(mutated, begun.checkpoint.state);
     if (!rebased.ok) throw new Error(`rebase fixture: ${rebased.reason}`);
-    expect(rebased.value.context.endWave?.wave.candidates).toHaveLength(1);
-    const result = advanceMechanicsBoundary(begun.continuation, {
-      continuation: canonicalFingerprint(begun.continuation),
-      state: rebased.value,
-    } as unknown as MechanicsBoundaryCompletion);
+    expect(rebased.value.context.endWave).toBeNull();
+    const completion = completeMechanicsBoundaryCheckpoint(
+      begun.continuation,
+      rebased.value
+    );
+    if (!completion) throw new Error("completion fixture");
+    const result = advanceMechanicsBoundary(begun.continuation, completion);
 
-    expect(result.status).toBe("checkpoint");
-    if (result.status !== "checkpoint") return;
-    expect(result.checkpoint.wave.candidates).toHaveLength(1);
-    const settled = advanceMechanicsBoundary(result.continuation, {
-      continuation: canonicalFingerprint(result.continuation),
-      state: result.checkpoint.state,
-    } as unknown as MechanicsBoundaryCompletion);
-    expect(settled.status).toBe("complete");
-    if (settled.status !== "complete") return;
-    const finalCampaign = settled.world.documents.find(
+    expect(result.status).toBe("complete");
+    if (result.status !== "complete") return;
+    const afterCurrent = result.world.documents.find(
+      (document) => document.kind === "shared"
+    );
+    expect(afterCurrent?.state.occurrences).toHaveProperty("dawn-child");
+
+    const following = applyBoundary(result.world, {
+      input: { clock: { material: CAMPAIGN, epoch: 0 }, phase: "dawn" },
+      kind: "observe-day-phase",
+    });
+    expect(following.status).toBe("applied");
+    if (following.status !== "applied") return;
+    const finalCampaign = following.world.documents.find(
       (document) => document.kind === "shared"
     );
     expect(finalCampaign?.state.occurrences).not.toHaveProperty("dawn-child");
   });
 
-  it("turns a naturally extended nonempty wave into a second checkpoint", () => {
+  it("does not retroactively add a handler's new lifetime to a nonempty wave", () => {
     let campaign = addRoot(shared(), CAMPAIGN);
     campaign = addToState(campaign, "first-dawn-child", {
       endRules: [
         {
           clock: { material: CAMPAIGN, epoch: 0 },
           kind: "day-phase",
+          minimumBoundaryOrdinal: 1,
           phase: "dawn",
         },
       ],
@@ -2546,6 +2741,7 @@ describe("canonical mechanics world and clocks", () => {
         {
           clock: { material: CAMPAIGN, epoch: 0 },
           kind: "day-phase",
+          minimumBoundaryOrdinal: 2,
           phase: "dawn",
         },
       ],
@@ -2556,27 +2752,32 @@ describe("canonical mechanics world and clocks", () => {
     });
     const rebased = rebaseMechanicsCausalState(mutated, begun.checkpoint.state);
     if (!rebased.ok) throw new Error(`rebase fixture: ${rebased.reason}`);
-    expect(rebased.value.context.endWave?.wave.candidates).toHaveLength(2);
+    expect(rebased.value.context.endWave?.wave.candidates).toHaveLength(1);
 
-    const extended = advanceMechanicsBoundary(begun.continuation, {
-      continuation: canonicalFingerprint(begun.continuation),
-      state: rebased.value,
-    } as unknown as MechanicsBoundaryCompletion);
+    const completion = completeMechanicsBoundaryCheckpoint(
+      begun.continuation,
+      rebased.value
+    );
+    if (!completion) throw new Error("completion fixture");
+    const extended = advanceMechanicsBoundary(begun.continuation, completion);
     expect(extended.status).toBe("checkpoint");
     if (extended.status !== "checkpoint") return;
-    expect(extended.checkpoint.wave.candidates).toHaveLength(2);
+    expect(extended.checkpoint.wave.candidates).toHaveLength(1);
 
-    const settled = advanceMechanicsBoundary(extended.continuation, {
-      continuation: canonicalFingerprint(extended.continuation),
-      state: extended.checkpoint.state,
-    } as unknown as MechanicsBoundaryCompletion);
+    expect(extended.checkpoint.boundary).toBeNull();
+    const extendedCompletion = completeMechanicsBoundaryCheckpoint(
+      extended.continuation,
+      extended.checkpoint.state
+    );
+    if (!extendedCompletion) throw new Error("extended completion fixture");
+    const settled = advanceMechanicsBoundary(extended.continuation, extendedCompletion);
     expect(settled.status).toBe("complete");
     if (settled.status !== "complete") return;
     const finalCampaign = settled.world.documents.find(
       (document) => document.kind === "shared"
     );
     expect(finalCampaign?.state.occurrences).not.toHaveProperty("first-dawn-child");
-    expect(finalCampaign?.state.occurrences).not.toHaveProperty("second-dawn-child");
+    expect(finalCampaign?.state.occurrences).toHaveProperty("second-dawn-child");
   });
 
   it("turns a completion-added end request into a second checkpoint", () => {
@@ -2602,20 +2803,25 @@ describe("canonical mechanics world and clocks", () => {
       },
       world: current.world,
     } as unknown as MechanicsCausalState;
-    const next = advanceMechanicsBoundary(begun.continuation, {
-      continuation: canonicalFingerprint(begun.continuation),
-      state: completionState,
-    } as unknown as MechanicsBoundaryCompletion);
+    const completion = completeMechanicsBoundaryCheckpoint(
+      begun.continuation,
+      completionState
+    );
+    if (!completion) throw new Error("completion fixture");
+    const next = advanceMechanicsBoundary(begun.continuation, completion);
 
     expect(next.status === "rejected" ? next.reason : next.status).toBe("checkpoint");
     if (next.status !== "checkpoint") return;
     expect(next.checkpoint.wave.request.endRequests).toEqual([
       worldGeneration(initial, HERO, "root"),
     ]);
-    const settled = advanceMechanicsBoundary(next.continuation, {
-      continuation: canonicalFingerprint(next.continuation),
-      state: next.checkpoint.state,
-    } as unknown as MechanicsBoundaryCompletion);
+    expect(next.checkpoint.boundary).toBeNull();
+    const nextCompletion = completeMechanicsBoundaryCheckpoint(
+      next.continuation,
+      next.checkpoint.state
+    );
+    if (!nextCompletion) throw new Error("next completion fixture");
+    const settled = advanceMechanicsBoundary(next.continuation, nextCompletion);
     expect(settled.status).toBe("complete");
     if (settled.status !== "complete") return;
     expect(settled.world.documents[0]?.state.occurrences).not.toHaveProperty("root");
@@ -2706,6 +2912,12 @@ describe("canonical mechanics world and clocks", () => {
     );
 
     expect(result.status).toBe("applied");
+    expect(checkpoints.map(({ boundary }) => boundary)).toEqual([
+      {
+        clock: { material: HERO, epoch: 1 },
+        kind: "combat-end",
+      },
+    ]);
     expect(
       checkpoints
         .at(-1)

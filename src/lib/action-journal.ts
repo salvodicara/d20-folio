@@ -30,12 +30,17 @@ const MAX_STRING_LENGTH = 1_024;
 const MAX_PATH_SEGMENT_LENGTH = 256;
 const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 const ENGINE_ROOTS = new Set(["schema", "buildRevision", "epoch", "revision", "actions"]);
+const ENCOUNTER_COMBATANT_HIGH_WATER = [
+  "encounter",
+  "nextCombatantOrdinal",
+] as const satisfies JournalPath;
 const HIGH_WATER_PATHS = [
   ["nextOccurrenceOrdinal"],
   ["nextEntityOrdinal"],
   ["nextInventoryOrdinal"],
   ["nextEncounterEpoch"],
-  ["encounter", "nextCombatantOrdinal"],
+  ["timeline", "nextBoundaryOrdinal"],
+  ENCOUNTER_COMBATANT_HIGH_WATER,
 ] as const satisfies readonly JournalPath[];
 
 type UnknownRecord = Record<string, unknown>;
@@ -309,9 +314,16 @@ function encounterEpoch(stored: StoredValue): number | null {
 function encounterLifecyclesAreValid(mutations: readonly ActionMutation[]): boolean {
   for (const mutation of mutations) {
     if (mutation.path.length !== 1 || mutation.path[0] !== "encounter") continue;
-    const highWater = HIGH_WATER_PATHS[4];
-    const before = storedHighWater(mutation.before, mutation.path, highWater);
-    const after = storedHighWater(mutation.after, mutation.path, highWater);
+    const before = storedHighWater(
+      mutation.before,
+      mutation.path,
+      ENCOUNTER_COMBATANT_HIGH_WATER
+    );
+    const after = storedHighWater(
+      mutation.after,
+      mutation.path,
+      ENCOUNTER_COMBATANT_HIGH_WATER
+    );
     if (!before || !after) return false;
     const beforeEpoch = before.present ? encounterEpoch(mutation.before) : null;
     const afterEpoch = after.present ? encounterEpoch(mutation.after) : null;

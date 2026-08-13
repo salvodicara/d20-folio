@@ -355,7 +355,7 @@ function inventoryObject(
   };
 }
 
-describe("material state schema 3", () => {
+describe("material state schema 4", () => {
   it("constructs exact frozen roots with first-unused physical ordinals", () => {
     const character = createEmptyCharacterMaterialState(4, CHARACTER, livingVitals());
     const shared = createEmptySharedMaterialState();
@@ -365,12 +365,14 @@ describe("material state schema 3", () => {
       nextEntityOrdinal: 1,
       nextInventoryOrdinal: 1,
       nextOccurrenceOrdinal: 1,
-      schema: 3,
+      schema: 4,
+      timeline: { nextBoundaryOrdinal: 1 },
     });
     expect(shared).toMatchObject({
       nextEntityOrdinal: 1,
       nextOccurrenceOrdinal: 1,
-      schema: 3,
+      schema: 4,
+      timeline: { nextBoundaryOrdinal: 1 },
     });
     expect(parseCharacterMaterialState(character, CHARACTER)).toEqual({
       ok: true,
@@ -383,8 +385,8 @@ describe("material state schema 3", () => {
     expect(Object.isFrozen(character)).toBe(true);
   });
 
-  it("has no schema-2 or missing physical-identity compatibility path", () => {
-    const oldSchema = { ...characterState(), schema: 2 };
+  it("has no schema-3 or missing physical-identity compatibility path", () => {
+    const oldSchema = { ...characterState(), schema: 3 };
     expect(parseCharacterMaterialState(oldSchema, CHARACTER)).toEqual({ ok: false });
 
     const missingInventoryCounter = characterState() as unknown as Record<
@@ -395,6 +397,19 @@ describe("material state schema 3", () => {
     expect(parseCharacterMaterialState(missingInventoryCounter, CHARACTER)).toEqual({
       ok: false,
     });
+
+    for (const nextBoundaryOrdinal of [undefined, 0, -1, 1.5, Number.MAX_VALUE]) {
+      const invalidTimeline = characterState() as unknown as Record<string, unknown>;
+      const timeline = {
+        ...(invalidTimeline.timeline as Record<string, unknown>),
+      };
+      if (nextBoundaryOrdinal === undefined) delete timeline.nextBoundaryOrdinal;
+      else timeline.nextBoundaryOrdinal = nextBoundaryOrdinal;
+      invalidTimeline.timeline = timeline;
+      expect(parseCharacterMaterialState(invalidTimeline, CHARACTER)).toEqual({
+        ok: false,
+      });
+    }
 
     const missingItemOrdinal = characterState();
     missingItemOrdinal.nextInventoryOrdinal = 2;

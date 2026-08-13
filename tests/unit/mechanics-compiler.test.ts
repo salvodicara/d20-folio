@@ -9,6 +9,7 @@ import {
 import { mechanicsCapabilitySnapshotFingerprint } from "@/lib/mechanics-capability";
 import { compileMechanicsFrame } from "@/lib/mechanics-compiler";
 import { deriveMechanicsPostEvents } from "@/lib/mechanics-execution";
+import { mechanicsProgramEffectOccurrenceId } from "@/lib/mechanics-program-effects";
 import { createEmptyCharacterMaterialState } from "@/lib/material-state";
 import {
   reviewMechanicsIntent,
@@ -20,7 +21,7 @@ import {
   parseMechanicsWorld,
   rebaseMechanicsCausalState,
 } from "@/lib/mechanics-world";
-import type { ProgramPhaseState } from "@/types/mechanic-occurrence";
+import type { MechanicOccurrence, ProgramPhaseState } from "@/types/mechanic-occurrence";
 import type {
   CompileMechanicsFrameInput,
   MechanicsCompilerResponse,
@@ -31,8 +32,13 @@ import type {
   MechanicsAuthoritySnapshot,
 } from "@/types/mechanics-authority";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
-import type { MechanicsIntent, ReviewedMechanicsIntent } from "@/types/mechanics-program";
+import type {
+  MechanicsAnswer,
+  MechanicsIntent,
+  ReviewedMechanicsIntent,
+} from "@/types/mechanics-program";
 import type { MechanicsProgram } from "@/types/mechanics-program-authoring";
+import type { EntityRef, OccurrenceGenerationRef } from "@/types/mechanics-reference";
 import type { MechanicsTriggerEvidence } from "@/types/mechanics-trigger";
 import type { MechanicsCausalState, MechanicsWorld } from "@/types/mechanics-world";
 
@@ -47,9 +53,14 @@ const HERO = {
   uid: "user",
 } as const;
 const SELF = { entityId: "self", material: HERO } as const;
+const FAMILIAR = { entityId: "familiar", material: HERO, ordinal: 1 } as const;
 const ROOT = {
   occurrence: { material: HERO, occurrenceId: "root-1" },
   ordinal: 1,
+} as const;
+const OTHER_ROOT = {
+  occurrence: { material: HERO, occurrenceId: "root-2" },
+  ordinal: 2,
 } as const;
 const FIXED_ONE = { kind: "fixed", value: 1 } as const;
 
@@ -144,14 +155,51 @@ function authoritySnapshot(
   return { definitions: [authorityDefinition(authority)] };
 }
 
-function world(nextOccurrenceOrdinal = 1): MechanicsWorld {
-  const state = createEmptyCharacterMaterialState(5, HERO, {
+function world(nextOccurrenceOrdinal = 1, withFamiliar = false): MechanicsWorld {
+  const base = createEmptyCharacterMaterialState(5, HERO, {
     hitPoints: {
       current: 20,
       temporary: { current: 0, sourceOccurrence: null },
     },
     zeroHitPoints: null,
   });
+  const state = withFamiliar
+    ? {
+        ...base,
+        entities: {
+          familiar: {
+            availability: "present" as const,
+            controller: null,
+            exhaustion: 0,
+            kind: "creature" as const,
+            label: "",
+            ordinal: FAMILIAR.ordinal,
+            overrides: {
+              armorClass: null,
+              hitPointMaximum: null,
+              initiativeBonus: null,
+              speedFt: null,
+            },
+            ownerOccurrence: null,
+            resources: {},
+            template: {
+              kind: "catalogue-companion" as const,
+              sourceId: "familiar",
+              variantId: "owl",
+            },
+            vitals: {
+              hitPoints: {
+                current: 1,
+                temporary: { current: 0, sourceOccurrence: null },
+              },
+              zeroHitPoints: null,
+            },
+          },
+        },
+        nextEntityOrdinal: 2,
+        nextOccurrenceOrdinal,
+      }
+    : { ...base, nextOccurrenceOrdinal };
   const parsed = parseMechanicsWorld({
     documents: [
       {
@@ -164,6 +212,68 @@ function world(nextOccurrenceOrdinal = 1): MechanicsWorld {
   });
   if (!parsed.ok) throw new Error(parsed.reason);
   return parsed.value;
+}
+
+function withOccurrences(
+  snapshot: Readonly<MechanicsWorld>,
+  occurrences: Readonly<Record<string, Readonly<MechanicOccurrence>>>
+): MechanicsWorld {
+  const candidate = structuredClone(snapshot);
+  const document = candidate.documents[0];
+  if (document?.kind !== "character") throw new Error("occurrence fixture");
+  document.state.occurrences = { ...document.state.occurrences, ...occurrences };
+  document.state.nextOccurrenceOrdinal =
+    Math.max(...Object.values(document.state.occurrences).map(({ ordinal }) => ordinal)) +
+    1;
+  const parsed = parseMechanicsWorld(candidate);
+  if (!parsed.ok) throw new Error(`occurrence fixture: ${parsed.reason}`);
+  return parsed.value;
+}
+
+function effectBase(
+  ordinal: number,
+  stepId: string,
+  root: Readonly<OccurrenceGenerationRef> = ROOT,
+  target: Readonly<EntityRef> = SELF
+) {
+  return {
+    endRules: [],
+    ending: null,
+    ordinal,
+    origin: {
+      execution: 1,
+      kind: "program-step" as const,
+      phaseId: "seed",
+      root,
+      slot: ordinal,
+      stepId,
+    },
+    parentId: root.occurrence.occurrenceId,
+    target,
+  } as const;
+}
+
+function programOccurrence(
+  program: MechanicsProgram,
+  ordinal: number,
+  authority = authorityReceipt(program)
+): Extract<MechanicOccurrence, { readonly kind: "program" }> {
+  return {
+    authority,
+    endRules: [],
+    ending: null,
+    kind: "program",
+    ordinal,
+    phaseState: Object.fromEntries(
+      program.phases.map(({ phaseId }) => [
+        phaseId,
+        { execution: phaseId === "seed" ? 1 : 0, lastTriggerEventId: null },
+      ])
+    ),
+    registers: Object.fromEntries(
+      program.registers.map(({ initial, registerId }) => [registerId, initial])
+    ),
+  };
 }
 
 function worldWithProgramRoot(
@@ -254,9 +364,10 @@ function advanceIntent(
 
 function reviewed(
   intent: Readonly<MechanicsIntent>,
-  snapshot: Readonly<MechanicsWorld>
+  snapshot: Readonly<MechanicsWorld>,
+  answers: readonly Readonly<MechanicsAnswer>[] = []
 ): Readonly<ReviewedMechanicsIntent> {
-  const result = reviewMechanicsIntent(intent, [], snapshot);
+  const result = reviewMechanicsIntent(intent, answers, snapshot);
   if (result.status !== "reviewed") {
     throw new Error(`intent fixture was rejected: ${JSON.stringify(result)}`);
   }
@@ -463,6 +574,1285 @@ describe("compileMechanicsFrame", () => {
     ]);
   });
 
+  it("creates exact deterministic condition occurrences with durable provenance", () => {
+    const program = conformed({
+      id: "compiler-condition-start",
+      phases: [
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 2 },
+              minimum: { kind: "fixed", value: 2 },
+              multiplicity: "set",
+              when: null,
+            },
+          ],
+          phaseId: "resolve",
+          steps: [
+            {
+              conditionId: "poisoned",
+              kind: "condition",
+              lifetime: { kind: "manual" },
+              operation: "apply",
+              stepId: "apply-condition",
+              target: { inputId: "targets", kind: "input" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const before = world(1, true);
+    const proposed = createIntent(program);
+    const input = compilationInput(
+      reviewed(proposed, before, [
+        { inputId: "targets", kind: "entities", targets: [SELF, FAMILIAR] },
+      ]),
+      before
+    );
+
+    const first = compiled(compileMechanicsFrame(input));
+    const second = compileMechanicsFrame(input);
+    const rootInvocation = { kind: "program-root", occurrence: ROOT } as const;
+    const causeId = canonicalFingerprint({
+      authority: proposed.frame.authority,
+      invocation: rootInvocation,
+    });
+    const expected = [FAMILIAR, SELF].map((target, index) => {
+      const slot = index + 1;
+      const origin = {
+        execution: 1,
+        kind: "program-step" as const,
+        phaseId: "resolve",
+        root: ROOT,
+        slot,
+        stepId: "apply-condition",
+      };
+      return {
+        causeId,
+        conditionImmunityOverride: null,
+        created: {
+          occurrence: {
+            material: HERO,
+            occurrenceId: mechanicsProgramEffectOccurrenceId(origin),
+          },
+          ordinal: slot + 1,
+        },
+        kind: "occurrence-create",
+        occurrence: {
+          conditionId: "poisoned",
+          endRules: [],
+          kind: "condition",
+          origin,
+          parentId: "root-1",
+          target,
+        },
+        operationId: canonicalFingerprint({
+          actionId: "action-1",
+          execution: 1,
+          kind: "occurrence-create",
+          phaseId: "resolve",
+          root: ROOT,
+          slot,
+          stepId: "apply-condition",
+        }),
+        parent: ROOT,
+      } as const;
+    });
+
+    expect(JSON.stringify(second)).toBe(JSON.stringify(first));
+    expect(first.transaction.operations.slice(1)).toEqual(expected);
+    expect(first.trace).toMatchObject([
+      {
+        operationIds: expected.map(({ operationId }) => operationId),
+        status: "compiled",
+        stepId: "apply-condition",
+      },
+    ]);
+    expect(
+      first.trace[0]?.executions.map(({ kind, operationId, status }) => ({
+        kind,
+        operationId,
+        status,
+      }))
+    ).toEqual(
+      expected.map(({ operationId }) => ({
+        kind: "occurrence-create",
+        operationId,
+        status: "applied",
+      }))
+    );
+  });
+
+  it("reuses the unspent ordinal when condition immunity makes every create a no-change", () => {
+    const program = conformed({
+      id: "compiler-condition-immunity",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              fact: { conditionId: "poisoned", kind: "condition-immunity" },
+              kind: "standing",
+              lifetime: { kind: "manual" },
+              operation: "start",
+              stepId: "grant-immunity",
+              target: { kind: "role", role: "target" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 2 },
+              minimum: { kind: "fixed", value: 2 },
+              multiplicity: "slots",
+              when: null,
+            },
+          ],
+          phaseId: "pulse",
+          steps: [
+            {
+              conditionId: "poisoned",
+              kind: "condition",
+              lifetime: { kind: "manual" },
+              operation: "apply",
+              stepId: "apply-immune-condition",
+              target: { inputId: "targets", kind: "input" },
+              when: null,
+            },
+            {
+              fact: { key: "after-immunity", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "manual" },
+              operation: "start",
+              stepId: "start-after-immunity",
+              target: { kind: "role", role: "target" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "program-phase-end", phaseId: "resolve" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const before = withOccurrences(
+      worldWithProgramRoot(program, {
+        pulse: { execution: 0, lastTriggerEventId: null },
+        resolve: { execution: 1, lastTriggerEventId: null },
+      }),
+      {
+        immunity: {
+          endRules: [],
+          ending: null,
+          fact: { conditionId: "poisoned", kind: "condition-immunity" },
+          kind: "standing",
+          ordinal: 2,
+          origin: {
+            execution: 1,
+            kind: "program-step",
+            phaseId: "resolve",
+            root: ROOT,
+            slot: 1,
+            stepId: "grant-immunity",
+          },
+          parentId: "root-1",
+          target: SELF,
+        },
+      }
+    );
+    const proposed = advanceIntent(program, "pulse", {
+      execution: 1,
+      kind: "program-phase-end",
+      occurrence: ROOT,
+      phaseId: "resolve",
+      triggerEventId: "program.root-1.resolve.1",
+    });
+    const result = compiled(
+      compileMechanicsFrame(
+        compilationInput(
+          reviewed(proposed, before, [
+            { inputId: "targets", kind: "entities", targets: [SELF, SELF] },
+          ]),
+          before
+        )
+      )
+    );
+    const creates = result.transaction.operations.flatMap((operation) =>
+      operation.kind === "occurrence-create" && operation.occurrence.kind === "condition"
+        ? [
+            {
+              occurrenceId: operation.created.occurrence.occurrenceId,
+              ordinal: operation.created.ordinal,
+            },
+          ]
+        : []
+    );
+    const following = result.transaction.operations.find(
+      (operation) =>
+        operation.kind === "occurrence-create" && operation.occurrence.kind === "standing"
+    );
+
+    expect(creates.map(({ ordinal }) => ordinal)).toEqual([3, 3]);
+    expect(new Set(creates.map(({ occurrenceId }) => occurrenceId)).size).toBe(2);
+    expect(result.trace[0]?.executions).toMatchObject([
+      { reason: "condition-immune", status: "no-change" },
+      { reason: "condition-immune", status: "no-change" },
+    ]);
+    expect(following).toMatchObject({ created: { ordinal: 3 } });
+    const document = result.simulation.state.world.documents[0];
+    expect(document?.state.nextOccurrenceOrdinal).toBe(4);
+    expect(Object.keys(document?.state.occurrences ?? {})).toHaveLength(3);
+  });
+
+  it("returns exact replacement coordination for concentration and polymorph starts", () => {
+    for (const scenario of [
+      {
+        coordinationKind: "concentration-replacement",
+        effectKind: "concentration",
+        existingFormId: null,
+        occurrenceId: "existing-concentration",
+      },
+      {
+        coordinationKind: "occurrence-end",
+        effectKind: "polymorph",
+        existingFormId: "brown-bear",
+        occurrenceId: "existing-polymorph",
+      },
+    ] as const) {
+      const existingStep =
+        scenario.effectKind === "concentration"
+          ? {
+              kind: "concentration" as const,
+              lifetime: { kind: "manual" as const },
+              operation: "start" as const,
+              stepId: "start-existing-concentration",
+              when: null,
+            }
+          : {
+              formId: scenario.existingFormId,
+              kind: "polymorph" as const,
+              lifetime: { kind: "manual" as const },
+              operation: "start" as const,
+              stepId: "start-existing-polymorph",
+              target: { kind: "role" as const, role: "target" as const },
+              when: null,
+            };
+      const step =
+        scenario.effectKind === "concentration"
+          ? {
+              kind: "concentration" as const,
+              lifetime: { kind: "manual" as const },
+              operation: "start" as const,
+              stepId: "start-concentration",
+              when: null,
+            }
+          : {
+              formId: "wolf",
+              kind: "polymorph" as const,
+              lifetime: { kind: "manual" as const },
+              operation: "start" as const,
+              stepId: "start-polymorph",
+              target: { kind: "role" as const, role: "target" as const },
+              when: null,
+            };
+      const program = conformed({
+        id: `compiler-${scenario.effectKind}-replacement`,
+        phases: [
+          {
+            inputs: [],
+            phaseId: "resolve",
+            steps: [existingStep],
+            trigger: { kind: "invocation" },
+          },
+          {
+            inputs: [],
+            phaseId: "pulse",
+            steps: [step],
+            trigger: { kind: "program-phase-end", phaseId: "resolve" },
+          },
+        ],
+        registers: [],
+        version: 1,
+      });
+      const common = {
+        endRules: [],
+        ending: null,
+        ordinal: 2,
+        origin: {
+          execution: 1,
+          kind: "program-step" as const,
+          phaseId: "resolve",
+          root: ROOT,
+          slot: 1,
+          stepId: existingStep.stepId,
+        },
+        parentId: "root-1",
+        target: SELF,
+      };
+      const occurrence: MechanicOccurrence =
+        scenario.effectKind === "concentration"
+          ? { ...common, kind: "concentration" }
+          : {
+              ...common,
+              formId: scenario.existingFormId,
+              kind: "polymorph-form",
+            };
+      const before = withOccurrences(
+        worldWithProgramRoot(program, {
+          pulse: { execution: 0, lastTriggerEventId: null },
+          resolve: { execution: 1, lastTriggerEventId: null },
+        }),
+        { [scenario.occurrenceId]: occurrence }
+      );
+      const proposed = advanceIntent(program, "pulse", {
+        execution: 1,
+        kind: "program-phase-end",
+        occurrence: ROOT,
+        phaseId: "resolve",
+        triggerEventId: "program.root-1.resolve.1",
+      });
+
+      expect(
+        compileMechanicsFrame(compilationInput(reviewed(proposed, before), before))
+      ).toEqual({
+        coordination: {
+          kind: scenario.coordinationKind,
+          occurrences: [
+            {
+              occurrence: { material: HERO, occurrenceId: scenario.occurrenceId },
+              ordinal: 2,
+            },
+          ],
+        },
+        status: "needs-coordination",
+      });
+    }
+  });
+
+  it("rejects a second same-frame start of one exclusive effect", () => {
+    for (const effectKind of ["concentration", "polymorph"] as const) {
+      const steps = ["first", "second"].map((suffix) =>
+        effectKind === "concentration"
+          ? {
+              kind: "concentration" as const,
+              lifetime: { kind: "manual" as const },
+              operation: "start" as const,
+              stepId: `${suffix}-concentration`,
+              when: null,
+            }
+          : {
+              formId: suffix === "first" ? "brown-bear" : "wolf",
+              kind: "polymorph" as const,
+              lifetime: { kind: "manual" as const },
+              operation: "start" as const,
+              stepId: `${suffix}-polymorph`,
+              target: { kind: "role" as const, role: "target" as const },
+              when: null,
+            }
+      );
+      const program = conformed({
+        id: `compiler-${effectKind}-same-frame-replacement`,
+        phases: [
+          {
+            inputs: [],
+            phaseId: "resolve",
+            steps,
+            trigger: { kind: "invocation" },
+          },
+        ],
+        registers: [],
+        version: 1,
+      });
+      const before = world();
+
+      expect(
+        compileMechanicsFrame(
+          compilationInput(reviewed(createIntent(program), before), before)
+        )
+      ).toEqual({
+        operationId: null,
+        phaseId: "resolve",
+        reason: "unresolved-step",
+        referenceId: "same-frame-exclusive-replacement",
+        status: "rejected",
+        stepId: `second-${effectKind}`,
+      });
+    }
+  });
+
+  it("rejects duplicate targets for a polymorph start", () => {
+    const step = {
+      formId: "wolf",
+      kind: "polymorph" as const,
+      lifetime: { kind: "manual" as const },
+      operation: "start" as const,
+      stepId: "start-polymorph",
+      target: { inputId: "targets", kind: "input" as const },
+      when: null,
+    };
+    const program = conformed({
+      id: "compiler-polymorph-duplicate-target",
+      phases: [
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 2 },
+              minimum: { kind: "fixed", value: 2 },
+              multiplicity: "slots",
+              when: null,
+            },
+          ],
+          phaseId: "resolve",
+          steps: [step],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const before = world();
+
+    const result = compileMechanicsFrame(
+      compilationInput(
+        reviewed(createIntent(program), before, [
+          { inputId: "targets", kind: "entities", targets: [SELF, SELF] },
+        ]),
+        before
+      )
+    );
+    expect(result).toEqual({
+      operationId: null,
+      phaseId: "resolve",
+      reason: "unresolved-step",
+      referenceId: "duplicate-exclusive-target",
+      status: "rejected",
+      stepId: "start-polymorph",
+    });
+  });
+
+  it("derives the sole concentration owner from the caster role", () => {
+    const program = conformed({
+      id: "compiler-concentration-owner",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              kind: "concentration",
+              lifetime: { kind: "manual" },
+              operation: "start",
+              stepId: "start-concentration",
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const before = world(1, true);
+    const result = compiled(
+      compileMechanicsFrame(
+        compilationInput(reviewed(createIntent(program), before), before)
+      )
+    );
+
+    const created = result.transaction.operations.find(
+      (operation) =>
+        operation.kind === "occurrence-create" &&
+        operation.occurrence.kind === "concentration"
+    );
+    expect(created?.kind).toBe("occurrence-create");
+    if (created?.kind !== "occurrence-create") return;
+    expect(created.occurrence).toMatchObject({ kind: "concentration", target: SELF });
+  });
+
+  it("removes exact conditions globally across roots in canonical order", () => {
+    const program = conformed({
+      id: "compiler-condition-remove",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "seed",
+          steps: [
+            {
+              conditionId: "poisoned",
+              kind: "condition",
+              lifetime: { kind: "manual" },
+              operation: "apply",
+              stepId: "seed-poisoned",
+              target: { kind: "role", role: "target" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              conditionId: "poisoned",
+              kind: "condition",
+              lifetime: null,
+              operation: "remove",
+              stepId: "remove-poisoned",
+              target: { kind: "role", role: "target" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "program-phase-end", phaseId: "seed" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const before = withOccurrences(world(1, true), {
+      "root-1": programOccurrence(program, ROOT.ordinal),
+      "root-2": programOccurrence(program, OTHER_ROOT.ordinal),
+      earlier: {
+        ...effectBase(3, "seed-poisoned", OTHER_ROOT),
+        conditionId: "poisoned",
+        kind: "condition",
+      },
+      later: {
+        ...effectBase(6, "seed-poisoned"),
+        conditionId: "poisoned",
+        kind: "condition",
+      },
+      "wrong-condition": {
+        ...effectBase(4, "seed-poisoned"),
+        conditionId: "prone",
+        kind: "condition",
+      },
+      "wrong-target": {
+        ...effectBase(5, "seed-poisoned", ROOT, FAMILIAR),
+        conditionId: "poisoned",
+        kind: "condition",
+      },
+    });
+    const proposed = advanceIntent(program, "resolve", {
+      execution: 1,
+      kind: "program-phase-end",
+      occurrence: ROOT,
+      phaseId: "seed",
+      triggerEventId: "program.root-1.seed.1",
+    });
+
+    expect(
+      compileMechanicsFrame(compilationInput(reviewed(proposed, before), before))
+    ).toEqual({
+      coordination: {
+        kind: "occurrence-end",
+        occurrences: [
+          { occurrence: { material: HERO, occurrenceId: "earlier" }, ordinal: 3 },
+          { occurrence: { material: HERO, occurrenceId: "later" }, ordinal: 6 },
+        ],
+      },
+      status: "needs-coordination",
+    });
+  });
+
+  it("ends a standing fact only for the current root and fully materialized fact", () => {
+    const fact = {
+      kind: "target-mark" as const,
+      markId: "quarry",
+      marked: { kind: "role" as const, role: "source" as const },
+    };
+    const program = conformed({
+      id: "compiler-standing-end",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "seed",
+          steps: [
+            {
+              fact,
+              kind: "standing",
+              lifetime: { kind: "manual" },
+              operation: "start",
+              stepId: "seed-mark",
+              target: { kind: "role", role: "target" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              fact,
+              kind: "standing",
+              lifetime: null,
+              operation: "end",
+              stepId: "end-mark",
+              target: { kind: "role", role: "target" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "program-phase-end", phaseId: "seed" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const before = withOccurrences(
+      worldWithProgramRoot(program, {
+        resolve: { execution: 0, lastTriggerEventId: null },
+        seed: { execution: 1, lastTriggerEventId: null },
+      }),
+      {
+        "root-2": programOccurrence(program, OTHER_ROOT.ordinal),
+        exact: {
+          ...effectBase(3, "seed-mark"),
+          fact: { kind: "target-mark", markId: "quarry", marked: SELF },
+          kind: "standing",
+        },
+        "other-fact": {
+          ...effectBase(4, "seed-mark"),
+          fact: { key: "quarry", kind: "active-key" },
+          kind: "standing",
+        },
+        "other-root": {
+          ...effectBase(5, "seed-mark", OTHER_ROOT),
+          fact: { kind: "target-mark", markId: "quarry", marked: SELF },
+          kind: "standing",
+        },
+      }
+    );
+    const proposed = advanceIntent(program, "resolve", {
+      execution: 1,
+      kind: "program-phase-end",
+      occurrence: ROOT,
+      phaseId: "seed",
+      triggerEventId: "program.root-1.seed.1",
+    });
+
+    expect(
+      compileMechanicsFrame(compilationInput(reviewed(proposed, before), before))
+    ).toEqual({
+      coordination: {
+        kind: "occurrence-end",
+        occurrences: [
+          { occurrence: { material: HERO, occurrenceId: "exact" }, ordinal: 3 },
+        ],
+      },
+      status: "needs-coordination",
+    });
+  });
+
+  it("ends concentration by canonical caster and polymorph by exact form", () => {
+    for (const scenario of [
+      {
+        end: {
+          kind: "concentration" as const,
+          lifetime: null,
+          operation: "end" as const,
+          stepId: "end-concentration",
+          when: null,
+        },
+        existing: {
+          ...effectBase(2, "seed-concentration"),
+          kind: "concentration" as const,
+        },
+        id: "concentration",
+        start: {
+          kind: "concentration" as const,
+          lifetime: { kind: "manual" as const },
+          operation: "start" as const,
+          stepId: "seed-concentration",
+          when: null,
+        },
+      },
+      {
+        end: {
+          formId: "wolf",
+          kind: "polymorph" as const,
+          lifetime: null,
+          operation: "end" as const,
+          stepId: "end-polymorph",
+          target: { kind: "role" as const, role: "target" as const },
+          when: null,
+        },
+        existing: {
+          ...effectBase(2, "seed-polymorph"),
+          formId: "wolf",
+          kind: "polymorph-form" as const,
+        },
+        id: "polymorph",
+        start: {
+          formId: "wolf",
+          kind: "polymorph" as const,
+          lifetime: { kind: "manual" as const },
+          operation: "start" as const,
+          stepId: "seed-polymorph",
+          target: { kind: "role" as const, role: "target" as const },
+          when: null,
+        },
+      },
+    ] as const) {
+      const program = conformed({
+        id: `compiler-${scenario.id}-end`,
+        phases: [
+          {
+            inputs: [],
+            phaseId: "seed",
+            steps: [scenario.start],
+            trigger: { kind: "invocation" },
+          },
+          {
+            inputs: [],
+            phaseId: "resolve",
+            steps: [scenario.end],
+            trigger: { kind: "program-phase-end", phaseId: "seed" },
+          },
+        ],
+        registers: [],
+        version: 1,
+      });
+      const baseAuthority = authorityReceipt(program);
+      const authority =
+        scenario.id === "concentration"
+          ? {
+              ...baseAuthority,
+              anchors: { ...baseAuthority.anchors, caster: FAMILIAR },
+            }
+          : baseAuthority;
+      const target = scenario.id === "concentration" ? FAMILIAR : SELF;
+      const before = withOccurrences(world(1, scenario.id === "concentration"), {
+        "root-1": programOccurrence(program, ROOT.ordinal, authority),
+        existing: {
+          ...scenario.existing,
+          ...effectBase(2, scenario.start.stepId, ROOT, target),
+        },
+      });
+      const proposed = advanceIntent(
+        program,
+        "resolve",
+        {
+          execution: 1,
+          kind: "program-phase-end",
+          occurrence: ROOT,
+          phaseId: "seed",
+          triggerEventId: "program.root-1.seed.1",
+        },
+        authority
+      );
+
+      expect(
+        compileMechanicsFrame(compilationInput(reviewed(proposed, before), before))
+      ).toEqual({
+        coordination: {
+          kind: "occurrence-end",
+          occurrences: [
+            { occurrence: { material: HERO, occurrenceId: "existing" }, ordinal: 2 },
+          ],
+        },
+        status: "needs-coordination",
+      });
+
+      const otherRootOnly = withOccurrences(world(1, scenario.id === "concentration"), {
+        "root-1": programOccurrence(program, ROOT.ordinal, authority),
+        "root-2": programOccurrence(program, OTHER_ROOT.ordinal, authority),
+        existing: {
+          ...scenario.existing,
+          ...effectBase(3, scenario.start.stepId, OTHER_ROOT, target),
+        },
+      });
+      const noMatch = compiled(
+        compileMechanicsFrame(
+          compilationInput(reviewed(proposed, otherRootOnly), otherRootOnly)
+        )
+      );
+      expect(noMatch.trace).toEqual([
+        {
+          executions: [],
+          operationIds: [],
+          status: "compiled",
+          stepId: scenario.end.stepId,
+        },
+      ]);
+
+      if (scenario.id === "polymorph") {
+        const wrongForm = withOccurrences(world(), {
+          "root-1": programOccurrence(program, ROOT.ordinal, authority),
+          existing: {
+            ...scenario.existing,
+            ...effectBase(2, scenario.start.stepId),
+            formId: "brown-bear",
+          },
+        });
+        expect(
+          compiled(
+            compileMechanicsFrame(
+              compilationInput(reviewed(proposed, wrongForm), wrongForm)
+            )
+          ).trace
+        ).toEqual([
+          {
+            executions: [],
+            operationIds: [],
+            status: "compiled",
+            stepId: scenario.end.stepId,
+          },
+        ]);
+      }
+    }
+  });
+
+  it("compiles an exact zero-match effect end as an idempotent no-op", () => {
+    const program = conformed({
+      id: "compiler-effect-end-no-match",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              conditionId: "poisoned",
+              kind: "condition",
+              lifetime: null,
+              operation: "remove",
+              stepId: "remove-absent-condition",
+              target: { kind: "role", role: "target" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const before = world();
+    const result = compiled(
+      compileMechanicsFrame(
+        compilationInput(reviewed(createIntent(program), before), before)
+      )
+    );
+
+    expect(result.transaction.operations).toMatchObject([
+      { kind: "program-state-transition", receipt: { kind: "create" } },
+    ]);
+    expect(result.trace).toEqual([
+      {
+        executions: [],
+        operationIds: [],
+        status: "compiled",
+        stepId: "remove-absent-condition",
+      },
+    ]);
+  });
+
+  it("selects effect ends from the projected prefix before exposing the barrier", () => {
+    const program = conformed({
+      id: "compiler-projected-effect-end",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              fact: { key: "ward", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "manual" },
+              operation: "start",
+              stepId: "start-ward",
+              target: { kind: "role", role: "target" },
+              when: null,
+            },
+            {
+              fact: { key: "ward", kind: "active-key" },
+              kind: "standing",
+              lifetime: null,
+              operation: "end",
+              stepId: "end-ward",
+              target: { kind: "role", role: "target" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const before = world();
+    const origin = {
+      execution: 1,
+      kind: "program-step" as const,
+      phaseId: "resolve",
+      root: ROOT,
+      slot: 1,
+      stepId: "start-ward",
+    };
+
+    expect(
+      compileMechanicsFrame(
+        compilationInput(reviewed(createIntent(program), before), before)
+      )
+    ).toEqual({
+      coordination: {
+        kind: "occurrence-end",
+        occurrences: [
+          {
+            occurrence: {
+              material: HERO,
+              occurrenceId: mechanicsProgramEffectOccurrenceId(origin),
+            },
+            ordinal: 2,
+          },
+        ],
+      },
+      status: "needs-coordination",
+    });
+  });
+
+  it("freezes every active direct child across executions, slots and targets", () => {
+    const producer = {
+      conditionId: "poisoned",
+      kind: "condition" as const,
+      lifetime: { kind: "manual" as const },
+      operation: "apply" as const,
+      stepId: "apply-condition",
+      target: { kind: "role" as const, role: "target" as const },
+      when: null,
+    };
+    const otherProducer = { ...producer, stepId: "apply-other-condition" };
+    const program = conformed({
+      id: "compiler-occurrence-end-children",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "seed",
+          steps: [producer, otherProducer],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              childStepId: producer.stepId,
+              kind: "occurrence-end",
+              stepId: "end-produced-conditions",
+              when: null,
+            },
+          ],
+          trigger: { kind: "program-phase-end", phaseId: "seed" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const firstBase = effectBase(4, producer.stepId, ROOT, SELF);
+    const secondBase = effectBase(3, producer.stepId, ROOT, FAMILIAR);
+    const currentRoot = programOccurrence(program, ROOT.ordinal);
+    currentRoot.phaseState.seed = { execution: 2, lastTriggerEventId: null };
+    const before = withOccurrences(world(1, true), {
+      "root-1": currentRoot,
+      "root-2": programOccurrence(program, OTHER_ROOT.ordinal),
+      first: { ...firstBase, conditionId: "poisoned", kind: "condition" },
+      otherRoot: {
+        ...effectBase(7, producer.stepId, OTHER_ROOT),
+        conditionId: "poisoned",
+        kind: "condition",
+      },
+      second: {
+        ...secondBase,
+        conditionId: "poisoned",
+        kind: "condition",
+        origin: { ...secondBase.origin, execution: 2, slot: 1 },
+      },
+      wrongStep: {
+        ...effectBase(6, otherProducer.stepId),
+        conditionId: "poisoned",
+        kind: "condition",
+      },
+    });
+    const proposed = advanceIntent(program, "resolve", {
+      execution: 2,
+      kind: "program-phase-end",
+      occurrence: ROOT,
+      phaseId: "seed",
+      triggerEventId: "program.root-1.seed.2",
+    });
+    const result = compileMechanicsFrame(
+      compilationInput(reviewed(proposed, before), before)
+    );
+
+    expect(result).toEqual({
+      coordination: {
+        kind: "occurrence-end",
+        occurrences: [
+          { occurrence: { material: HERO, occurrenceId: "first" }, ordinal: 4 },
+          { occurrence: { material: HERO, occurrenceId: "second" }, ordinal: 3 },
+        ],
+      },
+      status: "needs-coordination",
+    });
+    expect(
+      result.status === "needs-coordination" &&
+        Object.isFrozen(result.coordination.occurrences)
+    ).toBe(true);
+
+    const emptyRoot = programOccurrence(program, ROOT.ordinal);
+    emptyRoot.phaseState.seed = { execution: 2, lastTriggerEventId: null };
+    const empty = withOccurrences(world(), { "root-1": emptyRoot });
+    const noMatch = compiled(
+      compileMechanicsFrame(compilationInput(reviewed(proposed, empty), empty))
+    );
+    expect(noMatch.trace).toEqual([
+      {
+        executions: [],
+        operationIds: [],
+        status: "compiled",
+        stepId: "end-produced-conditions",
+      },
+    ]);
+  });
+
+  it("selects direct children created in the projected prefix", () => {
+    const program = conformed({
+      id: "compiler-projected-occurrence-end",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              conditionId: "poisoned",
+              kind: "condition",
+              lifetime: { kind: "manual" },
+              operation: "apply",
+              stepId: "apply-condition",
+              target: { kind: "role", role: "target" },
+              when: null,
+            },
+            {
+              childStepId: "apply-condition",
+              kind: "occurrence-end",
+              stepId: "end-condition-children",
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const before = world();
+    const origin = {
+      execution: 1,
+      kind: "program-step" as const,
+      phaseId: "resolve",
+      root: ROOT,
+      slot: 1,
+      stepId: "apply-condition",
+    };
+
+    expect(
+      compileMechanicsFrame(
+        compilationInput(reviewed(createIntent(program), before), before)
+      )
+    ).toEqual({
+      coordination: {
+        kind: "occurrence-end",
+        occurrences: [
+          {
+            occurrence: {
+              material: HERO,
+              occurrenceId: mechanicsProgramEffectOccurrenceId(origin),
+            },
+            ordinal: 2,
+          },
+        ],
+      },
+      status: "needs-coordination",
+    });
+  });
+
+  it("selects material-lifecycle children through the same occurrence-end seam", () => {
+    const program = conformed({
+      id: "compiler-material-lifecycle-end",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "seed",
+          steps: [
+            {
+              controller: null,
+              entityKey: "summoned-wolf",
+              kind: "entity-create",
+              lifetime: { kind: "manual" },
+              stepId: "create-wolf",
+              template: { kind: "monster", monsterId: "wolf" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              childStepId: "create-wolf",
+              kind: "occurrence-end",
+              stepId: "dismiss-created-wolves",
+              when: null,
+            },
+          ],
+          trigger: { kind: "program-phase-end", phaseId: "seed" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const before = withOccurrences(world(), {
+      "root-1": programOccurrence(program, ROOT.ordinal),
+      lifecycle: {
+        ...effectBase(2, "create-wolf"),
+        kind: "material-lifecycle",
+      },
+    });
+    const proposed = advanceIntent(program, "resolve", {
+      execution: 1,
+      kind: "program-phase-end",
+      occurrence: ROOT,
+      phaseId: "seed",
+      triggerEventId: "program.root-1.seed.1",
+    });
+
+    expect(
+      compileMechanicsFrame(compilationInput(reviewed(proposed, before), before))
+    ).toEqual({
+      coordination: {
+        kind: "occurrence-end",
+        occurrences: [
+          { occurrence: { material: HERO, occurrenceId: "lifecycle" }, ordinal: 2 },
+        ],
+      },
+      status: "needs-coordination",
+    });
+  });
+
+  it("broadcasts and zips standing target marks across compiled slots", () => {
+    const program = conformed({
+      id: "compiler-standing-target-mark",
+      phases: [
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "holders",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 2 },
+              minimum: { kind: "fixed", value: 2 },
+              multiplicity: "set",
+              when: null,
+            },
+            {
+              eligibility: "creature",
+              inputId: "marks",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 2 },
+              minimum: FIXED_ONE,
+              multiplicity: "set",
+              when: null,
+            },
+          ],
+          phaseId: "resolve",
+          steps: [
+            {
+              fact: {
+                kind: "target-mark",
+                markId: "quarry",
+                marked: { inputId: "marks", kind: "input" },
+              },
+              kind: "standing",
+              lifetime: { kind: "manual" },
+              operation: "start",
+              stepId: "mark-targets",
+              target: { inputId: "holders", kind: "input" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const before = world(1, true);
+
+    for (const scenario of [
+      { expectedMarks: [FAMILIAR, FAMILIAR], marks: [FAMILIAR] },
+      { expectedMarks: [FAMILIAR, SELF], marks: [FAMILIAR, SELF] },
+    ] as const) {
+      const result = compiled(
+        compileMechanicsFrame(
+          compilationInput(
+            reviewed(createIntent(program), before, [
+              {
+                inputId: "holders",
+                kind: "entities",
+                targets: [SELF, FAMILIAR],
+              },
+              { inputId: "marks", kind: "entities", targets: scenario.marks },
+            ]),
+            before
+          )
+        )
+      );
+      const creates = result.transaction.operations.filter(
+        (operation) => operation.kind === "occurrence-create"
+      );
+
+      expect(
+        creates.map(({ created, occurrence }) => ({
+          fact: occurrence.kind === "standing" ? occurrence.fact : null,
+          ordinal: created.ordinal,
+          slot: occurrence.origin.slot,
+          target: occurrence.target,
+        }))
+      ).toEqual(
+        [FAMILIAR, SELF].map((target, index) => ({
+          fact: {
+            kind: "target-mark",
+            markId: "quarry",
+            marked: scenario.expectedMarks[index],
+          },
+          ordinal: index + 2,
+          slot: index + 1,
+          target,
+        }))
+      );
+    }
+  });
+
   it("advances only after register steps and guards the projected registers", () => {
     const program = conformed({
       id: "compiler-advance-register",
@@ -658,12 +2048,18 @@ describe("compileMechanicsFrame", () => {
           phaseId: "resolve",
           steps: [
             {
-              conditionId: "poisoned",
-              kind: "condition",
-              lifetime: { kind: "manual" },
-              operation: "apply",
-              stepId: "apply-condition",
+              delivery: "automatic",
+              kind: "damage",
+              parts: [
+                {
+                  amount: { expression: FIXED_ONE, kind: "integer" },
+                  damageType: "fire",
+                  partId: "fire",
+                },
+              ],
+              stepId: "deal-damage",
               target: { kind: "role", role: "target" },
+              traits: ["spell"],
               when: null,
             },
           ],
@@ -683,9 +2079,9 @@ describe("compileMechanicsFrame", () => {
       operationId: null,
       phaseId: "resolve",
       reason: "unsupported-step",
-      referenceId: "condition",
+      referenceId: "damage",
       status: "rejected",
-      stepId: "apply-condition",
+      stepId: "deal-damage",
     });
   });
 

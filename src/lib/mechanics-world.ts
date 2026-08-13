@@ -238,20 +238,40 @@ function conformObservedMechanicsBoundary(
       : null;
   }
   if (kind === "rest-completed") {
-    if (!isExactRecord(value, ["clock", "combatant", "kind", "rest"])) {
+    if (
+      !isExactRecord(value, ["boundaryOrdinal", "clock", "combatant", "kind", "rest"])
+    ) {
       return null;
     }
     const clock = conformClockRef(value.clock);
     const combatant = conformEntityRef(value.combatant);
-    return clock && combatant && (value.rest === "short" || value.rest === "long")
-      ? freezeDeep({ clock, combatant, kind, rest: value.rest })
+    return clock &&
+      combatant &&
+      isPositiveCounter(value.boundaryOrdinal) &&
+      (value.rest === "short" || value.rest === "long")
+      ? freezeDeep({
+          boundaryOrdinal: value.boundaryOrdinal,
+          clock,
+          combatant,
+          kind,
+          rest: value.rest,
+        })
       : null;
   }
   if (kind === "day-phase") {
-    if (!isExactRecord(value, ["clock", "kind", "phase"])) return null;
+    if (!isExactRecord(value, ["boundaryOrdinal", "clock", "kind", "phase"])) {
+      return null;
+    }
     const clock = conformClockRef(value.clock);
-    return clock && (value.phase === "dawn" || value.phase === "dusk")
-      ? freezeDeep({ clock, kind, phase: value.phase })
+    return clock &&
+      isPositiveCounter(value.boundaryOrdinal) &&
+      (value.phase === "dawn" || value.phase === "dusk")
+      ? freezeDeep({
+          boundaryOrdinal: value.boundaryOrdinal,
+          clock,
+          kind,
+          phase: value.phase,
+        })
       : null;
   }
   return null;
@@ -350,6 +370,7 @@ export function conformMechanicsBoundaryCommand(
     if (!isExactRecord(value, ["input", "kind"])) return null;
     const boundary = conformObservedMechanicsBoundary({
       ...(isExactRecord(value.input, ["clock", "combatant", "rest"]) ? value.input : {}),
+      boundaryOrdinal: 1,
       kind: "rest-completed",
     });
     return boundary?.kind === "rest-completed"
@@ -367,6 +388,7 @@ export function conformMechanicsBoundaryCommand(
     if (!isExactRecord(value, ["input", "kind"])) return null;
     const boundary = conformObservedMechanicsBoundary({
       ...(isExactRecord(value.input, ["clock", "phase"]) ? value.input : {}),
+      boundaryOrdinal: 1,
       kind: "day-phase",
     });
     return boundary?.kind === "day-phase"
@@ -600,8 +622,13 @@ function occurrenceClocksResolve(
       rule.kind === "day-phase"
     ) {
       if (!clockResolves(world, rule.clock, "timeline")) return false;
-      if (rule.kind !== "time-reached") return true;
       const document = documentFor(world, rule.clock.material);
+      if (rule.kind !== "time-reached") {
+        return (
+          document !== null &&
+          rule.minimumBoundaryOrdinal <= document.state.timeline.nextBoundaryOrdinal
+        );
+      }
       return (
         document !== null && rule.elapsedSeconds > document.state.timeline.elapsedSeconds
       );
@@ -1052,7 +1079,10 @@ function ownTurnEconomy(epoch: number, round: number, ordinal: number) {
 }
 
 /** Match one boundary against one resolved runtime end rule. */
-export function isEndRuleDue(rule: EndRule, boundary: EndRule): boolean {
+export function isEndRuleDue(
+  rule: EndRule,
+  boundary: EndRule | ObservedMechanicsBoundary
+): boolean {
   if (rule.kind !== boundary.kind) return false;
   if (rule.kind === "time-reached" && boundary.kind === "time-reached") {
     return (
@@ -1071,15 +1101,28 @@ export function isEndRuleDue(rule: EndRule, boundary: EndRule): boolean {
       rule.phase === boundary.phase
     );
   }
-  if (rule.kind === "rest-completed" && boundary.kind === "rest-completed") {
+  if (
+    rule.kind === "rest-completed" &&
+    boundary.kind === "rest-completed" &&
+    "boundaryOrdinal" in boundary
+  ) {
     return (
       sameClock(rule.clock, boundary.clock) &&
       sameEntity(rule.combatant, boundary.combatant) &&
-      rule.rest === boundary.rest
+      rule.rest === boundary.rest &&
+      boundary.boundaryOrdinal >= rule.minimumBoundaryOrdinal
     );
   }
-  if (rule.kind === "day-phase" && boundary.kind === "day-phase") {
-    return sameClock(rule.clock, boundary.clock) && rule.phase === boundary.phase;
+  if (
+    rule.kind === "day-phase" &&
+    boundary.kind === "day-phase" &&
+    "boundaryOrdinal" in boundary
+  ) {
+    return (
+      sameClock(rule.clock, boundary.clock) &&
+      rule.phase === boundary.phase &&
+      boundary.boundaryOrdinal >= rule.minimumBoundaryOrdinal
+    );
   }
   if (rule.kind === "occurrence-end" && boundary.kind === "occurrence-end") {
     return rule.occurrenceId === boundary.occurrenceId;
@@ -1122,12 +1165,22 @@ function observedBoundaryValid(
     return true;
   }
   if (boundary.kind === "rest-completed") {
+    const document = documentFor(world, boundary.clock.material);
     return (
-      clockResolves(world, boundary.clock, "timeline") &&
+      document !== null &&
+      document.state.timeline.epoch === boundary.clock.epoch &&
+      boundary.boundaryOrdinal < document.state.timeline.nextBoundaryOrdinal &&
+      boundary.boundaryOrdinal + 1 === document.state.timeline.nextBoundaryOrdinal &&
       creaturePresent(world, boundary.combatant)
     );
   }
-  return clockResolves(world, boundary.clock, "timeline");
+  const document = documentFor(world, boundary.clock.material);
+  return (
+    document !== null &&
+    document.state.timeline.epoch === boundary.clock.epoch &&
+    boundary.boundaryOrdinal < document.state.timeline.nextBoundaryOrdinal &&
+    boundary.boundaryOrdinal + 1 === document.state.timeline.nextBoundaryOrdinal
+  );
 }
 
 function observedBoundaryHistoricallyValid(
@@ -1306,10 +1359,12 @@ function detachOrphanedLeases(world: MutableWorld): boolean {
     const sharedTimeline = {
       clock: timelineClock(shared),
       elapsedSeconds: shared.state.timeline.elapsedSeconds,
+      nextBoundaryOrdinal: shared.state.timeline.nextBoundaryOrdinal,
     };
     const localTimeline = {
       clock: timelineClock(document),
       elapsedSeconds: document.state.timeline.elapsedSeconds,
+      nextBoundaryOrdinal: document.state.timeline.nextBoundaryOrdinal,
     };
     rebaseTimelineRules(document.state, sharedTimeline, localTimeline);
     document.state.clockBinding = { timeline: localTimeline.clock, encounter: null };
@@ -1692,6 +1747,32 @@ function normalizeInventorySourceLeases(
   }
 }
 
+function normalizeOccurrenceEndRequests(
+  world: Readonly<MechanicsWorld>,
+  values: readonly Readonly<OccurrenceGenerationRef>[]
+): readonly Readonly<OccurrenceGenerationRef>[] | null {
+  try {
+    const unique = [
+      ...new Map(
+        values.map((value) => {
+          const request = conformOccurrenceGenerationRef(value);
+          if (!request) throw new TypeError("Invalid occurrence end request");
+          return [occurrenceGenerationRefKey(request), request] as const;
+        })
+      ).values(),
+    ];
+    const normalized = normalizedClosureRequest({ endRequests: unique }).endRequests;
+    const closure = parseClosureRequest(world, {
+      boundaries: [],
+      endRequests: normalized,
+      inventorySourceLeases: [],
+    });
+    return closure ? freezeDeep(structuredClone(normalized)) : null;
+  } catch {
+    return null;
+  }
+}
+
 type LatchedEndWaveResult =
   | {
       readonly ok: true;
@@ -1806,6 +1887,8 @@ function preservesAllocationHighWater(
       next.state.nextOccurrenceOrdinal < document.state.nextOccurrenceOrdinal ||
       next.state.nextEntityOrdinal < document.state.nextEntityOrdinal ||
       next.state.nextEncounterEpoch < document.state.nextEncounterEpoch ||
+      next.state.timeline.nextBoundaryOrdinal <
+        document.state.timeline.nextBoundaryOrdinal ||
       (document.kind === "character" &&
         (next.kind !== "character" ||
           next.state.nextInventoryOrdinal < document.state.nextInventoryOrdinal))
@@ -1862,14 +1945,16 @@ export function beginMechanicsCausalState(value: unknown): MechanicsCausalStateR
 export function rebaseMechanicsCausalState(
   value: Readonly<MechanicsWorld>,
   priorState: Readonly<MechanicsCausalState>,
-  additionalLeases: readonly Readonly<InventoryGenerationRef>[] = []
+  additionalLeases: readonly Readonly<InventoryGenerationRef>[] = [],
+  additionalEndRequests: readonly Readonly<OccurrenceGenerationRef>[] = []
 ): MechanicsCausalStateResult {
   const structured = parseMechanicsWorldStructure(value);
   if (!structured.ok) return { ok: false, reason: "invalid-world" };
   if (
     !isExactRecord(priorState, ["context", "world"]) ||
     !isExactRecord(priorState.context, ["endWave", "request"]) ||
-    !isDenseArray(additionalLeases)
+    !isDenseArray(additionalLeases) ||
+    !isDenseArray(additionalEndRequests)
   ) {
     return { ok: false, reason: "invalid-end-wave" };
   }
@@ -1919,9 +2004,14 @@ export function rebaseMechanicsCausalState(
     ...additionalLeases,
   ]);
   if (!leases) return { ok: false, reason: "invalid-end-wave" };
+  const endRequests = normalizeOccurrenceEndRequests(
+    structured.value,
+    additionalEndRequests
+  );
+  if (!endRequests) return { ok: false, reason: "invalid-end-wave" };
   const request = mergeClosureRequests(
     prior?.wave.request ?? priorState.context.request,
-    normalizedClosureRequest({ inventorySourceLeases: leases })
+    normalizedClosureRequest({ endRequests, inventorySourceLeases: leases })
   );
   const discovery = discoverMechanicsEndWave(structured.value, request);
   if (discovery.status === "rejected") {
@@ -2014,6 +2104,10 @@ function discoverCandidates(
     world.documents.map((document) => [materialRefKey(document.material), document])
   );
   const exactBoundaries = new Map<string, ObservedMechanicsBoundary>();
+  const qualitativeBoundaries = new Map<
+    string,
+    Extract<ObservedMechanicsBoundary, { kind: "day-phase" | "rest-completed" }>[]
+  >();
   const timeBoundaries = new Map<
     string,
     Extract<ObservedMechanicsBoundary, { kind: "time-reached" }>[]
@@ -2024,6 +2118,23 @@ function discoverCandidates(
       const values = timeBoundaries.get(key);
       if (values) values.push(boundary);
       else timeBoundaries.set(key, [boundary]);
+    } else if (boundary.kind === "day-phase" || boundary.kind === "rest-completed") {
+      const key =
+        boundary.kind === "day-phase"
+          ? canonicalJson({
+              clock: boundary.clock,
+              kind: boundary.kind,
+              phase: boundary.phase,
+            })
+          : canonicalJson({
+              clock: boundary.clock,
+              combatant: boundary.combatant,
+              kind: boundary.kind,
+              rest: boundary.rest,
+            });
+      const values = qualitativeBoundaries.get(key);
+      if (values) values.push(boundary);
+      else qualitativeBoundaries.set(key, [boundary]);
     } else {
       exactBoundaries.set(canonicalJson(boundary), boundary);
     }
@@ -2032,6 +2143,13 @@ function discoverCandidates(
     boundaries.sort(
       (left, right) =>
         left.elapsedSeconds - right.elapsedSeconds ||
+        compareCanonical(canonicalJson(left), canonicalJson(right))
+    );
+  }
+  for (const boundaries of qualitativeBoundaries.values()) {
+    boundaries.sort(
+      (left, right) =>
+        left.boundaryOrdinal - right.boundaryOrdinal ||
         compareCanonical(canonicalJson(left), canonicalJson(right))
     );
   }
@@ -2219,13 +2337,27 @@ function discoverCandidates(
           key,
           Math.min(earliestTimeRules.get(key) ?? rule.elapsedSeconds, rule.elapsedSeconds)
         );
-      } else if (
-        rule.kind === "combat-end" ||
-        rule.kind === "turn-boundary" ||
-        rule.kind === "rest-completed" ||
-        rule.kind === "day-phase"
-      ) {
+      } else if (rule.kind === "combat-end" || rule.kind === "turn-boundary") {
         const boundary = exactBoundaries.get(canonicalJson(rule));
+        if (boundary) {
+          addDirectCause(node, {
+            boundary: structuredClone(boundary),
+            kind: "explicit-boundary",
+          });
+        }
+      } else if (rule.kind === "rest-completed" || rule.kind === "day-phase") {
+        const key =
+          rule.kind === "day-phase"
+            ? canonicalJson({ clock: rule.clock, kind: rule.kind, phase: rule.phase })
+            : canonicalJson({
+                clock: rule.clock,
+                combatant: rule.combatant,
+                kind: rule.kind,
+                rest: rule.rest,
+              });
+        const boundary = qualitativeBoundaries
+          .get(key)
+          ?.find(({ boundaryOrdinal }) => boundaryOrdinal >= rule.minimumBoundaryOrdinal);
         if (boundary) {
           addDirectCause(node, {
             boundary: structuredClone(boundary),
@@ -3330,7 +3462,7 @@ function checkpointStateValid(
   historicalBasis: Readonly<MechanicsWorld> | null = null
 ): checkpoint is Readonly<MechanicsBoundaryCheckpoint> {
   if (
-    !isExactRecord(checkpoint, ["ordinal", "state", "wave"]) ||
+    !isExactRecord(checkpoint, ["boundary", "ordinal", "state", "wave"]) ||
     !isCounter(checkpoint.ordinal) ||
     !isExactRecord(checkpoint.state, ["context", "world"]) ||
     !(historicalBasis
@@ -3343,11 +3475,26 @@ function checkpointStateValid(
   ) {
     return false;
   }
+  const boundary =
+    checkpoint.boundary === null
+      ? null
+      : conformObservedMechanicsBoundary(checkpoint.boundary);
+  if (
+    (checkpoint.boundary !== null &&
+      (!boundary || canonicalJson(boundary) !== canonicalJson(checkpoint.boundary))) ||
+    (checkpoint.ordinal === 0 && boundary === null)
+  ) {
+    return false;
+  }
   const wave: Readonly<MechanicsEndWaveReceipt> = checkpoint.wave;
   const state = checkpoint.state as unknown as Readonly<MechanicsCausalState>;
   if (
     !isExactRecord(state.context, ["endWave", "request"]) ||
-    canonicalJson(state.context.request) !== canonicalJson(wave.request)
+    canonicalJson(state.context.request) !== canonicalJson(wave.request) ||
+    (boundary !== null &&
+      !wave.request.boundaries.some(
+        (candidate) => canonicalJson(candidate) === canonicalJson(boundary)
+      ))
   ) {
     return false;
   }
@@ -3547,6 +3694,7 @@ function emitBoundaryCheckpoint(
     request: latched.value.wave.request,
   });
   const checkpoint = freezeDeep({
+    boundary: structuredClone(boundary),
     ordinal,
     state,
     wave: latched.value.wave,
@@ -4031,6 +4179,7 @@ function startSharedEncounter(
   const sharedTimeline = {
     clock: timelineClock(mutableShared),
     elapsedSeconds: mutableShared.state.timeline.elapsedSeconds,
+    nextBoundaryOrdinal: mutableShared.state.timeline.nextBoundaryOrdinal,
   };
   try {
     for (const characterMaterial of leasedCharacterMaterials(
@@ -4049,6 +4198,7 @@ function startSharedEncounter(
       const sourceTimeline = {
         clock: timelineClock(character),
         elapsedSeconds: character.state.timeline.elapsedSeconds,
+        nextBoundaryOrdinal: character.state.timeline.nextBoundaryOrdinal,
       };
       rebaseTimelineRules(character.state, sourceTimeline, sharedTimeline);
       character.state.clockBinding = {
@@ -4155,6 +4305,7 @@ function resumeEndEncounter(
     const sharedTimeline = {
       clock: timelineClock(mutable),
       elapsedSeconds: mutable.state.timeline.elapsedSeconds,
+      nextBoundaryOrdinal: mutable.state.timeline.nextBoundaryOrdinal,
     };
     mutable.state.encounter = null;
     try {
@@ -4168,6 +4319,7 @@ function resumeEndEncounter(
         const localTimeline = {
           clock: timelineClock(character),
           elapsedSeconds: character.state.timeline.elapsedSeconds,
+          nextBoundaryOrdinal: character.state.timeline.nextBoundaryOrdinal,
         };
         rebaseTimelineRules(character.state, sharedTimeline, localTimeline);
         character.state.clockBinding = {
@@ -4199,24 +4351,48 @@ export function beginMechanicsBoundary(
   const request = normalizedClosureRequest({});
 
   if (command.kind === "complete-rest") {
+    const allocated = allocateTimelineBoundary(basis, command.input.clock);
+    if (!allocated) {
+      return boundaryRejected(
+        clockResolves(basis, command.input.clock, "timeline")
+          ? "overflow"
+          : "clock-conflict"
+      );
+    }
     return emitBoundaryCheckpoint(
       basis,
-      basis,
+      allocated.world,
       command,
       { kind: "finish" },
       request,
-      { kind: "rest-completed", ...command.input },
+      {
+        boundaryOrdinal: allocated.boundaryOrdinal,
+        kind: "rest-completed",
+        ...command.input,
+      },
       0
     );
   }
   if (command.kind === "observe-day-phase") {
+    const allocated = allocateTimelineBoundary(basis, command.input.clock);
+    if (!allocated) {
+      return boundaryRejected(
+        clockResolves(basis, command.input.clock, "timeline")
+          ? "overflow"
+          : "clock-conflict"
+      );
+    }
     return emitBoundaryCheckpoint(
       basis,
-      basis,
+      allocated.world,
       command,
       { kind: "finish" },
       request,
-      { kind: "day-phase", ...command.input },
+      {
+        boundaryOrdinal: allocated.boundaryOrdinal,
+        kind: "day-phase",
+        ...command.input,
+      },
       0
     );
   }
@@ -4351,6 +4527,28 @@ export function beginMechanicsBoundary(
   );
 }
 
+/** Brand one causally valid completion for one exact process-local checkpoint. */
+export function completeMechanicsBoundaryCheckpoint(
+  continuationValue: unknown,
+  stateValue: unknown
+): Readonly<MechanicsBoundaryCompletion> | null {
+  try {
+    if (!continuationValid(continuationValue)) return null;
+    const state = stateValue as Readonly<MechanicsCausalState>;
+    if (
+      !completionStateValid(continuationValue.checkpoint, state, continuationValue.basis)
+    ) {
+      return null;
+    }
+    return freezeDeep({
+      continuation: canonicalFingerprint(continuationValue),
+      state: structuredClone(state),
+    }) as unknown as Readonly<MechanicsBoundaryCompletion>;
+  } catch {
+    return null;
+  }
+}
+
 /** Advance only the exact checkpoint named by one coordinator-issued completion. */
 export function advanceMechanicsBoundary(
   continuationValue: Readonly<MechanicsBoundaryContinuation>,
@@ -4377,6 +4575,7 @@ export function advanceMechanicsBoundary(
         return boundaryRejected("overflow");
       }
       const checkpoint = freezeDeep({
+        boundary: null,
         ordinal,
         state: completed.state,
         wave: completed.state.context.endWave?.wave,
@@ -4450,6 +4649,30 @@ function timelineClock(document: MechanicsDocument | MutableDocument): ClockRef 
   return { material: document.material, epoch: document.state.timeline.epoch };
 }
 
+function allocateTimelineBoundary(
+  basis: Readonly<MechanicsWorld>,
+  clock: Readonly<ClockRef>
+): {
+  readonly boundaryOrdinal: number;
+  readonly world: Readonly<MechanicsWorld>;
+} | null {
+  if (!clockResolves(basis, clock, "timeline")) return null;
+  const candidate = mutableWorld(basis);
+  const document = documentFor(candidate, clock.material);
+  if (
+    !document ||
+    document.state.timeline.nextBoundaryOrdinal === Number.MAX_SAFE_INTEGER
+  ) {
+    return null;
+  }
+  const boundaryOrdinal = document.state.timeline.nextBoundaryOrdinal;
+  document.state.timeline.nextBoundaryOrdinal += 1;
+  const projected = projectBoundaryMutation(basis, candidate);
+  return projected.status === "rejected"
+    ? null
+    : { boundaryOrdinal, world: projected.world };
+}
+
 function seedEncounter(epoch: number, seed: EncounterSeed): EncounterState | null {
   try {
     const participants = Object.fromEntries(
@@ -4472,8 +4695,8 @@ function seedEncounter(epoch: number, seed: EncounterSeed): EncounterState | nul
 
 function rebaseTimelineRules(
   state: CharacterMaterialState,
-  source: { clock: ClockRef; elapsedSeconds: number },
-  target: { clock: ClockRef; elapsedSeconds: number }
+  source: { clock: ClockRef; elapsedSeconds: number; nextBoundaryOrdinal: number },
+  target: { clock: ClockRef; elapsedSeconds: number; nextBoundaryOrdinal: number }
 ): boolean {
   let changed = false;
   for (const occurrence of Object.values(state.occurrences)) {
@@ -4487,7 +4710,13 @@ function rebaseTimelineRules(
         return rule;
       }
       changed = true;
-      if (rule.kind !== "time-reached") return { ...rule, clock: target.clock };
+      if (rule.kind !== "time-reached") {
+        return {
+          ...rule,
+          clock: target.clock,
+          minimumBoundaryOrdinal: target.nextBoundaryOrdinal,
+        };
+      }
       const remaining = rule.elapsedSeconds - source.elapsedSeconds;
       if (!Number.isSafeInteger(remaining) || remaining <= 0) {
         throw new RangeError("Clock rebase deadline is not future");

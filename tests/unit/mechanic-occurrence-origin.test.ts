@@ -56,7 +56,6 @@ const CONCENTRATION_STEP = {
   lifetime: MANUAL_LIFETIME,
   operation: "start",
   stepId: "concentration",
-  target: TARGET_SELECTOR,
   when: null,
 } as const satisfies MechanicsStep;
 const POLYMORPH_STEP = {
@@ -255,6 +254,21 @@ describe("program-step occurrence origin", () => {
       state([step], { child: effect(step, occurrenceKind) })
     );
     expect(parsed.ok).toBe(true);
+  });
+
+  it.each([
+    [{ ...CONDITION_STEP, lifetime: null, operation: "remove" } as const, "condition"],
+    [{ ...STANDING_STEP, lifetime: null, operation: "end" } as const, "standing"],
+    [
+      { ...CONCENTRATION_STEP, lifetime: null, operation: "end" } as const,
+      "concentration",
+    ],
+    [{ ...POLYMORPH_STEP, lifetime: null, operation: "end" } as const, "polymorph-form"],
+  ] as const)("rejects non-producing %s provenance for %s", (step, occurrenceKind) => {
+    const parsed = parseOccurrenceState(
+      state([step], { child: effect(step, occurrenceKind) })
+    );
+    expect(parsed.ok).toBe(false);
   });
 
   it("rejects forged roots, unknown or incompatible steps, and future executions", () => {

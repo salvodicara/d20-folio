@@ -47,21 +47,10 @@ const PROGRAM_AUTHORITY = customSchema<
   MechanicsProgramAuthorityReceipt
 >("mechanics-program-authority-receipt");
 
-const OBSERVED_MECHANICS_BOUNDARY_VARIANTS = {
+const COMMON_MECHANICS_BOUNDARY_VARIANTS = {
   "combat-end": objectSchema({
     clock: CLOCK_REF,
     kind: literalSchema("combat-end"),
-  }),
-  "day-phase": objectSchema({
-    clock: CLOCK_REF,
-    kind: literalSchema("day-phase"),
-    phase: unionSchema([literalSchema("dawn"), literalSchema("dusk")]),
-  }),
-  "rest-completed": objectSchema({
-    clock: CLOCK_REF,
-    combatant: ENTITY_REF,
-    kind: literalSchema("rest-completed"),
-    rest: unionSchema([literalSchema("short"), literalSchema("long")]),
   }),
   "time-reached": objectSchema({
     clock: CLOCK_REF,
@@ -77,9 +66,39 @@ const OBSERVED_MECHANICS_BOUNDARY_VARIANTS = {
   }),
 } as const;
 
+const OBSERVED_MECHANICS_BOUNDARY_VARIANTS = {
+  ...COMMON_MECHANICS_BOUNDARY_VARIANTS,
+  "day-phase": objectSchema({
+    boundaryOrdinal: POSITIVE_INTEGER_SCHEMA,
+    clock: CLOCK_REF,
+    kind: literalSchema("day-phase"),
+    phase: unionSchema([literalSchema("dawn"), literalSchema("dusk")]),
+  }),
+  "rest-completed": objectSchema({
+    boundaryOrdinal: POSITIVE_INTEGER_SCHEMA,
+    clock: CLOCK_REF,
+    combatant: ENTITY_REF,
+    kind: literalSchema("rest-completed"),
+    rest: unionSchema([literalSchema("short"), literalSchema("long")]),
+  }),
+} as const;
+
 /** Resolved runtime expirations; program phase rules freeze one execution. */
 export const END_RULE_SCHEMA = discriminatedUnionSchema("kind", {
-  ...OBSERVED_MECHANICS_BOUNDARY_VARIANTS,
+  ...COMMON_MECHANICS_BOUNDARY_VARIANTS,
+  "day-phase": objectSchema({
+    clock: CLOCK_REF,
+    kind: literalSchema("day-phase"),
+    minimumBoundaryOrdinal: POSITIVE_INTEGER_SCHEMA,
+    phase: unionSchema([literalSchema("dawn"), literalSchema("dusk")]),
+  }),
+  "rest-completed": objectSchema({
+    clock: CLOCK_REF,
+    combatant: ENTITY_REF,
+    kind: literalSchema("rest-completed"),
+    minimumBoundaryOrdinal: POSITIVE_INTEGER_SCHEMA,
+    rest: unionSchema([literalSchema("short"), literalSchema("long")]),
+  }),
   "occurrence-end": objectSchema({
     kind: literalSchema("occurrence-end"),
     occurrenceId: ID_SCHEMA,

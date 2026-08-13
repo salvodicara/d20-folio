@@ -101,8 +101,8 @@ ending; finalization re-proves the exact wave and returns the resulting world wi
 events. The universal physical-D20 dependency is branch-complete too: exact inputs reject numeric aliases,
 and table-entered two-failure Death Saves retain provenance distinct from a natural 1. Focused cross-seam
 verification is green (408 tests across 20 directly affected suites); by owner rule no
-global branch gate ran. The next active milestone is the single step compiler plus fixed-point
-subscriber/suspension coordinator and one final journal draft.
+global branch gate ran. The single step compiler has since reached the effect/lifetime/boundary slice
+below; the fixed-point subscriber/suspension coordinator and one final journal draft remain open.
 
 **Exact physical-operation checkpoint CLOSED on branch (2026-08-12; compiler/coordinator ACTIVE):**
 program/effect/entity/item creation now carries exact preallocated generations and atomic lifecycle
@@ -128,8 +128,8 @@ creation collides on the owning document's clock binding, and a persisted curren
 `own-turn`. Transaction projection and causal rebase also preserve every document's journal
 epoch/revision/actions and a character's build revision. The independent operation-layer P0/P1 audit's
 then-known gaps are closed. The focused kernel proof is 401 tests across 14 suites, with no global branch
-gate run. The active next milestone remains completion of the per-material-ledger step compiler, one
-bounded fixed-point causal coordinator, and one final reversible journal draft.
+gate run. Compiler progress is recorded below; payment/vitality/material/resource compilation, one bounded
+fixed-point causal coordinator and one final reversible journal draft remain active.
 
 **Compiler/provenance vertical ACTIVE on branch (2026-08-12):** persistent effects and material
 lifecycles now carry exact structured origin `{root, phase, execution, step, slot}` validated against the
@@ -137,9 +137,10 @@ root's frozen program; duplicate or semantically mismatched emissions fail close
 transaction's pending next execution. Register mutation is an individual compare-and-swap physical
 operation. The single `compileMechanicsFrame` seam now re-proves reviewed input, recognizes replay before
 new responses, orders create-root first/advance-root last, assigns deterministic operation ids, includes
-trusted fact guards and recompiles each register/manual step from the kernel-projected prefix. Unsupported
-steps reject explicitly—there is no legacy fallback. The follow-up real-play audit found additional P0
-prerequisites (separately authorized overrides, THP source replacement, guarded effective
+trusted fact guards and recompiles each step from the kernel-projected prefix. Its executable slice now
+includes register/manual work plus exact condition, standing, Concentration and polymorph starts and
+semantic end selection; unsupported steps still reject explicitly. The follow-up real-play audit found
+additional P0 prerequisites (separately authorized overrides, THP source replacement, guarded effective
 defense/healing/Exhaustion facts and death interrupts, reviewed payment debits, resource cardinality,
 closed materialization, same-frame created selectors and enchantment transfer), so this is an honest
 vertical rather than an engine-completion claim. Focused verification only; the sole full gate remains
@@ -155,7 +156,30 @@ non-invocation evidence and its phase CAS receipt share that exact event id. End
 readable but are absent from every effective projection, so replacements can begin without double-active
 state. Hostile APIs still reject a raw latched world; causal review and compilation re-prove the entire
 transient and use only its canonical result. Focused verification is green (254 tests across nine suites);
-by owner rule no global branch gate ran. Every other compiler gap remains open.
+by owner rule no global branch gate ran. The effect/lifetime/boundary checkpoint below is the current
+continuation truth.
+
+**Effect/lifetime/qualitative-boundary compiler checkpoint CLOSED on branch (2026-08-12;
+coordinator/runtime cutover ACTIVE):** exact condition, standing, Concentration and polymorph starts now
+compile with stable target slots, structured provenance and enforceable lifetimes. Concentration has no
+authored target: the receipt's exact caster is its single source of truth. Semantic condition removal
+selects every active exact target + condition occurrence across roots, while standing, Concentration and
+polymorph end selections are restricted to the current root plus the full fact/caster/form identity. Empty
+sets are idempotent; nonempty sets and committed exclusive replacements remain explicit
+`needs-coordination` barriers for the unfinished fixed-point coordinator, and same-frame conflicting
+exclusive starts fail closed. Authored `occurrence-end` has one exact `childStepId` grammar that selects
+all active direct children of that producer for the current root generation; `end-program` alone terminates
+the root. Program conformance now rejects unreachable phase lifetimes and source-end
+feedback. Rest/day boundaries allocate an exact monotonic ordinal before the checkpoint; rules match the
+same selectors at or after their stored minimum, so effects created during boundary `N` begin at `N + 1`
+and survive `N`. Shared-clock rebase resets that minimum from the destination timeline. The branch-only
+`MaterialState` shape is schema 4; no schema-3 state was deployed or persisted, so no live migration or
+compatibility path is needed. Checkpoints expose their exact boundary (or `null` for wave-only extension),
+and only the kernel can brand a completion; an unavailable source retains authority solely through its
+exact readable owned root. Focused verification is green (275 tests across nine affected suites); the only global gate remains
+the final post-convergence, post-rebase push to `main`. Payment, vitality, material/resource steps, the
+fixed-point subscriber/end-wave coordinator, remaining audited prerequisites, corpus transcription,
+persistence/UI cutover and complete deletion of superseded executors remain active.
 
 **Deterministic automation gap sweep — ACTIVE (2026-08-04):** six truth-gated milestones are closed and
 branch-pushed: persistent/reactive-effect lifecycle, target-bound on-hit retaliation, variable-level

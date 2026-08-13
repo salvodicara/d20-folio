@@ -183,6 +183,7 @@ export type MechanicsBoundaryCursor =
 
 /** One ordered causal barrier. Every ending source remains readable in `state`. */
 export interface MechanicsBoundaryCheckpoint {
+  readonly boundary: Readonly<ObservedMechanicsBoundary> | null;
   readonly ordinal: number;
   readonly state: Readonly<MechanicsCausalState>;
   readonly wave: Readonly<MechanicsEndWaveReceipt>;

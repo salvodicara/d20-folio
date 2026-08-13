@@ -93,8 +93,9 @@ and does not fabricate generic change events with no authored consumer. The univ
 is included as a direct program-runtime dependency; it rejects non-canonical numeric aliases and records a
 table-declared two-failure Death Save separately from a natural 1. Focused verification passed 408 tests
 across the 20 directly affected suites. The active work now moves to the single `MechanicsProgram` step
-compiler plus fixed-point coordinator, suspension replay and one final journal draft. By owner rule no
-global branch gate ran for this checkpoint.
+compiler, which has since reached the effect/lifetime/boundary slice recorded below. The fixed-point
+coordinator, suspension replay and one final journal draft remain open. By owner rule no global branch
+gate ran for this checkpoint.
 
 ### 2026-08-12 exact physical operations — checkpoint closed
 
@@ -126,12 +127,11 @@ grant atomic. Timeline-bound creation reads the owning material's clock binding,
 rejects a current combatant left in `between-turns`. Neither projection nor causal rebase can rewrite
 protected journal epoch/revision/actions or character build revision. The independent operation-layer
 P0/P1 review's then-known gaps are closed. The focused kernel proof is 401 tests across 14 suites; no
-global gate ran. Next: one
-`compileMechanicsFrame` with a per-material allocation
-ledger, one fixed-point subscriber/end-wave coordinator and one `planMechanicsWorldAction` call producing
-one journal draft.
+global gate ran. Compiler progress since this checkpoint is recorded below; one fixed-point
+subscriber/end-wave coordinator and one `planMechanicsWorldAction` call producing one journal draft
+remain open.
 
-### 2026-08-12 compiler/provenance vertical — active checkpoint
+### 2026-08-12 compiler/provenance vertical — initial checkpoint
 
 Every effect and material lifecycle now carries structured program-step provenance: exact root
 generation, phase, execution, step and stable expansion slot. The parser proves the tuple against the
@@ -139,21 +139,22 @@ root's frozen authority program, validates the step/occurrence-kind mapping, rej
 and permits a one-execution-ahead origin only inside the compiler's transaction projection. Program
 register mutation is now its own exact compare-and-swap operation and participates in collision analysis.
 
-The sole `compileMechanicsFrame` entry point has its first honest executable slice. It re-reviews the
-frozen intent against the current basis, returns replay before considering new responses, places root
-create first and advance last, assigns deterministic operation identities, carries trusted fact guards,
-and projects each prefix through the physical kernel before compiling the next register/manual step. Its
-result is the closed compiler status union; every terminal step outside this slice rejects explicitly.
-Resource selectors exposed to future subcompilers are deduplicated and sorted by exact resource key.
+At this checkpoint the sole `compileMechanicsFrame` entry point gained its first honest executable slice.
+It re-reviews the frozen intent against the current basis, returns replay before considering new
+responses, places root create first and advance last, assigns deterministic operation identities, carries
+trusted fact guards, and projects each prefix through the physical kernel before compiling the next
+register/manual step. Its result is the closed compiler status union; unsupported terminal steps reject
+explicitly. Resource selectors exposed to future subcompilers are deduplicated and sorted by exact
+resource key.
 
 The parallel real-play compiler audit invalidated any broader “all remaining gaps closed” reading. Before
-effect/vitality/material compilation can be called correct, the model still needs: table-override
-authorization independent of the program's operational cause; source-specific Temporary-HP replacement
-teardown; guarded effective damage/healing/Exhaustion facts and death-prevention interrupts; payment
-debits; exact resource cardinality; closed entity/item blueprint materialization; same-frame created
-selectors; enchantment attach/transfer; and replayable manual outputs. These are engine responsibilities,
-not reasons to ask the user unnecessary questions. No global branch gate was run; only the directly
-affected suites and lint lane are used for this branch checkpoint.
+the complete compiler can be called correct, the audit identified table-override authorization independent
+of the program's operational cause; source-specific Temporary-HP replacement teardown; guarded effective
+damage/healing/Exhaustion facts and death-prevention interrupts; payment debits; exact resource
+cardinality; closed entity/item blueprint materialization; same-frame created selectors; enchantment
+attach/transfer; and replayable manual outputs. These are engine responsibilities, not reasons to ask the
+user unnecessary questions. No global branch gate was run; only focused verification is used for branch
+engineering.
 
 ### 2026-08-12 exact program-phase completion — closed checkpoint
 
@@ -169,7 +170,45 @@ from every effective projection, allowing exact same-action replacement without 
 Hostile review still rejects their raw world; causal review/compiler access first re-proves the complete
 transient and uses only the canonical state, so a forged context fails closed. Focused verification is green
 (254 tests across the nine directly affected suites); by owner rule this branch checkpoint runs no global
-gate. Every other compiler prerequisite listed above remains open.
+gate. The next checkpoint below records the effect/lifetime/boundary slice that followed.
+
+### 2026-08-12 effect, lifetime and qualitative-boundary compiler — checkpoint closed
+
+`compileMechanicsFrame` now exactly compiles condition, standing, Concentration and polymorph starts from
+the kernel-projected prefix. Target expansion has stable slots, standing marks materialize by exact
+broadcast/zip cardinality, and every clock-bound lifetime resolves against the owning material.
+Concentration has one canonical target derived from the receipt's caster anchor; authoring can no longer
+provide a second target that could drift.
+
+Semantic effect endings now select one deterministic active set. A condition removal is global across
+all roots for the exact target + condition, matching a deliberate cure or table override. Standing,
+Concentration and polymorph endings are root-scoped and additionally match the complete standing fact,
+caster or form identity, so ending an older source cannot kill an identical replacement from another
+root. Authored `occurrence-end.childStepId` uses the same producer-kind authority as persisted origin
+validation and selects every active direct child of that producer for the exact root generation, including
+Temporary-HP and entity/inventory lifecycle children; `end-program` is the only root terminator. Empty
+selections are idempotent no-ops. Nonempty selections and committed exclusive replacements
+still return `needs-coordination`; the fixed-point coordinator must latch/finalize them and retry the
+frame. That coordinator is not complete, and same-frame conflicting exclusive starts fail closed.
+
+Program conformance rejects unreachable phase lifetimes before execution: same-phase and strict
+downstream expiry are valid, while backward/sideways one-shot targets and source-end feedback cycles are
+not. Rest and day-phase lifetimes now use the material timeline's exact high-water allocator. Boundary
+`N` is allocated and the counter advanced before its checkpoint; rules record a minimum ordinal and match
+the same selectors at any later ordinal, so an effect created during `N` begins at `N + 1` and cannot
+expire retroactively. Shared-clock rebase uses the destination's current first-unused ordinal. The
+branch-only `MaterialState` shape is schema 4; no schema-3 `MaterialState` was deployed or persisted, so
+there is no live migration or compatibility path.
+
+Boundary checkpoints now carry the exact newly observed boundary, or `null` for a pure wave extension,
+and only the kernel's fail-closed completion constructor can brand their continuation. During
+`source-end`, an unavailable entity actor remains authoritative only through an exact still-readable
+program root it owns; installed, stale, removed and foreign authority paths still reject.
+
+Only focused affected-suite verification was run for this engineering checkpoint. The sole global gate
+remains reserved for the final convergence, rebase and push to `main`. Remaining work includes the
+fixed-point coordinator, payment/vitality/material/resource compilation, the other audited prerequisites,
+corpus transcription, persistence/application cutover and complete deletion of superseded executors.
 
 ## Product doctrine
 

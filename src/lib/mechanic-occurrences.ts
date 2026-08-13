@@ -11,6 +11,7 @@ import {
   type MechanicOccurrenceSchemaRefTypes,
 } from "@/lib/mechanic-occurrence-schema";
 import { conformMechanicsProgramAuthorityReceipt } from "@/lib/mechanics-program-receipt";
+import { mechanicsProgramStepChildKind } from "@/lib/mechanics-program-authoring-schema";
 import {
   conformMaterialEntityId,
   conformMechanicId,
@@ -42,10 +43,6 @@ type OccurrenceOfKind<Kind extends MechanicOccurrence["kind"]> = Extract<
   MechanicOccurrence,
   { kind: Kind }
 >;
-type ProgramStep = NonNullable<
-  ProgramOccurrence["authority"]["snapshot"]["program"]
->["phases"][number]["steps"][number];
-
 export interface OccurrenceEntry<
   Occurrence extends MechanicOccurrence = MechanicOccurrence,
 > {
@@ -236,27 +233,6 @@ function validProgramState(
   );
 }
 
-function effectMatchesProgramStep(
-  occurrence: Readonly<EffectOccurrence>,
-  step: Readonly<ProgramStep>
-): boolean {
-  switch (occurrence.kind) {
-    case "condition":
-      return step.kind === "condition" && step.operation === "apply";
-    case "standing":
-      return (
-        (step.kind === "standing" && step.operation === "start") ||
-        step.kind === "temporary-hit-points"
-      );
-    case "concentration":
-      return step.kind === "concentration" && step.operation === "start";
-    case "polymorph-form":
-      return step.kind === "polymorph" && step.operation === "start";
-    case "material-lifecycle":
-      return step.kind === "entity-create" || step.kind === "inventory-create";
-  }
-}
-
 function validProgramStepOrigin(
   occurrence: Readonly<EffectOccurrence>,
   parent: Readonly<ProgramOccurrence>
@@ -273,7 +249,7 @@ function validProgramStepOrigin(
     phaseState !== undefined &&
     origin.execution - 1 <= phaseState.execution &&
     step !== undefined &&
-    effectMatchesProgramStep(occurrence, step)
+    mechanicsProgramStepChildKind(step) === occurrence.kind
   );
 }
 

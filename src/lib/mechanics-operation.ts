@@ -86,7 +86,7 @@ import {
 } from "@/lib/vitals";
 import type { ActionFactGuard, JournalActorRef } from "@/types/action-journal";
 import type { ExhaustionLevel } from "@/types/condition";
-import type { NewMechanicOccurrence } from "@/types/mechanic-occurrence";
+import type { EndRule, NewMechanicOccurrence } from "@/types/mechanic-occurrence";
 import type {
   EntityRef,
   InventoryGenerationRef,
@@ -450,6 +450,22 @@ function documentFor(
   );
   const document = world.documents[index];
   return index >= 0 && document ? { document, index } : null;
+}
+
+function boundaryRulesUseCurrentAllocation(
+  world: Readonly<MechanicsWorld>,
+  rules: readonly Readonly<EndRule>[]
+): boolean {
+  return rules.every((rule) => {
+    if (rule.kind !== "rest-completed" && rule.kind !== "day-phase") return true;
+    const document = documentFor(world, rule.clock.material)?.document;
+    return (
+      document !== undefined &&
+      document.state.timeline.epoch === rule.clock.epoch &&
+      rule.minimumBoundaryOrdinal === document.state.timeline.nextBoundaryOrdinal &&
+      rule.minimumBoundaryOrdinal !== Number.MAX_SAFE_INTEGER
+    );
+  });
 }
 
 type LocatedTarget =
@@ -1739,6 +1755,9 @@ function simulateEntityCreate(
       ? noChangeExecution(operation, "entity-already-created")
       : { reason: "entity-collision", status: "rejected" };
   }
+  if (!boundaryRulesUseCurrentAllocation(world, operation.endRules)) {
+    return { reason: "invalid-transition", status: "rejected" };
+  }
   if (
     located.document.state.nextEntityOrdinal !== operation.entity.ordinal ||
     located.document.state.nextOccurrenceOrdinal !== operation.lifecycle.ordinal
@@ -1906,6 +1925,9 @@ function simulateOccurrenceCreate(
     return existing.ordinal === created.ordinal && sameNewOccurrence(existing, occurrence)
       ? noChangeExecution(operation, "occurrence-already-active")
       : { reason: "occurrence-collision", status: "rejected" };
+  }
+  if (!boundaryRulesUseCurrentAllocation(world, occurrence.endRules)) {
+    return { reason: "invalid-transition", status: "rejected" };
   }
   if (document.state.nextOccurrenceOrdinal !== created.ordinal) {
     return { reason: "stale-allocation-state", status: "rejected" };
@@ -2079,6 +2101,9 @@ function simulateInventoryCreate(
       reason: existingInstance ? "inventory-collision" : "occurrence-collision",
       status: "rejected",
     };
+  }
+  if (!boundaryRulesUseCurrentAllocation(world, operation.endRules)) {
+    return { reason: "invalid-transition", status: "rejected" };
   }
   if (
     located.document.state.nextInventoryOrdinal !== operation.item.instanceOrdinal ||
@@ -2818,10 +2843,18 @@ function runMechanicsTransaction(
   const before = parsedState.value;
   let world = before.world;
   let inventorySourceLeases = before.context.request.inventorySourceLeases;
-  if (!entityExists(before.world, transaction.actor)) return rejected("missing-actor");
+  const actorPresent = entityExists(before.world, transaction.actor);
   const causesById = new Map(
     transaction.causes.map((cause) => [cause.causeId, cause] as const)
   );
+  if (
+    !actorPresent &&
+    transaction.causes.some(
+      ({ invocation }) => invocation.kind === "installed-capability"
+    )
+  ) {
+    return rejected("missing-actor");
+  }
   if (!resourceDefinitionFactsPresent(before.world, transaction)) {
     return rejected("missing-resource-definition-fact");
   }
@@ -2881,6 +2914,19 @@ function runMechanicsTransaction(
       );
     }
     resolvedCauses.set(cause.causeId, resolved);
+  }
+  if (
+    !actorPresent &&
+    transaction.causes.some((cause) => {
+      const resolved = resolvedCauses.get(cause.causeId);
+      return (
+        cause.invocation.kind !== "program-root" ||
+        !resolved ||
+        !sameCanonical(resolved.authority.installation.owner, transaction.actor)
+      );
+    })
+  ) {
+    return rejected("missing-actor");
   }
   for (const operation of transaction.operations) {
     const cause = causesById.get(operation.causeId);
@@ -2972,7 +3018,12 @@ function runMechanicsTransaction(
       transaction,
     };
   }
-  const finalState = rebaseMechanicsCausalState(world, before, inventorySourceLeases);
+  const finalState = rebaseMechanicsCausalState(
+    world,
+    before,
+    inventorySourceLeases,
+    consequences.map(({ occurrence }) => occurrence)
+  );
   if (!finalState.ok) {
     return rejected(
       "invalid-after",

@@ -1087,13 +1087,18 @@ function parseClockRef(value: unknown): ClockRef | null {
 
 function parseTimeline(value: unknown): MaterialCoordinator["timeline"] | null {
   if (
-    !isExactRecord(value, ["epoch", "elapsedSeconds"]) ||
+    !isExactRecord(value, ["epoch", "elapsedSeconds", "nextBoundaryOrdinal"]) ||
     !isCounter(value.epoch) ||
-    !isCounter(value.elapsedSeconds)
+    !isCounter(value.elapsedSeconds) ||
+    !isPositiveInteger(value.nextBoundaryOrdinal)
   ) {
     return null;
   }
-  return { epoch: value.epoch, elapsedSeconds: value.elapsedSeconds };
+  return {
+    epoch: value.epoch,
+    elapsedSeconds: value.elapsedSeconds,
+    nextBoundaryOrdinal: value.nextBoundaryOrdinal,
+  };
 }
 
 function parseParticipant(value: unknown): EncounterParticipant | null {
@@ -1801,7 +1806,7 @@ export function createEmptyCharacterMaterialState(
     entities: {},
     nextEncounterEpoch: 1,
     encounter: null,
-    timeline: { epoch: 0, elapsedSeconds: 0 },
+    timeline: { epoch: 0, elapsedSeconds: 0, nextBoundaryOrdinal: 1 },
     clockBinding: {
       timeline: {
         material: { ...material },
@@ -1825,6 +1830,6 @@ export function createEmptySharedMaterialState(): Readonly<SharedMaterialState> 
     entities: {},
     nextEncounterEpoch: 1,
     encounter: null,
-    timeline: { epoch: 0, elapsedSeconds: 0 },
+    timeline: { epoch: 0, elapsedSeconds: 0, nextBoundaryOrdinal: 1 },
   });
 }

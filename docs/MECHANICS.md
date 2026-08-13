@@ -90,9 +90,11 @@ from that closed basis instead of storing a continuation. This is required for r
 summons and final-use item tombstones. One bounded indexed worklist finds all direct and cascading causes;
 ordinary post-events, source-ending delivery and the verified complete finalization delta are explicit
 stages rather than hidden mutations. A boundary can advance only through a kernel-produced continuation,
-never through a callback that supplies replacement state. Its completion is bound to the entire
-continuation; if subscriber work creates or extends the wave, the kernel exposes a new readable checkpoint
-before any finalization. Inside one terminal transaction, ordered steps expose only transaction-local world
+never through a callback that supplies replacement state. Every checkpoint exposes the exact newly
+observed boundary; a checkpoint that only extends the current end wave exposes `null`. The sole completion
+constructor re-proves the causal state and binds it to the entire continuation before branding it. If
+subscriber work creates or extends the wave, the kernel exposes a new readable checkpoint before any
+finalization. Inside one terminal transaction, ordered steps expose only transaction-local world
 projections and newly true end rules are deliberately not latched between steps. The kernel performs one
 causal rebase after the final step, preserving any already-latched wave and evaluating the transaction's
 net state. Creating a Temporary-HP source followed by its grant is therefore genuinely atomic rather than
@@ -106,12 +108,29 @@ and deadlines cannot. Active-state exclusivity therefore allows the replacement 
 old readable generation is finalized. Hostile derive/review APIs still require a closed world. The causal
 derive/review/compiler path must first re-prove the entire `{ context, world }` transient—including its
 exact request, wave, causes and leases—and must use only the canonical re-proved state thereafter.
+An unavailable entity remains an eligible transaction actor only when every used cause resolves from an
+exact still-readable program root owned by that entity. An installed capability never receives that
+exception, and a stale, removed or foreign root cannot preserve authority.
 
 The exact program root's `phaseState` is the only phase-completion record. The final causal rebase derives
 `program-phase-completed` directly from a `program-phase-end` lifetime's root generation, phase and
 execution: a current or overdue execution latches the child, while a future execution leaves it live. The
 closure request does not mirror phase completions, and the exact generation prevents a recreated root id
 from satisfying stale lifetime authority.
+
+The authored phase graph must also prove that every phase lifetime can end. Same-phase and strict
+downstream lifetimes are valid; a non-self lifetime cannot target an upstream or sibling one-shot phase,
+and no source-end feedback path may depend on the effect already ending before its expiry phase can run.
+These are schema semantics, not runtime best effort: an unreachable lifetime rejects the whole program.
+
+Rest and day-phase lifetimes use exact qualitative-boundary generations rather than a boolean or a phase
+name alone. Every material timeline allocates `boundaryOrdinal = nextBoundaryOrdinal` and increments the
+counter before the boundary checkpoint. An end rule stores `minimumBoundaryOrdinal` and matches the same
+clock/selectors only when the observed ordinal is at least that minimum, so a lifetime created during
+boundary `N` begins at `N + 1` and survives the boundary that created it. Shared-clock rebase resets the
+minimum to the destination timeline's current first-unused ordinal. This branch-only `MaterialState`
+runtime is schema 4; no schema-3 runtime state was deployed or persisted, so no production migration or
+compatibility parser exists.
 
 Hostile commands, groups and observations are snapshotted once from own enumerable data descriptors;
 accessors are rejected and stateful proxy reads cannot change already-validated order or cardinality.
@@ -130,12 +149,21 @@ deterministic order; `compileMechanicsFrame` exposes exactly that canonical even
 The compiler/coordinator and corpus transcription are still active work. `compileMechanicsFrame` is now
 the only intended program-to-transaction seam: it re-proves reviewed input, recognizes replay first,
 places root-create first and root-advance last, emits each register change as its own CAS, and recompiles
-the next step from the kernel-projected prefix. Its current register/manual vertical rejects every
-unsupported terminal kind explicitly. The remaining subcompilers must use one per-material allocation
-ledger, compile reviewed payments exactly once, and resolve all vitality/effect/material/resource steps
-before the bounded fixed-point coordinator emits one journal action. Legacy authoring/executors are
-migration inputs only, never a second supported model, and are deleted once the sole runtime consumes the
-full corpus.
+the next step from the kernel-projected prefix. In addition to register/manual steps, it exactly compiles
+condition, standing, Concentration and polymorph starts. Concentration is always derived from the exact
+caster anchor; it has no independent authored target. Semantic ends select the precise active set:
+condition removal is global for the exact target + condition, while standing, Concentration and
+polymorph endings are scoped to the current root plus their materialized fact/caster/form identity. Empty
+sets are idempotent no-ops. Authored cleanup has one additional exact form:
+`occurrence-end.childStepId` selects every active direct child produced by that step for the current root
+generation, across executions, slots and targets—including Temporary-HP, entity and inventory lifecycle
+children. `end-program` is the sole root terminator.
+Nonempty end sets and committed exclusive replacements deliberately return a
+`needs-coordination` barrier; the bounded fixed-point coordinator that consumes those barriers is not yet
+complete. Remaining subcompilers must compile reviewed payments exactly once, allocate physical
+generations from each kernel-projected prefix, and resolve vitality/material/resource steps before that
+coordinator emits one journal action. Superseded authoring/executors are migration inputs only, never a
+second supported model, and are deleted once the sole runtime consumes the full corpus.
 
 **Grant SOURCES** are assembled by `src/lib/resolve-grant-sources.ts → resolveAllGrantSources`:
 features (class / feat / race / subclass), equipped + attuned magic items, chosen Eldritch

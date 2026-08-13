@@ -32,7 +32,7 @@ import type { TurnEconomyState } from "@/types/turn-economy";
 
 export type { CountResourceCell, ResourceCell } from "@/types/resource";
 
-export const MATERIAL_STATE_SCHEMA = 3 as const;
+export const MATERIAL_STATE_SCHEMA = 4 as const;
 
 export interface MaterialJournalFields extends ActionJournal {
   actions: readonly JournalAction[];
@@ -220,6 +220,8 @@ export interface MaterialTimeline {
   epoch: number;
   /** Absolute, user-observed elapsed play time. */
   elapsedSeconds: number;
+  /** First unused identity for a rest/day-phase observation on this timeline. */
+  nextBoundaryOrdinal: number;
 }
 
 export interface CharacterClockBinding {

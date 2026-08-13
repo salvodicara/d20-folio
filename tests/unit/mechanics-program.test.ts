@@ -286,6 +286,40 @@ function conformed(value: unknown): MechanicsProgram {
   return result;
 }
 
+function phaseLifetimeProgram(
+  phases: readonly {
+    readonly phaseId: string;
+    readonly trigger: MechanicsProgram["phases"][number]["trigger"];
+  }[],
+  creatorPhaseId: string,
+  targetPhaseId: string
+): Readonly<MechanicsProgram> | null {
+  return conformMechanicsProgram({
+    id: "phase-lifetime",
+    phases: phases.map((phase) => ({
+      inputs: [],
+      phaseId: phase.phaseId,
+      steps:
+        phase.phaseId === creatorPhaseId
+          ? [
+              {
+                fact: { key: "phase-child", kind: "active-key" },
+                kind: "standing",
+                lifetime: { kind: "program-phase-end", phaseId: targetPhaseId },
+                operation: "start",
+                stepId: "start-phase-child",
+                target: { kind: "role", role: "target" },
+                when: null,
+              },
+            ]
+          : [],
+      trigger: phase.trigger,
+    })),
+    registers: [],
+    version: 1,
+  });
+}
+
 function sourceEndCausalState(program: MechanicsProgram): Readonly<MechanicsCausalState> {
   const initial = structuredClone(
     worldWithProgramRoot(program, {
@@ -566,6 +600,201 @@ describe("MechanicsProgram terminal kernel", () => {
           },
         ],
       })
+    ).toBeNull();
+  });
+
+  it("accepts only targetless concentration steps", () => {
+    const step = {
+      kind: "concentration",
+      lifetime: { kind: "manual" },
+      operation: "start",
+      stepId: "start-concentration",
+      when: null,
+    } as const;
+    const authored = {
+      id: "caster-owned-concentration",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [step],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    } as const;
+
+    expect(conformMechanicsProgram(authored)?.phases[0]?.steps[0]).toEqual(step);
+    expect(
+      conformMechanicsProgram({
+        ...authored,
+        phases: [
+          {
+            ...authored.phases[0],
+            steps: [
+              {
+                ...step,
+                target: { kind: "role", role: "target" },
+              },
+            ],
+          },
+        ],
+      })
+    ).toBeNull();
+  });
+
+  it("uses one exact direct child-step occurrence-end grammar across phases", () => {
+    const producer = {
+      conditionId: "poisoned",
+      kind: "condition",
+      lifetime: { kind: "manual" },
+      operation: "apply",
+      stepId: "apply-condition",
+      target: { kind: "role", role: "target" },
+      when: null,
+    } as const;
+    const ending = {
+      childStepId: "apply-condition",
+      kind: "occurrence-end",
+      stepId: "end-applied-conditions",
+      when: null,
+    } as const;
+    const authored = {
+      id: "exact-occurrence-end",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "seed",
+          steps: [producer],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [],
+          phaseId: "cleanup",
+          steps: [ending],
+          trigger: { kind: "program-phase-end", phaseId: "seed" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    } as const;
+
+    expect(conformMechanicsProgram(authored)?.phases[1]?.steps[0]).toEqual(ending);
+    expect(
+      conformMechanicsProgram({
+        ...authored,
+        phases: [
+          authored.phases[0],
+          {
+            ...authored.phases[1],
+            steps: [{ ...ending, unknown: true }],
+          },
+        ],
+      })
+    ).toBeNull();
+    expect(
+      conformMechanicsProgram({
+        ...authored,
+        phases: [
+          authored.phases[0],
+          {
+            ...authored.phases[1],
+            steps: [
+              {
+                kind: "occurrence-end",
+                stepId: ending.stepId,
+                when: null,
+              },
+            ],
+          },
+        ],
+      })
+    ).toBeNull();
+    expect(
+      conformMechanicsProgram({
+        ...authored,
+        phases: [
+          authored.phases[0],
+          {
+            ...authored.phases[1],
+            steps: [{ ...ending, childStepId: "missing-producer" }],
+          },
+        ],
+      })
+    ).toBeNull();
+    expect(
+      conformMechanicsProgram({
+        ...authored,
+        phases: [
+          {
+            ...authored.phases[0],
+            steps: [{ ...producer, lifetime: null, operation: "remove" }],
+          },
+          authored.phases[1],
+        ],
+      })
+    ).toBeNull();
+  });
+
+  it("accepts same-phase and strict-downstream one-shot lifetimes", () => {
+    const resolve = { phaseId: "resolve", trigger: { kind: "invocation" } } as const;
+    const finish = {
+      phaseId: "finish",
+      trigger: { kind: "program-phase-end", phaseId: "resolve" },
+    } as const;
+
+    expect(phaseLifetimeProgram([resolve], "resolve", "resolve")).not.toBeNull();
+    expect(phaseLifetimeProgram([resolve, finish], "resolve", "finish")).not.toBeNull();
+  });
+
+  it("rejects upstream and sibling one-shot lifetimes", () => {
+    const resolve = { phaseId: "resolve", trigger: { kind: "invocation" } } as const;
+    const left = {
+      phaseId: "left",
+      trigger: { kind: "program-phase-end", phaseId: "resolve" },
+    } as const;
+    const right = {
+      phaseId: "right",
+      trigger: { kind: "program-phase-end", phaseId: "resolve" },
+    } as const;
+
+    expect(phaseLifetimeProgram([resolve, left], "left", "resolve")).toBeNull();
+    expect(phaseLifetimeProgram([resolve, left, right], "left", "right")).toBeNull();
+  });
+
+  it("accepts source-end recurrence that waits for a future external drain", () => {
+    expect(
+      phaseLifetimeProgram(
+        [
+          { phaseId: "resolve", trigger: { kind: "invocation" } },
+          {
+            phaseId: "pulse",
+            trigger: {
+              combatant: "owner",
+              kind: "turn-boundary",
+              phase: "start",
+            },
+          },
+          { phaseId: "cleanup", trigger: { kind: "source-end" } },
+        ],
+        "cleanup",
+        "pulse"
+      )
+    ).not.toBeNull();
+  });
+
+  it("rejects source-end lifetimes drained by the same phase chain", () => {
+    const resolve = { phaseId: "resolve", trigger: { kind: "invocation" } } as const;
+    const cleanup = { phaseId: "cleanup", trigger: { kind: "source-end" } } as const;
+    const finish = {
+      phaseId: "finish",
+      trigger: { kind: "program-phase-end", phaseId: "cleanup" },
+    } as const;
+
+    expect(phaseLifetimeProgram([resolve, cleanup], "cleanup", "cleanup")).toBeNull();
+    expect(
+      phaseLifetimeProgram([resolve, cleanup, finish], "cleanup", "finish")
     ).toBeNull();
   });
 

@@ -512,6 +512,17 @@ Temporary HP reads its target's vitals, and a persistent timeline-bound creation
 document's clock binding—not merely the clock currently written into the rule—because releasing a final
 shared-combat lease rebases every such rule in that document.
 
+Rest and day-phase identity follows the same allocation law. Each material timeline owns the first-unused
+`nextBoundaryOrdinal`; beginning one of those qualitative boundaries allocates the current ordinal and
+increments the counter before the checkpoint or any subscriber can create another lifetime. A rest/day
+end rule records `minimumBoundaryOrdinal` and becomes due only for the same clock/selectors at an observed
+ordinal greater than or equal to that minimum. An effect created during boundary `N` therefore records
+`N + 1`, cannot expire retroactively on `N`, and remains compatible with a later matching boundary even
+when other qualitative boundaries occurred between them. Shared-clock release rebases the rule to the
+target timeline's current first-unused ordinal rather than copying a number from the detached clock. The
+branch-only `MaterialState` runtime shape is schema 4; no schema-3 `MaterialState` was ever deployed or
+persisted, so there is no live migration or compatibility reader to retain.
+
 Entity dismissal and encounter membership are one physical transition for a non-current participant:
 before the candidate is admitted back through the closed-world parser, the kernel removes that exact
 generation from every local/shared encounter, repairs initiative membership and releases any character
@@ -579,10 +590,18 @@ execution: the current or an overdue execution latches an exact `program-phase-c
 future execution stays live. The closure request carries no second phase-completion ledger. Exact root
 generation therefore closes same-id ABA without duplicating phase state.
 
+Program conformance also proves phase-lifetime liveness statically. A lifetime may end in its creating
+phase or in a strict downstream phase. A non-self lifetime cannot point backward or sideways into a
+one-shot invocation branch, and a source-end feedback path that would require the effect's own ending to
+reach its expiry phase is rejected. An accepted authored program therefore cannot create an immortal
+effect merely because its end phase is unreachable.
+
 Table time/rest/turn/encounter progression uses the pure `beginMechanicsBoundary` /
-`advanceMechanicsBoundary` state machine. A completion is bound to the complete continuation fingerprint
-and can preserve boundary-owned facts only; same-wave completion may finalize, while a wave created or
-extended during subscriber delivery must surface as another checkpoint first. Historical boundary proofs
+`advanceMechanicsBoundary` state machine. Each checkpoint names the exact newly observed boundary, or
+`null` when it only extends the current end wave. `completeMechanicsBoundaryCheckpoint` is the sole
+production constructor for a completion: it re-proves the supplied causal state and binds it to the
+complete continuation fingerprint. Same-wave completion may finalize, while a wave created or extended
+during subscriber delivery must surface as another checkpoint first. Historical boundary proofs
 survive only the exact clock/encounter hand-off performed by that state machine. There is no injected
 resolver and no API through which a caller can return a replacement world.
 
@@ -606,18 +625,30 @@ creation is operation zero, root advance is final, and each intermediate operati
 Register writes are individual compare-and-swap `program-register-transition` operations rather than a
 final lump, operation ids are deterministic, trusted compiler fact guards join the transaction, and the
 result is a closed typed union (`compiled`, `replay`, `needs-response`, `needs-coordination`, `rejected`).
-The first executable vertical deliberately supports register and manual-output steps only; every other
-step currently rejects as unsupported instead of falling through to legacy behavior.
+The executable vertical now covers register/manual steps plus exact condition, standing,
+Concentration and polymorph starts. Stable expansion slots bind every selected target and materialized
+standing fact; Concentration has no authored target and is derived solely from the receipt's exact caster.
+Semantic end steps select active occurrences deterministically: condition removal is deliberately global
+for the exact target + condition, while standing, Concentration and polymorph endings are restricted to
+the current root plus their fully materialized fact/caster/form identity. Zero matches are an idempotent
+no-op. Authored `occurrence-end` contains only `childStepId`; it selects all active direct children of that
+producer for the exact current root generation across executions, slots and targets, including Temporary
+HP and entity/inventory material lifecycles. Producer-kind validation shares the same authority used to
+validate persisted origin kinds. `end-program` alone terminates the root. A nonempty end selection or an
+already-active exclusive replacement returns
+`needs-coordination`; the still-open fixed-point coordinator must latch and finalize that exact set before
+the frame is retried. A conflicting second exclusive start created in the same frame is invalid rather
+than silently replacing transaction-local state.
 
-The active compiler work must now add the per-material allocation ledger, payment prelude and the
-vitality/effect/material/resource subcompilers, then feed one bounded fixed-point coordinator that runs
-trigger, subscriber and source-ending waves and calls `planMechanicsWorldAction` once for one reversible
-journal draft. The compiler audit has also exposed kernel/model prerequisites that remain open: a
-separately authorized table-override path, source-specific Temporary-HP replacement cleanup, guarded
-effective defense/healing/immunity facts, and closed entity/item materializations in capability snapshots.
-No second executor, compatibility planner or final register-write lump is permitted. Persistence adapters
-and corpus transcription remain open; the existing combat executors are migration inputs only and are
-deleted as their consumers move.
+The active compiler work must now add the payment prelude and vitality/material/resource subcompilers,
+allocating every physical generation from the kernel-projected prefix, then feed one bounded fixed-point
+coordinator that resolves the effect barriers, runs trigger/subscriber/source-ending waves and calls
+`planMechanicsWorldAction` once for one reversible journal draft. The compiler audit has also exposed
+kernel/model prerequisites that remain open: a separately authorized table-override path,
+source-specific Temporary-HP replacement cleanup, guarded effective defense/healing/immunity facts, and
+closed entity/item materializations in capability snapshots. No second executor, compatibility planner
+or final register-write lump is permitted. Persistence adapters and corpus transcription remain open; the
+existing combat executors are migration inputs only and are deleted as their consumers move.
 
 The action economy is **immediate-commit-per-action-with-undo** (the owner's binding decision —
 **not** batch select-and-commit), so a resource is deducted the instant it is used.
