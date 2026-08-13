@@ -4,6 +4,7 @@ import type { ActionFactGuard } from "@/types/action-journal";
 import type { DamageAllocationObservation, DamageTableOverride } from "@/types/damage";
 import type { DiceObservation } from "@/types/dice-formula";
 import type { MechanicsAuthoritySnapshot } from "@/types/mechanics-authority";
+import type { MechanicsPostEvent } from "@/types/mechanics-execution";
 import type { OccurrenceGenerationRef } from "@/types/mechanics-reference";
 import type {
   MechanicsOperationExecution,
@@ -126,6 +127,7 @@ export type MechanicsFrameCompileRejection =
 
 export type MechanicsFrameCompileResult =
   | {
+      readonly events: readonly Readonly<MechanicsPostEvent>[];
       readonly manual: readonly ManualInstruction[];
       readonly simulation: Extract<
         MechanicsTransactionSimulationResult,

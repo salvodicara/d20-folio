@@ -147,14 +147,29 @@ result is the closed compiler status union; every terminal step outside this sli
 Resource selectors exposed to future subcompilers are deduplicated and sorted by exact resource key.
 
 The parallel real-play compiler audit invalidated any broader “all remaining gaps closed” reading. Before
-effect/vitality/material compilation can be called correct, the model still needs: internal exact
-program-phase completion in the causal closure request; table-override authorization independent of the
-program's operational cause; source-specific Temporary-HP replacement teardown; guarded effective
-damage/healing/Exhaustion facts and death-prevention interrupts; payment debits; exact resource
-cardinality; closed entity/item blueprint materialization; same-frame created selectors; enchantment
-attach/transfer; and replayable manual outputs. These are engine responsibilities, not reasons to ask the
-user unnecessary questions. No global branch gate was run; only the directly affected suites and lint
-lane are used for this branch checkpoint.
+effect/vitality/material compilation can be called correct, the model still needs: table-override
+authorization independent of the program's operational cause; source-specific Temporary-HP replacement
+teardown; guarded effective damage/healing/Exhaustion facts and death-prevention interrupts; payment
+debits; exact resource cardinality; closed entity/item blueprint materialization; same-frame created
+selectors; enchantment attach/transfer; and replayable manual outputs. These are engine responsibilities,
+not reasons to ask the user unnecessary questions. No global branch gate was run; only the directly
+affected suites and lint lane are used for this branch checkpoint.
+
+### 2026-08-12 exact program-phase completion — closed checkpoint
+
+`ProgramOccurrence.phaseState` is now the sole completion truth. After the complete atomic transaction,
+causal rebase resolves each `program-phase-end` child against the exact root generation, phase and authored
+execution: current and overdue executions latch `program-phase-completed`, future executions remain live,
+and exact generation closes same-id ABA. The cumulative closure request deliberately carries no duplicate
+completion list. An applied `program-state-transition` also emits the authentic exact
+`program-phase-end` post-event consumed by subscribers. Every non-invocation evidence is bound to that
+event's exact id and the matching phase CAS receipt, and phase events trail ordinary events from the same
+complete transaction. Latched occurrences remain readable for authority/subscriber delivery but disappear
+from every effective projection, allowing exact same-action replacement without overlapping active state.
+Hostile review still rejects their raw world; causal review/compiler access first re-proves the complete
+transient and uses only the canonical state, so a forged context fails closed. Focused verification is green
+(254 tests across the nine directly affected suites); by owner rule this branch checkpoint runs no global
+gate. Every other compiler prerequisite listed above remains open.
 
 ## Product doctrine
 

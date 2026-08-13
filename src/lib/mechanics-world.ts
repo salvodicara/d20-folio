@@ -6,6 +6,7 @@ import {
 } from "@/lib/canonical-fingerprint";
 import { projectCreatureConditions } from "@/lib/condition";
 import {
+  conformProgramPhaseCompletion,
   isEffectOccurrence,
   resolveOccurrenceAuthority,
 } from "@/lib/mechanic-occurrences";
@@ -31,6 +32,7 @@ import type {
   MechanicOccurrence,
   MechanicsEndCause,
   ObservedMechanicsBoundary,
+  ProgramPhaseCompletion,
 } from "@/types/mechanic-occurrence";
 import type { MechanicsSourceRef } from "@/types/mechanics-authority-ref";
 import type {
@@ -761,11 +763,11 @@ function validateReferences(
       if (itemSource && !inventorySourceResolves(world, itemSource)) {
         return "missing-reference";
       }
-      if (occurrence.kind === "concentration") {
+      if (occurrence.kind === "concentration" && occurrence.ending === null) {
         const targetKey = entityRefKey(occurrence.target);
         if (concentrations.has(targetKey)) return "duplicate-exclusive-state";
         concentrations.add(targetKey);
-      } else if (occurrence.kind === "polymorph-form") {
+      } else if (occurrence.kind === "polymorph-form" && occurrence.ending === null) {
         const targetKey = entityRefKey(occurrence.target);
         if (polymorphs.has(targetKey)) return "duplicate-exclusive-state";
         polymorphs.add(targetKey);
@@ -1936,6 +1938,19 @@ export function rebaseMechanicsCausalState(
   };
 }
 
+/** Re-prove one exact kernel causal state without closing its readable world. */
+export function conformMechanicsCausalState(value: unknown): MechanicsCausalStateResult {
+  if (!isExactRecord(value, ["context", "world"])) {
+    return { ok: false, reason: "invalid-end-wave" };
+  }
+  const state = value as unknown as Readonly<MechanicsCausalState>;
+  const reproved = rebaseMechanicsCausalState(state.world, state);
+  if (!reproved.ok) return reproved;
+  return canonicalJson(reproved.value) === canonicalJson(state)
+    ? reproved
+    : { ok: false, reason: "invalid-end-wave" };
+}
+
 function causeKey(cause: MechanicsEndCause): string {
   return canonicalJson(cause);
 }
@@ -2140,7 +2155,7 @@ function discoverCandidates(
           (activeInventorySources.get(sourceInventoryKey) ?? 0) + 1
         );
       }
-      if (occurrence.kind === "condition") {
+      if (occurrence.kind === "condition" && occurrence.ending === null) {
         const targetKey = entityRefKey(occurrence.target);
         const instances = conditionInstances.get(targetKey);
         const instance = {
@@ -2215,6 +2230,25 @@ function discoverCandidates(
           addDirectCause(node, {
             boundary: structuredClone(boundary),
             kind: "explicit-boundary",
+          });
+        }
+      } else if (
+        rule.kind === "program-phase-end" &&
+        isEffectOccurrence(node.occurrence)
+      ) {
+        const completion = {
+          execution: rule.execution,
+          phaseId: rule.phaseId,
+          root: node.occurrence.origin.root,
+        } satisfies ProgramPhaseCompletion;
+        const root = occurrenceAtGeneration(world, completion.root);
+        if (
+          root?.kind === "program" &&
+          (root.phaseState[completion.phaseId]?.execution ?? -1) >= completion.execution
+        ) {
+          addDirectCause(node, {
+            completion,
+            kind: "program-phase-completed",
           });
         }
       }
@@ -2658,6 +2692,12 @@ function isEndCause(value: unknown): value is MechanicsEndCause {
     return (
       isExactRecord(value, ["kind", "dependency"]) &&
       isOccurrenceGenerationRefValue(value.dependency)
+    );
+  }
+  if (kind === "program-phase-completed") {
+    return (
+      isExactRecord(value, ["kind", "completion"]) &&
+      conformProgramPhaseCompletion(value.completion) !== null
     );
   }
   return (

@@ -24,6 +24,7 @@ import {
   selectPolymorphForm,
   selectProgramExecution,
   selectProgramPhaseChildren,
+  selectProgramStepChildren,
   selectProjectedGrantSources,
   selectRoundsUntilDeadline,
   selectStandingFacts,
@@ -926,6 +927,67 @@ describe("root authority and effect selectors", () => {
     expect(selectPolymorphForm(state, ACTOR)?.id).toBe("form");
   });
 
+  it("keeps ending children structurally readable but mechanically inactive", () => {
+    const mutable = mutableState(selectorState());
+    const endingIds = [
+      "active",
+      "item-active",
+      "grant",
+      "mark-old",
+      "mark-new",
+      "poison-visible",
+      "poison-hidden",
+      "prone",
+      "concentration",
+      "form",
+      "timed",
+    ] as const;
+    for (const occurrenceId of endingIds) {
+      const occurrence = mutable.occurrences[occurrenceId];
+      if (!occurrence) throw new Error("ending selector fixture");
+      occurrence.ending = { causes: [{ kind: "requested" }] };
+    }
+    const parsed = parseOccurrenceState(mutable);
+    if (!parsed.ok) throw new Error("ending selector fixture");
+
+    expect(selectOccurrenceEntries(parsed.value).map(({ id }) => id)).toEqual(
+      expect.arrayContaining(endingIds)
+    );
+    expect(selectChildrenOf(parsed.value, "root").map(({ id }) => id)).toContain(
+      "active"
+    );
+    expect(
+      selectProgramPhaseChildren(parsed.value, "root", "invoke", 1).map(({ id }) => id)
+    ).toContain("active");
+    expect(
+      selectProgramStepChildren(parsed.value, "root", "invoke", 1, "start-standing").map(
+        ({ id }) => id
+      )
+    ).toContain("active");
+    expect(
+      selectProgramExecution(parsed.value, "root")?.children.map(({ id }) => id)
+    ).toContain("active");
+    expect(resolveOccurrenceAuthority(parsed.value, "active")).not.toBeNull();
+    expect(selectOccurrencesForTarget(parsed.value, ACTOR)).toEqual([]);
+    expect(selectActiveKeys(parsed.value, ACTOR)).toEqual([]);
+    expect(selectActiveKeys(parsed.value)).toEqual([]);
+    expect(selectProjectedGrantSources(parsed.value, ACTOR)).toEqual([]);
+    expect(selectConditionOccurrences(parsed.value, ACTOR)).toEqual([]);
+    expect(selectEffectiveConditions(parsed.value, ACTOR)).toEqual([]);
+    expect(selectConcentrationForActor(parsed.value, ACTOR)).toBeNull();
+    expect(selectMarkedTarget(parsed.value, ACTOR, "quarry")).toBeNull();
+    expect(selectStandingFacts(parsed.value, ACTOR)).toEqual([]);
+    expect(selectPolymorphForm(parsed.value, ACTOR)).toBeNull();
+    expect(selectItemActivations(parsed.value, ACTOR)).toEqual([]);
+    expect(
+      selectOccurrencesEndingAt(parsed.value, {
+        kind: "combat-end",
+        clock: ENCOUNTER_CLOCK,
+      }).map(({ id }) => id)
+    ).toEqual([]);
+    expect(selectRoundsUntilDeadline(parsed.value, "timed", 6)).toBeNull();
+  });
+
   it("selects root and effect lifetimes without treating roots as targeted", () => {
     let state = selectorState();
     const root = mutableState(state);
@@ -996,6 +1058,34 @@ describe("root authority and effect selectors", () => {
         target: ACTOR,
       })
     ).toThrow(TypeError);
+
+    const ending = mutableState(state);
+    for (const occurrenceId of ["concentration", "form"] as const) {
+      const occurrence = ending.occurrences[occurrenceId];
+      if (!occurrence) throw new Error("ending exclusive fixture");
+      occurrence.ending = { causes: [{ kind: "requested" }] };
+    }
+    const parsed = parseOccurrenceState(ending);
+    if (!parsed.ok) throw new Error("ending exclusive fixture");
+    const replacementConcentration = addOccurrence(parsed.value, "other-concentration", {
+      endRules: [],
+      kind: "concentration",
+      origin: effectOrigin("start-concentration"),
+      parentId: "root",
+      target: ACTOR,
+    });
+    const replacements = addOccurrence(replacementConcentration, "other-form", {
+      endRules: [],
+      formId: "ape",
+      kind: "polymorph-form",
+      origin: effectOrigin("start-polymorph"),
+      parentId: "root",
+      target: ACTOR,
+    });
+    expect(selectConcentrationForActor(replacements, ACTOR)?.id).toBe(
+      "other-concentration"
+    );
+    expect(selectPolymorphForm(replacements, ACTOR)?.id).toBe("other-form");
   });
 
   it("keeps canonical damage and condition-immunity projections on effects", () => {
@@ -1040,6 +1130,20 @@ describe("root authority and effect selectors", () => {
         })
       )
     ).toThrow(TypeError);
+
+    const ending = mutableState(state);
+    for (const occurrenceId of ["fire-one", "fire-two", "charm-immunity"] as const) {
+      const occurrence = ending.occurrences[occurrenceId];
+      if (!occurrence) throw new Error("ending standing fixture");
+      occurrence.ending = { causes: [{ kind: "requested" }] };
+    }
+    const parsed = parseOccurrenceState(ending);
+    if (!parsed.ok) throw new Error("ending standing fixture");
+    expect(selectEffectiveDamageDefenseProfile(parsed.value, ACTOR)).toEqual({
+      damageThreshold: null,
+      rules: [],
+    });
+    expect(selectEffectiveConditionImmunities(parsed.value, ACTOR)).toEqual([]);
   });
 
   it("orders all roots and effects by allocation ordinal", () => {

@@ -367,10 +367,22 @@ function frameSemantics(frame: Readonly<MechanicsExecutionFrame>): boolean {
   const { authority, invocation, rootReceipt, trigger } = frame;
   const program = authority.snapshot.program;
   if (!program || !programRootReceiptIsCoherent(rootReceipt)) return false;
+  if (
+    rootReceipt.next.triggerEventId !==
+    (trigger.kind === "invocation" ? null : trigger.triggerEventId)
+  ) {
+    return false;
+  }
   const phase = program.phases.find(
     ({ phaseId }) => phaseId === rootReceipt.next.phaseId
   );
   if (!phase || !phaseTriggerMatches(phase.trigger, trigger, authority)) return false;
+  if (
+    trigger.kind === "program-phase-end" &&
+    !sameCanonical(trigger.occurrence, rootReceipt.root)
+  ) {
+    return false;
+  }
 
   const rootMaterial = rootReceipt.root.occurrence.material;
   if (!sameCanonical(rootMaterial, authority.installation.owner.material)) return false;

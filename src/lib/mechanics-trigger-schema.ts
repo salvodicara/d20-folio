@@ -42,52 +42,62 @@ export const MECHANICS_TRIGGER_EVIDENCE_SCHEMA = discriminatedUnionSchema("kind"
     kind: literalSchema("turn-boundary"),
     phase: unionSchema([literalSchema("start"), literalSchema("end")]),
     round: POSITIVE_INTEGER_SCHEMA,
+    triggerEventId: ID_SCHEMA,
   }),
   "resource-depleted": objectSchema({
     kind: literalSchema("resource-depleted"),
     resource: RESOURCE_REF_SCHEMA,
+    triggerEventId: ID_SCHEMA,
   }),
   "hit-points-zero": objectSchema({
     kind: literalSchema("hit-points-zero"),
     target: ENTITY_REF_SCHEMA,
+    triggerEventId: ID_SCHEMA,
   }),
   "damage-taken": objectSchema({
     attacker: unionSchema([ENTITY_REF_SCHEMA, NULL_SCHEMA]),
     criticalHit: booleanSchema,
     kind: literalSchema("damage-taken"),
     resolution: DAMAGE_RESOLUTION_SCHEMA,
+    triggerEventId: ID_SCHEMA,
   }),
   "rest-completed": objectSchema({
     clock: CLOCK_REF_SCHEMA,
     combatant: ENTITY_REF_SCHEMA,
     kind: literalSchema("rest-completed"),
     rest: unionSchema([literalSchema("short"), literalSchema("long")]),
+    triggerEventId: ID_SCHEMA,
   }),
   "day-phase": objectSchema({
     clock: CLOCK_REF_SCHEMA,
     kind: literalSchema("day-phase"),
     phase: unionSchema([literalSchema("dawn"), literalSchema("dusk")]),
+    triggerEventId: ID_SCHEMA,
   }),
   "source-end": objectSchema({
     kind: literalSchema("source-end"),
     occurrence: OCCURRENCE_GENERATION_REF_SCHEMA,
+    triggerEventId: ID_SCHEMA,
   }),
   "program-phase-end": objectSchema({
     execution: POSITIVE_INTEGER_SCHEMA,
     kind: literalSchema("program-phase-end"),
     occurrence: OCCURRENCE_GENERATION_REF_SCHEMA,
     phaseId: ID_SCHEMA,
+    triggerEventId: ID_SCHEMA,
   }),
   "area-boundary": objectSchema({
     area: OCCURRENCE_GENERATION_REF_SCHEMA,
     boundary: unionSchema([literalSchema("enter"), literalSchema("leave")]),
     entity: ENTITY_REF_SCHEMA,
     kind: literalSchema("area-boundary"),
+    triggerEventId: ID_SCHEMA,
   }),
   "manual-table-event": objectSchema({
     authority: unionSchema([literalSchema("table"), literalSchema("environment")]),
     eventId: ID_SCHEMA,
     kind: literalSchema("manual-table-event"),
+    triggerEventId: ID_SCHEMA,
   }),
 });
 

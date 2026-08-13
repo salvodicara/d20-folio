@@ -44,6 +44,7 @@ function directConditionInstances(
     for (const [occurrenceId, occurrence] of Object.entries(document.state.occurrences)) {
       if (
         occurrence.kind !== "condition" ||
+        occurrence.ending !== null ||
         entityRefKey(occurrence.target) !== targetKey
       ) {
         continue;

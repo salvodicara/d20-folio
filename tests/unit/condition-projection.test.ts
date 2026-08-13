@@ -250,6 +250,17 @@ describe("world condition projection", () => {
     });
   });
 
+  it("does not project a latched condition while its source stays readable", () => {
+    const hero = structuredClone(withCondition(character(), "ending", "paralyzed"));
+    const ending = hero.occurrences.ending;
+    if (!ending) throw new Error("ending condition fixture");
+    ending.ending = { causes: [{ kind: "requested" }] };
+
+    const result = projectResolvedEntityConditions(world(hero, shared()), HERO_REF);
+    expect(result?.projection.instances).toEqual([]);
+    expect(result?.projection.effective).toEqual([]);
+  });
+
   it("does not project targetless program roots as conditions", () => {
     const hero = character();
     const rooted = addOccurrence(

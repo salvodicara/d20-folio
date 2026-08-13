@@ -2,6 +2,7 @@
 
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { evaluateIntegerExpression } from "@/lib/integer-expression";
+import { deriveMechanicsPostEvents } from "@/lib/mechanics-execution";
 import {
   projectMechanicsTransaction,
   simulateMechanicsTransaction,
@@ -285,14 +286,13 @@ export function compileMechanicsFrame(
   input: Readonly<CompileMechanicsFrameInput>
 ): Readonly<MechanicsFrameCompileResult> {
   const phaseId = input.reviewed.intent.frame.rootReceipt.next.phaseId;
-  const preparation = prepareMechanicsProgramCompilation(
-    input.reviewed,
-    input.state.world
-  );
+  const preparation = prepareMechanicsProgramCompilation(input.reviewed, input.state);
   if (preparation.status === "replay") return freezeDeep({ status: "replay" });
   if (preparation.status === "rejected") {
     return rejected(
-      "invalid-reviewed-intent",
+      preparation.reason === "invalid-state"
+        ? "invalid-state"
+        : "invalid-reviewed-intent",
       phaseId,
       null,
       preparation.referenceId ?? preparation.reason
@@ -327,6 +327,7 @@ export function compileMechanicsFrame(
   const manual: Readonly<ManualInstruction>[] = [];
   const trace: MechanicsCompiledStepTrace[] = [];
   let context = preparation.context;
+  const state = preparation.state;
 
   const project = (
     operation: Readonly<MechanicsOperation>,
@@ -340,7 +341,7 @@ export function compileMechanicsFrame(
     if (!transaction) return rejected("kernel-rejected", phaseId, stepId);
     const result = projectMechanicsTransaction(transaction, {
       authoritySnapshot: input.authoritySnapshot,
-      state: input.state,
+      state,
     });
     if (result.status !== "projected") {
       operations.pop();
@@ -418,7 +419,7 @@ export function compileMechanicsFrame(
   if (!transaction) return rejected("kernel-rejected", phaseId, null);
   const simulation = simulateMechanicsTransaction(transaction, {
     authoritySnapshot: input.authoritySnapshot,
-    state: input.state,
+    state,
   });
   if (simulation.status !== "simulated" && simulation.status !== "no-change") {
     return finalProblem(simulation, phaseId);
@@ -434,6 +435,7 @@ export function compileMechanicsFrame(
     }),
   }));
   return freezeDeep({
+    events: deriveMechanicsPostEvents(simulation.stages),
     manual,
     simulation,
     status: "compiled" as const,

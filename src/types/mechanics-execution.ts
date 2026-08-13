@@ -102,6 +102,12 @@ export type MechanicsEvent =
       readonly target: EntityRef;
     })
   | (MechanicsEventBase & {
+      readonly execution: number;
+      readonly kind: "program-phase-end";
+      readonly occurrence: OccurrenceGenerationRef;
+      readonly phaseId: string;
+    })
+  | (MechanicsEventBase & {
       readonly kind: "resource-depleted";
       readonly resource: ResourceRef;
     })
@@ -110,7 +116,7 @@ export type MechanicsEvent =
       readonly occurrence: OccurrenceGenerationRef;
     });
 
-/** Events emitted by an operation stage, never by either occurrence-end phase. */
+/** Events derived from a complete transaction's applied stages. */
 export type MechanicsPostEvent = Exclude<
   MechanicsEvent,
   { readonly kind: "source-ending" }

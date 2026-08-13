@@ -8,10 +8,18 @@ import {
 } from "@/lib/mechanics-authority-ref";
 import { mechanicsCapabilitySnapshotFingerprint } from "@/lib/mechanics-capability";
 import { compileMechanicsFrame } from "@/lib/mechanics-compiler";
+import { deriveMechanicsPostEvents } from "@/lib/mechanics-execution";
 import { createEmptyCharacterMaterialState } from "@/lib/material-state";
-import { reviewMechanicsIntent } from "@/lib/mechanics-program";
+import {
+  reviewMechanicsIntent,
+  reviewMechanicsIntentFromCausalState,
+} from "@/lib/mechanics-program";
 import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
-import { beginMechanicsCausalState, parseMechanicsWorld } from "@/lib/mechanics-world";
+import {
+  beginMechanicsCausalState,
+  parseMechanicsWorld,
+  rebaseMechanicsCausalState,
+} from "@/lib/mechanics-world";
 import type { ProgramPhaseState } from "@/types/mechanic-occurrence";
 import type {
   CompileMechanicsFrameInput,
@@ -26,7 +34,12 @@ import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program
 import type { MechanicsIntent, ReviewedMechanicsIntent } from "@/types/mechanics-program";
 import type { MechanicsProgram } from "@/types/mechanics-program-authoring";
 import type { MechanicsTriggerEvidence } from "@/types/mechanics-trigger";
-import type { MechanicsWorld } from "@/types/mechanics-world";
+import type { MechanicsCausalState, MechanicsWorld } from "@/types/mechanics-world";
+
+type EmittedMechanicsTriggerEvidence = Exclude<
+  MechanicsTriggerEvidence,
+  { readonly kind: "invocation" }
+>;
 
 const HERO = {
   characterId: "hero",
@@ -219,8 +232,7 @@ function createIntent(
 function advanceIntent(
   program: MechanicsProgram,
   phaseId: string,
-  trigger: MechanicsTriggerEvidence,
-  triggerEventId: string,
+  trigger: EmittedMechanicsTriggerEvidence,
   authority = authorityReceipt(program)
 ): MechanicsIntent {
   return {
@@ -232,7 +244,7 @@ function advanceIntent(
       rootReceipt: {
         expected: { execution: 0, phaseId, triggerEventId: null },
         kind: "advance",
-        next: { execution: 1, phaseId, triggerEventId },
+        next: { execution: 1, phaseId, triggerEventId: trigger.triggerEventId },
         root: ROOT,
       },
       trigger,
@@ -265,6 +277,85 @@ function compilationInput(
     reviewed: value,
     state: state.value,
   };
+}
+
+function compilationInputFromState(
+  value: Readonly<ReviewedMechanicsIntent>,
+  state: Readonly<MechanicsCausalState>
+): CompileMechanicsFrameInput {
+  return {
+    authoritySnapshot: authoritySnapshot(value.intent.frame.authority),
+    facts: [],
+    responses: [],
+    reviewed: value,
+    state,
+  };
+}
+
+function reviewedFromState(
+  intent: Readonly<MechanicsIntent>,
+  state: Readonly<MechanicsCausalState>
+): Readonly<ReviewedMechanicsIntent> {
+  const result = reviewMechanicsIntentFromCausalState(intent, [], state);
+  if (result.status !== "reviewed") {
+    throw new Error(`intent fixture was rejected: ${JSON.stringify(result)}`);
+  }
+  return result.reviewed;
+}
+
+function phaseEndCausalState(
+  program: MechanicsProgram,
+  authority = authorityReceipt(program)
+): Readonly<MechanicsCausalState> {
+  const initial = structuredClone(
+    worldWithProgramRoot(
+      program,
+      {
+        after: { execution: 0, lastTriggerEventId: null },
+        pulse: { execution: 0, lastTriggerEventId: null },
+        resolve: { execution: 1, lastTriggerEventId: null },
+      },
+      authority
+    )
+  );
+  const document = initial.documents[0];
+  if (document?.kind !== "character") throw new Error("phase-end fixture");
+  document.state.nextOccurrenceOrdinal = 3;
+  document.state.occurrences.child = {
+    endRules: [
+      {
+        execution: 1,
+        kind: "program-phase-end",
+        occurrenceId: "root-1",
+        phaseId: "pulse",
+      },
+    ],
+    ending: null,
+    fact: { key: "phase-child", kind: "active-key" },
+    kind: "standing",
+    ordinal: 2,
+    origin: {
+      execution: 1,
+      kind: "program-step",
+      phaseId: "resolve",
+      root: ROOT,
+      slot: 1,
+      stepId: "install-child",
+    },
+    parentId: "root-1",
+    target: SELF,
+  };
+  const closed = parseMechanicsWorld(initial);
+  if (!closed.ok) throw new Error(`phase-end fixture: ${closed.reason}`);
+  const begun = beginMechanicsCausalState(closed.value);
+  if (!begun.ok) throw new Error(`phase-end fixture: ${begun.reason}`);
+  const ending = structuredClone(begun.value.world);
+  const root = ending.documents[0]?.state.occurrences["root-1"];
+  if (root?.kind !== "program") throw new Error("phase-end fixture");
+  root.phaseState.pulse = { execution: 1, lastTriggerEventId: "pulse-event-1" };
+  const rebased = rebaseMechanicsCausalState(ending, begun.value);
+  if (!rebased.ok) throw new Error(`phase-end fixture: ${rebased.reason}`);
+  return rebased.value;
 }
 
 function compiled(
@@ -353,6 +444,23 @@ describe("compileMechanicsFrame", () => {
       ],
       status: "simulated",
     });
+    const phaseTransition = first.transaction.operations[0];
+    expect(phaseTransition.kind).toBe("program-state-transition");
+    expect(first.events).toEqual(deriveMechanicsPostEvents(first.simulation.stages));
+    expect(first.events).toEqual([
+      {
+        eventId: `event:${canonicalFingerprint({
+          kind: "program-phase-end",
+          operationId: phaseTransition.operationId,
+          subject: { execution: 1, occurrence: ROOT, phaseId: "resolve" },
+        })}`,
+        execution: 1,
+        kind: "program-phase-end",
+        occurrence: ROOT,
+        operationId: phaseTransition.operationId,
+        phaseId: "resolve",
+      },
+    ]);
   });
 
   it("advances only after register steps and guards the projected registers", () => {
@@ -387,17 +495,13 @@ describe("compileMechanicsFrame", () => {
       pulse: { execution: 0, lastTriggerEventId: null },
       resolve: { execution: 1, lastTriggerEventId: null },
     });
-    const proposed = advanceIntent(
-      program,
-      "pulse",
-      {
-        execution: 1,
-        kind: "program-phase-end",
-        occurrence: ROOT,
-        phaseId: "resolve",
-      },
-      "program.root-1.resolve.1"
-    );
+    const proposed = advanceIntent(program, "pulse", {
+      execution: 1,
+      kind: "program-phase-end",
+      occurrence: ROOT,
+      phaseId: "resolve",
+      triggerEventId: "program.root-1.resolve.1",
+    });
     const result = compiled(
       compileMechanicsFrame(compilationInput(reviewed(proposed, before), before))
     );
@@ -423,6 +527,90 @@ describe("compileMechanicsFrame", () => {
       ],
       status: "simulated",
     });
+  });
+
+  it("compiles a phase-end subscriber from the exact latched causal state", () => {
+    const program = conformed({
+      id: "compiler-latched-phase-end",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              fact: { key: "phase-child", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "program-phase-end", phaseId: "pulse" },
+              operation: "start",
+              stepId: "install-child",
+              target: { kind: "role", role: "target" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [],
+          phaseId: "pulse",
+          steps: [],
+          trigger: { kind: "program-phase-end", phaseId: "resolve" },
+        },
+        {
+          inputs: [],
+          phaseId: "after",
+          steps: [
+            {
+              kind: "register",
+              operation: { kind: "add", value: FIXED_ONE },
+              registerId: "tally",
+              stepId: "count-after",
+              when: null,
+            },
+          ],
+          trigger: { kind: "program-phase-end", phaseId: "pulse" },
+        },
+      ],
+      registers: [{ initial: 0, registerId: "tally" }],
+      version: 1,
+    });
+    const authority = authorityReceipt(program);
+    const state = phaseEndCausalState(program, authority);
+    const proposed = advanceIntent(
+      program,
+      "after",
+      {
+        execution: 1,
+        kind: "program-phase-end",
+        occurrence: ROOT,
+        phaseId: "pulse",
+        triggerEventId: "pulse-event-1",
+      },
+      authority
+    );
+    const reviewedIntent = reviewedFromState(proposed, state);
+    expect(reviewMechanicsIntent(proposed, [], state.world)).toMatchObject({
+      reason: "invalid-world",
+      status: "rejected",
+    });
+
+    const result = compiled(
+      compileMechanicsFrame(compilationInputFromState(reviewedIntent, state))
+    );
+    expect(result.transaction.operations).toMatchObject([
+      { kind: "program-register-transition", registerId: "tally" },
+      { kind: "program-state-transition", receipt: { kind: "advance" } },
+    ]);
+    expect(result.simulation.state.context.endWave?.wave.candidates).toMatchObject([
+      { occurrence: { occurrence: { occurrenceId: "child" }, ordinal: 2 } },
+    ]);
+
+    const forged = {
+      ...state,
+      context: { ...state.context, request: { ...state.context.request, extra: [] } },
+    } as unknown as MechanicsCausalState;
+    expect(
+      compileMechanicsFrame(compilationInputFromState(reviewedIntent, forged))
+    ).toMatchObject({ reason: "invalid-state", status: "rejected" });
   });
 
   it("returns replay before considering supplied responses", () => {
@@ -571,17 +759,13 @@ describe("compileMechanicsFrame", () => {
       pulse: { execution: 0, lastTriggerEventId: null },
       resolve: { execution: 1, lastTriggerEventId: null },
     });
-    const proposedAdvance = advanceIntent(
-      program,
-      "pulse",
-      {
-        execution: 1,
-        kind: "program-phase-end",
-        occurrence: ROOT,
-        phaseId: "resolve",
-      },
-      "program.root-1.resolve.1"
-    );
+    const proposedAdvance = advanceIntent(program, "pulse", {
+      execution: 1,
+      kind: "program-phase-end",
+      occurrence: ROOT,
+      phaseId: "resolve",
+      triggerEventId: "program.root-1.resolve.1",
+    });
     const advanceResult = compiled(
       compileMechanicsFrame(
         compilationInput(reviewed(proposedAdvance, advanceWorld), advanceWorld)

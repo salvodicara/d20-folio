@@ -5,6 +5,7 @@ import {
   MECHANIC_OCCURRENCE_SCHEMA_REFS,
   NEW_MECHANIC_OCCURRENCE_SCHEMA,
   OCCURRENCE_STATE_SCHEMA,
+  PROGRAM_PHASE_COMPLETION_SCHEMA,
   PROGRAM_STEP_OCCURRENCE_ORIGIN_SCHEMA,
   type MechanicOccurrenceSchemaCustomTypes,
   type MechanicOccurrenceSchemaRefTypes,
@@ -23,6 +24,7 @@ import type {
   OccurrenceState,
   OccurrenceStateParseResult,
   ProgramOccurrence,
+  ProgramPhaseCompletion,
   ProgramStepOccurrenceOrigin,
 } from "@/types/mechanic-occurrence";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
@@ -113,6 +115,10 @@ const conformEndRuleStructure = exactConformer(
 );
 const conformProgramStepOccurrenceOriginStructure = exactConformer(
   PROGRAM_STEP_OCCURRENCE_ORIGIN_SCHEMA,
+  OCCURRENCE_SCHEMA_CONTEXT
+);
+const conformProgramPhaseCompletionStructure = exactConformer(
+  PROGRAM_PHASE_COMPLETION_SCHEMA,
   OCCURRENCE_SCHEMA_CONTEXT
 );
 const conformOccurrenceStateStructure = exactConformer(
@@ -304,17 +310,21 @@ function validStateInvariants(state: OccurrenceState): boolean {
     if (occurrence.ordinal >= state.nextOccurrenceOrdinal) return false;
     ordinals.add(occurrence.ordinal);
 
-    if (occurrence.kind === "concentration") {
+    if (occurrence.ending === null && occurrence.kind === "concentration") {
       const targetKey = canonicalKey(occurrence.target);
       if (concentrations.has(targetKey)) return false;
       concentrations.add(targetKey);
     }
-    if (occurrence.kind === "polymorph-form") {
+    if (occurrence.ending === null && occurrence.kind === "polymorph-form") {
       const targetKey = canonicalKey(occurrence.target);
       if (polymorphForms.has(targetKey)) return false;
       polymorphForms.add(targetKey);
     }
-    if (occurrence.kind === "standing" && occurrence.fact.kind === "damage-defense") {
+    if (
+      occurrence.ending === null &&
+      occurrence.kind === "standing" &&
+      occurrence.fact.kind === "damage-defense"
+    ) {
       const rule = conformDamageDefenseRule(occurrence.fact.rule);
       if (!rule) return false;
       const prior = damageRulesBySource.get(rule.sourceId);
@@ -415,6 +425,17 @@ export function conformProgramStepOccurrenceOrigin(
 ): Readonly<ProgramStepOccurrenceOrigin> | null {
   try {
     return conformProgramStepOccurrenceOriginStructure(value);
+  } catch {
+    return null;
+  }
+}
+
+/** Exact hostile shape boundary for one kernel-issued phase-completion proof. */
+export function conformProgramPhaseCompletion(
+  value: unknown
+): Readonly<ProgramPhaseCompletion> | null {
+  try {
+    return conformProgramPhaseCompletionStructure(value);
   } catch {
     return null;
   }
@@ -575,7 +596,9 @@ export function selectOccurrencesForTarget(
   target: EntityRef
 ): ReadonlyArray<OccurrenceEntry<EffectOccurrence>> {
   return selectOccurrenceEntries(state).flatMap(({ id, occurrence }) =>
-    isEffectOccurrence(occurrence) && sameEntity(occurrence.target, target)
+    isEffectOccurrence(occurrence) &&
+    occurrence.ending === null &&
+    sameEntity(occurrence.target, target)
       ? [{ id, occurrence }]
       : []
   );
@@ -586,7 +609,9 @@ function entriesForOptionalTarget(
   target?: EntityRef
 ): ReadonlyArray<OccurrenceEntry> {
   return target === undefined
-    ? selectOccurrenceEntries(state)
+    ? selectOccurrenceEntries(state).filter(
+        ({ occurrence }) => occurrence.ending === null
+      )
     : selectOccurrencesForTarget(state, target);
 }
 
@@ -780,7 +805,7 @@ export function selectRoundsUntilDeadline(
   elapsedSeconds?: number
 ): number | null {
   const occurrence = state.occurrences[occurrenceId];
-  if (!occurrence) return null;
+  if (!occurrence || occurrence.ending !== null) return null;
   const candidates = occurrence.endRules.flatMap((rule) => {
     if (
       rule.kind === "time-reached" &&

@@ -689,7 +689,7 @@ function programEndWaveWorld(): MechanicsWorld {
   hero = addToState(hero, "child", {
     endRules: [
       {
-        execution: 1,
+        execution: 2,
         kind: "program-phase-end",
         occurrenceId: "root",
         phaseId: "active",
@@ -793,6 +793,47 @@ describe("canonical mechanics world and clocks", () => {
     expect(isEndRuleDue(rule, { ...rule, execution: 2 })).toBe(false);
     expect(isEndRuleDue(rule, { ...rule, phaseId: "other" })).toBe(false);
     expect(isEndRuleDue(rule, { ...rule, occurrenceId: "other" })).toBe(false);
+  });
+
+  it("derives current and overdue phase endings from the root state", () => {
+    const future = programEndWaveWorld();
+    const futureDiscovery = discoverMechanicsEndWave(future);
+    if (futureDiscovery.status !== "discovered") throw new Error("future fixture");
+    expect(futureDiscovery.wave.candidates).toEqual([]);
+
+    const current = structuredClone(future);
+    const currentRoot = current.documents.find(
+      (document) => document.kind === "character"
+    )?.state.occurrences.root;
+    if (currentRoot?.kind !== "program") throw new Error("current fixture");
+    currentRoot.phaseState.active = { execution: 2, lastTriggerEventId: null };
+    const currentDiscovery = discoverMechanicsEndWave(current);
+    if (currentDiscovery.status !== "discovered") throw new Error("current fixture");
+    expect(currentDiscovery.wave.candidates).toEqual([
+      {
+        causes: [
+          {
+            completion: {
+              execution: 2,
+              phaseId: "active",
+              root: worldGeneration(current, HERO, "root"),
+            },
+            kind: "program-phase-completed",
+          },
+        ],
+        occurrence: worldGeneration(current, HERO, "child"),
+      },
+    ]);
+
+    const overdue = structuredClone(current);
+    const overdueRoot = overdue.documents.find(
+      (document) => document.kind === "character"
+    )?.state.occurrences.root;
+    if (overdueRoot?.kind !== "program") throw new Error("overdue fixture");
+    overdueRoot.phaseState.active = { execution: 3, lastTriggerEventId: null };
+    const overdueDiscovery = discoverMechanicsEndWave(overdue);
+    if (overdueDiscovery.status !== "discovered") throw new Error("overdue fixture");
+    expect(overdueDiscovery.wave.candidates).toEqual(currentDiscovery.wave.candidates);
   });
 
   it("discovers a complete child-first end wave without removing its source", () => {

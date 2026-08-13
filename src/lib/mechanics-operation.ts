@@ -1018,6 +1018,7 @@ function effectiveConditionImmunities(
     for (const occurrence of Object.values(document.state.occurrences)) {
       if (
         occurrence.kind === "standing" &&
+        occurrence.ending === null &&
         entityRefKey(occurrence.target) === targetKey &&
         occurrence.fact.kind === "condition-immunity"
       ) {
@@ -1147,6 +1148,7 @@ function concentrationsForTarget(
     for (const [occurrenceId, occurrence] of Object.entries(document.state.occurrences)) {
       if (
         occurrence.kind === "concentration" &&
+        occurrence.ending === null &&
         entityRefKey(occurrence.target) === key
       ) {
         references.push({ material: document.material, occurrenceId });

@@ -1132,15 +1132,11 @@ export function simulateResolutionGroup(
     };
   }
 
-  const events: MechanicsPostEvent[] = [];
-  for (const stage of result.stages) {
-    events.push(...deriveMechanicsPostEvents(stage));
-  }
   return {
     actionFacts: result.actionFacts,
     analysis,
     consequences: result.consequences,
-    events: freezeDeep(events),
+    events: deriveMechanicsPostEvents(result.stages),
     executions: result.executions,
     orderedProposalIds: freezeDeep([...orderedProposalIds]),
     stages: result.stages,
@@ -1176,8 +1172,8 @@ function hpZeroEvent(
     : [];
 }
 
-/** Ordinary post-events can consume only a transaction-kernel stage. */
-function deriveMechanicsPostEvents(
+/** Ordinary post-events can consume only one transaction-kernel stage. */
+function deriveMechanicsStagePostEvents(
   stage: Readonly<MechanicsOperationStage>
 ): MechanicsPostEvent[] {
   const { execution } = stage;
@@ -1228,6 +1224,23 @@ function deriveMechanicsPostEvents(
       },
     ];
   }
+  if (execution.kind === "program-state-transition") {
+    const { next } = execution.operation.receipt;
+    return [
+      {
+        eventId: eventId("program-phase-end", execution.operationId, {
+          execution: next.execution,
+          occurrence: execution.facts.root,
+          phaseId: next.phaseId,
+        }),
+        execution: next.execution,
+        kind: "program-phase-end",
+        occurrence: execution.facts.root,
+        operationId: execution.operationId,
+        phaseId: next.phaseId,
+      },
+    ];
+  }
   if (
     execution.kind === "turn-economy-transition" ||
     execution.kind === "entity-create" ||
@@ -1236,7 +1249,6 @@ function deriveMechanicsPostEvents(
     execution.kind === "inventory-create" ||
     execution.kind === "inventory-transition" ||
     execution.kind === "inventory-end" ||
-    execution.kind === "program-state-transition" ||
     execution.kind === "program-register-transition" ||
     execution.kind === "occurrence-create"
   ) {
@@ -1259,6 +1271,17 @@ function deriveMechanicsPostEvents(
     return hpZeroEvent(execution, operation.target);
   }
   return [];
+}
+
+/** Derive one transaction's events, with phase completion trailing ordinary events. */
+export function deriveMechanicsPostEvents(
+  stages: readonly Readonly<MechanicsOperationStage>[]
+): readonly Readonly<MechanicsPostEvent>[] {
+  const events = stages.flatMap(deriveMechanicsStagePostEvents);
+  return freezeDeep([
+    ...events.filter(({ kind }) => kind !== "program-phase-end"),
+    ...events.filter(({ kind }) => kind === "program-phase-end"),
+  ]);
 }
 
 /**

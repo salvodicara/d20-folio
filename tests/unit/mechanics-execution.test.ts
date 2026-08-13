@@ -16,6 +16,7 @@ import {
   analyzeResolutionGroup,
   conformOrderingObservation,
   conformResolutionGroup,
+  deriveMechanicsPostEvents,
   deriveMechanicsSourceEndingEvents,
   finalizeMechanicsEndWaveWithEvents,
   mechanicsOperationAccessFootprint,
@@ -23,6 +24,7 @@ import {
   simulateResolutionGroup,
 } from "@/lib/mechanics-execution";
 import { createEmptyCharacterMaterialState } from "@/lib/material-state";
+import { simulateMechanicsTransaction } from "@/lib/mechanics-operation";
 import { createTurnEconomyState } from "@/lib/turn-economy";
 import {
   beginMechanicsCausalState,
@@ -1319,7 +1321,7 @@ describe("simultaneous resolution groups", () => {
     expect(JSON.stringify(basis)).toBe(JSON.stringify(world()));
   });
 
-  it("creates a program root from its exact authority cause without fabricating target events", () => {
+  it("creates a program root and emits only its exact phase-completion event", () => {
     const operation = programRootCreateOperation();
     const result = simulateResolutionGroup(
       {
@@ -1330,10 +1332,80 @@ describe("simultaneous resolution groups", () => {
     );
     expect(result).toMatchObject({ status: "simulated" });
     if (result.status !== "simulated") return;
-    expect(result.events).toEqual([]);
+    expect(result.events).toEqual([
+      {
+        eventId: `event:${canonicalFingerprint({
+          kind: "program-phase-end",
+          operationId: operation.operationId,
+          subject: {
+            execution: 1,
+            occurrence: operation.receipt.root,
+            phaseId: "invoke",
+          },
+        })}`,
+        execution: 1,
+        kind: "program-phase-end",
+        occurrence: operation.receipt.root,
+        operationId: "create-root",
+        phaseId: "invoke",
+      },
+    ]);
+    expect(result.events).toEqual(deriveMechanicsPostEvents(result.stages));
     const root = result.state.world.documents[0]?.state.occurrences.root;
     expect(root).toMatchObject({ authority: AUTHORITY, kind: "program" });
     expect(root).not.toHaveProperty("target");
+  });
+
+  it("latches a created phase child only after the transaction prefix commits", () => {
+    const createRoot = programRootCreateOperation();
+    const rootCause = programRootCause(createRoot.receipt.root);
+    const baseChild = occurrenceCreateOperation("create-phase-child", "phase-child", 2);
+    const createChild = {
+      ...baseChild,
+      causeId: rootCause.causeId,
+      occurrence: {
+        ...baseChild.occurrence,
+        endRules: [
+          {
+            execution: 1,
+            kind: "program-phase-end",
+            occurrenceId: "root",
+            phaseId: "invoke",
+          },
+        ],
+      },
+    } as const satisfies MechanicsOperation;
+    const causes = [INSTALLED_CAUSE, rootCause].sort((left, right) =>
+      compareCodeUnits(left.causeId, right.causeId)
+    );
+    const result = simulateMechanicsTransaction(
+      {
+        actionId: "phase-child",
+        actor: SELF,
+        causes,
+        factGuards: [],
+        operations: [createRoot, createChild],
+      },
+      {
+        authoritySnapshot: authoritySnapshotFor(causes),
+        state: causalState(),
+      }
+    );
+    expect(result.status).toBe("simulated");
+    if (result.status !== "simulated") return;
+    expect(
+      result.stages.at(-1)?.after.documents[0]?.state.occurrences["phase-child"]?.ending
+    ).toBeNull();
+    expect(
+      result.state.world.documents[0]?.state.occurrences["phase-child"]?.ending
+    ).toEqual({
+      causes: [
+        {
+          completion: { execution: 1, phaseId: "invoke", root: createRoot.receipt.root },
+          kind: "program-phase-completed",
+        },
+      ],
+    });
   });
 
   it("returns an exact occurrence-end consequence without removing or announcing the source", () => {
@@ -1604,9 +1676,48 @@ describe("simultaneous resolution groups", () => {
     ]);
   });
 
-  it("does not expose a boundary for caller-attested execution receipts", async () => {
-    const publicApi = await import("@/lib/mechanics-execution");
-    expect(publicApi).not.toHaveProperty("deriveMechanicsPostEvents");
+  it("derives phase completion after every ordinary event in the full transaction", () => {
+    const createRoot = programRootCreateOperation();
+    const damage = damageOperation("damage-after-root", FIRST);
+    const simulation = simulateMechanicsTransaction(
+      {
+        actionId: "root-then-damage",
+        actor: SELF,
+        causes: [INSTALLED_CAUSE],
+        factGuards: [],
+        operations: [createRoot, damage],
+      },
+      {
+        authoritySnapshot: authoritySnapshotFor([INSTALLED_CAUSE]),
+        state: causalState(),
+      }
+    );
+    expect(simulation.status).toBe("simulated");
+    if (simulation.status !== "simulated") return;
+    expect(simulation.stages.map(({ execution }) => execution.kind)).toEqual([
+      "program-state-transition",
+      "creature-damage",
+    ]);
+
+    const events = deriveMechanicsPostEvents(simulation.stages);
+    expect(events.map(({ kind }) => kind)).toEqual(["damage-taken", "program-phase-end"]);
+    expect(events.at(-1)).toEqual({
+      eventId: `event:${canonicalFingerprint({
+        kind: "program-phase-end",
+        operationId: createRoot.operationId,
+        subject: {
+          execution: 1,
+          occurrence: createRoot.receipt.root,
+          phaseId: "invoke",
+        },
+      })}`,
+      execution: 1,
+      kind: "program-phase-end",
+      occurrence: createRoot.receipt.root,
+      operationId: createRoot.operationId,
+      phaseId: "invoke",
+    });
+    expect(Object.isFrozen(events)).toBe(true);
   });
 
   it("carries authoritative attacker/critical evidence into one damage event", () => {

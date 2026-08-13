@@ -139,11 +139,23 @@ operation. The single `compileMechanicsFrame` seam now re-proves reviewed input,
 new responses, orders create-root first/advance-root last, assigns deterministic operation ids, includes
 trusted fact guards and recompiles each register/manual step from the kernel-projected prefix. Unsupported
 steps reject explicitly—there is no legacy fallback. The follow-up real-play audit found additional P0
-prerequisites (phase-completion closure, separately authorized overrides, THP source replacement,
-guarded effective defense/healing/Exhaustion facts and death interrupts, reviewed payment debits, resource
-cardinality, closed materialization, same-frame created selectors and enchantment transfer), so this is an
-honest vertical rather than an engine-completion claim. Focused verification only; the sole full gate
-remains reserved for the final rebased integration to `main`.
+prerequisites (separately authorized overrides, THP source replacement, guarded effective
+defense/healing/Exhaustion facts and death interrupts, reviewed payment debits, resource cardinality,
+closed materialization, same-frame created selectors and enchantment transfer), so this is an honest
+vertical rather than an engine-completion claim. Focused verification only; the sole full gate remains
+reserved for the final rebased integration to `main`.
+
+**Exact program-phase completion checkpoint CLOSED on branch (2026-08-12; compiler/coordinator
+ACTIVE):** the exact program root's `phaseState` is the sole completion truth. One post-transaction causal
+rebase derives `program-phase-completed` from the child's exact root generation, phase and execution,
+latching current or overdue lifetimes while future executions remain live; the closure request carries no
+duplicate completion state, and exact generation closes same-id ABA. Applied `program-state-transition`
+stages emit the authentic exact `program-phase-end` post-event for subscribers after ordinary events. Every
+non-invocation evidence and its phase CAS receipt share that exact event id. Ending sources stay structurally
+readable but are absent from every effective projection, so replacements can begin without double-active
+state. Hostile APIs still reject a raw latched world; causal review and compilation re-prove the entire
+transient and use only its canonical result. Focused verification is green (254 tests across nine suites);
+by owner rule no global branch gate ran. Every other compiler gap remains open.
 
 **Deterministic automation gap sweep — ACTIVE (2026-08-04):** six truth-gated milestones are closed and
 branch-pushed: persistent/reactive-effect lifecycle, target-bound on-hit retaliation, variable-level

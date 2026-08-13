@@ -8,6 +8,7 @@ import type {
   NewMechanicOccurrenceSchemaShape,
   ObservedMechanicsBoundarySchemaShape,
   OccurrenceStateSchemaShape,
+  ProgramPhaseCompletionSchemaShape,
   ProgramPhaseStateEntrySchemaShape,
   ProgramPhaseStateSchemaShape,
   StandingFactSchemaShape,
@@ -17,6 +18,7 @@ export type OccurrenceId = string;
 export type EndRule = EndRuleSchemaShape;
 export type MechanicsEndCause = MechanicsEndCauseSchemaShape;
 export type ObservedMechanicsBoundary = ObservedMechanicsBoundarySchemaShape;
+export type ProgramPhaseCompletion = ProgramPhaseCompletionSchemaShape;
 export type JsonScalar = JsonScalarSchemaShape;
 export type ProgramPhaseStateEntry = ProgramPhaseStateEntrySchemaShape;
 export type ProgramPhaseState = ProgramPhaseStateSchemaShape;

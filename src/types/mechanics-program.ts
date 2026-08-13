@@ -18,7 +18,7 @@ import type {
 import type { EntityRef } from "@/types/mechanics-reference";
 import type { ProgramOccurrence } from "@/types/mechanic-occurrence";
 import type { MechanicsProgramPhase } from "@/types/mechanics-program-authoring";
-import type { MechanicsWorld } from "@/types/mechanics-world";
+import type { MechanicsCausalState, MechanicsWorld } from "@/types/mechanics-world";
 import type { ResourceRef, ResourceSelector, ResourceTerm } from "@/types/resource";
 
 export type MechanicsRoles = Readonly<Record<MechanicsRole, EntityRef | null>>;
@@ -216,11 +216,15 @@ export interface MechanicsProgramCompilationContext {
 export type MechanicsProgramCompilationPreparation =
   | {
       readonly context: Readonly<MechanicsProgramCompilationContext>;
+      readonly state: Readonly<MechanicsCausalState>;
       readonly status: "ready";
     }
   | { readonly status: "replay" }
   | {
-      readonly reason: MechanicsReviewRejection | "invalid-reviewed-intent";
+      readonly reason:
+        | MechanicsReviewRejection
+        | "invalid-reviewed-intent"
+        | "invalid-state";
       readonly referenceId: string | null;
       readonly status: "rejected";
     };

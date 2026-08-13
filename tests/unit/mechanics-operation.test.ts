@@ -3154,6 +3154,48 @@ describe("atomic mechanics transactions", () => {
       },
     });
 
+    const rootCause = programRootCause(AUTHORITY, "root");
+    const replacement = {
+      causeId: rootCause.causeId,
+      conditionImmunityOverride: null,
+      created: occurrenceGeneration("replacement-focus", 3),
+      kind: "occurrence-create",
+      occurrence: {
+        endRules: [],
+        kind: "concentration",
+        origin: programStepOrigin(STEP_IDS.concentration, { slot: 2 }),
+        parentId: "root",
+        target: SELF,
+      },
+      operationId: "replace-latched-focus",
+      parent: occurrenceGeneration("root", 1),
+    } as const satisfies MechanicsOperation;
+    const replaceTransaction = transaction(
+      [
+        {
+          causeId: INSTALLED_CAUSE.causeId,
+          input: { amount: 1, maximumHitPoints: 10 },
+          kind: "creature-healing",
+          maximumHitPointsSource: { kind: "fact" },
+          operationId: "heal-before-replacement",
+          target: SELF,
+        },
+        replacement,
+      ],
+      { causes: orderedCauses(INSTALLED_CAUSE, rootCause) }
+    );
+    const replaced = simulated(
+      simulateMechanicsTransaction(result.state.world, replaceTransaction, {
+        authoritySnapshot: authoritySnapshotFor(replaceTransaction),
+        state: result.state,
+      })
+    );
+    expect(state(replaced.state.world).occurrences.focus).toHaveProperty("ending");
+    expect(state(replaced.state.world).occurrences["replacement-focus"]).toMatchObject({
+      ending: null,
+      kind: "concentration",
+    });
+
     const followup = transaction([
       {
         causeId: INSTALLED_CAUSE.causeId,
@@ -3320,6 +3362,66 @@ describe("atomic mechanics transactions", () => {
       )
     );
     expect(state(overridden.state.world).occurrences).toHaveProperty("poisoned");
+  });
+
+  it("does not let a latched standing immunity block a new condition", () => {
+    const material = structuredClone(
+      createEmptyCharacterMaterialState(1, CHARACTER, alive(10, 1))
+    );
+    const root = addOccurrence(
+      {
+        nextOccurrenceOrdinal: material.nextOccurrenceOrdinal,
+        occurrences: material.occurrences,
+      },
+      "root",
+      {
+        authority: AUTHORITY,
+        endRules: [],
+        kind: "program",
+        phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
+        registers: {},
+      }
+    );
+    const immunity = addOccurrence(root, "poison-immunity", {
+      endRules: [{ kind: "temporary-hp-empty" }],
+      fact: { conditionId: "poisoned", kind: "condition-immunity" },
+      kind: "standing",
+      origin: programStepOrigin(STEP_IDS.standing),
+      parentId: "root",
+      target: SELF,
+    });
+    const invoked = structuredClone(immunity);
+    const program = invoked.occurrences.root;
+    if (!program || program.kind !== "program") throw new Error("root fixture");
+    program.phaseState.invoke = { execution: 1, lastTriggerEventId: null };
+    const before = parsedCharacterState({ ...material, ...invoked });
+    const clear = transaction([
+      {
+        causeId: INSTALLED_CAUSE.causeId,
+        clear: { kind: "all" },
+        kind: "temporary-hit-points-clear",
+        operationId: "expire-immunity",
+        target: SELF,
+      },
+    ]);
+    const latched = simulated(simulateMechanicsTransaction(before, clear));
+    expect(state(latched.state.world).occurrences["poison-immunity"]).toMatchObject({
+      ending: { causes: [{ kind: "temporary-hit-points-empty" }] },
+    });
+
+    const apply = transaction([
+      conditionCreate("poison-after-immunity", "poisoned", "poisoned"),
+    ]);
+    const applied = simulated(
+      simulateMechanicsTransaction(latched.state.world, apply, {
+        authoritySnapshot: authoritySnapshotFor(apply),
+        state: latched.state,
+      })
+    );
+    expect(state(applied.state.world).occurrences.poisoned).toMatchObject({
+      ending: null,
+      kind: "condition",
+    });
   });
 
   it("defers occurrence closure and material cleanup to the higher-level executor", () => {

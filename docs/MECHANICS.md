@@ -99,15 +99,34 @@ net state. Creating a Temporary-HP source followed by its grant is therefore gen
 an impossible create-then-expire sequence. Projection and causal rebase may change mechanics data only:
 journal epoch/revision/actions and character build revision are protected invariants.
 
+An `ending` occurrence is structurally readable but mechanically inactive. Authority, provenance,
+root/child/phase/step traversal and `source-ending` delivery can still address its exact generation; active
+keys, grants, conditions, Concentration, marks, standing defenses/immunities, polymorph, item activations
+and deadlines cannot. Active-state exclusivity therefore allows the replacement effect to start before the
+old readable generation is finalized. Hostile derive/review APIs still require a closed world. The causal
+derive/review/compiler path must first re-prove the entire `{ context, world }` transient—including its
+exact request, wave, causes and leases—and must use only the canonical re-proved state thereafter.
+
+The exact program root's `phaseState` is the only phase-completion record. The final causal rebase derives
+`program-phase-completed` directly from a `program-phase-end` lifetime's root generation, phase and
+execution: a current or overdue execution latches the child, while a future execution leaves it live. The
+closure request does not mirror phase completions, and the exact generation prevents a recreated root id
+from satisfying stale lifetime authority.
+
 Hostile commands, groups and observations are snapshotted once from own enumerable data descriptors;
 accessors are rejected and stateful proxy reads cannot change already-validated order or cardinality.
 Persisted turn phase likewise has one closed shape: the current participant is `own-turn`; only the
 authenticated boundary continuation may transiently carry `between-turns` while advancing initiative.
 
 Authentic events are not an open-ended change log. Applied operation stages alone emit `damage-taken`,
-`hit-points-zero` and `resource-depleted`; an exact readable wave alone emits `source-ending`. Terminal
-cleanup is represented by its proved world delta and the final reversible journal action, not generic
-condition/entity/inventory/register events that no authored trigger consumes.
+`hit-points-zero`, `resource-depleted` and, for an exact `program-state-transition`,
+`program-phase-end` carrying root occurrence generation, phase and completed execution; an exact readable
+wave alone emits `source-ending`. Terminal cleanup is represented by its proved world delta and the final
+reversible journal action, not generic condition/entity/inventory/register events that no authored trigger
+consumes.
+Every non-invocation evidence carries the authentic event id, and its program-root CAS receipt must repeat
+that same id. A transaction publishes ordinary post-events first and phase-completion events last, in
+deterministic order; `compileMechanicsFrame` exposes exactly that canonical event sequence.
 The compiler/coordinator and corpus transcription are still active work. `compileMechanicsFrame` is now
 the only intended program-to-transaction seam: it re-proves reviewed input, recognizes replay first,
 places root-create first and root-advance last, emits each register change as its own CAS, and recompiles

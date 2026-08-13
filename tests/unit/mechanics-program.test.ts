@@ -2,21 +2,33 @@ import { describe, expect, it } from "vitest";
 
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { resolveDamage } from "@/lib/damage";
+import { addOccurrence } from "@/lib/mechanic-occurrences";
 import {
   deriveMechanicsRequirements,
+  deriveMechanicsRequirementsFromCausalState,
   planMechanicsAction,
   reviewMechanicsIntent,
+  reviewMechanicsIntentFromCausalState,
 } from "@/lib/mechanics-program";
 import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
 import { createEmptyCharacterMaterialState } from "@/lib/material-state";
-import { parseMechanicsWorld } from "@/lib/mechanics-world";
+import {
+  beginMechanicsCausalState,
+  parseMechanicsWorld,
+  rebaseMechanicsCausalState,
+} from "@/lib/mechanics-world";
 import type { ProgramPhaseState } from "@/types/mechanic-occurrence";
 import type { MechanicsExecutionFrame } from "@/types/mechanics-command";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
 import type { MechanicsIntent } from "@/types/mechanics-program";
 import type { MechanicsProgram } from "@/types/mechanics-program-authoring";
 import type { MechanicsTriggerEvidence } from "@/types/mechanics-trigger";
-import type { MechanicsWorld } from "@/types/mechanics-world";
+import type { MechanicsCausalState, MechanicsWorld } from "@/types/mechanics-world";
+
+type EmittedMechanicsTriggerEvidence = Exclude<
+  MechanicsTriggerEvidence,
+  { readonly kind: "invocation" }
+>;
 
 const HERO = {
   characterId: "hero",
@@ -27,6 +39,10 @@ const SELF = { entityId: "self", material: HERO } as const;
 const ROOT = {
   occurrence: { material: HERO, occurrenceId: "root-1" },
   ordinal: 1,
+} as const;
+const SOURCE_CHILD = {
+  occurrence: { material: HERO, occurrenceId: "source-child" },
+  ordinal: 2,
 } as const;
 const FIXED_ONE = { kind: "fixed", value: 1 } as const;
 const ROLL_8D6 = {
@@ -232,8 +248,7 @@ function intent(
 function advanceIntent(
   program: MechanicsProgram,
   phaseId: string,
-  trigger: MechanicsTriggerEvidence,
-  triggerEventId: string,
+  trigger: EmittedMechanicsTriggerEvidence,
   expected = { execution: 0, phaseId, triggerEventId: null as string | null },
   authority = authorityReceipt(program)
 ): MechanicsIntent {
@@ -249,7 +264,7 @@ function advanceIntent(
         next: {
           execution: expected.execution + 1,
           phaseId,
-          triggerEventId,
+          triggerEventId: trigger.triggerEventId,
         },
         root: ROOT,
       },
@@ -269,6 +284,62 @@ function conformed(value: unknown): MechanicsProgram {
   const result = conformMechanicsProgram(value);
   if (!result) throw new Error("program fixture did not conform");
   return result;
+}
+
+function sourceEndCausalState(program: MechanicsProgram): Readonly<MechanicsCausalState> {
+  const initial = structuredClone(
+    worldWithProgramRoot(program, {
+      cleanup: { execution: 0, lastTriggerEventId: null },
+      resolve: { execution: 1, lastTriggerEventId: null },
+    })
+  );
+  const document = initial.documents[0];
+  const root = document?.state.occurrences["root-1"];
+  if (document?.kind !== "character" || root?.kind !== "program") {
+    throw new Error("source-end fixture");
+  }
+  const occurrences = addOccurrence(
+    {
+      nextOccurrenceOrdinal: document.state.nextOccurrenceOrdinal,
+      occurrences: document.state.occurrences,
+    },
+    "source-child",
+    {
+      endRules: [{ kind: "temporary-hp-empty" }],
+      fact: { key: "source-child", kind: "active-key" },
+      kind: "standing",
+      origin: {
+        execution: 1,
+        kind: "program-step",
+        phaseId: "resolve",
+        root: ROOT,
+        slot: 1,
+        stepId: "install-source-child",
+      },
+      parentId: "root-1",
+      target: SELF,
+    }
+  );
+  document.state.nextOccurrenceOrdinal = occurrences.nextOccurrenceOrdinal;
+  document.state.occurrences = structuredClone(occurrences.occurrences);
+  document.state.vitals.hitPoints.temporary = {
+    current: 1,
+    sourceOccurrence: SOURCE_CHILD,
+  };
+  const closed = parseMechanicsWorld(initial);
+  if (!closed.ok) throw new Error(`source-end fixture: ${closed.reason}`);
+  const begun = beginMechanicsCausalState(closed.value);
+  if (!begun.ok) throw new Error(`source-end fixture: ${begun.reason}`);
+  const ending = structuredClone(begun.value.world);
+  const endingDocument = ending.documents[0];
+  if (endingDocument?.kind !== "character") throw new Error("source-end fixture");
+  endingDocument.state.vitals.hitPoints.temporary = {
+    current: 0,
+    sourceOccurrence: null,
+  };
+  const rebased = rebaseMechanicsCausalState(ending, begun.value);
+  if (!rebased.ok) throw new Error(`source-end fixture: ${rebased.reason}`);
+  return rebased.value;
 }
 
 describe("MechanicsProgram terminal kernel", () => {
@@ -324,7 +395,17 @@ describe("MechanicsProgram terminal kernel", () => {
         {
           inputs: [],
           phaseId: "resolve",
-          steps: [],
+          steps: [
+            {
+              fact: { key: "source-child", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "temporary-hit-points-empty" },
+              operation: "start",
+              stepId: "install-source-child",
+              target: { kind: "role", role: "target" },
+              when: null,
+            },
+          ],
           trigger: { kind: "invocation" },
         },
       ],
@@ -488,6 +569,65 @@ describe("MechanicsProgram terminal kernel", () => {
     ).toBeNull();
   });
 
+  it("keeps hostile world review closed while causal review reads an ending source", () => {
+    const program = conformed({
+      id: "source-end-review",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              fact: { key: "source-child", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "temporary-hit-points-empty" },
+              operation: "start",
+              stepId: "install-source-child",
+              target: { kind: "role", role: "target" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [],
+          phaseId: "cleanup",
+          steps: [],
+          trigger: { kind: "source-end" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const state = sourceEndCausalState(program);
+    const proposed = advanceIntent(program, "cleanup", {
+      kind: "source-end",
+      occurrence: SOURCE_CHILD,
+      triggerEventId: "source-end.root-1.1",
+    });
+
+    expect(deriveMechanicsRequirements(proposed, state.world)).toMatchObject({
+      reason: "invalid-world",
+      status: "rejected",
+    });
+    expect(reviewMechanicsIntent(proposed, [], state.world)).toMatchObject({
+      reason: "invalid-world",
+      status: "rejected",
+    });
+    expect(deriveMechanicsRequirementsFromCausalState(proposed, state).status).toBe(
+      "derived"
+    );
+    expect(reviewMechanicsIntentFromCausalState(proposed, [], state).status).toBe(
+      "reviewed"
+    );
+    expect(
+      deriveMechanicsRequirementsFromCausalState(proposed, {
+        ...state,
+        context: { ...state.context, request: { ...state.context.request, extra: [] } },
+      })
+    ).toMatchObject({ reason: "invalid-world", status: "rejected" });
+  });
+
   it("makes invocation creation and retries exact without retaining a ledger", () => {
     const program = conformed({
       id: "invocation-retry",
@@ -588,17 +728,13 @@ describe("MechanicsProgram terminal kernel", () => {
       pulse: { execution: 0, lastTriggerEventId: null },
       resolve: { execution: 1, lastTriggerEventId: null },
     });
-    const proposed = advanceIntent(
-      program,
-      "pulse",
-      {
-        execution: 1,
-        kind: "program-phase-end",
-        occurrence: ROOT,
-        phaseId: "resolve",
-      },
-      "program.root-1.resolve.1"
-    );
+    const proposed = advanceIntent(program, "pulse", {
+      execution: 1,
+      kind: "program-phase-end",
+      occurrence: ROOT,
+      phaseId: "resolve",
+      triggerEventId: "program.root-1.resolve.1",
+    });
 
     expect(deriveMechanicsRequirements(proposed, snapshot).status).toBe("derived");
     expect(
@@ -611,6 +747,10 @@ describe("MechanicsProgram terminal kernel", () => {
           rootReceipt: {
             ...proposed.frame.rootReceipt,
             root: { ...ROOT, ordinal: 2 },
+          },
+          trigger: {
+            ...proposed.frame.trigger,
+            occurrence: { ...ROOT, ordinal: 2 },
           },
         }),
         snapshot
@@ -639,6 +779,7 @@ describe("MechanicsProgram terminal kernel", () => {
             kind: "program-phase-end",
             occurrence: ROOT,
             phaseId: "resolve",
+            triggerEventId: "program.root-1.resolve.1",
           },
         } as never),
         snapshot
@@ -1763,17 +1904,13 @@ describe("MechanicsProgram terminal kernel", () => {
       react: { execution: 0, lastTriggerEventId: null },
       resolve: { execution: 1, lastTriggerEventId: null },
     });
-    const proposed = advanceIntent(
-      program,
-      "react",
-      {
-        attacker: SELF,
-        criticalHit: true,
-        kind: "damage-taken",
-        resolution: attempt.resolution,
-      },
-      "damage-event-1"
-    );
+    const proposed = advanceIntent(program, "react", {
+      attacker: SELF,
+      criticalHit: true,
+      kind: "damage-taken",
+      resolution: attempt.resolution,
+      triggerEventId: "damage-event-1",
+    });
 
     const result = deriveMechanicsRequirements(proposed, before);
     expect(result.status).toBe("derived");
@@ -1835,18 +1972,14 @@ describe("MechanicsProgram terminal kernel", () => {
       pulse: { execution: 0, lastTriggerEventId: null },
       resolve: { execution: 1, lastTriggerEventId: null },
     });
-    const proposed = advanceIntent(
-      program,
-      "pulse",
-      {
-        clock: { epoch: 0, material: HERO },
-        combatant: SELF,
-        kind: "turn-boundary",
-        phase: "start",
-        round: 1,
-      },
-      "turn.hero.1.start"
-    );
+    const proposed = advanceIntent(program, "pulse", {
+      clock: { epoch: 0, material: HERO },
+      combatant: SELF,
+      kind: "turn-boundary",
+      phase: "start",
+      round: 1,
+      triggerEventId: "turn.hero.1.start",
+    });
     expect(
       deriveMechanicsRequirements(
         withFrame(proposed, {
@@ -1889,6 +2022,7 @@ describe("MechanicsProgram terminal kernel", () => {
       manual: [],
       status: "planned",
     });
+    // The same evidence cannot acquire a fresh event identity through its CAS receipt.
     expect(
       deriveMechanicsRequirements(
         withFrame(
@@ -1905,10 +2039,7 @@ describe("MechanicsProgram terminal kernel", () => {
         ),
         after
       )
-    ).toMatchObject({
-      reason: "invalid-root-occurrence",
-      status: "rejected",
-    });
+    ).toMatchObject({ reason: "invalid-intent", status: "rejected" });
     expect(
       deriveMechanicsRequirements(
         withFrame(
@@ -1934,8 +2065,8 @@ describe("MechanicsProgram terminal kernel", () => {
             kind: "turn-boundary",
             phase: "start",
             round: 2,
+            triggerEventId: "turn.hero.2.start",
           },
-          "turn.hero.2.start",
           {
             execution: 1,
             phaseId: "pulse",

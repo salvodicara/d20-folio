@@ -112,6 +112,17 @@ const OCCURRENCE_GENERATION_REF = refSchema<
   OccurrenceGenerationRefSchemaShape
 >("occurrence-generation-ref");
 
+/** Exact internal proof that one committed program-phase execution completed. */
+export const PROGRAM_PHASE_COMPLETION_SCHEMA = objectSchema({
+  execution: POSITIVE_INTEGER_SCHEMA,
+  phaseId: ID_SCHEMA,
+  root: OCCURRENCE_GENERATION_REF,
+});
+
+export type ProgramPhaseCompletionSchemaShape = InferExactSchema<
+  typeof PROGRAM_PHASE_COMPLETION_SCHEMA
+>;
+
 export const MECHANICS_END_CAUSE_SCHEMA = discriminatedUnionSchema("kind", {
   "concentration-broken": objectSchema({
     kind: literalSchema("concentration-broken"),
@@ -127,6 +138,10 @@ export const MECHANICS_END_CAUSE_SCHEMA = discriminatedUnionSchema("kind", {
   "live-entity-missing": objectSchema({
     entity: ENTITY_REF,
     kind: literalSchema("live-entity-missing"),
+  }),
+  "program-phase-completed": objectSchema({
+    completion: PROGRAM_PHASE_COMPLETION_SCHEMA,
+    kind: literalSchema("program-phase-completed"),
   }),
   requested: objectSchema({ kind: literalSchema("requested") }),
   "temporary-hit-points-empty": objectSchema({

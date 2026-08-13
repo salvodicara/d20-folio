@@ -34,7 +34,7 @@ import {
 } from "@/lib/mechanics-program-authoring";
 import { planMechanicsWorldAction } from "@/lib/mechanics-action";
 import { locateResolvedMaterialResource } from "@/lib/material-resource";
-import { parseMechanicsWorld } from "@/lib/mechanics-world";
+import { conformMechanicsCausalState, parseMechanicsWorld } from "@/lib/mechanics-world";
 import { conformResourceRef, resourceRefKey } from "@/lib/resources";
 import type { JournalActorRef } from "@/types/action-journal";
 import type { D20TestObservation, D20TestRequest, D20TestResult } from "@/types/d20-test";
@@ -874,7 +874,11 @@ function triggerMatches(
         )
       );
     case "program-phase-end":
-      if (evidence.kind !== "program-phase-end" || trigger.phaseId !== evidence.phaseId) {
+      if (
+        evidence.kind !== "program-phase-end" ||
+        trigger.phaseId !== evidence.phaseId ||
+        !exactEqual(evidence.occurrence, intent.rootOccurrence)
+      ) {
         return false;
       } else {
         const sourceProgram = occurrenceFor(world, evidence.occurrence);
@@ -909,30 +913,31 @@ function triggerMatches(
   }
 }
 
-function validateIntentAgainstWorld(
-  intentValue: unknown,
-  snapshot: Readonly<MechanicsWorld>
-):
-  | {
-      readonly bindings: Readonly<Record<string, number>>;
-      readonly execution: MechanicsExecutionContext;
-      readonly executionMode: MechanicsExecutionMode;
-      readonly intent: Readonly<MechanicsIntent>;
-      readonly phase: MechanicsProgramPhase;
-      readonly root: ProgramOccurrence | null;
-      readonly world: Readonly<MechanicsWorld>;
-    }
+type ValidatedMechanicsIntent = {
+  readonly bindings: Readonly<Record<string, number>>;
+  readonly execution: MechanicsExecutionContext;
+  readonly executionMode: MechanicsExecutionMode;
+  readonly intent: Readonly<MechanicsIntent>;
+  readonly phase: MechanicsProgramPhase;
+  readonly root: ProgramOccurrence | null;
+  readonly world: Readonly<MechanicsWorld>;
+};
+
+type MechanicsIntentValidation =
+  | ValidatedMechanicsIntent
   | {
       readonly reason: MechanicsRequirementsRejection;
       readonly referenceId: string | null;
-    } {
+    };
+
+function validateIntentAgainstReadableWorld(
+  intentValue: unknown,
+  world: Readonly<MechanicsWorld>
+): MechanicsIntentValidation {
   const intent = conformMechanicsIntent(intentValue);
   if (!intent) return { reason: "invalid-intent", referenceId: null };
   const execution = executionContext(intent);
   if (!execution) return { reason: "invalid-intent", referenceId: "frame" };
-  const parsed = parseMechanicsWorld(snapshot);
-  if (!parsed.ok) return { reason: "invalid-world", referenceId: null };
-  const world = parsed.value;
   const phase = resolvedPhase(execution);
   if (!phase) return { reason: "missing-phase", referenceId: execution.phaseId };
   if (execution.roles.owner === null) {
@@ -959,6 +964,16 @@ function validateIntentAgainstWorld(
   const bindings = bindingsFor(execution, root);
   if (!bindings) return { reason: "invalid-intent", referenceId: "bindings" };
   return { bindings, execution, executionMode: mode, intent, phase, root, world };
+}
+
+function validateIntentAgainstWorld(
+  intentValue: unknown,
+  snapshot: Readonly<MechanicsWorld>
+): MechanicsIntentValidation {
+  const parsed = parseMechanicsWorld(snapshot);
+  return parsed.ok
+    ? validateIntentAgainstReadableWorld(intentValue, parsed.value)
+    : { reason: "invalid-world", referenceId: null };
 }
 
 type PredicateTruth = boolean | null;
@@ -1007,7 +1022,7 @@ export function refreshMechanicsProgramCompilationContext(
 /** Re-review the exact closed basis once and distinguish replay before compiling. */
 export function prepareMechanicsProgramCompilation(
   reviewedValue: Readonly<ReviewedMechanicsIntent>,
-  snapshot: Readonly<MechanicsWorld>
+  stateValue: unknown
 ): Readonly<MechanicsProgramCompilationPreparation> {
   if (typeof reviewedValue !== "object" || !Object.isFrozen(reviewedValue)) {
     return freezeDeep({
@@ -1016,7 +1031,18 @@ export function prepareMechanicsProgramCompilation(
       status: "rejected" as const,
     });
   }
-  const validated = validateIntentAgainstWorld(reviewedValue.intent, snapshot);
+  const state = conformMechanicsCausalState(stateValue);
+  if (!state.ok) {
+    return freezeDeep({
+      reason: "invalid-state" as const,
+      referenceId: null,
+      status: "rejected" as const,
+    });
+  }
+  const validated = validateIntentAgainstReadableWorld(
+    reviewedValue.intent,
+    state.value.world
+  );
   if ("reason" in validated) {
     return freezeDeep({
       reason: validated.reason,
@@ -1027,11 +1053,7 @@ export function prepareMechanicsProgramCompilation(
   if (validated.executionMode === "replay") {
     return freezeDeep({ status: "replay" as const });
   }
-  const rereview = reviewMechanicsIntent(
-    reviewedValue.intent,
-    reviewedValue.answers,
-    snapshot
-  );
+  const rereview = reviewMechanicsIntentValidated(validated, reviewedValue.answers);
   if (rereview.status !== "reviewed" || !exactEqual(rereview.reviewed, reviewedValue)) {
     return freezeDeep({
       reason: "invalid-reviewed-intent" as const,
@@ -1039,9 +1061,12 @@ export function prepareMechanicsProgramCompilation(
       status: "rejected" as const,
     });
   }
-  const context = refreshMechanicsProgramCompilationContext(reviewedValue, snapshot);
+  const context = refreshMechanicsProgramCompilationContext(
+    reviewedValue,
+    state.value.world
+  );
   return context
-    ? freezeDeep({ context, status: "ready" as const })
+    ? freezeDeep({ context, state: state.value, status: "ready" as const })
     : freezeDeep({
         reason: "invalid-reviewed-intent" as const,
         referenceId: null,
@@ -1075,7 +1100,9 @@ function occurrencesForTarget(
   return world.documents.flatMap((document) =>
     Object.values(document.state.occurrences).filter(
       (occurrence): occurrence is EffectOccurrence =>
-        occurrence.kind !== "program" && exactEqual(occurrence.target, target)
+        occurrence.kind !== "program" &&
+        occurrence.ending === null &&
+        exactEqual(occurrence.target, target)
     )
   );
 }
@@ -1655,18 +1682,9 @@ function requirementForInput(
  * Derive all table requirements without consuming answers. Conditions that depend
  * on earlier answers remain explicit `conditional` requirements in authored order.
  */
-export function deriveMechanicsRequirements(
-  intentValue: unknown,
-  snapshot: Readonly<MechanicsWorld>
+function deriveMechanicsRequirementsValidated(
+  validated: ValidatedMechanicsIntent
 ): MechanicsRequirementsResult {
-  const validated = validateIntentAgainstWorld(intentValue, snapshot);
-  if ("reason" in validated) {
-    return freezeDeep({
-      reason: validated.reason,
-      referenceId: validated.referenceId,
-      status: "rejected",
-    });
-  }
   const context: PredicateContext = {
     bindings: validated.bindings,
     intent: validated.execution,
@@ -1691,6 +1709,41 @@ export function deriveMechanicsRequirements(
     requirements: freezeDeep(requirements),
     status: "derived",
   });
+}
+
+function deriveRejected(
+  validation: Exclude<MechanicsIntentValidation, ValidatedMechanicsIntent>
+): MechanicsRequirementsResult {
+  return freezeDeep({
+    reason: validation.reason,
+    referenceId: validation.referenceId,
+    status: "rejected",
+  });
+}
+
+export function deriveMechanicsRequirements(
+  intentValue: unknown,
+  snapshot: Readonly<MechanicsWorld>
+): MechanicsRequirementsResult {
+  const validated = validateIntentAgainstWorld(intentValue, snapshot);
+  return "reason" in validated
+    ? deriveRejected(validated)
+    : deriveMechanicsRequirementsValidated(validated);
+}
+
+/** Derive against a re-proved source-readable causal world. */
+export function deriveMechanicsRequirementsFromCausalState(
+  intentValue: unknown,
+  stateValue: unknown
+): MechanicsRequirementsResult {
+  const state = conformMechanicsCausalState(stateValue);
+  if (!state.ok) {
+    return deriveRejected({ reason: "invalid-world", referenceId: null });
+  }
+  const validated = validateIntentAgainstReadableWorld(intentValue, state.value.world);
+  return "reason" in validated
+    ? deriveRejected(validated)
+    : deriveMechanicsRequirementsValidated(validated);
 }
 
 type RollPaymentEvidence =
@@ -2074,16 +2127,10 @@ function reviewRejected(
   return freezeDeep({ reason, referenceId, requirement, status: "rejected" as const });
 }
 
-/** Exact staged answer review; only active requirements consume answers. */
-export function reviewMechanicsIntent(
-  intentValue: unknown,
-  answersValue: unknown,
-  snapshot: Readonly<MechanicsWorld>
+function reviewMechanicsIntentValidated(
+  validated: ValidatedMechanicsIntent,
+  answersValue: unknown
 ): MechanicsReviewResult {
-  const validated = validateIntentAgainstWorld(intentValue, snapshot);
-  if ("reason" in validated) {
-    return reviewRejected(validated.reason, validated.referenceId);
-  }
   const answers = conformMechanicsAnswers(answersValue);
   if (!answers) return reviewRejected("invalid-answers", null);
   if (!unique(answers.map((answer) => answer.inputId))) {
@@ -2158,6 +2205,32 @@ export function reviewMechanicsIntent(
     }),
     status: "reviewed",
   });
+}
+
+/** Exact staged hostile review; only a causally closed world is accepted. */
+export function reviewMechanicsIntent(
+  intentValue: unknown,
+  answersValue: unknown,
+  snapshot: Readonly<MechanicsWorld>
+): MechanicsReviewResult {
+  const validated = validateIntentAgainstWorld(intentValue, snapshot);
+  return "reason" in validated
+    ? reviewRejected(validated.reason, validated.referenceId)
+    : reviewMechanicsIntentValidated(validated, answersValue);
+}
+
+/** Exact staged review against a re-proved source-readable causal world. */
+export function reviewMechanicsIntentFromCausalState(
+  intentValue: unknown,
+  answersValue: unknown,
+  stateValue: unknown
+): MechanicsReviewResult {
+  const state = conformMechanicsCausalState(stateValue);
+  if (!state.ok) return reviewRejected("invalid-world", null);
+  const validated = validateIntentAgainstReadableWorld(intentValue, state.value.world);
+  return "reason" in validated
+    ? reviewRejected(validated.reason, validated.referenceId)
+    : reviewMechanicsIntentValidated(validated, answersValue);
 }
 
 function operationForStep(step: MechanicsStep): MechanicsWorldOperation | null {

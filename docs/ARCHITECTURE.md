@@ -563,6 +563,22 @@ purportedly trusted continuation. End discovery is one bounded indexed worklist 
 Concentration, ownership, inventory, live-entity and Temporary-HP edges; it emits a deterministic
 dependent-first wave without recursive deletion or repeated whole-world scans.
 
+Source readability is not mechanical activity. An occurrence whose exact `ending` latch is present remains
+addressable only for authority, provenance, child traversal and `source-end` delivery; active conditions,
+grants, standing facts, damage/condition defenses, marks, Concentration, polymorph forms, item activations
+and deadlines exclude it. Active-only exclusivity permits a replacement Concentration, form or standing
+defense to begin in the same causal action while the old generation is still readable. Compiler/reviewer
+access to this transient is likewise singular: hostile requirement/review APIs continue to accept only a
+closed world, while the causal path re-proves the complete `{ context, world }` state from its exact wave,
+request, latches and leases and then uses only that canonical result for every prefix projection and final
+simulation. A raw readable world or a forged context is never a trusted compiler basis.
+
+A program root's `phaseState` is the sole phase-completion truth. During that one post-transaction causal
+rebase, a child with a `program-phase-end` lifetime resolves its exact root generation, phase and authored
+execution: the current or an overdue execution latches an exact `program-phase-completed` cause, while a
+future execution stays live. The closure request carries no second phase-completion ledger. Exact root
+generation therefore closes same-id ABA without duplicating phase state.
+
 Table time/rest/turn/encounter progression uses the pure `beginMechanicsBoundary` /
 `advanceMechanicsBoundary` state machine. A completion is bound to the complete continuation fingerprint
 and can preserve boundary-owned facts only; same-wave completion may finalize, while a wave created or
@@ -571,10 +587,16 @@ survive only the exact clock/encounter hand-off performed by that state machine.
 resolver and no API through which a caller can return a replacement world.
 
 The authentic post-event set is intentionally small: `damage-taken`, `hit-points-zero` and
-`resource-depleted` derive only from exact applied operation stages; `source-ending` derives only from a
-re-proved readable end wave. Occurrence removal and condition/entity/inventory/turn/register/Temporary-HP
-cleanup do not invent generic semantic events because no authored trigger consumes them; their complete
-effect is the verified finalization delta and ultimately the single journal draft.
+`resource-depleted` derive only from exact applied operation stages; an applied
+`program-state-transition` emits `program-phase-end` with the exact root occurrence generation, phase and
+completed execution for subscribers; `source-ending` derives only from a re-proved readable end wave. Each
+non-invocation trigger evidence carries that emitted event's exact id, and the phase CAS receipt must carry
+the same id, so evidence cannot be replayed under an invented identity. Phase-completion events trail all
+ordinary events from the same complete transaction while retaining deterministic order among themselves;
+the sole frame compiler returns that canonical event list with its simulation.
+Occurrence removal and condition/entity/inventory/turn/register/Temporary-HP cleanup do not invent generic
+semantic events because no authored trigger consumes them; their complete effect is the verified
+finalization delta and ultimately the single journal draft.
 
 This hardened foundation is implemented and covered by focused hostile-input tests, but the cutover is
 not yet a production runtime. The canonical `compileMechanicsFrame` seam now exists and re-reviews the
@@ -590,12 +612,12 @@ step currently rejects as unsupported instead of falling through to legacy behav
 The active compiler work must now add the per-material allocation ledger, payment prelude and the
 vitality/effect/material/resource subcompilers, then feed one bounded fixed-point coordinator that runs
 trigger, subscriber and source-ending waves and calls `planMechanicsWorldAction` once for one reversible
-journal draft. The compiler audit has also exposed kernel/model prerequisites that remain open: an exact
-internal program-phase-completion boundary, separately authorized table overrides, source-specific
-Temporary-HP replacement cleanup, guarded effective defense/healing/immunity facts, and closed
-entity/item materializations in capability snapshots. No second executor, compatibility planner or
-final register-write lump is permitted. Persistence adapters and corpus transcription remain open; the
-existing combat executors are migration inputs only and are deleted as their consumers move.
+journal draft. The compiler audit has also exposed kernel/model prerequisites that remain open: a
+separately authorized table-override path, source-specific Temporary-HP replacement cleanup, guarded
+effective defense/healing/immunity facts, and closed entity/item materializations in capability snapshots.
+No second executor, compatibility planner or final register-write lump is permitted. Persistence adapters
+and corpus transcription remain open; the existing combat executors are migration inputs only and are
+deleted as their consumers move.
 
 The action economy is **immediate-commit-per-action-with-undo** (the owner's binding decision —
 **not** batch select-and-commit), so a resource is deducted the instant it is used.
