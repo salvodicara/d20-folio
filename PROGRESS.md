@@ -126,10 +126,24 @@ final causal rebase, so newly satisfied end rules observe the atomic net result 
 waves remain readable; this closes the real create-source/assign-Temporary-HP lifecycle. Timeline-bound
 creation collides on the owning document's clock binding, and a persisted current combatant must be in
 `own-turn`. Transaction projection and causal rebase also preserve every document's journal
-epoch/revision/actions and a character's build revision. The independent P0/P1 audit's remaining gaps are closed. The focused kernel
-proof is 401 tests across 14 suites, with no global branch gate run.
-The active next milestone remains one per-material-ledger step compiler, one bounded fixed-point causal
-coordinator, and one final reversible journal draft.
+epoch/revision/actions and a character's build revision. The independent operation-layer P0/P1 audit's
+then-known gaps are closed. The focused kernel proof is 401 tests across 14 suites, with no global branch
+gate run. The active next milestone remains completion of the per-material-ledger step compiler, one
+bounded fixed-point causal coordinator, and one final reversible journal draft.
+
+**Compiler/provenance vertical ACTIVE on branch (2026-08-12):** persistent effects and material
+lifecycles now carry exact structured origin `{root, phase, execution, step, slot}` validated against the
+root's frozen program; duplicate or semantically mismatched emissions fail closed, including across a
+transaction's pending next execution. Register mutation is an individual compare-and-swap physical
+operation. The single `compileMechanicsFrame` seam now re-proves reviewed input, recognizes replay before
+new responses, orders create-root first/advance-root last, assigns deterministic operation ids, includes
+trusted fact guards and recompiles each register/manual step from the kernel-projected prefix. Unsupported
+steps reject explicitly—there is no legacy fallback. The follow-up real-play audit found additional P0
+prerequisites (phase-completion closure, separately authorized overrides, THP source replacement,
+guarded effective defense/healing/Exhaustion facts and death interrupts, reviewed payment debits, resource
+cardinality, closed materialization, same-frame created selectors and enchantment transfer), so this is an
+honest vertical rather than an engine-completion claim. Focused verification only; the sole full gate
+remains reserved for the final rebased integration to `main`.
 
 **Deterministic automation gap sweep — ACTIVE (2026-08-04):** six truth-gated milestones are closed and
 branch-pushed: persistent/reactive-effect lifecycle, target-bound on-hit retaliation, variable-level

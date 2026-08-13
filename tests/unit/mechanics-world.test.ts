@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { materialRefKey } from "@/lib/action-journal";
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
-import { addOccurrence } from "@/lib/mechanic-occurrences";
+import {
+  addOccurrence,
+  addTransitionedProgramOccurrence,
+} from "@/lib/mechanic-occurrences";
 import {
   advanceMechanicsBoundary,
   beginMechanicsBoundary,
@@ -39,7 +42,11 @@ import type {
   MaterialRef,
   SharedMaterialRef,
 } from "@/types/mechanics-reference";
-import type { EndRule, NewMechanicOccurrence } from "@/types/mechanic-occurrence";
+import type {
+  EndRule,
+  NewMechanicOccurrence,
+  ProgramOccurrence,
+} from "@/types/mechanic-occurrence";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
 import type {
   EncounterSeed,
@@ -190,6 +197,65 @@ function character(material: CharacterMaterialRef = HERO): CharacterMaterialStat
   return structuredClone(createEmptyCharacterMaterialState(1, material, livingVitals()));
 }
 
+function fixtureSteps() {
+  return [
+    {
+      conditionId: "prone",
+      kind: "condition",
+      lifetime: { kind: "manual" },
+      operation: "apply",
+      stepId: "apply-condition",
+      target: { kind: "role", role: "target" },
+      when: null,
+    },
+    {
+      fact: { key: "fixture", kind: "active-key" },
+      kind: "standing",
+      lifetime: { kind: "manual" },
+      operation: "start",
+      stepId: "start-standing",
+      target: { kind: "role", role: "target" },
+      when: null,
+    },
+    {
+      kind: "concentration",
+      lifetime: { kind: "manual" },
+      operation: "start",
+      stepId: "start-concentration",
+      target: { kind: "role", role: "target" },
+      when: null,
+    },
+    {
+      formId: "wolf",
+      kind: "polymorph",
+      lifetime: { kind: "manual" },
+      operation: "start",
+      stepId: "start-polymorph",
+      target: { kind: "role", role: "target" },
+      when: null,
+    },
+    {
+      controller: null,
+      entityKey: "fixture-entity",
+      kind: "entity-create",
+      lifetime: { kind: "manual" },
+      stepId: "create-entity",
+      template: { kind: "monster", monsterId: "goblin-warrior" },
+      when: null,
+    },
+    {
+      instanceKey: "fixture-item",
+      itemId: "longsword",
+      kind: "inventory-create",
+      lifetime: { kind: "manual" },
+      owner: "owner",
+      quantity: { kind: "fixed", value: 1 },
+      stepId: "create-inventory",
+      when: null,
+    },
+  ] as const;
+}
+
 function tableAuthority(
   material: MaterialRef,
   id: string
@@ -225,7 +291,7 @@ function tableAuthority(
           {
             inputs: [],
             phaseId: "active",
-            steps: [],
+            steps: fixtureSteps(),
             trigger: { kind: "invocation" },
           },
         ],
@@ -276,7 +342,7 @@ function inventoryAuthority(
           {
             inputs: [],
             phaseId: "active",
-            steps: [],
+            steps: fixtureSteps(),
             trigger: { kind: "invocation" },
           },
         ],
@@ -306,20 +372,90 @@ function program(
   };
 }
 
+function transitionedProgram(
+  material: MaterialRef,
+  id: string,
+  authority: MechanicsProgramAuthorityReceipt = tableAuthority(material, id)
+): Omit<ProgramOccurrence, "ending" | "ordinal"> {
+  return {
+    ...program(material, id, authority),
+    phaseState: { active: { execution: 1, lastTriggerEventId: null } },
+  };
+}
+
 type MutableMaterialState = CharacterMaterialState | SharedMaterialState;
+type NewEffectOccurrence = Exclude<NewMechanicOccurrence, { kind: "program" }>;
+type WithoutOrigin<Occurrence> = Occurrence extends { origin: unknown }
+  ? Omit<Occurrence, "origin">
+  : never;
+type FixtureEffectOccurrence = WithoutOrigin<NewEffectOccurrence>;
+
+function fixtureStepId(
+  occurrence: FixtureEffectOccurrence,
+  lifecycleStepId: "create-entity" | "create-inventory"
+) {
+  switch (occurrence.kind) {
+    case "condition":
+      return "apply-condition";
+    case "standing":
+      return "start-standing";
+    case "concentration":
+      return "start-concentration";
+    case "polymorph-form":
+      return "start-polymorph";
+    case "material-lifecycle":
+      return lifecycleStepId;
+  }
+}
 
 function addToState<State extends MutableMaterialState>(
   state: State,
   id: string,
-  occurrence: NewMechanicOccurrence
+  occurrence: FixtureEffectOccurrence,
+  lifecycleStepId: "create-entity" | "create-inventory" = "create-entity"
 ): State {
+  const root = state.occurrences[occurrence.parentId];
+  if (root?.kind !== "program") throw new Error("Missing program fixture root");
+  const stepId = fixtureStepId(occurrence, lifecycleStepId);
+  const phase = root.authority.snapshot.program?.phases.find(({ steps }) =>
+    steps.some((step) => step.stepId === stepId)
+  );
+  if (!phase) throw new Error(`Missing fixture step ${stepId}`);
+  const execution = root.phaseState[phase.phaseId]?.execution;
+  if (!execution) throw new Error(`Inactive fixture phase ${phase.phaseId}`);
+  const usedSlots = Object.values(state.occurrences).flatMap((candidate) =>
+    candidate.kind !== "program" &&
+    candidate.origin.root.occurrence.occurrenceId === occurrence.parentId &&
+    candidate.origin.root.ordinal === root.ordinal &&
+    candidate.origin.phaseId === phase.phaseId &&
+    candidate.origin.execution === execution &&
+    candidate.origin.stepId === stepId
+      ? [candidate.origin.slot]
+      : []
+  );
   const next = addOccurrence(
     {
       nextOccurrenceOrdinal: state.nextOccurrenceOrdinal,
       occurrences: state.occurrences,
     },
     id,
-    occurrence
+    {
+      ...occurrence,
+      origin: {
+        execution,
+        kind: "program-step",
+        phaseId: phase.phaseId,
+        root: {
+          occurrence: {
+            material: root.authority.installation.owner.material,
+            occurrenceId: occurrence.parentId,
+          },
+          ordinal: root.ordinal,
+        },
+        slot: Math.max(0, ...usedSlots) + 1,
+        stepId,
+      },
+    }
   );
   return { ...state, ...next };
 }
@@ -330,7 +466,15 @@ function addRoot<State extends MutableMaterialState>(
   id = "root",
   authority = tableAuthority(material, id)
 ): State {
-  return addToState(state, id, program(material, id, authority));
+  const next = addTransitionedProgramOccurrence(
+    {
+      nextOccurrenceOrdinal: state.nextOccurrenceOrdinal,
+      occurrences: state.occurrences,
+    },
+    id,
+    transitionedProgram(material, id, authority)
+  );
+  return { ...state, ...next };
 }
 
 function generation(
@@ -560,6 +704,31 @@ function programEndWaveWorld(): MechanicsWorld {
 }
 
 describe("canonical mechanics world and clocks", () => {
+  it("keeps one-ahead program origins transient to transaction projection", () => {
+    const priorHero = addRoot(character(), HERO);
+    const candidateHero = structuredClone(
+      addToState(structuredClone(priorHero), "pending-effect", {
+        endRules: [],
+        fact: { key: "pending-effect", kind: "active-key" },
+        kind: "standing",
+        parentId: "root",
+        target: self(),
+      })
+    );
+    const pendingEffect = candidateHero.occurrences["pending-effect"];
+    if (pendingEffect?.kind !== "standing") throw new Error("effect fixture");
+    pendingEffect.origin.execution = 2;
+    const candidate = world(candidateHero);
+
+    expect(parseMechanicsWorld(candidate)).toEqual({
+      ok: false,
+      reason: "invalid-program-origin",
+    });
+    expect(projectMechanicsTransactionWorld(candidate, world(priorHero))).toMatchObject({
+      ok: true,
+    });
+  });
+
   it.each(["epoch", "revision", "actions", "buildRevision"] as const)(
     "protects %s from transaction-projection mutation",
     (field) => {
@@ -1454,12 +1623,17 @@ describe("canonical mechanics world and clocks", () => {
 
   it("rejects two physical generations owned by one material lifecycle", () => {
     let hero = addRoot(character(), HERO);
-    hero = addToState(hero, "single-owner", {
-      endRules: [],
-      kind: "material-lifecycle",
-      parentId: "root",
-      target: self(),
-    });
+    hero = addToState(
+      hero,
+      "single-owner",
+      {
+        endRules: [],
+        kind: "material-lifecycle",
+        parentId: "root",
+        target: self(),
+      },
+      "create-inventory"
+    );
     const owner = generation(hero, HERO, "single-owner");
     hero.nextInventoryOrdinal = 3;
     hero.inventory = {
@@ -2542,12 +2716,17 @@ describe("canonical mechanics world and clocks", () => {
       parentId: "root",
       target: { material: CAMPAIGN, entityId: "summon", ordinal: 1 },
     });
-    hero = addToState(hero, "material-owner", {
-      endRules: [],
-      kind: "material-lifecycle",
-      parentId: "root",
-      target: self(),
-    });
+    hero = addToState(
+      hero,
+      "material-owner",
+      {
+        endRules: [],
+        kind: "material-lifecycle",
+        parentId: "root",
+        target: self(),
+      },
+      "create-inventory"
+    );
     hero.nextInventoryOrdinal = 2;
     hero.inventory = {
       blade: item(generation(hero, HERO, "material-owner")),
@@ -2682,12 +2861,17 @@ describe("canonical mechanics world and clocks", () => {
 
   it("targets objects while keeping inventory-linked existence referential", () => {
     let hero = addRoot(character(), HERO);
-    hero = addToState(hero, "conjure", {
-      kind: "material-lifecycle",
-      parentId: "root",
-      target: self(),
-      endRules: [],
-    });
+    hero = addToState(
+      hero,
+      "conjure",
+      {
+        kind: "material-lifecycle",
+        parentId: "root",
+        target: self(),
+        endRules: [],
+      },
+      "create-inventory"
+    );
     hero.nextInventoryOrdinal = 2;
     hero.inventory = {
       blade: item(generation(hero, HERO, "conjure")),
@@ -2720,12 +2904,17 @@ describe("canonical mechanics world and clocks", () => {
 
   it("retains a consumed source as one zero-quantity tombstone until its last effect ends", () => {
     let hero = addRoot(character(), HERO, "conjured-root");
-    hero = addToState(hero, "conjured-source", {
-      kind: "material-lifecycle",
-      parentId: "conjured-root",
-      target: self(),
-      endRules: [],
-    });
+    hero = addToState(
+      hero,
+      "conjured-source",
+      {
+        kind: "material-lifecycle",
+        parentId: "conjured-root",
+        target: self(),
+        endRules: [],
+      },
+      "create-inventory"
+    );
     hero.nextInventoryOrdinal = 2;
     hero.inventory = {
       potion: {
@@ -2808,12 +2997,17 @@ describe("canonical mechanics world and clocks", () => {
 
   it("turns remaining owned quantity into a tombstone while its authority stays active", () => {
     let hero = addRoot(character(), HERO, "conjured-root");
-    hero = addToState(hero, "conjured-source", {
-      endRules: [],
-      kind: "material-lifecycle",
-      parentId: "conjured-root",
-      target: self(),
-    });
+    hero = addToState(
+      hero,
+      "conjured-source",
+      {
+        endRules: [],
+        kind: "material-lifecycle",
+        parentId: "conjured-root",
+        target: self(),
+      },
+      "create-inventory"
+    );
     hero.nextInventoryOrdinal = 2;
     hero.inventory = {
       potion: {
@@ -2876,12 +3070,17 @@ describe("canonical mechanics world and clocks", () => {
       "potion-root",
       inventoryAuthority("potion", 1, "potion-root")
     );
-    hero = addToState(hero, "potion-owner", {
-      endRules: [],
-      kind: "material-lifecycle",
-      parentId: "potion-root",
-      target: self(),
-    });
+    hero = addToState(
+      hero,
+      "potion-owner",
+      {
+        endRules: [],
+        kind: "material-lifecycle",
+        parentId: "potion-root",
+        target: self(),
+      },
+      "create-inventory"
+    );
     hero.nextInventoryOrdinal = 2;
     hero.inventory = {
       potion: {

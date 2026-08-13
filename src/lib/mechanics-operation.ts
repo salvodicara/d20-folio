@@ -31,6 +31,7 @@ import {
   addTransitionedProgramOccurrence,
   conformEndRule,
   conformNewMechanicOccurrence,
+  conformProgramStepOccurrenceOrigin,
 } from "@/lib/mechanic-occurrences";
 import {
   MECHANIC_OCCURRENCE_SCHEMA_REFS,
@@ -120,6 +121,7 @@ import {
   type MechanicsOperationSchemaCustomTypes,
   type MechanicsOperationStage,
   type MechanicsTransaction,
+  type MechanicsTransactionProjectionResult,
   type MechanicsTransactionSimulationContext,
   type MechanicsTransactionSimulationResult,
 } from "@/types/mechanics-operation";
@@ -327,6 +329,7 @@ const OPERATION_CONTEXT: ExactSchemaContext<
     "occurrence-generation-ref": conformOccurrenceGenerationRef,
     "positive-integer": (value) => integer(value, 1),
     "program-root-receipt": conformProgramRootReceipt,
+    "program-step-occurrence-origin": conformProgramStepOccurrenceOrigin,
     "resource-operation": conformResourceOperation,
     "resource-ref": conformResourceRef,
     "resource-spec": conformResourceSpec,
@@ -368,15 +371,20 @@ export function conformMechanicsOperation(
 }
 
 function transactionCausesAreValid(transaction: Readonly<MechanicsTransaction>): boolean {
-  const programTransitions = transaction.operations.filter(
-    ({ kind }) => kind === "program-state-transition"
-  );
-  if (
-    programTransitions.length > 1 ||
-    (programTransitions.length === 1 &&
-      transaction.operations[0].kind !== "program-state-transition")
-  ) {
-    return false;
+  const programTransitions: Readonly<
+    Extract<MechanicsOperation, { readonly kind: "program-state-transition" }>
+  >[] = [];
+  for (const operation of transaction.operations) {
+    if (operation.kind === "program-state-transition") {
+      programTransitions.push(operation);
+    }
+  }
+  if (programTransitions.length > 1) return false;
+  const programTransition = programTransitions[0];
+  if (programTransition) {
+    const expectedIndex =
+      programTransition.receipt.kind === "create" ? 0 : transaction.operations.length - 1;
+    if (transaction.operations[expectedIndex] !== programTransition) return false;
   }
   if (
     transaction.operations.length !== 1 &&
@@ -666,6 +674,7 @@ function operationTargetKind(
     case "inventory-transition":
     case "inventory-end":
     case "program-state-transition":
+    case "program-register-transition":
     case "occurrence-create":
     case "occurrence-end":
     case "resource-initialize":
@@ -1513,6 +1522,68 @@ function simulateProgramStateTransition(
   };
 }
 
+function simulateProgramRegisterTransition(
+  world: Readonly<MechanicsWorld>,
+  operation: Readonly<
+    Extract<MechanicsOperation, { readonly kind: "program-register-transition" }>
+  >,
+  cause: Readonly<MechanicsOperationCause>,
+  authority: Readonly<MechanicsProgramAuthorityReceipt>,
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
+): OperationSimulation {
+  const program = authority.snapshot.program;
+  if (
+    !program ||
+    cause.invocation.kind !== "program-root" ||
+    !sameCanonical(cause.invocation.occurrence, operation.root) ||
+    !program.registers.some(({ registerId }) => registerId === operation.registerId)
+  ) {
+    return { reason: "invalid-program-state", status: "rejected" };
+  }
+  const existing = occurrenceAtGeneration(world, operation.root);
+  if (!existing) return { reason: "missing-program-root", status: "rejected" };
+  if (existing.kind !== "program" || !programRootIdentityMatches(existing, authority)) {
+    return { reason: "invalid-program-state", status: "rejected" };
+  }
+  const before = existing.registers[operation.registerId];
+  if (!sameCanonical(before, operation.expected)) {
+    return { reason: "stale-program-state", status: "rejected" };
+  }
+  if (sameCanonical(before, operation.next)) {
+    return noChangeExecution(operation, "program-register-unchanged");
+  }
+  const after = withProgramOccurrence(
+    world,
+    operation.root,
+    {
+      ...existing,
+      registers: {
+        ...existing.registers,
+        [operation.registerId]: structuredClone(operation.next),
+      },
+    },
+    inventorySourceLeases
+  );
+  if (!after) return { reason: "invalid-after", status: "rejected" };
+  return {
+    actionFacts: [],
+    execution: {
+      facts: {
+        after: operation.next,
+        before,
+        registerId: operation.registerId,
+        root: operation.root,
+      },
+      kind: operation.kind,
+      operation,
+      operationId: operation.operationId,
+      status: "applied",
+    },
+    world: after,
+    status: "applied",
+  };
+}
+
 interface LocatedMaterialEntity {
   readonly documentIndex: number;
   readonly entity: Readonly<MaterialEntity>;
@@ -1615,7 +1686,8 @@ function simulateEntityCreate(
   if (!located) return { reason: "missing-target", status: "rejected" };
   if (
     !sameMaterial(operation.lifecycle.occurrence.material, material) ||
-    !sameMaterial(operation.parent.occurrence.material, material)
+    !sameMaterial(operation.parent.occurrence.material, material) ||
+    !sameCanonical(operation.origin.root, operation.parent)
   ) {
     return { reason: "invalid-transition", status: "rejected" };
   }
@@ -1649,6 +1721,7 @@ function simulateEntityCreate(
     endRules: structuredClone(operation.endRules),
     ending: null,
     kind: "material-lifecycle" as const,
+    origin: structuredClone(operation.origin),
     ordinal: operation.lifecycle.ordinal,
     parentId: operation.parent.occurrence.occurrenceId,
     target: structuredClone(operation.entity),
@@ -1812,7 +1885,8 @@ function simulateOccurrenceCreate(
   if (!document) return { reason: "missing-target", status: "rejected" };
   if (
     !sameMaterial(operation.parent.occurrence.material, material) ||
-    operation.parent.occurrence.occurrenceId !== operation.occurrence.parentId
+    operation.parent.occurrence.occurrenceId !== operation.occurrence.parentId ||
+    !sameCanonical(operation.occurrence.origin.root, operation.parent)
   ) {
     return { reason: "invalid-cause", status: "rejected" };
   }
@@ -1946,6 +2020,7 @@ function inventoryLifecycle(
   return {
     endRules: operation.endRules,
     kind: "material-lifecycle",
+    origin: operation.origin,
     parentId: operation.parent.occurrence.occurrenceId,
     target: { entityId: "self", material: operation.item.owner },
   };
@@ -1963,7 +2038,8 @@ function simulateInventoryCreate(
   }
   if (
     !sameMaterial(operation.lifecycle.occurrence.material, operation.item.owner) ||
-    !sameMaterial(operation.parent.occurrence.material, operation.item.owner)
+    !sameMaterial(operation.parent.occurrence.material, operation.item.owner) ||
+    !sameCanonical(operation.origin.root, operation.parent)
   ) {
     return { reason: "invalid-transition", status: "rejected" };
   }
@@ -2529,6 +2605,15 @@ function simulateOperation(
       inventorySourceLeases
     );
   }
+  if (operation.kind === "program-register-transition") {
+    return simulateProgramRegisterTransition(
+      world,
+      operation,
+      cause,
+      authority,
+      inventorySourceLeases
+    );
+  }
   if (operation.kind === "occurrence-create") {
     return simulateOccurrenceCreate(world, operation, authority, inventorySourceLeases);
   }
@@ -2662,7 +2747,7 @@ function resourceDefinitionFactsPresent(
 function rejected(
   reason: MechanicsOperationRejection,
   operationId: string | null = null
-): MechanicsTransactionSimulationResult {
+): Extract<MechanicsTransactionSimulationResult, { readonly status: "rejected" }> {
   return { operationId, reason, status: "rejected" };
 }
 
@@ -2699,10 +2784,21 @@ function operationInventorySourceLease(
  * Simulate every ordered operation and expose raw facts plus causal consequences.
  * Any rejection aborts the whole transaction; no partial plan can escape.
  */
-export function simulateMechanicsTransaction(
+function runMechanicsTransaction(
   transactionValue: unknown,
-  contextValue: Readonly<MechanicsTransactionSimulationContext>
-): MechanicsTransactionSimulationResult {
+  contextValue: Readonly<MechanicsTransactionSimulationContext>,
+  projectOnly: true
+): MechanicsTransactionProjectionResult;
+function runMechanicsTransaction(
+  transactionValue: unknown,
+  contextValue: Readonly<MechanicsTransactionSimulationContext>,
+  projectOnly: false
+): MechanicsTransactionSimulationResult;
+function runMechanicsTransaction(
+  transactionValue: unknown,
+  contextValue: Readonly<MechanicsTransactionSimulationContext>,
+  projectOnly: boolean
+): MechanicsTransactionProjectionResult | MechanicsTransactionSimulationResult {
   const transaction = conformMechanicsTransaction(transactionValue);
   if (!transaction) return rejected("invalid-transaction");
   if (!exactRecord(contextValue, ["authoritySnapshot", "state"])) {
@@ -2848,6 +2944,21 @@ export function simulateMechanicsTransaction(
     consequences.push(...(result.consequences ?? []));
   }
 
+  const facts = mergeActionFacts(actionFacts);
+  if (!facts) return rejected("fact-conflict");
+  if (projectOnly) {
+    return {
+      actionFacts: facts,
+      changed: changed || consequences.length > 0,
+      consequences,
+      executions,
+      inventorySourceLeases,
+      stages,
+      status: "projected",
+      transaction,
+      world,
+    };
+  }
   if (!changed && consequences.length === 0) {
     return {
       actionFacts: [],
@@ -2859,8 +2970,6 @@ export function simulateMechanicsTransaction(
       transaction,
     };
   }
-  const facts = mergeActionFacts(actionFacts);
-  if (!facts) return rejected("fact-conflict");
   const finalState = rebaseMechanicsCausalState(world, before, inventorySourceLeases);
   if (!finalState.ok) {
     return rejected(
@@ -2878,4 +2987,23 @@ export function simulateMechanicsTransaction(
     status: "simulated",
     transaction,
   };
+}
+
+/**
+ * Project a complete ordered prefix for the compiler without discovering or
+ * latching causal endings. The returned world is transient and cannot persist.
+ */
+export function projectMechanicsTransaction(
+  transactionValue: unknown,
+  contextValue: Readonly<MechanicsTransactionSimulationContext>
+): MechanicsTransactionProjectionResult {
+  return runMechanicsTransaction(transactionValue, contextValue, true);
+}
+
+/** Simulate one complete atomic transaction and perform its sole causal rebase. */
+export function simulateMechanicsTransaction(
+  transactionValue: unknown,
+  contextValue: Readonly<MechanicsTransactionSimulationContext>
+): MechanicsTransactionSimulationResult {
+  return runMechanicsTransaction(transactionValue, contextValue, false);
 }

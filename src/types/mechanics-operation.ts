@@ -19,6 +19,7 @@ import type { DiceObservation, DiceRollRequirement } from "@/types/dice-formula"
 import type { IntegerBindings } from "@/types/integer-expression";
 import type {
   EndRule,
+  EffectOccurrence,
   JsonScalar,
   NewMechanicOccurrence,
   ProgramPhaseStateEntry,
@@ -91,10 +92,15 @@ const INVENTORY_GENERATION_REF_VALUE_SCHEMA = customSchema<
   InventoryGenerationRef
 >("inventory-generation-ref");
 type NewEffectOccurrence = Exclude<NewMechanicOccurrence, { readonly kind: "program" }>;
+type ProgramStepOccurrenceOrigin = EffectOccurrence["origin"];
 const NEW_EFFECT_OCCURRENCE_VALUE_SCHEMA = customSchema<
   "new-effect-occurrence",
   NewEffectOccurrence
 >("new-effect-occurrence");
+const PROGRAM_STEP_OCCURRENCE_ORIGIN_VALUE_SCHEMA = customSchema<
+  "program-step-occurrence-origin",
+  ProgramStepOccurrenceOrigin
+>("program-step-occurrence-origin");
 const PROGRAM_REGISTERS_SCHEMA = recordSchema("string", JSON_SCALAR_SCHEMA);
 const OCCURRENCE_GENERATION_REF_VALUE_SCHEMA = customSchema<
   "occurrence-generation-ref",
@@ -331,6 +337,7 @@ export const MECHANICS_OPERATION_SCHEMA = discriminatedUnionSchema("kind", {
     entity: MATERIAL_ENTITY_REF_VALUE_SCHEMA,
     kind: literalSchema("entity-create"),
     lifecycle: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
+    origin: PROGRAM_STEP_OCCURRENCE_ORIGIN_VALUE_SCHEMA,
     parent: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
     value: NEW_MATERIAL_ENTITY_VALUE_SCHEMA,
   }),
@@ -353,6 +360,7 @@ export const MECHANICS_OPERATION_SCHEMA = discriminatedUnionSchema("kind", {
     item: INVENTORY_GENERATION_REF_VALUE_SCHEMA,
     kind: literalSchema("inventory-create"),
     lifecycle: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
+    origin: PROGRAM_STEP_OCCURRENCE_ORIGIN_VALUE_SCHEMA,
     parent: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
   }),
   "inventory-transition": objectSchema({
@@ -380,6 +388,14 @@ export const MECHANICS_OPERATION_SCHEMA = discriminatedUnionSchema("kind", {
     kind: literalSchema("program-state-transition"),
     nextRegisters: PROGRAM_REGISTERS_SCHEMA,
     receipt: PROGRAM_ROOT_RECEIPT_VALUE_SCHEMA,
+  }),
+  "program-register-transition": objectSchema({
+    ...OPERATION_COMMON_SCHEMA,
+    expected: JSON_SCALAR_SCHEMA,
+    kind: literalSchema("program-register-transition"),
+    next: JSON_SCALAR_SCHEMA,
+    registerId: ID_SCHEMA,
+    root: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
   }),
   "occurrence-create": objectSchema({
     ...OPERATION_COMMON_SCHEMA,
@@ -466,6 +482,7 @@ export type MechanicsOperationSchemaCustomTypes = {
   readonly "occurrence-generation-ref": OccurrenceGenerationRef;
   readonly "positive-integer": number;
   readonly "program-root-receipt": ProgramRootReceipt;
+  readonly "program-step-occurrence-origin": ProgramStepOccurrenceOrigin;
   readonly "resource-operation": ResourceOperation;
   readonly "resource-ref": ResourceRef;
   readonly "resource-spec": ResourceSpec;
@@ -522,6 +539,13 @@ export interface ProgramStateTransitionFacts {
   readonly after: Readonly<ProgramStateSnapshot>;
   readonly before: Readonly<ProgramStateSnapshot> | null;
   readonly created: boolean;
+  readonly root: Readonly<OccurrenceGenerationRef>;
+}
+
+export interface ProgramRegisterTransitionFacts {
+  readonly after: JsonScalar;
+  readonly before: JsonScalar;
+  readonly registerId: string;
   readonly root: Readonly<OccurrenceGenerationRef>;
 }
 
@@ -599,6 +623,7 @@ export interface MechanicsOperationFactsByKind {
   readonly "inventory-transition": Readonly<InventoryTransitionFacts>;
   readonly "inventory-end": Readonly<InventoryTransitionFacts>;
   readonly "program-state-transition": Readonly<ProgramStateTransitionFacts>;
+  readonly "program-register-transition": Readonly<ProgramRegisterTransitionFacts>;
   readonly "occurrence-create": Readonly<OccurrenceCreateFacts>;
   readonly "occurrence-end": Readonly<OccurrenceEndRequestFacts>;
   readonly "exhaustion-transition": Readonly<ExhaustionTransitionFacts>;
@@ -666,6 +691,7 @@ export interface MechanicsOperationNoChangeReasonByKind {
   readonly "inventory-transition": "inventory-unchanged";
   readonly "inventory-end": "inventory-not-active";
   readonly "program-state-transition": "program-state-already-committed";
+  readonly "program-register-transition": "program-register-unchanged";
   readonly "occurrence-create":
     | "condition-immune"
     | "concentration-unsustainable"
@@ -729,3 +755,28 @@ export type MechanicsTransactionSimulationResult =
       readonly operationId: string | null;
       readonly status: "rejected";
     };
+
+/**
+ * Compiler-only ordered projection. It exposes the exact transaction-local world
+ * without running causal rebase, so later authored steps compile against the
+ * physical result of earlier steps while one final transaction remains atomic.
+ */
+export type MechanicsTransactionProjectionResult =
+  | {
+      readonly actionFacts: readonly Readonly<ActionFactGuard>[];
+      readonly changed: boolean;
+      readonly consequences: readonly Readonly<MechanicsOperationConsequence>[];
+      readonly executions: readonly (
+        | MechanicsOperationExecution
+        | MechanicsOperationNoChange
+      )[];
+      readonly inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[];
+      readonly stages: readonly MechanicsOperationStage[];
+      readonly status: "projected";
+      readonly transaction: Readonly<MechanicsTransaction>;
+      readonly world: Readonly<MechanicsWorld>;
+    }
+  | Extract<
+      MechanicsTransactionSimulationResult,
+      { readonly status: "needs-observation" | "needs-boundary" | "rejected" }
+    >;

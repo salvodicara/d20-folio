@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { addOccurrence, resolveOccurrenceAuthority } from "@/lib/mechanic-occurrences";
+import {
+  addOccurrence,
+  addTransitionedProgramOccurrence,
+  resolveOccurrenceAuthority,
+} from "@/lib/mechanic-occurrences";
 import {
   createEmptyCharacterMaterialState,
   createEmptySharedMaterialState,
@@ -68,7 +72,27 @@ function authoredProgram(
       {
         inputs: [],
         phaseId: "invoke",
-        steps: [],
+        steps: [
+          {
+            controller: null,
+            entityKey: "fixture-entity",
+            kind: "entity-create",
+            lifetime: { kind: "manual" },
+            stepId: "create-entity",
+            template: { kind: "monster", monsterId: "goblin-warrior" },
+            when: null,
+          },
+          {
+            instanceKey: "fixture-item",
+            itemId: "longsword",
+            kind: "inventory-create",
+            lifetime: { kind: "manual" },
+            owner: "owner",
+            quantity: { kind: "fixed", value: 1 },
+            stepId: "create-inventory",
+            when: null,
+          },
+        ],
         trigger: { kind: "invocation" },
       },
     ],
@@ -172,13 +196,33 @@ function program(
   };
 }
 
+function transitionedProgram(
+  authority: NewProgramOccurrence["authority"] = entityAuthority()
+): NewProgramOccurrence {
+  return {
+    ...program(authority),
+    phaseState: { invoke: { execution: 1, lastTriggerEventId: null } },
+  };
+}
+
 function materialLifecycle(
   target: EntityRef,
+  material: CharacterMaterialRef | SharedMaterialRef,
+  rootOrdinal: number,
+  stepId: "create-entity" | "create-inventory",
   parentId = "root"
 ): NewMaterialLifecycleOccurrence {
   return {
     endRules: [],
     kind: "material-lifecycle",
+    origin: {
+      execution: 1,
+      kind: "program-step",
+      phaseId: "invoke",
+      root: { occurrence: { material, occurrenceId: parentId }, ordinal: rootOrdinal },
+      slot: 1,
+      stepId,
+    },
     parentId,
     target,
   };
@@ -187,17 +231,28 @@ function materialLifecycle(
 function withProgram<State extends CharacterMaterialState | SharedMaterialState>(
   state: State,
   target: EntityRef,
-  authority: NewProgramOccurrence["authority"] = entityAuthority()
+  authority: NewProgramOccurrence["authority"] = entityAuthority(),
+  lifecycleStepId: "create-entity" | "create-inventory" = "create-entity"
 ): State {
-  const root = addOccurrence(
+  const rootOrdinal = state.nextOccurrenceOrdinal;
+  const root = addTransitionedProgramOccurrence(
     {
       nextOccurrenceOrdinal: state.nextOccurrenceOrdinal,
       occurrences: state.occurrences,
     },
     "root",
-    program(authority)
+    transitionedProgram(authority)
   );
-  const child = addOccurrence(root, "child", materialLifecycle(target));
+  const child = addOccurrence(
+    root,
+    "child",
+    materialLifecycle(
+      target,
+      authority.installation.owner.material,
+      rootOrdinal,
+      lifecycleStepId
+    )
+  );
   return { ...state, ...child };
 }
 
@@ -429,7 +484,12 @@ describe("material state schema 3", () => {
   });
 
   it("permits one occurrence-owned physical stack without weakening item state", () => {
-    const owned = withProgram(characterState(), SELF);
+    const owned = withProgram(
+      characterState(),
+      SELF,
+      entityAuthority(),
+      "create-inventory"
+    );
     const child = owned.occurrences.child;
     if (!child) throw new Error("owned stack fixture");
     owned.nextInventoryOrdinal = 2;
@@ -609,7 +669,12 @@ describe("material state schema 3", () => {
   });
 
   it("requires inventory ownership to name an effect targeting self", () => {
-    const valid = withProgram(characterState(), SELF);
+    const valid = withProgram(
+      characterState(),
+      SELF,
+      entityAuthority(),
+      "create-inventory"
+    );
     valid.nextInventoryOrdinal = 2;
     valid.inventory.sword = {
       ...item(1),

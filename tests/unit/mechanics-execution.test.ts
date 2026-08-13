@@ -36,6 +36,7 @@ import type {
   MechanicsAuthorityDefinition,
   MechanicsAuthoritySnapshot,
 } from "@/types/mechanics-authority";
+import type { ProgramStepOccurrenceOrigin } from "@/types/mechanic-occurrence";
 import type { EntityRef, OccurrenceGenerationRef } from "@/types/mechanics-reference";
 import type {
   MechanicsOperation,
@@ -68,6 +69,70 @@ const SECOND = {
   material: MATERIAL,
   ordinal: 2,
 } as const satisfies EntityRef;
+const STEP_IDS = {
+  concentration: "start-concentration",
+  condition: "apply-condition",
+  entity: "create-entity",
+  inventory: "create-inventory",
+  polymorph: "start-polymorph",
+  standing: "start-standing",
+} as const;
+const PROGRAM_STEPS = [
+  {
+    conditionId: "poisoned",
+    kind: "condition",
+    lifetime: { kind: "manual" },
+    operation: "apply",
+    stepId: STEP_IDS.condition,
+    target: { kind: "role", role: "target" },
+    when: null,
+  },
+  {
+    fact: { key: "fixture-standing", kind: "active-key" },
+    kind: "standing",
+    lifetime: { kind: "manual" },
+    operation: "start",
+    stepId: STEP_IDS.standing,
+    target: { kind: "role", role: "target" },
+    when: null,
+  },
+  {
+    kind: "concentration",
+    lifetime: { kind: "manual" },
+    operation: "start",
+    stepId: STEP_IDS.concentration,
+    target: { kind: "role", role: "target" },
+    when: null,
+  },
+  {
+    formId: "fixture-form",
+    kind: "polymorph",
+    lifetime: { kind: "manual" },
+    operation: "start",
+    stepId: STEP_IDS.polymorph,
+    target: { kind: "role", role: "target" },
+    when: null,
+  },
+  {
+    controller: null,
+    entityKey: "fixture-entity",
+    kind: "entity-create",
+    lifetime: { kind: "manual" },
+    stepId: STEP_IDS.entity,
+    template: { kind: "monster", monsterId: "fixture-monster" },
+    when: null,
+  },
+  {
+    instanceKey: "fixture-inventory",
+    itemId: "fixture-item",
+    kind: "inventory-create",
+    lifetime: { kind: "manual" },
+    owner: "owner",
+    quantity: { kind: "fixed", value: 1 },
+    stepId: STEP_IDS.inventory,
+    when: null,
+  },
+] as const;
 const MECHANICS_REVISION = canonicalFingerprint({ fixture: "mechanics-execution" });
 const CAPABILITY = {
   capabilityId: "execution",
@@ -103,7 +168,7 @@ const AUTHORITY = {
         {
           inputs: [],
           phaseId: "invoke",
-          steps: [],
+          steps: PROGRAM_STEPS,
           trigger: { kind: "invocation" },
         },
       ],
@@ -331,6 +396,29 @@ function entityAvailabilityOperation(
   };
 }
 
+function programStepOrigin(
+  stepId: (typeof STEP_IDS)[keyof typeof STEP_IDS],
+  options: {
+    execution?: number;
+    root?: OccurrenceGenerationRef;
+    slot?: number;
+  } = {}
+): ProgramStepOccurrenceOrigin {
+  return {
+    execution: options.execution ?? 1,
+    kind: "program-step",
+    phaseId: "invoke",
+    root:
+      options.root ??
+      ({
+        occurrence: { material: MATERIAL, occurrenceId: "root" },
+        ordinal: 1,
+      } as const),
+    slot: options.slot ?? 1,
+    stepId,
+  };
+}
+
 function entityCreateOperation(
   operationId: string,
   target: Exclude<EntityRef, { readonly entityId: "self" }>,
@@ -349,6 +437,12 @@ function entityCreateOperation(
       ordinal: lifecycleOrdinal,
     },
     operationId,
+    origin: programStepOrigin(STEP_IDS.entity, {
+      root: {
+        occurrence: { material: target.material, occurrenceId: "root" },
+        ordinal: 1,
+      },
+    }),
     parent: {
       occurrence: { material: target.material, occurrenceId: "root" },
       ordinal: 1,
@@ -392,6 +486,7 @@ function occurrenceCreateOperation(
       endRules: [],
       fact: { key: `fact-${occurrenceId}`, kind: "active-key" },
       kind: "standing",
+      origin: programStepOrigin(STEP_IDS.standing),
       parentId: "root",
       target: FIRST,
     },
@@ -465,9 +560,13 @@ function worldWithProgramRoot(nextOccurrenceOrdinal = 1): Readonly<MechanicsWorl
       registers: {},
     }
   );
+  const invoked = structuredClone(occurrences);
+  const root = invoked.occurrences.root;
+  if (!root || root.kind !== "program") throw new Error("program-root fixture");
+  root.phaseState.invoke = { execution: 1, lastTriggerEventId: null };
   const parsed = parseMechanicsWorld({
     ...basis,
-    documents: [{ ...document, state: { ...document.state, ...occurrences } }],
+    documents: [{ ...document, state: { ...document.state, ...invoked } }],
   });
   if (!parsed.ok) throw new Error("program-root fixture");
   return parsed.value;
@@ -908,6 +1007,7 @@ describe("simultaneous resolution groups", () => {
               conditionId: "poisoned",
               endRules: [],
               kind,
+              origin: programStepOrigin(STEP_IDS.condition),
               parentId: "root",
               target: FIRST,
             }
@@ -916,12 +1016,14 @@ describe("simultaneous resolution groups", () => {
                 endRules: [],
                 formId: occurrenceId,
                 kind,
+                origin: programStepOrigin(STEP_IDS.polymorph),
                 parentId: "root",
                 target: FIRST,
               }
             : {
                 endRules: [],
                 kind,
+                origin: programStepOrigin(STEP_IDS.concentration),
                 parentId: "root",
                 target: FIRST,
               },
@@ -1286,6 +1388,9 @@ describe("simultaneous resolution groups", () => {
         conditionId: "blinded",
         endRules: [],
         kind: "condition",
+        origin: programStepOrigin(STEP_IDS.condition, {
+          root: occurrenceGeneration(basis, "root"),
+        }),
         parentId: "root",
         target: FIRST,
       },

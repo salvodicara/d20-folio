@@ -1,9 +1,11 @@
 import { exactConformer, type ExactSchemaContext } from "@/lib/exact-schema";
 import { conformDamageDefenseProfile, conformDamageDefenseRule } from "@/lib/damage";
 import {
+  END_RULE_SCHEMA,
   MECHANIC_OCCURRENCE_SCHEMA_REFS,
   NEW_MECHANIC_OCCURRENCE_SCHEMA,
   OCCURRENCE_STATE_SCHEMA,
+  PROGRAM_STEP_OCCURRENCE_ORIGIN_SCHEMA,
   type MechanicOccurrenceSchemaCustomTypes,
   type MechanicOccurrenceSchemaRefTypes,
 } from "@/lib/mechanic-occurrence-schema";
@@ -21,6 +23,7 @@ import type {
   OccurrenceState,
   OccurrenceStateParseResult,
   ProgramOccurrence,
+  ProgramStepOccurrenceOrigin,
 } from "@/types/mechanic-occurrence";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
 import type { ClockRef, EntityRef } from "@/types/mechanics-reference";
@@ -37,6 +40,9 @@ type OccurrenceOfKind<Kind extends MechanicOccurrence["kind"]> = Extract<
   MechanicOccurrence,
   { kind: Kind }
 >;
+type ProgramStep = NonNullable<
+  ProgramOccurrence["authority"]["snapshot"]["program"]
+>["phases"][number]["steps"][number];
 
 export interface OccurrenceEntry<
   Occurrence extends MechanicOccurrence = MechanicOccurrence,
@@ -99,6 +105,14 @@ const OCCURRENCE_SCHEMA_CONTEXT: ExactSchemaContext<
 };
 const conformNewOccurrenceStructure = exactConformer(
   NEW_MECHANIC_OCCURRENCE_SCHEMA,
+  OCCURRENCE_SCHEMA_CONTEXT
+);
+const conformEndRuleStructure = exactConformer(
+  END_RULE_SCHEMA,
+  OCCURRENCE_SCHEMA_CONTEXT
+);
+const conformProgramStepOccurrenceOriginStructure = exactConformer(
+  PROGRAM_STEP_OCCURRENCE_ORIGIN_SCHEMA,
   OCCURRENCE_SCHEMA_CONTEXT
 );
 const conformOccurrenceStateStructure = exactConformer(
@@ -216,9 +230,61 @@ function validProgramState(
   );
 }
 
+function effectMatchesProgramStep(
+  occurrence: Readonly<EffectOccurrence>,
+  step: Readonly<ProgramStep>
+): boolean {
+  switch (occurrence.kind) {
+    case "condition":
+      return step.kind === "condition" && step.operation === "apply";
+    case "standing":
+      return (
+        (step.kind === "standing" && step.operation === "start") ||
+        step.kind === "temporary-hit-points"
+      );
+    case "concentration":
+      return step.kind === "concentration" && step.operation === "start";
+    case "polymorph-form":
+      return step.kind === "polymorph" && step.operation === "start";
+    case "material-lifecycle":
+      return step.kind === "entity-create" || step.kind === "inventory-create";
+  }
+}
+
+function validProgramStepOrigin(
+  occurrence: Readonly<EffectOccurrence>,
+  parent: Readonly<ProgramOccurrence>
+): boolean {
+  const { origin } = occurrence;
+  const phase = parent.authority.snapshot.program?.phases.find(
+    ({ phaseId }) => phaseId === origin.phaseId
+  );
+  const phaseState = parent.phaseState[origin.phaseId];
+  const step = phase?.steps.find(({ stepId }) => stepId === origin.stepId);
+  return (
+    occurrence.parentId === origin.root.occurrence.occurrenceId &&
+    parent.ordinal === origin.root.ordinal &&
+    phaseState !== undefined &&
+    origin.execution - 1 <= phaseState.execution &&
+    step !== undefined &&
+    effectMatchesProgramStep(occurrence, step)
+  );
+}
+
+function programStepOriginKey(origin: Readonly<ProgramStepOccurrenceOrigin>): string {
+  return canonicalKey([
+    origin.root.ordinal,
+    origin.phaseId,
+    origin.execution,
+    origin.stepId,
+    origin.slot,
+  ]);
+}
+
 function validStateInvariants(state: OccurrenceState): boolean {
   const ids = Object.keys(state.occurrences);
   const ordinals = new Set<number>();
+  const programStepOrigins = new Set<string>();
   const concentrations = new Set<string>();
   const damageRulesBySource = new Map<string, DamageDefenseRule>();
   const polymorphForms = new Set<string>();
@@ -258,8 +324,17 @@ function validStateInvariants(state: OccurrenceState): boolean {
 
     if (isEffectOccurrence(occurrence)) {
       const parent = state.occurrences[occurrence.parentId];
-      if (!parent || parent.kind !== "program" || parent.ordinal >= occurrence.ordinal)
+      const originKey = programStepOriginKey(occurrence.origin);
+      if (
+        !parent ||
+        parent.kind !== "program" ||
+        parent.ordinal >= occurrence.ordinal ||
+        !validProgramStepOrigin(occurrence, parent) ||
+        programStepOrigins.has(originKey)
+      ) {
         return false;
+      }
+      programStepOrigins.add(originKey);
     }
 
     for (const rule of occurrence.endRules) {
@@ -334,24 +409,24 @@ export function conformNewMechanicOccurrence(
   }
 }
 
+/** Exact hostile shape boundary; root/program semantics belong to state validation. */
+export function conformProgramStepOccurrenceOrigin(
+  value: unknown
+): Readonly<ProgramStepOccurrenceOrigin> | null {
+  try {
+    return conformProgramStepOccurrenceOriginStructure(value);
+  } catch {
+    return null;
+  }
+}
+
 /** Exact hostile-input boundary for one resolved occurrence end rule. */
 export function conformEndRule(value: unknown): Readonly<EndRule> | null {
-  const occurrence = conformNewMechanicOccurrence({
-    endRules: [value],
-    kind: "material-lifecycle",
-    parentId: "end-rule-validator",
-    target: {
-      entityId: "self",
-      material: {
-        characterId: "end-rule-validator",
-        kind: "character-play",
-        uid: "end-rule-validator",
-      },
-    },
-  });
-  return occurrence?.kind === "material-lifecycle" && occurrence.endRules.length === 1
-    ? occurrence.endRules[0]
-    : null;
+  try {
+    return conformEndRuleStructure(value);
+  } catch {
+    return null;
+  }
 }
 
 /** Fail-closed JSON boundary for the active-only occurrence state. */
@@ -677,14 +752,22 @@ export function selectProgramPhaseChildren(
   phaseId: string,
   execution: number
 ): ReadonlyArray<OccurrenceEntry<EffectOccurrence>> {
-  return selectChildrenOf(state, parentId).filter(({ occurrence }) =>
-    occurrence.endRules.some(
-      (rule) =>
-        rule.kind === "program-phase-end" &&
-        rule.occurrenceId === parentId &&
-        rule.phaseId === phaseId &&
-        rule.execution === execution
-    )
+  return selectChildrenOf(state, parentId).filter(
+    ({ occurrence }) =>
+      occurrence.origin.phaseId === phaseId && occurrence.origin.execution === execution
+  );
+}
+
+/** Select one authored step's children from one exact phase execution. */
+export function selectProgramStepChildren(
+  state: Readonly<OccurrenceState>,
+  parentId: string,
+  phaseId: string,
+  execution: number,
+  stepId: string
+): ReadonlyArray<OccurrenceEntry<EffectOccurrence>> {
+  return selectProgramPhaseChildren(state, parentId, phaseId, execution).filter(
+    ({ occurrence }) => occurrence.origin.stepId === stepId
   );
 }
 

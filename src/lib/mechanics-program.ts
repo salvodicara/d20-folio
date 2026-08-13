@@ -65,6 +65,8 @@ import type {
   MechanicsIntent,
   MechanicsPaymentRequirement,
   MechanicsPlanResult,
+  MechanicsProgramCompilationContext,
+  MechanicsProgramCompilationPreparation,
   MechanicsRequirement,
   MechanicsRequirementsRejection,
   MechanicsRequirementsResult,
@@ -77,6 +79,7 @@ import type {
   ReviewedMechanicsPayment,
 } from "@/types/mechanics-program";
 import type {
+  MechanicsAmountSpec,
   MechanicsEntitySelector,
   MechanicsInput,
   MechanicsPredicate,
@@ -635,6 +638,18 @@ function resourceCandidates(
       ];
 }
 
+function canonicalResourceCandidates(
+  candidates: readonly Readonly<ResourceRef>[]
+): readonly ResourceRef[] {
+  return [
+    ...new Map(
+      candidates.map((candidate) => [resourceRefKey(candidate), candidate])
+    ).entries(),
+  ]
+    .sort(([left], [right]) => compareCodeUnits(left, right))
+    .map(([, candidate]) => candidate);
+}
+
 function resourceRemaining(world: MechanicsWorld, ref: ResourceRef): number | null {
   const cell = locateResolvedMaterialResource(world, ref)?.cell ?? null;
   if (!cell || cell.disabled) return cell ? 0 : null;
@@ -957,6 +972,102 @@ interface PredicateContext {
   readonly world: MechanicsWorld;
 }
 
+/**
+ * Rebuild the compiler's read view from a kernel-produced projection. This is
+ * intentionally not a hostile-input boundary; `prepareMechanicsProgramCompilation`
+ * performs the one closed-basis review before any projection exists.
+ */
+export function refreshMechanicsProgramCompilationContext(
+  reviewed: Readonly<ReviewedMechanicsIntent>,
+  world: Readonly<MechanicsWorld>,
+  landedDamage: Readonly<Record<string, Readonly<Record<string, number>>>> = {}
+): Readonly<MechanicsProgramCompilationContext> | null {
+  const execution = executionContext(reviewed.intent);
+  if (!execution) return null;
+  const phase = resolvedPhase(execution);
+  if (!phase) return null;
+  const lookup = programRoot(execution, world);
+  if (lookup.kind === "invalid") return null;
+  const root = lookup.root;
+  if (root !== null && !rootIdentityMatches(execution, root)) return null;
+  const bindings = bindingsFor(execution, root);
+  if (!bindings) return null;
+  return freezeDeep({
+    bindings,
+    execution: execution.execution,
+    intent: reviewed.intent,
+    landedDamage,
+    phase,
+    resolved: reviewed.resolved,
+    root,
+    world,
+  });
+}
+
+/** Re-review the exact closed basis once and distinguish replay before compiling. */
+export function prepareMechanicsProgramCompilation(
+  reviewedValue: Readonly<ReviewedMechanicsIntent>,
+  snapshot: Readonly<MechanicsWorld>
+): Readonly<MechanicsProgramCompilationPreparation> {
+  if (typeof reviewedValue !== "object" || !Object.isFrozen(reviewedValue)) {
+    return freezeDeep({
+      reason: "invalid-reviewed-intent" as const,
+      referenceId: null,
+      status: "rejected" as const,
+    });
+  }
+  const validated = validateIntentAgainstWorld(reviewedValue.intent, snapshot);
+  if ("reason" in validated) {
+    return freezeDeep({
+      reason: validated.reason,
+      referenceId: validated.referenceId,
+      status: "rejected" as const,
+    });
+  }
+  if (validated.executionMode === "replay") {
+    return freezeDeep({ status: "replay" as const });
+  }
+  const rereview = reviewMechanicsIntent(
+    reviewedValue.intent,
+    reviewedValue.answers,
+    snapshot
+  );
+  if (rereview.status !== "reviewed" || !exactEqual(rereview.reviewed, reviewedValue)) {
+    return freezeDeep({
+      reason: "invalid-reviewed-intent" as const,
+      referenceId: null,
+      status: "rejected" as const,
+    });
+  }
+  const context = refreshMechanicsProgramCompilationContext(reviewedValue, snapshot);
+  return context
+    ? freezeDeep({ context, status: "ready" as const })
+    : freezeDeep({
+        reason: "invalid-reviewed-intent" as const,
+        referenceId: null,
+        status: "rejected" as const,
+      });
+}
+
+/** Evaluate one authored step against the current projected world/register view. */
+export function mechanicsProgramStepIsActive(
+  step: Readonly<MechanicsStep>,
+  context: Readonly<MechanicsProgramCompilationContext>
+): boolean | null {
+  if (step.when === null) return true;
+  const execution = executionContext(context.intent);
+  return execution
+    ? evaluatePredicate(step.when, {
+        bindings: context.bindings,
+        intent: execution,
+        landedDamage: context.landedDamage,
+        resolved: context.resolved,
+        root: context.root,
+        world: context.world,
+      })
+    : null;
+}
+
 function occurrencesForTarget(
   world: MechanicsWorld,
   target: EntityRef
@@ -1222,6 +1333,93 @@ function evaluatePredicate(
           )
         : false;
   }
+}
+
+function compilationPredicateContext(
+  context: Readonly<MechanicsProgramCompilationContext>
+): PredicateContext | null {
+  const intent = executionContext(context.intent);
+  return intent
+    ? {
+        bindings: context.bindings,
+        intent,
+        landedDamage: context.landedDamage,
+        resolved: context.resolved,
+        root: context.root,
+        world: context.world,
+      }
+    : null;
+}
+
+/** Resolve one entity selector without exposing programme-internal role derivation. */
+export function resolveMechanicsProgramTargets(
+  selector: Readonly<MechanicsEntitySelector>,
+  context: Readonly<MechanicsProgramCompilationContext>
+): readonly MechanicsRequestIdentity[] | null {
+  const internal = compilationPredicateContext(context);
+  return internal
+    ? resolveTargets(selector, internal.intent, internal.resolved, internal.bindings)
+    : null;
+}
+
+function transformedInputAmount(
+  total: number,
+  transform: unknown,
+  bindings: Readonly<Record<string, number>>
+): number | null {
+  return evaluatedAmount(transform, { ...bindings, "input-total": total });
+}
+
+/** Resolve an authored amount from reviewed dice, prior landed damage or bindings. */
+export function resolveMechanicsProgramAmount(
+  spec: Readonly<MechanicsAmountSpec>,
+  context: Readonly<MechanicsProgramCompilationContext>,
+  identity: Readonly<MechanicsRequestIdentity> | null = null
+): number | null {
+  if (spec.kind === "integer") {
+    return evaluatedAmount(spec.expression, context.bindings);
+  }
+  if (spec.kind === "landed-damage") {
+    const parts = context.landedDamage[spec.stepId];
+    const amount =
+      spec.partId === null
+        ? parts && Object.values(parts).reduce((total, value) => total + value, 0)
+        : parts?.[spec.partId];
+    return amount === undefined
+      ? null
+      : transformedInputAmount(amount, spec.transform, context.bindings);
+  }
+  const answer = context.resolved[spec.inputId];
+  if (answer?.kind !== "dice") return null;
+  const request =
+    spec.cardinality === "shared"
+      ? answer.requests.length === 1
+        ? answer.requests[0]
+        : undefined
+      : identity === null
+        ? undefined
+        : answer.requests.find(({ identity: candidate }) =>
+            exactEqual(candidate, identity)
+          );
+  return request
+    ? transformedInputAmount(request.resolution.total, spec.transform, context.bindings)
+    : null;
+}
+
+/** Resolve every physical resource matching one authored selector in canonical order. */
+export function resolveMechanicsProgramResources(
+  selector: Readonly<ResourceSelector>,
+  context: Readonly<MechanicsProgramCompilationContext>
+): readonly ResourceRef[] | null {
+  const internal = compilationPredicateContext(context);
+  if (!internal) return null;
+  const candidates = resourceCandidates(
+    selector,
+    internal.intent,
+    internal.resolved,
+    internal.world
+  );
+  return candidates ? canonicalResourceCandidates(candidates) : null;
 }
 
 function materializeD20Request(

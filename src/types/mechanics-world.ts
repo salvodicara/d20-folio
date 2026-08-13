@@ -52,6 +52,7 @@ export type MechanicsWorldInvalidReason =
   | "protected-state-mismatch"
   | "controller-cycle"
   | "duplicate-lifecycle-owner"
+  | "invalid-program-origin"
   | "duplicate-exclusive-state";
 
 export type MechanicsWorldParseResult =

@@ -31,6 +31,7 @@ type MutableProjection<Value> = Value extends readonly (infer Entry)[]
 export type MechanicOccurrence = MutableProjection<MechanicOccurrenceSchemaShape>;
 export type ProgramOccurrence = Extract<MechanicOccurrence, { kind: "program" }>;
 export type EffectOccurrence = Exclude<MechanicOccurrence, ProgramOccurrence>;
+export type ProgramStepOccurrenceOrigin = EffectOccurrence["origin"];
 export type NewMechanicOccurrence = MutableProjection<NewMechanicOccurrenceSchemaShape>;
 export type OccurrenceState = Omit<
   MutableProjection<OccurrenceStateSchemaShape>,

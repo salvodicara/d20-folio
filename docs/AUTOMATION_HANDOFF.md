@@ -124,11 +124,37 @@ earlier operation. Ordered steps expose only transaction-local world projections
 preserves an existing latched wave and discovers the net new wave, making source-create + Temporary-HP
 grant atomic. Timeline-bound creation reads the owning material's clock binding, and the closed parser
 rejects a current combatant left in `between-turns`. Neither projection nor causal rebase can rewrite
-protected journal epoch/revision/actions or character build revision. The independent P0/P1 review's remaining gaps are all
-closed. The focused kernel proof is 401 tests across 14 suites; no global gate ran. Next: one
+protected journal epoch/revision/actions or character build revision. The independent operation-layer
+P0/P1 review's then-known gaps are closed. The focused kernel proof is 401 tests across 14 suites; no
+global gate ran. Next: one
 `compileMechanicsFrame` with a per-material allocation
 ledger, one fixed-point subscriber/end-wave coordinator and one `planMechanicsWorldAction` call producing
 one journal draft.
+
+### 2026-08-12 compiler/provenance vertical — active checkpoint
+
+Every effect and material lifecycle now carries structured program-step provenance: exact root
+generation, phase, execution, step and stable expansion slot. The parser proves the tuple against the
+root's frozen authority program, validates the step/occurrence-kind mapping, rejects duplicate emissions
+and permits a one-execution-ahead origin only inside the compiler's transaction projection. Program
+register mutation is now its own exact compare-and-swap operation and participates in collision analysis.
+
+The sole `compileMechanicsFrame` entry point has its first honest executable slice. It re-reviews the
+frozen intent against the current basis, returns replay before considering new responses, places root
+create first and advance last, assigns deterministic operation identities, carries trusted fact guards,
+and projects each prefix through the physical kernel before compiling the next register/manual step. Its
+result is the closed compiler status union; every terminal step outside this slice rejects explicitly.
+Resource selectors exposed to future subcompilers are deduplicated and sorted by exact resource key.
+
+The parallel real-play compiler audit invalidated any broader “all remaining gaps closed” reading. Before
+effect/vitality/material compilation can be called correct, the model still needs: internal exact
+program-phase completion in the causal closure request; table-override authorization independent of the
+program's operational cause; source-specific Temporary-HP replacement teardown; guarded effective
+damage/healing/Exhaustion facts and death-prevention interrupts; payment debits; exact resource
+cardinality; closed entity/item blueprint materialization; same-frame created selectors; enchantment
+attach/transfer; and replayable manual outputs. These are engine responsibilities, not reasons to ask the
+user unnecessary questions. No global branch gate was run; only the directly affected suites and lint
+lane are used for this branch checkpoint.
 
 ## Product doctrine
 

@@ -465,6 +465,14 @@ addressable while ordinary effects that require its presence become eligible to 
 exact generation references, may cross loaded documents, and the world rejects every local or
 cross-document controller cycle.
 
+Every non-root occurrence also carries one structured `ProgramStepOccurrenceOrigin`: exact root
+generation, phase id, phase execution, globally unique authored step id and deterministic expansion
+slot. World validation resolves that origin against the root's frozen program, checks that occurrence
+kind matches the referenced step and rejects duplicate emissions. A closed world accepts only committed
+executions; the compiler-only transaction projection may admit exactly the next pending execution while
+the create-root operation and its children are assembled atomically. Effect provenance is therefore
+queryable data, never an occurrence-id naming convention or English/source regex.
+
 Public mechanics commands contain only invocation identity or answers to engine-issued requests. The
 trusted adapter constructs a complete, recoverable execution frame containing the authority receipt,
 invocation, exact root create/advance CAS receipt and typed trigger evidence. Terminal operations carry
@@ -569,14 +577,25 @@ cleanup do not invent generic semantic events because no authored trigger consum
 effect is the verified finalization delta and ultimately the single journal draft.
 
 This hardened foundation is implemented and covered by focused hostile-input tests, but the cutover is
-not yet a production runtime. The next single compiler, `compileMechanicsFrame`, owns one per-material
-in-memory allocation ledger, compiles one authored step against the actual projected world at a time and
-advances exact ordinals only after that step simulates. The single coordinator then runs trigger,
-subscriber and source-ending waves to a bounded fixed point, resumes only from fenced basis + typed
-answers, and calls `planMechanicsWorldAction` once to produce one reversible journal draft. No second
-executor, compatibility planner or final register-write lump is permitted. Persistence adapters and
-corpus transcription remain open; the existing combat executors are temporary migration inputs until
-their consumers move, then are deleted rather than retained as fallbacks.
+not yet a production runtime. The canonical `compileMechanicsFrame` seam now exists and re-reviews the
+exact frozen intent before compilation; replay is recognized before new answers are considered. Root
+creation is operation zero, root advance is final, and each intermediate operation is admitted only after
+`projectMechanicsTransaction` has produced the exact transaction-local world used by the next step.
+Register writes are individual compare-and-swap `program-register-transition` operations rather than a
+final lump, operation ids are deterministic, trusted compiler fact guards join the transaction, and the
+result is a closed typed union (`compiled`, `replay`, `needs-response`, `needs-coordination`, `rejected`).
+The first executable vertical deliberately supports register and manual-output steps only; every other
+step currently rejects as unsupported instead of falling through to legacy behavior.
+
+The active compiler work must now add the per-material allocation ledger, payment prelude and the
+vitality/effect/material/resource subcompilers, then feed one bounded fixed-point coordinator that runs
+trigger, subscriber and source-ending waves and calls `planMechanicsWorldAction` once for one reversible
+journal draft. The compiler audit has also exposed kernel/model prerequisites that remain open: an exact
+internal program-phase-completion boundary, separately authorized table overrides, source-specific
+Temporary-HP replacement cleanup, guarded effective defense/healing/immunity facts, and closed
+entity/item materializations in capability snapshots. No second executor, compatibility planner or
+final register-write lump is permitted. Persistence adapters and corpus transcription remain open; the
+existing combat executors are migration inputs only and are deleted as their consumers move.
 
 The action economy is **immediate-commit-per-action-with-undo** (the owner's binding decision —
 **not** batch select-and-commit), so a resource is deducted the instant it is used.

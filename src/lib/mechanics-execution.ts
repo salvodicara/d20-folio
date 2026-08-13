@@ -514,6 +514,10 @@ export function mechanicsOperationAccessFootprint(
           )
         : footprint([root], [root]);
     }
+    case "program-register-transition": {
+      const root = occurrenceAddress(operation.root);
+      return footprint([root], [root]);
+    }
     case "occurrence-create":
       return footprint(
         [
@@ -1233,6 +1237,7 @@ function deriveMechanicsPostEvents(
     execution.kind === "inventory-transition" ||
     execution.kind === "inventory-end" ||
     execution.kind === "program-state-transition" ||
+    execution.kind === "program-register-transition" ||
     execution.kind === "occurrence-create"
   ) {
     return [];

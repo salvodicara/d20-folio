@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  addOccurrence,
+  addOccurrence as allocateOccurrence,
   addTransitionedProgramOccurrence,
   conformNewMechanicOccurrence,
   createOccurrenceState,
@@ -76,7 +76,52 @@ function authoredProgram(id: string) {
       {
         inputs: [],
         phaseId: "invoke",
-        steps: [],
+        steps: [
+          {
+            conditionId: "prone",
+            kind: "condition",
+            lifetime: { kind: "manual" },
+            operation: "apply",
+            stepId: "apply-condition",
+            target: { kind: "role", role: "target" },
+            when: null,
+          },
+          {
+            fact: { key: "fixture", kind: "active-key" },
+            kind: "standing",
+            lifetime: { kind: "manual" },
+            operation: "start",
+            stepId: "start-standing",
+            target: { kind: "role", role: "target" },
+            when: null,
+          },
+          {
+            kind: "concentration",
+            lifetime: { kind: "manual" },
+            operation: "start",
+            stepId: "start-concentration",
+            target: { kind: "role", role: "target" },
+            when: null,
+          },
+          {
+            formId: "wolf",
+            kind: "polymorph",
+            lifetime: { kind: "manual" },
+            operation: "start",
+            stepId: "start-polymorph",
+            target: { kind: "role", role: "target" },
+            when: null,
+          },
+          {
+            controller: null,
+            entityKey: "fixture-entity",
+            kind: "entity-create",
+            lifetime: { kind: "manual" },
+            stepId: "create-entity",
+            template: { kind: "monster", monsterId: "goblin-warrior" },
+            when: null,
+          },
+        ],
         trigger: { kind: "invocation" },
       },
     ],
@@ -192,11 +237,35 @@ function program(
   };
 }
 
-function transitionedProgram(): Omit<ProgramOccurrence, "ending" | "ordinal"> {
+function transitionedProgram(
+  authority: MechanicsProgramAuthorityReceipt = entityAuthority()
+): Omit<ProgramOccurrence, "ending" | "ordinal"> {
   return {
-    ...program(),
+    ...program(authority),
     phaseState: { invoke: { execution: 1, lastTriggerEventId: "event-1" } },
     registers: { count: 1, mode: false },
+  };
+}
+
+function effectOrigin(
+  stepId:
+    | "apply-condition"
+    | "create-entity"
+    | "start-concentration"
+    | "start-polymorph"
+    | "start-standing",
+  parentId = "root"
+): NewEffectOccurrence["origin"] {
+  return {
+    execution: 1,
+    kind: "program-step",
+    phaseId: "invoke",
+    root: {
+      occurrence: { material: MATERIAL, occurrenceId: parentId },
+      ordinal: 1,
+    },
+    slot: 1,
+    stepId,
   };
 }
 
@@ -205,7 +274,14 @@ function condition(
   parentId = "root",
   target: EntityRef = ACTOR
 ): Extract<NewEffectOccurrence, { kind: "condition" }> {
-  return { conditionId, endRules: [], kind: "condition", parentId, target };
+  return {
+    conditionId,
+    endRules: [],
+    kind: "condition",
+    origin: effectOrigin("apply-condition", parentId),
+    parentId,
+    target,
+  };
 }
 
 function standing(
@@ -213,14 +289,70 @@ function standing(
   parentId = "root",
   target: EntityRef = ACTOR
 ): NewStandingOccurrence {
-  return { endRules: [], fact, kind: "standing", parentId, target };
+  return {
+    endRules: [],
+    fact,
+    kind: "standing",
+    origin: effectOrigin("start-standing", parentId),
+    parentId,
+    target,
+  };
 }
 
 function materialLifecycle(
   parentId = "root",
   target: EntityRef = ACTOR
 ): NewMaterialLifecycleOccurrence {
-  return { endRules: [], kind: "material-lifecycle", parentId, target };
+  return {
+    endRules: [],
+    kind: "material-lifecycle",
+    origin: effectOrigin("create-entity", parentId),
+    parentId,
+    target,
+  };
+}
+
+function addOccurrence(
+  state: Readonly<OccurrenceState>,
+  id: string,
+  occurrence: NewMechanicOccurrence
+): Readonly<OccurrenceState> {
+  if (occurrence.kind === "program") {
+    return allocateOccurrence(state, id, occurrence);
+  }
+  const root = state.occurrences[occurrence.parentId];
+  if (root?.kind !== "program") return allocateOccurrence(state, id, occurrence);
+  const phase = root.authority.snapshot.program?.phases.find(({ steps }) =>
+    steps.some(({ stepId }) => stepId === occurrence.origin.stepId)
+  );
+  if (!phase) return allocateOccurrence(state, id, occurrence);
+  const execution = root.phaseState[phase.phaseId]?.execution;
+  if (!execution) return allocateOccurrence(state, id, occurrence);
+  const usedSlots = Object.values(state.occurrences).flatMap((candidate) =>
+    candidate.kind !== "program" &&
+    candidate.origin.root.occurrence.occurrenceId === occurrence.parentId &&
+    candidate.origin.phaseId === phase.phaseId &&
+    candidate.origin.execution === execution &&
+    candidate.origin.stepId === occurrence.origin.stepId
+      ? [candidate.origin.slot]
+      : []
+  );
+  return allocateOccurrence(state, id, {
+    ...occurrence,
+    origin: {
+      ...occurrence.origin,
+      execution,
+      phaseId: phase.phaseId,
+      root: {
+        occurrence: {
+          material: root.authority.installation.owner.material,
+          occurrenceId: occurrence.parentId,
+        },
+        ordinal: root.ordinal,
+      },
+      slot: Math.max(0, ...usedSlots) + 1,
+    },
+  });
 }
 
 function damageSelector(
@@ -238,7 +370,11 @@ function stateWithRoot(
   authority: MechanicsProgramAuthorityReceipt = entityAuthority(),
   id = "root"
 ): Readonly<OccurrenceState> {
-  return addOccurrence(createOccurrenceState(), id, program(authority));
+  return addTransitionedProgramOccurrence(
+    createOccurrenceState(),
+    id,
+    transitionedProgram(authority)
+  );
 }
 
 function mutableState(state: Readonly<OccurrenceState>): OccurrenceState {
@@ -315,6 +451,7 @@ describe("one-model occurrence boundary", () => {
     expect(conformed && Object.keys(conformed).sort()).toEqual([
       "endRules",
       "kind",
+      "origin",
       "parentId",
       "target",
     ]);
@@ -566,7 +703,7 @@ describe("immutable allocation, ordinals and cascades", () => {
 
   it("allocates unique monotonic ordinals and never rewinds", () => {
     const empty = createOccurrenceState();
-    const root = addOccurrence(empty, "root", program());
+    const root = stateWithRoot();
     const one = addOccurrence(root, "one", condition("prone"));
     const two = addOccurrence(one, "two", condition("stunned"));
     const removed = removeOccurrences(two, "one");
@@ -628,7 +765,11 @@ describe("immutable allocation, ordinals and cascades", () => {
 describe("root authority and effect selectors", () => {
   function selectorState(): Readonly<OccurrenceState> {
     let state = stateWithRoot();
-    state = addOccurrence(state, "item-root", program(entityAuthority("inventory-item")));
+    state = addTransitionedProgramOccurrence(
+      state,
+      "item-root",
+      transitionedProgram(entityAuthority("inventory-item"))
+    );
     state = addOccurrence(state, "active", standing({ key: "rage", kind: "active-key" }));
     state = addOccurrence(
       state,
@@ -659,6 +800,7 @@ describe("root authority and effect selectors", () => {
     state = addOccurrence(state, "concentration", {
       endRules: [],
       kind: "concentration",
+      origin: effectOrigin("start-concentration"),
       parentId: "root",
       target: ACTOR,
     });
@@ -666,6 +808,7 @@ describe("root authority and effect selectors", () => {
       endRules: [{ kind: "temporary-hp-empty" }],
       formId: "giant-ape",
       kind: "polymorph-form",
+      origin: effectOrigin("start-polymorph"),
       parentId: "root",
       target: ACTOR,
     });
@@ -809,7 +952,7 @@ describe("root authority and effect selectors", () => {
     expect(selectRoundsUntilDeadline(state, "timed", 6, TIMELINE_CLOCK, 6)).toBe(2);
     expect(
       selectProgramPhaseChildren(state, "root", "invoke", 1).map(({ id }) => id)
-    ).toEqual(["phase-child"]);
+    ).toEqual(selectChildrenOf(state, "root").map(({ id }) => id));
     expect(selectProgramPhaseChildren(state, "root", "invoke", 2)).toEqual([]);
     expect(selectProgramExecution(state, "root")?.children.map(({ id }) => id)).toEqual(
       selectChildrenOf(state, "root").map(({ id }) => id)
@@ -821,6 +964,7 @@ describe("root authority and effect selectors", () => {
     state = addOccurrence(state, "concentration", {
       endRules: [],
       kind: "concentration",
+      origin: effectOrigin("start-concentration"),
       parentId: "root",
       target: ACTOR,
     });
@@ -828,6 +972,7 @@ describe("root authority and effect selectors", () => {
       addOccurrence(state, "other-concentration", {
         endRules: [],
         kind: "concentration",
+        origin: effectOrigin("start-concentration"),
         parentId: "root",
         target: ACTOR,
       })
@@ -837,6 +982,7 @@ describe("root authority and effect selectors", () => {
       endRules: [],
       formId: "wolf",
       kind: "polymorph-form",
+      origin: effectOrigin("start-polymorph"),
       parentId: "root",
       target: ACTOR,
     });
@@ -845,6 +991,7 @@ describe("root authority and effect selectors", () => {
         endRules: [],
         formId: "ape",
         kind: "polymorph-form",
+        origin: effectOrigin("start-polymorph"),
         parentId: "root",
         target: ACTOR,
       })

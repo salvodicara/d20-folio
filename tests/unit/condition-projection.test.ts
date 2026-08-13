@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { materialRefKey } from "@/lib/action-journal";
 import { projectResolvedEntityConditions } from "@/lib/condition-projection";
-import { addOccurrence } from "@/lib/mechanic-occurrences";
+import {
+  addOccurrence,
+  addTransitionedProgramOccurrence,
+} from "@/lib/mechanic-occurrences";
 import {
   createEmptyCharacterMaterialState,
   createEmptySharedMaterialState,
@@ -55,7 +58,17 @@ function authoredProgram(
       {
         inputs: [],
         phaseId: "invoke",
-        steps: [],
+        steps: [
+          {
+            conditionId: "prone",
+            kind: "condition",
+            lifetime: { kind: "manual" },
+            operation: "apply",
+            stepId: "apply-condition",
+            target: { kind: "role", role: "target" },
+            when: null,
+          },
+        ],
         trigger: { kind: "invocation" },
       },
     ],
@@ -115,12 +128,45 @@ function program(
   };
 }
 
+function transitionedProgram(
+  receipt: NewProgramOccurrence["authority"] = authority()
+): NewProgramOccurrence {
+  return {
+    ...program(receipt),
+    phaseState: { invoke: { execution: 1, lastTriggerEventId: null } },
+  };
+}
+
+function conditionOrigin(
+  material: CharacterMaterialRef | SharedMaterialRef,
+  parentId: string,
+  rootOrdinal: number
+): NewConditionOccurrence["origin"] {
+  return {
+    execution: 1,
+    kind: "program-step",
+    phaseId: "invoke",
+    root: { occurrence: { material, occurrenceId: parentId }, ordinal: rootOrdinal },
+    slot: 1,
+    stepId: "apply-condition",
+  };
+}
+
 function condition(
   conditionId: NewConditionOccurrence["conditionId"],
   target: EntityRef = HERO_REF,
-  parentId = "root"
+  parentId = "root",
+  material: CharacterMaterialRef | SharedMaterialRef = HERO,
+  rootOrdinal = 1
 ): NewConditionOccurrence {
-  return { conditionId, endRules: [], kind: "condition", parentId, target };
+  return {
+    conditionId,
+    endRules: [],
+    kind: "condition",
+    origin: conditionOrigin(material, parentId, rootOrdinal),
+    parentId,
+    target,
+  };
 }
 
 function character(currentVitals = vitals()): CharacterMaterialState {
@@ -137,18 +183,20 @@ function withCondition<State extends CharacterMaterialState | SharedMaterialStat
   conditionId: NewConditionOccurrence["conditionId"]
 ): State {
   const rootId = `${occurrenceId}-root`;
-  const root = addOccurrence(
+  const material = "inventory" in state ? HERO : CAMPAIGN;
+  const rootOrdinal = state.nextOccurrenceOrdinal;
+  const root = addTransitionedProgramOccurrence(
     {
       nextOccurrenceOrdinal: state.nextOccurrenceOrdinal,
       occurrences: state.occurrences,
     },
     rootId,
-    program()
+    transitionedProgram()
   );
   const child = addOccurrence(
     root,
     occurrenceId,
-    condition(conditionId, HERO_REF, rootId)
+    condition(conditionId, HERO_REF, rootId, material, rootOrdinal)
   );
   return { ...state, ...child };
 }
@@ -245,18 +293,19 @@ describe("world condition projection", () => {
       },
       vitals: vitals(),
     };
-    const root = addOccurrence(
+    const rootOrdinal = hero.nextOccurrenceOrdinal;
+    const root = addTransitionedProgramOccurrence(
       {
         nextOccurrenceOrdinal: hero.nextOccurrenceOrdinal,
         occurrences: hero.occurrences,
       },
       "familiar-root",
-      program(authority(FAMILIAR_REF))
+      transitionedProgram(authority(FAMILIAR_REF))
     );
     const child = addOccurrence(
       root,
       "familiar-condition",
-      condition("poisoned", FAMILIAR_REF, "familiar-root")
+      condition("poisoned", FAMILIAR_REF, "familiar-root", HERO, rootOrdinal)
     );
     const currentWorld = world({ ...hero, ...child }, shared());
 
@@ -306,10 +355,10 @@ describe("world condition projection", () => {
   });
 
   it("rejects Exhaustion in the effect occurrence dialect", () => {
-    const root = addOccurrence(
+    const root = addTransitionedProgramOccurrence(
       { nextOccurrenceOrdinal: 1, occurrences: {} },
       "root",
-      program()
+      transitionedProgram()
     );
     expect(() =>
       addOccurrence(root, "legacy-exhaustion", {

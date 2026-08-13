@@ -208,8 +208,23 @@ const STANDING_FACT = refSchema<"standing-fact", StandingFactSchemaShape>(
   "standing-fact"
 );
 
+/** Durable provenance of one effect emitted by one exact authored step execution. */
+export const PROGRAM_STEP_OCCURRENCE_ORIGIN_SCHEMA = objectSchema({
+  execution: POSITIVE_INTEGER_SCHEMA,
+  kind: literalSchema("program-step"),
+  phaseId: ID_SCHEMA,
+  root: OCCURRENCE_GENERATION_REF,
+  slot: POSITIVE_INTEGER_SCHEMA,
+  stepId: ID_SCHEMA,
+});
+
+export type ProgramStepOccurrenceOriginSchemaShape = InferExactSchema<
+  typeof PROGRAM_STEP_OCCURRENCE_ORIGIN_SCHEMA
+>;
+
 const EFFECT_BASE = {
   endRules: arraySchema(END_RULE),
+  origin: PROGRAM_STEP_OCCURRENCE_ORIGIN_SCHEMA,
   parentId: ID_SCHEMA,
   target: ENTITY_REF,
 } as const;

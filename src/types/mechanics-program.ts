@@ -16,6 +16,9 @@ import type {
   MechanicsRole,
 } from "@/types/mechanics-program-authoring";
 import type { EntityRef } from "@/types/mechanics-reference";
+import type { ProgramOccurrence } from "@/types/mechanic-occurrence";
+import type { MechanicsProgramPhase } from "@/types/mechanics-program-authoring";
+import type { MechanicsWorld } from "@/types/mechanics-world";
 import type { ResourceRef, ResourceSelector, ResourceTerm } from "@/types/resource";
 
 export type MechanicsRoles = Readonly<Record<MechanicsRole, EntityRef | null>>;
@@ -197,6 +200,30 @@ export interface ReviewedMechanicsIntent {
   readonly requirements: readonly MechanicsRequirement[];
   readonly resolved: Readonly<Record<string, ResolvedMechanicsAnswer>>;
 }
+
+/** Trusted compiler view rebuilt from the reviewed intent and current projected world. */
+export interface MechanicsProgramCompilationContext {
+  readonly bindings: Readonly<Record<string, number>>;
+  readonly execution: number;
+  readonly intent: Readonly<MechanicsIntent>;
+  readonly landedDamage: Readonly<Record<string, Readonly<Record<string, number>>>>;
+  readonly phase: Readonly<MechanicsProgramPhase>;
+  readonly resolved: Readonly<Record<string, ResolvedMechanicsAnswer>>;
+  readonly root: Readonly<ProgramOccurrence> | null;
+  readonly world: Readonly<MechanicsWorld>;
+}
+
+export type MechanicsProgramCompilationPreparation =
+  | {
+      readonly context: Readonly<MechanicsProgramCompilationContext>;
+      readonly status: "ready";
+    }
+  | { readonly status: "replay" }
+  | {
+      readonly reason: MechanicsReviewRejection | "invalid-reviewed-intent";
+      readonly referenceId: string | null;
+      readonly status: "rejected";
+    };
 
 export type MechanicsReviewRejection =
   | MechanicsRequirementsRejection

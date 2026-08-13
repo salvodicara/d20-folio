@@ -43,6 +43,7 @@ import {
 import type { ActionFactGuard } from "@/types/action-journal";
 import type { DamageDefenseRule, DamagePart, DamageResolution } from "@/types/damage";
 import type { DiceFormula, DiceObservation } from "@/types/dice-formula";
+import type { ProgramStepOccurrenceOrigin } from "@/types/mechanic-occurrence";
 import type { MechanicsInvocationRef } from "@/types/mechanics-authority-ref";
 import type {
   MechanicsAuthorityDefinition,
@@ -93,6 +94,70 @@ const SHARED = {
   kind: "shared-combat",
 } as const;
 const SELF = { entityId: "self", material: CHARACTER } as const satisfies EntityRef;
+const STEP_IDS = {
+  concentration: "start-concentration",
+  condition: "apply-condition",
+  entity: "create-entity",
+  inventory: "create-inventory",
+  polymorph: "start-polymorph",
+  standing: "start-standing",
+} as const;
+const PROGRAM_STEPS = [
+  {
+    conditionId: "poisoned",
+    kind: "condition",
+    lifetime: { kind: "manual" },
+    operation: "apply",
+    stepId: STEP_IDS.condition,
+    target: { kind: "role", role: "target" },
+    when: null,
+  },
+  {
+    fact: { key: "fixture-standing", kind: "active-key" },
+    kind: "standing",
+    lifetime: { kind: "manual" },
+    operation: "start",
+    stepId: STEP_IDS.standing,
+    target: { kind: "role", role: "target" },
+    when: null,
+  },
+  {
+    kind: "concentration",
+    lifetime: { kind: "manual" },
+    operation: "start",
+    stepId: STEP_IDS.concentration,
+    target: { kind: "role", role: "target" },
+    when: null,
+  },
+  {
+    formId: "fixture-form",
+    kind: "polymorph",
+    lifetime: { kind: "manual" },
+    operation: "start",
+    stepId: STEP_IDS.polymorph,
+    target: { kind: "role", role: "target" },
+    when: null,
+  },
+  {
+    controller: null,
+    entityKey: "fixture-entity",
+    kind: "entity-create",
+    lifetime: { kind: "manual" },
+    stepId: STEP_IDS.entity,
+    template: { kind: "monster", monsterId: "fixture-monster" },
+    when: null,
+  },
+  {
+    instanceKey: "fixture-inventory",
+    itemId: "fixture-item",
+    kind: "inventory-create",
+    lifetime: { kind: "manual" },
+    owner: "owner",
+    quantity: { kind: "fixed", value: 1 },
+    stepId: STEP_IDS.inventory,
+    when: null,
+  },
+] as const;
 const MECHANICS_REVISION = canonicalFingerprint({ fixture: "mechanics-operation" });
 const CAPABILITY = {
   capabilityId: "operation",
@@ -128,7 +193,7 @@ const AUTHORITY = {
         {
           inputs: [],
           phaseId: "invoke",
-          steps: [],
+          steps: PROGRAM_STEPS,
           trigger: { kind: "invocation" },
         },
       ],
@@ -183,7 +248,7 @@ const TABLE_AUTHORITY = {
         {
           inputs: [],
           phaseId: "invoke",
-          steps: [],
+          steps: PROGRAM_STEPS,
           trigger: { kind: "invocation" },
         },
       ],
@@ -380,6 +445,25 @@ function occurrenceGeneration(
   return {
     occurrence: { material: CHARACTER, occurrenceId },
     ordinal,
+  };
+}
+
+function programStepOrigin(
+  stepId: (typeof STEP_IDS)[keyof typeof STEP_IDS],
+  options: {
+    execution?: number;
+    rootId?: string;
+    rootOrdinal?: number;
+    slot?: number;
+  } = {}
+): ProgramStepOccurrenceOrigin {
+  return {
+    execution: options.execution ?? 1,
+    kind: "program-step",
+    phaseId: "invoke",
+    root: occurrenceGeneration(options.rootId ?? "root", options.rootOrdinal ?? 1),
+    slot: options.slot ?? 1,
+    stepId,
   };
 }
 
@@ -792,10 +876,15 @@ function concentratingWorld(vitals: CreatureVitals): Readonly<MechanicsWorld> {
   const occurrences = addOccurrence(root, "focus", {
     endRules: [],
     kind: "concentration",
+    origin: programStepOrigin(STEP_IDS.concentration),
     parentId: "root",
     target: SELF,
   });
-  return parsedCharacterState({ ...state, ...occurrences });
+  const invoked = structuredClone(occurrences);
+  const program = invoked.occurrences.root;
+  if (!program || program.kind !== "program") throw new Error("root fixture");
+  program.phaseState.invoke = { execution: 1, lastTriggerEventId: null };
+  return parsedCharacterState({ ...state, ...invoked });
 }
 
 function damage(
@@ -867,6 +956,10 @@ function conditionCreate(
       conditionId,
       endRules: [],
       kind: "condition",
+      origin: programStepOrigin(STEP_IDS.condition, {
+        rootId: parentId,
+        rootOrdinal: options.parentOrdinal ?? 1,
+      }),
       parentId,
       target: SELF,
     },
@@ -878,19 +971,55 @@ function conditionCreate(
 function programCreate(
   operationId: string,
   occurrenceId: string,
-  cause: MechanicsOperationCause
+  cause: MechanicsOperationCause,
+  nextRegisters: Readonly<Record<string, string | number | boolean | null>> = {}
 ): Extract<MechanicsOperation, { readonly kind: "program-state-transition" }> {
   return {
     causeId: cause.causeId,
     expectedRegisters: null,
     kind: "program-state-transition",
-    nextRegisters: {},
+    nextRegisters,
     operationId,
     receipt: {
       kind: "create",
       materialEpoch: 0,
       next: { execution: 1, phaseId: "invoke", triggerEventId: null },
       root: occurrenceGeneration(occurrenceId, 1),
+    },
+  };
+}
+
+function programRegister(
+  operationId: string,
+  cause: MechanicsOperationCause,
+  root: OccurrenceGenerationRef,
+  registerId: string,
+  expected: string | number | boolean | null,
+  next: string | number | boolean | null
+): Extract<MechanicsOperation, { readonly kind: "program-register-transition" }> {
+  return {
+    causeId: cause.causeId,
+    expected,
+    kind: "program-register-transition",
+    next,
+    operationId,
+    registerId,
+    root,
+  };
+}
+
+function authorityWithRegister(
+  registerId: string,
+  initial: string | number | boolean | null
+): MechanicsProgramAuthorityReceipt {
+  return {
+    ...AUTHORITY,
+    snapshot: {
+      ...AUTHORITY.snapshot,
+      program: {
+        ...AUTHORITY.snapshot.program,
+        registers: [{ initial, registerId }],
+      },
     },
   };
 }
@@ -911,6 +1040,10 @@ function standingCreate(
       endRules: [],
       fact: { key: occurrenceId, kind: "active-key" },
       kind: "standing",
+      origin: programStepOrigin(STEP_IDS.standing, {
+        rootId: parentId,
+        rootOrdinal: parentOrdinal,
+      }),
       parentId,
       target: SELF,
     },
@@ -925,7 +1058,7 @@ function worldWithRoots(
   const state = structuredClone(
     createEmptyCharacterMaterialState(1, CHARACTER, alive(10))
   );
-  const occurrences = roots.reduce(
+  const initial = roots.reduce(
     (current, [occurrenceId, authority]) =>
       addOccurrence(current, occurrenceId, {
         authority,
@@ -939,7 +1072,13 @@ function worldWithRoots(
       occurrences: state.occurrences,
     }
   );
-  return parsedCharacterState({ ...state, ...occurrences });
+  const invoked = structuredClone(initial);
+  for (const [occurrenceId] of roots) {
+    const program = invoked.occurrences[occurrenceId];
+    if (!program || program.kind !== "program") throw new Error("root fixture");
+    program.phaseState.invoke = { execution: 1, lastTriggerEventId: null };
+  }
+  return parsedCharacterState({ ...state, ...invoked });
 }
 
 function transaction(
@@ -998,6 +1137,7 @@ function entityCreateOperation(
     kind: "entity-create",
     lifecycle: occurrenceGeneration("summon-lifecycle", lifecycleOrdinal),
     operationId: "create-summon",
+    origin: programStepOrigin(STEP_IDS.entity),
     parent: occurrenceGeneration("root", 1),
     value: newEntity,
   };
@@ -1066,6 +1206,7 @@ function inventoryCreateOperation(
     kind: "inventory-create",
     lifecycle: occurrenceGeneration(`${instanceId}-lifecycle`, lifecycleOrdinal),
     operationId: `create-${instanceId}`,
+    origin: programStepOrigin(STEP_IDS.inventory),
     parent: occurrenceGeneration("root", 1),
   };
 }
@@ -2195,6 +2336,120 @@ describe("atomic mechanics transactions", () => {
     });
   });
 
+  it("creates a root, applies register steps in authored order, and exposes each exact transition", () => {
+    const authority = authorityWithRegister("tally", 0);
+    const installed = installedCause(authority);
+    const rootCause = programRootCause(authority, "root");
+    const root = occurrenceGeneration("root", 1);
+    const result = simulated(
+      simulateMechanicsTransaction(
+        parsedWorld(alive(10)),
+        transaction(
+          [
+            programCreate("create-root", "root", installed, { tally: 0 }),
+            programRegister("tally-one", rootCause, root, "tally", 0, 1),
+            programRegister("tally-three", rootCause, root, "tally", 1, 3),
+          ],
+          { causes: orderedCauses(installed, rootCause) }
+        )
+      )
+    );
+
+    expect(state(result.state.world).occurrences.root).toMatchObject({
+      registers: { tally: 3 },
+    });
+    expect(result.executions.slice(1)).toMatchObject([
+      {
+        facts: {
+          after: 1,
+          before: 0,
+          registerId: "tally",
+          root,
+        },
+        kind: "program-register-transition",
+        status: "applied",
+      },
+      {
+        facts: {
+          after: 3,
+          before: 1,
+          registerId: "tally",
+          root,
+        },
+        kind: "program-register-transition",
+        status: "applied",
+      },
+    ]);
+  });
+
+  it("applies register steps before the advance receipt and rejects stale or reordered state", () => {
+    const authority = authorityWithRegister("tally", 0);
+    const rootCause = programRootCause(authority, "root");
+    const base = structuredClone(
+      createEmptyCharacterMaterialState(1, CHARACTER, alive(10))
+    );
+    const occurrences = addOccurrence(
+      {
+        nextOccurrenceOrdinal: base.nextOccurrenceOrdinal,
+        occurrences: base.occurrences,
+      },
+      "root",
+      {
+        authority,
+        endRules: [],
+        kind: "program",
+        phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
+        registers: { tally: 0 },
+      }
+    );
+    const world = parsedCharacterState({ ...base, ...occurrences });
+    const root = occurrenceGeneration("root", 1);
+    const register = programRegister("tally-one", rootCause, root, "tally", 0, 1);
+    const advance = {
+      causeId: rootCause.causeId,
+      expectedRegisters: { tally: 1 },
+      kind: "program-state-transition",
+      nextRegisters: { tally: 1 },
+      operationId: "advance-root",
+      receipt: {
+        expected: { execution: 0, phaseId: "invoke", triggerEventId: null },
+        kind: "advance",
+        next: { execution: 1, phaseId: "invoke", triggerEventId: "event-1" },
+        root,
+      },
+    } as const satisfies MechanicsOperation;
+
+    const result = simulated(
+      simulateMechanicsTransaction(
+        world,
+        transaction([register, advance], { causes: [rootCause] })
+      )
+    );
+    expect(state(result.state.world).occurrences.root).toMatchObject({
+      phaseState: {
+        invoke: { execution: 1, lastTriggerEventId: "event-1" },
+      },
+      registers: { tally: 1 },
+    });
+    expect(
+      conformMechanicsTransaction(
+        transaction([advance, register], { causes: [rootCause] })
+      )
+    ).toBeNull();
+    expect(
+      simulateMechanicsTransaction(
+        world,
+        transaction([programRegister("stale", rootCause, root, "tally", 1, 2)], {
+          causes: [rootCause],
+        })
+      )
+    ).toEqual({
+      operationId: "stale",
+      reason: "stale-program-state",
+      status: "rejected",
+    });
+  });
+
   it("rejects child-before-root, root creation from a root, and unrelated parents", () => {
     const cause = installedCause(AUTHORITY);
     expect(
@@ -2777,6 +3032,7 @@ describe("atomic mechanics transactions", () => {
         endRules: [{ kind: "temporary-hp-empty" }],
         fact: { key: "temporary-hit-points", kind: "active-key" },
         kind: "standing",
+        origin: programStepOrigin(STEP_IDS.standing),
         parentId: "root",
         target: SELF,
       },
@@ -2987,6 +3243,7 @@ describe("atomic mechanics transactions", () => {
       endRules: [],
       fact: { conditionId: "poisoned", kind: "condition-immunity" },
       kind: "standing",
+      origin: programStepOrigin(STEP_IDS.standing),
       parentId: "root",
       target: SELF,
     });
@@ -2997,7 +3254,13 @@ describe("atomic mechanics transactions", () => {
       phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
       registers: {},
     });
-    const immuneWorld = parsedCharacterState({ ...immuneState, ...tableRoot });
+    const invoked = structuredClone(tableRoot);
+    for (const occurrenceId of ["root", "table-root"] as const) {
+      const program = invoked.occurrences[occurrenceId];
+      if (!program || program.kind !== "program") throw new Error("root fixture");
+      program.phaseState.invoke = { execution: 1, lastTriggerEventId: null };
+    }
+    const immuneWorld = parsedCharacterState({ ...immuneState, ...invoked });
     expect(
       simulateMechanicsTransaction(
         immuneWorld,
@@ -3068,6 +3331,7 @@ describe("atomic mechanics transactions", () => {
       occurrence: {
         endRules: [],
         kind: "concentration",
+        origin: programStepOrigin(STEP_IDS.concentration),
         parentId: "root",
         target: SELF,
       },
@@ -3124,10 +3388,15 @@ describe("atomic mechanics transactions", () => {
       endRules: [],
       fact: { key: "child", kind: "active-key" },
       kind: "standing",
+      origin: programStepOrigin(STEP_IDS.standing),
       parentId: "root",
       target: SELF,
     });
-    const cascadeWorld = parsedCharacterState({ ...rootState, ...child });
+    const invoked = structuredClone(child);
+    const program = invoked.occurrences.root;
+    if (!program || program.kind !== "program") throw new Error("root fixture");
+    program.phaseState.invoke = { execution: 1, lastTriggerEventId: null };
+    const cascadeWorld = parsedCharacterState({ ...rootState, ...invoked });
     const ended = simulated(
       simulateMechanicsTransaction(
         cascadeWorld,
@@ -3962,6 +4231,9 @@ describe("atomic mechanics transactions", () => {
                 endRules: [],
                 fact: { key: "haste", kind: "active-key" },
                 kind: "standing",
+                origin: programStepOrigin(STEP_IDS.standing, {
+                  rootId: "potion-root",
+                }),
                 parentId: "potion-root",
                 target: SELF,
               },

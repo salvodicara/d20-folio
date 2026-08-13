@@ -869,6 +869,41 @@ function validateControllerGraph(
   return null;
 }
 
+/**
+ * Effect provenance may point one execution ahead only inside an ordered transaction:
+ * advance receipts commit last so predicates/register steps observe the prior exact CAS basis.
+ * No public/persisted world may expose that transient state.
+ */
+function validateProgramOrigins(
+  world: MechanicsWorld,
+  allowPendingExecution: boolean
+): MechanicsWorldInvalidReason | null {
+  for (const document of world.documents) {
+    for (const occurrence of Object.values(document.state.occurrences)) {
+      if (!isEffectOccurrence(occurrence)) continue;
+      const { origin } = occurrence;
+      if (!sameMaterial(origin.root.occurrence.material, document.material)) {
+        return "invalid-program-origin";
+      }
+      const root = occurrenceAtGeneration(world, origin.root);
+      if (
+        root?.kind !== "program" ||
+        occurrence.parentId !== origin.root.occurrence.occurrenceId
+      ) {
+        return "invalid-program-origin";
+      }
+      const phase = root.phaseState[origin.phaseId];
+      if (
+        !phase ||
+        origin.execution > phase.execution + (allowPendingExecution ? 1 : 0)
+      ) {
+        return "invalid-program-origin";
+      }
+    }
+  }
+  return null;
+}
+
 function validateClosedTurnState(
   world: MechanicsWorld
 ): MechanicsWorldInvalidReason | null {
@@ -889,7 +924,8 @@ function validateClosedTurnState(
 function validateWorldInvariants(
   world: MechanicsWorld,
   inventorySourceLeases: ReadonlySet<string> = new Set(),
-  allowLatchedEndings = false
+  allowLatchedEndings = false,
+  allowPendingProgramOrigins = false
 ): MechanicsWorldInvalidReason | null {
   if (
     !allowLatchedEndings &&
@@ -903,6 +939,7 @@ function validateWorldInvariants(
   }
   return (
     validateReferences(world, inventorySourceLeases) ??
+    validateProgramOrigins(world, allowPendingProgramOrigins) ??
     validateControllerGraph(world) ??
     validateLeases(world)
   );
@@ -1616,6 +1653,7 @@ export function projectMechanicsTransactionWorld(
   const invalid = validateWorldInvariants(
     candidate.value,
     closure.inventorySourceLeases,
+    true,
     true
   );
   if (invalid) return { ok: false, reason: invalid };

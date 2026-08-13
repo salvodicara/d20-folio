@@ -63,6 +63,13 @@ only the authenticated end-turn continuation may remove it before the coordinato
 Ordinary cleanup cannot silently advance current membership. Controller changes are exact cross-document
 links and the complete graph must remain acyclic.
 
+Every effect/lifecycle occurrence records a structured origin
+`{ root, phaseId, execution, stepId, slot }`. The root generation proves authority; phase/execution proves
+the exact frame; the globally unique step id proves the authored mechanic; and the stable expansion slot
+distinguishes repeated/duplicate targets without depending on allocator order. The occurrence parser
+validates that tuple against the root's frozen program and the expected step-to-occurrence-kind mapping.
+Only the compiler's transient prefix projection may be one execution ahead of committed root state.
+
 Program-authored turn work is exactly the claim-bearing subset of `TurnEconomyCommand`; lifecycle
 `start-turn`/`end-turn` commands belong only to the authoritative encounter boundary state machine.
 Operation collision footprints include every semantic read/write dependency: controller graph and
@@ -101,11 +108,15 @@ Authentic events are not an open-ended change log. Applied operation stages alon
 `hit-points-zero` and `resource-depleted`; an exact readable wave alone emits `source-ending`. Terminal
 cleanup is represented by its proved world delta and the final reversible journal action, not generic
 condition/entity/inventory/register events that no authored trigger consumes.
-The compiler/coordinator and corpus transcription are still active work. The compiler must use one
-per-material allocation ledger, simulate each authored step against the projected world, and feed one
-bounded fixed-point coordinator that emits one journal action. Legacy authoring/executors are migration
-inputs only, never a second supported model, and are removed once the sole runtime consumes the full
-corpus.
+The compiler/coordinator and corpus transcription are still active work. `compileMechanicsFrame` is now
+the only intended program-to-transaction seam: it re-proves reviewed input, recognizes replay first,
+places root-create first and root-advance last, emits each register change as its own CAS, and recompiles
+the next step from the kernel-projected prefix. Its current register/manual vertical rejects every
+unsupported terminal kind explicitly. The remaining subcompilers must use one per-material allocation
+ledger, compile reviewed payments exactly once, and resolve all vitality/effect/material/resource steps
+before the bounded fixed-point coordinator emits one journal action. Legacy authoring/executors are
+migration inputs only, never a second supported model, and are deleted once the sole runtime consumes the
+full corpus.
 
 **Grant SOURCES** are assembled by `src/lib/resolve-grant-sources.ts → resolveAllGrantSources`:
 features (class / feat / race / subclass), equipped + attuned magic items, chosen Eldritch
