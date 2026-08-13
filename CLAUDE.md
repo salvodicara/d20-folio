@@ -213,15 +213,18 @@ PRODUCT/UX/design rules live in `docs/PRODUCT_CONSTITUTION.md`. Violating one is
   kind (this overrides any harness default that injects them). Every commit stages a
   `.changeset/*.md` (pre-commit guard; feeds `CHANGELOG.md`) and updates its canonical doc; keep
   `PROGRESS.md` current as you ship.
-- **No pull requests.** Finish line = gate green → independent `ponytail-review` convergence
-  (golden rule 12) → rebase onto latest `origin/main` → `git push origin HEAD:main` → poll origin
-  for the SHA → `just wt-rm`. The merge push is the ONLY push. Full recipe: `docs/WORKTREES.md`.
+- **No pull requests.** Recoverable branch checkpoints use explicit
+  `git push origin HEAD:<branch>` and run no full gate. Finish line = independent
+  `ponytail-review` convergence (golden rule 12) → rebase onto latest `origin/main` → ONE full gate
+  on `git push origin HEAD:main` → poll origin for the SHA → `just wt-rm`. Full recipe:
+  `docs/WORKTREES.md`.
   `main` integrates; users only get code via an owner-published release or owner-fired manual
   deploy (golden rule 22).
 - **Git hooks** (`git config core.hooksPath .githooks` or `just setup`): **pre-commit FAST (~5s)**
-  — changeset doc-guard + `lint-staged` + fast unit lane; **pre-push = the FULL authoritative
-  gate** — typecheck ∥ `lint --max-warnings 0` ∥ `test:coverage` (≥80% lines/stmts/fns, ≥75%
-  branches), then production build. **Never `--no-verify`.**
+  — changeset doc-guard + `lint-staged` + fast unit lane; branch pre-push = immediate checkpoint;
+  only a `main`-targeting pre-push runs the FULL authoritative gate — typecheck ∥
+  `lint --max-warnings 0` ∥ `test:coverage` (≥80% lines/stmts/fns, ≥75% branches), then production
+  build. **Never `--no-verify`.**
 - **Local CI:** `pnpm tsc -b && pnpm lint --max-warnings 0 && pnpm test --run && pnpm build`.
   Tests must pass with `VITE_FIREBASE_API_KEY` unset — never import `@/lib/firebase`/
   `@/lib/firestore` transitively from a unit test (mock it, or use a pure module).

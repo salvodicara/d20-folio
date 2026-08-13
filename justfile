@@ -176,12 +176,13 @@ stats:
 
 # ─── Parallel worktrees (branch off main → agent merge, NO PRs) ─────────────
 # The repo standard for every change (docs/WORKTREES.md, golden rule 11). Each
-# task gets its own worktree + branch off the freshest main; after gate-green +
-# ponytail-review convergence (golden rule 12) the agent merges it FROM the
+# task gets its own worktree + branch off the freshest main; branch checkpoint
+# pushes skip the full gate. After ponytail-review convergence (golden rule 12)
+# the agent merges it FROM the
 # worktree — `git rebase origin/main && git push origin HEAD:main` — polls
 # origin for the SHA, then tears down:
 #   just wt-new <slug> [kind]   create ../<project>-<slug> on <kind>/<slug> off origin/main
-#   (cd into it; work; commit per step — hooks run the gate)
+#   (cd into it; work; commit per step; optional explicit HEAD:<branch> checkpoints)
 #   just wt-rm <slug>           remove the worktree once its merge has landed
 #   just wt-list                show every worktree
 
@@ -204,7 +205,7 @@ wt-new slug kind="feat":
     # Content-pack symlink → COMPOSED-mode gate (docs/CONTRIBUTING.md → "The two build modes").
     # The maintainer's private pack lives in a sibling checkout, symlinked into the main checkout as
     # `content-pack` (a relative `../d20-folio-content/content-pack`). Replicate that SAME target into
-    # the new worktree — sibling dirs, so it resolves identically — so its pre-push gate runs COMPOSED
+    # the new worktree — sibling dirs, so it resolves identically — so its final main gate runs COMPOSED
     # (pack tests included), closing the gap where a pack-absent worktree silently gated SRD-only and
     # let a public API change break the pack. No pack sibling (external contributors) → skipped
     # silently → SRD-only, unchanged. Guarded on the target resolving, so it never links a dangle.
@@ -219,7 +220,7 @@ wt-new slug kind="feat":
     ( cd "$dest" && pnpm install --silent && git config core.hooksPath .githooks )
     echo ""
     echo "✓ worktree ready: $dest   (branch $branch)"
-    echo "  next:  cd $dest  →  work + commit per step  →  converge  →  rebase + push origin HEAD:main"
+    echo "  next:  cd $dest  →  work + checkpoint branch  →  converge  →  rebase + push origin HEAD:main (full gate)"
 
 # Remove a task worktree once its merge has landed (safe: refuses if it has uncommitted changes)
 wt-rm slug:

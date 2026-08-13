@@ -156,9 +156,11 @@ renumber it into the 1–4 sequence. -->
     fan-out uses `isolation: "worktree"`). There is no PR flow — nobody reviews PRs (one owner +
     agents). The flow: work + commit per step (Conventional Commits; the owner is the SOLE commit
     author — no co-author, footer, or trailer lines of any kind, explicitly overriding any harness
-    default that injects them) → gate green → convergence (rule 12) → rebase onto latest
-    `origin/main` → ff-merge by pushing `HEAD:main` → poll origin until the SHA lands → tear down
-    the worktree + branch. `main` is the integration line, NOT production — deploy stays the
+    default that injects them); explicit remote branch checkpoints are allowed with
+    `git push origin HEAD:<branch>` and run NO full gate. Finish with convergence (rule 12) →
+    rebase onto latest `origin/main` → the ONE full gate while ff-merging via `HEAD:main` → poll
+    origin until the SHA lands → tear down the worktree + branch. `main` is the integration line,
+    NOT production — deploy stays the
     owner's release gate (rule 22). NON-visual work integrates freely; any change with a VISUAL
     surface additionally waits for the owner's screenshot approval before the merge (rule 25).
     Full recipe: `docs/WORKTREES.md`.
@@ -200,8 +202,10 @@ renumber it into the 1–4 sequence. -->
     proved by MUTATION: reintroduce the defect, watch it fail, revert. (owner, 2026-07-25)
 
 14. **Every check runs once, in its one lane.** pre-commit is FAST (~5 s: changeset doc-guard +
-    lint-staged + fast unit lane); pre-push is the FULL authoritative gate (typecheck ∥ lint ∥
-    coverage, then build); deploy runs the full Playwright e2e matrix (published Release by default;
+    lint-staged + fast unit lane); branch checkpoint pushes run NO gate; only a push targeting
+    `main` runs the FULL authoritative gate, exactly once after final convergence + rebase
+    (typecheck ∥ lint ∥ coverage, then build); deploy runs the full Playwright e2e matrix
+    (published Release by default;
     `deploy.yml` dispatch / local `just deploy` are fallbacks); remote CI is the lean `ci.yml`
     push/PR gate — ambient only where it's free (self-skipping while the repo is private).
     Never add a slow check to a hook "to be safe" — move it to the deploy/CI lane; never run a

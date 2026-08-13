@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
-# Pre-push hook: the FAST-BUT-SAFE gate — owner mandate 2026-06-12 (a GOLDEN
-# RULE): "keep it SAFE, but don't have CI checks run forever — both to save
+# Pre-push hook: the FINAL-MERGE gate — owner mandates 2026-06-12 + 2026-08-12
+# (a GOLDEN RULE). Branch checkpoint pushes are deliberately immediate; the
+# complete gate runs exactly once, when the finished branch targets `main`.
+#
+# Original mandate: "keep it SAFE, but don't have CI checks run forever — both to save
 # money on GH Actions and to speed up local development."
 #
 # THE GATE SPLIT (docs/GOLDEN_RULES.md rule 14; detail in docs/CONTRIBUTING.md
 # → "The gate split"):
 #   pre-commit  → doc-guard + lint-staged + fast unit lane            (~5 s)
-#   pre-push    → typecheck ∥ lint ∥ unit coverage (CONCURRENT), then
+#   branch push → checkpoint only; no gate
+#   main push   → typecheck ∥ lint ∥ unit coverage (CONCURRENT), then
 #                 vite build + budget; rules tests when that surface
 #                 changed                                             (THIS hook)
 #   deploy      → the FULL e2e matrix + `firebase deploy`, ALWAYS owner-fired:
@@ -37,7 +41,22 @@
 
 set -euo pipefail
 
-echo "==> Pre-push: fast-but-safe gate (typecheck ∥ lint ∥ unit+coverage, then build · budget)..."
+# Git supplies every ref update on stdin as:
+#   <local-ref> <local-sha> <remote-ref> <remote-sha>
+# Capture it once: the main-target decision and the change-scoped rules check
+# both need the same stream. Any push not updating `refs/heads/main` is a
+# recoverable branch/tag checkpoint and must not spend the final gate.
+ZERO_SHA='0000000000000000000000000000000000000000'
+push_refs="$(cat)"
+
+if ! awk -v zero="$ZERO_SHA" \
+  '$3 == "refs/heads/main" && $2 != zero { targets_main = 1 } END { exit targets_main ? 0 : 1 }' \
+  <<<"$push_refs"; then
+  echo "==> Pre-push: checkpoint ref — full gate deferred to the final main merge."
+  exit 0
+fi
+
+echo "==> Pre-push: final main gate (typecheck ∥ lint ∥ unit+coverage, then build · budget)..."
 echo ""
 
 # ── Composed-mode advisory (belt-and-suspenders) ──────────────────────────────
@@ -62,11 +81,9 @@ if [ ! -e content-pack ]; then
 fi
 
 # ── Firestore rules tests (emulator) — change-scoped ──────────────────────────
-# Detect whether THIS push changes the rules surface; only then boot the emulator
-# (ordinary pushes stay fast). git feeds pre-push the ref list on stdin as
-# "<local_ref> <local_sha> <remote_ref> <remote_sha>" lines.
+# Detect whether the final main push changes the rules surface; only then boot
+# the emulator. The ref list was captured from pre-push stdin above.
 RULES_SURFACE_RE='^(firestore\.rules|tests/rules/)'
-ZERO_SHA='0000000000000000000000000000000000000000'
 rules_changed=false
 
 while read -r _local_ref local_sha _remote_ref remote_sha; do
@@ -88,7 +105,7 @@ while read -r _local_ref local_sha _remote_ref remote_sha; do
   if git diff --name-only "$range" 2>/dev/null | grep -Eq "$RULES_SURFACE_RE"; then
     rules_changed=true
   fi
-done
+done <<<"$push_refs"
 
 if [ "$rules_changed" = true ]; then
   echo "--- Firestore rules tests (rules surface changed → emulator) ---"
