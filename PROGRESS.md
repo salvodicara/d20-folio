@@ -135,9 +135,11 @@ fixed-point causal coordinator and one final reversible journal draft remain act
 lifecycles now carry exact structured origin `{root, phase, execution, step, slot}` validated against the
 root's frozen program; duplicate or semantically mismatched emissions fail closed, including across a
 transaction's pending next execution. Register mutation is an individual compare-and-swap physical
-operation. The single `compileMechanicsFrame` seam now re-proves reviewed input, recognizes replay before
-new responses, orders create-root first/advance-root last, assigns deterministic operation ids, includes
-trusted fact guards and recompiles each step from the kernel-projected prefix. Its executable slice now
+operation. Root allocation is a standalone zero-state segment before the exact frame is pushed. The
+prepare/coordinator boundary recognizes replay before push; `compileMechanicsFrame` then re-proves reviewed
+input and compiles only the authored step named by the exact nonterminal LIFO top cursor. The final phase
+CAS is its own segment.
+Its executable slice now
 includes register/manual work plus exact condition, standing, Concentration and polymorph starts and
 semantic end selection; unsupported steps still reject explicitly. The follow-up real-play audit found
 additional P0 prerequisites (separately authorized overrides, THP source replacement, guarded effective
@@ -150,7 +152,7 @@ reserved for the final rebased integration to `main`.
 ACTIVE):** the exact program root's `phaseState` is the sole completion truth. One post-transaction causal
 rebase derives `program-phase-completed` from the child's exact root generation, phase and execution,
 latching current or overdue lifetimes while future executions remain live; the closure request carries no
-duplicate completion state, and exact generation closes same-id ABA. Applied `program-state-transition`
+duplicate completion state, and exact generation closes same-id ABA. Applied `program-phase-transition`
 stages emit the authentic exact `program-phase-end` post-event for subscribers after ordinary events. Every
 non-invocation evidence and its phase CAS receipt share that exact event id. Ending sources stay structurally
 readable but are absent from every effective projection, so replacements can begin without double-active
@@ -158,6 +160,19 @@ state. Hostile APIs still reject a raw latched world; causal review and compilat
 transient and use only its canonical result. Focused verification is green (254 tests across nine suites);
 by owner rule no global branch gate ran. The effect/lifetime/boundary checkpoint below is the current
 continuation truth.
+
+**Exact root/phase split + pending-frame checkpoint CLOSED on branch (2026-08-12; coordinator
+ACTIVE):** root allocation and phase completion now have separate physical meanings.
+`program-root-create` derives the complete zeroed phase map and initial registers without publishing a
+completion; final `program-phase-transition` performs the exact selected-phase CAS and alone publishes
+`program-phase-end`. Register writes remain individual CAS operations between those boundaries. A bounded,
+unforgeable causal state now owns the exact LIFO frame stack: root creation is a standalone segment before
+push, program operations belong only to the exact top cursor, and final phase CAS atomically marks that top
+complete while the same causal rebase latches every lifetime made due by the new phase state. Compiler
+barriers may bind the immutable input/cursor and frozen target generations, but never a
+second world or progress model. Only focused verification runs during branch engineering; the global gate
+remains reserved for final convergence. The per-step segmented compiler is closed; the active next slice
+is the bounded fixed-point subscriber/end-wave coordinator.
 
 **Effect/lifetime/qualitative-boundary compiler checkpoint CLOSED on branch (2026-08-12;
 coordinator/runtime cutover ACTIVE):** exact condition, standing, Concentration and polymorph starts now

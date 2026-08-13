@@ -8,6 +8,7 @@ import type { MechanicsPostEvent } from "@/types/mechanics-execution";
 import type { OccurrenceGenerationRef } from "@/types/mechanics-reference";
 import type {
   MechanicsOperationExecution,
+  MechanicsOperationConsequence,
   MechanicsOperationNoChange,
   MechanicsTransaction,
   MechanicsTransactionSimulationResult,
@@ -114,6 +115,33 @@ export interface CompileMechanicsFrameInput {
   readonly state: Readonly<MechanicsCausalState>;
 }
 
+declare const MECHANICS_COMPILER_CONTINUATION: unique symbol;
+
+/**
+ * Process-local proof for one exact compiler barrier. It carries no world,
+ * transaction prefix or progress model and can never be persisted. Response
+ * resumption remains fail-closed until the coordinator owns that protocol.
+ */
+export interface MechanicsCompilerContinuation {
+  readonly [MECHANICS_COMPILER_CONTINUATION]: true;
+}
+
+/**
+ * One authentic compiler-owned transition. The coordinator consumes this
+ * segment, delivers its events/consequences, then invokes the compiler again
+ * with the returned causal state. No projected world or second progress cursor
+ * can cross this seam.
+ */
+export interface MechanicsCompiledSegment {
+  readonly actionFacts: readonly Readonly<ActionFactGuard>[];
+  readonly consequences: readonly Readonly<MechanicsOperationConsequence>[];
+  readonly events: readonly Readonly<MechanicsPostEvent>[];
+  readonly manual: readonly ManualInstruction[];
+  readonly state: Readonly<MechanicsCausalState>;
+  readonly trace: readonly MechanicsCompiledStepTrace[];
+  readonly transaction: Readonly<MechanicsTransaction> | null;
+}
+
 export type MechanicsFrameCompileRejection =
   | "invalid-reviewed-intent"
   | "invalid-state"
@@ -127,19 +155,13 @@ export type MechanicsFrameCompileRejection =
 
 export type MechanicsFrameCompileResult =
   | {
-      readonly events: readonly Readonly<MechanicsPostEvent>[];
-      readonly manual: readonly ManualInstruction[];
-      readonly simulation: Extract<
-        MechanicsTransactionSimulationResult,
-        { readonly status: "simulated" | "no-change" }
-      >;
+      readonly segment: Readonly<MechanicsCompiledSegment>;
       readonly status: "compiled";
-      readonly trace: readonly MechanicsCompiledStepTrace[];
-      readonly transaction: Readonly<MechanicsTransaction>;
     }
-  | { readonly status: "replay" }
   | {
+      readonly continuation: Readonly<MechanicsCompilerContinuation>;
       readonly request: Readonly<MechanicsCompilerRequest>;
+      readonly segment: null;
       readonly status: "needs-response";
     }
   | {
@@ -159,6 +181,8 @@ export type MechanicsFrameCompileResult =
             readonly kind: "occurrence-end";
             readonly occurrences: readonly OccurrenceGenerationRef[];
           };
+      readonly continuation: Readonly<MechanicsCompilerContinuation>;
+      readonly segment: null;
       readonly status: "needs-coordination";
     }
   | {

@@ -7,10 +7,10 @@ import {
   discriminatedUnionSchema,
   literalSchema,
   objectSchema,
-  recordSchema,
   unionSchema,
   type InferExactSchema,
 } from "@/lib/exact-schema";
+import { PHASE_EXECUTION_RECEIPT_SCHEMA } from "@/lib/mechanics-command-schema";
 import type { CanonicalFingerprint } from "@/lib/canonical-fingerprint";
 import type { ActionFactGuard, JournalActorRef } from "@/types/action-journal";
 import type { DamageResolution } from "@/types/damage";
@@ -27,7 +27,6 @@ import type {
 import { JSON_SCALAR_SCHEMA } from "@/lib/mechanic-occurrence-schema";
 import type { MechanicsInvocationRef } from "@/types/mechanics-authority-ref";
 import type { MechanicsAuthoritySnapshot } from "@/types/mechanics-authority";
-import type { ProgramRootReceipt } from "@/types/mechanics-command";
 import type {
   EntityRef,
   InventoryGenerationRef,
@@ -101,7 +100,6 @@ const PROGRAM_STEP_OCCURRENCE_ORIGIN_VALUE_SCHEMA = customSchema<
   "program-step-occurrence-origin",
   ProgramStepOccurrenceOrigin
 >("program-step-occurrence-origin");
-const PROGRAM_REGISTERS_SCHEMA = recordSchema("string", JSON_SCALAR_SCHEMA);
 const OCCURRENCE_GENERATION_REF_VALUE_SCHEMA = customSchema<
   "occurrence-generation-ref",
   OccurrenceGenerationRef
@@ -154,10 +152,6 @@ const DAMAGE_RESOLUTION_VALUE_SCHEMA = customSchema<
 const POSITIVE_INTEGER_SCHEMA = customSchema<"positive-integer", number>(
   "positive-integer"
 );
-const PROGRAM_ROOT_RECEIPT_VALUE_SCHEMA = customSchema<
-  "program-root-receipt",
-  ProgramRootReceipt
->("program-root-receipt");
 const TURN_ECONOMY_COMMAND_VALUE_SCHEMA = customSchema<
   "turn-economy-command",
   TurnEconomyClaimCommand
@@ -382,12 +376,18 @@ export const MECHANICS_OPERATION_SCHEMA = discriminatedUnionSchema("kind", {
     item: INVENTORY_GENERATION_REF_VALUE_SCHEMA,
     kind: literalSchema("inventory-end"),
   }),
-  "program-state-transition": objectSchema({
+  "program-root-create": objectSchema({
     ...OPERATION_COMMON_SCHEMA,
-    expectedRegisters: unionSchema([PROGRAM_REGISTERS_SCHEMA, literalSchema(null)]),
-    kind: literalSchema("program-state-transition"),
-    nextRegisters: PROGRAM_REGISTERS_SCHEMA,
-    receipt: PROGRAM_ROOT_RECEIPT_VALUE_SCHEMA,
+    kind: literalSchema("program-root-create"),
+    materialEpoch: customSchema<"nonnegative-integer", number>("nonnegative-integer"),
+    root: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
+  }),
+  "program-phase-transition": objectSchema({
+    ...OPERATION_COMMON_SCHEMA,
+    expected: PHASE_EXECUTION_RECEIPT_SCHEMA,
+    kind: literalSchema("program-phase-transition"),
+    next: PHASE_EXECUTION_RECEIPT_SCHEMA,
+    root: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
   }),
   "program-register-transition": objectSchema({
     ...OPERATION_COMMON_SCHEMA,
@@ -481,7 +481,6 @@ export type MechanicsOperationSchemaCustomTypes = {
   readonly "nonnegative-integer": number;
   readonly "occurrence-generation-ref": OccurrenceGenerationRef;
   readonly "positive-integer": number;
-  readonly "program-root-receipt": ProgramRootReceipt;
   readonly "program-step-occurrence-origin": ProgramStepOccurrenceOrigin;
   readonly "resource-operation": ResourceOperation;
   readonly "resource-ref": ResourceRef;
@@ -530,15 +529,13 @@ export interface OccurrenceCreateFacts {
   readonly created: Readonly<OccurrenceGenerationRef>;
 }
 
-export interface ProgramStateSnapshot {
-  readonly phase: Readonly<ProgramPhaseStateEntry>;
-  readonly registers: Readonly<Record<string, JsonScalar>>;
+export interface ProgramRootCreateFacts {
+  readonly root: Readonly<OccurrenceGenerationRef>;
 }
 
-export interface ProgramStateTransitionFacts {
-  readonly after: Readonly<ProgramStateSnapshot>;
-  readonly before: Readonly<ProgramStateSnapshot> | null;
-  readonly created: boolean;
+export interface ProgramPhaseTransitionFacts {
+  readonly after: Readonly<ProgramPhaseStateEntry>;
+  readonly before: Readonly<ProgramPhaseStateEntry>;
   readonly root: Readonly<OccurrenceGenerationRef>;
 }
 
@@ -622,7 +619,8 @@ export interface MechanicsOperationFactsByKind {
   readonly "inventory-create": Readonly<InventoryCreateFacts>;
   readonly "inventory-transition": Readonly<InventoryTransitionFacts>;
   readonly "inventory-end": Readonly<InventoryTransitionFacts>;
-  readonly "program-state-transition": Readonly<ProgramStateTransitionFacts>;
+  readonly "program-root-create": Readonly<ProgramRootCreateFacts>;
+  readonly "program-phase-transition": Readonly<ProgramPhaseTransitionFacts>;
   readonly "program-register-transition": Readonly<ProgramRegisterTransitionFacts>;
   readonly "occurrence-create": Readonly<OccurrenceCreateFacts>;
   readonly "occurrence-end": Readonly<OccurrenceEndRequestFacts>;
@@ -690,7 +688,8 @@ export interface MechanicsOperationNoChangeReasonByKind {
   readonly "inventory-create": "inventory-already-created";
   readonly "inventory-transition": "inventory-unchanged";
   readonly "inventory-end": "inventory-not-active";
-  readonly "program-state-transition": "program-state-already-committed";
+  readonly "program-root-create": "program-root-already-created";
+  readonly "program-phase-transition": "program-phase-already-committed";
   readonly "program-register-transition": "program-register-unchanged";
   readonly "occurrence-create":
     | "condition-immune"
@@ -756,11 +755,7 @@ export type MechanicsTransactionSimulationResult =
       readonly status: "rejected";
     };
 
-/**
- * Compiler-only ordered projection. It exposes the exact transaction-local world
- * without running causal rebase, so later authored steps compile against the
- * physical result of earlier steps while one final transaction remains atomic.
- */
+/** Compiler-only simulation of a complete ordered prefix. Its causal state is sole truth. */
 export type MechanicsTransactionProjectionResult =
   | {
       readonly actionFacts: readonly Readonly<ActionFactGuard>[];
@@ -770,11 +765,10 @@ export type MechanicsTransactionProjectionResult =
         | MechanicsOperationExecution
         | MechanicsOperationNoChange
       )[];
-      readonly inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[];
       readonly stages: readonly MechanicsOperationStage[];
+      readonly state: Readonly<MechanicsCausalState>;
       readonly status: "projected";
       readonly transaction: Readonly<MechanicsTransaction>;
-      readonly world: Readonly<MechanicsWorld>;
     }
   | Extract<
       MechanicsTransactionSimulationResult,

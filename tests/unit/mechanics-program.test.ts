@@ -5,16 +5,16 @@ import { resolveDamage } from "@/lib/damage";
 import { addOccurrence } from "@/lib/mechanic-occurrences";
 import {
   deriveMechanicsRequirements,
-  deriveMechanicsRequirementsFromCausalState,
-  planMechanicsAction,
+  prepareMechanicsProgramCompilation,
+  refreshMechanicsProgramCompilationContext,
   reviewMechanicsIntent,
-  reviewMechanicsIntentFromCausalState,
 } from "@/lib/mechanics-program";
 import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
 import { createEmptyCharacterMaterialState } from "@/lib/material-state";
 import {
   beginMechanicsCausalState,
   parseMechanicsWorld,
+  pushMechanicsPendingFrame,
   rebaseMechanicsCausalState,
 } from "@/lib/mechanics-world";
 import type { ProgramPhaseState } from "@/types/mechanic-occurrence";
@@ -224,6 +224,28 @@ function worldWithProgramRoot(
   return parsed.value;
 }
 
+function causalState(snapshot: Readonly<MechanicsWorld>): Readonly<MechanicsCausalState> {
+  const begun = beginMechanicsCausalState(snapshot);
+  if (!begun.ok) throw new Error(`causal fixture: ${begun.reason}`);
+  return begun.value;
+}
+
+function withPendingFrame(
+  state: Readonly<MechanicsCausalState>,
+  frame: Readonly<MechanicsExecutionFrame>
+): Readonly<MechanicsCausalState> {
+  const pushed = pushMechanicsPendingFrame(state, frame);
+  if (!pushed.ok) throw new Error(`pending frame fixture: ${pushed.reason}`);
+  return pushed.value;
+}
+
+function pendingState(
+  snapshot: Readonly<MechanicsWorld>,
+  frame: Readonly<MechanicsExecutionFrame>
+): Readonly<MechanicsCausalState> {
+  return withPendingFrame(causalState(snapshot), frame);
+}
+
 function intent(
   program: MechanicsProgram,
   authority = authorityReceipt(program)
@@ -401,7 +423,7 @@ describe("MechanicsProgram terminal kernel", () => {
       registers: [],
       version: 1,
     });
-    const snapshot = worldWithFamiliar(2);
+    const snapshot = causalState(worldWithFamiliar(2));
     const request = intent(program);
     const answer = {
       inputId: "target",
@@ -451,14 +473,13 @@ describe("MechanicsProgram terminal kernel", () => {
     expect(Object.isFrozen(result)).toBe(true);
     expect(Object.isFrozen(result?.phases)).toBe(true);
     if (!result) return;
-    const snapshot = world();
+    const snapshot = causalState(world());
     const requirements = deriveMechanicsRequirements(intent(result), snapshot);
     expect(Object.isFrozen(requirements)).toBe(true);
     const review = reviewMechanicsIntent(intent(result), [], snapshot);
     expect(Object.isFrozen(review)).toBe(true);
     if (review.status === "reviewed") {
       expect(Object.isFrozen(review.reviewed)).toBe(true);
-      expect(Object.isFrozen(planMechanicsAction(review.reviewed, snapshot))).toBe(true);
     }
     expect(conformMechanicsProgram({ ...authored, legacy: true })).toBeNull();
     expect(
@@ -843,16 +864,16 @@ describe("MechanicsProgram terminal kernel", () => {
       reason: "invalid-world",
       status: "rejected",
     });
-    expect(deriveMechanicsRequirementsFromCausalState(proposed, state).status).toBe(
-      "derived"
-    );
-    expect(reviewMechanicsIntentFromCausalState(proposed, [], state).status).toBe(
-      "reviewed"
-    );
+    const pending = withPendingFrame(state, proposed.frame);
+    expect(deriveMechanicsRequirements(proposed, pending).status).toBe("derived");
+    expect(reviewMechanicsIntent(proposed, [], pending).status).toBe("reviewed");
     expect(
-      deriveMechanicsRequirementsFromCausalState(proposed, {
-        ...state,
-        context: { ...state.context, request: { ...state.context.request, extra: [] } },
+      deriveMechanicsRequirements(proposed, {
+        ...pending,
+        context: {
+          ...pending.context,
+          request: { ...pending.context.request, extra: [] },
+        },
       })
     ).toMatchObject({ reason: "invalid-world", status: "rejected" });
   });
@@ -882,44 +903,38 @@ describe("MechanicsProgram terminal kernel", () => {
     });
     const proposed = intent(program);
     const before = world();
-    const review = reviewMechanicsIntent(proposed, [], before);
+    const review = reviewMechanicsIntent(proposed, [], causalState(before));
     expect(review.status).toBe("reviewed");
     if (review.status !== "reviewed") return;
-    expect(planMechanicsAction(review.reviewed, before)).toMatchObject({
-      manual: [{ instructionId: "move-owner" }],
-      operations: ["program-invocation-state-transition"],
-      reason: "missing-world-operation",
-      status: "rejected",
-    });
-
     const after = worldWithProgramRoot(program, {
       resolve: { execution: 1, lastTriggerEventId: null },
     });
-    expect(planMechanicsAction(review.reviewed, after)).toEqual({
-      action: null,
-      manual: [],
-      status: "planned",
-    });
-    expect(deriveMechanicsRequirements(proposed, after).status).toBe("derived");
+    expect(deriveMechanicsRequirements(proposed, causalState(after)).status).toBe(
+      "derived"
+    );
     expect(
       deriveMechanicsRequirements(
         proposed,
-        worldWithProgramRoot(program, {
-          resolve: { execution: 0, lastTriggerEventId: null },
-        })
+        causalState(
+          worldWithProgramRoot(program, {
+            resolve: { execution: 0, lastTriggerEventId: null },
+          })
+        )
       )
     ).toMatchObject({ reason: "invalid-root-occurrence", status: "rejected" });
 
     // Once the allocation cursor advances, an absent root is a closed/stale
     // invocation, not permission to recreate a completed program occurrence.
-    expect(deriveMechanicsRequirements(proposed, world(2))).toMatchObject({
+    expect(deriveMechanicsRequirements(proposed, causalState(world(2)))).toMatchObject({
       reason: "invalid-root-occurrence",
       status: "rejected",
     });
-    expect(deriveMechanicsRequirements(proposed, world(1, 1))).toMatchObject({
-      reason: "invalid-root-occurrence",
-      status: "rejected",
-    });
+    expect(deriveMechanicsRequirements(proposed, causalState(world(1, 1)))).toMatchObject(
+      {
+        reason: "invalid-root-occurrence",
+        status: "rejected",
+      }
+    );
     expect(
       deriveMechanicsRequirements(
         withFrame(proposed, {
@@ -928,9 +943,166 @@ describe("MechanicsProgram terminal kernel", () => {
             root: { ...proposed.frame.rootReceipt.root, ordinal: 2 },
           },
         }),
-        after
+        causalState(after)
       )
     ).toMatchObject({ reason: "invalid-root-occurrence", status: "rejected" });
+  });
+
+  it("executes a created phase-zero root only under its exact issued top frame", () => {
+    const program = conformed({
+      id: "pending-create",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const proposed = intent(program);
+    const reviewed = reviewMechanicsIntent(proposed, [], causalState(world()));
+    expect(reviewed.status).toBe("reviewed");
+    if (reviewed.status !== "reviewed") return;
+
+    const initial = causalState(world());
+    expect(prepareMechanicsProgramCompilation(reviewed.reviewed, initial).status).toBe(
+      "ready"
+    );
+
+    const createdWorld = worldWithProgramRoot(program, {
+      resolve: { execution: 0, lastTriggerEventId: null },
+    });
+    const unissued = causalState(createdWorld);
+    expect(deriveMechanicsRequirements(proposed, unissued)).toMatchObject({
+      reason: "invalid-root-occurrence",
+      status: "rejected",
+    });
+    expect(prepareMechanicsProgramCompilation(reviewed.reviewed, unissued)).toMatchObject(
+      {
+        reason: "invalid-root-occurrence",
+        status: "rejected",
+      }
+    );
+    expect(
+      refreshMechanicsProgramCompilationContext(reviewed.reviewed, unissued)
+    ).toBeNull();
+
+    const pending = withPendingFrame(unissued, proposed.frame);
+    expect(deriveMechanicsRequirements(proposed, pending).status).toBe("derived");
+    expect(reviewMechanicsIntent(proposed, [], pending).status).toBe("reviewed");
+    expect(prepareMechanicsProgramCompilation(reviewed.reviewed, pending).status).toBe(
+      "ready"
+    );
+    expect(
+      refreshMechanicsProgramCompilationContext(reviewed.reviewed, pending)
+    ).not.toBeNull();
+
+    const cloned = { ...pending };
+    expect(prepareMechanicsProgramCompilation(reviewed.reviewed, cloned)).toMatchObject({
+      reason: "invalid-state",
+      status: "rejected",
+    });
+    const activeFrame = pending.context.pendingFrames[0];
+    if (!activeFrame) throw new Error("pending frame fixture");
+    const forgedCursor = {
+      ...pending,
+      context: {
+        ...pending.context,
+        pendingFrames: [
+          {
+            ...activeFrame,
+            cursor: { nextSlot: 2, stage: "step", stepIndex: 0 },
+          },
+        ],
+      },
+    };
+    expect(
+      prepareMechanicsProgramCompilation(reviewed.reviewed, forgedCursor)
+    ).toMatchObject({ reason: "invalid-state", status: "rejected" });
+    expect(
+      deriveMechanicsRequirements(
+        withFrame(proposed, {
+          rootReceipt: {
+            ...proposed.frame.rootReceipt,
+            root: { ...proposed.frame.rootReceipt.root, ordinal: 2 },
+          },
+        }),
+        pending
+      )
+    ).toMatchObject({ reason: "invalid-root-occurrence", status: "rejected" });
+    expect(
+      deriveMechanicsRequirements(
+        withFrame(proposed, {
+          rootReceipt: {
+            ...proposed.frame.rootReceipt,
+            next: { ...proposed.frame.rootReceipt.next, phaseId: "other" },
+          },
+        }),
+        pending
+      )
+    ).toMatchObject({ reason: "invalid-intent", status: "rejected" });
+  });
+
+  it("admits only the pending stack top and treats the exact committed receipt as replay", () => {
+    const program = conformed({
+      id: "pending-advance",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [],
+          phaseId: "pulse",
+          steps: [],
+          trigger: { combatant: "owner", kind: "turn-boundary", phase: "start" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const outer = intent(program);
+    const inner = advanceIntent(program, "pulse", {
+      clock: { epoch: 0, material: HERO },
+      combatant: SELF,
+      kind: "turn-boundary",
+      phase: "start",
+      round: 1,
+      triggerEventId: "turn.hero.1.start",
+    });
+    const expectedWorld = worldWithProgramRoot(program, {
+      pulse: { execution: 0, lastTriggerEventId: null },
+      resolve: { execution: 0, lastTriggerEventId: null },
+    });
+    const outerPending = pendingState(expectedWorld, outer.frame);
+    const nested = withPendingFrame(outerPending, inner.frame);
+
+    expect(deriveMechanicsRequirements(outer, nested)).toMatchObject({
+      reason: "invalid-root-occurrence",
+      status: "rejected",
+    });
+    expect(deriveMechanicsRequirements(inner, nested).status).toBe("derived");
+    const reviewed = reviewMechanicsIntent(inner, [], nested);
+    expect(reviewed.status).toBe("reviewed");
+    if (reviewed.status !== "reviewed") return;
+    expect(prepareMechanicsProgramCompilation(reviewed.reviewed, nested).status).toBe(
+      "ready"
+    );
+
+    const committed = causalState(
+      worldWithProgramRoot(program, {
+        pulse: { execution: 1, lastTriggerEventId: "turn.hero.1.start" },
+        resolve: { execution: 0, lastTriggerEventId: null },
+      })
+    );
+    expect(prepareMechanicsProgramCompilation(reviewed.reviewed, committed)).toEqual({
+      status: "replay",
+    });
   });
 
   it("freezes program-phase trigger evidence to one source execution", () => {
@@ -965,7 +1137,8 @@ describe("MechanicsProgram terminal kernel", () => {
       triggerEventId: "program.root-1.resolve.1",
     });
 
-    expect(deriveMechanicsRequirements(proposed, snapshot).status).toBe("derived");
+    const pending = pendingState(snapshot, proposed.frame);
+    expect(deriveMechanicsRequirements(proposed, pending).status).toBe("derived");
     expect(
       deriveMechanicsRequirements(
         withFrame(proposed, {
@@ -982,7 +1155,7 @@ describe("MechanicsProgram terminal kernel", () => {
             occurrence: { ...ROOT, ordinal: 2 },
           },
         }),
-        snapshot
+        pending
       )
     ).toMatchObject({ reason: "invalid-root-occurrence", status: "rejected" });
     expect(
@@ -990,15 +1163,15 @@ describe("MechanicsProgram terminal kernel", () => {
         withFrame(proposed, {
           trigger: { ...proposed.frame.trigger, execution: 2 },
         }),
-        snapshot
+        pending
       )
-    ).toMatchObject({ reason: "trigger-mismatch", status: "rejected" });
+    ).toMatchObject({ reason: "invalid-root-occurrence", status: "rejected" });
     expect(
       deriveMechanicsRequirements(
         withFrame(proposed, {
           trigger: { ...proposed.frame.trigger, execution: 0 },
         }),
-        snapshot
+        pending
       )
     ).toMatchObject({ reason: "invalid-intent", status: "rejected" });
     expect(
@@ -1011,7 +1184,7 @@ describe("MechanicsProgram terminal kernel", () => {
             triggerEventId: "program.root-1.resolve.1",
           },
         } as never),
-        snapshot
+        pending
       )
     ).toMatchObject({ reason: "invalid-intent", status: "rejected" });
   });
@@ -1196,7 +1369,7 @@ describe("MechanicsProgram terminal kernel", () => {
       version: 1,
     } as const;
     const program = conformed(authored);
-    const snapshot = world();
+    const snapshot = causalState(world());
     const review = reviewMechanicsIntent(
       intent(program),
       [
@@ -1223,20 +1396,6 @@ describe("MechanicsProgram terminal kernel", () => {
       snapshot
     );
     if (review.status !== "reviewed") throw new Error(JSON.stringify(review));
-    expect(planMechanicsAction(review.reviewed, snapshot)).toMatchObject({
-      manual: [
-        {
-          targets: [
-            { binding: SELF, ordinal: 1 },
-            { binding: SELF, ordinal: 2 },
-          ],
-        },
-      ],
-      operations: ["hit-point-damage", "program-invocation-state-transition"],
-      reason: "missing-world-operation",
-      status: "rejected",
-    });
-
     const otherTargets = { ...targets, inputId: "other-targets" } as const;
     expect(
       conformMechanicsProgram({
@@ -1386,7 +1545,7 @@ describe("MechanicsProgram terminal kernel", () => {
           { inputId: "first", kind: "resource", resource: gp },
           { inputId: "second", kind: "resource", resource: gp },
         ],
-        parsed.value
+        causalState(parsed.value)
       )
     ).toMatchObject({
       reason: "invalid-answer",
@@ -1484,7 +1643,7 @@ describe("MechanicsProgram terminal kernel", () => {
       registers: [],
       version: 1,
     });
-    const snapshot = world();
+    const snapshot = causalState(world());
     const staged = reviewMechanicsIntent(
       intent(program),
       [
@@ -1639,7 +1798,7 @@ describe("MechanicsProgram terminal kernel", () => {
       registers: [],
       version: 1,
     });
-    const snapshot = world();
+    const snapshot = causalState(world());
     const request = intent(program);
     const requirements = deriveMechanicsRequirements(request, snapshot);
     expect(requirements.status).toBe("derived");
@@ -1708,11 +1867,6 @@ describe("MechanicsProgram terminal kernel", () => {
       "attack",
       "ordinary-damage",
     ]);
-    expect(planMechanicsAction(reviewed.reviewed, snapshot)).toMatchObject({
-      operations: ["program-invocation-state-transition"],
-      reason: "missing-world-operation",
-      status: "rejected",
-    });
   });
 
   it("authorizes generic die replacements cumulatively with the neutral policy", () => {
@@ -1757,7 +1911,7 @@ describe("MechanicsProgram terminal kernel", () => {
       registers: [],
       version: 1,
     });
-    const snapshot = world();
+    const snapshot = causalState(world());
     const request = intent(program);
     const requirements = deriveMechanicsRequirements(request, snapshot);
     expect(requirements.status).toBe("derived");
@@ -1847,7 +2001,7 @@ describe("MechanicsProgram terminal kernel", () => {
       registers: [],
       version: 1,
     });
-    const snapshot = world();
+    const snapshot = causalState(world());
     const request = intent(program);
     const requirement = deriveMechanicsRequirements(request, snapshot);
     if (requirement.status !== "derived") throw new Error("requirement rejected");
@@ -1951,7 +2105,7 @@ describe("MechanicsProgram terminal kernel", () => {
       registers: [],
       version: 1,
     });
-    const snapshot = world();
+    const snapshot = causalState(world());
     const request = intent(program);
     const derived = deriveMechanicsRequirements(request, snapshot);
     if (derived.status !== "derived") throw new Error("requirements rejected");
@@ -2046,7 +2200,7 @@ describe("MechanicsProgram terminal kernel", () => {
           ...intent(program),
           trigger: { eventId: "forged", kind: "manual-table-event" },
         },
-        world()
+        causalState(world())
       )
     ).toMatchObject({ reason: "invalid-intent", status: "rejected" });
     expect(
@@ -2141,7 +2295,8 @@ describe("MechanicsProgram terminal kernel", () => {
       triggerEventId: "damage-event-1",
     });
 
-    const result = deriveMechanicsRequirements(proposed, before);
+    const pending = pendingState(before, proposed.frame);
+    const result = deriveMechanicsRequirements(proposed, pending);
     expect(result.status).toBe("derived");
     if (result.status !== "derived") return;
     expect(result.requirements).toMatchObject([
@@ -2155,7 +2310,7 @@ describe("MechanicsProgram terminal kernel", () => {
             packet: attempt.resolution.packet,
           } as never,
         }),
-        before
+        pending
       )
     ).toMatchObject({ reason: "invalid-intent", status: "rejected" });
     expect(
@@ -2172,7 +2327,7 @@ describe("MechanicsProgram terminal kernel", () => {
             },
           },
         }),
-        before
+        pending
       )
     ).toMatchObject({ reason: "invalid-intent", status: "rejected" });
   });
@@ -2220,37 +2375,28 @@ describe("MechanicsProgram terminal kernel", () => {
             },
           },
         }),
-        before
+        causalState(before)
       )
     ).toMatchObject({ reason: "invalid-intent", status: "rejected" });
     const first = { ...proposed, actionId: "pulse-a" };
     const contender = { ...proposed, actionId: "pulse-b" };
 
-    expect(deriveMechanicsRequirements(first, before).status).toBe("derived");
-    expect(deriveMechanicsRequirements(contender, before).status).toBe("derived");
-    const reviewed = reviewMechanicsIntent(first, [], before);
+    const active = pendingState(before, first.frame);
+    expect(deriveMechanicsRequirements(first, active).status).toBe("derived");
+    expect(deriveMechanicsRequirements(contender, active).status).toBe("derived");
+    const reviewed = reviewMechanicsIntent(first, [], active);
     expect(reviewed.status).toBe("reviewed");
     if (reviewed.status !== "reviewed") return;
-    expect(planMechanicsAction(reviewed.reviewed, before)).toMatchObject({
-      operations: ["program-phase-state-transition"],
-      reason: "missing-world-operation",
-      status: "rejected",
-    });
-
     // The winning CAS set the exact receipt. Same event+ordinal is an idempotent
-    // replay even after journal eviction, and planning cannot repeat any body work.
+    // replay even after journal eviction, so no body work can repeat.
     const after = worldWithProgramRoot(program, {
       pulse: { execution: 1, lastTriggerEventId: "turn.hero.1.start" },
       resolve: { execution: 1, lastTriggerEventId: null },
     });
     expect(after.documents[0]?.state.actions).toEqual([]);
-    expect(deriveMechanicsRequirements(first, after).status).toBe("derived");
-    expect(deriveMechanicsRequirements(contender, after).status).toBe("derived");
-    expect(planMechanicsAction(reviewed.reviewed, after)).toEqual({
-      action: null,
-      manual: [],
-      status: "planned",
-    });
+    const committed = causalState(after);
+    expect(deriveMechanicsRequirements(first, committed).status).toBe("derived");
+    expect(deriveMechanicsRequirements(contender, committed).status).toBe("derived");
     // The same evidence cannot acquire a fresh event identity through its CAS receipt.
     expect(
       deriveMechanicsRequirements(
@@ -2266,7 +2412,7 @@ describe("MechanicsProgram terminal kernel", () => {
             },
           }
         ),
-        after
+        committed
       )
     ).toMatchObject({ reason: "invalid-intent", status: "rejected" });
     expect(
@@ -2280,90 +2426,28 @@ describe("MechanicsProgram terminal kernel", () => {
             },
           }
         ),
-        after
+        committed
       )
     ).toMatchObject({ reason: "invalid-intent", status: "rejected" });
+    const next = advanceIntent(
+      program,
+      "pulse",
+      {
+        clock: { epoch: 0, material: HERO },
+        combatant: SELF,
+        kind: "turn-boundary",
+        phase: "start",
+        round: 2,
+        triggerEventId: "turn.hero.2.start",
+      },
+      {
+        execution: 1,
+        phaseId: "pulse",
+        triggerEventId: "turn.hero.1.start",
+      }
+    );
     expect(
-      deriveMechanicsRequirements(
-        advanceIntent(
-          program,
-          "pulse",
-          {
-            clock: { epoch: 0, material: HERO },
-            combatant: SELF,
-            kind: "turn-boundary",
-            phase: "start",
-            round: 2,
-            triggerEventId: "turn.hero.2.start",
-          },
-          {
-            execution: 1,
-            phaseId: "pulse",
-            triggerEventId: "turn.hero.1.start",
-          }
-        ),
-        after
-      ).status
+      deriveMechanicsRequirements(next, pendingState(after, next.frame)).status
     ).toBe("derived");
-  });
-
-  it("fails closed on same-phase state threading until ordered world execution exists", () => {
-    const program = conformed({
-      id: "damage-then-heal",
-      phases: [
-        {
-          inputs: [],
-          phaseId: "resolve",
-          steps: [
-            {
-              delivery: "automatic",
-              kind: "damage",
-              parts: [
-                {
-                  amount: {
-                    expression: { kind: "fixed", value: 4 },
-                    kind: "integer",
-                  },
-                  damageType: "necrotic",
-                  partId: "drain",
-                },
-              ],
-              stepId: "land-damage",
-              target: { kind: "role", role: "target" },
-              traits: ["spell"],
-              when: null,
-            },
-            {
-              amount: {
-                kind: "landed-damage",
-                partId: "drain",
-                stepId: "land-damage",
-                transform: {
-                  bindingId: "input-total",
-                  kind: "binding",
-                },
-              },
-              kind: "heal",
-              stepId: "heal-landed",
-              target: { kind: "role", role: "caster" },
-              when: null,
-            },
-          ],
-          trigger: { kind: "invocation" },
-        },
-      ],
-      registers: [],
-      version: 1,
-    });
-    const snapshot = world();
-    const reviewed = reviewMechanicsIntent(intent(program), [], snapshot);
-    expect(reviewed.status).toBe("reviewed");
-    if (reviewed.status !== "reviewed") return;
-    expect(planMechanicsAction(reviewed.reviewed, snapshot)).toMatchObject({
-      operations: ["ordered-program-execution"],
-      reason: "missing-world-operation",
-      status: "rejected",
-      stepIds: ["heal-landed"],
-    });
   });
 });

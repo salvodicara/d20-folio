@@ -27,12 +27,17 @@ import { createEmptyCharacterMaterialState } from "@/lib/material-state";
 import { simulateMechanicsTransaction } from "@/lib/mechanics-operation";
 import { createTurnEconomyState } from "@/lib/turn-economy";
 import {
+  advanceMechanicsPendingFrameStep,
   beginMechanicsCausalState,
   discoverMechanicsEndWave,
   finalizeMechanicsEndWave,
   latchMechanicsEndWave,
   parseMechanicsWorld,
+  popMechanicsPendingFrame,
+  pushMechanicsPendingFrame,
+  topMechanicsPendingFrame,
 } from "@/lib/mechanics-world";
+import type { MechanicsExecutionFrame } from "@/types/mechanics-command";
 import type { MechanicsInvocationRef } from "@/types/mechanics-authority-ref";
 import type {
   MechanicsAuthorityDefinition,
@@ -103,7 +108,6 @@ const PROGRAM_STEPS = [
     lifetime: { kind: "manual" },
     operation: "start",
     stepId: STEP_IDS.concentration,
-    target: { kind: "role", role: "target" },
     when: null,
   },
   {
@@ -574,6 +578,32 @@ function worldWithProgramRoot(nextOccurrenceOrdinal = 1): Readonly<MechanicsWorl
   return parsed.value;
 }
 
+function worldWithZeroedProgramRoot(): Readonly<MechanicsWorld> {
+  const basis = world();
+  const document = basis.documents[0];
+  if (document?.kind !== "character") throw new Error("character fixture");
+  const occurrences = addOccurrence(
+    {
+      nextOccurrenceOrdinal: document.state.nextOccurrenceOrdinal,
+      occurrences: document.state.occurrences,
+    },
+    "root",
+    {
+      authority: AUTHORITY,
+      endRules: [],
+      kind: "program",
+      phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
+      registers: {},
+    }
+  );
+  const parsed = parseMechanicsWorld({
+    ...basis,
+    documents: [{ ...document, state: { ...document.state, ...occurrences } }],
+  });
+  if (!parsed.ok) throw new Error("zeroed program-root fixture");
+  return parsed.value;
+}
+
 function occurrenceGeneration(
   value: Readonly<MechanicsWorld>,
   occurrenceId: string
@@ -684,6 +714,78 @@ function causalState(value: unknown = world()): Readonly<MechanicsCausalState> {
   return result.value;
 }
 
+function createFrame(
+  value: Readonly<MechanicsWorld>,
+  root: Readonly<OccurrenceGenerationRef>
+): Readonly<MechanicsExecutionFrame> {
+  const document = value.documents.find(
+    ({ material }) =>
+      JSON.stringify(material) === JSON.stringify(root.occurrence.material)
+  );
+  if (!document) throw new Error("program-frame material fixture");
+  return {
+    authority: AUTHORITY,
+    invocation: {
+      installation: AUTHORITY.installation,
+      kind: "installed-capability",
+    },
+    rootReceipt: {
+      kind: "create",
+      materialEpoch: document.state.epoch,
+      next: { execution: 1, phaseId: "invoke", triggerEventId: null },
+      root,
+    },
+    trigger: { kind: "invocation" },
+  };
+}
+
+function pushedFrame(
+  state: Readonly<MechanicsCausalState>,
+  root: Readonly<OccurrenceGenerationRef>
+) {
+  const frame = createFrame(state.world, root);
+  const pushed = pushMechanicsPendingFrame(state, frame);
+  if (!pushed.ok) throw new Error(`pending-frame fixture: ${pushed.reason}`);
+  return { frame, state: pushed.value } as const;
+}
+
+function pendingAtStep(
+  state: Readonly<MechanicsCausalState>,
+  frame: Readonly<MechanicsExecutionFrame>,
+  stepId: string
+): Readonly<MechanicsCausalState> {
+  const phase = frame.authority.snapshot.program?.phases.find(
+    ({ phaseId }) => phaseId === frame.rootReceipt.next.phaseId
+  );
+  const target = phase?.steps.findIndex((step) => step.stepId === stepId) ?? -1;
+  if (!phase || target < 0) throw new Error(`missing authored step: ${stepId}`);
+  let current = state;
+  for (let index = 0; index < target; index += 1) {
+    const advanced = advanceMechanicsPendingFrameStep(current, frame);
+    if (!advanced.ok) throw new Error(`pending-step fixture: ${advanced.reason}`);
+    current = advanced.value;
+  }
+  return current;
+}
+
+function pendingAtPhaseTransition(
+  state: Readonly<MechanicsCausalState>,
+  frame: Readonly<MechanicsExecutionFrame>
+): Readonly<MechanicsCausalState> {
+  let current = state;
+  let remaining = 64;
+  while (topMechanicsPendingFrame(current)?.cursor.stage === "step" && remaining > 0) {
+    const advanced = advanceMechanicsPendingFrameStep(current, frame);
+    if (!advanced.ok) throw new Error(`pending-phase fixture: ${advanced.reason}`);
+    current = advanced.value;
+    remaining -= 1;
+  }
+  if (topMechanicsPendingFrame(current)?.cursor.stage !== "phase-transition") {
+    throw new Error("pending phase-transition fixture");
+  }
+  return current;
+}
+
 function context(
   ordering: unknown = null,
   causes: readonly MechanicsOperationCause[] = [INSTALLED_CAUSE],
@@ -705,22 +807,30 @@ function context(
 
 function programRootCreateOperation(
   occurrenceId = "root"
-): Extract<MechanicsOperation, { kind: "program-state-transition" }> {
+): Extract<MechanicsOperation, { kind: "program-root-create" }> {
   return {
     causeId: INSTALLED_CAUSE.causeId,
-    expectedRegisters: null,
-    kind: "program-state-transition",
-    nextRegisters: {},
+    kind: "program-root-create",
+    materialEpoch: 0,
     operationId: `create-${occurrenceId}`,
-    receipt: {
-      kind: "create",
-      materialEpoch: 0,
-      next: { execution: 1, phaseId: "invoke", triggerEventId: null },
-      root: {
-        occurrence: { material: MATERIAL, occurrenceId },
-        ordinal: 1,
-      },
+    root: {
+      occurrence: { material: MATERIAL, occurrenceId },
+      ordinal: 1,
     },
+  };
+}
+
+function programPhaseTransitionOperation(
+  root: OccurrenceGenerationRef
+): Extract<MechanicsOperation, { kind: "program-phase-transition" }> {
+  const cause = programRootCause(root);
+  return {
+    causeId: cause.causeId,
+    expected: { execution: 0, phaseId: "invoke", triggerEventId: null },
+    kind: "program-phase-transition",
+    next: { execution: 1, phaseId: "invoke", triggerEventId: null },
+    operationId: "commit-invoke",
+    root,
   };
 }
 
@@ -883,12 +993,9 @@ describe("simultaneous resolution groups", () => {
     const first = programRootCreateOperation("first-root");
     const second = {
       ...programRootCreateOperation("second-root"),
-      receipt: {
-        ...programRootCreateOperation("second-root").receipt,
-        root: {
-          occurrence: { material: MATERIAL, occurrenceId: "second-root" },
-          ordinal: 2,
-        },
+      root: {
+        occurrence: { material: MATERIAL, occurrenceId: "second-root" },
+        ordinal: 2,
       },
     } as const satisfies MechanicsOperation;
     const result = analyzeResolutionGroup(
@@ -1321,91 +1428,146 @@ describe("simultaneous resolution groups", () => {
     expect(JSON.stringify(basis)).toBe(JSON.stringify(world()));
   });
 
-  it("creates a program root and emits only its exact phase-completion event", () => {
-    const operation = programRootCreateOperation();
-    const result = simulateResolutionGroup(
+  it("creates a zeroed program root and emits only the separate phase commit event", () => {
+    const createRoot = programRootCreateOperation();
+    const phase = programPhaseTransitionOperation(createRoot.root);
+    const rootCause = programRootCause(createRoot.root);
+    const allocation = simulateMechanicsTransaction(
       {
-        groupId: "program-root",
-        proposals: [{ operation, proposalId: "root" }],
+        actionId: "program-root-create",
+        actor: SELF,
+        causes: [INSTALLED_CAUSE],
+        factGuards: [],
+        operations: [createRoot],
       },
-      context()
+      {
+        authoritySnapshot: authoritySnapshotFor([INSTALLED_CAUSE]),
+        state: causalState(),
+      }
+    );
+    expect(allocation.status).toBe("simulated");
+    if (allocation.status !== "simulated") return;
+    expect(deriveMechanicsPostEvents(allocation.stages)).toEqual([]);
+    expect(allocation.state.world.documents[0]?.state.occurrences.root).toMatchObject({
+      phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
+    });
+
+    const pending = pushedFrame(allocation.state, createRoot.root);
+    const phaseState = pendingAtPhaseTransition(pending.state, pending.frame);
+    const result = simulateMechanicsTransaction(
+      {
+        actionId: "program-phase",
+        actor: SELF,
+        causes: [rootCause],
+        factGuards: [],
+        operations: [phase],
+      },
+      {
+        authoritySnapshot: authoritySnapshotFor([rootCause]),
+        state: phaseState,
+      }
     );
     expect(result).toMatchObject({ status: "simulated" });
     if (result.status !== "simulated") return;
-    expect(result.events).toEqual([
+    expect(allocation.stages[0]?.execution).toMatchObject({
+      facts: { root: createRoot.root },
+      kind: "program-root-create",
+    });
+    expect(deriveMechanicsPostEvents(result.stages)).toEqual([
       {
         eventId: `event:${canonicalFingerprint({
           kind: "program-phase-end",
-          operationId: operation.operationId,
+          operationId: phase.operationId,
           subject: {
             execution: 1,
-            occurrence: operation.receipt.root,
+            occurrence: createRoot.root,
             phaseId: "invoke",
           },
         })}`,
         execution: 1,
         kind: "program-phase-end",
-        occurrence: operation.receipt.root,
-        operationId: "create-root",
+        occurrence: createRoot.root,
+        operationId: phase.operationId,
         phaseId: "invoke",
       },
     ]);
-    expect(result.events).toEqual(deriveMechanicsPostEvents(result.stages));
     const root = result.state.world.documents[0]?.state.occurrences.root;
-    expect(root).toMatchObject({ authority: AUTHORITY, kind: "program" });
+    expect(root).toMatchObject({
+      authority: AUTHORITY,
+      kind: "program",
+      phaseState: { invoke: { execution: 1, lastTriggerEventId: null } },
+      registers: {},
+    });
     expect(root).not.toHaveProperty("target");
+    expect(topMechanicsPendingFrame(result.state)?.cursor).toEqual({
+      stage: "phase-complete",
+    });
+    expect(popMechanicsPendingFrame(result.state, pending.frame).ok).toBe(true);
   });
 
-  it("latches a created phase child only after the transaction prefix commits", () => {
+  it("keeps a phase child readable through its exact phase commit", () => {
     const createRoot = programRootCreateOperation();
-    const rootCause = programRootCause(createRoot.receipt.root);
+    const rootCause = programRootCause(createRoot.root);
+    const phase = programPhaseTransitionOperation(createRoot.root);
     const baseChild = occurrenceCreateOperation("create-phase-child", "phase-child", 2);
     const createChild = {
       ...baseChild,
       causeId: rootCause.causeId,
-      occurrence: {
-        ...baseChild.occurrence,
-        endRules: [
-          {
-            execution: 1,
-            kind: "program-phase-end",
-            occurrenceId: "root",
-            phaseId: "invoke",
-          },
-        ],
-      },
     } as const satisfies MechanicsOperation;
-    const causes = [INSTALLED_CAUSE, rootCause].sort((left, right) =>
-      compareCodeUnits(left.causeId, right.causeId)
-    );
-    const result = simulateMechanicsTransaction(
+    const allocation = simulateMechanicsTransaction(
       {
-        actionId: "phase-child",
+        actionId: "phase-child-root",
         actor: SELF,
-        causes,
+        causes: [INSTALLED_CAUSE],
         factGuards: [],
-        operations: [createRoot, createChild],
+        operations: [createRoot],
       },
       {
-        authoritySnapshot: authoritySnapshotFor(causes),
+        authoritySnapshot: authoritySnapshotFor([INSTALLED_CAUSE]),
         state: causalState(),
       }
     );
-    expect(result.status).toBe("simulated");
+    expect(allocation.status).toBe("simulated");
+    if (allocation.status !== "simulated") return;
+    const pending = pushedFrame(allocation.state, createRoot.root);
+    const childState = pendingAtStep(pending.state, pending.frame, STEP_IDS.standing);
+    const childResult = simulateMechanicsTransaction(
+      {
+        actionId: "phase-child",
+        actor: SELF,
+        causes: [rootCause],
+        factGuards: [],
+        operations: [createChild],
+      },
+      {
+        authoritySnapshot: authoritySnapshotFor([rootCause]),
+        state: childState,
+      }
+    );
+    expect(childResult.status).toBe("simulated");
+    if (childResult.status !== "simulated") return;
+    expect(
+      childResult.state.world.documents[0]?.state.occurrences["phase-child"]?.ending
+    ).toBeNull();
+    const phaseState = pendingAtPhaseTransition(childResult.state, pending.frame);
+    const result = simulateMechanicsTransaction(
+      {
+        actionId: "phase-child-commit",
+        actor: SELF,
+        causes: [rootCause],
+        factGuards: [],
+        operations: [phase],
+      },
+      {
+        authoritySnapshot: authoritySnapshotFor([rootCause]),
+        state: phaseState,
+      }
+    );
+    expect(result).toMatchObject({ status: "simulated" });
     if (result.status !== "simulated") return;
     expect(
-      result.stages.at(-1)?.after.documents[0]?.state.occurrences["phase-child"]?.ending
-    ).toBeNull();
-    expect(
       result.state.world.documents[0]?.state.occurrences["phase-child"]?.ending
-    ).toEqual({
-      causes: [
-        {
-          completion: { execution: 1, phaseId: "invoke", root: createRoot.receipt.root },
-          kind: "program-phase-completed",
-        },
-      ],
-    });
+    ).toBeNull();
   });
 
   it("returns an exact occurrence-end consequence without removing or announcing the source", () => {
@@ -1446,7 +1608,7 @@ describe("simultaneous resolution groups", () => {
   });
 
   it("does not invent an event for a condition projection change", () => {
-    const basis = worldWithProgramRoot();
+    const basis = worldWithZeroedProgramRoot();
     const cause = programRootCause(occurrenceGeneration(basis, "root"));
     const operation = {
       causeId: cause.causeId,
@@ -1469,12 +1631,15 @@ describe("simultaneous resolution groups", () => {
       operationId: "create-blind-first",
       parent: occurrenceGeneration(basis, "root"),
     } as const satisfies MechanicsOperation;
+    const pending = pushedFrame(causalState(basis), occurrenceGeneration(basis, "root"));
     const result = simulateResolutionGroup(
       {
         groupId: "condition-effect",
         proposals: [{ operation, proposalId: "condition" }],
       },
-      context(null, [cause], { state: causalState(basis) })
+      context(null, [cause], {
+        state: pendingAtStep(pending.state, pending.frame, STEP_IDS.condition),
+      })
     );
     expect(result.status).toBe("simulated");
     if (result.status !== "simulated") return;
@@ -1676,45 +1841,81 @@ describe("simultaneous resolution groups", () => {
     ]);
   });
 
-  it("derives phase completion after every ordinary event in the full transaction", () => {
+  it("derives phase completion after every ordinary event in the exact segment sequence", () => {
     const createRoot = programRootCreateOperation();
-    const damage = damageOperation("damage-after-root", FIRST);
-    const simulation = simulateMechanicsTransaction(
+    const phase = programPhaseTransitionOperation(createRoot.root);
+    const rootCause = programRootCause(createRoot.root);
+    const allocation = simulateMechanicsTransaction(
       {
-        actionId: "root-then-damage",
+        actionId: "root-allocate",
         actor: SELF,
         causes: [INSTALLED_CAUSE],
         factGuards: [],
-        operations: [createRoot, damage],
+        operations: [createRoot],
       },
       {
         authoritySnapshot: authoritySnapshotFor([INSTALLED_CAUSE]),
         state: causalState(),
       }
     );
+    expect(allocation.status).toBe("simulated");
+    if (allocation.status !== "simulated") return;
+    const pending = pushedFrame(allocation.state, createRoot.root);
+    const damage = damageOperation("damage-after-root", FIRST);
+    const damaged = simulateMechanicsTransaction(
+      {
+        actionId: "damage-after-root",
+        actor: SELF,
+        causes: [INSTALLED_CAUSE],
+        factGuards: [],
+        operations: [damage],
+      },
+      {
+        authoritySnapshot: authoritySnapshotFor([INSTALLED_CAUSE]),
+        state: pending.state,
+      }
+    );
+    expect(damaged.status).toBe("simulated");
+    if (damaged.status !== "simulated") return;
+    const phaseState = pendingAtPhaseTransition(damaged.state, pending.frame);
+    const simulation = simulateMechanicsTransaction(
+      {
+        actionId: "commit-root",
+        actor: SELF,
+        causes: [rootCause],
+        factGuards: [],
+        operations: [phase],
+      },
+      {
+        authoritySnapshot: authoritySnapshotFor([rootCause]),
+        state: phaseState,
+      }
+    );
     expect(simulation.status).toBe("simulated");
     if (simulation.status !== "simulated") return;
-    expect(simulation.stages.map(({ execution }) => execution.kind)).toEqual([
-      "program-state-transition",
+    const stages = [...allocation.stages, ...damaged.stages, ...simulation.stages];
+    expect(stages.map(({ execution }) => execution.kind)).toEqual([
+      "program-root-create",
       "creature-damage",
+      "program-phase-transition",
     ]);
 
-    const events = deriveMechanicsPostEvents(simulation.stages);
+    const events = deriveMechanicsPostEvents(stages);
     expect(events.map(({ kind }) => kind)).toEqual(["damage-taken", "program-phase-end"]);
     expect(events.at(-1)).toEqual({
       eventId: `event:${canonicalFingerprint({
         kind: "program-phase-end",
-        operationId: createRoot.operationId,
+        operationId: phase.operationId,
         subject: {
           execution: 1,
-          occurrence: createRoot.receipt.root,
+          occurrence: createRoot.root,
           phaseId: "invoke",
         },
       })}`,
       execution: 1,
       kind: "program-phase-end",
-      occurrence: createRoot.receipt.root,
-      operationId: createRoot.operationId,
+      occurrence: createRoot.root,
+      operationId: phase.operationId,
       phaseId: "invoke",
     });
     expect(Object.isFrozen(events)).toBe(true);

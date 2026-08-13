@@ -19,6 +19,7 @@ import type {
   EncounterState,
   SharedMaterialState,
 } from "@/types/material-state";
+import type { MechanicsExecutionFrame } from "@/types/mechanics-command";
 
 export type MechanicsDocument =
   | {
@@ -100,7 +101,24 @@ export interface MechanicsClosureRequest {
  */
 export interface MechanicsCausalContext {
   readonly endWave: Readonly<MechanicsEndWaveCheckpoint> | null;
+  readonly pendingFrames: readonly Readonly<MechanicsPendingFrame>[];
   readonly request: Required<MechanicsClosureRequest>;
+}
+
+/** Exact progress inside one active program frame. */
+export type MechanicsPendingFrameCursor =
+  | {
+      readonly nextSlot: number;
+      readonly stage: "step";
+      readonly stepIndex: number;
+    }
+  | { readonly stage: "phase-transition" }
+  | { readonly stage: "phase-complete" };
+
+/** One semantic stack entry; the final entry is the only mutable top frame. */
+export interface MechanicsPendingFrame {
+  readonly cursor: Readonly<MechanicsPendingFrameCursor>;
+  readonly frame: Readonly<MechanicsExecutionFrame>;
 }
 
 declare const MECHANICS_CAUSAL_STATE: unique symbol;
@@ -218,8 +236,8 @@ export type MechanicsBoundaryResult =
     }
   | {
       readonly outcome: "applied" | "already-applied";
+      readonly state: Readonly<MechanicsCausalState>;
       readonly status: "complete";
-      readonly world: Readonly<MechanicsWorld>;
     }
   | {
       readonly reason: MechanicsWorldSimulationRejection;

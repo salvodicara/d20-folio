@@ -1,4 +1,5 @@
 import { materialRefKey } from "@/lib/action-journal";
+import { conformMechanicsExecutionFrame } from "@/lib/mechanics-command-boundary";
 import {
   canonicalFingerprint,
   canonicalJson,
@@ -69,12 +70,15 @@ import type {
   MechanicsEndWaveLatchResult,
   MechanicsEndWaveCheckpoint,
   MechanicsEndWaveReceipt,
+  MechanicsPendingFrame,
+  MechanicsPendingFrameCursor,
   MechanicsWorld,
   MechanicsWorldInvalidReason,
   MechanicsWorldParseResult,
   MechanicsWorldSimulationRejection,
   MechanicsWorldSimulationResult,
 } from "@/types/mechanics-world";
+import type { MechanicsExecutionFrame } from "@/types/mechanics-command";
 import type {
   CharacterMaterialRef,
   InventoryGenerationRef,
@@ -85,6 +89,11 @@ const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 const MAX_ID_LENGTH = 256;
 const MAX_WORLD_DOCUMENTS = 256;
 const MAX_ENCOUNTER_PARTICIPANTS = 256;
+const MAX_PENDING_FRAMES = 256;
+const MAX_PENDING_SLOT = 2_048;
+
+/** Nonempty pending stacks are process-local capabilities, never JSON credentials. */
+const kernelCausalStates = new WeakSet<object>();
 
 type MutableDocument =
   | {
@@ -701,7 +710,8 @@ function occurrenceCreatureSemanticsValid(
 
 function validateReferences(
   world: MechanicsWorld,
-  inventorySourceLeases: ReadonlySet<string> = new Set()
+  inventorySourceLeases: ReadonlySet<string> = new Set(),
+  allowEndingDeadlines = false
 ): MechanicsWorldInvalidReason | null {
   const concentrations = new Set<string>();
   const encounterCombatants = new Set<string>();
@@ -782,7 +792,12 @@ function validateReferences(
       ) {
         return "missing-reference";
       }
-      if (!occurrenceClocksResolve(world, occurrence)) return "invalid-clock";
+      if (
+        !(allowEndingDeadlines && occurrence.ending !== null) &&
+        !occurrenceClocksResolve(world, occurrence)
+      ) {
+        return "invalid-clock";
+      }
       if (!occurrenceCreatureSemanticsValid(world, occurrence)) {
         return "missing-reference";
       }
@@ -898,14 +913,139 @@ function validateControllerGraph(
   return null;
 }
 
-/**
- * Effect provenance may point one execution ahead only inside an ordered transaction:
- * advance receipts commit last so predicates/register steps observe the prior exact CAS basis.
- * No public/persisted world may expose that transient state.
- */
+interface PendingFramePermit {
+  readonly execution: number;
+  readonly phaseId: string;
+  readonly root: OccurrenceGenerationRef;
+}
+
+function exactEqual(left: unknown, right: unknown): boolean {
+  try {
+    return canonicalJson(left) === canonicalJson(right);
+  } catch {
+    return false;
+  }
+}
+
+function receiptPhaseState(receipt: {
+  readonly execution: number;
+  readonly triggerEventId: string | null;
+}) {
+  return {
+    execution: receipt.execution,
+    lastTriggerEventId: receipt.triggerEventId,
+  };
+}
+
+function pendingFrameKey(frame: Readonly<MechanicsExecutionFrame>): string {
+  return `${occurrenceGenerationRefKey(frame.rootReceipt.root)}\u0000${frame.rootReceipt.next.phaseId}`;
+}
+
+function conformPendingFrameCursor(
+  value: unknown,
+  stepCount: number
+): Readonly<MechanicsPendingFrameCursor> | null {
+  if (isExactRecord(value, ["stage"])) {
+    return value.stage === "phase-transition" || value.stage === "phase-complete"
+      ? freezeDeep({ stage: value.stage })
+      : null;
+  }
+  if (
+    !isExactRecord(value, ["nextSlot", "stage", "stepIndex"]) ||
+    value.stage !== "step" ||
+    !isCounter(value.stepIndex) ||
+    value.stepIndex >= stepCount ||
+    !isPositiveCounter(value.nextSlot) ||
+    value.nextSlot > MAX_PENDING_SLOT
+  ) {
+    return null;
+  }
+  return freezeDeep({
+    nextSlot: value.nextSlot,
+    stage: value.stage,
+    stepIndex: value.stepIndex,
+  });
+}
+
+function pendingFramePermit(
+  world: Readonly<MechanicsWorld>,
+  value: unknown
+): {
+  readonly frame: Readonly<MechanicsPendingFrame>;
+  readonly permit: PendingFramePermit;
+} | null {
+  if (!isExactRecord(value, ["cursor", "frame"])) return null;
+  const frame = conformMechanicsExecutionFrame(value.frame);
+  const program = frame?.authority.snapshot.program;
+  const phase = program?.phases.find(
+    ({ phaseId }) => phaseId === frame.rootReceipt.next.phaseId
+  );
+  if (!frame || !program || !phase || !exactEqual(frame, value.frame)) return null;
+  const cursor = conformPendingFrameCursor(value.cursor, phase.steps.length);
+  if (!cursor || !exactEqual(cursor, value.cursor)) return null;
+  const root = occurrenceAtGeneration(world, frame.rootReceipt.root);
+  if (
+    root?.kind !== "program" ||
+    root.ending !== null ||
+    !exactEqual(root.authority, frame.authority)
+  ) {
+    return null;
+  }
+  const current = root.phaseState[phase.phaseId];
+  const expected =
+    frame.rootReceipt.kind === "create"
+      ? { execution: 0, lastTriggerEventId: null }
+      : receiptPhaseState(frame.rootReceipt.expected);
+  const next = receiptPhaseState(frame.rootReceipt.next);
+  if (!exactEqual(current, cursor.stage === "phase-complete" ? next : expected)) {
+    return null;
+  }
+  return {
+    frame: freezeDeep({ cursor, frame }),
+    permit: {
+      execution: frame.rootReceipt.next.execution,
+      phaseId: phase.phaseId,
+      root: frame.rootReceipt.root,
+    },
+  };
+}
+
+function conformPendingFrames(
+  world: Readonly<MechanicsWorld>,
+  value: unknown
+): readonly Readonly<MechanicsPendingFrame>[] | null {
+  if (!isDenseArray(value) || value.length > MAX_PENDING_FRAMES) return null;
+  const keys = new Set<string>();
+  const frames: Readonly<MechanicsPendingFrame>[] = [];
+  for (const entry of value) {
+    const conformed = pendingFramePermit(world, entry);
+    if (!conformed) return null;
+    const key = pendingFrameKey(conformed.frame.frame);
+    if (keys.has(key)) return null;
+    keys.add(key);
+    frames.push(conformed.frame);
+  }
+  return freezeDeep(frames);
+}
+
+function pendingFramePermits(
+  world: Readonly<MechanicsWorld>,
+  frames: readonly Readonly<MechanicsPendingFrame>[]
+): readonly PendingFramePermit[] | null {
+  const conformed = conformPendingFrames(world, frames);
+  return conformed
+    ? conformed.map(({ frame }) => ({
+        execution: frame.rootReceipt.next.execution,
+        phaseId: frame.rootReceipt.next.phaseId,
+        root: frame.rootReceipt.root,
+      }))
+    : null;
+}
+
+/** One-ahead provenance exists only while its exact recoverable frame is active. */
 function validateProgramOrigins(
   world: MechanicsWorld,
-  allowPendingExecution: boolean
+  permits: readonly PendingFramePermit[]
 ): MechanicsWorldInvalidReason | null {
   for (const document of world.documents) {
     for (const occurrence of Object.values(document.state.occurrences)) {
@@ -922,9 +1062,17 @@ function validateProgramOrigins(
         return "invalid-program-origin";
       }
       const phase = root.phaseState[origin.phaseId];
+      if (!phase || origin.execution > phase.execution + 1) {
+        return "invalid-program-origin";
+      }
       if (
-        !phase ||
-        origin.execution > phase.execution + (allowPendingExecution ? 1 : 0)
+        origin.execution === phase.execution + 1 &&
+        !permits.some(
+          (permit) =>
+            permit.execution === origin.execution &&
+            permit.phaseId === origin.phaseId &&
+            exactEqual(permit.root, origin.root)
+        )
       ) {
         return "invalid-program-origin";
       }
@@ -954,7 +1102,7 @@ function validateWorldInvariants(
   world: MechanicsWorld,
   inventorySourceLeases: ReadonlySet<string> = new Set(),
   allowLatchedEndings = false,
-  allowPendingProgramOrigins = false
+  pendingFrames: readonly Readonly<MechanicsPendingFrame>[] = []
 ): MechanicsWorldInvalidReason | null {
   if (
     !allowLatchedEndings &&
@@ -966,9 +1114,34 @@ function validateWorldInvariants(
   ) {
     return "invalid-ending";
   }
+  const permits = pendingFramePermits(world, pendingFrames);
+  if (!permits) return "invalid-program-origin";
+  return validateWorldInvariantsWithPermits(world, inventorySourceLeases, permits);
+}
+
+function validateReadableCausalWorld(
+  world: MechanicsWorld,
+  inventorySourceLeases: ReadonlySet<string>,
+  pendingFrames: readonly Readonly<MechanicsPendingFrame>[]
+): MechanicsWorldInvalidReason | null {
+  const permits = pendingFramePermits(world, pendingFrames);
+  if (!permits) return "invalid-program-origin";
+  return (
+    validateReferences(world, inventorySourceLeases, true) ??
+    validateProgramOrigins(world, permits) ??
+    validateControllerGraph(world) ??
+    validateLeases(world)
+  );
+}
+
+function validateWorldInvariantsWithPermits(
+  world: MechanicsWorld,
+  inventorySourceLeases: ReadonlySet<string>,
+  permits: readonly PendingFramePermit[]
+): MechanicsWorldInvalidReason | null {
   return (
     validateReferences(world, inventorySourceLeases) ??
-    validateProgramOrigins(world, allowPendingProgramOrigins) ??
+    validateProgramOrigins(world, permits) ??
     validateControllerGraph(world) ??
     validateLeases(world)
   );
@@ -1533,7 +1706,8 @@ function projectWorld(
   original: Readonly<MechanicsWorld>,
   candidate: MutableWorld,
   inventorySourceLeases: ReadonlySet<string>,
-  requireCausalClosure: boolean
+  requireCausalClosure: boolean,
+  pendingFrames: readonly Readonly<MechanicsPendingFrame>[] = []
 ): MechanicsWorldSimulationResult {
   if (
     !sameMaterial(original.scope, candidate.scope) ||
@@ -1568,7 +1742,7 @@ function projectWorld(
   if (!parsed.ok) return rejected(original, "invalid-transition");
   if (
     requireCausalClosure &&
-    validateWorldInvariants(parsed.value, inventorySourceLeases)
+    validateWorldInvariants(parsed.value, inventorySourceLeases, false, pendingFrames)
   ) {
     return rejected(original, "invalid-transition");
   }
@@ -1580,17 +1754,19 @@ function projectWorld(
 function finalize(
   original: Readonly<MechanicsWorld>,
   candidate: MutableWorld,
-  inventorySourceLeases: ReadonlySet<string> = new Set()
+  inventorySourceLeases: ReadonlySet<string> = new Set(),
+  pendingFrames: readonly Readonly<MechanicsPendingFrame>[] = []
 ): MechanicsWorldSimulationResult {
-  return projectWorld(original, candidate, inventorySourceLeases, true);
+  return projectWorld(original, candidate, inventorySourceLeases, true, pendingFrames);
 }
 
 function projectBoundaryMutation(
   original: Readonly<MechanicsWorld>,
   candidate: MutableWorld,
-  inventorySourceLeases: ReadonlySet<string> = new Set()
+  inventorySourceLeases: ReadonlySet<string> = new Set(),
+  pendingFrames: readonly Readonly<MechanicsPendingFrame>[] = []
 ): MechanicsWorldSimulationResult {
-  return projectWorld(original, candidate, inventorySourceLeases, false);
+  return projectWorld(original, candidate, inventorySourceLeases, false, pendingFrames);
 }
 
 function parseClosureRequest(
@@ -1655,6 +1831,37 @@ function parseClosureRequest(
   };
 }
 
+function transactionPermits(
+  world: Readonly<MechanicsWorld>,
+  state: Readonly<MechanicsCausalState> | null
+): readonly PendingFramePermit[] | null {
+  if (state === null) return [];
+  if (
+    !isExactRecord(state, ["context", "world"]) ||
+    !isExactRecord(state.context, ["endWave", "pendingFrames", "request"]) ||
+    !pendingCapabilityValid(state)
+  ) {
+    return null;
+  }
+  const basis = parseMechanicsWorldStructure(state.world);
+  if (
+    !basis.ok ||
+    !protectedJournalsMatch(basis.value, world) ||
+    !preservesLatchedEndings(basis.value, world) ||
+    !preservesAllocationHighWater(basis.value, world)
+  ) {
+    return null;
+  }
+  const basisFrames = conformPendingFrames(basis.value, state.context.pendingFrames);
+  const prefixFrames = conformPendingFrames(world, state.context.pendingFrames);
+  return basisFrames &&
+    prefixFrames &&
+    exactEqual(basisFrames, state.context.pendingFrames) &&
+    exactEqual(prefixFrames, state.context.pendingFrames)
+    ? pendingFramePermits(world, prefixFrames)
+    : null;
+}
+
 /**
  * Parse an intermediate transaction snapshot while exact inventory tombstones
  * are leased by the causal authority that is still executing. Such a snapshot
@@ -1662,19 +1869,23 @@ function parseClosureRequest(
  */
 export function parseMechanicsWorldTransactionState(
   value: unknown,
-  inventorySourceLeases: readonly InventoryGenerationRef[] = []
+  inventorySourceLeases: readonly InventoryGenerationRef[] = [],
+  causalState: Readonly<MechanicsCausalState> | null = null
 ): MechanicsWorldParseResult {
   const structured = parseMechanicsWorldStructure(value);
   if (!structured.ok) return structured;
+  const permits = transactionPermits(structured.value, causalState);
+  if (!permits) return { ok: false, reason: "invalid-program-origin" };
   const closure = parseClosureRequest(structured.value, {
     boundaries: [],
     endRequests: [],
     inventorySourceLeases,
   });
   if (!closure) return { ok: false, reason: "invalid-lease" };
-  const invalid = validateWorldInvariants(
+  const invalid = validateWorldInvariantsWithPermits(
     structured.value,
-    closure.inventorySourceLeases
+    closure.inventorySourceLeases,
+    permits
   );
   return invalid ? { ok: false, reason: invalid } : { ok: true, value: structured.value };
 }
@@ -1692,7 +1903,8 @@ export function parseMechanicsWorldTransactionState(
 export function projectMechanicsTransactionWorld(
   value: unknown,
   priorValue: unknown,
-  inventorySourceLeases: readonly InventoryGenerationRef[] = []
+  inventorySourceLeases: readonly InventoryGenerationRef[] = [],
+  causalState: Readonly<MechanicsCausalState> | null = null
 ): MechanicsWorldParseResult {
   const prior = parseMechanicsWorldStructure(priorValue);
   if (!prior.ok) return prior;
@@ -1701,17 +1913,18 @@ export function projectMechanicsTransactionWorld(
   if (!protectedJournalsMatch(prior.value, candidate.value)) {
     return { ok: false, reason: "protected-state-mismatch" };
   }
+  const permits = transactionPermits(prior.value, causalState);
+  if (!permits) return { ok: false, reason: "invalid-program-origin" };
   const closure = parseClosureRequest(candidate.value, {
     boundaries: [],
     endRequests: [],
     inventorySourceLeases,
   });
   if (!closure) return { ok: false, reason: "invalid-lease" };
-  const invalid = validateWorldInvariants(
+  const invalid = validateWorldInvariantsWithPermits(
     candidate.value,
     closure.inventorySourceLeases,
-    true,
-    true
+    permits
   );
   if (invalid) return { ok: false, reason: invalid };
   if (!preservesLatchedEndings(prior.value, candidate.value)) {
@@ -1787,7 +2000,8 @@ function latchAndRediscoverEndWave(
   world: Readonly<MechanicsWorld>,
   wave: Readonly<MechanicsEndWaveReceipt>,
   historicalBasis: Readonly<MechanicsWorld> | null = null,
-  currentRemoval: Readonly<CurrentCombatantRemovalAuthorization> | null = null
+  currentRemoval: Readonly<CurrentCombatantRemovalAuthorization> | null = null,
+  pendingFrames: readonly Readonly<MechanicsPendingFrame>[] = []
 ): LatchedEndWaveResult {
   const latched = historicalBasis
     ? latchHistoricalMechanicsEndWave(historicalBasis, world, wave)
@@ -1812,7 +2026,17 @@ function latchAndRediscoverEndWave(
         currentRemoval
       )
     : finalizeMechanicsEndWave(current.world, current.wave);
-  if (finalization.status === "rejected") {
+  if (
+    finalization.status === "rejected" &&
+    !(
+      pendingFrames.length > 0 &&
+      validateReadableCausalWorld(
+        current.world,
+        leaseSet(current.wave.request),
+        pendingFrames
+      ) === null
+    )
+  ) {
     return { ok: false, reason: finalization.reason };
   }
   return {
@@ -1917,7 +2141,12 @@ function kernelCausalState(
   world: Readonly<MechanicsWorld>,
   context: Readonly<MechanicsCausalState["context"]>
 ): Readonly<MechanicsCausalState> {
-  return freezeDeep({ context, world }) as unknown as Readonly<MechanicsCausalState>;
+  const state = freezeDeep({
+    context,
+    world,
+  }) as unknown as Readonly<MechanicsCausalState>;
+  kernelCausalStates.add(state);
+  return state;
 }
 
 /** The only hostile causal entry: one causally closed persisted world, no leases. */
@@ -1932,9 +2161,14 @@ export function beginMechanicsCausalState(value: unknown): MechanicsCausalStateR
     ok: true,
     value: kernelCausalState(closed.value, {
       endWave: null,
+      pendingFrames: [],
       request: discovery.wave.request,
     }),
   };
+}
+
+function pendingCapabilityValid(state: Readonly<MechanicsCausalState>): boolean {
+  return state.context.pendingFrames.length === 0 || kernelCausalStates.has(state);
 }
 
 /**
@@ -1948,19 +2182,49 @@ export function rebaseMechanicsCausalState(
   additionalLeases: readonly Readonly<InventoryGenerationRef>[] = [],
   additionalEndRequests: readonly Readonly<OccurrenceGenerationRef>[] = []
 ): MechanicsCausalStateResult {
+  return rebaseMechanicsCausalStateWithFrames(
+    value,
+    priorState,
+    additionalLeases,
+    additionalEndRequests,
+    isExactRecord(priorState, ["context", "world"]) &&
+      isExactRecord(priorState.context, ["endWave", "pendingFrames", "request"])
+      ? priorState.context.pendingFrames
+      : null
+  );
+}
+
+function rebaseMechanicsCausalStateWithFrames(
+  value: Readonly<MechanicsWorld>,
+  priorState: Readonly<MechanicsCausalState>,
+  additionalLeases: readonly Readonly<InventoryGenerationRef>[],
+  additionalEndRequests: readonly Readonly<OccurrenceGenerationRef>[],
+  nextPendingFramesValue: unknown
+): MechanicsCausalStateResult {
   const structured = parseMechanicsWorldStructure(value);
   if (!structured.ok) return { ok: false, reason: "invalid-world" };
   if (
     !isExactRecord(priorState, ["context", "world"]) ||
-    !isExactRecord(priorState.context, ["endWave", "request"]) ||
+    !isExactRecord(priorState.context, ["endWave", "pendingFrames", "request"]) ||
+    !pendingCapabilityValid(priorState) ||
     !isDenseArray(additionalLeases) ||
     !isDenseArray(additionalEndRequests)
   ) {
     return { ok: false, reason: "invalid-end-wave" };
   }
   const priorWorld = parseMechanicsWorldStructure(priorState.world);
+  const priorPendingFrames = priorWorld.ok
+    ? conformPendingFrames(priorWorld.value, priorState.context.pendingFrames)
+    : null;
+  const nextPendingFrames = conformPendingFrames(
+    structured.value,
+    nextPendingFramesValue
+  );
   if (
     !priorWorld.ok ||
+    !priorPendingFrames ||
+    !nextPendingFrames ||
+    !exactEqual(priorPendingFrames, priorState.context.pendingFrames) ||
     !protectedJournalsMatch(priorWorld.value, structured.value) ||
     !preservesLatchedEndings(priorWorld.value, structured.value) ||
     !preservesAllocationHighWater(priorWorld.value, structured.value)
@@ -1984,7 +2248,8 @@ export function rebaseMechanicsCausalState(
   } else {
     const closedPrior = parseMechanicsWorldTransactionState(
       priorWorld.value,
-      priorState.context.request.inventorySourceLeases
+      priorState.context.request.inventorySourceLeases,
+      priorState
     );
     if (!closedPrior.ok) return { ok: false, reason: "invalid-end-wave" };
     const priorDiscovery = discoverMechanicsEndWave(
@@ -2013,16 +2278,49 @@ export function rebaseMechanicsCausalState(
     prior?.wave.request ?? priorState.context.request,
     normalizedClosureRequest({ endRequests, inventorySourceLeases: leases })
   );
+  const invalid = validateWorldInvariants(
+    structured.value,
+    new Set(leases.map(leaseKey)),
+    true,
+    nextPendingFrames
+  );
+  if (invalid) return { ok: false, reason: "invalid-end-wave" };
+  const openPendingRootKeys = new Set(
+    nextPendingFrames
+      .filter(({ cursor }) => cursor.stage !== "phase-complete")
+      .map(({ frame }) => occurrenceGenerationRefKey(frame.rootReceipt.root))
+  );
   const discovery = discoverMechanicsEndWave(structured.value, request);
   if (discovery.status === "rejected") {
     return { ok: false, reason: discovery.reason };
   }
-  const latched = latchAndRediscoverEndWave(discovery.world, discovery.wave);
+  const latched = latchAndRediscoverEndWave(
+    discovery.world,
+    discovery.wave,
+    null,
+    null,
+    nextPendingFrames
+  );
   if (!latched.ok) return latched;
+  if (
+    latched.value.wave.candidates.some((candidate) =>
+      openPendingRootKeys.has(occurrenceGenerationRefKey(candidate.occurrence))
+    )
+  ) {
+    return { ok: false, reason: "invalid-end-wave" };
+  }
+  const reprovedPendingFrames = conformPendingFrames(
+    latched.value.world,
+    nextPendingFrames
+  );
+  if (!reprovedPendingFrames || !exactEqual(reprovedPendingFrames, nextPendingFrames)) {
+    return { ok: false, reason: "invalid-end-wave" };
+  }
   return {
     ok: true,
     value: kernelCausalState(latched.value.world, {
       endWave: latched.value.wave.candidates.length === 0 ? null : latched.value,
+      pendingFrames: reprovedPendingFrames,
       request: latched.value.wave.request,
     }),
   };
@@ -2034,11 +2332,231 @@ export function conformMechanicsCausalState(value: unknown): MechanicsCausalStat
     return { ok: false, reason: "invalid-end-wave" };
   }
   const state = value as unknown as Readonly<MechanicsCausalState>;
+  if (
+    !isExactRecord(state.context, ["endWave", "pendingFrames", "request"]) ||
+    !pendingCapabilityValid(state)
+  ) {
+    return { ok: false, reason: "invalid-end-wave" };
+  }
   const reproved = rebaseMechanicsCausalState(state.world, state);
   if (!reproved.ok) return reproved;
   return canonicalJson(reproved.value) === canonicalJson(state)
     ? reproved
     : { ok: false, reason: "invalid-end-wave" };
+}
+
+function exactCausalState(value: unknown): Readonly<MechanicsCausalState> | null {
+  const conformed = conformMechanicsCausalState(value);
+  return conformed.ok && exactEqual(conformed.value, value) ? conformed.value : null;
+}
+
+function exactExecutionFrame(value: unknown): Readonly<MechanicsExecutionFrame> | null {
+  const frame = conformMechanicsExecutionFrame(value);
+  return frame && exactEqual(frame, value) ? frame : null;
+}
+
+/** Read the semantic LIFO top; malformed or empty states expose no authority. */
+export function topMechanicsPendingFrame(
+  stateValue: unknown
+): Readonly<MechanicsPendingFrame> | null {
+  const state = exactCausalState(stateValue);
+  return state?.context.pendingFrames.at(-1) ?? null;
+}
+
+/** Exact frame identity check for top-only compiler and coordinator transitions. */
+export function topMechanicsPendingFrameMatches(
+  stateValue: unknown,
+  frameValue: unknown
+): boolean {
+  const top = topMechanicsPendingFrame(stateValue);
+  const frame = exactExecutionFrame(frameValue);
+  return top !== null && frame !== null && exactEqual(top.frame, frame);
+}
+
+function replacePendingTop(
+  state: Readonly<MechanicsCausalState>,
+  frame: Readonly<MechanicsExecutionFrame>,
+  cursor: Readonly<MechanicsPendingFrameCursor>
+): MechanicsCausalStateResult {
+  const top = state.context.pendingFrames.at(-1);
+  if (!top || !exactEqual(top.frame, frame)) {
+    return { ok: false, reason: "invalid-transition" };
+  }
+  const pendingFrames = [...state.context.pendingFrames.slice(0, -1), { cursor, frame }];
+  const conformed = conformPendingFrames(state.world, pendingFrames);
+  if (!conformed || !exactEqual(conformed, pendingFrames)) {
+    return { ok: false, reason: "invalid-transition" };
+  }
+  return rebaseMechanicsCausalStateWithFrames(state.world, state, [], [], conformed);
+}
+
+/** Push one already-created exact root at its receipt's expected phase state. */
+export function pushMechanicsPendingFrame(
+  stateValue: unknown,
+  frameValue: unknown
+): MechanicsCausalStateResult {
+  const state = exactCausalState(stateValue);
+  const frame = exactExecutionFrame(frameValue);
+  const program = frame?.authority.snapshot.program;
+  const phase = program?.phases.find(
+    ({ phaseId }) => phaseId === frame.rootReceipt.next.phaseId
+  );
+  if (!state || !frame || !program || !phase) {
+    return { ok: false, reason: "invalid-transition" };
+  }
+  const cursor: MechanicsPendingFrameCursor =
+    phase.steps.length === 0
+      ? { stage: "phase-transition" }
+      : { nextSlot: 1, stage: "step", stepIndex: 0 };
+  const pendingFrames = [...state.context.pendingFrames, { cursor, frame }];
+  const conformed = conformPendingFrames(state.world, pendingFrames);
+  if (!conformed || !exactEqual(conformed, pendingFrames)) {
+    return { ok: false, reason: "invalid-transition" };
+  }
+  return rebaseMechanicsCausalStateWithFrames(state.world, state, [], [], conformed);
+}
+
+/** Advance only the top frame's exact expansion slot. */
+export function advanceMechanicsPendingFrameSlot(
+  stateValue: unknown,
+  frameValue: unknown
+): MechanicsCausalStateResult {
+  const state = exactCausalState(stateValue);
+  const frame = exactExecutionFrame(frameValue);
+  const top = state?.context.pendingFrames.at(-1);
+  if (
+    !state ||
+    !frame ||
+    !top ||
+    !exactEqual(top.frame, frame) ||
+    top.cursor.stage !== "step" ||
+    top.cursor.nextSlot >= MAX_PENDING_SLOT
+  ) {
+    return { ok: false, reason: "invalid-transition" };
+  }
+  return replacePendingTop(state, frame, {
+    ...top.cursor,
+    nextSlot: top.cursor.nextSlot + 1,
+  });
+}
+
+/** Complete only the top step, resetting the next step's stable slot to one. */
+export function advanceMechanicsPendingFrameStep(
+  stateValue: unknown,
+  frameValue: unknown
+): MechanicsCausalStateResult {
+  const state = exactCausalState(stateValue);
+  const frame = exactExecutionFrame(frameValue);
+  const top = state?.context.pendingFrames.at(-1);
+  const phase = frame?.authority.snapshot.program?.phases.find(
+    ({ phaseId }) => phaseId === frame.rootReceipt.next.phaseId
+  );
+  if (
+    !state ||
+    !frame ||
+    !top ||
+    !phase ||
+    !exactEqual(top.frame, frame) ||
+    top.cursor.stage !== "step"
+  ) {
+    return { ok: false, reason: "invalid-transition" };
+  }
+  const nextIndex = top.cursor.stepIndex + 1;
+  return replacePendingTop(
+    state,
+    frame,
+    nextIndex === phase.steps.length
+      ? { stage: "phase-transition" }
+      : { nextSlot: 1, stage: "step", stepIndex: nextIndex }
+  );
+}
+
+/** Accept the sole exact expected→next root CAS and mark the top frame complete atomically. */
+export function acceptMechanicsPendingFramePhaseTransition(
+  value: unknown,
+  stateValue: unknown,
+  frameValue: unknown,
+  additionalLeases: readonly Readonly<InventoryGenerationRef>[] = [],
+  additionalEndRequests: readonly Readonly<OccurrenceGenerationRef>[] = []
+): MechanicsCausalStateResult {
+  const state = exactCausalState(stateValue);
+  const frame = exactExecutionFrame(frameValue);
+  const top = state?.context.pendingFrames.at(-1);
+  const candidate = parseMechanicsWorldStructure(value);
+  if (
+    !state ||
+    !frame ||
+    !top ||
+    !candidate.ok ||
+    !exactEqual(top.frame, frame) ||
+    top.cursor.stage !== "phase-transition"
+  ) {
+    return { ok: false, reason: "invalid-transition" };
+  }
+  const expected = mutableWorld(state.world);
+  const document = documentFor(expected, frame.rootReceipt.root.occurrence.material);
+  const root =
+    document?.state.occurrences[frame.rootReceipt.root.occurrence.occurrenceId];
+  if (
+    root?.kind !== "program" ||
+    root.ordinal !== frame.rootReceipt.root.ordinal ||
+    root.ending !== null
+  ) {
+    return { ok: false, reason: "invalid-transition" };
+  }
+  root.phaseState[frame.rootReceipt.next.phaseId] = receiptPhaseState(
+    frame.rootReceipt.next
+  );
+  if (!exactEqual(candidate.value, expected)) {
+    return { ok: false, reason: "invalid-transition" };
+  }
+  const pendingFrames = [
+    ...state.context.pendingFrames.slice(0, -1),
+    { cursor: { stage: "phase-complete" } as const, frame },
+  ];
+  const conformed = conformPendingFrames(candidate.value, pendingFrames);
+  if (
+    !conformed ||
+    !exactEqual(conformed, pendingFrames) ||
+    !protectedJournalsMatch(state.world, candidate.value) ||
+    !preservesLatchedEndings(state.world, candidate.value) ||
+    !preservesAllocationHighWater(state.world, candidate.value)
+  ) {
+    return { ok: false, reason: "invalid-transition" };
+  }
+  return rebaseMechanicsCausalStateWithFrames(
+    candidate.value,
+    state,
+    additionalLeases,
+    additionalEndRequests,
+    conformed
+  );
+}
+
+/** Pop only the exact completed LIFO top; no arbitrary stack setter exists. */
+export function popMechanicsPendingFrame(
+  stateValue: unknown,
+  frameValue: unknown
+): MechanicsCausalStateResult {
+  const state = exactCausalState(stateValue);
+  const frame = exactExecutionFrame(frameValue);
+  const top = state?.context.pendingFrames.at(-1);
+  if (
+    !state ||
+    !frame ||
+    !top ||
+    !exactEqual(top.frame, frame) ||
+    top.cursor.stage !== "phase-complete"
+  ) {
+    return { ok: false, reason: "invalid-transition" };
+  }
+  return rebaseMechanicsCausalStateWithFrames(
+    state.world,
+    state,
+    [],
+    [],
+    state.context.pendingFrames.slice(0, -1)
+  );
 }
 
 function causeKey(cause: MechanicsEndCause): string {
@@ -3130,6 +3648,93 @@ export function finalizeMechanicsMaterialCleanup(
   return finalize(structured.value, candidate);
 }
 
+/** Finalize one active causal wave without losing or invalidating its frame stack. */
+export function finalizeMechanicsCausalEndWave(
+  stateValue: unknown
+): MechanicsCausalStateResult {
+  const state = exactCausalState(stateValue);
+  if (!state) return { ok: false, reason: "invalid-end-wave" };
+  if (state.context.endWave === null) return { ok: true, value: state };
+  const finalized = finalizeMechanicsEndWave(state.world, state.context.endWave.wave);
+  if (finalized.status === "rejected") {
+    return { ok: false, reason: finalized.reason };
+  }
+  const pendingFrames = conformPendingFrames(
+    finalized.world,
+    state.context.pendingFrames
+  );
+  if (!pendingFrames || !exactEqual(pendingFrames, state.context.pendingFrames)) {
+    return { ok: false, reason: "invalid-end-wave" };
+  }
+  const request = normalizedClosureRequest({
+    boundaries: state.context.request.boundaries,
+    inventorySourceLeases: state.context.request.inventorySourceLeases,
+  });
+  const discovery = discoverMechanicsEndWave(finalized.world, request);
+  if (discovery.status === "rejected") {
+    return { ok: false, reason: discovery.reason };
+  }
+  const latched = latchAndRediscoverEndWave(
+    discovery.world,
+    discovery.wave,
+    null,
+    null,
+    pendingFrames
+  );
+  if (!latched.ok) return latched;
+  const reproved = conformPendingFrames(latched.value.world, pendingFrames);
+  if (!reproved || !exactEqual(reproved, pendingFrames)) {
+    return { ok: false, reason: "invalid-end-wave" };
+  }
+  return {
+    ok: true,
+    value: kernelCausalState(latched.value.world, {
+      endWave: latched.value.wave.candidates.length === 0 ? null : latched.value,
+      pendingFrames: reproved,
+      request: latched.value.wave.request,
+    }),
+  };
+}
+
+/** Run terminal material cleanup while preserving every active program root. */
+export function finalizeMechanicsCausalMaterialCleanup(
+  stateValue: unknown
+): MechanicsCausalStateResult {
+  const state = exactCausalState(stateValue);
+  if (!state || state.context.endWave !== null) {
+    return { ok: false, reason: "invalid-end-wave" };
+  }
+  const candidate = mutableWorld(state.world);
+  try {
+    cleanEndedMaterial(candidate, new Set());
+  } catch (error) {
+    return {
+      ok: false,
+      reason:
+        error instanceof RangeError
+          ? "overflow"
+          : error instanceof CurrentCombatantRemovalRequiresBoundary
+            ? "encounter-conflict"
+            : "invalid-transition",
+    };
+  }
+  const cleaned = finalize(
+    state.world,
+    candidate,
+    new Set(),
+    state.context.pendingFrames
+  );
+  return cleaned.status === "rejected"
+    ? { ok: false, reason: cleaned.reason }
+    : rebaseMechanicsCausalStateWithFrames(
+        cleaned.world,
+        state,
+        [],
+        [],
+        state.context.pendingFrames
+      );
+}
+
 function currentTurnBoundary(
   document: MechanicsDocument,
   phase: "end" | "start"
@@ -3162,16 +3767,31 @@ function boundaryRejected(
 
 function finishBoundary(
   basis: Readonly<MechanicsWorld>,
-  current: Readonly<MechanicsWorld>
+  current: Readonly<MechanicsWorld>,
+  pendingFrames: readonly Readonly<MechanicsPendingFrame>[],
+  request: Required<MechanicsClosureRequest>
 ): MechanicsBoundaryResult {
-  const cleanup = finalizeMechanicsMaterialCleanup(current);
-  if (cleanup.status === "rejected") {
+  const cleanup = finalizeMechanicsCausalMaterialCleanup(
+    kernelCausalState(current, { endWave: null, pendingFrames, request })
+  );
+  if (!cleanup.ok) {
     return boundaryRejected(cleanup.reason);
   }
-  const terminal = finalize(basis, mutableWorld(cleanup.world));
-  return terminal.status === "rejected"
-    ? boundaryRejected(terminal.reason)
-    : { outcome: terminal.status, status: "complete", world: terminal.world };
+  const terminal = finalize(
+    basis,
+    mutableWorld(cleanup.value.world),
+    leaseSet(request),
+    cleanup.value.context.pendingFrames
+  );
+  if (terminal.status === "rejected") return boundaryRejected(terminal.reason);
+  const state = kernelCausalState(terminal.world, {
+    endWave: null,
+    pendingFrames: cleanup.value.context.pendingFrames,
+    request: cleanup.value.context.request,
+  });
+  return exactCausalState(state)
+    ? { outcome: terminal.status, state, status: "complete" }
+    : boundaryRejected("invalid-transition");
 }
 
 function participantCursor(
@@ -3488,8 +4108,22 @@ function checkpointStateValid(
   }
   const wave: Readonly<MechanicsEndWaveReceipt> = checkpoint.wave;
   const state = checkpoint.state as unknown as Readonly<MechanicsCausalState>;
+  if (!isExactRecord(state.context, ["endWave", "pendingFrames", "request"])) {
+    return false;
+  }
+  const pendingFrames = conformPendingFrames(
+    checkpoint.state.world,
+    state.context.pendingFrames
+  );
   if (
-    !isExactRecord(state.context, ["endWave", "request"]) ||
+    !pendingCapabilityValid(state) ||
+    !pendingFrames ||
+    !exactEqual(pendingFrames, state.context.pendingFrames) ||
+    validateReadableCausalWorld(
+      checkpoint.state.world,
+      leaseSet(state.context.request),
+      pendingFrames
+    ) !== null ||
     canonicalJson(state.context.request) !== canonicalJson(wave.request) ||
     (boundary !== null &&
       !wave.request.boundaries.some(
@@ -3516,13 +4150,20 @@ function completionStateValid(
 ): boolean {
   if (
     !isExactRecord(state, ["context", "world"]) ||
-    !isExactRecord(state.context, ["endWave", "request"])
+    !isExactRecord(state.context, ["endWave", "pendingFrames", "request"]) ||
+    !pendingCapabilityValid(state) ||
+    !exactEqual(state.context.pendingFrames, checkpoint.state.context.pendingFrames)
   ) {
     return false;
   }
   const parsed = parseMechanicsWorldStructure(state.world);
+  const pendingFrames = parsed.ok
+    ? conformPendingFrames(parsed.value, state.context.pendingFrames)
+    : null;
   if (
     !parsed.ok ||
+    !pendingFrames ||
+    !exactEqual(pendingFrames, state.context.pendingFrames) ||
     canonicalJson(parsed.value) !== canonicalJson(state.world) ||
     !protectedJournalsMatch(checkpoint.state.world, parsed.value) ||
     !boundaryOwnedFactsMatch(checkpoint.state.world, parsed.value) ||
@@ -3550,6 +4191,15 @@ function completionStateValid(
   if (
     !leases ||
     canonicalJson(leases) !== canonicalJson(state.context.request.inventorySourceLeases)
+  ) {
+    return false;
+  }
+  if (
+    validateReadableCausalWorld(
+      parsed.value,
+      new Set(leases.map(leaseKey)),
+      pendingFrames
+    )
   ) {
     return false;
   }
@@ -3629,13 +4279,47 @@ function continuationValid(
   if (!isExactRecord(value, ["basis", "checkpoint", "command", "cursor", "request"])) {
     return false;
   }
-  const basis = parseMechanicsWorld(value.basis);
+  const basis = parseMechanicsWorldStructure(value.basis);
   const command = conformMechanicsBoundaryCommand(value.command);
   const cursor = conformBoundaryCursor(value.cursor);
-  if (!basis.ok || !command || !cursor || !cursorMatchesCommand(command, cursor)) {
+  if (
+    !basis.ok ||
+    !isExactRecord(value.checkpoint, ["boundary", "ordinal", "state", "wave"]) ||
+    !isExactRecord(value.checkpoint.state, ["context", "world"]) ||
+    !isExactRecord(value.checkpoint.state.context, [
+      "endWave",
+      "pendingFrames",
+      "request",
+    ]) ||
+    !pendingCapabilityValid(value.checkpoint.state) ||
+    !command ||
+    !cursor ||
+    !cursorMatchesCommand(command, cursor)
+  ) {
+    return false;
+  }
+  const basisPendingFrames = conformPendingFrames(
+    basis.value,
+    value.checkpoint.state.context.pendingFrames
+  );
+  if (
+    !basisPendingFrames ||
+    !exactEqual(basisPendingFrames, value.checkpoint.state.context.pendingFrames) ||
+    validateClosedTurnState(basis.value)
+  ) {
     return false;
   }
   if (!checkpointStateValid(value.checkpoint, basis.value)) return false;
+  if (
+    validateWorldInvariants(
+      basis.value,
+      leaseSet(value.checkpoint.state.context.request),
+      false,
+      basisPendingFrames
+    )
+  ) {
+    return false;
+  }
   try {
     const normalized = normalizedClosureRequest(value.request as MechanicsClosureRequest);
     return (
@@ -3664,7 +4348,8 @@ function emitBoundaryCheckpoint(
   cursor: Readonly<MechanicsBoundaryCursor>,
   priorRequest: Required<MechanicsClosureRequest>,
   boundary: Readonly<ObservedMechanicsBoundary>,
-  ordinal: number
+  ordinal: number,
+  pendingFrames: readonly Readonly<MechanicsPendingFrame>[]
 ): MechanicsBoundaryResult {
   let request: Required<MechanicsClosureRequest>;
   try {
@@ -3683,14 +4368,31 @@ function emitBoundaryCheckpoint(
     discovery.world,
     discovery.wave,
     basis,
-    currentCombatantRemovalAuthorization(command, cursor)
+    currentCombatantRemovalAuthorization(command, cursor),
+    pendingFrames
   );
   if (!latched.ok) return boundaryRejected(latched.reason);
+  const reprovedPendingFrames = conformPendingFrames(latched.value.world, pendingFrames);
+  const invariantProblem = reprovedPendingFrames
+    ? validateReadableCausalWorld(
+        latched.value.world,
+        leaseSet(latched.value.wave.request),
+        reprovedPendingFrames
+      )
+    : "invalid-program-origin";
+  if (
+    !reprovedPendingFrames ||
+    !exactEqual(reprovedPendingFrames, pendingFrames) ||
+    invariantProblem
+  ) {
+    return boundaryRejected("invalid-transition");
+  }
   const state = kernelCausalState(latched.value.world, {
     endWave:
       latched.value.wave.candidates.length === 0
         ? null
         : { wave: latched.value.wave, world: latched.value.world },
+    pendingFrames: reprovedPendingFrames,
     request: latched.value.wave.request,
   });
   const checkpoint = freezeDeep({
@@ -3720,7 +4422,7 @@ function completionWorld(
   | {
       readonly ok: true;
       readonly request: Required<MechanicsClosureRequest>;
-      readonly world: Readonly<MechanicsWorld>;
+      readonly state: Readonly<MechanicsCausalState>;
     }
   | {
       readonly ok: "checkpoint";
@@ -3761,28 +4463,42 @@ function completionWorld(
       return { ok: false, reason: discovery.reason, world: state.world };
     }
     if (discovery.wave.candidates.length === 0) {
+      const nextRequest = normalizedClosureRequest({
+        boundaries: request.boundaries,
+        inventorySourceLeases: request.inventorySourceLeases,
+      });
       return {
         ok: true,
-        request: normalizedClosureRequest({
-          boundaries: request.boundaries,
-          inventorySourceLeases: request.inventorySourceLeases,
+        request: nextRequest,
+        state: kernelCausalState(discovery.world, {
+          endWave: null,
+          pendingFrames: state.context.pendingFrames,
+          request: nextRequest,
         }),
-        world: discovery.world,
       };
     }
     const latched = latchAndRediscoverEndWave(
       discovery.world,
       discovery.wave,
       continuation.basis,
-      currentCombatantRemovalAuthorization(continuation.command, continuation.cursor)
+      currentCombatantRemovalAuthorization(continuation.command, continuation.cursor),
+      state.context.pendingFrames
     );
     if (!latched.ok) {
       return { ok: false, reason: latched.reason, world: discovery.world };
+    }
+    const pendingFrames = conformPendingFrames(
+      latched.value.world,
+      state.context.pendingFrames
+    );
+    if (!pendingFrames || !exactEqual(pendingFrames, state.context.pendingFrames)) {
+      return { ok: false, reason: "invalid-end-wave", world: latched.value.world };
     }
     return {
       ok: "checkpoint",
       state: kernelCausalState(latched.value.world, {
         endWave: latched.value,
+        pendingFrames,
         request: latched.value.wave.request,
       }),
     };
@@ -3802,16 +4518,29 @@ function completionWorld(
     wave,
     currentCombatantRemovalAuthorization(continuation.command, continuation.cursor)
   );
-  return finalized.status === "rejected"
-    ? { ok: false, reason: finalized.reason, world: finalized.world }
-    : {
-        ok: true,
-        request: normalizedClosureRequest({
-          boundaries: request.boundaries,
-          inventorySourceLeases: request.inventorySourceLeases,
-        }),
-        world: finalized.world,
-      };
+  if (finalized.status === "rejected") {
+    return { ok: false, reason: finalized.reason, world: finalized.world };
+  }
+  const pendingFrames = conformPendingFrames(
+    finalized.world,
+    state.context.pendingFrames
+  );
+  if (!pendingFrames || !exactEqual(pendingFrames, state.context.pendingFrames)) {
+    return { ok: false, reason: "invalid-end-wave", world: finalized.world };
+  }
+  const nextRequest = normalizedClosureRequest({
+    boundaries: request.boundaries,
+    inventorySourceLeases: request.inventorySourceLeases,
+  });
+  return {
+    ok: true,
+    request: nextRequest,
+    state: kernelCausalState(finalized.world, {
+      endWave: null,
+      pendingFrames,
+      request: nextRequest,
+    }),
+  };
 }
 
 function nextParticipant(
@@ -3880,7 +4609,8 @@ function continueCompleteTurn(
   command: Extract<MechanicsBoundaryCommand, { kind: "complete-turn" }>,
   cursorValue: Extract<MechanicsBoundaryCursor, { kind: "complete-turn" }>,
   request: Required<MechanicsClosureRequest>,
-  ordinal: number
+  ordinal: number,
+  pendingFrames: readonly Readonly<MechanicsPendingFrame>[]
 ): MechanicsBoundaryResult {
   let world = current;
   let cursor = cursorValue;
@@ -3933,10 +4663,10 @@ function continueCompleteTurn(
         encounter.round,
         mutableSelected.ordinal
       );
-      const committed = finalize(world, candidate, leases);
+      const committed = finalize(world, candidate, leases, pendingFrames);
       return committed.status === "rejected"
         ? boundaryRejected(committed.reason)
-        : finishBoundary(basis, committed.world);
+        : finishBoundary(basis, committed.world, pendingFrames, request);
     }
     const skippedCandidate = mutableWorld(world);
     const skippedEncounter = documentFor(skippedCandidate, command.material)?.state
@@ -3954,11 +4684,18 @@ function continueCompleteTurn(
         skippedEncounter.order.includes(cursor.encounter.currentCombatantId)
           ? cursor.encounter.currentCombatantId
           : skippedEncounter.order[0]) ?? null;
-      if (placeholder === null) return finishBoundary(basis, world);
+      if (placeholder === null) {
+        return finishBoundary(basis, world, pendingFrames, request);
+      }
       skippedEncounter.currentCombatantId = placeholder;
       skippedEncounter.phase = "turns";
     }
-    const cleaned = projectBoundaryMutation(world, skippedCandidate, leases);
+    const cleaned = projectBoundaryMutation(
+      world,
+      skippedCandidate,
+      leases,
+      pendingFrames
+    );
     if (cleaned.status === "rejected") {
       return boundaryRejected(cleaned.reason);
     }
@@ -3984,7 +4721,9 @@ function continueCompleteTurn(
     ) {
       return boundaryRejected("invalid-transition");
     }
-    if (encounter.phase === "initiative") return finishBoundary(basis, world);
+    if (encounter.phase === "initiative") {
+      return finishBoundary(basis, world, pendingFrames, request);
+    }
     const next = nextParticipant(cursor, encounter);
     if (!next) {
       if (cursor.excludeCurrent === null) {
@@ -4002,10 +4741,10 @@ function continueCompleteTurn(
       mutableEncounter.currentCombatantId = null;
       mutableEncounter.order = [];
       mutableEncounter.phase = "initiative";
-      const suspended = finalize(world, candidate, leases);
+      const suspended = finalize(world, candidate, leases, pendingFrames);
       return suspended.status === "rejected"
         ? boundaryRejected(suspended.reason)
-        : finishBoundary(basis, suspended.world);
+        : finishBoundary(basis, suspended.world, pendingFrames, request);
     }
     if ("conflict" in next) return boundaryRejected("invalid-transition");
 
@@ -4033,7 +4772,7 @@ function continueCompleteTurn(
       }
       mutableEncounter.round += 1;
       document.state.timeline.elapsedSeconds += 6;
-      const advanced = projectBoundaryMutation(world, candidate, leases);
+      const advanced = projectBoundaryMutation(world, candidate, leases, pendingFrames);
       if (advanced.status === "rejected") {
         return boundaryRejected(advanced.reason);
       }
@@ -4055,7 +4794,8 @@ function continueCompleteTurn(
           elapsedSeconds: document.state.timeline.elapsedSeconds,
           kind: "time-reached",
         },
-        ordinal
+        ordinal,
+        pendingFrames
       );
     }
 
@@ -4083,7 +4823,7 @@ function continueCompleteTurn(
     mutableEncounter.currentCombatantId = null;
     mutableEncounter.order = [];
     mutableEncounter.phase = "initiative";
-    const started = finalize(world, candidate, leases);
+    const started = finalize(world, candidate, leases, pendingFrames);
     if (started.status === "rejected") {
       return boundaryRejected(started.reason);
     }
@@ -4105,7 +4845,8 @@ function continueCompleteTurn(
         phase: "start",
         round: mutableEncounter.round,
       },
-      ordinal
+      ordinal,
+      pendingFrames
     );
   }
   return boundaryRejected("encounter-conflict");
@@ -4118,7 +4859,8 @@ function startSharedEncounter(
   characterMaterials: readonly CharacterMaterialRef[],
   nextIndex: number,
   request: Required<MechanicsClosureRequest>,
-  ordinal: number
+  ordinal: number,
+  pendingFrames: readonly Readonly<MechanicsPendingFrame>[]
 ): MechanicsBoundaryResult {
   const leases = leaseSet(request);
   for (let index = nextIndex; index < characterMaterials.length; index += 1) {
@@ -4147,7 +4889,8 @@ function startSharedEncounter(
       }),
       request,
       { clock: localClock, kind: "combat-end" },
-      ordinal
+      ordinal,
+      pendingFrames
     );
   }
 
@@ -4210,7 +4953,7 @@ function startSharedEncounter(
     if (error instanceof RangeError) return boundaryRejected("overflow");
     throw error;
   }
-  const started = finalize(current, candidate, leases);
+  const started = finalize(current, candidate, leases, pendingFrames);
   if (started.status === "rejected") {
     return boundaryRejected(started.reason);
   }
@@ -4224,9 +4967,10 @@ function startSharedEncounter(
         { kind: "finish" },
         request,
         boundary,
-        ordinal
+        ordinal,
+        pendingFrames
       )
-    : finishBoundary(basis, started.world);
+    : finishBoundary(basis, started.world, pendingFrames, request);
 }
 
 function resumeStartSharedEncounter(
@@ -4235,7 +4979,8 @@ function resumeStartSharedEncounter(
   command: Extract<MechanicsBoundaryCommand, { kind: "start-encounter" }>,
   cursor: Extract<MechanicsBoundaryCursor, { kind: "start-shared-encounter" }>,
   request: Required<MechanicsClosureRequest>,
-  ordinal: number
+  ordinal: number,
+  pendingFrames: readonly Readonly<MechanicsPendingFrame>[]
 ): MechanicsBoundaryResult {
   if (
     command.material.kind !== "shared-combat" ||
@@ -4264,7 +5009,7 @@ function resumeStartSharedEncounter(
   }
   cleared.state.encounter = null;
   cleared.state.clockBinding.encounter = null;
-  const clearedResult = finalize(current, candidate, leaseSet(request));
+  const clearedResult = finalize(current, candidate, leaseSet(request), pendingFrames);
   return clearedResult.status === "rejected"
     ? boundaryRejected(clearedResult.reason)
     : startSharedEncounter(
@@ -4274,7 +5019,8 @@ function resumeStartSharedEncounter(
         cursor.characterMaterials,
         cursor.nextIndex + 1,
         request,
-        ordinal
+        ordinal,
+        pendingFrames
       );
 }
 
@@ -4283,7 +5029,8 @@ function resumeEndEncounter(
   current: Readonly<MechanicsWorld>,
   command: Extract<MechanicsBoundaryCommand, { kind: "end-encounter" }>,
   cursor: Extract<MechanicsBoundaryCursor, { kind: "end-encounter" }>,
-  request: Required<MechanicsClosureRequest>
+  request: Required<MechanicsClosureRequest>,
+  pendingFrames: readonly Readonly<MechanicsPendingFrame>[]
 ): MechanicsBoundaryResult {
   const after = documentFor(current, command.material);
   const encounter = after?.state.encounter;
@@ -4332,10 +5079,10 @@ function resumeEndEncounter(
       throw error;
     }
   }
-  const cleared = finalize(current, candidate, leaseSet(request));
+  const cleared = finalize(current, candidate, leaseSet(request), pendingFrames);
   return cleared.status === "rejected"
     ? boundaryRejected(cleared.reason)
-    : finishBoundary(basis, cleared.world);
+    : finishBoundary(basis, cleared.world, pendingFrames, request);
 }
 
 /** Start one table boundary from a closed hostile world. */
@@ -4345,13 +5092,32 @@ export function beginMechanicsBoundary(
 ): MechanicsBoundaryResult {
   const begun = beginMechanicsCausalState(value);
   if (!begun.ok) return boundaryRejected(begun.reason);
-  const basis = begun.value.world;
+  return beginMechanicsBoundaryFromState(begun.value, commandValue);
+}
+
+/** Start a boundary inside one active causal action without dropping its frame stack. */
+export function beginMechanicsBoundaryFromCausalState(
+  stateValue: unknown,
+  commandValue: unknown
+): MechanicsBoundaryResult {
+  const state = exactCausalState(stateValue);
+  return !state || state.context.endWave !== null
+    ? boundaryRejected("invalid-end-wave")
+    : beginMechanicsBoundaryFromState(state, commandValue);
+}
+
+function beginMechanicsBoundaryFromState(
+  state: Readonly<MechanicsCausalState>,
+  commandValue: unknown
+): MechanicsBoundaryResult {
+  const basis = state.world;
   const command = conformMechanicsBoundaryCommand(commandValue);
   if (!command) return boundaryRejected("invalid-transition");
-  const request = normalizedClosureRequest({});
+  const request = state.context.request;
+  const pendingFrames = state.context.pendingFrames;
 
   if (command.kind === "complete-rest") {
-    const allocated = allocateTimelineBoundary(basis, command.input.clock);
+    const allocated = allocateTimelineBoundary(basis, command.input.clock, pendingFrames);
     if (!allocated) {
       return boundaryRejected(
         clockResolves(basis, command.input.clock, "timeline")
@@ -4370,11 +5136,12 @@ export function beginMechanicsBoundary(
         kind: "rest-completed",
         ...command.input,
       },
-      0
+      0,
+      pendingFrames
     );
   }
   if (command.kind === "observe-day-phase") {
-    const allocated = allocateTimelineBoundary(basis, command.input.clock);
+    const allocated = allocateTimelineBoundary(basis, command.input.clock, pendingFrames);
     if (!allocated) {
       return boundaryRejected(
         clockResolves(basis, command.input.clock, "timeline")
@@ -4393,7 +5160,8 @@ export function beginMechanicsBoundary(
         kind: "day-phase",
         ...command.input,
       },
-      0
+      0,
+      pendingFrames
     );
   }
   if (command.kind === "advance-time") {
@@ -4410,7 +5178,7 @@ export function beginMechanicsBoundary(
       return boundaryRejected("overflow");
     }
     document.state.timeline.elapsedSeconds += command.elapsedSeconds;
-    const projected = projectBoundaryMutation(basis, candidate);
+    const projected = projectBoundaryMutation(basis, candidate, new Set(), pendingFrames);
     if (projected.status === "rejected") {
       return boundaryRejected(projected.reason);
     }
@@ -4425,7 +5193,8 @@ export function beginMechanicsBoundary(
         elapsedSeconds: document.state.timeline.elapsedSeconds,
         kind: "time-reached",
       },
-      0
+      0,
+      pendingFrames
     );
   }
   if (command.kind === "complete-turn") {
@@ -4464,7 +5233,8 @@ export function beginMechanicsBoundary(
       },
       request,
       boundary,
-      0
+      0,
+      pendingFrames
     );
   }
   if (command.kind === "start-encounter") {
@@ -4474,7 +5244,16 @@ export function beginMechanicsBoundary(
     }
     if (document.kind === "shared") {
       const materials = leasedCharacterMaterials(command.seed);
-      return startSharedEncounter(basis, basis, command, materials, 0, request, 0);
+      return startSharedEncounter(
+        basis,
+        basis,
+        command,
+        materials,
+        0,
+        request,
+        0,
+        pendingFrames
+      );
     }
     if (
       document.state.clockBinding.encounter !== null ||
@@ -4490,7 +5269,7 @@ export function beginMechanicsBoundary(
     const clock = startEncounterOnDocument(mutable, command.seed);
     if (!clock) return boundaryRejected("encounter-conflict");
     mutable.state.clockBinding.encounter = clock;
-    const started = finalize(basis, candidate);
+    const started = finalize(basis, candidate, new Set(), pendingFrames);
     if (started.status === "rejected") {
       return boundaryRejected(started.reason);
     }
@@ -4506,9 +5285,10 @@ export function beginMechanicsBoundary(
           { kind: "finish" },
           request,
           boundary,
-          0
+          0,
+          pendingFrames
         )
-      : finishBoundary(basis, started.world);
+      : finishBoundary(basis, started.world, pendingFrames, request);
   }
   const document = documentFor(basis, command.material);
   const clock = document ? encounterClock(document) : null;
@@ -4523,7 +5303,8 @@ export function beginMechanicsBoundary(
     { encounter: encounterCursor(encounter), kind: "end-encounter" },
     request,
     { clock, kind: "combat-end" },
-    0
+    0,
+    pendingFrames
   );
 }
 
@@ -4542,7 +5323,7 @@ export function completeMechanicsBoundaryCheckpoint(
     }
     return freezeDeep({
       continuation: canonicalFingerprint(continuationValue),
-      state: structuredClone(state),
+      state,
     }) as unknown as Readonly<MechanicsBoundaryCompletion>;
   } catch {
     return null;
@@ -4602,35 +5383,43 @@ export function advanceMechanicsBoundary(
     }
     const { basis, command, cursor } = continuationValue;
     if (cursor.kind === "finish") {
-      return finishBoundary(basis, completed.world);
+      return finishBoundary(
+        basis,
+        completed.state.world,
+        completed.state.context.pendingFrames,
+        completed.request
+      );
     }
     if (cursor.kind === "complete-turn" && command.kind === "complete-turn") {
       return continueCompleteTurn(
         basis,
-        completed.world,
+        completed.state.world,
         command,
         cursor,
         completed.request,
-        nextOrdinal
+        nextOrdinal,
+        completed.state.context.pendingFrames
       );
     }
     if (cursor.kind === "start-shared-encounter" && command.kind === "start-encounter") {
       return resumeStartSharedEncounter(
         basis,
-        completed.world,
+        completed.state.world,
         command,
         cursor,
         completed.request,
-        nextOrdinal
+        nextOrdinal,
+        completed.state.context.pendingFrames
       );
     }
     if (cursor.kind === "end-encounter" && command.kind === "end-encounter") {
       return resumeEndEncounter(
         basis,
-        completed.world,
+        completed.state.world,
         command,
         cursor,
-        completed.request
+        completed.request,
+        completed.state.context.pendingFrames
       );
     }
     return boundaryRejected("invalid-transition");
@@ -4651,7 +5440,8 @@ function timelineClock(document: MechanicsDocument | MutableDocument): ClockRef 
 
 function allocateTimelineBoundary(
   basis: Readonly<MechanicsWorld>,
-  clock: Readonly<ClockRef>
+  clock: Readonly<ClockRef>,
+  pendingFrames: readonly Readonly<MechanicsPendingFrame>[]
 ): {
   readonly boundaryOrdinal: number;
   readonly world: Readonly<MechanicsWorld>;
@@ -4667,7 +5457,7 @@ function allocateTimelineBoundary(
   }
   const boundaryOrdinal = document.state.timeline.nextBoundaryOrdinal;
   document.state.timeline.nextBoundaryOrdinal += 1;
-  const projected = projectBoundaryMutation(basis, candidate);
+  const projected = projectBoundaryMutation(basis, candidate, new Set(), pendingFrames);
   return projected.status === "rejected"
     ? null
     : { boundaryOrdinal, world: projected.world };

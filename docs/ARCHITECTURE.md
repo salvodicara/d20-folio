@@ -469,9 +469,10 @@ Every non-root occurrence also carries one structured `ProgramStepOccurrenceOrig
 generation, phase id, phase execution, globally unique authored step id and deterministic expansion
 slot. World validation resolves that origin against the root's frozen program, checks that occurrence
 kind matches the referenced step and rejects duplicate emissions. A closed world accepts only committed
-executions; the compiler-only transaction projection may admit exactly the next pending execution while
-the create-root operation and its children are assembled atomically. Effect provenance is therefore
-queryable data, never an occurrence-id naming convention or English/source regex.
+executions; an unforgeable pending-frame permit admits exactly its one-ahead execution, and only the LIFO
+top may create the current authored step's consecutive expansion slots. Root allocation is a standalone
+zero-state transaction before that frame is pushed. Effect provenance is therefore queryable data, never
+an occurrence-id naming convention or English/source regex.
 
 Public mechanics commands contain only invocation identity or answers to engine-issued requests. The
 trusted adapter constructs a complete, recoverable execution frame containing the authority receipt,
@@ -606,25 +607,37 @@ survive only the exact clock/encounter hand-off performed by that state machine.
 resolver and no API through which a caller can return a replacement world.
 
 The authentic post-event set is intentionally small: `damage-taken`, `hit-points-zero` and
-`resource-depleted` derive only from exact applied operation stages; an applied
-`program-state-transition` emits `program-phase-end` with the exact root occurrence generation, phase and
-completed execution for subscribers; `source-ending` derives only from a re-proved readable end wave. Each
+`resource-depleted` derive only from exact applied operation stages. `program-root-create` allocates an
+all-zero phase map plus authored initial registers and emits no completion event;
+`program-phase-transition` is the final exact phase compare-and-swap and alone emits
+`program-phase-end` with the root occurrence generation, phase and completed execution for subscribers.
+Its acceptance marks the exact top frame `phase-complete` and performs the sole causal rebase, so any
+lifetime made due by that transition is latched in the same returned state before subscriber delivery.
+`source-ending` derives only from a re-proved readable end wave. Each
 non-invocation trigger evidence carries that emitted event's exact id, and the phase CAS receipt must carry
 the same id, so evidence cannot be replayed under an invented identity. Phase-completion events trail all
 ordinary events from the same complete transaction while retaining deterministic order among themselves;
-the sole frame compiler returns that canonical event list with its simulation.
+the sole frame compiler returns that canonical event list with its simulated segment.
 Occurrence removal and condition/entity/inventory/turn/register/Temporary-HP cleanup do not invent generic
 semantic events because no authored trigger consumes them; their complete effect is the verified
 finalization delta and ultimately the single journal draft.
 
 This hardened foundation is implemented and covered by focused hostile-input tests, but the cutover is
-not yet a production runtime. The canonical `compileMechanicsFrame` seam now exists and re-reviews the
-exact frozen intent before compilation; replay is recognized before new answers are considered. Root
-creation is operation zero, root advance is final, and each intermediate operation is admitted only after
-`projectMechanicsTransaction` has produced the exact transaction-local world used by the next step.
+not yet a production runtime. A bounded, unforgeable `MechanicsCausalState` owns the exact LIFO stack of
+incomplete frames. Root creation is a standalone zero-state segment before push; every later program-root
+operation is authorized only for the exact semantic cursor at the stack top, while older frames remain
+permits solely for provenance already present in the world. The canonical `compileMechanicsFrame` seam
+re-reviews the exact frozen intent, requires that exact nonterminal top, emits at most one authentic
+simulated step segment, and reserves a single-operation phase CAS to atomically mark the top
+`phase-complete` and latch every newly due phase lifetime. Replay is recognized before a frame is pushed,
+at the prepare/coordinator boundary.
 Register writes are individual compare-and-swap `program-register-transition` operations rather than a
 final lump, operation ids are deterministic, trusted compiler fact guards join the transaction, and the
-result is a closed typed union (`compiled`, `replay`, `needs-response`, `needs-coordination`, `rejected`).
+result is a closed typed union (`compiled`, `needs-response`, `needs-coordination`, `rejected`).
+Every response or coordination barrier carries an opaque process-local compiler continuation. It binds
+only the immutable frame/input, exact expected causal cursor, response prefix and frozen barrier
+generations—never a second world, projected prefix or independent progress model. Resumption remains
+owned by the fixed-point coordinator.
 The executable vertical now covers register/manual steps plus exact condition, standing,
 Concentration and polymorph starts. Stable expansion slots bind every selected target and materialized
 standing fact; Concentration has no authored target and is derived solely from the receipt's exact caster.
@@ -641,7 +654,7 @@ the frame is retried. A conflicting second exclusive start created in the same f
 than silently replacing transaction-local state.
 
 The active compiler work must now add the payment prelude and vitality/material/resource subcompilers,
-allocating every physical generation from the kernel-projected prefix, then feed one bounded fixed-point
+allocating every physical generation from the current authentic causal segment, then feed one bounded fixed-point
 coordinator that resolves the effect barriers, runs trigger/subscriber/source-ending waves and calls
 `planMechanicsWorldAction` once for one reversible journal draft. The compiler audit has also exposed
 kernel/model prerequisites that remain open: a separately authorized table-override path,

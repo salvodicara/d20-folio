@@ -499,20 +499,22 @@ export function mechanicsOperationAccessFootprint(
         ]
       );
     }
-    case "program-state-transition": {
-      const root = occurrenceAddress(operation.receipt.root);
-      return operation.receipt.kind === "create"
-        ? footprint(
-            [],
-            [root],
-            [
-              collisionAddress({
-                kind: "occurrence-allocation",
-                material: operation.receipt.root.occurrence.material,
-              }),
-            ]
-          )
-        : footprint([root], [root]);
+    case "program-root-create": {
+      const root = occurrenceAddress(operation.root);
+      return footprint(
+        [],
+        [root],
+        [
+          collisionAddress({
+            kind: "occurrence-allocation",
+            material: operation.root.occurrence.material,
+          }),
+        ]
+      );
+    }
+    case "program-phase-transition": {
+      const root = occurrenceAddress(operation.root);
+      return footprint([root], [root]);
     }
     case "program-register-transition": {
       const root = occurrenceAddress(operation.root);
@@ -561,11 +563,8 @@ function technicalOrdinal(operation: Readonly<MechanicsOperation>, key: string):
       : operation.lifecycle.ordinal;
   }
   if (operation.kind === "occurrence-create") return operation.created.ordinal;
-  if (
-    operation.kind === "program-state-transition" &&
-    operation.receipt.kind === "create"
-  ) {
-    return operation.receipt.root.ordinal;
+  if (operation.kind === "program-root-create") {
+    return operation.root.ordinal;
   }
   throw new TypeError("Technical write has no allocator ordinal");
 }
@@ -1224,18 +1223,18 @@ function deriveMechanicsStagePostEvents(
       },
     ];
   }
-  if (execution.kind === "program-state-transition") {
-    const { next } = execution.operation.receipt;
+  if (execution.kind === "program-phase-transition") {
+    const { next, root } = execution.operation;
     return [
       {
         eventId: eventId("program-phase-end", execution.operationId, {
           execution: next.execution,
-          occurrence: execution.facts.root,
+          occurrence: root,
           phaseId: next.phaseId,
         }),
         execution: next.execution,
         kind: "program-phase-end",
-        occurrence: execution.facts.root,
+        occurrence: root,
         operationId: execution.operationId,
         phaseId: next.phaseId,
       },
@@ -1249,6 +1248,7 @@ function deriveMechanicsStagePostEvents(
     execution.kind === "inventory-create" ||
     execution.kind === "inventory-transition" ||
     execution.kind === "inventory-end" ||
+    execution.kind === "program-root-create" ||
     execution.kind === "program-register-transition" ||
     execution.kind === "occurrence-create"
   ) {

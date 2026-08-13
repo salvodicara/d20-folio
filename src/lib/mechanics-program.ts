@@ -28,13 +28,9 @@ import {
   MECHANICS_INTENT_SCHEMA,
   type MechanicsProgramSchemaCustomTypes,
 } from "@/lib/mechanics-program-schema";
-import {
-  mechanicsPhaseOrderedDependencies,
-  type MechanicsD20RequestSpec,
-} from "@/lib/mechanics-program-authoring";
-import { planMechanicsWorldAction } from "@/lib/mechanics-action";
+import { type MechanicsD20RequestSpec } from "@/lib/mechanics-program-authoring";
 import { locateResolvedMaterialResource } from "@/lib/material-resource";
-import { conformMechanicsCausalState, parseMechanicsWorld } from "@/lib/mechanics-world";
+import { conformMechanicsCausalState } from "@/lib/mechanics-world";
 import { conformResourceRef, resourceRefKey } from "@/lib/resources";
 import type { JournalActorRef } from "@/types/action-journal";
 import type { D20TestObservation, D20TestRequest, D20TestResult } from "@/types/d20-test";
@@ -56,7 +52,6 @@ import type {
   OccurrenceGenerationRef,
 } from "@/types/mechanics-reference";
 import type {
-  ManualInstruction,
   MechanicsAnswer,
   MechanicsAnswers,
   MechanicsRequestIdentity,
@@ -64,7 +59,6 @@ import type {
   MechanicsDiceRequirement,
   MechanicsIntent,
   MechanicsPaymentRequirement,
-  MechanicsPlanResult,
   MechanicsProgramCompilationContext,
   MechanicsProgramCompilationPreparation,
   MechanicsRequirement,
@@ -72,7 +66,6 @@ import type {
   MechanicsRequirementsResult,
   MechanicsReviewRejection,
   MechanicsReviewResult,
-  MechanicsWorldOperation,
   MechanicsRoles,
   ResolvedMechanicsAnswer,
   ReviewedMechanicsIntent,
@@ -90,7 +83,11 @@ import type {
 } from "@/types/mechanics-program-authoring";
 import type { InventoryInstance, MaterialEntity } from "@/types/material-state";
 import type { MechanicsTriggerEvidence } from "@/types/mechanics-trigger";
-import type { MechanicsDocument, MechanicsWorld } from "@/types/mechanics-world";
+import type {
+  MechanicsDocument,
+  MechanicsPendingFrame,
+  MechanicsWorld,
+} from "@/types/mechanics-world";
 import type { ResourceRef, ResourceSelector, ResourceTerm } from "@/types/resource";
 
 export type {
@@ -101,8 +98,6 @@ export type {
   MechanicsD20Requirement,
   MechanicsDiceRequirement,
   MechanicsIntent,
-  MechanicsPlanRejection,
-  MechanicsPlanResult,
   MechanicsRequirement,
   MechanicsRequirementActivation,
   MechanicsRequirementsRejection,
@@ -111,7 +106,6 @@ export type {
   MechanicsReviewResult,
   MechanicsRoles,
   MechanicsTriggerEvidence,
-  MechanicsWorldOperation,
   ResolvedMechanicsAnswer,
   ReviewedMechanicsIntent,
   ReviewedMechanicsPayment,
@@ -751,12 +745,17 @@ function rootIdentityMatches(
 function executionMode(
   intent: MechanicsExecutionContext,
   phase: MechanicsProgramPhase,
-  lookup: ProgramRootLookup
+  lookup: ProgramRootLookup,
+  pendingFrames: readonly Readonly<MechanicsPendingFrame>[]
 ): MechanicsExecutionMode | null {
   const receipt = intent.rootReceipt;
+  const top = pendingFrames.at(-1) ?? null;
+  const topMatches = top !== null && exactEqual(top.frame, intent.intent.frame);
+  if (top !== null && !topMatches) return null;
   if (receipt.kind === "create") {
     if (lookup.kind === "absent") {
-      return lookup.materialEpoch === receipt.materialEpoch &&
+      return top === null &&
+        lookup.materialEpoch === receipt.materialEpoch &&
         lookup.nextOccurrenceOrdinal === receipt.root.ordinal
         ? "new"
         : null;
@@ -769,7 +768,17 @@ function executionMode(
       return null;
     }
     const state = lookup.root.phaseState[phase.phaseId];
-    return state && phaseStateMatches(state, receipt.next) ? "replay" : null;
+    if (!state) return null;
+    if (phaseStateMatches(state, receipt.next)) return "replay";
+    return topMatches &&
+      top.cursor.stage !== "phase-complete" &&
+      phaseStateMatches(state, {
+        execution: 0,
+        phaseId: receipt.next.phaseId,
+        triggerEventId: null,
+      })
+      ? "new"
+      : null;
   }
 
   if (
@@ -781,7 +790,13 @@ function executionMode(
   }
   const state = lookup.root.phaseState[phase.phaseId];
   if (!state) return null;
-  if (phaseStateMatches(state, receipt.expected)) return "new";
+  if (
+    topMatches &&
+    top.cursor.stage !== "phase-complete" &&
+    phaseStateMatches(state, receipt.expected)
+  ) {
+    return "new";
+  }
   return phaseStateMatches(state, receipt.next) ? "replay" : null;
 }
 
@@ -932,7 +947,8 @@ type MechanicsIntentValidation =
 
 function validateIntentAgainstReadableWorld(
   intentValue: unknown,
-  world: Readonly<MechanicsWorld>
+  world: Readonly<MechanicsWorld>,
+  pendingFrames: readonly Readonly<MechanicsPendingFrame>[] = []
 ): MechanicsIntentValidation {
   const intent = conformMechanicsIntent(intentValue);
   if (!intent) return { reason: "invalid-intent", referenceId: null };
@@ -944,7 +960,7 @@ function validateIntentAgainstReadableWorld(
     return { reason: "missing-role", referenceId: "owner" };
   }
   const lookup = programRoot(execution, world);
-  const mode = executionMode(execution, phase, lookup);
+  const mode = executionMode(execution, phase, lookup, pendingFrames);
   if (mode === null) {
     return {
       reason: "invalid-root-occurrence",
@@ -966,16 +982,6 @@ function validateIntentAgainstReadableWorld(
   return { bindings, execution, executionMode: mode, intent, phase, root, world };
 }
 
-function validateIntentAgainstWorld(
-  intentValue: unknown,
-  snapshot: Readonly<MechanicsWorld>
-): MechanicsIntentValidation {
-  const parsed = parseMechanicsWorld(snapshot);
-  return parsed.ok
-    ? validateIntentAgainstReadableWorld(intentValue, parsed.value)
-    : { reason: "invalid-world", referenceId: null };
-}
-
 type PredicateTruth = boolean | null;
 
 interface PredicateContext {
@@ -988,38 +994,35 @@ interface PredicateContext {
 }
 
 /**
- * Rebuild the compiler's read view from a kernel-produced projection. This is
- * intentionally not a hostile-input boundary; `prepareMechanicsProgramCompilation`
- * performs the one closed-basis review before any projection exists.
+ * Rebuild the compiler view from an exact causal state. An absent initial create
+ * or the exact nonterminal stack top is the only executable receipt.
  */
 export function refreshMechanicsProgramCompilationContext(
   reviewed: Readonly<ReviewedMechanicsIntent>,
-  world: Readonly<MechanicsWorld>,
+  stateValue: unknown,
   landedDamage: Readonly<Record<string, Readonly<Record<string, number>>>> = {}
 ): Readonly<MechanicsProgramCompilationContext> | null {
-  const execution = executionContext(reviewed.intent);
-  if (!execution) return null;
-  const phase = resolvedPhase(execution);
-  if (!phase) return null;
-  const lookup = programRoot(execution, world);
-  if (lookup.kind === "invalid") return null;
-  const root = lookup.root;
-  if (root !== null && !rootIdentityMatches(execution, root)) return null;
-  const bindings = bindingsFor(execution, root);
-  if (!bindings) return null;
+  const state = conformMechanicsCausalState(stateValue);
+  if (!state.ok) return null;
+  const validated = validateIntentAgainstReadableWorld(
+    reviewed.intent,
+    state.value.world,
+    state.value.context.pendingFrames
+  );
+  if ("reason" in validated || validated.executionMode !== "new") return null;
   return freezeDeep({
-    bindings,
-    execution: execution.execution,
+    bindings: validated.bindings,
+    execution: validated.execution.execution,
     intent: reviewed.intent,
     landedDamage,
-    phase,
+    phase: validated.phase,
     resolved: reviewed.resolved,
-    root,
-    world,
+    root: validated.root,
+    world: state.value.world,
   });
 }
 
-/** Re-review the exact closed basis once and distinguish replay before compiling. */
+/** Re-review the exact causal basis once and distinguish replay before compiling. */
 export function prepareMechanicsProgramCompilation(
   reviewedValue: Readonly<ReviewedMechanicsIntent>,
   stateValue: unknown
@@ -1041,7 +1044,8 @@ export function prepareMechanicsProgramCompilation(
   }
   const validated = validateIntentAgainstReadableWorld(
     reviewedValue.intent,
-    state.value.world
+    state.value.world,
+    state.value.context.pendingFrames
   );
   if ("reason" in validated) {
     return freezeDeep({
@@ -1061,10 +1065,7 @@ export function prepareMechanicsProgramCompilation(
       status: "rejected" as const,
     });
   }
-  const context = refreshMechanicsProgramCompilationContext(
-    reviewedValue,
-    state.value.world
-  );
+  const context = refreshMechanicsProgramCompilationContext(reviewedValue, state.value);
   return context
     ? freezeDeep({ context, state: state.value, status: "ready" as const })
     : freezeDeep({
@@ -1723,24 +1724,17 @@ function deriveRejected(
 
 export function deriveMechanicsRequirements(
   intentValue: unknown,
-  snapshot: Readonly<MechanicsWorld>
-): MechanicsRequirementsResult {
-  const validated = validateIntentAgainstWorld(intentValue, snapshot);
-  return "reason" in validated
-    ? deriveRejected(validated)
-    : deriveMechanicsRequirementsValidated(validated);
-}
-
-/** Derive against a re-proved source-readable causal world. */
-export function deriveMechanicsRequirementsFromCausalState(
-  intentValue: unknown,
   stateValue: unknown
 ): MechanicsRequirementsResult {
   const state = conformMechanicsCausalState(stateValue);
   if (!state.ok) {
     return deriveRejected({ reason: "invalid-world", referenceId: null });
   }
-  const validated = validateIntentAgainstReadableWorld(intentValue, state.value.world);
+  const validated = validateIntentAgainstReadableWorld(
+    intentValue,
+    state.value.world,
+    state.value.context.pendingFrames
+  );
   return "reason" in validated
     ? deriveRejected(validated)
     : deriveMechanicsRequirementsValidated(validated);
@@ -2207,216 +2201,20 @@ function reviewMechanicsIntentValidated(
   });
 }
 
-/** Exact staged hostile review; only a causally closed world is accepted. */
+/** Exact staged review against a re-proved source-readable causal state. */
 export function reviewMechanicsIntent(
-  intentValue: unknown,
-  answersValue: unknown,
-  snapshot: Readonly<MechanicsWorld>
-): MechanicsReviewResult {
-  const validated = validateIntentAgainstWorld(intentValue, snapshot);
-  return "reason" in validated
-    ? reviewRejected(validated.reason, validated.referenceId)
-    : reviewMechanicsIntentValidated(validated, answersValue);
-}
-
-/** Exact staged review against a re-proved source-readable causal world. */
-export function reviewMechanicsIntentFromCausalState(
   intentValue: unknown,
   answersValue: unknown,
   stateValue: unknown
 ): MechanicsReviewResult {
   const state = conformMechanicsCausalState(stateValue);
   if (!state.ok) return reviewRejected("invalid-world", null);
-  const validated = validateIntentAgainstReadableWorld(intentValue, state.value.world);
+  const validated = validateIntentAgainstReadableWorld(
+    intentValue,
+    state.value.world,
+    state.value.context.pendingFrames
+  );
   return "reason" in validated
     ? reviewRejected(validated.reason, validated.referenceId)
     : reviewMechanicsIntentValidated(validated, answersValue);
-}
-
-function operationForStep(step: MechanicsStep): MechanicsWorldOperation | null {
-  switch (step.kind) {
-    case "damage":
-      return "hit-point-damage";
-    case "heal":
-      return "hit-point-healing";
-    case "incoming-damage-adjustment":
-      return "incoming-damage-adjustment";
-    case "temporary-hit-points":
-    case "clear-temporary-hit-points":
-      return "temporary-hit-points";
-    case "condition":
-      return "condition-transition";
-    case "exhaustion-change":
-      return "exhaustion-transition";
-    case "standing":
-      return "standing-transition";
-    case "concentration":
-      return "concentration-transition";
-    case "polymorph":
-      return "polymorph-transition";
-    case "stabilize":
-    case "death":
-      return "death-transition";
-    case "resource-change":
-    case "resource-recover":
-    case "resource-state":
-      return "resource-transition";
-    case "occurrence-end":
-    case "end-program":
-      return "occurrence-transition";
-    case "entity-create":
-    case "entity-end":
-    case "entity-change":
-      return "entity-transition";
-    case "inventory-create":
-    case "inventory-end":
-    case "inventory-change":
-      return "inventory-transition";
-    case "turn-claim":
-      return "turn-claim-transition";
-    case "register":
-      return "program-register-transition";
-    case "manual-relocation":
-    case "manual-table":
-      return null;
-  }
-}
-
-function manualForStep(
-  step: Extract<MechanicsStep, { readonly kind: "manual-relocation" | "manual-table" }>,
-  reviewed: ReviewedMechanicsIntent,
-  bindings: Readonly<Record<string, number>>,
-  execution: MechanicsExecutionContext
-): readonly ManualInstruction[] | null {
-  if (step.kind === "manual-relocation") {
-    const targets = resolveTargets(step.target, execution, reviewed.resolved, bindings);
-    return targets
-      ? [
-          {
-            instructionId: step.instructionId,
-            kind: "relocation",
-            mode: step.mode,
-            stepId: step.stepId,
-            targets,
-          },
-        ]
-      : null;
-  }
-  const answer = reviewed.resolved[step.tableInputId];
-  return answer?.kind === "table"
-    ? [
-        {
-          authority: answer.authority,
-          instructionId: step.instructionId,
-          kind: "table",
-          rowId: answer.rowId,
-          stepId: step.stepId,
-        },
-      ]
-    : null;
-}
-
-function planRejected(
-  reason: Extract<MechanicsPlanResult, { readonly status: "rejected" }>["reason"],
-  manual: readonly ManualInstruction[] = [],
-  operations: readonly MechanicsWorldOperation[] = [],
-  stepIds: readonly string[] = []
-): MechanicsPlanResult {
-  return freezeDeep({ manual, operations, reason, status: "rejected", stepIds });
-}
-
-/**
- * Re-review immediately before plan. Until typed world simulators exist for an
- * active operation, fail with the exact missing operation instead of compiling a
- * generic document mutation.
- */
-export function planMechanicsAction(
-  reviewedValue: ReviewedMechanicsIntent,
-  snapshot: Readonly<MechanicsWorld>
-): MechanicsPlanResult {
-  if (typeof reviewedValue !== "object" || !Object.isFrozen(reviewedValue)) {
-    return planRejected("invalid-reviewed-intent");
-  }
-  const validated = validateIntentAgainstWorld(reviewedValue.intent, snapshot);
-  if ("reason" in validated) return planRejected("stale-review");
-  if (validated.executionMode === "replay") {
-    return freezeDeep({ action: null, manual: [], status: "planned" as const });
-  }
-  const rereview = reviewMechanicsIntent(
-    reviewedValue.intent,
-    reviewedValue.answers,
-    snapshot
-  );
-  if (rereview.status !== "reviewed") return planRejected("stale-review");
-  if (!exactEqual(rereview.reviewed, reviewedValue)) {
-    return planRejected("invalid-reviewed-intent");
-  }
-  const { bindings, execution, phase, root, world } = validated;
-  const context: PredicateContext = {
-    bindings,
-    intent: execution,
-    resolved: reviewedValue.resolved,
-    root,
-    world,
-  };
-  const orderedDependencies = mechanicsPhaseOrderedDependencies(phase);
-  if (orderedDependencies.length > 0) {
-    return planRejected(
-      "missing-world-operation",
-      [],
-      ["ordered-program-execution"],
-      orderedDependencies
-    );
-  }
-  const manual: ManualInstruction[] = [];
-  const missing: { operation: MechanicsWorldOperation; stepId: string }[] = [];
-  for (const step of phase.steps) {
-    const active = step.when === null ? true : evaluatePredicate(step.when, context);
-    if (active === null)
-      return planRejected("unresolved-predicate", manual, [], [step.stepId]);
-    if (!active) continue;
-    const operation = operationForStep(step);
-    if (operation) missing.push({ operation, stepId: step.stepId });
-    else if (step.kind === "manual-relocation" || step.kind === "manual-table") {
-      const instructions = manualForStep(step, reviewedValue, bindings, execution);
-      if (!instructions) {
-        return planRejected("invalid-reviewed-intent", manual, [], [step.stepId]);
-      }
-      manual.push(...instructions);
-    } else {
-      return planRejected("invalid-reviewed-intent", manual, [], [step.stepId]);
-    }
-  }
-
-  // Program state is one atomic receipt. Invocation creates the exact preallocated
-  // root and its complete phaseState; later phases atomically replace the selected
-  // {execution,lastTriggerEventId} pair. Neither transition derives an ordinal.
-  missing.push({
-    operation:
-      execution.rootReceipt.kind === "create"
-        ? "program-invocation-state-transition"
-        : "program-phase-state-transition",
-    stepId: phase.phaseId,
-  });
-  const operations = [...new Set(missing.map(({ operation }) => operation))];
-  if (operations.length > 0) {
-    return planRejected(
-      "missing-world-operation",
-      manual,
-      operations,
-      missing.map(({ stepId }) => stepId)
-    );
-  }
-
-  const adapter = planMechanicsWorldAction(world, world, {
-    actor: execution.actor,
-    facts: reviewedValue.intent.factGuards,
-    id: reviewedValue.intent.actionId,
-  });
-  if (adapter.status === "rejected") return planRejected("action-planner-rejected");
-  return freezeDeep({
-    action: adapter.status === "planned" ? adapter.action : null,
-    manual: Object.freeze(manual),
-    status: "planned",
-  });
 }

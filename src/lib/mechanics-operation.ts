@@ -17,7 +17,6 @@ import { conformDamageResolution } from "@/lib/damage";
 import { conformDiceObservation } from "@/lib/dice-formula";
 import { exactConformer, type ExactSchemaContext } from "@/lib/exact-schema";
 import { conformIntegerBindings } from "@/lib/integer-expression";
-import { conformProgramRootReceipt } from "@/lib/mechanics-command-boundary";
 import {
   insertResolvedMaterialResource,
   locateResolvedMaterialResource,
@@ -52,6 +51,7 @@ import {
   inventoryGenerationRefKey,
 } from "@/lib/mechanics-reference-schema";
 import {
+  acceptMechanicsPendingFramePhaseTransition,
   projectMechanicsTransactionWorld,
   rebaseMechanicsCausalState,
   reconcileMechanicsEncounterMembership,
@@ -127,6 +127,7 @@ import {
 } from "@/types/mechanics-operation";
 import type {
   MechanicsBoundaryCommand,
+  MechanicsCausalState,
   MechanicsDocument,
   MechanicsWorld,
 } from "@/types/mechanics-world";
@@ -328,7 +329,6 @@ const OPERATION_CONTEXT: ExactSchemaContext<
     "nonnegative-integer": (value) => integer(value, 0),
     "occurrence-generation-ref": conformOccurrenceGenerationRef,
     "positive-integer": (value) => integer(value, 1),
-    "program-root-receipt": conformProgramRootReceipt,
     "program-step-occurrence-origin": conformProgramStepOccurrenceOrigin,
     "resource-operation": conformResourceOperation,
     "resource-ref": conformResourceRef,
@@ -354,8 +354,15 @@ export function conformMechanicsOperation(
 ): Readonly<MechanicsOperation> | null {
   const operation = conformOperationStructure(value);
   if (
-    operation?.kind === "program-state-transition" &&
-    (operation.receipt.kind === "create") !== (operation.expectedRegisters === null)
+    operation?.kind === "program-phase-transition" &&
+    (operation.expected.phaseId !== operation.next.phaseId ||
+      operation.next.execution !== operation.expected.execution + 1 ||
+      !Number.isSafeInteger(operation.next.execution) ||
+      (operation.expected.execution === 0) !==
+        (operation.expected.triggerEventId === null) ||
+      (operation.next.triggerEventId === null
+        ? operation.expected.execution !== 0
+        : operation.next.triggerEventId === operation.expected.triggerEventId))
   ) {
     return null;
   }
@@ -371,20 +378,25 @@ export function conformMechanicsOperation(
 }
 
 function transactionCausesAreValid(transaction: Readonly<MechanicsTransaction>): boolean {
-  const programTransitions: Readonly<
-    Extract<MechanicsOperation, { readonly kind: "program-state-transition" }>
-  >[] = [];
-  for (const operation of transaction.operations) {
-    if (operation.kind === "program-state-transition") {
-      programTransitions.push(operation);
-    }
+  const rootCreates = transaction.operations.filter(
+    (operation) => operation.kind === "program-root-create"
+  );
+  if (
+    rootCreates.length > 1 ||
+    (rootCreates[0] &&
+      (transaction.operations[0] !== rootCreates[0] ||
+        transaction.operations.length !== 1))
+  ) {
+    return false;
   }
-  if (programTransitions.length > 1) return false;
-  const programTransition = programTransitions[0];
-  if (programTransition) {
-    const expectedIndex =
-      programTransition.receipt.kind === "create" ? 0 : transaction.operations.length - 1;
-    if (transaction.operations[expectedIndex] !== programTransition) return false;
+  const phaseTransitions = transaction.operations.filter(
+    (operation) => operation.kind === "program-phase-transition"
+  );
+  if (
+    phaseTransitions.length > 1 ||
+    (phaseTransitions[0] && transaction.operations.at(-1) !== phaseTransitions[0])
+  ) {
+    return false;
   }
   if (
     transaction.operations.length !== 1 &&
@@ -407,20 +419,20 @@ function transactionCausesAreValid(transaction: Readonly<MechanicsTransaction>):
   }
 
   const usedCauseIds = new Set<string>();
-  const createdRootsByCause = new Map<string, number>();
   for (const operation of transaction.operations) {
     const cause = causesById.get(operation.causeId);
     if (!cause) return false;
     usedCauseIds.add(operation.causeId);
-    if (
-      operation.kind === "program-state-transition" &&
-      operation.receipt.kind === "create"
-    ) {
-      const createdRoots = (createdRootsByCause.get(operation.causeId) ?? 0) + 1;
-      if (cause.invocation.kind !== "installed-capability" || createdRoots > 1) {
+    if (operation.kind === "program-root-create") {
+      if (cause.invocation.kind !== "installed-capability") return false;
+    }
+    if (operation.kind === "program-phase-transition") {
+      if (
+        cause.invocation.kind !== "program-root" ||
+        !sameCanonical(cause.invocation.occurrence, operation.root)
+      ) {
         return false;
       }
-      createdRootsByCause.set(operation.causeId, createdRoots);
     }
   }
   return usedCauseIds.size === transaction.causes.length;
@@ -629,6 +641,87 @@ function resolveOperationCause(
     : null;
 }
 
+function causeAuthorizedByPendingTop(
+  cause: Readonly<MechanicsOperationCause>,
+  resolved: Readonly<ResolvedOperationCause>,
+  state: Readonly<MechanicsCausalState>
+): boolean {
+  if (cause.invocation.kind !== "program-root") return true;
+  const top = state.context.pendingFrames.at(-1);
+  return (
+    top !== undefined &&
+    sameCanonical(top.frame.rootReceipt.root, cause.invocation.occurrence) &&
+    sameCanonical(top.frame.authority, resolved.authority)
+  );
+}
+
+function newProgramOrigin(operation: Readonly<MechanicsOperation>): Readonly<{
+  readonly origin: Readonly<
+    NonNullable<ReturnType<typeof conformProgramStepOccurrenceOrigin>>
+  >;
+  readonly parent: Readonly<OccurrenceGenerationRef>;
+}> | null {
+  if (operation.kind === "occurrence-create") {
+    return { origin: operation.occurrence.origin, parent: operation.parent };
+  }
+  if (operation.kind === "entity-create" || operation.kind === "inventory-create") {
+    return { origin: operation.origin, parent: operation.parent };
+  }
+  return null;
+}
+
+function newProgramOriginAuthorizedByPendingTop(
+  operation: Readonly<MechanicsOperation>,
+  cause: Readonly<MechanicsOperationCause>,
+  state: Readonly<MechanicsCausalState>,
+  expectedSlot: number | null,
+  authoredStepId: string | null
+): boolean {
+  const created = newProgramOrigin(operation);
+  if (created === null) return true;
+  const top = state.context.pendingFrames.at(-1);
+  if (
+    cause.invocation.kind !== "program-root" ||
+    top?.cursor.stage !== "step" ||
+    !sameCanonical(top.frame.rootReceipt.root, cause.invocation.occurrence) ||
+    !sameCanonical(created.parent, cause.invocation.occurrence) ||
+    !sameCanonical(created.origin.root, cause.invocation.occurrence)
+  ) {
+    return false;
+  }
+  const phase = top.frame.authority.snapshot.program?.phases.find(
+    ({ phaseId }) => phaseId === top.frame.rootReceipt.next.phaseId
+  );
+  const step = phase?.steps[top.cursor.stepIndex];
+  return (
+    step !== undefined &&
+    created.origin.execution === top.frame.rootReceipt.next.execution &&
+    created.origin.phaseId === top.frame.rootReceipt.next.phaseId &&
+    authoredStepId === step.stepId &&
+    created.origin.stepId === authoredStepId &&
+    expectedSlot !== null &&
+    created.origin.slot === expectedSlot
+  );
+}
+
+function programRegisterAuthorizedByPendingTop(
+  operation: Readonly<MechanicsOperation>,
+  state: Readonly<MechanicsCausalState>
+): boolean {
+  if (operation.kind !== "program-register-transition") return true;
+  const top = state.context.pendingFrames.at(-1);
+  if (top?.cursor.stage !== "step") return false;
+  const phase = top.frame.authority.snapshot.program?.phases.find(
+    ({ phaseId }) => phaseId === top.frame.rootReceipt.next.phaseId
+  );
+  const step = phase?.steps[top.cursor.stepIndex];
+  return (
+    step?.kind === "register" &&
+    step.registerId === operation.registerId &&
+    sameCanonical(top.frame.rootReceipt.root, operation.root)
+  );
+}
+
 function inventorySourceLease(
   authority: Readonly<MechanicsProgramAuthorityReceipt>
 ): Readonly<InventoryGenerationRef> | null {
@@ -689,7 +782,8 @@ function operationTargetKind(
     case "inventory-create":
     case "inventory-transition":
     case "inventory-end":
-    case "program-state-transition":
+    case "program-root-create":
+    case "program-phase-transition":
     case "program-register-transition":
     case "occurrence-create":
     case "occurrence-end":
@@ -946,6 +1040,9 @@ function executeOperation(
     case "inventory-create":
     case "inventory-transition":
     case "inventory-end":
+    case "program-root-create":
+    case "program-phase-transition":
+    case "program-register-transition":
     case "occurrence-create":
     case "occurrence-end":
     case "exhaustion-transition":
@@ -981,12 +1078,14 @@ function withTargetVitals(
 function validatedTransactionCandidate(
   value: unknown,
   priorWorld: Readonly<MechanicsWorld>,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): Readonly<MechanicsWorld> | null {
   const parsed = projectMechanicsTransactionWorld(
     value,
     priorWorld,
-    inventorySourceLeases
+    inventorySourceLeases,
+    causalState
   );
   return parsed.ok ? parsed.value : null;
 }
@@ -996,6 +1095,7 @@ function withOccurrence(
   material: Readonly<MaterialRef>,
   occurrenceId: string,
   occurrence: Readonly<NewMechanicOccurrence>,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): Readonly<MechanicsWorld> | null {
   const located = documentFor(world, material);
@@ -1021,7 +1121,12 @@ function withOccurrence(
         : document
     ),
   };
-  return validatedTransactionCandidate(candidate, world, inventorySourceLeases);
+  return validatedTransactionCandidate(
+    candidate,
+    world,
+    causalState,
+    inventorySourceLeases
+  );
 }
 
 function effectiveConditionImmunities(
@@ -1103,6 +1208,9 @@ function visibleFacts(
     case "inventory-create":
     case "inventory-transition":
     case "inventory-end":
+    case "program-root-create":
+    case "program-phase-transition":
+    case "program-register-transition":
     case "occurrence-create":
     case "occurrence-end":
     case "exhaustion-transition":
@@ -1241,6 +1349,7 @@ function simulateTurnEconomyTransition(
   operation: Readonly<
     Extract<MechanicsOperation, { readonly kind: "turn-economy-transition" }>
   >,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   const lookup = locateEncounterParticipant(world, operation.combatant);
@@ -1254,6 +1363,7 @@ function simulateTurnEconomyTransition(
   const after = validatedTransactionCandidate(
     withParticipantEconomy(world, lookup.located, transition.after),
     world,
+    causalState,
     inventorySourceLeases
   );
   if (!after) return { reason: "invalid-after", status: "rejected" };
@@ -1315,6 +1425,7 @@ function withProgramOccurrence(
   world: Readonly<MechanicsWorld>,
   reference: Readonly<OccurrenceGenerationRef>,
   occurrence: Readonly<ProgramOccurrence>,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): Readonly<MechanicsWorld> | null {
   const located = documentFor(world, reference.occurrence.material);
@@ -1336,13 +1447,19 @@ function withProgramOccurrence(
         : document
     ),
   };
-  return validatedTransactionCandidate(candidate, world, inventorySourceLeases);
+  return validatedTransactionCandidate(
+    candidate,
+    world,
+    causalState,
+    inventorySourceLeases
+  );
 }
 
 function withCreatedProgramOccurrence(
   world: Readonly<MechanicsWorld>,
   reference: Readonly<OccurrenceGenerationRef>,
   occurrence: Omit<ProgramOccurrence, "ending" | "ordinal">,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): Readonly<MechanicsWorld> | null {
   const located = documentFor(world, reference.occurrence.material);
@@ -1368,167 +1485,170 @@ function withCreatedProgramOccurrence(
         : document
     ),
   };
-  return validatedTransactionCandidate(candidate, world, inventorySourceLeases);
+  return validatedTransactionCandidate(
+    candidate,
+    world,
+    causalState,
+    inventorySourceLeases
+  );
 }
 
-function simulateProgramStateTransition(
+function simulateProgramRootCreate(
   world: Readonly<MechanicsWorld>,
   operation: Readonly<
-    Extract<MechanicsOperation, { readonly kind: "program-state-transition" }>
+    Extract<MechanicsOperation, { readonly kind: "program-root-create" }>
   >,
   cause: Readonly<MechanicsOperationCause>,
   authority: Readonly<MechanicsProgramAuthorityReceipt>,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
-  const { receipt } = operation;
   const program = authority.snapshot.program;
   const ownerMaterial = authority.installation.owner.material;
   if (
     !program ||
-    !sameMaterial(receipt.root.occurrence.material, ownerMaterial) ||
-    !exactKeys(
-      operation.nextRegisters,
-      program.registers.map(({ registerId }) => registerId)
-    ) ||
-    (operation.expectedRegisters !== null &&
-      !exactKeys(
-        operation.expectedRegisters,
-        program.registers.map(({ registerId }) => registerId)
-      ))
+    cause.invocation.kind !== "installed-capability" ||
+    !sameMaterial(operation.root.occurrence.material, ownerMaterial)
   ) {
     return { reason: "invalid-program-state", status: "rejected" };
   }
-  const phase = program.phases.find(({ phaseId }) => phaseId === receipt.next.phaseId);
-  if (!phase) return { reason: "invalid-program-state", status: "rejected" };
-  const located = documentFor(world, receipt.root.occurrence.material);
+  const located = documentFor(world, operation.root.occurrence.material);
   if (!located) return { reason: "missing-target", status: "rejected" };
   const existing =
-    located.document.state.occurrences[receipt.root.occurrence.occurrenceId];
-  const nextPhase = programPhaseEntry(receipt.next);
-
-  if (receipt.kind === "create") {
-    if (cause.invocation.kind !== "installed-capability") {
-      return { reason: "invalid-cause", status: "rejected" };
-    }
-    const phaseState = Object.fromEntries(
+    located.document.state.occurrences[operation.root.occurrence.occurrenceId];
+  const expectedRoot = {
+    authority,
+    endRules: [],
+    phaseState: Object.fromEntries(
       program.phases.map(({ phaseId }) => [
         phaseId,
-        phaseId === receipt.next.phaseId
-          ? nextPhase
-          : { execution: 0, lastTriggerEventId: null },
+        { execution: 0, lastTriggerEventId: null },
       ])
-    );
-    const expectedRoot = {
-      authority,
-      endRules: [],
-      phaseState,
-      registers: operation.nextRegisters,
-    };
-    if (existing) {
-      return existing.kind === "program" &&
-        existing.ordinal === receipt.root.ordinal &&
-        existing.ending === null &&
-        sameCanonical(
-          {
-            authority: existing.authority,
-            endRules: existing.endRules,
-            phaseState: existing.phaseState,
-            registers: existing.registers,
-          },
-          expectedRoot
-        )
-        ? noChangeExecution(operation, "program-state-already-committed")
-        : { reason: "program-root-collision", status: "rejected" };
-    }
-    if (
-      located.document.state.epoch !== receipt.materialEpoch ||
-      located.document.state.nextOccurrenceOrdinal !== receipt.root.ordinal
-    ) {
-      return { reason: "stale-program-state", status: "rejected" };
-    }
-    if (receipt.root.ordinal === Number.MAX_SAFE_INTEGER) {
-      return { reason: "overflow", status: "rejected" };
-    }
-    const after = withCreatedProgramOccurrence(
-      world,
-      receipt.root,
-      { ...expectedRoot, kind: "program" },
-      inventorySourceLeases
-    );
-    const created = after ? occurrenceAtGeneration(after, receipt.root) : undefined;
-    if (created?.kind !== "program") {
-      return { reason: "invalid-after", status: "rejected" };
-    }
-    return {
-      actionFacts: [],
-      execution: {
-        facts: {
-          after: { phase: nextPhase, registers: operation.nextRegisters },
-          before: null,
-          created: true,
-          root: receipt.root,
+    ),
+    registers: Object.fromEntries(
+      program.registers.map(({ initial, registerId }) => [registerId, initial])
+    ),
+  };
+  if (existing) {
+    return existing.kind === "program" &&
+      existing.ordinal === operation.root.ordinal &&
+      existing.ending === null &&
+      sameCanonical(
+        {
+          authority: existing.authority,
+          endRules: existing.endRules,
+          phaseState: existing.phaseState,
+          registers: existing.registers,
         },
-        kind: operation.kind,
-        operation,
-        operationId: operation.operationId,
-        status: "applied",
-      },
-      world: after,
-      status: "applied",
-    };
+        expectedRoot
+      )
+      ? noChangeExecution(operation, "program-root-already-created")
+      : { reason: "program-root-collision", status: "rejected" };
   }
-
   if (
-    cause.invocation.kind !== "program-root" ||
-    !sameCanonical(cause.invocation.occurrence, receipt.root)
+    located.document.state.epoch !== operation.materialEpoch ||
+    located.document.state.nextOccurrenceOrdinal !== operation.root.ordinal
   ) {
-    return { reason: "invalid-cause", status: "rejected" };
+    return { reason: "stale-program-state", status: "rejected" };
   }
-  if (!existing || existing.ordinal !== receipt.root.ordinal) {
+  if (operation.root.ordinal === Number.MAX_SAFE_INTEGER) {
+    return { reason: "overflow", status: "rejected" };
+  }
+  const after = withCreatedProgramOccurrence(
+    world,
+    operation.root,
+    { ...expectedRoot, kind: "program" },
+    causalState,
+    inventorySourceLeases
+  );
+  const created = after ? occurrenceAtGeneration(after, operation.root) : undefined;
+  if (created?.kind !== "program") {
+    return { reason: "invalid-after", status: "rejected" };
+  }
+  return {
+    actionFacts: [],
+    execution: {
+      facts: { root: operation.root },
+      kind: operation.kind,
+      operation,
+      operationId: operation.operationId,
+      status: "applied",
+    },
+    world: after,
+    status: "applied",
+  };
+}
+
+function simulateProgramPhaseTransition(
+  world: Readonly<MechanicsWorld>,
+  operation: Readonly<
+    Extract<MechanicsOperation, { readonly kind: "program-phase-transition" }>
+  >,
+  cause: Readonly<MechanicsOperationCause>,
+  authority: Readonly<MechanicsProgramAuthorityReceipt>
+): OperationSimulation {
+  const program = authority.snapshot.program;
+  const phase = program?.phases.find(({ phaseId }) => phaseId === operation.next.phaseId);
+  if (
+    !program ||
+    !phase ||
+    cause.invocation.kind !== "program-root" ||
+    !sameCanonical(cause.invocation.occurrence, operation.root) ||
+    (phase.trigger.kind === "invocation") !== (operation.next.triggerEventId === null)
+  ) {
+    return { reason: "invalid-program-state", status: "rejected" };
+  }
+  const existing = occurrenceAtGeneration(world, operation.root);
+  if (!existing) {
     return { reason: "missing-program-root", status: "rejected" };
   }
   if (existing.kind !== "program" || !programRootIdentityMatches(existing, authority)) {
     return { reason: "invalid-program-state", status: "rejected" };
   }
-  const currentPhase = existing.phaseState[receipt.next.phaseId];
-  if (!currentPhase || operation.expectedRegisters === null) {
+  const currentPhase = existing.phaseState[operation.next.phaseId];
+  if (!currentPhase) {
     return { reason: "invalid-program-state", status: "rejected" };
   }
-  if (
-    sameCanonical(currentPhase, nextPhase) &&
-    sameCanonical(existing.registers, operation.nextRegisters)
-  ) {
-    return noChangeExecution(operation, "program-state-already-committed");
+  const nextPhase = programPhaseEntry(operation.next);
+  if (sameCanonical(currentPhase, nextPhase)) {
+    return noChangeExecution(operation, "program-phase-already-committed");
   }
-  if (
-    !sameCanonical(currentPhase, programPhaseEntry(receipt.expected)) ||
-    !sameCanonical(existing.registers, operation.expectedRegisters)
-  ) {
+  if (!sameCanonical(currentPhase, programPhaseEntry(operation.expected))) {
     return { reason: "stale-program-state", status: "rejected" };
   }
   const nextRoot: ProgramOccurrence = {
     ...existing,
     phaseState: {
       ...existing.phaseState,
-      [receipt.next.phaseId]: nextPhase,
+      [operation.next.phaseId]: nextPhase,
     },
-    registers: structuredClone(operation.nextRegisters),
   };
-  const after = withProgramOccurrence(
-    world,
-    receipt.root,
-    nextRoot,
-    inventorySourceLeases
-  );
-  if (!after) return { reason: "invalid-after", status: "rejected" };
+  const located = documentFor(world, operation.root.occurrence.material);
+  if (!located) return { reason: "missing-program-root", status: "rejected" };
+  const after = {
+    scope: world.scope,
+    documents: world.documents.map((document, index) =>
+      index === located.index
+        ? {
+            ...document,
+            state: {
+              ...document.state,
+              occurrences: {
+                ...document.state.occurrences,
+                [operation.root.occurrence.occurrenceId]: nextRoot,
+              },
+            },
+          }
+        : document
+    ),
+  };
   return {
     actionFacts: [],
     execution: {
       facts: {
-        after: { phase: nextPhase, registers: operation.nextRegisters },
-        before: { phase: currentPhase, registers: existing.registers },
-        created: false,
-        root: receipt.root,
+        after: nextPhase,
+        before: currentPhase,
+        root: operation.root,
       },
       kind: operation.kind,
       operation,
@@ -1547,6 +1667,7 @@ function simulateProgramRegisterTransition(
   >,
   cause: Readonly<MechanicsOperationCause>,
   authority: Readonly<MechanicsProgramAuthorityReceipt>,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   const program = authority.snapshot.program;
@@ -1580,6 +1701,7 @@ function simulateProgramRegisterTransition(
         [operation.registerId]: structuredClone(operation.next),
       },
     },
+    causalState,
     inventorySourceLeases
   );
   if (!after) return { reason: "invalid-after", status: "rejected" };
@@ -1697,6 +1819,7 @@ function simulateEntityCreate(
   world: Readonly<MechanicsWorld>,
   operation: Readonly<Extract<MechanicsOperation, { readonly kind: "entity-create" }>>,
   authority: Readonly<MechanicsProgramAuthorityReceipt>,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   const material = operation.entity.material;
@@ -1793,7 +1916,12 @@ function simulateEntityCreate(
         : document
     ),
   };
-  const after = validatedTransactionCandidate(candidate, world, inventorySourceLeases);
+  const after = validatedTransactionCandidate(
+    candidate,
+    world,
+    causalState,
+    inventorySourceLeases
+  );
   if (!after) return { reason: "invalid-after", status: "rejected" };
   return {
     actionFacts: [],
@@ -1814,6 +1942,7 @@ function simulateEntityAvailability(
   operation: Readonly<
     Extract<MechanicsOperation, { readonly kind: "entity-availability" }>
   >,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   const located = locateMaterialEntityGeneration(world, operation.target);
@@ -1832,6 +1961,7 @@ function simulateEntityAvailability(
   const after = validatedTransactionCandidate(
     reconcileMechanicsEncounterMembership(candidate),
     world,
+    causalState,
     inventorySourceLeases
   );
   if (!after) return { reason: "invalid-after", status: "rejected" };
@@ -1854,6 +1984,7 @@ function simulateEntityController(
   operation: Readonly<
     Extract<MechanicsOperation, { readonly kind: "entity-controller" }>
   >,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   const located = locateMaterialEntityGeneration(world, operation.target);
@@ -1875,6 +2006,7 @@ function simulateEntityController(
       controller: operation.controller,
     }),
     world,
+    causalState,
     inventorySourceLeases
   );
   if (!after) return { reason: "invalid-after", status: "rejected" };
@@ -1898,6 +2030,7 @@ function simulateOccurrenceCreate(
     Extract<MechanicsOperation, { readonly kind: "occurrence-create" }>
   >,
   authority: Readonly<MechanicsProgramAuthorityReceipt>,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   const { created } = operation;
@@ -1978,6 +2111,7 @@ function simulateOccurrenceCreate(
     material,
     created.occurrence.occurrenceId,
     occurrence,
+    causalState,
     inventorySourceLeases
   );
   if (!after) return { reason: "invalid-after", status: "rejected" };
@@ -2054,6 +2188,7 @@ function simulateInventoryCreate(
   world: Readonly<MechanicsWorld>,
   operation: Readonly<Extract<MechanicsOperation, { readonly kind: "inventory-create" }>>,
   authority: Readonly<MechanicsProgramAuthorityReceipt>,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   const located = documentFor(world, operation.item.owner);
@@ -2150,7 +2285,12 @@ function simulateInventoryCreate(
         : document
     ),
   };
-  const after = validatedTransactionCandidate(candidate, world, inventorySourceLeases);
+  const after = validatedTransactionCandidate(
+    candidate,
+    world,
+    causalState,
+    inventorySourceLeases
+  );
   const createdDocument = after
     ? documentFor(after, operation.item.owner)?.document
     : null;
@@ -2214,6 +2354,7 @@ type InventoryMutationOperation = Extract<
 function simulateInventoryMutation(
   world: Readonly<MechanicsWorld>,
   operation: Readonly<InventoryMutationOperation>,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   const located = locateInventoryInstance(world, operation.item);
@@ -2325,7 +2466,12 @@ function simulateInventoryMutation(
         : entry
     ),
   };
-  const parsed = validatedTransactionCandidate(candidate, world, inventorySourceLeases);
+  const parsed = validatedTransactionCandidate(
+    candidate,
+    world,
+    causalState,
+    inventorySourceLeases
+  );
   if (!parsed) return { reason: "invalid-after", status: "rejected" };
   const parsedInstance = locateInventoryInstance(parsed, operation.item)?.instance;
   if (!parsedInstance) return { reason: "invalid-after", status: "rejected" };
@@ -2404,6 +2550,7 @@ function simulateExhaustionTransition(
   operation: Readonly<
     Extract<MechanicsOperation, { readonly kind: "exhaustion-transition" }>
   >,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   const lookup = locateTarget(world, operation.target);
@@ -2433,6 +2580,7 @@ function simulateExhaustionTransition(
   const parsed = validatedTransactionCandidate(
     withTargetExhaustion(world, lookup.target, after, vitals),
     world,
+    causalState,
     inventorySourceLeases
   );
   if (!parsed) {
@@ -2463,6 +2611,7 @@ function simulateResourceTransition(
   operation: Readonly<
     Extract<MechanicsOperation, { readonly kind: "resource-transition" }>
   >,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   const location = locateResolvedMaterialResource(world, operation.resource);
@@ -2489,7 +2638,12 @@ function simulateResourceTransition(
     transition.after
   );
   if (!candidate) return { reason: "invalid-after", status: "rejected" };
-  const parsed = validatedTransactionCandidate(candidate, world, inventorySourceLeases);
+  const parsed = validatedTransactionCandidate(
+    candidate,
+    world,
+    causalState,
+    inventorySourceLeases
+  );
   if (!parsed) {
     return { reason: "invalid-after", status: "rejected" };
   }
@@ -2516,6 +2670,7 @@ function simulateResourceInitialize(
   operation: Readonly<
     Extract<MechanicsOperation, { readonly kind: "resource-initialize" }>
   >,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   if (fixedShapeResource(operation.resource)) {
@@ -2547,7 +2702,12 @@ function simulateResourceInitialize(
     initialized.cell
   );
   if (!candidate) return { reason: "missing-target", status: "rejected" };
-  const parsed = validatedTransactionCandidate(candidate, world, inventorySourceLeases);
+  const parsed = validatedTransactionCandidate(
+    candidate,
+    world,
+    causalState,
+    inventorySourceLeases
+  );
   if (!parsed) {
     return { reason: "invalid-after", status: "rejected" };
   }
@@ -2571,6 +2731,7 @@ function simulateResourceInitialize(
 function simulateResourceRemove(
   world: Readonly<MechanicsWorld>,
   operation: Readonly<Extract<MechanicsOperation, { readonly kind: "resource-remove" }>>,
+  causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   if (fixedShapeResource(operation.resource)) {
@@ -2580,7 +2741,12 @@ function simulateResourceRemove(
   if (!location) return { reason: "resource-missing", status: "rejected" };
   const candidate = removeResolvedMaterialResource(world, operation.resource);
   if (!candidate) return { reason: "invalid-after", status: "rejected" };
-  const parsed = validatedTransactionCandidate(candidate, world, inventorySourceLeases);
+  const parsed = validatedTransactionCandidate(
+    candidate,
+    world,
+    causalState,
+    inventorySourceLeases
+  );
   if (!parsed) {
     return { reason: "invalid-after", status: "rejected" };
   }
@@ -2603,34 +2769,66 @@ function simulateOperation(
   operation: Readonly<MechanicsOperation>,
   cause: Readonly<MechanicsOperationCause>,
   authority: Readonly<MechanicsProgramAuthorityReceipt>,
-  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[] = []
+  causalState: Readonly<MechanicsCausalState>,
+  inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): OperationSimulation {
   if (operation.kind === "turn-economy-transition") {
-    return simulateTurnEconomyTransition(world, operation, inventorySourceLeases);
+    return simulateTurnEconomyTransition(
+      world,
+      operation,
+      causalState,
+      inventorySourceLeases
+    );
   }
   if (operation.kind === "entity-create") {
-    return simulateEntityCreate(world, operation, authority, inventorySourceLeases);
+    return simulateEntityCreate(
+      world,
+      operation,
+      authority,
+      causalState,
+      inventorySourceLeases
+    );
   }
   if (operation.kind === "entity-availability") {
-    return simulateEntityAvailability(world, operation, inventorySourceLeases);
+    return simulateEntityAvailability(
+      world,
+      operation,
+      causalState,
+      inventorySourceLeases
+    );
   }
   if (operation.kind === "entity-controller") {
-    return simulateEntityController(world, operation, inventorySourceLeases);
+    return simulateEntityController(world, operation, causalState, inventorySourceLeases);
   }
   if (operation.kind === "inventory-create") {
-    return simulateInventoryCreate(world, operation, authority, inventorySourceLeases);
+    return simulateInventoryCreate(
+      world,
+      operation,
+      authority,
+      causalState,
+      inventorySourceLeases
+    );
   }
   if (operation.kind === "inventory-transition" || operation.kind === "inventory-end") {
-    return simulateInventoryMutation(world, operation, inventorySourceLeases);
+    return simulateInventoryMutation(
+      world,
+      operation,
+      causalState,
+      inventorySourceLeases
+    );
   }
-  if (operation.kind === "program-state-transition") {
-    return simulateProgramStateTransition(
+  if (operation.kind === "program-root-create") {
+    return simulateProgramRootCreate(
       world,
       operation,
       cause,
       authority,
+      causalState,
       inventorySourceLeases
     );
+  }
+  if (operation.kind === "program-phase-transition") {
+    return simulateProgramPhaseTransition(world, operation, cause, authority);
   }
   if (operation.kind === "program-register-transition") {
     return simulateProgramRegisterTransition(
@@ -2638,26 +2836,48 @@ function simulateOperation(
       operation,
       cause,
       authority,
+      causalState,
       inventorySourceLeases
     );
   }
   if (operation.kind === "occurrence-create") {
-    return simulateOccurrenceCreate(world, operation, authority, inventorySourceLeases);
+    return simulateOccurrenceCreate(
+      world,
+      operation,
+      authority,
+      causalState,
+      inventorySourceLeases
+    );
   }
   if (operation.kind === "occurrence-end") {
     return simulateOccurrenceEnd(world, operation);
   }
   if (operation.kind === "exhaustion-transition") {
-    return simulateExhaustionTransition(world, operation, inventorySourceLeases);
+    return simulateExhaustionTransition(
+      world,
+      operation,
+      causalState,
+      inventorySourceLeases
+    );
   }
   if (operation.kind === "resource-transition") {
-    return simulateResourceTransition(world, operation, inventorySourceLeases);
+    return simulateResourceTransition(
+      world,
+      operation,
+      causalState,
+      inventorySourceLeases
+    );
   }
   if (operation.kind === "resource-initialize") {
-    return simulateResourceInitialize(world, operation, inventorySourceLeases);
+    return simulateResourceInitialize(
+      world,
+      operation,
+      causalState,
+      inventorySourceLeases
+    );
   }
   if (operation.kind === "resource-remove") {
-    return simulateResourceRemove(world, operation, inventorySourceLeases);
+    return simulateResourceRemove(world, operation, causalState, inventorySourceLeases);
   }
   const targetRef = operationTarget(operation);
   const lookup = locateTarget(world, targetRef);
@@ -2704,6 +2924,7 @@ function simulateOperation(
   const parsed = validatedTransactionCandidate(
     withTargetVitals(world, target, transition.after),
     world,
+    causalState,
     inventorySourceLeases
   );
   if (!parsed) {
@@ -2828,6 +3049,12 @@ function runMechanicsTransaction(
 ): MechanicsTransactionProjectionResult | MechanicsTransactionSimulationResult {
   const transaction = conformMechanicsTransaction(transactionValue);
   if (!transaction) return rejected("invalid-transaction");
+  const phaseTransition = transaction.operations.find(
+    (operation) => operation.kind === "program-phase-transition"
+  );
+  if (phaseTransition && transaction.operations.length !== 1) {
+    return rejected("invalid-transaction", phaseTransition.operationId);
+  }
   if (!exactRecord(contextValue, ["authoritySnapshot", "state"])) {
     return rejected("invalid-transaction");
   }
@@ -2866,6 +3093,10 @@ function runMechanicsTransaction(
   const stages: MechanicsOperationStage[] = [];
   const noChanges: MechanicsOperationNoChange[] = [];
   const resolvedCauses = new Map<string, Readonly<ResolvedOperationCause>>();
+  const pendingTop = before.context.pendingFrames.at(-1);
+  let nextProgramOriginSlot =
+    pendingTop?.cursor.stage === "step" ? pendingTop.cursor.nextSlot : null;
+  let activeProgramOriginStepId: string | null = null;
   const operationForCause = (causeId: string) =>
     transaction.operations.find((operation) => operation.causeId === causeId);
   for (const cause of transaction.causes.filter(
@@ -2897,10 +3128,9 @@ function runMechanicsTransaction(
       const creator = transaction.operations[0];
       const creatorAuthority = resolvedCauses.get(creator.causeId)?.authority;
       if (
-        creator.kind === "program-state-transition" &&
-        creator.receipt.kind === "create" &&
+        creator.kind === "program-root-create" &&
         creatorAuthority &&
-        sameCanonical(creator.receipt.root, cause.invocation.occurrence) &&
+        sameCanonical(creator.root, cause.invocation.occurrence) &&
         sameCanonical(creatorAuthority.installation.owner, transaction.actor) &&
         cause.causeId === mechanicsOperationCauseId(creatorAuthority, cause.invocation)
       ) {
@@ -2933,6 +3163,36 @@ function runMechanicsTransaction(
     if (!cause) return rejected("invalid-cause", operation.operationId);
     const resolvedCause = resolvedCauses.get(cause.causeId);
     if (!resolvedCause) return rejected("invalid-cause", operation.operationId);
+    if (!causeAuthorizedByPendingTop(cause, resolvedCause, before)) {
+      return rejected("invalid-cause", operation.operationId);
+    }
+    const programOrigin = newProgramOrigin(operation);
+    if (programOrigin !== null && activeProgramOriginStepId === null) {
+      activeProgramOriginStepId = programOrigin.origin.stepId;
+    }
+    if (
+      !newProgramOriginAuthorizedByPendingTop(
+        operation,
+        cause,
+        before,
+        nextProgramOriginSlot,
+        activeProgramOriginStepId
+      )
+    ) {
+      return rejected("invalid-cause", operation.operationId);
+    }
+    if (programOrigin !== null) {
+      if (
+        nextProgramOriginSlot === null ||
+        nextProgramOriginSlot === Number.MAX_SAFE_INTEGER
+      ) {
+        return rejected("invalid-cause", operation.operationId);
+      }
+      nextProgramOriginSlot += 1;
+    }
+    if (!programRegisterAuthorizedByPendingTop(operation, before)) {
+      return rejected("invalid-cause", operation.operationId);
+    }
     const authorityLease = inventorySourceLease(resolvedCause.authority);
     const operationLease = operationInventorySourceLease(world, operation);
     inventorySourceLeases = mergeInventorySourceLeases(
@@ -2944,7 +3204,8 @@ function runMechanicsTransaction(
     const stageBefore = projectMechanicsTransactionWorld(
       world,
       world,
-      inventorySourceLeases
+      inventorySourceLeases,
+      before
     );
     if (!stageBefore.ok) return rejected("invalid-after", operation.operationId);
     const result = simulateOperation(
@@ -2952,6 +3213,7 @@ function runMechanicsTransaction(
       operation,
       cause,
       resolvedCause.authority,
+      before,
       inventorySourceLeases
     );
     if (result.status === "rejected") {
@@ -2995,16 +3257,35 @@ function runMechanicsTransaction(
   const facts = mergeActionFacts(actionFacts);
   if (!facts) return rejected("fact-conflict");
   if (projectOnly) {
+    const acceptedState = phaseTransition
+      ? acceptMechanicsPendingFramePhaseTransition(
+          world,
+          before,
+          before.context.pendingFrames.at(-1)?.frame,
+          inventorySourceLeases,
+          consequences.map(({ occurrence }) => occurrence)
+        )
+      : rebaseMechanicsCausalState(
+          world,
+          before,
+          inventorySourceLeases,
+          consequences.map(({ occurrence }) => occurrence)
+        );
+    if (!acceptedState.ok) {
+      return rejected(
+        "invalid-after",
+        transaction.operations[transaction.operations.length - 1]?.operationId ?? null
+      );
+    }
     return {
       actionFacts: facts,
       changed: changed || consequences.length > 0,
       consequences,
       executions,
-      inventorySourceLeases,
       stages,
+      state: acceptedState.value,
       status: "projected",
       transaction,
-      world,
     };
   }
   if (!changed && consequences.length === 0) {
@@ -3018,12 +3299,23 @@ function runMechanicsTransaction(
       transaction,
     };
   }
-  const finalState = rebaseMechanicsCausalState(
-    world,
-    before,
-    inventorySourceLeases,
-    consequences.map(({ occurrence }) => occurrence)
-  );
+  const phaseAccepted = phaseTransition
+    ? acceptMechanicsPendingFramePhaseTransition(
+        world,
+        before,
+        before.context.pendingFrames.at(-1)?.frame,
+        inventorySourceLeases,
+        consequences.map(({ occurrence }) => occurrence)
+      )
+    : null;
+  const finalState = phaseAccepted
+    ? phaseAccepted
+    : rebaseMechanicsCausalState(
+        world,
+        before,
+        inventorySourceLeases,
+        consequences.map(({ occurrence }) => occurrence)
+      );
   if (!finalState.ok) {
     return rejected(
       "invalid-after",

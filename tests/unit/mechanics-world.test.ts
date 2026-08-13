@@ -7,18 +7,28 @@ import {
 } from "@/lib/mechanic-occurrences";
 import {
   advanceMechanicsBoundary,
+  acceptMechanicsPendingFramePhaseTransition,
+  advanceMechanicsPendingFrameSlot,
+  advanceMechanicsPendingFrameStep,
   beginMechanicsBoundary,
+  beginMechanicsBoundaryFromCausalState,
   beginMechanicsCausalState,
   completeMechanicsBoundaryCheckpoint,
+  conformMechanicsCausalState,
   discoverMechanicsEndWave,
   finalizeMechanicsEndWave,
+  finalizeMechanicsCausalEndWave,
   finalizeMechanicsMaterialCleanup,
   isEndRuleDue,
   isMechanicsEndWaveReceiptForWorld,
   latchMechanicsEndWave,
   parseMechanicsWorld,
   projectMechanicsTransactionWorld,
+  popMechanicsPendingFrame,
+  pushMechanicsPendingFrame,
   rebaseMechanicsCausalState,
+  topMechanicsPendingFrame,
+  topMechanicsPendingFrameMatches,
 } from "@/lib/mechanics-world";
 import {
   createEmptyCharacterMaterialState,
@@ -49,6 +59,7 @@ import type {
   ProgramOccurrence,
 } from "@/types/mechanic-occurrence";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
+import type { MechanicsExecutionFrame } from "@/types/mechanics-command";
 import type {
   EncounterSeed,
   MechanicsBoundaryCheckpoint,
@@ -477,6 +488,86 @@ function addRoot<State extends MutableMaterialState>(
   return { ...state, ...next };
 }
 
+function addPendingRoot<State extends MutableMaterialState>(
+  state: State,
+  material: MaterialRef,
+  id: string
+): State {
+  const authority = tableAuthority(material, id);
+  const next = addOccurrence(
+    {
+      nextOccurrenceOrdinal: state.nextOccurrenceOrdinal,
+      occurrences: state.occurrences,
+    },
+    id,
+    program(material, id, authority)
+  );
+  return { ...state, ...next };
+}
+
+function pendingFrame(
+  state: MutableMaterialState,
+  material: MaterialRef,
+  occurrenceId: string
+): MechanicsExecutionFrame {
+  const root = state.occurrences[occurrenceId];
+  if (root?.kind !== "program") throw new Error("pending root fixture");
+  return {
+    authority: root.authority,
+    invocation: {
+      installation: root.authority.installation,
+      kind: "installed-capability",
+    },
+    rootReceipt: {
+      kind: "create",
+      materialEpoch: state.epoch,
+      next: { execution: 1, phaseId: "active", triggerEventId: null },
+      root: {
+        occurrence: { material, occurrenceId },
+        ordinal: root.ordinal,
+      },
+    },
+    trigger: { kind: "invocation" },
+  };
+}
+
+function addPendingEffect<State extends MutableMaterialState>(
+  state: State,
+  material: MaterialRef,
+  rootId: string,
+  occurrenceId: string,
+  slot: number
+): State {
+  const root = state.occurrences[rootId];
+  if (root?.kind !== "program") throw new Error("pending effect root fixture");
+  const next = addOccurrence(
+    {
+      nextOccurrenceOrdinal: state.nextOccurrenceOrdinal,
+      occurrences: state.occurrences,
+    },
+    occurrenceId,
+    {
+      endRules: [],
+      fact: { key: occurrenceId, kind: "active-key" },
+      kind: "standing",
+      origin: {
+        execution: 1,
+        kind: "program-step",
+        phaseId: "active",
+        root: {
+          occurrence: { material, occurrenceId: rootId },
+          ordinal: root.ordinal,
+        },
+        slot,
+        stepId: "start-standing",
+      },
+      parentId: rootId,
+      target: self(),
+    }
+  );
+  return { ...state, ...next };
+}
+
 function generation(
   state: MutableMaterialState,
   material: MaterialRef,
@@ -512,6 +603,29 @@ function world(
       ...extra,
     ]),
   };
+}
+
+function characterWorld(hero: CharacterMaterialState): MechanicsWorld {
+  return {
+    scope: HERO,
+    documents: [{ kind: "character", material: HERO, state: hero }],
+  };
+}
+
+function pendingFixture(...rootIds: string[]) {
+  let hero = character();
+  for (const rootId of rootIds) hero = addPendingRoot(hero, HERO, rootId);
+  const initial = characterWorld(hero);
+  const begun = beginMechanicsCausalState(initial);
+  if (!begun.ok) throw new Error(`pending causal fixture: ${begun.reason}`);
+  const frames = rootIds.map((rootId) => pendingFrame(hero, HERO, rootId));
+  let state = begun.value;
+  for (const frame of frames) {
+    const pushed = pushMechanicsPendingFrame(state, frame);
+    if (!pushed.ok) throw new Error(`pending push fixture: ${pushed.reason}`);
+    state = pushed.value;
+  }
+  return { frames, hero, initial, state };
 }
 
 function worldGeneration(
@@ -560,7 +674,7 @@ function applyBoundary(
   }
   if (result.status === "checkpoint") throw new Error("boundary fixture did not settle");
   return result.status === "complete"
-    ? { status: result.outcome, world: result.world }
+    ? { state: result.state, status: result.outcome }
     : result;
 }
 
@@ -705,7 +819,7 @@ function programEndWaveWorld(): MechanicsWorld {
 }
 
 describe("canonical mechanics world and clocks", () => {
-  it("keeps one-ahead program origins transient to transaction projection", () => {
+  it("rejects one-ahead program origins without an exact pending frame", () => {
     const priorHero = addRoot(character(), HERO);
     const candidateHero = structuredClone(
       addToState(structuredClone(priorHero), "pending-effect", {
@@ -725,9 +839,218 @@ describe("canonical mechanics world and clocks", () => {
       ok: false,
       reason: "invalid-program-origin",
     });
-    expect(projectMechanicsTransactionWorld(candidate, world(priorHero))).toMatchObject({
-      ok: true,
+    expect(projectMechanicsTransactionWorld(candidate, world(priorHero))).toEqual({
+      ok: false,
+      reason: "invalid-program-origin",
     });
+  });
+
+  it("admits one-ahead origins only through every exact active frame permit", () => {
+    const { frames, hero, state } = pendingFixture("outer", "inner");
+    let firstHero = addPendingEffect(hero, HERO, "outer", "outer-one", 1);
+    let first = characterWorld(firstHero);
+    expect(projectMechanicsTransactionWorld(first, state.world)).toEqual({
+      ok: false,
+      reason: "invalid-program-origin",
+    });
+    expect(projectMechanicsTransactionWorld(first, state.world, [], state).ok).toBe(true);
+
+    firstHero = addPendingEffect(firstHero, HERO, "inner", "inner-one", 1);
+    first = characterWorld(firstHero);
+    const projected = projectMechanicsTransactionWorld(first, state.world, [], state);
+    expect(projected.ok).toBe(true);
+    if (!projected.ok) return;
+
+    const secondHero = addPendingEffect(
+      structuredClone(firstHero),
+      HERO,
+      "inner",
+      "inner-two",
+      2
+    );
+    expect(
+      projectMechanicsTransactionWorld(
+        characterWorld(secondHero),
+        projected.value,
+        [],
+        state
+      )
+    ).toMatchObject({ ok: true });
+
+    for (const mutate of [
+      (candidate: CharacterMaterialState) => {
+        const occurrence = candidate.occurrences["inner-one"];
+        if (occurrence?.kind === "standing") occurrence.origin.execution = 2;
+      },
+      (candidate: CharacterMaterialState) => {
+        const occurrence = candidate.occurrences["inner-one"];
+        if (occurrence?.kind === "standing") occurrence.origin.phaseId = "missing";
+      },
+      (candidate: CharacterMaterialState) => {
+        const occurrence = candidate.occurrences["inner-one"];
+        const outer = frames[0];
+        if (occurrence?.kind === "standing" && outer) {
+          occurrence.origin.root = outer.rootReceipt.root;
+        }
+      },
+    ]) {
+      const candidate = structuredClone(firstHero);
+      mutate(candidate);
+      expect(
+        projectMechanicsTransactionWorld(
+          characterWorld(candidate),
+          state.world,
+          [],
+          state
+        )
+      ).toMatchObject({ ok: false });
+    }
+  });
+
+  it("keeps pending frames unforgeable, bounded, duplicate-free and LIFO", () => {
+    const { frames, state } = pendingFixture("outer", "inner");
+    expect(topMechanicsPendingFrame(state)?.frame).toEqual(frames[1]);
+    expect(topMechanicsPendingFrameMatches(state, frames[1])).toBe(true);
+    expect(advanceMechanicsPendingFrameSlot(state, frames[0])).toEqual({
+      ok: false,
+      reason: "invalid-transition",
+    });
+    expect(pushMechanicsPendingFrame(state, frames[1])).toEqual({
+      ok: false,
+      reason: "invalid-transition",
+    });
+
+    const cloned = structuredClone(state);
+    expect(conformMechanicsCausalState(cloned)).toEqual({
+      ok: false,
+      reason: "invalid-end-wave",
+    });
+    expect(topMechanicsPendingFrame(cloned)).toBeNull();
+
+    const forged = {
+      ...state,
+      context: {
+        ...state.context,
+        pendingFrames: [
+          ...state.context.pendingFrames,
+          {
+            cursor: { nextSlot: 0, stage: "step", stepIndex: 0 },
+            frame: frames[0],
+          },
+        ],
+      },
+    };
+    expect(conformMechanicsCausalState(forged)).toEqual({
+      ok: false,
+      reason: "invalid-end-wave",
+    });
+  });
+
+  it("advances one exact top cursor through slots, steps, phase CAS and pop", () => {
+    const { frames, state } = pendingFixture("root");
+    const frame = frames[0];
+    if (!frame) throw new Error("pending frame fixture");
+    const slot = advanceMechanicsPendingFrameSlot(state, frame);
+    if (!slot.ok) throw new Error(`slot fixture: ${slot.reason}`);
+    expect(topMechanicsPendingFrame(slot.value)?.cursor).toEqual({
+      nextSlot: 2,
+      stage: "step",
+      stepIndex: 0,
+    });
+    let current = slot.value;
+    for (let index = 0; index < fixtureSteps().length; index += 1) {
+      const advanced = advanceMechanicsPendingFrameStep(current, frame);
+      if (!advanced.ok) throw new Error(`step fixture: ${advanced.reason}`);
+      current = advanced.value;
+    }
+    expect(topMechanicsPendingFrame(current)?.cursor).toEqual({
+      stage: "phase-transition",
+    });
+    expect(popMechanicsPendingFrame(current, frame)).toEqual({
+      ok: false,
+      reason: "invalid-transition",
+    });
+
+    const committedWorld = structuredClone(current.world);
+    const document = committedWorld.documents[0];
+    const root = document?.state.occurrences.root;
+    if (!document || root?.kind !== "program") throw new Error("CAS fixture");
+    root.phaseState.active = { execution: 1, lastTriggerEventId: null };
+    const committed = acceptMechanicsPendingFramePhaseTransition(
+      committedWorld,
+      current,
+      frame
+    );
+    if (!committed.ok) throw new Error(`CAS fixture: ${committed.reason}`);
+    expect(topMechanicsPendingFrame(committed.value)?.cursor).toEqual({
+      stage: "phase-complete",
+    });
+    const CASAndMutation = structuredClone(committedWorld);
+    const mutatedDocument = CASAndMutation.documents[0];
+    if (!mutatedDocument) throw new Error("CAS mutation fixture");
+    mutatedDocument.state.timeline.elapsedSeconds += 1;
+    expect(
+      acceptMechanicsPendingFramePhaseTransition(CASAndMutation, current, frame)
+    ).toEqual({ ok: false, reason: "invalid-transition" });
+    const popped = popMechanicsPendingFrame(committed.value, frame);
+    if (!popped.ok) throw new Error(`pop fixture: ${popped.reason}`);
+    expect(popped.value.context.pendingFrames).toEqual([]);
+    expect(parseMechanicsWorld(popped.value.world).ok).toBe(true);
+  });
+
+  it("preserves pending frames through rebase, end waves and boundaries", () => {
+    const { frames, hero, state } = pendingFixture("root");
+    const frame = frames[0];
+    if (!frame) throw new Error("pending frame fixture");
+    const withChild = characterWorld(
+      addPendingEffect(hero, HERO, "root", "pending-child", 1)
+    );
+    const projected = projectMechanicsTransactionWorld(withChild, state.world, [], state);
+    if (!projected.ok) throw new Error("pending projection fixture");
+    const rebased = rebaseMechanicsCausalState(projected.value, state);
+    if (!rebased.ok) throw new Error(`pending rebase fixture: ${rebased.reason}`);
+    expect(rebased.value.context.pendingFrames).toEqual(state.context.pendingFrames);
+
+    const child = worldGeneration(rebased.value.world, HERO, "pending-child");
+    const ending = rebaseMechanicsCausalState(
+      rebased.value.world,
+      rebased.value,
+      [],
+      [child]
+    );
+    if (!ending.ok) throw new Error(`pending end fixture: ${ending.reason}`);
+    const finalized = finalizeMechanicsCausalEndWave(ending.value);
+    if (!finalized.ok) throw new Error(`pending finalize fixture: ${finalized.reason}`);
+    expect(finalized.value.context.pendingFrames).toEqual(state.context.pendingFrames);
+    expect(finalized.value.world.documents[0]?.state.occurrences).not.toHaveProperty(
+      "pending-child"
+    );
+    expect(
+      rebaseMechanicsCausalState(
+        finalized.value.world,
+        finalized.value,
+        [],
+        [frame.rootReceipt.root]
+      )
+    ).toEqual({ ok: false, reason: "invalid-end-wave" });
+
+    const boundary = beginMechanicsBoundaryFromCausalState(finalized.value, {
+      clock: { material: HERO, epoch: 0 },
+      elapsedSeconds: 1,
+      kind: "advance-time",
+    });
+    if (boundary.status !== "checkpoint") throw new Error("pending boundary fixture");
+    expect(boundary.checkpoint.state.context.pendingFrames).toEqual(
+      state.context.pendingFrames
+    );
+    const completion = completeMechanicsBoundaryCheckpoint(
+      boundary.continuation,
+      boundary.checkpoint.state
+    );
+    if (!completion) throw new Error("pending boundary completion fixture");
+    const completed = advanceMechanicsBoundary(boundary.continuation, completion);
+    if (completed.status !== "complete") throw new Error("pending boundary result");
+    expect(completed.state.context.pendingFrames).toEqual(state.context.pendingFrames);
   });
 
   it.each(["epoch", "revision", "actions", "buildRevision"] as const)(
@@ -1210,6 +1533,7 @@ describe("canonical mechanics world and clocks", () => {
     expect(Reflect.ownKeys(begun.value)).toEqual(["context", "world"]);
     expect(begun.value.context).toEqual({
       endWave: null,
+      pendingFrames: [],
       request: { boundaries: [], endRequests: [], inventorySourceLeases: [] },
     });
     // @ts-expect-error The non-exported required brand blocks structural construction.
@@ -1236,6 +1560,7 @@ describe("canonical mechanics world and clocks", () => {
       beginMechanicsCausalState({
         context: {
           endWave: { wave: discovery.wave, world: latched.world },
+          pendingFrames: [],
           request: { boundaries: [], endRequests: [], inventorySourceLeases: [] },
         },
         world: latched.world,
@@ -2100,7 +2425,7 @@ describe("canonical mechanics world and clocks", () => {
     });
     expect(first.status).toBe("applied");
     if (first.status !== "applied") return;
-    const afterFirst = first.world.documents[0]?.state;
+    const afterFirst = first.state.world.documents[0]?.state;
     expect(afterFirst?.timeline.elapsedSeconds).toBe(0);
     expect(afterFirst?.encounter?.currentCombatantId).toBe("ally");
     expect(afterFirst?.encounter?.participants.hero?.economy).toMatchObject({
@@ -2119,7 +2444,7 @@ describe("canonical mechanics world and clocks", () => {
       reactions: [],
     });
 
-    const beforeSecond = structuredClone(first.world);
+    const beforeSecond = structuredClone(first.state.world);
     const heroEconomy = beforeSecond.documents[0]?.state.encounter?.participants.hero;
     if (!heroEconomy) throw new Error("hero economy fixture missing");
     heroEconomy.economy = {
@@ -2141,7 +2466,7 @@ describe("canonical mechanics world and clocks", () => {
     });
     expect(second.status).toBe("applied");
     if (second.status !== "applied") return;
-    const afterSecond = second.world.documents[0]?.state;
+    const afterSecond = second.state.world.documents[0]?.state;
     expect(afterSecond?.timeline.elapsedSeconds).toBe(6);
     expect(afterSecond?.encounter?.round).toBe(2);
     expect(afterSecond?.encounter?.currentCombatantId).toBe("hero");
@@ -2168,12 +2493,12 @@ describe("canonical mechanics world and clocks", () => {
 
     expect(result.status === "rejected" ? result.reason : result.status).toBe("applied");
     if (result.status !== "applied") return;
-    const encounter = result.world.documents[0]?.state.encounter;
+    const encounter = result.state.world.documents[0]?.state.encounter;
     expect(encounter?.order).toEqual(["hero", "ally"]);
     expect(encounter?.currentCombatantId).toBe("ally");
     expect(encounter?.participants.ally?.economy.phase).toBe("own-turn");
-    expect(result.world.documents[0]?.state.timeline.elapsedSeconds).toBe(0);
-    expect(result.world.documents[0]?.state.entities).not.toHaveProperty("summon");
+    expect(result.state.world.documents[0]?.state.timeline.elapsedSeconds).toBe(0);
+    expect(result.state.world.documents[0]?.state.entities).not.toHaveProperty("summon");
     expect(checkpoints.map(({ boundary }) => boundary)).toEqual([
       {
         clock: { material: HERO, epoch: 1 },
@@ -2350,12 +2675,12 @@ describe("canonical mechanics world and clocks", () => {
         round: 2,
       },
     ]);
-    const encounter = result.world.documents[0]?.state.encounter;
+    const encounter = result.state.world.documents[0]?.state.encounter;
     expect(encounter?.order).toEqual(["hero"]);
     expect(encounter?.round).toBe(2);
     expect(encounter?.currentCombatantId).toBe("hero");
     expect(encounter?.participants.hero?.economy.phase).toBe("own-turn");
-    expect(result.world.documents[0]?.state.timeline.elapsedSeconds).toBe(6);
+    expect(result.state.world.documents[0]?.state.timeline.elapsedSeconds).toBe(6);
   });
 
   it("uses absolute deadlines and matches qualitative rules at or after their global minimum", () => {
@@ -2415,8 +2740,8 @@ describe("canonical mechanics world and clocks", () => {
     });
     expect(first.status).toBe("applied");
     if (first.status !== "applied") return;
-    expect(first.world.documents[0]?.state.occurrences).toHaveProperty("deadline");
-    const rest = applyBoundary(first.world, {
+    expect(first.state.world.documents[0]?.state.occurrences).toHaveProperty("deadline");
+    const rest = applyBoundary(first.state.world, {
       input: {
         clock: { material: HERO, epoch: 0 },
         combatant: self(),
@@ -2426,18 +2751,18 @@ describe("canonical mechanics world and clocks", () => {
     });
     expect(rest.status).toBe("applied");
     if (rest.status !== "applied") return;
-    expect(rest.world.documents[0]?.state.occurrences).not.toHaveProperty("rest");
-    expect(rest.world.documents[0]?.state.occurrences).toHaveProperty("dawn");
-    expect(rest.world.documents[0]?.state.timeline.nextBoundaryOrdinal).toBe(2);
-    const dawn = applyBoundary(rest.world, {
+    expect(rest.state.world.documents[0]?.state.occurrences).not.toHaveProperty("rest");
+    expect(rest.state.world.documents[0]?.state.occurrences).toHaveProperty("dawn");
+    expect(rest.state.world.documents[0]?.state.timeline.nextBoundaryOrdinal).toBe(2);
+    const dawn = applyBoundary(rest.state.world, {
       input: { clock: { material: HERO, epoch: 0 }, phase: "dawn" },
       kind: "observe-day-phase",
     });
     expect(dawn.status).toBe("applied");
     if (dawn.status !== "applied") return;
-    expect(dawn.world.documents[0]?.state.occurrences).not.toHaveProperty("dawn");
-    expect(dawn.world.documents[0]?.state.timeline.nextBoundaryOrdinal).toBe(3);
-    const deadline = applyBoundary(dawn.world, {
+    expect(dawn.state.world.documents[0]?.state.occurrences).not.toHaveProperty("dawn");
+    expect(dawn.state.world.documents[0]?.state.timeline.nextBoundaryOrdinal).toBe(3);
+    const deadline = applyBoundary(dawn.state.world, {
       clock: { material: HERO, epoch: 0 },
       elapsedSeconds: 6,
       kind: "advance-time",
@@ -2446,7 +2771,9 @@ describe("canonical mechanics world and clocks", () => {
       "applied"
     );
     if (deadline.status !== "applied") return;
-    expect(deadline.world.documents[0]?.state.occurrences).not.toHaveProperty("deadline");
+    expect(deadline.state.world.documents[0]?.state.occurrences).not.toHaveProperty(
+      "deadline"
+    );
   });
 
   it("allocates distinct qualitative boundary ordinals and rejects stale replay", () => {
@@ -2459,7 +2786,7 @@ describe("canonical mechanics world and clocks", () => {
     expect(first.status).toBe("applied");
     if (first.status !== "applied") return;
     const secondCheckpoints: MechanicsBoundaryCheckpoint[] = [];
-    const second = applyBoundary(first.world, command, secondCheckpoints);
+    const second = applyBoundary(first.state.world, command, secondCheckpoints);
     expect(second.status).toBe("applied");
     if (second.status !== "applied") return;
 
@@ -2481,7 +2808,7 @@ describe("canonical mechanics world and clocks", () => {
       },
     ]);
     expect(
-      discoverMechanicsEndWave(second.world, { boundaries: [firstBoundary] })
+      discoverMechanicsEndWave(second.state.world, { boundaries: [firstBoundary] })
     ).toMatchObject({ reason: "invalid-boundary", status: "rejected" });
   });
 
@@ -2691,18 +3018,18 @@ describe("canonical mechanics world and clocks", () => {
 
     expect(result.status).toBe("complete");
     if (result.status !== "complete") return;
-    const afterCurrent = result.world.documents.find(
+    const afterCurrent = result.state.world.documents.find(
       (document) => document.kind === "shared"
     );
     expect(afterCurrent?.state.occurrences).toHaveProperty("dawn-child");
 
-    const following = applyBoundary(result.world, {
+    const following = applyBoundary(result.state.world, {
       input: { clock: { material: CAMPAIGN, epoch: 0 }, phase: "dawn" },
       kind: "observe-day-phase",
     });
     expect(following.status).toBe("applied");
     if (following.status !== "applied") return;
-    const finalCampaign = following.world.documents.find(
+    const finalCampaign = following.state.world.documents.find(
       (document) => document.kind === "shared"
     );
     expect(finalCampaign?.state.occurrences).not.toHaveProperty("dawn-child");
@@ -2773,7 +3100,7 @@ describe("canonical mechanics world and clocks", () => {
     const settled = advanceMechanicsBoundary(extended.continuation, extendedCompletion);
     expect(settled.status).toBe("complete");
     if (settled.status !== "complete") return;
-    const finalCampaign = settled.world.documents.find(
+    const finalCampaign = settled.state.world.documents.find(
       (document) => document.kind === "shared"
     );
     expect(finalCampaign?.state.occurrences).not.toHaveProperty("first-dawn-child");
@@ -2799,6 +3126,7 @@ describe("canonical mechanics world and clocks", () => {
     const completionState = {
       context: {
         endWave: { wave: current.wave, world: current.world },
+        pendingFrames: begun.checkpoint.state.context.pendingFrames,
         request: current.wave.request,
       },
       world: current.world,
@@ -2824,7 +3152,9 @@ describe("canonical mechanics world and clocks", () => {
     const settled = advanceMechanicsBoundary(next.continuation, nextCompletion);
     expect(settled.status).toBe("complete");
     if (settled.status !== "complete") return;
-    expect(settled.world.documents[0]?.state.occurrences).not.toHaveProperty("root");
+    expect(settled.state.world.documents[0]?.state.occurrences).not.toHaveProperty(
+      "root"
+    );
   });
 
   it("rebases an eight-hour effect local to shared and back without freezing its lifetime", () => {
@@ -2853,7 +3183,7 @@ describe("canonical mechanics world and clocks", () => {
     });
     expect(start.status).toBe("applied");
     if (start.status !== "applied") return;
-    const leasedHero = start.world.documents.find(
+    const leasedHero = start.state.world.documents.find(
       (document) => document.kind === "character"
     );
     const leasedRule = leasedHero?.state.occurrences["mage-armor"]?.endRules[0];
@@ -2863,20 +3193,20 @@ describe("canonical mechanics world and clocks", () => {
       elapsedSeconds: 29_800,
     });
 
-    const advanced = applyBoundary(start.world, {
+    const advanced = applyBoundary(start.state.world, {
       clock: { material: CAMPAIGN, epoch: 0 },
       elapsedSeconds: 600,
       kind: "advance-time",
     });
     expect(advanced.status).toBe("applied");
     if (advanced.status !== "applied") return;
-    const end = applyBoundary(advanced.world, {
+    const end = applyBoundary(advanced.state.world, {
       kind: "end-encounter",
       material: CAMPAIGN,
     });
     expect(end.status).toBe("applied");
     if (end.status !== "applied") return;
-    const detachedHero = end.world.documents.find(
+    const detachedHero = end.state.world.documents.find(
       (document) => document.kind === "character"
     );
     const detachedRule = detachedHero?.state.occurrences["mage-armor"]?.endRules[0];
@@ -3385,10 +3715,10 @@ describe("canonical mechanics world and clocks", () => {
     });
     expect(started.status).toBe("applied");
     if (started.status !== "applied") return;
-    const state = started.world.documents[0]?.state;
+    const state = started.state.world.documents[0]?.state;
     expect(state?.encounter?.epoch).toBe(1);
-    if (started.world.documents[0]?.kind === "character") {
-      expect(started.world.documents[0].state.clockBinding.encounter).toEqual({
+    if (started.state.world.documents[0]?.kind === "character") {
+      expect(started.state.world.documents[0].state.clockBinding.encounter).toEqual({
         material: HERO,
         epoch: 1,
       });

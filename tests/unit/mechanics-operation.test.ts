@@ -29,12 +29,17 @@ import {
   simulateMechanicsTransaction as simulateKernelTransaction,
 } from "@/lib/mechanics-operation";
 import {
+  advanceMechanicsPendingFrameSlot,
+  advanceMechanicsPendingFrameStep,
   advanceMechanicsBoundary,
   beginMechanicsCausalState,
   beginMechanicsBoundary,
   completeMechanicsBoundaryCheckpoint,
   discoverMechanicsEndWave,
   parseMechanicsWorld,
+  popMechanicsPendingFrame,
+  pushMechanicsPendingFrame,
+  topMechanicsPendingFrame,
 } from "@/lib/mechanics-world";
 import {
   createBetweenTurnsEconomyState,
@@ -47,6 +52,7 @@ import type { DamageDefenseRule, DamagePart, DamageResolution } from "@/types/da
 import type { DiceFormula, DiceObservation } from "@/types/dice-formula";
 import type { ProgramStepOccurrenceOrigin } from "@/types/mechanic-occurrence";
 import type { MechanicsInvocationRef } from "@/types/mechanics-authority-ref";
+import type { MechanicsExecutionFrame } from "@/types/mechanics-command";
 import type {
   MechanicsAuthorityDefinition,
   MechanicsAuthoritySnapshot,
@@ -70,7 +76,11 @@ import type {
   MechanicsTransactionSimulationResult,
 } from "@/types/mechanics-operation";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
-import type { MechanicsBoundaryCommand, MechanicsWorld } from "@/types/mechanics-world";
+import type {
+  MechanicsBoundaryCommand,
+  MechanicsCausalState,
+  MechanicsWorld,
+} from "@/types/mechanics-world";
 import type {
   ResourceInitializationObservations,
   ResourceRef,
@@ -369,6 +379,109 @@ function causalState(worldValue: unknown) {
   return result.value;
 }
 
+function createProgramFrame(
+  world: Readonly<MechanicsWorld>,
+  authority: Readonly<MechanicsProgramAuthorityReceipt>,
+  root: Readonly<OccurrenceGenerationRef>
+): Readonly<MechanicsExecutionFrame> {
+  const document = world.documents.find(
+    ({ material }) => canonicalJson(material) === canonicalJson(root.occurrence.material)
+  );
+  if (!document) throw new Error("program-frame material fixture");
+  return {
+    authority,
+    invocation: {
+      installation: authority.installation,
+      kind: "installed-capability",
+    },
+    rootReceipt: {
+      kind: "create",
+      materialEpoch: document.state.epoch,
+      next: { execution: 1, phaseId: "invoke", triggerEventId: null },
+      root,
+    },
+    trigger: { kind: "invocation" },
+  };
+}
+
+function pushProgramFrame(
+  stateValue: Readonly<MechanicsCausalState>,
+  authority: Readonly<MechanicsProgramAuthorityReceipt>,
+  root: Readonly<OccurrenceGenerationRef>
+): {
+  readonly frame: Readonly<MechanicsExecutionFrame>;
+  readonly state: Readonly<MechanicsCausalState>;
+} {
+  const frame = createProgramFrame(stateValue.world, authority, root);
+  const pushed = pushMechanicsPendingFrame(stateValue, frame);
+  if (!pushed.ok) throw new Error(`pending-frame fixture: ${pushed.reason}`);
+  return { frame, state: pushed.value };
+}
+
+function pendingAtStep(
+  stateValue: Readonly<MechanicsCausalState>,
+  frame: Readonly<MechanicsExecutionFrame>,
+  stepId: string,
+  nextSlot = 1
+): Readonly<MechanicsCausalState> {
+  const phase = frame.authority.snapshot.program?.phases.find(
+    ({ phaseId }) => phaseId === frame.rootReceipt.next.phaseId
+  );
+  const targetIndex = phase?.steps.findIndex((step) => step.stepId === stepId) ?? -1;
+  if (!phase || targetIndex < 0) throw new Error(`missing authored step: ${stepId}`);
+  let current = stateValue;
+  for (let index = 0; index < targetIndex; index += 1) {
+    const advanced = advanceMechanicsPendingFrameStep(current, frame);
+    if (!advanced.ok) throw new Error(`pending-step fixture: ${advanced.reason}`);
+    current = advanced.value;
+  }
+  for (let slot = 1; slot < nextSlot; slot += 1) {
+    const advanced = advanceMechanicsPendingFrameSlot(current, frame);
+    if (!advanced.ok) throw new Error(`pending-slot fixture: ${advanced.reason}`);
+    current = advanced.value;
+  }
+  return current;
+}
+
+function pendingAtPhaseTransition(
+  stateValue: Readonly<MechanicsCausalState>,
+  frame: Readonly<MechanicsExecutionFrame>
+): Readonly<MechanicsCausalState> {
+  let current = stateValue;
+  let remaining = 64;
+  while (topMechanicsPendingFrame(current)?.cursor.stage === "step" && remaining > 0) {
+    const advanced = advanceMechanicsPendingFrameStep(current, frame);
+    if (!advanced.ok) throw new Error(`pending-phase fixture: ${advanced.reason}`);
+    current = advanced.value;
+    remaining -= 1;
+  }
+  if (topMechanicsPendingFrame(current)?.cursor.stage !== "phase-transition") {
+    throw new Error("pending phase-transition fixture");
+  }
+  return current;
+}
+
+function pendingProgramContext(
+  world: Readonly<MechanicsWorld>,
+  transactionValue: Readonly<MechanicsTransaction>,
+  authority: Readonly<MechanicsProgramAuthorityReceipt>,
+  root: Readonly<OccurrenceGenerationRef>,
+  options: {
+    readonly basis?: Readonly<MechanicsCausalState>;
+    readonly nextSlot?: number;
+    readonly stepId?: string;
+  } = {}
+) {
+  const pushed = pushProgramFrame(options.basis ?? causalState(world), authority, root);
+  return {
+    authoritySnapshot: authoritySnapshotFor(transactionValue),
+    state:
+      options.stepId === undefined
+        ? pushed.state
+        : pendingAtStep(pushed.state, pushed.frame, options.stepId, options.nextSlot),
+  } as const;
+}
+
 function simulationContext(worldValue: unknown, transactionValue: unknown) {
   return {
     authoritySnapshot: authoritySnapshotFor(transactionValue),
@@ -405,7 +518,7 @@ function completeBoundary(
   if (result.status !== "complete") {
     throw new Error(`Boundary fixture failed: ${JSON.stringify(result)}`);
   }
-  return result.world;
+  return result.state.world;
 }
 
 function operationCause(
@@ -970,21 +1083,30 @@ function conditionCreate(
 function programCreate(
   operationId: string,
   occurrenceId: string,
-  cause: MechanicsOperationCause,
-  nextRegisters: Readonly<Record<string, string | number | boolean | null>> = {}
-): Extract<MechanicsOperation, { readonly kind: "program-state-transition" }> {
+  cause: MechanicsOperationCause
+): Extract<MechanicsOperation, { readonly kind: "program-root-create" }> {
   return {
     causeId: cause.causeId,
-    expectedRegisters: null,
-    kind: "program-state-transition",
-    nextRegisters,
+    kind: "program-root-create",
+    materialEpoch: 0,
     operationId,
-    receipt: {
-      kind: "create",
-      materialEpoch: 0,
-      next: { execution: 1, phaseId: "invoke", triggerEventId: null },
-      root: occurrenceGeneration(occurrenceId, 1),
-    },
+    root: occurrenceGeneration(occurrenceId, 1),
+  };
+}
+
+function programPhaseTransition(
+  operationId: string,
+  cause: MechanicsOperationCause,
+  root: OccurrenceGenerationRef,
+  triggerEventId: string | null = null
+): Extract<MechanicsOperation, { readonly kind: "program-phase-transition" }> {
+  return {
+    causeId: cause.causeId,
+    expected: { execution: 0, phaseId: "invoke", triggerEventId: null },
+    kind: "program-phase-transition",
+    next: { execution: 1, phaseId: "invoke", triggerEventId },
+    operationId,
+    root,
   };
 }
 
@@ -1017,6 +1139,23 @@ function authorityWithRegister(
       ...AUTHORITY.snapshot,
       program: {
         ...AUTHORITY.snapshot.program,
+        phases: [
+          {
+            ...AUTHORITY.snapshot.program.phases[0],
+            steps: [
+              {
+                kind: "register",
+                operation: {
+                  kind: "set-scalar",
+                  value: initial,
+                },
+                registerId,
+                stepId: `set-${registerId}`,
+                when: null,
+              },
+            ],
+          },
+        ],
         registers: [{ initial, registerId }],
       },
     },
@@ -1051,7 +1190,7 @@ function standingCreate(
   };
 }
 
-function worldWithRoots(
+function worldWithZeroedRoots(
   roots: readonly (readonly [string, MechanicsProgramAuthorityReceipt])[]
 ): Readonly<MechanicsWorld> {
   const state = structuredClone(
@@ -1071,13 +1210,42 @@ function worldWithRoots(
       occurrences: state.occurrences,
     }
   );
-  const invoked = structuredClone(initial);
-  for (const [occurrenceId] of roots) {
-    const program = invoked.occurrences[occurrenceId];
-    if (!program || program.kind !== "program") throw new Error("root fixture");
-    program.phaseState.invoke = { execution: 1, lastTriggerEventId: null };
-  }
-  return parsedCharacterState({ ...state, ...invoked });
+  return parsedCharacterState({ ...state, ...initial });
+}
+
+function appendZeroedRoot(
+  world: Readonly<MechanicsWorld>,
+  occurrenceId: string,
+  authority: Readonly<MechanicsProgramAuthorityReceipt> = AUTHORITY
+): {
+  readonly root: Readonly<OccurrenceGenerationRef>;
+  readonly world: Readonly<MechanicsWorld>;
+} {
+  const material = structuredClone(state(world));
+  const ordinal = material.nextOccurrenceOrdinal;
+  const occurrences = addOccurrence(
+    {
+      nextOccurrenceOrdinal: material.nextOccurrenceOrdinal,
+      occurrences: material.occurrences,
+    },
+    occurrenceId,
+    {
+      authority,
+      endRules: [],
+      kind: "program",
+      phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
+      registers: Object.fromEntries(
+        (authority.snapshot.program?.registers ?? []).map(({ initial, registerId }) => [
+          registerId,
+          initial,
+        ])
+      ),
+    }
+  );
+  return {
+    root: occurrenceGeneration(occurrenceId, ordinal),
+    world: parsedCharacterState({ ...material, ...occurrences }),
+  };
 }
 
 function transaction(
@@ -1223,11 +1391,19 @@ describe("atomic mechanics transactions", () => {
       })
     ).toBeNull();
 
-    const before = worldWithRoots([["root", AUTHORITY]]);
+    const before = worldWithZeroedRoots([["root", AUTHORITY]]);
+    const create = transaction([operation], { causes: [rootCause] });
     const created = simulated(
       simulateMechanicsTransaction(
         before,
-        transaction([operation], { causes: [rootCause] })
+        create,
+        pendingProgramContext(
+          before,
+          create,
+          AUTHORITY,
+          occurrenceGeneration("root", 1),
+          { stepId: STEP_IDS.inventory }
+        )
       )
     );
     expect(state(created.state.world)).toMatchObject({
@@ -1258,10 +1434,10 @@ describe("atomic mechanics transactions", () => {
       status: "applied",
     });
     expect(
-      simulateMechanicsTransaction(
-        created.state.world,
-        transaction([operation], { causes: [rootCause] })
-      )
+      simulateMechanicsTransaction(created.state.world, create, {
+        authoritySnapshot: authoritySnapshotFor(create),
+        state: created.state,
+      })
     ).toMatchObject({
       executions: [{ kind: "inventory-create", reason: "inventory-already-created" }],
       status: "no-change",
@@ -1270,13 +1446,18 @@ describe("atomic mechanics transactions", () => {
 
   it("rejects stale inventory allocation state and partial collisions atomically", () => {
     const rootCause = programRootCause(AUTHORITY, "root");
-    const before = worldWithRoots([["root", AUTHORITY]]);
+    const before = worldWithZeroedRoots([["root", AUTHORITY]]);
     const operation = inventoryCreateOperation(rootCause);
+    const stale = transaction(
+      [{ ...operation, item: inventoryRef("summoned-item", 2) }],
+      { causes: [rootCause] }
+    );
     expect(
       simulateMechanicsTransaction(
         before,
-        transaction([{ ...operation, item: inventoryRef("summoned-item", 2) }], {
-          causes: [rootCause],
+        stale,
+        pendingProgramContext(before, stale, AUTHORITY, occurrenceGeneration("root", 1), {
+          stepId: STEP_IDS.inventory,
         })
       )
     ).toEqual({
@@ -1290,10 +1471,18 @@ describe("atomic mechanics transactions", () => {
     material.inventory[operation.item.instanceId] = inventoryInstance(1);
     material.nextInventoryOrdinal = 2;
     const collided = parsedCharacterState(material);
+    const collision = transaction([operation], { causes: [rootCause] });
     expect(
       simulateMechanicsTransaction(
         collided,
-        transaction([operation], { causes: [rootCause] })
+        collision,
+        pendingProgramContext(
+          collided,
+          collision,
+          AUTHORITY,
+          occurrenceGeneration("root", 1),
+          { stepId: STEP_IDS.inventory }
+        )
       )
     ).toEqual({
       operationId: operation.operationId,
@@ -1372,10 +1561,21 @@ describe("atomic mechanics transactions", () => {
 
   it("zeroes an item under an exact lease, keeps ownership, and requests lifecycle end", () => {
     const rootCause = programRootCause(AUTHORITY, "root");
+    const before = worldWithZeroedRoots([["root", AUTHORITY]]);
+    const create = transaction([inventoryCreateOperation(rootCause)], {
+      causes: [rootCause],
+    });
     const created = simulated(
       simulateMechanicsTransaction(
-        worldWithRoots([["root", AUTHORITY]]),
-        transaction([inventoryCreateOperation(rootCause)], { causes: [rootCause] })
+        before,
+        create,
+        pendingProgramContext(
+          before,
+          create,
+          AUTHORITY,
+          occurrenceGeneration("root", 1),
+          { stepId: STEP_IDS.inventory }
+        )
       )
     );
     const operation = {
@@ -1389,7 +1589,13 @@ describe("atomic mechanics transactions", () => {
     const ended = simulated(
       simulateMechanicsTransaction(
         created.state.world,
-        transaction([operation], { causes: [rootCause] })
+        transaction([operation], { causes: [rootCause] }),
+        {
+          authoritySnapshot: authoritySnapshotFor(
+            transaction([operation], { causes: [rootCause] })
+          ),
+          state: created.state,
+        }
       )
     );
     expect(state(ended.state.world).inventory["summoned-item"]).toMatchObject({
@@ -1474,10 +1680,19 @@ describe("atomic mechanics transactions", () => {
       })
     ).toBeNull();
 
+    const before = worldWithZeroedRoots([["root", AUTHORITY]]);
+    const create = transaction([operation], { causes: [rootCause] });
     const created = simulated(
       simulateMechanicsTransaction(
-        worldWithRoots([["root", AUTHORITY]]),
-        transaction([operation], { causes: [rootCause] })
+        before,
+        create,
+        pendingProgramContext(
+          before,
+          create,
+          AUTHORITY,
+          occurrenceGeneration("root", 1),
+          { stepId: STEP_IDS.entity }
+        )
       )
     );
     expect(created.executions).toEqual([
@@ -1511,10 +1726,10 @@ describe("atomic mechanics transactions", () => {
     });
 
     expect(
-      simulateMechanicsTransaction(
-        created.state.world,
-        transaction([operation], { causes: [rootCause] })
-      )
+      simulateMechanicsTransaction(created.state.world, create, {
+        authoritySnapshot: authoritySnapshotFor(create),
+        state: created.state,
+      })
     ).toMatchObject({
       executions: [
         {
@@ -1530,10 +1745,21 @@ describe("atomic mechanics transactions", () => {
 
   it("rejects stale entity allocation, partial collisions, and invalid controllers", () => {
     const rootCause = programRootCause(AUTHORITY, "root");
-    const before = worldWithRoots([["root", AUTHORITY]]);
+    const before = worldWithZeroedRoots([["root", AUTHORITY]]);
     const stale = entityCreateOperation(rootCause, 2, 2);
+    const staleTransaction = transaction([stale], { causes: [rootCause] });
     expect(
-      simulateMechanicsTransaction(before, transaction([stale], { causes: [rootCause] }))
+      simulateMechanicsTransaction(
+        before,
+        staleTransaction,
+        pendingProgramContext(
+          before,
+          staleTransaction,
+          AUTHORITY,
+          occurrenceGeneration("root", 1),
+          { stepId: STEP_IDS.entity }
+        )
+      )
     ).toEqual({
       operationId: stale.operationId,
       reason: "stale-allocation-state",
@@ -1545,10 +1771,18 @@ describe("atomic mechanics transactions", () => {
     collisionState.nextEntityOrdinal = 2;
     const collisionWorld = parsedCharacterState(collisionState);
     const collision = entityCreateOperation(rootCause);
+    const collisionTransaction = transaction([collision], { causes: [rootCause] });
     expect(
       simulateMechanicsTransaction(
         collisionWorld,
-        transaction([collision], { causes: [rootCause] })
+        collisionTransaction,
+        pendingProgramContext(
+          collisionWorld,
+          collisionTransaction,
+          AUTHORITY,
+          occurrenceGeneration("root", 1),
+          { stepId: STEP_IDS.entity }
+        )
       )
     ).toEqual({
       operationId: collision.operationId,
@@ -1563,10 +1797,20 @@ describe("atomic mechanics transactions", () => {
         controller: { entityId: "missing", material: CHARACTER, ordinal: 99 },
       },
     } as const satisfies MechanicsOperation;
+    const missingControllerTransaction = transaction([missingController], {
+      causes: [rootCause],
+    });
     expect(
       simulateMechanicsTransaction(
         before,
-        transaction([missingController], { causes: [rootCause] })
+        missingControllerTransaction,
+        pendingProgramContext(
+          before,
+          missingControllerTransaction,
+          AUTHORITY,
+          occurrenceGeneration("root", 1),
+          { stepId: STEP_IDS.entity }
+        )
       )
     ).toEqual({
       operationId: missingController.operationId,
@@ -1581,10 +1825,20 @@ describe("atomic mechanics transactions", () => {
         controller: entityCreateOperation(rootCause).entity,
       },
     } as const satisfies MechanicsOperation;
+    const selfControlledTransaction = transaction([selfControlled], {
+      causes: [rootCause],
+    });
     expect(
       simulateMechanicsTransaction(
         before,
-        transaction([selfControlled], { causes: [rootCause] })
+        selfControlledTransaction,
+        pendingProgramContext(
+          before,
+          selfControlledTransaction,
+          AUTHORITY,
+          occurrenceGeneration("root", 1),
+          { stepId: STEP_IDS.entity }
+        )
       )
     ).toEqual({
       operationId: selfControlled.operationId,
@@ -2199,7 +2453,7 @@ describe("atomic mechanics transactions", () => {
   });
 
   it("resolves program-root authority only at the exact occurrence generation", () => {
-    const original = state(worldWithRoots([["root", AUTHORITY]]));
+    const original = state(worldWithZeroedRoots([["root", AUTHORITY]]));
     const root = original.occurrences.root;
     if (!root || root.kind !== "program") throw new Error("program root fixture");
     const recreated = parsedCharacterState({
@@ -2217,10 +2471,16 @@ describe("atomic mechanics transactions", () => {
       }),
       causeId: exactCause.causeId,
     };
+    const exactTransaction = transaction([exactOperation], { causes: [exactCause] });
     expect(
       simulateKernelTransaction(
-        transaction([exactOperation], { causes: [exactCause] }),
-        emptyAuthorityContext(recreated)
+        exactTransaction,
+        pendingProgramContext(
+          recreated,
+          exactTransaction,
+          AUTHORITY,
+          occurrenceGeneration("root", 2)
+        )
       )
     ).toMatchObject({ status: "simulated" });
 
@@ -2230,10 +2490,19 @@ describe("atomic mechanics transactions", () => {
       entities: { foe: creature(alive(10)) },
       nextEntityOrdinal: 2,
     });
+    const foeTransaction = transaction([exactOperation], {
+      actor: foe,
+      causes: [exactCause],
+    });
     expect(
       simulateKernelTransaction(
-        transaction([exactOperation], { actor: foe, causes: [exactCause] }),
-        emptyAuthorityContext(recreatedWithFoe)
+        foeTransaction,
+        pendingProgramContext(
+          recreatedWithFoe,
+          foeTransaction,
+          AUTHORITY,
+          occurrenceGeneration("root", 2)
+        )
       )
     ).toEqual({
       operationId: "exact-root",
@@ -2242,12 +2511,19 @@ describe("atomic mechanics transactions", () => {
     });
 
     const staleCause = programRootCause(AUTHORITY, "root", 1);
+    const staleTransaction = transaction(
+      [{ ...exactOperation, causeId: staleCause.causeId }],
+      { causes: [staleCause] }
+    );
     expect(
       simulateKernelTransaction(
-        transaction([{ ...exactOperation, causeId: staleCause.causeId }], {
-          causes: [staleCause],
-        }),
-        emptyAuthorityContext(recreated)
+        staleTransaction,
+        pendingProgramContext(
+          recreated,
+          staleTransaction,
+          AUTHORITY,
+          occurrenceGeneration("root", 2)
+        )
       )
     ).toEqual({
       operationId: "exact-root",
@@ -2256,7 +2532,7 @@ describe("atomic mechanics transactions", () => {
     });
   });
 
-  it("keeps only an exact readable program root authoritative after its actor leaves", () => {
+  it("keeps only an exact pending program root authoritative after its actor leaves", () => {
     const actor = {
       entityId: "source",
       material: CHARACTER,
@@ -2309,44 +2585,30 @@ describe("atomic mechanics transactions", () => {
       phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
       registers: {},
     });
-    const invoked = structuredClone(roots);
-    for (const occurrenceId of ["source-root", "target-root"] as const) {
-      const root = invoked.occurrences[occurrenceId];
-      if (!root || root.kind !== "program") throw new Error("root fixture");
-      root.phaseState.invoke = { execution: 1, lastTriggerEventId: null };
-    }
-    const before = parsedCharacterState({ ...material, ...invoked });
-    const endSource = {
+    const before = parsedCharacterState({ ...material, ...roots });
+    const endTarget = {
       causeId: rootCause.causeId,
       kind: "occurrence-end",
-      occurrence: occurrenceGeneration("source-root", 1),
-      operationId: "end-source-root",
-    } as const satisfies MechanicsOperation;
-    const first = simulated(
-      simulateMechanicsTransaction(
-        before,
-        transaction([endSource], { actor, causes: [rootCause] })
-      )
-    );
-    expect(state(first.state.world).occurrences["source-root"]?.ending).toEqual({
-      causes: [{ kind: "requested" }],
-    });
-
-    const endTarget = {
-      ...endSource,
       occurrence: occurrenceGeneration("target-root", 2),
-      operationId: "end-from-latched-source",
+      operationId: "end-from-pending-source",
     } as const satisfies MechanicsOperation;
+    const endTargetTransaction = transaction([endTarget], {
+      actor,
+      causes: [rootCause],
+    });
     const ended = simulated(
       simulateMechanicsTransaction(
-        first.state.world,
-        transaction([endTarget], { actor, causes: [rootCause] }),
-        {
-          authoritySnapshot: { definitions: [] },
-          state: first.state,
-        }
+        before,
+        endTargetTransaction,
+        pendingProgramContext(
+          before,
+          endTargetTransaction,
+          authority,
+          occurrenceGeneration("source-root", 1)
+        )
       )
     );
+    expect(state(ended.state.world).occurrences["source-root"]?.ending).toBeNull();
     expect(state(ended.state.world).occurrences["target-root"]?.ending).toEqual({
       causes: [{ kind: "requested" }],
     });
@@ -2364,7 +2626,13 @@ describe("atomic mechanics transactions", () => {
     expect(
       simulateMechanicsTransaction(
         before,
-        transaction([endTarget], { actor: otherActor, causes: [rootCause] })
+        transaction([endTarget], { actor: otherActor, causes: [rootCause] }),
+        pendingProgramContext(
+          before,
+          transaction([endTarget], { actor: otherActor, causes: [rootCause] }),
+          authority,
+          occurrenceGeneration("source-root", 1)
+        )
       )
     ).toEqual({
       operationId: endTarget.operationId,
@@ -2373,13 +2641,20 @@ describe("atomic mechanics transactions", () => {
     });
 
     const staleCause = programRootCause(authority, "source-root", 99);
+    const staleTransaction = transaction(
+      [{ ...endTarget, causeId: staleCause.causeId }],
+      { actor, causes: [staleCause] }
+    );
     expect(
       simulateMechanicsTransaction(
         before,
-        transaction([{ ...endTarget, causeId: staleCause.causeId }], {
-          actor,
-          causes: [staleCause],
-        })
+        staleTransaction,
+        pendingProgramContext(
+          before,
+          staleTransaction,
+          authority,
+          occurrenceGeneration("source-root", 1)
+        )
       )
     ).toEqual({
       operationId: endTarget.operationId,
@@ -2429,50 +2704,92 @@ describe("atomic mechanics transactions", () => {
     expect(
       conformMechanicsOperation({
         ...root,
-        receipt: {
-          ...root.receipt,
-          root: { ...root.receipt.root, authority },
-        },
+        root: { ...root.root, authority },
       })
     ).toBeNull();
     const effect = standingCreate("create-effect", "effect", "root", rootCause);
+    const phase = programPhaseTransition(
+      "commit-invocation",
+      rootCause,
+      occurrenceGeneration("root", 1)
+    );
     expect(conformMechanicsOperation(effect)).toEqual(effect);
     const missingParent: Record<string, unknown> = { ...effect };
     delete missingParent.parent;
     expect(conformMechanicsOperation(missingParent)).toBeNull();
 
-    const result = simulated(
+    const allocated = simulated(
       simulateMechanicsTransaction(
         parsedWorld(alive(10)),
-        transaction([root, effect], { causes: orderedCauses(installed, rootCause) })
+        transaction([root], { causes: [installed] })
       )
     );
-    expect(state(result.state.world).occurrences.root).toMatchObject({ authority });
-    expect(state(result.state.world).occurrences.effect).toMatchObject({
-      parentId: "root",
-    });
-    expect(result.executions[0]).toMatchObject({
-      facts: {
-        after: {
-          phase: { execution: 1, lastTriggerEventId: null },
-          registers: {},
-        },
-        before: null,
-        created: true,
-        root: occurrenceGeneration("root", 1),
-      },
+    expect(
+      simulateMechanicsTransaction(
+        allocated.state.world,
+        transaction([root], { causes: [installed] })
+      )
+    ).toMatchObject({
+      executions: [{ reason: "program-root-already-created", status: "no-change" }],
+      status: "no-change",
     });
 
     expect(
       simulateMechanicsTransaction(
-        result.state.world,
-        transaction([root, effect], { causes: orderedCauses(installed, rootCause) })
+        parsedWorld(alive(10)),
+        transaction([root, effect, phase], {
+          causes: orderedCauses(installed, rootCause),
+        })
       )
+    ).toEqual({
+      operationId: null,
+      reason: "invalid-transaction",
+      status: "rejected",
+    });
+
+    const effectTransaction = transaction([effect], { causes: [rootCause] });
+    const pending = pushProgramFrame(allocated.state, authority, root.root);
+    const effectState = pendingAtStep(pending.state, pending.frame, STEP_IDS.standing);
+    const effected = simulated(
+      simulateMechanicsTransaction(allocated.state.world, effectTransaction, {
+        authoritySnapshot: authoritySnapshotFor(effectTransaction),
+        state: effectState,
+      })
+    );
+    expect(state(effected.state.world).occurrences.root).toMatchObject({ authority });
+    expect(state(effected.state.world).occurrences.effect).toMatchObject({
+      parentId: "root",
+    });
+    expect(allocated.executions[0]).toMatchObject({
+      facts: { root: occurrenceGeneration("root", 1) },
+      kind: "program-root-create",
+    });
+
+    const phaseState = pendingAtPhaseTransition(effected.state, pending.frame);
+    const phaseTransaction = transaction([phase], { causes: [rootCause] });
+    const committed = simulated(
+      simulateMechanicsTransaction(effected.state.world, phaseTransaction, {
+        authoritySnapshot: authoritySnapshotFor(phaseTransaction),
+        state: phaseState,
+      })
+    );
+    expect(topMechanicsPendingFrame(committed.state)?.cursor).toEqual({
+      stage: "phase-complete",
+    });
+    const popped = popMechanicsPendingFrame(committed.state, pending.frame);
+    expect(popped.ok).toBe(true);
+    expect(state(committed.state.world).occurrences.root).toMatchObject({
+      phaseState: { invoke: { execution: 1, lastTriggerEventId: null } },
+      registers: {},
+    });
+
+    expect(
+      simulateMechanicsTransaction(committed.state.world, phaseTransaction, {
+        authoritySnapshot: authoritySnapshotFor(phaseTransaction),
+        state: committed.state,
+      })
     ).toMatchObject({
-      executions: [
-        { reason: "program-state-already-committed", status: "no-change" },
-        { reason: "occurrence-already-active", status: "no-change" },
-      ],
+      executions: [{ reason: "program-phase-already-committed", status: "no-change" }],
       status: "no-change",
     });
 
@@ -2485,10 +2802,19 @@ describe("atomic mechanics transactions", () => {
         fact: { key: "stale-effect", kind: "active-key" },
       },
     } as const satisfies MechanicsOperation;
+    const staleWorld = worldWithZeroedRoots([["root", authority]]);
+    const staleTransaction = transaction([staleEffect], { causes: [rootCause] });
     expect(
       simulateMechanicsTransaction(
-        worldWithRoots([["root", authority]]),
-        transaction([staleEffect], { causes: [rootCause] })
+        staleWorld,
+        staleTransaction,
+        pendingProgramContext(
+          staleWorld,
+          staleTransaction,
+          authority,
+          occurrenceGeneration("root", 1),
+          { stepId: STEP_IDS.standing }
+        )
       )
     ).toEqual({
       operationId: "stale-effect",
@@ -2502,24 +2828,34 @@ describe("atomic mechanics transactions", () => {
     const installed = installedCause(authority);
     const rootCause = programRootCause(authority, "root");
     const root = occurrenceGeneration("root", 1);
+    const allocation = transaction([programCreate("create-root", "root", installed)], {
+      causes: [installed],
+    });
+    const allocated = simulated(
+      simulateMechanicsTransaction(parsedWorld(alive(10)), allocation)
+    );
+    const body = transaction(
+      [
+        programRegister("tally-one", rootCause, root, "tally", 0, 1),
+        programRegister("tally-three", rootCause, root, "tally", 1, 3),
+      ],
+      { causes: [rootCause] }
+    );
     const result = simulated(
       simulateMechanicsTransaction(
-        parsedWorld(alive(10)),
-        transaction(
-          [
-            programCreate("create-root", "root", installed, { tally: 0 }),
-            programRegister("tally-one", rootCause, root, "tally", 0, 1),
-            programRegister("tally-three", rootCause, root, "tally", 1, 3),
-          ],
-          { causes: orderedCauses(installed, rootCause) }
-        )
+        allocated.state.world,
+        body,
+        pendingProgramContext(allocated.state.world, body, authority, root, {
+          basis: allocated.state,
+          stepId: `set-tally`,
+        })
       )
     );
 
     expect(state(result.state.world).occurrences.root).toMatchObject({
       registers: { tally: 3 },
     });
-    expect(result.executions.slice(1)).toMatchObject([
+    expect(result.executions).toMatchObject([
       {
         facts: {
           after: 1,
@@ -2543,7 +2879,7 @@ describe("atomic mechanics transactions", () => {
     ]);
   });
 
-  it("applies register steps before the advance receipt and rejects stale or reordered state", () => {
+  it("applies register steps before the phase commit and rejects stale or reordered state", () => {
     const authority = authorityWithRegister("tally", 0);
     const rootCause = programRootCause(authority, "root");
     const base = structuredClone(
@@ -2566,29 +2902,20 @@ describe("atomic mechanics transactions", () => {
     const world = parsedCharacterState({ ...base, ...occurrences });
     const root = occurrenceGeneration("root", 1);
     const register = programRegister("tally-one", rootCause, root, "tally", 0, 1);
-    const advance = {
-      causeId: rootCause.causeId,
-      expectedRegisters: { tally: 1 },
-      kind: "program-state-transition",
-      nextRegisters: { tally: 1 },
-      operationId: "advance-root",
-      receipt: {
-        expected: { execution: 0, phaseId: "invoke", triggerEventId: null },
-        kind: "advance",
-        next: { execution: 1, phaseId: "invoke", triggerEventId: "event-1" },
-        root,
-      },
-    } as const satisfies MechanicsOperation;
+    const advance = programPhaseTransition("advance-root", rootCause, root);
+    const registerTransaction = transaction([register], { causes: [rootCause] });
+    const pending = pushProgramFrame(causalState(world), authority, root);
+    const registerState = pendingAtStep(pending.state, pending.frame, `set-tally`);
 
     const result = simulated(
-      simulateMechanicsTransaction(
-        world,
-        transaction([register, advance], { causes: [rootCause] })
-      )
+      simulateMechanicsTransaction(world, registerTransaction, {
+        authoritySnapshot: authoritySnapshotFor(registerTransaction),
+        state: registerState,
+      })
     );
     expect(state(result.state.world).occurrences.root).toMatchObject({
       phaseState: {
-        invoke: { execution: 1, lastTriggerEventId: "event-1" },
+        invoke: { execution: 0, lastTriggerEventId: null },
       },
       registers: { tally: 1 },
     });
@@ -2597,16 +2924,221 @@ describe("atomic mechanics transactions", () => {
         transaction([advance, register], { causes: [rootCause] })
       )
     ).toBeNull();
+    const phaseState = pendingAtPhaseTransition(result.state, pending.frame);
+    const phaseTransaction = transaction([advance], { causes: [rootCause] });
+    const committed = simulated(
+      simulateMechanicsTransaction(result.state.world, phaseTransaction, {
+        authoritySnapshot: authoritySnapshotFor(phaseTransaction),
+        state: phaseState,
+      })
+    );
+    expect(state(committed.state.world).occurrences.root).toMatchObject({
+      phaseState: {
+        invoke: { execution: 1, lastTriggerEventId: null },
+      },
+      registers: { tally: 1 },
+    });
+    const staleTransaction = transaction(
+      [programRegister("stale", rootCause, root, "tally", 1, 2)],
+      { causes: [rootCause] }
+    );
     expect(
-      simulateMechanicsTransaction(
-        world,
-        transaction([programRegister("stale", rootCause, root, "tally", 1, 2)], {
-          causes: [rootCause],
-        })
-      )
+      simulateMechanicsTransaction(world, staleTransaction, {
+        authoritySnapshot: authoritySnapshotFor(staleTransaction),
+        state: registerState,
+      })
     ).toEqual({
       operationId: "stale",
       reason: "stale-program-state",
+      status: "rejected",
+    });
+  });
+
+  it("accepts consecutive one-ahead origins only at the exact top cursor slots", () => {
+    const before = worldWithZeroedRoots([["root", AUTHORITY]]);
+    const root = occurrenceGeneration("root", 1);
+    const cause = programRootCause(AUTHORITY, "root");
+    const first = standingCreate("standing-one", "standing-one", "root", cause);
+    const second = {
+      ...standingCreate("standing-two", "standing-two", "root", cause),
+      created: occurrenceGeneration("standing-two", 3),
+      occurrence: {
+        ...standingCreate("standing-two", "standing-two", "root", cause).occurrence,
+        fact: { key: "standing-two", kind: "active-key" },
+        origin: programStepOrigin(STEP_IDS.standing, { slot: 2 }),
+      },
+    } as const satisfies MechanicsOperation;
+    const body = transaction([first, second], { causes: [cause] });
+    const result = simulated(
+      simulateMechanicsTransaction(
+        before,
+        body,
+        pendingProgramContext(before, body, AUTHORITY, root, {
+          stepId: STEP_IDS.standing,
+        })
+      )
+    );
+
+    expect(state(result.state.world).occurrences).toHaveProperty("standing-one");
+    expect(state(result.state.world).occurrences).toHaveProperty("standing-two");
+    expect(topMechanicsPendingFrame(result.state)?.cursor).toEqual({
+      nextSlot: 1,
+      stage: "step",
+      stepIndex: 1,
+    });
+  });
+
+  it.each([
+    ["gap", 1, 3, "standing-two"],
+    ["duplicate", 1, 1, "standing-two"],
+    ["reverse", 2, 1, "standing-one"],
+  ] as const)(
+    "rejects a %s in one-ahead authored slots",
+    (_case, firstSlot, secondSlot, rejectedOperationId) => {
+      const before = worldWithZeroedRoots([["root", AUTHORITY]]);
+      const cause = programRootCause(AUTHORITY, "root");
+      const create = (
+        operationId: string,
+        occurrenceId: string,
+        ordinal: number,
+        slot: number
+      ) => {
+        const base = standingCreate(operationId, occurrenceId, "root", cause);
+        return {
+          ...base,
+          created: occurrenceGeneration(occurrenceId, ordinal),
+          occurrence: {
+            ...base.occurrence,
+            fact: { key: occurrenceId, kind: "active-key" },
+            origin: programStepOrigin(STEP_IDS.standing, { slot }),
+          },
+        } as const satisfies MechanicsOperation;
+      };
+      const body = transaction(
+        [
+          create("standing-one", "standing-one", 2, firstSlot),
+          create("standing-two", "standing-two", 3, secondSlot),
+        ],
+        { causes: [cause] }
+      );
+
+      expect(
+        simulateMechanicsTransaction(
+          before,
+          body,
+          pendingProgramContext(
+            before,
+            body,
+            AUTHORITY,
+            occurrenceGeneration("root", 1),
+            { stepId: STEP_IDS.standing }
+          )
+        )
+      ).toEqual({
+        operationId: rejectedOperationId,
+        reason: "invalid-cause",
+        status: "rejected",
+      });
+    }
+  );
+
+  it("rejects a non-top program cause while a nested frame owns execution", () => {
+    const before = worldWithZeroedRoots([
+      ["parent-root", AUTHORITY],
+      ["nested-root", AUTHORITY],
+    ]);
+    const parentRoot = occurrenceGeneration("parent-root", 1);
+    const nestedRoot = occurrenceGeneration("nested-root", 2);
+    const parentCause = programRootCause(AUTHORITY, "parent-root", 1);
+    const operation = standingCreate(
+      "parent-effect",
+      "parent-effect",
+      "parent-root",
+      parentCause
+    );
+    const body = transaction([operation], { causes: [parentCause] });
+    const parent = pushProgramFrame(causalState(before), AUTHORITY, parentRoot);
+    const nested = pushProgramFrame(parent.state, AUTHORITY, nestedRoot);
+
+    expect(
+      simulateMechanicsTransaction(before, body, {
+        authoritySnapshot: authoritySnapshotFor(body),
+        state: nested.state,
+      })
+    ).toEqual({
+      operationId: operation.operationId,
+      reason: "invalid-cause",
+      status: "rejected",
+    });
+  });
+
+  it("does not let an installed cause mint program-step provenance", () => {
+    const before = worldWithZeroedRoots([["root", AUTHORITY]]);
+    const operation = standingCreate(
+      "installed-effect",
+      "installed-effect",
+      "root",
+      INSTALLED_CAUSE
+    );
+    const body = transaction([operation]);
+
+    expect(
+      simulateMechanicsTransaction(
+        before,
+        body,
+        pendingProgramContext(before, body, AUTHORITY, occurrenceGeneration("root", 1), {
+          stepId: STEP_IDS.standing,
+        })
+      )
+    ).toEqual({
+      operationId: operation.operationId,
+      reason: "invalid-cause",
+      status: "rejected",
+    });
+  });
+
+  it("commits the exact phase CAS atomically and only then exposes phase-complete", () => {
+    const before = worldWithZeroedRoots([["root", AUTHORITY]]);
+    const root = occurrenceGeneration("root", 1);
+    const cause = programRootCause(AUTHORITY, "root");
+    const pending = pushProgramFrame(causalState(before), AUTHORITY, root);
+    const phaseState = pendingAtPhaseTransition(pending.state, pending.frame);
+    const operation = programPhaseTransition("commit-root", cause, root);
+    const commit = transaction([operation], { causes: [cause] });
+    const result = simulated(
+      simulateMechanicsTransaction(before, commit, {
+        authoritySnapshot: authoritySnapshotFor(commit),
+        state: phaseState,
+      })
+    );
+
+    expect(state(before).occurrences.root).toMatchObject({
+      phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
+    });
+    expect(state(result.state.world).occurrences.root).toMatchObject({
+      phaseState: { invoke: { execution: 1, lastTriggerEventId: null } },
+    });
+    expect(topMechanicsPendingFrame(result.state)?.cursor).toEqual({
+      stage: "phase-complete",
+    });
+  });
+
+  it("rejects the legacy root-create plus body batch", () => {
+    const installed = installedCause(AUTHORITY);
+    const rootCause = programRootCause(AUTHORITY, "root");
+    const create = programCreate("create-root", "root", installed);
+    const body = standingCreate("create-effect", "effect", "root", rootCause);
+
+    expect(
+      simulateMechanicsTransaction(
+        parsedWorld(alive(10)),
+        transaction([create, body], {
+          causes: orderedCauses(installed, rootCause),
+        })
+      )
+    ).toEqual({
+      operationId: null,
+      reason: "invalid-transaction",
       status: "rejected",
     });
   });
@@ -2618,7 +3150,9 @@ describe("atomic mechanics transactions", () => {
     "rejects %s qualitative minima on newly created effects, entities, and inventory",
     (_position, minimumBoundaryOrdinal) => {
       const rootCause = programRootCause(AUTHORITY, "root");
-      const material = structuredClone(state(worldWithRoots([["root", AUTHORITY]])));
+      const material = structuredClone(
+        state(worldWithZeroedRoots([["root", AUTHORITY]]))
+      );
       material.timeline.nextBoundaryOrdinal = 2;
       const before = parsedCharacterState(material);
       const endRules = [
@@ -2637,10 +3171,26 @@ describe("atomic mechanics transactions", () => {
       ] as const satisfies readonly MechanicsOperation[];
 
       for (const operation of creations) {
+        const operationTransaction = transaction([operation], {
+          causes: [rootCause],
+        });
+        const stepId =
+          operation.kind === "entity-create"
+            ? STEP_IDS.entity
+            : operation.kind === "inventory-create"
+              ? STEP_IDS.inventory
+              : STEP_IDS.standing;
         expect(
           simulateMechanicsTransaction(
             before,
-            transaction([operation], { causes: [rootCause] })
+            operationTransaction,
+            pendingProgramContext(
+              before,
+              operationTransaction,
+              AUTHORITY,
+              occurrenceGeneration("root", 1),
+              { stepId }
+            )
           )
         ).toEqual({
           operationId: operation.operationId,
@@ -2670,7 +3220,7 @@ describe("atomic mechanics transactions", () => {
       status: "rejected",
     });
 
-    const rooted = worldWithRoots([["root", AUTHORITY]]);
+    const rooted = worldWithZeroedRoots([["root", AUTHORITY]]);
     const rootCause = programRootCause(AUTHORITY, "root");
     expect(
       simulateMechanicsTransaction(
@@ -2748,24 +3298,31 @@ describe("atomic mechanics transactions", () => {
 
   it("requires exact root generations and emits readable end requests", () => {
     const otherAuthority = authorityVariant(9);
-    const before = worldWithRoots([
+    const before = worldWithZeroedRoots([
       ["causing-root", AUTHORITY],
       ["other-root", otherAuthority],
     ]);
     const cause = programRootCause(AUTHORITY, "causing-root");
+    const endOther = transaction(
+      [
+        {
+          causeId: cause.causeId,
+          kind: "occurrence-end",
+          occurrence: occurrenceGeneration("other-root", 2),
+          operationId: "dispel-other",
+        },
+      ],
+      { causes: [cause] }
+    );
     const ended = simulated(
       simulateMechanicsTransaction(
         before,
-        transaction(
-          [
-            {
-              causeId: cause.causeId,
-              kind: "occurrence-end",
-              occurrence: occurrenceGeneration("other-root", 2),
-              operationId: "dispel-other",
-            },
-          ],
-          { causes: [cause] }
+        endOther,
+        pendingProgramContext(
+          before,
+          endOther,
+          AUTHORITY,
+          occurrenceGeneration("causing-root", 1)
         )
       )
     );
@@ -3253,13 +3810,19 @@ describe("atomic mechanics transactions", () => {
       operationId: "grant-sourced-temporary-hit-points",
       target: SELF,
     } as const satisfies MechanicsOperation;
-    const before = worldWithRoots([["root", AUTHORITY]]);
-
+    const before = worldWithZeroedRoots([["root", AUTHORITY]]);
+    const applyTransaction = transaction([createSource, grant], {
+      causes: [rootCause],
+    });
+    const pending = pendingProgramContext(
+      before,
+      applyTransaction,
+      AUTHORITY,
+      occurrenceGeneration("root", 1),
+      { stepId: STEP_IDS.standing }
+    );
     const result = simulated(
-      simulateMechanicsTransaction(
-        before,
-        transaction([createSource, grant], { causes: [rootCause] })
-      )
+      simulateMechanicsTransaction(before, applyTransaction, pending)
     );
 
     expect(
@@ -3281,7 +3844,8 @@ describe("atomic mechanics transactions", () => {
     expect(
       simulateMechanicsTransaction(
         before,
-        transaction([grant, createSource], { causes: [rootCause] })
+        transaction([grant, createSource], { causes: [rootCause] }),
+        pending
       )
     ).toEqual({
       operationId: "grant-sourced-temporary-hit-points",
@@ -3310,9 +3874,13 @@ describe("atomic mechanics transactions", () => {
   });
 
   it("keeps Concentration readable until its causal end wave is delivered", () => {
+    const replacementRoot = appendZeroedRoot(
+      concentratingWorld(alive(3)),
+      "replacement-root"
+    );
     const result = simulated(
       simulateMechanicsTransaction(
-        concentratingWorld(alive(3)),
+        replacementRoot.world,
         transaction([
           creatureDamage("drop", SELF, 3, {
             maximumHitPoints: { kind: "fact", value: 10 },
@@ -3361,21 +3929,24 @@ describe("atomic mechanics transactions", () => {
       },
     });
 
-    const rootCause = programRootCause(AUTHORITY, "root");
+    const rootCause = programRootCause(AUTHORITY, "replacement-root", 3);
     const replacement = {
       causeId: rootCause.causeId,
       conditionImmunityOverride: null,
-      created: occurrenceGeneration("replacement-focus", 3),
+      created: occurrenceGeneration("replacement-focus", 4),
       kind: "occurrence-create",
       occurrence: {
         endRules: [],
         kind: "concentration",
-        origin: programStepOrigin(STEP_IDS.concentration, { slot: 2 }),
-        parentId: "root",
+        origin: programStepOrigin(STEP_IDS.concentration, {
+          rootId: "replacement-root",
+          rootOrdinal: 3,
+        }),
+        parentId: "replacement-root",
         target: SELF,
       },
       operationId: "replace-latched-focus",
-      parent: occurrenceGeneration("root", 1),
+      parent: replacementRoot.root,
     } as const satisfies MechanicsOperation;
     const replaceTransaction = transaction(
       [
@@ -3394,7 +3965,11 @@ describe("atomic mechanics transactions", () => {
     const replaced = simulated(
       simulateMechanicsTransaction(result.state.world, replaceTransaction, {
         authoritySnapshot: authoritySnapshotFor(replaceTransaction),
-        state: result.state,
+        state: pendingAtStep(
+          pushProgramFrame(result.state, AUTHORITY, replacementRoot.root).state,
+          createProgramFrame(result.state.world, AUTHORITY, replacementRoot.root),
+          STEP_IDS.concentration
+        ),
       })
     );
     expect(state(replaced.state.world).occurrences.focus).toHaveProperty("ending");
@@ -3431,22 +4006,44 @@ describe("atomic mechanics transactions", () => {
   });
 
   it("creates universal occurrences and defers their causal closure", () => {
+    const conditionRoot = appendZeroedRoot(
+      concentratingWorld(alive(10)),
+      "condition-root"
+    );
+    const conditionCause = programRootCause(AUTHORITY, "condition-root", 3);
+    const paralyze = conditionCreate("paralyze", "paralysis", "paralyzed", null, {
+      cause: conditionCause,
+      createdOrdinal: 4,
+      parentId: "condition-root",
+      parentOrdinal: 3,
+    });
+    const paralyzeTransaction = transaction([paralyze], {
+      causes: [conditionCause],
+    });
     const paralyzed = simulated(
       simulateMechanicsTransaction(
-        concentratingWorld(alive(10)),
-        transaction([conditionCreate("paralyze", "paralysis", "paralyzed")])
+        conditionRoot.world,
+        paralyzeTransaction,
+        pendingProgramContext(
+          conditionRoot.world,
+          paralyzeTransaction,
+          AUTHORITY,
+          conditionRoot.root,
+          { stepId: STEP_IDS.condition }
+        )
       )
     );
     expect(Object.keys(state(paralyzed.state.world).occurrences)).toEqual([
       "root",
       "focus",
+      "condition-root",
       "paralysis",
     ]);
     const paralyzeExecution = paralyzed.executions[0];
     expect(paralyzeExecution?.status).toBe("applied");
     if (paralyzeExecution?.status !== "applied") return;
     expect(paralyzeExecution.facts).toEqual({
-      created: occurrenceGeneration("paralysis", 3),
+      created: occurrenceGeneration("paralysis", 4),
     });
     expect(paralyzed.state.context.endWave).toMatchObject({
       wave: {
@@ -3503,41 +4100,71 @@ describe("atomic mechanics transactions", () => {
       phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
       registers: {},
     });
-    const invoked = structuredClone(tableRoot);
-    for (const occurrenceId of ["root", "table-root"] as const) {
-      const program = invoked.occurrences[occurrenceId];
-      if (!program || program.kind !== "program") throw new Error("root fixture");
-      program.phaseState.invoke = { execution: 1, lastTriggerEventId: null };
-    }
-    const immuneWorld = parsedCharacterState({ ...immuneState, ...invoked });
+    const immunityTestRoot = addOccurrence(tableRoot, "condition-root", {
+      authority: AUTHORITY,
+      endRules: [],
+      kind: "program",
+      phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
+      registers: {},
+    });
+    const closed = structuredClone(immunityTestRoot);
+    const program = closed.occurrences.root;
+    if (!program || program.kind !== "program") throw new Error("root fixture");
+    program.phaseState.invoke = { execution: 1, lastTriggerEventId: null };
+    const immuneWorld = parsedCharacterState({ ...immuneState, ...closed });
+    const immunityTestCause = programRootCause(AUTHORITY, "condition-root", 4);
+    const immuneOperation = conditionCreate("poison", "poisoned", "poisoned", null, {
+      cause: immunityTestCause,
+      createdOrdinal: 5,
+      parentId: "condition-root",
+      parentOrdinal: 4,
+    });
+    const immuneTransaction = transaction([immuneOperation], {
+      causes: [immunityTestCause],
+    });
     expect(
       simulateMechanicsTransaction(
         immuneWorld,
-        transaction([
-          conditionCreate("poison", "poisoned", "poisoned", null, {
-            createdOrdinal: 4,
-          }),
-        ])
+        immuneTransaction,
+        pendingProgramContext(
+          immuneWorld,
+          immuneTransaction,
+          AUTHORITY,
+          occurrenceGeneration("condition-root", 4),
+          { stepId: STEP_IDS.condition }
+        )
       )
     ).toMatchObject({
       executions: [{ reason: "condition-immune", status: "no-change" }],
       status: "no-change",
     });
 
+    const invalidOverride = conditionCreate(
+      "poison-override",
+      "poisoned",
+      "poisoned",
+      { reasonId: "table-overrides-immunity" },
+      {
+        cause: immunityTestCause,
+        createdOrdinal: 5,
+        parentId: "condition-root",
+        parentOrdinal: 4,
+      }
+    );
+    const invalidOverrideTransaction = transaction([invalidOverride], {
+      causes: [immunityTestCause],
+    });
     expect(
       simulateMechanicsTransaction(
         immuneWorld,
-        transaction([
-          conditionCreate(
-            "poison-override",
-            "poisoned",
-            "poisoned",
-            {
-              reasonId: "table-overrides-immunity",
-            },
-            { createdOrdinal: 4 }
-          ),
-        ])
+        invalidOverrideTransaction,
+        pendingProgramContext(
+          immuneWorld,
+          invalidOverrideTransaction,
+          AUTHORITY,
+          occurrenceGeneration("condition-root", 4),
+          { stepId: STEP_IDS.condition }
+        )
       )
     ).toEqual({
       operationId: "poison-override",
@@ -3546,25 +4173,32 @@ describe("atomic mechanics transactions", () => {
     });
 
     const tableCause = programRootCause(TABLE_AUTHORITY, "table-root", 3);
+    const tableOverride = conditionCreate(
+      "table-poison-override",
+      "poisoned",
+      "poisoned",
+      { reasonId: "table-overrides-immunity" },
+      {
+        cause: tableCause,
+        createdOrdinal: 5,
+        parentId: "table-root",
+        parentOrdinal: 3,
+      }
+    );
+    const tableTransaction = transaction([tableOverride], {
+      actor: TABLE_OWNER,
+      causes: [tableCause],
+    });
     const overridden = simulated(
       simulateMechanicsTransaction(
         immuneWorld,
-        transaction(
-          [
-            conditionCreate(
-              "table-poison-override",
-              "poisoned",
-              "poisoned",
-              { reasonId: "table-overrides-immunity" },
-              {
-                cause: tableCause,
-                createdOrdinal: 4,
-                parentId: "table-root",
-                parentOrdinal: 3,
-              }
-            ),
-          ],
-          { actor: TABLE_OWNER, causes: [tableCause] }
+        tableTransaction,
+        pendingProgramContext(
+          immuneWorld,
+          tableTransaction,
+          TABLE_AUTHORITY,
+          occurrenceGeneration("table-root", 3),
+          { stepId: STEP_IDS.condition }
         )
       )
     );
@@ -3597,7 +4231,14 @@ describe("atomic mechanics transactions", () => {
       parentId: "root",
       target: SELF,
     });
-    const invoked = structuredClone(immunity);
+    const applyRoot = addOccurrence(immunity, "apply-root", {
+      authority: AUTHORITY,
+      endRules: [],
+      kind: "program",
+      phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
+      registers: {},
+    });
+    const invoked = structuredClone(applyRoot);
     const program = invoked.occurrences.root;
     if (!program || program.kind !== "program") throw new Error("root fixture");
     program.phaseState.invoke = { execution: 1, lastTriggerEventId: null };
@@ -3616,13 +4257,27 @@ describe("atomic mechanics transactions", () => {
       ending: { causes: [{ kind: "temporary-hit-points-empty" }] },
     });
 
-    const apply = transaction([
-      conditionCreate("poison-after-immunity", "poisoned", "poisoned"),
-    ]);
+    const applyCause = programRootCause(AUTHORITY, "apply-root", 3);
+    const apply = transaction(
+      [
+        conditionCreate("poison-after-immunity", "poisoned", "poisoned", null, {
+          cause: applyCause,
+          createdOrdinal: 4,
+          parentId: "apply-root",
+          parentOrdinal: 3,
+        }),
+      ],
+      { causes: [applyCause] }
+    );
+    const pending = pushProgramFrame(
+      latched.state,
+      AUTHORITY,
+      occurrenceGeneration("apply-root", 3)
+    );
     const applied = simulated(
       simulateMechanicsTransaction(latched.state.world, apply, {
         authoritySnapshot: authoritySnapshotFor(apply),
-        state: latched.state,
+        state: pendingAtStep(pending.state, pending.frame, STEP_IDS.condition),
       })
     );
     expect(state(applied.state.world).occurrences.poisoned).toMatchObject({
@@ -3632,24 +4287,45 @@ describe("atomic mechanics transactions", () => {
   });
 
   it("latches occurrence closure while deferring final cleanup", () => {
+    const replacementRoot = appendZeroedRoot(
+      concentratingWorld(alive(10)),
+      "replacement-root"
+    );
+    const replacementCause = programRootCause(AUTHORITY, "replacement-root", 3);
     const replacement: MechanicsOperation = {
-      causeId: INSTALLED_CAUSE.causeId,
+      causeId: replacementCause.causeId,
       conditionImmunityOverride: null,
-      created: occurrenceGeneration("new-focus", 3),
+      created: occurrenceGeneration("new-focus", 4),
       kind: "occurrence-create",
       occurrence: {
         endRules: [],
         kind: "concentration",
-        origin: programStepOrigin(STEP_IDS.concentration),
-        parentId: "root",
+        origin: programStepOrigin(STEP_IDS.concentration, {
+          rootId: "replacement-root",
+          rootOrdinal: 3,
+        }),
+        parentId: "replacement-root",
         target: SELF,
       },
       operationId: "replace-focus",
-      parent: occurrenceGeneration("root", 1),
+      parent: replacementRoot.root,
     };
-    const concentrating = concentratingWorld(alive(10));
+    const concentrating = replacementRoot.world;
+    const replacementTransaction = transaction([replacement], {
+      causes: [replacementCause],
+    });
     expect(
-      simulateMechanicsTransaction(concentrating, transaction([replacement]))
+      simulateMechanicsTransaction(
+        concentrating,
+        replacementTransaction,
+        pendingProgramContext(
+          concentrating,
+          replacementTransaction,
+          AUTHORITY,
+          replacementRoot.root,
+          { stepId: STEP_IDS.concentration }
+        )
+      )
     ).toEqual({
       operationId: "replace-focus",
       reason: "concentration-replacement-required",
@@ -3658,15 +4334,18 @@ describe("atomic mechanics transactions", () => {
     expect(
       simulateMechanicsTransaction(
         concentrating,
-        transaction([
-          {
-            causeId: INSTALLED_CAUSE.causeId,
-            kind: "occurrence-end",
-            occurrence: occurrenceGeneration("focus", 2),
-            operationId: "end-old-focus",
-          },
-          replacement,
-        ])
+        transaction(
+          [
+            {
+              causeId: INSTALLED_CAUSE.causeId,
+              kind: "occurrence-end",
+              occurrence: occurrenceGeneration("focus", 2),
+              operationId: "end-old-focus",
+            },
+            replacement,
+          ],
+          { causes: orderedCauses(INSTALLED_CAUSE, replacementCause) }
+        )
       )
     ).toEqual({
       operationId: null,
@@ -3720,7 +4399,9 @@ describe("atomic mechanics transactions", () => {
     );
     expect(projected.status).toBe("projected");
     if (projected.status !== "projected") return;
-    expect(state(projected.world).occurrences.root?.ending).toBeNull();
+    expect(state(projected.state.world).occurrences.root?.ending).toEqual({
+      causes: [{ kind: "requested" }],
+    });
     expect(projected.consequences).toEqual([
       {
         causeId: INSTALLED_CAUSE.causeId,
@@ -4531,6 +5212,8 @@ describe("atomic mechanics transactions", () => {
     const before = parsedCharacterState(material);
     const authority = inventoryAuthority("potion", 1);
     const itemCause = installedCause(authority);
+    const rootCause = programRootCause(authority, "potion-root");
+    const potionRoot = occurrenceGeneration("potion-root", 1);
     const resource = {
       character: CHARACTER,
       instanceId: "potion",
@@ -4541,46 +5224,68 @@ describe("atomic mechanics transactions", () => {
       ...COUNT_RESOURCE_SPEC,
       id: "item-quantity",
     } as const satisfies ResourceSpec;
+    const allocate = transaction(
+      [programCreate("create-root", "potion-root", itemCause)],
+      { causes: [itemCause] }
+    );
+    const allocated = simulated(simulateMechanicsTransaction(before, allocate));
+    const pending = pushProgramFrame(allocated.state, authority, potionRoot);
+    const spend = transaction(
+      [
+        {
+          bindings: {},
+          causeId: itemCause.causeId,
+          kind: "resource-transition",
+          operationId: "drink",
+          resource,
+          spec: quantitySpec,
+          transition: { amount: 1, kind: "spend" },
+        },
+      ],
+      {
+        causes: [itemCause],
+        factGuards: [resourceDefinitionFact(before, resource, quantitySpec)],
+      }
+    );
+    const spent = simulated(
+      simulateMechanicsTransaction(allocated.state.world, spend, {
+        authoritySnapshot: authoritySnapshotFor(spend),
+        state: pending.state,
+      })
+    );
+    const effect = {
+      causeId: rootCause.causeId,
+      conditionImmunityOverride: null,
+      created: occurrenceGeneration("potion-effect", 2),
+      kind: "occurrence-create",
+      occurrence: {
+        endRules: [],
+        fact: { key: "haste", kind: "active-key" },
+        kind: "standing",
+        origin: programStepOrigin(STEP_IDS.standing, {
+          rootId: "potion-root",
+        }),
+        parentId: "potion-root",
+        target: SELF,
+      },
+      operationId: "apply-effect",
+      parent: potionRoot,
+    } as const satisfies MechanicsOperation;
+    const effectTransaction = transaction([effect], { causes: [rootCause] });
+    const effectState = pendingAtStep(spent.state, pending.frame, STEP_IDS.standing);
+    const effected = simulated(
+      simulateMechanicsTransaction(spent.state.world, effectTransaction, {
+        authoritySnapshot: authoritySnapshotFor(effectTransaction),
+        state: effectState,
+      })
+    );
+    const phase = programPhaseTransition("commit-potion", rootCause, potionRoot);
+    const phaseTransaction = transaction([phase], { causes: [rootCause] });
     const activated = simulated(
-      simulateMechanicsTransaction(
-        before,
-        transaction(
-          [
-            programCreate("create-root", "potion-root", itemCause),
-            {
-              bindings: {},
-              causeId: itemCause.causeId,
-              kind: "resource-transition",
-              operationId: "drink",
-              resource,
-              spec: quantitySpec,
-              transition: { amount: 1, kind: "spend" },
-            },
-            {
-              causeId: itemCause.causeId,
-              conditionImmunityOverride: null,
-              created: occurrenceGeneration("potion-effect", 2),
-              kind: "occurrence-create",
-              occurrence: {
-                endRules: [],
-                fact: { key: "haste", kind: "active-key" },
-                kind: "standing",
-                origin: programStepOrigin(STEP_IDS.standing, {
-                  rootId: "potion-root",
-                }),
-                parentId: "potion-root",
-                target: SELF,
-              },
-              operationId: "apply-effect",
-              parent: occurrenceGeneration("potion-root", 1),
-            },
-          ],
-          {
-            causes: [itemCause],
-            factGuards: [resourceDefinitionFact(before, resource, quantitySpec)],
-          }
-        )
-      )
+      simulateMechanicsTransaction(effected.state.world, phaseTransaction, {
+        authoritySnapshot: authoritySnapshotFor(phaseTransaction),
+        state: pendingAtPhaseTransition(effected.state, pending.frame),
+      })
     );
     expect(state(activated.state.world).inventory.potion?.quantity.current).toBe(0);
     expect(state(activated.state.world).occurrences).toHaveProperty("potion-root");
@@ -4607,46 +5312,41 @@ describe("atomic mechanics transactions", () => {
       status: "rejected",
     });
 
-    const rootCause = programRootCause(authority, "potion-root");
-    const ended = simulated(
-      simulateMechanicsTransaction(
-        activated.state.world,
-        transaction(
-          [
-            {
-              causeId: rootCause.causeId,
-              kind: "occurrence-end",
-              occurrence: occurrenceGeneration("potion-root", 1),
-              operationId: "end-potion-effect",
-            },
-          ],
-          { actionId: "end-potion-effect", causes: [rootCause] }
-        )
-      )
-    );
-    expect(ended.stages[0]?.after).toBe(ended.stages[0]?.before);
-    expect(state(ended.state.world).occurrences).toHaveProperty("potion-root");
-    expect(state(ended.state.world).occurrences).toHaveProperty("potion-effect");
-    expect(state(ended.state.world).occurrences["potion-root"]?.ending).toEqual({
-      causes: [{ kind: "requested" }],
-    });
-    expect(state(ended.state.world).occurrences["potion-effect"]?.ending).toEqual({
-      causes: [
+    const endTransaction = transaction(
+      [
         {
-          dependency: occurrenceGeneration("potion-root", 1),
-          kind: "dependency-ended",
+          causeId: rootCause.causeId,
+          kind: "occurrence-end",
+          occurrence: occurrenceGeneration("potion-root", 1),
+          operationId: "end-potion-effect",
         },
       ],
+      { actionId: "end-potion-effect", causes: [rootCause] }
+    );
+    expect(
+      simulateMechanicsTransaction(activated.state.world, endTransaction, {
+        authoritySnapshot: { definitions: [] },
+        state: activated.state,
+      })
+    ).toEqual({
+      operationId: "end-potion-effect",
+      reason: "invalid-after",
+      status: "rejected",
     });
-    expect(state(ended.state.world).inventory.potion?.quantity.current).toBe(0);
-    expect(ended.consequences).toEqual([
-      {
-        causeId: rootCause.causeId,
-        kind: "occurrence-end",
-        occurrence: occurrenceGeneration("potion-root", 1),
-        operationId: "end-potion-effect",
-      },
-    ]);
+    const popped = popMechanicsPendingFrame(activated.state, pending.frame);
+    expect(popped.ok).toBe(true);
+    if (!popped.ok) return;
+    expect(
+      simulateMechanicsTransaction(popped.value.world, endTransaction, {
+        authoritySnapshot: { definitions: [] },
+        state: popped.value,
+      })
+    ).toEqual({
+      operationId: "end-potion-effect",
+      reason: "invalid-cause",
+      status: "rejected",
+    });
+    expect(state(popped.value.world).inventory.potion?.quantity.current).toBe(0);
   });
 
   it("rejects bad authority, targets, kinds, and maximum evidence", () => {

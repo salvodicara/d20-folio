@@ -68,7 +68,8 @@ Every effect/lifecycle occurrence records a structured origin
 the exact frame; the globally unique step id proves the authored mechanic; and the stable expansion slot
 distinguishes repeated/duplicate targets without depending on allocator order. The occurrence parser
 validates that tuple against the root's frozen program and the expected step-to-occurrence-kind mapping.
-Only the compiler's transient prefix projection may be one execution ahead of committed root state.
+Only an exact active pending-frame permit may keep already-created provenance one execution ahead of the
+root's committed phase; only its LIFO top may create the next consecutive slot.
 
 Program-authored turn work is exactly the claim-bearing subset of `TurnEconomyCommand`; lifecycle
 `start-turn`/`end-turn` commands belong only to the authoritative encounter boundary state machine.
@@ -138,18 +139,22 @@ Persisted turn phase likewise has one closed shape: the current participant is `
 authenticated boundary continuation may transiently carry `between-turns` while advancing initiative.
 
 Authentic events are not an open-ended change log. Applied operation stages alone emit `damage-taken`,
-`hit-points-zero`, `resource-depleted` and, for an exact `program-state-transition`,
-`program-phase-end` carrying root occurrence generation, phase and completed execution; an exact readable
+`hit-points-zero` and `resource-depleted`. `program-root-create` establishes the exact all-zero root and
+emits nothing; only final `program-phase-transition` emits `program-phase-end` carrying root occurrence
+generation, phase and completed execution. Accepting that compare-and-swap marks the exact top frame
+`phase-complete` and performs one causal rebase, so every lifetime made due by the new phase state is
+already latched in the returned state before the event can be delivered. An exact readable
 wave alone emits `source-ending`. Terminal cleanup is represented by its proved world delta and the final
 reversible journal action, not generic condition/entity/inventory/register events that no authored trigger
 consumes.
 Every non-invocation evidence carries the authentic event id, and its program-root CAS receipt must repeat
 that same id. A transaction publishes ordinary post-events first and phase-completion events last, in
 deterministic order; `compileMechanicsFrame` exposes exactly that canonical event sequence.
-The compiler/coordinator and corpus transcription are still active work. `compileMechanicsFrame` is now
-the only intended program-to-transaction seam: it re-proves reviewed input, recognizes replay first,
-places root-create first and root-advance last, emits each register change as its own CAS, and recompiles
-the next step from the kernel-projected prefix. In addition to register/manual steps, it exactly compiles
+The compiler/coordinator and corpus transcription are still active work. Root allocation is a standalone
+physical segment; only after its zeroed root is re-proved may the coordinator push the exact process-local
+frame. `compileMechanicsFrame` is the only intended program-to-transaction seam: it consumes only that
+exact LIFO top and its semantic cursor, compiles at most one authored step per segment, and reserves the
+single-operation `program-phase-transition` segment for completion. In addition to register/manual steps, it exactly compiles
 condition, standing, Concentration and polymorph starts. Concentration is always derived from the exact
 caster anchor; it has no independent authored target. Semantic ends select the precise active set:
 condition removal is global for the exact target + condition, while standing, Concentration and
@@ -159,9 +164,13 @@ sets are idempotent no-ops. Authored cleanup has one additional exact form:
 generation, across executions, slots and targets—including Temporary-HP, entity and inventory lifecycle
 children. `end-program` is the sole root terminator.
 Nonempty end sets and committed exclusive replacements deliberately return a
-`needs-coordination` barrier; the bounded fixed-point coordinator that consumes those barriers is not yet
-complete. Remaining subcompilers must compile reviewed payments exactly once, allocate physical
-generations from each kernel-projected prefix, and resolve vitality/material/resource steps before that
+`needs-coordination` barrier with an opaque process-local continuation. The continuation binds only the
+immutable frame/input, exact expected causal cursor, response prefix and frozen barrier generations; it
+does not retain a second world, projected prefix or independent progress model. It exposes no serializable
+state and cannot be cloned or replayed against another causal lineage. The pending-frame kernel is now
+complete; the bounded fixed-point coordinator that consumes those barriers is not. Remaining
+subcompilers must compile reviewed payments exactly once, allocate physical generations from each
+authentic causal segment, and resolve vitality/material/resource steps before that
 coordinator emits one journal action. Superseded authoring/executors are migration inputs only, never a
 second supported model, and are deleted once the sole runtime consumes the full corpus.
 

@@ -27,9 +27,15 @@ import {
   entityRefKey,
   occurrenceGenerationRefKey,
 } from "@/lib/mechanics-reference-schema";
+import {
+  advanceMechanicsPendingFrameStep,
+  topMechanicsPendingFrame,
+} from "@/lib/mechanics-world";
 import type {
   CompileMechanicsFrameInput,
+  MechanicsCompiledSegment,
   MechanicsCompiledStepTrace,
+  MechanicsCompilerContinuation,
   MechanicsFrameCompileRejection,
   MechanicsFrameCompileResult,
 } from "@/types/mechanics-compiler";
@@ -37,7 +43,6 @@ import type {
   MechanicsOperation,
   MechanicsOperationCause,
   MechanicsTransaction,
-  MechanicsTransactionProjectionResult,
   MechanicsTransactionSimulationResult,
 } from "@/types/mechanics-operation";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
@@ -53,9 +58,45 @@ import type {
 } from "@/types/mechanics-program";
 import type { MechanicsStep } from "@/types/mechanics-program-authoring";
 import type { EntityRef, OccurrenceGenerationRef } from "@/types/mechanics-reference";
-import type { MechanicsCausalState } from "@/types/mechanics-world";
+import type {
+  MechanicsCausalState,
+  MechanicsPendingFrameCursor,
+} from "@/types/mechanics-world";
 
 const MAX_COMPILED_OPERATIONS = 2_048;
+
+type CompilerCoordination = Extract<
+  MechanicsFrameCompileResult,
+  { readonly status: "needs-coordination" }
+>["coordination"];
+
+type CompilerBarrier =
+  | {
+      readonly kind: "coordination";
+      readonly value: Readonly<CompilerCoordination>;
+    }
+  | {
+      readonly kind: "request";
+      readonly value: Readonly<
+        Extract<
+          MechanicsFrameCompileResult,
+          { readonly status: "needs-response" }
+        >["request"]
+      >;
+    };
+
+interface MechanicsCompilerFiber {
+  readonly binding: ReturnType<typeof canonicalFingerprint>;
+  readonly barrier: Readonly<CompilerBarrier>;
+  readonly cursor: Readonly<MechanicsPendingFrameCursor>;
+  readonly frame: Readonly<CompileMechanicsFrameInput["reviewed"]["intent"]["frame"]>;
+  readonly responsePrefix: readonly Readonly<
+    CompileMechanicsFrameInput["responses"][number]
+  >[];
+  readonly seal: ReturnType<typeof canonicalFingerprint>;
+}
+
+const compilerFibers = new WeakMap<object, Readonly<MechanicsCompilerFiber>>();
 
 type EffectStep = Extract<
   MechanicsStep,
@@ -109,6 +150,80 @@ function freezeDeep<T>(value: T): Readonly<T> {
   return value;
 }
 
+function compilerInputBinding(
+  input: Readonly<CompileMechanicsFrameInput>
+): ReturnType<typeof canonicalFingerprint> {
+  return canonicalFingerprint({
+    authoritySnapshot: input.authoritySnapshot,
+    facts: input.facts,
+    reviewed: input.reviewed,
+  });
+}
+
+function compilerFiberSeal(
+  fiber: Omit<MechanicsCompilerFiber, "seal">
+): ReturnType<typeof canonicalFingerprint> {
+  return canonicalFingerprint(fiber);
+}
+
+function compilerContinuation(
+  input: Readonly<CompileMechanicsFrameInput>,
+  cursor: Readonly<MechanicsPendingFrameCursor>,
+  barrier: Readonly<CompilerBarrier>
+): Readonly<MechanicsCompilerContinuation> {
+  const privateState = {
+    binding: compilerInputBinding(input),
+    barrier: freezeDeep(structuredClone(barrier)),
+    cursor: freezeDeep(structuredClone(cursor)),
+    frame: input.reviewed.intent.frame,
+    responsePrefix: freezeDeep(structuredClone(input.responses)),
+  } satisfies Omit<MechanicsCompilerFiber, "seal">;
+  const fiber = Object.freeze({
+    ...privateState,
+    seal: compilerFiberSeal(privateState),
+  }) satisfies MechanicsCompilerFiber;
+  const continuation = freezeDeep({}) as Readonly<MechanicsCompilerContinuation>;
+  compilerFibers.set(continuation, fiber);
+  return continuation;
+}
+
+function responsePrefixMatches(
+  prefix: MechanicsCompilerFiber["responsePrefix"],
+  responses: CompileMechanicsFrameInput["responses"]
+): boolean {
+  return canonicalFingerprint(prefix) === canonicalFingerprint(responses);
+}
+
+/** Runtime proof that a process-local cursor belongs to one exact compiler input. */
+export function isMechanicsCompilerContinuationFor(
+  value: unknown,
+  input: Readonly<CompileMechanicsFrameInput>
+): value is Readonly<MechanicsCompilerContinuation> {
+  if (typeof value !== "object" || value === null) return false;
+  const fiber = compilerFibers.get(value);
+  if (!fiber) return false;
+  try {
+    const top = topMechanicsPendingFrame(input.state);
+    return (
+      top !== null &&
+      fiber.binding === compilerInputBinding(input) &&
+      canonicalFingerprint(top.frame) === canonicalFingerprint(fiber.frame) &&
+      canonicalFingerprint(top.cursor) === canonicalFingerprint(fiber.cursor) &&
+      responsePrefixMatches(fiber.responsePrefix, input.responses) &&
+      fiber.seal ===
+        compilerFiberSeal({
+          barrier: fiber.barrier,
+          binding: fiber.binding,
+          cursor: fiber.cursor,
+          frame: fiber.frame,
+          responsePrefix: fiber.responsePrefix,
+        })
+    );
+  } catch {
+    return false;
+  }
+}
+
 function compareCodeUnits(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
 }
@@ -147,7 +262,8 @@ function isEffectEndStep(step: Readonly<MechanicsStep>): step is EffectEndStep {
 
 function effectSlots(
   step: Readonly<EffectStep>,
-  context: Readonly<MechanicsProgramCompilationContext>
+  context: Readonly<MechanicsProgramCompilationContext>,
+  firstSlot = 1
 ): readonly Readonly<EffectStartSlot>[] | null {
   const identities = resolveMechanicsProgramTargets(
     step.kind === "concentration" ? { kind: "role", role: "caster" } : step.target,
@@ -171,9 +287,17 @@ function effectSlots(
   }
   const result: EffectStartSlot[] = [];
   for (const [index, identity] of identities.entries()) {
-    const slot = mechanicsProgramExpansionSlot(index);
+    const offset = mechanicsProgramExpansionSlot(index);
+    const slot = offset === null ? null : firstSlot + offset - 1;
     const fact = facts[index];
-    if (slot === null || fact === undefined) return null;
+    if (
+      slot === null ||
+      !Number.isSafeInteger(slot) ||
+      slot < firstSlot ||
+      fact === undefined
+    ) {
+      return null;
+    }
     result.push({ fact, slot, target: identity.binding });
   }
   return result;
@@ -347,7 +471,10 @@ function replacementCoordination(
   step: Readonly<EffectStartStep>,
   slots: readonly Readonly<EffectStartSlot>[],
   context: Readonly<MechanicsProgramCompilationContext>
-): MechanicsFrameCompileResult | null {
+):
+  | Readonly<CompilerCoordination>
+  | Extract<MechanicsFrameCompileResult, { readonly status: "rejected" }>
+  | null {
   if (step.kind !== "concentration" && step.kind !== "polymorph") return null;
   if (step.kind === "concentration") {
     const target = slots[0]?.target;
@@ -395,13 +522,11 @@ function replacementCoordination(
       "same-frame-exclusive-replacement"
     );
   }
-  return freezeDeep({
-    coordination:
-      step.kind === "concentration"
-        ? { kind: "concentration-replacement" as const, occurrences }
-        : { kind: "occurrence-end" as const, occurrences },
-    status: "needs-coordination" as const,
-  });
+  return freezeDeep(
+    step.kind === "concentration"
+      ? { kind: "concentration-replacement" as const, occurrences }
+      : { kind: "occurrence-end" as const, occurrences }
+  );
 }
 
 function effectOccurrence(
@@ -512,7 +637,8 @@ function registerOperation(
   input: Readonly<CompileMechanicsFrameInput>,
   context: Readonly<MechanicsProgramCompilationContext>,
   step: Readonly<Extract<MechanicsStep, { readonly kind: "register" }>>,
-  cause: Readonly<MechanicsOperationCause>
+  cause: Readonly<MechanicsOperationCause>,
+  slot: number
 ): Readonly<
   Extract<MechanicsOperation, { readonly kind: "program-register-transition" }>
 > | null {
@@ -537,7 +663,7 @@ function registerOperation(
     expected: current,
     kind: "program-register-transition",
     next,
-    operationId: operationId(input, step.stepId, 1, "program-register-transition"),
+    operationId: operationId(input, step.stepId, slot, "program-register-transition"),
     registerId: step.registerId,
     root: input.reviewed.intent.frame.rootReceipt.root,
   };
@@ -573,87 +699,77 @@ function manualInstruction(
     : null;
 }
 
-function phaseOperation(
+function phaseTransitionOperation(
   input: Readonly<CompileMechanicsFrameInput>,
-  context: Readonly<MechanicsProgramCompilationContext>,
   cause: Readonly<MechanicsOperationCause>
-): Readonly<Extract<MechanicsOperation, { readonly kind: "program-state-transition" }>> {
+): Readonly<Extract<MechanicsOperation, { readonly kind: "program-phase-transition" }>> {
   const receipt = input.reviewed.intent.frame.rootReceipt;
-  const registers =
-    context.root?.registers ??
-    Object.fromEntries(
-      input.reviewed.intent.frame.authority.snapshot.program?.registers.map(
-        ({ initial, registerId }) => [registerId, initial]
-      ) ?? []
-    );
   return {
     causeId: cause.causeId,
-    expectedRegisters: receipt.kind === "create" ? null : registers,
-    kind: "program-state-transition",
-    nextRegisters: registers,
-    operationId: operationId(input, receipt.next.phaseId, 1, "program-state-transition"),
-    receipt,
+    expected:
+      receipt.kind === "create"
+        ? {
+            execution: 0,
+            phaseId: receipt.next.phaseId,
+            triggerEventId: null,
+          }
+        : receipt.expected,
+    kind: "program-phase-transition",
+    next: receipt.next,
+    operationId: operationId(input, receipt.next.phaseId, 1, "program-phase-transition"),
+    root: receipt.root,
   };
 }
 
-function projectionProblem(
-  result: Exclude<MechanicsTransactionProjectionResult, { readonly status: "projected" }>,
+function transactionProblem(
+  input: Readonly<CompileMechanicsFrameInput>,
+  cursor: Readonly<MechanicsPendingFrameCursor>,
+  result: Extract<
+    MechanicsTransactionSimulationResult,
+    {
+      readonly status: "needs-boundary" | "needs-observation" | "rejected";
+    }
+  >,
   phaseId: string,
   stepId: string | null
 ): MechanicsFrameCompileResult {
   if (result.status === "needs-boundary") {
+    const coordination = freezeDeep({
+      boundary: result.boundary,
+      kind: "boundary" as const,
+    });
     return freezeDeep({
-      coordination: { boundary: result.boundary, kind: "boundary" as const },
+      continuation: compilerContinuation(input, cursor, {
+        kind: "coordination",
+        value: coordination,
+      }),
+      coordination,
+      segment: null,
       status: "needs-coordination" as const,
     });
   }
   if (result.status === "needs-observation") {
-    return freezeDeep({
-      request: {
+    const request = freezeDeep({
+      boundary: result.boundary,
+      kind: "resource-observation" as const,
+      requestId: canonicalFingerprint({
         boundary: result.boundary,
-        kind: "resource-observation" as const,
-        requestId: canonicalFingerprint({
-          boundary: result.boundary,
-          operationId: result.operationId,
-          requirement: result.requirement,
-        }),
+        operationId: result.operationId,
         requirement: result.requirement,
-      },
+      }),
+      requirement: result.requirement,
+    });
+    return freezeDeep({
+      continuation: compilerContinuation(input, cursor, {
+        kind: "request",
+        value: request,
+      }),
+      request,
+      segment: null,
       status: "needs-response" as const,
     });
   }
   return rejected("kernel-rejected", phaseId, stepId, result.reason, result.operationId);
-}
-
-function finalProblem(
-  result: Exclude<
-    MechanicsTransactionSimulationResult,
-    { readonly status: "simulated" | "no-change" }
-  >,
-  phaseId: string
-): MechanicsFrameCompileResult {
-  if (result.status === "needs-boundary") {
-    return freezeDeep({
-      coordination: { boundary: result.boundary, kind: "boundary" as const },
-      status: "needs-coordination" as const,
-    });
-  }
-  if (result.status === "needs-observation") {
-    return freezeDeep({
-      request: {
-        boundary: result.boundary,
-        kind: "resource-observation" as const,
-        requestId: canonicalFingerprint({
-          boundary: result.boundary,
-          operationId: result.operationId,
-          requirement: result.requirement,
-        }),
-        requirement: result.requirement,
-      },
-      status: "needs-response" as const,
-    });
-  }
-  return rejected("kernel-rejected", phaseId, null, result.reason, result.operationId);
 }
 
 /** Compile one already-reviewed frame; no store, locale, persistence or UI is consulted. */
@@ -661,8 +777,19 @@ export function compileMechanicsFrame(
   input: Readonly<CompileMechanicsFrameInput>
 ): Readonly<MechanicsFrameCompileResult> {
   const phaseId = input.reviewed.intent.frame.rootReceipt.next.phaseId;
+  const top = topMechanicsPendingFrame(input.state);
+  if (
+    top === null ||
+    canonicalFingerprint(top.frame) !==
+      canonicalFingerprint(input.reviewed.intent.frame) ||
+    top.cursor.stage === "phase-complete"
+  ) {
+    return rejected("invalid-state", phaseId, null, "pending-frame");
+  }
   const preparation = prepareMechanicsProgramCompilation(input.reviewed, input.state);
-  if (preparation.status === "replay") return freezeDeep({ status: "replay" });
+  if (preparation.status === "replay") {
+    return rejected("invalid-state", phaseId, null, "pending-frame-replay");
+  }
   if (preparation.status === "rejected") {
     return rejected(
       preparation.reason === "invalid-state"
@@ -683,30 +810,33 @@ export function compileMechanicsFrame(
   const authority: Readonly<MechanicsProgramAuthorityReceipt> =
     input.reviewed.intent.frame.authority;
   const receipt = input.reviewed.intent.frame.rootReceipt;
-  const installedCause: MechanicsOperationCause = {
-    causeId: canonicalFingerprint({
-      authority,
-      invocation: input.reviewed.intent.frame.invocation,
-    }),
-    invocation: input.reviewed.intent.frame.invocation,
-  };
   const rootInvocation = { kind: "program-root", occurrence: receipt.root } as const;
   const rootCause: MechanicsOperationCause = {
     causeId: canonicalFingerprint({ authority, invocation: rootInvocation }),
     invocation: rootInvocation,
   };
-  const causes = new Map(
-    [installedCause, rootCause].map((cause) => [cause.causeId, cause] as const)
-  );
-  const operations: Readonly<MechanicsOperation>[] = [];
-  const manual: Readonly<ManualInstruction>[] = [];
-  const trace: MechanicsCompiledStepTrace[] = [];
+  const causes = new Map([[rootCause.causeId, rootCause] as const]);
+  const cursor = top.cursor;
   let context = preparation.context;
   const state = preparation.state;
 
+  const suspend = (
+    coordination: Readonly<CompilerCoordination>
+  ): MechanicsFrameCompileResult =>
+    freezeDeep({
+      continuation: compilerContinuation(input, cursor, {
+        kind: "coordination",
+        value: coordination,
+      }),
+      coordination,
+      segment: null,
+      status: "needs-coordination" as const,
+    });
+
+  const operations: Readonly<MechanicsOperation>[] = [];
   const project = (
     operation: Readonly<MechanicsOperation>,
-    stepId: string | null
+    stepId: string
   ): MechanicsFrameCompileResult | null => {
     if (operations.length >= MAX_COMPILED_OPERATIONS) {
       return rejected("unresolved-step", phaseId, stepId, "operation-limit");
@@ -720,11 +850,11 @@ export function compileMechanicsFrame(
     });
     if (result.status !== "projected") {
       operations.pop();
-      return projectionProblem(result, phaseId, stepId);
+      return transactionProblem(input, cursor, result, phaseId, stepId);
     }
     const refreshed = refreshMechanicsProgramCompilationContext(
       input.reviewed,
-      result.world,
+      result.state,
       context.landedDamage
     );
     if (!refreshed) {
@@ -740,36 +870,135 @@ export function compileMechanicsFrame(
     return null;
   };
 
-  if (receipt.kind === "create") {
-    const problem = project(phaseOperation(input, context, installedCause), null);
-    if (problem) return problem;
+  const cursorOnly = (
+    manual: readonly Readonly<ManualInstruction>[],
+    trace: readonly Readonly<MechanicsCompiledStepTrace>[]
+  ): MechanicsFrameCompileResult => {
+    const advanced = advanceMechanicsPendingFrameStep(state, top.frame);
+    if (!advanced.ok) {
+      return rejected("kernel-rejected", phaseId, trace[0]?.stepId ?? null);
+    }
+    const segment: MechanicsCompiledSegment = {
+      actionFacts: [],
+      consequences: [],
+      events: [],
+      manual,
+      state: advanced.value,
+      trace,
+      transaction: null,
+    };
+    return freezeDeep({ segment, status: "compiled" as const });
+  };
+
+  const simulateStep = (stepId: string): MechanicsFrameCompileResult => {
+    const transaction = transactionFor(input, operations, causes);
+    if (!transaction) return rejected("kernel-rejected", phaseId, stepId);
+    const simulation = simulateMechanicsTransaction(transaction, {
+      authoritySnapshot: input.authoritySnapshot,
+      state,
+    });
+    if (simulation.status !== "simulated" && simulation.status !== "no-change") {
+      return transactionProblem(input, cursor, simulation, phaseId, stepId);
+    }
+    const advanced = advanceMechanicsPendingFrameStep(simulation.state, top.frame);
+    if (!advanced.ok) {
+      return rejected("kernel-rejected", phaseId, stepId, "cursor-advance");
+    }
+    const operationIds = operations.map(({ operationId: id }) => id);
+    const executionsById = new Map(
+      simulation.executions.map(
+        (execution) => [execution.operationId, execution] as const
+      )
+    );
+    const segment: MechanicsCompiledSegment = {
+      actionFacts: simulation.actionFacts,
+      consequences: simulation.consequences,
+      events: deriveMechanicsPostEvents(simulation.stages),
+      manual: [],
+      state: advanced.value,
+      trace: [
+        {
+          executions: operationIds.flatMap((id) => {
+            const execution = executionsById.get(id);
+            return execution ? [execution] : [];
+          }),
+          operationIds,
+          status: "compiled",
+          stepId,
+        },
+      ],
+      transaction: simulation.transaction,
+    };
+    return freezeDeep({ segment, status: "compiled" as const });
+  };
+
+  if (cursor.stage === "phase-transition") {
+    const operation = phaseTransitionOperation(input, rootCause);
+    const transaction = transactionFor(input, [operation], causes);
+    if (!transaction) return rejected("kernel-rejected", phaseId, null);
+    const simulation = simulateMechanicsTransaction(transaction, {
+      authoritySnapshot: input.authoritySnapshot,
+      state,
+    });
+    if (simulation.status !== "simulated" && simulation.status !== "no-change") {
+      return transactionProblem(input, cursor, simulation, phaseId, null);
+    }
+    const nextTop = topMechanicsPendingFrame(simulation.state);
+    if (
+      nextTop === null ||
+      canonicalFingerprint(nextTop.frame) !== canonicalFingerprint(top.frame) ||
+      nextTop.cursor.stage !== "phase-complete"
+    ) {
+      return rejected("kernel-rejected", phaseId, null, "phase-cursor");
+    }
+    const segment: MechanicsCompiledSegment = {
+      actionFacts: simulation.actionFacts,
+      consequences: simulation.consequences,
+      events: deriveMechanicsPostEvents(simulation.stages),
+      manual: [],
+      state: simulation.state,
+      trace: [],
+      transaction: simulation.transaction,
+    };
+    return freezeDeep({ segment, status: "compiled" as const });
   }
 
-  for (const step of context.phase.steps) {
+  const step = context.phase.steps[cursor.stepIndex];
+  if (!step) {
+    return rejected("invalid-state", phaseId, null, "step-cursor");
+  }
+  {
     const active = mechanicsProgramStepIsActive(step, context);
     if (active === null) {
       return rejected("unresolved-predicate", phaseId, step.stepId);
     }
     if (!active) {
-      trace.push({
-        executions: [],
-        operationIds: [],
-        status: "omitted",
-        stepId: step.stepId,
-      });
-      continue;
+      return cursorOnly(
+        [],
+        [
+          {
+            executions: [],
+            operationIds: [],
+            status: "omitted",
+            stepId: step.stepId,
+          },
+        ]
+      );
     }
     if (step.kind === "manual-relocation" || step.kind === "manual-table") {
       const instruction = manualInstruction(step, context);
       if (!instruction) return rejected("unresolved-step", phaseId, step.stepId);
-      manual.push(instruction);
-      trace.push({
-        executions: [],
-        operationIds: [],
-        status: "manual",
-        stepId: step.stepId,
-      });
-      continue;
+      return cursorOnly(
+        [instruction],
+        [
+          {
+            executions: [],
+            operationIds: [],
+            status: "manual",
+            stepId: step.stepId,
+          },
+        ]
+      );
     }
     if (step.kind === "occurrence-end") {
       const occurrences = selectActiveProgramStepChildren(
@@ -778,18 +1007,19 @@ export function compileMechanicsFrame(
         step.childStepId
       );
       if (occurrences.length > 0) {
-        return freezeDeep({
-          coordination: { kind: "occurrence-end" as const, occurrences },
-          status: "needs-coordination" as const,
-        });
+        return suspend({ kind: "occurrence-end", occurrences });
       }
-      trace.push({
-        executions: [],
-        operationIds: [],
-        status: "compiled",
-        stepId: step.stepId,
-      });
-      continue;
+      return cursorOnly(
+        [],
+        [
+          {
+            executions: [],
+            operationIds: [],
+            status: "compiled",
+            stepId: step.stepId,
+          },
+        ]
+      );
     }
     if (isEffectEndStep(step)) {
       const slots = effectSlots(step, context);
@@ -810,21 +1040,22 @@ export function compileMechanicsFrame(
         );
       }
       if (occurrences.length > 0) {
-        return freezeDeep({
-          coordination: { kind: "occurrence-end" as const, occurrences },
-          status: "needs-coordination" as const,
-        });
+        return suspend({ kind: "occurrence-end", occurrences });
       }
-      trace.push({
-        executions: [],
-        operationIds: [],
-        status: "compiled",
-        stepId: step.stepId,
-      });
-      continue;
+      return cursorOnly(
+        [],
+        [
+          {
+            executions: [],
+            operationIds: [],
+            status: "compiled",
+            stepId: step.stepId,
+          },
+        ]
+      );
     }
     if (isEffectStartStep(step)) {
-      const slots = effectSlots(step, context);
+      const slots = effectSlots(step, context, cursor.nextSlot);
       if (!slots) return rejected("unresolved-step", phaseId, step.stepId, "targets");
       if (
         step.kind !== "standing" &&
@@ -857,8 +1088,9 @@ export function compileMechanicsFrame(
         return rejected("unresolved-step", phaseId, step.stepId, "effect-occurrence");
       }
       const coordination = replacementCoordination(step, slots, context);
-      if (coordination) return coordination;
-      const operationIds: string[] = [];
+      if (coordination) {
+        return "status" in coordination ? coordination : suspend(coordination);
+      }
       for (const slot of slots) {
         const origin: ProgramStepOccurrenceOrigin = {
           execution: context.execution,
@@ -903,60 +1135,28 @@ export function compileMechanicsFrame(
         };
         const problem = project(operation, step.stepId);
         if (problem) return problem;
-        operationIds.push(id);
       }
-      trace.push({
-        executions: [],
-        operationIds,
-        status: "compiled",
-        stepId: step.stepId,
-      });
-      continue;
+      return operations.length === 0
+        ? cursorOnly(
+            [],
+            [
+              {
+                executions: [],
+                operationIds: [],
+                status: "compiled",
+                stepId: step.stepId,
+              },
+            ]
+          )
+        : simulateStep(step.stepId);
     }
     if (step.kind !== "register") {
       return rejected("unsupported-step", phaseId, step.stepId, step.kind);
     }
-    const operation = registerOperation(input, context, step, rootCause);
+    const operation = registerOperation(input, context, step, rootCause, cursor.nextSlot);
     if (!operation) return rejected("unresolved-step", phaseId, step.stepId);
     const problem = project(operation, step.stepId);
     if (problem) return problem;
-    trace.push({
-      executions: [],
-      operationIds: [operation.operationId],
-      status: "compiled",
-      stepId: step.stepId,
-    });
+    return simulateStep(step.stepId);
   }
-
-  if (receipt.kind === "advance") {
-    const problem = project(phaseOperation(input, context, rootCause), null);
-    if (problem) return problem;
-  }
-  const transaction = transactionFor(input, operations, causes);
-  if (!transaction) return rejected("kernel-rejected", phaseId, null);
-  const simulation = simulateMechanicsTransaction(transaction, {
-    authoritySnapshot: input.authoritySnapshot,
-    state,
-  });
-  if (simulation.status !== "simulated" && simulation.status !== "no-change") {
-    return finalProblem(simulation, phaseId);
-  }
-  const executionById = new Map(
-    simulation.executions.map((execution) => [execution.operationId, execution] as const)
-  );
-  const completeTrace = trace.map((entry) => ({
-    ...entry,
-    executions: entry.operationIds.flatMap((id) => {
-      const execution = executionById.get(id);
-      return execution ? [execution] : [];
-    }),
-  }));
-  return freezeDeep({
-    events: deriveMechanicsPostEvents(simulation.stages),
-    manual,
-    simulation,
-    status: "compiled" as const,
-    trace: completeTrace,
-    transaction,
-  });
 }

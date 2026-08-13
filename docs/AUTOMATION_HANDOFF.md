@@ -59,10 +59,11 @@ Concentration replacement now requires an explicit end barrier. Exact inventory 
 tombstone only during its originating transaction, and final material cleanup cannot discover or end an
 active occurrence. The focused foundation suites pass; no full branch gate was run, by owner rule.
 
-Do not mistake this checkpoint for an executor. `planMechanicsAction` still fails closed on every typed
-world operation, root/phase/register transition and ordered dependency. The next work is one causal
-coordinator that compiles all triggered frames and end waves into one transaction/draft, followed by the
-corpus and application cutover and deletion of every old effect-program/handwritten executor path.
+Do not mistake this checkpoint for an executor. The deleted parallel program planner never became a
+supported path: typed world operations flow only through the physical transaction kernel, and the final
+coordinator will call `planMechanicsWorldAction` exactly once after every frame, event and end wave drains.
+The next work is that causal coordinator, followed by corpus/application cutover and deletion of every
+old effect-program or handwritten executor path.
 
 ### 2026-08-12 causal-kernel hardening — checkpoint closed
 
@@ -136,16 +137,33 @@ remain open.
 Every effect and material lifecycle now carries structured program-step provenance: exact root
 generation, phase, execution, step and stable expansion slot. The parser proves the tuple against the
 root's frozen authority program, validates the step/occurrence-kind mapping, rejects duplicate emissions
-and permits a one-execution-ahead origin only inside the compiler's transaction projection. Program
+and permits a one-execution-ahead origin only under an exact active pending frame. Program
 register mutation is now its own exact compare-and-swap operation and participates in collision analysis.
 
 At this checkpoint the sole `compileMechanicsFrame` entry point gained its first honest executable slice.
-It re-reviews the frozen intent against the current basis, returns replay before considering new
-responses, places root create first and advance last, assigns deterministic operation identities, carries
-trusted fact guards, and projects each prefix through the physical kernel before compiling the next
-register/manual step. Its result is the closed compiler status union; unsupported terminal steps reject
-explicitly. Resource selectors exposed to future subcompilers are deduplicated and sorted by exact
-resource key.
+It re-reviews the frozen intent against the current basis, consumes only the exact nonterminal LIFO top
+cursor, and emits at most one authentic simulated step segment. Replay is resolved before push by the
+prepare/coordinator boundary. Root allocation happens separately before push; the final phase CAS is a
+single-operation segment. Its result is the closed compiler status union; unsupported terminal steps
+reject explicitly.
+Resource selectors exposed to future subcompilers are deduplicated and sorted by exact resource key.
+
+The physical transition is now split. `program-root-create` is the sole allocator: it derives every phase
+at execution zero plus authored initial registers and emits no completion event.
+`program-phase-transition` performs only the selected phase CAS, is final, and alone emits
+`program-phase-end`. Compiler barriers carry an opaque process-local continuation whose private fiber
+binds the immutable reviewed frame, exact pending cursor, response prefix and any frozen barrier
+generations; it retains no projected world or second progress model. Cloning or changing the authority,
+facts, frame or causal lineage invalidates it. Nothing in that continuation is persisted, and the
+coordinator owns its eventual resumption.
+
+The pending-frame kernel is now closed. Its bounded unforgeable causal state carries one exact LIFO stack;
+all frames validate provenance already present, while only the semantic top may execute, advance or
+complete. Root creation is a standalone installed-authority segment before push. Each authored step becomes
+at most one authentic simulated segment with consecutive expansion slots, and the final phase CAS is a
+single-operation segment that atomically marks the top `phase-complete` and, in the same causal rebase,
+latches every lifetime made due by the new phase state. Boundary/end-wave/cleanup flows
+preserve and re-prove the stack. No pending frame or compiler continuation is serializable.
 
 The parallel real-play compiler audit invalidated any broader “all remaining gaps closed” reading. Before
 the complete compiler can be called correct, the audit identified table-override authorization independent
@@ -162,7 +180,7 @@ engineering.
 causal rebase resolves each `program-phase-end` child against the exact root generation, phase and authored
 execution: current and overdue executions latch `program-phase-completed`, future executions remain live,
 and exact generation closes same-id ABA. The cumulative closure request deliberately carries no duplicate
-completion list. An applied `program-state-transition` also emits the authentic exact
+completion list. An applied `program-phase-transition` also emits the authentic exact
 `program-phase-end` post-event consumed by subscribers. Every non-invocation evidence is bound to that
 event's exact id and the matching phase CAS receipt, and phase events trail ordinary events from the same
 complete transaction. Latched occurrences remain readable for authority/subscriber delivery but disappear
@@ -174,8 +192,8 @@ gate. The next checkpoint below records the effect/lifetime/boundary slice that 
 
 ### 2026-08-12 effect, lifetime and qualitative-boundary compiler — checkpoint closed
 
-`compileMechanicsFrame` now exactly compiles condition, standing, Concentration and polymorph starts from
-the kernel-projected prefix. Target expansion has stable slots, standing marks materialize by exact
+`compileMechanicsFrame` exactly compiles condition, standing, Concentration and polymorph starts from
+the current authentic causal segment. Target expansion has stable slots, standing marks materialize by exact
 broadcast/zip cardinality, and every clock-bound lifetime resolves against the owning material.
 Concentration has one canonical target derived from the receipt's caster anchor; authoring can no longer
 provide a second target that could drift.

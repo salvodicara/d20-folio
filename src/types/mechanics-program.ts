@@ -1,10 +1,9 @@
-/** Transient review and planning projections for MechanicsProgram execution. */
+/** Transient review and compiler projections for MechanicsProgram execution. */
 
 import type {
   MechanicsAnswersSchemaShape,
   MechanicsIntentSchemaShape,
 } from "@/lib/mechanics-program-schema";
-import type { JournalActionDraft } from "@/types/action-journal";
 import type { D20TestResult, D20TestReview } from "@/types/d20-test";
 import type {
   DiceResolution,
@@ -266,47 +265,4 @@ export type ManualInstruction =
       readonly kind: "table";
       readonly rowId: string;
       readonly stepId: string;
-    };
-
-export type MechanicsWorldOperation =
-  | "ordered-program-execution"
-  | "program-invocation-state-transition"
-  | "program-phase-state-transition"
-  | "resource-transition"
-  | "hit-point-damage"
-  | "hit-point-healing"
-  | "incoming-damage-adjustment"
-  | "temporary-hit-points"
-  | "condition-transition"
-  | "standing-transition"
-  | "concentration-transition"
-  | "polymorph-transition"
-  | "death-transition"
-  | "exhaustion-transition"
-  | "occurrence-transition"
-  | "entity-transition"
-  | "inventory-transition"
-  | "turn-claim-transition"
-  | "program-register-transition";
-
-export type MechanicsPlanRejection =
-  | "invalid-reviewed-intent"
-  | "stale-review"
-  | "invalid-world"
-  | "unresolved-predicate"
-  | "missing-world-operation"
-  | "action-planner-rejected";
-
-export type MechanicsPlanResult =
-  | {
-      readonly action: JournalActionDraft | null;
-      readonly manual: readonly ManualInstruction[];
-      readonly status: "planned";
-    }
-  | {
-      readonly manual: readonly ManualInstruction[];
-      readonly operations: readonly MechanicsWorldOperation[];
-      readonly reason: MechanicsPlanRejection;
-      readonly status: "rejected";
-      readonly stepIds: readonly string[];
     };
