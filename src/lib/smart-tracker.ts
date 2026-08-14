@@ -31,7 +31,6 @@ import type {
   AbilityCode,
   ConditionId,
   CreatureType,
-  DamageType,
   SrdEquipmentData,
   SpellRecurrence,
   TrackerUnit,
@@ -42,7 +41,10 @@ import type {
   ActionTargeting,
   SrdActionDef,
   ActionEconomyCategory,
+  ResourceRecoveryTrigger,
+  CombatEffectProgram,
 } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 import { isPoolAltRecovery, isSlotAltRecovery } from "@/data/types";
 import { classFeatureIndex, getClassTable, pactSlotLevel } from "@/data/classes";
 import { getBeast } from "@/data/beasts";
@@ -55,7 +57,6 @@ import {
 } from "@/lib/classes";
 import {
   evaluateGrants,
-  countTopLevelFreeCasts,
   type Grant,
   type GrantSource,
   type AggregatedGrants,
@@ -68,7 +69,11 @@ import {
   type MarkedTargetScope,
   type CastSourceOverrides,
   type FreeCastFromListEntry,
+  type ResourcePayment,
+  type FreeCastCapacityStep,
+  type FreeCastEntry,
   whileActiveDurationAtCastLevel,
+  resolveGrantActiveKey,
   grantField,
   hasGrantField,
   topGrantRef,
@@ -88,7 +93,12 @@ import {
   bloodiedFromHp,
   aggregateCharacterGrants,
 } from "@/lib/aggregate-character";
-import { slotUsageKey } from "@/lib/cast-options";
+import {
+  classifySpellCastingTime,
+  slotUsageKey,
+  type CastRecoveryCadence,
+  type SpellCastTiming,
+} from "@/lib/cast-options";
 import { scaleCombatSummaryAtCastLevel } from "@/lib/cast-resolution";
 import { getRace, rawRaceTraitCatKey, type RaceFeatureEntry } from "@/data/races";
 import type { CreatureSize, SrdRaceTrait } from "@/data/types";
@@ -101,7 +111,9 @@ import {
 import { spellIndex, spells } from "@/data/spells";
 import { WEAPONS_BY_ID } from "@/data/weapons";
 import { getEquipment } from "@/data/equipment";
-import { getMagicItem } from "@/data/magic-items";
+import { getMagicItem, SRD_MAGIC_ITEMS } from "@/data/magic-items";
+import { resolveItemResources } from "@/lib/item-resources";
+import { makeItemResourceIdentity, type ItemResourceIdentity } from "@/lib/resources";
 import { resolveItemConsumable, consumableActionSlot } from "@/lib/srd-resolve";
 import {
   appendAbilityModToDice,
@@ -626,11 +638,33 @@ export interface ResolvedAction {
   /** SRD spell id (set for SRD spell actions) — lets the Combat page build the
    *  spell's cast options (upcast / free-cast) for rich in-combat casting. */
   spellId?: string;
+  /**
+   * Ordered, locale-free deterministic effect authored by the spell/action.
+   * This payload is carried verbatim through localization and cast transforms;
+   * only the effect-program interpreter may execute it.
+   */
+  effectProgram?: CombatEffectProgram;
+  /**
+   * Explicit exclusive mutation owner for an authored effect program. When this
+   * marker is present, consumers must not also execute legacy summary mutations.
+   * It is intentionally retained even if a malformed transform loses the payload,
+   * so routing can fail closed instead of silently falling back to legacy logic.
+   */
+  effectResolutionOwner?: "effect-program";
+  /** Exact stored index for a custom spell. Its action id is index-based too, so
+   * duplicate homebrew names remain independently castable. */
+  customSpellIndex?: number;
+  /** Canonical casting-time class. Present only on spell casts. */
+  castTiming?: SpellCastTiming;
   /** SRD weapon id (set for equipped SRD weapon actions, incl. their off-hand
    *  rows) — lets the combat card pick the per-weapon-type seal glyph
    *  (`weaponSealIcon`). Undefined for custom / manifested / pact weapons (→
    *  generic sword). */
   weaponId?: string;
+  /** Catalogue id of the magic item behind a bounded spell-pool opener. The
+   * runtime `castPoolSourceId` stays instance-bound; presentation uses this
+   * stable id without parsing or exposing the physical copy's UUID. */
+  castPoolItemId?: string;
   /** True for the dual-wield OFF-HAND bonus attack (Two-Weapon Fighting). The UI
    *  surfaces it ONLY once a Light-weapon Attack has been committed this turn —
    *  RAW 2024: the off-hand attack follows the Attack action with a Light weapon.
@@ -664,6 +698,10 @@ export interface ResolvedAction {
   slotLevel?: number;
   /** Tracker ID consumed (if feature with tracker) */
   costTracker?: string;
+  /** Exact item-resource payment address for an instance-bound item action. */
+  resourcePayment?: Extract<ResourcePayment, { kind: "item-resource" }>;
+  /** Units spent from `resourcePayment` when the action itself has a fixed cost. */
+  resourceCost?: number;
   /** Stable source id of the bounded spell pool this action opens. Kept separate
    * from `costTracker`: homebrew features may share one resource without sharing
    * their eligible spell lists. */
@@ -1196,6 +1234,13 @@ export interface RawResolvedAction extends Omit<
   summary: RawActionSummary;
 }
 
+/** Stamp an authored program and its exclusive owner as one inseparable route. */
+function effectProgramRoute(
+  effectProgram: CombatEffectProgram | undefined
+): Pick<ResolvedAction, "effectProgram" | "effectResolutionOwner"> {
+  return effectProgram ? { effectProgram, effectResolutionOwner: "effect-program" } : {};
+}
+
 /**
  * Build a weapon's structured range from its property tokens — PURE + locale-FREE
  * (no formatting, just feet numbers). Mirrors the three weapon resolvers' inline
@@ -1471,14 +1516,25 @@ interface TrackerExprCtx {
  * arithmetic forms) — so a Star-Map / Misty-Wanderer / Mapping-Magic free cast
  * scaled by an ability modifier resolves through the one shared resolver rather
  * than a per-site literal match (single source of truth — golden rule 6). A
- * blank/absent formula falls back to the grant's fixed `chargesPerRest`.
+ * blank/absent formula falls back to the grant's fixed `chargesPerRest`. When
+ * `capacityByLevel` has an eligible step, its formula/fixed capacity replaces
+ * that base pair; the highest eligible `minLevel` wins.
  */
 export function resolveChargesFormula(
   formula: string | undefined,
   chargesPerRest: number,
-  character: CharacterDoc
+  character: CharacterDoc,
+  capacityByLevel: ReadonlyArray<FreeCastCapacityStep> = []
 ): number {
-  if (!formula) return chargesPerRest;
+  const level = totalLevel(character.character);
+  const step = capacityByLevel
+    .filter((candidate) => candidate.minLevel <= level)
+    .reduce<
+      FreeCastCapacityStep | undefined
+    >((best, candidate) => (!best || candidate.minLevel > best.minLevel ? candidate : best), undefined);
+  const resolvedFormula = step ? step.chargesFormula : formula;
+  const resolvedFixed = step ? step.chargesPerRest : chargesPerRest;
+  if (!resolvedFormula) return resolvedFixed;
   // LATENT (B2 lesson): this passes NO `scalingLevel`, so a `"level"` term resolves
   // on the TOTAL character level. That is correct for every shipped `chargesFormula`
   // (race/feat/subclass free casts, which scale on character level by RAW). If a
@@ -1486,7 +1542,7 @@ export function resolveChargesFormula(
   // on the OWNING-class level instead — thread `featureScalingLevel(...)` as the
   // 3rd arg here, exactly as `resolveTrackerTotal` already does for class trackers.
   // No shipped item triggers this today; see docs/AUTOMATION_BACKLOG.md (W11).
-  return resolveTrackerTotal(formula, character);
+  return resolveTrackerTotal(resolvedFormula, character);
 }
 
 /**
@@ -2467,19 +2523,26 @@ export function resolveCunningStrikeOptions(character: CharacterDoc): {
 /**
  * D4 — a resolved free-cast-FROM-LIST pool the Play board's guided picker renders.
  * The player picks ONE spell from `spellIds` (a class list ≤ a level cap) and casts
- * it without a slot, debiting the `trackerId` pool (Cleric Divine Intervention →
- * any Cleric spell ≤ 5th, 1/Long Rest). `remaining` is the per-rest charges left.
+ * it without a slot, debiting its exact `payment` owner (Cleric Divine
+ * Intervention's tracker or one physical item's resource). `remaining` is the
+ * available amount in that payment owner.
  */
 export interface FreeCastFromListPool {
+  /** Runtime grant attribution. Item pools use their per-instance source id. */
   sourceId: string;
+  /** Stable catalogue identity for item-pool presentation. */
+  itemId?: string;
+  /** Exact payment owner; `trackerId` remains only as a legacy routing field. */
+  payment?: ResourcePayment;
   trackerId: string;
   /** The eligible spell ids (class list ≤ maxSpellLevel, sorted by level then id). */
   spellIds: string[];
   maxSpellLevel: number;
-  rest: "short" | "long";
-  /** Per-rest charge cap (Divine Intervention = 1). */
+  /** Recovery owned by the exact payment source. */
+  recovery: CastRecoveryCadence;
+  /** Capacity of the bounded payment source (Divine Intervention = 1). */
   charges: number;
-  /** Charges remaining this rest (charges − tracker used). */
+  /** Currently available units in the payment source. */
   remaining: number;
   /**
    * S9 — per-spell charge cost, keyed by spell id, with a value for EVERY eligible
@@ -2491,6 +2554,47 @@ export interface FreeCastFromListPool {
   costBySpell: Record<string, number>;
   casterAbility?: AbilityCode;
   castOverrides?: CastSourceOverrides;
+}
+
+export interface ItemResourceAvailability {
+  identity: ItemResourceIdentity;
+  capacity: number;
+  current: number;
+  /** Exact boundaries declared by the typed resource. No boundary aliases. */
+  recoveryTriggers: ReadonlyArray<ResourceRecoveryTrigger>;
+}
+
+/** Resolve one exact physical resource without deriving identity from a source id. */
+export function resolveItemResourceAvailability(
+  character: CharacterDoc,
+  identity: ItemResourceIdentity
+): ItemResourceAvailability | null {
+  const resolved = resolveItemResources({
+    equipment: character.character.equipment,
+    catalogue: SRD_MAGIC_ITEMS,
+    itemResources: character.session.itemResources,
+  }).resources.find(
+    (resource) =>
+      resource.key === identity.key &&
+      resource.itemId === identity.itemId &&
+      resource.instanceId === identity.instanceId &&
+      resource.resourceId === identity.resourceId
+  );
+  if (
+    !resolved ||
+    resolved.capacity === undefined ||
+    resolved.current === undefined ||
+    resolved.state?.disabled === true ||
+    (resolved.itemState && resolved.itemState.disposition !== "magical")
+  ) {
+    return null;
+  }
+  return {
+    identity,
+    capacity: resolved.capacity,
+    current: resolved.current,
+    recoveryTriggers: resolved.spec.recoveries.map(({ trigger }) => trigger),
+  };
 }
 
 export const CAST_SOURCE_ACTIVE_PREFIX = "cast-source:";
@@ -2533,8 +2637,9 @@ function freeCastEntryIncludesSpell(
  */
 export function resolveFreeCastFromList(character: CharacterDoc): FreeCastFromListPool[] {
   const { character: charData, session } = character;
+  const grantSources = resolveAllGrantSources(charData, session.itemResources);
   const agg = evaluateGrants(
-    resolveAllGrantSources(charData),
+    grantSources,
     new Set(session.activeFeatures ?? []),
     new Map(Object.entries(session.grantBundleChoices ?? {}))
   );
@@ -2549,8 +2654,14 @@ export function resolveFreeCastFromList(character: CharacterDoc): FreeCastFromLi
   // resolved total (War God's Blessing rides the whole Channel Divinity pool —
   // 2/3/4 by level — single source of truth; golden rules 2/6). Resolved once.
   const trackerById = new Map(resolveTrackers(character).map((tr) => [tr.id, tr]));
+  const itemIdBySourceId = new Map(
+    grantSources.flatMap((source) =>
+      source.ref?.kind === "magic-item" ? [[source.id, source.ref.key] as const] : []
+    )
+  );
 
-  return agg.freeCastFromList.map((entry) => {
+  const pools: FreeCastFromListPool[] = [];
+  for (const entry of agg.freeCastFromList) {
     // Two pool shapes: a FIXED set of named ids (War God's Blessing) or a class
     // list ≤ a level cap (Divine Intervention).
     const eligible = spells
@@ -2577,13 +2688,33 @@ export function resolveFreeCastFromList(character: CharacterDoc): FreeCastFromLi
     const maxSpellLevel =
       entry.maxSpellLevel ??
       eligible.reduce((max, id) => Math.max(max, spellIndex.get(id)?.level ?? 0), 0);
-    // Charge cap + rest cadence: explicit on the pool, else inferred from the
-    // debited tracker (Channel Divinity = 2/3/4; recovers on short-or-long rest).
-    const tracker = trackerById.get(entry.trackerId);
-    const charges = entry.chargesPerRest ?? tracker?.total ?? 1;
-    const rest: "short" | "long" =
-      entry.rest ?? (tracker?.recovery === "long-rest" ? "long" : "short");
-    const used = session.trackers[entry.trackerId]?.used ?? 0;
+    // Capacity + recovery cadence come from the exact payment owner. Typed item
+    // resources keep their declared boundaries; trackers retain short/long rest.
+    const availability =
+      entry.payment.kind === "item-resource"
+        ? resolveItemResourceAvailability(character, entry.payment)
+        : null;
+    if (entry.payment.kind === "item-resource" && !availability) continue;
+    const tracker =
+      entry.payment.kind === "tracker"
+        ? trackerById.get(entry.payment.trackerId)
+        : undefined;
+    const charges = availability
+      ? availability.capacity
+      : entry.payment.kind === "tracker"
+        ? (entry.chargesPerRest ?? tracker?.total ?? 1)
+        : 0;
+    const recovery: CastRecoveryCadence = availability
+      ? { kind: "item-resource", triggers: availability.recoveryTriggers }
+      : {
+          kind: "tracker",
+          rest: entry.rest ?? (tracker?.recovery === "long-rest" ? "long" : "short"),
+        };
+    const remaining = availability
+      ? availability.current
+      : entry.payment.kind === "tracker"
+        ? Math.max(0, charges - (session.trackers[entry.payment.trackerId]?.used ?? 0))
+        : 0;
     // S9 — per-spell cost for EVERY eligible spell (default 1). Feature pools carry
     // no `spellCosts`, so every entry defaults to 1 and the two existing consumers
     // are unaffected; a variable-cost item pool overlays its real per-spell costs.
@@ -2591,19 +2722,24 @@ export function resolveFreeCastFromList(character: CharacterDoc): FreeCastFromLi
     for (const id of eligible) {
       costBySpell[id] = entry.spellCosts?.[id] ?? 1;
     }
-    return {
+    const itemId = itemIdBySourceId.get(entry.sourceId);
+    pools.push({
       sourceId: entry.sourceId,
-      trackerId: entry.trackerId,
+      ...(itemId ? { itemId } : {}),
+      payment: entry.payment,
+      trackerId:
+        entry.payment.kind === "tracker" ? entry.payment.trackerId : entry.sourceId,
       spellIds: eligible,
       maxSpellLevel,
-      rest,
+      recovery,
       charges,
-      remaining: Math.max(0, charges - used),
+      remaining,
       costBySpell,
       ...(entry.casterAbility ? { casterAbility: entry.casterAbility } : {}),
       ...(entry.castOverrides ? { castOverrides: entry.castOverrides } : {}),
-    };
-  });
+    });
+  }
+  return pools;
 }
 
 /** Exhaustiveness guard local to this pure module (do NOT import the
@@ -2771,7 +2907,7 @@ export function freeCastItemChargeMax(grants: ReadonlyArray<Grant> | undefined):
     // charged multi-spell item surfaces its pool row the same way (S9).
     const perRest =
       g.type === "free-cast-spell"
-        ? g.chargesPerRest
+        ? (g.chargesPerRest ?? 0)
         : g.type === "free-cast-from-list"
           ? (g.chargesPerRest ?? 0)
           : 0;
@@ -2781,8 +2917,8 @@ export function freeCastItemChargeMax(grants: ReadonlyArray<Grant> | undefined):
 }
 
 /**
- * One item charge cap for Inventory, Resources, casting, and activation actions.
- * A mixed item still owns one pool keyed by item id; the largest declaration wins.
+ * Legacy grant-owned item charge cap. Resource-backed items own their capacity in
+ * `resources`; older tracker-backed items retain this compatibility projection.
  */
 export function magicItemChargeMax(grants: ReadonlyArray<Grant> | undefined): number {
   let charges = freeCastItemChargeMax(grants);
@@ -2795,29 +2931,28 @@ export function magicItemChargeMax(grants: ReadonlyArray<Grant> | undefined): nu
 }
 
 /**
- * S9 — CHARGE trackers for equipped charged magic items (Wand of Magic
- * Missiles, Winged Boots, Staff of Healing, …). A charged item carries a cast
- * grant or activated-property tracker whose counter IS the item's charge pool;
- * that counter is created+debited by the shared commit flow
- * (`freeCastSourcesForSpell` + the cost-engine `free-cast` op keyed by the
- * source id), but it never surfaced in the rail. This emits ONE resolved
- * tracker per such grant, keyed by the ITEM id (the same id the cast debits),
- * so the charge pool shows + is editable in Resources with zero new state.
+ * Compatibility trackers for equipped magic items whose older grant still owns
+ * its charge capacity/recovery. Resource-backed items do not enter this path:
+ * their exact per-instance state is resolved by `resolveItemResources`.
  *
  * Walks ONLY equipped, attunement-satisfied magic-item sources (the same gate
  * `resolveGrantSourcesForEquipment` applies for every other item effect), so
  * an unequipped wand contributes no phantom row. Cast-only pools keep the
  * established `dawn` default; an activated property may supply an exact tracker
  * cadence and opt out of automatic refill when the amount needs table input.
- * Deduped by item id at the caller; multiple grants on one item (rare) share
- * the one pool, first-charge-count wins.
+ * Legacy rows are deduped by catalogue item id; multiple grants on one item share
+ * the one compatibility pool, first charge declaration wins.
  */
 function resolveMagicItemTrackers(character: CharacterDoc): RawResolvedTracker[] {
   const out: RawResolvedTracker[] = [];
   const seen = new Set<string>();
-  for (const source of resolveGrantSourcesForEquipment(character.character.equipment)) {
+  for (const source of resolveGrantSourcesForEquipment(
+    character.character.equipment,
+    character.session.itemResources
+  )) {
     if (source.ref?.kind !== "magic-item") continue;
-    if (seen.has(source.id)) continue;
+    const itemId = source.ref.key;
+    if (seen.has(itemId)) continue;
     const charges = magicItemChargeMax(source.grants);
     if (charges <= 0) continue;
     const activationTracker = (source.grants ?? []).find(
@@ -2830,17 +2965,18 @@ function resolveMagicItemTrackers(character: CharacterDoc): RawResolvedTracker[]
     const castSpec = (source.grants ?? []).find(
       (g): g is Extract<Grant, { type: "free-cast-spell" | "free-cast-from-list" }> =>
         (g.type === "free-cast-spell" || g.type === "free-cast-from-list") &&
+        g.resourceCost === undefined &&
         (g.chargesPerRest ?? 0) > 0
     );
     const autoRecover = activationSpec?.autoRecover ?? castSpec?.autoRecover;
     const longRestRecovery =
       activationSpec?.longRestRecovery ?? castSpec?.longRestRecovery;
-    seen.add(source.id);
+    seen.add(itemId);
     out.push({
-      id: source.id,
+      id: itemId,
       // The charge pool's label is the magic item's own name (single source —
       // the rail and the cast row attribute the same item, golden rule 6).
-      label: srdText("magic-item", source.id, "name"),
+      label: srdText("magic-item", itemId, "name"),
       total: charges,
       recovery: activationSpec?.recovery ?? "dawn",
       ...(autoRecover === false ? { autoRecover: false } : {}),
@@ -2849,7 +2985,7 @@ function resolveMagicItemTrackers(character: CharacterDoc): RawResolvedTracker[]
       // No raw `unit`: the rail falls back to the localized "uses"/usesWord word
       // (a charge IS a use of the pool) — keeps the unit i18n-clean (no English
       // leak) and consistent with every other pool row.
-      used: character.session.trackers[source.id]?.used ?? 0,
+      used: character.session.trackers[itemId]?.used ?? 0,
     });
   }
   return out;
@@ -2865,21 +3001,50 @@ function resolveMagicItemActivationActions(character: CharacterDoc): RawResolved
   const { session } = character;
   const pinnedSet = new Set(session.pinnedActions);
   const out: RawResolvedAction[] = [];
-  for (const source of resolveGrantSourcesForEquipment(character.character.equipment)) {
+  for (const source of resolveGrantSourcesForEquipment(
+    character.character.equipment,
+    session.itemResources
+  )) {
     if (source.ref?.kind !== "magic-item") continue;
+    const itemId = source.ref.key;
     for (const [grantIndex, grant] of (source.grants ?? []).entries()) {
       if (grant.type !== "while-active" || !grant.activation) continue;
+      const resourcePayment =
+        grant.activation.resourceCost && source.item
+          ? ({
+              kind: "item-resource",
+              ...makeItemResourceIdentity(
+                source.item.itemId,
+                source.item.instanceId,
+                grant.activation.resourceCost.resourceId
+              ),
+            } as const)
+          : undefined;
+      if (grant.activation.resourceCost && !resourcePayment) continue;
+      const availability = resourcePayment
+        ? resolveItemResourceAvailability(character, resourcePayment)
+        : null;
+      if (resourcePayment && !availability) continue;
       const tracker = grant.activation.tracker;
-      const total = tracker ? resolveTrackerTotal(tracker.total, character) : 0;
-      const used = tracker ? (session.trackers[source.id]?.used ?? 0) : 0;
+      const total = availability
+        ? availability.capacity
+        : tracker
+          ? resolveTrackerTotal(tracker.total, character)
+          : 0;
+      const current = availability
+        ? availability.current
+        : tracker
+          ? Math.max(0, total - (session.trackers[itemId]?.used ?? 0))
+          : 0;
+      const duration = grant.duration;
       const id = `item-activate-${source.id}-${grant.activeKey}`;
       const grantRef = topGrantRef(source, grant, grantIndex);
       out.push({
         id,
         name: hasGrantField(grantRef, "label", grant.label)
           ? grantField(grantRef, "label", grant.label)
-          : srdText("magic-item", source.id, "name"),
-        description: srdText("magic-item", source.id, "description"),
+          : srdText("magic-item", itemId, "name"),
+        description: srdText("magic-item", itemId, "description"),
         type: grant.activation.action,
         source: "feature",
         spellLevel: null,
@@ -2887,24 +3052,39 @@ function resolveMagicItemActivationActions(character: CharacterDoc): RawResolved
         costsSlot: false,
         ...(tracker
           ? {
-              costTracker: source.id,
+              costTracker: itemId,
               costTrackerIsPool: tracker.isPool ?? true,
               trackerCost: 1,
             }
           : {}),
+        ...(resourcePayment ? { resourcePayment, resourceCost: 1 } : {}),
         pinned: pinnedSet.has(id),
         defaultPinned: false,
-        activatesKey: grant.activeKey,
-        summary: tracker
+        activatesKey: resolveGrantActiveKey(source, grant.activeKey),
+        ...(duration?.kind === "maintained" || duration?.kind === "timed"
+          ? duration.endsEarlyOn?.length
+            ? { activationEndsEarlyOn: duration.endsEarlyOn }
+            : {}
+          : {}),
+        ...(duration?.kind === "turn-boundary"
           ? {
-              uses: {
-                current: Math.max(0, total - used),
-                total,
-                isPool: tracker.isPool ?? true,
-                unit: tracker.unit,
+              activeTurnBoundary: {
+                phase: duration.phase,
+                turns: duration.turns,
               },
             }
-          : {},
+          : {}),
+        summary:
+          tracker || availability
+            ? {
+                uses: {
+                  current,
+                  total,
+                  isPool: tracker?.isPool ?? true,
+                  ...(tracker?.unit ? { unit: tracker.unit } : {}),
+                },
+              }
+            : {},
       });
     }
   }
@@ -2912,40 +3092,47 @@ function resolveMagicItemActivationActions(character: CharacterDoc): RawResolved
 }
 
 /**
- * S9 — the item→multi-spell-pool ACTION bridge. A charged magic item that casts ONE
- * OF several spells from a shared charge pool (Wand of Binding / Wand of Fear, Ring
- * of Animal Influence, Staff of Charming) carries a `free-cast-from-list` grant but
- * NO `mechanics.actions`, so — unlike a class feature — its pool never surfaces a
- * Play-board card. This emits ONE `RawResolvedAction` per such equipped, attunement-
- * satisfied item, keyed `item-cast-<itemId>` with `costTracker = <itemId>` (the SAME
- * item-charge tracker `resolveMagicItemTrackers` surfaces and the cast debits). The
- * card routes through the EXISTING `costTracker`→`free-cast-from-list` picker seam
- * (`TurnEconomyProvider.handleSelect` → `DivineInterventionModal`), so no new picker
- * is built (golden rule 3). Walks the SAME equipped/attuned gate as every other item
- * effect; an unattuned/unequipped item contributes no card.
+ * S9 — the item→multi-spell-pool ACTION bridge. A charged magic item that casts
+ * one of several spells carries a `free-cast-from-list` grant but no ordinary
+ * action, so this emits one picker opener per equipped, attunement-satisfied
+ * physical copy. Typed items expose an exact `resourcePayment`; legacy items keep
+ * their tracker payment. The picker supplies the selected spell's variable cost.
  */
 function resolveItemPoolCastActions(character: CharacterDoc): RawResolvedAction[] {
   const { session } = character;
   const pinnedSet = new Set(session.pinnedActions);
   const out: RawResolvedAction[] = [];
   const seen = new Set<string>();
-  for (const source of resolveGrantSourcesForEquipment(character.character.equipment)) {
+  for (const source of resolveGrantSourcesForEquipment(
+    character.character.equipment,
+    session.itemResources
+  )) {
     if (source.ref?.kind !== "magic-item") continue;
     if (seen.has(source.id)) continue;
-    const hasPool = (source.grants ?? []).some((g) => g.type === "free-cast-from-list");
-    if (!hasPool) continue;
-    const charges = freeCastItemChargeMax(source.grants);
+    const entry = evaluateGrants([source]).freeCastFromList[0];
+    if (!entry) continue;
+    const availability =
+      entry.payment.kind === "item-resource"
+        ? resolveItemResourceAvailability(character, entry.payment)
+        : null;
+    if (entry.payment.kind === "item-resource" && !availability) continue;
+    const charges = availability
+      ? availability.capacity
+      : freeCastItemChargeMax(source.grants);
     if (charges <= 0) continue;
     seen.add(source.id);
-    const used = session.trackers[source.id]?.used ?? 0;
-    const remaining = Math.max(0, charges - used);
+    const remaining = availability
+      ? availability.current
+      : entry.payment.kind === "tracker"
+        ? Math.max(0, charges - (session.trackers[entry.payment.trackerId]?.used ?? 0))
+        : 0;
     const id = `item-cast-${source.id}`;
     out.push({
       id,
       // The card title is the item's own name (single source — the rail row, the
       // cast action, and the picker rubric all attribute the same item, rule 6);
       // the description says WHAT the card does (a chrome hint, both locales).
-      name: srdText("magic-item", source.id, "name"),
+      name: srdText("magic-item", source.ref.key, "name"),
       description: uiText("combat.itemPoolCastActionHint"),
       type: "action",
       // Not a real spell/weapon row — a pool picker opener, like the Divine
@@ -2955,8 +3142,11 @@ function resolveItemPoolCastActions(character: CharacterDoc): RawResolvedAction[
       concentration: false,
       // The pool spends item CHARGES, never a spell slot.
       costsSlot: false,
-      costTracker: source.id,
+      ...(entry.payment.kind === "tracker"
+        ? { costTracker: entry.payment.trackerId }
+        : { resourcePayment: entry.payment }),
       castPoolSourceId: source.id,
+      castPoolItemId: source.ref.key,
       costTrackerIsPool: true,
       pinned: pinnedSet.has(id),
       defaultPinned: false,
@@ -2977,10 +3167,9 @@ function resolveItemPoolCastActions(character: CharacterDoc): RawResolvedAction[
  * ${spellId}` key (the lifecycle desync risk).
  *
  * Two origins, both keyed `${featId}:${spellId}`:
- *  (a) FIXED `free-cast-spell` grants on a feat/feature/species source (Fey-Touched
- *      Misty Step, a heritage feat's granted spells, Magic Initiate's spell once
- *      its grant is modeled) — NOT magic items (their shared charge pool is
- *      `resolveMagicItemTrackers`).
+ *  (a) Selected tracker-backed `free-cast-spell` grants on a feat/feature/species
+ *      source (including grants nested in the selected lineage bundle) — NOT magic
+ *      items (their shared charge pool is `resolveMagicItemTrackers`).
  *  (b) CHOSEN free-cast spells (the player's div/ench pick) — stamped on the spell
  *      ref's `freeCastSource` (already `${featId}:${spellId}` at pick time), so
  *      resolved from `character.spells`, not from a grant.
@@ -2996,6 +3185,12 @@ interface FeatFreeCastSpec {
   rest: "short" | "long";
 }
 
+type TrackerBackedFreeCast = Extract<FreeCastEntry, { payment: { kind: "tracker" } }>;
+
+function isTrackerBackedFreeCast(entry: FreeCastEntry): entry is TrackerBackedFreeCast {
+  return entry.payment.kind === "tracker";
+}
+
 function forEachFeatFreeCast(
   character: CharacterDoc,
   cb: (spec: FeatFreeCastSpec) => void
@@ -3004,26 +3199,41 @@ function forEachFeatFreeCast(
   const level = totalLevel(charData);
   const seen = new Set<string>();
 
-  // (a) Fixed free-cast-spell grants on MULTI-free-cast sources only — feats,
-  //     class features, species traits whose tracker we replace with per-spell
-  //     rows. A SINGLE-free-cast source keeps its own `mechanics.tracker` (bare
-  //     key), so it is NOT re-emitted here (that would phantom-duplicate it).
-  for (const source of [
+  // (a) Every selected per-spell tracker-backed grant. Evaluating the sources is
+  // the same descent used by cast options, so a free cast inside a selected
+  // lineage bundle cannot be castable yet invisible from the resource rail.
+  const sources = [
     ...resolveGrantSourcesForFeatures(charData.features),
     ...resolveGrantSourcesForRace(charData.race),
-  ]) {
-    if (source.ref?.kind === "magic-item") continue;
-    if (countTopLevelFreeCasts(source.grants) < 2) continue;
-    for (const g of source.grants ?? []) {
-      if (g.type !== "free-cast-spell") continue;
-      if (g.minLevel != null && level < g.minLevel) continue;
-      const id = `${source.id}:${g.spellId}`;
-      if (seen.has(id)) continue;
-      const total = resolveChargesFormula(g.chargesFormula, g.chargesPerRest, character);
-      if (total <= 0) continue;
-      seen.add(id);
-      cb({ id, sourceId: source.id, spellId: g.spellId, total, rest: g.rest });
-    }
+  ];
+  const freeCasts = evaluateGrants(
+    sources,
+    new Set(character.session.activeFeatures ?? []),
+    new Map(Object.entries(character.session.grantBundleChoices ?? {}))
+  ).freeCasts;
+  for (const entry of freeCasts) {
+    if (!isTrackerBackedFreeCast(entry)) continue;
+    if (entry.minLevel != null && level < entry.minLevel) continue;
+    const id = entry.payment.trackerId;
+    const suffix = `:${entry.spellId}`;
+    // Bare ids remain owned by their source's normal tracker. Only explicitly
+    // per-spell addresses get a derived spell-labelled row.
+    if (!id.endsWith(suffix) || seen.has(id)) continue;
+    const total = resolveChargesFormula(
+      entry.chargesFormula,
+      entry.chargesPerRest,
+      character,
+      entry.capacityByLevel
+    );
+    if (total <= 0) continue;
+    seen.add(id);
+    cb({
+      id,
+      sourceId: id.slice(0, -suffix.length),
+      spellId: entry.spellId,
+      total,
+      rest: entry.rest,
+    });
   }
 
   // (b) Chosen free-cast spells (the player's pick). Only the MULTI case is a
@@ -4458,7 +4668,12 @@ interface ActionResolveCtx {
   pinnedSet: Set<string>;
   /** Ids the player explicitly unpinned (default-pinned rows hidden when present). */
   unpinnedSet: Set<string>;
+  /** Combat omits non-turn casts and unprepared spellbook rows; the spellbook
+   * scope retains them so its Cast CTA resolves through this same action model. */
+  scope: ActionResolveScope;
 }
+
+export type ActionResolveScope = "combat" | "spellbook";
 
 /**
  * Extract all combat actions for a character.
@@ -4470,7 +4685,10 @@ interface ActionResolveCtx {
  * ORDER are preserved — consumers and the smart-tracker test suite must not
  * notice the internal decomposition (docs/ARCHITECTURE.md).
  */
-export function resolveActions(character: CharacterDoc): RawResolvedAction[] {
+export function resolveActions(
+  character: CharacterDoc,
+  scope: ActionResolveScope = "combat"
+): RawResolvedAction[] {
   const { character: charData, session } = character;
   const level = totalLevel(charData);
   const ctx: ActionResolveCtx = {
@@ -4484,6 +4702,7 @@ export function resolveActions(character: CharacterDoc): RawResolvedAction[] {
     exPenalty: exhaustionPenalty(session.exhaustion),
     pinnedSet: new Set(session.pinnedActions),
     unpinnedSet: new Set(session.unpinnedActions ?? []),
+    scope,
   };
   // Dedup by STABLE action id (golden rule 7 — never by display string). An
   // action id (`<featureId>-<type>` / `spell-<id>` / `weapon-<id>` …) uniquely
@@ -4868,6 +5087,7 @@ function resolveEquipmentActions(
         name: srdText("equipment", item.id, "name"),
         description: srdText("equipment", item.id, "description"),
         type: action.type,
+        ...effectProgramRoute(action.effectProgram),
         ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
         ...actionTurnConstraints(action),
         source: "feature",
@@ -5207,6 +5427,7 @@ function resolveFeatureActions(
         id,
         name: actionName,
         type: action.type,
+        ...effectProgramRoute(action.effectProgram),
         source: "feature",
         spellLevel: null,
         concentration: false,
@@ -5334,6 +5555,7 @@ function resolveFeatureActions(
           id,
           name: raceTraitLoc(raceForActions.id, trait, "name"),
           type: action.type,
+          ...effectProgramRoute(action.effectProgram),
           source: "feature",
           spellLevel: null,
           concentration: false,
@@ -5400,6 +5622,7 @@ function resolveFeatureActions(
           id,
           name: srdText("invocation", inv.id, "name"),
           type: action.type,
+          ...effectProgramRoute(action.effectProgram),
           source: "feature",
           spellLevel: null,
           concentration: false,
@@ -5460,7 +5683,7 @@ function resolveSpellActions(
   // reach the combat cards too — previously features+invocations only.
   const activeFeatureKeys = new Set(session.activeFeatures ?? []);
   const spellGrantAggregate = evaluateGrants(
-    resolveAllGrantSources(charData),
+    resolveAllGrantSources(charData, session.itemResources),
     activeFeatureKeys,
     new Map(Object.entries(session.grantBundleChoices ?? {}))
   );
@@ -5525,7 +5748,11 @@ function resolveSpellActions(
   // expanded spells, species legacy spells like Tiefling Fire Bolt, etc.) — so a
   // granted/inferred spell is castable even when it was never written into
   // `spells[]` (minimal representation; imported docs). Deduped by srd id.
-  for (const spellRef of resolveEffectiveSpells(charData, character.session)) {
+  const customActionIds = new Set<string>();
+  for (const [spellIndexInBook, spellRef] of resolveEffectiveSpells(
+    charData,
+    character.session
+  ).entries()) {
     const srdId = "custom" in spellRef ? undefined : spellRef.srdId;
     const spell = srdId ? spellIndex.get(srdId) : undefined;
 
@@ -5534,6 +5761,7 @@ function resolveSpellActions(
       const customSpell = spellRef;
       // Unprepared homebrew spell on a prepared caster → not castable in combat.
       if (
+        ctx.scope === "combat" &&
         !isSpellCombatCastable({
           level: customSpell.level,
           preparedCaster,
@@ -5542,10 +5770,11 @@ function resolveSpellActions(
       ) {
         continue;
       }
+      const customCastTiming = classifySpellCastingTime(customSpell.castingTime);
+      if (ctx.scope === "combat" && customCastTiming === "extended") continue;
+      const customActionType: ActionType =
+        customCastTiming === "extended" ? "free" : customCastTiming;
       const ct = customSpell.castingTime.toLowerCase();
-      let customActionType: ActionType = "action";
-      if (ct.includes("bonus")) customActionType = "bonus";
-      else if (ct.includes("reaction")) customActionType = "reaction";
 
       // Custom (homebrew) spells carry single user strings (no translation).
       const customSummary: RawActionSummary = {};
@@ -5571,12 +5800,20 @@ function resolveSpellActions(
         }
       }
 
-      const customSpellId = `custom-spell-${customSpell.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+      const customBaseId = `custom-spell-${customSpell.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")}`;
+      const customSpellId = customActionIds.has(customBaseId)
+        ? `${customBaseId}--${spellIndexInBook}`
+        : customBaseId;
+      customActionIds.add(customSpellId);
       actions.push({
         id: customSpellId,
         name: customText(customSpell.name),
         type: customActionType,
         source: "spell",
+        customSpellIndex: spellIndexInBook,
+        castTiming: customCastTiming,
         spellLevel: customSpell.level,
         concentration: customSpell.concentration,
         summary: customSummary,
@@ -5595,6 +5832,7 @@ function resolveSpellActions(
     // Cantrips, always-prepared grants, Spell Mastery / Signature picks, and
     // free-cast spells all stay castable (see `isSpellCombatCastable`).
     if (
+      ctx.scope === "combat" &&
       !isSpellCombatCastable({
         level: spell.level,
         preparedCaster,
@@ -5607,6 +5845,9 @@ function resolveSpellActions(
     ) {
       continue;
     }
+
+    const castTiming = classifySpellCastingTime(spell.castingTime);
+    if (ctx.scope === "combat" && castTiming === "extended") continue;
 
     // Per-spell casting ability (MULTICLASS RAW + feat/species pins). A
     // Cleric / Wizard's Guiding Bolt uses WIS, their Fireball INT — derived from
@@ -5664,11 +5905,10 @@ function resolveSpellActions(
         )
       : atkBonus;
 
-    // Determine action type from casting time
-    let actionType: ActionType = "action";
-    const castTime = spell.castingTime.toLowerCase();
-    if (castTime.includes("bonus")) actionType = "bonus";
-    else if (castTime.includes("reaction")) actionType = "reaction";
+    // Extended casts exist on the spellbook surface but claim no turn-economy
+    // slot. Combat scope omits them above; `free` is only the compatible action
+    // shape for the shared transaction API, not a claim that hours are instant.
+    const actionType: ActionType = castTiming === "extended" ? "free" : castTiming;
 
     // Build structured summary
     const summary: RawActionSummary = {};
@@ -6084,7 +6324,9 @@ function resolveSpellActions(
       id: `spell-${spell.id}`,
       name: srdText("spell", spell.id, "name"),
       type: actionType,
+      ...effectProgramRoute(spell.effectProgram),
       source: "spell",
+      castTiming,
       spellLevel: spell.level,
       spellId: spell.id,
       concentration: spell.concentration,
@@ -7327,7 +7569,7 @@ export function gainsHeroicInspirationOnLongRest(character: CharacterDoc): boole
   // consumer. `resolveAllGrantSources` is the same fan-in the other CharacterDoc
   // consumers (`resolveActiveMaintainedEffects`) already use.
   return evaluateGrants(
-    resolveAllGrantSources(character.character),
+    resolveAllGrantSources(character.character, character.session.itemResources),
     new Set(character.session.activeFeatures ?? []),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   ).heroicInspirationOnLongRest;
@@ -7350,7 +7592,7 @@ export function gainsHeroicInspirationOnLongRest(character: CharacterDoc): boole
  */
 function combatAbilityScores(character: CharacterDoc): Record<AbilityCode, number> {
   const agg = evaluateGrants(
-    resolveAllGrantSources(character.character),
+    resolveAllGrantSources(character.character, character.session.itemResources),
     new Set(character.session.activeFeatures ?? []),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   );
@@ -7511,7 +7753,7 @@ export type ActiveStateBlocker = "heavy-armor" | "incapacitated";
  * deterministic expiry. Callers dedupe by active key. */
 function resolveLifecycleGrantSources(character: CharacterDoc): GrantSource[] {
   return [
-    ...resolveAllGrantSources(character.character),
+    ...resolveAllGrantSources(character.character, character.session.itemResources),
     ...resolveGrantSourcesForSpellLifecycles(character.character.spells),
   ];
 }
@@ -7549,14 +7791,15 @@ export function resolveActiveStatesEndingOn(
   const ended = new Set<string>();
   for (const source of resolveLifecycleGrantSources(character)) {
     for (const grant of source.grants ?? []) {
+      if (grant.type !== "while-active") continue;
+      const activeKey = resolveGrantActiveKey(source, grant.activeKey);
       if (
-        grant.type === "while-active" &&
-        active.has(grant.activeKey) &&
+        active.has(activeKey) &&
         grant.duration !== undefined &&
         "endsEarlyOn" in grant.duration &&
         grant.duration.endsEarlyOn?.includes(trigger)
       ) {
-        ended.add(grant.activeKey);
+        ended.add(activeKey);
       }
     }
   }
@@ -7575,17 +7818,19 @@ export function resolveActiveStatesEndingOnRest(
   const ended = new Set<string>();
   for (const source of resolveLifecycleGrantSources(character)) {
     for (const grant of source.grants ?? []) {
-      if (grant.type !== "while-active" || !active.has(grant.activeKey)) continue;
+      if (grant.type !== "while-active") continue;
+      const activeKey = resolveGrantActiveKey(source, grant.activeKey);
+      if (!active.has(activeKey)) continue;
       const duration = whileActiveDurationAtCastLevel(
         grant.duration,
-        character.session.activeSpellCastLevels?.[grant.activeKey]
+        character.session.activeSpellCastLevels?.[activeKey]
       );
       if (
         duration?.kind === "maintained" ||
         duration?.kind === "turn-boundary" ||
         (duration?.kind === "timed" && duration.minutes <= restMinutes)
       ) {
-        ended.add(grant.activeKey);
+        ended.add(activeKey);
       }
     }
   }
@@ -7618,10 +7863,11 @@ export function resolveActiveMaintainedEffects(
   for (const source of resolveLifecycleGrantSources(character)) {
     for (const g of source.grants ?? []) {
       if (g.type !== "while-active" || g.duration?.kind !== "maintained") continue;
-      if (!active.has(g.activeKey) || seen.has(g.activeKey)) continue;
-      seen.add(g.activeKey);
+      const activeKey = resolveGrantActiveKey(source, g.activeKey);
+      if (!active.has(activeKey) || seen.has(activeKey)) continue;
+      seen.add(activeKey);
       out.push({
-        activeKey: g.activeKey,
+        activeKey,
         sourceId: source.id,
         maintainedBy: g.duration.maintainedBy,
         ...(g.duration.maxMinutes !== undefined
@@ -7691,16 +7937,17 @@ export function resolveActiveBoundaryEffects(
   const out: ActiveBoundaryEffect[] = [];
   for (const source of resolveLifecycleGrantSources(character)) {
     for (const grant of source.grants ?? []) {
+      if (grant.type !== "while-active") continue;
+      const activeKey = resolveGrantActiveKey(source, grant.activeKey);
       if (
-        grant.type !== "while-active" ||
         grant.duration?.kind !== "turn-boundary" ||
-        !active.has(grant.activeKey) ||
-        seen.has(grant.activeKey)
+        !active.has(activeKey) ||
+        seen.has(activeKey)
       )
         continue;
-      seen.add(grant.activeKey);
+      seen.add(activeKey);
       out.push({
-        activeKey: grant.activeKey,
+        activeKey,
         sourceId: source.id,
         phase: grant.duration.phase,
         turns: grant.duration.turns,
@@ -7727,15 +7974,16 @@ export function resolveActiveTimedEffects(character: CharacterDoc): ActiveTimedE
   for (const source of resolveLifecycleGrantSources(character)) {
     for (const g of source.grants ?? []) {
       if (g.type !== "while-active") continue;
-      if (!active.has(g.activeKey) || seen.has(g.activeKey)) continue;
+      const activeKey = resolveGrantActiveKey(source, g.activeKey);
+      if (!active.has(activeKey) || seen.has(activeKey)) continue;
       const duration = whileActiveDurationAtCastLevel(
         g.duration,
-        character.session.activeSpellCastLevels?.[g.activeKey]
+        character.session.activeSpellCastLevels?.[activeKey]
       );
       if (duration?.maxRounds === undefined) continue;
-      seen.add(g.activeKey);
+      seen.add(activeKey);
       out.push({
-        activeKey: g.activeKey,
+        activeKey,
         sourceId: source.id,
         maxRounds: duration.maxRounds,
       });
@@ -8234,7 +8482,7 @@ export function resolveAtZeroHpInterrupts(character: CharacterDoc): AtZeroHpInte
   // lives in `character.features` — so resolve over the FULL grant sources
   // (race + feats + features + …), mirroring `gainsHeroicInspirationOnLongRest`.
   const interrupts = evaluateGrants(
-    resolveAllGrantSources(character.character),
+    resolveAllGrantSources(character.character, character.session.itemResources),
     new Set(character.session.activeFeatures ?? []),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   ).atZeroHpInterrupts;
@@ -8281,12 +8529,13 @@ export function applyShortRestExhaustion(character: CharacterDoc): number {
 /** A single way to pay for an action — the primary cost or a declared alternate. */
 export interface ActionCostOption {
   kind: "primary" | "alternate";
-  cost: CostSpec;
+  cost: CostSpec | ({ kind: "item-resource"; amount: number } & ItemResourceIdentity);
 }
 
 /**
  * Enumerate every way the player may pay for a resolved action — the primary
- * cost (a spell slot, a tracker spend, or an equipment charge, in that priority)
+ * cost (a spell slot, an exact physical-item resource, a tracker spend, or an
+ * equipment charge, in that priority)
  * plus any declared `alternateCost` (Wild Companion: slot OR Wild Shape). Each
  * is a cost-engine `CostSpec` ready for `planCommit`. An at-will action with no
  * cost yields no options (combat auto-commits). Override-first — the alternate
@@ -8299,11 +8548,23 @@ export function getActionCostOptions(
 ): ActionCostOption[] {
   const options: ActionCostOption[] = [];
 
-  // Primary cost: slot ▸ tracker ▸ equipment (the first that applies).
+  // Primary cost: slot ▸ exact item resource ▸ tracker ▸ equipment.
   if (action.costsSlot) {
     options.push({
       kind: "primary",
       cost: { kind: "spell-slot", minLevel: action.slotLevel ?? 1 },
+    });
+  } else if (action.resourcePayment) {
+    options.push({
+      kind: "primary",
+      cost: {
+        kind: "item-resource",
+        itemId: action.resourcePayment.itemId,
+        instanceId: action.resourcePayment.instanceId,
+        resourceId: action.resourcePayment.resourceId,
+        key: action.resourcePayment.key,
+        amount: action.resourceCost ?? 1,
+      },
     });
   } else if (action.costTracker) {
     options.push({

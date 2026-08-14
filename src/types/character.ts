@@ -842,7 +842,7 @@ export interface ItemResourceCounterState {
 
 export interface ItemResourceLogicalState {
   resources: Record<string, ItemResourceCounterState>;
-  disposition: "magical" | "nonmagical";
+  disposition: "magical" | "nonmagical" | "destroyed";
   /** Compact causal stack head; semantic reverts restore the prior head. */
   causalHead: string | null;
 }
@@ -916,7 +916,7 @@ export interface ItemResourceState {
   instanceId: string;
   revision: number;
   resources: Record<string, ItemResourceCounterState>;
-  disposition: "magical" | "nonmagical";
+  disposition: "magical" | "nonmagical" | "destroyed";
   causalHead: string | null;
   lastTransition?: ItemResourceLastTransition;
 }

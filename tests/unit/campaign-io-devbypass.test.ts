@@ -77,6 +77,7 @@ describe("campaign-io under dev bypass", () => {
   it("fresh-reads and updates an offline PC in the local combat replica", async () => {
     const campaign = makeDevCampaign();
     campaign.encounter = {
+      nextMonsterOrdinal: 1,
       round: 2,
       currentCombatantId: "pc-b",
       epoch: 1,
@@ -182,6 +183,7 @@ describe("campaign-io under dev bypass", () => {
       duration: { kind: "encounter" },
     };
     campaign.encounter = {
+      nextMonsterOrdinal: 1,
       round: 1,
       currentCombatantId: "pc-b",
       order: ["pc-b", "pc-a"],
@@ -263,7 +265,7 @@ describe("campaign-io under dev bypass", () => {
     const held: ActiveCombatEffect = {
       id: "hold:offline",
       actor: caster,
-      target: { kind: "monster", combatantId: "goblin" },
+      target: { kind: "monster", combatantId: "monster-1" },
       source: { kind: "spell", id: "hold-person", actionId: "cast-hold" },
       payload: { kind: "condition", conditionId: "paralyzed" },
       duration: {
@@ -273,9 +275,10 @@ describe("campaign-io under dev bypass", () => {
       },
     };
     campaign.encounter = {
+      nextMonsterOrdinal: 2,
       round: 1,
       currentCombatantId: attacker.id,
-      order: [attacker.id, caster.combatantId, "goblin"],
+      order: [attacker.id, caster.combatantId, "monster-1"],
       epoch: 1,
       status: "active",
       combatants: [
@@ -283,13 +286,12 @@ describe("campaign-io under dev bypass", () => {
         { kind: "pc", id: caster.combatantId, memberUid: "a", characterId: "char-a" },
         {
           kind: "monster",
-          id: "goblin",
+          id: "monster-1",
           name: "Goblin",
           ac: 12,
           initiative: 8,
           conditions: [],
-          maxHp: 7,
-          tokens: [7],
+          hp: { current: 7, temp: 0, max: 7 },
         },
       ],
       effectOps: [{ id: "apply:hold", kind: "apply", effect: held }],
@@ -339,50 +341,54 @@ describe("campaign-io under dev bypass", () => {
     const campaign = makeDevCampaign();
     const haste: ActiveCombatEffect = {
       id: "haste:dev",
-      actor: { kind: "monster", combatantId: "caster" },
-      target: { kind: "monster", combatantId: "target" },
+      actor: { kind: "monster", combatantId: "monster-1" },
+      target: { kind: "monster", combatantId: "monster-2" },
       source: { kind: "spell", id: "haste", actionId: "cast-haste" },
       payload: { kind: "grant-group", activeKey: "spell-haste" },
       duration: {
         kind: "turn-boundary",
-        combatantId: "target",
+        combatantId: "monster-2",
         round: 1,
         phase: "turn-start",
       },
     };
     campaign.encounter = {
+      nextMonsterOrdinal: 3,
       round: 1,
-      currentCombatantId: "caster",
-      order: ["caster", "target"],
+      currentCombatantId: "monster-1",
+      order: ["monster-1", "monster-2"],
       epoch: 1,
       status: "active",
       combatants: [
         {
           kind: "monster",
-          id: "caster",
+          id: "monster-1",
           name: "Caster",
           ac: 12,
           initiative: 10,
           conditions: [],
-          maxHp: 20,
-          tokens: [20],
+          hp: { current: 20, temp: 0, max: 20 },
         },
         {
           kind: "monster",
-          id: "target",
+          id: "monster-2",
           name: "Target",
           ac: 12,
           initiative: 9,
           conditions: [],
-          maxHp: 20,
-          tokens: [20],
+          hp: { current: 20, temp: 0, max: 20 },
         },
       ],
       effectOps: [{ id: "apply:haste", kind: "apply", effect: haste }],
     };
     useCampaignStore.setState({ campaign });
 
-    await advanceEncounterTurn(campaign.id, "next", { uid: "dm", isDm: true }, "caster");
+    await advanceEncounterTurn(
+      campaign.id,
+      "next",
+      { uid: "dm", isDm: true },
+      "monster-1"
+    );
 
     const effectOps = useCampaignStore.getState().campaign?.encounter?.effectOps ?? [];
     expect(effectOps).toContainEqual(
@@ -420,8 +426,8 @@ describe("campaign-io under dev bypass", () => {
     const campaign = makeDevCampaign();
     const active = (id: string): ActiveCombatEffect => ({
       id,
-      actor: { kind: "monster", combatantId: "caster" },
-      target: { kind: "monster", combatantId: "target" },
+      actor: { kind: "monster", combatantId: "monster-1" },
+      target: { kind: "monster", combatantId: "monster-2" },
       source: { kind: "spell", id: "heroism", actionId: "cast" },
       payload: { kind: "grant-group", activeKey: "heroism-active" },
       duration: { kind: "encounter" },
@@ -431,6 +437,7 @@ describe("campaign-io under dev bypass", () => {
       { id: "apply:two", kind: "apply", effect: active("two") },
     ];
     campaign.encounter = {
+      nextMonsterOrdinal: 1,
       round: 1,
       currentCombatantId: null,
       epoch: 1,
@@ -441,7 +448,7 @@ describe("campaign-io under dev bypass", () => {
     useCampaignStore.setState({ campaign });
 
     await revokePersistentCombatEffectsBySource(campaign.id, {
-      actorId: "caster",
+      actorId: "monster-1",
       sourceId: "heroism",
     });
 
@@ -458,6 +465,7 @@ describe("campaign-io under dev bypass", () => {
   it("validates persistent-effect participants in dev bypass too", async () => {
     const campaign = makeDevCampaign();
     campaign.encounter = {
+      nextMonsterOrdinal: 3,
       round: 1,
       currentCombatantId: "pc-u1",
       epoch: 1,
@@ -466,13 +474,21 @@ describe("campaign-io under dev bypass", () => {
         { kind: "pc", id: "pc-u1", memberUid: "u1", characterId: "char-u1" },
         {
           kind: "monster",
-          id: "goblins",
-          name: "Goblin",
+          id: "monster-1",
+          name: "Goblin 1",
           ac: 13,
           initiative: 8,
           conditions: [],
-          maxHp: 7,
-          tokens: [7, 7],
+          hp: { current: 7, temp: 0, max: 7 },
+        },
+        {
+          kind: "monster",
+          id: "monster-2",
+          name: "Goblin 2",
+          ac: 13,
+          initiative: 8,
+          conditions: [],
+          hp: { current: 7, temp: 0, max: 7 },
         },
       ],
     };
@@ -485,7 +501,7 @@ describe("campaign-io under dev bypass", () => {
         memberUid: "u1",
         characterId: "char-u1",
       },
-      target: { kind: "monster", combatantId: "goblins", tokenIndex: 1 },
+      target: { kind: "monster", combatantId: "monster-2" },
       source: { kind: "spell", id: "ward", actionId: "cast" },
       payload: { kind: "grant-group", activeKey: "ward-active" },
       duration: { kind: "encounter" },
@@ -512,8 +528,9 @@ describe("campaign-io under dev bypass", () => {
     await expect(
       appendPersistentCombatEffect(campaign.id, {
         ...valid,
-        id: "ward:bad-token",
-        target: { kind: "monster", combatantId: "goblins", tokenIndex: 2 },
+        id: "ward:missing-target",
+        // One combatant per creature: a target must exist at the table.
+        target: { kind: "monster", combatantId: "monster-3" },
       })
     ).rejects.toThrow("Combat effect participant mismatch");
   });
@@ -521,6 +538,7 @@ describe("campaign-io under dev bypass", () => {
   it("a condition cure removes both the manual layer and every source-owned occurrence", async () => {
     const campaign = makeDevCampaign();
     campaign.encounter = {
+      nextMonsterOrdinal: 2,
       round: 1,
       currentCombatantId: "pc-u1",
       epoch: 1,
@@ -534,8 +552,7 @@ describe("campaign-io under dev bypass", () => {
           ac: 12,
           initiative: 8,
           conditions: ["paralyzed"],
-          maxHp: 9,
-          tokens: [9],
+          hp: { current: 9, temp: 0, max: 9 },
         },
       ],
     };

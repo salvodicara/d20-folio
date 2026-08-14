@@ -15,7 +15,12 @@ import type {
   TrackerState,
 } from "@/types/character";
 import type { CombatEvent } from "@/types/combat-log";
-import type { CombatState, CombatPersistence, RecentAttack } from "@/types/combat-state";
+import type {
+  CombatState,
+  CombatPersistence,
+  PendingConcentrationSave,
+  RecentAttack,
+} from "@/types/combat-state";
 import {
   applyCombatToSession,
   sessionToCombatState,
@@ -48,23 +53,15 @@ import {
 import { getBeast } from "@/data/beasts";
 import { FIND_FAMILIAR_SPELL_ID, type FamiliarCreatureType } from "@/lib/familiar-ids";
 import { concentrationValue } from "@/lib/concentration";
-import {
-  concentrationSaveDc,
-  effectiveAbilityScores,
-  resolveConcentrationSaveBonus,
-  resolveSaveBonus,
-  savingThrowBonus,
-} from "@/lib/compute";
+import { concentrationSaveDc } from "@/lib/compute";
 import {
   aggregateCharacterGrants,
   activeKeysForConcentration,
+  effectiveAC,
   effectiveMaxHp,
 } from "@/lib/aggregate-character";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
-import {
-  conditionBreaksConcentration,
-  hasConcentrationSaveAdvantage,
-} from "@/lib/condition-effects";
+import { conditionBreaksConcentration } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { evaluateGrants } from "@/lib/grants";
 import { slotUsageKey } from "@/lib/cast-options";
@@ -78,12 +75,70 @@ import {
 import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast, useUndoStore } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
-import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
+import type {
+  ActiveCombatEffect,
+  CombatantRef,
+  CombatEffectOp,
+} from "@/types/combat-effect";
 import {
+  conformCombatEffectOps,
   endedEffectSuccessor,
+  foldCombatEffectOps,
   isEffectActiveAtEncounterPosition,
   mergeActiveCombatEffects,
 } from "@/lib/combat-effects";
+import {
+  applyResourceOperation,
+  isValidItemInstanceId,
+  type ItemResourceOperation,
+  type ResourceApplyResult,
+  type ResourceItemBinding,
+  type ResourceItemSpec,
+} from "@/lib/resources";
+import {
+  simulateItemResourceOperations,
+  type ItemResourceOperationBatchResult,
+  type ItemResourceOperationEntry,
+} from "@/lib/item-resource-boundaries";
+import {
+  applyMechanicsPlanToCharacter,
+  type MechanicsPlan,
+  type MechanicsReceipt,
+} from "@/lib/mechanics-command";
+import {
+  canCharacterRest,
+  DEATH_FAIL_LIMIT,
+  DEATH_SUCCESS_LIMIT,
+  isCharacterAlive,
+  stabilisedInPlay,
+} from "@/lib/character-status";
+import {
+  concentrationSaveD20Context,
+  resolveCharacterConcentrationSave,
+  resolveCharacterDeathSave,
+  type CharacterEnteredD20Result,
+} from "@/lib/character-d20-tests";
+import { parsePersistedPlayStateV1 } from "@/lib/session-state-codec";
+
+export type MechanicsPlanCommitResult =
+  | { status: "applied"; receipt: MechanicsReceipt }
+  | {
+      status: "rejected";
+      reason:
+        | "readonly"
+        | "character-missing"
+        | "character-mismatch"
+        | "owner-missing"
+        | "stale-plan"
+        | "invalid-plan";
+    };
+
+/** Result of one entered-D20 command. Its inverse is a whole-command CAS: it
+ * restores exactly this command's state, or fails closed after any later edit. */
+export interface D20TestCommitResult {
+  result: CharacterEnteredD20Result;
+  undo: () => boolean;
+}
 
 /**
  * Hard cap on the PERSISTED/synced log array. The log is append-only and never
@@ -181,10 +236,24 @@ interface CharacterState {
    * {@link declareAttack}. Empty outside a live encounter.
    */
   combatRecentActions: RecentAttack[];
-  /** Character-owned effect occurrences persisted in the combat subdoc. */
+  /** Effective local effects consumed by the sheet: legacy occurrences plus the
+   * authored ledger fold. This derived array is never persisted as a whole. */
   combatActiveEffects: ActiveCombatEffect[];
+  /** Legacy source-owned occurrences persisted in `CombatState.activeEffects`. */
+  combatLegacyActiveEffects: ActiveCombatEffect[];
+  /** Authored program occurrence ledger persisted in `CombatState.effectOps`. */
+  combatEffectOps: CombatEffectOp[];
+  /** Exact authored program cursors persisted beside the local occurrence ledger. */
+  combatEffectLifecycles: NonNullable<CombatState["effectLifecycles"]>;
+  /** Outer action CAS facts. These are physical-document metadata, not SessionState,
+   * and every ordinary whole play-state write must preserve them byte-for-byte. */
+  combatActionRevision: number;
+  combatActionHead: string | null;
+  combatActionLifecycles: NonNullable<CombatState["actionLifecycles"]>;
   combatAppliedEncounterEffects: CombatState["appliedEncounterEffects"];
   combatTurnEconomy: CombatState["turnEconomy"];
+  /** Durable FIFO of one unresolved save per landed damage packet. */
+  combatPendingConcentrationSaves: PendingConcentrationSave[];
   /** Campaign-owned effects currently projected onto one character id. */
   encounterEffectProjection: {
     characterId: string;
@@ -202,11 +271,23 @@ interface CharacterState {
   applySoloCombatEffects: (
     effects: ReadonlyArray<ActiveCombatEffect>
   ) => (() => void) | null;
+  /** Atomically replace the authored ledger and its derived effective projection.
+   * Returns false when read-only, unloaded, or causally malformed. */
+  replaceCombatEffectOps: (effectOps: ReadonlyArray<CombatEffectOp>) => boolean;
   /** Inject (or clear) the combat-state persistence seam — the subscription lifecycle. */
   setCombatPersistence: (persistence: CombatPersistence | null) => void;
+  /** Persist the current complete play owner through the injected seam. */
+  persistPlayState: () => void;
   setParentPersistenceFlush: (flush: (() => void) | null) => void;
   /** T4 — load a sheet in read-only mode (DM viewing a member's character). */
   loadReadonly: (doc: CharacterDoc | null) => void;
+  /** Atomically publish one parent + play-state pair. Marked v1 parents are never
+   * exposed to consumers before their complete child has passed hydration. */
+  loadCharacterWithCombat: (
+    doc: CharacterDoc,
+    combat: CombatState | null,
+    readonly: boolean
+  ) => boolean;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
 
@@ -282,7 +363,10 @@ interface CharacterState {
    *    death-save failure (`opts.crit` → two), ends a Stable state (the saves
    *    restart), and is instant death when it reaches the effective max.
    *    A no-op once dead (3 failures).
-   *  - Healing from 0 (`setHP`) clears the track AND the Unconscious condition.
+   *  - The explicit `setHP` override can clear the track and Unconscious condition;
+   *    ordinary healing cannot revive a dead character.
+   * Returns a causal whole-owner inverse when a positive safe-integer packet
+   * commits; the inverse rejects any intervening character/combat-state change.
    */
   applyDamage: (
     amount: number,
@@ -290,13 +374,13 @@ interface CharacterState {
       crit?: boolean;
       hit?: { attacker: CombatantRef | null; attackMode?: "melee" | "ranged" };
     }
-  ) => void;
+  ) => (() => boolean) | null;
   /**
    * Apply healing: raise current HP by `amount` (clamped to max). The dedicated
    * healing seam (mirror of {@link applyDamage}) — used by the HP control's heal
    * action so the combat log gets ONE structured `hp-heal` event from the store,
    * not a low-level `setHP` (which also serves rest/undo/level-up and must stay
-   * log-free). No-op for a non-positive amount. */
+   * log-free). No-op for a non-positive amount or a dead character. */
   applyHealing: (amount: number) => void;
   /**
    * Gain temporary HP: set the temp pool to `max(current, amount)` (temp HP don't
@@ -334,6 +418,8 @@ interface CharacterState {
   restoreSpellSlot: (level: number, pactMagic?: boolean) => void;
   useTracker: (trackerId: string, amount?: number) => void;
   restoreTracker: (trackerId: string, amount?: number) => void;
+  /** Commit one preflighted mechanics plan as a single whole-character CAS. */
+  applyMechanicsPlan: (plan: MechanicsPlan) => MechanicsPlanCommitResult;
   /** Record or clear one table-rolled value in an available tracker slot. */
   setTrackerRoll: (trackerId: string, index: number, value: number | null) => void;
   /** Spend one exact recorded value and return an inverse restoring it. */
@@ -342,6 +428,22 @@ interface CharacterState {
   topUpTracker: (trackerId: string, upTo: number | "full") => (() => void) | null;
   /** Refresh every pool scoped to a newly-started active state; returns exact undo. */
   refreshTrackersOnActivation: (activeKey: string) => (() => void) | null;
+  /**
+   * Apply one typed item-resource whole-state CAS. The caller supplies the exact
+   * catalogue spec, physical binding, and planned operation; the store owns only
+   * the resulting session state and never resolves mechanics from prose or ids.
+   */
+  applyItemResourceOperation: (
+    item: ResourceItemSpec,
+    binding: ResourceItemBinding,
+    operation: ItemResourceOperation
+  ) => ResourceApplyResult;
+  /** Validate and commit a prepared item-resource batch as one whole-state CAS. */
+  applyItemResourceOperations: (
+    entries: readonly ItemResourceOperationEntry[]
+  ) => ItemResourceOperationBatchResult;
+  /** Remove one physical equipment ref and its whole resource state atomically. */
+  removeItemResourceInstance: (instanceId: string) => boolean;
   /** Decrement a tracked equipment item by 1; removes the entry entirely when quantity hits 0. */
   useEquipmentItem: (equipmentKey: string) => void;
   /**
@@ -355,7 +457,13 @@ interface CharacterState {
   adjustEquipmentQuantity: (srdId: string, delta: number) => boolean;
   setConcentration: (
     spell: StoredConcentration,
-    opts?: { undoable?: boolean; castLevel?: number; silent?: boolean }
+    opts?: {
+      undoable?: boolean;
+      castLevel?: number;
+      silent?: boolean;
+      /** Internal damage path: a depleted form restores this resolved Temp HP. */
+      retractedFormTempHp?: number;
+    }
   ) => string[];
   addCondition: (
     condition: string,
@@ -382,11 +490,11 @@ interface CharacterState {
    */
   applyHiddenState: (findDc: number) => (() => void) | null;
   /**
-   * Restore the HP-mutation snapshot an undo captured — current/temp HP, the
+   * Restore the simple HP-mutation snapshot an undo captured — current/temp HP, the
    * dying track, and the conditions list — EXACTLY, in one set + one durable
    * combat-state write. Log-free by design (an undo must not mint story beats)
    * and clamp-free (the values came from this same store). The single reverse
-   * seam for the damage-intake / death-save undo paths, closing the
+   * seam for simple healing/override undo paths, closing the
    * persistence hole a raw `updateSession` restore left (the trio lives in the
    * `combat/state` subdoc, which `updateSession` never writes).
    */
@@ -405,6 +513,15 @@ interface CharacterState {
    * Replaces the raw `updateSession({ deathSucc/deathFail })` so the event has a
    * single emission point. */
   setDeathSaves: (successes: number, failures: number) => void;
+  /** Commit a physical Death Save through the universal D20 kernel. Live rules
+   * facts are resolved only after every eligibility check at this boundary. */
+  commitDeathSave: (faces: ReadonlyArray<number>) => D20TestCommitResult | null;
+  /** Resolve the current FIFO Concentration prompt. A stale spell, queue head,
+   * damage/DC pair, or character state is rejected without mutation. */
+  commitPendingConcentrationSave: (
+    pending: PendingConcentrationSave,
+    faces: ReadonlyArray<number>
+  ) => D20TestCommitResult | null;
   /**
    * PLAY-NO-EDIT — add a SESSION defense (a resistance/immunity/vulnerability/
    * condition-immunity gained in play: a potion, a spell, a curse). Layers over
@@ -618,6 +735,19 @@ interface CharacterState {
  */
 const UNCONSCIOUS_CONDITION_ID = "unconscious";
 
+function legacyCombatEffects(
+  effects: ReadonlyArray<ActiveCombatEffect>
+): ActiveCombatEffect[] {
+  return effects.filter((effect) => effect.programOwner === undefined);
+}
+
+function effectiveCombatEffects(
+  legacy: ReadonlyArray<ActiveCombatEffect>,
+  effectOps: ReadonlyArray<CombatEffectOp>
+): ActiveCombatEffect[] {
+  return mergeActiveCombatEffects(legacy, foldCombatEffectOps(effectOps));
+}
+
 function persistCombat(get: () => CharacterState): void {
   const cur = get().character;
   if (!cur) return;
@@ -628,7 +758,15 @@ function persistCombat(get: () => CharacterState): void {
       get().combatRecentActions,
       get().combatAppliedEncounterEffects,
       get().combatTurnEconomy,
-      get().combatActiveEffects
+      get().combatLegacyActiveEffects,
+      get().combatPendingConcentrationSaves,
+      get().combatEffectLifecycles,
+      get().combatEffectOps,
+      {
+        actionRevision: get().combatActionRevision,
+        actionHead: get().combatActionHead,
+        actionLifecycles: get().combatActionLifecycles,
+      }
     )
   );
 }
@@ -663,6 +801,153 @@ function attachEncounterEffects(
   });
 }
 
+type CombatHydrationPatch = Pick<
+  CharacterState,
+  | "character"
+  | "combatRound"
+  | "combatRecentActions"
+  | "combatActiveEffects"
+  | "combatLegacyActiveEffects"
+  | "combatEffectOps"
+  | "combatEffectLifecycles"
+  | "combatActionRevision"
+  | "combatActionHead"
+  | "combatActionLifecycles"
+  | "combatAppliedEncounterEffects"
+  | "combatTurnEconomy"
+  | "combatPendingConcentrationSaves"
+>;
+
+/** Build one complete inbound play-state projection without publishing an
+ * intermediate parent-only character. */
+function projectCombatHydration(
+  character: CharacterDoc,
+  combat: CombatState | null,
+  encounterEffectProjection: CharacterState["encounterEffectProjection"]
+): CombatHydrationPatch | null {
+  const legacyActiveEffects = legacyCombatEffects(combat?.activeEffects ?? []);
+  const effectOps = combat?.effectOps ?? [];
+  const activeEffects = effectiveCombatEffects(legacyActiveEffects, effectOps);
+  const projected = { ...character, session: { ...character.session } };
+  attachEncounterEffects(projected, encounterEffectProjection, activeEffects);
+  let maxSession = projected.session;
+  if (projected.playStateVersion === 1) {
+    if (!combat?.playState) return null;
+    const parsed = parsePersistedPlayStateV1(combat.playState);
+    if (!parsed.ok) return null;
+    maxSession = parsed.session;
+    if (projected.session.encounterEffects) {
+      Object.defineProperty(maxSession, "encounterEffects", {
+        configurable: true,
+        enumerable: false,
+        writable: true,
+        value: projected.session.encounterEffects,
+      });
+    }
+  }
+  const max = effectiveMaxHp(projected.character, maxSession);
+  const hydration = applyCombatToSession(
+    projected.session,
+    combat,
+    max,
+    projected.playStateVersion === 1 ? 1 : "legacy"
+  );
+  if (!hydration.ok) return null;
+  const hydrated = {
+    ...projected,
+    character: {
+      ...projected.character,
+      ac: effectiveAC(projected.character, hydration.session),
+    },
+    session: hydration.session,
+  };
+  const hydratedConcentration = hydrated.session.concentration;
+  const pendingConcentrationSaves =
+    hydrated.session.hp.current > 0 &&
+    isCharacterAlive(hydrated.status, hydrated.session) &&
+    hydratedConcentration !== ""
+      ? (combat?.pendingConcentrationSaves ?? []).filter(
+          (pending) => pending.spell === hydratedConcentration
+        )
+      : [];
+  return {
+    character: hydrated,
+    combatRound: combat?.round ?? 1,
+    combatRecentActions: combat?.recentActions ?? [],
+    combatActiveEffects: activeEffects,
+    combatLegacyActiveEffects: legacyActiveEffects,
+    combatEffectOps: effectOps,
+    combatEffectLifecycles: combat?.effectLifecycles ?? [],
+    combatActionRevision: combat?.actionRevision ?? 0,
+    combatActionHead: combat?.actionHead ?? null,
+    combatActionLifecycles: combat?.actionLifecycles ?? {},
+    combatAppliedEncounterEffects: combat?.appliedEncounterEffects,
+    combatTurnEconomy: combat?.turnEconomy,
+    combatPendingConcentrationSaves: pendingConcentrationSaves,
+  };
+}
+
+interface D20CommandSnapshot {
+  character: CharacterDoc;
+  legacyActiveEffects: ActiveCombatEffect[];
+  effectOps: CombatEffectOp[];
+  pendingConcentrationSaves: PendingConcentrationSave[];
+  encounterEffectProjection: CharacterState["encounterEffectProjection"];
+  damageTakenThisRound: boolean;
+}
+
+function captureD20Command(state: CharacterState): D20CommandSnapshot | null {
+  if (!state.character) return null;
+  return {
+    character: structuredClone(state.character),
+    legacyActiveEffects: structuredClone(state.combatLegacyActiveEffects),
+    effectOps: structuredClone(state.combatEffectOps),
+    pendingConcentrationSaves: structuredClone(state.combatPendingConcentrationSaves),
+    encounterEffectProjection: structuredClone(state.encounterEffectProjection),
+    damageTakenThisRound: useCombatStore.getState().damageTakenThisRound,
+  };
+}
+
+function sameD20CommandSnapshot(
+  left: D20CommandSnapshot | null,
+  right: D20CommandSnapshot
+): boolean {
+  return left !== null && JSON.stringify(left) === JSON.stringify(right);
+}
+
+/** Restore one exact owner-combat receipt only while its post-state is still current. */
+function causalD20CommandUndo(
+  before: D20CommandSnapshot,
+  after: D20CommandSnapshot,
+  get: () => CharacterState
+): () => boolean {
+  return () => {
+    if (!sameD20CommandSnapshot(captureD20Command(get()), after)) return false;
+    const restoredCharacter = structuredClone(before.character);
+    const restoredLegacyEffects = structuredClone(before.legacyActiveEffects);
+    const restoredEffectOps = structuredClone(before.effectOps);
+    const restoredEffects = effectiveCombatEffects(
+      restoredLegacyEffects,
+      restoredEffectOps
+    );
+    const restoredProjection = structuredClone(before.encounterEffectProjection);
+    attachEncounterEffects(restoredCharacter, restoredProjection, restoredEffects);
+    useCharacterStore.setState({
+      character: restoredCharacter,
+      combatActiveEffects: restoredEffects,
+      combatLegacyActiveEffects: restoredLegacyEffects,
+      combatEffectOps: restoredEffectOps,
+      combatPendingConcentrationSaves: structuredClone(before.pendingConcentrationSaves),
+      encounterEffectProjection: restoredProjection,
+    });
+    useCombatStore.setState({ damageTakenThisRound: before.damageTakenThisRound });
+    persistCombat(get);
+    flushParentPersistence(get);
+    void saveLogToIDB(restoredCharacter.id, restoredCharacter.session.logEntries);
+    return true;
+  };
+}
+
 export const useCharacterStore = create<CharacterState>()((set, get) => ({
   character: null,
   loading: false,
@@ -673,8 +958,15 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   combatRound: 1,
   combatRecentActions: [],
   combatActiveEffects: [],
+  combatLegacyActiveEffects: [],
+  combatEffectOps: [],
+  combatEffectLifecycles: [],
+  combatActionRevision: 0,
+  combatActionHead: null,
+  combatActionLifecycles: {},
   combatAppliedEncounterEffects: undefined,
   combatTurnEconomy: undefined,
+  combatPendingConcentrationSaves: [],
   encounterEffectProjection: null,
 
   // The normal owner-edit load path — always clears read-only (so re-entering a
@@ -685,6 +977,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       error: null,
       readonly: false,
       combatActiveEffects: [],
+      combatLegacyActiveEffects: [],
+      combatEffectOps: [],
+      combatEffectLifecycles: [],
+      combatActionRevision: 0,
+      combatActionHead: null,
+      combatActionLifecycles: {},
+      combatPendingConcentrationSaves: [],
     }),
   setEncounterEffects: (characterId, effects = []) => {
     const projection = characterId ? { characterId, effects } : null;
@@ -698,19 +997,81 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly || effects.length === 0) return null;
     const character = get().character;
     if (!character) return null;
-    const previous = get().combatActiveEffects;
-    const next = mergeActiveCombatEffects(previous, effects);
-    set({ combatActiveEffects: next, character: { ...character } });
+    const additions = legacyCombatEffects(effects);
+    if (additions.length === 0) return null;
+    const previous = get().combatLegacyActiveEffects;
+    const nextLegacy = mergeActiveCombatEffects(previous, additions);
+    const next = effectiveCombatEffects(nextLegacy, get().combatEffectOps);
+    set({
+      combatActiveEffects: next,
+      combatLegacyActiveEffects: nextLegacy,
+      character: { ...character },
+    });
     persistCombat(get);
     return () => {
       const current = get().character;
       if (!current) return;
-      set({ combatActiveEffects: previous, character: { ...current } });
+      set({
+        combatActiveEffects: effectiveCombatEffects(previous, get().combatEffectOps),
+        combatLegacyActiveEffects: previous,
+        character: { ...current },
+      });
       persistCombat(get);
     };
   },
-  loadReadonly: (doc) => set({ character: doc, error: null, readonly: true }),
+  replaceCombatEffectOps: (effectOps) => {
+    if (get().readonly || !get().character) return false;
+    const canonical = conformCombatEffectOps(effectOps);
+    if (canonical.length !== effectOps.length) return false;
+    const character = get().character;
+    if (!character) return false;
+    set({
+      combatEffectOps: canonical,
+      combatActiveEffects: effectiveCombatEffects(
+        get().combatLegacyActiveEffects,
+        canonical
+      ),
+      character: { ...character },
+    });
+    persistCombat(get);
+    return true;
+  },
+  loadReadonly: (doc) =>
+    set({
+      character: doc,
+      error: null,
+      readonly: true,
+      combatActiveEffects: [],
+      combatLegacyActiveEffects: [],
+      combatEffectOps: [],
+      combatEffectLifecycles: [],
+      combatActionRevision: 0,
+      combatActionHead: null,
+      combatActionLifecycles: {},
+      combatPendingConcentrationSaves: [],
+    }),
+  loadCharacterWithCombat: (doc, combat, readonly) => {
+    const projection = projectCombatHydration(
+      doc,
+      combat,
+      get().encounterEffectProjection
+    );
+    if (!projection) {
+      set({
+        error:
+          doc.playStateVersion === 1
+            ? combat
+              ? "Invalid play state: invalid-v1-play-state"
+              : "Invalid play state: missing-v1-combat-state"
+            : "Invalid combat state",
+      });
+      return false;
+    }
+    set({ ...projection, error: null, readonly });
+    return true;
+  },
   setCombatPersistence: (persistence) => set({ combatPersistence: persistence }),
+  persistPlayState: () => persistCombat(get),
   setParentPersistenceFlush: (flush) => set({ parentPersistenceFlush: flush }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
@@ -722,26 +1083,26 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // Aid), the same ceiling every write path uses (rule 6 — one source for max).
     // The trio-merge math itself lives ONCE in `applyCombatToSession` (reused by the
     // in-hub party/encounter live read).
-    const activeEffects = combat?.activeEffects ?? [];
-    const projected = { ...character, session: { ...character.session } };
-    attachEncounterEffects(projected, get().encounterEffectProjection, activeEffects);
-    const max = effectiveMaxHp(projected.character, projected.session);
-    const hydrated = {
-      ...projected,
-      session: applyCombatToSession(projected.session, combat, max),
-    };
-    set({
-      character: hydrated,
-      // Mirror the subdoc's SOLO round so a later whole-object write carries it; `1` when
-      // the subdoc is absent (a fresh char) — the turn engine seeds from this on hydrate.
-      combatRound: combat?.round ?? 1,
-      // Mirror the declared-attack ring so a later whole-object write preserves it (the
-      // OVERWRITE write would otherwise drop a declaration made from another surface).
-      combatRecentActions: combat?.recentActions ?? [],
-      combatActiveEffects: activeEffects,
-      combatAppliedEncounterEffects: combat?.appliedEncounterEffects,
-      combatTurnEconomy: combat?.turnEconomy,
-    });
+    const projection = projectCombatHydration(
+      character,
+      combat,
+      get().encounterEffectProjection
+    );
+    // Once the parent advertises v1 ownership, absence or a malformed play payload is
+    // an integrity failure—not a fresh/full-HP character. Leave the last proven store
+    // state untouched so auto-save cannot write a fabricated replacement.
+    if (!projection) {
+      set({
+        error:
+          character.playStateVersion === 1
+            ? combat
+              ? "Invalid play state: invalid-v1-play-state"
+              : "Invalid play state: missing-v1-combat-state"
+            : "Invalid combat state",
+      });
+      return;
+    }
+    set({ ...projection, error: null });
   },
 
   updateSession: (partial) => {
@@ -850,10 +1211,16 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   },
 
   applyDamage: (amount, opts) => {
-    if (amount <= 0) return;
-    if (get().readonly) return;
+    if (!Number.isSafeInteger(amount) || amount <= 0) return null;
+    if (get().readonly) return null;
     const { character } = get();
-    if (!character) return;
+    if (!character) return null;
+    const before = captureD20Command(get());
+    if (!before) return null;
+    const finishDamage = (): (() => boolean) | null => {
+      const after = captureD20Command(get());
+      return after ? causalD20CommandUndo(before, after, get) : null;
+    };
     const { current, temp } = character.session.hp;
     const max = effectiveMaxHp(character.character, character.session);
     const aggregate = aggregateCharacterGrants(character.character, character.session);
@@ -879,19 +1246,24 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       persistentEffects,
       stateZeroHpFloors: [...stateFloorByKey.values()],
     });
-    if (!transition.changed) return;
+    if (!transition.changed) return null;
 
     const consumedEffectIds = new Set(transition.consumedEffectIds);
     const consumedActiveKeys = new Set([
       ...transition.consumedStateKeys,
       ...persistentEffects.flatMap((effect) =>
-        consumedEffectIds.has(effect.id) && effect.payload.kind !== "condition"
+        consumedEffectIds.has(effect.id) &&
+        (effect.payload.kind === "grant-group" || effect.payload.kind === "target-mark")
           ? [effect.payload.activeKey]
           : []
       ),
     ]);
-    const nextLocalEffects = get().combatActiveEffects.filter(
+    const nextLegacyEffects = get().combatLegacyActiveEffects.filter(
       (effect) => !consumedEffectIds.has(effect.id)
+    );
+    const nextLocalEffects = effectiveCombatEffects(
+      nextLegacyEffects,
+      get().combatEffectOps
     );
     const nextEncounterEffects = persistentEffects.filter(
       (effect) => !consumedEffectIds.has(effect.id)
@@ -926,6 +1298,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (current === 0) {
       set({
         combatActiveEffects: nextLocalEffects,
+        combatLegacyActiveEffects: nextLegacyEffects,
+        // A creature taking damage at 0 cannot still maintain Concentration;
+        // any legacy/stale queued prompts are therefore ineligible.
+        combatPendingConcentrationSaves: [],
         encounterEffectProjection: nextEncounterEffectProjection,
         character: {
           ...character,
@@ -954,7 +1330,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       });
       logTransitionEvents();
       persistCombat(get);
-      return;
+      return finishDamage();
     }
 
     // USE-APPLIES (Task 2, RAGE-MAINTAIN) — "taking damage" MAINTAINS a Rage-style
@@ -983,102 +1359,72 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // save. Both rules surface as a single concentration state-clear when
     // current = 0.
     const concentrating = character.session.concentration;
-    let newConcentration = concentrating;
-    // S1 — while-active chips the dropped concentration spell lit (Fly, Haste,
-    // Mage Armor…). Resolved from the spell's STABLE ref (golden rule 7);
-    // cleared together with concentration in the 0-HP auto-drop `set` below so the
-    // rail chip never lingers lit after the spell ends. [] for a non-buff /
-    // homebrew / non-concentrating spell ⇒ nothing changes.
-    let droppedActiveKeys: readonly string[] = [];
+    let nextPendingConcentrationSaves = get().combatPendingConcentrationSaves;
+    const concentrationBreaks = concentrating !== "" && (newCurrent === 0 || formEnds);
     if (concentrating !== "") {
-      if (newCurrent === 0 || formEnds) {
+      if (concentrationBreaks) {
         // Concentration ends OUTRIGHT — no maintenance save is offered — when the
         // caster drops to 0 HP (broken by RAW) OR when a Polymorph form's Temp HP
         // is depleted (S7: the spell ends, taking its Concentration with it). Both
         // surface as the single `concentration-dropped` beat.
-        newConcentration = "";
-        droppedActiveKeys = activeKeysForConcentration(
-          character.character,
-          character.session,
-          concentrating
-        );
+        nextPendingConcentrationSaves = [];
         useToastStore.getState().showToast({
           intent: { kind: "concentration-dropped", spell: concentrating },
           duration: 5000,
         });
       } else {
         const dc = concentrationSaveDc(amount);
-        // The character's CON-save total for THIS save: the base CON save
-        // (proficiency + flat save bonuses, manual override-aware) plus the
-        // CONCENTRATION-ONLY grant bonus (Bladesong Focus +INT — previously
-        // computed but never shown; AX exposure audit).
-        const cd = character.character;
-        // B8 — the ability-keyed save-bonus layers (Aura of Protection +CHA,
-        // Increased Toughness +WIS, Bladesong Focus +INT) scale with the CURRENT
-        // (effective) score, so an ability-boosting item raises them (RAW 2024).
-        // Resolve effective scores ONCE and feed the base CON save AND both bonus
-        // helpers from it — never the raw stored scores (rule 6).
-        const effectiveScores = effectiveAbilityScores(
-          cd.abilityScores,
-          aggregate.abilityScoreFloors,
-          aggregate.itemAbilityScoreBonus,
-          aggregate.itemAbilityScoreCap
+        const pending: PendingConcentrationSave = {
+          id: crypto.randomUUID(),
+          spell: concentrating,
+          damage: amount,
+          difficultyClass: dc,
+        };
+        nextPendingConcentrationSaves = [...nextPendingConcentrationSaves, pending];
+        // Keep the shipped short notice, but the prompt is no longer ephemeral:
+        // the durable FIFO above remains reachable until the entered roll commits.
+        // Its display facts come from the same live kernel context as resolution.
+        const context = concentrationSaveD20Context(character, pending);
+        const saveBonus = context.modifierTerms.reduce(
+          (sum, term) => sum + term.value,
+          0
         );
-        const conSave = savingThrowBonus(
-          effectiveScores.CON,
-          totalLevel(cd),
-          // CON-save proficiency = own ∪ granted (inline — engine-core must not
-          // import the lib/views presenter that owns the display merge).
-          cd.savingThrows.includes("CON") || aggregate.saveProficiencies.has("CON"),
-          cd.savingThrowBonusOverrides?.CON ?? null,
-          character.session.exhaustion,
-          cd.proficiencyBonusOverride,
-          resolveSaveBonus(aggregate, effectiveScores, "CON")
-        );
-        const saveBonus =
-          conSave + resolveConcentrationSaveBonus(aggregate, effectiveScores);
+        const advantage =
+          context.advantageSourceIds.length > 0 &&
+          context.disadvantageSourceIds.length === 0;
         useToastStore.getState().showToast({
           intent: {
             kind: "concentration-save",
             spell: concentrating,
             dc,
             saveBonus,
-            advantage: hasConcentrationSaveAdvantage(aggregate),
+            advantage,
           },
           duration: 5000,
         });
       }
     }
 
-    // S7 — retract the Polymorph SELF-form when it ends: restore the caster's own
-    // AC/speeds/scores and drop the form. Triggered by Temp-HP depletion (the RAW
-    // primary trigger, which also covers the 0-HP break since Temp absorbs first).
-    // The Beast Temp HP is already 0 (`newTemp`), so no temp restore is needed here.
-    const retractForm = formEnds;
-    const revertBuild = formEnds ? revertBuildFromPrior(activeForm.prior) : undefined;
-
-    const endedActiveKeys = new Set([...droppedActiveKeys, ...consumedActiveKeys]);
     set({
       combatActiveEffects: nextLocalEffects,
+      combatLegacyActiveEffects: nextLegacyEffects,
+      combatPendingConcentrationSaves: nextPendingConcentrationSaves,
       encounterEffectProjection: nextEncounterEffectProjection,
       character: {
         ...character,
-        ...(revertBuild ? { character: { ...character.character, ...revertBuild } } : {}),
         session: {
           ...character.session,
           hp: { ...character.session.hp, current: newCurrent, temp: newTemp },
-          concentration: newConcentration,
           conditions: [...transition.state.conditions],
           deathSucc: transition.state.deathSaves.successes,
           deathFail: transition.state.deathSaves.failures,
           ...(consumedEffectIds.size > 0
             ? { encounterEffects: nextEncounterEffects }
             : {}),
-          ...(retractForm ? { polymorphForm: undefined } : {}),
-          ...(endedActiveKeys.size > 0
+          ...(consumedActiveKeys.size > 0
             ? {
                 activeFeatures: (character.session.activeFeatures ?? []).filter(
-                  (key) => !endedActiveKeys.has(key)
+                  (key) => !consumedActiveKeys.has(key)
                 ),
               }
             : {}),
@@ -1086,22 +1432,25 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       },
     });
     logTransitionEvents();
-    // Concentration that ended outright (0-HP break OR a form's Temp-HP depletion)
-    // is its own story beat.
-    if (concentrating !== "" && newConcentration === "") {
-      get().logEvent({ kind: "concentration-end", spell: concentrating });
+    if (concentrationBreaks) {
+      // ONE authoritative teardown owns every concentration-bound fact. Keep the
+      // already-resolved depleted-form Temp HP instead of restoring its prior pool.
+      get().setConcentration("", {
+        undoable: false,
+        ...(formEnds ? { retractedFormTempHp: newTemp } : {}),
+      });
+    } else {
+      // Persist the whole resulting combat state (offline-safe, durably queued).
+      persistCombat(get);
     }
-    // Persist the whole resulting combat state (offline-safe, durably queued). The
-    // dropped concentration / active-feature chips are NON-combat session fields — they
-    // persist through the parent-doc auto-save, not here.
-    persistCombat(get);
+    return finishDamage();
   },
 
   applyHealing: (amount) => {
     if (amount <= 0) return;
     if (get().readonly) return;
     const { character } = get();
-    if (!character) return;
+    if (!character || !isCharacterAlive(character.status, character.session)) return;
     // D1 — heal up to the effective max (stored base + hp-flat boons + Aid).
     const max = effectiveMaxHp(character.character, character.session);
     const prevCurrent = character.session.hp.current;
@@ -1139,6 +1488,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return null;
     const before = get().character;
     if (!before) return null;
+    const legacyActiveEffectsBefore = get().combatLegacyActiveEffects;
+    const effectOpsBefore = get().combatEffectOps;
+    const pendingConcentrationSavesBefore = get().combatPendingConcentrationSaves;
     const healingBlocked = aggregateCharacterGrants(
       before.character,
       before.session
@@ -1160,8 +1512,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       get().setBardicInspirationDie(effects.bardicInspirationDie);
     if (effects.heroicInspiration !== undefined)
       get().setHeroicInspiration(effects.heroicInspiration);
-    if (effects.stabilize && get().character?.session.hp.current === 0) {
-      get().setDeathSaves(3, 0);
+    if (effects.stabilize) {
+      const current = get().character;
+      if (
+        current?.session.hp.current === 0 &&
+        isCharacterAlive(current.status, current.session)
+      ) {
+        get().setDeathSaves(3, 0);
+      }
     }
     if (effects.addConcentrationConditions?.length) {
       const current = get().character;
@@ -1184,7 +1542,16 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (effects.addConcentrationConditions?.length || effects.removeConditions?.length)
       flushParentPersistence(get);
     return () => {
-      set({ character: before });
+      set({
+        character: before,
+        combatActiveEffects: effectiveCombatEffects(
+          legacyActiveEffectsBefore,
+          effectOpsBefore
+        ),
+        combatLegacyActiveEffects: legacyActiveEffectsBefore,
+        combatEffectOps: effectOpsBefore,
+        combatPendingConcentrationSaves: pendingConcentrationSavesBefore,
+      });
       useCombatStore.setState({ damageTakenThisRound: damageTakenBefore });
       persistCombat(get);
       flushParentPersistence(get);
@@ -1273,6 +1640,33 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       },
     });
     flushParentPersistence(get);
+  },
+
+  applyMechanicsPlan: (plan) => {
+    if (get().readonly) return { status: "rejected", reason: "readonly" };
+    if (!get().character) {
+      return { status: "rejected", reason: "character-missing" };
+    }
+    let receipt: MechanicsReceipt | undefined;
+    let rejection: Extract<MechanicsPlanCommitResult, { status: "rejected" }>["reason"] =
+      "invalid-plan";
+    set((state) => {
+      if (!state.character) {
+        rejection = "character-missing";
+        return state;
+      }
+      const applied = applyMechanicsPlanToCharacter(state.character, plan);
+      if (applied.status === "rejected") {
+        rejection =
+          applied.reason === "source-unavailable" ? "stale-plan" : applied.reason;
+        return state;
+      }
+      receipt = applied.receipt;
+      return { ...state, character: applied.character };
+    });
+    if (!receipt) return { status: "rejected", reason: rejection };
+    flushParentPersistence(get);
+    return { status: "applied", receipt };
   },
 
   setTrackerRoll: (trackerId, index, value) => {
@@ -1416,6 +1810,115 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     };
   },
 
+  applyItemResourceOperation: (item, binding, operation) => {
+    const character = get().character;
+    const instanceId = binding.instanceId;
+    const current =
+      typeof instanceId === "string"
+        ? character?.session.itemResources?.[instanceId]
+        : undefined;
+    if (get().readonly || !character) {
+      return {
+        status: "rejected",
+        ...(current ? { state: structuredClone(current) } : {}),
+      };
+    }
+    const owners = character.character.equipment.filter(
+      (ref) =>
+        !("custom" in ref) &&
+        ref.srdId === item.itemId &&
+        ref.srdId === binding.srdId &&
+        ref.instanceId === instanceId
+    );
+    if (owners.length !== 1) {
+      return {
+        status: "rejected",
+        ...(current ? { state: structuredClone(current) } : {}),
+      };
+    }
+    const result = applyResourceOperation(item, binding, current, operation);
+    if (result.status !== "applied") return result;
+    set({
+      character: {
+        ...character,
+        session: {
+          ...character.session,
+          itemResources: {
+            ...character.session.itemResources,
+            [result.state.instanceId]: result.state,
+          },
+        },
+      },
+    });
+    flushParentPersistence(get);
+    return result;
+  },
+
+  applyItemResourceOperations: (entries) => {
+    const character = get().character;
+    if (get().readonly || !character) return { status: "rejected" };
+    for (const entry of entries) {
+      const instanceId = entry.binding.instanceId;
+      if (typeof instanceId !== "string") return { status: "rejected" };
+      const owners = character.character.equipment.filter(
+        (ref) => !("custom" in ref) && ref.instanceId === instanceId
+      );
+      const owner = owners[0];
+      if (
+        owners.length !== 1 ||
+        !owner ||
+        "custom" in owner ||
+        owner.srdId !== entry.item.itemId ||
+        entry.binding.srdId !== entry.item.itemId
+      ) {
+        return { status: "rejected" };
+      }
+    }
+    const result = simulateItemResourceOperations(
+      character.session.itemResources,
+      entries
+    );
+    if (result.status !== "applied") return result;
+    set({
+      character: {
+        ...character,
+        session: { ...character.session, itemResources: result.itemResources },
+      },
+    });
+    flushParentPersistence(get);
+    return result;
+  },
+
+  removeItemResourceInstance: (instanceId) => {
+    if (get().readonly || !isValidItemInstanceId(instanceId)) return false;
+    const character = get().character;
+    if (!character) return false;
+    const matches = character.character.equipment.flatMap((ref, index) =>
+      !("custom" in ref) && ref.instanceId === instanceId ? [index] : []
+    );
+    if (matches.length !== 1) return false;
+    const removeIndex = matches[0];
+    if (removeIndex === undefined) return false;
+    const itemResources = omitStateKeys(
+      character.session.itemResources,
+      new Set([instanceId])
+    );
+    set({
+      character: {
+        ...character,
+        character: {
+          ...character.character,
+          equipment: character.character.equipment.filter(
+            (_ref, index) => index !== removeIndex
+          ),
+        },
+        session: { ...character.session, itemResources },
+      },
+    });
+    flushParentPersistence(get);
+    return true;
+  },
+
   useEquipmentItem: (equipmentKey) => {
     if (get().readonly) return;
     const { character } = get();
@@ -1470,7 +1973,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
 
   setConcentration: (
     spell,
-    opts?: { undoable?: boolean; castLevel?: number; silent?: boolean }
+    opts?: {
+      undoable?: boolean;
+      castLevel?: number;
+      silent?: boolean;
+      retractedFormTempHp?: number;
+    }
   ) => {
     if (get().readonly) return [];
     const { character } = get();
@@ -1526,7 +2034,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const priorConcentrationConditions = character.session.concentrationConditions;
     const nextConcentrationConditions =
       prev && prev !== spell ? undefined : priorConcentrationConditions;
-    const priorLocalEffects = get().combatActiveEffects;
+    const priorPendingConcentrationSaves = get().combatPendingConcentrationSaves;
+    const nextPendingConcentrationSaves =
+      prev !== spell ? [] : priorPendingConcentrationSaves;
+    const priorLocalEffects = get().combatLegacyActiveEffects;
     const endedLocalEffects =
       prev && prev !== spell
         ? priorLocalEffects.filter(
@@ -1540,7 +2051,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       phase: "turn-start" as const,
       order: ["self"],
     };
-    const nextLocalEffects = mergeActiveCombatEffects(
+    const nextLegacyEffects = mergeActiveCombatEffects(
       priorLocalEffects.filter(
         (effect) => !endedLocalEffects.some((ended) => ended.id === effect.id)
       ),
@@ -1548,6 +2059,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         const successor = endedEffectSuccessor(effect, soloPosition);
         return successor ? [successor] : [];
       })
+    );
+    const nextLocalEffects = effectiveCombatEffects(
+      nextLegacyEffects,
+      get().combatEffectOps
     );
     // RAW 2024 (PHB p.235): when you start casting another spell that
     // requires Concentration, your existing concentration ends. We
@@ -1567,6 +2082,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const applyChange = (): string[] => {
       set({
         combatActiveEffects: nextLocalEffects,
+        combatLegacyActiveEffects: nextLegacyEffects,
+        combatPendingConcentrationSaves: nextPendingConcentrationSaves,
         character: {
           ...character,
           // S7 — fold the body-restore patch when the form is retracted.
@@ -1589,7 +2106,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
             ...(retractForm
               ? {
                   polymorphForm: undefined,
-                  hp: { ...character.session.hp, temp: form.prior.tempHp },
+                  hp: {
+                    ...character.session.hp,
+                    temp: opts?.retractedFormTempHp ?? form.prior.tempHp,
+                  },
                 }
               : {}),
           },
@@ -1626,13 +2146,26 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
             // (Beast build + Temp HP + form) is the atomic undo target — a partial
             // concentration-only restore would leave the reverted body behind.
             if (retractForm) {
-              set({ character: before, combatActiveEffects: priorLocalEffects });
+              set({
+                character: before,
+                combatActiveEffects: effectiveCombatEffects(
+                  priorLocalEffects,
+                  get().combatEffectOps
+                ),
+                combatLegacyActiveEffects: priorLocalEffects,
+                combatPendingConcentrationSaves: priorPendingConcentrationSaves,
+              });
               persistCombat(get);
               flushParentPersistence(get);
               return;
             }
             set({
-              combatActiveEffects: priorLocalEffects,
+              combatActiveEffects: effectiveCombatEffects(
+                priorLocalEffects,
+                get().combatEffectOps
+              ),
+              combatLegacyActiveEffects: priorLocalEffects,
+              combatPendingConcentrationSaves: priorPendingConcentrationSaves,
               character: {
                 ...cur,
                 session: {
@@ -1761,10 +2294,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!effectiveSessionConditions(character.session).includes(condition)) return null;
     const prevConditions = character.session.conditions;
     const prevConcentrationConditions = character.session.concentrationConditions;
-    const prevLocalEffects = get().combatActiveEffects;
-    const nextLocalEffects = prevLocalEffects.filter(
+    const prevLocalEffects = get().combatLegacyActiveEffects;
+    const nextLegacyEffects = prevLocalEffects.filter(
       (effect) =>
         effect.payload.kind !== "condition" || effect.payload.conditionId !== condition
+    );
+    const nextLocalEffects = effectiveCombatEffects(
+      nextLegacyEffects,
+      get().combatEffectOps
     );
     // RA-12 — dropping Invisible ends the hidden state: the remembered find-DC
     // goes with it (and comes back on undo).
@@ -1772,6 +2309,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const clearsHiddenDc = condition === "invisible" && prevHiddenDc !== undefined;
     set({
       combatActiveEffects: nextLocalEffects,
+      combatLegacyActiveEffects: nextLegacyEffects,
       character: {
         ...character,
         session: {
@@ -1798,7 +2336,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       const cur = get().character;
       if (!cur) return;
       set({
-        combatActiveEffects: prevLocalEffects,
+        combatActiveEffects: effectiveCombatEffects(
+          prevLocalEffects,
+          get().combatEffectOps
+        ),
+        combatLegacyActiveEffects: prevLocalEffects,
         character: {
           ...cur,
           session: {
@@ -1879,6 +2421,90 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     persistCombat(get);
   },
 
+  commitDeathSave: (faces) => {
+    if (get().readonly) return null;
+    const live = get().character;
+    if (
+      !live ||
+      live.session.hp.current !== 0 ||
+      !isCharacterAlive(live.status, live.session) ||
+      stabilisedInPlay(live.session)
+    ) {
+      return null;
+    }
+    const before = captureD20Command(get());
+    if (!before) return null;
+    let result: CharacterEnteredD20Result;
+    try {
+      // The builder reads the live aggregate here, at the mutation boundary:
+      // all-save bonuses, Exhaustion, threshold, and net roll mode cannot stale.
+      result = resolveCharacterDeathSave(live, faces);
+    } catch {
+      return null;
+    }
+    const outcome = result.reviewedOutcome.deathSave;
+    if (!outcome) return null;
+    if (outcome.hitPointsRegained > 0) {
+      get().applyHealing(outcome.hitPointsRegained);
+    } else {
+      get().setDeathSaves(
+        Math.min(DEATH_SUCCESS_LIMIT, live.session.deathSucc + outcome.successes),
+        Math.min(DEATH_FAIL_LIMIT, live.session.deathFail + outcome.failures)
+      );
+    }
+    const after = captureD20Command(get());
+    if (!after) return null;
+    return {
+      result,
+      undo: causalD20CommandUndo(before, after, get),
+    };
+  },
+
+  commitPendingConcentrationSave: (pending, faces) => {
+    if (get().readonly) return null;
+    const live = get().character;
+    const head = get().combatPendingConcentrationSaves[0];
+    if (
+      !live ||
+      !head ||
+      head.id !== pending.id ||
+      head.spell !== pending.spell ||
+      head.damage !== pending.damage ||
+      head.difficultyClass !== pending.difficultyClass ||
+      live.session.hp.current <= 0 ||
+      !isCharacterAlive(live.status, live.session) ||
+      live.session.concentration !== pending.spell
+    ) {
+      return null;
+    }
+    const before = captureD20Command(get());
+    if (!before) return null;
+    let result: CharacterEnteredD20Result;
+    try {
+      result = resolveCharacterConcentrationSave(live, pending, faces);
+    } catch {
+      return null;
+    }
+    if (result.reviewedOutcome.status === "success") {
+      set({
+        combatPendingConcentrationSaves: get().combatPendingConcentrationSaves.slice(1),
+      });
+      persistCombat(get);
+    } else if (result.reviewedOutcome.status === "failure") {
+      // The authoritative teardown owns the spell, active keys, timers,
+      // Polymorph body, target conditions, effects, event log, and queue clear.
+      get().setConcentration("", { undoable: false });
+    } else {
+      return null;
+    }
+    const after = captureD20Command(get());
+    if (!after) return null;
+    return {
+      result,
+      undo: causalD20CommandUndo(before, after, get),
+    };
+  },
+
   persistInitiative: () => {
     if (get().readonly) return;
     const { character, combatPersistence } = get();
@@ -1901,7 +2527,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   persistCombatTurnState: (round, turnEconomy) => {
     if (get().readonly || !get().character) return;
     set({ combatRound: round, combatTurnEconomy: turnEconomy });
-    get().combatPersistence?.writeTurnEconomy(round, turnEconomy);
+    // A marked play owner is already coalesced as one complete child write; keep the
+    // update-only patch solely for legacy documents whose noncombat session remains
+    // parent-owned.
+    if (get().character?.playStateVersion === 1) persistCombat(get);
+    else get().combatPersistence?.writeTurnEconomy(round, turnEconomy);
   },
 
   declareAttack: (entry) => {
@@ -1917,7 +2547,15 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       get().combatRecentActions,
       get().combatAppliedEncounterEffects,
       get().combatTurnEconomy,
-      get().combatActiveEffects
+      get().combatLegacyActiveEffects,
+      get().combatPendingConcentrationSaves,
+      undefined,
+      get().combatEffectOps,
+      {
+        actionRevision: get().combatActionRevision,
+        actionHead: get().combatActionHead,
+        actionLifecycles: get().combatActionLifecycles,
+      }
     );
     set({ combatRecentActions: pushRecentAttack(base, entry).recentActions });
     persistCombat(get);
@@ -1991,6 +2629,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
 
   longRest: () => {
     if (get().readonly) return;
+    const beforeRest = get().character;
+    if (!beforeRest || !canCharacterRest(beforeRest.status, beforeRest.session)) return;
     // Sleep ends Concentration. Route through the ONE concentration teardown so
     // its active grants, cast-level provenance, target conditions, and a possible
     // self-Polymorph form are retracted atomically before the rest baseline is
@@ -2019,7 +2659,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // (Monk Self-Restoration removes 2 instead of 1).
     const exhaustionRemoved =
       1 +
-      evaluateGrants(resolveAllGrantSources(character.character)).exhaustionRecoveryBonus;
+      evaluateGrants(
+        resolveAllGrantSources(character.character, character.session.itemResources)
+      ).exhaustionRecoveryBonus;
     // Magic-item charges with `recovery: "long-rest"` restore to max. (Items
     // with `recovery: "dawn"` are functionally identical for the player —
     // dawn happens at the end of a Long Rest.) Other recoveries (short-rest
@@ -2064,6 +2706,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     }
     const endedActiveKeys = new Set(resolveActiveStatesEndingOnRest(character, "long"));
     set({
+      combatPendingConcentrationSaves: [],
       character: {
         ...character,
         character: { ...character.character, equipment: newEquipment },
@@ -2114,7 +2757,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   shortRest: () => {
     if (get().readonly) return;
     const beforeRest = get().character;
-    if (!beforeRest) return;
+    if (!beforeRest || !canCharacterRest(beforeRest.status, beforeRest.session)) return;
     const initiallyEndedKeys = new Set(
       resolveActiveStatesEndingOnRest(beforeRest, "short")
     );
@@ -2452,7 +3095,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const character = get().character;
     if (!character) return noop;
     const priorBoundaries = character.session.effectBoundaries;
-    const priorLocalEffects = get().combatActiveEffects;
+    const priorLocalEffects = get().combatLegacyActiveEffects;
     const localPosition = {
       ...position,
       currentCombatantId: "self",
@@ -2464,12 +3107,16 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const survivingLocalEffects = priorLocalEffects.filter((effect) =>
       isEffectActiveAtEncounterPosition(effect, localPosition)
     );
-    const nextLocalEffects = mergeActiveCombatEffects(
+    const nextLegacyEffects = mergeActiveCombatEffects(
       survivingLocalEffects,
       expiredLocalEffects.flatMap((effect) => {
         const successor = endedEffectSuccessor(effect, localPosition);
         return successor ? [successor] : [];
       })
+    );
+    const nextLocalEffects = effectiveCombatEffects(
+      nextLegacyEffects,
+      get().combatEffectOps
     );
     const sources = new Map(
       resolveActiveBoundaryEffects(character).map((effect) => [
@@ -2512,6 +3159,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     );
     set({
       combatActiveEffects: nextLocalEffects,
+      combatLegacyActiveEffects: nextLegacyEffects,
       character: {
         ...character,
         session: {
@@ -2540,7 +3188,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           activeKey:
             effect.payload.kind === "condition"
               ? `condition:${effect.payload.conditionId}`
-              : effect.payload.activeKey,
+              : effect.payload.kind === "program-standing"
+                ? `standing:${effect.payload.effectId}`
+                : effect.payload.activeKey,
           sourceId: effect.source.id,
         })),
       ],
@@ -2551,7 +3201,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         const current = get().character;
         if (!current) return;
         set({
-          combatActiveEffects: priorLocalEffects,
+          combatActiveEffects: effectiveCombatEffects(
+            priorLocalEffects,
+            get().combatEffectOps
+          ),
+          combatLegacyActiveEffects: priorLocalEffects,
           character: {
             ...current,
             session: {
@@ -2653,7 +3307,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const { character } = get();
     if (!character) return;
     const charData = character.character;
-    const sources = resolveAllGrantSources(charData);
+    const sources = resolveAllGrantSources(charData, character.session.itemResources);
     // 1. Strip every variant spell this bundle could grant (any prior pick),
     //    keeping custom spells and any non-bundle / non-always-prepared refs.
     const bundleIds = allBundleSpellIds(sources, bundleKey);
@@ -2728,6 +3382,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!form) return null;
 
     const before = character; // undo = re-assume the exact same form
+    const pendingConcentrationSavesBefore = get().combatPendingConcentrationSaves;
     const revert = revertBuildFromPrior(form.prior);
     // Restore the body, retract the Beast Temp HP, drop the form. Clear the form's
     // concentration inline (only if it is still the form's spell — a prior swap
@@ -2736,6 +3391,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const { polymorphForm: _dropped, ...restSession } = character.session;
     void _dropped;
     set({
+      ...(clearConc ? { combatPendingConcentrationSaves: [] } : {}),
       character: {
         ...character,
         character: { ...character.character, ...revert },
@@ -2747,7 +3403,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       },
     });
 
-    return () => set({ character: before });
+    return () =>
+      set({
+        character: before,
+        combatPendingConcentrationSaves: pendingConcentrationSavesBefore,
+      });
   },
 
   setCompanionHp: (featureId, current) => {
@@ -2870,7 +3530,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     }
     // Provenance for the toast: the source feature(s) granting the top-up.
     for (const c of evaluateGrants(
-      resolveAllGrantSources(character.character),
+      resolveAllGrantSources(character.character, character.session.itemResources),
       new Set(character.session.activeFeatures ?? []),
       new Map(Object.entries(character.session.grantBundleChoices ?? {}))
     ).initiativeTrackerTopUps) {
@@ -3062,7 +3722,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   applyAtZeroHpInterrupt: (trackerId) => {
     if (get().readonly) return () => {};
     const character = get().character;
-    if (!character) return () => {};
+    if (
+      !character ||
+      character.session.hp.current !== 0 ||
+      !isCharacterAlive(character.status, character.session)
+    ) {
+      return () => {};
+    }
     const priorHp = character.session.hp;
     const priorTracker = character.session.trackers[trackerId];
     const priorUsed = priorTracker?.used ?? 0;

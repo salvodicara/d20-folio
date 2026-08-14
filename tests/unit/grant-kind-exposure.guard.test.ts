@@ -21,23 +21,13 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { GRANT_SCHEMA } from "@/lib/grant-schema";
 
 const read = (rel: string): string => readFileSync(join(process.cwd(), rel), "utf8");
 
-/** Extract every kind literal from the `export type Grant =` union. */
+/** Read every kind from the exact schema that also defines the public algebra. */
 function grantKinds(): string[] {
-  const src = read("src/lib/grants.ts");
-  const start = src.indexOf("export type Grant =");
-  if (start < 0) throw new Error("Grant union not found");
-  // The union ends at the first subsequent top-level `export` declaration.
-  const end = src.indexOf("\nexport ", start + 1);
-  const block = src.slice(start, end);
-  const kinds = new Set<string>();
-  for (const m of block.matchAll(/type: "([a-z0-9-]+)"/g)) {
-    const k = m[1];
-    if (k) kinds.add(k);
-  }
-  return [...kinds].sort();
+  return Object.keys(GRANT_SCHEMA.variants).sort();
 }
 
 type Exposure =
@@ -71,6 +61,10 @@ const EXPOSURE: Record<string, Exposure> = {
   },
   "see-invisible": {
     via: "deriveSensesAndSpeeds",
+    consumer: "src/features/character/hud/LeftHud.tsx",
+  },
+  "air-and-water-breathing": {
+    via: "airAndWaterBreathing",
     consumer: "src/features/character/hud/LeftHud.tsx",
   },
 
@@ -110,6 +104,10 @@ const EXPOSURE: Record<string, Exposure> = {
   "flat-damage-reduction": {
     via: "deriveFlatDamageReductions",
     consumer: "src/features/character/molecules/ResourceRail.tsx",
+  },
+  "save-damage-rule": {
+    via: "saveDamageRules",
+    consumer: "src/lib/combat-resolution.ts",
   },
   "choice-resistance": {
     via: "choiceResistances",
@@ -165,7 +163,7 @@ const EXPOSURE: Record<string, Exposure> = {
   },
   "concentration-save-bonus": {
     via: "resolveConcentrationSaveBonus",
-    consumer: "src/stores/characterStore.ts",
+    consumer: "src/lib/character-d20-tests.ts",
   },
   "crit-range": {
     via: "critRange",
@@ -397,17 +395,9 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "resolvePersistentDamage",
     consumer: "src/features/campaigns/campaign-io.ts",
   },
-  "spell-slot-tracker-recovery": {
-    via: "spellSlotTrackerRecoveries",
-    consumer: "src/lib/smart-tracker.ts",
-  },
-  "tracker-alt-recovery": {
-    via: "trackerAltRecoveries",
-    consumer: "src/lib/smart-tracker.ts",
-  },
-  "resource-conversion": {
-    via: "conversionOptionVMs",
-    consumer: "src/features/character/molecules/ResourceConversions.tsx",
+  resource: {
+    plumbing:
+      "canonical ResourceSpec declaration: the resource planner consumes it; it is not itself a rendered rule modifier",
   },
 
   // ── Informational riders → rail sections + feature cards ──
@@ -459,6 +449,18 @@ const EXPOSURE: Record<string, Exposure> = {
   "copy-to-2nd-target": {
     via: "copyTargetVMs",
     consumer: "src/features/character/center/tabs/FeaturesTab.tsx",
+  },
+  "spell-slot-tracker-recovery": {
+    via: "spellSlotTrackerRecoveries",
+    consumer: "src/lib/smart-tracker.ts",
+  },
+  "tracker-alt-recovery": {
+    via: "trackerAltRecoveries",
+    consumer: "src/lib/smart-tracker.ts",
+  },
+  "resource-conversion": {
+    via: "conversionOptionVMs",
+    consumer: "src/features/character/molecules/ResourceConversions.tsx",
   },
 
   // ── Choice engine (pickers — the choice IS the surface) ──
@@ -515,10 +517,6 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "effectiveMaxHp",
     consumer: "src/lib/aggregate-character.ts",
   },
-  "cunning-strike-option": {
-    via: "resolveCunningStrikeOptions",
-    consumer: "src/features/character/center/tabs/PlayTab.tsx",
-  },
 
   // ── Shipped (S6 play affordances): formerly OPEN, now consumed ──
   "familiar-enhancement": {
@@ -530,6 +528,10 @@ const EXPOSURE: Record<string, Exposure> = {
   "familiar-forms": {
     via: "resolveFamiliarForms",
     consumer: "src/features/character/companions/familiar-picker.tsx",
+  },
+  "cunning-strike-option": {
+    via: "resolveCunningStrikeOptions",
+    consumer: "src/features/character/center/tabs/PlayTab.tsx",
   },
   // ATTACK-PIPS — War Magic became an INTERACTION: the provider reads
   // `resolveReplaceAttackWithCast` to route a mid-Attack-action cantrip cast onto

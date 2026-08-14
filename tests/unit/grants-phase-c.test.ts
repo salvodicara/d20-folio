@@ -229,11 +229,14 @@ describe("ritual-casting / free-cast", () => {
     ]);
     expect(agg.freeCasts).toHaveLength(1);
     const fc = agg.freeCasts[0];
-    expect(fc?.spellId).toBe("misty-step");
-    expect(fc?.chargesPerRest).toBe(1);
-    expect(fc?.rest).toBe("long");
-    expect(fc?.casterAbility).toBe("CHA");
-    expect(fc?.sourceId).toBe("fey-touched");
+    // The tracker arm of the payment union carries the per-rest cap fields.
+    if (!fc || !("chargesPerRest" in fc))
+      throw new Error("expected a tracker-paid entry");
+    expect(fc.spellId).toBe("misty-step");
+    expect(fc.chargesPerRest).toBe(1);
+    expect(fc.rest).toBe("long");
+    expect(fc.casterAbility).toBe("CHA");
+    expect(fc.sourceId).toBe("fey-touched");
   });
 });
 

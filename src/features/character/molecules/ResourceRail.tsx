@@ -1,16 +1,17 @@
 /**
  * ResourceRail — the always-on Right HUD content, re-homed from the legacy
  * `GameRail` rail body and composed by `RightHud`. Four sections matching the
- * cockpit mock: **Resources** (spell slots + class trackers), **Status**
+ * cockpit mock: **Resources** (spell slots + class trackers + exact physical-item
+ * counters), **Status**
  * (concentration + conditions + exhaustion), **Defenses** (resist / immune /
  * vulnerable), and **Proficiencies** (armor / weapons / tools / languages).
  *
  * The engine seam is READ-ONLY-derive + state-binding only: `resolveTrackers` +
  * the aggregated spell-slot / conditions / exhaustion / concentration views; it
  * calls only the existing store actions (useTracker / restoreTracker,
- * add/removeCondition, setConcentration, updateSession). HP / hit dice / death
- * saves live in the center HEALTH panel, never here. The action-economy "This
- * Turn" loop and HP mutation are Phase 4 — not in this rail.
+ * add/removeCondition, setConcentration, updateSession) plus the shared typed
+ * item-resource command provider. HP / hit dice / death saves live in the center
+ * HEALTH panel, never here.
  */
 
 import { useMemo, useState, useRef, lazy, Suspense } from "react";
@@ -92,6 +93,8 @@ import { CompanionHpStepper } from "@/components/shared/CompanionHpStepper";
 import { buildCompanionCardViews } from "@/lib/views/companion-row-view";
 import { RailNotes } from "./RailNotes";
 import { ResourceConversions } from "./ResourceConversions";
+import { TableClockControl } from "./TableClockControl";
+import { ItemResourceRailRow } from "./ItemResourceRailRow";
 import { GrantBundleSelector } from "@/components/sheet/GrantBundleSelector";
 import { ActivatableFeaturesBar } from "./ActivatableFeaturesBar";
 import {
@@ -101,27 +104,13 @@ import {
 } from "@/lib/proficiency-tokens";
 import { localizeSrd } from "@/i18n/resolver";
 import { ensureSrdKind } from "@/i18n";
-import type { AbilityCode, DamageType, ConditionId } from "@/data/types";
+import type { AbilityCode, ConditionId } from "@/data/types";
+import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 import type { SessionDefenseKind } from "@/types/character";
 import type { TFunction } from "i18next";
 import { localeDistance } from "@/lib/utils";
+import { buildItemResourceViewModels } from "@/lib/views/item-resource-view";
 
-/** The full DamageType enum, in the canonical order, for the #68 override pickers. */
-const ALL_DAMAGE_TYPES: DamageType[] = [
-  "acid",
-  "bludgeoning",
-  "cold",
-  "fire",
-  "force",
-  "lightning",
-  "necrotic",
-  "piercing",
-  "poison",
-  "radiant",
-  "psychic",
-  "slashing",
-  "thunder",
-];
 /** The six set-valued override maps on CharacterData (#68). */
 type SetOverrideField =
   | "damageResistanceOverrides"
@@ -161,11 +150,29 @@ export function ResourceRail() {
   const showToast = useToastStore((s) => s.showToast);
   const sheetMode = useUIStore((s) => s.sheetMode);
   const isEdit = sheetMode === "edit";
+  const isPlay = sheetMode === "play";
+  const readonly = useCharacterStore((s) => s.readonly);
   const setCompanionHp = useCharacterStore((s) => s.setCompanionHp);
 
+  const itemResources = useMemo(
+    () => (character ? buildItemResourceViewModels(character).resources : []),
+    [character]
+  );
+  const typedItemTrackerIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const resource of itemResources) {
+      ids.add(resource.identity.itemId);
+    }
+    return ids;
+  }, [itemResources]);
   const trackers = useMemo<ResolvedTracker[]>(
-    () => (character ? localizeTrackers(character, locale) : []),
-    [character, locale]
+    () =>
+      character
+        ? localizeTrackers(character, locale).filter(
+            (tracker) => !typedItemTrackerIds.has(tracker.id)
+          )
+        : [],
+    [character, locale, typedItemTrackerIds]
   );
 
   // BARDTRK1 — the Bard's OWN Bardic Inspiration give-out tracker lives with the
@@ -288,7 +295,8 @@ export function ResourceRail() {
   // Bard); "" when none. Distinct from the Bard's own give-out tracker.
   const heldDie = session.bardicInspirationDie ?? "";
   const INSPIRATION_DICE = ["d6", "d8", "d10", "d12"] as const;
-  const hasResources = spellSlots.length > 0 || trackers.length > 0;
+  const hasResources =
+    spellSlots.length > 0 || trackers.length > 0 || itemResources.length > 0;
 
   const toggleCondition = (id: string): void => {
     const store = useCharacterStore.getState();
@@ -527,8 +535,8 @@ export function ResourceRail() {
 
   return (
     <div className="folio-panel flex flex-col gap-6 p-4">
-      {/* ── Resources — spell slots + class trackers ─────────────────────── */}
-      <RailSection rubric={t("character.hud.resources")}>
+      {/* ── Resources — slots + class trackers + exact item counters ─────── */}
+      <RailSection rubric={t("character.hud.resources")} action={<TableClockControl />}>
         {hasResources ? (
           <div className="flex flex-col gap-3">
             {spellSlots.length > 0 && (
@@ -549,6 +557,29 @@ export function ResourceRail() {
             {trackers.map((tracker) => (
               <RailTracker key={tracker.id} tracker={tracker} />
             ))}
+            {itemResources.map((resource) => {
+              const itemName = localizeSrd(
+                "magic-item",
+                resource.identity.itemId,
+                "name",
+                locale
+              );
+              const itemLabel =
+                resource.copyNumber == null
+                  ? itemName
+                  : t("magicItems.resourceCopy", {
+                      name: itemName,
+                      number: resource.copyNumber,
+                    });
+              return (
+                <ItemResourceRailRow
+                  key={resource.identity.key}
+                  resource={resource}
+                  itemLabel={itemLabel}
+                  interactive={isPlay && !readonly}
+                />
+              );
+            })}
             {/* PRIM-resource-conversion (closes needs-UI:resource-conversion-
                 action) — Font of Magic SP ⇄ slots, Nature Magician Wild Shape →
                 slot. Inline picker of the LEGAL trades only; click = immediate
@@ -1410,7 +1441,7 @@ function AddDefensePicker({
   const options =
     kind === "conditionImmunity"
       ? conditionOptions(locale)
-      : ALL_DAMAGE_TYPES.map((d) => ({ id: d, label: t(`srd.damage_${d}`) })) //
+      : DAMAGE_TYPES.map((d) => ({ id: d, label: t(`srd.damage_${d}`) })) //
           .sort((a, b) => a.label.localeCompare(b.label, locale));
 
   function commit(id: string) {

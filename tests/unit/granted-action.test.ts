@@ -20,7 +20,7 @@ const SHIELD_FEAT: GrantSource = {
         it: "+5 CA fino al tuo prossimo turno.",
       },
       trigger: { en: "when you are hit by an attack", it: "quando vieni colpito" },
-      cost: { kind: "spell-slot", minLevel: 1 },
+      cost: { kind: "tracker", trackerId: "feat-shield-master", amount: 1 },
     },
   ],
 };
@@ -32,7 +32,7 @@ describe("granted-action evaluator", () => {
     expect(agg.grantedActions[0]).toMatchObject({
       sourceId: "feat-shield-master",
       slot: "reaction",
-      cost: { kind: "spell-slot", minLevel: 1 },
+      cost: { kind: "tracker", trackerId: "feat-shield-master", amount: 1 },
     });
     expect(loc(agg.grantedActions[0]?.name, "en")).toBe("Shield");
     expect(loc(agg.grantedActions[0]?.trigger, "en")).toContain("hit");
@@ -50,8 +50,8 @@ describe("granted-action evaluator", () => {
             en: "Detect Magic (at will)",
             it: "Individuazione del Magico (a volontà)",
           },
+          // Omitted `cost` is the schema's at-will/no-payment representation.
           slot: "action",
-          cost: { kind: "none" },
         },
       ],
     };
