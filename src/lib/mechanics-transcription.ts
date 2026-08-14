@@ -328,6 +328,40 @@ interface SpellDamageComponent {
 }
 
 /**
+ * Clause classification DERIVED from a hand-authored program's own inputs and
+ * steps — the one honest source when the executable truth is the program
+ * itself rather than the declarative fields.
+ */
+function clausesFromAuthoredProgram(
+  program: Readonly<MechanicsProgram>
+): TranscriptionClause[] {
+  const derived: TranscriptionClause[] = [
+    clause("authored-program", "automated", "hand-authored-canonical-format"),
+  ];
+  for (const phase of program.phases) {
+    for (const input of phase.inputs) {
+      const id = `${phase.phaseId}-${input.inputId}`;
+      if (input.kind === "d20" || input.kind === "dice") {
+        derived.push(clause(id, "physical-input"));
+      } else if (input.kind === "table") {
+        derived.push(clause(id, "table", "table-adjudicated-input"));
+      } else {
+        derived.push(clause(id, "automated"));
+      }
+    }
+    for (const step of phase.steps) {
+      derived.push(clause(`${phase.phaseId}-${step.stepId}`, "automated"));
+    }
+    if (phase.trigger.kind === "root-pulse") {
+      derived.push(
+        clause(`${phase.phaseId}-occupancy`, "spatial", "table-signals-pulse")
+      );
+    }
+  }
+  return derived;
+}
+
+/**
  * Transcribe one spell's declarative facts. The result's program is null when
  * any emitted structure failed program conformance — in that case every clause
  * that would have been automated reports `unsupported` with the failure.
@@ -342,6 +376,21 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     clauses.push(clause(clauseId, "unsupported", detail));
   };
 
+  if (spell.mechanicsProgram !== undefined) {
+    const authored = conformMechanicsProgram(spell.mechanicsProgram);
+    if (!authored) {
+      return {
+        clauses: [clause("authored-program", "unsupported", "program-conformance")],
+        entityId: spell.id,
+        program: null,
+      };
+    }
+    return {
+      clauses: clausesFromAuthoredProgram(authored),
+      entityId: spell.id,
+      program: authored,
+    };
+  }
   if (spell.effectProgram && !SUPERSEDED_LEGACY_PROGRAMS.has(spell.id)) {
     clauses.push(
       clause("effect-program", "unsupported", "legacy-authored-program-migration")

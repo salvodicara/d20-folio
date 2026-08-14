@@ -216,6 +216,242 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
   },
   {
     id: "fire-shield",
+    // The canonical-runtime authored program (supersedes `effectProgram`):
+    // the cast picks warm or chill and lights the matching 10-minute shield;
+    // each melee hit within 5 ft is a possessor-declared retaliation pulse
+    // dealing 2d8 of the lit shield's type to the attacker. The half-damage
+    // resistance rider stays with the derived grant layer.
+    mechanicsProgram: {
+      id: "spell:fire-shield",
+      phases: [
+        {
+          inputs: [
+            {
+              inputId: "slot",
+              kind: "resource",
+              term: {
+                amount: { kind: "fixed", value: 1 },
+                selector: {
+                  kind: "spell-slot",
+                  level: { kind: "minimum", value: 4 },
+                  owner: "caster",
+                  pool: "either",
+                },
+              },
+              when: null,
+            },
+            {
+              inputId: "shield-form",
+              kind: "choice",
+              options: ["warm", "chill"],
+              when: null,
+            },
+          ],
+          phaseId: "resolve",
+          steps: [
+            {
+              fact: { key: "fire-shield-warm", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "duration", seconds: { kind: "fixed", value: 600 } },
+              operation: "start",
+              stepId: "warm-shield",
+              target: { kind: "role", role: "caster" },
+              when: { choiceId: "warm", inputId: "shield-form", kind: "answer-choice" },
+            },
+            {
+              fact: { key: "fire-shield-chill", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "duration", seconds: { kind: "fixed", value: 600 } },
+              operation: "start",
+              stepId: "chill-shield",
+              target: { kind: "role", role: "caster" },
+              when: { choiceId: "chill", inputId: "shield-form", kind: "answer-choice" },
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "pulse-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 1 },
+              minimum: { kind: "fixed", value: 1 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              acceptancePolicy: [],
+              expansion: { binding: "caster", kind: "single" },
+              formula: {
+                terms: [
+                  {
+                    count: { kind: "fixed", value: 2 },
+                    kind: "dice",
+                    operation: "add",
+                    sides: 8,
+                    termId: "retaliation-die",
+                  },
+                ],
+              },
+              inputId: "retaliation-roll",
+              kind: "dice",
+              payments: [],
+              replacementPolicy: [],
+              when: null,
+            },
+          ],
+          phaseId: "retaliate",
+          steps: [
+            {
+              delivery: "automatic",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "retaliation-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "fire",
+                  partId: "warm-retaliation",
+                },
+              ],
+              stepId: "warm-retaliation",
+              target: { inputId: "pulse-targets", kind: "input" },
+              traits: ["spell"],
+              when: {
+                fact: { key: "fire-shield-warm", kind: "active-key" },
+                kind: "standing-present",
+                present: true,
+                quantifier: "any",
+                target: { kind: "role", role: "caster" },
+              },
+            },
+            {
+              delivery: "automatic",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "retaliation-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "cold",
+                  partId: "chill-retaliation",
+                },
+              ],
+              stepId: "chill-retaliation",
+              target: { inputId: "pulse-targets", kind: "input" },
+              traits: ["spell"],
+              when: {
+                fact: { key: "fire-shield-chill", kind: "active-key" },
+                kind: "standing-present",
+                present: true,
+                quantifier: "any",
+                target: { kind: "role", role: "caster" },
+              },
+            },
+          ],
+          trigger: { eventId: "retaliation", kind: "root-pulse" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    },
+    effectProgram: {
+      version: 1,
+      id: "spell.fire-shield",
+      inputs: [
+        {
+          id: "shield-form",
+          kind: "choice",
+          scope: "program",
+          options: ["warm", "chill"],
+        },
+        {
+          id: "retaliation-roll",
+          kind: "roll",
+          scope: "target",
+          roll: { count: 2, sides: 8 },
+        },
+      ],
+      phases: [
+        {
+          id: "ward",
+          trigger: { kind: "resolve" },
+          targeting: { affinity: "self", maxTargets: 1 },
+          steps: [
+            {
+              id: "warm-shield",
+              kind: "standing",
+              scope: "program",
+              subject: "source",
+              operation: "start",
+              effectId: "fire-shield-warm",
+              lifetime: { kind: "manual" },
+              when: { kind: "choice", inputId: "shield-form", equals: "warm" },
+            },
+            {
+              id: "chill-shield",
+              kind: "standing",
+              scope: "program",
+              subject: "source",
+              operation: "start",
+              effectId: "fire-shield-chill",
+              lifetime: { kind: "manual" },
+              when: { kind: "choice", inputId: "shield-form", equals: "chill" },
+            },
+          ],
+        },
+        {
+          id: "retaliate",
+          trigger: {
+            kind: "manual",
+            eventId: "melee-hit-within-five-feet",
+          },
+          targeting: { affinity: "enemy", maxTargets: 1 },
+          steps: [
+            {
+              id: "warm-retaliation",
+              kind: "damage",
+              scope: "target",
+              subject: "target",
+              amount: { kind: "input", inputId: "retaliation-roll" },
+              damageType: { kind: "fixed", damageType: "fire" },
+              damageSource: "spell",
+              when: {
+                kind: "standing",
+                subject: "source",
+                effectId: "fire-shield-warm",
+                present: true,
+              },
+              packetId: "retaliation",
+            },
+            {
+              id: "chill-retaliation",
+              kind: "damage",
+              scope: "target",
+              subject: "target",
+              amount: { kind: "input", inputId: "retaliation-roll" },
+              damageType: { kind: "fixed", damageType: "cold" },
+              damageSource: "spell",
+              when: {
+                kind: "standing",
+                subject: "source",
+                effectId: "fire-shield-chill",
+                present: true,
+              },
+              packetId: "retaliation",
+            },
+          ],
+        },
+      ],
+    },
     level: 4,
     school: "evocation",
     classes: ["druid", "sorcerer", "wizard"],
@@ -229,9 +465,10 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     concentration: false,
     damageType: "fire",
     damageDice: "2d8",
+    resolveOnCast: false,
     grants: [
       // PROSE-SWEPT 2026-06-10 — warm shield (resist Cold) or chill shield
-      // (resist Fire), chosen at cast; the 2d8 retaliation stays descriptive.
+      // (resist Fire), chosen at cast.
       {
         type: "while-active",
         activeKey: "spell-fire-shield",
@@ -398,6 +635,129 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
   },
   {
     id: "phantasmal-killer",
+    effectProgram: {
+      version: 1,
+      id: "spell.phantasmal-killer",
+      gates: [
+        {
+          id: "initial-save",
+          kind: "save",
+          scope: "target",
+          ability: "WIS",
+        },
+        {
+          id: "repeat-save",
+          kind: "save",
+          scope: "target",
+          ability: "WIS",
+        },
+      ],
+      inputs: [
+        {
+          id: "nightmare-roll",
+          kind: "roll",
+          scope: "target",
+          roll: {
+            count: { base: 4, perSlot: { above: 4, amount: 1 } },
+            sides: 10,
+          },
+        },
+      ],
+      phases: [
+        {
+          id: "impact",
+          trigger: { kind: "resolve" },
+          targeting: { affinity: "enemy", maxTargets: 1 },
+          steps: [
+            {
+              id: "initial-damage",
+              kind: "damage",
+              scope: "target",
+              subject: "target",
+              amount: { kind: "input", inputId: "nightmare-roll" },
+              damageType: { kind: "fixed", damageType: "psychic" },
+              damageSource: "spell",
+              gate: {
+                gateId: "initial-save",
+                pass: "failure",
+                otherwise: "half",
+              },
+              packetId: "nightmare",
+            },
+            {
+              id: "start-nightmare",
+              kind: "standing",
+              scope: "target",
+              subject: "target",
+              operation: "start",
+              effectId: "phantasmal-killer-nightmare",
+              lifetime: { kind: "source-end" },
+              when: {
+                kind: "gate",
+                gateId: "initial-save",
+                result: "failure",
+              },
+            },
+            {
+              id: "initial-success-ends",
+              kind: "end-program",
+              scope: "target",
+              when: {
+                kind: "gate",
+                gateId: "initial-save",
+                result: "success",
+              },
+            },
+          ],
+        },
+        {
+          id: "nightmare-turn",
+          trigger: { kind: "turn-end", subject: "target" },
+          targeting: { affinity: "enemy", maxTargets: 1 },
+          steps: [
+            {
+              id: "repeat-damage",
+              kind: "damage",
+              scope: "target",
+              subject: "target",
+              amount: { kind: "input", inputId: "nightmare-roll" },
+              damageType: { kind: "fixed", damageType: "psychic" },
+              damageSource: "spell",
+              gate: {
+                gateId: "repeat-save",
+                pass: "failure",
+                otherwise: "skip",
+              },
+              packetId: "nightmare",
+            },
+            {
+              id: "repeat-success-clears",
+              kind: "standing",
+              scope: "target",
+              subject: "target",
+              operation: "end",
+              effectId: "phantasmal-killer-nightmare",
+              when: {
+                kind: "gate",
+                gateId: "repeat-save",
+                result: "success",
+              },
+            },
+            {
+              id: "repeat-success-ends",
+              kind: "end-program",
+              scope: "target",
+              when: {
+                kind: "gate",
+                gateId: "repeat-save",
+                result: "success",
+              },
+            },
+          ],
+          repeat: { id: "nightmare-duration", maxOccurrences: 10 },
+        },
+      ],
+    },
     level: 4,
     school: "illusion",
     classes: ["bard", "wizard"],
@@ -409,11 +769,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     damageDice: "4d10",
     damageDicePerUpcast: "1d10",
     saveAbility: "WIS",
-    conditionApplication: {
-      options: ["frightened"],
-      on: "failed-save",
-      lifetime: { kind: "source" },
-    },
+    damageOnSave: "half",
     grants: [
       {
         type: "while-active",
@@ -653,6 +1009,109 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
   },
   {
     id: "vitriolic-sphere",
+    effectProgram: {
+      version: 1,
+      id: "spell.vitriolic-sphere",
+      gates: [
+        {
+          id: "initial-save",
+          kind: "save",
+          scope: "target",
+          ability: "DEX",
+        },
+      ],
+      inputs: [
+        {
+          id: "initial-roll",
+          kind: "roll",
+          scope: "program",
+          roll: {
+            count: { base: 10, perSlot: { above: 4, amount: 2 } },
+            sides: 4,
+          },
+        },
+        {
+          id: "afterburn-roll",
+          kind: "roll",
+          scope: "target",
+          roll: { count: 5, sides: 4 },
+        },
+      ],
+      phases: [
+        {
+          id: "impact",
+          trigger: { kind: "resolve" },
+          targeting: { affinity: "enemy" },
+          steps: [
+            {
+              id: "initial-damage",
+              kind: "damage",
+              scope: "target",
+              subject: "target",
+              amount: { kind: "input", inputId: "initial-roll" },
+              damageType: { kind: "fixed", damageType: "acid" },
+              damageSource: "spell",
+              gate: {
+                gateId: "initial-save",
+                pass: "failure",
+                otherwise: "half",
+              },
+              packetId: "impact",
+            },
+            {
+              id: "arm-afterburn",
+              kind: "standing",
+              scope: "target",
+              subject: "target",
+              operation: "start",
+              effectId: "vitriolic-afterburn",
+              lifetime: {
+                kind: "turn-boundary",
+                subject: "target",
+                phase: "turn-end",
+                offsetTurns: 1,
+              },
+              when: { kind: "gate", gateId: "initial-save", result: "failure" },
+            },
+          ],
+        },
+        {
+          id: "afterburn",
+          trigger: {
+            kind: "turn-end",
+            subject: "target",
+            offsetTurns: 1,
+          },
+          targeting: { affinity: "enemy", maxTargets: 1 },
+          steps: [
+            {
+              id: "afterburn-damage",
+              kind: "damage",
+              scope: "target",
+              subject: "target",
+              amount: { kind: "input", inputId: "afterburn-roll" },
+              damageType: { kind: "fixed", damageType: "acid" },
+              damageSource: "spell",
+              packetId: "afterburn",
+              when: {
+                kind: "standing",
+                subject: "target",
+                effectId: "vitriolic-afterburn",
+                present: true,
+              },
+            },
+            {
+              id: "end-afterburn",
+              kind: "standing",
+              scope: "target",
+              subject: "target",
+              operation: "end",
+              effectId: "vitriolic-afterburn",
+            },
+          ],
+        },
+      ],
+    },
     level: 4,
     school: "evocation",
     classes: ["sorcerer", "wizard"],

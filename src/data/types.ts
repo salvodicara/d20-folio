@@ -1303,6 +1303,17 @@ export interface SrdSpellData {
    * The resolver applies `floor(net damage × fraction)` to the caster in the same
    * undoable commit. Vampiric Touch uses `0.5`. */
   selfHealingFromDamage?: { fraction: number };
+  /**
+   * A hand-authored deterministic-runtime program in the CANONICAL
+   * MechanicsProgram format, for the few spells whose semantics exceed the
+   * declarative fields (Fire Shield's retaliation, Contagion's stages). The
+   * transcriber conforms and serves it VERBATIM — the executable truth — and
+   * derives the honest clause classification from the program's own inputs
+   * and steps. Supersedes the legacy `effectProgram`, which is deleted with
+   * the legacy executor at cutover. Validated by `conformMechanicsProgram`
+   * at transcription time; an unconformable program is a corpus-guard failure.
+   */
+  mechanicsProgram?: Readonly<Record<string, unknown>>;
   /** School of magic */
   school: SpellSchool;
   /** Class IDs that have access to this spell */

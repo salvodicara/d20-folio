@@ -1626,6 +1626,8 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
     /** One face-list per d20 requirement (attack first, then saves), request order. */
     readonly attackFaces: readonly (readonly number[])[];
     readonly bindings: Readonly<Record<string, number>>;
+    /** Answers for authored choice inputs, by input id. */
+    readonly choices?: Readonly<Record<string, string>>;
     readonly slotLevel: number | null;
     readonly spellId: string;
     readonly targetSlots: number;
@@ -1796,6 +1798,16 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
             },
             payments: [],
           })),
+        });
+      } else if (requirement.kind === "choice") {
+        const chosen = plan.choices?.[requirement.inputId];
+        if (chosen === undefined) {
+          throw new Error(`no planned choice for ${requirement.inputId}`);
+        }
+        answers.push({
+          choiceId: chosen,
+          inputId: requirement.inputId,
+          kind: "choice",
         });
       } else if (requirement.kind === "dice") {
         for (const request of requirement.requests) {
@@ -2095,6 +2107,104 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
       execution: 1,
       lastTriggerEventId: "pulse.1",
     });
+  });
+
+  it("fire-shield: authored program lights the chosen shield and retaliates", async () => {
+    const cast = await runAttackCast({
+      attackFaces: [],
+      bindings: {},
+      choices: { "shield-form": "warm" },
+      slotLevel: 4,
+      spellId: "fire-shield",
+      targetSlots: 0,
+    });
+    const standings = Object.values(cast.state.occurrences).filter(
+      (occurrence) => occurrence.kind === "standing"
+    );
+    expect(standings).toHaveLength(1);
+    const trailIds = (value: unknown): string[] => [
+      ...new Set(
+        [...JSON.stringify(value).matchAll(/"trailId":"([^"]+)"/g)].map(
+          (match) => match[1] ?? ""
+        )
+      ),
+    ];
+    const answers: MechanicsAnswer[] = [];
+    const run = () =>
+      runMechanicsCausalAction({
+        answers,
+        authoritySnapshot: authoritySnapshot(cast.authority),
+        facts: cast.facts,
+        frameAnswers: [],
+        intent: {
+          actionId: "fire-shield-retaliation-1",
+          factGuards: [],
+          frame: {
+            authority: cast.authority,
+            invocation: { kind: "program-root", occurrence: ROOT },
+            rootReceipt: {
+              expected: { execution: 0, phaseId: "retaliate", triggerEventId: null },
+              kind: "advance",
+              next: {
+                execution: 1,
+                phaseId: "retaliate",
+                triggerEventId: "retaliation.1",
+              },
+              root: ROOT,
+            },
+            trigger: {
+              eventId: "retaliation",
+              kind: "root-pulse",
+              triggerEventId: "retaliation.1",
+            },
+          },
+        },
+        responses: [],
+        state: cast.causal,
+        turnEconomy: [],
+      });
+    let outcome = run();
+    for (
+      let remaining = 5;
+      outcome.status === "needs-answer" && remaining > 0;
+      remaining -= 1
+    ) {
+      const requirement = outcome.requirement;
+      if (!requirement) throw new Error("missing retaliation requirement");
+      if (requirement.kind === "entities") {
+        answers.push({
+          inputId: requirement.inputId,
+          kind: "entities",
+          targets: [SELF],
+        });
+      } else if (requirement.kind === "dice") {
+        answers.push({
+          inputId: requirement.inputId,
+          kind: "dice",
+          requests: requirement.requests.map(({ identity, roll }) => ({
+            identity,
+            observation: {
+              aggregates: [],
+              trails: trailIds(roll).map((trailId) => ({
+                initialFace: 5,
+                steps: [],
+                trailId,
+              })),
+            },
+            payments: [],
+          })),
+        });
+      } else {
+        throw new Error(`unexpected retaliation requirement: ${requirement.kind}`);
+      }
+      outcome = run();
+    }
+    if (outcome.status === "rejected") throw new Error(JSON.stringify(outcome));
+    expect(outcome.status).toBe("complete");
+    if (outcome.status !== "complete") return;
+    // Warm shield lit → 2d8 fire at faces 5 = 10 damage to the attacker; the
+    // chill branch's predicate holds false and no-ops.
+    expect(heroState(outcome.state).vitals.hitPoints.current).toBe(10);
   });
 
   it("omits the ray-of-sickness save entirely when the attack misses", async () => {

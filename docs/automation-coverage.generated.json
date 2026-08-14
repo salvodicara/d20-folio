@@ -6537,12 +6537,57 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "legacy-authored-program-migration",
-          "status": "unsupported"
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-slot",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-shield-form",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-warm-shield",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-chill-shield",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "retaliate-pulse-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "retaliate-retaliation-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "retaliate-warm-retaliation",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "retaliate-chill-retaliation",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "retaliate-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "fire-shield"
     },
     {
@@ -11010,15 +11055,15 @@
       "id": "wish"
     }
   ],
-  "executablePrograms": 258,
+  "executablePrograms": 259,
   "family": "spells",
   "totalEntities": 422,
   "totals": {
-    "automated": 1587,
-    "physical-input": 310,
+    "automated": 1595,
+    "physical-input": 311,
     "table": 211,
-    "spatial": 136,
+    "spatial": 137,
     "narrative": 128,
-    "unsupported": 37
+    "unsupported": 36
   }
 }
