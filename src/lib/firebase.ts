@@ -29,7 +29,13 @@ export const app = initializeApp(firebaseConfig);
 // free tier roomy) — provisioned 2026-08-02, see the rollout runbook.
 // Emulator traffic never needs a production reCAPTCHA token. Disabling App Check in
 // the sandbox also prevents `.env.local`'s live site key from making any external call.
-const appCheckSiteKey = useEmulators ? undefined : import.meta.env.VITE_APPCHECK_SITE_KEY;
+// Local dev stays OFF too — localhost is not a registered reCAPTCHA domain, so the
+// live key can only produce console noise there; `VITE_APPCHECK_DEBUG=true` is the
+// explicit dev opt-in that swaps in the registered debug token instead.
+const appCheckSiteKey =
+  useEmulators || (import.meta.env.DEV && import.meta.env.VITE_APPCHECK_DEBUG !== "true")
+    ? undefined
+    : import.meta.env.VITE_APPCHECK_SITE_KEY;
 if (appCheckSiteKey) {
   if (import.meta.env.VITE_APPCHECK_DEBUG === "true") {
     // Debug-token escape hatch (dev/CI/e2e) — must be set BEFORE initializeAppCheck.

@@ -588,8 +588,11 @@ step 4 (enforce) remains, owner-gated on metrics.
    console → **App Check** → **Apps** → web app → **Register** → reCAPTCHA Enterprise.
 2. **Wire the key** — DONE for `.env.local` (the local-primary deploy builds from it;
    the site key is public-by-design, safe in the bundle). The `deploy.yml` remote twin
-   needs the same var as a repo secret IF remote deploys resume. Optionally
-   set `VITE_APPCHECK_DEBUG=true` for e2e/dev runs that need a token without solving a
+   needs the same var as a repo secret IF remote deploys resume. **Local dev never
+   initializes App Check** (`import.meta.env.DEV` gate in `src/lib/firebase.ts`) —
+   localhost is not a registered reCAPTCHA domain, so the live key could only produce
+   `appCheck/recaptcha-error` console noise there. The dev opt-in is
+   `VITE_APPCHECK_DEBUG=true`, for e2e/dev runs that need a token without solving a
    captcha — it arms `self.FIREBASE_APPCHECK_DEBUG_TOKEN` before init, and the console's
    **Manage debug tokens** dialog must allow-list the token it logs to `console.debug`.
 3. **Watch, don't enforce yet** — ACTIVE NOW: leave Firestore and Storage in **unenforced (monitor)**
