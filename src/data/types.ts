@@ -258,11 +258,13 @@ export interface ResourceDepletionBand {
   outcomes: ReadonlyArray<ResourceDepletionOutcome>;
 }
 
-/** Entered-d20 table consulted when the last unit of the resource is spent. */
-export interface ResourceDepletionRule {
-  kind: "entered-d20";
-  bands: ReadonlyArray<ResourceDepletionBand>;
-}
+/**
+ * Consequence of spending the last unit: either an entered-d20 table the
+ * player resolves physically, or a deterministic outcome that always fires.
+ */
+export type ResourceDepletionRule =
+  | { kind: "entered-d20"; bands: ReadonlyArray<ResourceDepletionBand> }
+  | { kind: "deterministic"; outcomes: ReadonlyArray<ResourceDepletionOutcome> };
 
 /** Typed, instance-owned mutable pool declared by one catalogue item. */
 export interface ResourceSpec {
