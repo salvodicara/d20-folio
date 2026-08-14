@@ -19,6 +19,7 @@ import {
 } from "@/lib/material-state";
 import { conformMechanicsProgramAuthorityReceipt } from "@/lib/mechanics-program-receipt";
 import {
+  transcribeFeatureAction,
   transcribeSpell,
   TRANSCRIPTION_BINDINGS,
   type SpellTranscription,
@@ -64,7 +65,8 @@ export function characterWorldState(
   doc: Readonly<CharacterDoc>,
   uid: string,
   maxHp: number,
-  slotMaxOverrides: Readonly<Record<string, number>> = {}
+  slotMaxOverrides: Readonly<Record<string, number>> = {},
+  trackerSeeds: Readonly<Record<string, { total: number; used: number }>> = {}
 ): Readonly<CharacterMaterialState> | null {
   const material = characterMaterialRef(doc, uid);
   if (doc.session.world !== undefined) {
@@ -113,6 +115,12 @@ export function characterWorldState(
             level: pact.level,
           }
         : null,
+      pools: Object.fromEntries(
+        Object.entries(trackerSeeds).map(([trackerId, seed]) => [
+          trackerId,
+          countCell(Math.max(0, seed.total - seed.used)),
+        ])
+      ),
       standardSpellSlots: Object.fromEntries(
         slots.flatMap((slot) =>
           slot.pactMagic
@@ -219,6 +227,101 @@ export function characterSpellCapability(
     },
   ];
   return { authority, facts, transcription };
+}
+
+/**
+ * The executable authority for one feature-granted action (Second Wind): the
+ * transcribed program closed on the caster with the caller-resolved flat term
+ * bound, plus the pool resource-definition fact for its tracker payment.
+ */
+export function characterFeatureActionCapability(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  featureId: string,
+  action: Readonly<import("@/data/types").SrdActionDef>,
+  ordinal: number,
+  derived: Readonly<{ featureBonus: number; maxHp: number; saveDc: number }>
+): CharacterCastCapability | null {
+  const transcription = transcribeFeatureAction(featureId, action, ordinal);
+  if (!transcription.program) return null;
+  const self = characterSelfRef(doc, uid);
+  const capability = {
+    capabilityId: transcription.program.id,
+    definition: {
+      catalogueKind: "class-feature" as const,
+      entityId: featureId,
+      kind: "catalogue" as const,
+      mechanicsRevision: canonicalFingerprint({ program: transcription.program }),
+    },
+    kind: "program" as const,
+  };
+  const authority = conformMechanicsProgramAuthorityReceipt({
+    anchors: { activator: self, caster: self, owner: self, source: self, target: self },
+    installation: {
+      capability,
+      generation: 1,
+      installationId: transcription.program.id,
+      owner: self,
+    },
+    schema: 1,
+    snapshot: {
+      grantGroups: {},
+      program: transcription.program,
+      ref: capability,
+      resources: {},
+      schema: 1,
+    },
+    source: { capability, kind: "capability", owner: self },
+    staticBindings: {
+      [TRANSCRIPTION_BINDINGS.featureBonus]: derived.featureBonus,
+      [TRANSCRIPTION_BINDINGS.saveDc]: derived.saveDc,
+    },
+  });
+  if (!authority) return null;
+  const facts: ActionFactGuard[] = [
+    {
+      address: ["hit-point-maximum"],
+      expected: { present: true, value: derived.maxHp },
+      lifecycle: "commit-redo",
+      owner: self,
+    },
+    ...(action.costTracker !== undefined
+      ? [
+          {
+            address: [
+              "resource-definition",
+              "resources",
+              "pools",
+              action.costTracker,
+            ] as const,
+            expected: {
+              present: true,
+              value: {
+                bindings: {},
+                spec: {
+                  capacity: { kind: "unbounded" as const },
+                  id: action.costTracker,
+                  initial: { kind: "empty" as const },
+                  kind: "count" as const,
+                  recoveries: [],
+                },
+              },
+            },
+            lifecycle: "commit" as const,
+            owner: self,
+          },
+        ]
+      : []),
+  ];
+  return {
+    authority,
+    facts,
+    transcription: {
+      clauses: transcription.clauses,
+      entityId: featureId,
+      program: transcription.program,
+    },
+  };
 }
 
 /** One resource-definition guard for every standard slot level the world holds. */
@@ -346,6 +449,22 @@ function mirroredCommit(
     const used = doc.session.spellSlots[key]?.used ?? 0;
     usedSlots[key] = { used: Math.max(0, used + (before.current - cell.current)) };
   }
+  const trackers: SessionState["trackers"] = { ...doc.session.trackers };
+  for (const [poolId, cell] of Object.entries(next.resources.pools)) {
+    const beforeCell = world.resources.pools[poolId];
+    if (
+      cell.kind !== "count" ||
+      beforeCell?.kind !== "count" ||
+      beforeCell.current === cell.current
+    ) {
+      continue;
+    }
+    const used = doc.session.trackers[poolId]?.used ?? 0;
+    trackers[poolId] = {
+      ...doc.session.trackers[poolId],
+      used: Math.max(0, used + (beforeCell.current - cell.current)),
+    };
+  }
   // Concentration mirror: only ENGINE transitions move the legacy field —
   // a legacy-held concentration is never clobbered, and an engine release
   // clears the field only when the engine had set it.
@@ -361,6 +480,7 @@ function mirroredCommit(
   const session: SessionState = {
     ...doc.session,
     concentration,
+    trackers,
     hp: {
       ...doc.session.hp,
       current: next.vitals.hitPoints.current,

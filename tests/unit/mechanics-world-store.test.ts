@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { MOCK_CHARACTER } from "@/lib/mock";
 import {
+  characterFeatureActionCapability,
   characterMaterialRef,
   characterSelfRef,
   characterSlotDefinitionFacts,
@@ -245,6 +246,154 @@ describe("mechanics world store", () => {
         key.includes(String(castLevel))
       )?.[1]?.used;
     expect(mirroredUsed).toBeGreaterThanOrEqual(1);
+  });
+
+  it("second wind spends the seeded tracker pool and heals with the class bonus", () => {
+    const damagedDoc = {
+      ...MOCK_CHARACTER,
+      session: {
+        ...MOCK_CHARACTER.session,
+        hp: { ...MOCK_CHARACTER.session.hp, current: 12 },
+        trackers: {},
+      },
+    };
+    const world = characterWorldState(
+      damagedDoc,
+      "test-uid",
+      60,
+      {},
+      {
+        "fighter-second-wind": { total: 2, used: 0 },
+      }
+    );
+    if (!world) throw new Error("world fixture");
+    expect(world.resources.pools["fighter-second-wind"]).toMatchObject({ current: 2 });
+    const capability = characterFeatureActionCapability(
+      damagedDoc,
+      "test-uid",
+      "fighter-second-wind",
+      {
+        costTracker: "fighter-second-wind",
+        heal: { dice: "1d10", plus: { kind: "class-level", classId: "fighter" } },
+        targeting: { affinity: "self", maxTargets: 1 },
+        type: "bonus",
+      },
+      0,
+      { featureBonus: 3, maxHp: 60, saveDc: 8 }
+    );
+    expect(capability).not.toBeNull();
+    if (!capability) return;
+    const self = characterSelfRef(damagedDoc, "test-uid");
+    const material = characterMaterialRef(damagedDoc, "test-uid");
+    const begun = beginMechanicsCausalState({
+      documents: [{ kind: "character", material, state: world }],
+      scope: material,
+    });
+    if (!begun.ok) throw new Error(`begin: ${begun.reason}`);
+    const trailIds = (value: unknown): string[] => [
+      ...new Set(
+        [...JSON.stringify(value).matchAll(/"trailId":"([^"]+)"/g)].map(
+          (match) => match[1] ?? ""
+        )
+      ),
+    ];
+    const answers: MechanicsAnswer[] = [];
+    const run = () =>
+      runMechanicsCausalAction({
+        answers,
+        authoritySnapshot: { definitions: [authorityDefinition(capability.authority)] },
+        facts: capability.facts,
+        frameAnswers: [],
+        intent: {
+          actionId: "use-second-wind",
+          factGuards: [],
+          frame: {
+            authority: capability.authority,
+            invocation: {
+              installation: capability.authority.installation,
+              kind: "installed-capability",
+            },
+            rootReceipt: {
+              kind: "create",
+              materialEpoch: 0,
+              next: { execution: 1, phaseId: "resolve", triggerEventId: null },
+              root: {
+                occurrence: { material, occurrenceId: "second-wind-1" },
+                ordinal: world.nextOccurrenceOrdinal,
+              },
+            },
+            trigger: { kind: "invocation" },
+          },
+        },
+        responses: [],
+        state: begun.value,
+        turnEconomy: [],
+      });
+    let outcome = run();
+    for (
+      let remaining = 5;
+      outcome.status === "needs-answer" && remaining > 0;
+      remaining -= 1
+    ) {
+      const requirement = outcome.requirement;
+      if (!requirement) throw new Error("missing requirement");
+      if (requirement.kind === "resource") {
+        answers.push({
+          inputId: requirement.inputId,
+          kind: "resource",
+          resource: {
+            kind: "pool",
+            owner: self,
+            resourceId: "fighter-second-wind",
+          },
+        });
+      } else if (requirement.kind === "entities") {
+        answers.push({ inputId: requirement.inputId, kind: "entities", targets: [self] });
+      } else if (requirement.kind === "dice") {
+        answers.push({
+          inputId: requirement.inputId,
+          kind: "dice",
+          requests: requirement.requests.map(({ identity, roll }) => ({
+            identity,
+            observation: {
+              aggregates: [],
+              trails: trailIds(roll).map((trailId) => ({
+                initialFace: 7,
+                steps: [],
+                trailId,
+              })),
+            },
+            payments: [],
+          })),
+        });
+      } else {
+        throw new Error(`unexpected requirement: ${requirement.kind}`);
+      }
+      outcome = run();
+    }
+    if (outcome.status !== "complete" || !outcome.action) {
+      throw new Error(`second wind: ${JSON.stringify(outcome)}`);
+    }
+    const committed = commitCharacterAction(
+      damagedDoc,
+      "test-uid",
+      world,
+      outcome.action,
+      outcome.action.guards.facts.map((fact) => ({
+        actual: fact.expected,
+        address: fact.address,
+        owner: fact.owner,
+      }))
+    );
+    expect(committed).not.toBeNull();
+    if (!committed) return;
+    // 1d10 face 7 + resolved fighter-level bonus 3 → +10 HP from 12 to 22.
+    expect(committed.world.vitals.hitPoints.current).toBe(22);
+    expect(committed.world.resources.pools["fighter-second-wind"]).toMatchObject({
+      current: 1,
+    });
+    // The rollout bridge mirrors the spent use onto the legacy tracker.
+    expect(committed.session.trackers["fighter-second-wind"]?.used).toBe(1);
   });
 
   it("pulses a persisted moonbeam zone through the round-tripped authority", () => {

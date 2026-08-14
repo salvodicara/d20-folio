@@ -12,7 +12,7 @@
  */
 
 import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
-import type { SrdSpellData } from "@/data/types";
+import type { SrdActionDef, SrdSpellData } from "@/data/types";
 import type { AbilityCode } from "@/types/ability";
 import type { IntegerExpression } from "@/types/integer-expression";
 import type { MechanicsProgram } from "@/types/mechanics-program-authoring";
@@ -42,6 +42,8 @@ export const TRANSCRIPTION_BINDINGS = {
   attackBonus: "spell-attack-bonus",
   castingModifier: "spellcasting-modifier",
   characterLevel: "character-level",
+  /** The resolved flat bonus of a feature action's heal/THP term. */
+  featureBonus: "feature-bonus",
   saveDc: "spell-save-dc",
   targetArmorClass: "target-armor-class",
 } as const;
@@ -1240,4 +1242,231 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     };
   }
   return { clauses, entityId: spell.id, program };
+}
+
+export interface FeatureActionTranscription {
+  readonly actionId: string;
+  readonly clauses: readonly TranscriptionClause[];
+  readonly program: Readonly<MechanicsProgram> | null;
+}
+
+/**
+ * Transcribe one feature-granted action's declarative facts (Second Wind:
+ * spend one tracker use, heal 1d10 + the resolved class-level bonus). The
+ * tracker rides the world's POOL model; the heal/THP flat term arrives as the
+ * caller-resolved `feature-bonus` binding. Fields beyond this first family
+ * report explicit unsupported boundaries — never silently green.
+ */
+export function transcribeFeatureAction(
+  featureId: string,
+  action: Readonly<SrdActionDef>,
+  ordinal: number
+): FeatureActionTranscription {
+  const actionId = `action:${featureId}:${action.id ?? String(ordinal)}`;
+  const clauses: TranscriptionClause[] = [];
+  const inputs: Record<string, unknown>[] = [];
+  const steps: Record<string, unknown>[] = [];
+  const unsupported = (clauseId: string, detail: string): void => {
+    clauses.push(clause(clauseId, "unsupported", detail));
+  };
+
+  const blockers: readonly (readonly [boolean, string, string])[] = [
+    [action.effectProgram !== undefined, "effect-program", "legacy-program-migration"],
+    [action.skillCheck !== undefined, "skill-check", "check-flow-pending"],
+    [action.checkBonus !== undefined, "check-bonus", "check-flow-pending"],
+    [action.attack !== undefined, "attack", "feature-attack-pending"],
+    [action.attackSequence !== undefined, "attack-sequence", "attack-flow-pending"],
+    [action.attackType !== undefined, "attack-type", "feature-attack-pending"],
+    [action.damageReduction !== undefined, "damage-reduction", "reaction-flow-pending"],
+    [action.alternateCost !== undefined, "alternate-cost", "cost-choice-pending"],
+    [action.poolSpendEffect !== undefined, "pool-spend", "entered-pool-spend-pending"],
+    [
+      action.conditionApplication !== undefined,
+      "condition-application",
+      "feature-conditions-pending",
+    ],
+    [
+      action.conditionRemoval !== undefined || action.cureConditions !== undefined,
+      "condition-removal",
+      "feature-cures-pending",
+    ],
+    [action.grantDie !== undefined, "grant-die", "granted-die-pending"],
+    [action.trackerTopUp !== undefined, "tracker-topup", "topup-flow-pending"],
+    [action.maintainsActiveKey !== undefined, "maintain", "maintenance-flow-pending"],
+    [
+      action.grantsNextAttackAdvantage === true,
+      "next-attack-advantage",
+      "turn-fact-pending",
+    ],
+    [action.locksMovement === true, "locks-movement", "turn-fact-pending"],
+  ];
+  for (const [present, clauseId, detail] of blockers) {
+    if (present) unsupported(clauseId, detail);
+  }
+
+  // Turn economy and prerequisites stay with the table until the turn runtime.
+  clauses.push(clause("economy", "table", `table-spends-${action.type}`));
+  if (action.trigger !== undefined) {
+    clauses.push(clause("reaction-trigger", "table", `table-signals-${action.trigger}`));
+  }
+  if (
+    action.requiresActionThisTurn !== undefined ||
+    action.requiresOutcomeThisTurn !== undefined ||
+    action.requiresActionCategoryThisTurn !== undefined
+  ) {
+    clauses.push(clause("turn-prerequisite", "table", "table-verifies-prerequisite"));
+  }
+  if (action.maxUsesPerTurn !== undefined) {
+    clauses.push(clause("per-turn-cap", "table", "table-enforces-cap"));
+  }
+
+  // Tracker payment as a world pool.
+  if (action.costTracker !== undefined) {
+    inputs.push({
+      inputId: "uses",
+      kind: "resource",
+      term: {
+        amount: fixed(action.trackerCost ?? 1),
+        selector: { kind: "pool", owner: "caster", resourceId: action.costTracker },
+      },
+      when: null,
+    });
+    clauses.push(clause("tracker-payment", "automated"));
+  }
+
+  // Targeting.
+  const maxTargets = action.targeting?.maxTargets;
+  if (typeof maxTargets === "string") {
+    unsupported("targeting", `dynamic-max-targets:${maxTargets}`);
+  } else {
+    inputs.push({
+      eligibility: "creature",
+      inputId: "targets",
+      kind: "entities",
+      maximum: fixed(typeof maxTargets === "number" ? maxTargets : 1),
+      minimum: fixed(0),
+      multiplicity: "slots",
+      when: null,
+    });
+    clauses.push(clause("targeting", "automated"));
+  }
+
+  // Saving throw (the DC binding is caller-resolved, like a spell's).
+  if (action.saveAbility !== undefined) {
+    inputs.push(savingThrowInput(action.saveAbility));
+    clauses.push(clause("saving-throw", "physical-input"));
+  }
+
+  // Healing: a fixed dice formula plus the caller-resolved flat bonus.
+  if (action.heal !== undefined) {
+    const formula = action.heal.dice;
+    const dice =
+      formula !== undefined && !formula.startsWith("classSpecific:")
+        ? parseDice(formula)
+        : null;
+    if (action.heal.diceCount !== undefined || formula === undefined || dice === null) {
+      unsupported(
+        "healing",
+        action.heal.diceCount !== undefined
+          ? "variable-die-count-pending"
+          : `dice:${formula ?? "none"}`
+      );
+    } else {
+      inputs.push(diceInput("heal-roll", dice, fixed(dice.count)));
+      steps.push({
+        amount: sharedDiceAmount(
+          "heal-roll",
+          action.heal.plus !== undefined
+            ? {
+                kind: "add",
+                terms: [
+                  INPUT_TOTAL,
+                  { bindingId: TRANSCRIPTION_BINDINGS.featureBonus, kind: "binding" },
+                ],
+              }
+            : INPUT_TOTAL
+        ),
+        kind: "heal",
+        stepId: "heal-apply",
+        target: { inputId: "targets", kind: "input" },
+        when: null,
+      });
+      clauses.push(clause("healing-roll", "physical-input"));
+      if (action.heal.plus !== undefined) {
+        clauses.push(clause("healing-bonus", "automated", "caller-resolved-term"));
+      }
+      clauses.push(clause("healing-application", "automated"));
+    }
+  }
+
+  // Temporary hit points: N rolls of one fixed die, plus the caller-resolved
+  // flat term; class-scaling dice stay a boundary until the die resolver.
+  if (action.tempHpRoll !== undefined) {
+    const roll = action.tempHpRoll;
+    const dice = roll.die.startsWith("classSpecific:")
+      ? null
+      : parseDice(`${roll.rolls}${roll.die}`);
+    if (dice === null) {
+      unsupported("temporary-hit-points", `die:${roll.die}`);
+    } else {
+      inputs.push(diceInput("temp-hp-roll", dice, fixed(dice.count)));
+      clauses.push(clause("temporary-hit-points-roll", "physical-input"));
+      steps.push({
+        amount: sharedDiceAmount(
+          "temp-hp-roll",
+          roll.plus !== undefined
+            ? {
+                kind: "add",
+                terms: [
+                  INPUT_TOTAL,
+                  { bindingId: TRANSCRIPTION_BINDINGS.featureBonus, kind: "binding" },
+                ],
+              }
+            : INPUT_TOTAL
+        ),
+        decision: "replace",
+        kind: "temporary-hit-points",
+        lifetime: { kind: "manual" },
+        stepId: "temp-hp-apply",
+        target: { inputId: "targets", kind: "input" },
+        when: null,
+      });
+      if (roll.plus !== undefined) {
+        clauses.push(
+          clause("temporary-hit-points-bonus", "automated", "caller-resolved-term")
+        );
+      }
+      clauses.push(clause("temporary-hit-points", "automated"));
+    }
+  }
+
+  const blocked = clauses.some((entry) => entry.status === "unsupported");
+  if (blocked || steps.length === 0) {
+    return {
+      actionId,
+      clauses:
+        steps.length === 0 && !blocked
+          ? [...clauses, clause("resolution", "narrative", "no-mechanical-steps")]
+          : clauses,
+      program: null,
+    };
+  }
+  const program = conformMechanicsProgram({
+    id: actionId,
+    phases: [{ inputs, phaseId: "resolve", steps, trigger: { kind: "invocation" } }],
+    registers: [],
+    version: 1,
+  });
+  if (!program) {
+    return {
+      actionId,
+      clauses: clauses.map((entry) =>
+        entry.status === "automated"
+          ? clause(entry.clauseId, "unsupported", "program-conformance")
+          : entry
+      ),
+      program: null,
+    };
+  }
+  return { actionId, clauses, program };
 }
