@@ -345,7 +345,14 @@ describe("mechanics world to ActionJournal adapter", () => {
     expect(
       planMechanicsWorldAction(before, after, {
         actor: ACTOR,
-        facts: [{ ...table, owner: { ...table.owner, material: SHARED } }],
+        facts: [
+          {
+            ...table,
+            /* Deliberately re-homes the owner onto a material with no
+               document so the plan must reject it. */
+            owner: { ...table.owner, material: SHARED } as typeof table.owner,
+          },
+        ],
         id: "facts:missing-authority-document",
       })
     ).toEqual({ reason: "invalid-action", status: "rejected" });

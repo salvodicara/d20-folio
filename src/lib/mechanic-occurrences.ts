@@ -123,16 +123,16 @@ const conformOccurrenceStateStructure = exactConformer(
   OCCURRENCE_SCHEMA_CONTEXT
 );
 
-function canonicalClone(value: JsonValue): JsonValue {
+function canonicalClone(value: unknown): JsonValue {
   if (Array.isArray(value)) return value.map(canonicalClone);
   if (value !== null && typeof value === "object") {
     return Object.fromEntries(
       Object.keys(value)
         .sort()
-        .map((key) => [key, canonicalClone(value[key] as JsonValue)])
+        .map((key) => [key, canonicalClone((value as Record<string, unknown>)[key])])
     );
   }
-  return value;
+  return value as JsonValue;
 }
 
 function deepFreeze<T>(value: T): Readonly<T> {
@@ -145,15 +145,15 @@ function deepFreeze<T>(value: T): Readonly<T> {
   return value;
 }
 
-function canonicalKey(value: JsonValue): string {
+function canonicalKey(value: unknown): string {
   return JSON.stringify(canonicalClone(value));
 }
 
 function sameJson(left: unknown, right: unknown): boolean {
-  return canonicalKey(left as JsonValue) === canonicalKey(right as JsonValue);
+  return canonicalKey(left) === canonicalKey(right);
 }
 
-function uniqueSemanticEntries(values: ReadonlyArray<JsonValue>): boolean {
+function uniqueSemanticEntries(values: ReadonlyArray<unknown>): boolean {
   const seen = new Set<string>();
   for (const value of values) {
     const key = canonicalKey(value);
@@ -379,9 +379,7 @@ export function conformNewMechanicOccurrence(
   value: unknown
 ): Readonly<NewMechanicOccurrence> | null {
   try {
-    const occurrence = conformNewOccurrenceStructure(
-      value
-    ) as NewMechanicOccurrence | null;
+    const occurrence = conformNewOccurrenceStructure(value);
     if (
       !occurrence ||
       !uniqueSemanticEntries(occurrence.endRules) ||
@@ -483,7 +481,7 @@ export function addOccurrence(
 export function addTransitionedProgramOccurrence(
   state: Readonly<OccurrenceState>,
   id: string,
-  occurrence: Omit<ProgramOccurrence, "ending" | "ordinal">
+  occurrence: Readonly<Extract<NewMechanicOccurrence, { kind: "program" }>>
 ): Readonly<OccurrenceState> {
   const current = parsedOrThrow(state);
   if (!stableKey(id) || Object.hasOwn(current.occurrences, id)) {

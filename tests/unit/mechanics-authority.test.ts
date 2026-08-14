@@ -735,7 +735,9 @@ describe("authoritative executable closure", () => {
     expect(parsed).not.toBe(input);
     expect(Object.isFrozen(parsed)).toBe(true);
     expect(Object.isFrozen(parsed?.grantGroups.mobility?.[0]?.grant)).toBe(true);
-    input.resources.charges.id = "changed";
+    const inputCharges = input.resources.charges;
+    if (!inputCharges) throw new Error("charges fixture");
+    Reflect.set(inputCharges, "id", "changed");
     expect(parsed?.resources.charges?.id).toBe("charges");
     expect(
       conformMechanicsCapabilitySnapshot({ ...executableSnapshot(), excess: true })

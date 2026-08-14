@@ -22,7 +22,11 @@ import {
 } from "@/lib/turn-economy";
 import type { EffectOccurrence } from "@/types/mechanic-occurrence";
 import type { EntityRef, OccurrenceGenerationRef } from "@/types/mechanics-reference";
-import type { EncounterState } from "@/types/material-state";
+import type {
+  CharacterMaterialState,
+  EncounterState,
+  SharedMaterialState,
+} from "@/types/material-state";
 import type { MechanicsWorld } from "@/types/mechanics-world";
 
 const CHARACTER = {
@@ -175,7 +179,7 @@ function condition(
 }
 
 function effectWorld(): Readonly<MechanicsWorld> {
-  const character = {
+  const character: CharacterMaterialState = {
     ...structuredClone(
       createEmptyCharacterMaterialState(1, CHARACTER, {
         hitPoints: {
@@ -260,7 +264,7 @@ function effectWorld(): Readonly<MechanicsWorld> {
       staleGeneration: condition(10, { root: REPLACED_ROOT }),
     },
   };
-  const shared = {
+  const shared: SharedMaterialState = {
     ...structuredClone(createEmptySharedMaterialState()),
     nextOccurrenceOrdinal: 2,
     occurrences: {

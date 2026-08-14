@@ -156,6 +156,12 @@ function freezeDeep<T>(value: T): Readonly<T> {
 
 export { isAuthenticMechanicsEventEmission };
 
+function nonEmpty<Entry>(
+  values: readonly Entry[]
+): values is readonly [Entry, ...Entry[]] {
+  return values.length > 0;
+}
+
 function conformResolutionGroupValue(value: unknown): Readonly<ResolutionGroup> | null {
   const record = exactRecordSnapshot(value, ["groupId", "proposals"]);
   if (!record || !id(record.groupId)) return null;
@@ -176,10 +182,11 @@ function conformResolutionGroupValue(value: unknown): Readonly<ResolutionGroup> 
     operationIds.add(operation.operationId);
     proposals.push({ operation, proposalId: proposal.proposalId });
   }
+  if (!nonEmpty(proposals)) return null;
   return freezeDeep({
     groupId: record.groupId,
     proposals,
-  }) as Readonly<ResolutionGroup>;
+  });
 }
 
 /** Hostile-input wrapper: proxy traps are rejection, never engine control flow. */

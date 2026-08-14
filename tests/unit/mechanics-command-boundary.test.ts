@@ -292,10 +292,20 @@ function resolvedDefinition(
   };
 }
 
-function sortedFences(fences: MechanicsDocumentFence[]): MechanicsDocumentFence[] {
+function sortedFences(
+  fences: [MechanicsDocumentFence, ...MechanicsDocumentFence[]]
+): [MechanicsDocumentFence, ...MechanicsDocumentFence[]] {
   return fences.sort((left, right) =>
     materialRefKey(left.material).localeCompare(materialRefKey(right.material))
   );
+}
+
+function nonEmptyFences(
+  fences: readonly MechanicsDocumentFence[]
+): [MechanicsDocumentFence, ...MechanicsDocumentFence[]] {
+  const [first, ...rest] = fences;
+  if (!first) throw new Error("fence fixture");
+  return [first, ...rest];
 }
 
 function expectDeepFrozen(value: unknown): void {
@@ -360,7 +370,12 @@ describe("mechanics public command boundary", () => {
     expect(
       authorizeMechanicsRequester(
         user,
-        resolvedDefinition({ entityId: "self", material: SHARED_MATERIAL })
+        resolvedDefinition(
+          /* Deliberately self-on-shared: the requester gate must deny it. */
+          { entityId: "self", material: SHARED_MATERIAL } as unknown as Parameters<
+            typeof resolvedDefinition
+          >[0]
+        )
       )
     ).toEqual({ reason: "owner-not-character-play", status: "denied" });
     expect(
@@ -807,7 +822,7 @@ describe("mechanics command suspension boundary", () => {
     ).not.toBeNull();
     expect(
       conformMechanicsCommandSuspension(
-        createSuspension({ documentFences: [...twoFences].reverse() })
+        createSuspension({ documentFences: nonEmptyFences([...twoFences].reverse()) })
       )
     ).toBeNull();
     expect(

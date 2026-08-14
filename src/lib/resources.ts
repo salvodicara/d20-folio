@@ -959,7 +959,7 @@ export function reduceResource(
     return applied(cell, { ...synchronizedCell, values }, operation);
   }
   const spentResolution = synchronizedCell.values[operation.index];
-  if (spentResolution === null) return rejected("unrecorded-roll");
+  if (spentResolution == null) return rejected("unrecorded-roll");
   const values = synchronizedCell.values.filter((_, index) => index !== operation.index);
   return applied(cell, { ...synchronizedCell, values }, operation, {
     recoveryResolution: null,

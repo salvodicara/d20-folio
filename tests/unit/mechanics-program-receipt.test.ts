@@ -43,7 +43,7 @@ const ANCHORS = {
   target: OTHER_ENTITY,
 } as const;
 
-function program(id = CAPABILITY.capabilityId) {
+function program(id: string = CAPABILITY.capabilityId) {
   return {
     id,
     phases: [
@@ -98,8 +98,8 @@ describe("mechanics program authority receipt", () => {
     expect(Object.isFrozen(conformed.snapshot.program)).toBe(true);
     expect(Object.isFrozen(conformed.staticBindings)).toBe(true);
 
-    input.installation.installationId = "changed";
-    input.staticBindings.proficiencyBonus = 9;
+    Reflect.set(input.installation, "installationId", "changed");
+    Reflect.set(input.staticBindings, "proficiencyBonus", 9);
     expect(conformed.installation.installationId).toBe("installation-1");
     expect(conformed.staticBindings.proficiencyBonus).toBe(3);
   });

@@ -54,7 +54,11 @@ import type {
   MechanicsAuthoritySnapshot,
 } from "@/types/mechanics-authority";
 import type { ProgramStepOccurrenceOrigin } from "@/types/mechanic-occurrence";
-import type { EntityRef, OccurrenceGenerationRef } from "@/types/mechanics-reference";
+import type {
+  EntityRef,
+  MaterialEntityRef,
+  OccurrenceGenerationRef,
+} from "@/types/mechanics-reference";
 import type {
   MechanicsOperation,
   MechanicsOperationCause,
@@ -76,6 +80,10 @@ const MATERIAL = {
 } as const;
 const SHARED = { campaignId: "campaign-1", kind: "shared-combat" } as const;
 const SELF = { entityId: "self", material: MATERIAL } as const satisfies EntityRef;
+
+function isMaterialTarget(target: EntityRef): target is Readonly<MaterialEntityRef> {
+  return target.entityId !== "self";
+}
 const FIRST = {
   entityId: "first",
   material: MATERIAL,
@@ -1370,14 +1378,16 @@ describe("simultaneous resolution groups", () => {
       },
       5
     );
+    const creatureValue = creature.value;
+    if (creatureValue.kind !== "creature") throw new Error("creature fixture");
     const sourcedCreature = {
       ...creature,
       value: {
-        ...creature.value,
+        ...creatureValue,
         vitals: {
-          ...creature.value.vitals,
+          ...creatureValue.vitals,
           hitPoints: {
-            ...creature.value.vitals.hitPoints,
+            ...creatureValue.vitals.hitPoints,
             temporary: { current: 3, sourceOccurrence: source },
           },
         },
@@ -1450,7 +1460,7 @@ describe("simultaneous resolution groups", () => {
       operationId: string,
       target: EntityRef
     ): Extract<MechanicsOperation, { kind: "entity-controller" }> => {
-      if (target.entityId === "self") throw new Error("material target fixture");
+      if (!isMaterialTarget(target)) throw new Error("material target fixture");
       return {
         causeId: INSTALLED_CAUSE.causeId,
         controller,

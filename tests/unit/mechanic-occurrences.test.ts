@@ -101,7 +101,6 @@ function authoredProgram(id: string) {
             lifetime: { kind: "manual" },
             operation: "start",
             stepId: "start-concentration",
-            target: { kind: "role", role: "target" },
             when: null,
           },
           {
@@ -240,7 +239,7 @@ function program(
 
 function transitionedProgram(
   authority: MechanicsProgramAuthorityReceipt = entityAuthority()
-): Omit<ProgramOccurrence, "ending" | "ordinal"> {
+): NewProgramOccurrence {
   return {
     ...program(authority),
     phaseState: { invoke: { execution: 1, lastTriggerEventId: "event-1" } },
@@ -618,7 +617,9 @@ describe("one-model occurrence boundary", () => {
     if (!parsed.ok) return;
     expect(parsed.value).not.toBe(input);
     expect(Object.isFrozen(parsed.value)).toBe(true);
-    expect(Object.isFrozen(parsed.value.occurrences.root?.authority)).toBe(true);
+    const parsedRoot = parsed.value.occurrences.root;
+    if (parsedRoot?.kind !== "program") throw new Error("root fixture");
+    expect(Object.isFrozen(parsedRoot.authority)).toBe(true);
     expect(Object.isFrozen(parsed.value.occurrences.effect?.endRules)).toBe(true);
     expect(parsed.value.occurrences.effect?.endRules.map((rule) => rule.kind)).toEqual([
       "time-reached",
@@ -875,7 +876,10 @@ describe("root authority and effect selectors", () => {
   it("excludes roots from target selectors and narrows children to effects", () => {
     const state = selectorState();
     const targeted = selectOccurrencesForTarget(state, ACTOR);
-    expect(targeted.some(({ occurrence }) => occurrence.kind === "program")).toBe(false);
+    const targetedKinds: readonly string[] = targeted.map(
+      ({ occurrence }) => occurrence.kind
+    );
+    expect(targetedKinds).not.toContain("program");
     expect(targeted.map(({ id }) => id)).not.toContain("root");
     const children: ReadonlyArray<{ occurrence: Readonly<EffectOccurrence> }> =
       selectChildrenOf(state, "root");
@@ -951,7 +955,7 @@ describe("root authority and effect selectors", () => {
     if (!parsed.ok) throw new Error("ending selector fixture");
 
     expect(selectOccurrenceEntries(parsed.value).map(({ id }) => id)).toEqual(
-      expect.arrayContaining(endingIds)
+      expect.arrayContaining([...endingIds])
     );
     expect(selectChildrenOf(parsed.value, "root").map(({ id }) => id)).toContain(
       "active"

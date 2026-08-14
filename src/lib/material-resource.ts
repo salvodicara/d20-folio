@@ -7,7 +7,12 @@ import type { IntegerBindings } from "@/types/integer-expression";
 import type { EntityRef, MaterialRef } from "@/types/mechanics-reference";
 import type { MaterialEntity } from "@/types/material-state";
 import type { MechanicsDocument, MechanicsWorld } from "@/types/mechanics-world";
-import type { ResourceCell, ResourceRef, ResourceSpec } from "@/types/resource";
+import type {
+  CountResourceCell,
+  ResourceCell,
+  ResourceRef,
+  ResourceSpec,
+} from "@/types/resource";
 
 export interface MaterialResourceLocation {
   readonly cell: Readonly<ResourceCell>;
@@ -187,6 +192,18 @@ function replaceEntityCell(
   };
 }
 
+/** Patch one entity slot; the split keeps each document kind paired with its state. */
+function withDocumentEntity(
+  document: Readonly<MechanicsDocument>,
+  entityId: string,
+  entity: Readonly<MaterialEntity>
+): Readonly<MechanicsDocument> {
+  const entities = { ...document.state.entities, [entityId]: entity };
+  return document.kind === "character"
+    ? { ...document, state: { ...document.state, entities } }
+    : { ...document, state: { ...document.state, entities } };
+}
+
 /**
  * Replace exactly one located cell without interpreting it. The caller runs
  * mechanics-world closure before exposing or journaling the candidate.
@@ -223,20 +240,11 @@ export function replaceResolvedMaterialResource(
         }
         const entity = exactMaterialEntity(document, resource.owner);
         if (!entity) return document;
-        return {
-          ...document,
-          state: {
-            ...document.state,
-            entities: {
-              ...document.state.entities,
-              [resource.owner.entityId]: replaceEntityCell(
-                entity,
-                resource.resourceId,
-                cell
-              ),
-            },
-          },
-        };
+        return withDocumentEntity(
+          document,
+          resource.owner.entityId,
+          replaceEntityCell(entity, resource.resourceId, cell)
+        );
       }
       if (document.kind !== "character") return document;
       switch (resource.kind) {
@@ -249,7 +257,9 @@ export function replaceResolvedMaterialResource(
                 ...document.state.resources,
                 standardSpellSlots: {
                   ...document.state.resources.standardSpellSlots,
-                  [String(resource.level)]: cell,
+                  /* Written through uninterpreted, exactly like the prior
+                     shape; slot addresses always hold count cells. */
+                  [String(resource.level)]: cell as CountResourceCell,
                 },
               },
             },
@@ -259,7 +269,10 @@ export function replaceResolvedMaterialResource(
             ...document,
             state: {
               ...document.state,
-              resources: { ...document.state.resources, pactSpellSlot: cell },
+              resources: {
+                ...document.state.resources,
+                pactSpellSlot: cell as CountResourceCell,
+              },
             },
           };
         case "hit-die":
@@ -385,20 +398,11 @@ export function insertResolvedMaterialResource(
         }
         const entity = exactMaterialEntity(document, resource.owner);
         if (!entity) return document;
-        return {
-          ...document,
-          state: {
-            ...document.state,
-            entities: {
-              ...document.state.entities,
-              [resource.owner.entityId]: replaceEntityCell(
-                entity,
-                resource.resourceId,
-                cell
-              ),
-            },
-          },
-        };
+        return withDocumentEntity(
+          document,
+          resource.owner.entityId,
+          replaceEntityCell(entity, resource.resourceId, cell)
+        );
       }
       if (document.kind !== "character") return document;
       switch (resource.kind) {
@@ -502,19 +506,10 @@ export function removeResolvedMaterialResource(
         }
         const entity = exactMaterialEntity(document, resource.owner);
         if (!entity) return document;
-        return {
-          ...document,
-          state: {
-            ...document.state,
-            entities: {
-              ...document.state.entities,
-              [resource.owner.entityId]: {
-                ...entity,
-                resources: withoutKey(entity.resources, resource.resourceId),
-              },
-            },
-          },
-        };
+        return withDocumentEntity(document, resource.owner.entityId, {
+          ...entity,
+          resources: withoutKey(entity.resources, resource.resourceId),
+        });
       }
       if (document.kind !== "character") return document;
       switch (resource.kind) {
@@ -568,9 +563,6 @@ export function removeResolvedMaterialResource(
             },
           };
         }
-        case "currency":
-        case "item-quantity":
-          return document;
       }
     }
   );

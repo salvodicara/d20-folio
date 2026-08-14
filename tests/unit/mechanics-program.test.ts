@@ -381,11 +381,17 @@ function sourceEndCausalState(program: MechanicsProgram): Readonly<MechanicsCaus
       target: SELF,
     }
   );
-  document.state.nextOccurrenceOrdinal = occurrences.nextOccurrenceOrdinal;
-  document.state.occurrences = structuredClone(occurrences.occurrences);
-  document.state.vitals.hitPoints.temporary = {
-    current: 1,
-    sourceOccurrence: SOURCE_CHILD,
+  document.state = {
+    ...document.state,
+    nextOccurrenceOrdinal: occurrences.nextOccurrenceOrdinal,
+    occurrences: structuredClone(occurrences.occurrences),
+    vitals: {
+      ...document.state.vitals,
+      hitPoints: {
+        ...document.state.vitals.hitPoints,
+        temporary: { current: 1, sourceOccurrence: SOURCE_CHILD },
+      },
+    },
   };
   const closed = parseMechanicsWorld(initial);
   if (!closed.ok) throw new Error(`source-end fixture: ${closed.reason}`);
@@ -394,9 +400,15 @@ function sourceEndCausalState(program: MechanicsProgram): Readonly<MechanicsCaus
   const ending = structuredClone(begun.value.world);
   const endingDocument = ending.documents[0];
   if (endingDocument?.kind !== "character") throw new Error("source-end fixture");
-  endingDocument.state.vitals.hitPoints.temporary = {
-    current: 0,
-    sourceOccurrence: null,
+  endingDocument.state = {
+    ...endingDocument.state,
+    vitals: {
+      ...endingDocument.state.vitals,
+      hitPoints: {
+        ...endingDocument.state.vitals.hitPoints,
+        temporary: { current: 0, sourceOccurrence: null },
+      },
+    },
   };
   const rebased = rebaseMechanicsCausalState(ending, begun.value);
   if (!rebased.ok) throw new Error(`source-end fixture: ${rebased.reason}`);
@@ -1233,6 +1245,8 @@ describe("MechanicsProgram terminal kernel", () => {
     });
 
     const pending = pendingState(snapshot, proposed.frame);
+    const rootTrigger = proposed.frame.trigger;
+    if (rootTrigger.kind !== "program-phase-end") throw new Error("trigger fixture");
     expect(deriveMechanicsRequirements(proposed, pending).status).toBe("derived");
     expect(
       deriveMechanicsRequirements(
@@ -1246,7 +1260,7 @@ describe("MechanicsProgram terminal kernel", () => {
             root: { ...ROOT, ordinal: 2 },
           },
           trigger: {
-            ...proposed.frame.trigger,
+            ...rootTrigger,
             occurrence: { ...ROOT, ordinal: 2 },
           },
         }),
@@ -1256,7 +1270,7 @@ describe("MechanicsProgram terminal kernel", () => {
     expect(
       deriveMechanicsRequirements(
         withFrame(proposed, {
-          trigger: { ...proposed.frame.trigger, execution: 2 },
+          trigger: { ...rootTrigger, execution: 2 },
         }),
         pending
       )
@@ -1264,7 +1278,7 @@ describe("MechanicsProgram terminal kernel", () => {
     expect(
       deriveMechanicsRequirements(
         withFrame(proposed, {
-          trigger: { ...proposed.frame.trigger, execution: 0 },
+          trigger: { ...rootTrigger, execution: 0 },
         }),
         pending
       )
@@ -2408,11 +2422,13 @@ describe("MechanicsProgram terminal kernel", () => {
         pending
       )
     ).toMatchObject({ reason: "invalid-intent", status: "rejected" });
+    const reactionTrigger = proposed.frame.trigger;
+    if (reactionTrigger.kind !== "damage-taken") throw new Error("trigger fixture");
     expect(
       deriveMechanicsRequirements(
         withFrame(proposed, {
           trigger: {
-            ...proposed.frame.trigger,
+            ...reactionTrigger,
             resolution: {
               ...attempt.resolution,
               packet: {

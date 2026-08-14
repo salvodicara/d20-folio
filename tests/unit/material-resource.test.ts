@@ -33,15 +33,17 @@ function count(current: number): CountResourceCell {
 }
 
 function state(instanceOrdinal = 1): CharacterMaterialState {
-  const value = structuredClone(
-    createEmptyCharacterMaterialState(1, CHARACTER, {
-      hitPoints: {
-        current: 10,
-        temporary: { current: 0, sourceOccurrence: null },
-      },
-      zeroHitPoints: null,
-    })
-  );
+  const value = {
+    ...structuredClone(
+      createEmptyCharacterMaterialState(1, CHARACTER, {
+        hitPoints: {
+          current: 10,
+          temporary: { current: 0, sourceOccurrence: null },
+        },
+        zeroHitPoints: null,
+      })
+    ),
+  };
   value.resources.pools.focus = count(2);
   value.resources.standardSpellSlots["1"] = count(3);
   value.resources.pactSpellSlot = count(1);
@@ -198,7 +200,9 @@ describe("physical material resource locator", () => {
     const closed = finalizeMechanicsEndWave(discovery.world, discovery.wave);
     expect(closed.status).toBe("applied");
     if (closed.status !== "applied") return;
-    expect(closed.world.documents[0]?.state.inventory).not.toHaveProperty("wand");
+    const closedDocument = closed.world.documents[0];
+    if (closedDocument?.kind !== "character") throw new Error("character fixture");
+    expect(closedDocument.state.inventory).not.toHaveProperty("wand");
   });
 
   it("rejects missing and malformed physical addresses", () => {

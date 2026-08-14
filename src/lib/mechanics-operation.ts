@@ -190,9 +190,16 @@ function exactRecord(value: unknown, keys: readonly string[]): value is UnknownR
   );
 }
 
+/** The reference grammar rejects "self" as a material entity id. */
+function isMaterialEntityRef(
+  reference: Readonly<EntityRef>
+): reference is Readonly<MaterialEntityRef> {
+  return reference.entityId !== "self";
+}
+
 function conformMaterialEntityRef(value: unknown): Readonly<MaterialEntityRef> | null {
   const reference = conformEntityRef(value);
-  return reference?.entityId === "self" ? null : reference;
+  return reference !== null && isMaterialEntityRef(reference) ? reference : null;
 }
 
 function journalActor(value: unknown): JournalActorRef | null {
@@ -255,7 +262,6 @@ const OPERATION_CONTEXT: ExactSchemaContext<
     "inventory-generation-ref": conformInventoryGenerationRef,
     "journal-actor": journalActor,
     "material-entity-ref": conformMaterialEntityRef,
-    "material-ref": conformMaterialRef,
     "material-entity-id": conformMaterialEntityId,
     "canonical-fingerprint": conformCanonicalFingerprint,
     "mechanics-invocation-ref": conformMechanicsInvocationRef,
@@ -510,7 +516,11 @@ function entityExists(world: MechanicsWorld, actor: JournalActorRef): boolean {
   if (!document) return false;
   if (actor.entityId === "self") return document.kind === "character";
   const entity = document.state.entities[actor.entityId];
-  return entity?.ordinal === actor.ordinal && entity.availability === "present";
+  return (
+    entity !== undefined &&
+    entity.ordinal === actor.ordinal &&
+    entity.availability === "present"
+  );
 }
 
 function occurrenceAtAddress(
@@ -978,6 +988,9 @@ function executeOperation(
         "maximum-already-synchronized",
         maximumFact(targetRef, operation.input.maximumHitPoints)
       );
+    case "entity-create":
+    case "entity-availability":
+    case "entity-controller":
     case "inventory-create":
     case "inventory-transition":
     case "inventory-end":
@@ -990,6 +1003,7 @@ function executeOperation(
     case "resource-initialize":
     case "resource-remove":
     case "resource-transition":
+    case "turn-economy-transition":
       throw new TypeError("Operation has no terminal vitality transition");
   }
 }
@@ -1158,6 +1172,7 @@ function visibleFacts(
     case "resource-initialize":
     case "resource-remove":
     case "resource-transition":
+    case "turn-economy-transition":
       throw new TypeError("Operation has no terminal vitality facts");
   }
 }
@@ -1399,7 +1414,7 @@ function withProgramOccurrence(
 function withCreatedProgramOccurrence(
   world: Readonly<MechanicsWorld>,
   reference: Readonly<OccurrenceGenerationRef>,
-  occurrence: Omit<ProgramOccurrence, "ending" | "ordinal">,
+  occurrence: Readonly<Extract<NewMechanicOccurrence, { kind: "program" }>>,
   causalState: Readonly<MechanicsCausalState>,
   inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[]
 ): Readonly<MechanicsWorld> | null {
@@ -1502,7 +1517,8 @@ function simulateProgramRootCreate(
     causalState,
     inventorySourceLeases
   );
-  const created = after ? occurrenceAtGeneration(after, operation.root) : undefined;
+  if (!after) return { reason: "invalid-after", status: "rejected" };
+  const created = occurrenceAtGeneration(after, operation.root);
   if (created?.kind !== "program") {
     return { reason: "invalid-after", status: "rejected" };
   }
@@ -1566,22 +1582,18 @@ function simulateProgramPhaseTransition(
   };
   const located = documentFor(world, operation.root.occurrence.material);
   if (!located) return { reason: "missing-program-root", status: "rejected" };
-  const after = {
+  const after: Readonly<MechanicsWorld> = {
     scope: world.scope,
-    documents: world.documents.map((document, index) =>
-      index === located.index
-        ? {
-            ...document,
-            state: {
-              ...document.state,
-              occurrences: {
-                ...document.state.occurrences,
-                [operation.root.occurrence.occurrenceId]: nextRoot,
-              },
-            },
-          }
-        : document
-    ),
+    documents: world.documents.map((document, index) => {
+      if (index !== located.index) return document;
+      const occurrences = {
+        ...document.state.occurrences,
+        [operation.root.occurrence.occurrenceId]: nextRoot,
+      };
+      return document.kind === "character"
+        ? { ...document, state: { ...document.state, occurrences } }
+        : { ...document, state: { ...document.state, occurrences } };
+    }),
   };
   return {
     actionFacts: [],
@@ -1626,7 +1638,9 @@ function simulateProgramRegisterTransition(
     return { reason: "invalid-program-state", status: "rejected" };
   }
   const before = existing.registers[operation.registerId];
-  if (!sameCanonical(before, operation.expected)) {
+  /* `sameCanonical` throws on an absent register, so the second operand only
+     narrows the checked value. */
+  if (!sameCanonical(before, operation.expected) || before === undefined) {
     return { reason: "stale-program-state", status: "rejected" };
   }
   if (sameCanonical(before, operation.next)) {
@@ -1703,7 +1717,7 @@ function controllerWouldCycle(
   while (cursor !== null) {
     const key = entityRefKey(cursor);
     if (key === targetKey) return true;
-    if (seen.has(key) || cursor.entityId === "self") return false;
+    if (seen.has(key) || !isMaterialEntityRef(cursor)) return false;
     seen.add(key);
     cursor = locateMaterialEntityGeneration(world, cursor)?.entity.controller ?? null;
   }
@@ -1718,17 +1732,13 @@ function entityCandidate(
 ): Readonly<MechanicsWorld> {
   return {
     scope: world.scope,
-    documents: world.documents.map((document, index) =>
-      index === documentIndex
-        ? {
-            ...document,
-            state: {
-              ...document.state,
-              entities: { ...document.state.entities, [entityId]: entity },
-            },
-          }
-        : document
-    ),
+    documents: world.documents.map((document, index) => {
+      if (index !== documentIndex) return document;
+      const entities = { ...document.state.entities, [entityId]: entity };
+      return document.kind === "character"
+        ? { ...document, state: { ...document.state, entities } }
+        : { ...document, state: { ...document.state, entities } };
+    }),
   };
 }
 
@@ -2311,7 +2321,10 @@ function simulateInventoryMutation(
   const before = located.instance;
   let after: InventoryInstance;
   if (operation.kind === "inventory-end" || operation.change.kind === "quantity") {
-    const value = operation.kind === "inventory-end" ? 0 : operation.change.value;
+    const value =
+      operation.kind === "inventory-end" || operation.change.kind !== "quantity"
+        ? 0
+        : operation.change.value;
     if (before.quantity.current === 0 && value > 0) {
       return { reason: "invalid-transition", status: "rejected" };
     }

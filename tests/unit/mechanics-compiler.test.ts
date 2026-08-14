@@ -33,6 +33,7 @@ import type {
   MechanicsAuthorityDefinition,
   MechanicsAuthoritySnapshot,
 } from "@/types/mechanics-authority";
+import type { MechanicOccurrenceSchemaShape } from "@/lib/mechanic-occurrence-schema";
 import type { MechanicOccurrence, ProgramPhaseState } from "@/types/mechanic-occurrence";
 import type {
   MechanicsOperationCause,
@@ -305,16 +306,32 @@ function effectBase(
 
 function withOccurrences(
   snapshot: Readonly<MechanicsWorld>,
-  occurrences: Readonly<Record<string, Readonly<MechanicOccurrence>>>
+  occurrences: Readonly<
+    Record<string, MechanicOccurrence | MechanicOccurrenceSchemaShape>
+  >
 ): MechanicsWorld {
   const candidate = structuredClone(snapshot);
   const document = candidate.documents[0];
   if (document?.kind !== "character") throw new Error("occurrence fixture");
-  document.state.occurrences = { ...document.state.occurrences, ...occurrences };
-  document.state.nextOccurrenceOrdinal =
-    Math.max(...Object.values(document.state.occurrences).map(({ ordinal }) => ordinal)) +
-    1;
-  const parsed = parseMechanicsWorld(candidate);
+  const merged: Record<string, MechanicOccurrence | MechanicOccurrenceSchemaShape> = {
+    ...document.state.occurrences,
+    ...occurrences,
+  };
+  const parsed = parseMechanicsWorld({
+    ...candidate,
+    documents: [
+      {
+        ...document,
+        state: {
+          ...document.state,
+          occurrences: merged,
+          nextOccurrenceOrdinal:
+            Math.max(...Object.values(merged).map(({ ordinal }) => ordinal)) + 1,
+        },
+      },
+      ...candidate.documents.slice(1),
+    ],
+  });
   if (!parsed.ok) throw new Error(`occurrence fixture: ${parsed.reason}`);
   return parsed.value;
 }
@@ -524,7 +541,7 @@ function phaseEndCausalState(
   );
   const document = initial.documents[0];
   if (document?.kind !== "character") throw new Error("phase-end fixture");
-  document.state.nextOccurrenceOrdinal = 3;
+  document.state = { ...document.state, nextOccurrenceOrdinal: 3 };
   document.state.occurrences.child = {
     endRules: [
       {
@@ -1144,7 +1161,7 @@ describe("compileMechanicsFrame segmented SSOT", () => {
         version: 1,
       });
       const common = effectBase(2, "existing");
-      const occurrence: MechanicOccurrence =
+      const occurrence: MechanicOccurrenceSchemaShape =
         scenario.effectKind === "concentration"
           ? {
               ...common,
@@ -1509,7 +1526,7 @@ describe("compileMechanicsFrame segmented SSOT", () => {
         scenario.kind === "concentration"
           ? { ...baseAuthority, anchors: { ...baseAuthority.anchors, caster: FAMILIAR } }
           : baseAuthority;
-      const occurrence: MechanicOccurrence =
+      const occurrence: MechanicOccurrenceSchemaShape =
         scenario.kind === "concentration"
           ? {
               ...effectBase(2, "seed-exclusive", ROOT, scenario.target),
@@ -1546,7 +1563,7 @@ describe("compileMechanicsFrame segmented SSOT", () => {
       });
 
       const otherBase = effectBase(3, "seed-exclusive", OTHER_ROOT, scenario.target);
-      const otherOccurrence: MechanicOccurrence =
+      const otherOccurrence: MechanicOccurrenceSchemaShape =
         scenario.kind === "concentration"
           ? { ...otherBase, kind: "concentration" }
           : { ...otherBase, formId: "wolf", kind: "polymorph-form" };
@@ -1561,7 +1578,7 @@ describe("compileMechanicsFrame segmented SSOT", () => {
       expect(noMatch.transaction).toBeNull();
       expect(noMatch.trace[0]).toMatchObject({ status: "compiled", stepId: "end" });
 
-      if (scenario.kind === "polymorph") {
+      if (occurrence.kind === "polymorph-form") {
         const wrongFormWorld = withOccurrences(world(), {
           "root-1": programOccurrence(program, ROOT.ordinal, authority),
           existing: { ...occurrence, formId: "brown-bear" },
@@ -1655,6 +1672,7 @@ describe("compileMechanicsFrame segmented SSOT", () => {
     });
     expect(
       result.status === "needs-coordination" &&
+        result.coordination.kind !== "boundary" &&
         Object.isFrozen(result.coordination.occurrences)
     ).toBe(true);
 

@@ -148,6 +148,7 @@ describe("low-dependency mechanics authority references", () => {
     expect(conformed).toEqual(input);
     expect(conformed).not.toBe(input);
     expect(Object.isFrozen(conformed)).toBe(true);
+    if (conformed.kind !== "installed-capability") throw new Error("ref fixture");
     expect(Object.isFrozen(conformed.installation)).toBe(true);
     expect(mechanicsInvocationRefKey(conformed)).toBe(
       mechanicsInvocationRefKey({

@@ -241,7 +241,7 @@ function conformObservedMechanicsBoundary(
       combatant &&
       (value.phase === "start" || value.phase === "end") &&
       isPositiveCounter(value.round)
-      ? freezeDeep({
+      ? freezeDeep<ObservedMechanicsBoundary>({
           clock,
           combatant,
           kind,
@@ -262,7 +262,7 @@ function conformObservedMechanicsBoundary(
       combatant &&
       isPositiveCounter(value.boundaryOrdinal) &&
       (value.rest === "short" || value.rest === "long")
-      ? freezeDeep({
+      ? freezeDeep<ObservedMechanicsBoundary>({
           boundaryOrdinal: value.boundaryOrdinal,
           clock,
           combatant,
@@ -279,7 +279,7 @@ function conformObservedMechanicsBoundary(
     return clock &&
       isPositiveCounter(value.boundaryOrdinal) &&
       (value.phase === "dawn" || value.phase === "dusk")
-      ? freezeDeep({
+      ? freezeDeep<ObservedMechanicsBoundary>({
           boundaryOrdinal: value.boundaryOrdinal,
           clock,
           kind,
@@ -723,8 +723,11 @@ function validateReferences(
   const ownedMaterialLifecycles = new Set<string>();
   const activeItemSources = activeInventorySourceKeys(world);
   for (const document of world.documents) {
-    const self = { material: document.material, entityId: "self" } satisfies EntityRef;
     if (document.kind === "character") {
+      const self = {
+        material: document.material,
+        entityId: "self",
+      } satisfies EntityRef;
       if (!temporaryHitPointSourceValid(world, document.state.vitals, self)) {
         return "missing-reference";
       }
@@ -980,11 +983,12 @@ function pendingFramePermit(
 } | null {
   if (!isExactRecord(value, ["cursor", "frame", "selectedEvent"])) return null;
   const frame = conformMechanicsExecutionFrame(value.frame);
-  const program = frame?.authority.snapshot.program;
+  if (!frame) return null;
+  const program = frame.authority.snapshot.program;
   const phase = program?.phases.find(
     ({ phaseId }) => phaseId === frame.rootReceipt.next.phaseId
   );
-  if (!frame || !program || !phase || !exactEqual(frame, value.frame)) return null;
+  if (!program || !phase || !exactEqual(frame, value.frame)) return null;
   const cursor = conformPendingFrameCursor(value.cursor, phase.steps.length);
   if (
     !cursor ||
@@ -1237,7 +1241,7 @@ export function isMechanicsWorld(value: unknown): value is MechanicsWorld {
 function rejected(
   world: Readonly<MechanicsWorld>,
   reason: MechanicsWorldSimulationRejection
-): MechanicsWorldSimulationResult {
+): Extract<MechanicsWorldSimulationResult, { status: "rejected" }> {
   return { status: "rejected", reason, world };
 }
 
@@ -1620,7 +1624,7 @@ function cleanEndedMaterial(
               activeItemSources.has(sourceKey) ||
               inventorySourceLeases.has(sourceKey)
             ) {
-              instance.quantity.current = 0;
+              instance.quantity = { ...instance.quantity, current: 0 };
               instance.ownerOccurrence = null;
             } else {
               Reflect.deleteProperty(document.state.inventory, instanceId);
@@ -3016,7 +3020,9 @@ function discoverCandidates(
       return document.kind === "character" ? document.state.vitals : null;
     }
     const entity = document.state.entities[target.entityId];
-    return entity?.ordinal === target.ordinal && entity.kind === "creature"
+    return entity !== undefined &&
+      entity.ordinal === target.ordinal &&
+      entity.kind === "creature"
       ? entity.vitals
       : null;
   };
@@ -3513,7 +3519,7 @@ export function isMechanicsEndWaveReceiptForWorld(
 
 function isMechanicsEndWaveReceiptForHistoricalWorld(
   basis: Readonly<MechanicsWorld>,
-  value: Readonly<MechanicsWorld>,
+  value: unknown,
   wave: unknown
 ): wave is Readonly<MechanicsEndWaveReceipt> {
   try {
@@ -3612,7 +3618,7 @@ function latchVerifiedMechanicsEndWave(
     if (!occurrence || occurrence.ordinal !== reference.ordinal) {
       return rejected(parsed.value, "invalid-end-wave");
     }
-    const nextEnding = { causes: structuredClone(ending.causes) };
+    const nextEnding = { causes: [...structuredClone(ending.causes)] };
     if (canonicalJson(occurrence.ending) !== canonicalJson(nextEnding)) {
       occurrence.ending = nextEnding;
       changed = true;
@@ -4020,7 +4026,7 @@ function conformBoundaryCursor(value: unknown): Readonly<MechanicsBoundaryCursor
     ) {
       return null;
     }
-    return freezeDeep({
+    return freezeDeep<MechanicsBoundaryCursor>({
       encounter,
       excludeCurrent: excludeCurrent as MaterialEntityRef | null,
       expectedRound: value.expectedRound,
@@ -4169,14 +4175,22 @@ function checkpointStateValid(
   if (
     !isExactRecord(checkpoint, ["boundary", "ordinal", "state", "wave"]) ||
     !isCounter(checkpoint.ordinal) ||
-    !isExactRecord(checkpoint.state, ["context", "world"]) ||
-    !(historicalBasis
-      ? isMechanicsEndWaveReceiptForHistoricalWorld(
-          historicalBasis,
-          checkpoint.state.world,
-          checkpoint.wave
-        )
-      : isMechanicsEndWaveReceiptForWorld(checkpoint.state.world, checkpoint.wave))
+    !isExactRecord(checkpoint.state, ["context", "world"])
+  ) {
+    return false;
+  }
+  if (historicalBasis) {
+    if (
+      !isMechanicsEndWaveReceiptForHistoricalWorld(
+        historicalBasis,
+        checkpoint.state.world,
+        checkpoint.wave
+      )
+    ) {
+      return false;
+    }
+  } else if (
+    !isMechanicsEndWaveReceiptForWorld(checkpoint.state.world, checkpoint.wave)
   ) {
     return false;
   }
@@ -4196,16 +4210,13 @@ function checkpointStateValid(
   if (!isExactRecord(state.context, ["endWave", "pendingFrames", "request"])) {
     return false;
   }
-  const pendingFrames = conformPendingFrames(
-    checkpoint.state.world,
-    state.context.pendingFrames
-  );
+  const pendingFrames = conformPendingFrames(state.world, state.context.pendingFrames);
   if (
     !pendingCapabilityValid(state) ||
     !pendingFrames ||
     !exactEqual(pendingFrames, state.context.pendingFrames) ||
     validateReadableCausalWorld(
-      checkpoint.state.world,
+      state.world,
       leaseSet(state.context.request),
       pendingFrames
     ) !== null ||
@@ -4376,7 +4387,9 @@ function continuationValid(
       "pendingFrames",
       "request",
     ]) ||
-    !pendingCapabilityValid(value.checkpoint.state) ||
+    !pendingCapabilityValid(
+      value.checkpoint.state as unknown as Readonly<MechanicsCausalState>
+    ) ||
     !command ||
     !cursor ||
     !cursorMatchesCommand(command, cursor)
@@ -4413,7 +4426,7 @@ function continuationValid(
         "endRequests",
         "inventorySourceLeases",
       ]) &&
-      value.request.endRequests.length === 0 &&
+      normalized.endRequests.length === 0 &&
       canonicalJson(normalized) === canonicalJson(value.request) &&
       canonicalJson(value.request.boundaries) ===
         canonicalJson(value.checkpoint.wave.request.boundaries) &&
@@ -5440,15 +5453,16 @@ export function advanceMechanicsBoundary(
       if (!Number.isSafeInteger(ordinal)) {
         return boundaryRejected("overflow");
       }
+      const wave = completed.state.context.endWave?.wave;
+      if (!wave) {
+        return boundaryRejected("invalid-end-wave");
+      }
       const checkpoint = freezeDeep({
         boundary: null,
         ordinal,
         state: completed.state,
-        wave: completed.state.context.endWave?.wave,
+        wave,
       });
-      if (!checkpoint.wave) {
-        return boundaryRejected("invalid-end-wave");
-      }
       const continuation = freezeDeep({
         ...continuationValue,
         checkpoint,
@@ -5562,7 +5576,7 @@ function seedEncounter(epoch: number, seed: EncounterSeed): EncounterState | nul
         },
       ])
     );
-    return structuredClone({ epoch, ...seed, participants });
+    return structuredClone({ epoch, ...seed, order: [...seed.order], participants });
   } catch {
     return null;
   }
@@ -5623,7 +5637,7 @@ function startEncounterOnDocument(
 }
 
 function leasedCharacterMaterials(
-  encounter: Pick<EncounterState, "participants">
+  encounter: Pick<EncounterSeed, "participants">
 ): CharacterMaterialRef[] {
   const byKey = new Map<string, CharacterMaterialRef>();
   for (const participant of Object.values(encounter.participants)) {

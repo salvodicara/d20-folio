@@ -472,18 +472,21 @@ describe("material state schema 4", () => {
     expect(parseCharacterMaterialState(valid, CHARACTER).ok).toBe(true);
 
     const stale = structuredClone(valid);
-    const enchantment = stale.inventory.blade?.enchantment;
-    if (!enchantment) throw new Error("enchantment fixture");
-    enchantment.instanceOrdinal = 3;
+    const staleBlade = stale.inventory.blade;
+    if (!staleBlade?.enchantment) throw new Error("enchantment fixture");
+    staleBlade.enchantment = { ...staleBlade.enchantment, instanceOrdinal: 3 };
     expect(parseCharacterMaterialState(stale, CHARACTER)).toEqual({ ok: false });
 
     const foreign = structuredClone(valid);
-    const foreignEnchantment = foreign.inventory.blade?.enchantment;
-    if (!foreignEnchantment) throw new Error("enchantment fixture");
-    foreignEnchantment.owner = {
-      characterId: "other-character",
-      kind: "character-play",
-      uid: CHARACTER.uid,
+    const foreignBlade = foreign.inventory.blade;
+    if (!foreignBlade?.enchantment) throw new Error("enchantment fixture");
+    foreignBlade.enchantment = {
+      ...foreignBlade.enchantment,
+      owner: {
+        characterId: "other-character",
+        kind: "character-play",
+        uid: CHARACTER.uid,
+      },
     };
     expect(parseCharacterMaterialState(foreign, CHARACTER)).toEqual({ ok: false });
 
@@ -557,11 +560,12 @@ describe("material state schema 4", () => {
     });
 
     const staleGeneration = structuredClone(valid);
-    const staleController = staleGeneration.entities.familiar?.controller;
-    if (!staleController || staleController.entityId === "self") {
+    const staleFamiliar = staleGeneration.entities.familiar;
+    const staleController = staleFamiliar?.controller;
+    if (!staleFamiliar || !staleController || staleController.entityId === "self") {
       throw new Error("expected material-entity controller fixture");
     }
-    staleController.ordinal = 3;
+    staleFamiliar.controller = { ...staleController, ordinal: 3 };
     expect(parseCharacterMaterialState(staleGeneration, CHARACTER)).toEqual({
       ok: false,
     });
@@ -589,11 +593,16 @@ describe("material state schema 4", () => {
     });
 
     const staleSharedGeneration = structuredClone(shared);
-    const staleSharedController = staleSharedGeneration.entities.familiar?.controller;
-    if (!staleSharedController || staleSharedController.entityId === "self") {
+    const staleSharedFamiliar = staleSharedGeneration.entities.familiar;
+    const staleSharedController = staleSharedFamiliar?.controller;
+    if (
+      !staleSharedFamiliar ||
+      !staleSharedController ||
+      staleSharedController.entityId === "self"
+    ) {
       throw new Error("expected shared material-entity controller fixture");
     }
-    staleSharedController.ordinal = 3;
+    staleSharedFamiliar.controller = { ...staleSharedController, ordinal: 3 };
     expect(parseSharedMaterialState(staleSharedGeneration, SHARED)).toEqual({
       ok: false,
     });

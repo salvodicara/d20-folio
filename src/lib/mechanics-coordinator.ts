@@ -35,6 +35,7 @@ import {
   topMechanicsPendingFrame,
 } from "@/lib/mechanics-world";
 import type { ActionFactGuard } from "@/types/action-journal";
+import type { EndRule } from "@/types/mechanic-occurrence";
 import type {
   MechanicsCompilerContinuation,
   MechanicsCompilerResponse,
@@ -213,7 +214,9 @@ export function runMechanicsCausalAction(
 
   if (rootFrame.rootReceipt.kind === "create") {
     const program = rootFrame.authority.snapshot.program;
-    const rootEndRules = (program?.lifetime ?? []).flatMap((spec) => {
+    const rootEndRules: Readonly<EndRule>[] = [];
+    let rootLifetimeUnresolved = false;
+    for (const spec of program?.lifetime ?? []) {
       const resolved = resolveMechanicsLifetime(spec, {
         bindings: rootFrame.authority.staticBindings,
         combatant:
@@ -239,9 +242,10 @@ export function runMechanicsCausalAction(
         root: rootFrame.rootReceipt.root,
         world: entryState.world,
       });
-      return resolved ?? [null];
-    });
-    if (rootEndRules.some((rule) => rule === null)) {
+      if (resolved) rootEndRules.push(...resolved);
+      else rootLifetimeUnresolved = true;
+    }
+    if (rootLifetimeUnresolved) {
       return rejectedResult("root-create-rejected", frameRef(rootFrame), "root-lifetime");
     }
     const cause: MechanicsOperationCause = {
@@ -259,7 +263,7 @@ export function runMechanicsCausalAction(
       operations: [
         {
           causeId: cause.causeId,
-          endRules: rootEndRules.filter((rule) => rule !== null),
+          endRules: rootEndRules,
           kind: "program-root-create",
           materialEpoch: rootFrame.rootReceipt.materialEpoch,
           operationId: `root-create:${canonicalFingerprint(rootFrame.rootReceipt)}`,

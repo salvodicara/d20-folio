@@ -50,7 +50,10 @@ import {
 import type { ActionFactGuard } from "@/types/action-journal";
 import type { DamageDefenseRule, DamagePart, DamageResolution } from "@/types/damage";
 import type { DiceFormula, DiceObservation } from "@/types/dice-formula";
-import type { ProgramStepOccurrenceOrigin } from "@/types/mechanic-occurrence";
+import type {
+  NewMechanicOccurrence,
+  ProgramStepOccurrenceOrigin,
+} from "@/types/mechanic-occurrence";
 import type { MechanicsInvocationRef } from "@/types/mechanics-authority-ref";
 import type { MechanicsExecutionFrame } from "@/types/mechanics-command";
 import type {
@@ -352,6 +355,9 @@ function authoritySnapshotFor(transactionValue: unknown): MechanicsAuthoritySnap
         }
         if (
           !("invocation" in cause) ||
+          typeof cause.invocation !== "object" ||
+          cause.invocation === null ||
+          !("kind" in cause.invocation) ||
           cause.invocation.kind !== "installed-capability"
         ) {
           return [];
@@ -1169,7 +1175,9 @@ function standingCreate(
   parentId: string,
   cause: MechanicsOperationCause,
   parentOrdinal = 1
-): Extract<MechanicsOperation, { readonly kind: "occurrence-create" }> {
+): Extract<MechanicsOperation, { readonly kind: "occurrence-create" }> & {
+  readonly occurrence: Extract<NewMechanicOccurrence, { kind: "standing" }>;
+} {
   return {
     causeId: cause.causeId,
     conditionImmunityOverride: null,
@@ -1468,7 +1476,7 @@ describe("atomic mechanics transactions", () => {
     });
     expect(state(before).inventory).toEqual({});
 
-    const material = structuredClone(state(before));
+    const material = { ...structuredClone(state(before)) };
     material.inventory[operation.item.instanceId] = inventoryInstance(1);
     material.nextInventoryOrdinal = 2;
     const collided = parsedCharacterState(material);
@@ -1493,9 +1501,9 @@ describe("atomic mechanics transactions", () => {
   });
 
   it("uses one desired-state reducer for quantity, equipment, and attunement", () => {
-    const material = structuredClone(
-      createEmptyCharacterMaterialState(1, CHARACTER, alive(10))
-    );
+    const material = {
+      ...structuredClone(createEmptyCharacterMaterialState(1, CHARACTER, alive(10))),
+    };
     material.inventory.item = inventoryInstance(1);
     material.nextInventoryOrdinal = 2;
     const before = parsedCharacterState(material);
@@ -1621,9 +1629,9 @@ describe("atomic mechanics transactions", () => {
   });
 
   it("CAS-detaches the exact inbound enchantment bearer and rejects stale or omitted bearers", () => {
-    const material = structuredClone(
-      createEmptyCharacterMaterialState(1, CHARACTER, alive(10))
-    );
+    const material = {
+      ...structuredClone(createEmptyCharacterMaterialState(1, CHARACTER, alive(10))),
+    };
     const enchantment = inventoryRef("rune", 2);
     material.inventory.weapon = inventoryInstance(1, 1, { enchantment });
     material.inventory.rune = inventoryInstance(2);
@@ -1767,7 +1775,7 @@ describe("atomic mechanics transactions", () => {
       status: "rejected",
     });
 
-    const collisionState = structuredClone(state(before));
+    const collisionState = { ...structuredClone(state(before)) };
     collisionState.entities.summon = creature(alive(8));
     collisionState.nextEntityOrdinal = 2;
     const collisionWorld = parsedCharacterState(collisionState);
@@ -2557,9 +2565,9 @@ describe("atomic mechanics transactions", () => {
     } as const satisfies MechanicsProgramAuthorityReceipt;
     const rootCause = programRootCause(authority, "source-root");
     const installed = installedCause(authority);
-    const material = structuredClone(
-      createEmptyCharacterMaterialState(1, CHARACTER, alive(10))
-    );
+    const material = {
+      ...structuredClone(createEmptyCharacterMaterialState(1, CHARACTER, alive(10))),
+    };
     material.entities.source = creature(alive(10), false);
     material.entities.other = creature(alive(10), true, 2);
     material.nextEntityOrdinal = 3;
@@ -5068,9 +5076,9 @@ describe("atomic mechanics transactions", () => {
   });
 
   it("leaves final item cleanup to the higher-level executor", () => {
-    const material = structuredClone(
-      createEmptyCharacterMaterialState(1, CHARACTER, alive(10))
-    );
+    const material = {
+      ...structuredClone(createEmptyCharacterMaterialState(1, CHARACTER, alive(10))),
+    };
     material.inventory.potion = {
       attuned: false,
       definition: { itemId: "potion-of-healing", kind: "catalogue" },
@@ -5143,9 +5151,9 @@ describe("atomic mechanics transactions", () => {
   });
 
   it("authenticates every installed cause against the shared action basis", () => {
-    const material = structuredClone(
-      createEmptyCharacterMaterialState(1, CHARACTER, alive(10))
-    );
+    const material = {
+      ...structuredClone(createEmptyCharacterMaterialState(1, CHARACTER, alive(10))),
+    };
     material.inventory.potion = inventoryInstance(1);
     material.nextInventoryOrdinal = 2;
     const before = parsedCharacterState(material);
@@ -5159,7 +5167,7 @@ describe("atomic mechanics transactions", () => {
         kind: "catalogue",
         mechanicsRevision: canonicalFingerprint({ fixture: "secondary-item-capability" }),
       },
-    };
+    } as const;
     const secondaryAuthority = {
       ...primaryAuthority,
       installation: {
@@ -5234,9 +5242,9 @@ describe("atomic mechanics transactions", () => {
   });
 
   it("rejects ABA reuse when one inventory id names a new physical ordinal", () => {
-    const material = structuredClone(
-      createEmptyCharacterMaterialState(1, CHARACTER, alive(10))
-    );
+    const material = {
+      ...structuredClone(createEmptyCharacterMaterialState(1, CHARACTER, alive(10))),
+    };
     material.inventory.wand = {
       attuned: false,
       definition: { itemId: "wand-of-magic-missiles", kind: "catalogue" },
@@ -5279,9 +5287,9 @@ describe("atomic mechanics transactions", () => {
   });
 
   it("leases a final consumable through cost and effects, then rejects reuse", () => {
-    const material = structuredClone(
-      createEmptyCharacterMaterialState(1, CHARACTER, alive(10))
-    );
+    const material = {
+      ...structuredClone(createEmptyCharacterMaterialState(1, CHARACTER, alive(10))),
+    };
     material.inventory.potion = {
       attuned: false,
       definition: { itemId: "potion-of-speed", kind: "catalogue" },

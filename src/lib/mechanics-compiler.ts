@@ -64,6 +64,7 @@ import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program
 import type {
   MechanicOccurrence,
   NewMechanicOccurrence,
+  ObservedMechanicsBoundary,
   ProgramStepOccurrenceOrigin,
   StandingFact,
 } from "@/types/mechanic-occurrence";
@@ -143,7 +144,8 @@ function effectTargetIsCreature(
   if (target.entityId === "self") return document.kind === "character";
   const entity = document.state.entities[target.entityId];
   return (
-    entity?.ordinal === target.ordinal &&
+    entity !== undefined &&
+    entity.ordinal === target.ordinal &&
     entity.availability === "present" &&
     entity.kind === "creature"
   );
@@ -406,7 +408,12 @@ function currentTurnPhase(
     return trigger.phase;
   }
   const reached = state.context.request.boundaries.filter(
-    (boundary) =>
+    (
+      boundary
+    ): boundary is Extract<
+      Readonly<ObservedMechanicsBoundary>,
+      { readonly kind: "turn-boundary" }
+    > =>
       boundary.kind === "turn-boundary" &&
       boundary.clock.epoch === encounter.clock.epoch &&
       materialRefKey(boundary.clock.material) === clockKey &&
@@ -577,7 +584,7 @@ function effectOccurrence(
   origin: Readonly<ProgramStepOccurrenceOrigin>,
   endRules: NonNullable<ReturnType<typeof resolveMechanicsLifetime>>,
   parentId: string
-): Readonly<NewMechanicOccurrence> | null {
+): Readonly<Exclude<NewMechanicOccurrence, { kind: "program" }>> | null {
   const common = {
     endRules,
     origin,
@@ -659,7 +666,9 @@ function locateVitalityTarget(
     return document.kind === "character" ? { kind: "character" } : null;
   }
   const entity = document.state.entities[target.entityId];
-  return entity?.ordinal === target.ordinal && entity.availability === "present"
+  return entity !== undefined &&
+    entity.ordinal === target.ordinal &&
+    entity.availability === "present"
     ? { entity, kind: "entity" }
     : null;
 }
@@ -817,7 +826,7 @@ function rejected(
   stepId: string | null,
   referenceId: string | null = null,
   operationId: string | null = null
-): MechanicsFrameCompileResult {
+): Extract<MechanicsFrameCompileResult, { readonly status: "rejected" }> {
   return freezeDeep({
     operationId,
     phaseId,
@@ -1664,7 +1673,11 @@ export function compileMechanicsFrame(
         } else if (step.kind === "resource-recover") {
           transition = { kind: "recover", trigger: step.trigger };
         } else {
-          transition = step.operation;
+          /* The authored override-capacity variant still carries an
+             IntegerExpression the operation grammar models as a resolved
+             number; it is forwarded verbatim so the operation conformer keeps
+             rejecting it (fail-closed) until capacity evaluation is built. */
+          transition = step.operation as typeof transition;
         }
         const problem = project(
           {
@@ -2044,7 +2057,15 @@ export function compileMechanicsFrame(
             }
           : {
               causeId: rootCause.causeId,
-              change: step.change,
+              /* The authored change payload (quantity expression, attuned /
+                 equipped field names) still differs from the operation
+                 grammar's resolved shape; it is forwarded verbatim so the
+                 operation conformer keeps rejecting it (fail-closed) until
+                 the compile lowering is built. */
+              change: step.change as unknown as Extract<
+                MechanicsOperation,
+                { readonly kind: "inventory-transition" }
+              >["change"],
               enchantmentBearer,
               item,
               kind: "inventory-transition",

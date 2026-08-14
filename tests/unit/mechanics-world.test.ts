@@ -53,11 +53,7 @@ import type {
   OccurrenceGenerationRef,
   SharedMaterialRef,
 } from "@/types/mechanics-reference";
-import type {
-  EndRule,
-  NewMechanicOccurrence,
-  ProgramOccurrence,
-} from "@/types/mechanic-occurrence";
+import type { EndRule, NewMechanicOccurrence } from "@/types/mechanic-occurrence";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
 import type { MechanicsExecutionFrame } from "@/types/mechanics-command";
 import type {
@@ -387,7 +383,7 @@ function transitionedProgram(
   material: MaterialRef,
   id: string,
   authority: MechanicsProgramAuthorityReceipt = tableAuthority(material, id)
-): Omit<ProgramOccurrence, "ending" | "ordinal"> {
+): Extract<NewMechanicOccurrence, { kind: "program" }> {
   return {
     ...program(material, id, authority),
     phaseState: { active: { execution: 1, lastTriggerEventId: null } },
@@ -1062,35 +1058,39 @@ describe("canonical mechanics world and clocks", () => {
         (entry) => materialRefKey(entry.material) === materialRefKey(HERO)
       );
       if (document?.kind !== "character") throw new Error("character fixture");
-      if (field === "epoch") document.state.epoch = 1;
-      else if (field === "revision") document.state.revision = 1;
-      else if (field === "buildRevision") document.state.buildRevision = 2;
-      else {
-        document.state.actions = [
-          {
-            actor: self(),
-            generation: 1,
-            guards: {
-              documents: [
+      if (field === "epoch") document.state = { ...document.state, epoch: 1 };
+      else if (field === "revision") document.state = { ...document.state, revision: 1 };
+      else if (field === "buildRevision") {
+        document.state = { ...document.state, buildRevision: 2 };
+      } else {
+        document.state = {
+          ...document.state,
+          actions: [
+            {
+              actor: self(),
+              generation: 1,
+              guards: {
+                documents: [
+                  {
+                    epoch: document.state.epoch,
+                    material: HERO,
+                    revision: document.state.revision,
+                  },
+                ],
+                facts: [],
+              },
+              id: "protected-action",
+              mutations: [
                 {
-                  epoch: document.state.epoch,
-                  material: HERO,
-                  revision: document.state.revision,
+                  after: { present: true, value: "changed" },
+                  before: { present: true, value: "" },
+                  path: ["notes"],
+                  target: HERO,
                 },
               ],
-              facts: [],
             },
-            id: "protected-action",
-            mutations: [
-              {
-                after: { present: true, value: "changed" },
-                before: { present: true, value: "" },
-                path: ["notes"],
-                target: HERO,
-              },
-            ],
-          },
-        ];
+          ],
+        };
       }
 
       expect(projectMechanicsTransactionWorld(candidate, prior)).toEqual({
@@ -1616,7 +1616,13 @@ describe("canonical mechanics world and clocks", () => {
 
   it("rebases a branded causal state by monotonically unioning exact causes", () => {
     let hero = addRoot(character(), HERO);
-    hero.vitals.hitPoints.temporary = { current: 5, sourceOccurrence: null };
+    hero.vitals = {
+      ...hero.vitals,
+      hitPoints: {
+        ...hero.vitals.hitPoints,
+        temporary: { current: 5, sourceOccurrence: null },
+      },
+    };
     hero = addToState(hero, "focus", {
       endRules: [{ kind: "temporary-hp-empty" }],
       kind: "concentration",
@@ -1656,9 +1662,15 @@ describe("canonical mechanics world and clocks", () => {
       (document) => document.kind === "character"
     );
     if (heroDocument?.kind !== "character") throw new Error("hero fixture");
-    heroDocument.state.vitals.hitPoints.temporary = {
-      current: 0,
-      sourceOccurrence: null,
+    heroDocument.state = {
+      ...heroDocument.state,
+      vitals: {
+        ...heroDocument.state.vitals,
+        hitPoints: {
+          ...heroDocument.state.vitals.hitPoints,
+          temporary: { current: 0, sourceOccurrence: null },
+        },
+      },
     };
     const second = rebaseMechanicsCausalState(depleted, first.value);
     expect(second.ok).toBe(true);
@@ -1901,9 +1913,15 @@ describe("canonical mechanics world and clocks", () => {
         materialRefKey(entry.material) === materialRefKey(HERO)
     );
     if (document?.kind !== "character") throw new Error("character fixture");
-    document.state.encounter = turnsEncounter(1);
-    document.state.nextEncounterEpoch = 6;
-    document.state.clockBinding.encounter = { material: HERO, epoch: 1 };
+    document.state = {
+      ...document.state,
+      encounter: turnsEncounter(1),
+      nextEncounterEpoch: 6,
+      clockBinding: {
+        ...document.state.clockBinding,
+        encounter: { material: HERO, epoch: 1 },
+      },
+    };
 
     expect(rebaseMechanicsCausalState(candidate, begun.value)).toEqual({
       ok: false,
@@ -1927,8 +1945,14 @@ describe("canonical mechanics world and clocks", () => {
         materialRefKey(entry.material) === materialRefKey(HERO)
     );
     if (document?.kind !== "character") throw new Error("character fixture");
-    document.state.encounter = turnsEncounter(2);
-    document.state.clockBinding.encounter = { material: HERO, epoch: 2 };
+    document.state = {
+      ...document.state,
+      encounter: turnsEncounter(2),
+      clockBinding: {
+        ...document.state.clockBinding,
+        encounter: { material: HERO, epoch: 2 },
+      },
+    };
 
     expect(rebaseMechanicsCausalState(candidate, begun.value)).toEqual({
       ok: false,
@@ -1956,8 +1980,11 @@ describe("canonical mechanics world and clocks", () => {
       (document) => document.kind === "shared"
     );
     if (replacementCampaign?.kind !== "shared") throw new Error("campaign fixture");
-    replacementCampaign.state.entities.ally = monster(2);
-    replacementCampaign.state.nextEntityOrdinal = 3;
+    replacementCampaign.state = {
+      ...replacementCampaign.state,
+      entities: { ...replacementCampaign.state.entities, ally: monster(2) },
+      nextEntityOrdinal: 3,
+    };
     expect(parseMechanicsWorld(replacement)).toMatchObject({
       ok: false,
       reason: "missing-reference",
@@ -2039,13 +2066,15 @@ describe("canonical mechanics world and clocks", () => {
       phase: "initiative",
       round: 1,
     };
+    const firstHero = first.encounter.participants.hero;
+    if (!firstHero) throw new Error("hero participant fixture");
     const second = shared();
     second.nextEncounterEpoch = 2;
     second.encounter = {
       ...structuredClone(first.encounter),
       participants: {
         hero: {
-          ...structuredClone(first.encounter.participants.hero),
+          ...structuredClone(firstHero),
           economy: betweenTurns("second-initiative"),
         },
       },
@@ -2293,7 +2322,12 @@ describe("canonical mechanics world and clocks", () => {
     leasedHero.entities = { ally: monster() };
     const campaign = shared();
     campaign.nextEncounterEpoch = 2;
-    campaign.encounter = { epoch: 1, ...initiativeSeed(HERO) };
+    /* Deliberately economy-less participants: the document must fail exact
+       conformance, which is what this fixture asserts. */
+    campaign.encounter = {
+      epoch: 1,
+      ...initiativeSeed(HERO),
+    } as unknown as EncounterState;
     leasedHero.clockBinding = {
       timeline: { material: CAMPAIGN, epoch: 0 },
       encounter: { material: CAMPAIGN, epoch: 1 },
@@ -2875,8 +2909,8 @@ describe("canonical mechanics world and clocks", () => {
         (document) => document.kind === "character"
       );
       if (hero?.kind !== "character") throw new Error("character fixture");
-      if (field === "epoch") hero.state.epoch = 1;
-      else hero.state.revision = 1;
+      if (field === "epoch") hero.state = { ...hero.state, epoch: 1 };
+      else hero.state = { ...hero.state, revision: 1 };
       expect(completeMechanicsBoundaryCheckpoint(begun.continuation, mutated)).toBeNull();
     }
   );

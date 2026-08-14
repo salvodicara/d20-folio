@@ -38,7 +38,9 @@ describe("DiceFormula", () => {
     expect(formula).not.toBe(source);
     expect(Object.isFrozen(formula)).toBe(true);
     expect(Object.isFrozen(formula?.terms)).toBe(true);
-    expect(Object.isFrozen(formula?.terms[0]?.count)).toBe(true);
+    const conformedTerm = formula?.terms[0];
+    if (conformedTerm?.kind !== "dice") throw new Error("dice term fixture");
+    expect(Object.isFrozen(conformedTerm.count)).toBe(true);
     const sourceTerm = source.terms[0];
     if (!sourceTerm) throw new Error("test formula lost its only term");
     sourceTerm.termId = "changed";
@@ -583,12 +585,12 @@ describe("DiceFormula", () => {
       contribution: 4,
       effectiveFace: 4,
       initialFace: 1,
-      operation: "add" as const,
+      operation: "add",
       steps: [{ face: 4, kind: "replacement", sourceId: "reroll-low" }],
-      sides: 6 as const,
+      sides: 6,
       termId: "first",
       trailId: "first:0",
-    };
+    } as const;
     const second = {
       ...first,
       contribution: 6,
@@ -599,7 +601,7 @@ describe("DiceFormula", () => {
       ],
       termId: "second",
       trailId: "second:0",
-    };
+    } as const;
     expect(
       diceReplacementsAreAuthorized([
         { rules: policy, trails: [first] },
