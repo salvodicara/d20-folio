@@ -1257,10 +1257,20 @@ export interface FeatureActionTranscription {
  * caller-resolved `feature-bonus` binding. Fields beyond this first family
  * report explicit unsupported boundaries — never silently green.
  */
+/** The feature-level facts an action inherits (its tracker, its standing buffs). */
+export interface FeatureActionContext {
+  readonly trackerId?: string;
+  readonly whileActive?: readonly Readonly<{
+    readonly activeKey: string;
+    readonly maintained: boolean;
+  }>[];
+}
+
 export function transcribeFeatureAction(
   featureId: string,
   action: Readonly<SrdActionDef>,
-  ordinal: number
+  ordinal: number,
+  feature: Readonly<FeatureActionContext> = {}
 ): FeatureActionTranscription {
   const actionId = `action:${featureId}:${action.id ?? String(ordinal)}`;
   const clauses: TranscriptionClause[] = [];
@@ -1320,18 +1330,46 @@ export function transcribeFeatureAction(
     clauses.push(clause("per-turn-cap", "table", "table-enforces-cap"));
   }
 
-  // Tracker payment as a world pool.
-  if (action.costTracker !== undefined) {
+  // Tracker payment as a world pool: the action's own tracker, or the owning
+  // feature's tracker when the action is that feature's activator (Rage).
+  const isMaintainer = action.maintainsActiveKey !== undefined;
+  const paymentTracker =
+    action.costTracker ?? (isMaintainer ? undefined : feature.trackerId);
+  if (paymentTracker !== undefined) {
     inputs.push({
       inputId: "uses",
       kind: "resource",
       term: {
         amount: fixed(action.trackerCost ?? 1),
-        selector: { kind: "pool", owner: "caster", resourceId: action.costTracker },
+        selector: { kind: "pool", owner: "caster", resourceId: paymentTracker },
       },
       when: null,
     });
     clauses.push(clause("tracker-payment", "automated"));
+  }
+
+  // Activating a feature that carries while-active buffs lights each key on
+  // the actor; a maintained duration stays a table-owned end (Rage's rounds).
+  if (!isMaintainer && (feature.whileActive?.length ?? 0) > 0) {
+    for (const buff of feature.whileActive ?? []) {
+      steps.push({
+        fact: { key: buff.activeKey, kind: "active-key" },
+        kind: "standing",
+        lifetime: { kind: "manual" },
+        operation: "start",
+        stepId: `standing-${buff.activeKey}`,
+        target: { kind: "role", role: "caster" },
+        when: null,
+      });
+      clauses.push(clause(`standing-${buff.activeKey}`, "automated"));
+      clauses.push(
+        clause(
+          `standing-${buff.activeKey}-duration`,
+          "table",
+          buff.maintained ? "maintained-by-table" : "table-owned-end"
+        )
+      );
+    }
   }
 
   // Targeting.

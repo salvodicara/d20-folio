@@ -396,6 +396,120 @@ describe("mechanics world store", () => {
     expect(committed.session.trackers["fighter-second-wind"]?.used).toBe(1);
   });
 
+  it("rage activation pays the feature tracker and lights the standing key", () => {
+    const doc = {
+      ...MOCK_CHARACTER,
+      session: { ...MOCK_CHARACTER.session, trackers: {} },
+    };
+    const world = characterWorldState(
+      doc,
+      "test-uid",
+      60,
+      {},
+      {
+        "barbarian-rage": { total: 2, used: 0 },
+      }
+    );
+    if (!world) throw new Error("world fixture");
+    const capability = characterFeatureActionCapability(
+      doc,
+      "test-uid",
+      "barbarian-rage",
+      { type: "bonus" },
+      0,
+      { featureBonus: 0, maxHp: 60, saveDc: 8 },
+      {
+        trackerId: "barbarian-rage",
+        whileActive: [{ activeKey: "barbarian-rage", maintained: true }],
+      }
+    );
+    expect(capability).not.toBeNull();
+    if (!capability) return;
+    const self = characterSelfRef(doc, "test-uid");
+    const material = characterMaterialRef(doc, "test-uid");
+    const begun = beginMechanicsCausalState({
+      documents: [{ kind: "character", material, state: world }],
+      scope: material,
+    });
+    if (!begun.ok) throw new Error(`begin: ${begun.reason}`);
+    const answers: MechanicsAnswer[] = [];
+    const run = () =>
+      runMechanicsCausalAction({
+        answers,
+        authoritySnapshot: { definitions: [authorityDefinition(capability.authority)] },
+        facts: capability.facts,
+        frameAnswers: [],
+        intent: {
+          actionId: "enter-rage",
+          factGuards: [],
+          frame: {
+            authority: capability.authority,
+            invocation: {
+              installation: capability.authority.installation,
+              kind: "installed-capability",
+            },
+            rootReceipt: {
+              kind: "create",
+              materialEpoch: 0,
+              next: { execution: 1, phaseId: "resolve", triggerEventId: null },
+              root: {
+                occurrence: { material, occurrenceId: "rage-1" },
+                ordinal: world.nextOccurrenceOrdinal,
+              },
+            },
+            trigger: { kind: "invocation" },
+          },
+        },
+        responses: [],
+        state: begun.value,
+        turnEconomy: [],
+      });
+    let outcome = run();
+    for (
+      let remaining = 4;
+      outcome.status === "needs-answer" && remaining > 0;
+      remaining -= 1
+    ) {
+      const requirement = outcome.requirement;
+      if (requirement?.kind === "resource") {
+        answers.push({
+          inputId: requirement.inputId,
+          kind: "resource",
+          resource: { kind: "pool", owner: self, resourceId: "barbarian-rage" },
+        });
+      } else if (requirement?.kind === "entities") {
+        answers.push({ inputId: requirement.inputId, kind: "entities", targets: [self] });
+      } else {
+        throw new Error(`unexpected requirement: ${requirement?.kind ?? "none"}`);
+      }
+      outcome = run();
+    }
+    if (outcome.status !== "complete" || !outcome.action) {
+      throw new Error(`rage: ${JSON.stringify(outcome)}`);
+    }
+    const committed = commitCharacterAction(
+      doc,
+      "test-uid",
+      world,
+      outcome.action,
+      outcome.action.guards.facts.map((fact) => ({
+        actual: fact.expected,
+        address: fact.address,
+        owner: fact.owner,
+      }))
+    );
+    expect(committed).not.toBeNull();
+    if (!committed) return;
+    expect(committed.world.resources.pools["barbarian-rage"]).toMatchObject({
+      current: 1,
+    });
+    expect(committed.session.trackers["barbarian-rage"]?.used).toBe(1);
+    const standings = Object.values(committed.world.occurrences).filter(
+      (occurrence) => occurrence.kind === "standing"
+    );
+    expect(standings).toHaveLength(1);
+  });
+
   it("pulses a persisted moonbeam zone through the round-tripped authority", () => {
     const world = characterWorldState(MOCK_CHARACTER, "test-uid", 60);
     if (!world) throw new Error("world fixture");

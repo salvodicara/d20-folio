@@ -240,9 +240,13 @@ export function characterFeatureActionCapability(
   featureId: string,
   action: Readonly<import("@/data/types").SrdActionDef>,
   ordinal: number,
-  derived: Readonly<{ featureBonus: number; maxHp: number; saveDc: number }>
+  derived: Readonly<{ featureBonus: number; maxHp: number; saveDc: number }>,
+  feature: Readonly<import("@/lib/mechanics-transcription").FeatureActionContext> = {}
 ): CharacterCastCapability | null {
-  const transcription = transcribeFeatureAction(featureId, action, ordinal);
+  const paymentTracker =
+    action.costTracker ??
+    (action.maintainsActiveKey === undefined ? feature.trackerId : undefined);
+  const transcription = transcribeFeatureAction(featureId, action, ordinal, feature);
   if (!transcription.program) return null;
   const self = characterSelfRef(doc, uid);
   const capability = {
@@ -285,14 +289,14 @@ export function characterFeatureActionCapability(
       lifecycle: "commit-redo",
       owner: self,
     },
-    ...(action.costTracker !== undefined
+    ...(paymentTracker !== undefined
       ? [
           {
             address: [
               "resource-definition",
               "resources",
               "pools",
-              action.costTracker,
+              paymentTracker,
             ] as const,
             expected: {
               present: true,
@@ -300,7 +304,7 @@ export function characterFeatureActionCapability(
                 bindings: {},
                 spec: {
                   capacity: { kind: "unbounded" as const },
-                  id: action.costTracker,
+                  id: paymentTracker,
                   initial: { kind: "empty" as const },
                   kind: "count" as const,
                   recoveries: [],
