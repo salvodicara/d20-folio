@@ -37,6 +37,10 @@ import { SpellAddModal } from "@/components/sheet/SpellAddModal";
 import { BeastFormPicker } from "@/components/sheet/BeastFormPicker";
 import { resolvePolymorphForms } from "@/lib/polymorph";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
+import { economyActionCategory, type EconomyActionCategory } from "@/lib/combat-economy";
+import { resolveConditionEffects } from "@/lib/condition-effects";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
+import type { LocText } from "@/lib/loc-text";
 import { ensureSrdKind } from "@/i18n";
 import { slotUsageKey } from "@/lib/cast-options";
 import { deriveSpellSlots, applySlotMaxOverrides } from "@/lib/multiclass-slots";
@@ -101,8 +105,11 @@ export function SpellsTab() {
   const [engineCast, setEngineCast] = useState<{
     economy: {
       actionId: string;
+      economyCategory: EconomyActionCategory | null;
+      nameLoc?: LocText;
       slot: "action" | "bonus" | "free";
       spellLevel: number;
+      triggersAttack: boolean;
     } | null;
     hasAttack: boolean;
     spellId: string;
@@ -339,16 +346,20 @@ export function SpellsTab() {
 
   const handleCast = useCallback(
     (vm: SpellCardVM) => {
-      // Engine dual-dispatch (rollout bridge): outside an encounter, an
-      // engine-executable SRD spell resolves through the deterministic
-      // runtime; everything else still rides the legacy transaction until
-      // its cutover wave deletes it.
+      // Engine dual-dispatch (rollout bridge): outside an ENCOUNTER — solo
+      // combat included, whose turn boundaries now live in the character's
+      // own engine world — an engine-executable SRD spell resolves through
+      // the deterministic runtime; everything else still rides the legacy
+      // transaction until its cutover wave deletes it.
       const action = actionForSpell(vm);
-      // Engine dual-dispatch (rollout bridge): outside an encounter, an
-      // ordinary engine-executable SRD cast resolves through the runtime.
       // Flows whose choices the runtime does not model yet stay legacy:
-      // item-pool/free-cast payments, metamagic-capable casters, and a cast
-      // that would silently bypass the legacy concentration swap confirm.
+      // item-pool/free-cast payments, metamagic-capable casters, a cast that
+      // would silently bypass the legacy concentration swap confirm, and —
+      // the same conservative line the Play-tab gate holds — actions whose
+      // legacy commit carries semantics the engine mirror does not own yet
+      // (the reaction marker, while-active activation states, use-applies),
+      // plus a slot the character's conditions currently forbid (the legacy
+      // path owns that block and its feedback).
       const combatState = useCombatStore.getState();
       const turnKey = turnEconomyKey(
         useCombatStatusStore.getState().status,
@@ -358,6 +369,23 @@ export function SpellsTab() {
       const slotSpentThisTurn =
         combatState.spellSlotCastTurnKey === turnKey &&
         combatState.spellSlotCastsThisTurn >= 1;
+      const blockedSlots = resolveConditionEffects(
+        character !== null ? effectiveSessionConditions(character.session) : []
+      ).blockedSlots;
+      const gatedSlot =
+        action?.type === "action" || action?.type === "bonus" ? action.type : null;
+      // A while-active grant that CARRIES mechanics (Shield's +5 AC, Hex's
+      // mark rider) still lives on the legacy activation chip — the engine's
+      // standing occurrence has no sheet read yet, so those casts stay
+      // legacy. An EMPTY marker grant (Hold Monster's duration chip) owns no
+      // sheet truth beyond the concentration the engine already mirrors.
+      const carriesActiveState =
+        vm.data !== null &&
+        (vm.data.grants ?? []).some(
+          (grant) =>
+            grant.type === "while-active" &&
+            (grant.grants.length > 0 || grant.targetScope !== undefined)
+        );
       // Every cast option must be an ordinary (non-pact) slot — free-cast,
       // pool and pact sources still resolve through the legacy option flow.
       const plainOptionsOnly =
@@ -375,6 +403,12 @@ export function SpellsTab() {
       const plainCast =
         action !== undefined &&
         action.castPoolSourceId === undefined &&
+        action.type !== "reaction" &&
+        !carriesActiveState &&
+        action.maintainsActiveKey === undefined &&
+        action.standingEffect === undefined &&
+        (action.useEffects?.length ?? 0) === 0 &&
+        !(gatedSlot !== null && blockedSlots.has(gatedSlot)) &&
         plainOptionsOnly &&
         !(vm.data !== null && vm.data.level > 0 && slotSpentThisTurn) &&
         !(vm.data !== null && pooledSpellIds.has(vm.data.id)) &&
@@ -388,6 +422,8 @@ export function SpellsTab() {
           setEngineCast({
             economy: {
               actionId: action.id,
+              economyCategory: economyActionCategory(action),
+              nameLoc: action.nameLoc,
               slot:
                 action.type === "bonus"
                   ? "bonus"
@@ -395,6 +431,8 @@ export function SpellsTab() {
                     ? "action"
                     : "free",
               spellLevel: vm.data.level,
+              triggersAttack:
+                action.summary.attackBonus != null || action.summary.saveAbility != null,
             },
             hasAttack: vm.data.attackType !== undefined,
             spellId: vm.data.id,

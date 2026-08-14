@@ -13,10 +13,13 @@ import { concentrationValue } from "@/lib/concentration";
 import { reduceActionJournal } from "@/lib/action-journal";
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { slotUsageKey } from "@/lib/cast-options";
+import { resolveConditionEffects } from "@/lib/condition-effects";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import {
   createEmptyCharacterMaterialState,
   parseCharacterMaterialState,
 } from "@/lib/material-state";
+import { planMechanicsWorldAction } from "@/lib/mechanics-action";
 import { mechanicsAuthorityDefinitionFingerprint } from "@/lib/mechanics-authority";
 import {
   mechanicsDefinitionFactAddress,
@@ -32,11 +35,19 @@ import {
   type SpellTranscription,
   type WeaponAttackProfile,
 } from "@/lib/mechanics-transcription";
+import {
+  advanceMechanicsBoundary,
+  beginMechanicsBoundary,
+  completeMechanicsBoundaryCheckpoint,
+} from "@/lib/mechanics-world";
 import { applySlotMaxOverrides, deriveSpellSlots } from "@/lib/multiclass-slots";
 import {
+  attacksPerActionForCharacter,
+  effectiveWalkingSpeedFt,
   resolveActions,
   resolveTrackers as resolveActionsTrackerRows,
 } from "@/lib/smart-tracker";
+import { conformTurnEconomyProjection } from "@/lib/turn-economy";
 import type {
   ActionFactGuard,
   ActionJournalWorld,
@@ -48,7 +59,9 @@ import type { CharacterMaterialState } from "@/types/material-state";
 import type { MechanicsAuthorityDefinition } from "@/types/mechanics-authority";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
 import type { CharacterMaterialRef, EntityRef } from "@/types/mechanics-reference";
+import type { MechanicsBoundaryCommand, MechanicsWorld } from "@/types/mechanics-world";
 import type { ProgramOccurrence } from "@/types/mechanic-occurrence";
+import type { TurnEconomyProjection } from "@/types/turn-economy";
 
 export function characterMaterialRef(
   doc: { readonly id: string },
@@ -244,6 +257,242 @@ export function characterWorldState(
   };
   const parsed = parseCharacterMaterialState(seed, material);
   return parsed.ok ? parsed.value : null;
+}
+
+// ─── The solo combat loop's canonical turn machinery ────────────────────────
+
+/** The one participant id of the character's own solo encounter. */
+export const SOLO_PARTICIPANT_ID = "self";
+
+/**
+ * The character's CURRENT turn-economy capability projection, derived from the
+ * same build/session seams every legacy combat surface reads (attacks per
+ * Attack action, effective walking Speed, condition-gated incapacitation), so
+ * the kernel's turn claims and the sheet can never disagree. Null when the
+ * derivation does not conform (fail-closed: a turn-claim step then rejects
+ * with `turn-economy-projection` missing rather than guessing).
+ */
+export function characterTurnEconomyProjection(
+  doc: Readonly<CharacterDoc>
+): Readonly<TurnEconomyProjection> | null {
+  const conditions = resolveConditionEffects(
+    effectiveSessionConditions(doc.session)
+  ).blockedSlots;
+  const speedFt = Math.max(
+    0,
+    doc.character.speedOverride ?? effectiveWalkingSpeedFt(doc)
+  );
+  return conformTurnEconomyProjection({
+    actions: { extraSlots: [], override: null },
+    attacks: {
+      options: [],
+      perAttackAction: {
+        base: Math.max(1, attacksPerActionForCharacter(doc)),
+        override: null,
+      },
+    },
+    bonusActions: {
+      dualWielder: false,
+      limit: { base: 1, override: null },
+      requirements: [],
+    },
+    freeInteractions: { limit: { base: 1, override: null } },
+    // Only the incapacitated family blocks the Reaction slot, so that gate is
+    // the exact projection-level incapacitation signal.
+    incapacitated: conditions.has("reaction"),
+    movement: {
+      costPerFoot: { base: 1, override: null },
+      modes: [{ mode: "walk", speedFt: { base: speedFt, override: null } }],
+      requirements: [],
+    },
+    reactions: { limit: { base: 1, override: null }, requirements: [] },
+  });
+}
+
+/**
+ * The coordinator's `turnEconomy` entries for a character-owned dispatch: the
+ * character itself as the one combatant, carrying the live projection. Empty
+ * when the projection cannot conform, so a turn-claiming program fails closed
+ * instead of claiming against a guessed capability set.
+ */
+export function characterTurnEconomy(
+  doc: Readonly<CharacterDoc>,
+  uid: string
+): readonly Readonly<{
+  combatant: EntityRef;
+  projection: TurnEconomyProjection;
+}>[] {
+  const projection = characterTurnEconomyProjection(doc);
+  return projection ? [{ combatant: characterSelfRef(doc, uid), projection }] : [];
+}
+
+function characterWorldValue(
+  material: Readonly<CharacterMaterialRef>,
+  world: Readonly<CharacterMaterialState>
+): MechanicsWorld {
+  return {
+    documents: [{ kind: "character", material, state: world }],
+    scope: material,
+  };
+}
+
+/**
+ * Drive one table boundary over the character's own world to completion and
+ * plan it as one committable journal action — the character-material twin of
+ * the encounter seam's `planAdversaryTurnBoundary`. Each checkpoint is
+ * accepted unchanged: no transcribed program subscribes a phase to boundary
+ * events today, so every checkpoint audience is empty by construction and
+ * plain acceptance is exactly the coordinator's drive; the latched end waves
+ * still finalize every due lifetime. Returns null when the boundary rejects —
+ * the caller degrades fail-closed (the legacy tracker still steps and booked
+ * lifetimes STAND; nothing ever expires early).
+ */
+function planCharacterBoundary(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  command: Readonly<MechanicsBoundaryCommand>,
+  actionId: string
+): Readonly<JournalActionDraft> | null {
+  const material = characterMaterialRef(doc, uid);
+  const value = characterWorldValue(material, world);
+  let result = beginMechanicsBoundary(value, command);
+  let remaining = 64;
+  while (result.status === "checkpoint" && remaining > 0) {
+    const completion = completeMechanicsBoundaryCheckpoint(
+      result.continuation,
+      result.checkpoint.state
+    );
+    if (!completion) return null;
+    result = advanceMechanicsBoundary(result.continuation, completion);
+    remaining -= 1;
+  }
+  if (result.status !== "complete" || result.outcome !== "applied") return null;
+  const planned = planMechanicsWorldAction(value, result.state.world, {
+    actor: { authority: "table", kind: "material-authority", material },
+    facts: [],
+    id: actionId,
+  });
+  return planned.status === "planned" ? planned.action : null;
+}
+
+/**
+ * Start the SOLO encounter on the character's own material: one participant
+ * (the character itself), phase "turns", its own turn already running at
+ * `round`. From here every turn-anchored lifetime freezes to an EXACT
+ * turn-boundary end rule (instead of the out-of-combat 6-seconds-per-turn
+ * timeline law), and kernel turn claims can commit against the participant's
+ * economy ledger. `initiativeRoll` is the tracker's entered RAW d20 when the
+ * player typed one; a lone participant needs no ordering, so an absent or
+ * out-of-range entry seeds the neutral 10 (the turns phase requires a rolled
+ * value). Null when a solo encounter is already running, the character's
+ * clocks are campaign-leased, or the boundary rejects.
+ */
+export function planSoloEncounterStart(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  round: number,
+  actionId: string,
+  initiativeRoll: number | null = null
+): Readonly<JournalActionDraft> | null {
+  if (world.encounter !== null || !Number.isSafeInteger(round) || round < 1) {
+    return null;
+  }
+  const rolled =
+    initiativeRoll !== null &&
+    Number.isSafeInteger(initiativeRoll) &&
+    initiativeRoll >= 1 &&
+    initiativeRoll <= 20
+      ? initiativeRoll
+      : 10;
+  return planCharacterBoundary(
+    doc,
+    uid,
+    world,
+    {
+      kind: "start-encounter",
+      material: characterMaterialRef(doc, uid),
+      seed: {
+        currentCombatantId: SOLO_PARTICIPANT_ID,
+        nextCombatantOrdinal: 2,
+        order: [SOLO_PARTICIPANT_ID],
+        participants: {
+          [SOLO_PARTICIPANT_ID]: {
+            combatant: characterSelfRef(doc, uid),
+            initiativeRoll: rolled,
+            ordinal: 1,
+            skipped: false,
+          },
+        },
+        phase: "turns",
+        round,
+      },
+    },
+    actionId
+  );
+}
+
+/**
+ * Complete the character's own SOLO turn through the kernel's `complete-turn`
+ * boundary: the end wave latches and finalizes every due turn-anchored
+ * lifetime (end-of-turn expiries), the single-participant order wraps — the
+ * round advances and six seconds pass — and the same participant's next turn
+ * starts with a FRESH own-turn economy (per-turn claims reset exactly).
+ * Null when no solo turn is running or the boundary rejects (fail-closed:
+ * the legacy round still advances and booked lifetimes stand).
+ */
+export function planSoloTurnBoundary(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  actionId: string
+): Readonly<JournalActionDraft> | null {
+  if (world.encounter?.phase !== "turns") return null;
+  return planCharacterBoundary(
+    doc,
+    uid,
+    world,
+    {
+      excludeCurrent: null,
+      kind: "complete-turn",
+      material: characterMaterialRef(doc, uid),
+    },
+    actionId
+  );
+}
+
+/**
+ * End the SOLO encounter on the character's own material (the tracker's End
+ * Combat): the kernel clears the local encounter and rebinds every
+ * encounter-anchored lifetime through its own combat-end machinery. Null when
+ * no solo encounter is running or the boundary rejects.
+ */
+export function planSoloEncounterEnd(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  actionId: string
+): Readonly<JournalActionDraft> | null {
+  if (world.encounter === null) return null;
+  return planCharacterBoundary(
+    doc,
+    uid,
+    world,
+    { kind: "end-encounter", material: characterMaterialRef(doc, uid) },
+    actionId
+  );
+}
+
+/** Resolve a planned boundary action's own guards as its commit facts. */
+export function boundaryCommitFacts(
+  action: Readonly<JournalActionDraft>
+): readonly Readonly<ResolvedActionFact>[] {
+  return action.guards.facts.map((fact) => ({
+    actual: fact.expected,
+    address: fact.address,
+    owner: fact.owner,
+  }));
 }
 
 export interface CharacterCastCapability {

@@ -523,6 +523,15 @@ interface CharacterState {
     faces: ReadonlyArray<number>
   ) => D20TestCommitResult | null;
   /**
+   * Surface the RAW damage-while-concentrating consequence for damage the
+   * DETERMINISTIC ENGINE already landed on this character (its journal commit
+   * mirrored the HP itself, so this never touches HP): queue the entered-d20
+   * Concentration save at the usual DC, or — when the commit left the
+   * character at 0 HP — break concentration outright through the one
+   * authoritative teardown. No-op when nothing is being concentrated on.
+   */
+  queueConcentrationSaveForDamage: (damage: number) => void;
+  /**
    * PLAY-NO-EDIT — add a SESSION defense (a resistance/immunity/vulnerability/
    * condition-immunity gained in play: a potion, a spell, a curse). Layers over
    * the build's permanent defenses without touching them — the play-time mirror
@@ -2503,6 +2512,54 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       result,
       undo: causalD20CommandUndo(before, after, get),
     };
+  },
+
+  queueConcentrationSaveForDamage: (damage) => {
+    if (get().readonly || !Number.isSafeInteger(damage) || damage <= 0) return;
+    const { character } = get();
+    const concentrating = character?.session.concentration ?? "";
+    if (!character || concentrating === "") return;
+    // 2024 RAW: dropping to 0 HP breaks Concentration outright — no save. The
+    // authoritative teardown owns the spell, active keys, timers, target
+    // conditions, effects, event log, and the pending-save queue clear.
+    if (character.session.hp.current === 0) {
+      get().setConcentration("", { undoable: false });
+      useToastStore.getState().showToast({
+        intent: { kind: "concentration-dropped", spell: concentrating },
+        duration: 5000,
+      });
+      return;
+    }
+    const dc = concentrationSaveDc(damage);
+    const pending: PendingConcentrationSave = {
+      id: crypto.randomUUID(),
+      spell: concentrating,
+      damage,
+      difficultyClass: dc,
+    };
+    set({
+      combatPendingConcentrationSaves: [
+        ...get().combatPendingConcentrationSaves,
+        pending,
+      ],
+    });
+    // The same durable prompt + short notice the legacy damage seam surfaces
+    // (one semantic unit, one intent — the banner carries the entered roll).
+    const context = concentrationSaveD20Context(character, pending);
+    const saveBonus = context.modifierTerms.reduce((sum, term) => sum + term.value, 0);
+    const advantage =
+      context.advantageSourceIds.length > 0 && context.disadvantageSourceIds.length === 0;
+    useToastStore.getState().showToast({
+      intent: {
+        kind: "concentration-save",
+        spell: concentrating,
+        dc,
+        saveBonus,
+        advantage,
+      },
+      duration: 5000,
+    });
+    persistCombat(get);
   },
 
   persistInitiative: () => {

@@ -21,13 +21,21 @@ import { useMechanicsCast } from "@/features/character/useMechanicsCast";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CastSummaryVM, SlotSummaryVM } from "@/lib/views/spells-view";
+import type { EconomyActionCategory } from "@/lib/combat-economy";
+import type { LocText } from "@/lib/loc-text";
 
 export interface EngineCastFlowProps {
   /** Legacy turn-economy identity mirrored on a successful engine commit. */
   readonly economy: {
     readonly actionId: string;
+    /** Rules category mirrored onto the economy entry (restricted-slot truth). */
+    readonly economyCategory: EconomyActionCategory | null;
+    /** Stable persisted name, so a hydrated turn re-localizes the entry. */
+    readonly nameLoc?: LocText;
     readonly slot: "action" | "bonus" | "free";
     readonly spellLevel: number;
+    /** The cast counts as an "attack" turn event (Rage-style maintenance). */
+    readonly triggersAttack: boolean;
   } | null;
   /** The spell requires a target armor class before its attack can review. */
   readonly hasAttack: boolean;
@@ -87,7 +95,12 @@ export function EngineCastFlow({
           combat.selectAction({
             id: economy.actionId,
             name: spellName,
+            ...(economy.nameLoc ? { nameLoc: economy.nameLoc } : {}),
             slot: economy.slot,
+            ...(economy.economyCategory
+              ? { economyCategory: economy.economyCategory }
+              : {}),
+            ...(economy.triggersAttack ? { triggerEvents: ["attack"] as const } : {}),
           });
         }
         return committed;

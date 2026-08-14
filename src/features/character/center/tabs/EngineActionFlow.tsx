@@ -10,6 +10,7 @@
  */
 
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { MechanicsCastModal } from "@/components/sheet/MechanicsCastModal";
 import {
@@ -23,8 +24,10 @@ import {
 } from "@/lib/mechanics-world-store";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
-import { useCombatStore } from "@/stores/combatStore";
+import { useCombatStore, type SelectedAction } from "@/stores/combatStore";
+import type { EconomyActionCategory } from "@/lib/combat-economy";
 import type { FeatureActionContext } from "@/lib/mechanics-transcription";
+import type { LocText } from "@/lib/loc-text";
 import type { SrdActionDef } from "@/data/types";
 import type { CharacterDoc } from "@/types/character";
 
@@ -40,21 +43,34 @@ export interface EngineFeatureDispatch {
     readonly featureBonus: number;
     readonly saveDc: number;
   }>;
+  /** Rules category mirrored onto the economy entry (restricted-slot truth). */
+  readonly economyCategory: EconomyActionCategory | null;
   readonly economySlot: "action" | "bonus" | "free";
   readonly featureId: string;
   /** The action requires a target armor class before its attack can review. */
   readonly hasAttackRoll: boolean;
   /** The resolved legacy row id, for the turn-economy mirror. */
   readonly legacyActionId: string;
+  /** Stable persisted name, so a hydrated turn re-localizes the entry. */
+  readonly nameLoc?: LocText;
   readonly ordinal: number;
+  /** The commit counts as an "attack" turn event (Rage-style maintenance). */
+  readonly triggersAttack: boolean;
 }
 
 /** One engine-eligible weapon attack row, resolved by the Play-tab gate. */
 export interface EngineWeaponDispatch {
   readonly kind: "weapon";
   readonly actionName: string;
+  /** Rules category mirrored onto the economy entry (restricted-slot truth). */
+  readonly economyCategory: EconomyActionCategory | null;
   /** The resolved weapon row id (`weapon-...`) the capability re-resolves. */
   readonly legacyActionId: string;
+  /** Stable persisted name, so a hydrated turn re-localizes the entry. */
+  readonly nameLoc?: LocText;
+  /** Extra Attack: mirror the commit as one attack-pips SWING (claim or ride
+   * an Attack action) instead of a whole Action-slot occupant. */
+  readonly swing: boolean;
 }
 
 export type EngineActionDispatch = EngineFeatureDispatch | EngineWeaponDispatch;
@@ -65,6 +81,7 @@ export interface EngineActionFlowProps {
 }
 
 export function EngineActionFlow({ dispatch, onClose }: EngineActionFlowProps) {
+  const { t } = useTranslation();
   const doc = useCharacterStore((state) => state.character);
   const uid = useAuthStore((state) => state.user?.uid ?? null);
   const [targetArmorClass, setTargetArmorClass] = useState<number | null>(null);
@@ -132,11 +149,39 @@ export function EngineActionFlow({ dispatch, onClose }: EngineActionFlowProps) {
           ),
         });
       }
-      useCombatStore.getState().selectAction({
+      // The economy mirror stays EXACT to the legacy entry the commit loop
+      // would have written: slot occupant, rules category, and the "attack"
+      // turn event the maintenance check reads. An Extra-Attack weapon swing
+      // mirrors onto the attack-pips ledger (claim or ride an Attack action)
+      // instead of occupying a whole Action slot.
+      const combat = useCombatStore.getState();
+      const triggersAttack = dispatch.kind === "weapon" || dispatch.triggersAttack;
+      const entry: SelectedAction = {
         id: dispatch.legacyActionId,
         name: dispatch.actionName,
+        ...(dispatch.nameLoc ? { nameLoc: dispatch.nameLoc } : {}),
         slot: dispatch.kind === "weapon" ? "action" : dispatch.economySlot,
-      });
+        ...(dispatch.economyCategory
+          ? { economyCategory: dispatch.economyCategory }
+          : {}),
+        ...(triggersAttack ? { triggerEvents: ["attack"] as const } : {}),
+      };
+      if (dispatch.kind === "weapon" && dispatch.swing) {
+        combat.commitAttackSwing(
+          {
+            id: "attack-group",
+            name: t("combat.attackAction"),
+            nameLoc: { ui: "combat.attackAction" },
+            slot: "action",
+            isAttackGroup: true,
+            economyCategory: "attack",
+            triggerEvents: ["attack"],
+          },
+          dispatch.legacyActionId
+        );
+      } else {
+        combat.selectAction(entry);
+      }
       return true;
     },
   };

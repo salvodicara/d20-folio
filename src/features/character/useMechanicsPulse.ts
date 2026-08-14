@@ -15,6 +15,7 @@ import { runMechanicsCausalAction } from "@/lib/mechanics-coordinator";
 import {
   characterMaterialRef,
   characterSelfRef,
+  characterTurnEconomy,
   characterWorldState,
   commitCharacterAction,
   type EnginePulseRef,
@@ -23,9 +24,10 @@ export { activeEnginePulses, type EnginePulseRef } from "@/lib/mechanics-world-s
 import { beginMechanicsCausalState } from "@/lib/mechanics-world";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
-import type {
-  MechanicsCastPhase,
-  MechanicsCastState,
+import {
+  engineSelfDamage,
+  type MechanicsCastPhase,
+  type MechanicsCastState,
 } from "@/features/character/useMechanicsCast";
 import type { MechanicsAnswer } from "@/types/mechanics-program";
 import type { MechanicsCompilerResponse } from "@/types/mechanics-compiler";
@@ -108,7 +110,7 @@ export function useMechanicsPulse(
       },
       responses,
       state: state.value,
-      turnEconomy: [],
+      turnEconomy: characterTurnEconomy(doc, uid),
     });
     if (outcome.status === "needs-answer") {
       return outcome.requirement
@@ -151,6 +153,12 @@ export function useMechanicsPulse(
     );
     if (!committed) return false;
     updateSession(committed.session);
+    // A pulse that damages the possessor surfaces the same entered-d20
+    // Concentration prompt seam the legacy damage path owns.
+    const selfDamage = engineSelfDamage(replay.world, committed.world);
+    if (selfDamage > 0) {
+      useCharacterStore.getState().queueConcentrationSaveForDamage(selfDamage);
+    }
     reset();
     return true;
   }, [doc, replay, reset, uid, updateSession]);

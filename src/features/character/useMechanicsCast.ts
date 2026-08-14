@@ -21,6 +21,7 @@ import {
   characterSlotDefinitionFacts,
   characterSpellCapability,
   characterTrackerSeeds,
+  characterTurnEconomy,
   characterWorldState,
   commitCharacterAction,
   mechanicsAuthorityDefinition,
@@ -62,6 +63,17 @@ export interface EngineActionSource {
   readonly extraFacts?: readonly ActionFactGuard[];
   /** Stable id stem for the run's action/occurrence identities. */
   readonly key: string;
+}
+
+/** Total damage a committed engine action landed on the character ITSELF
+ * (current + temporary hit points, the RAW "you take damage" trigger). */
+export function engineSelfDamage(
+  before: Readonly<CharacterMaterialState>,
+  after: Readonly<CharacterMaterialState>
+): number {
+  const total = (state: Readonly<CharacterMaterialState>) =>
+    state.vitals.hitPoints.current + state.vitals.hitPoints.temporary.current;
+  return Math.max(0, total(before) - total(after));
 }
 
 /**
@@ -141,7 +153,10 @@ export function useMechanicsEngineAction(
       },
       responses,
       state: state.value,
-      turnEconomy: [],
+      // The character itself is the one combatant a solo dispatch may claim
+      // for; a turn-claim step compiles against this live projection and its
+      // claim commits against the solo encounter's own economy ledger.
+      turnEconomy: characterTurnEconomy(doc, uid),
     });
     if (outcome.status === "needs-answer") {
       return outcome.requirement
@@ -186,6 +201,13 @@ export function useMechanicsEngineAction(
     );
     if (!committed) return false;
     updateSession(committed.session);
+    // Damage the engine landed on the character itself surfaces the SAME
+    // entered-d20 Concentration prompt seam the legacy damage path owns
+    // (queued after the mirror so the 0-HP outright break reads final HP).
+    const selfDamage = engineSelfDamage(replay.world, committed.world);
+    if (selfDamage > 0) {
+      useCharacterStore.getState().queueConcentrationSaveForDamage(selfDamage);
+    }
     reset();
     return true;
   }, [doc, replay, reset, uid, updateSession]);

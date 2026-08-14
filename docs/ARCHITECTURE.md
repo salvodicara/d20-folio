@@ -1736,6 +1736,43 @@ twin of `undoCharacterAction`), restoring hp trio, temporary HP, condition occur
 booked lifetimes precisely, dropping every line of the undone action; a pre-world beat degrades
 to the legacy one-tap arithmetic inside the boundary.
 
+**The SOLO combat loop rides the same runtime** (`src/lib/mechanics-world-store.ts` +
+`src/features/character/center/solo-world-turn.ts`). The character's own material carries a LOCAL
+single-participant encounter: `planSoloEncounterStart` seeds it (the character as the one
+"turns"-phase participant, its own turn running at the tracker's round, the entered raw-d20
+initiative when the player typed one), `planSoloTurnBoundary` fires the kernel's `complete-turn`
+per solo round advance, and `planSoloEncounterEnd` closes it — all through the identical
+begin/checkpoint/advance boundary drive as the adversary seam, committed as one journal action
+under the character material's table authority and mirrored onto the legacy session
+(`commitCharacterAction` — condition chips, concentration, slots) in the same write. The wiring
+lives at the two tracker seams: the provider's solo End Turn calls `advanceSoloWorldTurn` (the
+encounter starts LAZILY on the first advance, so out-of-combat casts keep the
+6-seconds-per-turn timeline freeze), and the tracker's End Combat calls `endSoloWorldEncounter`.
+While the solo encounter runs, turn-anchored lifetimes freeze to EXACT turn-boundary end rules
+and expire precisely when the tracker steps — fail-closed and one-way exactly like the adversary
+boundary (a rejected plan leaves lifetimes standing; undoing an End Turn rewinds only the legacy
+round). Every character dispatch (`useMechanicsEngineAction` / `useMechanicsPulse`) feeds the
+coordinator the character's live **turn-economy projection**
+(`characterTurnEconomyProjection` — attacks per Attack action, walking Speed and
+condition-gated incapacitation from the same build seams the sheet reads), so an authored
+`turn-claim` step compiles for solo dispatches and its claim commits against the participant's
+own-turn ledger: a per-turn-capped program is REJECTED by the kernel on a second same-turn
+dispatch and allowed again after the boundary opens the next turn. (The transcriber does not
+yet emit `turn-claim` steps from declared per-turn caps — until it does, the legacy layered
+gates keep enforcing them at the UI.) Being in solo combat never forces the legacy path:
+engine-executable casts/actions dispatch through `EngineCastFlow`/`EngineActionFlow` mid-combat,
+and each commit mirrors the EXACT legacy turn-economy entry (slot occupant with its rules
+category and "attack" turn event, the one-slot-per-turn claim on the solo turn key, and — for an
+Extra-Attack weapon swing — the attack-pips ledger claim/ride instead of a whole Action slot).
+Engine damage landing on the character itself surfaces the SAME entered-d20 Concentration
+prompt seam the legacy damage path owns (`queueConcentrationSaveForDamage`; an engine commit
+that leaves the character at 0 HP breaks concentration outright through the one authoritative
+teardown). Honest boundaries that stay legacy this wave: REACTIONS (the reaction marker + the
+while-active activation the sheet's AC reads — Shield's program is engine-executable but its
+standing occurrence has no sheet read yet) and any cast whose while-active grant CARRIES
+mechanics (empty duration-marker grants, e.g. Hold Monster's, dispatch engine since the
+world's concentration occurrence already owns that truth).
+
 ## Persistence + offline
 
 Firestore SDK handles real-time sync + offline persistence transparently. Writes are

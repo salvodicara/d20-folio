@@ -241,6 +241,84 @@ describe("SpellsTab", () => {
     expect(useUndoStore.getState().past).toEqual([]);
   });
 
+  // The SOLO COMBAT cutover: being mid-combat keeps the ENGINE dispatch, and a
+  // committed engine cast mirrors the exact legacy turn economy — the claimed
+  // slot, the one-slot-per-turn marker on the SOLO turn key, and the world-side
+  // slot debit — while the RA-08 layered gate then routes a second leveled cast
+  // of the same turn back to the legacy path, which refuses it.
+  it("commits an engine cast during solo combat with the economy mirrored", async () => {
+    const doc = makeCharacterDoc({ classId: "cleric", level: 3 });
+    doc.character.spells = [{ srdId: "healing-word", prepared: true }];
+    doc.character.spellSlots = [{ level: 1, total: 2 }];
+    doc.session.spellSlots = {};
+    doc.session.hp = { current: 5, temp: 0 };
+    load(doc);
+    renderPage();
+    // Mid-combat: the tracker sits on round 3 (set after mount so the combat
+    // hydration pass cannot reset the display round back to its default).
+    useCombatStore.getState().setRound(3);
+
+    const card = screen.getByText("Healing Word").closest(".uc") as HTMLElement;
+    fireEvent.click(card.querySelector(".uc-chevron") as HTMLElement);
+    fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 1/i }));
+
+    // The engine modal resolves the cast: slot, target, the entered heal die.
+    await screen.findByText(/Resolve cast/);
+    const modal = () => within(screen.getByRole("dialog"));
+    fireEvent.click(modal().getByRole("button", { name: /Level 1 slot/ }));
+    fireEvent.click(await modal().findByRole("button", { name: "Yourself" }));
+    // 2024 Healing Word rolls 2d4 + modifier: enter both entered die faces.
+    const dice = await modal().findAllByRole("spinbutton");
+    for (const die of dice) fireEvent.change(die, { target: { value: "4" } });
+    fireEvent.click(modal().getByRole("button", { name: "Apply" }));
+    await modal().findByText(/Everything resolved/);
+    fireEvent.click(modal().getByRole("button", { name: "Apply" }));
+    await waitFor(() => expect(screen.queryByText(/Resolve cast/)).toBeNull());
+
+    // The world debited the slot once and the legacy economy mirrors exactly:
+    // bonus slot occupied, the solo turn key holds the one-slot-per-turn claim.
+    const state = useCombatStore.getState();
+    expect(useCharacterStore.getState().character?.session.spellSlots["1"]?.used).toBe(1);
+    expect(state.selected.bonus).toContainEqual(
+      expect.objectContaining({ id: "spell-healing-word", slot: "bonus" })
+    );
+    expect(state.spellSlotCastsThisTurn).toBe(1);
+    expect(state.spellSlotCastTurnKey).toBe("solo:test-char:3");
+
+    // A second leveled cast this turn: the layered gate keeps it LEGACY, and
+    // the legacy limiter refuses it — no engine modal, nothing spent twice.
+    fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 1/i }));
+    expect(screen.queryByText(/Resolve cast/)).toBeNull();
+    expect(useCharacterStore.getState().character?.session.spellSlots["1"]?.used).toBe(1);
+    expect(useCombatStore.getState().spellSlotCastsThisTurn).toBe(1);
+  });
+
+  // Reaction buff spells (Shield) carry legacy semantics the engine mirror
+  // does not own yet (the reaction marker + the while-active activation), so
+  // the gate keeps them on the legacy path — in and out of combat.
+  it("keeps a reaction buff spell on the legacy path", async () => {
+    const doc = makeCharacterDoc({ classId: "wizard", level: 5 });
+    doc.character.spells = [{ srdId: "shield", prepared: true }];
+    doc.character.spellSlots = [{ level: 1, total: 2 }];
+    doc.session.spellSlots = {};
+    load(doc);
+    renderPage();
+
+    const card = screen.getByText("Shield").closest(".uc") as HTMLElement;
+    fireEvent.click(card.querySelector(".uc-chevron") as HTMLElement);
+    fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 1/i }));
+
+    // The legacy reaction commit lands: reaction spent, slot debited by the
+    // legacy counters, active buff lit — and no engine modal ever opened.
+    await waitFor(() => expect(useCombatStore.getState().reactionUsed).toBe(true));
+    expect(screen.queryByText(/Resolve cast/)).toBeNull();
+    expect(useCombatStore.getState().reactionUsedId).toBe("spell-shield");
+    expect(useCharacterStore.getState().character?.session.spellSlots["1"]?.used).toBe(1);
+    expect(
+      useCharacterStore.getState().character?.session.activeFeatures ?? []
+    ).toContain("spell-shield");
+  });
+
   it("casts an extended-time spell without claiming turn economy", async () => {
     const doc = structuredClone(MOCK_CHARACTER);
     doc.character.spells = [

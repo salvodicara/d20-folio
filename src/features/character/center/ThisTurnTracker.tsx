@@ -59,6 +59,7 @@ import {
 import { InitVital } from "@/features/campaigns/init-vital";
 import { StatusLedge } from "./StatusLedge";
 import { useTurnEconomy } from "./useTurnEconomy";
+import { endSoloWorldEncounter } from "./solo-world-turn";
 import { useTurnState, useSheetCombat } from "./turn-state";
 import { MovementSlider } from "./MovementSlider";
 import { isCharacterAlive } from "@/lib/character-status";
@@ -323,6 +324,9 @@ export function ThisTurnTracker({
     });
     if (!ok) return;
     useCombatStore.getState().endCombat();
+    // Close the character-world SOLO encounter through the kernel's own
+    // end-encounter boundary (fail-closed no-op when none is running).
+    endSoloWorldEncounter();
   }
 
   // Engine-derived initiative bonus (DEX + Alert(PB) + exhaustion + grant bonus

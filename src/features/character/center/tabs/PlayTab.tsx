@@ -53,6 +53,7 @@ import {
   canCastSpellWithSlots,
   resolveSpellCastOptions,
 } from "@/lib/views/spell-cast-sources";
+import { economyActionCategory } from "@/lib/combat-economy";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import {
@@ -429,8 +430,11 @@ export function PlayTab() {
    * The engine gate: decide on TAP whether this row is engine-executable. A
    * conservative allowlist — rows whose legacy commit carries semantics the
    * engine does not model yet (activation toggles, turn prerequisites, per-turn
-   * caps, alternate costs, equipment costs, use-applies, riders, ammo, the
-   * Extra-Attack economy) stay legacy so the two runtimes never split a truth.
+   * caps, alternate costs, equipment costs, use-applies, riders, ammo) stay
+   * legacy so the two runtimes never split a truth. Solo combat itself never
+   * forces legacy: an Extra-Attack weapon swing rides the engine too, mirrored
+   * onto the attack-pips ledger, while a swing that could not open (every
+   * Attack action already spent) keeps the legacy path and its feedback.
    */
   const engineDispatchFor = useCallback(
     (action: ResolvedAction): EngineActionDispatch | null => {
@@ -451,6 +455,14 @@ export function PlayTab() {
       ) {
         return null;
       }
+      // A condition-blocked economy slot keeps the legacy path: its commit
+      // loop owns the block and the "slot blocked" feedback (rule 6 — one
+      // truth), so the engine can never spend through Incapacitated.
+      const blockedSlots = resolveConditionEffects(
+        effectiveSessionConditions(character.session)
+      ).blockedSlots;
+      const slot = getEconomySlot(action);
+      if (slot !== "free" && blockedSlots.has(slot)) return null;
       const uid = useAuthStore.getState().user?.uid;
       if (uid === undefined) return null;
       if (action.source === "weapon") {
@@ -460,16 +472,32 @@ export function PlayTab() {
           action.summary.ammo !== undefined ||
           (action.summary.extraDamage?.length ?? 0) > 0 ||
           (action.summary.dieModifiers?.length ?? 0) > 0 ||
-          action.summary.onHitHeal !== undefined ||
-          attackBudget > 1
+          action.summary.onHitHeal !== undefined
         ) {
           return null;
+        }
+        // Extra Attack (attack-pips): the swing must be able to claim or ride
+        // an Attack action right now; otherwise legacy owns the "spent" story.
+        const swing = attackBudget > 1;
+        if (swing) {
+          const combat = useCombatStore.getState();
+          const midAction = combat.attacksUsed % combat.attackBudget !== 0;
+          if (!midAction && combat.selected.action.length >= combat.budget.action) {
+            return null;
+          }
         }
         const capability = characterWeaponAttackCapability(character, uid, action.id, {
           maxHp: character.character.hp.max,
         });
         if (!capability) return null;
-        return { actionName: action.name, kind: "weapon", legacyActionId: action.id };
+        return {
+          actionName: action.name,
+          economyCategory: economyActionCategory(action),
+          kind: "weapon",
+          legacyActionId: action.id,
+          nameLoc: action.nameLoc,
+          swing,
+        };
       }
       if (action.source !== "feature" || action.id.startsWith("custom-")) return null;
       // Recover the owning SRD feature + authored action from the stable row id
@@ -542,12 +570,16 @@ export function PlayTab() {
                 ? { attackBonus: action.summary.attackBonus ?? 0 }
                 : {}),
             },
+            economyCategory: economyActionCategory(action),
             economySlot: getEconomySlot(action),
             featureId: srdFeature.id,
             hasAttackRoll: merged.attackType !== undefined,
             kind: "feature",
             legacyActionId: action.id,
+            nameLoc: action.nameLoc,
             ordinal,
+            triggersAttack:
+              action.summary.attackBonus != null || action.summary.saveAbility != null,
           };
         }
       }

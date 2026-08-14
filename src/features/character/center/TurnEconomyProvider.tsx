@@ -152,6 +152,7 @@ import {
   useOptionalItemResourceCommands,
 } from "./useItemResourceCommands";
 import { advanceSharedTurn, useSheetCombat } from "./turn-state";
+import { advanceSoloWorldTurn } from "./solo-world-turn";
 import type { StoredConcentration } from "@/types/ids";
 import { isCustomSpell, type SrdSpellRef } from "@/types/character";
 import {
@@ -2586,6 +2587,11 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     const compacted = useUndoStore.getState().past.filter((e) => e.turnScoped);
     useUndoStore.getState().purgeTurnScoped();
     endTurn();
+    // Fire the canonical engine turn boundary over the character's own world
+    // (start lazily, complete-turn, mirror expiries) — fail-closed and
+    // one-way; see `advanceSoloWorldTurn`. The legacy expiry engines below
+    // keep running for every state the world does not own yet.
+    advanceSoloWorldTurn(c.round);
     const boundaryAtStart = useCharacterStore.getState().expireEffectBoundaries({
       round: c.round + 1,
       phase: "turn-start",
