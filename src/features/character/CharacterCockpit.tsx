@@ -40,6 +40,7 @@ import { RunicEmptyState } from "@/components/ui/runic-empty-state";
 import { FolioLoader } from "@/components/shared/FolioLoader";
 import { cn } from "@/lib/utils";
 import { DyingBanner } from "./DyingBanner";
+import { ConcentrationSaveBanner } from "./ConcentrationSaveBanner";
 import { BinderFob } from "./BinderFob";
 import { MobileSignet } from "./MobileSignet";
 import { CombatHeader } from "./center/CombatHeader";
@@ -48,6 +49,7 @@ import { TabStrip } from "./center/TabStrip";
 import { TabBody } from "./center/TabBody";
 import { PlayRefDeepLink } from "./center/PlayRefDeepLink";
 import { TurnEconomyProvider } from "./center/TurnEconomyProvider";
+import { ItemResourceCommandProvider } from "./center/ItemResourceCommandProvider";
 import { LeftHud } from "./hud/LeftHud";
 import { RightHud } from "./hud/RightHud";
 
@@ -185,42 +187,48 @@ export function CockpitView() {
   }
 
   return (
-    <main
-      id="main"
-      className="wb mx-auto w-full max-w-7xl px-4 py-6 lg:py-8"
-      // P10 GLASS CASE — a read-only viewer (member/DM/admin) marks the whole
-      // cockpit so the folio.css glass-case recipe hides every pure-commit
-      // affordance (card CTAs, End Turn/Reset, add-condition/defense, spend
-      // cues) while every piece of STATE stays legible. The store `readonly`
-      // guards are the behavioral backstop; this is the visual-honesty seam.
-      data-sheet-readonly={readonly ? "" : undefined}
-    >
-      {/* T4 — the read-only state is surfaced by the MemberSheetView header row
+    <ItemResourceCommandProvider>
+      <main
+        id="main"
+        className="wb mx-auto w-full max-w-7xl px-4 py-6 lg:py-8"
+        // P10 GLASS CASE — a read-only viewer (member/DM/admin) marks the whole
+        // cockpit so the folio.css glass-case recipe hides every pure-commit
+        // affordance (card CTAs, End Turn/Reset, add-condition/defense, spend
+        // cues) while every piece of STATE stays legible. The store `readonly`
+        // guards are the behavioral backstop; this is the visual-honesty seam.
+        data-sheet-readonly={readonly ? "" : undefined}
+      >
+        {/* T4 — the read-only state is surfaced by the MemberSheetView header row
           (back button + "Read-only" chip on ONE compact line), not a banner here. */}
-      {combatHeader}
+        {combatHeader}
 
-      {/* The management home, split by pointer/width (`useBinderFobHome`) so
+        {/* The management home, split by pointer/width (`useBinderFobHome`) so
           exactly ONE renders: the Binder's Fob (the fixed coin chain) on
           fine-pointer ≥768px desktop, the Signet (one coin above the bottom nav
           that blooms its chain) on coarse/compact mobile. Both self-gate on the
           same query + own-sheet + not-readonly, and both are fixed so the tools
           are reachable at every scroll depth (no floating deep-scroll exit). */}
-      <BinderFob />
-      <MobileSignet />
+        <BinderFob />
+        <MobileSignet />
 
-      {/* A knockout (0 HP) lights a prominent danger strip on EVERY tab — the
+        {/* A knockout (0 HP) lights a prominent danger strip on EVERY tab — the
           markable death saves + a quick heal — paired with the header's compact
           "0 HP · Dying" pill. Renders nothing above 0 HP. */}
-      <DyingBanner />
+        <DyingBanner />
 
-      {/* #10 — below the rail threshold the two rail toggles are CO-LOCATED at
+        {/* Every living hit while concentrating produces one durable FIFO prompt.
+          It stays above the tab grid so the required physical-roll entry remains
+          reachable on every cockpit surface and survives route/hydration churn. */}
+        <ConcentrationSaveBanner />
+
+        {/* #10 — below the rail threshold the two rail toggles are CO-LOCATED at
           the top via `order` (Stats, Resources, then the center), so both HUDs
           are reachable together without scrolling past the tall tab body. DOM
           order stays center→left→right (so keyboard/SR focus order is
           center-first on every viewport); `order` only repaints the recomposed
           flow, and the `rail:` explicit column placement leaves the ≥1180
           three-column grid UNCHANGED. */}
-      {/* `[overflow-anchor:none]` — STOP THE RAIL JUMP. Expanding an action card
+        {/* `[overflow-anchor:none]` — STOP THE RAIL JUMP. Expanding an action card
           DOWN the (long) Play board changes the page's content height; the
           browser's CSS scroll-anchoring then adjusts window.scrollY to keep its
           chosen anchor visually fixed, which visibly SHIFTS the whole cockpit —
@@ -229,55 +237,58 @@ export function CockpitView() {
           shift was the viewport re-anchor). Excluding this subtree from anchor
           selection removes the reanchor so a card-expand never nudges the page —
           while the rails STILL scroll with it (NOT sticky/pinned). */}
-      {/* The three-column HUD mounts at the `rail:` breakpoint (--bp-rail 1180px,
+        {/* The three-column HUD mounts at the `rail:` breakpoint (--bp-rail 1180px,
           DESIGN.md §11) — NOT `lg:` (1024): between 1024–1179 (iPad landscape)
           three columns squeezed the center to ~400px, narrower than a phone, so
           the whole tablet band keeps the recomposed single-column cockpit. */}
-      <div className="grid grid-cols-1 gap-x-6 gap-y-4 [overflow-anchor:none] rail:grid-cols-[16rem_minmax(0,1fr)_18rem] rail:items-start rail:gap-y-8">
-        {/* ── CENTER — health · this turn · tabs (mobile: after the rails) ──── */}
-        {/* `.content` + `data-mode` activate the design-source amber EDITING
+        <div className="grid grid-cols-1 gap-x-6 gap-y-4 [overflow-anchor:none] rail:grid-cols-[16rem_minmax(0,1fr)_18rem] rail:items-start rail:gap-y-8">
+          {/* ── CENTER — health · this turn · tabs (mobile: after the rails) ──── */}
+          {/* `.content` + `data-mode` activate the design-source amber EDITING
             frame (immutable folio.css `.content[data-mode="edit"]::before`) that
             hugs this content column in edit mode; absent in play. */}
-        <div
-          data-mode={isEditMode ? "edit" : undefined}
-          // #71 — horizontal padding so the tab strip, filters, and card lists
-          // aren't flush to the `.content` column edge (and clear the inset
-          // `.content[data-mode=edit]` amber frame ring). The frame `::before` is
-          // inset:0 over the padding box, so it still hugs the column edge while
-          // the content breathes inside.
-          //
-          // `isolate` — the design-source amber EDITING frame (`.content[data-mode=
-          // edit]::before`) is `z-index: var(--z-sticky)` (100), the SAME layer as
-          // the topbar; in a plain `position: relative` column that z escapes to the
-          // root context and (being later in DOM) paints OVER the topbar on scroll —
-          // the gold frame "leaks into the header" and collides with the sticky edit
-          // banner. Forming a stacking context here confines that z:100 to this
-          // column, so the topbar (z:100 at root) and the z:99 banner both stay
-          // cleanly above the frame as it scrolls beneath them.
-          className="content isolate flex flex-col max-rail:order-3 rail:col-start-2 rail:row-start-1"
-        >
-          {turnEconomyRegion}
+          <div
+            data-mode={isEditMode ? "edit" : undefined}
+            // #71 — horizontal padding so the tab strip, filters, and card lists
+            // aren't flush to the `.content` column edge (and clear the inset
+            // `.content[data-mode=edit]` amber frame ring). The frame `::before` is
+            // inset:0 over the padding box, so it still hugs the column edge while
+            // the content breathes inside.
+            //
+            // `isolate` — the design-source amber EDITING frame (`.content[data-mode=
+            // edit]::before`) is `z-index: var(--z-sticky)` (100), the SAME layer as
+            // the topbar; in a plain `position: relative` column that z escapes to the
+            // root context and (being later in DOM) paints OVER the topbar on scroll —
+            // the gold frame "leaks into the header" and collides with the sticky edit
+            // banner. Forming a stacking context here confines that z:100 to this
+            // column, so the topbar (z:100 at root) and the z:99 banner both stay
+            // cleanly above the frame as it scrolls beneath them.
+            className="content isolate flex flex-col max-rail:order-3 rail:col-start-2 rail:row-start-1"
+          >
+            {turnEconomyRegion}
+          </div>
+
+          {/* ── LEFT — abilities · skills · senses (mobile: "Stats" sheet) ───── */}
+          <aside
+            aria-label={t("character.hud.statsRegion")}
+            className="max-rail:order-1 rail:col-start-1 rail:row-start-1"
+          >
+            <MobileDisclosure label={t("character.hud.stats")}>
+              {leftHud}
+            </MobileDisclosure>
+          </aside>
+
+          {/* ── RIGHT — resources · status · defenses (mobile: "Resources") ──── */}
+          <aside
+            aria-label={t("character.hud.resourcesRegion")}
+            className="max-rail:order-2 rail:col-start-3 rail:row-start-1"
+          >
+            <MobileDisclosure label={t("character.hud.resources")}>
+              {rightHud}
+            </MobileDisclosure>
+          </aside>
         </div>
-
-        {/* ── LEFT — abilities · skills · senses (mobile: "Stats" sheet) ───── */}
-        <aside
-          aria-label={t("character.hud.statsRegion")}
-          className="max-rail:order-1 rail:col-start-1 rail:row-start-1"
-        >
-          <MobileDisclosure label={t("character.hud.stats")}>{leftHud}</MobileDisclosure>
-        </aside>
-
-        {/* ── RIGHT — resources · status · defenses (mobile: "Resources") ──── */}
-        <aside
-          aria-label={t("character.hud.resourcesRegion")}
-          className="max-rail:order-2 rail:col-start-3 rail:row-start-1"
-        >
-          <MobileDisclosure label={t("character.hud.resources")}>
-            {rightHud}
-          </MobileDisclosure>
-        </aside>
-      </div>
-    </main>
+      </main>
+    </ItemResourceCommandProvider>
   );
 }
 

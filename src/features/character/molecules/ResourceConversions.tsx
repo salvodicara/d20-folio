@@ -9,13 +9,12 @@
  * (the SAME `.co-add` + `.co-picker` recipes the condition strip uses) listing
  * ONLY the conversions that are legal right now (`conversionOptionVMs` — every
  * constraint pre-validated, golden rule 20); clicking an option IMMEDIATELY
- * commits the reversible plan (`planResourceConversion` → `applyCommitOps`)
- * and raises an undo toast. No eligible option → the affordance is disabled
- * with an honest hint (never an error after the fact).
+ * captures that stable choice, then re-resolves the live grant and every owner
+ * through `prepareMechanicsCommand` immediately before one atomic CAS commit.
+ * No eligible option → the affordance is disabled with an honest hint.
  *
- * Engine seam: read-only derive + the existing store mutations through the
- * cost-engine `CommitStore` adapter — the SAME ops every combat action uses,
- * so undo semantics are identical by construction.
+ * Undo is the receipt's exact causal inverse; redo prepares the same choice
+ * again against current facts instead of replaying stale mutation deltas.
  */
 
 import { useMemo, useRef, useState } from "react";
@@ -23,107 +22,19 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeftRight } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableToast } from "@/stores/undoStore";
+import { useToastStore } from "@/stores/toastStore";
 import { useDismissOnOutside } from "@/hooks/useDismissOnOutside";
-import { classFeatureIndex } from "@/data/classes";
-import { classEntryLevel } from "@/lib/classes";
-import { resolveTrackers } from "@/lib/smart-tracker";
-import { slotUsageKey } from "@/lib/cast-options";
 import {
-  applyCommitOps,
-  planResourceConversion,
-  type CommitStore,
-} from "@/lib/cost-engine";
-import type { ResourceConversionEntry } from "@/lib/grants";
-import {
+  buildConversionCtx,
   conversionOptionVMs,
+  planMechanicsRevert,
+  prepareMechanicsCommand,
   type ConversionOptionVM,
-  type ConversionCtx,
-} from "@/lib/views/tracker-view";
+  type ResourceConversionSelection,
+} from "@/lib/mechanics-command";
+import type { ResourceConversionEntry } from "@/lib/grants";
 import { Icon } from "@/components/ui/icon";
 import type { CharacterDoc } from "@/types/character";
-
-/**
- * The cost-engine store adapter. `planResourceConversion` only ever plans
- * spend/gain ops over slots + trackers, so the equipment/concentration members
- * delegate to the store where it has them and are inert otherwise (a guard
- * test pins that conversion plans never contain those ops).
- */
-function commitStore(): CommitStore {
-  const s = useCharacterStore.getState();
-  return {
-    useSpellSlot: s.useSpellSlot,
-    restoreSpellSlot: s.restoreSpellSlot,
-    useTracker: s.useTracker,
-    restoreTracker: s.restoreTracker,
-    useEquipmentItem: s.useEquipmentItem,
-    // Never produced by a conversion plan (spend/gain slots + trackers only).
-    restoreEquipmentItem: () => undefined,
-    getConcentration: () => s.character?.session.concentration ?? "",
-    setConcentration: s.setConcentration,
-  };
-}
-
-/** Live resource counts for the option validator, from the current doc. */
-function buildCtx(doc: CharacterDoc, entry: ResourceConversionEntry): ConversionCtx {
-  const { character, session } = doc;
-  // The conversion is gated by the level IN the class that owns its source
-  // feature (Font of Magic's cost table reads the Sorcerer level).
-  const ownerClass = classFeatureIndex.get(entry.sourceId)?.class;
-  const classLevel = ownerClass ? classEntryLevel(character, ownerClass) : 0;
-  const trackers = resolveTrackers(doc);
-  const remaining = (id: string): number => {
-    const tr = trackers.find((t) => t.id === id);
-    return tr ? Math.max(0, tr.total - tr.used) : 0;
-  };
-  const deficit = (id: string): number => {
-    const tr = trackers.find((t) => t.id === id);
-    return tr ? Math.max(0, Math.min(tr.used, tr.total)) : 0;
-  };
-  // Font of Magic (Sorcerer) creates/converts NORMAL slots only — Pact-Magic
-  // slots can't be converted — so resolve the non-pact pool at each level (which
-  // keys as `String(level)` via slotUsageKey, distinct from a same-level pact pool).
-  const normalSlotAt = (level: number) =>
-    character.spellSlots.find((s) => s.level === level && !s.pactMagic);
-  const slotTotal = (level: number): number => normalSlotAt(level)?.total ?? 0;
-  const slotUsed = (level: number): number => {
-    const slot = normalSlotAt(level);
-    if (!slot) return 0;
-    return Math.min(session.spellSlots[slotUsageKey(slot)]?.used ?? 0, slot.total);
-  };
-  return {
-    classLevel,
-    trackerRemaining: remaining,
-    trackerDeficit: deficit,
-    slotsExpended: slotUsed,
-    slotsAvailable: (level) => Math.max(0, slotTotal(level) - slotUsed(level)),
-    // PRIM-resource-conversion `pact-slot` (Warlock Magical Cunning / Eldritch
-    // Master) — UNLIKE Font of Magic, this path acts on the Pact-Magic pool, so
-    // resolve THAT pool (single level for a Warlock) here. `restoresAll` = the
-    // character also has Eldritch Master, gated by its STABLE feature id's
-    // declared level vs the live Warlock level (golden rule 7 — no magic 20).
-    ...(entry.produces === "pact-slot" && { pactPool: pactPool(doc) }),
-  };
-}
-
-/**
- * The Warlock Pact-Magic pool for a `pact-slot` conversion (Magical Cunning /
- * Eldritch Master): the single pact slot level, the pool max, how many are
- * expended, and whether Eldritch Master upgrades the restore to the full pool.
- * Returns `undefined` when the character has no Pact slot (no conversion to make).
- */
-function pactPool(doc: CharacterDoc): ConversionCtx["pactPool"] {
-  const { character, session } = doc;
-  const slot = character.spellSlots.find((s) => s.pactMagic);
-  if (!slot) return undefined;
-  const expended = Math.min(
-    session.spellSlots[slotUsageKey(slot)]?.used ?? 0,
-    slot.total
-  );
-  const warlockLevel = classEntryLevel(character, "warlock");
-  const eldritchMaster = classFeatureIndex.get("warlock-eldritch-master");
-  const restoresAll = eldritchMaster != null && warlockLevel >= eldritchMaster.level;
-  return { level: slot.level, max: slot.total, expended, restoresAll };
-}
 
 /** One conversion entry → its button + inline option picker. */
 function ConversionControl({
@@ -136,12 +47,13 @@ function ConversionControl({
   unitLabel: string;
 }) {
   const { t } = useTranslation();
+  const showToast = useToastStore((state) => state.showToast);
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   useDismissOnOutside(open, wrapRef, () => setOpen(false));
 
   const options = useMemo(
-    () => conversionOptionVMs(entry, buildCtx(doc, entry)),
+    () => conversionOptionVMs(entry, buildConversionCtx(doc, entry)),
     [entry, doc]
   );
 
@@ -152,9 +64,47 @@ function ConversionControl({
         ? t("character.restorePactSlots")
         : t("character.convertCreateSlot");
 
+  function reportConflict(): void {
+    showToast({ message: t("character.conversionConflict"), duration: 4000 });
+  }
+
+  function execute(selection: ResourceConversionSelection) {
+    const store = useCharacterStore.getState();
+    const live = store.character;
+    if (!live) {
+      reportConflict();
+      return null;
+    }
+    const prepared = prepareMechanicsCommand(live, {
+      kind: "resource-conversion",
+      occurrenceId: crypto.randomUUID(),
+      characterId: doc.id,
+      sourceId: entry.sourceId,
+      conversionId: entry.conversionId,
+      selection,
+    });
+    if (prepared.status !== "planned") {
+      reportConflict();
+      return null;
+    }
+    const committed = store.applyMechanicsPlan(prepared.plan);
+    if (committed.status !== "applied") {
+      reportConflict();
+      return null;
+    }
+    return () => {
+      const reverted = useCharacterStore
+        .getState()
+        .applyMechanicsPlan(planMechanicsRevert(committed.receipt));
+      if (reverted.status !== "applied") {
+        reportConflict();
+        return false;
+      }
+      return true;
+    };
+  }
+
   function commit(opt: ConversionOptionVM): void {
-    const ops = planResourceConversion(entry, opt.choice);
-    if (ops.length === 0) return; // incoherent choice — the plan refuses
     const message =
       opt.kind === "create-slot"
         ? t("character.convertedSlotToast", { level: opt.producedSlotLevel })
@@ -164,7 +114,7 @@ function ConversionControl({
               points: opt.pointsGained,
               unit: unitLabel,
             });
-    registerUndoableToast({ message }, () => applyCommitOps(ops, commitStore()), {
+    registerUndoableToast({ message }, () => execute(opt.selection), {
       turnScoped: false,
     });
     setOpen(false);

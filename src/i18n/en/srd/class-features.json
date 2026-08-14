@@ -766,7 +766,7 @@
     "name": "Aura of Courage"
   },
   "paladin-aura-of-protection": {
-    "description": "Whenever you or a friendly creature within 10 feet of you must make a saving throw, the creature gains a bonus equal to your Charisma modifier (minimum +1). At 18th level, the range increases to 30 feet.",
+    "description": "You emit a 10-foot aura that is inactive while you have the Incapacitated condition. You and allies in it gain a saving-throw bonus equal to your Charisma modifier (minimum +1). At level 18, its range becomes 30 feet.",
     "name": "Aura of Protection"
   },
   "paladin-channel-divinity": {

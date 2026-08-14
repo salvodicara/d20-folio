@@ -72,6 +72,7 @@ export type MechanicsCoordinationRejection =
   | "invalid-input"
   | "invalid-state"
   | "invalid-reviewed-intent"
+  | "invalid-authority-snapshot"
   | "invalid-response"
   | "unresolved-predicate"
   | "unresolved-step"

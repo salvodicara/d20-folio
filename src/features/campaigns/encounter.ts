@@ -16,8 +16,8 @@
  *
  * Why reimplement the monster HP math instead of reusing `useHpControls`: that hook is
  * hard-coupled to the single-hero `useCharacterStore`, so it cannot drive an arbitrary
- * token. We lift only the ARITHMETIC + clamp discipline (golden rule 20): every token
- * HP edit clamps to `[0, maxHp]`, so an invalid HP is unreachable by construction. NO
+ * creature. We lift only the ARITHMETIC + clamp discipline (golden rule 20): every
+ * monster HP edit clamps to `[0, hp.max]`, so an invalid HP is unreachable. NO
  * dice anywhere — initiative is TYPED by the DM (golden rule / constitution 2.2).
  *
  * IDs only (golden rule 7): `conditions` holds stable condition IDs; the only
@@ -45,9 +45,208 @@ export interface EncounterPcSeed {
   characterId: string;
 }
 
-/** Integer-clamp a value into `[0, max]` (golden rule 20 — every token HP edit). */
+/** Integer-clamp a value into `[0, max]` (golden rule 20). */
 function clampHp(value: number, max: number): number {
   return Math.max(0, Math.min(max, Math.round(value)));
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function nonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function safeInteger(value: unknown, minimum = 0): value is number {
+  return Number.isSafeInteger(value) && (value as number) >= minimum;
+}
+
+function finiteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+const PC_COMBATANT_KEYS = new Set(["kind", "id", "memberUid", "characterId", "hidden"]);
+
+const MONSTER_COMBATANT_KEYS = new Set([
+  "kind",
+  "id",
+  "hidden",
+  "side",
+  "name",
+  "srdId",
+  "ac",
+  "initiative",
+  "conditions",
+  "hp",
+  "groupId",
+  "groupIndex",
+  "groupSize",
+  "revealed",
+  "notes",
+  "xp",
+  "creatureType",
+  "portraitUrl",
+  "portraitCrop",
+  "defenses",
+  "bardicInspirationDie",
+  "heroicInspiration",
+]);
+
+function hasOnlyKeys(value: Record<string, unknown>, keys: ReadonlySet<string>): boolean {
+  return Object.keys(value).every((key) => keys.has(key));
+}
+
+function isPortraitCrop(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    Object.keys(value).length === 4 &&
+    finiteNumber(value.x) &&
+    finiteNumber(value.y) &&
+    finiteNumber(value.width) &&
+    finiteNumber(value.height)
+  );
+}
+
+function isEncounterPc(value: Record<string, unknown>): boolean {
+  return (
+    value.kind === "pc" &&
+    hasOnlyKeys(value, PC_COMBATANT_KEYS) &&
+    nonEmptyString(value.memberUid) &&
+    value.id === `pc-${value.memberUid}` &&
+    nonEmptyString(value.characterId) &&
+    (value.hidden === undefined || typeof value.hidden === "boolean")
+  );
+}
+
+function isEncounterMonster(value: Record<string, unknown>): boolean {
+  const hp = value.hp;
+  if (
+    value.kind !== "monster" ||
+    !hasOnlyKeys(value, MONSTER_COMBATANT_KEYS) ||
+    !nonEmptyString(value.id) ||
+    !/^monster-[1-9]\d*$/.test(value.id) ||
+    !nonEmptyString(value.name) ||
+    !finiteNumber(value.ac) ||
+    !(value.initiative === null || Number.isSafeInteger(value.initiative)) ||
+    !Array.isArray(value.conditions) ||
+    !value.conditions.every(nonEmptyString) ||
+    new Set(value.conditions).size !== value.conditions.length ||
+    !isRecord(hp) ||
+    Object.keys(hp).length !== 3 ||
+    !Object.hasOwn(hp, "current") ||
+    !Object.hasOwn(hp, "temp") ||
+    !Object.hasOwn(hp, "max") ||
+    !safeInteger(hp.current) ||
+    !safeInteger(hp.temp) ||
+    !safeInteger(hp.max) ||
+    hp.current > hp.max
+  ) {
+    return false;
+  }
+  if (
+    (value.hidden !== undefined && typeof value.hidden !== "boolean") ||
+    (value.side !== undefined && value.side !== "ally" && value.side !== "enemy") ||
+    (value.srdId !== undefined && !nonEmptyString(value.srdId)) ||
+    (value.revealed !== undefined && typeof value.revealed !== "boolean") ||
+    (value.notes !== undefined && !nonEmptyString(value.notes)) ||
+    (value.xp !== undefined && !safeInteger(value.xp)) ||
+    (value.creatureType !== undefined && !nonEmptyString(value.creatureType)) ||
+    (value.portraitUrl !== undefined && !nonEmptyString(value.portraitUrl)) ||
+    (value.portraitCrop !== undefined && !isPortraitCrop(value.portraitCrop)) ||
+    (value.defenses !== undefined && !isRecord(value.defenses)) ||
+    (value.bardicInspirationDie !== undefined &&
+      !nonEmptyString(value.bardicInspirationDie)) ||
+    (value.heroicInspiration !== undefined &&
+      typeof value.heroicInspiration !== "boolean")
+  ) {
+    return false;
+  }
+  const groupValues = [value.groupId, value.groupIndex, value.groupSize];
+  const grouped = groupValues.every((entry) => entry !== undefined);
+  if (!grouped && groupValues.some((entry) => entry !== undefined)) return false;
+  return (
+    !grouped ||
+    (nonEmptyString(value.groupId) &&
+      /^monster-[1-9]\d*$/.test(value.groupId) &&
+      safeInteger(value.groupIndex, 1) &&
+      safeInteger(value.groupSize, 2) &&
+      value.groupIndex <= value.groupSize)
+  );
+}
+
+/** Strict encounter boundary. It returns the original current-model value and never
+ * repairs, expands or rewrites persisted combatants. */
+export function parseEncounterState(value: unknown): EncounterState {
+  if (
+    !isRecord(value) ||
+    !Array.isArray(value.combatants) ||
+    !safeInteger(value.nextMonsterOrdinal, 1) ||
+    !safeInteger(value.round, 1) ||
+    !(value.currentCombatantId === null || nonEmptyString(value.currentCombatantId)) ||
+    !safeInteger(value.epoch) ||
+    value.status !== "active"
+  ) {
+    throw new TypeError("Invalid encounter state");
+  }
+  const combatants: EncounterCombatant[] = [];
+  const ids = new Set<string>();
+  let highestMonsterOrdinal = 0;
+  for (const candidate of value.combatants) {
+    if (!isRecord(candidate)) throw new TypeError("Invalid encounter combatant");
+    const combatant: EncounterCombatant | null =
+      candidate.kind === "pc"
+        ? isEncounterPc(candidate)
+          ? (candidate as unknown as EncounterPc)
+          : null
+        : isEncounterMonster(candidate)
+          ? (candidate as unknown as EncounterMonster)
+          : null;
+    if (!combatant || ids.has(combatant.id)) {
+      throw new TypeError("Invalid encounter combatant");
+    }
+    ids.add(combatant.id);
+    combatants.push(combatant);
+    if (combatant.kind === "monster") {
+      highestMonsterOrdinal = Math.max(
+        highestMonsterOrdinal,
+        Number(combatant.id.slice("monster-".length))
+      );
+    }
+  }
+  if (value.nextMonsterOrdinal <= highestMonsterOrdinal) {
+    throw new TypeError("Invalid encounter monster identity allocator");
+  }
+  if (value.currentCombatantId !== null && !ids.has(value.currentCombatantId)) {
+    throw new TypeError("Invalid encounter turn pointer");
+  }
+  if (value.order !== undefined) {
+    if (
+      !Array.isArray(value.order) ||
+      !value.order.every((id): id is string => nonEmptyString(id) && ids.has(id)) ||
+      new Set(value.order).size !== value.order.length
+    ) {
+      throw new TypeError("Invalid encounter turn order");
+    }
+  }
+  if (value.initiativeSwaps !== undefined) {
+    if (
+      !Array.isArray(value.initiativeSwaps) ||
+      !value.initiativeSwaps.every(
+        (swap) =>
+          isRecord(swap) &&
+          Object.keys(swap).length === 2 &&
+          nonEmptyString(swap.sourceId) &&
+          nonEmptyString(swap.targetId) &&
+          swap.sourceId !== swap.targetId &&
+          ids.has(swap.sourceId) &&
+          ids.has(swap.targetId)
+      )
+    ) {
+      throw new TypeError("Invalid encounter initiative swap");
+    }
+  }
+  return value as unknown as EncounterState;
 }
 
 /** Build a PC combatant REFERENCE — uid + character id only (no statline copy). */
@@ -85,6 +284,7 @@ export function startEncounter(
   }
   return {
     combatants,
+    nextMonsterOrdinal: 1,
     round: 1,
     currentCombatantId: null,
     epoch,
@@ -130,67 +330,23 @@ export function beginEncounterTurns(
 
 // ─── Adding / removing combatants ───────────────────────────────────────────
 
-/** The lowest unused `monster-<n>` id, derived from the existing combatants so the
- *  id is deterministic + collision-free without any RNG (golden rule / no dice). */
-function nextMonsterId(combatants: ReadonlyArray<EncounterCombatant>): string {
-  let max = 0;
-  for (const c of combatants) {
-    const m = /^monster-(\d+)$/.exec(c.id);
-    if (m) max = Math.max(max, Number(m[1]));
-  }
-  return `monster-${max + 1}`;
-}
-
-/**
- * Conform the retired monster-group representation into first-class creature instances.
- * Pure and idempotent: current encounters (one HP value per monster) are returned by
- * reference; a legacy group keeps its original id for the first creature and receives
- * deterministic `~N` ids for the rest. Frozen order expands in place, preserving the
- * group's initiative position and current-turn pointer.
- */
-export function conformEncounterCreatures(state: EncounterState): EncounterState {
-  if (!state.combatants.some((c) => c.kind === "monster" && c.tokens.length > 1)) {
-    return state;
-  }
-  const replacements = new Map<string, string[]>();
-  const combatants: EncounterCombatant[] = state.combatants.flatMap((combatant) => {
-    if (combatant.kind !== "monster" || combatant.tokens.length <= 1) return [combatant];
-    const groupId = combatant.groupId ?? combatant.id;
-    const size = combatant.tokens.length;
-    const ids = combatant.tokens.map((_, index) =>
-      index === 0 ? combatant.id : `${combatant.id}~${index + 1}`
-    );
-    replacements.set(combatant.id, ids);
-    return combatant.tokens.map((hp, index) => ({
-      ...combatant,
-      id: index === 0 ? combatant.id : `${combatant.id}~${index + 1}`,
-      tokens: [hp],
-      groupId,
-      groupIndex: index + 1,
-      groupSize: size,
-    }));
-  });
-  const order = state.order?.flatMap((id) => replacements.get(id) ?? [id]);
-  return { ...state, combatants, ...(order ? { order } : {}) };
-}
-
-/** A DM-typed monster/NPC group to add to the encounter. */
+/** A DM-typed monster/NPC batch to add to the encounter. */
 export interface MonsterInput {
   /** User content — the monster/NPC name the DM types. */
   name: string;
   ac: number;
   maxHp: number;
-  /** How many identical tokens (Goblin ×3); coerced to ≥ 1. */
+  /** How many independent creatures to create; coerced to ≥ 1. */
   count: number;
-  /** Typed initiative for the group; `null` = blank. */
+  /** Typed initiative seeded onto each creature; `null` = blank. */
   initiative: number | null;
-  /** Which side this creature fights for. Defaults to enemy for old callers/data. */
+  /** Which side this creature fights for. Omission denotes an enemy. */
   side?: "ally" | "enemy";
   /** Optional DM free-text notes (omitted/empty → no `notes` field is stored). */
   notes?: string;
   /** Optional bestiary reference — set by the picker; omitted → no field stored. */
   srdId?: string;
-  /** Optional per-token XP (SRD Step 3) — the picker seeds `monsterXp(statblock)`, the
+  /** Optional per-creature XP (SRD Step 3) — the picker seeds `monsterXp(statblock)`, the
    *  custom form seeds `xpForCr(chosen CR)`; omitted (unknown) → no field stored, the
    *  group renders as un-costed. A harmless `xp: 0` IS stored (existence, not truthiness). */
   xp?: number;
@@ -212,24 +368,29 @@ export function monsterInstanceName(monster: EncounterMonster): string {
 }
 
 /**
- * Append a monster group — `count` tokens each seeded at full `maxHp` over the
- * shared ceiling. `count` is floored to 1 and `maxHp` to 0 so the group is always
- * well-formed. Round / turn are untouched.
+ * Append `count` independent creatures, each seeded with one scalar full-HP record.
+ * IDs consume consecutive deterministic ordinals; group metadata is presentation-only.
  */
 export function addMonster(state: EncounterState, input: MonsterInput): EncounterState {
-  const count = Math.max(1, Math.floor(input.count));
-  const maxHp = Math.max(0, Math.round(input.maxHp));
+  const name = input.name.trim();
+  if (!name) return state;
+  const count = Number.isFinite(input.count) ? Math.max(1, Math.floor(input.count)) : 1;
+  const maxHp = Number.isFinite(input.maxHp) ? Math.max(0, Math.round(input.maxHp)) : 0;
   const notes = input.notes?.trim();
   const srdId = input.srdId?.trim();
-  const groupId = nextMonsterId(state.combatants);
-  const base: Omit<EncounterMonster, "id" | "tokens"> = {
+  const firstOrdinal = state.nextMonsterOrdinal;
+  const groupId = `monster-${firstOrdinal}`;
+  const base: Omit<EncounterMonster, "id"> = {
     kind: "monster",
     ...(input.side === "ally" ? { side: "ally" as const } : {}),
-    name: input.name,
-    ac: input.ac,
-    initiative: input.initiative === null ? null : Math.round(input.initiative),
+    name,
+    ac: Number.isFinite(input.ac) ? Math.max(0, Math.round(input.ac)) : 0,
+    initiative:
+      input.initiative === null || !Number.isFinite(input.initiative)
+        ? null
+        : Math.round(input.initiative),
     conditions: [],
-    maxHp,
+    hp: { current: maxHp, temp: 0, max: maxHp },
     // Only store `notes`/`srdId`/`xp` when meaningful — keep the doc minimal (no
     // empty-string field, `stripUndefined`-independent). The `xp` guard is
     // EXISTENCE-based (`!= null` + finite + `≥ 0`), never truthy: a genuine harmless
@@ -252,8 +413,7 @@ export function addMonster(state: EncounterState, input: MonsterInput): Encounte
   };
   const monsters: EncounterMonster[] = Array.from({ length: count }, (_, index) => ({
     ...base,
-    id: index === 0 ? groupId : `${groupId}~${index + 1}`,
-    tokens: [maxHp],
+    id: `monster-${firstOrdinal + index}`,
     ...(count > 1 ? { groupId, groupIndex: index + 1, groupSize: count } : {}),
   }));
   const combatants = [...state.combatants, ...monsters];
@@ -266,10 +426,11 @@ export function addMonster(state: EncounterState, input: MonsterInput): Encounte
     return {
       ...state,
       combatants,
+      nextMonsterOrdinal: firstOrdinal + count,
       order: [...state.order, ...monsters.map((m) => m.id)],
     };
   }
-  return { ...state, combatants };
+  return { ...state, combatants, nextMonsterOrdinal: firstOrdinal + count };
 }
 
 /**
@@ -364,7 +525,11 @@ function mapCombatant(
 ): EncounterState {
   const index = state.combatants.findIndex((c) => c.id === id);
   if (index < 0) return state;
-  const combatants = state.combatants.map((c, i) => (i === index ? fn(c) : c));
+  const current = state.combatants[index];
+  if (!current) return state;
+  const changed = fn(current);
+  if (changed === current) return state;
+  const combatants = state.combatants.map((c, i) => (i === index ? changed : c));
   return { ...state, combatants };
 }
 
@@ -375,6 +540,7 @@ export function setInitiative(
   id: string,
   value: number | null
 ): EncounterState {
+  if (value !== null && !Number.isFinite(value)) return state;
   return mapCombatant(state, id, (c) =>
     c.kind === "pc" ? c : { ...c, initiative: value === null ? null : Math.round(value) }
   );
@@ -436,7 +602,7 @@ export function setMonsterName(
   return mapCombatant(state, id, (c) => (c.kind === "pc" ? c : { ...c, name: trimmed }));
 }
 
-/** Set a MONSTER's per-token XP (SRD Step 3) — the lair toggle (§D.5) routes through
+/** Set a MONSTER's XP (SRD Step 3) — the lair toggle (§D.5) routes through
  *  this to rewrite the cost between the base and `xpInLair` prints. Clamped to a
  *  non-negative integer (`Math.max(0, Math.round(xp))`). A PC is a no-op (a PC has no
  *  XP cost — its threat is its class levels, counted on the budget side). */
@@ -445,49 +611,37 @@ export function setMonsterXp(
   id: string,
   xp: number
 ): EncounterState {
+  if (!Number.isFinite(xp)) return state;
   return mapCombatant(state, id, (c) =>
     c.kind === "pc" ? c : { ...c, xp: Math.max(0, Math.round(xp)) }
   );
 }
 
-/** Apply a signed HP delta (damage negative, heal positive) to one MONSTER token,
- *  clamped to `[0, maxHp]`. A PC is a no-op — its HP lives in the `combat/state`
+/** Apply a signed HP delta (damage negative, heal positive) to one MONSTER,
+ *  clamped to `[0, hp.max]`. A PC is a no-op — its HP lives in the `combat/state`
  *  subdoc (the player/DM multi-writer edit lands in a later chunk). */
 export function applyHp(
   state: EncounterState,
   id: string,
-  tokenIndex: number,
   delta: number
 ): EncounterState {
-  return mapCombatant(state, id, (c) =>
-    c.kind === "pc"
-      ? c
-      : {
-          ...c,
-          tokens: setToken(
-            c.tokens,
-            tokenIndex,
-            c.tokens[tokenIndex] ?? 0,
-            delta,
-            c.maxHp
-          ),
-        }
-  );
+  if (!Number.isFinite(delta)) return state;
+  return mapCombatant(state, id, (c) => {
+    if (c.kind === "pc") return c;
+    const current = clampHp(c.hp.current + delta, c.hp.max);
+    return current === c.hp.current ? c : { ...c, hp: { ...c.hp, current } };
+  });
 }
 
-/** Set one MONSTER token's HP to an absolute value, clamped to `[0, maxHp]`. A PC is a
+/** Set one MONSTER's HP to an absolute value, clamped to `[0, hp.max]`. A PC is a
  *  no-op (live HP lives in the subdoc). */
-export function setHp(
-  state: EncounterState,
-  id: string,
-  tokenIndex: number,
-  value: number
-): EncounterState {
-  return mapCombatant(state, id, (c) =>
-    c.kind === "pc"
-      ? c
-      : { ...c, tokens: setToken(c.tokens, tokenIndex, value, 0, c.maxHp) }
-  );
+export function setHp(state: EncounterState, id: string, value: number): EncounterState {
+  if (!Number.isFinite(value)) return state;
+  return mapCombatant(state, id, (c) => {
+    if (c.kind === "pc") return c;
+    const current = clampHp(value, c.hp.max);
+    return current === c.hp.current ? c : { ...c, hp: { ...c.hp, current } };
+  });
 }
 
 /** Set a monster instance's Temporary HP. Values are finite, integral and non-negative;
@@ -497,27 +651,13 @@ export function setMonsterTempHp(
   id: string,
   value: number
 ): EncounterState {
-  const next = Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
+  if (!Number.isFinite(value)) return state;
+  const next = Math.max(0, Math.round(value));
   return mapCombatant(state, id, (combatant) => {
     if (combatant.kind === "pc") return combatant;
-    if (next > 0) return { ...combatant, tempHp: next };
-    return Object.fromEntries(
-      Object.entries(combatant).filter(([key]) => key !== "tempHp")
-    ) as typeof combatant;
+    if (combatant.hp.temp === next) return combatant;
+    return { ...combatant, hp: { ...combatant.hp, temp: next } };
   });
-}
-
-/** Immutably write `clampHp(base + delta, max)` into `tokens[index]` (out-of-range
- *  index is a no-op — returns the same array). */
-function setToken(
-  tokens: ReadonlyArray<number>,
-  index: number,
-  base: number,
-  delta: number,
-  max: number
-): number[] {
-  if (index < 0 || index >= tokens.length) return [...tokens];
-  return tokens.map((t, i) => (i === index ? clampHp(base + delta, max) : t));
 }
 
 /** Toggle a condition ID on a MONSTER — add if absent, remove if present (deduped).
@@ -653,7 +793,7 @@ export function applyInitiativeSwaps(
   return next;
 }
 
-/** The ids of fully-defeated MONSTERS (every token at 0) — the combatants `advanceTurn`
+/** The ids of defeated MONSTERS (0 HP) — the combatants `advanceTurn`
  *  skips. A PC is NEVER included (a downed PC still takes turns for death saves), so the
  *  skip can never pass over a player. */
 function deadMonsterIds(state: EncounterState): ReadonlySet<string> {
@@ -671,7 +811,7 @@ function deadMonsterIds(state: EncounterState): ReadonlySet<string> {
  * is empty (turns not begun). An id-based step (never a sort index), so a live PC
  * initiative change can't silently re-target the current turn.
  *
- * DEAD-MONSTER SKIP (RAW): a monster whose every token is dead is skipped — combat
+ * DEAD-MONSTER SKIP (RAW): a monster at 0 HP is skipped — combat
  * doesn't pause on a corpse. A PC is NEVER skipped ({@link deadMonsterIds} holds only
  * monsters), so a downed player still takes their turn to roll death saves. The scan is
  * bounded by `order.length`, so an all-dead-monster table (no live target) self-limits to
@@ -768,12 +908,12 @@ export function encounterRollFor(
 // ─── Status helpers ─────────────────────────────────────────────────────────
 
 /**
- * Whether a MONSTER is fully defeated — every token dead (0 HP). PC down-state is
+ * Whether a MONSTER is defeated (0 HP). PC down-state is
  * computed live in the view selector from the player's `combat/state` HP, so it is
  * not handled here.
  */
 export function isDown(monster: EncounterMonster): boolean {
-  return monster.tokens.every((t) => t === 0);
+  return monster.hp.current === 0;
 }
 
 /**

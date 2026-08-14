@@ -17,15 +17,17 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 
-const { updateCharacterMock, shareOrCopyMock, copyWithToastMock } = vi.hoisted(() => ({
-  updateCharacterMock: vi.fn<() => Promise<void>>(),
-  shareOrCopyMock: vi.fn<() => Promise<void>>(),
-  copyWithToastMock: vi.fn<() => void>(),
-}));
+const { setCharacterSharingMock, shareOrCopyMock, copyWithToastMock } = vi.hoisted(
+  () => ({
+    setCharacterSharingMock: vi.fn<() => Promise<void>>(),
+    shareOrCopyMock: vi.fn<() => Promise<void>>(),
+    copyWithToastMock: vi.fn<() => void>(),
+  })
+);
 
 vi.mock("@/lib/firebase", () => ({ db: {} }));
 vi.mock("@/lib/firestore", () => ({
-  updateCharacter: updateCharacterMock,
+  setCharacterSharing: setCharacterSharingMock,
   // SnapshotsHistory (hosted by the same coin) pulls these; the dialog stays shut.
   listCharacterSnapshots: vi.fn(() => Promise.resolve([])),
   saveCharacterSnapshot: vi.fn(() => Promise.resolve("snap-1")),
@@ -74,7 +76,7 @@ async function flipVisibility(): Promise<void> {
 
 describe("character share link — the owner affordance", () => {
   beforeEach(() => {
-    updateCharacterMock.mockReset().mockResolvedValue(undefined);
+    setCharacterSharingMock.mockReset().mockResolvedValue(undefined);
     shareOrCopyMock.mockReset().mockResolvedValue(undefined);
     copyWithToastMock.mockReset();
     useAuthStore.setState({ user: { uid: "owner-1" } as never });
@@ -111,9 +113,11 @@ describe("character share link — the owner affordance", () => {
     openSharePopover();
     await flipVisibility();
 
-    expect(updateCharacterMock).toHaveBeenCalledWith("owner-1", "char-1", {
-      shared: true,
-    });
+    expect(setCharacterSharingMock).toHaveBeenCalledWith(
+      "owner-1",
+      expect.objectContaining({ id: "char-1", shared: false }),
+      true
+    );
     expect(useCharacterStore.getState().character?.shared).toBe(true);
     expect(screen.getByText(LINK)).toBeInTheDocument();
     // No confirm anywhere: the switch IS the control and the popover IS the feedback.
@@ -134,9 +138,11 @@ describe("character share link — the owner affordance", () => {
 
     await flipVisibility();
 
-    expect(updateCharacterMock).toHaveBeenCalledWith("owner-1", "char-1", {
-      shared: false,
-    });
+    expect(setCharacterSharingMock).toHaveBeenCalledWith(
+      "owner-1",
+      expect.objectContaining({ id: "char-1", shared: true }),
+      false
+    );
     expect(useCharacterStore.getState().character?.shared).toBe(false);
     expect(screen.queryByText(LINK)).toBeNull();
     // Instantly, with nothing to dismiss and nothing to confirm.
@@ -167,7 +173,7 @@ describe("character share link — the owner affordance", () => {
   });
 
   it("a failed write never leaves the sheet claiming a link that works", async () => {
-    updateCharacterMock.mockRejectedValue(new Error("offline"));
+    setCharacterSharingMock.mockRejectedValue(new Error("offline"));
     render(<SheetExtrasCoin triggerClassName="fob-coin" />);
     openSharePopover();
     await flipVisibility();
@@ -177,5 +183,29 @@ describe("character share link — the owner affordance", () => {
     expect(useToastStore.getState().toasts.at(-1)?.message).toMatch(
       /couldn't change sharing/i
     );
+  });
+
+  it("fences a second toggle while the first atomic publish is pending", async () => {
+    let settle!: () => void;
+    setCharacterSharingMock.mockReturnValue(
+      new Promise<void>((resolve) => {
+        settle = resolve;
+      })
+    );
+    render(<SheetExtrasCoin triggerClassName="fob-coin" />);
+    openSharePopover();
+    const toggle = screen.getByRole("switch", {
+      name: /anyone with the link can view/i,
+    });
+
+    fireEvent.click(toggle);
+    fireEvent.click(toggle);
+    expect(setCharacterSharingMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      settle();
+      await Promise.resolve();
+    });
+    expect(useCharacterStore.getState().character?.shared).toBe(true);
   });
 });

@@ -1,6 +1,7 @@
 /** Pure PC damage-state transitions shared by solo and encounter adapters. */
 
-import type { DamageSource, DamageType } from "@/data/types";
+import type { DamageSource } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 import { resolvePersistentDamage, resolvePersistentHit } from "@/lib/combat-effects";
 import { applyDamage } from "@/lib/combat-hp";
 import {

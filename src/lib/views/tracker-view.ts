@@ -39,7 +39,6 @@ import type {
   AuraClause,
   CopyToTargetClause,
   IncomingAttackClause,
-  ResourceConversionEntry,
   RollFloorClause,
 } from "@/lib/grants";
 import { ALL_ABILITY_CODES, type AbilityCode } from "@/data/types";
@@ -52,6 +51,11 @@ import { getRace, rawRaceTraitCatKey } from "@/data/races";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { condColor, condInkColor } from "@/lib/condition-color";
 import { combatHigherLevels } from "@/lib/views/combat-action-view";
+export {
+  conversionOptionVMs,
+  type ConversionCtx,
+  type ConversionOptionVM,
+} from "@/lib/mechanics-command";
 
 type Locale = keyof BiText;
 
@@ -636,165 +640,6 @@ export function copyTargetVMs(
     ...(c.appliesToFeature && { appliesToFeature: c.appliesToFeature }),
     effect: localizeText(c.effect, locale),
   }));
-}
-
-// ─── PRIM-resource-conversion ───────────────────────────────────────────────
-
-/**
- * One COMMITTABLE conversion option (PRIM-resource-conversion) — a concrete,
- * already-validated choice the player can take RIGHT NOW. The rail renders the
- * list per conversion entry and clicking one immediately commits the plan
- * (`planResourceConversion(entry, choice)` → `applyCommitOps`, with undo) —
- * the combat immediate-commit-with-undo model.
- */
-export interface ConversionOptionVM {
-  kind: "create-slot" | "slot-to-points" | "restore-pact";
-  /** The use-time choice to feed `planResourceConversion`. */
-  choice: {
-    unitsSpent?: number;
-    producedSlotLevel?: number;
-    slotLevel?: number;
-    pactSlotLevel?: number;
-    pactRestoreAmount?: number;
-  };
-  /** The slot level produced (create-slot). */
-  producedSlotLevel?: number;
-  /** Units of `fromTracker` spent (create-slot — SP or Wild Shape uses). */
-  costUnits?: number;
-  /** The slot level expended (slot-to-points). */
-  slotLevelSpent?: number;
-  /** Units credited to `toTracker` (slot-to-points). */
-  pointsGained?: number;
-  /** Pact-Magic slots restored (restore-pact — Magical Cunning / Eldritch Master). */
-  pactRestored?: number;
-}
-
-/** The live resource context an option list is validated against. */
-export interface ConversionCtx {
-  /** Level in the class that owns the conversion (gates `costTable.minLevel`). */
-  classLevel: number;
-  /** Remaining uses of a tracker id (`fromTracker` spendable budget). */
-  trackerRemaining: (trackerId: string) => number;
-  /** Spent uses of a tracker id (`toTracker` creditable headroom). */
-  trackerDeficit: (trackerId: string) => number;
-  /** Currently EXPENDED slots at a level (a produced slot un-expends one). */
-  slotsExpended: (level: number) => number;
-  /** Currently AVAILABLE (unexpended) slots at a level. */
-  slotsAvailable: (level: number) => number;
-  /**
-   * Warlock Pact-Magic pool, present ONLY for a `pact-slot` conversion (Magical
-   * Cunning / Eldritch Master): the single pact slot `level`, the pool `max`,
-   * how many are `expended`, and whether Eldritch Master upgrades the restore to
-   * the FULL pool (else ⌈max/2⌉). Absent → the `pact-slot` case offers nothing.
-   */
-  pactPool?: { level: number; max: number; expended: number; restoresAll: boolean };
-}
-
-/**
- * Build the VALID conversion options for one `resource-conversion` entry —
- * every constraint enforced up front so an invalid conversion is unreachable
- * (golden rule 20), and every option maps 1:1 onto a `planResourceConversion`
- * choice that the cost-engine will accept:
- *
- *  - **Creating Spell Slots** (Font of Magic `costTable`): one option per table
- *    row whose `minLevel` ≤ the class level, whose cost fits the remaining
- *    pool, and where a slot of that level is currently EXPENDED (producing a
- *    slot un-expends one — the engine's reversible representation).
- *  - **Nature Magician** (`perUnitSlotLevels`): one option per spendable unit
- *    count, deduped by produced level (the level caps at `maxSlotLevel`, so
- *    extra units past the cap are never offered), same expended-slot gate.
- *  - **Converting Spell Slots** (`produces: "sorcery-points"`): one option per
- *    slot level with an available slot, capped to the pool's spent headroom so
- *    no point of the credit can be lost (`gain-tracker` clamps at full).
- *  - **Magical Cunning / Eldritch Master** (`produces: "pact-slot"`): ONE option
- *    restoring ⌈max/2⌉ Pact-Magic slots (the full pool when Eldritch Master
- *    upgrades it), gated on the feature's Long-Rest charge AND ≥1 Pact slot
- *    currently expended, clamped to what is expended.
- *
- * Pure — no store access; the caller supplies the live counts.
- */
-export function conversionOptionVMs(
-  entry: ResourceConversionEntry,
-  ctx: ConversionCtx
-): ConversionOptionVM[] {
-  const out: ConversionOptionVM[] = [];
-  switch (entry.produces) {
-    case "spell-slot": {
-      if (!entry.fromTracker) break;
-      const budget = ctx.trackerRemaining(entry.fromTracker);
-      if (entry.costTable) {
-        for (const row of entry.costTable) {
-          if (row.minLevel > ctx.classLevel) continue;
-          if (entry.maxSlotLevel != null && row.slotLevel > entry.maxSlotLevel) continue;
-          if (row.cost > budget) continue;
-          if (ctx.slotsExpended(row.slotLevel) < 1) continue;
-          out.push({
-            kind: "create-slot",
-            choice: { producedSlotLevel: row.slotLevel },
-            producedSlotLevel: row.slotLevel,
-            costUnits: row.cost,
-          });
-        }
-      } else if (entry.perUnitSlotLevels != null) {
-        const seen = new Set<number>();
-        for (let units = 1; units <= budget; units++) {
-          const raw = units * entry.perUnitSlotLevels;
-          const level =
-            entry.maxSlotLevel != null ? Math.min(raw, entry.maxSlotLevel) : raw;
-          if (level <= 0 || seen.has(level)) continue;
-          // Past the cap, extra units buy nothing — stop offering them.
-          if (entry.maxSlotLevel != null && raw > entry.maxSlotLevel) break;
-          seen.add(level);
-          if (ctx.slotsExpended(level) < 1) continue;
-          out.push({
-            kind: "create-slot",
-            choice: { unitsSpent: units },
-            producedSlotLevel: level,
-            costUnits: units,
-          });
-        }
-      }
-      break;
-    }
-    case "sorcery-points": {
-      if (!entry.toTracker) break;
-      const deficit = ctx.trackerDeficit(entry.toTracker);
-      for (let level = 1; level <= 9; level++) {
-        if (ctx.slotsAvailable(level) < 1) continue;
-        // Cap to the pool's headroom so no point of the credit is lost.
-        if (level > deficit) continue;
-        out.push({
-          kind: "slot-to-points",
-          choice: { slotLevel: level },
-          slotLevelSpent: level,
-          pointsGained: level,
-        });
-      }
-      break;
-    }
-    case "pact-slot": {
-      // Warlock Magical Cunning (L2) / Eldritch Master (L20) — un-expend Pact-
-      // Magic slots, gated on (a) the feature's ONE Long-Rest charge being
-      // available and (b) at least one Pact slot currently expended (nothing to
-      // regain otherwise). Magical Cunning restores ⌈max/2⌉; Eldritch Master
-      // upgrades it to the full pool. The offered amount is clamped to what is
-      // expended so the option never over-restores (golden rule 20).
-      const pool = ctx.pactPool;
-      if (!pool || !entry.fromTracker) break;
-      if (ctx.trackerRemaining(entry.fromTracker) < 1) break;
-      if (pool.expended < 1) break;
-      const full = pool.restoresAll ? pool.max : Math.ceil(pool.max / 2);
-      const amount = Math.min(full, pool.expended);
-      if (amount < 1) break;
-      out.push({
-        kind: "restore-pact",
-        choice: { pactSlotLevel: pool.level, pactRestoreAmount: amount },
-        pactRestored: amount,
-      });
-      break;
-    }
-  }
-  return out;
 }
 
 // ─── Activatable features ───────────────────────────────────────────────────

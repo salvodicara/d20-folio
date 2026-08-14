@@ -42,6 +42,30 @@ import type { CharacterDoc } from "@/types/character";
 import type { StoredConcentration } from "@/types/ids";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 
+/**
+ * Project the equipment that still exists as an active magic object. Catalogue
+ * defaults have no stored state, so an absent entry remains active; once a typed
+ * transition marks an exact physical copy nonmagical, consumed, or destroyed,
+ * every intrinsic equipment calculation must stop reading that copy. Identity
+ * mismatches fail closed instead of lending another copy's state.
+ */
+export function effectiveEquipmentForItemResources(
+  equipment: CharacterDoc["character"]["equipment"],
+  itemResources?: CharacterDoc["session"]["itemResources"]
+): CharacterDoc["character"]["equipment"] {
+  if (!itemResources) return equipment;
+  return equipment.filter((ref) => {
+    if ("custom" in ref || ref.instanceId === undefined) return true;
+    const state = itemResources[ref.instanceId];
+    return (
+      state === undefined ||
+      (state.itemId === ref.srdId &&
+        state.instanceId === ref.instanceId &&
+        state.disposition === "magical")
+    );
+  });
+}
+
 /** The session slices that feed sheet-wide grant aggregation. */
 export type AggregationSession = Pick<
   CharacterDoc["session"],
@@ -50,7 +74,11 @@ export type AggregationSession = Pick<
   Partial<
     Pick<
       CharacterDoc["session"],
-      "conditions" | "concentrationConditions" | "encounterEffects" | "concentration"
+      | "conditions"
+      | "concentrationConditions"
+      | "encounterEffects"
+      | "concentration"
+      | "itemResources"
     >
   >;
 
@@ -66,10 +94,11 @@ export function aggregateCharacterGrants(
 ): AggregatedGrants {
   const encounterSources = resolveCombatEffectGrantSources(session.encounterEffects);
   return evaluateGrants(
-    [...resolveAllGrantSources(character), ...encounterSources],
+    [...resolveAllGrantSources(character, session.itemResources), ...encounterSources],
     new Set(session.activeFeatures ?? []),
     new Map(Object.entries(session.grantBundleChoices ?? {})),
     {
+      level: totalLevel(character),
       conditions: new Set(
         effectiveSessionConditions({
           conditions: session.conditions ?? [],
@@ -124,7 +153,8 @@ export function computeCharacterAC(
     | "acBonusAbilities"
     | "acBonus"
     | "acFormulas"
-  >
+  >,
+  itemResources?: CharacterDoc["session"]["itemResources"]
 ): number {
   const scores = effectiveAbilityScores(
     character.abilityScores,
@@ -133,7 +163,7 @@ export function computeCharacterAC(
     agg.itemAbilityScoreCap
   );
   return computeAC(
-    character.equipment,
+    effectiveEquipmentForItemResources(character.equipment, itemResources),
     scores,
     getEquipment,
     character.features,
@@ -172,7 +202,8 @@ export function computeCharacterAcBreakdown(
     | "acBonusAbilities"
     | "acBonus"
     | "acFormulas"
-  >
+  >,
+  itemResources?: CharacterDoc["session"]["itemResources"]
 ): RawBreakdownPart[] {
   const scores = effectiveAbilityScores(
     character.abilityScores,
@@ -181,7 +212,7 @@ export function computeCharacterAcBreakdown(
     agg.itemAbilityScoreCap
   );
   return computeACDetailed(
-    character.equipment,
+    effectiveEquipmentForItemResources(character.equipment, itemResources),
     scores,
     getEquipment,
     character.features,
@@ -211,9 +242,10 @@ export function acFromAggregate(
     | "acBonusAbilities"
     | "acBonus"
     | "acFormulas"
-  >
+  >,
+  itemResources?: CharacterDoc["session"]["itemResources"]
 ): number {
-  return character.acOverride ?? computeCharacterAC(character, agg);
+  return character.acOverride ?? computeCharacterAC(character, agg, itemResources);
 }
 
 /**
@@ -227,7 +259,11 @@ export function effectiveAC(
   character: CharacterDoc["character"],
   session: AggregationSession
 ): number {
-  return acFromAggregate(character, aggregateCharacterGrants(character, session));
+  return acFromAggregate(
+    character,
+    aggregateCharacterGrants(character, session),
+    session.itemResources
+  );
 }
 
 // ─── Max HP — the by-the-book composition (#95) ─────────────────────────────────

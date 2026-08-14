@@ -494,6 +494,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "WIS",
+    targeting: { affinity: "enemy", maxTargets: 6 },
     source: "SRD",
   },
   {

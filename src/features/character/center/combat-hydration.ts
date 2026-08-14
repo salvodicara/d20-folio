@@ -84,6 +84,7 @@ export function snapshotTurnEconomy(
     movementUsedFt: state.movementUsedFt,
     dashesThisTurn: state.dashesThisTurn,
     spellSlotCastsThisTurn: state.spellSlotCastsThisTurn,
+    spellSlotCastTurnKey: state.spellSlotCastTurnKey,
     damageTakenThisRound: state.damageTakenThisRound,
     nextAttackAdvantage: state.nextAttackAdvantage,
     movementLocked: state.movementLocked,
@@ -125,6 +126,10 @@ function restoreTurnEconomy(
     movementUsedFt: snapshot.movementUsedFt,
     dashesThisTurn: snapshot.dashesThisTurn,
     spellSlotCastsThisTurn: snapshot.spellSlotCastsThisTurn,
+    spellSlotCastTurnKey:
+      snapshot.spellSlotCastsThisTurn > 0
+        ? (snapshot.spellSlotCastTurnKey ?? snapshot.key)
+        : null,
     damageTakenThisRound: snapshot.damageTakenThisRound,
     nextAttackAdvantage: snapshot.nextAttackAdvantage ?? false,
     movementLocked: snapshot.movementLocked ?? false,
@@ -143,6 +148,7 @@ function turnIsBaseline(): boolean {
     state.movementUsedFt === 0 &&
     state.dashesThisTurn === 0 &&
     state.spellSlotCastsThisTurn === 0 &&
+    state.spellSlotCastTurnKey === null &&
     !state.damageTakenThisRound &&
     !state.nextAttackAdvantage &&
     !state.movementLocked

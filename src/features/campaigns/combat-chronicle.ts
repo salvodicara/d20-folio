@@ -14,8 +14,7 @@
  *
  * Deterministic + total: every function returns a NEW state (or the same when
  * there's nothing to record). Down-crossing is derived HERE (one place, testable):
- * a PC when its current HP crosses to 0, a monster group when its LAST live token
- * dies.
+ * a PC or monster when its current HP crosses to 0.
  */
 
 import type { EncounterState, EncounterMonster } from "@/types/campaign";
@@ -67,27 +66,26 @@ function mapEvent(
 }
 
 /**
- * Record a MONSTER token HP SET (the absolute-value edit the DM books) plus any
+ * Record a MONSTER HP SET (the absolute-value edit the DM books) plus any
  * down-crossing. Applies {@link setHp}, derives the delta, and appends a
  * `hp-damage` (delta < 0) or `hp-heal` (delta > 0) event; a no-change edit (a clamp
  * no-op) records nothing. `attackerId` rides a damage event ONLY when the DM
  * attributed it (absent = unattributed). A `down` event follows when this hit
- * defeated the LAST live token of the group.
+ * defeated the creature.
  */
 export function recordMonsterHp(
   state: EncounterState,
   monsterId: string,
-  tokenIndex: number,
   value: number,
   attackerId?: string
 ): EncounterState {
   const before = state.combatants.find((c) => c.id === monsterId);
   if (!before || before.kind !== "monster") return state;
-  const beforeHp = before.tokens[tokenIndex] ?? 0;
-  const next = setHp(state, monsterId, tokenIndex, value);
+  const beforeHp = before.hp.current;
+  const next = setHp(state, monsterId, value);
   const after = next.combatants.find((c) => c.id === monsterId);
   if (!after || after.kind !== "monster") return next;
-  const afterHp = after.tokens[tokenIndex] ?? 0;
+  const afterHp = after.hp.current;
   const delta = afterHp - beforeHp;
   if (delta === 0) return next;
   let out =
@@ -97,7 +95,7 @@ export function recordMonsterHp(
           targetId: monsterId,
           amount: -delta,
           current: afterHp,
-          max: after.maxHp,
+          max: after.hp.max,
           ...(attackerId ? { attackerId } : {}),
         })
       : appendEvent(next, {
@@ -105,7 +103,7 @@ export function recordMonsterHp(
           targetId: monsterId,
           amount: delta,
           current: afterHp,
-          max: after.maxHp,
+          max: after.hp.max,
         });
   if (!isDown(before) && isDown(after)) {
     out = appendEvent(out, { kind: "down", targetId: monsterId });
@@ -119,33 +117,30 @@ export function recordMonsterHp(
 export function recordMonsterDamage(
   state: EncounterState,
   monsterId: string,
-  tokenIndex: number,
   amount: number,
   attackerId?: string,
   action?: LocText
 ): EncounterState {
   const before = state.combatants.find((c) => c.id === monsterId);
-  if (!before || before.kind !== "monster" || amount <= 0) return state;
-  const beforeHp = before.tokens[tokenIndex] ?? 0;
-  const tempAbsorbed = Math.min(before.tempHp ?? 0, Math.max(0, Math.round(amount)));
-  const afterTemp = setMonsterTempHp(
-    state,
-    monsterId,
-    (before.tempHp ?? 0) - tempAbsorbed
-  );
+  if (!before || before.kind !== "monster" || !Number.isFinite(amount) || amount <= 0) {
+    return state;
+  }
+  const beforeHp = before.hp.current;
+  const tempAbsorbed = Math.min(before.hp.temp, Math.max(0, Math.round(amount)));
+  const afterTemp = setMonsterTempHp(state, monsterId, before.hp.temp - tempAbsorbed);
   const remaining = Math.max(0, Math.round(amount) - tempAbsorbed);
-  const afterHpState = setHp(afterTemp, monsterId, tokenIndex, beforeHp - remaining);
+  const afterHpState = setHp(afterTemp, monsterId, beforeHp - remaining);
   const after = afterHpState.combatants.find((c) => c.id === monsterId);
   if (!after || after.kind !== "monster") return afterHpState;
-  const hpLost = beforeHp - (after.tokens[tokenIndex] ?? 0);
+  const hpLost = beforeHp - after.hp.current;
   const landed = tempAbsorbed + hpLost;
   if (landed === 0) return afterHpState;
   let out = appendEvent(afterHpState, {
     kind: "hp-damage",
     targetId: monsterId,
     amount: landed,
-    current: after.tokens[tokenIndex] ?? 0,
-    max: after.maxHp,
+    current: after.hp.current,
+    max: after.hp.max,
     ...(tempAbsorbed > 0 ? { tempAbsorbed } : {}),
     ...(attackerId ? { attackerId } : {}),
     ...(action ? { action } : {}),
@@ -229,22 +224,15 @@ export function recordCondition(
   });
 }
 
-/** The index of the first monster token BELOW its max (where a restore lands its HP
- *  back); falls back to `0` when every token is full. Pure. */
-function firstRestorableToken(tokens: ReadonlyArray<number>, max: number): number {
-  const i = tokens.findIndex((hp) => hp < max);
-  return i < 0 ? 0 : i;
-}
-
 /**
  * UNDO one MONSTER HP event from the chronicle (owner 2026-08-02 — remediability): the
  * DM's one-tap reversal of an auto-applied player hit (or their own mis-booked edit). It
  * both REMOVES the chronicle line AND restores the monster's HP by the SAME amount, so a
  * wrong number is corrected in a single obvious tap — no HP left silently dropped.
  *
- * Damage undone → the amount is HEALED back onto the group (the first token below max);
- * a heal undone → the amount is re-damaged off it. Any `down` line for that target is
- * dropped once the group is no longer down (a restored group is no longer defeated). A
+ * Damage undone → the amount is HEALED back onto the creature; a heal undone → the
+ * amount is re-damaged. Any `down` line for that target is dropped once the creature
+ * is no longer down. A
  * no-op on a PC target (a PC's live HP lives in its own subdoc, not the encounter — the
  * DM corrects that on the PC card) and on any non-HP event / unknown id. The reconcile
  * layer then re-derives the feed: with the applied event gone, the player's declaration
@@ -257,33 +245,25 @@ export function undoHpEvent(state: EncounterState, eventId: string): EncounterSt
   if (!event || (event.kind !== "hp-damage" && event.kind !== "hp-heal")) return state;
   const target = state.combatants.find((c) => c.id === event.targetId);
   // Only a monster's HP lives on the encounter; a PC event just clears its line. Undoing
-  // damage HEALS the amount back (onto the first token below max); undoing a heal
-  // re-damages it (off the first live token) — the reverse delta on a sensible token.
+  // damage HEALS the amount back; undoing a heal re-damages it.
   const isDamage = event.kind === "hp-damage";
   let restored = state;
   if (target && target.kind === "monster") {
-    const tokenIndex = isDamage
-      ? firstRestorableToken(target.tokens, target.maxHp)
-      : Math.max(
-          0,
-          target.tokens.findIndex((hp) => hp > 0)
-        );
     restored = applyHp(
       state,
       event.targetId,
-      tokenIndex,
       isDamage ? event.amount - (event.tempAbsorbed ?? 0) : -event.amount
     );
     if (isDamage && (event.tempAbsorbed ?? 0) > 0) {
       restored = setMonsterTempHp(
         restored,
         event.targetId,
-        (target.tempHp ?? 0) + (event.tempAbsorbed ?? 0)
+        target.hp.temp + (event.tempAbsorbed ?? 0)
       );
     }
   }
   // Drop the undone line, plus any now-stale `down` line for the same target once the
-  // restore leaves the group standing again.
+  // restore leaves the creature standing again.
   const targetAfter = restored.combatants.find((c) => c.id === event.targetId);
   const stillDown = targetAfter?.kind === "monster" && isDown(targetAfter);
   const nextEvents = restored.events?.filter(
@@ -351,7 +331,7 @@ export function skipEventAttacker(
 
 /**
  * The light, STATE-SUPPORTED outcome of a finished fight: `victory` when the
- * encounter held at least one monster and EVERY monster group is defeated, else the
+ * encounter held at least one enemy monster and EVERY one is defeated, else the
  * neutral `ended`. Never asserts an outcome the state can't support (a fight ended
  * with monsters still standing is `ended`, editable by the DM at close).
  */

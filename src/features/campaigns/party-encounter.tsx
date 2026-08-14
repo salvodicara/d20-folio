@@ -101,13 +101,8 @@ import { CR_VALUES, xpForCr } from "@/lib/monster";
 import { ensureSrdKind } from "@/i18n";
 import { useLocale } from "@/hooks/useLocale";
 import { conditionChips, conditionOptions } from "@/lib/views/tracker-view";
-import {
-  ALL_CREATURE_TYPES,
-  ALL_DAMAGE_TYPES,
-  type ConditionId,
-  type CreatureType,
-  type DamageType,
-} from "@/data/types";
+import { ALL_CREATURE_TYPES, type ConditionId, type CreatureType } from "@/data/types";
+import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 import { bloodiedFromHp } from "@/lib/aggregate-character";
 import {
   hpState,
@@ -147,17 +142,15 @@ import {
   recordCondition,
   recordPcHp,
 } from "@/features/campaigns/combat-chronicle";
-import { setEncounterInitiative } from "@/features/campaigns/campaign-io";
+import {
+  setEncounterInitiative,
+  writeCampaignCombatEffect,
+} from "@/features/campaigns/campaign-io";
 import { reduceHpDelta, defaultCombatState } from "@/lib/combat-state";
+import { isCharacterAlive } from "@/lib/character-status";
 import { revokeConditionEffectOps } from "@/lib/combat-effects";
 import type { EncounterBudgetView } from "@/features/campaigns/encounter-view";
 import type { BudgetVerdict } from "@/lib/encounter-difficulty";
-import {
-  applyHpDelta,
-  setCombatCondition,
-  setCombatTempHp,
-  tickDeathSave,
-} from "@/lib/combat-state-io";
 import { useToastStore } from "@/stores/toastStore";
 import type { CharacterDoc } from "@/types/character";
 import type { CombatState } from "@/types/combat-state";
@@ -553,10 +546,14 @@ export function PcCombatantCard({
    *  event rides the same debounced encounter write). Absent for a player / at rest. */
   recordEvent?: ApplyFn;
 }) {
-  if (state.status === "ready") {
+  const hydrated =
+    state.status === "ready" && combat !== undefined
+      ? hydrateMemberDoc(state.doc, combat)
+      : null;
+  if (hydrated) {
     return (
       <PcReadyCard
-        doc={state.doc}
+        doc={hydrated}
         combat={combat ?? null}
         encounterConditions={encounterConditions}
         memberUid={memberUid}
@@ -579,7 +576,10 @@ export function PcCombatantCard({
   // with zero height change (the old gray skeleton bars were 3px shorter than the
   // chips, so every card below nudged when the doc hydrated — a nav-feel jump).
   const cluster = (
-    <FallbackVitals snapshot={snapshot} busy={state.status === "loading"} />
+    <FallbackVitals
+      snapshot={snapshot}
+      busy={state.status === "loading" || combat === undefined}
+    />
   );
   return (
     <CombatantCard
@@ -598,7 +598,7 @@ export function PcCombatantCard({
         // The unreadable-doc state is exactly where detaching a broken attachment
         // matters, so the self picker rides the fallback body too.
         <>
-          <DocStateNote loading={state.status === "loading"} />
+          <DocStateNote loading={state.status === "loading" || combat === undefined} />
           {selfAttach}
         </>
       }
@@ -719,11 +719,9 @@ function PcReadyCard({
   // shared by the HP tile, the INIT chip, and the conditions / death-save block.
   const write = useCombatWrite();
 
-  // Fold the LIVE combat trio onto the parent doc BEFORE deriving (golden rule 6) so
-  // HP / conditions reflect the member's `combat/state` subdoc, not the stripped
-  // parent-doc default. AC / passives / senses / max HP keep deriving from the doc.
-  const hydrated = useMemo(() => hydrateMemberDoc(doc, combat), [doc, combat]);
-  const stats = useMemo(() => derivePartyMemberStats(hydrated), [hydrated]);
+  // `PcCombatantCard` admits this branch only after the combat subdoc has been
+  // resolved and the parent ownership marker has hydrated successfully.
+  const stats = useMemo(() => derivePartyMemberStats(doc), [doc]);
   const charId = doc.id;
   const maxHp = stats.maxHp;
   const conditionList = encounterConditions ?? stats.conditions;
@@ -786,6 +784,7 @@ function PcReadyCard({
           current={stats.currentHp}
           max={maxHp}
           temp={stats.tempHp}
+          dead={!isCharacterAlive(doc.status, doc.session)}
           canEdit={canEdit}
           write={write}
           combatantId={`pc-${memberUid}`}
@@ -969,7 +968,7 @@ function useCombatWrite(): CombatWrite {
  * the slim Liquid-Mercury bar BELOW the number and the "HP" label, exactly the cockpit
  * {@link HeaderHpControl} recipe (golden rule 10 — no parallel HP widget). EDITABLE for
  * the owner / DM (the tile is the SHARED {@link HpEditPopover} trigger, DELTA + absolute
- * `combat-state-io` writes through the shared `write` seam), else a static readout.
+ * fresh-read effect writes through the shared `write` seam), else a static readout.
  */
 /** The read-only barred HP chip — ONE recipe for every static member-HP readout
  *  (a non-editable peer's live card, the doc-loading/denied snapshot fallback). */
@@ -1020,6 +1019,7 @@ function HpVital({
   current,
   max,
   temp,
+  dead,
   canEdit,
   write,
   combatantId,
@@ -1031,6 +1031,8 @@ function HpVital({
   current: number;
   max: number;
   temp: number;
+  /** Canonical lifecycle verdict; ordinary HP controls never double as resurrection. */
+  dead: boolean;
   canEdit: boolean;
   write: CombatWrite;
   /** This PC's combatant id (`pc-<uid>`) — the target of a recorded chronicle beat. */
@@ -1073,12 +1075,18 @@ function HpVital({
       current={current}
       max={max}
       temp={temp}
+      dead={dead}
       // The DM books FINAL numbers here (no defense data on this surface), so
       // the popover renders no intake section and the parts are a single
       // untyped amount — summed for safety.
       onDamage={(parts) => {
         const amount = parts.reduce((s, p) => s + p.amount, 0);
-        write(() => applyHpDelta(uid, charId, base, { kind: "damage", amount }, max));
+        write(() =>
+          writeCampaignCombatEffect(uid, charId, base, max, {
+            kind: "hp",
+            operation: { kind: "damage", amount },
+          })
+        );
         // Record the chronicle beat in the SAME motion (DM only) — the PC's live HP
         // lives in its subdoc, so we reduce the pre/post here off the same base the
         // write uses. Unattributed; the feed's one-tap picker adds the "who".
@@ -1101,7 +1109,13 @@ function HpVital({
         }
       }}
       onHeal={(n) => {
-        write(() => applyHpDelta(uid, charId, base, { kind: "heal", amount: n }, max));
+        if (dead) return;
+        write(() =>
+          writeCampaignCombatEffect(uid, charId, base, max, {
+            kind: "hp",
+            operation: { kind: "heal", amount: n },
+          })
+        );
         if (recordEvent && n > 0) {
           const post = reduceHpDelta(
             base ?? defaultCombatState(max),
@@ -1121,9 +1135,21 @@ function HpVital({
         }
       }}
       onTemp={(n) =>
-        write(() => setCombatTempHp(uid, charId, base, Math.max(temp, n), max))
+        write(() =>
+          writeCampaignCombatEffect(uid, charId, base, max, {
+            kind: "temp-hp",
+            value: Math.max(temp, n),
+          })
+        )
       }
-      onClearTemp={() => write(() => setCombatTempHp(uid, charId, base, 0, max))}
+      onClearTemp={() =>
+        write(() =>
+          writeCampaignCombatEffect(uid, charId, base, max, {
+            kind: "temp-hp",
+            value: 0,
+          })
+        )
+      }
       ariaLabel={t("character.hitPoints")}
       align="start"
       // B4 — the SHARED HpEditPopover's optional rubric slot is the sheet's glossary
@@ -1149,7 +1175,7 @@ function HpVital({
 /**
  * The EDITABLE conditions editor + (while downed) the death-save pips for one PC card,
  * rendered in the disclosure BODY (CARD-6) for the owner / DM only (the caller gates on
- * `canEdit`). Each interaction is a commutative / transactional `combat-state-io` write
+ * `canEdit`). Each interaction is a fresh-read, effect-root-only campaign transaction
  * via the shared `write` seam. The collapsed read-only condition chips live in the
  * card's `conditions` slot, so this is purely the editor.
  */
@@ -1184,20 +1210,17 @@ function PcCombatExtras({
 }) {
   return (
     <div className="flex flex-col gap-2.5">
-      {/* Conditions — add/remove through the SHARED editor (whole-object writes). */}
+      {/* Conditions — add/remove through the shared effect-root writer. */}
       <ConditionEditor
         conditions={conditions}
         onToggle={(conditionId) => {
           const added = !conditions.includes(conditionId);
           if (added || baseConditions.includes(conditionId)) {
             write(() =>
-              setCombatCondition(
-                uid,
-                charId,
-                base,
-                { kind: added ? "add" : "remove", conditionId },
-                maxHp
-              )
+              writeCampaignCombatEffect(uid, charId, base, maxHp, {
+                kind: "condition",
+                operation: { kind: added ? "add" : "remove", conditionId },
+              })
             );
           }
           if (recordEvent) {
@@ -1224,7 +1247,12 @@ function PcCombatExtras({
         <DeathSaveTicks
           deathSaves={deathSaves}
           onTick={(outcome) =>
-            write(() => tickDeathSave(uid, charId, base, outcome, maxHp))
+            write(() =>
+              writeCampaignCombatEffect(uid, charId, base, maxHp, {
+                kind: "death-save",
+                outcome,
+              })
+            )
           }
         />
       )}
@@ -1423,7 +1451,7 @@ const VERDICT_GLYPH: Record<BudgetVerdict, typeof ShieldCheck> = {
  * metagame). Every state is designed: a colored verdict chip when the
  * budget + a costed monster both exist; a muted "—" chip while the party budget is
  * pending, absent (no PCs), or no monster is costed yet; and a muted `+n ?` marker
- * (its own tooltip) whenever some groups carry no XP, so the verdict reads as an
+ * (its own tooltip) whenever some creatures carry no XP, so the verdict reads as an
  * HONEST floor computed from the costed monsters only.
  */
 export function EncounterBudgetReadout({
@@ -1450,9 +1478,9 @@ export function EncounterBudgetReadout({
           })
         : t("campaignHub.encounterBudgetNoParty");
 
-  // No monster groups at all → nudge the DM to add some (on the costed-XP run, whose
-  // "0 XP" is otherwise inert). `uncostedGroups + (costed groups)` — the costed count
-  // is not in the view, but "nothing costed AND nothing un-costed" ⇒ zero groups.
+  // No enemy creatures at all → nudge the DM to add some (on the costed-XP run, whose
+  // "0 XP" is otherwise inert). The costed creature count is not in the view, but
+  // "nothing costed AND nothing un-costed" means there are no enemy creatures.
   const noMonsters = costedXp === 0 && uncostedGroups === 0 && verdict === null;
 
   return (
@@ -1601,13 +1629,13 @@ function TurnHint({ label, glyph }: { label: string; glyph: string }) {
 /**
  * One monster/NPC combatant on the SHARED {@link CombatantCard} shell (CARD-1, the
  * `enemy` side) — identical markup to a PC card, differentiated only by the `data-side`
- * accent. The READ parts (initial · name · ×count · AC · HP-or-band · defeated/hidden
+ * accent. The READ parts (initial · name · AC · HP-or-band · defeated/hidden
  * badge · conditions · turn highlight) always render — that IS the player read-only
- * view. The EDIT parts (typed initiative chip, per-token HP steppers, conditions, reveal
+ * view. The EDIT parts (typed initiative chip, scalar HP control, conditions, reveal
  * HP, hidden toggle, remove) live in the disclosure body, gated behind `apply` (DM-only);
  * a player gets a static, non-expandable card.
  *
- * HIDDEN ENEMY HP (CARD-5): the DM/admin (`apply` present) always sees the EXACT summed
+ * HIDDEN ENEMY HP (CARD-5): the DM/admin (`apply` present) always sees the EXACT
  * HP; a player sees only a qualitative BAND (Healthy / Bloodied / Near Death) unless the
  * DM has flipped `revealed`, in which case the player reads the exact number.
  */
@@ -1635,23 +1663,12 @@ export function MonsterCard({
   // The DM-only statblock disclosure (a picker-added monster carries `srdId`).
   const [statblockOpen, setStatblockOpen] = useState(false);
   const down = isDown(monster);
-  const groupCurrent = monster.tokens.reduce((sum, hp) => sum + hp, 0);
-  const groupMax = monster.maxHp * monster.tokens.length;
-  const aliveTokens = monster.tokens.filter((hp) => hp > 0).length;
   // Allies are table-facing participants, so their exact state is visible like a PC's.
   // Enemy HP stays concealed until the DM explicitly reveals it.
   const showExactHp = editable || monster.side === "ally" || !!monster.revealed;
   const hasConditions = monster.conditions.length > 0;
 
-  const subline =
-    monster.tokens.length > 1 ? (
-      <span className="flex items-center gap-1.5 text-xs">
-        <Badge variant="muted" size="sm">{`×${monster.tokens.length}`}</Badge>
-        <span className="tabular-nums text-text-muted">
-          {`${aliveTokens}/${monster.tokens.length}`}
-        </span>
-      </span>
-    ) : null;
+  const subline = null;
 
   const badges =
     down || monster.hidden || monster.side === "ally" || monster.bardicInspirationDie ? (
@@ -1709,9 +1726,9 @@ export function MonsterCard({
         valueText={monster.ac}
       />
       <MonsterHpStat
-        current={groupCurrent}
-        max={groupMax}
-        temp={monster.tempHp ?? 0}
+        current={monster.hp.current}
+        max={monster.hp.max}
+        temp={monster.hp.temp}
         showExact={showExactHp}
       />
     </div>
@@ -1749,25 +1766,14 @@ export function MonsterCard({
         maxLength={60}
       />
 
-      <MonsterTokens
+      <MonsterHpControl
         monster={monster}
-        onDamage={(tokenIndex, amount) =>
-          apply((e) => recordMonsterDamage(e, monster.id, tokenIndex, amount))
-        }
-        onHeal={(tokenIndex, amount) =>
-          apply((e) =>
-            recordMonsterHp(
-              e,
-              monster.id,
-              tokenIndex,
-              (monster.tokens[tokenIndex] ?? 0) + amount
-            )
-          )
+        onDamage={(amount) => apply((e) => recordMonsterDamage(e, monster.id, amount))}
+        onHeal={(amount) =>
+          apply((e) => recordMonsterHp(e, monster.id, monster.hp.current + amount))
         }
         onTemp={(amount) =>
-          apply((e) =>
-            setMonsterTempHp(e, monster.id, Math.max(monster.tempHp ?? 0, amount))
-          )
+          apply((e) => setMonsterTempHp(e, monster.id, Math.max(monster.hp.temp, amount)))
         }
         onClearTemp={() => apply((e) => setMonsterTempHp(e, monster.id, 0))}
       />
@@ -2155,18 +2161,14 @@ function MonsterInitChip({
 }
 
 /**
- * Per-token HP for a monster group ("Goblin ×3" → three independent tokens). Each
- * token reuses the EXACT PC-card HP recipe (golden rule 10): the {@link HpBadge}
+ * Scalar HP control for one monster. It reuses the EXACT PC-card HP recipe
+ * (golden rule 10): the {@link HpBadge}
  * `.vital-hp` chip as the trigger for the SHARED {@link HpEditPopover}, so monster
- * + character HP editing look + behave identically. Monsters have no temp pool, so
- * the popover is opened with `hideTemp`. The popover emits DAMAGE/HEAL DELTAS; the
+ * + character HP editing look + behave identically. The popover emits DAMAGE/HEAL DELTAS; the
  * engine's absolute `onSet` (→ `setHp` → `clampHp`) clamps `hp ± n` to `[0, maxHp]`,
- * so no clamp is needed here (the seam already owns it). A lone token is just the
- * monster, so it labels with the monster NAME (the card title already names it, so
- * no extra visible label); a group shows a compact "Token N" lead-in to tell the
- * otherwise-identical tokens apart.
+ * so no clamp is needed here (the seam already owns it).
  */
-function MonsterTokens({
+function MonsterHpControl({
   monster,
   onDamage,
   onHeal,
@@ -2174,87 +2176,66 @@ function MonsterTokens({
   onClearTemp,
 }: {
   monster: EncounterMonster;
-  onDamage: (tokenIndex: number, amount: number) => void;
-  onHeal: (tokenIndex: number, amount: number) => void;
+  onDamage: (amount: number) => void;
+  onHeal: (amount: number) => void;
   onTemp: (amount: number) => void;
   onClearTemp: () => void;
 }) {
   const { t } = useTranslation();
   const hpLabel = t("character.health.hpAbbr");
-  const many = monster.tokens.length > 1;
+  const { current, max, temp } = monster.hp;
+  const state = hpState(current, max);
+  const pct = max > 0 ? Math.round((current / max) * 100) : 0;
+  const aria = monsterInstanceName(monster);
   return (
     <div className="party-vitals">
-      {monster.tokens.map((hp, i) => {
-        const state = hpState(hp, monster.maxHp);
-        const pct = monster.maxHp > 0 ? Math.round((hp / monster.maxHp) * 100) : 0;
-        const aria = many
-          ? t("campaignHub.encounterTokenHp", { name: monster.name, n: i + 1 })
-          : monster.name;
-        return (
-          // Tokens are positional + identical by construction; the index IS the
-          // stable key here (no id to key on, never reordered).
-          <div
-            key={i}
-            className={cn("flex items-center gap-1.5", hp === 0 && "opacity-60")}
+      <div className={cn("flex items-center gap-1.5", current === 0 && "opacity-60")}>
+        <HpEditPopover
+          current={current}
+          max={max}
+          temp={temp}
+          onDamage={(parts) =>
+            onDamage(parts.reduce((sum, part) => sum + part.amount, 0))
+          }
+          onHeal={onHeal}
+          onTemp={onTemp}
+          onClearTemp={onClearTemp}
+          ariaLabel={aria}
+          align="start"
+          rubric={
+            <GlossaryTip
+              term="hitPoints"
+              rubric={t("character.hitPoints")}
+              side="bottom"
+            />
+          }
+        >
+          <button
+            type="button"
+            data-state={state}
+            data-density="chip"
+            aria-label={aria}
+            className="vital vital-hp"
           >
-            {many && (
-              <span className="text-xs tabular-nums text-text-muted">
-                {t("campaignHub.encounterTokenLabel", { n: i + 1 })}
-              </span>
-            )}
-            <HpEditPopover
-              current={hp}
-              max={monster.maxHp}
-              temp={monster.tempHp ?? 0}
-              onDamage={(parts) =>
-                onDamage(
-                  i,
-                  parts.reduce((sum, part) => sum + part.amount, 0)
-                )
-              }
-              onHeal={(amount) => onHeal(i, amount)}
-              onTemp={onTemp}
-              onClearTemp={onClearTemp}
-              ariaLabel={aria}
-              align="start"
-              // B4 — pass the SAME glossary rubric as the PC HpVital so the monster
-              // token popover opens with the matching "Punti ferita" header (parity).
-              rubric={
-                <GlossaryTip
-                  term="hitPoints"
-                  rubric={t("character.hitPoints")}
-                  side="bottom"
-                />
-              }
-            >
-              <button
-                type="button"
-                data-state={state}
-                data-density="chip"
-                aria-label={aria}
-                className="vital vital-hp"
-              >
-                <HpBadge
-                  density="chip"
-                  current={hp}
-                  max={monster.maxHp}
-                  temp={monster.tempHp ?? 0}
-                  state={state}
-                  pct={pct}
-                  hpLabel={hpLabel}
-                />
-              </button>
-            </HpEditPopover>
-          </div>
-        );
-      })}
+            <HpBadge
+              density="chip"
+              current={current}
+              max={max}
+              temp={temp}
+              state={state}
+              pct={pct}
+              hpLabel={hpLabel}
+            />
+          </button>
+        </HpEditPopover>
+      </div>
     </div>
   );
 }
 
 // ─── Add monster / NPC form ───────────────────────────────────────────────────
 
-/** Inline form to add a monster/NPC group — name + count are the only fields typed
+/** Inline form to add a monster/NPC batch — name + count are the only fields typed
  *  from scratch; every numeric is a clamped NumberStepper (no dice, no invalid state
  *  reachable — golden rule 20). DM-only. CONTROLLED: the open/closed toggle lives with
  *  the banner so its trigger can sit inline next to Begin-turns; this renders only the
@@ -2522,7 +2503,7 @@ export function AddMonsterForm({
               )}
             </legend>
             <div className="custom-monster-defense-grid">
-              {ALL_DAMAGE_TYPES.map((type) => (
+              {DAMAGE_TYPES.map((type) => (
                 <button
                   key={type}
                   type="button"

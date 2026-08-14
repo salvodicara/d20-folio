@@ -9,11 +9,12 @@
  */
 
 import type {
+  AbilityCode,
   CombatConditionLifetime,
   CreatureType,
   DamageSource,
-  DamageType,
 } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 import {
   NO_DEFENSES,
   resolveDamageIntake,
@@ -27,6 +28,7 @@ import type { LocText } from "@/lib/loc-text";
 export type CombatResolutionKind = "attack" | "save" | "attack-save" | "automatic";
 export type CombatTargetAffinity = "enemy" | "ally" | "self" | "any";
 export type SaveDamageOutcome = "half" | "none";
+export type CombatResolutionOwner = "legacy" | "effect-program";
 
 export interface CombatStandingEffectSpec {
   source: ActiveCombatEffect["source"];
@@ -41,6 +43,8 @@ export interface CombatStandingEffectSpec {
 }
 
 export interface CombatResolutionSpec {
+  /** Exclusive mutation route. Effect-program ownership forbids legacy commits. */
+  resolutionOwner: CombatResolutionOwner;
   kind: CombatResolutionKind;
   attackMode?: "melee" | "ranged";
   targetCap: number;
@@ -65,6 +69,9 @@ export interface CombatResolutionSpec {
   sharedAmount: boolean;
   targetAffinity: CombatTargetAffinity;
   excludeSelf: boolean;
+  /** Hard legal-target gate. The resolver never lets its show-all affordance
+   * bypass an authored creature-type restriction. */
+  targetCreatureTypes?: ReadonlyArray<CreatureType>;
   conditionApplication?: {
     options: string[];
     max?: number;
@@ -75,6 +82,20 @@ export interface CombatResolutionSpec {
   standingEffect?: CombatStandingEffectSpec;
   /** What a successful save does to the entered damage. Default is no damage. */
   damageOnSave: SaveDamageOutcome;
+}
+
+/**
+ * Resolve the exclusive target/effect mutation owner. Either half of the authored
+ * route is enough to retain program ownership: a malformed transform therefore
+ * fails in the program path instead of silently falling back to legacy mutations.
+ */
+export function combatResolutionOwner(
+  action: Pick<ResolvedAction, "effectProgram" | "effectResolutionOwner">
+): CombatResolutionOwner {
+  return action.effectProgram !== undefined ||
+    action.effectResolutionOwner === "effect-program"
+    ? "effect-program"
+    : "legacy";
 }
 
 export interface CombatDamagePartSpec {
@@ -96,6 +117,8 @@ export interface CombatDamagePartSpec {
   /** The table fact that gates this component. Hybrid actions can therefore
    * resolve an attack component and a save component independently. */
   resolution: "attack" | "save" | "automatic";
+  /** Save ability for target-owned response rules such as Evasion. */
+  saveAbility?: AbilityCode;
   /** A split-area primary applies only to the first declared target. */
   target: "primary" | "all" | "one-roll";
   /** One entered roll is reused for every target of this component. */
@@ -267,6 +290,7 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
             : "enemy");
 
   return {
+    resolutionOwner: combatResolutionOwner(action),
     kind,
     ...(s.attackMode ? { attackMode: s.attackMode } : {}),
     targetCap:
@@ -299,12 +323,18 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
     ...(standingEffect ? { standingEffect } : {}),
     targetAffinity,
     excludeSelf: action.standingEffect?.excludeSelf ?? s.targeting?.excludeSelf === true,
+    ...(s.targeting?.creatureTypes
+      ? { targetCreatureTypes: s.targeting.creatureTypes }
+      : {}),
     damageOnSave: s.damageOnSave ?? "none",
   };
 }
 
 /** Open a resolver whenever an action has a target-facing or self-applied consequence. */
 export function shouldResolveCombatAction(action: ResolvedAction): boolean {
+  // Program ownership is sufficient even when the legacy summary has no scalar
+  // consequence. The interpreter, not this compatibility planner, owns its phases.
+  if (combatResolutionOwner(action) === "effect-program") return true;
   if (
     action.summary.resolveOnCast === false &&
     !action.summary.recurringUse &&
@@ -329,6 +359,9 @@ export function shouldResolveCombatAction(action: ResolvedAction): boolean {
 /** SOLO has no modeled opponents. Resolve only consequences the app can apply to the
  * current hero; enemy damage/save declarations remain at the physical table. */
 export function shouldResolveSoloAction(action: ResolvedAction): boolean {
+  // A program-owned action must never fall through to the one-tap legacy commit.
+  // The program resolver may still reject an unavailable external target safely.
+  if (combatResolutionOwner(action) === "effect-program") return true;
   if (action.summary.resolveOnCast === false && !action.summary.recurringUse)
     return false;
   const spec = combatResolutionSpec(action);
@@ -390,6 +423,9 @@ export function combatDamageParts(action: ResolvedAction): CombatDamagePartSpec[
       ...(source ? { source } : {}),
       optional: false,
       resolution: primaryResolution,
+      ...(primaryResolution === "save" && s.saveAbility
+        ? { saveAbility: s.saveAbility as AbilityCode }
+        : {}),
       target: splitArea ? "primary" : "all",
       sharedAmount: s.area === true || s.targeting?.sharedAmount === true,
       damageOnSave: s.damageOnSave ?? "none",
@@ -424,6 +460,7 @@ export function combatDamageParts(action: ResolvedAction): CombatDamagePartSpec[
       resolution:
         s.secondaryDamage.resolution ??
         (hasAttack && hasSave ? "save" : primaryResolution),
+      ...(s.saveAbility ? { saveAbility: s.saveAbility as AbilityCode } : {}),
       target: "all",
       sharedAmount: s.secondaryDamage.area === true,
       damageOnSave: s.secondaryDamage.damageOnSave ?? s.damageOnSave ?? "none",
@@ -453,6 +490,9 @@ export function combatDamageParts(action: ResolvedAction): CombatDamagePartSpec[
         ? { targetCreatureTypes: extra.targetCreatureTypes }
         : {}),
       resolution: primaryResolution,
+      ...(primaryResolution === "save" && s.saveAbility
+        ? { saveAbility: s.saveAbility as AbilityCode }
+        : {}),
       target: "all",
       sharedAmount: false,
       damageOnSave: s.damageOnSave ?? "none",
@@ -515,8 +555,14 @@ export function resolveCombatDamage(
     const applies = combatDamagePartApplies(spec, outcome, damageOnSave);
     if (!applies && resolved !== "saved") return [];
     const saveHalf = spec.damageOnSave === "half" || damageOnSave === "half";
+    const saveDamageRule =
+      spec.resolution === "save" && spec.saveAbility && saveHalf
+        ? defenses.saveDamageRules.find((rule) => rule.ability === spec.saveAbility)
+        : undefined;
+    if (resolved === "saved" && saveDamageRule?.onSuccess === "none") return [];
     if (resolved === "saved" && !saveHalf) return [];
     const adjusted =
+      (resolved === "failed-save" && saveDamageRule?.onFailure === "half") ||
       (resolved === "saved" && saveHalf) ||
       (resolved === "miss" && spec.damageOnMiss === "half")
         ? Math.floor(Math.max(0, amount) / 2)
@@ -526,6 +572,13 @@ export function resolveCombatDamage(
         amount: adjusted,
         ...(damageType ? { type: damageType } : {}),
         ...(spec.source ? { source: spec.source } : {}),
+        ...(spec.resolution === "attack" && resolved === "hit"
+          ? { delivery: "attack" as const }
+          : spec.resolution === "save"
+            ? { delivery: "save" as const }
+            : spec.resolution === "automatic"
+              ? { delivery: "automatic" as const }
+              : {}),
       },
     ];
   });

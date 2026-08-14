@@ -20787,7 +20787,8 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
 [data-sheet-readonly] .uc-detail-foot .btn, /* card-foot action buttons (Cast · Use · Pin) */
 [data-sheet-readonly] .dying-banner .btn, /* the dying strip's heal / interrupt CTAs */
 [data-sheet-readonly] .dying-banner .input, /* …and its quick-heal amount field */
-[data-sheet-readonly] .ds-roll /* …and the death-save d20 roll entry (RA-11) */ {
+[data-sheet-readonly] .ds-roll, /* …and the death-save d20 roll entry (RA-11) */
+[data-sheet-readonly] .concentration-save-roll /* durable Concentration d20 entry */ {
   display: none;
 }
 /* An UNHELD inspiration die is all affordance (the d6–d12 receive picker),

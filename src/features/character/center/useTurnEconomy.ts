@@ -31,8 +31,15 @@ export type PreparedCommit = (
   artifact?: PreparedCommitArtifact
 ) => void;
 
+export interface ExecuteActionIntent {
+  /** Cast this eligible spell as a ritual: no slot/source payment and no turn slot. */
+  ritual?: true;
+}
+
 /** The economy commit surface shared by the center meter + the Play-tab cards. */
 export interface TurnEconomyApi {
+  /** Resolve choices/targets, then atomically commit every consequence and cost. */
+  executeAction: (action: ResolvedAction, intent?: ExecuteActionIntent) => void;
   /**
    * Resolve every pre-target choice (currently slot level / free-cast source /
    * Metamagic) without spending it. The returned commit closes over those exact

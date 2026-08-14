@@ -4,7 +4,7 @@ import { asAlignmentId } from "@/lib/lore-utils";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { renderHook, act } from "@testing-library/react";
 import type { CharacterDoc } from "@/types/character";
-import { omitCombatTrio } from "@/lib/combat-state";
+import { omitCombatTrio, sessionToCombatState } from "@/lib/combat-state";
 import { serializeCharacterEnvelope } from "@/lib/character-codec";
 
 /**
@@ -19,6 +19,7 @@ import { serializeCharacterEnvelope } from "@/lib/character-codec";
 const {
   debouncedSave,
   debouncedFlush,
+  debouncedCancel,
   subscribeMock,
   refreshAttachedSheetsMock,
   createTrackerMock,
@@ -27,6 +28,7 @@ const {
 } = vi.hoisted(() => ({
   debouncedSave: vi.fn(),
   debouncedFlush: vi.fn(() => Promise.resolve()),
+  debouncedCancel: vi.fn(),
   subscribeMock: vi.fn<
     (
       uid: string,
@@ -53,7 +55,13 @@ const {
       onError?: (err: Error) => void
     ) => () => void
   >(() => () => {}),
-  writeCombatStateMock: vi.fn(() => Promise.resolve()),
+  writeCombatStateMock: vi.fn<
+    (
+      uid: string,
+      charId: string,
+      state: import("@/types/combat-state").CombatState
+    ) => Promise<void>
+  >(() => Promise.resolve()),
 }));
 
 const authState = { user: { uid: "u1" } as { uid: string } | null };
@@ -68,12 +76,17 @@ vi.mock("@/stores/authStore", () => ({
 }));
 vi.mock("@/lib/firestore", () => ({
   subscribeToCharacter: subscribeMock,
-  createDebouncedSave: () => ({ save: debouncedSave, flush: debouncedFlush }),
+  createDebouncedSave: () => ({
+    save: debouncedSave,
+    flush: debouncedFlush,
+    cancel: debouncedCancel,
+  }),
   saveStatusCallbacks: { onPending() {}, onSaving() {}, onSaved() {}, onError() {} },
 }));
 vi.mock("@/lib/combat-state-io", () => ({
   subscribeCombatState: combatSubscribeMock,
   writeCombatState: writeCombatStateMock,
+  writeCombatTurnEconomy: vi.fn(() => Promise.resolve()),
 }));
 vi.mock("@/features/campaigns/refresh-attached-sheets", () => ({
   createAttachedCampaignTracker: createTrackerMock,
@@ -193,15 +206,51 @@ function combatCb(
   return (s) => cb(s, meta);
 }
 
+function combatErrorCb(): (error: Error) => void {
+  const cb = combatSubscribeMock.mock.calls.at(-1)?.[3];
+  if (!cb) throw new Error("combat subscription error callback not captured");
+  return cb;
+}
+
+function parentErrorCb(): (error: Error) => void {
+  const cb = subscribeMock.mock.calls.at(-1)?.[3];
+  if (!cb) throw new Error("parent subscription error callback not captured");
+  return cb;
+}
+
+function v1Doc(): CharacterDoc {
+  return { ...doc(), playStateVersion: 1 };
+}
+
+function v1Combat(
+  patch: Partial<import("@/types/combat-state").CombatState> = {}
+): import("@/types/combat-state").CombatState {
+  return { ...sessionToCombatState(v1Doc().session), ...patch };
+}
+
+async function flushPlayWrite(): Promise<void> {
+  await act(async () => {
+    await Promise.resolve();
+  });
+}
+
 beforeEach(() => {
   debouncedSave.mockClear();
+  debouncedCancel.mockClear();
   subscribeMock.mockClear();
   refreshAttachedSheetsMock.mockClear();
   createTrackerMock.mockClear();
   combatSubscribeMock.mockClear();
   writeCombatStateMock.mockClear();
   authState.user = { uid: "u1" };
-  useCharacterStore.setState({ character: null, loading: false, error: null });
+  useCharacterStore.setState({
+    character: null,
+    loading: false,
+    error: null,
+    readonly: false,
+    combatPersistence: null,
+    parentPersistenceFlush: null,
+  });
 });
 
 describe("useCharacterSubscription — domain-rule-D8 sync invariants", () => {
@@ -302,7 +351,9 @@ describe("useCharacterSubscription — domain-rule-D8 sync invariants", () => {
     act(() => useCharacterStore.getState().setHP(40));
     writeCombatStateMock.mockClear();
 
-    act(() => useCharacterStore.getState().applyDamage(7));
+    act(() => {
+      useCharacterStore.getState().applyDamage(7);
+    });
     act(() => useCharacterStore.getState().applyHealing(3));
 
     expect(writeCombatStateMock).toHaveBeenCalledTimes(2);
@@ -475,6 +526,153 @@ describe("useCharacterSubscription — combat/state subdoc hydration", () => {
       current: 5,
       temp: 0,
     });
+  });
+});
+
+describe("useCharacterSubscription — v1 play ownership gate", () => {
+  it("does not publish a marked parent until a complete child arrives", () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => snapshotCb()(v1Doc()));
+    expect(useCharacterStore.getState().character).toBeNull();
+    expect(useCharacterStore.getState().loading).toBe(true);
+
+    const combat = v1Combat();
+    combat.playState = sessionToCombatState({
+      ...v1Doc().session,
+      notes: "child truth",
+    }).playState;
+    act(() => combatCb()(combat));
+    expect(useCharacterStore.getState().character?.session.notes).toBe("child truth");
+    expect(useCharacterStore.getState().loading).toBe(false);
+  });
+
+  it("publishes atomically when the complete child arrives before its marked parent", () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => combatCb()(v1Combat({ hp: { current: 9, temp: 2 } })));
+    expect(useCharacterStore.getState().character).toBeNull();
+    act(() => snapshotCb()(v1Doc()));
+    expect(useCharacterStore.getState().character?.session.hp).toEqual({
+      current: 9,
+      temp: 2,
+    });
+  });
+
+  it("fails closed for a missing marked child and ignores later callbacks", () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => snapshotCb()(v1Doc()));
+    act(() => combatCb()(null));
+    expect(useCharacterStore.getState().character).toBeNull();
+    expect(useCharacterStore.getState().error).toContain("missing-v1-combat-state");
+    expect(writeCombatStateMock).not.toHaveBeenCalled();
+    expect(debouncedSave).not.toHaveBeenCalled();
+
+    act(() => combatErrorCb()(new Error("invalid-v1-play-state")));
+    expect(useCharacterStore.getState().character).toBeNull();
+    expect(useCharacterStore.getState().error).toContain("missing-v1-combat-state");
+    expect(writeCombatStateMock).not.toHaveBeenCalled();
+  });
+
+  it("quarantines a loaded v1 character and cancels every queued write when its child disappears", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => combatCb()(v1Combat()));
+    act(() => snapshotCb()(v1Doc()));
+    const loaded = useCharacterStore.getState().character;
+    if (!loaded) throw new Error("valid v1 pair was not published");
+    writeCombatStateMock.mockClear();
+    debouncedSave.mockClear();
+    debouncedCancel.mockClear();
+
+    act(() => {
+      useCharacterStore.setState({
+        character: {
+          ...loaded,
+          character: { ...loaded.character, quote: "queued parent edit" },
+          session: { ...loaded.session, notes: "queued child edit" },
+        },
+      });
+      combatCb()(null);
+    });
+    await flushPlayWrite();
+
+    const state = useCharacterStore.getState();
+    expect(state.character).toBeNull();
+    expect(state.error).toContain("missing-v1-combat-state");
+    expect(state.combatPersistence).toBeNull();
+    expect(state.parentPersistenceFlush).toBeNull();
+    expect(debouncedSave).toHaveBeenCalledTimes(1);
+    expect(debouncedCancel).toHaveBeenCalledTimes(1);
+    expect(writeCombatStateMock).not.toHaveBeenCalled();
+
+    act(() => state.persistPlayState());
+    await flushPlayWrite();
+    expect(writeCombatStateMock).not.toHaveBeenCalled();
+  });
+
+  it("quarantines a loaded v1 character when the child becomes malformed", () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => combatCb()(v1Combat()));
+    act(() => snapshotCb()(v1Doc()));
+
+    act(() => combatErrorCb()(new Error("Invalid combat state: invalid-combat-state")));
+
+    const state = useCharacterStore.getState();
+    expect(state.character).toBeNull();
+    expect(state.error).toBe("Invalid combat state: invalid-combat-state");
+    expect(state.combatPersistence).toBeNull();
+    expect(state.parentPersistenceFlush).toBeNull();
+    expect(debouncedCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("quarantines a loaded v1 character when its parent parser/subscription fails", () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => combatCb()(v1Combat()));
+    act(() => snapshotCb()(v1Doc()));
+
+    act(() => parentErrorCb()(new Error("invalid parent envelope")));
+
+    const state = useCharacterStore.getState();
+    expect(state.character).toBeNull();
+    expect(state.error).toBe("invalid parent envelope");
+    expect(state.combatPersistence).toBeNull();
+    expect(state.parentPersistenceFlush).toBeNull();
+    expect(debouncedCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("routes a noncombat session edit to the child and preserves action metadata", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => combatCb()(v1Combat({ actionRevision: 7, actionHead: null })));
+    act(() => snapshotCb()(v1Doc()));
+    writeCombatStateMock.mockClear();
+    debouncedSave.mockClear();
+
+    act(() => useCharacterStore.getState().updateSession({ notes: "child only" }));
+    await flushPlayWrite();
+
+    expect(debouncedSave).not.toHaveBeenCalled();
+    expect(writeCombatStateMock).toHaveBeenCalledTimes(1);
+    const state = writeCombatStateMock.mock.calls[0]?.[2];
+    if (!state) throw new Error("play-state write not captured");
+    expect(state.playState?.state.notes).toBe("child only");
+    expect(state.actionRevision).toBe(7);
+    expect(state.actionHead).toBeNull();
+  });
+
+  it("coalesces a combat + log composite action into one complete child write", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => combatCb()(v1Combat()));
+    act(() => snapshotCb()(v1Doc()));
+    writeCombatStateMock.mockClear();
+    debouncedSave.mockClear();
+
+    act(() => useCharacterStore.getState().addCondition("prone"));
+    await flushPlayWrite();
+
+    expect(writeCombatStateMock).toHaveBeenCalledTimes(1);
+    const state = writeCombatStateMock.mock.calls[0]?.[2];
+    if (!state) throw new Error("play-state write not captured");
+    expect(state.conditions).toContain("prone");
+    expect(state.playState?.state.log).toHaveLength(1);
+    expect(debouncedSave).not.toHaveBeenCalled();
   });
 });
 

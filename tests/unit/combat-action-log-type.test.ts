@@ -285,8 +285,8 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
     ).toEqual(expected);
   });
 
-  // RA-08 — the one-spell-slot-per-turn advisory. Fires ONLY once >1 slot has been
-  // expended to cast a spell this turn (a likely rules slip); never at 0 or 1.
+  // RA-08 — defensive invalid-state read-out. The transaction seam hard-blocks
+  // >1; the presenter still explains an explicitly injected legacy state.
   it.each([
     [0, false],
     [1, false],
@@ -306,7 +306,7 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
     }
   });
 
-  it("the spell-slot advisory sorts LAST (after exhaustion) and never blocks", () => {
+  it("the defensive spell-slot signal sorts LAST (after exhaustion)", () => {
     const ls = composeTurnLimiters({
       conditions: ["grappled"],
       attackRollState: "none",
@@ -533,6 +533,13 @@ describe("attacksRemainingInAction (attacks left in the open Attack action)", ()
 describe("isPipAttackAction / maxReplaceAttackSpellLevel", () => {
   it("a weapon attack action is always a pip attack", () => {
     expect(isPipAttackAction(makeAction("weapon", {}), -1)).toBe(true);
+  });
+
+  it("Grapple and Shove each replace one attack instead of consuming the whole Action", () => {
+    for (const id of ["base-grapple", "base-shove"]) {
+      expect(isPipAttackAction({ ...makeAction("feature", {}), id }, -1)).toBe(true);
+    }
+    expect(isPipAttackAction(makeAction("feature", {}), -1)).toBe(false);
   });
 
   it("a cantrip is a pip attack only within the War-Magic band", () => {

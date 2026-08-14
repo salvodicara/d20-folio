@@ -4,7 +4,6 @@ export type CombatAbilityCode = "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA";
 
 export interface CombatOutcomeTarget {
   combatantId: string;
-  tokenIndex?: number;
 }
 
 export type CombatAttackResult = "hit" | "miss" | "critical-hit";

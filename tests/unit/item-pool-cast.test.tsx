@@ -1,7 +1,7 @@
 /**
  * S9 — multi-spell item-cast: WIRING test (golden rule 13). An equipped, attuned
  * Wand of Binding surfaces a pool-picker card on the Play board; tapping it opens
- * the shared guided picker, and choosing a spell debits the item-charge tracker by
+ * the shared guided picker, and choosing a spell debits that physical item's pool by
  * that spell's VARIABLE cost (Hold Person 2, Hold Monster 5) — with the undo toast
  * restoring EXACTLY that cost (not a hardcoded 1). Staff of Charming casts at the
  * uniform cost of 1. The engine facts are pinned by `item-pool-cast-actions.test.ts`
@@ -47,6 +47,7 @@ vi.mock("@/features/character/center/CombatResolver", () => ({
 }));
 import { MemoryRouter } from "react-router";
 import { PlayTab } from "@/features/character/center/tabs/PlayTab";
+import { ItemResourceCommandProvider } from "@/features/character/center/ItemResourceCommandProvider";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -58,20 +59,63 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { makeCharacterDoc } from "./_helpers";
 import type { SrdEquipmentRef } from "@/types/character";
 
-function loadWielder(refs: SrdEquipmentRef[]): void {
+function loadWielder(refs: SrdEquipmentRef[], capacity: number): void {
   const doc = makeCharacterDoc({ classId: "fighter", level: 5, equipment: refs });
+  const ref = refs[0];
+  if (!ref?.instanceId) throw new Error("item-resource fixture needs an instance ID");
+  doc.session.itemResources = {
+    [ref.instanceId]: {
+      itemId: ref.srdId,
+      instanceId: ref.instanceId,
+      revision: 0,
+      resources: {
+        charges: { capacity, current: capacity, disabled: false },
+      },
+      disposition: "magical",
+      causalHead: null,
+    },
+  };
   useCharacterStore.setState({ character: doc, loading: false, error: null });
 }
 
-const used = (id: string): number =>
-  useCharacterStore.getState().character?.session.trackers[id]?.used ?? 0;
+const currentCharges = (instanceId: string): number | undefined =>
+  useCharacterStore.getState().character?.session.itemResources?.[instanceId]?.resources
+    .charges?.current;
+
+function replaceCharges(
+  itemId: string,
+  instanceId: string,
+  capacity: number,
+  current: number
+): void {
+  const character = useCharacterStore.getState().character;
+  if (!character) throw new Error("character missing");
+  const previous = character.session.itemResources?.[instanceId];
+  useCharacterStore.getState().updateSession({
+    itemResources: {
+      ...character.session.itemResources,
+      [instanceId]: {
+        itemId,
+        instanceId,
+        revision: (previous?.revision ?? 0) + 1,
+        resources: {
+          charges: { capacity, current, disabled: false },
+        },
+        disposition: "magical",
+        causalHead: null,
+      },
+    },
+  });
+}
 
 function renderPage() {
   return render(
     <MemoryRouter>
-      <TurnEconomyProvider>
-        <PlayTab />
-      </TurnEconomyProvider>
+      <ItemResourceCommandProvider>
+        <TurnEconomyProvider>
+          <PlayTab />
+        </TurnEconomyProvider>
+      </ItemResourceCommandProvider>
       <ConfirmDialog />
     </MemoryRouter>
   );
@@ -104,15 +148,27 @@ describe("S9 — multi-spell item-cast (shared charge pool)", () => {
   });
 
   it("Wand of Binding: casting Hold Person debits EXACTLY 2 charges, undo restores 2", async () => {
-    loadWielder([
-      { srdId: "wand-of-binding", equipped: true, attuned: true, quantity: 1 },
-    ]);
+    loadWielder(
+      [
+        {
+          srdId: "wand-of-binding",
+          instanceId: "wand-binding-copy",
+          equipped: true,
+          attuned: true,
+          quantity: 1,
+        },
+      ],
+      7
+    );
     renderPage();
 
     // The pool-picker card surfaces under the item name; its CTA reads as a spell
     // cast FROM the item (not a bare "Use").
     const cta = await screen.findByLabelText("Cast a spell from Wand of Binding");
-    expect(used("wand-of-binding")).toBe(0);
+    expect(
+      cta.closest("article")?.querySelector("svg.lucide-wand-sparkles")
+    ).not.toBeNull();
+    expect(currentCharges("wand-binding-copy")).toBe(7);
 
     // Tap → the shared guided picker opens with the item rubric + per-spell costs.
     fireEvent.click(cta);
@@ -121,16 +177,10 @@ describe("S9 — multi-spell item-cast (shared charge pool)", () => {
 
     // Choosing Hold Person (cost 2) debits exactly 2 charges.
     fireEvent.click(within(dialog).getByText("Hold Person"));
-    await waitFor(() => expect(used("wand-of-binding")).toBe(2));
-    expect(
-      useCombatStore
-        .getState()
-        .selected.action.find((action) => action.id === "spell-hold-person")?.cost
-    ).toMatchObject({
-      type: "tracker",
-      key: "wand-of-binding",
-      trackerAmount: 2,
-    });
+    await waitFor(() => expect(currentCharges("wand-binding-copy")).toBe(5));
+    expect(useCombatStore.getState().selected.action).toContainEqual(
+      expect.objectContaining({ id: "spell-hold-person" })
+    );
     expect(
       useCharacterStore.getState().character?.session.logEntries.at(-1)?.event
     ).toMatchObject({
@@ -141,39 +191,85 @@ describe("S9 — multi-spell item-cast (shared charge pool)", () => {
 
     // The ONE undo restores the exact cost, economy claim, and structured spell log.
     undoLastToast();
-    expect(used("wand-of-binding")).toBe(2 - 2);
+    expect(currentCharges("wand-binding-copy")).toBe(7);
     expect(useCombatStore.getState().selected.action).toEqual([]);
     expect(useCharacterStore.getState().character?.session.logEntries ?? []).toEqual([]);
 
     // Redo revalidates the LIVE pool. If those charges were spent elsewhere after
     // undo, replay bails without overdrawing or resurrecting the action.
-    useCharacterStore.getState().useTracker("wand-of-binding", 7);
+    replaceCharges("wand-of-binding", "wand-binding-copy", 7, 0);
     expect(useUndoStore.getState().redo()).toBe(false);
-    expect(used("wand-of-binding")).toBe(7);
+    expect(currentCharges("wand-binding-copy")).toBe(0);
     expect(useCombatStore.getState().selected.action).toEqual([]);
   });
 
+  it("rejects a stale item-cast undo after its exact action owner is gone", async () => {
+    loadWielder(
+      [
+        {
+          srdId: "wand-of-binding",
+          instanceId: "stale-binding-copy",
+          equipped: true,
+          attuned: true,
+          quantity: 1,
+        },
+      ],
+      7
+    );
+    renderPage();
+
+    fireEvent.click(await screen.findByLabelText("Cast a spell from Wand of Binding"));
+    fireEvent.click(within(await screen.findByRole("dialog")).getByText("Hold Person"));
+    await waitFor(() => expect(currentCharges("stale-binding-copy")).toBe(5));
+
+    // Another mutation removed the action that owns this undo. The old undo must
+    // fail its ownership check instead of reversing target effects while leaving
+    // the item's compare-and-swap spend in place.
+    useCombatStore.getState().deselectAction("spell-hold-person");
+    expect(useUndoStore.getState().undo()).toBe(false);
+    expect(currentCharges("stale-binding-copy")).toBe(5);
+    expect(useUndoStore.getState().past).toHaveLength(1);
+  });
+
   it("Staff of Charming: a uniform-cost pick debits EXACTLY 1 charge", async () => {
-    loadWielder([
-      { srdId: "staff-of-charming", equipped: true, attuned: true, quantity: 1 },
-    ]);
+    loadWielder(
+      [
+        {
+          srdId: "staff-of-charming",
+          instanceId: "charming-staff-copy",
+          equipped: true,
+          attuned: true,
+          quantity: 1,
+        },
+      ],
+      10
+    );
     renderPage();
 
     const cta = await screen.findByLabelText("Cast a spell from Staff of Charming");
     fireEvent.click(cta);
     const dialog = await screen.findByRole("dialog");
     fireEvent.click(within(dialog).getByText("Charm Person"));
-    await waitFor(() => expect(used("staff-of-charming")).toBe(1));
+    await waitFor(() => expect(currentCharges("charming-staff-copy")).toBe(9));
 
     undoLastToast();
-    expect(used("staff-of-charming")).toBe(0);
+    expect(currentCharges("charming-staff-copy")).toBe(10);
   });
 
   it("resolves the chosen spell and targets before spending in an encounter", async () => {
     encounterMode.active = true;
-    loadWielder([
-      { srdId: "wand-of-binding", equipped: true, attuned: true, quantity: 1 },
-    ]);
+    loadWielder(
+      [
+        {
+          srdId: "wand-of-binding",
+          instanceId: "encounter-binding-copy",
+          equipped: true,
+          attuned: true,
+          quantity: 1,
+        },
+      ],
+      7
+    );
     renderPage();
 
     fireEvent.click(await screen.findByLabelText("Cast a spell from Wand of Binding"));
@@ -182,11 +278,11 @@ describe("S9 — multi-spell item-cast (shared charge pool)", () => {
     const resolver = await screen.findByRole("dialog", { name: "Resolve Hold Person" });
     expect(within(resolver).getByText("DC 17")).toBeInTheDocument();
     expect(within(resolver).getByText("Concentration")).toBeInTheDocument();
-    expect(used("wand-of-binding")).toBe(0);
+    expect(currentCharges("encounter-binding-copy")).toBe(7);
     expect(useCombatStore.getState().selected.action).toEqual([]);
 
     fireEvent.click(within(resolver).getByRole("button", { name: "Apply Hold Person" }));
-    await waitFor(() => expect(used("wand-of-binding")).toBe(2));
+    await waitFor(() => expect(currentCharges("encounter-binding-copy")).toBe(5));
     expect(useCombatStore.getState().selected.action).toContainEqual(
       expect.objectContaining({ id: "spell-hold-person" })
     );

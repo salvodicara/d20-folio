@@ -2,6 +2,7 @@ import type { SrdClassTable, SrdClassFeatureData, SrdClassLevel } from "../types
 import { asProficiencyToken } from "@/lib/proficiency-tokens";
 import { ARTISAN_TOOL_IDS, MUSICAL_INSTRUMENT_IDS } from "@/lib/tools";
 import { proficiencyBonus } from "@/lib/proficiency";
+import { DAMAGE_TYPES } from "@/types/damage";
 
 export const MONK_TABLE: SrdClassTable = {
   id: "monk",
@@ -341,21 +342,7 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
             addLevel: true,
             damageTypesByLevel: {
               1: ["bludgeoning", "piercing", "slashing"],
-              13: [
-                "acid",
-                "bludgeoning",
-                "cold",
-                "fire",
-                "force",
-                "lightning",
-                "necrotic",
-                "piercing",
-                "poison",
-                "psychic",
-                "radiant",
-                "slashing",
-                "thunder",
-              ],
+              13: [...DAMAGE_TYPES],
             },
           },
           targeting: { affinity: "self", maxTargets: 1 },
@@ -378,21 +365,7 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
             addMod: "DEX",
             damageTypeChoicesByLevel: {
               1: ["bludgeoning", "piercing", "slashing"],
-              13: [
-                "acid",
-                "bludgeoning",
-                "cold",
-                "fire",
-                "force",
-                "lightning",
-                "necrotic",
-                "piercing",
-                "poison",
-                "psychic",
-                "radiant",
-                "slashing",
-                "thunder",
-              ],
+              13: [...DAMAGE_TYPES],
             },
           },
           targeting: { affinity: "any", maxTargets: 1 },
@@ -439,6 +412,16 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
     id: "monk-evasion",
     class: "monk",
     level: 7,
+    grants: [
+      {
+        type: "save-damage-rule",
+        ability: "DEX",
+        requiresDamageOnSuccess: "half",
+        onSuccess: "none",
+        onFailure: "half",
+        suppressedByConditions: ["incapacitated"],
+      },
+    ],
     source: "SRD",
   },
   {

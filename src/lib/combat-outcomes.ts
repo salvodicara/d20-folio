@@ -48,12 +48,13 @@ function finiteNonNegative(value: unknown): value is number {
 }
 
 function parseTarget(value: unknown): CombatOutcomeTarget | null {
-  if (!isRecord(value) || !nonEmpty(value.combatantId)) return null;
-  if (value.tokenIndex !== undefined && !wholeNonNegative(value.tokenIndex)) return null;
-  return {
-    combatantId: value.combatantId,
-    ...(value.tokenIndex !== undefined ? { tokenIndex: value.tokenIndex } : {}),
-  };
+  if (
+    !isRecord(value) ||
+    Object.keys(value).some((key) => key !== "combatantId") ||
+    !nonEmpty(value.combatantId)
+  )
+    return null;
+  return { combatantId: value.combatantId };
 }
 
 /** Strict read-edge parser. Malformed or internally inconsistent facts are dropped. */
@@ -118,7 +119,7 @@ export function parseCombatOutcomeReceipt(value: unknown): CombatOutcomeReceipt 
 }
 
 function sameTarget(a: CombatOutcomeTarget, b: CombatOutcomeTarget): boolean {
-  return a.combatantId === b.combatantId && a.tokenIndex === b.tokenIndex;
+  return a.combatantId === b.combatantId;
 }
 
 /** Exact semantic matcher used by generic follow-up prerequisites. */
@@ -172,7 +173,7 @@ export function queryCombatOutcomes(
   const matches = receipts.filter((receipt) => combatOutcomeMatches(receipt, predicate));
   const seen = new Set<string>();
   const targets = matches.flatMap(({ target }) => {
-    const key = `${target.combatantId}:${target.tokenIndex ?? ""}`;
+    const key = target.combatantId;
     if (seen.has(key)) return [];
     seen.add(key);
     return [target];
@@ -222,11 +223,7 @@ export function compileCombatOutcomeReceipts(input: {
     });
   };
   for (const reviewed of input.targets) {
-    if (
-      reviewed.target.combatantId.length === 0 ||
-      (reviewed.target.tokenIndex !== undefined &&
-        !wholeNonNegative(reviewed.target.tokenIndex))
-    ) {
+    if (reviewed.target.combatantId.length === 0) {
       continue;
     }
     if (reviewed.attack) {

@@ -766,7 +766,7 @@
     "name": "Aura di Coraggio"
   },
   "paladin-aura-of-protection": {
-    "description": "Ogni volta che tu o una creatura amica entro 3 metri dovete effettuare un tiro salvezza, la creatura ottiene un bonus pari al tuo modificatore di Carisma (minimo +1). Al 18° livello, il raggio aumenta a 9 metri.",
+    "description": "Emetti un'aura di 3 metri, inattiva mentre hai la condizione Incapacitato. Tu e gli alleati al suo interno ottenete ai tiri salvezza un bonus pari al tuo modificatore di Carisma (minimo +1). Al livello 18, la portata diventa 9 metri.",
     "name": "Aura di Protezione"
   },
   "paladin-channel-divinity": {

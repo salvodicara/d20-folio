@@ -10,11 +10,30 @@ import type { CharacterDoc } from "@/types/character";
 import type { CombatPersistence, CombatState } from "@/types/combat-state";
 import { makeCharacterDoc } from "./_helpers";
 import { conc } from "./__helpers__/concentration";
-import type { ActiveCombatEffect } from "@/types/combat-effect";
+import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
 import { nonCombatSessionChanged } from "@/lib/combat-state";
 import { serializeCharacter } from "@/lib/character-codec";
 import { castSourceActiveKey } from "@/lib/smart-tracker";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
+import type { CombatEffectLifecycleRuntime } from "@/lib/combat-effect-lifecycle";
+
+const LOCAL_EFFECT_LIFECYCLE: CombatEffectLifecycleRuntime = {
+  schema: 1,
+  occurrenceId: "cast:local",
+  programId: "spell:test",
+  sourceId: "test-char-1",
+  cursor: {
+    tallies: [],
+    layerStates: [],
+    areaStates: [],
+    ended: false,
+    phases: [],
+  },
+  headCommandId: null,
+  commands: [],
+  events: [],
+  auxiliaryConsequences: [],
+};
 
 /**
  * Creates a minimal mock character for testing store operations.
@@ -129,9 +148,32 @@ function projectedEffect(targetId = "pc-u1"): ActiveCombatEffect {
   };
 }
 
+function programEffect(): ActiveCombatEffect {
+  return {
+    ...projectedEffect(),
+    id: "program-effect",
+    source: { kind: "spell", id: "program-spell", actionId: "program-cast" },
+    payload: { kind: "program-standing", effectId: "burning-zone" },
+    programOwner: {
+      occurrenceId: "cast:program",
+      programId: "spell:test",
+      phaseId: "resolve",
+      stepId: "standing",
+      operationId: "command:program#0",
+      instance: null,
+      iteration: 0,
+    },
+  };
+}
+
+function programApply(effect = programEffect()): CombatEffectOp {
+  return { id: `apply:${effect.id}`, kind: "apply", effect };
+}
+
 describe("characterStore — campaign effect projection", () => {
   beforeEach(() => {
     useCharacterStore.setState({ encounterEffectProjection: null });
+    useCharacterStore.getState().setCombatPersistence(null);
     useCharacterStore.getState().setCharacter(null);
   });
 
@@ -234,6 +276,104 @@ describe("characterStore — campaign effect projection", () => {
       local,
       campaign,
     ]);
+  });
+
+  it("hydrates authored ops into the effective projection without retaining a legacy duplicate", () => {
+    const legacy = projectedEffect();
+    const program = programEffect();
+    const operation = programApply(program);
+    useCharacterStore.getState().setCharacter(mockCharacter());
+    useCharacterStore.getState().hydrateCombatState({
+      hp: { current: 20, temp: 0 },
+      conditions: [],
+      initiativeRoll: null,
+      deathSaves: { successes: 0, failures: 0 },
+      round: 2,
+      recentActions: [],
+      // A stale composed snapshot may contain the program projection too. Hydration
+      // partitions it back to its authored owner instead of perpetuating two homes.
+      activeEffects: [legacy, program],
+      effectOps: [operation],
+    });
+
+    const state = useCharacterStore.getState();
+    expect(state.combatLegacyActiveEffects).toEqual([legacy]);
+    expect(state.combatEffectOps).toEqual([operation]);
+    expect(state.combatActiveEffects).toEqual([legacy, program]);
+    expect(state.character?.session.encounterEffects).toEqual([legacy, program]);
+  });
+
+  it("preserves hydrated program lifecycles through later whole combat writes", () => {
+    const write = vi.fn<CombatPersistence["write"]>();
+    useCharacterStore.getState().setCharacter(mockCharacter());
+    useCharacterStore.getState().setCombatPersistence({
+      write,
+      writeTurnEconomy: vi.fn(),
+    });
+    useCharacterStore.getState().hydrateCombatState({
+      hp: { current: 20, temp: 0 },
+      conditions: [],
+      initiativeRoll: null,
+      deathSaves: { successes: 0, failures: 0 },
+      round: 2,
+      recentActions: [],
+      effectLifecycles: [LOCAL_EFFECT_LIFECYCLE],
+    });
+
+    useCharacterStore.getState().applySoloCombatEffects([projectedEffect()]);
+
+    expect(useCharacterStore.getState().combatEffectLifecycles).toEqual([
+      LOCAL_EFFECT_LIFECYCLE,
+    ]);
+    expect(write).toHaveBeenLastCalledWith(
+      expect.objectContaining({ effectLifecycles: [LOCAL_EFFECT_LIFECYCLE] })
+    );
+  });
+
+  it("atomically replaces authored ops, persists their ledger, and preserves legacy ownership", () => {
+    const write = vi.fn<CombatPersistence["write"]>();
+    const legacy = projectedEffect();
+    const program = programEffect();
+    const apply = programApply(program);
+    useCharacterStore.getState().setCharacter(mockCharacter());
+    useCharacterStore.getState().setCombatPersistence({
+      write,
+      writeTurnEconomy: vi.fn(),
+    });
+    useCharacterStore.getState().applySoloCombatEffects([legacy]);
+    write.mockClear();
+
+    expect(useCharacterStore.getState().replaceCombatEffectOps([apply])).toBe(true);
+    expect(useCharacterStore.getState().combatActiveEffects).toEqual([legacy, program]);
+    const appliedWrite = write.mock.calls.at(-1)?.[0];
+    expect(appliedWrite?.activeEffects).toEqual([legacy]);
+    expect(appliedWrite?.effectOps).toEqual([apply]);
+
+    const undoDamage = useCharacterStore.getState().applyDamage(1);
+    expect(write.mock.calls.at(-1)?.[0].effectOps).toEqual([apply]);
+    expect(undoDamage?.()).toBe(true);
+    expect(useCharacterStore.getState().combatEffectOps).toEqual([apply]);
+
+    expect(useCharacterStore.getState().replaceCombatEffectOps([apply, apply])).toBe(
+      false
+    );
+    expect(useCharacterStore.getState().combatEffectOps).toEqual([apply]);
+
+    const revoke: CombatEffectOp = {
+      id: "revoke:program-effect",
+      kind: "revoke",
+      effectId: program.id,
+      actorId: program.actor.combatantId,
+      targetId: program.target.combatantId,
+    };
+    expect(useCharacterStore.getState().replaceCombatEffectOps([apply, revoke])).toBe(
+      true
+    );
+    expect(useCharacterStore.getState().combatActiveEffects).toEqual([legacy]);
+    expect(write.mock.calls.at(-1)?.[0]).toMatchObject({
+      activeEffects: [legacy],
+      effectOps: [apply, revoke],
+    });
   });
 });
 
@@ -502,6 +642,45 @@ describe("characterStore — rest mechanics", () => {
       expect(sess()?.conditions).toEqual(["prone"]);
     });
 
+    const ordinaryHealingDeathCases: Array<
+      [
+        string,
+        {
+          fail?: number;
+          exhaustion?: number;
+          status?: CharacterDoc["status"];
+        },
+      ]
+    > = [
+      ["three failed saves", { fail: 3 }],
+      ["Exhaustion 6", { exhaustion: 6 }],
+      ["the roster death status", { status: "dead" }],
+    ];
+
+    it.each(ordinaryHealingDeathCases)(
+      "ordinary healing cannot revive a character dead from %s",
+      (_cause, cause) => {
+        seed({ current: 0, conditions: ["unconscious"] });
+        const live = store().character;
+        if (!live) throw new Error("character missing");
+        store().setCharacter({
+          ...live,
+          status: cause.status ?? live.status,
+          session: {
+            ...live.session,
+            deathFail: cause.fail ?? live.session.deathFail,
+            exhaustion: cause.exhaustion ?? live.session.exhaustion,
+          },
+        });
+
+        store().applyHealing(5);
+
+        expect(sess()?.hp.current).toBe(0);
+        expect(sess()?.conditions).toEqual(["unconscious"]);
+        expect(sess()?.deathFail).toBe(cause.fail ?? 0);
+      }
+    );
+
     it("restoreHpSnapshot restores HP, temp, the dying track, and conditions exactly", () => {
       seed({ current: 0, temp: 0, fail: 2, conditions: ["unconscious"] });
       store().restoreHpSnapshot({
@@ -560,6 +739,14 @@ describe("characterStore — rest mechanics", () => {
       expect(sess()?.deathSucc).toBe(0);
       expect(sess()?.deathFail).toBe(2);
       expect(sess()?.conditions).toEqual(["unconscious"]);
+    });
+
+    it("does not stabilize a character who already has three failed saves", () => {
+      seed({ current: 0, fail: 3, conditions: ["unconscious"] });
+      const undo = store().applyResolvedCombatEffects({ stabilize: true });
+      expect(sess()?.deathSucc).toBe(0);
+      expect(sess()?.deathFail).toBe(3);
+      expect(undo).toBeTypeOf("function");
     });
 
     it("keeps a solo concentration condition source-owned and makes it inert on drop", () => {
@@ -1011,6 +1198,21 @@ describe("characterStore — rest mechanics", () => {
       char.session.deathFail = 2;
       useCharacterStore.getState().setCharacter(char);
       useCharacterStore.getState().setHP(5); // heal 5
+      const state = useCharacterStore.getState().character?.session;
+      expect(state?.hp.current).toBe(5);
+      expect(state?.deathSucc).toBe(0);
+      expect(state?.deathFail).toBe(0);
+    });
+
+    it("setHP remains the explicit manual override for a dead death-save track", () => {
+      const char = mockCharacter();
+      char.session.hp.current = 0;
+      char.session.deathSucc = 0;
+      char.session.deathFail = 3;
+      useCharacterStore.getState().setCharacter(char);
+
+      useCharacterStore.getState().setHP(5);
+
       const state = useCharacterStore.getState().character?.session;
       expect(state?.hp.current).toBe(5);
       expect(state?.deathSucc).toBe(0);
@@ -2538,21 +2740,19 @@ describe("characterStore — FRONTIER-S3 cadence appliers", () => {
   });
 });
 
-// S9 — an equipped charged magic item surfaces its charge pool as a rail
-// tracker keyed by the item id (the same id the cast flow debits).
-describe("resolveTrackers — charged item charge pool (S9)", () => {
-  it("an equipped Wand of Magic Missiles surfaces a 7-charge pool tracker", async () => {
+// Physical item counters have instance identity and therefore never re-enter the
+// legacy source-id tracker map (two same-named wands must not share one pool).
+describe("resolveTrackers — physical item counters", () => {
+  it("does not duplicate an equipped Wand of Magic Missiles as a generic tracker", async () => {
     const { resolveTrackers } = await import("@/lib/smart-tracker");
     const doc = makeCharacterDoc({
       classId: "fighter",
       level: 5,
       equipment: [{ srdId: "wand-of-magic-missiles", equipped: true, quantity: 1 }],
     });
-    const wand = resolveTrackers(doc).find((t) => t.id === "wand-of-magic-missiles");
-    expect(wand).toBeDefined();
-    expect(wand?.total).toBe(7);
-    expect(wand?.isPool).toBe(true);
-    expect(wand?.recovery).toBe("dawn");
+    expect(resolveTrackers(doc).some((t) => t.id === "wand-of-magic-missiles")).toBe(
+      false
+    );
   });
 
   it("an UNEQUIPPED charged item surfaces no charge tracker", async () => {

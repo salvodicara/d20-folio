@@ -114,6 +114,7 @@ export function derivePartyMemberStats(doc: CharacterDoc): PartyMemberStats {
   const aggSession = {
     activeFeatures: session.activeFeatures,
     grantBundleChoices: session.grantBundleChoices,
+    itemResources: session.itemResources,
   };
   const aggregate = aggregateCharacterGrants(charData, aggSession);
 
@@ -251,13 +252,20 @@ export function derivePartyMemberStats(doc: CharacterDoc): PartyMemberStats {
  */
 export function hydrateMemberDoc(
   doc: CharacterDoc,
-  combat: CombatState | null
-): CharacterDoc {
+  combat: CombatState | null | undefined
+): CharacterDoc | null {
+  if (combat === undefined) return null;
   const max = effectiveMaxHp(doc.character, {
     activeFeatures: doc.session.activeFeatures,
     grantBundleChoices: doc.session.grantBundleChoices,
   });
-  return { ...doc, session: applyCombatToSession(doc.session, combat, max) };
+  const hydrated = applyCombatToSession(
+    doc.session,
+    combat,
+    max,
+    doc.playStateVersion === 1 ? 1 : "legacy"
+  );
+  return hydrated.ok ? { ...doc, session: hydrated.session } : null;
 }
 
 /**
@@ -275,10 +283,11 @@ export function hydrateMemberDoc(
  */
 export function derivePcLive(
   doc: CharacterDoc,
-  combat: CombatState | null,
+  combat: CombatState | null | undefined,
   roll: number | null
-): PcLive {
+): PcLive | null {
   const hydrated = hydrateMemberDoc(doc, combat);
+  if (!hydrated) return null;
   const stats = derivePartyMemberStats(hydrated);
   return {
     name: doc.character.name,

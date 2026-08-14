@@ -91,6 +91,7 @@ export function LeftHud() {
   const grantBundleChoices = useCharacterStore(
     (s) => s.character?.session.grantBundleChoices
   );
+  const itemResources = characterDoc?.session.itemResources;
 
   // Full aggregate → ability-score floors + senses/speeds (grants), threading the
   // chosen grant-bundle so a picked lineage's senses/floors apply. The save /
@@ -100,9 +101,13 @@ export function LeftHud() {
   const fullAggregate = useMemo(
     () =>
       charData
-        ? aggregateCharacterGrants(charData, { activeFeatures, grantBundleChoices })
+        ? aggregateCharacterGrants(charData, {
+            activeFeatures,
+            grantBundleChoices,
+            itemResources,
+          })
         : null,
-    [charData, activeFeatures, grantBundleChoices]
+    [charData, activeFeatures, grantBundleChoices, itemResources]
   );
   const savesChecks = useMemo(
     () =>
@@ -112,9 +117,10 @@ export function LeftHud() {
             activeFeatures,
             conditions,
             grantBundleChoices,
+            itemResources,
           })
         : null,
-    [charData, exhaustion, activeFeatures, conditions, grantBundleChoices]
+    [charData, exhaustion, activeFeatures, conditions, grantBundleChoices, itemResources]
   );
 
   if (!charData || !fullAggregate || !savesChecks) return null;
@@ -222,7 +228,10 @@ export function LeftHud() {
   const walkingSpeedFt = characterDoc
     ? (charData.speedOverride ?? effectiveWalkingSpeedFt(characterDoc, getEquipment))
     : 0;
-  const { senses, speeds } = deriveSensesAndSpeeds(fullAggregate, walkingSpeedFt);
+  const { senses, speeds, airAndWaterBreathing } = deriveSensesAndSpeeds(
+    fullAggregate,
+    walkingSpeedFt
+  );
   // RA-26 — jump distances (2024 PHB, running start): long = STR SCORE ft,
   // high = 3 + STR MOD ft (min 0). Pure STR-derived — no SRD grant modifies it —
   // so read-only movement facts beside the derived speeds. Reads the EFFECTIVE
@@ -525,6 +534,14 @@ export function LeftHud() {
               </div>
             );
           })}
+          {airAndWaterBreathing ? (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-text-secondary">{t("character.breathing")}</span>
+              <span className="text-right text-text-primary">
+                {t("character.breathingAirWater")}
+              </span>
+            </div>
+          ) : null}
           {/* Non-walking speeds (#68) — fly/swim/climb were computed by the engine
               but DROPPED here; now surfaced + overridable (the walking speed is the
               editable header vital). Honest blank when the character has none. */}

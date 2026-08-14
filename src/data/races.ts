@@ -6,7 +6,8 @@ import type {
   SrdActionDef,
 } from "./types";
 import { mergePack } from "@/lib/pack-merge";
-import { packRaces } from "@pack";
+import { withPackGrantExtensions } from "@/lib/pack-grant-extensions";
+import { packGrantExtensions, packRaces } from "@pack";
 
 const PUBLIC_RACES: SrdRaceData[] = [
   // ─── Human ───────────────────────────────────────────────────
@@ -904,8 +905,25 @@ const PUBLIC_RACES: SrdRaceData[] = [
   },
 ];
 
-/** All species — public SRD + content pack. */
-export const SRD_RACES: SrdRaceData[] = mergePack("race", PUBLIC_RACES, packRaces);
+const PUBLIC_RACES_WITH_PACK_GRANTS = PUBLIC_RACES.map((race) => ({
+  ...race,
+  traits: race.traits.map((trait) => {
+    const sourceKey = `race:${race.id}:${trait.id}`;
+    return packGrantExtensions[sourceKey]?.length
+      ? {
+          ...trait,
+          grants: withPackGrantExtensions(sourceKey, trait.grants, packGrantExtensions),
+        }
+      : trait;
+  }),
+}));
+
+/** All species — public SRD (including typed pack extensions) + pack species. */
+export const SRD_RACES: SrdRaceData[] = mergePack(
+  "race",
+  PUBLIC_RACES_WITH_PACK_GRANTS,
+  packRaces
+);
 
 // ─── Lookup Map ───────────────────────────────────────────────
 

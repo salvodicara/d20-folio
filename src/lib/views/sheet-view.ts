@@ -21,7 +21,8 @@ import type {
   NonWalkingSpeed,
 } from "@/lib/grants";
 import type { DamageDefenses } from "@/lib/damage-intake";
-import type { AbilityCode, ConditionId, DamageSource, DamageType } from "@/data/types";
+import type { AbilityCode, ConditionId, DamageSource } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 import { SRD_LANGUAGE_IDS } from "@/lib/feat-language-choices";
 import { SRD_TOOLS_2024 } from "@/lib/feat-skill-tool-choices";
 import { isUmbrellaTool } from "@/lib/tool-names";
@@ -476,6 +477,8 @@ export interface FlatDamageReductionLine {
   damageTypes: DamageType[];
   /** The resolved flat amount ("PB" already → the character's PB). */
   amount: number;
+  /** Exact incoming packet that can consume this reduction. */
+  trigger: "attack";
   /** True when gated on wearing Heavy armor (the label notes the condition). */
   requiresHeavyArmor: boolean;
   /** Granting entity id — the render label's provenance. */
@@ -508,6 +511,7 @@ export function deriveFlatDamageReductions(
     lines.push({
       damageTypes: [...new Set(e.damageTypes)].sort(),
       amount,
+      trigger: e.trigger,
       requiresHeavyArmor: e.condition === "wearing-heavy-armor",
       sourceId: e.sourceId,
     });
@@ -565,8 +569,20 @@ export function deriveDamageDefenses(
     ),
     sourceResistances: new Set(deriveDamageSourceResistances(aggregate)),
     flatReductions: deriveFlatDamageReductions(aggregate, pb, heavyArmorEquipped).map(
-      (l) => ({ damageTypes: l.damageTypes, amount: l.amount })
+      (l) => ({
+        id: l.sourceId,
+        damageTypes: l.damageTypes,
+        amount: l.amount,
+        trigger: l.trigger,
+      })
     ),
+    saveDamageRules: aggregate.saveDamageRules.map((rule) => ({
+      id: rule.sourceId,
+      ability: rule.ability,
+      requiresDamageOnSuccess: rule.requiresDamageOnSuccess,
+      onSuccess: rule.onSuccess,
+      onFailure: rule.onFailure,
+    })),
   };
 }
 
@@ -608,6 +624,7 @@ export interface SpeedEntry {
 export interface SensesSpeedsView {
   senses: SenseEntry[];
   speeds: SpeedEntry[];
+  airAndWaterBreathing: boolean;
 }
 
 /**
@@ -653,7 +670,11 @@ export function deriveSensesAndSpeeds(
   const climb = resolveNonWalkingSpeed(aggregate.climbSpeed, walkingSpeedFt);
   if (climb !== null && climb > 0) speeds.push({ kind: "climb", rangeFt: climb });
 
-  return { senses, speeds };
+  return {
+    senses,
+    speeds,
+    airAndWaterBreathing: aggregate.airAndWaterBreathing,
+  };
 }
 
 // ─── L1 — advantage / disadvantage chips ────────────────────────────────────

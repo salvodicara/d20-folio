@@ -36,6 +36,7 @@ import type {
 import type {
   CreatureMaterialEntity,
   InventoryInstance,
+  MaterialEntity,
   ObjectMaterialEntity,
 } from "@/types/material-state";
 import type {
@@ -467,6 +468,7 @@ export type MechanicsOperationSchemaCustomTypes = {
   readonly "canonical-fingerprint": CanonicalFingerprint;
   readonly "damage-resolution": DamageResolution;
   readonly "dice-observation": DiceObservation;
+  readonly "end-rule": EndRule;
   readonly "entity-ref": EntityRef;
   readonly id: string;
   readonly "integer-bindings": IntegerBindings;

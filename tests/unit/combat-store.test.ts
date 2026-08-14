@@ -36,6 +36,7 @@ beforeEach(() =>
     movementUsedFt: 0,
     dashesThisTurn: 0,
     spellSlotCastsThisTurn: 0,
+    spellSlotCastTurnKey: null,
     nextAttackAdvantage: false,
     movementLocked: false,
   })
@@ -115,18 +116,37 @@ describe("combatStore", () => {
     });
   });
 
-  // RA-08 — the one-spell-slot-per-turn advisory counter.
-  describe("RA-08 spell-slot-cast advisory counter", () => {
-    it("commitSpellSlotCast increments; its restore decrements (never below 0)", () => {
+  // RA-08 — hard one-slot-expenditure gate keyed to the GLOBAL turn pointer.
+  describe("RA-08 spell-slot expenditure gate", () => {
+    it("blocks a second claim on one global turn and allows the next turn", () => {
       expect(s().spellSlotCastsThisTurn).toBe(0);
-      const restore = s().commitSpellSlotCast();
-      s().commitSpellSlotCast();
-      expect(s().spellSlotCastsThisTurn).toBe(2);
-      restore();
+      const restoreA = s().commitSpellSlotCast("turn-a");
+      expect(restoreA).not.toBeNull();
       expect(s().spellSlotCastsThisTurn).toBe(1);
-      restore();
-      restore();
+      expect(s().spellSlotCastTurnKey).toBe("turn-a");
+      expect(s().commitSpellSlotCast("turn-a")).toBeNull();
+
+      const restoreB = s().commitSpellSlotCast("turn-b");
+      expect(restoreB).not.toBeNull();
+      expect(s()).toMatchObject({
+        spellSlotCastsThisTurn: 1,
+        spellSlotCastTurnKey: "turn-b",
+      });
+    });
+
+    it("uses an exact retryable inverse across later global-turn claims", () => {
+      const restoreA = s().commitSpellSlotCast("turn-a");
+      const restoreB = s().commitSpellSlotCast("turn-b");
+      expect(restoreA?.()).toBe(false);
+      expect(s().spellSlotCastTurnKey).toBe("turn-b");
+      expect(restoreB?.()).toBe(true);
+      expect(s()).toMatchObject({
+        spellSlotCastsThisTurn: 1,
+        spellSlotCastTurnKey: "turn-a",
+      });
+      expect(restoreA?.()).toBe(true);
       expect(s().spellSlotCastsThisTurn).toBe(0);
+      expect(s().spellSlotCastTurnKey).toBeNull();
     });
 
     it.each([
@@ -134,11 +154,11 @@ describe("combatStore", () => {
       ["resetTurn", () => s().resetTurn()],
       ["endCombat", () => s().endCombat()],
     ])("%s resets the slot-cast count to 0 (turn-scoped)", (_label, boundary) => {
-      s().commitSpellSlotCast();
-      s().commitSpellSlotCast();
-      expect(s().spellSlotCastsThisTurn).toBe(2);
+      s().commitSpellSlotCast("turn-a");
+      expect(s().spellSlotCastsThisTurn).toBe(1);
       boundary();
       expect(s().spellSlotCastsThisTurn).toBe(0);
+      expect(s().spellSlotCastTurnKey).toBeNull();
     });
   });
 
@@ -577,11 +597,17 @@ describe("combatStore", () => {
       });
     });
 
-    s().useReaction("shield", "reaction-1", [receipt("reaction-1", "shield")]);
-    s().useReaction("shield", "reaction-1", [receipt("reaction-1", "shield")]);
-    s().useReaction("counterspell", "reaction-2", [
-      receipt("reaction-2", "counterspell"),
-    ]);
+    expect(
+      s().useReaction("shield", "reaction-1", [receipt("reaction-1", "shield")])
+    ).toBe(true);
+    expect(
+      s().useReaction("shield", "reaction-1", [receipt("reaction-1", "shield")])
+    ).toBe(false);
+    expect(
+      s().useReaction("counterspell", "reaction-2", [
+        receipt("reaction-2", "counterspell"),
+      ])
+    ).toBe(false);
     s().resetReaction();
     unsubscribe();
 

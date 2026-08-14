@@ -56,6 +56,9 @@ export const MAX_UNDO_DEPTH = 20;
  */
 export type UndoLabel = { message: string } | { intent: ToastIntent };
 
+/** Returning exactly `false` reports a CAS conflict; every other result is success. */
+export type UndoApplier = () => unknown;
+
 export interface UndoEntry {
   /** Monotonic "undo-N". */
   id: string;
@@ -74,13 +77,13 @@ export interface UndoEntry {
    */
   turnScoped: boolean;
   /** The reverse-applier (exactly today's closures). */
-  undo: () => void;
+  undo: UndoApplier;
   /**
    * Re-run the original execute. Returns the NEW reverse-applier, or `null` when
    * the re-execution legally bailed (budget full, no uses left) — then nothing is
    * pushed and the redo is a quiet no-op.
    */
-  redo: () => (() => void) | null;
+  redo: () => UndoApplier | null;
 }
 
 interface UndoState {
@@ -146,7 +149,7 @@ export const useUndoStore = create<UndoState>()((set, get) => ({
     // A miss (evicted / fenced) is a silent no-op — a stale toast whose entry is
     // gone can never fire a dangling closure.
     if (!entry) return false;
-    entry.undo();
+    if (entry.undo() === false) return false;
     dismissEntryToast(entry);
     set((s) => ({
       past: s.past.filter((e) => e.id !== entry.id),
@@ -164,9 +167,13 @@ export const useUndoStore = create<UndoState>()((set, get) => ({
     replaying = true;
     try {
       // Re-run the original execute (single source of the mutation, golden rule 6).
-      // The re-registration inside pushes the fresh entry onto `past`; a legal bail
-      // returns null and nothing is pushed (the entry is simply dropped).
-      return entry.redo() !== null;
+      // The re-registration inside pushes the fresh entry onto `past`. A legal
+      // bail (including a resource CAS conflict) keeps the old future entry so
+      // the user can retry after resolving the conflict; history must never be
+      // destroyed merely because live state temporarily rejected a replay.
+      if (entry.redo() !== null) return true;
+      set((s) => ({ future: capped([...s.future, entry]) }));
+      return false;
     } finally {
       replaying = false;
     }
@@ -217,7 +224,7 @@ export const useUndoStore = create<UndoState>()((set, get) => ({
  */
 export function registerUndoable(
   label: UndoLabel,
-  execute: () => (() => void) | null,
+  execute: () => UndoApplier | null,
   opts: { turnScoped: boolean }
 ): string | null {
   const undo = execute();
@@ -264,7 +271,7 @@ export function wireUndoToast(
  */
 export function registerUndoableToast(
   label: UndoLabel,
-  execute: () => (() => void) | null,
+  execute: () => UndoApplier | null,
   opts: { turnScoped: boolean; duration?: number }
 ): string | null {
   const entryId = registerUndoable(label, execute, { turnScoped: opts.turnScoped });
@@ -286,7 +293,7 @@ export function registerUndoableToast(
  */
 export function registerUndoableResult(
   label: UndoLabel,
-  undo: () => void,
+  undo: UndoApplier,
   replay: () => void,
   opts: { turnScoped: boolean } = { turnScoped: false }
 ): void {
@@ -295,8 +302,14 @@ export function registerUndoableResult(
     turnScoped: opts.turnScoped,
     undo,
     redo: () => {
+      const previousLastId = useUndoStore.getState().past.at(-1)?.id ?? null;
       replay();
-      return useUndoStore.getState().past.at(-1)?.undo ?? null;
+      const replayed = useUndoStore.getState().past.at(-1);
+      // A live CAS/resource guard may legally reject the replay. In that case
+      // no fresh entry was registered, and returning an older entry's inverse
+      // would falsely report success and corrupt the next Undo. Keep this redo
+      // in `future` so it remains retryable instead.
+      return replayed && replayed.id !== previousLastId ? replayed.undo : null;
     },
   });
   wireUndoToast(entryId, label);

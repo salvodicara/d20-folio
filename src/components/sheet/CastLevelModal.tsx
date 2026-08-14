@@ -20,7 +20,12 @@ import { Button } from "@/components/ui/button";
 // The discriminated union (slot / free-cast / mastery) is owned by the engine —
 // the resolver produces it, this modal only renders it. Importing it from the
 // engine keeps the dependency direction one-way (UI → engine, never reverse).
-import { toggleMetamagicSelection, type CastLevelOption } from "@/lib/cast-options";
+import {
+  toggleMetamagicSelection,
+  type CastLevelOption,
+  type CastRecoveryCadence,
+} from "@/lib/cast-options";
+import { itemResourceRecoveryTranslationKey } from "@/lib/views/item-resource-view";
 import { scaleUpcastDice, spellInstanceCount } from "@/lib/utils";
 
 export type { CastLevelOption };
@@ -119,6 +124,15 @@ function slotVar(level: number): string {
 
 export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalProps) {
   const { t } = useTranslation();
+  const recoveryLabel = (recovery: CastRecoveryCadence): string => {
+    if (recovery.kind === "tracker") {
+      return t(recovery.rest === "long" ? "combat.perLongRest" : "combat.perShortRest");
+    }
+    if (recovery.triggers.length === 0) return t("combat.resourceRecoveryNone");
+    return recovery.triggers
+      .map((trigger) => t(itemResourceRecoveryTranslationKey(trigger)))
+      .join(" · ");
+  };
   // Per-cast Metamagic multi-select. Reset whenever a fresh request opens so a
   // previous cast's selection never bleeds into the next one — using React's
   // "adjust state during render on a prop change" pattern (NOT a setState effect,
@@ -267,11 +281,7 @@ export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalP
                           {t("combat.itemPoolChargeCost", { n: opt.cost })}
                         </span>
                       )}
-                      <span className="cl-rest">
-                        {opt.rest === "long"
-                          ? t("combat.perLongRest")
-                          : t("combat.perShortRest")}
-                      </span>
+                      <span className="cl-rest">{recoveryLabel(opt.recovery)}</span>
                       <span className="cl-count">
                         {opt.remaining}/{opt.total}
                       </span>

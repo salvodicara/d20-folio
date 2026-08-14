@@ -27,6 +27,7 @@ import {
 } from "@/lib/smart-tracker";
 import { classFeatureIndex } from "@/data/classes";
 import type { CharacterDoc, SessionState } from "@/types/character";
+import { makeItemResourceIdentity } from "@/lib/resources";
 
 // ─── Minimal druid fixture ────────────────────────────────────────────────────
 
@@ -271,6 +272,36 @@ describe("alternate-action-cost — getActionCostOptions enumerates both routes"
       {
         kind: "alternate",
         cost: { kind: "tracker", trackerId: "druid-wild-shape", amount: 1 },
+      },
+    ]);
+  });
+
+  it("keeps an exact physical-item resource as the primary beside an alternate", () => {
+    const payment = makeItemResourceIdentity("winged-boots", "boots-copy", "charges");
+    expect(
+      getActionCostOptions(
+        action({
+          resourcePayment: { kind: "item-resource", ...payment },
+          resourceCost: 1,
+          alternateCost: {
+            kind: "tracker",
+            trackerId: "fighter-second-wind",
+            amount: 1,
+          },
+        })
+      )
+    ).toEqual([
+      {
+        kind: "primary",
+        cost: { kind: "item-resource", ...payment, amount: 1 },
+      },
+      {
+        kind: "alternate",
+        cost: {
+          kind: "tracker",
+          trackerId: "fighter-second-wind",
+          amount: 1,
+        },
       },
     ]);
   });

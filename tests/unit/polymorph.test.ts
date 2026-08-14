@@ -18,7 +18,8 @@ import {
   revertBuildFromPrior,
   POLYMORPH_SPELL_IDS,
 } from "@/lib/polymorph";
-import { ALL_DAMAGE_TYPES, CREATURE_SIZE_ORDER, type AbilityCode } from "@/data/types";
+import { CREATURE_SIZE_ORDER, type AbilityCode } from "@/data/types";
+import { DAMAGE_TYPES } from "@/types/damage";
 import { effectiveAC } from "@/lib/aggregate-character";
 import { resolveActions } from "@/lib/smart-tracker";
 import { localizeAction } from "@/lib/views/combat-action-view";
@@ -29,7 +30,7 @@ import { makeCharacterDoc } from "./_helpers";
 import { srd, loc } from "../_harness/loc";
 
 const ABILITIES: ReadonlyArray<AbilityCode> = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
-const DAMAGE = new Set<string>(ALL_DAMAGE_TYPES);
+const DAMAGE = new Set<string>(DAMAGE_TYPES);
 const SIZES = new Set<string>(CREATURE_SIZE_ORDER);
 
 // ── Catalogue integrity ──────────────────────────────────────────────────────

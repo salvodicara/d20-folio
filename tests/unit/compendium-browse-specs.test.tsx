@@ -36,7 +36,7 @@ import { classFeatures } from "@/data/classes";
 import { spells } from "@/data/spells";
 import { SRD_EQUIPMENT } from "@/data/equipment";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
-import { parseMagicItemCharges, parseMagicItemAcBonus } from "@/lib/magic-item-utils";
+import { parseMagicItemAcBonus } from "@/lib/magic-item-utils";
 import { SRD_METAMAGIC } from "@/data/metamagic";
 import { SRD_INVOCATIONS } from "@/data/invocations";
 import { makeCharacterDoc } from "./_helpers";
@@ -368,19 +368,25 @@ describe("magicItemSpec discovery facets + typed-document meta", () => {
     );
   });
 
-  it("a charged item's detail pins its parsed charge pool as a meta row", () => {
-    const charged = SRD_MAGIC_ITEMS.find((i) => parseMagicItemCharges(i) !== undefined);
+  it("a charged item's detail pins its typed charge pool as a meta row", () => {
+    const charged = SRD_MAGIC_ITEMS.find((i) =>
+      i.resources?.some(
+        (resource) => resource.unit === "charges" && resource.capacity.kind === "fixed"
+      )
+    );
     expect(charged).toBeDefined();
     if (!charged) return;
     const detail = magicItemSpec.detail(charged, c, { added: false });
     const row = detail.meta?.find((m) => m.label === "equipment.charges");
-    expect(row?.value).toBe(String(parseMagicItemCharges(charged)));
+    const spec = charged.resources?.find((resource) => resource.unit === "charges");
+    expect(row?.value).toBe(
+      spec?.capacity.kind === "fixed" ? String(spec.capacity.amount) : undefined
+    );
   });
 
   it("a chargeless, bonus-less item's detail keeps NO meta grid (eyebrow only)", () => {
     const plain = SRD_MAGIC_ITEMS.find(
-      (i) =>
-        parseMagicItemCharges(i) === undefined && parseMagicItemAcBonus(i) === undefined
+      (i) => !i.resources?.length && parseMagicItemAcBonus(i) === undefined
     );
     expect(plain).toBeDefined();
     if (!plain) return;

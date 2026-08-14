@@ -9,11 +9,11 @@ import type {
   AbilityCode,
   ClassId,
   CreatureSize,
-  DamageType,
   ConditionId,
   WeaponAttackCantripData,
 } from "@/data/types";
 import { CREATURE_SIZE_ORDER } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 import { appendAbilityModToDice } from "@/lib/utils";
 // Ability modifier lives in the SRD-free `@/lib/ability` module so eager callers
 // (the persistence-layer sanitizer) can use the formula without dragging compute's
@@ -605,12 +605,12 @@ function resolveItemAcFormulaGrants(
 
 /**
  * H6 — Concentration save DC when the caster takes damage (2024 RAW):
- * DC = max(10, floor(damage / 2)). Returns 0 for non-positive damage so
- * the caller can short-circuit (no save when HP didn't drop).
+ * DC = min(30, max(10, floor(damage / 2))). Returns 0 for non-positive
+ * or invalid damage so the caller can short-circuit (no save when HP didn't drop).
  */
 export function concentrationSaveDc(damage: number): number {
   if (!Number.isFinite(damage) || damage <= 0) return 0;
-  return Math.max(10, Math.floor(damage / 2));
+  return Math.min(30, Math.max(10, Math.floor(damage / 2)));
 }
 
 /** How a single Death Saving Throw d20 result resolves (2024 RAW). */

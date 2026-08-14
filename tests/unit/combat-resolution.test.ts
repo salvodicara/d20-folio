@@ -27,6 +27,7 @@ import {
   resolveCombatDamage,
   resolveCombatDamagePackets,
   shouldResolveSoloAction,
+  combatResolutionOwner,
 } from "@/lib/combat-resolution";
 import type { DamageDefenses } from "@/lib/damage-intake";
 import type { ActionSummary, ResolvedAction } from "@/lib/smart-tracker";
@@ -168,6 +169,26 @@ describe("combatResolutionSpec — target shape and outcome", () => {
         })
       ).targetAffinity
     ).toBe("any");
+  });
+
+  it("preserves authored legal creature types in the resolver plan", () => {
+    expect(
+      combatResolutionSpec(
+        makeAction("spell", {
+          targeting: {
+            affinity: "ally",
+            excludeSelf: true,
+            maxTargets: 1,
+            creatureTypes: ["beast"],
+          },
+          conditionApplication: { options: ["charmed"], on: "automatic" },
+        })
+      )
+    ).toMatchObject({
+      targetAffinity: "ally",
+      excludeSelf: true,
+      targetCreatureTypes: ["beast"],
+    });
   });
 
   it("resolves a held-die grant in encounters but keeps another-creature grants manual in solo", () => {
@@ -384,6 +405,41 @@ describe("actionRiderConditions — modelled applied-condition riders (Phase 3)"
 });
 
 describe("shouldResolveCombatAction — which commits open the resolver", () => {
+  it("routes a program-only action to its exclusive resolver owner", () => {
+    const effectProgram: NonNullable<ResolvedAction["effectProgram"]> = {
+      version: 1,
+      id: "test.program-only",
+      phases: [
+        {
+          id: "resolve",
+          trigger: { kind: "resolve" },
+          steps: [{ id: "finish", kind: "end-program", scope: "program" }],
+        },
+      ],
+    };
+    const action: ResolvedAction = {
+      ...makeAction("spell", {}),
+      effectProgram,
+      effectResolutionOwner: "effect-program",
+    };
+
+    expect(combatResolutionOwner(action)).toBe("effect-program");
+    expect(combatResolutionSpec(action).resolutionOwner).toBe("effect-program");
+    expect(shouldResolveCombatAction(action)).toBe(true);
+    expect(shouldResolveSoloAction(action)).toBe(true);
+  });
+
+  it("retains exclusive ownership when a malformed transform drops the payload", () => {
+    const action: ResolvedAction = {
+      ...makeAction("feature", { healing: "1d8" }),
+      effectResolutionOwner: "effect-program",
+    };
+
+    expect(combatResolutionOwner(action)).toBe("effect-program");
+    expect(shouldResolveCombatAction(action)).toBe(true);
+    expect(shouldResolveSoloAction(action)).toBe(true);
+  });
+
   it("a weapon swing opens it (Phase 1)", () => {
     expect(shouldResolveCombatAction(makeAction("weapon", { damage: "1d8" }))).toBe(true);
   });
@@ -468,6 +524,7 @@ describe("resolveCombatDamage — typed deterministic consequences", () => {
     vulnerabilities: new Set(["radiant"]),
     sourceResistances: new Set(),
     flatReductions: [],
+    saveDamageRules: [],
   };
 
   it("keeps simultaneous damage components separate for their own defenses", () => {
@@ -505,6 +562,46 @@ describe("resolveCombatDamage — typed deterministic consequences", () => {
       defenses
     );
     expect(resolved).toMatchObject({ rawTotal: 12, netTotal: 6 });
+  });
+
+  it("applies an active Evasion rule only to DEX save-for-half damage", () => {
+    const action = makeAction("spell", {
+      damage: "8d6",
+      damageType: "fire",
+      saveAbility: "DEX",
+      damageOnSave: "half",
+    });
+    const [part] = combatDamageParts(action);
+    if (!part) throw new Error("missing damage fixture part");
+    const evasionDefenses: DamageDefenses = {
+      ...defenses,
+      resistances: new Set(),
+      saveDamageRules: [
+        {
+          id: "rogue-evasion",
+          ability: "DEX",
+          requiresDamageOnSuccess: "half",
+          onSuccess: "none",
+          onFailure: "half",
+        },
+      ],
+    };
+    expect(
+      resolveCombatDamage(
+        [{ spec: part, amount: 25, damageType: "fire" }],
+        { attack: "hit", save: "saved" },
+        "half",
+        evasionDefenses
+      ).netTotal
+    ).toBe(0);
+    expect(
+      resolveCombatDamage(
+        [{ spec: part, amount: 25, damageType: "fire" }],
+        { attack: "hit", save: "failed-save" },
+        "half",
+        evasionDefenses
+      ).netTotal
+    ).toBe(12);
   });
 
   it("applies Graze only on a miss and never asks the table for a die result", () => {

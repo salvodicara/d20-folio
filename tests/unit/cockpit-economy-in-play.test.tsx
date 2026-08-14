@@ -421,7 +421,9 @@ describe("economy in the Play tab", () => {
     ) as HTMLElement;
 
     // Spend the reaction (as the board's Mark-used row does) → the coin tarnishes.
-    act(() => useCombatStore.getState().useReaction("test-reaction"));
+    act(() => {
+      useCombatStore.getState().useReaction("test-reaction");
+    });
     const reactionTok = panel.querySelector(
       'button.econ-tok[data-kind="reaction"]'
     ) as HTMLElement;

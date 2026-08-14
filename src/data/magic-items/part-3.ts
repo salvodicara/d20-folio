@@ -312,6 +312,35 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "staff",
     attunement: true,
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 10 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: {
+              kind: "entered-roll",
+              roll: { dice: 1, sides: 6, modifier: 4 },
+            },
+          },
+        ],
+        onEmpty: {
+          kind: "entered-d20",
+          bands: [
+            {
+              min: 1,
+              max: 1,
+              outcomes: [{ kind: "set-item-disposition", disposition: "destroyed" }],
+            },
+            { min: 2, max: 20, outcomes: [] },
+          ],
+        },
+      },
+    ],
     grants: [
       { type: "damage-resistance", damageType: "fire" },
       { type: "always-prepared-spell", spellId: "burning-hands" },
@@ -321,9 +350,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
         type: "free-cast-from-list",
         spellIds: ["burning-hands", "fireball", "wall-of-fire"],
         spellCosts: { "burning-hands": 1, fireball: 3, "wall-of-fire": 4 },
-        chargesPerRest: 10,
-        autoRecover: false,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
       },
     ],
     properties: ["charges: 10"],
@@ -336,6 +363,35 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "staff",
     attunement: true,
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 10 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: {
+              kind: "entered-roll",
+              roll: { dice: 1, sides: 6, modifier: 4 },
+            },
+          },
+        ],
+        onEmpty: {
+          kind: "entered-d20",
+          bands: [
+            {
+              min: 1,
+              max: 1,
+              outcomes: [{ kind: "set-item-disposition", disposition: "destroyed" }],
+            },
+            { min: 2, max: 20, outcomes: [] },
+          ],
+        },
+      },
+    ],
     grants: [
       { type: "damage-resistance", damageType: "cold" },
       { type: "always-prepared-spell", spellId: "cone-of-cold" },
@@ -351,9 +407,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
           "ice-storm": 4,
           "wall-of-ice": 4,
         },
-        chargesPerRest: 10,
-        autoRecover: false,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
       },
     ],
     properties: ["charges: 10"],
@@ -433,11 +487,37 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7"],
-    // S9 — single-fixed-spell wand: casts Polymorph from its 7-charge pool (1
-    // charge per cast; RAW save DC 15 in the item prose). Same pipeline Wand of
-    // Magic Missiles ships — the paired `always-prepared-spell` makes Polymorph
-    // castable on the Play board, the `free-cast-spell` debits the
-    // `wand-of-polymorph` tracker, `rest: "long"` = "regains daily at dawn".
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 7 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: {
+              kind: "entered-roll",
+              roll: { dice: 1, sides: 6, modifier: 1 },
+            },
+          },
+        ],
+        onEmpty: {
+          kind: "entered-d20",
+          bands: [
+            {
+              min: 1,
+              max: 1,
+              outcomes: [{ kind: "set-item-disposition", disposition: "destroyed" }],
+            },
+            { min: 2, max: 20, outcomes: [] },
+          ],
+        },
+      },
+    ],
+    // Polymorph spends 1 charge; dawn recovery and last-charge destruction are
+    // exact typed facts rather than a long-rest alias.
     // Polymorph's own beast-form STAT SWAP stays the user override (the spell's
     // automation is deferred) — only the CAST affordance + charges are modeled.
     grants: [
@@ -445,9 +525,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
       {
         type: "free-cast-spell",
         spellId: "polymorph",
-        chargesPerRest: 7,
-        autoRecover: false,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
+        castOverrides: { saveDC: 15 },
       },
     ],
     source: "SRD",
@@ -459,9 +538,19 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "legendary",
     type: "armor",
     attunement: true,
+    resources: [
+      {
+        kind: "counter",
+        id: "uses",
+        unit: "uses",
+        capacity: { kind: "fixed", amount: 1 },
+        initial: { kind: "full" },
+        recoveries: [{ trigger: { kind: "dawn" }, amount: { kind: "full" } }],
+      },
+    ],
     // Always-on B/P/S resistance; the 10-minute B/P/S Immunity is the "Metal
     // Shell" activated property (1/dawn) — ALL-IN: modeled behind the shared
-    // item action/tracker/timer seam.
+    // item action/resource/timer seam.
     grants: [
       { type: "damage-resistance", damageType: "bludgeoning" },
       { type: "damage-resistance", damageType: "piercing" },
@@ -471,7 +560,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
         activeKey: "armor-of-invulnerability-metal-shell",
         activation: {
           action: "action",
-          tracker: { total: "1", recovery: "dawn" },
+          resourceCost: { resourceId: "uses" },
         },
         duration: { kind: "timed", minutes: 10, maxRounds: 100 },
         grants: [
@@ -599,6 +688,32 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "legendary",
     type: "ring",
     attunement: false,
+    resources: [
+      {
+        kind: "counter",
+        id: "wishes",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 3 },
+        initial: { kind: "full" },
+        onEmpty: {
+          kind: "deterministic",
+          outcomes: [
+            {
+              kind: "set-item-disposition",
+              disposition: "nonmagical",
+            },
+          ],
+        },
+      },
+    ],
+    grants: [
+      { type: "always-prepared-spell", spellId: "wish" },
+      {
+        type: "free-cast-spell",
+        spellId: "wish",
+        resourceCost: { resourceId: "wishes" },
+      },
+    ],
     source: "SRD",
   },
   {
@@ -880,6 +995,21 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     type: "wondrous",
     attunement: true,
     properties: ["charges: 10"],
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 10 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: { kind: "entered-roll", roll: { dice: 1, sides: 6 } },
+          },
+        ],
+      },
+    ],
     grants: [
       { type: "always-prepared-spell", spellId: "mage-armor" },
       { type: "always-prepared-spell", spellId: "shield" },
@@ -908,9 +1038,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
           "otilukes-resilient-sphere": 4,
           "wall-of-force": 5,
         },
-        chargesPerRest: 10,
-        autoRecover: false,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
+        castOverrides: { saveDC: 17 },
       },
     ],
     source: "SRD",
@@ -959,6 +1088,24 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     type: "ring",
     attunement: true,
     properties: ["element-keyed focus", "5 charges (1d4+1 at dawn)"],
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 5 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: {
+              kind: "entered-roll",
+              roll: { dice: 1, sides: 4, modifier: 1 },
+            },
+          },
+        ],
+      },
+    ],
     // Per-element focus modelled as a single-select choice-grant-bundle keyed by
     // the ring's linked plane. The selector surfaces once the ring is equipped +
     // attuned (equipment grant seam — `attunement: true`). Each option grants the
@@ -985,9 +1132,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
                 type: "free-cast-from-list",
                 spellIds: ["chain-lightning", "gust-of-wind", "wind-wall"],
                 spellCosts: { "chain-lightning": 3, "gust-of-wind": 2, "wind-wall": 1 },
-                chargesPerRest: 5,
-                autoRecover: false,
-                rest: "long",
+                resourceCost: { resourceId: "charges" },
+                castOverrides: { saveDC: 18 },
               },
             ],
           },
@@ -1009,9 +1155,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
                   stoneskin: 3,
                   "wall-of-stone": 3,
                 },
-                chargesPerRest: 5,
-                autoRecover: false,
-                rest: "long",
+                resourceCost: { resourceId: "charges" },
+                castOverrides: { saveDC: 18 },
               },
             ],
           },
@@ -1033,9 +1178,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
                   "fire-storm": 4,
                   "wall-of-fire": 3,
                 },
-                chargesPerRest: 5,
-                autoRecover: false,
-                rest: "long",
+                resourceCost: { resourceId: "charges" },
+                castOverrides: { saveDC: 18 },
               },
             ],
           },
@@ -1065,9 +1209,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
                   "wall-of-ice": 3,
                   "water-walk": 2,
                 },
-                chargesPerRest: 5,
-                autoRecover: false,
-                rest: "long",
+                resourceCost: { resourceId: "charges" },
+                castOverrides: { saveDC: 18 },
               },
             ],
           },

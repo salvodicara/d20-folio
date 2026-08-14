@@ -4,6 +4,9 @@
     "points": "pts",
     "use": "use",
     "uses": "uses",
+    "charges": "charges",
+    "beads": "beads",
+    "rounds": "rounds",
     "dice": "dice",
     "treats": "treats"
   }

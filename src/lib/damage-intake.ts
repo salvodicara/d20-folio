@@ -26,7 +26,8 @@
  *    die if the remainder ≥ your HP maximum.
  */
 
-import type { DamageSource, DamageType } from "@/data/types";
+import type { DamageSource } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 
 /**
  * One damage instance as ENTERED by the player: the rolled amount plus, when
@@ -39,6 +40,9 @@ export interface DamageInstance {
   type?: DamageType;
   /** Damage SOURCE (Abjurer Spell Resistance → `"spell"`); orthogonal to `type`. */
   source?: DamageSource;
+  /** Delivery fact for packet-scoped defenses. Omitted means the table has not
+   * established it, so attack-only reductions never fire speculatively. */
+  delivery?: "attack" | "save" | "automatic";
 }
 
 /**
@@ -57,8 +61,20 @@ export interface DamageDefenses {
   sourceResistances: ReadonlySet<DamageSource>;
   /** Already-resolved flat reductions (PB sentinel + armor gate resolved). */
   flatReductions: ReadonlyArray<{
+    /** Stable granting-source identity; duplicate projections consume one budget. */
+    id: string;
     damageTypes: ReadonlyArray<DamageType>;
     amount: number;
+    trigger: "attack";
+  }>;
+  /** Active Evasion-style rewrites. The action supplies the exact save ability
+   * and whether its baseline successful-save consequence is half damage. */
+  saveDamageRules: ReadonlyArray<{
+    id: string;
+    ability: "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA";
+    requiresDamageOnSuccess: "half";
+    onSuccess: "none";
+    onFailure: "half";
   }>;
 }
 
@@ -70,6 +86,7 @@ export const NO_DEFENSES: DamageDefenses = {
   vulnerabilities: new Set(),
   sourceResistances: new Set(),
   flatReductions: [],
+  saveDamageRules: [],
 };
 
 /** One instance after the defense math — every step kept for the shown formula. */
@@ -77,6 +94,7 @@ export interface ResolvedDamagePart {
   amount: number;
   type?: DamageType;
   source?: DamageSource;
+  delivery?: DamageInstance["delivery"];
   /** Flat reduction actually subtracted (0 when none applied). */
   flatReduction: number;
   immune: boolean;
@@ -108,39 +126,36 @@ export function resolveDamagePart(
   part: DamageInstance,
   defenses: DamageDefenses
 ): ResolvedDamagePart {
+  const [resolved] = resolveDamageIntake([part], defenses).parts;
   const amount = Math.max(0, Math.floor(part.amount));
-  const base: ResolvedDamagePart = {
+  return (
+    resolved ?? {
+      amount,
+      ...(part.type ? { type: part.type } : {}),
+      ...(part.source ? { source: part.source } : {}),
+      ...(part.delivery ? { delivery: part.delivery } : {}),
+      flatReduction: 0,
+      immune: false,
+      resisted: false,
+      doubled: false,
+      net: amount,
+    }
+  );
+}
+
+function unresolvedDamagePart(part: DamageInstance): ResolvedDamagePart {
+  const amount = Math.max(0, Math.floor(part.amount));
+  return {
     amount,
     ...(part.type ? { type: part.type } : {}),
     ...(part.source ? { source: part.source } : {}),
+    ...(part.delivery ? { delivery: part.delivery } : {}),
     flatReduction: 0,
     immune: false,
     resisted: false,
     doubled: false,
     net: amount,
   };
-  if (part.type && defenses.immunities.has(part.type)) {
-    return { ...base, immune: true, net: 0 };
-  }
-  // All other modifiers first — the flat reductions matching this type.
-  let flat = 0;
-  if (part.type) {
-    for (const fr of defenses.flatReductions) {
-      if (fr.damageTypes.includes(part.type)) flat += Math.max(0, fr.amount);
-    }
-  }
-  flat = Math.min(flat, amount);
-  let net = amount - flat;
-  // Resistance halves ONCE — a type resistance and a source resistance never
-  // stack (SRD: multiple instances count as one).
-  const resisted =
-    defenses.allDamageResistance ||
-    (part.type !== undefined && defenses.resistances.has(part.type)) ||
-    (part.source !== undefined && defenses.sourceResistances.has(part.source));
-  if (resisted) net = Math.floor(net / 2);
-  const doubled = part.type !== undefined && defenses.vulnerabilities.has(part.type);
-  if (doubled) net *= 2;
-  return { ...base, flatReduction: flat, resisted, doubled, net };
 }
 
 /** The whole entered hit (one or more instances) resolved + totalled. */
@@ -157,9 +172,51 @@ export function resolveDamageIntake(
   parts: ReadonlyArray<DamageInstance>,
   defenses: DamageDefenses
 ): ResolvedDamageIntake {
-  const resolved = parts
-    .filter((p) => p.amount > 0)
-    .map((p) => resolveDamagePart(p, defenses));
+  const working = parts.filter((part) => part.amount > 0).map(unresolvedDamagePart);
+
+  // Packet-scoped flat reducers (Heavy Armor Master) have one shared budget for
+  // the whole attack. Allocate it deterministically across matching components in
+  // declaration order; never subtract PB independently from every damage type.
+  const seenReductionIds = new Set<string>();
+  for (const reduction of defenses.flatReductions) {
+    if (seenReductionIds.has(reduction.id)) continue;
+    seenReductionIds.add(reduction.id);
+    let budget = Math.max(0, Math.floor(reduction.amount));
+    if (budget === 0) continue;
+    for (let index = 0; index < working.length && budget > 0; index += 1) {
+      const part = working[index];
+      if (
+        !part ||
+        part.delivery !== reduction.trigger ||
+        part.type === undefined ||
+        defenses.immunities.has(part.type) ||
+        !reduction.damageTypes.includes(part.type)
+      ) {
+        continue;
+      }
+      const remaining = Math.max(0, part.amount - part.flatReduction);
+      const applied = Math.min(remaining, budget);
+      part.flatReduction += applied;
+      budget -= applied;
+    }
+  }
+
+  const resolved = working.map((part): ResolvedDamagePart => {
+    if (part.type && defenses.immunities.has(part.type)) {
+      return { ...part, immune: true, net: 0 };
+    }
+    let net = Math.max(0, part.amount - part.flatReduction);
+    // Resistance halves ONCE — a type resistance and a source resistance never
+    // stack (SRD: multiple instances count as one).
+    const resisted =
+      defenses.allDamageResistance ||
+      (part.type !== undefined && defenses.resistances.has(part.type)) ||
+      (part.source !== undefined && defenses.sourceResistances.has(part.source));
+    if (resisted) net = Math.floor(net / 2);
+    const doubled = part.type !== undefined && defenses.vulnerabilities.has(part.type);
+    if (doubled) net *= 2;
+    return { ...part, resisted, doubled, net };
+  });
   return {
     parts: resolved,
     rawTotal: resolved.reduce((s, p) => s + p.amount, 0),

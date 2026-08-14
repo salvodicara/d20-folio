@@ -67,6 +67,11 @@ export function usePartyCombatStates(
           seeded = true;
           void resolveDevDoc(characterId, uid).then((doc) => {
             if (cancelled) return;
+            if (doc.playStateVersion === 1) {
+              // A marked parent without its child is corruption, never a seed/default.
+              settle(uid, null);
+              return;
+            }
             void writeCombatState(
               uid,
               characterId,

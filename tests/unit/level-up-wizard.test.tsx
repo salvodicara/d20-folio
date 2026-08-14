@@ -17,7 +17,7 @@ import i18n from "@/i18n";
 
 vi.mock("@/lib/firebase", () => ({ db: {}, auth: {}, storage: {} }));
 vi.mock("@/lib/firestore", () => ({
-  updateCharacter: vi.fn().mockResolvedValue(undefined),
+  replaceCharacterState: vi.fn().mockResolvedValue(undefined),
   saveCharacterSnapshot: vi.fn().mockResolvedValue(undefined),
 }));
 // The route normally subscribes to Firestore; tests preset the store directly.

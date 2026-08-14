@@ -184,13 +184,17 @@ interface CombatState {
    */
   dashesThisTurn: number;
   /**
-   * RA-08 — the number of spell SLOTS expended to cast a spell THIS turn (2024
+   * RA-08 — the number of spell SLOTS expended to cast a spell on
+   * {@link spellSlotCastTurnKey} (2024
    * "Casting Spells": "On a turn, you can expend only one spell slot to cast a
    * spell"). Counts slot-paid casts only — NOT cantrips, NOT free/at-will casts.
-   * Turn-scoped, NOT persisted. When it exceeds 1 the "what's limiting you"
-   * banner surfaces an ADVISORY (never a hard block — override-first).
+   * The count is hard-capped at one by {@link commitSpellSlotCast}. Keeping the
+   * global turn key beside it lets a Reaction on the next creature's turn start
+   * a fresh allowance without erasing the prior turn's exact undo state.
    */
   spellSlotCastsThisTurn: number;
+  /** Exact encounter-pointer/solo-turn identity owned by the slot-cast count. */
+  spellSlotCastTurnKey: string | null;
   /**
    * Whether the character's HP was REDUCED since the start of this round
    * (auto-detected from the session HP setter). Per 2024 RAW it MAINTAINS a
@@ -216,11 +220,12 @@ interface CombatState {
    */
   commitDash: () => () => void;
   /**
-   * RA-08 — record a slot-paid spell cast this turn (the one-spell-slot-per-turn
-   * advisory). Returns a restore that decrements the count (the cast's undo runs
-   * it). No-op restore when read-only.
+   * RA-08 — atomically claim the one slot expenditure allowed on `turnKey`.
+   * Returns an exact causal inverse, or `null` when that global turn already has
+   * a slot expenditure (or the sheet is read-only). The inverse returns false
+   * after a newer turn claim replaced its state, so stale undo stays retryable.
    */
-  commitSpellSlotCast: () => () => void;
+  commitSpellSlotCast: (turnKey: string) => (() => boolean) | null;
   /** Record that the character took damage this round (HP went down). */
   noteDamageTaken: () => void;
   /** Arm/consume exact next-attack Advantage; both return an undo inverse. */
@@ -290,7 +295,7 @@ interface CombatState {
     id: string,
     outcomeOccurrenceId?: string,
     outcomes?: ReadonlyArray<CombatOutcomeReceipt>
-  ) => void;
+  ) => boolean;
   /** Undo reaction use — resets reactionUsed without touching selections */
   resetReaction: () => void;
   /** Reset turn without advancing round (clear selections for undo) */
@@ -368,6 +373,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
   movementUsedFt: 0,
   dashesThisTurn: 0,
   spellSlotCastsThisTurn: 0,
+  spellSlotCastTurnKey: null,
   damageTakenThisRound: false,
   nextAttackAdvantage: false,
   movementLocked: false,
@@ -383,13 +389,32 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     set((s) => ({ dashesThisTurn: s.dashesThisTurn + 1 }));
     return () => set((s) => ({ dashesThisTurn: Math.max(0, s.dashesThisTurn - 1) }));
   },
-  commitSpellSlotCast: () => {
-    if (sheetReadonly()) return () => {};
-    set((s) => ({ spellSlotCastsThisTurn: s.spellSlotCastsThisTurn + 1 }));
-    return () =>
-      set((s) => ({
-        spellSlotCastsThisTurn: Math.max(0, s.spellSlotCastsThisTurn - 1),
-      }));
+  commitSpellSlotCast: (turnKey) => {
+    if (sheetReadonly() || turnKey.length === 0) return null;
+    const before = get();
+    if (before.spellSlotCastTurnKey === turnKey && before.spellSlotCastsThisTurn >= 1) {
+      return null;
+    }
+    const previousKey = before.spellSlotCastTurnKey;
+    const previousCount = before.spellSlotCastsThisTurn;
+    set({ spellSlotCastTurnKey: turnKey, spellSlotCastsThisTurn: 1 });
+    return () => {
+      let restored = false;
+      set((state) => {
+        if (
+          state.spellSlotCastTurnKey !== turnKey ||
+          state.spellSlotCastsThisTurn !== 1
+        ) {
+          return state;
+        }
+        restored = true;
+        return {
+          spellSlotCastTurnKey: previousKey,
+          spellSlotCastsThisTurn: previousCount,
+        };
+      });
+      return restored;
+    };
   },
   noteDamageTaken: () => set({ damageTakenThisRound: true }),
   grantNextAttackAdvantage: () => {
@@ -609,28 +634,22 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
   },
 
   useReaction: (id, outcomeOccurrenceId, outcomes) => {
-    if (sheetReadonly()) return;
+    if (sheetReadonly()) return false;
+    let accepted = false;
     set((state) => {
       const occurrenceId = outcomeOccurrenceId ?? null;
-      if (
-        state.reactionUsed &&
-        (state.reactionUsedId !== id ||
-          state.reactionOutcomeOccurrenceId !== occurrenceId)
-      )
-        return state;
+      // A reaction claim is a strict compare-and-swap. Treating a duplicate id as
+      // accepted is state-idempotent but not transaction-idempotent: a delayed
+      // same-id claim could otherwise pay a second resource after remote combat
+      // state had already occupied the reaction.
+      if (state.reactionUsed) return state;
+      accepted = true;
       const outcomeReceipts = appendOwnedOutcomes(
         state.outcomeReceipts,
         outcomes,
         id,
         outcomeOccurrenceId
       );
-      if (
-        state.reactionUsed &&
-        state.reactionUsedId === id &&
-        state.reactionOutcomeOccurrenceId === occurrenceId &&
-        outcomeReceipts === state.outcomeReceipts
-      )
-        return state;
       return {
         reactionUsed: true,
         reactionUsedId: id,
@@ -638,6 +657,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
         outcomeReceipts,
       };
     });
+    return accepted;
   },
 
   resetReaction: () => {
@@ -672,6 +692,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       movementUsedFt: 0,
       dashesThisTurn: 0,
       spellSlotCastsThisTurn: 0,
+      spellSlotCastTurnKey: null,
       damageTakenThisRound: false,
       nextAttackAdvantage: false,
       movementLocked: false,
@@ -693,6 +714,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       movementUsedFt: 0,
       dashesThisTurn: 0,
       spellSlotCastsThisTurn: 0,
+      spellSlotCastTurnKey: null,
       damageTakenThisRound: false,
       nextAttackAdvantage: false,
       movementLocked: false,
@@ -724,6 +746,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       movementUsedFt: 0,
       dashesThisTurn: 0,
       spellSlotCastsThisTurn: 0,
+      spellSlotCastTurnKey: null,
       damageTakenThisRound: false,
       nextAttackAdvantage: false,
       movementLocked: false,

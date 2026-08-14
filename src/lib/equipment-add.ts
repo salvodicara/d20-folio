@@ -5,9 +5,10 @@
  * long-standing "add a 2nd Potion of Healing → two separate rows" bug).
  *
  * Stacking rule: same SRD id AND no per-instance state that must stay distinct —
- * charges, attunement, an AC bonus, personal notes, or weapon overrides. Magic
- * items that carry charges/attunement are genuinely distinct instances, so they
- * never collapse; plain consumables/gear/ammo/weapons merge by quantity. Cosmetic
+ * instance identity, legacy charges, attunement, an AC bonus, personal notes, or
+ * weapon overrides. Magic items with typed resources carry an `instanceId`, so
+ * two physical copies can never collapse; plain consumables/gear/ammo/weapons
+ * merge by quantity. Cosmetic
  * or srdId-derived flags (equipped, tracked, isConsumable…) are ignored and the
  * existing entry's are kept. Homebrew (`custom`) never stacks.
  */
@@ -25,6 +26,8 @@ function equipmentStacks(existing: EquipmentRef, ref: SrdEquipmentRef): boolean 
   if ("custom" in existing) return false;
   return (
     existing.srdId === ref.srdId &&
+    existing.instanceId === undefined &&
+    ref.instanceId === undefined &&
     !existing.charges &&
     !ref.charges &&
     existing.attuned === undefined &&

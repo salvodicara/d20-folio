@@ -209,6 +209,7 @@ describe("B2 — a SINGLE-class character is unchanged (owning-class level == to
  *   ranger-fey-wanderer-misty-wanderer   Misty Step        "WIS"    "Wisdom modifier" / LR
  *   artificer-cartographer-mapping-magic Faerie Fire       "INT"    "Intelligence modifier" / LR
  *   warlock-archfey-steps-of-the-fey     Misty Step        "CHA"    "Charisma modifier" / LR
+ *   shadar-kai lineage (L5 capacity step) Misty Step        "PB"     "Proficiency Bonus" / LR
  *
  * This guard PINS that set + asserts EXHAUSTIVELY that NO shipped `chargesFormula`
  * references a `"level"` token (i.e. a class-specific or even character level). So
@@ -249,13 +250,13 @@ describe("W11 — every shipped free-cast `chargesFormula` scales on a character
     // Counts pin both the values AND their multiplicity, so adding/removing a
     // free-cast formula trips this until the table above + the SRD note are updated.
     // The composed data differs by mode: SRD-only carries just the Forest Gnome
-    // "PB"; the content pack adds the other five occurrences.
+    // "PB"; the content pack adds the other six occurrences.
     const counts = shippedFormulas.reduce<Record<string, number>>((acc, f) => {
       acc[f] = (acc[f] ?? 0) + 1;
       return acc;
     }, {});
     expect(counts).toEqual(
-      packFeats.length > 0 ? { PB: 2, WIS: 2, INT: 1, CHA: 1 } : { PB: 1 }
+      packFeats.length > 0 ? { PB: 3, WIS: 2, INT: 1, CHA: 1 } : { PB: 1 }
     );
   });
 

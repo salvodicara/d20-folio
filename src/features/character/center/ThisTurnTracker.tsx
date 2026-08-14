@@ -61,6 +61,7 @@ import { StatusLedge } from "./StatusLedge";
 import { useTurnEconomy } from "./useTurnEconomy";
 import { useTurnState, useSheetCombat } from "./turn-state";
 import { MovementSlider } from "./MovementSlider";
+import { isCharacterAlive } from "@/lib/character-status";
 
 /** The economy-token types the meter can filter the action board by (item e). */
 export type EconFilterType = "action" | "bonus" | "reaction";
@@ -127,10 +128,9 @@ export function ThisTurnTracker({
   const gc = useSheetCombat();
   const movementUsedFt = useCombatStore((s) => s.movementUsedFt);
   const movementLocked = useCombatStore((s) => s.movementLocked);
-  const setMovementUsed = useCombatStore((s) => s.setMovementUsed);
   // RA-09 — Dash commits this turn; each extends the movement budget by one Speed.
   const dashesThisTurn = useCombatStore((s) => s.dashesThisTurn);
-  // RA-08 — slot-paid spell casts this turn (the one-spell-slot-per-turn advisory).
+  // RA-08 — slot-paid casts tracked by the hard one-slot-per-global-turn gate.
   const spellSlotCastsThisTurn = useCombatStore((s) => s.spellSlotCastsThisTurn);
   const exhaustion = useCharacterStore((s) => s.character?.session.exhaustion ?? 0);
   // Session inputs to the canonical full-grant aggregate (while-active toggles +
@@ -141,6 +141,7 @@ export function ThisTurnTracker({
   const grantBundleChoices = useCharacterStore(
     (s) => s.character?.session.grantBundleChoices
   );
+  const itemResources = useCharacterStore((s) => s.character?.session.itemResources);
   const applyInitiativeTrackerTopUps = useCharacterStore(
     (s) => s.applyInitiativeTrackerTopUps
   );
@@ -350,6 +351,7 @@ export function ThisTurnTracker({
     const initAgg = aggregateCharacterGrants(charData, {
       activeFeatures,
       grantBundleChoices,
+      itemResources,
     });
     const effectiveScores = effectiveAbilityScores(
       charData.abilityScores,
@@ -370,9 +372,18 @@ export function ThisTurnTracker({
       exhaustion,
       initiativeGrantBonus
     );
-  }, [charData, exhaustion, activeFeatures, grantBundleChoices]);
+  }, [charData, exhaustion, activeFeatures, grantBundleChoices, itemResources]);
 
   if (!character || !charData) return null;
+
+  const lifecycleEligible = isCharacterAlive(character.status, character.session);
+
+  /** Commit slider movement only while the fresh character is alive. */
+  function commitMovementUsed(ft: number) {
+    const live = useCharacterStore.getState().character;
+    if (!live || !isCharacterAlive(live.status, live.session)) return;
+    useCombatStore.getState().setMovementUsed(ft);
+  }
 
   // The shown roll: in an encounter, the campaign's `encounterInit` row (live — a DM
   // rolling FOR this player re-syncs it here in the same snapshot every surface gets);
@@ -397,7 +408,9 @@ export function ThisTurnTracker({
   // existed but nothing mounted it. Surface ONLY the currently-ACTIVE entries
   // (condition met) as a turn note; the player applies the heal themselves
   // (override-first, the engine never auto-heals).
-  const activeRegens = resolveStartOfTurnRegen(character).filter((r) => r.active);
+  const activeRegens = lifecycleEligible
+    ? resolveStartOfTurnRegen(character).filter((r) => r.active)
+    : [];
 
   // Round-1 save-gated damage-doubler notes (Assassin Death Strike): a DISPLAY-ONLY
   // reminder shown ONLY in combat round 1 (the same round-1 gate Assassinate's
@@ -480,23 +493,53 @@ export function ThisTurnTracker({
   // Hide). Crawl stays narrative (the 5-ft meter has no movement-mode concept).
   const isProne = conditions.includes("prone");
   const standCostFt = Math.floor(speedFt / 2);
+  const remainingMovementFt = Math.max(0, moveBudgetFt - movementUsedFt);
+  const canStand =
+    isProne &&
+    lifecycleEligible &&
+    speedFt > 0 &&
+    !conditionEffects.speedZero &&
+    !movementLocked &&
+    remainingMovementFt >= standCostFt;
   function standUp() {
+    // Re-resolve every prerequisite at commit: the character/conditions or turn
+    // budget may have changed since the prompt rendered.
+    const cs = useCharacterStore.getState();
+    const live = cs.character;
+    if (!live || !isCharacterAlive(live.status, live.session)) return;
+    const liveConditions = effectiveSessionConditions(live.session);
+    const liveConditionEffects = resolveConditionEffects(liveConditions);
+    const combat = useCombatStore.getState();
+    const liveSpeedFt =
+      live.character.speedOverride ?? effectiveWalkingSpeedFt(live, getEquipment, round);
+    const liveStandCostFt = Math.floor(liveSpeedFt / 2);
+    const liveBudgetFt = liveSpeedFt * (1 + combat.dashesThisTurn);
+    if (
+      !liveConditions.includes("prone") ||
+      liveSpeedFt <= 0 ||
+      liveConditionEffects.speedZero ||
+      combat.movementLocked ||
+      liveBudgetFt - combat.movementUsedFt < liveStandCostFt
+    ) {
+      return;
+    }
     // Drop Prone SILENTLY (returns its exact reverse) so the condition clear and
     // the movement debit ride ONE undo entry, not two separate toasts.
-    const dropProne = useCharacterStore.getState().removeConditionSilent("prone");
+    const dropProne = cs.removeConditionSilent("prone");
     if (!dropProne) return; // not prone / read-only — nothing to do
-    const combat = useCombatStore.getState();
     // DELTA debit (un-clamped upper): the MovementSlider snap-clamps the display,
     // and a delta refund on undo stays exact across a later turn's movement.
-    combat.setMovementUsed(combat.movementUsedFt + standCostFt);
+    combat.setMovementUsed(combat.movementUsedFt + liveStandCostFt);
     registerUndoableResult(
       {
-        message: t("combat.stoodUpToast", { cost: localeDistance(standCostFt, locale) }),
+        message: t("combat.stoodUpToast", {
+          cost: localeDistance(liveStandCostFt, locale),
+        }),
       },
       () => {
         dropProne(); // re-adds Prone + strips the condition-loss log line
         const c = useCombatStore.getState();
-        c.setMovementUsed(Math.max(0, c.movementUsedFt - standCostFt));
+        c.setMovementUsed(Math.max(0, c.movementUsedFt - liveStandCostFt));
       },
       () => standUp()
     );
@@ -665,11 +708,11 @@ export function ThisTurnTracker({
           {/* Read-only: the movement meter stays a legible read-out but leaves
               the tab order and drops its tap/drag/type editing (inert) — the
               same idiom the HUD rails use. */}
-          <span inert={readonly} className="contents">
+          <span inert={readonly || !lifecycleEligible} className="contents">
             <MovementSlider
               speedFt={moveBudgetFt}
               usedFt={movementUsedFt}
-              onChange={setMovementUsed}
+              onChange={commitMovementUsed}
               locale={locale}
               speedZero={conditionEffects.speedZero || movementLocked}
             />
@@ -727,9 +770,13 @@ export function ThisTurnTracker({
         <div className="conc-banner" role="status">
           <span className="conc-banner-mark" aria-hidden />
           <span className="conc-banner-text">{t("combat.proneStandNote")}</span>
-          <button type="button" className="conc-banner-drop" onClick={standUp}>
-            {t("combat.standAction", { cost: localeDistance(standCostFt, locale) })}
-          </button>
+          {canStand && (
+            <button type="button" className="conc-banner-drop" onClick={standUp}>
+              {t("combat.standAction", {
+                cost: localeDistance(standCostFt, locale),
+              })}
+            </button>
+          )}
         </div>
       )}
 

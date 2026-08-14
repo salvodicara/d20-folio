@@ -184,10 +184,11 @@ export interface SpellCardVM {
  */
 export function grantSourceNames(
   character: CharacterData,
-  locale: Locale
+  locale: Locale,
+  itemResources?: CharacterDoc["session"]["itemResources"]
 ): Map<string, string> {
   return new Map(
-    resolveAllGrantSources(character).map(
+    resolveAllGrantSources(character, itemResources).map(
       (s) => [s.id, grantSourceName(s, locale)] as const
     )
   );
@@ -482,7 +483,7 @@ export function buildSpellsViewModel(
   // Robe-of-the-Archmagi-while-active) reaches the Spells-tab card identically to
   // combat — the Spells-tab DC EQUALS the combat-tab DC by construction (rule 6).
   const grantAggregate = evaluateGrants(
-    resolveAllGrantSources(character),
+    resolveAllGrantSources(character, session.itemResources),
     new Set(session.activeFeatures ?? []),
     new Map(Object.entries(session.grantBundleChoices ?? {}))
   );

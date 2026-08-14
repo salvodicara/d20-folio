@@ -137,22 +137,30 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 3"],
-    // S9 — single-fixed-spell caster (NON-wand weapon; IDENTICAL mechanic to the wand
-    // family). RAW: "expend 1 charge to cast Dominate Beast (save DC 15) from it on a
-    // Beast that has a Swim Speed … regains 1d3 expended charges daily at dawn"
-    // (3-charge pool). Same pair as the wands: `always-prepared-spell` surfaces the
-    // cast; `free-cast-spell` debits the `trident-of-fish-command` charge tracker;
-    // `rest: "long"` models the dawn cadence. The "Beast with a Swim Speed" TARGET
-    // restriction stays prose (a narrative targeting constraint, like Wand of
-    // Polymorph's beast-form) — only the CAST affordance + charge pool are modeled.
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 3 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: { kind: "entered-roll", roll: { dice: 1, sides: 3 } },
+          },
+        ],
+      },
+    ],
+    // The "Beast with a Swim Speed" target restriction remains table-facing;
+    // the cast cost and exact 1d3 dawn recovery are engine-owned.
     grants: [
       { type: "always-prepared-spell", spellId: "dominate-beast" },
       {
         type: "free-cast-spell",
         spellId: "dominate-beast",
-        chargesPerRest: 3,
-        autoRecover: false,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
+        castOverrides: { saveDC: 15 },
       },
     ],
     source: "SRD",
@@ -166,20 +174,27 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: false,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 3"],
-    // S9 — single-fixed-spell wand: casts Detect Magic from its 3-charge pool
-    // (1 charge per cast). Same pipeline as Wand of Magic Missiles: the paired
-    // `always-prepared-spell` makes Detect Magic castable on the Play board for
-    // any wielder, the `free-cast-spell` debits the `wand-of-magic-detection`
-    // charge tracker; `rest: "long"` models "regains 1d3 charges daily at dawn"
-    // (the 1d3-vs-1d6+1 recharge die is prose, not a grant field).
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 3 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: { kind: "entered-roll", roll: { dice: 1, sides: 3 } },
+          },
+        ],
+      },
+    ],
     grants: [
       { type: "always-prepared-spell", spellId: "detect-magic" },
       {
         type: "free-cast-spell",
         spellId: "detect-magic",
-        chargesPerRest: 3,
-        autoRecover: false,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
       },
     ],
     source: "SRD",
@@ -193,6 +208,40 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: false,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7"],
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 7 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: {
+              kind: "entered-roll",
+              roll: { dice: 1, sides: 6, modifier: 1 },
+            },
+          },
+        ],
+        onEmpty: {
+          kind: "entered-d20",
+          bands: [
+            {
+              min: 1,
+              max: 1,
+              outcomes: [
+                {
+                  kind: "set-item-disposition",
+                  disposition: "destroyed",
+                },
+              ],
+            },
+            { min: 2, max: 20, outcomes: [] },
+          ],
+        },
+      },
+    ],
     // Magic Missile can be cast at levels 1–3 for 1–3 charges. The paired
     // prepared grant surfaces it for any wielder without copying it into spells[].
     grants: [
@@ -200,14 +249,12 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
       {
         type: "free-cast-spell",
         spellId: "magic-missile",
-        chargesPerRest: 7,
-        autoRecover: false,
+        resourceCost: { resourceId: "charges" },
         castLevels: [
           { level: 1, cost: 1 },
           { level: 2, cost: 2 },
           { level: 3, cost: 3 },
         ],
-        rest: "long",
       },
     ],
     source: "SRD",
@@ -264,20 +311,44 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7"],
-    // S9 — single-fixed-spell wand: casts Web from its 7-charge pool (1 charge
-    // per cast; RAW save DC 13 — carried in the item prose, since the engine
-    // resolves the spell's save DC from the wielder). Same pipeline Wand of Magic
-    // Missiles ships: a paired `always-prepared-spell` makes Web castable on the
-    // Play board for any wielder, and the `free-cast-spell` debits the
-    // `wand-of-web` charge tracker; `rest: "long"` models "regains daily at dawn".
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 7 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: {
+              kind: "entered-roll",
+              roll: { dice: 1, sides: 6, modifier: 1 },
+            },
+          },
+        ],
+        onEmpty: {
+          kind: "entered-d20",
+          bands: [
+            {
+              min: 1,
+              max: 1,
+              outcomes: [{ kind: "set-item-disposition", disposition: "destroyed" }],
+            },
+            { min: 2, max: 20, outcomes: [] },
+          ],
+        },
+      },
+    ],
+    // Web spends 1 charge; dawn recovery and last-charge destruction are exact
+    // typed facts rather than long-rest aliases.
     grants: [
       { type: "always-prepared-spell", spellId: "web" },
       {
         type: "free-cast-spell",
         spellId: "web",
-        chargesPerRest: 7,
-        autoRecover: false,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
+        castOverrides: { saveDC: 13 },
       },
     ],
     source: "SRD",
@@ -523,20 +594,27 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 3"],
-    // S9 — single-fixed-spell caster (NON-wand: a wondrous helm with the IDENTICAL
-    // mechanic the wands ship). RAW: "expend 1 charge to cast Teleport from it; the
-    // helm regains 1d3 expended charges daily at dawn" (3-charge pool). Same pair as
-    // Wand of Magic Detection: the `always-prepared-spell` makes Teleport castable on
-    // the Play board for any wielder, the `free-cast-spell` debits the
-    // `helm-of-teleportation` charge tracker; `rest: "long"` models the dawn cadence.
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 3 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: { kind: "entered-roll", roll: { dice: 1, sides: 3 } },
+          },
+        ],
+      },
+    ],
     grants: [
       { type: "always-prepared-spell", spellId: "teleport" },
       {
         type: "free-cast-spell",
         spellId: "teleport",
-        chargesPerRest: 3,
-        autoRecover: false,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
       },
     ],
     source: "SRD",
@@ -673,23 +751,32 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: false,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 3"],
-    // S9 — multi-spell charged caster (no attunement): casts ONE OF Animal
-    // Friendship / Speak with Animals from its shared 3-charge pool, ALL at 1 charge
-    // (uniform-cost pool → no `spellCosts`, every spell defaults to 1). RAW's third
-    // option — "Fear (as the spell) affecting only Beasts" — has no distinct Beast-
-    // only Fear spell in the SRD, so it maps to Animal Friendship (already in the
-    // pool; declare the LEAST). Same seam: a pool-picker card debits the
-    // `ring-of-animal-influence` tracker; regains 1d3 at dawn (`rest: "long"`).
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 3 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: { kind: "entered-roll", roll: { dice: 1, sides: 3 } },
+          },
+        ],
+      },
+    ],
+    // All three spells spend 1 charge. Fear's Beast-only target restriction stays
+    // table-facing; the exact shared pool and fixed save DC are engine-owned.
     grants: [
       { type: "always-prepared-spell", spellId: "animal-friendship" },
+      { type: "always-prepared-spell", spellId: "fear" },
       { type: "always-prepared-spell", spellId: "speak-with-animals" },
       {
         type: "free-cast-from-list",
-        spellIds: ["animal-friendship", "speak-with-animals"],
+        spellIds: ["animal-friendship", "fear", "speak-with-animals"],
         castOverrides: { saveDC: 13 },
-        chargesPerRest: 3,
-        autoRecover: false,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
       },
     ],
     source: "SRD",
@@ -812,12 +899,37 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 10"],
-    // S9 — multi-spell charged caster: casts ONE OF Charm Person / Command /
-    // Comprehend Languages from its shared 10-charge pool, ALL at 1 charge (uniform-
-    // cost pool → no `spellCosts`). Same seam: a pool-picker card debits the
-    // `staff-of-charming` tracker; the paired `always-prepared-spell` grants surface
-    // the three spells on the Spells page. Regains 1d8+2 at dawn (`rest: "long"`).
-    // The Reaction charm-redirect + charge-drain-on-1 clauses stay narrative.
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 10 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: {
+              kind: "entered-roll",
+              roll: { dice: 1, sides: 8, modifier: 2 },
+            },
+          },
+        ],
+        onEmpty: {
+          kind: "entered-d20",
+          bands: [
+            {
+              min: 1,
+              max: 1,
+              outcomes: [{ kind: "set-item-disposition", disposition: "destroyed" }],
+            },
+            { min: 2, max: 20, outcomes: [] },
+          ],
+        },
+      },
+    ],
+    // The three spells all spend 1 charge. Reflect Enchantment remains a reaction
+    // authoring gap; its spend must eventually bind this same physical-item pool.
     grants: [
       { type: "always-prepared-spell", spellId: "charm-person" },
       { type: "always-prepared-spell", spellId: "command" },
@@ -825,9 +937,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
       {
         type: "free-cast-from-list",
         spellIds: ["charm-person", "command", "comprehend-languages"],
-        chargesPerRest: 10,
-        autoRecover: false,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
       },
     ],
     source: "SRD",
@@ -841,8 +951,37 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 10"],
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 10 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: {
+              kind: "entered-roll",
+              roll: { dice: 1, sides: 6, modifier: 4 },
+            },
+          },
+        ],
+        onEmpty: {
+          kind: "entered-d20",
+          bands: [
+            {
+              min: 1,
+              max: 1,
+              outcomes: [{ kind: "set-item-disposition", disposition: "destroyed" }],
+            },
+            { min: 2, max: 20, outcomes: [] },
+          ],
+        },
+      },
+    ],
     // Cure Wounds levels 1–4 cost their cast level; the fixed-cost spells share
-    // the same 10-charge tracker through the list-pool sibling.
+    // the same physical-item pool through the list-pool sibling.
     grants: [
       { type: "always-prepared-spell", spellId: "cure-wounds" },
       { type: "always-prepared-spell", spellId: "lesser-restoration" },
@@ -850,23 +989,19 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
       {
         type: "free-cast-spell",
         spellId: "cure-wounds",
-        chargesPerRest: 10,
-        autoRecover: false,
+        resourceCost: { resourceId: "charges" },
         castLevels: [
           { level: 1, cost: 1 },
           { level: 2, cost: 2 },
           { level: 3, cost: 3 },
           { level: 4, cost: 4 },
         ],
-        rest: "long",
       },
       {
         type: "free-cast-from-list",
         spellIds: ["lesser-restoration", "mass-cure-wounds"],
         spellCosts: { "lesser-restoration": 2, "mass-cure-wounds": 5 },
-        chargesPerRest: 10,
-        autoRecover: false,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
       },
     ],
     source: "SRD",
@@ -880,6 +1015,35 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 10"],
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 10 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: {
+              kind: "entered-roll",
+              roll: { dice: 1, sides: 6, modifier: 4 },
+            },
+          },
+        ],
+        onEmpty: {
+          kind: "entered-d20",
+          bands: [
+            {
+              min: 1,
+              max: 1,
+              outcomes: [{ kind: "set-item-disposition", disposition: "destroyed" }],
+            },
+            { min: 2, max: 20, outcomes: [] },
+          ],
+        },
+      },
+    ],
     grants: [
       { type: "always-prepared-spell", spellId: "giant-insect" },
       { type: "always-prepared-spell", spellId: "insect-plague" },
@@ -887,9 +1051,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         type: "free-cast-from-list",
         spellIds: ["giant-insect", "insect-plague"],
         spellCosts: { "giant-insect": 4, "insect-plague": 5 },
-        chargesPerRest: 10,
-        autoRecover: false,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
       },
     ],
     source: "SRD",
@@ -906,6 +1068,32 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     // (the quarterstaff's own +2 attack/damage stays the item-bound weapon
     // bonus model gap — per-weapon attackBonusOverride is the seam today).
     properties: ["charges: 6"],
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 6 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: { kind: "entered-roll", roll: { dice: 1, sides: 6 } },
+          },
+        ],
+        onEmpty: {
+          kind: "entered-d20",
+          bands: [
+            {
+              min: 1,
+              max: 1,
+              outcomes: [{ kind: "set-item-disposition", disposition: "nonmagical" }],
+            },
+            { min: 2, max: 20, outcomes: [] },
+          ],
+        },
+      },
+    ],
     grants: [
       { type: "spell-attack-bonus", amount: 2, scope: "all" },
       { type: "always-prepared-spell", spellId: "animal-friendship" },
@@ -938,9 +1126,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
           "speak-with-plants": 3,
           "wall-of-thorns": 6,
         },
-        chargesPerRest: 6,
-        autoRecover: false,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
       },
     ],
     source: "SRD",
@@ -1001,13 +1187,37 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7"],
-    // S9 — multi-spell charged caster: casts ONE OF Hold Monster / Hold Person
-    // from its shared 7-charge pool, at PER-SPELL cost (Hold Monster 5, Hold Person
-    // 2 — RAW). The `free-cast-from-list` grant surfaces a Play-board pool-picker
-    // card (`resolveItemPoolCastActions`) debiting the `wand-of-binding` charge
-    // tracker; the paired `always-prepared-spell` grants make both spells visible on
-    // the Spells page for any wielder. Regains 1d6+1 at dawn (`rest: "long"`) — the
-    // dice regain stays narrative (the pool never auto-refills, same as every wand).
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 7 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: {
+              kind: "entered-roll",
+              roll: { dice: 1, sides: 6, modifier: 1 },
+            },
+          },
+        ],
+        onEmpty: {
+          kind: "entered-d20",
+          bands: [
+            {
+              min: 1,
+              max: 1,
+              outcomes: [{ kind: "set-item-disposition", disposition: "destroyed" }],
+            },
+            { min: 2, max: 20, outcomes: [] },
+          ],
+        },
+      },
+    ],
+    // Hold Monster costs 5 charges; Hold Person costs 2. Recovery and the
+    // last-charge d20 consequence are exact typed facts.
     grants: [
       { type: "always-prepared-spell", spellId: "hold-monster" },
       { type: "always-prepared-spell", spellId: "hold-person" },
@@ -1016,9 +1226,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         spellIds: ["hold-monster", "hold-person"],
         spellCosts: { "hold-monster": 5, "hold-person": 2 },
         castOverrides: { saveDC: 17 },
-        chargesPerRest: 7,
-        autoRecover: false,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
       },
     ],
     source: "SRD",
@@ -1043,12 +1251,37 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7"],
-    // S9 — multi-spell charged caster: casts ONE OF Command / Fear from its shared
-    // 7-charge pool, at PER-SPELL cost (Command 1, Fear 3 — RAW; the wand's Fear
-    // effect is the real Fear spell shaped as a 60-ft cone). Same seam as Wand of
-    // Binding: a pool-picker card debits the `wand-of-fear` tracker; the paired
-    // `always-prepared-spell` grants surface both spells on the Spells page. Regains
-    // 1d6+1 at dawn (`rest: "long"`); the dice regain stays narrative.
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 7 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: {
+              kind: "entered-roll",
+              roll: { dice: 1, sides: 6, modifier: 1 },
+            },
+          },
+        ],
+        onEmpty: {
+          kind: "entered-d20",
+          bands: [
+            {
+              min: 1,
+              max: 1,
+              outcomes: [{ kind: "set-item-disposition", disposition: "destroyed" }],
+            },
+            { min: 2, max: 20, outcomes: [] },
+          ],
+        },
+      },
+    ],
+    // Command costs 1 charge; Fear costs 3. The command-word and cone constraints
+    // remain table-facing; recovery and depletion are typed.
     grants: [
       { type: "always-prepared-spell", spellId: "command" },
       { type: "always-prepared-spell", spellId: "fear" },
@@ -1057,9 +1290,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         spellIds: ["command", "fear"],
         spellCosts: { command: 1, fear: 3 },
         castOverrides: { saveDC: 15 },
-        chargesPerRest: 7,
-        autoRecover: false,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
       },
     ],
     source: "SRD",
@@ -1073,20 +1304,48 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7"],
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 7 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: {
+              kind: "entered-roll",
+              roll: { dice: 1, sides: 6, modifier: 1 },
+            },
+          },
+        ],
+        onEmpty: {
+          kind: "entered-d20",
+          bands: [
+            {
+              min: 1,
+              max: 1,
+              outcomes: [{ kind: "set-item-disposition", disposition: "destroyed" }],
+            },
+            { min: 2, max: 20, outcomes: [] },
+          ],
+        },
+      },
+    ],
     // Fireball levels 3–5 cost 1–3 charges through the shared cast picker.
     grants: [
       { type: "always-prepared-spell", spellId: "fireball" },
       {
         type: "free-cast-spell",
         spellId: "fireball",
-        chargesPerRest: 7,
-        autoRecover: false,
+        resourceCost: { resourceId: "charges" },
+        castOverrides: { saveDC: 15 },
         castLevels: [
           { level: 3, cost: 1 },
           { level: 4, cost: 2 },
           { level: 5, cost: 3 },
         ],
-        rest: "long",
       },
     ],
     source: "SRD",
@@ -1100,20 +1359,48 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7"],
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 7 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: {
+              kind: "entered-roll",
+              roll: { dice: 1, sides: 6, modifier: 1 },
+            },
+          },
+        ],
+        onEmpty: {
+          kind: "entered-d20",
+          bands: [
+            {
+              min: 1,
+              max: 1,
+              outcomes: [{ kind: "set-item-disposition", disposition: "destroyed" }],
+            },
+            { min: 2, max: 20, outcomes: [] },
+          ],
+        },
+      },
+    ],
     // Lightning Bolt levels 3–5 cost 1–3 charges through the same picker.
     grants: [
       { type: "always-prepared-spell", spellId: "lightning-bolt" },
       {
         type: "free-cast-spell",
         spellId: "lightning-bolt",
-        chargesPerRest: 7,
-        autoRecover: false,
+        resourceCost: { resourceId: "charges" },
+        castOverrides: { saveDC: 15 },
         castLevels: [
           { level: 3, cost: 1 },
           { level: 4, cost: 2 },
           { level: 5, cost: 3 },
         ],
-        rest: "long",
       },
     ],
     source: "SRD",
@@ -1209,6 +1496,16 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "wondrous",
     attunement: true,
+    resources: [
+      {
+        kind: "counter",
+        id: "uses",
+        unit: "uses",
+        capacity: { kind: "fixed", amount: 1 },
+        initial: { kind: "full" },
+        recoveries: [{ trigger: { kind: "dawn" }, amount: { kind: "full" } }],
+      },
+    ],
     // Poison Resistance + Spider Climb are always on while worn. The once-per-
     // dawn Web cast rides the standard item free-cast pool; only the doubled-area
     // geometry and Spider Walk remain table-facing.
@@ -1219,8 +1516,8 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
       {
         type: "free-cast-spell",
         spellId: "web",
-        chargesPerRest: 1,
-        rest: "long",
+        resourceCost: { resourceId: "uses" },
+        castOverrides: { saveDC: 13 },
       },
     ],
     source: "SRD",

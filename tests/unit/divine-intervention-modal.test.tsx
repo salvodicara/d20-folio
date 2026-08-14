@@ -9,6 +9,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { DivineInterventionModal } from "@/components/sheet/DivineInterventionModal";
+import { makeItemResourceIdentity } from "@/lib/resources";
 import type { FreeCastFromListPool } from "@/lib/smart-tracker";
 
 const pool: FreeCastFromListPool = {
@@ -17,7 +18,7 @@ const pool: FreeCastFromListPool = {
   // A representative ≤5th Cleric subset (the real pool is engine-resolved + tested).
   spellIds: ["cure-wounds", "revivify", "guiding-bolt"],
   maxSpellLevel: 5,
-  rest: "long",
+  recovery: { kind: "tracker", rest: "long" },
   charges: 1,
   remaining: 1,
   // Feature pools are uniform 1-cost (a use IS a use).
@@ -93,7 +94,7 @@ describe("DivineInterventionModal", () => {
     trackerId: "cleric-channel-divinity",
     spellIds: ["shield-of-faith", "spiritual-weapon"],
     maxSpellLevel: 2,
-    rest: "short",
+    recovery: { kind: "tracker", rest: "short" },
     charges: 3,
     remaining: 3,
     costBySpell: { "shield-of-faith": 1, "spiritual-weapon": 1 },
@@ -115,14 +116,20 @@ describe("DivineInterventionModal", () => {
   });
 
   // S9 — the SAME picker serves the charged multi-spell ITEMS (Wand of Binding).
-  // A pool whose sourceId is a magic-item id renders the item rubric + a per-row
-  // charge-cost chip, and disables a row the pool can't afford.
+  // An instance-bound pool keeps its runtime source id separate from the stable
+  // item catalogue id used by the view. It renders the item rubric + a per-row
+  // charge-cost chip, and disables a row the exact resource can't afford.
   const wandPool: FreeCastFromListPool = {
-    sourceId: "wand-of-binding",
-    trackerId: "wand-of-binding",
+    sourceId: "magic-item:wand-copy-a",
+    itemId: "wand-of-binding",
+    payment: {
+      kind: "item-resource",
+      ...makeItemResourceIdentity("wand-of-binding", "wand-copy-a", "charges"),
+    },
+    trackerId: "magic-item:wand-copy-a",
     spellIds: ["hold-person", "hold-monster"],
     maxSpellLevel: 5,
-    rest: "long",
+    recovery: { kind: "item-resource", triggers: [{ kind: "dawn" }] },
     charges: 7,
     remaining: 4, // 4 charges left: Hold Person (2) affordable, Hold Monster (5) not.
     costBySpell: { "hold-person": 2, "hold-monster": 5 },

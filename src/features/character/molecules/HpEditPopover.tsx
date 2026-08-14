@@ -32,7 +32,8 @@
  *
  * **RA-03 — at 0 HP** (`atZero`): a "Critical hit" toggle joins the row (a crit
  * while dying marks two failures) and a quiet hint explains that damage at 0
- * marks death-save failures. Once `dead`, the Damage verb disables.
+ * marks death-save failures. Once `dead`, every ordinary HP mutation affordance
+ * disables; revival remains an explicit manual override elsewhere.
  *
  * Anchored on `--bg-surface-1`: the `.hp-act-*` tinted-translucent buttons are
  * AA-verified on surface-1, so routing every HP edit through this popover keeps
@@ -60,7 +61,8 @@ import {
   type DamageInstance,
   type ResolvedDamagePart,
 } from "@/lib/damage-intake";
-import type { DamageSource, DamageType } from "@/data/types";
+import type { DamageSource } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 import { cn } from "@/lib/utils";
 import { hpState } from "./hp-tier";
 
@@ -157,7 +159,7 @@ interface HpEditPopoverProps {
   resistedSources?: ReadonlyArray<DamageSource>;
   /** RA-03 — at 0 HP: show the Critical-hit toggle + the at-0 hint. */
   atZero?: boolean;
-  /** Dead in play — the Damage verb disables (a corpse takes no marks). */
+  /** Dead in play — ordinary HP mutation controls disable. */
   dead?: boolean;
 }
 
@@ -382,6 +384,7 @@ export function HpEditPopover({
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0"
               aria-label={t("character.hpAmountAria")}
+              disabled={dead}
             />
             <Button
               variant="neutral"
@@ -396,6 +399,7 @@ export function HpEditPopover({
               variant="neutral"
               size="sm"
               className="hp-act-heal"
+              disabled={dead}
               onClick={commit(onHeal)}
             >
               {t("combat.heal")}
@@ -405,13 +409,14 @@ export function HpEditPopover({
                 variant="neutral"
                 size="sm"
                 className="hp-act-temp"
+                disabled={dead}
                 onClick={commit(onTemp)}
               >
                 {t("combat.temp")}
               </Button>
             )}
             {!hideTemp && temp > 0 && (
-              <Button variant="ghost" size="sm" onClick={clear}>
+              <Button variant="ghost" size="sm" disabled={dead} onClick={clear}>
                 {t("combat.clearTemp", { amount: temp })}
               </Button>
             )}

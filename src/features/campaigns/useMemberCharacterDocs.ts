@@ -17,13 +17,12 @@
  * deliberately NOT a standing snapshot listener per member, which across a party of
  * M members would multiply into M×(M-1) live listeners, all re-firing on every
  * teammate's routine auto-save. The cost of that is judged higher than the cost of
- * staleness here, so this hook is intentionally NOT live: everything sourced from
- * it (AC, max HP, passives, senses) is a SNAPSHOT frozen at fetch time and goes
- * stale if a teammate edits their sheet while you keep the section mounted. Only
- * the combat trio (HP/conditions/initiative) is genuinely live, via the separate
- * `combat/state` subdoc listener ({@link "@/features/campaigns/usePartyCombatStates"})
- * merged in by `derivePcLive` — Party.tsx's header comment describing the WHOLE
- * card as "LIVE" overstates this for the non-trio fields. The live membership grant
+ * staleness here, so this hook is intentionally NOT live: `getFullCharacter` performs
+ * one complete parent+play-child hydration, after which AC, max HP, passives, and
+ * senses are a frozen snapshot. The separate `combat/state` listener
+ * ({@link "@/features/campaigns/usePartyCombatStates"}) then keeps play facts live.
+ * Party.tsx's header comment describing the WHOLE card as "LIVE" overstates this for
+ * build-derived fields. The live membership grant
  * authorizes each read; an absent/denied doc resolves to `{ status: "error" }` (the
  * card falls back to the snapshot, never a stuck spinner). Under dev-bypass it
  * resolves through the SAME fixture/scenario seam {@link useMemberCharacterSubscription}

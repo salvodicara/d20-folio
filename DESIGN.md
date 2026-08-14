@@ -916,10 +916,18 @@ is geometry-identical EN vs IT.
   state-driven: **Dying** (pulsing beacon + HeartCrack) → **Stable** (verdigris Heart) →
   **Dead** (Skull), ONE label owning the verdict (the pips molecule carries no duplicate
   announcement). While the outcome is open, the PRIMARY act is the death-save d20 **roll entry**
-  (clamped NumberStepper 1–20 + Apply — the `heal-roll-entry` idiom): the entered face applies the
-  SRD outcome automatically, undoable; the pips remain directly tappable as the override path. The
-  quick heal and the at-0 interrupts keep their places; read-only viewers lose the roll entry via
-  the glass-case recipe (`.ds-roll`).
+  (clamped NumberStepper 1–20 + Apply — the `heal-roll-entry` idiom). It asks for one physical face
+  normally or after Advantage/Disadvantage cancel, and exactly two when the live net mode requires
+  them; the engine selects the natural face and applies the SRD outcome as one undoable command. The
+  pips remain directly tappable as the override path. The quick heal and the at-0 interrupts keep
+  their places; read-only viewers lose the roll entry via the glass-case recipe (`.ds-roll`).
+- **Concentration damage prompt — one interruption ledger.** Damage while concentrating appends one
+  durable prompt per authored packet to the global `.conc-banner.conc-banner-prompt`, directly below
+  the dying register. Its compact line names the spell, exact DC and FIFO position, then uses the SAME
+  entered-d20 face control and visible net Advantage/Disadvantage state as Death Saves. Resolving the
+  head advances the queue or ends Concentration through its canonical teardown; the prompt survives
+  navigation/reload and its result is undoable. Read-only viewers retain the unresolved state and lose
+  only `.concentration-save-roll`, following the glass-case rule.
 - **Rest — the wax-seal moon medallion** (`.rest-medal` / `.rm-coin`, folio.css): a **glyph-only**
   44px struck-metal coin (the combat-economy coin recipe family) bearing the moon glyph, opening
   the Rest modal. It TRAILS the HP tile as a same-row **sibling** — data leads, its control follows —
@@ -1276,6 +1284,13 @@ in a void: last ink → panel edge = strip → panel edge.
 - **Recovery copy names the real trigger:** rest-scoped trackers keep the compact LR/SR grammar;
   activation-scoped trackers spell out “When {state} starts” / “Quando inizia {stato}” in expanded
   feature and compendium detail. They never show a misleading rest badge or the fallback “Manual.”
+- **Physical item resources are copy-specific without exposing ids:** Inventory shows the localized
+  item/resource label, current/capacity and exact recovery cadence for that row's physical copy; a
+  duplicated item is distinguished by an ordinal only where input attribution needs it. Raw UUIDs
+  never render. Spend and recovery use the same compact input modal, and cancelling any required roll
+  leaves the whole command untouched. The Resources rail adds one compact **Table Clock** popover only
+  when a below-capacity typed item can react to Dawn or Dusk. Those controls explicitly declare the
+  story boundary, use the existing struck-action/popover grammar, and disappear in read-only mode.
 
 ### "This Turn" action-economy band
 

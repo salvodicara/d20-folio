@@ -37,8 +37,9 @@ import type {
   CustomWeapon,
   CustomFeature,
 } from "@/types/character";
-import { ALL_DAMAGE_TYPES, ALL_SPELL_SCHOOLS } from "@/data/types";
-import type { SpellSchool, DamageType } from "@/data/types";
+import { ALL_SPELL_SCHOOLS } from "@/data/types";
+import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
+import type { SpellSchool } from "@/data/types";
 
 /**
  * Keep a freshly created homebrew in the account library, and SAY SO when the
@@ -275,8 +276,6 @@ interface CustomEquipmentFormProps {
    *  kinds, so the seed is either shape and the saved draft carries the kind. */
   libraryEdit?: LibraryEditProps<CustomEquipment | CustomWeapon>;
 }
-
-const DAMAGE_TYPES: readonly DamageType[] = ALL_DAMAGE_TYPES;
 
 export function CustomEquipmentForm({
   onCreated,

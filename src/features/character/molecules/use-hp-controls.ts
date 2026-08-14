@@ -42,20 +42,16 @@ import {
   type DamageInstance,
 } from "@/lib/damage-intake";
 import { deriveDamageDefenses } from "@/lib/views/sheet-view";
-import {
-  deathSaveOutcome,
-  effectiveProficiencyBonus,
-  isHeavyArmorEquipped,
-} from "@/lib/compute";
+import { effectiveProficiencyBonus, isHeavyArmorEquipped } from "@/lib/compute";
 import { totalLevel } from "@/lib/classes";
 import { getEquipment } from "@/data/equipment";
 import {
-  diedInPlay,
+  isCharacterAlive,
   stabilisedInPlay,
   DEATH_FAIL_LIMIT,
-  DEATH_SUCCESS_LIMIT,
 } from "@/lib/character-status";
-import type { DamageSource, DamageType } from "@/data/types";
+import type { DamageSource } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 
 // hpState + HpStateValue moved to the dependency-free `./hp-tier` module so the
 // roster card can import the tier without pulling this store-coupled hook (which
@@ -89,7 +85,7 @@ export interface HpControls {
   resistedSources: DamageSource[];
   /** At 0 HP (dying/stable/dead — the 0-HP rules apply to entered damage). */
   atZero: boolean;
-  /** Dead in play (three failures) — damage entry is inert. */
+  /** Dead by any canonical cause — ordinary damage/healing entry is inert. */
   dead: boolean;
   /** Stable at 0 (three successes). */
   stable: boolean;
@@ -116,7 +112,7 @@ export interface HpControls {
    * above the character's crit threshold (nat 20, Champion Survivor 18+) =
    * regain 1 HP and wake. No-op above 0 HP or once stable/dead.
    */
-  applyDeathSave: (face: number) => void;
+  applyDeathSave: (faces: number | ReadonlyArray<number>) => void;
 }
 
 /**
@@ -131,7 +127,6 @@ export function useHpControls(): HpControls {
   const applyHealing = useCharacterStore((s) => s.applyHealing);
   const gainTempHp = useCharacterStore((s) => s.gainTempHp);
   const setTempHP = useCharacterStore((s) => s.setTempHP);
-  const setDeathSaves = useCharacterStore((s) => s.setDeathSaves);
   const restoreHpSnapshot = useCharacterStore((s) => s.restoreHpSnapshot);
 
   const current = character?.session.hp.current ?? 0;
@@ -157,28 +152,22 @@ export function useHpControls(): HpControls {
   // Memoized on the same narrow slices every aggregate consumer keys on.
   const charData = character?.character;
   const session = character?.session;
-  const { defenses, critAt } = useMemo(() => {
+  const defenses = useMemo(() => {
     if (!charData || !session) {
-      return { defenses: NO_DEFENSES, critAt: 20 };
+      return NO_DEFENSES;
     }
     const aggregate = aggregateCharacterGrants(charData, session);
-    return {
-      defenses: deriveDamageDefenses(
-        aggregate,
-        {
-          resistance: charData.damageResistanceOverrides,
-          immunity: charData.damageImmunityOverrides,
-          vulnerability: charData.damageVulnerabilityOverrides,
-        },
-        session.sessionDefenses,
-        effectiveProficiencyBonus(
-          totalLevel(charData),
-          charData.proficiencyBonusOverride
-        ),
-        isHeavyArmorEquipped(charData.equipment, getEquipment)
-      ),
-      critAt: aggregate.deathSaveCritThreshold,
-    };
+    return deriveDamageDefenses(
+      aggregate,
+      {
+        resistance: charData.damageResistanceOverrides,
+        immunity: charData.damageImmunityOverrides,
+        vulnerability: charData.damageVulnerabilityOverrides,
+      },
+      session.sessionDefenses,
+      effectiveProficiencyBonus(totalLevel(charData), charData.proficiencyBonusOverride),
+      isHeavyArmorEquipped(charData.equipment, getEquipment)
+    );
   }, [charData, session]);
 
   const defended = useMemo(() => defendedDamageTypes(defenses), [defenses]);
@@ -190,7 +179,8 @@ export function useHpControls(): HpControls {
   const deathSucc = character?.session.deathSucc ?? 0;
   const deathFail = character?.session.deathFail ?? 0;
   const atZero = character !== null && current === 0;
-  const dead = character !== null && diedInPlay(character.session);
+  const dead =
+    character !== null && !isCharacterAlive(character.status, character.session);
   const stable = character !== null && stabilisedInPlay(character.session);
 
   /** Snapshot the slice every damage/death-save undo restores exactly. */
@@ -232,7 +222,8 @@ export function useHpControls(): HpControls {
       character.session.activeFeatures?.includes("spell-death-ward") ?? false;
     // Delegate to the store (temp absorption + the concentration DC from the FULL
     // damage taken + the Death Ward interrupt + the 0-HP rules — RA-03/RA-10).
-    applyDamage(intake.netTotal, { crit });
+    const undoDamage = applyDamage(intake.netTotal, { crit });
+    if (!undoDamage) return;
     // Read the ACTUAL resulting state from the store (Death Ward may have clamped
     // to 1; the 0-HP rules may have marked failures) — the toast reflects truth.
     const after = useCharacterStore.getState().character;
@@ -271,25 +262,11 @@ export function useHpControls(): HpControls {
                 prev: prev.current,
                 next: newHP,
               });
-    registerUndoableResult(
-      { message },
-      () => {
-        // A faithful inverse: HP + temp + the dying track + conditions restore in
-        // ONE persisting store write (incl. the knockout's Unconscious / a
-        // massive-death's 3 failures / an at-0 mark).
-        restoreHpSnapshot(prev);
-        // Re-light the Death Ward toggle the store ended (a faithful inverse — the
-        // ward is un-spent along with the HP).
-        if (wardTriggered) {
-          useCharacterStore.getState().setActiveFeature("spell-death-ward", true);
-        }
-      },
-      () => handleApplyDamage(parts, opts)
-    );
+    registerUndoableResult({ message }, undoDamage, () => handleApplyDamage(parts, opts));
   }
 
   function applyHeal(amount: number) {
-    if (!character) return;
+    if (!character || dead) return;
     if (!amount || amount <= 0) return;
     const prevHP = current;
     const newHP = Math.min(max, current + amount);
@@ -297,12 +274,26 @@ export function useHpControls(): HpControls {
     // Delegate to the store's healing seam, which clamps + logs the structured
     // `hp-heal` event (events-as-data) and — off 0 — resets the dying track +
     // sheds Unconscious. Undo restores the exact prior slice.
-    const prev = snapshotHp();
     registerUndoableToast(
       { message },
       () => {
+        const live = useCharacterStore.getState().character;
+        if (!live || !isCharacterAlive(live.status, live.session)) return null;
+        const liveSnapshot = {
+          current: live.session.hp.current,
+          temp: live.session.hp.temp,
+          deathSucc: live.session.deathSucc,
+          deathFail: live.session.deathFail,
+          conditions: [...live.session.conditions],
+        };
         applyHealing(amount);
-        return () => restoreHpSnapshot(prev);
+        if (
+          useCharacterStore.getState().character?.session.hp.current ===
+          liveSnapshot.current
+        ) {
+          return null;
+        }
+        return () => restoreHpSnapshot(liveSnapshot);
       },
       { turnScoped: false }
     );
@@ -341,56 +332,37 @@ export function useHpControls(): HpControls {
     );
   }
 
-  function applyDeathSave(face: number) {
-    if (!character || current > 0 || dead || stable) return;
-    const entered = Math.floor(face);
-    if (entered < 1 || entered > 20) return;
-    const prev = snapshotHp();
-    // RA-11 — the pure interpreter (`compute.deathSaveOutcome`) reads the entered
-    // face against the character's crit threshold (Champion Survivor lowers it).
-    const outcome = deathSaveOutcome(entered, critAt);
+  function applyDeathSave(faces: number | ReadonlyArray<number>) {
+    const enteredFaces = typeof faces === "number" ? [faces] : Array.from(faces);
+    const commit = useCharacterStore.getState().commitDeathSave(enteredFaces);
+    if (!commit) return;
+    const outcome = commit.result.reviewedOutcome.deathSave;
+    const entered = commit.result.selectedNaturalFace;
+    if (!outcome || entered === null) return;
+    const after = useCharacterStore.getState().character;
     let message: string;
-    switch (outcome) {
-      case "natural-twenty": {
-        // Regain 1 HP and wake — the heal seam resets the track + sheds
-        // Unconscious + logs, exactly like any heal off 0 (one seam, rule 6).
-        applyHealing(1);
-        message = t("combat.deathSaveNat20Toast", { n: entered });
-        break;
-      }
-      case "two-failures": {
-        const f = Math.min(DEATH_FAIL_LIMIT, deathFail + 2);
-        setDeathSaves(deathSucc, f);
-        message =
-          f >= DEATH_FAIL_LIMIT
-            ? t("deathSaves.dead")
-            : t("combat.deathSaveNat1Toast", { n: entered, f });
-        break;
-      }
-      case "failure": {
-        const f = Math.min(DEATH_FAIL_LIMIT, deathFail + 1);
-        setDeathSaves(deathSucc, f);
-        message =
-          f >= DEATH_FAIL_LIMIT
-            ? t("deathSaves.dead")
-            : t("combat.deathSaveFailToast", { n: entered, f });
-        break;
-      }
-      case "success": {
-        const s = Math.min(DEATH_SUCCESS_LIMIT, deathSucc + 1);
-        setDeathSaves(s, deathFail);
-        message =
-          s >= DEATH_SUCCESS_LIMIT
-            ? t("combat.deathSaveStableToast", { n: entered })
-            : t("combat.deathSaveSuccessToast", { n: entered, s });
-        break;
-      }
+    if (outcome.naturalTwentyBenefit) {
+      message = t("combat.deathSaveNat20Toast", { n: entered });
+    } else if (outcome.failures === 2) {
+      const failures = after?.session.deathFail ?? deathFail;
+      message =
+        failures >= DEATH_FAIL_LIMIT
+          ? t("deathSaves.dead")
+          : t("combat.deathSaveNat1Toast", { n: entered, f: failures });
+    } else if (commit.result.reviewedOutcome.status === "failure") {
+      const failures = after?.session.deathFail ?? deathFail;
+      message =
+        failures >= DEATH_FAIL_LIMIT
+          ? t("deathSaves.dead")
+          : t("combat.deathSaveFailToast", { n: entered, f: failures });
+    } else {
+      const successes = after?.session.deathSucc ?? deathSucc;
+      message =
+        successes >= 3
+          ? t("combat.deathSaveStableToast", { n: entered })
+          : t("combat.deathSaveSuccessToast", { n: entered, s: successes });
     }
-    registerUndoableResult(
-      { message },
-      () => restoreHpSnapshot(prev),
-      () => applyDeathSave(face)
-    );
+    registerUndoableResult({ message }, commit.undo, () => applyDeathSave(enteredFaces));
   }
 
   return {

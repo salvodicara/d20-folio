@@ -47,28 +47,19 @@ import type {
   CustomFeature,
   CharacterTag,
   CharacterLore,
-  LogEntry,
   PortraitCrop,
   InitiativeAdvantageOverride,
 } from "@/types/character";
-import type {
-  SpellSchool,
-  DamageType,
-  Recovery,
-  AbilityCode,
-  TrackerUnit,
-} from "@/data/types";
+import type { SpellSchool, Recovery, AbilityCode, TrackerUnit } from "@/data/types";
 import { TRACKER_UNITS } from "@/data/types";
+import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 import {
   minimizeCharacter,
   rehydrateCharacter,
   type MinimalCharacter,
 } from "./character-minimal";
 import { sanitizeSession } from "./sanitize-session";
-import {
-  normalizeStoredConcentration,
-  normalizeLogEntryConcentration,
-} from "./concentration";
+import { normalizeLogEntryConcentration } from "./concentration";
 import {
   conformStoredFeatures,
   remapSessionTrackerIds,
@@ -84,8 +75,13 @@ import {
 } from "@/data/srd-names";
 import { alignmentIdByLabel, asAlignmentId } from "@/lib/lore-utils";
 import { nonEmptyString, assertNonEmptyString } from "@/lib/non-empty-string";
-import { FAMILIAR_CREATURE_TYPES, type FamiliarCreatureType } from "@/lib/familiar-ids";
 import { enToProficiencyToken } from "@/data/proficiency-vocab";
+import { isItemInstanceId, parseItemResources } from "@/lib/item-resources";
+import {
+  sessionToState,
+  stateToSession,
+  type CompactSessionState,
+} from "@/lib/session-state-codec";
 
 // ─── Primitive validators ───────────────────────────────────────────────────
 
@@ -107,23 +103,8 @@ export function isSpellSchool(val: unknown): val is SpellSchool {
   return typeof val === "string" && (SPELL_SCHOOLS as string[]).includes(val);
 }
 
-const DAMAGE_TYPES: DamageType[] = [
-  "acid",
-  "bludgeoning",
-  "cold",
-  "fire",
-  "force",
-  "lightning",
-  "necrotic",
-  "piercing",
-  "poison",
-  "psychic",
-  "radiant",
-  "slashing",
-  "thunder",
-];
 export function isDamageType(val: unknown): val is DamageType {
-  return typeof val === "string" && (DAMAGE_TYPES as string[]).includes(val);
+  return typeof val === "string" && (DAMAGE_TYPES as readonly string[]).includes(val);
 }
 
 const RECOVERIES: Recovery[] = [
@@ -251,6 +232,7 @@ function parseSrdWeaponRef(obj: Record<string, unknown>): SrdWeaponRef | null {
 function parseSrdEquipmentRef(obj: Record<string, unknown>): SrdEquipmentRef | null {
   if (typeof obj.srdId !== "string") return null;
   const ref: SrdEquipmentRef = { srdId: obj.srdId };
+  if (isItemInstanceId(obj.instanceId)) ref.instanceId = obj.instanceId;
   if (typeof obj.notes === "string") ref.notes = obj.notes;
   if (typeof obj.equipped === "boolean") ref.equipped = obj.equipped;
   if (typeof obj.tracked === "boolean") ref.tracked = obj.tracked;
@@ -521,11 +503,6 @@ function isNonEmptyArray(v: unknown): v is unknown[] {
 function isNonEmptyRecord(v: unknown): v is Record<string, unknown> {
   return isRecord(v) && Object.keys(v).length > 0;
 }
-function isFamiliarCreatureType(v: unknown): v is FamiliarCreatureType {
-  return (
-    typeof v === "string" && (FAMILIAR_CREATURE_TYPES as readonly string[]).includes(v)
-  );
-}
 function asString(v: unknown): string {
   return typeof v === "string" ? v : "";
 }
@@ -534,10 +511,6 @@ function stringArray(v: unknown): string[] {
     ? v.filter((item): item is string => typeof item === "string")
     : [];
 }
-function numOr(v: unknown, fallback: number): number {
-  return typeof v === "number" && Number.isFinite(v) ? v : fallback;
-}
-
 // ── build reshape (minimal flat record ⇄ id-based `build`) ────────────────────
 
 /**
@@ -930,272 +903,6 @@ function parseEquipment(raw: unknown): Array<SrdEquipmentRef | CustomEquipment> 
   return out;
 }
 
-// ── state reshape (session ⇄ minimal `state`) ────────────────────────────────
-
-type CompactTrackerState = number | { used?: number; rolls: Array<number | null> };
-
-function recordedRolls(value: unknown): Array<number | null> {
-  if (!Array.isArray(value)) return [];
-  return (value as unknown[]).map((roll) =>
-    roll === null || (typeof roll === "number" && Number.isFinite(roll)) ? roll : null
-  );
-}
-
-/** Keep ordinary counters compact while preserving optional table-recorded rolls. */
-function flattenUsed(map: unknown): Record<string, CompactTrackerState> {
-  const out: Record<string, CompactTrackerState> = {};
-  if (!isRecord(map)) return out;
-  for (const [k, v] of Object.entries(map)) {
-    const used = isRecord(v) && typeof v.used === "number" ? v.used : 0;
-    const validRolls = recordedRolls(isRecord(v) ? v.rolls : undefined);
-    if (validRolls.some((roll) => typeof roll === "number")) {
-      out[k] = { ...(used > 0 ? { used } : {}), rolls: validRolls };
-    } else if (used > 0) {
-      out[k] = used;
-    }
-  }
-  return out;
-}
-
-/** Expand compact numeric counters and additive recorded-roll entries. */
-function expandUsed(
-  map: unknown
-): Record<string, { used: number; rolls?: Array<number | null> }> {
-  const out: Record<string, { used: number; rolls?: Array<number | null> }> = {};
-  if (!isRecord(map)) return out;
-  for (const [k, v] of Object.entries(map)) {
-    if (typeof v === "number") out[k] = { used: v };
-    else if (isRecord(v) && Array.isArray(v.rolls)) {
-      out[k] = {
-        used: numOr(v.used, 0),
-        rolls: recordedRolls(v.rolls),
-      };
-    }
-  }
-  return out;
-}
-
-const COIN_KEYS = ["pp", "gp", "ep", "sp", "cp"] as const;
-
-function logToState(e: LogEntry): Record<string, unknown> {
-  // Events-as-data: the entry stores a STRUCTURED `event` (ids + numbers), not a
-  // localized line — so the exported/synced log is locale-independent and the
-  // presenter localizes at render. `event` is JSON-serializable (a discriminated
-  // union of primitives), so it round-trips verbatim.
-  return { event: e.event, ts: e.ts, id: e.id };
-}
-
-/** Reshape a sanitized session into the minimal, non-default-only `state`. */
-function sessionToState(s: SessionState): Record<string, unknown> {
-  const state: Record<string, unknown> = {};
-
-  const hp: Record<string, number> = {};
-  if (s.hp.current !== 0) hp.current = s.hp.current;
-  if (s.hp.temp !== 0) hp.temp = s.hp.temp;
-  if (Object.keys(hp).length > 0) state.hp = hp;
-
-  if (s.hitDice.used !== 0) state.usedHitDice = s.hitDice.used;
-
-  const trackers = flattenUsed(s.trackers);
-  if (Object.keys(trackers).length > 0) state.trackers = trackers;
-
-  const usedSlots = flattenUsed(s.spellSlots);
-  if (Object.keys(usedSlots).length > 0) state.usedSlots = usedSlots;
-
-  const currency: Record<string, number> = {};
-  for (const coin of COIN_KEYS) {
-    if (s.currency[coin] !== 0) currency[coin] = s.currency[coin];
-  }
-  if (Object.keys(currency).length > 0) state.currency = currency;
-
-  if (s.concentration !== "") state.concentration = s.concentration;
-  if (s.concentration !== "" && s.concentrationCastLevel !== undefined)
-    state.concentrationCastLevel = s.concentrationCastLevel;
-  if (s.initiative !== "") state.initiative = s.initiative;
-  if (s.conditions.length > 0) state.conditions = s.conditions;
-  if (s.concentrationConditions?.length)
-    state.concentrationConditions = s.concentrationConditions;
-  // RA-12 — the Hide action's find-DC (meaningful only alongside `invisible`).
-  if (typeof s.hiddenDc === "number") state.hiddenDc = s.hiddenDc;
-  if (s.deathSucc !== 0) state.deathSucc = s.deathSucc;
-  if (s.deathFail !== 0) state.deathFail = s.deathFail;
-  if (s.inspiration) state.inspiration = true;
-  if (s.exhaustion !== 0) state.exhaustion = s.exhaustion;
-  if (s.pinnedActions.length > 0) state.pinnedActions = s.pinnedActions;
-  if (s.unpinnedActions && s.unpinnedActions.length > 0)
-    state.unpinnedActions = s.unpinnedActions;
-  if (s.notes !== "") state.notes = s.notes;
-  if (s.logEntries.length > 0) state.log = s.logEntries.map(logToState);
-
-  if (isNonEmptyArray(s.activeFeatures)) state.activeFeatures = s.activeFeatures;
-  if (isNonEmptyRecord(s.activeSpellCastLevels))
-    state.activeSpellCastLevels = s.activeSpellCastLevels;
-  if (isNonEmptyRecord(s.effectTimers)) state.effectTimers = s.effectTimers;
-  if (isNonEmptyRecord(s.effectBoundaries)) state.effectBoundaries = s.effectBoundaries;
-  if (isNonEmptyRecord(s.grantBundleChoices))
-    state.grantBundleChoices = s.grantBundleChoices;
-  if (isNonEmptyRecord(s.companionHp)) state.companionHp = s.companionHp;
-  // Companion variant pick (Beast Master) + the Find Familiar summon — absent on
-  // every non–companion doc, so the envelope stays byte-identical (ADDITIVE-only).
-  if (isNonEmptyRecord(s.companionVariant)) state.companionVariant = s.companionVariant;
-  if (s.familiar) state.familiar = s.familiar;
-  if (isNonEmptyRecord(s.manifestedWeaponOverrides))
-    state.manifestedWeaponOverrides = s.manifestedWeaponOverrides;
-  if (isNonEmptyRecord(s.pactWeaponConfig)) state.pactWeaponConfig = s.pactWeaponConfig;
-  if (isNonEmptyRecord(s.pactWeaponRiderTypes))
-    state.pactWeaponRiderTypes = s.pactWeaponRiderTypes;
-  // S7 — the active Polymorph form (absent for every non-polymorph doc, so the
-  // envelope stays byte-identical; ADDITIVE-only).
-  if (s.polymorphForm) state.polymorphForm = s.polymorphForm;
-  if (isNonEmptyString(s.bardicInspirationDie))
-    state.bardicInspirationDie = s.bardicInspirationDie;
-
-  return state;
-}
-
-/** Reverse {@link sessionToState}: a `state` → a Partial the sanitizer completes. */
-function stateToSession(state: Record<string, unknown>): Partial<SessionState> {
-  const s: Partial<SessionState> = {};
-  const hp = isRecord(state.hp) ? state.hp : {};
-  // One-way read-normalization (golden rule 10): a not-yet-migrated doc may carry a
-  // legacy `hp.aidBonus` — SUPERSEDED by the Aid `while-active` hp-flat grant. Silently
-  // DROP it (don't read it into state, don't write it back); the Aid toggle now adds the
-  // HP, so carrying it would DOUBLE-COUNT (aidBonus:5 + the toggle = +10).
-  s.hp = {
-    current: numOr(hp.current, 0),
-    temp: numOr(hp.temp, 0),
-  };
-  s.hitDice = { used: numOr(state.usedHitDice, 0) };
-  s.trackers = expandUsed(state.trackers);
-  s.spellSlots = expandUsed(state.usedSlots);
-  const currency = isRecord(state.currency) ? state.currency : {};
-  s.currency = {
-    pp: numOr(currency.pp, 0),
-    gp: numOr(currency.gp, 0),
-    ep: numOr(currency.ep, 0),
-    sp: numOr(currency.sp, 0),
-    cp: numOr(currency.cp, 0),
-  };
-  // One-way boundary normalization (golden rule 10): the SOLO round moved from
-  // `session.round` (parent doc) to the `combat/state` subdoc. A legacy export / stored
-  // doc may still carry `state.round`; it is READ-AND-DROPPED here (never written back —
-  // the writer no longer emits it, the migration copies it into the subdoc). Nothing on
-  // the in-memory session carries the round anymore; the turn engine (`combatStore`) owns it.
-  // Boundary read-normalization (golden rule 10): a legacy bare NAME (or any non-id,
-  // non-`custom:` value) is conformed so it can never reach the strict resolver.
-  s.concentration = normalizeStoredConcentration(state.concentration);
-  if (
-    s.concentration &&
-    typeof state.concentrationCastLevel === "number" &&
-    Number.isFinite(state.concentrationCastLevel) &&
-    state.concentrationCastLevel > 0
-  ) {
-    s.concentrationCastLevel = Math.round(state.concentrationCastLevel);
-  }
-  s.initiative = asString(state.initiative);
-  s.conditions = stringArray(state.conditions);
-  if (Array.isArray(state.concentrationConditions))
-    s.concentrationConditions = stringArray(state.concentrationConditions);
-  // RA-12 — the Hide action's find-DC.
-  if (typeof state.hiddenDc === "number") s.hiddenDc = state.hiddenDc;
-  s.deathSucc = numOr(state.deathSucc, 0);
-  s.deathFail = numOr(state.deathFail, 0);
-  s.inspiration = state.inspiration === true;
-  s.exhaustion = numOr(state.exhaustion, 0);
-  s.pinnedActions = stringArray(state.pinnedActions);
-  if (Array.isArray(state.unpinnedActions)) {
-    s.unpinnedActions = stringArray(state.unpinnedActions);
-  }
-  s.notes = asString(state.notes);
-  // `log` carries current-shape entries; the sanitizer normalizes + validates them.
-  if (Array.isArray(state.log)) {
-    s.logEntries = state.log.filter(isRecord) as unknown as LogEntry[];
-  }
-  if (isRecord(state.grantBundleChoices)) {
-    s.grantBundleChoices = state.grantBundleChoices as Record<string, string>;
-  }
-  if (Array.isArray(state.activeFeatures)) {
-    s.activeFeatures = stringArray(state.activeFeatures);
-  }
-  if (isRecord(state.activeSpellCastLevels)) {
-    s.activeSpellCastLevels = Object.fromEntries(
-      Object.entries(state.activeSpellCastLevels).flatMap(([key, value]) =>
-        typeof value === "number" && Number.isFinite(value) && value > 0
-          ? [[key, Math.round(value)]]
-          : []
-      )
-    );
-  }
-  if (isRecord(state.effectTimers)) {
-    const timers: Record<string, { roundsLeft: number }> = {};
-    for (const [key, val] of Object.entries(state.effectTimers)) {
-      if (isRecord(val) && typeof val.roundsLeft === "number") {
-        timers[key] = { roundsLeft: val.roundsLeft };
-      }
-    }
-    if (Object.keys(timers).length > 0) s.effectTimers = timers;
-  }
-  if (isRecord(state.effectBoundaries)) {
-    const boundaries: NonNullable<SessionState["effectBoundaries"]> = {};
-    for (const [key, value] of Object.entries(state.effectBoundaries)) {
-      if (
-        isRecord(value) &&
-        typeof value.round === "number" &&
-        Number.isFinite(value.round) &&
-        value.round >= 1 &&
-        (value.phase === "turn-start" || value.phase === "turn-end")
-      ) {
-        boundaries[key] = { round: Math.round(value.round), phase: value.phase };
-      }
-    }
-    if (Object.keys(boundaries).length > 0) s.effectBoundaries = boundaries;
-  }
-  if (isRecord(state.companionHp)) {
-    s.companionHp = state.companionHp as SessionState["companionHp"];
-  }
-  if (isRecord(state.companionVariant)) {
-    s.companionVariant = state.companionVariant as SessionState["companionVariant"];
-  }
-  // The Find Familiar summon — shape-validated at this untrusted-input boundary (the
-  // polymorphForm precedent): `monsterId` must be a string, `creatureType` in the
-  // closed swap set. A stale/pack-only `monsterId` is KEPT (degrades quietly at
-  // render — the encounter stale-`srdId` precedent); only a MALFORMED record drops.
-  if (
-    isRecord(state.familiar) &&
-    typeof state.familiar.monsterId === "string" &&
-    isFamiliarCreatureType(state.familiar.creatureType)
-  ) {
-    s.familiar = {
-      monsterId: state.familiar.monsterId,
-      creatureType: state.familiar.creatureType,
-      ...(state.familiar.dismissed === true ? { dismissed: true } : {}),
-    };
-  }
-  if (isRecord(state.manifestedWeaponOverrides)) {
-    s.manifestedWeaponOverrides =
-      state.manifestedWeaponOverrides as SessionState["manifestedWeaponOverrides"];
-  }
-  if (isRecord(state.pactWeaponConfig)) {
-    s.pactWeaponConfig = state.pactWeaponConfig as SessionState["pactWeaponConfig"];
-  }
-  if (isRecord(state.pactWeaponRiderTypes)) {
-    s.pactWeaponRiderTypes =
-      state.pactWeaponRiderTypes as SessionState["pactWeaponRiderTypes"];
-  }
-  if (
-    isRecord(state.polymorphForm) &&
-    typeof state.polymorphForm.beastId === "string" &&
-    typeof state.polymorphForm.spellId === "string" &&
-    isRecord(state.polymorphForm.prior)
-  ) {
-    s.polymorphForm = state.polymorphForm as unknown as SessionState["polymorphForm"];
-  }
-  if (isNonEmptyString(state.bardicInspirationDie)) {
-    s.bardicInspirationDie = state.bardicInspirationDie;
-  }
-  return s;
-}
-
 // ── public codec ─────────────────────────────────────────────────────────────
 
 /** The codec envelope (the persisted/exported character core): `{ schema, build,
@@ -1206,7 +913,7 @@ function stateToSession(state: Record<string, unknown>): Partial<SessionState> {
 export interface CharacterEnvelope {
   schema: number;
   build: Record<string, unknown>;
-  state: Record<string, unknown>;
+  state: CompactSessionState;
 }
 
 /**
@@ -1299,6 +1006,9 @@ export function parseCharacterEnvelope(
   build: Record<string, unknown>,
   state: Record<string, unknown>
 ): ParsedEnvelope {
+  if (!parseItemResources(state.itemResources).ok) {
+    return { ok: false, error: "invalid-item-resources" };
+  }
   const min = buildToMin(build);
   const character = rehydrateCharacter(min);
   const validation = validateCharacterData(character);

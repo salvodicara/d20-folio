@@ -57,6 +57,7 @@ export function monsterDamageDefenses(
         vulnerabilities: new Set(defenses.damageVulnerabilities ?? []),
         sourceResistances: new Set(),
         flatReductions: [],
+        saveDamageRules: [],
       }
     : undefined;
 }
@@ -100,7 +101,7 @@ export interface PcLive {
 export interface EncounterCombatantView {
   id: string;
   kind: "pc" | "monster";
-  /** Explicit table allegiance; older/test view rows fall back from kind. */
+  /** Explicit table allegiance; omission derives the canonical side from kind. */
   side?: "ally" | "enemy";
   name: string;
   ac: number;
@@ -115,13 +116,13 @@ export interface EncounterCombatantView {
   bardicInspirationDie?: string;
   heroicInspiration?: boolean;
   deathSaves?: { successes: number; failures: number };
-  /** PC: live current HP. Monster: summed token HP. */
+  /** Current HP from the owning play-state document. */
   currentHp: number;
-  /** PC: effective max HP. Monster: `maxHp × tokenCount`. */
+  /** Effective maximum HP from the owning play-state document. */
   maxHp: number;
-  /** PC: live temp HP. Monster: 0 (temp HP is a PC concept). */
+  /** Current Temporary HP from the owning play-state document. */
   tempHp: number;
-  /** Fully down/defeated (PC at 0 HP; monster all tokens dead). */
+  /** Fully down/defeated at 0 current HP. */
   down: boolean;
   /** The DM-only ambush flag (always false in a non-DM view — those rows are filtered). */
   hidden: boolean;
@@ -140,7 +141,6 @@ export interface EncounterCombatantView {
   // ── Monster state (present on `kind === "monster"`) ──
   srdId?: string;
   creatureType?: CreatureType;
-  tokens?: number[];
 }
 
 export interface EncounterView {
@@ -212,7 +212,6 @@ export function buildEncounterView(
         sourceConditionImmunities: live?.sourceConditionImmunities,
       });
     } else {
-      const currentHp = c.tokens.reduce((sum, hp) => sum + hp, 0);
       allRows.push({
         id: c.id,
         kind: "monster",
@@ -223,16 +222,15 @@ export function buildEncounterView(
         conditions: [...new Set([...c.conditions, ...projectedConditions])],
         bardicInspirationDie: c.bardicInspirationDie,
         heroicInspiration: c.heroicInspiration,
-        currentHp,
-        maxHp: c.maxHp * c.tokens.length,
-        tempHp: c.tempHp ?? 0,
+        currentHp: c.hp.current,
+        maxHp: c.hp.max,
+        tempHp: c.hp.temp,
         down: isDown(c),
         hidden: c.hidden ?? false,
         srdId: c.srdId,
         creatureType: c.creatureType,
         portraitUrl: c.portraitUrl ?? null,
         portraitCrop: c.portraitCrop ?? null,
-        tokens: c.tokens,
         defenses: monsterDamageDefenses(c.defenses),
         conditionImmunities: c.defenses?.conditionImmunities
           ? new Set(
@@ -300,9 +298,9 @@ export interface EncounterBudgetView {
   pendingPcs: number;
   /** PC characters counted into the budget (resolved live docs). */
   partySize: number;
-  /** SRD Step 3: Σ (xp × token count) over the costed monster groups. */
+  /** SRD Step 3: sum of XP over costed enemy creatures. */
   costedXp: number;
-  /** Monster groups with no XP (a stat-less custom monster, a pre-feature doc) — the
+  /** Enemy creatures with no XP (a stat-less custom monster) — the
    *  readout reports these as an un-costed floor, never guesses them. */
   uncostedGroups: number;
   /** null while budget is null, pendingPcs > 0, or no monster is costed yet. */
@@ -313,15 +311,15 @@ export interface EncounterBudgetView {
  * Build the DM XP-budget view-model.
  *
  * @param encounter   the campaign-doc structure (PC references + monster state,
- *                    each monster carrying its seeded `xp` + `tokens`).
+ *                    each monster carrying its seeded `xp`).
  * @param pcLiveById  the merged live facts per PC combatant id — the PC LEVEL sum
  *                    reads `PcLive.classes` (threaded from the member's live doc by
  *                    `derivePcLive`); `undefined` classes = that PC is still pending.
  *
- * Monster groups: HIDDEN ambush monsters and DEFEATED monsters BOTH count — the
+ * Monsters: HIDDEN ambush monsters and DEFEATED monsters BOTH count — the
  * readout is a DM-only planning number that grades the encounter AS BUILT (SRD Step
- * 3), not a live "remaining threat" meter, so it stays stable mid-fight. Group count
- * is `tokens.length` (Goblin ×3 = 3 × xp).
+ * 3), not a live "remaining threat" meter, so it stays stable mid-fight. A batch of
+ * three goblins is already represented by three independently costed combatants.
  */
 export function buildBudgetView(
   encounter: EncounterState,
@@ -329,21 +327,21 @@ export function buildBudgetView(
 ): EncounterBudgetView {
   const levels: number[] = [];
   let pendingPcs = 0;
-  const monsterGroups: { xp?: number; count: number }[] = [];
+  const enemyCosts: { xp?: number; count: 1 }[] = [];
   for (const c of encounter.combatants) {
     if (c.kind === "pc") {
       const classes = pcLiveById[c.id]?.classes;
       if (classes === undefined) pendingPcs += 1;
       else levels.push(totalLevel({ classes }));
     } else if ((c.side ?? "enemy") === "enemy") {
-      monsterGroups.push({ xp: c.xp, count: c.tokens.length });
+      enemyCosts.push({ xp: c.xp, count: 1 });
     }
   }
   const budget = partyXpBudget(levels);
-  const { costedXp, uncostedGroups } = encounterXpCost(monsterGroups);
-  const costedGroups = monsterGroups.length - uncostedGroups;
+  const { costedXp, uncostedGroups } = encounterXpCost(enemyCosts);
+  const costedCreatures = enemyCosts.length - uncostedGroups;
   const verdict =
-    budget !== null && pendingPcs === 0 && costedGroups > 0
+    budget !== null && pendingPcs === 0 && costedCreatures > 0
       ? budgetVerdict(costedXp, budget)
       : null;
   return {

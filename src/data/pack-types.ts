@@ -54,3 +54,15 @@ export type PackLazySrdLoader = (
   locale: Locale,
   kind: LazySrdKind
 ) => Promise<SrdCatalogue | undefined>;
+
+/**
+ * Typed mechanical additions to an existing public grant source.
+ *
+ * Keys are canonical source addresses owned by the public data module
+ * (`race:<raceId>:<traitId>`, `invocation:<invocationId>`, …). Values are normal
+ * declarative grants: the pack may restore licensed mechanics without replacing
+ * the public entity or hiding rules in an i18n prose overlay.
+ */
+export type PackGrantExtensions = Readonly<
+  Record<string, ReadonlyArray<import("@/lib/grants").Grant>>
+>;

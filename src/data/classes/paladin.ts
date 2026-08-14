@@ -269,9 +269,17 @@ export const PALADIN_FEATURES: SrdClassFeatureData[] = [
     id: "paladin-aura-of-protection",
     class: "paladin",
     level: 6,
-    // The aura is always active, so the paladin always adds max(CHA mod, 1) to
-    // every save (the allies-in-aura half is a Phase-2 party feature).
-    grants: [{ type: "save-bonus", ability: "CHA", min: 1 }],
+    // The allies-in-aura half is a party-position fact. The self bonus is
+    // deterministic, except that the aura is inactive while Incapacitated;
+    // Unconscious is listed too because nested conditions remain separate ids.
+    grants: [
+      {
+        type: "save-bonus",
+        ability: "CHA",
+        min: 1,
+        suppressedByConditions: ["incapacitated", "unconscious"],
+      },
+    ],
     source: "SRD",
   },
   {

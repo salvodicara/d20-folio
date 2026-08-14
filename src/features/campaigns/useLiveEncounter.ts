@@ -101,11 +101,12 @@ export function useLiveEncounter(
       if (st?.status === "ready") {
         // The roll comes off the campaign's `encounterInit` table (the initiative
         // SSOT) — the SAME live campaign doc this hook already subscribes to.
-        out[`pc-${ref.uid}`] = derivePcLive(
+        const live = derivePcLive(
           st.doc,
-          combatStates[ref.uid] ?? null,
+          combatStates[ref.uid],
           encounterRollFor(encounterInit, ref.uid)
         );
+        if (live) out[`pc-${ref.uid}`] = live;
       }
     }
     return out;

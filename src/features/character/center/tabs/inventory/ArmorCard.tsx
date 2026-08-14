@@ -23,10 +23,13 @@ import { chipText } from "@/lib/views/combat-action-view";
 import { formatArmorAcValue } from "@/lib/armor-display";
 import type { Locale } from "@/lib/locale";
 import type { ItemRowVM } from "@/lib/views/inventory-view";
+import type { ItemResourceVM } from "@/lib/views/item-resource-view";
 import { QuantityEditor } from "./QuantityEditor";
 import { ChargeUse } from "./ChargeUse";
 import { itemSeal } from "./item-seal";
 import type { ItemFieldValue } from "./WeaponCard";
+import { inventoryItemDisplayName } from "./inventory-card-helpers";
+import { itemResourceCardFragment } from "./item-resource-card-fragment";
 
 export interface ArmorCardCallbacks {
   onToggle: (id: string, open: boolean) => void;
@@ -35,6 +38,7 @@ export interface ArmorCardCallbacks {
   onToggleEquip: (idx: number) => void;
   onToggleAttune: (idx: number) => void;
   onSpendCharge: (vm: ItemRowVM) => void;
+  onSpendResource: (vm: ItemRowVM, resource: ItemResourceVM) => void;
 }
 
 export interface ArmorCardProps extends ArmorCardCallbacks {
@@ -57,10 +61,23 @@ export const ArmorCard = memo(function ArmorCard({
   onToggleEquip,
   onToggleAttune,
   onSpendCharge,
+  onSpendResource,
 }: ArmorCardProps) {
   const { t } = useTranslation();
+  const displayName = inventoryItemDisplayName(vm, t);
+  const {
+    unavailable: resourceUnavailable,
+    facts: resourceFacts,
+    controls: resourceControls,
+  } = itemResourceCardFragment({
+    resources: vm.resources,
+    isPlay,
+    onSpend: (resource) => onSpendResource(vm, resource),
+    t,
+  });
 
   const glossParts: string[] = [];
+  if (resourceUnavailable) glossParts.push(t("magicItems.resourceUnavailable"));
   if (vm.stealthDisadvantage) glossParts.push(t("equipment.stealthDisadvantage"));
   if (vm.unproficientArmor) glossParts.push(t("equipment.unproficient"));
 
@@ -95,6 +112,7 @@ export const ArmorCard = memo(function ArmorCard({
           icon: Zap,
         }
       : { label: "", value: undefined },
+    ...resourceFacts,
     vm.weight > 0
       ? {
           label: t("equipment.weight"),
@@ -116,13 +134,13 @@ export const ArmorCard = memo(function ArmorCard({
       kind="armor"
       sealIcon={itemSeal(vm)}
       slot="free"
-      name={vm.name}
+      name={displayName}
       quantity={vm.quantity}
       gloss={glossParts.join(" · ")}
       verdict={verdict}
       verdictOutcome="physical"
-      magical={vm.magicItemType != null}
-      active={vm.equipped}
+      magical={vm.magicItemType != null && !resourceUnavailable}
+      active={vm.equipped && !resourceUnavailable}
       isEdit={isEdit}
       open={expanded}
       onOpenChange={(o) => onToggle(vm.id, o)}
@@ -139,6 +157,7 @@ export const ArmorCard = memo(function ArmorCard({
               useTitle={t("equipment.useCharge")}
             />
           )}
+          {resourceControls}
           <Button
             size="sm"
             variant={vm.equipped ? "primary" : "secondary"}

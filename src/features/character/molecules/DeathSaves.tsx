@@ -44,13 +44,17 @@ export function DeathSaves() {
   const charData = character?.character;
   const activeFeatures = character?.session.activeFeatures;
   const grantBundleChoices = character?.session.grantBundleChoices;
+  const itemResources = character?.session.itemResources;
   const critAt = useMemo(
     () =>
       charData
-        ? aggregateCharacterGrants(charData, { activeFeatures, grantBundleChoices })
-            .deathSaveCritThreshold
+        ? aggregateCharacterGrants(charData, {
+            activeFeatures,
+            grantBundleChoices,
+            itemResources,
+          }).deathSaveCritThreshold
         : DEFAULT_DEATH_SAVE_CRIT,
-    [charData, activeFeatures, grantBundleChoices]
+    [charData, activeFeatures, grantBundleChoices, itemResources]
   );
 
   if (!character) return null;

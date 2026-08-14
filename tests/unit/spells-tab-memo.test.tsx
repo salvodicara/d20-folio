@@ -26,6 +26,7 @@ vi.mock("@/lib/resolve-spell-ability", async (importOriginal) => {
 });
 
 import { SpellsTab } from "@/features/character/center/tabs/SpellsTab";
+import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { resolveSpellAbility } from "@/lib/resolve-spell-ability";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -50,7 +51,9 @@ describe("SpellsTab — search keystroke does not re-render still-visible cards 
   it("typing a query that keeps spells visible re-renders ZERO of the visible cards", () => {
     render(
       <MemoryRouter>
-        <SpellsTab />
+        <TurnEconomyProvider>
+          <SpellsTab />
+        </TurnEconomyProvider>
       </MemoryRouter>
     );
     // Sanity: the mock's 16 spells each rendered a card → the counter fired.

@@ -33,10 +33,14 @@
  *    in-memory reader, so the parent-doc mirror was pure duplication (rule 6/10).
  */
 import type { SessionState } from "@/types/character";
+import type { CombatEffectLifecycleRuntime } from "@/lib/combat-effect-lifecycle";
 import type { LocText } from "@/lib/loc-text";
 import type { EconomyActionCategory } from "@/lib/combat-economy";
-import type { ActiveCombatEffect } from "@/types/combat-effect";
+import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
+import type { ConcentrationRef } from "@/types/ids";
+import type { PersistedPlayStateV1 } from "@/lib/session-state-codec";
+import type { ActionLifecycleRecord } from "@/lib/action-command";
 
 /**
  * A player-DECLARED attack in a live campaign encounter — the target(s) the player
@@ -139,13 +143,39 @@ export interface PersistedTurnEconomy {
   movementUsedFt: number;
   dashesThisTurn: number;
   spellSlotCastsThisTurn: number;
+  /** Additive global-turn identity for the hard one-slot-expenditure gate. A
+   * legacy snapshot without it binds a non-zero count to this snapshot's `key`. */
+  spellSlotCastTurnKey?: string | null;
   damageTakenThisRound: boolean;
   /** Optional for additive compatibility with turn snapshots written before this field. */
   nextAttackAdvantage?: boolean;
   movementLocked?: boolean;
 }
 
+/**
+ * One unresolved Constitution save caused by one distinct damage instance while
+ * concentrating. It deliberately stores only the trigger facts: the character's
+ * modifier, Exhaustion, and Advantage/Disadvantage are re-resolved from the live
+ * character at commit time through the universal entered-D20 kernel.
+ */
+export interface PendingConcentrationSave {
+  /** Unique command identity. Separate hits always receive separate ids. */
+  id: string;
+  /** Exact stable spell ref held when this damage instance landed. */
+  spell: ConcentrationRef;
+  /** Total damage taken by this instance, including Temporary Hit Points. */
+  damage: number;
+  /** Capped Concentration DC derived from {@link damage}. */
+  difficultyClass: number;
+}
+
 export interface CombatState {
+  /** Whole-document CAS revision for the outer ActionCommand adapter. */
+  actionRevision?: number;
+  /** Exact last committed command for this physical owner. */
+  actionHead?: string | null;
+  /** Bounded causal records for outer action undo/redo. */
+  actionLifecycles?: Readonly<Record<string, ActionLifecycleRecord>>;
   hp: { current: number; temp: number };
   conditions: string[];
   /** Held Bardic Inspiration die. Optional distinguishes a legacy subdoc from an
@@ -175,11 +205,25 @@ export interface CombatState {
   /** Source-owned effects applied to this character outside a campaign encounter.
    * They use the same occurrence model and lifetime algebra as shared encounters. */
   activeEffects?: ActiveCombatEffect[];
+  /** Append-only authored occurrence ledger for local combat, parallel to an
+   * encounter's `effectOps`. Program-owned effects are derived from this field. */
+  effectOps?: CombatEffectOp[];
+  /** Durable exact-occurrence program cursors for local combat. The collection is
+   * canonical, immutable, and lives only in this combat subdoc—not SessionState. */
+  effectLifecycles?: ReadonlyArray<CombatEffectLifecycleRuntime>;
   /** Idempotency receipt for PC-targeted effects delivered through the current
    * campaign encounter. A new encounter epoch replaces the receipt. */
   appliedEncounterEffects?: { epoch: number; ids: string[] };
   /** Current-turn economy, fenced by an exact encounter/solo turn key. */
   turnEconomy?: PersistedTurnEconomy;
+  /** FIFO of unresolved, per-authored-packet Concentration saves. Optional keeps combat docs
+   * written before this additive field backward-safe; absence means an empty queue. */
+  pendingConcentrationSaves?: PendingConcentrationSave[];
+  /**
+   * Versioned owner for every remaining mutable session fact. Optional only for
+   * combat documents written before the play-state ownership migration.
+   */
+  playState?: PersistedPlayStateV1;
 }
 
 /**

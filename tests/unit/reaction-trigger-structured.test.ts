@@ -118,7 +118,7 @@ function collectReactionRows(): ReactionRow[] {
 const ROWS = collectReactionRows();
 
 // Features whose RETIRED-parser output was WRONG — the mechanics audit
-// (M06 World Tree, M09 Chilling Retribution, M21 Beguiling Twist) found the prose
+// audit found the prose
 // parser mis-derived the trigger (each matched the generic "saving throw" pattern
 // and emitted "ally fails save"). Their structured token now intentionally
 // CORRECTS the parser rather than reproducing it, so the equivalence check asserts
@@ -129,6 +129,8 @@ const CORRECTED_TRIGGERS: Record<string, string> = {
   "ranger-fey-wanderer-beguiling-twist": "creature resists charm or fear",
   "ranger-winter-walker-chilling-retribution": "take damage",
   "monk-deflect-attacks": "an attack hits you",
+  "rogue-uncanny-dodge": "an attack hits you",
+  "shield-master": "you succeed on a Dexterity save for half damage",
 };
 
 describe("structured reaction trigger — equivalence with the retired parser", () => {

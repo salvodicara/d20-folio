@@ -317,4 +317,19 @@ describe("HeaderHpControl — dying (0 HP)", () => {
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
     useCharacterStore.setState({ readonly: false });
   });
+
+  it("disables every ordinary HP mutation after death", () => {
+    load({
+      hp: { ...MOCK_CHARACTER.session.hp, current: 0 },
+      deathFail: 3,
+    });
+    render(<HeaderHpControl />);
+    fireEvent.click(screen.getByRole("button", { name: /hit points/i }));
+
+    expect(screen.getByLabelText(/amount of damage/i)).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^damage$/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^heal$/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^temp$/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /clear.*temp/i })).toBeDisabled();
+  });
 });

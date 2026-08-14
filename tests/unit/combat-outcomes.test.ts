@@ -7,10 +7,7 @@ import {
 } from "@/lib/combat-outcomes";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 
-const target = (combatantId: string, tokenIndex?: number) => ({
-  combatantId,
-  ...(tokenIndex !== undefined ? { tokenIndex } : {}),
-});
+const target = (combatantId: string) => ({ combatantId });
 
 describe("combat outcome receipts", () => {
   it("compiles per-instance, per-target attack and save facts", () => {
@@ -19,7 +16,7 @@ describe("combat outcome receipts", () => {
       actionId: "scorching-rays",
       targets: [
         {
-          target: target("monster-1", 0),
+          target: target("monster-1"),
           attack: { attempts: 2, hits: 1 },
         },
         {
@@ -41,13 +38,13 @@ describe("combat outcome receipts", () => {
       {
         instance: null,
         count: 1,
-        target: target("monster-1", 0),
+        target: target("monster-1"),
         fact: { kind: "attack", result: "hit" },
       },
       {
         instance: null,
         count: 1,
-        target: target("monster-1", 0),
+        target: target("monster-1"),
         fact: { kind: "attack", result: "miss" },
       },
       {
@@ -180,6 +177,15 @@ describe("combat outcome receipts", () => {
       actionId: "a",
       instance: -1,
       target: target("x"),
+      fact: { kind: "attack", result: "hit" },
+    },
+    {
+      id: "1",
+      occurrenceId: "x",
+      actionId: "a",
+      instance: 0,
+      count: 1,
+      target: { combatantId: "x", unexpectedIdentityPart: 0 },
       fact: { kind: "attack", result: "hit" },
     },
     {

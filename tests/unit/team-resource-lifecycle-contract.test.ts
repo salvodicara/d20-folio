@@ -20,9 +20,16 @@ function liveFixture(name: (typeof TEAM)[number]): CharacterDoc {
     readFileSync(join(process.cwd(), "content-pack/fixtures/team", name), "utf8")
   );
   if (!imported.success) throw new Error(imported.error);
+  // Portable fixtures ship without the combat trio; the real app hydrates a
+  // full-HP subdoc at load, so the contract mirrors that here (a 0-HP doc
+  // cannot rest, by rule).
   return {
     ...imported.doc,
     id: name,
+    session: {
+      ...imported.doc.session,
+      hp: { ...imported.doc.session.hp, current: 1 },
+    },
     createdAt: new Date("2026-08-04"),
     updatedAt: new Date("2026-08-04"),
   };

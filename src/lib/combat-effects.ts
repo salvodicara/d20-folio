@@ -5,6 +5,7 @@ import type {
   CombatantRef,
   CombatEffectOp,
   EncounterPosition,
+  ProgramEffectOwner,
 } from "@/types/combat-effect";
 import {
   resolveCombatEffectGrantGroup,
@@ -12,7 +13,9 @@ import {
 } from "@/lib/resolve-grant-sources";
 import type { Grant } from "@/lib/grants";
 import { resolveDamageIntake, type DamageDefenses } from "@/lib/damage-intake";
-import type { DamageSource, DamageType } from "@/data/types";
+import type { DamageSource } from "@/data/types";
+import type { DamageType } from "@/types/damage";
+import { conformCombatEffectOp } from "@/lib/combat-effect-io";
 
 function scaledFlatAmount(
   amount: number,
@@ -24,29 +27,63 @@ function scaledFlatAmount(
   return amount + Math.max(0, level - scaling.baseLevel) * scaling.perLevel;
 }
 
+function combatantStackingKey(ref: CombatantRef): string {
+  return ref.kind === "monster"
+    ? [ref.kind, ref.combatantId].join("\u0000")
+    : [ref.kind, ref.combatantId, ref.memberUid, ref.characterId].join("\u0000");
+}
+
+function programOwnerStackingKey(owner: ProgramEffectOwner): string {
+  return [
+    owner.occurrenceId,
+    owner.programId,
+    owner.phaseId,
+    owner.stepId,
+    owner.operationId,
+    owner.instance ?? "",
+    owner.iteration,
+  ].join("\u0000");
+}
+
 function stackingKey(effect: ActiveCombatEffect): string {
   if (effect.payload.kind === "target-mark") {
     return [
-      effect.actor.combatantId,
+      combatantStackingKey(effect.actor),
       effect.source.kind,
       effect.source.id,
       effect.payload.scope,
     ].join("\u0000");
   }
   if (effect.payload.kind === "condition") {
+    if (effect.programOwner) {
+      return [
+        combatantStackingKey(effect.target),
+        effect.payload.kind,
+        effect.payload.conditionId,
+        programOwnerStackingKey(effect.programOwner),
+      ].join("\u0000");
+    }
     return [
-      effect.target.combatantId,
-      effect.target.kind === "monster" ? (effect.target.tokenIndex ?? "") : "",
-      effect.actor.combatantId,
+      combatantStackingKey(effect.target),
+      combatantStackingKey(effect.actor),
       effect.source.kind,
       effect.source.id,
       effect.payload.kind,
       effect.payload.conditionId,
     ].join("\u0000");
   }
+  if (effect.payload.kind === "program-standing") {
+    return [
+      combatantStackingKey(effect.target),
+      effect.payload.kind,
+      effect.payload.effectId,
+      effect.programOwner
+        ? programOwnerStackingKey(effect.programOwner)
+        : `occurrence:${effect.id}`,
+    ].join("\u0000");
+  }
   return [
-    effect.target.combatantId,
-    effect.target.kind === "monster" ? (effect.target.tokenIndex ?? "") : "",
+    combatantStackingKey(effect.target),
     effect.source.kind,
     effect.source.id,
     effect.payload.kind,
@@ -252,6 +289,7 @@ export function mergeDamageDefenseGrants(
   const vulnerabilities = new Set(base.vulnerabilities);
   const sourceResistances = new Set(base.sourceResistances);
   const flatReductions = [...base.flatReductions];
+  const saveDamageRules = [...base.saveDamageRules];
 
   for (const grant of grants) {
     switch (grant.type) {
@@ -278,8 +316,21 @@ export function mergeDamageDefenseGrants(
           grant.amount > 0
         ) {
           flatReductions.push({
+            id: `effect-flat-${flatReductions.length}`,
             damageTypes: grant.damageTypes,
             amount: grant.amount,
+            trigger: grant.trigger,
+          });
+        }
+        break;
+      case "save-damage-rule":
+        if (!grant.suppressedByConditions?.length) {
+          saveDamageRules.push({
+            id: `effect-save-${saveDamageRules.length}`,
+            ability: grant.ability,
+            requiresDamageOnSuccess: grant.requiresDamageOnSuccess,
+            onSuccess: grant.onSuccess,
+            onFailure: grant.onFailure,
           });
         }
         break;
@@ -293,6 +344,7 @@ export function mergeDamageDefenseGrants(
     vulnerabilities,
     sourceResistances,
     flatReductions,
+    saveDamageRules,
   };
 }
 
@@ -514,55 +566,199 @@ export function isEffectActiveAtEncounterPosition(
   return phaseIndex < boundaryPhaseIndex;
 }
 
+export interface CombatEffectOccurrenceState {
+  /** Immutable occurrence payload established by its first accepted apply. */
+  readonly effect: ActiveCombatEffect;
+  /** Current compare-and-swap head, including a terminal legacy revoke. */
+  readonly headOpId: string;
+  readonly active: boolean;
+  /** Legacy revoke is intentionally one-way; authored set-active cannot follow it. */
+  readonly terminal: boolean;
+}
+
+function operationOwnsOccurrence(
+  operation: Exclude<CombatEffectOp, { kind: "apply" }>,
+  occurrence: CombatEffectOccurrenceState
+): boolean {
+  return (
+    operation.effectId === occurrence.effect.id &&
+    operation.actorId === occurrence.effect.actor.combatantId &&
+    operation.targetId === occurrence.effect.target.combatantId
+  );
+}
+
 /**
- * Fold the append-only log into effective instances. Duplicate operation/effect ids
- * are harmless. Same-source effects do not stack; a newer instance permanently
- * supersedes the previous one, so revoking the replacement never resurrects stale
- * bonuses from an earlier cast.
+ * Fold every accepted occurrence without applying stacking or clock projection.
+ * Duplicate apply retries, stale heads, mismatched ownership, and operations after
+ * a terminal legacy revoke are ignored at this tolerant read boundary.
+ */
+export function foldCombatEffectOccurrences(
+  operations: ReadonlyArray<CombatEffectOp> | undefined
+): CombatEffectOccurrenceState[] {
+  const seenOps = new Set<string>();
+  const occurrences = new Map<string, CombatEffectOccurrenceState>();
+
+  for (const operation of operations ?? []) {
+    if (seenOps.has(operation.id)) continue;
+    if (operation.kind === "apply") {
+      if (occurrences.has(operation.effect.id)) continue;
+      seenOps.add(operation.id);
+      occurrences.set(operation.effect.id, {
+        effect: operation.effect,
+        headOpId: operation.id,
+        active: true,
+        terminal: false,
+      });
+      continue;
+    }
+
+    const current = occurrences.get(operation.effectId);
+    if (!current || current.terminal || !operationOwnsOccurrence(operation, current)) {
+      continue;
+    }
+    if (operation.kind === "revoke") {
+      seenOps.add(operation.id);
+      occurrences.set(operation.effectId, {
+        ...current,
+        headOpId: operation.id,
+        active: false,
+        terminal: true,
+      });
+      continue;
+    }
+    if (
+      operation.expectedHeadOpId !== current.headOpId ||
+      operation.active === current.active
+    ) {
+      continue;
+    }
+    seenOps.add(operation.id);
+    occurrences.set(operation.effectId, {
+      ...current,
+      headOpId: operation.id,
+      active: operation.active,
+    });
+  }
+
+  return [...occurrences.values()];
+}
+
+/** Current causal state for one exact occurrence, independent of stacking/expiry. */
+export function combatEffectOccurrenceState(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  effectId: string
+): CombatEffectOccurrenceState | null {
+  return (
+    foldCombatEffectOccurrences(operations).find(
+      (occurrence) => occurrence.effect.id === effectId
+    ) ?? null
+  );
+}
+
+/**
+ * Strict authored compare-and-swap append. Unlike tolerant reads, a duplicate,
+ * stale, mismatched, terminal, or no-op status request is rejected as `null`.
+ */
+export function appendCombatEffectStatusOp(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  operation: Extract<CombatEffectOp, { kind: "set-active" }>
+): CombatEffectOp[] | null {
+  const current = operations ?? [];
+  if (
+    !operation.id ||
+    !operation.effectId ||
+    !operation.actorId ||
+    !operation.targetId ||
+    !operation.expectedHeadOpId ||
+    current.some((candidate) => candidate.id === operation.id)
+  ) {
+    return null;
+  }
+  const occurrence = combatEffectOccurrenceState(current, operation.effectId);
+  if (
+    !occurrence ||
+    occurrence.terminal ||
+    occurrence.headOpId !== operation.expectedHeadOpId ||
+    occurrence.active === operation.active ||
+    !operationOwnsOccurrence(operation, occurrence)
+  ) {
+    return null;
+  }
+  return [...current, operation];
+}
+
+/** Tolerant untrusted ledger boundary. Structurally invalid, duplicate, stale,
+ * mismatched, or no-op entries are omitted instead of entering engine consumers. */
+export function conformCombatEffectOps(value: unknown): CombatEffectOp[] {
+  if (!Array.isArray(value)) return [];
+  let valid: CombatEffectOp[] = [];
+  for (const candidate of value) {
+    let operation: CombatEffectOp | null;
+    try {
+      operation = conformCombatEffectOp(candidate);
+    } catch {
+      continue;
+    }
+    if (!operation) continue;
+    if (operation.kind === "apply") {
+      if (
+        valid.some(({ id }) => id === operation.id) ||
+        combatEffectOccurrenceState(valid, operation.effect.id)
+      ) {
+        continue;
+      }
+      valid.push(operation);
+      continue;
+    }
+    if (operation.kind === "set-active") {
+      const appended = appendCombatEffectStatusOp(valid, operation);
+      if (appended) valid = appended;
+      continue;
+    }
+    if (valid.some(({ id }) => id === operation.id)) continue;
+    const occurrence = combatEffectOccurrenceState(valid, operation.effectId);
+    if (
+      !occurrence ||
+      occurrence.terminal ||
+      !operationOwnsOccurrence(operation, occurrence)
+    ) {
+      continue;
+    }
+    valid.push(operation);
+  }
+  return valid;
+}
+
+/**
+ * Fold the append-only log into effective instances. Same-source effects keep the
+ * existing non-stacking rule: the newest occurrence permanently supersedes the
+ * older one even while inactive or expired, so stale bonuses never resurrect.
  */
 export function foldCombatEffectOps(
   operations: ReadonlyArray<CombatEffectOp> | undefined,
   position?: EncounterPosition
 ): ActiveCombatEffect[] {
-  const seenOps = new Set<string>();
-  const seenEffects = new Set<string>();
-  const revoked = new Set<string>();
-  const live = new Map<string, ActiveCombatEffect>();
+  const occurrences = foldCombatEffectOccurrences(operations);
   const latestByStackingKey = new Map<string, string>();
-
-  for (const operation of operations ?? []) {
-    if (seenOps.has(operation.id)) continue;
-    seenOps.add(operation.id);
-    if (operation.kind === "revoke") {
-      revoked.add(operation.effectId);
-      live.delete(operation.effectId);
-      continue;
-    }
-    if (seenEffects.has(operation.effect.id)) continue;
-    seenEffects.add(operation.effect.id);
-    const key = stackingKey(operation.effect);
-    const previousId = latestByStackingKey.get(key);
-    if (previousId) live.delete(previousId);
-    latestByStackingKey.set(key, operation.effect.id);
-    if (!revoked.has(operation.effect.id))
-      live.set(operation.effect.id, operation.effect);
+  for (const { effect } of occurrences) {
+    latestByStackingKey.set(stackingKey(effect), effect.id);
   }
-
-  return [...live.values()].filter((effect) =>
+  return occurrences.flatMap(({ effect, active }) =>
+    active &&
+    latestByStackingKey.get(stackingKey(effect)) === effect.id &&
     isEffectActiveAtEncounterPosition(effect, position)
+      ? [effect]
+      : []
   );
 }
 
 export function effectsForTarget(
   operations: ReadonlyArray<CombatEffectOp> | undefined,
   targetId: string,
-  position?: EncounterPosition,
-  tokenIndex?: number
+  position?: EncounterPosition
 ): ActiveCombatEffect[] {
   return foldCombatEffectOps(operations, position).filter(
-    (effect) =>
-      effect.target.combatantId === targetId &&
-      (effect.target.kind !== "monster" || effect.target.tokenIndex === tokenIndex)
+    (effect) => effect.target.combatantId === targetId
   );
 }
 

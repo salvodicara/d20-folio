@@ -61,6 +61,7 @@ export interface SavesChecksSession {
   encounterEffects?: SessionState["encounterEffects"];
   concentration?: SessionState["concentration"];
   grantBundleChoices?: Record<string, string>;
+  itemResources?: SessionState["itemResources"];
 }
 
 /** One saving-throw row (STR…CHA), engine-computed + override-first. */
@@ -201,6 +202,7 @@ export function deriveSavesAndChecks(
   const fullAggregate = aggregateCharacterGrants(charData, {
     activeFeatures,
     grantBundleChoices: session.grantBundleChoices,
+    itemResources: session.itemResources,
   });
 
   const effectiveScores = effectiveAbilityScores(

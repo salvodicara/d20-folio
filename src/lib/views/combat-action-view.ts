@@ -16,6 +16,7 @@ import type {
   ReplaceAttackWithCastEntry,
   ResolvedAction,
   ResolvedActionHeal,
+  ActionResolveScope,
 } from "@/lib/smart-tracker";
 import { resolveActions } from "@/lib/smart-tracker";
 import type { BreakdownLine, RawBreakdownPart } from "@/lib/value-breakdown";
@@ -38,6 +39,7 @@ import {
 } from "@/lib/views/weapon-facts-view";
 import { buildRiders, type RiderVM } from "@/lib/views/rider-view";
 import { className } from "@/lib/views/level-up-view";
+import { economyActionCategory } from "@/lib/combat-economy";
 
 type Locale = keyof BiText;
 
@@ -348,7 +350,8 @@ function localizeSummary(
  * data becomes display strings (docs/ARCHITECTURE.md).
  */
 export function localizeAction(action: RawResolvedAction, locale: Locale): CombatAction {
-  const { name, description, summary, ...rest } = action;
+  const { name, description, summary, effectProgram, effectResolutionOwner, ...rest } =
+    action;
   // The render-ready on-hit rider strip (extra damage / die manipulation / on-hit
   // heal) — ONE seam both weapon surfaces feed, built from the engine's locale-free
   // rider data. Empty array when the action has no rider (the surface shows none).
@@ -407,6 +410,10 @@ export function localizeAction(action: RawResolvedAction, locale: Locale): Comba
       : undefined;
   return {
     ...rest,
+    // Rules data never crosses the presenter seam as text. Preserve the exact
+    // program reference and its exclusive owner while localizing only display data.
+    ...(effectProgram ? { effectProgram } : {}),
+    ...(effectResolutionOwner ? { effectResolutionOwner } : {}),
     name: localizedName,
     nameEn: localizeText(name, "en") + enSuffix,
     // The action's NAME as the engine's localizable LocText reference — carried
@@ -452,8 +459,12 @@ export interface CombatAction extends ResolvedAction {
  * `resolveActions` (engine) is locale-free; this presenter localizes every row
  * at the edge so `PlayTab` reads ready-to-render strings.
  */
-export function localizeActions(character: CharacterDoc, locale: Locale): CombatAction[] {
-  return resolveActions(character).map((a) => localizeAction(a, locale));
+export function localizeActions(
+  character: CharacterDoc,
+  locale: Locale,
+  scope: ActionResolveScope = "combat"
+): CombatAction[] {
+  return resolveActions(character, scope).map((a) => localizeAction(a, locale));
 }
 
 /**
@@ -568,11 +579,13 @@ export function isPipAttackAction(
   warMagicMaxSpellLevel: number
 ): boolean {
   if (action.type !== "action") return false;
-  if (action.source === "weapon") return true;
   if (action.source === "spell") {
     return (action.spellLevel ?? 0) <= warMagicMaxSpellLevel;
   }
-  return false;
+  // Grapple and Shove are Unarmed Strike options, so each replaces one attack
+  // inside the Attack action just like a weapon swing. Read the shared economy
+  // classifier rather than duplicating its stable base-action ids here.
+  return economyActionCategory(action) === "attack";
 }
 
 /**
@@ -654,9 +667,9 @@ export type TurnLimiterVM =
    * used to hardcode "−2" at every level). `level` names the cause.
    */
   | { kind: "exhaustion"; level: number; d20Penalty: number; speedPenaltyFt: number }
-  /** RA-08 — more than one spell slot has been expended to cast a spell this turn
-   *  (2024 "one spell slot per turn"). ADVISORY only — never a block. `count` is
-   *  the number of slot-paid casts so far. */
+  /** RA-08 — a defensive invalid-state signal: the transaction seam hard-blocks
+   *  a second slot expenditure on the same global turn, so `count > 1` can only
+   *  come from an explicitly injected/legacy in-memory state. */
   | { kind: "spellSlotLimit"; count: number };
 
 /**
@@ -685,7 +698,7 @@ export function composeTurnLimiters(args: {
    *  cancels a condition's disadvantage, so the player is NOT limited). */
   attackRollState: "advantage" | "disadvantage" | "none";
   exhaustion: number;
-  /** RA-08 — spell slots expended to cast a spell this turn (advisory when >1). */
+  /** RA-08 — slot expenditures on the currently projected global turn. */
   spellSlotCasts?: number;
 }): TurnLimiterVM[] {
   const { conditions, attackRollState, exhaustion, spellSlotCasts = 0 } = args;
@@ -758,10 +771,9 @@ export function composeTurnLimiters(args: {
       speedPenaltyFt: exhaustionSpeedReductionFt(level),
     });
 
-  // 5. RA-08 — one spell slot per turn (2024 "Casting Spells"). ADVISORY, last:
-  //    surfaces only once the player has expended MORE than one slot this turn (a
-  //    likely rules slip), never a hard block — the engine enforces nothing here
-  //    (override-first; homebrew / Action-Surge-into-a-second-cast edge cases exist).
+  // 5. RA-08 — one spell slot per global turn (2024 "Casting Spells"). The
+  //    transaction seam hard-blocks a second expenditure; this last-row signal
+  //    remains only as a defensive read-out for explicitly injected legacy state.
   if (spellSlotCasts > 1)
     limiters.push({ kind: "spellSlotLimit", count: spellSlotCasts });
 

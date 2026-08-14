@@ -48,7 +48,7 @@ import { useCharacterSubscription } from "@/hooks/useCharacterSubscription";
 import { useLocale } from "@/hooks/useLocale";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { asLocale } from "@/lib/locale";
-import { updateCharacter, saveCharacterSnapshot } from "@/lib/firestore";
+import { replaceCharacterState, saveCharacterSnapshot } from "@/lib/firestore";
 import { levelUp, getAverageHpGain } from "@/lib/level-up";
 import { isUmbrellaTool } from "@/lib/tool-names";
 import { localizeSrd } from "@/i18n/resolver";
@@ -1267,10 +1267,7 @@ export function LevelUpWizard() {
       // (features, slots, HP, ASI), so a pre-level-up reverse-applier could restore
       // state that no longer coheres. Drop the stack on commit.
       useUndoStore.getState().clear();
-      await updateCharacter(user.uid, character.id, {
-        character: updated,
-        session: updatedDoc.session,
-      });
+      await replaceCharacterState(user.uid, character.id, updated, updatedDoc.session);
     } catch (e) {
       const msg = e instanceof Error ? e.message : t("common.unknownError");
       console.error("Level-up save failed", e);

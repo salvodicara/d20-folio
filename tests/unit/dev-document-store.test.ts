@@ -66,6 +66,35 @@ describe("dev document store", () => {
     expect(merged.session.notes).toBe("persist me");
   });
 
+  it("stores no mutable session facts on a marked dev parent", () => {
+    const marked = {
+      ...structuredClone(MOCK_CHARACTER),
+      playStateVersion: 1 as const,
+    };
+    marked.session.notes = "child-owned";
+    marked.session.hp = { current: 3, temp: 4 };
+
+    const parent = projectDevCharacterParent(marked);
+    expect(parent.playStateVersion).toBe(1);
+    expect(parent.session).toEqual({});
+  });
+
+  it("rejects a corrupt dev ownership marker", () => {
+    expect(() =>
+      mergeDevCharacterParent(structuredClone(MOCK_CHARACTER), {
+        ...projectDevCharacterParent(structuredClone(MOCK_CHARACTER)),
+        playStateVersion: 2,
+      } as never)
+    ).toThrow("ownership marker");
+    expect(() =>
+      mergeDevCharacterParent(structuredClone(MOCK_CHARACTER), {
+        ...projectDevCharacterParent(structuredClone(MOCK_CHARACTER)),
+        playStateVersion: 1,
+        session: { notes: "stale" },
+      })
+    ).toThrow("mutable session state");
+  });
+
   it("clears replica keys", () => {
     writeDevDocument("characters", "c1", { value: true });
     clearDevDocuments();

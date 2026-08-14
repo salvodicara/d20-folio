@@ -44,19 +44,23 @@ describe("buildCastOptions — free casts + mastery (ordered after slots)", () =
         sourceName: "Fey-Touched",
         usesPerRest: 1,
         usedNow: 0,
-        rest: "long",
+        recovery: { kind: "tracker", rest: "long" },
       },
       {
         sourceId: "spent",
         sourceName: "Spent",
         usesPerRest: 1,
         usedNow: 1,
-        rest: "long",
+        recovery: { kind: "tracker", rest: "long" },
       },
     ]);
     const free = withFree.filter((o) => o.kind === "free-cast");
     expect(free).toHaveLength(1);
-    expect(free[0]).toMatchObject({ sourceId: "fey-touched", level: 1, rest: "long" });
+    expect(free[0]).toMatchObject({
+      sourceId: "fey-touched",
+      level: 1,
+      recovery: { kind: "tracker", rest: "long" },
+    });
   });
 
   it("orders slots → free-casts → masteries", () => {
@@ -64,7 +68,15 @@ describe("buildCastOptions — free casts + mastery (ordered after slots)", () =
       SLOTS,
       {},
       1,
-      [{ sourceId: "f", sourceName: "F", usesPerRest: 1, usedNow: 0, rest: "long" }],
+      [
+        {
+          sourceId: "f",
+          sourceName: "F",
+          usesPerRest: 1,
+          usedNow: 0,
+          recovery: { kind: "tracker", rest: "long" },
+        },
+      ],
       [{ sourceName: "Spell Mastery" }]
     );
     const kinds = opts.map((o) => o.kind);

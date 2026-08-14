@@ -18,6 +18,7 @@
  */
 import type { LogEntry, SessionState } from "@/types/character";
 import type { CombatEvent, LogSlot } from "@/types/combat-log";
+import { normalizeItemResources } from "@/lib/item-resources";
 
 /** The four economy slots a log row's colour can follow. */
 function asSlot(raw: unknown): LogSlot | undefined {
@@ -99,6 +100,7 @@ export function normalizeLogEntry(raw: unknown): LogEntry | null {
 }
 
 export function sanitizeSession(session: Partial<SessionState>): SessionState {
+  const itemResources = normalizeItemResources(session.itemResources);
   return {
     hp: {
       current: session.hp?.current ?? 0,
@@ -108,6 +110,7 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     },
     hitDice: { used: session.hitDice?.used ?? 0 },
     trackers: session.trackers ?? {},
+    ...(Object.keys(itemResources).length > 0 ? { itemResources } : {}),
     spellSlots: session.spellSlots ?? {},
     currency: {
       pp: session.currency?.pp ?? 0,

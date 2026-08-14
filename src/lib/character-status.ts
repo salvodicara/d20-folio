@@ -9,13 +9,11 @@
  * both surfaces route through, so they are identical by construction (golden rule
  * 6b — single source of truth).
  *
- * It DERIVES the fallen state instead of persisting a second copy: a character is
- * revived by healing from 0 HP, which already resets their death saves
- * (`characterStore`), so the derived state clears automatically — no stored
- * `status` flag to keep in sync, nothing to forget on revive (golden rule 2 —
- * declare the least, infer the rest). The same symmetry holds for the third
- * cause, Exhaustion level 6: lowering Exhaustion below 6 clears the fallen state
- * automatically, exactly like healing off 0 resets death saves.
+ * It DERIVES the fallen state instead of persisting a second copy. Ordinary
+ * healing never clears a death verdict; the explicit manual HP/death-save
+ * overrides remain the current recovery path until a typed revival mechanic owns
+ * that transition. Likewise, only explicitly lowering Exhaustion below 6 clears
+ * an Exhaustion death.
  *
  * Pure module (types only) — safe for CI-pure unit tests; no Firebase, no UI.
  */
@@ -55,4 +53,24 @@ export function isCharacterDead(
   session: Pick<SessionState, "deathFail" | "exhaustion">
 ): boolean {
   return status === "dead" || diedInPlay(session) || diedOfExhaustion(session);
+}
+
+/**
+ * The shared eligibility gate for ordinary living-character activity. Healing,
+ * rests, and movement all read this complement rather than inventing their own
+ * partial definition of death.
+ */
+export function isCharacterAlive(
+  status: CharacterDoc["status"],
+  session: Pick<SessionState, "deathFail" | "exhaustion">
+): boolean {
+  return !isCharacterDead(status, session);
+}
+
+/** A rest can begin only while alive and above 0 HP (2024 Rest rules). */
+export function canCharacterRest(
+  status: CharacterDoc["status"],
+  session: Pick<SessionState, "deathFail" | "exhaustion" | "hp">
+): boolean {
+  return session.hp.current >= 1 && isCharacterAlive(status, session);
 }

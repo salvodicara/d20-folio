@@ -26,6 +26,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
 import { computeAC, isHeavyArmorEquipped } from "@/lib/compute";
+import { effectiveEquipmentForItemResources } from "@/lib/aggregate-character";
 import { resolveActiveStatesEndingOn } from "@/lib/smart-tracker";
 import { formatWeight } from "@/lib/utils";
 import { matchesSearch } from "@/lib/search";
@@ -47,6 +48,8 @@ import { RunicEmptyState } from "@/components/ui/runic-empty-state";
 import { WeaponCard, type ItemFieldValue } from "./inventory/WeaponCard";
 import { ArmorCard } from "./inventory/ArmorCard";
 import { GearCard } from "./inventory/GearCard";
+import { inventoryItemDisplayName } from "./inventory/inventory-card-helpers";
+import { useItemResourceSpend } from "@/features/character/useItemResourceSpend";
 
 type CurrencyKey = "gp" | "sp" | "cp" | "pp" | "ep";
 // Order = highest→lowest denomination, ep last. The displayed abbreviation is
@@ -129,8 +132,9 @@ export function InventoryTab() {
   const { language: locale } = useLocale();
   const character = useCharacterStore((s) => s.character);
   const sheetMode = useUIStore((s) => s.sheetMode);
+  const { spend: spendItemResource } = useItemResourceSpend();
   const [addItemModalOpen, setAddItemModalOpen] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   const isEdit = sheetMode === "edit";
@@ -162,7 +166,7 @@ export function InventoryTab() {
   }, [view, search]);
 
   const onToggle = useCallback(
-    (id: string, open: boolean) => setExpandedId(open ? id : null),
+    (rowId: string, open: boolean) => setExpandedRowId(open ? rowId : null),
     []
   );
 
@@ -176,17 +180,21 @@ export function InventoryTab() {
       if (!char) return;
 
       const prevEquipment = char.character.equipment;
+      const consumedRef = char.character.equipment[item.idx];
       const newQty = item.quantity - 1;
+      const removedInstanceId =
+        item.isConsumable && newQty <= 0 && consumedRef && !("custom" in consumedRef)
+          ? consumedRef.instanceId
+          : undefined;
+      const priorResourceState = removedInstanceId
+        ? char.session.itemResources?.[removedInstanceId]
+        : undefined;
       const newEquipment =
         item.isConsumable && newQty <= 0
-          ? char.character.equipment.filter((ref) => {
-              const id = "custom" in ref ? `custom-${ref.name}` : ref.srdId;
-              return id !== item.id;
-            })
-          : char.character.equipment.map((ref) => {
-              const id = "custom" in ref ? `custom-${ref.name}` : ref.srdId;
-              return id === item.id ? { ...ref, quantity: newQty } : ref;
-            });
+          ? char.character.equipment.filter((_ref, index) => index !== item.idx)
+          : char.character.equipment.map((ref, index) =>
+              index === item.idx ? { ...ref, quantity: newQty } : ref
+            );
 
       const message =
         item.isConsumable && newQty <= 0
@@ -198,6 +206,16 @@ export function InventoryTab() {
           useCharacterStore.getState().setCharacter({
             ...char,
             character: { ...char.character, equipment: newEquipment },
+            session: removedInstanceId
+              ? {
+                  ...char.session,
+                  itemResources: Object.fromEntries(
+                    Object.entries(char.session.itemResources ?? {}).filter(
+                      ([instanceId]) => instanceId !== removedInstanceId
+                    )
+                  ),
+                }
+              : char.session,
           });
           return () => {
             const current = useCharacterStore.getState().character;
@@ -205,6 +223,16 @@ export function InventoryTab() {
             useCharacterStore.getState().setCharacter({
               ...current,
               character: { ...current.character, equipment: prevEquipment },
+              session:
+                removedInstanceId && priorResourceState
+                  ? {
+                      ...current.session,
+                      itemResources: {
+                        ...current.session.itemResources,
+                        [removedInstanceId]: priorResourceState,
+                      },
+                    }
+                  : current.session,
             });
           };
         },
@@ -255,27 +283,55 @@ export function InventoryTab() {
       if (!char) return;
       const removed = char.character.equipment[item.idx];
       if (!removed) return;
+      const instanceId = "custom" in removed ? undefined : removed.instanceId;
+      const priorResourceState = instanceId
+        ? char.session.itemResources?.[instanceId]
+        : undefined;
       const message = t("common.deleted", { name: item.name });
       registerUndoableToast(
         { message },
         () => {
-          const cur = useCharacterStore.getState().character;
-          if (!cur) return null;
-          const list = [...cur.character.equipment];
-          list.splice(item.idx, 1);
-          useCharacterStore.getState().setCharacter({
-            ...cur,
-            character: { ...cur.character, equipment: list },
-          });
+          const store = useCharacterStore.getState();
+          if (instanceId) {
+            if (!store.removeItemResourceInstance(instanceId)) return null;
+          } else {
+            const cur = store.character;
+            if (!cur || cur.character.equipment[item.idx] !== removed) return null;
+            const list = [...cur.character.equipment];
+            list.splice(item.idx, 1);
+            store.setCharacter({
+              ...cur,
+              character: { ...cur.character, equipment: list },
+            });
+          }
           return () => {
             const current = useCharacterStore.getState().character;
-            if (!current) return;
+            if (!current) return false;
+            if (
+              instanceId &&
+              current.character.equipment.some(
+                (ref) => !("custom" in ref) && ref.instanceId === instanceId
+              )
+            ) {
+              return false;
+            }
             const restored = [...current.character.equipment];
-            restored.splice(item.idx, 0, removed);
+            restored.splice(Math.min(item.idx, restored.length), 0, removed);
             useCharacterStore.getState().setCharacter({
               ...current,
               character: { ...current.character, equipment: restored },
+              session:
+                instanceId && priorResourceState
+                  ? {
+                      ...current.session,
+                      itemResources: {
+                        ...current.session.itemResources,
+                        [instanceId]: priorResourceState,
+                      },
+                    }
+                  : current.session,
             });
+            return true;
           };
         },
         { turnScoped: false }
@@ -374,6 +430,16 @@ export function InventoryTab() {
     [t]
   );
 
+  // Typed physical-item counters use the SAME prepare/input/CAS/undo command
+  // cycle as item-powered spell casts and combat actions. Inventory contributes
+  // only the generic one-unit affordance; it never writes resource state itself.
+  const handleSpendItemResource = useCallback(
+    (item: ItemRowVM, resource: ItemRowVM["resources"][number]) => {
+      void spendItemResource(resource, inventoryItemDisplayName(item, t));
+    },
+    [spendItemResource, t]
+  );
+
   const toggleAttunement = useCallback((idx: number) => {
     const store = useCharacterStore.getState();
     const char = store.character;
@@ -384,8 +450,12 @@ export function InventoryTab() {
     // A minimally-stored ref may carry no `attuned` yet — the first toggle
     // bonds it (the affordance is data-derived, `refRequiresAttunement`).
     equipCopy[idx] = { ...ref, attuned: !(ref.attuned ?? false) };
-    const newAC = computeAC(
+    const effectiveEquipment = effectiveEquipmentForItemResources(
       equipCopy,
+      char.session.itemResources
+    );
+    const newAC = computeAC(
+      effectiveEquipment,
       char.character.abilityScores,
       getEquipment,
       char.character.features
@@ -404,8 +474,12 @@ export function InventoryTab() {
     const ref = equipCopy[idx];
     if (!ref) return;
     equipCopy[idx] = { ...ref, equipped: !(ref.equipped ?? false) };
-    const newAC = computeAC(
+    const effectiveEquipment = effectiveEquipmentForItemResources(
       equipCopy,
+      char.session.itemResources
+    );
+    const newAC = computeAC(
+      effectiveEquipment,
       char.character.abilityScores,
       getEquipment,
       char.character.features
@@ -415,7 +489,7 @@ export function InventoryTab() {
       character: { ...char.character, equipment: equipCopy, ac: newAC },
     };
     store.setCharacter(nextCharacter);
-    if (isHeavyArmorEquipped(equipCopy, getEquipment)) {
+    if (isHeavyArmorEquipped(effectiveEquipment, getEquipment)) {
       for (const key of resolveActiveStatesEndingOn(nextCharacter, "heavy-armor")) {
         store.setActiveFeature(key, false);
       }
@@ -500,7 +574,7 @@ export function InventoryTab() {
                 vm={weapon}
                 isEdit={isEdit}
                 isPlay={isPlay}
-                expanded={expandedId === weapon.id}
+                expanded={expandedRowId === weapon.id}
                 locale={locale}
                 enchantOptions={view.enchantOptions}
                 onToggle={onToggle}
@@ -519,18 +593,19 @@ export function InventoryTab() {
           <div className="uc-stack">
             {filteredArmor.map((item) => (
               <ArmorCard
-                key={item.id}
+                key={item.rowId}
                 vm={item}
                 isEdit={isEdit}
                 isPlay={isPlay}
-                expanded={expandedId === item.id}
+                expanded={expandedRowId === item.rowId}
                 locale={locale}
-                onToggle={onToggle}
+                onToggle={(_, open) => onToggle(item.rowId, open)}
                 onDelete={handleDeleteEquipment}
                 onUpdateField={updateEquipmentField}
                 onToggleEquip={toggleEquip}
                 onToggleAttune={toggleAttunement}
                 onSpendCharge={spendCharge}
+                onSpendResource={handleSpendItemResource}
               />
             ))}
           </div>
@@ -544,19 +619,20 @@ export function InventoryTab() {
           <div className="uc-stack">
             {filteredGear.map((item) => (
               <GearCard
-                key={item.id}
+                key={item.rowId}
                 vm={item}
                 isEdit={isEdit}
                 isPlay={isPlay}
-                expanded={expandedId === item.id}
+                expanded={expandedRowId === item.rowId}
                 locale={locale}
-                onToggle={onToggle}
+                onToggle={(_, open) => onToggle(item.rowId, open)}
                 onDelete={handleDeleteEquipment}
                 onUpdateField={updateEquipmentField}
                 onUse={handleUseItem}
                 onToggleEquip={toggleEquip}
                 onToggleAttune={toggleAttunement}
                 onSpendCharge={spendCharge}
+                onSpendResource={handleSpendItemResource}
               />
             ))}
           </div>

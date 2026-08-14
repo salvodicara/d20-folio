@@ -54,6 +54,7 @@ const PURE_MODULES = [
   "src/lib/strip-undefined.ts",
   "src/lib/sanitize-character.ts",
   "src/lib/cast-options.ts",
+  "src/lib/mechanics-command.ts",
   "src/lib/feat-spell-choices.ts",
   "src/lib/feat-skill-tool-choices.ts",
   "src/lib/feat-tool-choices.ts",

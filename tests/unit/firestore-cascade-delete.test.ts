@@ -29,7 +29,10 @@ vi.mock("firebase/firestore", () => {
   return {
     collection: () => ({ _type: "snapshotsCol" }),
     collectionGroup: () => ({ _type: "snapshotsCG" }),
-    doc: () => ({ _type: "charDoc", path: "users/u1/characters/c1" }),
+    doc: (...segments: unknown[]) => ({
+      _type: "charDoc",
+      path: segments.slice(1).join("/"),
+    }),
     getDocs: vi.fn(() =>
       Promise.resolve({ docs: snapshotRefs.map((r) => ({ ref: { ...r } })) })
     ),
@@ -37,6 +40,20 @@ vi.mock("firebase/firestore", () => {
     deleteDoc: vi.fn((ref: { path?: string; _type?: string }) => {
       calls.push(`delete ${ref.path ?? ref._type ?? "?"}`);
       return Promise.resolve();
+    }),
+    writeBatch: vi.fn(() => {
+      const queued: string[] = [];
+      const batch = {
+        delete: vi.fn((ref: { path?: string; _type?: string }) => {
+          queued.push(`delete ${ref.path ?? ref._type ?? "?"}`);
+          return batch;
+        }),
+        commit: vi.fn(() => {
+          calls.push(...queued, "commit ownership batch");
+          return Promise.resolve();
+        }),
+      };
+      return batch;
     }),
     addDoc: vi.fn(() => Promise.resolve({ id: "new-id" })),
     updateDoc: vi.fn(() => Promise.resolve()),
@@ -100,12 +117,22 @@ describe("deleteCharacter — cascade delete (no orphan snapshots)", () => {
         `snapshot ${r.path} was deleted AFTER the parent — would orphan`
       ).toBeLessThan(parentIdx);
     }
+    const combatIdx = calls.findIndex(
+      (c) => c === "delete users/u1/characters/c1/combat/state"
+    );
+    expect(combatIdx, "combat/state was never deleted").not.toBe(-1);
+    expect(combatIdx).toBeLessThan(parentIdx);
   });
 
-  it("calls deleteDoc once per snapshot + once for the parent (plus portrait + log clear)", async () => {
+  it("deletes snapshots individually, then commits public sheet + child + parent atomically", async () => {
     await deleteCharacter("u1", "c1");
-    // N snapshots + 1 parent + 1 portrait + 1 IndexedDB log clear
-    expect(calls).toHaveLength(snapshotRefs.length + 3);
+    // N snapshots + public/sheet + combat/state + parent + commit + portrait + log.
+    expect(calls).toHaveLength(snapshotRefs.length + 6);
+    expect(calls).toContain("delete users/u1/characters/c1/public/sheet");
+    expect(calls.filter((call) => call === "commit ownership batch")).toHaveLength(1);
+    expect(calls.indexOf("commit ownership batch")).toBeGreaterThan(
+      calls.indexOf("delete users/u1/characters/c1")
+    );
   });
 
   it("clears the per-character IndexedDB action log as part of the cascade (no leak)", async () => {

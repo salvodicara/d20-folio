@@ -256,7 +256,34 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
       actions: [
         {
           type: "reaction",
-          trigger: "takeDamage",
+          // The click affirms the table-only visibility fact; the trigger still
+          // excludes saves, hazards, and automatic damage at the data boundary.
+          trigger: "hitByAttack",
+          targeting: { affinity: "self", maxTargets: 1 },
+          effectProgram: {
+            version: 1,
+            id: "feature.rogue-uncanny-dodge",
+            phases: [
+              {
+                id: "resolve",
+                trigger: { kind: "resolve" },
+                steps: [
+                  {
+                    id: "halve-attack-damage",
+                    kind: "damage-reduction",
+                    scope: "program",
+                    subject: "source",
+                    amount: {
+                      kind: "binding",
+                      binding: "triggering-damage",
+                      multiplier: 0.5,
+                      rounding: "ceil",
+                    },
+                  },
+                ],
+              },
+            ],
+          },
         },
       ],
     },
@@ -296,6 +323,16 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
     id: "rogue-evasion",
     class: "rogue",
     level: 7,
+    grants: [
+      {
+        type: "save-damage-rule",
+        ability: "DEX",
+        requiresDamageOnSuccess: "half",
+        onSuccess: "none",
+        onFailure: "half",
+        suppressedByConditions: ["incapacitated"],
+      },
+    ],
     source: "SRD",
   },
   {

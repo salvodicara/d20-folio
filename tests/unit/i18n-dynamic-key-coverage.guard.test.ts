@@ -51,7 +51,6 @@ import {
   ALL_ARMOR_CATEGORIES,
   ALL_CLASS_IDS,
   ALL_DAMAGE_SOURCES,
-  ALL_DAMAGE_TYPES,
   ALL_EQUIPMENT_CATEGORIES,
   ALL_FEAT_CATEGORIES,
   ALL_MAGIC_ITEM_RARITIES,
@@ -63,6 +62,7 @@ import {
   CREATURE_SIZE_ORDER,
   TRACKER_UNITS,
 } from "@/data/types";
+import { DAMAGE_TYPES } from "@/types/damage";
 import { ALL_SKILLS } from "@/lib/skills";
 import { ALIGNMENT_IDS, alignmentIdByLabel } from "@/lib/lore-utils";
 import { castingTimeI18nKey } from "@/lib/utils";
@@ -124,13 +124,13 @@ const FAMILIES: readonly Family[] = [
   // ── srd.* content tokens ───────────────────────────────────────────────────
   {
     label: "srd.damage_${dt}",
-    source: "ALL_DAMAGE_TYPES (@/data/types)",
-    keys: () => ALL_DAMAGE_TYPES.map((d) => `srd.damage_${d}`),
+    source: "DAMAGE_TYPES (@/types/damage)",
+    keys: () => DAMAGE_TYPES.map((d) => `srd.damage_${d}`),
   },
   {
     label: "srd.damageShort_${dt}",
-    source: "ALL_DAMAGE_TYPES (@/data/types)",
-    keys: () => ALL_DAMAGE_TYPES.map((d) => `srd.damageShort_${d}`),
+    source: "DAMAGE_TYPES (@/types/damage)",
+    keys: () => DAMAGE_TYPES.map((d) => `srd.damageShort_${d}`),
   },
   {
     // The call sites lowercase the `CreatureSize` ("Large" → "large").

@@ -106,6 +106,7 @@ export function CombatHeader() {
   const grantBundleChoices = useCharacterStore(
     (s) => s.character?.session.grantBundleChoices
   );
+  const itemResources = useCharacterStore((s) => s.character?.session.itemResources);
   // Portrait lives at the DOC level (not in charData) — feeds the hero seal (#92).
   const portraitUrl = useCharacterStore((s) => s.character?.portraitUrl);
   const portraitCrop = useCharacterStore((s) => s.character?.portraitCrop);
@@ -163,9 +164,13 @@ export function CombatHeader() {
   const initAgg = useMemo(
     () =>
       charData
-        ? aggregateCharacterGrants(charData, { activeFeatures, grantBundleChoices })
+        ? aggregateCharacterGrants(charData, {
+            activeFeatures,
+            grantBundleChoices,
+            itemResources,
+          })
         : null,
-    [charData, activeFeatures, grantBundleChoices]
+    [charData, activeFeatures, grantBundleChoices, itemResources]
   );
 
   // Esc exits edit mode (parity with the pre-rewrite sheet; the pill's hint
@@ -216,7 +221,7 @@ export function CombatHeader() {
   );
   // Single AC formula shared with the persisted snapshot the roster reads (6b):
   // computed default (for the inline-edit hint + reset) and the override-aware value.
-  const computedAc = computeCharacterAC(charData, initAgg);
+  const computedAc = computeCharacterAC(charData, initAgg, itemResources);
   const acValue = charData.acOverride ?? computedAc;
   const hasAlertFeat = characterHasFeat("alert", {
     humanOriginFeat: charData.humanOriginFeat,
@@ -245,7 +250,10 @@ export function CombatHeader() {
   // the weapon damage label rides (golden rule 3).
   const acBreakdown =
     charData.acOverride == null
-      ? localizeBreakdown(computeCharacterAcBreakdown(charData, initAgg), locale)
+      ? localizeBreakdown(
+          computeCharacterAcBreakdown(charData, initAgg, itemResources),
+          locale
+        )
       : [];
   const initBreakdownParts =
     charData.initiativeBonusOverride == null

@@ -25,7 +25,7 @@ import {
   resolveDamagePart,
   type DamageDefenses,
 } from "@/lib/damage-intake";
-import type { DamageType } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 
 /** Build a defenses bag from shorthand. */
 function defenses(d: {
@@ -43,9 +43,12 @@ function defenses(d: {
     vulnerabilities: new Set(d.vuln ?? []),
     sourceResistances: new Set(d.sources ?? []),
     flatReductions: (d.flat ?? []).map((f) => ({
+      id: `flat-${f.types.join("-")}`,
       damageTypes: f.types,
       amount: f.amount,
+      trigger: "attack",
     })),
+    saveDamageRules: [],
   };
 }
 
@@ -103,7 +106,7 @@ describe("resolveDamagePart — RAW order of application", () => {
 
   it("flat reduction applies BEFORE resistance (12 − 3 = 9 → 4), per the order rule", () => {
     const p = resolveDamagePart(
-      { amount: 12, type: "slashing" },
+      { amount: 12, type: "slashing", delivery: "attack" },
       defenses({
         resist: ["slashing"],
         flat: [{ types: ["slashing", "bludgeoning"], amount: 3 }],
@@ -114,7 +117,7 @@ describe("resolveDamagePart — RAW order of application", () => {
 
   it("flat reduction never drives a part negative", () => {
     const p = resolveDamagePart(
-      { amount: 2, type: "piercing" },
+      { amount: 2, type: "piercing", delivery: "attack" },
       defenses({ flat: [{ types: ["piercing"], amount: 5 }] })
     );
     expect(p).toMatchObject({ flatReduction: 2, net: 0 });
@@ -166,6 +169,31 @@ describe("resolveDamageIntake — multi-part hits", () => {
     );
     expect(r.parts).toHaveLength(1);
     expect(r.netTotal).toBe(5);
+  });
+
+  it("budgets one attack reduction across all matching components in the packet", () => {
+    const r = resolveDamageIntake(
+      [
+        { amount: 2, type: "slashing", delivery: "attack" },
+        { amount: 5, type: "piercing", delivery: "attack" },
+      ],
+      defenses({
+        flat: [{ types: ["bludgeoning", "piercing", "slashing"], amount: 3 }],
+      })
+    );
+    expect(r.parts.map(({ flatReduction, net }) => ({ flatReduction, net }))).toEqual([
+      { flatReduction: 2, net: 0 },
+      { flatReduction: 1, net: 4 },
+    ]);
+    expect(r.netTotal).toBe(4);
+  });
+
+  it("never applies an attack-only reduction to save or unclassified damage", () => {
+    const d = defenses({ flat: [{ types: ["slashing"], amount: 3 }] });
+    expect(
+      resolveDamageIntake([{ amount: 8, type: "slashing", delivery: "save" }], d).netTotal
+    ).toBe(8);
+    expect(resolveDamageIntake([{ amount: 8, type: "slashing" }], d).netTotal).toBe(8);
   });
 });
 

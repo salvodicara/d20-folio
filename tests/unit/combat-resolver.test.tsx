@@ -27,7 +27,7 @@ import { buildScenario } from "@/lib/dev-scenarios";
 import { NO_DEFENSES } from "@/lib/damage-intake";
 import type { PreparedCommitArtifact } from "@/features/character/center/useTurnEconomy";
 
-function monster(id: string, name: string, tokens = [7]): EncounterCombatantView {
+function monster(id: string, name: string, currentHp = 7): EncounterCombatantView {
   return {
     id,
     kind: "monster",
@@ -35,12 +35,11 @@ function monster(id: string, name: string, tokens = [7]): EncounterCombatantView
     ac: 12,
     initiative: 10,
     conditions: [],
-    currentHp: tokens.reduce((sum, hp) => sum + hp, 0),
-    maxHp: 7 * tokens.length,
+    currentHp,
+    maxHp: 7,
     tempHp: 0,
-    down: tokens.every((hp) => hp === 0),
+    down: currentHp === 0,
     hidden: false,
-    tokens,
   };
 }
 
@@ -679,7 +678,7 @@ describe("universal combat resolution", () => {
     };
     const activeCombat = combat([
       pc(),
-      monster("monster-old", "Fallen Fiend", [0]),
+      monster("monster-old", "Fallen Fiend", 0),
       monster("monster-new", "New Fiend"),
     ]);
     activeCombat.encounter = {
@@ -755,6 +754,243 @@ describe("universal combat resolution", () => {
     ]);
   });
 
+  it("uses the attack kernel for natural-one misses and propagates Critical Hits", () => {
+    let artifact: PreparedCommitArtifact | undefined;
+    render(
+      <CombatResolver
+        action={action({ damage: "1d8", attackBonus: 6, attackMode: "melee" })}
+        sheetCombat={combat([monster("monster-1", "Goblin")])}
+        onCommit={(afterCommit, prepared) => {
+          artifact = prepared;
+          afterCommit();
+        }}
+        onDone={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /goblin/i }));
+    const physicalD20 = screen.getByRole("spinbutton", {
+      name: /physical d20 for attack 1 against goblin/i,
+    });
+
+    fireEvent.change(physicalD20, { target: { value: "1" } });
+    expect(
+      screen.queryByRole("spinbutton", { name: /damage to goblin/i })
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(physicalD20, { target: { value: "20" } });
+    expect(screen.getByText(/26 vs ac 12.*critical hit/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("spinbutton", { name: /damage to goblin/i }), {
+      target: { value: "9" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    expectApplied([{ kind: "damage", targetId: "monster-1", amount: 9, crit: true }]);
+    expect(artifact?.outcomes).toEqual([
+      expect.objectContaining({
+        occurrenceId: artifact?.outcomeOccurrenceId,
+        instance: 0,
+        target: { combatantId: "monster-1" },
+        fact: { kind: "attack", result: "critical-hit" },
+      }),
+    ]);
+  });
+
+  it("derives Advantage and a forced Critical Hit from a nearby Paralyzed target", () => {
+    const paralyzed = { ...monster("monster-1", "Goblin"), conditions: ["paralyzed"] };
+    render(
+      <CombatResolver
+        action={action({ damage: "1d8", attackBonus: 6, attackMode: "melee" })}
+        sheetCombat={combat([paralyzed])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /goblin/i }));
+
+    expect(
+      screen.getByRole("spinbutton", {
+        name: /first physical d20 for attack 1 against goblin/i,
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("spinbutton", {
+        name: /second physical d20 for attack 1 against goblin/i,
+      })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/hits are critical/i)).toBeInTheDocument();
+
+    fireEvent.change(
+      screen.getByRole("spinbutton", {
+        name: /first physical d20 for attack 1 against goblin/i,
+      }),
+      { target: { value: "2" } }
+    );
+    fireEvent.change(
+      screen.getByRole("spinbutton", {
+        name: /second physical d20 for attack 1 against goblin/i,
+      }),
+      { target: { value: "6" } }
+    );
+    fireEvent.change(screen.getByRole("spinbutton", { name: /damage to goblin/i }), {
+      target: { value: "7" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    expectApplied([{ kind: "damage", targetId: "monster-1", amount: 7, crit: true }]);
+  });
+
+  it("applies and consumes a next-attack effect on only the first attack instance", () => {
+    const mockery = {
+      id: "mockery-on-lyra",
+      actor: { kind: "monster" as const, combatantId: "monster-caster" },
+      target: {
+        kind: "pc" as const,
+        combatantId: "pc-u1",
+        memberUid: "u1",
+        characterId: MOCK_CHARACTER.id,
+      },
+      source: {
+        kind: "spell" as const,
+        id: "vicious-mockery",
+        actionId: "spell-vicious-mockery",
+      },
+      payload: { kind: "grant-group" as const, activeKey: "spell-vicious-mockery" },
+      duration: { kind: "encounter" as const },
+    };
+    const activeCombat = combat([pc(), monster("monster-1", "Goblin")]);
+    activeCombat.encounter = {
+      effectOps: [{ id: "apply-mockery", kind: "apply", effect: mockery }],
+    } as GlobalCombat["encounter"];
+    render(
+      <CombatResolver
+        action={action({ damage: "1d8", attackBonus: 6, instances: 3 })}
+        sheetCombat={activeCombat}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /goblin/i }));
+    fireEvent.change(
+      screen.getByRole("spinbutton", { name: /instances assigned to goblin/i }),
+      { target: { value: "3" } }
+    );
+
+    expect(
+      screen.getByRole("spinbutton", {
+        name: /first physical d20 for attack 1 against goblin/i,
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("spinbutton", {
+        name: /second physical d20 for attack 1 against goblin/i,
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("spinbutton", {
+        name: /physical d20 for attack 2 against goblin/i,
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("spinbutton", {
+        name: /physical d20 for attack 3 against goblin/i,
+      })
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+    expect(applyMock).toHaveBeenCalledWith(
+      "camp1",
+      [],
+      expect.objectContaining({ consumeEffectIds: ["mockery-on-lyra"] })
+    );
+  });
+
+  it("keeps a computed cover miss editable only through an explicit table ruling", () => {
+    let artifact: PreparedCommitArtifact | undefined;
+    render(
+      <CombatResolver
+        action={action({ damage: "1d8", attackBonus: 6, attackMode: "melee" })}
+        sheetCombat={combat([monster("monster-1", "Goblin")])}
+        onCommit={(afterCommit, prepared) => {
+          artifact = prepared;
+          afterCommit();
+        }}
+        onDone={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /goblin/i }));
+    fireEvent.change(screen.getByRole("combobox", { name: /cover for goblin/i }), {
+      target: { value: "three-quarters" },
+    });
+
+    expect(screen.getByText(/16 vs ac 17.*miss/i)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("spinbutton", { name: /damage to goblin/i })
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Hit" }));
+    fireEvent.change(screen.getByRole("spinbutton", { name: /damage to goblin/i }), {
+      target: { value: "4" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    expectApplied([{ kind: "damage", targetId: "monster-1", amount: 4 }]);
+    expect(artifact?.outcomes?.[0]?.fact).toEqual({
+      kind: "attack",
+      result: "hit",
+    });
+  });
+
+  it("keeps authored half-on-miss damage behind the computed miss", () => {
+    render(
+      <CombatResolver
+        action={action({
+          damage: "1d8",
+          attackBonus: 6,
+          attackMode: "melee",
+          damageOnMiss: "half",
+        })}
+        sheetCombat={combat([monster("monster-1", "Goblin")])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /goblin/i }));
+    fireEvent.change(
+      screen.getByRole("spinbutton", {
+        name: /physical d20 for attack 1 against goblin/i,
+      }),
+      { target: { value: "1" } }
+    );
+    fireEvent.change(screen.getByRole("spinbutton", { name: /damage to goblin/i }), {
+      target: { value: "9" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    expectApplied([{ kind: "damage", targetId: "monster-1", amount: 4 }]);
+  });
+
+  it("blocks an attack through total cover before asking for a physical d20", () => {
+    render(
+      <CombatResolver
+        action={action({ damage: "1d8", attackBonus: 6, attackMode: "melee" })}
+        sheetCombat={combat([monster("monster-1", "Goblin")])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /goblin/i }));
+    fireEvent.change(screen.getByRole("combobox", { name: /cover for goblin/i }), {
+      target: { value: "total" },
+    });
+
+    expect(screen.getByText(/total cover.*no attack/i)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("spinbutton", {
+        name: /physical d20 for attack 1 against goblin/i,
+      })
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Apply action" })).toBeDisabled();
+  });
+
   it("offers creature-type bonus damage only for qualifying targets", () => {
     const smite = action({
       damage: "2d8",
@@ -801,6 +1037,33 @@ describe("universal combat resolution", () => {
     expect(screen.getAllByRole("spinbutton", { name: /damage to bandit/i })).toHaveLength(
       1
     );
+  });
+
+  it("never offers a creature outside the action's legal target types", () => {
+    render(
+      <CombatResolver
+        action={action({
+          targeting: {
+            affinity: "any",
+            maxTargets: 1,
+            creatureTypes: ["beast"],
+          },
+          conditionApplication: { options: ["charmed"], on: "automatic" },
+        })}
+        sheetCombat={combat([
+          { ...monster("monster-1", "Wolf"), creatureType: "beast" },
+          { ...monster("monster-2", "Bandit"), creatureType: "humanoid" },
+        ])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: /wolf/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /bandit/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /any creature/i }));
+    expect(screen.getByRole("button", { name: /wolf/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /bandit/i })).not.toBeInTheDocument();
   });
 
   it("requires and applies the chosen type for an optional damage rider", () => {
@@ -963,11 +1226,15 @@ describe("universal combat resolution", () => {
   });
 
   it("captures mixed hit/miss results when several attack instances share a target", () => {
+    let artifact: PreparedCommitArtifact | undefined;
     render(
       <CombatResolver
         action={action({ damage: "2d6", attackBonus: 7, instances: 3 })}
         sheetCombat={combat([monster("monster-1", "Goblin")])}
-        onCommit={commitNow}
+        onCommit={(afterCommit, prepared) => {
+          artifact = prepared;
+          afterCommit();
+        }}
         onDone={() => {}}
       />
     );
@@ -976,9 +1243,12 @@ describe("universal combat resolution", () => {
       screen.getByRole("spinbutton", { name: /instances assigned to goblin/i }),
       { target: { value: "3" } }
     );
-    fireEvent.change(screen.getByRole("spinbutton", { name: /hits on goblin/i }), {
-      target: { value: "2" },
-    });
+    fireEvent.change(
+      screen.getByRole("spinbutton", {
+        name: /physical d20 for attack 3 against goblin/i,
+      }),
+      { target: { value: "1" } }
+    );
     const damageRolls = screen.getAllByRole("spinbutton", {
       name: /damage roll \d for goblin/i,
     });
@@ -990,6 +1260,11 @@ describe("universal combat resolution", () => {
     expectApplied([
       { kind: "damage", targetId: "monster-1", amount: 5, hit: true },
       { kind: "damage", targetId: "monster-1", amount: 6, hit: true },
+    ]);
+    expect(artifact?.outcomes).toEqual([
+      expect.objectContaining({ instance: 0, fact: { kind: "attack", result: "hit" } }),
+      expect.objectContaining({ instance: 1, fact: { kind: "attack", result: "hit" } }),
+      expect.objectContaining({ instance: 2, fact: { kind: "attack", result: "miss" } }),
     ]);
   });
 
@@ -1078,11 +1353,15 @@ describe("universal combat resolution", () => {
     ]);
   });
 
-  it("exposes individual targets for a legacy grouped creature", () => {
+  it("targets each scalar monster by its own combatant identity", () => {
     render(
       <CombatResolver
-        action={action({ damage: "1d4", instances: 3 })}
-        sheetCombat={combat([monster("monster-1", "Goblin", [7, 4, 7])])}
+        action={action({ damage: "1d4", damageResolution: "automatic" })}
+        sheetCombat={combat([
+          monster("monster-1", "Goblin 1"),
+          monster("monster-2", "Goblin 2", 4),
+          monster("monster-3", "Goblin 3"),
+        ])}
         onCommit={commitNow}
         onDone={() => {}}
       />
@@ -1090,6 +1369,12 @@ describe("universal combat resolution", () => {
     expect(screen.getByRole("button", { name: /goblin 1/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /goblin 2/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /goblin 3/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /goblin 2/i }));
+    fireEvent.change(screen.getByRole("spinbutton", { name: /damage to goblin 2/i }), {
+      target: { value: "4" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+    expectApplied([{ kind: "damage", targetId: "monster-2", amount: 4 }]);
   });
 
   it("keeps ally targeting behind one explicit override instead of forbidding it", () => {

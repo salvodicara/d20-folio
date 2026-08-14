@@ -81,8 +81,27 @@ describe("multi-spell magic-item casts are derived from their EN rules tables", 
     const charges = parseMagicItemCharges(item);
     expect(charges, item.id).toBeGreaterThan(0);
     for (const pool of poolGrants(item.grants ?? [])) {
-      expect(pool.chargesPerRest, item.id).toBe(charges);
-      expect(pool.rest, item.id).toBe("long");
+      if (pool.resourceCost) {
+        const resourceId = pool.resourceCost.resourceId;
+        const resource = item.resources?.find((candidate) => candidate.id === resourceId);
+        expect(resource?.capacity, item.id).toEqual({
+          kind: "fixed",
+          amount: charges,
+        });
+        expect(
+          resource?.recoveries?.some((recovery) => recovery.trigger.kind === "dawn"),
+          item.id
+        ).toBe(true);
+        expect(
+          resource?.recoveries?.some((recovery) => recovery.trigger.kind === "long-rest"),
+          item.id
+        ).toBe(false);
+        expect(pool).not.toHaveProperty("chargesPerRest");
+        expect(pool).not.toHaveProperty("rest");
+      } else {
+        expect(pool.chargesPerRest, item.id).toBe(charges);
+        expect(pool.rest, item.id).toBe("long");
+      }
       for (const spellId of pool.spellIds ?? []) {
         expect(
           item.grants?.some(
@@ -105,8 +124,27 @@ describe("multi-spell magic-item casts are derived from their EN rules tables", 
     expect(castSpellIds(item.grants ?? [])).toContain("feather-fall");
     expect(parseMagicItemCharges(item)).toBe(5);
     for (const pool of poolGrants(item.grants ?? [])) {
-      expect(pool.chargesPerRest).toBe(5);
-      expect(pool.rest).toBe("long");
+      expect(pool.resourceCost).toEqual({ resourceId: "charges" });
+      expect(pool).not.toHaveProperty("chargesPerRest");
+      expect(pool).not.toHaveProperty("rest");
     }
+    expect(item.resources).toEqual([
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 5 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: {
+              kind: "entered-roll",
+              roll: { dice: 1, sides: 4, modifier: 1 },
+            },
+          },
+        ],
+      },
+    ]);
   });
 });

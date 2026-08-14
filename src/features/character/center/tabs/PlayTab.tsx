@@ -25,7 +25,7 @@
  * - Reactions commit immediately too (their own section, same grammar).
  */
 
-import { lazy, Suspense, useState, useMemo, useCallback, type ReactNode } from "react";
+import { useCallback, useState, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { Layers } from "lucide-react";
@@ -38,12 +38,7 @@ import { NumberStepper } from "@/components/ui/input";
 import { weaponSealIcon, magicItemSealIcon } from "@/components/shared/item-icons";
 import { getMagicItem } from "@/data/magic-items";
 import { ThisTurnTracker } from "../ThisTurnTracker";
-import {
-  shouldResolveCombatAction,
-  shouldResolveSoloAction,
-  tempHpRollFormula,
-} from "@/lib/combat-resolution";
-import { useSheetCombat } from "../turn-state";
+import { tempHpRollFormula } from "@/lib/combat-resolution";
 import { CombatAlgorithm } from "./CombatAlgorithm";
 import { SituationalRules } from "./SituationalRules";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -90,11 +85,6 @@ import {
   type ResolvedAction,
 } from "@/lib/smart-tracker";
 
-const CombatResolver = lazy(() =>
-  import("../CombatResolver").then(({ CombatResolver: resolver }) => ({
-    default: resolver,
-  }))
-);
 import { uiText } from "@/lib/loc-text";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { CunningStrikeOptions } from "@/components/shared/CunningStrikeOptions";
@@ -124,7 +114,7 @@ import {
   conditionLabel,
   localizeTrackerUnit,
 } from "@/lib/views/tracker-view";
-import { useTurnEconomy, getEconomySlot, type PreparedCommit } from "../useTurnEconomy";
+import { useTurnEconomy, getEconomySlot } from "../useTurnEconomy";
 import { combatOutcomePrerequisiteMet } from "@/lib/combat-outcomes";
 // The verdict composers live in the sibling helpers module (the same pattern as
 // spell-card-helpers) so the chip-budget guard walks the REAL composer.
@@ -333,54 +323,11 @@ export function PlayTab() {
   const togglePinnedAction = useCharacterStore((s) => s.togglePinnedAction);
   // The shared turn-economy owner: commit / undo (one source of the per-slot
   // undo refs), used by BOTH these cards and the center ThisTurnTracker.
-  const { prepareResolution, spendRider, applyCunningStrike } = useTurnEconomy();
-
-  // Encounter actions resolve BEFORE they spend anything. The capability model decides
-  // whether the shared resolver is needed; names and source type never do.
-  const sheetCombat = useSheetCombat();
-  const [declaring, setDeclaring] = useState<{
-    action: ResolvedAction;
-    commit: PreparedCommit;
-  } | null>(null);
-  const commitAction = useCallback(
-    (action: ResolvedAction) => {
-      // Outside an encounter the open sheet is the only modeled creature. A
-      // selected-recipient buff therefore applies to self without a pointless
-      // one-option target picker. Encounter play keeps the standing-effect spec
-      // intact so the real ally is selected and updated transactionally.
-      // Every action enters the same pre-commit seam. Most pass through
-      // immediately; spells resolve cast level/Metamagic and from-list pools
-      // resolve their chosen spell before target review. Only then can the
-      // capability gate decide whether CombatResolver is needed.
-      prepareResolution(action, (prepared, commit) => {
-        const targetReady =
-          !sheetCombat && prepared.standingEffect && !prepared.standingEffect.excludeSelf
-            ? {
-                ...prepared,
-                activatesKey: prepared.standingEffect.activeKey,
-                activeDurationRounds: prepared.standingEffect.maxRounds,
-                standingEffect: undefined,
-              }
-            : prepared;
-        if (
-          (sheetCombat && shouldResolveCombatAction(targetReady)) ||
-          (!sheetCombat && shouldResolveSoloAction(targetReady))
-        ) {
-          setDeclaring({
-            action: targetReady,
-            commit: (afterCommit, artifact) =>
-              commit(afterCommit, {
-                ...artifact,
-                action: artifact?.action ?? targetReady,
-              }),
-          });
-          return;
-        }
-        commit(() => undefined, { action: targetReady });
-      });
-    },
-    [prepareResolution, sheetCombat]
-  );
+  const {
+    executeAction: commitAction,
+    spendRider,
+    applyCunningStrike,
+  } = useTurnEconomy();
 
   const [filter, setFilter] = useState<FilterType>("all");
   const [search, setSearch] = useState("");
@@ -1067,20 +1014,6 @@ export function PlayTab() {
         />
       </div>
 
-      {/* One capability-driven resolver. Encounters expose the live roster; SOLO
-          mounts it only for consequences the current sheet can own (healing,
-          temporary HP, and condition cures). Cast-level choices happen first. */}
-      {declaring !== null && (
-        <Suspense fallback={null}>
-          <CombatResolver
-            action={declaring.action}
-            sheetCombat={sheetCombat}
-            onCommit={declaring.commit}
-            onDone={() => setDeclaring(null)}
-          />
-        </Suspense>
-      )}
-
       {/* ── Pinned ──────────────────────────────────────────────────
           Promoted across types; honors the active filter + search (D13) — hidden
           when nothing pinned matches the chosen type, and narrowed to that type
@@ -1537,18 +1470,18 @@ function CombatActionCard({
   const { language: locale } = useLocale();
   const kind = combatKind(action);
 
-  // S9 — the item→multi-spell-pool cast card (`item-cast-<itemId>`): it CASTS a
+  // S9 — the item→multi-spell-pool cast card: it CASTS a
   // spell from the item's shared charge pool, so it reads with the spell "Cast"
   // vocabulary (verb + descriptive aria) and its OWN magic-item-type seal glyph
   // (Wand of Binding → wand, Ring of Animal Influence → ring, Staff of Charming →
   // staff) instead of the generic class-feature Gem — the "cast a spell FROM this
-  // item" intent made legible without a new card type (golden rule 3).
-  const isItemPoolCast = action.id.startsWith("item-cast-");
-  const itemPoolSeal = isItemPoolCast
-    ? magicItemSealIcon(
-        getMagicItem(action.id.slice("item-cast-".length))?.type ?? "wondrous"
-      )
+  // item" intent made legible without a new card type (golden rule 3). Catalogue
+  // identity is explicit; the runtime action id may contain an instance UUID.
+  const itemPoolItem = action.castPoolItemId
+    ? getMagicItem(action.castPoolItemId)
     : undefined;
+  const isItemPoolCast = action.castPoolItemId !== undefined;
+  const itemPoolSeal = itemPoolItem ? magicItemSealIcon(itemPoolItem.type) : undefined;
 
   // Item g — two-hand wield stance for a Versatile weapon. The engine surfaces
   // `versatileDamage` (the two-handed formula, same versatile die the inventory

@@ -20,6 +20,7 @@ import type {
   SrdSpellRef,
   CustomSpell,
   ClassEntry,
+  ItemResourceState,
 } from "@/types/character";
 import { getSrdFeatureSource, srdRefForFeatureSource } from "@/lib/srd-feature-lookup";
 import { attunementSatisfied } from "@/lib/attunement";
@@ -35,6 +36,7 @@ import type { ToolChoiceContext } from "@/data/background-equipment";
 import { toolEnNameById, umbrellaToolChoiceOptions } from "@/lib/tool-names";
 import type { SrdRaceTrait, SrdSpellData } from "@/data/types";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
+import { isValidItemInstanceId } from "@/lib/resources";
 
 const INVOCATION_BY_ID = new Map(SRD_INVOCATIONS.map((inv) => [inv.id, inv]));
 const MANEUVER_BY_ID = new Map(SRD_MANEUVERS.map((m) => [m.id, m]));
@@ -166,7 +168,8 @@ export function resolveGrantSourcesForFeatures(
  * Custom equipment carries no SRD grants and is skipped.
  */
 export function resolveGrantSourcesForEquipment(
-  equipment: ReadonlyArray<SrdEquipmentRef | CustomEquipment>
+  equipment: ReadonlyArray<SrdEquipmentRef | CustomEquipment>,
+  itemResources?: Readonly<Record<string, ItemResourceState>>
 ): GrantSource[] {
   const sources: GrantSource[] = [];
   for (const e of equipment) {
@@ -175,10 +178,21 @@ export function resolveGrantSourcesForEquipment(
     if (!attunementSatisfied(e)) continue; // attunement-required, not yet attuned
     const item = getMagicItem(e.srdId);
     if (!item?.grants?.length) continue;
+    const instanceId = isValidItemInstanceId(e.instanceId) ? e.instanceId : undefined;
+    const itemState = instanceId ? itemResources?.[instanceId] : undefined;
+    if (
+      itemState &&
+      (itemState.itemId !== item.id ||
+        itemState.instanceId !== instanceId ||
+        itemState.disposition !== "magical")
+    ) {
+      continue;
+    }
     sources.push({
-      id: item.id,
+      id: instanceId ? `magic-item:${instanceId}` : item.id,
       grants: item.grants,
       ref: { kind: "magic-item", key: item.id },
+      ...(instanceId ? { item: { itemId: item.id, instanceId } } : {}),
     });
   }
   return sources;
@@ -638,18 +652,21 @@ export function resolveGrantSourcesForToolChoices(
  * non-Warlocks / non-Battle-Masters / background-less or legacy docs pass
  * nothing — they contribute no extra grants.
  */
-export function resolveAllGrantSources(character: {
-  race?: string;
-  features: ReadonlyArray<SrdFeatureRef | CustomFeature>;
-  equipment: ReadonlyArray<SrdEquipmentRef | CustomEquipment>;
-  /** PROSE sweep — prepared buff spells with standing while-active grants. */
-  spells?: ReadonlyArray<SrdSpellRef | CustomSpell>;
-  /** R4 — class-scoped picks live on each entry; flattened across all of them. */
-  classes?: ReadonlyArray<ClassEntry>;
-  background?: string;
-  /** Tool-CHOICE picks (slot id → chosen tool ids) — derived into proficiencies. */
-  toolChoices?: Record<string, ReadonlyArray<string>>;
-}): GrantSource[] {
+export function resolveAllGrantSources(
+  character: {
+    race?: string;
+    features: ReadonlyArray<SrdFeatureRef | CustomFeature>;
+    equipment: ReadonlyArray<SrdEquipmentRef | CustomEquipment>;
+    /** PROSE sweep — prepared buff spells with standing while-active grants. */
+    spells?: ReadonlyArray<SrdSpellRef | CustomSpell>;
+    /** R4 — class-scoped picks live on each entry; flattened across all of them. */
+    classes?: ReadonlyArray<ClassEntry>;
+    background?: string;
+    /** Tool-CHOICE picks (slot id → chosen tool ids) — derived into proficiencies. */
+    toolChoices?: Record<string, ReadonlyArray<string>>;
+  },
+  itemResources?: Readonly<Record<string, ItemResourceState>>
+): GrantSource[] {
   // The creation wizard stores species traits in `features[]`, but this assembler
   // ALSO resolves them from `character.race` via `resolveGrantSourcesForRace`.
   // Counting both would DOUBLE every species grant. So the race path is the single
@@ -667,7 +684,7 @@ export function resolveAllGrantSources(character: {
   return [
     ...resolveGrantSourcesForRace(character.race),
     ...resolveGrantSourcesForFeatures(nonRaceFeatures),
-    ...resolveGrantSourcesForEquipment(character.equipment),
+    ...resolveGrantSourcesForEquipment(character.equipment, itemResources),
     ...resolveGrantSourcesForSpells(character.spells ?? []),
     ...resolveGrantSourcesForInvocations(invocations),
     ...resolveGrantSourcesForManeuvers(maneuvers),

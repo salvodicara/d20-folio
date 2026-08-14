@@ -1,4 +1,4 @@
-import type { DamageType } from "../types";
+import type { DamageType } from "@/types/damage";
 import type { Grant } from "@/lib/grants";
 
 // The damage types the resistance chooser offers. The chooser's label AND each

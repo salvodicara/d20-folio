@@ -47,6 +47,7 @@ import {
   advanceTurn,
   prevTurn,
   removeCombatant,
+  parseEncounterState,
   setMonsterCondition,
   setMonsterBardicInspirationDie,
   setMonsterHeroicInspiration,
@@ -87,6 +88,7 @@ import {
   effectsForTarget,
   expiredCombatEffects,
   foldCombatEffectOps,
+  conformCombatEffectOps,
   healingBlockedByEffects,
   maxHpDeltaForEffect,
   resolvePersistentDamage,
@@ -94,11 +96,16 @@ import {
   tempHpBoundEffectIds,
 } from "@/lib/combat-effects";
 import { reducePcDamage, type PcDamageTransitionResult } from "@/lib/combat-transition";
-import { isActiveCombatEffect } from "@/lib/combat-effect-io";
-import { defaultCombatState, reduceMemberCombatEffects } from "@/lib/combat-state";
+import {
+  defaultCombatState,
+  reduceCondition,
+  reduceDeathSave,
+  reduceHpDelta,
+  reduceMemberCombatEffects,
+  setTempAbsolute,
+} from "@/lib/combat-state";
 import {
   combatStateRef,
-  combatStateWriteData,
   parseCombatState,
   updateDevCombatState,
 } from "@/lib/combat-state-io";
@@ -111,12 +118,15 @@ import type {
   MemberCharacterSnapshot,
   TreasuryLogEntry,
 } from "@/types/campaign";
-import {
-  conformEncounterCreatures,
-  setMonsterTempHp,
-} from "@/features/campaigns/encounter";
+import { setMonsterTempHp } from "@/features/campaigns/encounter";
 import type { PortraitCrop } from "@/types/character";
 import type { CombatChronicleEvent } from "@/types/combat-chronicle";
+import { DEATH_FAIL_LIMIT, isCharacterAlive } from "@/lib/character-status";
+import { normalizeStoredConcentration } from "@/lib/concentration";
+import { concentrationSaveDc } from "@/lib/compute";
+import { conditionBreaksConcentration } from "@/lib/condition-effects";
+import { resolveCombatEffectGrants } from "@/lib/resolve-grant-sources";
+import { conformCombatEffectLifecycleCollection } from "@/lib/combat-effect-lifecycle-collection";
 
 // Preserve the mockable live binding in dev/tests, while giving the production
 // optimizer a literal `false` so the local-replica branches and fixtures disappear.
@@ -129,8 +139,10 @@ import type {
   CombatantRef,
   CombatEffectOp,
 } from "@/types/combat-effect";
-import type { CombatState } from "@/types/combat-state";
-import type { DamageSource, DamageType } from "@/data/types";
+import type { CombatState, PendingConcentrationSave } from "@/types/combat-state";
+import type { StoredConcentration } from "@/types/ids";
+import type { DamageSource } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 import { NO_DEFENSES, type DamageDefenses } from "@/lib/damage-intake";
 import { monsterDamageDefenses } from "@/features/campaigns/encounter-view";
 import {
@@ -157,6 +169,9 @@ const INVITE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const INVITE_LENGTH = 14;
 /** Keeps the append-only effect ledger comfortably below Firestore's 1 MiB document cap. */
 const MAX_COMBAT_EFFECT_OPS = 512;
+/** Final campaign deletion owns one campaign + one chronicle write, leaving the
+ * remaining Firestore transaction budget for reciprocal character detaches. */
+const MAX_ATOMIC_CAMPAIGN_DETACHES = 498;
 const DEV_CAMPAIGN_COLLECTION = "campaign";
 
 function readDevCampaign(campaignId: string): CampaignDoc {
@@ -215,85 +230,53 @@ function memberCharacterDoc(uid: string, charId: string) {
  */
 function toCampaignDoc(id: string, data: Record<string, unknown>): CampaignDoc {
   const doc = { ...timestampsToDates(data), id } as CampaignDoc;
-  // C8 — NO `encounter.turnIndex` read-shim is needed here. The current EncounterState
-  // tracks a STABLE `currentCombatantId` (not a sort index); an old `turnIndex` could
-  // only exist on a campaign doc written by pre-C6 code. But the whole campaigns/
-  // encounter feature is UNDEPLOYED (live users are on pre-campaigns v0.14.0), so NO
-  // live campaign doc carries an encounter at all — encounters are seeded fresh by the
-  // DM (`encounter.ts` → `startEncounter`, `currentCombatantId = combatants[0].id`).
-  // Adding a `turnIndex → combatants[i].id` conform would be day-one dead code (rule 10).
+  // Encounter state is fail-closed: reads and writes accept the current model exactly
+  // and never repair persisted combatants into a different shape.
+  const memberDetails = conformCampaignMembers(doc.memberDetails);
+  if (!doc.encounter) return { ...doc, memberDetails };
+  const currentEncounter = parseEncounterState(doc.encounter);
+  const { effectLifecycles: storedEffectLifecycles, ...encounter } = currentEncounter;
+  const effectLifecycles =
+    conformCombatEffectLifecycleCollection(storedEffectLifecycles) ?? [];
   return {
     ...doc,
-    memberDetails: conformCampaignMembers(doc.memberDetails),
-    ...(doc.encounter
-      ? {
-          encounter: {
-            ...conformEncounterCreatures(doc.encounter),
-            ...(doc.encounter.effectOps
-              ? { effectOps: conformCombatEffectOps(doc.encounter.effectOps) }
-              : {}),
-          },
-        }
-      : {}),
+    memberDetails,
+    encounter: {
+      ...encounter,
+      ...(currentEncounter.effectOps
+        ? { effectOps: conformCombatEffectOps(currentEncounter.effectOps) }
+        : {}),
+      ...(effectLifecycles.length ? { effectLifecycles } : {}),
+    },
   };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function isString(value: unknown): value is string {
-  return typeof value === "string" && value.length > 0;
-}
-
-/**
- * Tolerant read boundary for the append-only effect ledger. Firestore rules protect
- * regular writes, but DM/admin tools and legacy documents can still contain adverse
- * shapes. Invalid applications and revocations whose stored provenance does not match
- * their application are ignored before engine consumers dereference nested fields.
- */
-export function conformCombatEffectOps(raw: unknown): CombatEffectOp[] {
-  if (!Array.isArray(raw)) return [];
-  const valid: CombatEffectOp[] = [];
-  const effects = new Map<string, ActiveCombatEffect>();
-  for (const value of raw) {
-    if (!isRecord(value) || !isString(value.id)) continue;
-    if (value.kind === "apply" && isActiveCombatEffect(value.effect)) {
-      const operation: CombatEffectOp = {
-        id: value.id,
-        kind: "apply",
-        effect: value.effect,
-      };
-      valid.push(operation);
-      if (!effects.has(value.effect.id)) effects.set(value.effect.id, value.effect);
-      continue;
-    }
-    if (
-      value.kind !== "revoke" ||
-      !isString(value.effectId) ||
-      !isString(value.actorId) ||
-      !isString(value.targetId)
-    ) {
-      continue;
-    }
-    const effect = effects.get(value.effectId);
-    if (
-      !effect ||
-      effect.actor.combatantId !== value.actorId ||
-      effect.target.combatantId !== value.targetId
-    ) {
-      continue;
-    }
-    valid.push({
-      id: value.id,
-      kind: "revoke",
-      effectId: value.effectId,
-      actorId: value.actorId,
-      targetId: value.targetId,
-    });
+function encounterForWrite(encounter: EncounterState): EncounterState {
+  const currentEncounter = parseEncounterState(encounter);
+  const { effectLifecycles: storedEffectLifecycles, ...rest } = currentEncounter;
+  const effectLifecycles = conformCombatEffectLifecycleCollection(
+    storedEffectLifecycles ?? []
+  );
+  if (!effectLifecycles) {
+    throw new TypeError("Invalid combat-effect lifecycle collection");
   }
-  return valid;
+  return {
+    ...rest,
+    ...(effectLifecycles.length ? { effectLifecycles } : {}),
+  };
 }
+
+function storedEncounter(value: unknown): EncounterState | null {
+  return value == null ? null : parseEncounterState(value);
+}
+
+function campaignWritableForWrite(data: CampaignWritable): CampaignWritable {
+  return data.encounter
+    ? { ...data, encounter: encounterForWrite(data.encounter) }
+    : data;
+}
+
+export { conformCombatEffectOps };
 
 /**
  * Reject a member's attached-character snapshot whose `name` is NOT a non-empty
@@ -540,8 +523,11 @@ export async function yieldDmRole(
 /**
  * Remove a member from the campaign (DM-only — `firestore.rules` gives the DM/admin an
  * unconstrained roster write): drop the uid from `members` (`arrayRemove`), delete their
- * whole `memberDetails` entry (`deleteField`), AND — B03 — splice their `pc-<uid>`
- * combatant out of any RUNNING encounter.
+ * whole `memberDetails` entry (`deleteField`), clear the removed hero's reciprocal
+ * `attachedCampaignId`, AND — B03 — splice their `pc-<uid>` combatant out of any
+ * RUNNING encounter. The reciprocal detach is in this SAME transaction so rules can
+ * prove the DM removed that exact member before permitting the otherwise owner-only
+ * character write; a removed hero is never stranded behind a stale attachment.
  *
  * A removed member's PC combatant is NOT harmless: while gathering it counts toward the
  * Begin-turns total forever (an orphan that can never roll → the gate locks with no UI to
@@ -562,7 +548,9 @@ export async function removeMember(campaignId: string, uid: string): Promise<voi
   const combatantId = `pc-${uid}`;
   await runTransaction(db, async (txn) => {
     const snap = await txn.get(ref);
-    const encounter = (snap.data()?.encounter ?? null) as EncounterState | null;
+    const campaign = snap.data() as CampaignDoc | undefined;
+    const encounter = storedEncounter(campaign?.encounter);
+    const characterId = nonEmptyString(campaign?.memberDetails[uid]?.characterId);
     const update: Record<string, unknown> = {
       members: arrayRemove(uid),
       [`memberDetails.${uid}`]: deleteField(),
@@ -576,6 +564,11 @@ export async function removeMember(campaignId: string, uid: string): Promise<voi
       update["encounter.order"] = pruned.order ?? [];
     }
     txn.update(ref, update);
+    if (characterId !== null) {
+      txn.update(doc(db, "users", uid, "characters", characterId), {
+        attachedCampaignId: deleteField(),
+      });
+    }
   });
 }
 
@@ -681,7 +674,7 @@ export async function advanceEncounterTurn(
   const ref = campaignDoc(campaignId);
   await runTransaction(db, async (txn) => {
     const snap = await txn.get(ref);
-    const encounter = (snap.data()?.encounter ?? null) as EncounterState | null;
+    const encounter = storedEncounter(snap.data()?.encounter);
     if (!encounter) return; // tolerant: a member can't conjure a turn
     if (encounter.currentCombatantId === null) return; // turns not begun yet
     // CAS: the turn already moved since the caller pressed (a stale double-click) → no-op.
@@ -735,14 +728,6 @@ export async function advanceEncounterTurn(
   });
 }
 
-/** The index of the first LIVE token in a monster group (`hp > 0`) — the token a
- *  player's declared damage lands on; falls back to `0` when the whole group is down
- *  (a re-hit on a dead group is a clamp no-op via {@link setHp}). Pure. */
-function firstLiveTokenIndex(tokens: ReadonlyArray<number>): number {
-  const i = tokens.findIndex((hp) => hp > 0);
-  return i < 0 ? 0 : i;
-}
-
 function pcCombatantRef(combatant: EncounterPc | undefined): CombatantRef | null {
   return combatant
     ? {
@@ -758,9 +743,6 @@ function pcCombatantRef(combatant: EncounterPc | undefined): CombatantRef | null
 interface DeclaredAmountEffect {
   targetId: string;
   amount: number;
-  /** Compatibility-only index for a legacy grouped monster that has not crossed the
-   * campaign conform boundary yet. Current creature instances always use index 0. */
-  tokenIndex?: number;
 }
 
 type DeclaredDamageEffect = DeclaredAmountEffect & {
@@ -807,7 +789,344 @@ export interface DeclaredPcTargetSnapshot {
   bardicInspirationDie?: string;
   heroicInspiration?: boolean;
   deathSaves?: { successes: number; failures: number };
+  /** Fresh parent-character lifecycle verdict. The live transaction always
+   * overwrites this caller preview before applying ordinary healing. */
+  lifecycleEligible?: boolean;
   defenses: DamageDefenses;
+}
+
+function storedCharacterState(data: unknown): Record<string, unknown> | null {
+  if (typeof data !== "object" || data === null) return null;
+  const record = data as Record<string, unknown>;
+  return typeof record.state === "object" && record.state !== null
+    ? (record.state as Record<string, unknown>)
+    : null;
+}
+
+function storedPlayStateOwnership(data: unknown): "legacy" | 1 {
+  if (typeof data !== "object" || data === null) {
+    throw new TypeError("Missing target character document");
+  }
+  const record = data as Record<string, unknown>;
+  if (!Object.hasOwn(record, "playStateVersion")) return "legacy";
+  if (record.playStateVersion === 1) return 1;
+  throw new TypeError("Invalid target play-state ownership marker");
+}
+
+/** Strict transaction read boundary. A marked parent may never fall back to an
+ * absent or legacy-shaped combat document; a malformed present document always
+ * aborts before any write is queued. */
+function storedTargetCombatState(data: unknown, parentData: unknown): CombatState | null {
+  if (typeof parentData !== "object" || parentData === null) {
+    throw new TypeError("Missing target character document");
+  }
+  const ownership = storedPlayStateOwnership(parentData);
+  if (data === null) {
+    if (ownership === 1) throw new TypeError("Missing v1 target play state");
+    return null;
+  }
+  const parsed = parseCombatState(data);
+  if (!parsed.ok) throw new TypeError(`Invalid target play state: ${parsed.reason}`);
+  if (ownership === 1 && parsed.ownership !== "v1") {
+    throw new TypeError("Missing v1 target play payload");
+  }
+  return parsed.state;
+}
+
+function sameStringList(
+  left: ReadonlyArray<string>,
+  right: ReadonlyArray<string>
+): boolean {
+  return (
+    left.length === right.length && left.every((value, index) => value === right[index])
+  );
+}
+
+function sameJson(left: unknown, right: unknown): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+/** The exact peer-authorized effect roots. Private play/action/turn facts are
+ * intentionally impossible to express through this writer. */
+function peerCombatEffectPatch(
+  before: CombatState,
+  after: CombatState
+): Record<string, unknown> {
+  const patch: Record<string, unknown> = {};
+  if (before.hp.current !== after.hp.current || before.hp.temp !== after.hp.temp) {
+    patch.hp = after.hp;
+  }
+  if (!sameStringList(before.conditions, after.conditions)) {
+    patch.conditions = after.conditions;
+  }
+  if (
+    after.bardicInspirationDie !== undefined &&
+    before.bardicInspirationDie !== after.bardicInspirationDie
+  ) {
+    patch.bardicInspirationDie = after.bardicInspirationDie;
+  }
+  if (
+    after.heroicInspiration !== undefined &&
+    before.heroicInspiration !== after.heroicInspiration
+  ) {
+    patch.heroicInspiration = after.heroicInspiration;
+  }
+  if (
+    before.deathSaves.successes !== after.deathSaves.successes ||
+    before.deathSaves.failures !== after.deathSaves.failures
+  ) {
+    patch.deathSaves = after.deathSaves;
+  }
+  if (
+    !sameJson(
+      before.pendingConcentrationSaves ?? [],
+      after.pendingConcentrationSaves ?? []
+    )
+  ) {
+    patch.pendingConcentrationSaves = after.pendingConcentrationSaves ?? [];
+  }
+  if (
+    after.appliedEncounterEffects !== undefined &&
+    !sameJson(before.appliedEncounterEffects, after.appliedEncounterEffects)
+  ) {
+    patch.appliedEncounterEffects = after.appliedEncounterEffects;
+  }
+  return patch;
+}
+
+/** Commit one peer effect as a narrow compare-and-swap-visible mutation. Legacy
+ * absent documents receive only the parseable core plus landed effect fields; a
+ * marked-v1 absence has already failed closed at storedTargetCombatState(). */
+function writePeerCombatEffect(
+  txn: Transaction,
+  ref: ReturnType<typeof combatStateRef>,
+  stored: CombatState | null,
+  before: CombatState,
+  after: CombatState
+): boolean {
+  const effect = peerCombatEffectPatch(before, after);
+  if (Object.keys(effect).length === 0) return false;
+  const actionRevision = (stored?.actionRevision ?? 0) + 1;
+  if (stored) {
+    txn.set(
+      ref,
+      {
+        ...effect,
+        actionRevision,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+    return true;
+  }
+  txn.set(ref, {
+    actionRevision,
+    hp: after.hp,
+    conditions: after.conditions,
+    ...(after.bardicInspirationDie !== undefined
+      ? { bardicInspirationDie: after.bardicInspirationDie }
+      : {}),
+    ...(after.heroicInspiration !== undefined
+      ? { heroicInspiration: after.heroicInspiration }
+      : {}),
+    initiativeRoll: null,
+    deathSaves: after.deathSaves,
+    ...(after.pendingConcentrationSaves?.length
+      ? { pendingConcentrationSaves: after.pendingConcentrationSaves }
+      : {}),
+    ...(after.appliedEncounterEffects
+      ? { appliedEncounterEffects: after.appliedEncounterEffects }
+      : {}),
+    updatedAt: serverTimestamp(),
+  });
+  return true;
+}
+
+function combatSeedForTarget(target: DeclaredPcTargetSnapshot): CombatState {
+  return {
+    ...defaultCombatState(target.maxHp),
+    hp: { current: target.currentHp, temp: target.tempHp },
+    conditions: [...target.conditions],
+    ...(target.bardicInspirationDie !== undefined
+      ? { bardicInspirationDie: target.bardicInspirationDie }
+      : {}),
+    ...(target.heroicInspiration !== undefined
+      ? { heroicInspiration: target.heroicInspiration }
+      : {}),
+    deathSaves: target.deathSaves ?? { successes: 0, failures: 0 },
+  };
+}
+
+export type CampaignCombatMutation =
+  | { kind: "hp"; operation: { kind: "damage" | "heal"; amount: number } }
+  | { kind: "condition"; operation: { kind: "add" | "remove"; conditionId: string } }
+  | { kind: "temp-hp"; value: number }
+  | { kind: "death-save"; outcome: "success" | "failure" };
+
+function reduceCampaignCombatMutation(
+  current: CombatState,
+  mutation: CampaignCombatMutation,
+  maxHp: number,
+  parentData: unknown
+): CombatState {
+  if (mutation.kind === "condition") {
+    return reduceCondition(current, mutation.operation);
+  }
+  if (mutation.kind === "temp-hp") {
+    return setTempAbsolute(current, mutation.value);
+  }
+  if (mutation.kind === "death-save") {
+    return reduceDeathSave(current, mutation.outcome);
+  }
+  if (
+    mutation.operation.kind === "heal" &&
+    !storedCharacterLifecycleEligible(parentData, current.deathSaves.failures, current)
+  ) {
+    return current;
+  }
+  return reduceHpDelta(current, mutation.operation, maxHp);
+}
+
+/** Fresh-read manual correction used by the campaign PC card. It shares the same
+ * effect-only patch/revision fence as reviewed resolutions instead of invoking the
+ * owner's offline whole-document writer on a peer document. */
+export async function writeCampaignCombatEffect(
+  uid: string,
+  characterId: string,
+  preview: CombatState | null,
+  maxHp: number,
+  mutation: CampaignCombatMutation
+): Promise<void> {
+  const fallback = preview ?? defaultCombatState(maxHp);
+  if (devBypassEnabled()) {
+    updateDevCombatState(uid, characterId, fallback, (current) => {
+      const localOwnership = current.playState
+        ? { status: "active", playStateVersion: 1 }
+        : { status: "active", state: {} };
+      return reduceCampaignCombatMutation(current, mutation, maxHp, localOwnership);
+    });
+    return;
+  }
+  const combatRef = combatStateRef(uid, characterId);
+  const parentRef = memberCharacterDoc(uid, characterId);
+  await runTransaction(db, async (txn) => {
+    const [combatSnap, parentSnap] = await Promise.all([
+      txn.get(combatRef),
+      txn.get(parentRef),
+    ]);
+    const parentData = parentSnap.exists() ? parentSnap.data() : null;
+    const stored = storedTargetCombatState(
+      combatSnap.exists() ? combatSnap.data() : null,
+      parentData
+    );
+    const current = stored ?? defaultCombatState(maxHp);
+    const next = reduceCampaignCombatMutation(current, mutation, maxHp, parentData);
+    writePeerCombatEffect(txn, combatRef, stored, current, next);
+  });
+}
+
+/** Interpret lifecycle facts from their marker-selected owner. Missing parent docs
+ * fail closed; omitted legacy state fields retain their canonical live defaults. */
+function storedCharacterLifecycleEligible(
+  data: unknown,
+  deathFailures: number,
+  combat: CombatState | null
+): boolean {
+  if (typeof data !== "object" || data === null) return false;
+  const record = data as Record<string, unknown>;
+  const storedState = storedCharacterState(data);
+  const playExhaustion = combat?.playState?.state.exhaustion;
+  const exhaustion =
+    storedPlayStateOwnership(data) === 1
+      ? typeof playExhaustion === "number"
+        ? playExhaustion
+        : 0
+      : typeof storedState?.exhaustion === "number"
+        ? storedState.exhaustion
+        : 0;
+  return isCharacterAlive(record.status === "dead" ? "dead" : "active", {
+    deathFail: deathFailures,
+    exhaustion,
+  });
+}
+
+/** Concentration follows the explicit ownership marker; never infer ownership from
+ * whichever copy happens to be populated during the migration window. */
+function storedCharacterConcentration(
+  data: unknown,
+  combat: CombatState | null
+): StoredConcentration {
+  return normalizeStoredConcentration(
+    storedPlayStateOwnership(data) === 1
+      ? combat?.playState?.state.concentration
+      : storedCharacterState(data)?.concentration
+  );
+}
+
+/** PCs that can actually receive damage in this resolution, including deterministic
+ * transfer chains and melee-hit retaliation. This bounds parent reads to lifecycle
+ * participants instead of billing one read for every creature in the effect ledger. */
+function potentialPcDamageTargetIds(args: {
+  effects: ReadonlyArray<DeclaredCombatEffect>;
+  activeEffects: ReadonlyArray<ActiveCombatEffect>;
+  hitTargetIds: ReadonlySet<string>;
+  attacker: CombatantRef | null;
+}): Set<string> {
+  const ids = new Set(
+    args.effects.flatMap((effect) =>
+      effect.kind === "damage" && effect.amount > 0 ? [effect.targetId] : []
+    )
+  );
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const effect of args.activeEffects) {
+      if (!ids.has(effect.target.combatantId)) continue;
+      const grants = resolveCombatEffectGrants(effect);
+      if (
+        grants.some((grant) => grant.type === "damage-transfer") &&
+        effect.actor.kind === "pc" &&
+        !ids.has(effect.actor.combatantId)
+      ) {
+        ids.add(effect.actor.combatantId);
+        grew = true;
+      }
+      if (
+        grants.some((grant) => grant.type === "damage-retaliation") &&
+        args.hitTargetIds.has(effect.target.combatantId) &&
+        args.attacker?.kind === "pc" &&
+        !ids.has(args.attacker.combatantId)
+      ) {
+        ids.add(args.attacker.combatantId);
+        grew = true;
+      }
+    }
+  }
+  return ids;
+}
+
+function remoteConcentrationPromptId(args: {
+  campaignId: string;
+  encounterEpoch: number;
+  eventCursor: number;
+  actorId: string;
+  occurrenceId?: string;
+  targetId: string;
+  packetOrdinal: number;
+}): string {
+  const part = (value: string | number): string => encodeURIComponent(String(value));
+  const occurrence = args.occurrenceId ?? `event-cursor-${args.eventCursor}`;
+  return [
+    "remote-concentration",
+    args.campaignId,
+    args.encounterEpoch,
+    args.actorId,
+    occurrence,
+    args.targetId,
+    args.packetOrdinal,
+  ]
+    .map(part)
+    .join(":");
 }
 
 /** Provenance + target snapshots for one reviewed action resolution. */
@@ -815,6 +1134,9 @@ export interface DeclaredCombatContext {
   actorId: string;
   action: LocText;
   round: number;
+  /** Stable identity allocated by the authoritative turn engine for this exact
+   * reviewed use. Remote lifecycle prompts derive their retry-safe ids from it. */
+  outcomeOccurrenceId?: string;
   pcTargets: ReadonlyArray<DeclaredPcTargetSnapshot>;
   /** Exact one-shot standing-effect occurrences consumed by this resolution. They
    * commit in the same transaction as HP, conditions, and Chronicle provenance. */
@@ -872,6 +1194,13 @@ interface DirectPcEffectResult {
     damageSource?: DamageSource;
   }>;
   consumedEffectIds: string[];
+  /** Post-defense damage taken by each distinct packet, in declaration order.
+   * Kept separate from Chronicle HP deltas: overkill and zero-HP floors do not
+   * change a Concentration save's damage input. */
+  damageInstances: number[];
+  /** Once a packet drops the target to 0, or an applied condition incapacitates
+   * it, Concentration is broken even if a later effect in the same batch heals. */
+  concentrationBroken: boolean;
 }
 
 /**
@@ -900,6 +1229,8 @@ export function reduceDirectPcEffects(
   const events: CombatChronicleEvent[] = [];
   const transfers: DirectPcEffectResult["transfers"] = [];
   const consumedEffectIds = new Set<string>();
+  const damageInstances: number[] = [];
+  let concentrationBroken = false;
   let eventIndex = 0;
   const stamp = (event: UnstampedCombatChronicleEvent): CombatChronicleEvent => ({
     ...event,
@@ -909,6 +1240,10 @@ export function reduceDirectPcEffects(
     round: provenance.round,
   });
   const landDamageTransition = (transition: PcDamageTransitionResult): void => {
+    if (transition.resolvedDamage > 0) {
+      damageInstances.push(transition.resolvedDamage);
+      if (transition.state.hp.current === 0) concentrationBroken = true;
+    }
     current = transition.state.hp.current;
     temp = transition.state.hp.temp;
     conditions = [...transition.state.conditions];
@@ -1040,6 +1375,9 @@ export function reduceDirectPcEffects(
         ? [...new Set([...conditions, effect.conditionId])]
         : conditions.filter((condition) => condition !== effect.conditionId);
       if (had !== effect.active) {
+        if (effect.active && conditionBreaksConcentration(effect.conditionId)) {
+          concentrationBroken = true;
+        }
         events.push(
           stamp({
             kind: effect.active ? "condition-gain" : "condition-loss",
@@ -1056,6 +1394,8 @@ export function reduceDirectPcEffects(
     }
     if (effect.kind === "stabilize") {
       if (
+        target.lifecycleEligible !== false &&
+        currentDeathSaves.failures < DEATH_FAIL_LIMIT &&
         current === 0 &&
         (currentDeathSaves.successes !== 3 || currentDeathSaves.failures !== 0)
       ) {
@@ -1084,7 +1424,13 @@ export function reduceDirectPcEffects(
       continue;
     }
     if (effect.kind === "healing") {
-      if (healingBlockedByEffects(provenance.persistentEffects ?? [])) continue;
+      if (
+        target.lifecycleEligible === false ||
+        currentDeathSaves.failures >= DEATH_FAIL_LIMIT ||
+        healingBlockedByEffects(provenance.persistentEffects ?? [])
+      ) {
+        continue;
+      }
       const before = current;
       current = Math.min(target.maxHp, current + amount);
       const landed = current - before;
@@ -1154,6 +1500,8 @@ export function reduceDirectPcEffects(
         events,
         transfers,
         consumedEffectIds: [...consumedEffectIds],
+        damageInstances,
+        concentrationBroken,
       }
     : null;
 }
@@ -1198,7 +1546,7 @@ export async function applyDeclaredCombatEffects(
   const ref = campaignDoc(campaignId);
   await runTransaction(db, async (txn) => {
     const snap = await txn.get(ref);
-    const encounter = (snap.data()?.encounter ?? null) as EncounterState | null;
+    const encounter = storedEncounter(snap.data()?.encounter);
     if (!encounter) return; // tolerant: a member can't conjure a fight
     const campaign = snap.data() as CampaignDoc;
     const actor = context
@@ -1207,13 +1555,14 @@ export async function applyDeclaredCombatEffects(
     if (context && actor?.kind !== "pc") return;
     const attackerRef = pcCombatantRef(actor?.kind === "pc" ? actor : undefined);
     const hitTargetIds = new Set(context?.hitTargetIds ?? []);
+    const activeEffects = foldCombatEffectOps(encounter.effectOps);
 
     // Read every declared PC plus every PC that can receive a persistent transfer.
     // Firestore requires all reads before the first write; the transaction retries when
     // either the encounter or any involved combat slice changes underneath it.
     const relevantPcIds = new Set(applicable.map((effect) => effect.targetId));
     if (actor?.kind === "pc") relevantPcIds.add(actor.id);
-    for (const effect of foldCombatEffectOps(encounter.effectOps)) {
+    for (const effect of activeEffects) {
       if (effect.actor.kind === "pc") relevantPcIds.add(effect.actor.combatantId);
       if (effect.target.kind === "pc") relevantPcIds.add(effect.target.combatantId);
     }
@@ -1237,7 +1586,7 @@ export async function applyDeclaredCombatEffects(
         });
       }
     }
-    for (const effect of foldCombatEffectOps(encounter.effectOps)) {
+    for (const effect of activeEffects) {
       for (const participant of [effect.actor, effect.target]) {
         if (participant.kind !== "pc" || pcTargetMap.has(participant.combatantId))
           continue;
@@ -1279,7 +1628,41 @@ export async function applyDeclaredCombatEffects(
     const pcRefs = pcTargets.map((target) =>
       combatStateRef(target.memberUid, target.characterId)
     );
-    const pcSnaps = await Promise.all(pcRefs.map((combatRef) => txn.get(combatRef)));
+    // Parent state owns both the life/death verdict and the exact Concentration ref.
+    // Read it only for revival-adjacent effects and PCs that can actually receive a
+    // damage packet (directly, through transfer, or through melee retaliation).
+    const parentStateTargetIds = new Set(
+      applicable.flatMap((effect) =>
+        effect.kind === "healing" ||
+        effect.kind === "stabilize" ||
+        (effect.kind === "condition" &&
+          effect.active &&
+          conditionBreaksConcentration(effect.conditionId))
+          ? [effect.targetId]
+          : []
+      )
+    );
+    for (const targetId of potentialPcDamageTargetIds({
+      effects: applicable,
+      activeEffects,
+      hitTargetIds,
+      attacker: attackerRef,
+    })) {
+      parentStateTargetIds.add(targetId);
+    }
+    // Every target parent is read in the transaction because its explicit marker—not
+    // the shape of either document—decides which play-state owner is authoritative.
+    const parentStateReads = pcTargets.map((target, index) => ({
+      index,
+      ref: memberCharacterDoc(target.memberUid, target.characterId),
+    }));
+    const [pcSnaps, parentStateSnaps] = await Promise.all([
+      Promise.all(pcRefs.map((combatRef) => txn.get(combatRef))),
+      Promise.all(parentStateReads.map(({ ref: parentRef }) => txn.get(parentRef))),
+    ]);
+    const parentStateSnapsByIndex = new Map(
+      parentStateReads.map(({ index }, readIndex) => [index, parentStateSnaps[readIndex]])
+    );
     const validTargets = pcTargets.flatMap((target, index) => {
       const combatRef = pcRefs[index];
       if (!combatRef) return [];
@@ -1294,27 +1677,41 @@ export async function applyDeclaredCombatEffects(
       ) {
         return [];
       }
-      const stored = pcSnaps[index]?.exists()
-        ? parseCombatState(pcSnaps[index].data())
-        : null;
+      const parentSnap = parentStateSnapsByIndex.get(index);
+      const parentData = parentSnap?.exists() ? parentSnap.data() : null;
+      const combatSnap = pcSnaps[index];
+      const stored = storedTargetCombatState(
+        combatSnap?.exists() ? combatSnap.data() : null,
+        parentData
+      );
+      const deathSaves = stored?.deathSaves ?? target.deathSaves;
+      const lifecycleEligible = parentStateTargetIds.has(target.targetId)
+        ? storedCharacterLifecycleEligible(parentData, deathSaves?.failures ?? 0, stored)
+        : target.lifecycleEligible;
+      const freshTarget: DeclaredPcTargetSnapshot = {
+        ...target,
+        ...(lifecycleEligible !== undefined ? { lifecycleEligible } : {}),
+        ...(stored
+          ? {
+              currentHp: stored.hp.current,
+              tempHp: stored.hp.temp,
+              conditions: stored.conditions,
+              bardicInspirationDie: stored.bardicInspirationDie,
+              ...(stored.heroicInspiration !== undefined
+                ? { heroicInspiration: stored.heroicInspiration }
+                : {}),
+              deathSaves,
+            }
+          : {}),
+      };
       return [
         {
-          target: {
-            ...target,
-            ...(stored
-              ? {
-                  currentHp: stored.hp.current,
-                  tempHp: stored.hp.temp,
-                  conditions: stored.conditions,
-                  bardicInspirationDie: stored.bardicInspirationDie,
-                  ...(stored.heroicInspiration !== undefined
-                    ? { heroicInspiration: stored.heroicInspiration }
-                    : {}),
-                  deathSaves: stored.deathSaves,
-                }
-              : {}),
-          },
+          target: freshTarget,
           ref: combatRef,
+          stored,
+          combat: stored ?? combatSeedForTarget(freshTarget),
+          concentration: storedCharacterConcentration(parentData, stored),
+          pendingConcentrationSaves: stored?.pendingConcentrationSaves ?? [],
         },
       ];
     });
@@ -1332,10 +1729,27 @@ export async function applyDeclaredCombatEffects(
     const initialEffectOps = encounter.effectOps ?? [];
     let nextEffectOps = initialEffectOps;
     let chronicle = encounter;
-    const latestTargets = new Map(
+    const latestTargets = new Map<string, DeclaredPcTargetSnapshot>(
       validTargets.map(({ target }) => [target.targetId, target])
     );
-    const changedTargets = new Map<string, DirectPcEffectResult>();
+    const concentrationByTarget = new Map<string, StoredConcentration>(
+      validTargets.map(({ target, concentration }) => [target.targetId, concentration])
+    );
+    const pendingConcentrationSavesByTarget = new Map<string, PendingConcentrationSave[]>(
+      validTargets.map(({ target, pendingConcentrationSaves }) => [
+        target.targetId,
+        [...pendingConcentrationSaves],
+      ])
+    );
+    const concentrationPromptOrdinalByTarget = new Map<string, number>();
+    const concentrationBrokenTargets = new Set<string>();
+    const initialEventCursor = encounter.events?.length ?? 0;
+    const changedTargets = new Map<
+      string,
+      DirectPcEffectResult & {
+        pendingConcentrationSaves: PendingConcentrationSave[];
+      }
+    >();
     const transferQueue: Array<
       DirectPcEffectResult["transfers"][number] & { path: ReadonlySet<string> }
     > = [];
@@ -1368,16 +1782,7 @@ export async function applyDeclaredCombatEffects(
           chronicle,
           [effect],
           context ? { actorId: context.actorId, action: context.action } : undefined,
-          effectsForTarget(
-            nextEffectOps,
-            effect.targetId,
-            undefined,
-            effect.kind === "condition" ||
-              effect.kind === "resource" ||
-              effect.kind === "stabilize"
-              ? undefined
-              : effect.tokenIndex
-          )
+          effectsForTarget(nextEffectOps, effect.targetId)
         );
         continue;
       }
@@ -1398,6 +1803,7 @@ export async function applyDeclaredCombatEffects(
       result: DirectPcEffectResult,
       path: ReadonlySet<string> = new Set()
     ): void => {
+      const targetId = result.target.targetId;
       latestTargets.set(result.target.targetId, {
         ...result.target,
         currentHp: result.hp.current,
@@ -1411,16 +1817,68 @@ export async function applyDeclaredCombatEffects(
           : {}),
         ...(result.deathSaves ? { deathSaves: result.deathSaves } : {}),
       });
-      const previous = changedTargets.get(result.target.targetId);
-      changedTargets.set(result.target.targetId, {
+      const previous = changedTargets.get(targetId);
+      const heldConcentration = concentrationByTarget.get(targetId) ?? "";
+      let pendingConcentrationSaves =
+        pendingConcentrationSavesByTarget.get(targetId) ?? [];
+      const concentrationBroken =
+        concentrationBrokenTargets.has(targetId) ||
+        result.concentrationBroken ||
+        result.conditions.some(conditionBreaksConcentration);
+      if (concentrationBroken) {
+        concentrationBrokenTargets.add(targetId);
+        pendingConcentrationSaves = [];
+      } else if (result.damageInstances.length > 0) {
+        pendingConcentrationSaves = heldConcentration
+          ? pendingConcentrationSaves.filter(
+              (pending) => pending.spell === heldConcentration
+            )
+          : [];
+        if (heldConcentration) {
+          const ids = new Set(pendingConcentrationSaves.map(({ id }) => id));
+          for (const damage of result.damageInstances) {
+            const packetOrdinal =
+              (concentrationPromptOrdinalByTarget.get(targetId) ?? 0) + 1;
+            concentrationPromptOrdinalByTarget.set(targetId, packetOrdinal);
+            const id = remoteConcentrationPromptId({
+              campaignId,
+              encounterEpoch: encounter.epoch,
+              eventCursor: initialEventCursor,
+              actorId: context?.actorId ?? "system",
+              ...(context?.outcomeOccurrenceId
+                ? { occurrenceId: context.outcomeOccurrenceId }
+                : {}),
+              targetId,
+              packetOrdinal,
+            });
+            if (ids.has(id)) continue;
+            ids.add(id);
+            pendingConcentrationSaves.push({
+              id,
+              spell: heldConcentration,
+              damage,
+              difficultyClass: concentrationSaveDc(damage),
+            });
+          }
+        }
+      }
+      pendingConcentrationSavesByTarget.set(targetId, pendingConcentrationSaves);
+      changedTargets.set(targetId, {
         ...result,
         deathSaves: result.deathSaves ?? previous?.deathSaves ?? null,
+        damageInstances: [
+          ...(previous?.damageInstances ?? []),
+          ...result.damageInstances,
+        ],
+        concentrationBroken:
+          concentrationBroken || previous?.concentrationBroken === true,
+        pendingConcentrationSaves,
       });
       chronicle = recordDirectPcEffectEvents(chronicle, result.events);
       enqueueTransfers(result.transfers, path);
       consume(result.consumedEffectIds);
-      if (result.hp.current === 0) {
-        consume(concentrationEffectIdsOwnedBy(nextEffectOps, result.target.targetId));
+      if (concentrationBroken) {
+        consume(concentrationEffectIdsOwnedBy(nextEffectOps, targetId));
       }
     };
 
@@ -1480,9 +1938,6 @@ export async function applyDeclaredCombatEffects(
             amount: transfer.amount,
             ...(transfer.damageType ? { damageType: transfer.damageType } : {}),
             ...(transfer.damageSource ? { damageSource: transfer.damageSource } : {}),
-            ...(transfer.target.tokenIndex !== undefined
-              ? { tokenIndex: transfer.target.tokenIndex }
-              : {}),
           },
           nextEffectOps,
           undefined,
@@ -1498,24 +1953,22 @@ export async function applyDeclaredCombatEffects(
     }
 
     for (const [targetId, result] of changedTargets) {
-      const combatRef = validById.get(targetId)?.ref;
-      if (!combatRef) continue;
-      txn.set(
-        combatRef,
-        {
-          hp: result.hp,
-          conditions: result.conditions,
-          ...(result.bardicInspirationDie !== undefined
-            ? { bardicInspirationDie: result.bardicInspirationDie }
-            : {}),
-          ...(result.heroicInspiration !== undefined
-            ? { heroicInspiration: result.heroicInspiration }
-            : {}),
-          ...(result.deathSaves ? { deathSaves: result.deathSaves } : {}),
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
+      const entry = validById.get(targetId);
+      if (!entry) continue;
+      const nextCombat: CombatState = {
+        ...entry.combat,
+        hp: result.hp,
+        conditions: result.conditions,
+        ...(result.bardicInspirationDie !== undefined
+          ? { bardicInspirationDie: result.bardicInspirationDie }
+          : {}),
+        ...(result.heroicInspiration !== undefined
+          ? { heroicInspiration: result.heroicInspiration }
+          : {}),
+        ...(result.deathSaves ? { deathSaves: result.deathSaves } : {}),
+        pendingConcentrationSaves: result.pendingConcentrationSaves,
+      };
+      writePeerCombatEffect(txn, entry.ref, entry.stored, entry.combat, nextCombat);
     }
     const effectOpsChanged = nextEffectOps !== initialEffectOps;
     if (chronicle === encounter && changedTargets.size === 0 && !effectOpsChanged) return;
@@ -1545,12 +1998,10 @@ export async function deliverQueuedMemberEffects(args: {
   if (devBypassEnabled() || args.maxHp <= 0) return;
   const campaignRef = campaignDoc(args.campaignId);
   const combatRef = combatStateRef(args.uid, args.characterId);
+  const characterRef = memberCharacterDoc(args.uid, args.characterId);
   await runTransaction(db, async (txn) => {
-    const [campaignSnap, combatSnap] = await Promise.all([
-      txn.get(campaignRef),
-      txn.get(combatRef),
-    ]);
-    const encounter = (campaignSnap.data()?.encounter ?? null) as EncounterState | null;
+    const campaignSnap = await txn.get(campaignRef);
+    const encounter = storedEncounter(campaignSnap.data()?.encounter);
     if (!encounter) return;
     const target = encounter.combatants.find(
       (combatant) => combatant.id === args.targetId
@@ -1567,13 +2018,27 @@ export async function deliverQueuedMemberEffects(args: {
       (effect) => effect.targetId === args.targetId
     );
     if (queued.length === 0) return;
-    let combat = combatSnap.exists()
-      ? parseCombatState(combatSnap.data())
-      : defaultCombatState(args.maxHp);
+    const [combatSnap, characterSnap] = await Promise.all([
+      txn.get(combatRef),
+      txn.get(characterRef),
+    ]);
+    const parentData = characterSnap.exists() ? characterSnap.data() : null;
+    const stored = storedTargetCombatState(
+      combatSnap.exists() ? combatSnap.data() : null,
+      parentData
+    );
+    const beforeCombat = stored ?? defaultCombatState(args.maxHp);
+    let combat = beforeCombat;
     let chronicle = encounter;
     let changed = false;
 
     for (const effect of queued) {
+      if (
+        effect.kind === "healing" &&
+        !storedCharacterLifecycleEligible(parentData, combat.deathSaves.failures, combat)
+      ) {
+        continue;
+      }
       const before = combat;
       const after = reduceMemberCombatEffects(
         before,
@@ -1614,7 +2079,7 @@ export async function deliverQueuedMemberEffects(args: {
     }
 
     if (!changed) return;
-    txn.set(combatRef, combatStateWriteData(combat));
+    writePeerCombatEffect(txn, combatRef, stored, beforeCombat, combat);
     if (chronicle !== encounter) {
       txn.update(campaignRef, {
         "encounter.events": chronicle.events ?? [],
@@ -1671,7 +2136,7 @@ export async function revokePersistentCombatEffect(
   const ref = campaignDoc(campaignId);
   await runTransaction(db, async (txn) => {
     const snap = await txn.get(ref);
-    const encounter = (snap.data()?.encounter ?? null) as EncounterState | null;
+    const encounter = storedEncounter(snap.data()?.encounter);
     if (!encounter) return;
     const operation = makeRevokeCombatEffectOp(encounter.effectOps, effectId);
     if (!operation) return;
@@ -1718,7 +2183,7 @@ export async function revokePersistentCombatEffectsBySource(
   for (;;) {
     const appended = await runTransaction(db, async (txn) => {
       const snap = await txn.get(ref);
-      const encounter = (snap.data()?.encounter ?? null) as EncounterState | null;
+      const encounter = storedEncounter(snap.data()?.encounter);
       if (!encounter) return false;
       const effect = sourceOwnedActiveEffect(encounter.effectOps, owner);
       if (!effect) return false;
@@ -1769,7 +2234,7 @@ async function appendPersistentCombatEffectOp(
   const ref = campaignDoc(campaignId);
   await runTransaction(db, async (txn) => {
     const snap = await txn.get(ref);
-    const encounter = (snap.data()?.encounter ?? null) as EncounterState | null;
+    const encounter = storedEncounter(snap.data()?.encounter);
     if (!encounter) return;
     if (
       operation.kind === "apply" &&
@@ -1806,7 +2271,7 @@ function persistentHpMutations(
     const key =
       target.kind === "pc"
         ? `pc:${target.memberUid}:${target.characterId}`
-        : `monster:${target.combatantId}:${String(target.tokenIndex ?? 0)}`;
+        : `monster:${target.combatantId}`;
     const current = byTarget.get(key);
     byTarget.set(key, { target, delta: (current?.delta ?? 0) + delta });
   };
@@ -1852,15 +2317,12 @@ function memberCombatMax(
   );
 }
 
-/** Campaign snapshots are required on valid documents, but this IO edge remains
- * absence-safe for an older/incomplete local or transaction fixture. */
+/** Read the current attached-character snapshot from its single campaign home. */
 function campaignMemberHpMax(
   campaign: CampaignDoc,
   memberUid: string
 ): number | undefined {
-  const memberDetails = (campaign as { memberDetails?: CampaignDoc["memberDetails"] })
-    .memberDetails;
-  return memberDetails?.[memberUid]?.character?.hpMax;
+  return campaign.memberDetails[memberUid]?.character?.hpMax;
 }
 
 function applyPersistentMonsterHpDelta(
@@ -1868,23 +2330,11 @@ function applyPersistentMonsterHpDelta(
   target: Extract<CombatantRef, { kind: "monster" }>,
   delta: number
 ): EncounterState {
-  let combatantId = target.combatantId;
-  let tokenIndex = target.tokenIndex ?? 0;
-  let monster = encounter.combatants.find(
+  const monster = encounter.combatants.find(
     (combatant): combatant is EncounterMonster =>
-      combatant.id === combatantId && combatant.kind === "monster"
+      combatant.id === target.combatantId && combatant.kind === "monster"
   );
-  if (!monster) {
-    const legacy = /^(.*)~(\d+)$/.exec(target.combatantId);
-    if (!legacy) return encounter;
-    combatantId = legacy[1] ?? target.combatantId;
-    tokenIndex = Math.max(0, Number(legacy[2]) - 1);
-    monster = encounter.combatants.find(
-      (combatant): combatant is EncounterMonster =>
-        combatant.id === combatantId && combatant.kind === "monster"
-    );
-  }
-  if (!monster || tokenIndex >= monster.tokens.length) return encounter;
+  if (!monster) return encounter;
   const targetMonster = monster;
   return {
     ...encounter,
@@ -1893,10 +2343,11 @@ function applyPersistentMonsterHpDelta(
         ? combatant
         : {
             ...targetMonster,
-            maxHp: Math.max(1, targetMonster.maxHp + delta),
-            tokens: targetMonster.tokens.map((hp, index) =>
-              index === tokenIndex ? Math.max(0, hp + delta) : hp
-            ),
+            hp: {
+              ...targetMonster.hp,
+              current: Math.max(0, targetMonster.hp.current + delta),
+              max: Math.max(1, targetMonster.hp.max + delta),
+            },
           }
     ),
   };
@@ -1941,7 +2392,13 @@ async function applyPersistentCombatEffectOperations(
   const pcRefs = pcMutations.map(({ target }) =>
     combatStateRef(target.memberUid, target.characterId)
   );
-  const pcSnapshots = await Promise.all(pcRefs.map((ref) => txn.get(ref)));
+  const pcParentRefs = pcMutations.map(({ target }) =>
+    memberCharacterDoc(target.memberUid, target.characterId)
+  );
+  const [pcSnapshots, pcParentSnapshots] = await Promise.all([
+    Promise.all(pcRefs.map((ref) => txn.get(ref))),
+    Promise.all(pcParentRefs.map((ref) => txn.get(ref))),
+  ]);
   let nextEncounter = encounter;
   for (const mutation of mutations) {
     if (mutation.target.kind === "monster") {
@@ -1954,16 +2411,22 @@ async function applyPersistentCombatEffectOperations(
   }
   for (const [index, mutation] of pcMutations.entries()) {
     const snapshot = pcSnapshots[index];
+    const parentSnapshot = pcParentSnapshots[index];
     const combatRef = pcRefs[index];
-    if (!snapshot || !combatRef) continue;
-    const current = snapshot.exists()
-      ? parseCombatState(snapshot.data())
-      : defaultCombatState(
-          memberCombatMax(campaign, mutation.target, encounter.effectOps)
-        );
-    txn.set(
+    if (!snapshot || !parentSnapshot || !combatRef) continue;
+    const stored = storedTargetCombatState(
+      snapshot.exists() ? snapshot.data() : null,
+      parentSnapshot.exists() ? parentSnapshot.data() : null
+    );
+    const current =
+      stored ??
+      defaultCombatState(memberCombatMax(campaign, mutation.target, encounter.effectOps));
+    writePeerCombatEffect(
+      txn,
       combatRef,
-      combatStateWriteData(applyPersistentHpDelta(current, mutation.delta))
+      stored,
+      current,
+      applyPersistentHpDelta(current, mutation.delta)
     );
   }
   txn.update(campaignRef, {
@@ -1993,29 +2456,7 @@ function encounterContainsCombatantRef(
     );
   }
 
-  if (direct?.kind === "monster") {
-    return (
-      ref.tokenIndex === undefined ||
-      (Number.isInteger(ref.tokenIndex) &&
-        ref.tokenIndex >= 0 &&
-        ref.tokenIndex < direct.tokens.length)
-    );
-  }
-
-  // Read-conformed legacy groups expose `monster~2`, while the untouched campaign
-  // transaction may still carry `monster.tokens[1]`. Accept only that exact slot.
-  const legacy = /^(.*)~(\d+)$/.exec(ref.combatantId);
-  if (!legacy || ref.tokenIndex !== undefined) return false;
-  const group = encounter.combatants.find(
-    (combatant) => combatant.id === legacy[1] && combatant.kind === "monster"
-  );
-  const index = Number(legacy[2]) - 1;
-  return (
-    group?.kind === "monster" &&
-    Number.isInteger(index) &&
-    index >= 0 &&
-    index < group.tokens.length
-  );
+  return direct?.kind === "monster";
 }
 
 /** Pure append guard shared by Firestore and dev-bypass writes. */
@@ -2054,7 +2495,7 @@ function makeRevokeCombatEffectOp(
 
 function currentDevEncounter(campaignId: string): EncounterState | null {
   const campaign = useCampaignStore.getState().campaign;
-  return campaign?.id === campaignId ? (campaign.encounter ?? null) : null;
+  return campaign?.id === campaignId ? storedEncounter(campaign.encounter) : null;
 }
 
 function appendPersistentCombatEffectOpOptimistic(
@@ -2105,44 +2546,23 @@ function reducePersistentMonsterDamage(
   hit?: { attacker: CombatantRef | null; attackMode?: "melee" | "ranged" },
   provenance?: { actorId?: string; action?: LocText }
 ): PersistentMonsterDamageResult {
-  let storedTargetId = effect.targetId;
-  let tokenIndex = effect.tokenIndex;
-  let monster = encounter.combatants.find(
+  const monster = encounter.combatants.find(
     (combatant): combatant is EncounterMonster =>
-      combatant.id === storedTargetId && combatant.kind === "monster"
+      combatant.id === effect.targetId && combatant.kind === "monster"
   );
-  if (!monster) {
-    const legacy = /^(.*)~(\d+)$/.exec(effect.targetId);
-    if (legacy) {
-      storedTargetId = legacy[1] ?? effect.targetId;
-      tokenIndex = Math.max(0, Number(legacy[2]) - 1);
-      monster = encounter.combatants.find(
-        (combatant): combatant is EncounterMonster =>
-          combatant.id === storedTargetId && combatant.kind === "monster"
-      );
-    }
-  }
   if (!monster) return { encounter, transfers: [], consumedEffectIds: [] };
-  const resolvedTokenIndex = tokenIndex ?? firstLiveTokenIndex(monster.tokens);
-  const currentHp = monster.tokens[resolvedTokenIndex];
-  if (currentHp === undefined) return { encounter, transfers: [], consumedEffectIds: [] };
-  const persistentEffects = effectsForTarget(
-    effectOps,
-    effect.targetId,
-    undefined,
-    effect.tokenIndex
-  );
+  const persistentEffects = effectsForTarget(effectOps, effect.targetId);
   const retaliations = hit
     ? resolvePersistentHit(persistentEffects, {
         attacker: hit.attacker,
         attackMode: hit.attackMode,
-        tempHp: monster.tempHp ?? 0,
+        tempHp: monster.hp.temp,
       })
     : [];
   const outcome = resolvePersistentDamage(persistentEffects, {
     intake: effect.intake,
-    currentHp,
-    tempHp: monster.tempHp ?? 0,
+    currentHp: monster.hp.current,
+    tempHp: monster.hp.temp,
     incomingDamage: effect.amount,
     ...(effect.damageType
       ? {
@@ -2155,8 +2575,7 @@ function reducePersistentMonsterDamage(
   return {
     encounter: recordMonsterDamage(
       encounter,
-      storedTargetId,
-      resolvedTokenIndex,
+      effect.targetId,
       outcome.targetDamage,
       provenance?.actorId,
       provenance?.action
@@ -2182,7 +2601,7 @@ function reducePersistentMonsterDamage(
 }
 
 /** Apply every declared hit to the encounter through the pure {@link recordMonsterHp}
- *  recorder (lowers the first live token + appends the unattributed chronicle event).
+ *  recorder (updates one creature + appends the unattributed chronicle event).
  *  PURE — shared by the live transaction and the dev-bypass optimistic path so both
  *  behave identically. Returns the SAME state when nothing landed. */
 export function reduceDeclaredEffects(
@@ -2194,27 +2613,7 @@ export function reduceDeclaredEffects(
   let next = encounter;
   for (const effect of effects) {
     const { targetId } = effect;
-    let storedTargetId = targetId;
-    let legacyIndex =
-      effect.kind === "condition" ||
-      effect.kind === "resource" ||
-      effect.kind === "stabilize"
-        ? undefined
-        : effect.tokenIndex;
-    let monster = next.combatants.find((c) => c.id === storedTargetId);
-    // A player may be looking at the read-conformed instance `monster-1~2` while an
-    // untouched live campaign still stores the retired `monster-1.tokens[1]` group.
-    // Resolve that deterministic id back to the old slot inside this transaction. The
-    // member write keeps the combatant count unchanged, satisfying the narrow rules;
-    // the next DM structural save persists the already-conformed instance model.
-    if (!monster) {
-      const legacy = /^(.*)~(\d+)$/.exec(targetId);
-      if (legacy) {
-        storedTargetId = legacy[1] ?? targetId;
-        legacyIndex = Math.max(0, Number(legacy[2]) - 1);
-        monster = next.combatants.find((c) => c.id === storedTargetId);
-      }
-    }
+    const monster = next.combatants.find((c) => c.id === targetId);
     // PC state lives in its combat subdocument. The IO seam handles it directly from
     // the resolver's live target snapshot; this encounter reducer owns monsters only.
     if (monster?.kind === "pc") continue;
@@ -2222,19 +2621,15 @@ export function reduceDeclaredEffects(
     if (effect.kind === "resource") {
       if (effect.resource.kind === "bardic-inspiration-die") {
         if (monster.bardicInspirationDie === effect.resource.value) continue;
-        next = setMonsterBardicInspirationDie(
-          next,
-          storedTargetId,
-          effect.resource.value
-        );
+        next = setMonsterBardicInspirationDie(next, targetId, effect.resource.value);
       } else {
         if (monster.heroicInspiration) continue;
-        next = setMonsterHeroicInspiration(next, storedTargetId, true);
+        next = setMonsterHeroicInspiration(next, targetId, true);
       }
       if (provenance) {
         next = appendEvent(next, {
           kind: "resource-grant",
-          targetId: storedTargetId,
+          targetId,
           resource: effect.resource.kind,
           ...(effect.resource.kind === "bardic-inspiration-die"
             ? { value: effect.resource.value }
@@ -2247,9 +2642,9 @@ export function reduceDeclaredEffects(
     }
     if (effect.kind === "condition") {
       const wasActive = monster.conditions.includes(effect.conditionId);
-      next = setMonsterCondition(next, storedTargetId, effect.conditionId, effect.active);
+      next = setMonsterCondition(next, targetId, effect.conditionId, effect.active);
       if (wasActive !== effect.active) {
-        next = recordCondition(next, storedTargetId, effect.conditionId, effect.active);
+        next = recordCondition(next, targetId, effect.conditionId, effect.active);
       }
       continue;
     }
@@ -2258,19 +2653,13 @@ export function reduceDeclaredEffects(
     if (effect.kind === "stabilize") continue;
     if (effect.amount <= 0) continue;
     if (effect.kind === "temp-hp") {
-      next = setMonsterTempHp(
-        next,
-        storedTargetId,
-        Math.max(monster.tempHp ?? 0, effect.amount)
-      );
+      next = setMonsterTempHp(next, targetId, Math.max(monster.hp.temp, effect.amount));
       continue;
     }
-    const tokenIndex = legacyIndex ?? firstLiveTokenIndex(monster.tokens);
     if (effect.kind === "damage") {
-      next = recordMonsterDamage(next, storedTargetId, tokenIndex, effect.amount);
+      next = recordMonsterDamage(next, targetId, effect.amount);
     } else if (!healingBlockedByEffects(persistentEffects)) {
-      const value = (monster.tokens[tokenIndex] ?? 0) + effect.amount;
-      next = recordMonsterHp(next, storedTargetId, tokenIndex, value);
+      next = recordMonsterHp(next, targetId, monster.hp.current + effect.amount);
     }
   }
   return next;
@@ -2387,6 +2776,9 @@ function applyDeclaredEffectsOptimistic(
             heroicInspiration:
               current.heroicInspiration ?? declared?.heroicInspiration ?? false,
             deathSaves: current.deathSaves,
+            ...(declared?.lifecycleEligible !== undefined
+              ? { lifecycleEligible: declared.lifecycleEligible }
+              : {}),
             defenses: declared?.defenses ?? NO_DEFENSES,
           },
           targetEffects,
@@ -2449,16 +2841,7 @@ function applyDeclaredEffectsOptimistic(
         next,
         [effect],
         context ? { actorId: context.actorId, action: context.action } : undefined,
-        effectsForTarget(
-          nextEffectOps,
-          effect.targetId,
-          undefined,
-          effect.kind === "condition" ||
-            effect.kind === "resource" ||
-            effect.kind === "stabilize"
-            ? undefined
-            : effect.tokenIndex
-        )
+        effectsForTarget(nextEffectOps, effect.targetId)
       );
       continue;
     }
@@ -2507,9 +2890,6 @@ function applyDeclaredEffectsOptimistic(
         amount: transfer.amount,
         ...(transfer.damageType ? { damageType: transfer.damageType } : {}),
         ...(transfer.damageSource ? { damageSource: transfer.damageSource } : {}),
-        ...(transfer.target.tokenIndex !== undefined
-          ? { tokenIndex: transfer.target.tokenIndex }
-          : {}),
       },
       nextEffectOps,
       undefined,
@@ -2679,7 +3059,9 @@ export async function persistStartEncounter(
 ): Promise<void> {
   if (devBypassEnabled()) return;
   await updateDoc(campaignDoc(campaignId), {
-    encounter: stripUndefined(encounter as unknown as Record<string, unknown>),
+    encounter: stripUndefined(
+      encounterForWrite(encounter) as unknown as Record<string, unknown>
+    ),
     encounterInit: {},
     encounterSkipped: {},
     updatedAt: serverTimestamp(),
@@ -2764,7 +3146,7 @@ export async function updateCampaign(
 ): Promise<void> {
   if (devBypassEnabled()) return;
   await updateDoc(campaignDoc(campaignId), {
-    ...(stripUndefined(data) as Record<string, unknown>),
+    ...(stripUndefined(campaignWritableForWrite(data)) as Record<string, unknown>),
     updatedAt: serverTimestamp(),
   });
 }
@@ -2828,13 +3210,14 @@ export function createDevCampaignSave(
   campaignId: string
 ): DebouncedWriter<CampaignWritable> {
   return createDebouncedWriter<CampaignWritable>((data) => {
+    const pending = campaignWritableForWrite(reconcileEncounterPointer(data));
     updateDevDocument(
       DEV_CAMPAIGN_COLLECTION,
       campaignId,
       resolveDevCampaign(campaignId),
       (current) => ({
         ...current,
-        ...reconcileEncounterPointer(data),
+        ...pending,
         updatedAt: new Date(),
       })
     );
@@ -2953,13 +3336,44 @@ export function subscribeToSharedCampaigns(
 
 /**
  * Delete a campaign and cascade its subcollections (DM-only — `firestore.rules`
- * `allow delete: if isDm()`). Firestore does not cascade, so the known
- * subcollections (every session + the single chronicle doc) are deleted first,
- * then the parent — no orphaned sub-resources (the no-leaks rule). No-op under dev
- * bypass. The DM is a member, so the subcollection writes are permitted.
+ * `allow delete: if isDm()`). Firestore does not cascade, so unbounded child
+ * collections are removed first. The final transaction fresh-reads the roster,
+ * clears every still-reciprocal character claim, and deletes the chronicle + parent
+ * together. A failed final commit therefore leaves the campaign addressable and all
+ * attachment claims retryable; it can never delete the authorization aggregate while
+ * stranding its members behind stale `attachedCampaignId` indexes.
  */
 export async function deleteCampaign(campaignId: string): Promise<void> {
   if (devBypassEnabled()) return;
+  const campaignRef = campaignDoc(campaignId);
+  const attachedCharacters = (
+    data: Record<string, unknown> | undefined
+  ): Array<{ uid: string; characterId: string; ref: ReturnType<typeof doc> }> => {
+    const details = data?.memberDetails;
+    if (typeof details !== "object" || details === null || Array.isArray(details)) {
+      return [];
+    }
+    const seen = new Set<string>();
+    return Object.entries(details).flatMap(([uid, raw]) => {
+      if (uid.length === 0 || typeof raw !== "object" || raw === null) return [];
+      const characterId = nonEmptyString((raw as Record<string, unknown>).characterId);
+      const key = characterId === null ? "" : `${uid}\u0000${characterId}`;
+      if (characterId === null || seen.has(key)) return [];
+      seen.add(key);
+      return [
+        { uid, characterId, ref: doc(db, "users", uid, "characters", characterId) },
+      ];
+    });
+  };
+
+  // Refuse an unrepresentable final atomic closure before deleting any children.
+  const preflight = await getDoc(campaignRef);
+  const preflightAttachments = preflight.exists()
+    ? attachedCharacters(preflight.data())
+    : [];
+  if (preflightAttachments.length > MAX_ATOMIC_CAMPAIGN_DETACHES) {
+    throw new RangeError("Campaign roster exceeds the atomic deletion boundary");
+  }
   // Cascade the custom banner in Storage too — it's addressed by path, not a
   // parent relationship, so deleting the campaign doc alone would leak the file.
   // Idempotent (ignores "not-found" when the campaign used the default art),
@@ -2973,8 +3387,24 @@ export async function deleteCampaign(campaignId: string): Promise<void> {
     const notes = await getDocs(col);
     await Promise.all(notes.docs.map((d) => deleteDoc(doc(col, d.id))));
   }
-  await deleteDoc(chronicleDoc(campaignId)).catch(() => {});
-  await deleteDoc(campaignDoc(campaignId));
+  await runTransaction(db, async (txn) => {
+    const campaignSnap = await txn.get(campaignRef);
+    if (!campaignSnap.exists()) return;
+    const attachments = attachedCharacters(campaignSnap.data());
+    if (attachments.length > MAX_ATOMIC_CAMPAIGN_DETACHES) {
+      throw new RangeError("Campaign roster exceeds the atomic deletion boundary");
+    }
+    // Firestore transactions require every read before the first write.
+    const characterSnaps = await Promise.all(attachments.map(({ ref }) => txn.get(ref)));
+    attachments.forEach(({ ref }, index) => {
+      const snap = characterSnaps[index];
+      if (snap && snap.exists() && snap.data().attachedCampaignId === campaignId) {
+        txn.update(ref, { attachedCampaignId: deleteField() });
+      }
+    });
+    txn.delete(chronicleDoc(campaignId));
+    txn.delete(campaignRef);
+  });
 }
 
 // ─── Notes subcollections (the content-sharing soft-reveal — PATH-based gate) ────

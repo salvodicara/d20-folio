@@ -25,6 +25,7 @@ import {
 } from "@/lib/views/spell-cast-sources";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { CharacterDoc } from "@/types/character";
+import { packGrantExtensions } from "@pack";
 
 const LABELS = { mastery: "MASTERY", signature: "SIGNATURE" };
 
@@ -42,7 +43,7 @@ const AT_WILL_INVOCATIONS: ReadonlyArray<readonly [string, string]> = [
   ["whispers-of-the-grave", "speak-with-dead"],
   // Pact of the Chain: "You learn the Find Familiar spell and can cast it as a
   // Magic action without expending a spell slot." Same at-will primitive as the
-  // others (the special familiar forms / familiar-attack are prose-only).
+  // others; special forms use their own typed grant, while the attack swap is prose.
   ["pact-of-the-chain", "find-familiar"],
 ];
 
@@ -270,8 +271,11 @@ describe("Pact of the Chain — slotless at-will Find Familiar", () => {
     expect(atWill?.casterAbility).toBe("CHA");
     expect(prepared?.spellId).toBe("find-familiar");
     expect(prepared?.spellAbility).toBe("CHA");
-    // The seven SRD special forms are now MODELED via the familiar-forms grant
-    // (the form picker offers them); the "forgo an attack" clause stays prose.
+    // The seven public special forms are always modeled; a composed build may
+    // extend the same typed familiar-forms grant with pack-only forms.
+    const packForms = (packGrantExtensions["invocation:pact-of-the-chain"] ?? []).flatMap(
+      (grant) => (grant.type === "familiar-forms" ? [...grant.monsterIds] : [])
+    );
     expect(forms?.monsterIds).toEqual([
       "imp",
       "pseudodragon",
@@ -280,6 +284,7 @@ describe("Pact of the Chain — slotless at-will Find Familiar", () => {
       "sphinx-of-wonder",
       "sprite",
       "venomous-snake",
+      ...packForms,
     ]);
     expect(grants).toHaveLength(3);
     expect(srd("invocation", inv?.id ?? "", "description", "en")).toContain(

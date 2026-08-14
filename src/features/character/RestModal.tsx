@@ -10,13 +10,16 @@
  * - Long rest: restore HP, spell slots, all trackers, reduce exhaustion
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { totalLevel } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
 import { Moon, Sun, Heart, Dice5 } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useUIStore } from "@/stores/uiStore";
+import { useToastStore } from "@/stores/toastStore";
+import { useItemResourceCommands } from "./center/useItemResourceCommands";
+import { canCharacterRest } from "@/lib/character-status";
 import {
   abilityModifier,
   effectiveAbilityScores,
@@ -37,6 +40,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type RestPhase = "idle" | "confirm-short" | "confirm-long" | "summary";
+type RestBoundaryKind = "short-rest" | "long-rest";
 
 interface RestSummary {
   type: "short" | "long";
@@ -49,6 +53,8 @@ interface RestSummary {
   exhaustionReduced: boolean;
   /** S4 — Human's Resourceful: a Long Rest auto-lit Heroic Inspiration. */
   inspirationGained: boolean;
+  /** Total typed item-resource units restored by this exact rest boundary. */
+  itemResourceUnitsRecovered: number;
 }
 
 /**
@@ -82,10 +88,13 @@ function RestFlow({ onClose }: { onClose: () => void }) {
   const setHP = useCharacterStore((s) => s.setHP);
   const updateSession = useCharacterStore((s) => s.updateSession);
   const sheetMode = useUIStore((s) => s.sheetMode);
+  const itemResourceCommands = useItemResourceCommands();
 
   const [phase, setPhase] = useState<RestPhase>("idle");
   const [summary, setSummary] = useState<RestSummary | null>(null);
   const [hitDiceToSpend, setHitDiceToSpend] = useState(0);
+  const [committing, setCommitting] = useState(false);
+  const committingRef = useRef(false);
 
   // Count spent spell slots
   const totalSlotsSpent = useMemo(() => {
@@ -104,7 +113,9 @@ function RestFlow({ onClose }: { onClose: () => void }) {
 
   if (!character) return null;
 
-  const { character: charData, session } = character;
+  const restCharacter = character;
+  const { character: charData, session } = restCharacter;
+  const restEligible = canCharacterRest(restCharacter.status, session);
   const level = totalLevel(charData);
   const hitDie = charData.hitDieType;
   const hitDiceMax = charData.hitDiceTotalOverride ?? level;
@@ -134,6 +145,31 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     conMod,
   });
 
+  /** Preflight and atomically commit one typed item-resource rest boundary.
+   * The reviewed character snapshot stays frozen across any physical-roll input. */
+  async function commitRestBoundary(kind: RestBoundaryKind) {
+    if (committingRef.current) return null;
+    if (!canCharacterRest(restCharacter.status, restCharacter.session)) return null;
+    committingRef.current = true;
+    setCommitting(true);
+    try {
+      const prepared = await itemResourceCommands.prepareBoundary({ kind });
+      if (!prepared) return null;
+      const live = useCharacterStore.getState().character;
+      if (live !== restCharacter || !canCharacterRest(live.status, live.session)) {
+        useToastStore.getState().showToast({
+          message: t("rest.stateChanged"),
+          duration: 5000,
+        });
+        return null;
+      }
+      return itemResourceCommands.commitBoundary(prepared) ? prepared : null;
+    } finally {
+      committingRef.current = false;
+      setCommitting(false);
+    }
+  }
+
   /**
    * RA-02 — finish the Short Rest, healing by `healedHp` (0 when no dice were
    * spent). The heal is the player's ENTERED roll + CON mod per die (golden rule
@@ -141,8 +177,9 @@ function RestFlow({ onClose }: { onClose: () => void }) {
    * deterministically in {@link handleShortRestHealApply}. Clamped to the
    * effective max; the dice are debited; the summary reports the ACTUAL HP gained.
    */
-  function finishShortRest(healedHp: number) {
-    if (!character) return;
+  async function finishShortRest(healedHp: number) {
+    const prepared = await commitRestBoundary("short-rest");
+    if (!prepared) return;
     const hpBefore = hpCurrent;
     const newHp = Math.min(hpCurrent + healedHp, hpMax);
 
@@ -150,7 +187,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     // shortRest() applies it, so the summary can report it). 0 for anyone
     // without the grant.
     const exhaustionRemovedOnShort =
-      getShortRestExhaustionRecovery(character) > 0 && session.exhaustion > 0;
+      getShortRestExhaustionRecovery(restCharacter) > 0 && session.exhaustion > 0;
 
     // Apply short rest (also reduces Exhaustion via the Tireless grant)
     shortRest();
@@ -171,6 +208,10 @@ function RestFlow({ onClose }: { onClose: () => void }) {
       trackersRestored: 0,
       exhaustionReduced: exhaustionRemovedOnShort,
       inspirationGained: false,
+      itemResourceUnitsRecovered: prepared.entries.reduce(
+        (sum, { receipt }) => sum + Math.max(0, receipt.after - receipt.before),
+        0
+      ),
     });
     setPhase("summary");
     setHitDiceToSpend(0);
@@ -182,11 +223,12 @@ function RestFlow({ onClose }: { onClose: () => void }) {
    * entered roll). Floor the batch at N (1 HP per die, RAW), never below.
    */
   function handleShortRestHealApply(total: number) {
-    finishShortRest(Math.max(hitDiceToSpend, total));
+    void finishShortRest(Math.max(hitDiceToSpend, total));
   }
 
-  function handleLongRestConfirm() {
-    if (!character) return;
+  async function handleLongRestConfirm() {
+    const prepared = await commitRestBoundary("long-rest");
+    if (!prepared) return;
     const hpBefore = hpCurrent;
     const hadExhaustion = session.exhaustion > 0;
     // RA-01 — Hit Dice regain is handled by `longRest()` (2024 RAW: regain ALL
@@ -197,7 +239,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     // it in the summary ONLY when it's a genuine GAIN (the character didn't
     // already have it), so the line reads as a consequence of this rest.
     const inspirationGained =
-      gainsHeroicInspirationOnLongRest(character) && !session.inspiration;
+      gainsHeroicInspirationOnLongRest(restCharacter) && !session.inspiration;
 
     longRest();
     // A long rest ends the current fight — return combat to baseline.
@@ -213,6 +255,10 @@ function RestFlow({ onClose }: { onClose: () => void }) {
       trackersRestored: totalTrackersSpent,
       exhaustionReduced: hadExhaustion,
       inspirationGained,
+      itemResourceUnitsRecovered: prepared.entries.reduce(
+        (sum, { receipt }) => sum + Math.max(0, receipt.after - receipt.before),
+        0
+      ),
     });
     setPhase("summary");
   }
@@ -274,6 +320,15 @@ function RestFlow({ onClose }: { onClose: () => void }) {
                 highlight
               />
             )}
+            {summary.itemResourceUnitsRecovered > 0 && (
+              <SummaryRow
+                label={t("rest.itemResourcesRecovered")}
+                value={t("rest.itemResourcesRecoveredValue", {
+                  count: summary.itemResourceUnitsRecovered,
+                })}
+                highlight
+              />
+            )}
             {summary.type === "long" && (
               <>
                 <SummaryRow
@@ -320,6 +375,14 @@ function RestFlow({ onClose }: { onClose: () => void }) {
           </Button>
         </div>
       </div>
+    );
+  }
+
+  if (!restEligible) {
+    return (
+      <InfoCard as="p" className="text-sm text-text-secondary">
+        {t("rest.unavailableWhileDown")}
+      </InfoCard>
     );
   }
 
@@ -398,14 +461,19 @@ function RestFlow({ onClose }: { onClose: () => void }) {
                   bonus={hitDiceToSpend * conMod}
                   onApply={handleShortRestHealApply}
                   applyLabel={t("rest.healAndRest")}
+                  disabled={committing}
                 />
               </div>
             ) : (
-              <Button onClick={() => finishShortRest(0)} className="flex-1">
+              <Button
+                onClick={() => void finishShortRest(0)}
+                className="flex-1"
+                disabled={committing}
+              >
                 {t("rest.takeShortRest")}
               </Button>
             )}
-            <Button onClick={handleDismiss} variant="ghost">
+            <Button onClick={handleDismiss} variant="ghost" disabled={committing}>
               {t("common.cancel")}
             </Button>
           </div>
@@ -462,10 +530,14 @@ function RestFlow({ onClose }: { onClose: () => void }) {
           </ul>
 
           <div className="rest-action-row">
-            <Button onClick={handleLongRestConfirm} className="flex-1">
+            <Button
+              onClick={() => void handleLongRestConfirm()}
+              className="flex-1"
+              disabled={committing}
+            >
               {t("rest.takeLongRest")}
             </Button>
-            <Button onClick={handleDismiss} variant="ghost">
+            <Button onClick={handleDismiss} variant="ghost" disabled={committing}>
               {t("common.cancel")}
             </Button>
           </div>

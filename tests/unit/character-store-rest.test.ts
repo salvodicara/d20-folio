@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { getMagicItem } from "@/data/magic-items";
 import { asRaceId } from "@/data/srd-names";
 import { asAlignmentId } from "@/lib/lore-utils";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
@@ -104,6 +103,57 @@ beforeEach(() =>
   useCharacterStore.setState({ character: null, loading: false, error: null })
 );
 
+type RestBlockCause = {
+  hp?: number;
+  deathFail?: number;
+  exhaustion?: number;
+  status?: CharacterDoc["status"];
+};
+
+const REST_BLOCK_CASES: Array<["shortRest" | "longRest", string, RestBlockCause]> = [
+  ["shortRest", "0 HP", { hp: 0 }],
+  ["longRest", "0 HP", { hp: 0 }],
+  ["shortRest", "three failed saves", { deathFail: 3 }],
+  ["longRest", "three failed saves", { deathFail: 3 }],
+  ["shortRest", "Exhaustion 6", { exhaustion: 6 }],
+  ["longRest", "Exhaustion 6", { exhaustion: 6 }],
+  ["shortRest", "roster death", { status: "dead" }],
+  ["longRest", "roster death", { status: "dead" }],
+];
+
+describe("rest lifecycle gate", () => {
+  beforeEach(() => {
+    useUndoStore.setState({ characterId: null, past: [], future: [] });
+  });
+
+  it.each(REST_BLOCK_CASES)("%s is a complete no-op at %s", (restKind, _cause, cause) => {
+    const character = mk(
+      {},
+      {
+        hp: { current: cause.hp ?? 30, temp: 4 },
+        deathFail: cause.deathFail ?? 0,
+        exhaustion: cause.exhaustion ?? 0,
+        concentration: conc("bless"),
+      }
+    );
+    character.status = cause.status ?? "active";
+    store().setCharacter(character);
+    useUndoStore.getState().register({
+      label: { message: "pre-rest action" },
+      turnScoped: false,
+      undo: () => {},
+      redo: () => null,
+    });
+    const before = store().character;
+
+    store()[restKind]();
+
+    expect(store().character).toBe(before);
+    expect(store().character?.session.concentration).toEqual(conc("bless"));
+    expect(useUndoStore.getState().past).toHaveLength(1);
+  });
+});
+
 describe("rests FENCE the undo stack (§5.4 case 9)", () => {
   beforeEach(() => {
     useUndoStore.setState({ characterId: null, past: [], future: [] });
@@ -138,7 +188,7 @@ describe("rests FENCE the undo stack (§5.4 case 9)", () => {
 });
 
 describe("long-rest tracker recovery", () => {
-  it("preserves table-rolled recovery, applies fixed partial recovery, and fully resets the rest", () => {
+  it("preserves manual recovery, resets generic rest trackers, and prunes legacy physical-item tracker state", () => {
     store().setCharacter(
       mk(
         {
@@ -200,14 +250,9 @@ describe("long-rest tracker recovery", () => {
 
     store().longRest();
 
-    const expectedTrackers: SessionState["trackers"] = {
+    expect(store().character?.session.trackers).toEqual({
       "wings-of-flying": { used: 1 },
-      "winged-boots": { used: 2 },
-      "wand-of-magic-missiles": { used: 3 },
-    };
-    if (getMagicItem("spirit-board")) expectedTrackers["spirit-board"] = { used: 1 };
-
-    expect(store().character?.session.trackers).toEqual(expectedTrackers);
+    } satisfies SessionState["trackers"]);
   });
 });
 
