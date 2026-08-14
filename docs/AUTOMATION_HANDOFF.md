@@ -1,9 +1,147 @@
 # Combat automation continuation handoff
 
-> **Branch-scoped handoff — 2026-08-04.** Read this before changing combat automation. This file
+> **Branch-scoped handoff — 2026-08-14.** Read this before changing combat automation. This file
 > records what is actually proved on the branch, what is still open, and the safest continuation
 > path. It is deliberately more conservative than older "100% automation" wording: those claims
 > are not a completion certificate.
+
+## Fable / Claude Code restart brief — 2026-08-14
+
+The owner is deliberately moving this epic to a fresh Claude Code session because the originating
+session became too long. Resume from the exact worktree and dirty state below; do not reconstruct the
+work from chat history, reset files, clean untracked files or assume that an uncommitted hunk is
+disposable. The durable goal is one canonical deterministic D&D 2024 mechanics engine, not a collection
+of feature-specific automations.
+
+### Frozen takeover state
+
+- App worktree: `/Users/salvatoredicara/Workspace/d20-folio-combat-automation-gaps`
+- Branch: `feat/combat-automation-gaps`
+- Local and remote head: `5cda7e63163c` (`feat(engine): freeze exact event audiences`)
+- Dirty state at handoff: **213 tracked files changed + 89 untracked files**. These include other
+  intentional application/item-resource/test work. Preserve all of it and identify ownership before
+  staging; never use `git add -A` or a destructive cleanup.
+- Pack worktree: `/Users/salvatoredicara/Workspace/d20-folio-content-automation-data`, branch
+  `feat/automation-data`, clean at `4931c47a250f`; the app's `content-pack` symlink targets it.
+- No branch has been merged or deployed. The owner permits coherent checkpoint commits and pushes on
+  the feature branch. **Do not run the global/full gate for those pushes.** Run the authoritative full
+  gate exactly once, after final convergence and test-pattern reconciliation, immediately before the
+  owner-authorized integration to `main`. Never use `--no-verify`; never deploy without separate owner
+  approval.
+
+The newest local slice attempts to remove causal end-latching from compiler prefix projection. Its
+owned implementation/proof files are:
+
+```text
+.changeset/calm-projections-wait.md
+PROGRESS.md
+docs/ARCHITECTURE.md
+docs/AUTOMATION_HANDOFF.md
+docs/MECHANICS.md
+src/lib/mechanics-compiler.ts
+src/lib/mechanics-operation.ts
+src/lib/mechanics-program.ts
+src/lib/mechanics-transaction-projection.ts       # new
+src/types/mechanics-operation.ts
+tests/unit/mechanics-operation.test.ts
+tests/unit/mechanics-program.test.ts
+```
+
+It replaces a projected `MechanicsCausalState` with an authenticated process-local projection carrying
+the exact prefix world and cumulative inventory leases, privately bound to its causal basis. The final
+`projectOnly` branch no longer performs phase acceptance or a final causal rebase. This slice is now
+**closed**: the phase-CAS fixture was rebuilt per the invariant (a one-execution-ahead origin is
+constructible only through the kernel while its exact frame is active), the basis re-proof was
+adjudicated and made unambiguous in the API (`conformMechanicsCausalState` at both kernel entries; a
+rebase call now always means a genuine post-transaction closure), and the ephemeral-registry doctrine
+was reconciled (registries authenticate kernel provenance; they are never a second history, progress or
+persistence model). Detail in the 2026-08-14 closed checkpoint below.
+
+The existing `graphify-out` index is stale/noisy for this frontier and literal token matching pulled in
+unrelated skill code. Use it only as a navigation hint; current code, focused tests, actual composed data
+and independently verified 2024 rules are the evidence.
+
+### Required continuation order
+
+1. ~~Close the transient projection proof above and checkpoint it with only focused verification.~~
+   **Done 2026-08-14** — see the closed checkpoint below.
+2. Repair compiler continuation semantics: current fibers do not bind the issuance causal state;
+   every nonempty `responses` array is rejected; there is no response conformer/classifier or resume API.
+   Keep continuations only for genuine user responses, bind the exact causal basis, make them single-use,
+   and let causal coordination mutate state then restart ordinary compilation without a fake continuation.
+3. Build one bounded depth-first fixed-point coordinator over compiler segments, frozen event audiences,
+   selected subscriber frames and readable end waves. It owns LIFO ordering, global work budgets,
+   response/coordination suspension, final frame pops and exactly one final journal draft.
+4. Complete the remaining authored step compilers and reviewed-payment prelude: damage/healing/Temporary
+   HP, Exhaustion, resources, entity/item lifecycle, turn claims, exact material blueprints, overrides,
+   table observations and replayable manual outputs. Never ask for a fact the engine already knows.
+5. Compile the actual SRD + private pack corpus into that one runtime and generate clause-level coverage
+   from real authoring data. A deterministic clause is green only with structured data, compiler,
+   runtime consumer, persistence/undo behavior and conformance tests. Classify unavoidable physical-roll,
+   spatial/table and narrative boundaries explicitly.
+6. Cut solo play, live encounter, offline peer delivery and NPC/monster execution over to the same
+   transaction runtime. Migrate live data under snapshot verification, then delete spent scripts and
+   every legacy/parallel executor, adapter and dangling field. At every point there is one supported
+   model, not old+new compatibility paths.
+7. Reconcile the parallel agent's newer testing patterns only after integrating current `main`, run the
+   independent convergence review, rebase, then run the one full dual-build gate before asking the owner
+   to integrate.
+
+Model real-table cases, including nested reactions, same-event audiences, source ending, same-id ABA,
+multi-target and multi-hit actions, replacement effects, concentration, zero HP/death, final item use,
+summons/polymorph, rests and clocks, offline recipients, stale retries, undo/redo and explicit DM/player
+override. The app never rolls dice: it requests only irreducible physical-roll faces or table facts and
+then computes every deterministic consequence.
+
+### Required final explainer
+
+Completion includes a self-contained, responsive, keyboard-accessible interactive HTML presentation,
+Italian-first (an EN toggle is welcome), explaining the finished engine to the owner. It must be derived
+from the actual final code, generated coverage and tests, never from aspirational status prose. Include:
+
+- an interactive single-source architecture graph from authored rule to review, compiler, physical
+  transaction, causal coordinator, events/end waves, journal, persistence and UI;
+- step-through real-play scenarios for attacks/saves/damage, nested reactions, Temporary HP,
+  Concentration/zero HP, resources/items/spells, turn/rest boundaries, summons/polymorph, offline peer
+  effects, overrides and undo/redo;
+- an edge-case explorer and clause-level coverage matrix distinguishing deterministic automation,
+  physical input, table/spatial facts and narrative-only rules;
+- direct proof references to the responsible modules/tests and a section explaining why each invariant
+  and architecture choice is optimal under the non-VTT, offline-first and override-first constraints;
+- an honest completion verdict. State “complete/optimal for the current rules and product constraints”
+  only if the generated corpus evidence and final gates prove it; otherwise expose every residual gap.
+
+Keep public/private licensing partition intact: the report must not leak pack-only prose, fixture names or
+non-SRD content into the public repository. Prefer a sanitized public report at
+`docs/automation-engine-explainer.html`; if private evidence is essential, generate a separate ignored
+private companion rather than weakening the boundary.
+
+### Copy/paste objective for the new session
+
+```text
+Resume the exact dirty worktree documented in docs/AUTOMATION_HANDOFF.md and finish the canonical
+deterministic D&D 2024 mechanics engine end-to-end. Automate every knowable consequence across combat,
+solo play, spells, items, resources, conditions, time/rests and entity lifecycles; request only physical
+dice/table facts the app cannot know; keep first-class overrides, exact undo/replay and offline delivery.
+There must be one source of truth and one runtime for solo, encounters, peers and NPCs. Migrate and delete
+all legacy/parallel models instead of preserving compatibility paths. Prove completeness from the actual
+SRD + private-pack corpus clause by clause, not from existing documents or prior completion claims.
+
+Start by auditing and closing the uncommitted projection-capability slice and its failing focused test,
+then follow the ordered continuation in the handoff: authentic response resumption, bounded causal
+fixed-point coordinator, remaining physical compilers/payments, corpus transcription, application cutover
+and legacy deletion. Preserve every unrelated dirty change. Use focused verification and checkpoint
+commit/push milestones on feat/combat-automation-gaps; do not run the full gate on feature-branch pushes.
+Reconcile latest main/test patterns and run the full dual-build gate only once at the true end, immediately
+before owner-authorized main integration. Never deploy without separate approval.
+
+At the end, produce the Italian-first interactive HTML architecture/coverage presentation specified in
+the handoff, with graphs, contextual step-through examples, hidden edge cases, proof links and an honest
+evidence-backed explanation of why the final model is optimal for the current rules and constraints.
+Do not stop at a plan or partial scaffold. Make decisions autonomously except for the repository's four
+owner forks, keep canonical docs current, checkpoint coherent milestones, and continue until the complete
+definition of done is genuinely satisfied or a real owner fork is reached.
+```
 
 ## Where to continue
 
@@ -131,6 +269,40 @@ P0/P1 review's then-known gaps are closed. The focused kernel proof is 401 tests
 global gate ran. Compiler progress since this checkpoint is recorded below; one fixed-point
 subscriber/end-wave coordinator and one `planMechanicsWorldAction` call producing one journal draft
 remain open.
+
+### 2026-08-14 authenticated compiler-prefix projection — checkpoint closed
+
+Compiler prefix projection is now a distinct process-local capability, not a causal state in disguise.
+Its public frozen value carries the exact projected world and cumulative inventory-source leases; a
+private runtime fiber binds those values to the original trusted causal basis. Projection performs no
+end discovery, causal rebase or pending-phase acceptance, so an intermediate root/child ending and an
+empty Temporary-HP source stay unlatched while later operations in the same compiler expansion can make
+their lifetime conditions false. A cloned, spread, serialized or reconstructed projection has no fiber
+and fails closed.
+
+Compilation still re-proves the reviewed input and causal basis once. Each context refresh then
+authenticates the prefix capability and validates its readable world against that already-conformed basis
+and its exact pending frames; it never conforms or rebases the projected world. The compiler continues to
+expand every operation of one authored step into one atomic transaction, and only its final simulation—or
+the real phase-commit transaction—performs the single causal rebase that discovers and latches net
+endings.
+
+The closing review resolved both interrupted points. First, the basis-vs-prefix distinction is now
+expressed in the API, not only in discipline: the transaction kernel and the resolution-group conformer
+re-prove the caller's already-authentic basis through `conformMechanicsCausalState` — a fixed-point
+re-proof that rejects any state whose canonical form differs from itself — so nothing on the prefix path
+ever calls a rebase, and a rebase call is always a genuine post-transaction closure. Second, the
+phase-CAS proof was rebuilt per the invariant rather than the assertion: a world holding a
+one-execution-ahead program origin cannot be parsed at rest, so the fixture creates its mid-frame child
+through the real kernel transaction while the exact recoverable frame is active. The ephemeral
+`WeakMap`/`WeakSet` registries (kernel causal states, event emissions, subscriber selections, compiler
+continuations, transaction projections) are possession proofs that authenticate kernel provenance of a
+process-local value; every authoritative fact stays inside the frozen value and the causal state, so a
+registry can never become a second history, progress or persistence model — this supersedes the older
+blanket "no hidden `WeakMap`" wording. Focused verification: 237 tests across the five directly affected
+suites. No global branch gate ran, by owner rule. The bounded fixed-point subscriber/end-wave
+coordinator, remaining compiler/corpus work, runtime cutover and final journal draft remain active; this
+checkpoint is not an engine-completion claim.
 
 ### 2026-08-12 compiler/provenance vertical — initial checkpoint
 

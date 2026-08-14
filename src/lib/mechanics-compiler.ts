@@ -20,7 +20,7 @@ import {
 import {
   mechanicsProgramStepIsActive,
   prepareMechanicsProgramCompilation,
-  refreshMechanicsProgramCompilationContext,
+  refreshMechanicsProgramProjectedCompilationContext,
   resolveMechanicsProgramTargets,
 } from "@/lib/mechanics-program";
 import {
@@ -852,9 +852,9 @@ export function compileMechanicsFrame(
       operations.pop();
       return transactionProblem(input, cursor, result, phaseId, stepId);
     }
-    const refreshed = refreshMechanicsProgramCompilationContext(
+    const refreshed = refreshMechanicsProgramProjectedCompilationContext(
       input.reviewed,
-      result.state,
+      result.projection,
       context.landedDamage
     );
     if (!refreshed) {

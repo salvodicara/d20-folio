@@ -7,8 +7,8 @@ import {
 } from "@/lib/mechanics-event-selection";
 import { conformMechanicsAuthoritySnapshot } from "@/lib/mechanics-authority";
 import {
+  conformMechanicsCausalState,
   isMechanicsEndWaveReceiptForWorld,
-  rebaseMechanicsCausalState,
 } from "@/lib/mechanics-world";
 import {
   conformMechanicsOperation,
@@ -969,8 +969,7 @@ function conformResolutionGroupContextValue(
   if (!authoritySnapshot || typeof record.state !== "object" || record.state === null) {
     return null;
   }
-  const candidateState = record.state as Readonly<MechanicsCausalState>;
-  const causalState = rebaseMechanicsCausalState(candidateState.world, candidateState);
+  const causalState = conformMechanicsCausalState(record.state);
   if (!causalState.ok) return null;
   const transaction = conformMechanicsTransaction({
     actionId: record.actionId,

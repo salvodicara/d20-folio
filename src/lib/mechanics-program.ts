@@ -40,8 +40,10 @@ import { type MechanicsD20RequestSpec } from "@/lib/mechanics-program-authoring"
 import { locateResolvedMaterialResource } from "@/lib/material-resource";
 import {
   conformMechanicsCausalState,
+  projectMechanicsTransactionWorld,
   pushMechanicsSelectedEventPendingFrame,
 } from "@/lib/mechanics-world";
+import { mechanicsTransactionProjectionFiber } from "@/lib/mechanics-transaction-projection";
 import { conformResourceRef, resourceRefKey } from "@/lib/resources";
 import type { JournalActorRef } from "@/types/action-journal";
 import type { D20TestObservation, D20TestRequest, D20TestResult } from "@/types/d20-test";
@@ -88,6 +90,7 @@ import type {
   ReviewedMechanicsIntent,
   ReviewedMechanicsPayment,
 } from "@/types/mechanics-program";
+import type { MechanicsTransactionProjection } from "@/types/mechanics-operation";
 import type {
   MechanicsAmountSpec,
   MechanicsEntitySelector,
@@ -1317,6 +1320,49 @@ export function refreshMechanicsProgramCompilationContext(
     resolved: reviewed.resolved,
     root: validated.root,
     world: state.value.world,
+  });
+}
+
+/**
+ * Rebuild a compiler view from an authentic transaction projection without
+ * converting that transient prefix into causal state or discovering end rules.
+ */
+export function refreshMechanicsProgramProjectedCompilationContext(
+  reviewed: Readonly<ReviewedMechanicsIntent>,
+  projectionValue: Readonly<MechanicsTransactionProjection>,
+  landedDamage: Readonly<Record<string, Readonly<Record<string, number>>>> = {}
+): Readonly<MechanicsProgramCompilationContext> | null {
+  const projection = mechanicsTransactionProjectionFiber(projectionValue);
+  if (!projection) return null;
+  const basis = conformMechanicsCausalState(projection.basis);
+  if (!basis.ok) return null;
+  const projected = projectMechanicsTransactionWorld(
+    projection.world,
+    basis.value.world,
+    projection.inventorySourceLeases,
+    basis.value
+  );
+  if (
+    !projected.ok ||
+    canonicalJson(projected.value) !== canonicalJson(projection.world)
+  ) {
+    return null;
+  }
+  const validated = validateIntentAgainstReadableWorld(
+    reviewed.intent,
+    projected.value,
+    basis.value.context.pendingFrames
+  );
+  if ("reason" in validated || validated.executionMode === "replay") return null;
+  return freezeDeep({
+    bindings: validated.bindings,
+    execution: validated.execution.execution,
+    intent: reviewed.intent,
+    landedDamage,
+    phase: validated.phase,
+    resolved: reviewed.resolved,
+    root: validated.root,
+    world: projected.value,
   });
 }
 

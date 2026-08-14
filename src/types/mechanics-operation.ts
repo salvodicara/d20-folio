@@ -755,7 +755,19 @@ export type MechanicsTransactionSimulationResult =
       readonly status: "rejected";
     };
 
-/** Compiler-only simulation of a complete ordered prefix. Its causal state is sole truth. */
+declare const MECHANICS_TRANSACTION_PROJECTION: unique symbol;
+
+/**
+ * Kernel-issued, process-local view of one complete ordered compiler prefix.
+ * It is not a causal state and cannot be persisted or reconstructed from JSON.
+ */
+export interface MechanicsTransactionProjection {
+  readonly [MECHANICS_TRANSACTION_PROJECTION]: true;
+  readonly inventorySourceLeases: readonly Readonly<InventoryGenerationRef>[];
+  readonly world: Readonly<MechanicsWorld>;
+}
+
+/** Compiler-only simulation of a complete ordered prefix without causal closure. */
 export type MechanicsTransactionProjectionResult =
   | {
       readonly actionFacts: readonly Readonly<ActionFactGuard>[];
@@ -765,8 +777,8 @@ export type MechanicsTransactionProjectionResult =
         | MechanicsOperationExecution
         | MechanicsOperationNoChange
       )[];
+      readonly projection: Readonly<MechanicsTransactionProjection>;
       readonly stages: readonly MechanicsOperationStage[];
-      readonly state: Readonly<MechanicsCausalState>;
       readonly status: "projected";
       readonly transaction: Readonly<MechanicsTransaction>;
     }

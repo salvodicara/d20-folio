@@ -207,6 +207,24 @@ forgeries, reuse, ABA, stale authority and roots/phases created after emission f
 affected-suite verification ran; by owner rule no global gate ran. The bounded fixed-point state
 coordinator and the remaining compiler/runtime cutover are still active; this is not engine completion.
 
+**Authenticated compiler-prefix projection checkpoint CLOSED on branch (2026-08-14; coordinator/runtime
+cutover ACTIVE):** successful prefix projection is now a distinct process-local capability whose frozen
+public value carries the exact projected world and cumulative inventory-source leases while a private
+runtime fiber binds both to the original trusted causal basis. It is never a causal-state receipt: prefix
+projection performs no end discovery, causal rebase or pending-phase acceptance, and clones, spreads,
+serialization and reconstruction fail closed. Compiler context refresh authenticates that capability and
+validates its readable world against the already-conformed basis and exact pending frames without
+conforming or rebasing the projection. One authored step still expands into one atomic transaction; only
+final simulation or the real phase commit performs the single causal rebase and latches the net endings.
+The closing review resolved both open points: the kernel's transaction entries now re-prove the
+already-authentic basis through `conformMechanicsCausalState` (a fixed-point re-proof that fails closed on
+any non-canonical state) so a basis re-proof can never read as a world rebase, and a world containing a
+one-execution-ahead program origin is constructible only through the kernel while its exact recoverable
+frame is active — the phase-CAS proof builds its mid-frame state through the real create transaction.
+Only focused affected-suite verification ran; no global gate ran. The fixed-point subscriber/end-wave
+coordinator, remaining compiler/corpus work, runtime cutover and final journal draft remain active; this
+is not an engine-completion claim.
+
 **Deterministic automation gap sweep — ACTIVE (2026-08-04):** six truth-gated milestones are closed and
 branch-pushed: persistent/reactive-effect lifecycle, target-bound on-hit retaliation, variable-level
 charged-item casts, activated-item tracker/timer lifecycle, bounded spell-pool execution, and variable

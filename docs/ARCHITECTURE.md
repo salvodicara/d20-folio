@@ -551,10 +551,21 @@ current participant whose economy is `own-turn`; the boundary parser alone may c
 
 Operation mutation and causal closure are deliberately separate. A terminal change first preserves
 every active source so post-events and `source-end` subscribers can still resolve their authority. Each
-ordered operation produces only a transaction-local `MechanicsWorld` projection; it is not a reusable
-causal receipt, and both projection and causal rebase prove that document journal epoch/revision/actions
-plus character build revision are unchanged. After the final operation, the transaction kernel performs exactly one causal rebase and
-discovers/latches the complete net end wave. This lets one atomic transaction create a
+ordered operation produces only an authenticated process-local projection capability. Its public value
+carries the exact transaction-local `MechanicsWorld` and cumulative inventory-source leases; a private
+runtime fiber binds both to the original trusted causal basis. It is not a `MechanicsCausalState` or a
+reusable causal receipt, and cloned, serialized or reconstructed projections fail authentication. The
+ephemeral registries behind such capabilities (kernel causal states, event emissions, subscriber
+selections, compiler continuations, transaction projections) are possession proofs of kernel provenance
+only: every authoritative fact lives in the frozen value and the causal state, so a registry can never
+become a second history, progress or persistence model. Prefix
+projection validates protected journal epoch/revision/actions plus character build revision, but never
+runs end discovery, causal rebase or pending-phase acceptance. The compiler refresh validates the
+projected world against the already-conformed basis and its exact pending frames without conforming or
+rebasing that world. The transaction kernel re-proves the caller's basis with the fixed-point
+`conformMechanicsCausalState`; a `rebaseMechanicsCausalState` call therefore always means a genuine
+post-transaction closure. After the complete transaction, the simulation/commit path performs exactly one
+causal rebase and discovers/latches the net end wave. This lets one atomic transaction create a
 `temporary-hp-empty` source and grant its Temporary HP without observing an impossible intermediate
 expiry, while preserving any wave that was already latched when the transaction began. The coordinator
 then delivers subscribers, appends their consequences and finalizes dependent-first removals plus
@@ -582,8 +593,9 @@ and deadlines exclude it. Active-only exclusivity permits a replacement Concentr
 defense to begin in the same causal action while the old generation is still readable. Compiler/reviewer
 access to this transient is likewise singular: hostile requirement/review APIs continue to accept only a
 closed world, while the causal path re-proves the complete `{ context, world }` state from its exact wave,
-request, latches and leases and then uses only that canonical result for every prefix projection and final
-simulation. A raw readable world or a forged context is never a trusted compiler basis.
+request, latches and leases and then uses only that canonical result as the basis for every authenticated
+prefix projection and final simulation. A raw readable world, forged context or unauthenticated projection
+is never a trusted compiler view.
 
 A program root's `phaseState` is the sole phase-completion truth. During that one post-transaction causal
 rebase, a child with a `program-phase-end` lifetime resolves its exact root generation, phase and authored

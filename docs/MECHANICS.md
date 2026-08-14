@@ -95,20 +95,26 @@ never through a callback that supplies replacement state. Every checkpoint expos
 observed boundary; a checkpoint that only extends the current end wave exposes `null`. The sole completion
 constructor re-proves the causal state and binds it to the entire continuation before branding it. If
 subscriber work creates or extends the wave, the kernel exposes a new readable checkpoint before any
-finalization. Inside one terminal transaction, ordered steps expose only transaction-local world
-projections and newly true end rules are deliberately not latched between steps. The kernel performs one
-causal rebase after the final step, preserving any already-latched wave and evaluating the transaction's
-net state. Creating a Temporary-HP source followed by its grant is therefore genuinely atomic rather than
-an impossible create-then-expire sequence. Projection and causal rebase may change mechanics data only:
-journal epoch/revision/actions and character build revision are protected invariants.
+finalization. Inside one terminal transaction, ordered steps expose only authenticated, process-local
+projection capabilities carrying the exact projected world, cumulative inventory-source leases and
+original trusted causal basis. A projection is never a `MechanicsCausalState`: it neither discovers or
+latches newly true end rules nor accepts a pending phase, and a clone, serialization or reconstruction has
+no authority. The compiler authenticates each projection and validates its readable view against the
+already-conformed basis and pending frames without conforming or rebasing the projected world. The kernel
+performs one causal rebase only after the complete transaction, preserving any already-latched wave and
+evaluating the transaction's net state. Creating a Temporary-HP source followed by its grant is therefore
+genuinely atomic rather than an impossible create-then-expire sequence. Projection and causal rebase may
+change mechanics data only: journal epoch/revision/actions and character build revision are protected
+invariants.
 
 An `ending` occurrence is structurally readable but mechanically inactive. Authority, provenance,
 root/child/phase/step traversal and `source-ending` delivery can still address its exact generation; active
 keys, grants, conditions, Concentration, marks, standing defenses/immunities, polymorph, item activations
 and deadlines cannot. Active-state exclusivity therefore allows the replacement effect to start before the
 old readable generation is finalized. Hostile derive/review APIs still require a closed world. The causal
-derive/review/compiler path must first re-prove the entire `{ context, world }` transient—including its
-exact request, wave, causes and leases—and must use only the canonical re-proved state thereafter.
+derive/review/compiler path first re-proves the entire `{ context, world }` basis—including its exact
+request, wave, causes and leases—and uses only that canonical basis thereafter. Compiler prefix views are
+the authenticated projection capabilities described above, never replacement causal-state receipts.
 An unavailable entity remains an eligible transaction actor only when every used cause resolves from an
 exact still-readable program root owned by that entity. An installed capability never receives that
 exception, and a stale, removed or foreign root cannot preserve authority.

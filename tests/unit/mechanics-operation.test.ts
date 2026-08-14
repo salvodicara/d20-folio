@@ -3098,21 +3098,66 @@ describe("atomic mechanics transactions", () => {
   });
 
   it("commits the exact phase CAS atomically and only then exposes phase-complete", () => {
-    const before = worldWithZeroedRoots([["root", AUTHORITY]]);
+    const initial = worldWithZeroedRoots([["root", AUTHORITY]]);
     const root = occurrenceGeneration("root", 1);
     const cause = programRootCause(AUTHORITY, "root");
-    const pending = pushProgramFrame(causalState(before), AUTHORITY, root);
-    const phaseState = pendingAtPhaseTransition(pending.state, pending.frame);
-    const operation = programPhaseTransition("commit-root", cause, root);
-    const commit = transaction([operation], { causes: [cause] });
-    const result = simulated(
-      simulateMechanicsTransaction(before, commit, {
-        authoritySnapshot: authoritySnapshotFor(commit),
-        state: phaseState,
+    const childOperation = standingCreate("create-child", "phase-child", "root", cause);
+    const create = transaction(
+      [
+        {
+          ...childOperation,
+          occurrence: {
+            ...childOperation.occurrence,
+            endRules: [
+              {
+                execution: 1,
+                kind: "program-phase-end",
+                occurrenceId: "root",
+                phaseId: "invoke",
+              },
+            ],
+            fact: { key: "phase-child", kind: "active-key" },
+          },
+        },
+      ],
+      { causes: [cause] }
+    );
+    const pushed = pushProgramFrame(causalState(initial), AUTHORITY, root);
+    const created = simulated(
+      simulateKernelTransaction(create, {
+        authoritySnapshot: authoritySnapshotFor(create),
+        state: pendingAtStep(pushed.state, pushed.frame, STEP_IDS.standing),
       })
     );
+    const phaseState = pendingAtPhaseTransition(created.state, pushed.frame);
+    const operation = programPhaseTransition("commit-root", cause, root);
+    const commit = transaction([operation], { causes: [cause] });
+    const context = {
+      authoritySnapshot: authoritySnapshotFor(commit),
+      state: phaseState,
+    } as const;
+    const projected = projectKernelTransaction(commit, context);
+    expect(projected.status).toBe("projected");
+    if (projected.status !== "projected") return;
+    expect(state(projected.projection.world).occurrences.root).toMatchObject({
+      phaseState: { invoke: { execution: 1, lastTriggerEventId: null } },
+    });
+    expect(
+      state(projected.projection.world).occurrences["phase-child"]?.ending
+    ).toBeNull();
+    expect(state(phaseState.world).occurrences.root).toMatchObject({
+      phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
+    });
+    expect(topMechanicsPendingFrame(phaseState)?.cursor).toEqual({
+      stage: "phase-transition",
+    });
+    expect(phaseState.context.endWave).toBeNull();
 
-    expect(state(before).occurrences.root).toMatchObject({
+    const result = simulated(
+      simulateMechanicsTransaction(phaseState.world, commit, context)
+    );
+
+    expect(state(phaseState.world).occurrences.root).toMatchObject({
       phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
     });
     expect(state(result.state.world).occurrences.root).toMatchObject({
@@ -3121,6 +3166,17 @@ describe("atomic mechanics transactions", () => {
     expect(topMechanicsPendingFrame(result.state)?.cursor).toEqual({
       stage: "phase-complete",
     });
+    expect(result.state.context.endWave?.wave.candidates).toEqual([
+      {
+        causes: [
+          {
+            completion: { execution: 1, phaseId: "invoke", root },
+            kind: "program-phase-completed",
+          },
+        ],
+        occurrence: occurrenceGeneration("phase-child", 2),
+      },
+    ]);
   });
 
   it("rejects the legacy root-create plus body batch", () => {
@@ -3821,6 +3877,33 @@ describe("atomic mechanics transactions", () => {
       occurrenceGeneration("root", 1),
       { stepId: STEP_IDS.standing }
     );
+    const prefix = projectKernelTransaction(
+      transaction([createSource], { causes: [rootCause] }),
+      pending
+    );
+    expect(prefix.status).toBe("projected");
+    if (prefix.status !== "projected") return;
+    expect(
+      state(prefix.projection.world).occurrences["temporary-hit-points"]
+    ).toMatchObject({ ending: null });
+    expect(state(prefix.projection.world).vitals.hitPoints.temporary).toEqual({
+      current: 0,
+      sourceOccurrence: null,
+    });
+
+    const completeProjection = projectKernelTransaction(applyTransaction, pending);
+    expect(completeProjection.status).toBe("projected");
+    if (completeProjection.status !== "projected") return;
+    expect(
+      state(completeProjection.projection.world).occurrences["temporary-hit-points"]
+    ).toMatchObject({ ending: null });
+    expect(state(completeProjection.projection.world).vitals.hitPoints.temporary).toEqual(
+      {
+        current: 6,
+        sourceOccurrence: source,
+      }
+    );
+
     const result = simulated(
       simulateMechanicsTransaction(before, applyTransaction, pending)
     );
@@ -4399,9 +4482,8 @@ describe("atomic mechanics transactions", () => {
     );
     expect(projected.status).toBe("projected");
     if (projected.status !== "projected") return;
-    expect(state(projected.state.world).occurrences.root?.ending).toEqual({
-      causes: [{ kind: "requested" }],
-    });
+    expect(state(projected.projection.world).occurrences.root?.ending).toBeNull();
+    expect(state(projected.projection.world).occurrences.child?.ending).toBeNull();
     expect(projected.consequences).toEqual([
       {
         causeId: INSTALLED_CAUSE.causeId,
@@ -5021,28 +5103,39 @@ describe("atomic mechanics transactions", () => {
       ...COUNT_RESOURCE_SPEC,
       id: "item-quantity",
     } as const satisfies ResourceSpec;
-    const result = simulated(
-      simulateMechanicsTransaction(
-        before,
-        transaction(
-          [
-            {
-              bindings: {},
-              causeId: itemCause.causeId,
-              kind: "resource-transition",
-              operationId: "drink-potion",
-              resource,
-              spec: quantitySpec,
-              transition: { amount: 1, kind: "spend" },
-            },
-          ],
-          {
-            causes: [itemCause],
-            factGuards: [resourceDefinitionFact(before, resource, quantitySpec)],
-          }
-        )
-      )
+    const spend = transaction(
+      [
+        {
+          bindings: {},
+          causeId: itemCause.causeId,
+          kind: "resource-transition",
+          operationId: "drink-potion",
+          resource,
+          spec: quantitySpec,
+          transition: { amount: 1, kind: "spend" },
+        },
+      ],
+      {
+        causes: [itemCause],
+        factGuards: [resourceDefinitionFact(before, resource, quantitySpec)],
+      }
     );
+    const basis = causalState(before);
+    const context = {
+      authoritySnapshot: authoritySnapshotFor(spend),
+      state: basis,
+    } as const;
+    const projected = projectKernelTransaction(spend, context);
+    expect(projected.status).toBe("projected");
+    if (projected.status !== "projected") return;
+    expect(state(projected.projection.world).inventory.potion?.quantity.current).toBe(0);
+    expect(projected.projection.inventorySourceLeases).toEqual([
+      inventoryRef("potion", 1),
+    ]);
+    expect(state(basis.world).inventory.potion?.quantity.current).toBe(1);
+    expect(basis.context.request.inventorySourceLeases).toEqual([]);
+
+    const result = simulated(simulateMechanicsTransaction(before, spend, context));
     expect(state(result.state.world).inventory.potion?.quantity.current).toBe(0);
     expect(state(result.state.world).inventory).toHaveProperty("potion");
     expect(result).not.toHaveProperty("action");

@@ -4,9 +4,14 @@ import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { resolveDamage } from "@/lib/damage";
 import { addOccurrence } from "@/lib/mechanic-occurrences";
 import {
+  mechanicsOperationCauseId,
+  projectMechanicsTransaction,
+} from "@/lib/mechanics-operation";
+import {
   deriveMechanicsRequirements,
   prepareMechanicsProgramCompilation,
   refreshMechanicsProgramCompilationContext,
+  refreshMechanicsProgramProjectedCompilationContext,
   reviewMechanicsIntent,
 } from "@/lib/mechanics-program";
 import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
@@ -1044,6 +1049,96 @@ describe("MechanicsProgram terminal kernel", () => {
         pending
       )
     ).toMatchObject({ reason: "invalid-intent", status: "rejected" });
+  });
+
+  it("refreshes compiler context only from an authentic transaction projection", () => {
+    const program = conformed({
+      id: "projection-authenticity",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              kind: "register",
+              operation: { kind: "set-scalar", value: 1 },
+              registerId: "counter",
+              stepId: "set-counter",
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [{ initial: 0, registerId: "counter" }],
+      version: 1,
+    });
+    const proposed = intent(program);
+    const pending = pendingState(
+      worldWithProgramRoot(program, {
+        resolve: { execution: 0, lastTriggerEventId: null },
+      }),
+      proposed.frame
+    );
+    const reviewed = reviewMechanicsIntent(proposed, [], pending);
+    expect(reviewed.status).toBe("reviewed");
+    if (reviewed.status !== "reviewed") return;
+
+    const invocation = { kind: "program-root", occurrence: ROOT } as const;
+    const cause = {
+      causeId: mechanicsOperationCauseId(proposed.frame.authority, invocation),
+      invocation,
+    } as const;
+    const transaction = {
+      actionId: "projection-authenticity",
+      actor: SELF,
+      causes: [cause],
+      factGuards: [],
+      operations: [
+        {
+          causeId: cause.causeId,
+          expected: 0,
+          kind: "program-register-transition",
+          next: 1,
+          operationId: "set-counter",
+          registerId: "counter",
+          root: ROOT,
+        },
+      ],
+    } as const;
+    const result = projectMechanicsTransaction(transaction, {
+      authoritySnapshot: { definitions: [] },
+      state: pending,
+    });
+    expect(result.status).toBe("projected");
+    if (result.status !== "projected") return;
+
+    expect(
+      refreshMechanicsProgramProjectedCompilationContext(
+        reviewed.reviewed,
+        result.projection
+      )
+    ).not.toBeNull();
+    expect(
+      refreshMechanicsProgramProjectedCompilationContext(reviewed.reviewed, {
+        ...result.projection,
+      })
+    ).toBeNull();
+    expect(
+      refreshMechanicsProgramProjectedCompilationContext(
+        reviewed.reviewed,
+        structuredClone(result.projection)
+      )
+    ).toBeNull();
+    const forged = {
+      inventorySourceLeases: result.projection.inventorySourceLeases,
+      world: result.projection.world,
+    } as unknown as Parameters<
+      typeof refreshMechanicsProgramProjectedCompilationContext
+    >[1];
+    expect(
+      refreshMechanicsProgramProjectedCompilationContext(reviewed.reviewed, forged)
+    ).toBeNull();
   });
 
   it("admits only the pending stack top and treats the exact committed receipt as replay", () => {

@@ -10,6 +10,7 @@ import {
   canonicalFingerprint,
   canonicalJson,
   conformCanonicalFingerprint,
+  type CanonicalFingerprint,
 } from "@/lib/canonical-fingerprint";
 import { gainExhaustion, removeExhaustion } from "@/lib/condition";
 import { projectResolvedEntityConditions } from "@/lib/condition-projection";
@@ -52,10 +53,12 @@ import {
 } from "@/lib/mechanics-reference-schema";
 import {
   acceptMechanicsPendingFramePhaseTransition,
+  conformMechanicsCausalState,
   projectMechanicsTransactionWorld,
   rebaseMechanicsCausalState,
   reconcileMechanicsEncounterMembership,
 } from "@/lib/mechanics-world";
+import { issueMechanicsTransactionProjection } from "@/lib/mechanics-transaction-projection";
 import {
   conformResourceOperation,
   conformResourceRef,
@@ -3062,10 +3065,7 @@ function runMechanicsTransaction(
     contextValue.authoritySnapshot
   );
   if (!authoritySnapshot) return rejected("invalid-cause");
-  const parsedState = rebaseMechanicsCausalState(
-    contextValue.state.world,
-    contextValue.state
-  );
+  const parsedState = conformMechanicsCausalState(contextValue.state);
   if (!parsedState.ok) return rejected("invalid-world");
   const before = parsedState.value;
   let world = before.world;
@@ -3241,15 +3241,23 @@ function runMechanicsTransaction(
       noChanges.push(result.execution);
       continue;
     }
+    const stageAfter = projectMechanicsTransactionWorld(
+      result.world,
+      stageBefore.value,
+      inventorySourceLeases,
+      before
+    );
+    if (!stageAfter.ok) return rejected("invalid-after", operation.operationId);
     const operationChanged =
-      canonicalJson(result.world) !== canonicalJson(stageBefore.value);
+      canonicalJson(stageAfter.value) !== canonicalJson(stageBefore.value);
+    const afterWorld = operationChanged ? stageAfter.value : stageBefore.value;
     stages.push({
-      after: result.world,
+      after: afterWorld,
       before: stageBefore.value,
       execution: result.execution,
     });
     changed ||= operationChanged;
-    world = result.world;
+    world = afterWorld;
     actionFacts.push(...result.actionFacts);
     consequences.push(...(result.consequences ?? []));
   }
@@ -3257,33 +3265,17 @@ function runMechanicsTransaction(
   const facts = mergeActionFacts(actionFacts);
   if (!facts) return rejected("fact-conflict");
   if (projectOnly) {
-    const acceptedState = phaseTransition
-      ? acceptMechanicsPendingFramePhaseTransition(
-          world,
-          before,
-          before.context.pendingFrames.at(-1)?.frame,
-          inventorySourceLeases,
-          consequences.map(({ occurrence }) => occurrence)
-        )
-      : rebaseMechanicsCausalState(
-          world,
-          before,
-          inventorySourceLeases,
-          consequences.map(({ occurrence }) => occurrence)
-        );
-    if (!acceptedState.ok) {
-      return rejected(
-        "invalid-after",
-        transaction.operations[transaction.operations.length - 1]?.operationId ?? null
-      );
-    }
     return {
       actionFacts: facts,
       changed: changed || consequences.length > 0,
       consequences,
       executions,
+      projection: issueMechanicsTransactionProjection(
+        before,
+        world,
+        inventorySourceLeases
+      ),
       stages,
-      state: acceptedState.value,
       status: "projected",
       transaction,
     };
