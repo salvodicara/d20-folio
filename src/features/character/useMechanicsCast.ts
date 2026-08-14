@@ -24,6 +24,7 @@ import {
   characterSpellCapability,
   characterWorldState,
   commitCharacterAction,
+  type CharacterCastDerived,
 } from "@/lib/mechanics-world-store";
 import { beginMechanicsCausalState } from "@/lib/mechanics-world";
 import { useAuthStore } from "@/stores/authStore";
@@ -94,7 +95,7 @@ export interface MechanicsCastState {
 
 export function useMechanicsCast(
   spellId: string,
-  derived: Readonly<{ castingModifier: number; maxHp: number; saveDc: number }>
+  derived: Readonly<CharacterCastDerived>
 ): MechanicsCastState {
   const doc = useCharacterStore((state) => state.character);
   const updateSession = useCharacterStore((state) => state.updateSession);

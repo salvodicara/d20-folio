@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { MOCK_CHARACTER } from "@/lib/mock";
 import {
+  characterMaterialRef,
   characterSelfRef,
   characterSlotDefinitionFacts,
   characterSpellCapability,
@@ -80,7 +81,9 @@ describe("mechanics world store", () => {
       "test-uid",
       "cure-wounds",
       {
+        attackBonus: 5,
         castingModifier: 0,
+        characterLevel: 3,
         maxHp: 60,
         saveDc: 15,
       }
@@ -165,7 +168,7 @@ describe("mechanics world store", () => {
           inputId: requirement.inputId,
           kind: "resource",
           resource: {
-            character: self.material,
+            character: characterMaterialRef(MOCK_CHARACTER, "test-uid"),
             kind: "standard-spell-slot",
             level: castLevel,
           },

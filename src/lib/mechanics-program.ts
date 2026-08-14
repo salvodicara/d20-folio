@@ -2555,6 +2555,22 @@ function reviewMechanicsIntentValidated(
           : exactRequirement.pendingInputId
       );
     }
+    // A roll requirement whose expansion produced zero requests carries zero
+    // physical information — it resolves itself without consuming an answer
+    // (an outcome-expanded damage roll after an all-miss attack). An explicit
+    // empty answer for it is still accepted through the ordinary path.
+    if (
+      (exactRequirement.kind === "d20" || exactRequirement.kind === "dice") &&
+      exactRequirement.requests.length === 0 &&
+      answer?.inputId !== input.inputId
+    ) {
+      resolved[input.inputId] =
+        exactRequirement.kind === "d20"
+          ? { inputId: input.inputId, kind: "d20", requests: [] }
+          : { inputId: input.inputId, kind: "dice", requests: [] };
+      refreshContextBindings();
+      continue;
+    }
     if (!answer) {
       return reviewRejected("missing-answer", input.inputId, exactRequirement);
     }

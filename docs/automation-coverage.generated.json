@@ -18,6 +18,11 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-cantrip-scaling",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-on-save",
           "detail": "negates",
           "status": "automated"
@@ -40,8 +45,18 @@
         },
         {
           "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
-          "status": "unsupported"
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-melee",
+          "status": "spatial"
         },
         {
           "clauseId": "damage-roll",
@@ -49,12 +64,22 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-application",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "damage-roll-cantrip-scaling",
           "detail": null,
           "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "chill-touch"
     },
     {
@@ -130,8 +155,18 @@
         },
         {
           "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
-          "status": "unsupported"
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-ranged",
+          "status": "spatial"
         },
         {
           "clauseId": "damage-roll",
@@ -139,12 +174,22 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-application",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "damage-roll-cantrip-scaling",
           "detail": null,
           "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "fire-bolt"
     },
     {
@@ -257,8 +302,18 @@
         },
         {
           "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
-          "status": "unsupported"
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-ranged",
+          "status": "spatial"
         },
         {
           "clauseId": "damage-roll",
@@ -266,12 +321,22 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-application",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "damage-roll-cantrip-scaling",
           "detail": null,
           "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "poison-spray"
     },
     {
@@ -299,8 +364,18 @@
         },
         {
           "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
-          "status": "unsupported"
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-ranged",
+          "status": "spatial"
         },
         {
           "clauseId": "damage-roll",
@@ -308,12 +383,22 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-application",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "damage-roll-cantrip-scaling",
           "detail": null,
           "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "produce-flame"
     },
     {
@@ -325,8 +410,18 @@
         },
         {
           "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
-          "status": "unsupported"
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-ranged",
+          "status": "spatial"
         },
         {
           "clauseId": "damage-roll",
@@ -334,12 +429,22 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-application",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "damage-roll-cantrip-scaling",
           "detail": null,
           "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "ray-of-frost"
     },
     {
@@ -381,6 +486,11 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-cantrip-scaling",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-on-save",
           "detail": "negates",
           "status": "automated"
@@ -419,8 +529,18 @@
         },
         {
           "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
-          "status": "unsupported"
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-melee",
+          "status": "spatial"
         },
         {
           "clauseId": "damage-roll",
@@ -428,12 +548,22 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-application",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "damage-roll-cantrip-scaling",
           "detail": null,
           "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "shocking-grasp"
     },
     {
@@ -445,8 +575,23 @@
         },
         {
           "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
-          "status": "unsupported"
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-ranged",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
         }
       ],
       "executable": false,
@@ -477,8 +622,18 @@
         },
         {
           "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
-          "status": "unsupported"
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-ranged",
+          "status": "spatial"
         },
         {
           "clauseId": "damage-roll",
@@ -486,12 +641,22 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-application",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "damage-roll-cantrip-scaling",
           "detail": null,
           "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "starry-wisp"
     },
     {
@@ -542,6 +707,11 @@
           "clauseId": "damage-roll",
           "detail": null,
           "status": "physical-input"
+        },
+        {
+          "clauseId": "damage-roll-cantrip-scaling",
+          "detail": null,
+          "status": "automated"
         },
         {
           "clauseId": "damage-roll-on-save",
@@ -762,8 +932,23 @@
         },
         {
           "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
-          "status": "unsupported"
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-ranged",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
         }
       ],
       "executable": false,
@@ -1400,8 +1585,18 @@
         },
         {
           "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
-          "status": "unsupported"
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-ranged",
+          "status": "spatial"
         },
         {
           "clauseId": "damage-roll",
@@ -1409,12 +1604,17 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-application",
           "detail": null,
           "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "guiding-bolt"
     },
     {
@@ -1615,8 +1815,8 @@
           "status": "physical-input"
         },
         {
-          "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
+          "clauseId": "attack-and-save",
+          "detail": "combined-gate-sequencing-pending",
           "status": "unsupported"
         },
         {
@@ -1807,6 +2007,11 @@
           "status": "automated"
         },
         {
+          "clauseId": "instances",
+          "detail": "per-instance-rolls-pending",
+          "status": "unsupported"
+        },
+        {
           "clauseId": "damage-roll",
           "detail": null,
           "status": "physical-input"
@@ -1817,7 +2022,7 @@
           "status": "automated"
         }
       ],
-      "executable": true,
+      "executable": false,
       "id": "magic-missile"
     },
     {
@@ -1885,8 +2090,8 @@
           "status": "physical-input"
         },
         {
-          "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
+          "clauseId": "attack-and-save",
+          "detail": "combined-gate-sequencing-pending",
           "status": "unsupported"
         },
         {
@@ -2732,13 +2937,28 @@
         },
         {
           "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
-          "status": "unsupported"
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-melee",
+          "status": "spatial"
         },
         {
           "clauseId": "damage-roll",
           "detail": null,
           "status": "physical-input"
+        },
+        {
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
+          "status": "automated"
         },
         {
           "clauseId": "damage-roll-application",
@@ -2756,7 +2976,7 @@
           "status": "table"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "flame-blade"
     },
     {
@@ -3475,8 +3695,8 @@
           "status": "physical-input"
         },
         {
-          "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
+          "clauseId": "attack-and-save",
+          "detail": "combined-gate-sequencing-pending",
           "status": "unsupported"
         },
         {
@@ -3527,9 +3747,24 @@
           "status": "automated"
         },
         {
+          "clauseId": "instances",
+          "detail": "one-target-slot-per-ray",
+          "status": "automated"
+        },
+        {
           "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
-          "status": "unsupported"
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "shared-armor-class-binding-per-ray-override",
+          "status": "table"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-ranged",
+          "status": "spatial"
         },
         {
           "clauseId": "damage-roll",
@@ -3537,12 +3772,17 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-application",
           "detail": null,
           "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "scorching-ray"
     },
     {
@@ -3735,13 +3975,28 @@
         },
         {
           "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
-          "status": "unsupported"
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-melee",
+          "status": "spatial"
         },
         {
           "clauseId": "damage-roll",
           "detail": null,
           "status": "physical-input"
+        },
+        {
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
+          "status": "automated"
         },
         {
           "clauseId": "damage-roll-application",
@@ -5078,13 +5333,28 @@
         },
         {
           "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
-          "status": "unsupported"
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-melee",
+          "status": "spatial"
         },
         {
           "clauseId": "damage-roll",
           "detail": null,
           "status": "physical-input"
+        },
+        {
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
+          "status": "automated"
         },
         {
           "clauseId": "damage-roll-application",
@@ -6319,13 +6589,28 @@
         },
         {
           "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
-          "status": "unsupported"
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-melee",
+          "status": "spatial"
         },
         {
           "clauseId": "damage-roll",
           "detail": null,
           "status": "physical-input"
+        },
+        {
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
+          "status": "automated"
         },
         {
           "clauseId": "damage-roll-application",
@@ -6343,7 +6628,7 @@
           "status": "table"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "bigbys-hand"
     },
     {
@@ -6818,28 +7103,28 @@
       "clauses": [
         {
           "clauseId": "slot-payment",
-          "detail": "program-conformance",
-          "status": "unsupported"
+          "detail": null,
+          "status": "automated"
         },
         {
           "clauseId": "targeting",
-          "detail": "program-conformance",
-          "status": "unsupported"
+          "detail": null,
+          "status": "automated"
         },
         {
           "clauseId": "cure-charmed",
-          "detail": "program-conformance",
-          "status": "unsupported"
+          "detail": null,
+          "status": "automated"
         },
         {
           "clauseId": "cure-exhaustion",
-          "detail": "program-conformance",
+          "detail": "exhaustion-step-authoring-pending",
           "status": "unsupported"
         },
         {
           "clauseId": "cure-petrified",
-          "detail": "program-conformance",
-          "status": "unsupported"
+          "detail": null,
+          "status": "automated"
         },
         {
           "clauseId": "cure-choice",
@@ -8724,13 +9009,28 @@
         },
         {
           "clauseId": "attack-roll",
-          "detail": "spell-attack-gate-pending-attack-request-context",
-          "status": "unsupported"
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-melee",
+          "status": "spatial"
         },
         {
           "clauseId": "damage-roll",
           "detail": null,
           "status": "physical-input"
+        },
+        {
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
+          "status": "automated"
         },
         {
           "clauseId": "damage-roll-application",
@@ -10010,15 +10310,15 @@
       "id": "wish"
     }
   ],
-  "executablePrograms": 190,
+  "executablePrograms": 203,
   "family": "spells",
   "totalEntities": 422,
   "totals": {
-    "automated": 1292,
-    "physical-input": 282,
-    "table": 199,
-    "unsupported": 126,
-    "narrative": 138,
-    "spatial": 70
+    "automated": 1356,
+    "physical-input": 306,
+    "table": 202,
+    "spatial": 94,
+    "narrative": 141,
+    "unsupported": 99
   }
 }

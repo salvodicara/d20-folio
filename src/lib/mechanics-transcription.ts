@@ -39,8 +39,11 @@ export interface SpellTranscription {
 
 /** Static bindings the runtime authority must supply for transcribed programs. */
 export const TRANSCRIPTION_BINDINGS = {
+  attackBonus: "spell-attack-bonus",
   castingModifier: "spellcasting-modifier",
+  characterLevel: "character-level",
   saveDc: "spell-save-dc",
+  targetArmorClass: "target-armor-class",
 } as const;
 
 const DICE_PATTERN = /^(\d+)d(\d+)(?:\s*\+\s*(\d+))?$/;
@@ -104,18 +107,43 @@ function upcastCount(
   };
 }
 
+/** count × (1 + ⌊(character level + 1) / 6⌋) — the 2024 cantrip progression (5/11/17). */
+function cantripScaledCount(count: number): IntegerExpression {
+  return {
+    factors: [
+      fixed(count),
+      {
+        kind: "add",
+        terms: [
+          fixed(1),
+          {
+            dividend: {
+              kind: "add",
+              terms: [
+                { bindingId: TRANSCRIPTION_BINDINGS.characterLevel, kind: "binding" },
+                fixed(1),
+              ],
+            },
+            divisor: fixed(6),
+            kind: "divide",
+            rounding: "floor",
+          },
+        ],
+      },
+    ],
+    kind: "multiply",
+  };
+}
+
 function diceInput(
   inputId: string,
   dice: ParsedDice,
-  perUpcastDice: ParsedDice | null,
-  spellLevel: number,
-  upcastScales: boolean
+  count: Readonly<IntegerExpression>,
+  expansion: Readonly<Record<string, unknown>> = { binding: "caster", kind: "single" }
 ): Record<string, unknown> {
   const terms: Record<string, unknown>[] = [
     {
-      count: upcastScales
-        ? upcastCount(dice.count, perUpcastDice?.count ?? null, spellLevel)
-        : fixed(dice.count),
+      count,
       kind: "dice",
       operation: "add",
       sides: dice.sides,
@@ -132,7 +160,7 @@ function diceInput(
   }
   return {
     acceptancePolicy: [],
-    expansion: { binding: "caster", kind: "single" },
+    expansion,
     formula: { terms },
     inputId,
     kind: "dice",
@@ -177,11 +205,58 @@ function savingThrowInput(ability: AbilityCode): Record<string, unknown> {
   };
 }
 
+/**
+ * One spell-attack request per answered target slot: the caster rolls, each
+ * request adjudicates against the bound target armor class, and the observation
+ * keeps the table-override channel for adjudication the world cannot see.
+ */
+function attackInput(): Record<string, unknown> {
+  return {
+    expansion: { bind: "target", inputId: "targets", kind: "entities" },
+    inputId: "attack",
+    kind: "d20",
+    payments: [],
+    request: {
+      actor: "caster",
+      armorClass: {
+        bindingId: TRANSCRIPTION_BINDINGS.targetArmorClass,
+        kind: "binding",
+      },
+      automaticCriticalSourceIds: [],
+      criticalThreshold: fixed(20),
+      enteredModifiers: [],
+      kind: "attack",
+      modifiers: [
+        {
+          sourceId: "spell-attack-bonus",
+          value: { bindingId: TRANSCRIPTION_BINDINGS.attackBonus, kind: "binding" },
+        },
+      ],
+      resolution: { kind: "rolled" },
+      rollRules: CANONICAL_ROLL_RULES,
+      target: "target",
+      testId: "spell-attack",
+    },
+    when: null,
+  };
+}
+
 function sharedDiceAmount(
   inputId: string,
   transform: Readonly<IntegerExpression>
 ): Record<string, unknown> {
   return { cardinality: "shared", inputId, kind: "dice-input", transform };
+}
+
+/** A per-attack-outcome damage roll: input expansion and step target must match. */
+function attackOutcomeSelector(outcomeIds: readonly string[]): Record<string, unknown> {
+  return {
+    cardinality: "per-request",
+    inputId: "attack",
+    kind: "d20-outcome",
+    outcomeIds,
+    quantifier: "any",
+  };
 }
 
 const INPUT_TOTAL: IntegerExpression = { bindingId: "input-total", kind: "binding" };
@@ -248,36 +323,64 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     clauses.push(clause("slot-payment", "automated"));
   }
 
+  // Resolution gates (read early so targeting can express per-ray slots).
+  const hasSave = spell.saveAbility !== undefined;
+  const hasAttack = spell.attackType !== undefined;
+
   // Targeting: the table selects who is inside an area; the engine applies.
+  // An instanced attack spell (Scorching Ray) targets one entity SLOT per ray —
+  // the same creature may occupy several slots, and each slot is its own attack.
   const maxTargets = spell.targeting?.maxTargets;
+  const instances = spell.instances;
   const targetMaximum = typeof maxTargets === "number" ? maxTargets : spell.area ? 20 : 1;
   if (typeof maxTargets === "string") {
     unsupported("targeting", `dynamic-max-targets:${maxTargets}`);
   } else {
+    const slotMaximum: IntegerExpression =
+      instances !== undefined && hasAttack && spell.level > 0
+        ? upcastCount(instances, spell.instancesPerUpcast ?? null, spell.level)
+        : instances !== undefined && hasAttack
+          ? fixed(instances)
+          : fixed(targetMaximum);
     inputs.push({
       eligibility: "creature",
       inputId: "targets",
       kind: "entities",
-      maximum: fixed(targetMaximum),
+      maximum: slotMaximum,
       minimum: fixed(0),
       multiplicity: "slots",
       when: null,
     });
     clauses.push(clause("targeting", "automated"));
+    if (instances !== undefined && hasAttack) {
+      clauses.push(clause("instances", "automated", "one-target-slot-per-ray"));
+    } else if (instances !== undefined) {
+      unsupported("instances", "per-instance-rolls-pending");
+    }
     if (spell.area) {
       clauses.push(clause("area-selection", "spatial", "table-selects-occupants"));
     }
   }
 
-  // Resolution gate.
-  const hasSave = spell.saveAbility !== undefined;
-  const hasAttack = spell.attackType !== undefined;
   if (spell.saveAbility !== undefined) {
     inputs.push(savingThrowInput(spell.saveAbility));
     clauses.push(clause("saving-throw", "physical-input"));
   }
-  if (hasAttack) {
-    unsupported("attack-roll", "spell-attack-gate-pending-attack-request-context");
+  if (hasAttack && hasSave) {
+    unsupported("attack-and-save", "combined-gate-sequencing-pending");
+  } else if (hasAttack) {
+    inputs.push(attackInput());
+    clauses.push(clause("attack-roll", "physical-input"));
+    clauses.push(
+      clause(
+        "attack-adjudication",
+        targetMaximum === 1 && instances === undefined ? "automated" : "table",
+        targetMaximum === 1 && instances === undefined
+          ? "hit-vs-bound-armor-class"
+          : "shared-armor-class-binding-per-ray-override"
+      )
+    );
+    clauses.push(clause("attack-range", "spatial", `table-verifies-${spell.attackType}`));
   }
 
   // Damage components.
@@ -318,17 +421,74 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
       });
     }
   }
+  const gatedByAttack = hasAttack && !hasSave;
   for (const component of components) {
-    inputs.push(
-      diceInput(
-        component.inputId,
-        component.dice,
-        component.perUpcast,
-        spell.level,
-        spell.level > 0 && component.perUpcast !== null
-      )
-    );
+    // Base + cantrip/upcast scaling on the rolled dice count.
+    const scaledCount: IntegerExpression =
+      spell.level === 0
+        ? cantripScaledCount(component.dice.count)
+        : upcastCount(
+            component.dice.count,
+            component.perUpcast?.count ?? null,
+            spell.level
+          );
+    if (gatedByAttack) {
+      // One damage roll per landed request; critical hits double the DICE
+      // (never the flat bonus), so they ride their own doubled-count input.
+      const critCount: IntegerExpression = {
+        factors: [fixed(2), scaledCount],
+        kind: "multiply",
+      };
+      const families = [
+        { count: scaledCount, inputId: component.inputId, outcomeIds: ["hit"] },
+        {
+          count: critCount,
+          inputId: `${component.inputId}-crit`,
+          outcomeIds: ["critical-hit"],
+        },
+      ] as const;
+      for (const family of families) {
+        inputs.push(
+          diceInput(family.inputId, component.dice, family.count, {
+            inputId: "attack",
+            kind: "d20-outcomes",
+            outcomeIds: family.outcomeIds,
+          })
+        );
+        steps.push({
+          delivery: "attack",
+          kind: "damage",
+          parts: [
+            {
+              amount: {
+                cardinality: "per-target-request",
+                inputId: family.inputId,
+                kind: "dice-input",
+                transform: INPUT_TOTAL,
+              },
+              damageType: component.damageType,
+              partId: `${family.inputId}-full`,
+            },
+          ],
+          stepId: `${family.inputId}-apply`,
+          target: attackOutcomeSelector(family.outcomeIds),
+          traits: ["spell"],
+          when: null,
+        });
+      }
+      clauses.push(clause(component.inputId, "physical-input"));
+      clauses.push(clause(`${component.inputId}-crit-dice`, "automated", "doubled"));
+      clauses.push(clause(`${component.inputId}-application`, "automated"));
+      if (spell.level === 0) {
+        clauses.push(clause(`${component.inputId}-cantrip-scaling`, "automated"));
+      }
+      continue;
+    }
+    inputs.push(diceInput(component.inputId, component.dice, scaledCount));
     clauses.push(clause(component.inputId, "physical-input"));
+    if (spell.level === 0) {
+      clauses.push(clause(`${component.inputId}-cantrip-scaling`, "automated"));
+    }
     const delivery = hasSave ? "saving-throw" : "automatic";
     const failedTarget = hasSave
       ? {
@@ -382,6 +542,9 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     }
     clauses.push(clause(`${component.inputId}-application`, "automated"));
   }
+  if (gatedByAttack && spell.damageOnMiss !== undefined) {
+    unsupported("damage-on-miss", "half-on-miss-roll-attribution-pending");
+  }
   if (spell.bonusDamageAgainst) {
     unsupported("bonus-damage-against", "creature-type-gated-damage");
   }
@@ -401,9 +564,9 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
         diceInput(
           "heal-roll",
           dice,
-          perUpcast,
-          spell.level,
-          spell.level > 0 && perUpcast !== null
+          spell.level > 0
+            ? upcastCount(dice.count, perUpcast?.count ?? null, spell.level)
+            : fixed(dice.count)
         )
       );
       steps.push({
@@ -447,7 +610,7 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
       unsupported("temporary-hit-points", `dice:${spell.tempHpRoll.dice}`);
     } else {
       if (dice) {
-        inputs.push(diceInput("temp-hp-roll", dice, null, spell.level, false));
+        inputs.push(diceInput("temp-hp-roll", dice, fixed(dice.count)));
         clauses.push(clause("temporary-hit-points-roll", "physical-input"));
       }
       const bonus = upcastCount(
@@ -482,8 +645,10 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     if (application.max !== undefined && application.max < application.options.length) {
       clauses.push(clause("condition-choice", "table", "table-picks-subset"));
     }
-    if (application.on === "hit" && !hasSave) {
-      unsupported("condition-gate", "on-hit-conditions-pending-attack-gate");
+    if (application.on === "hit" && !gatedByAttack) {
+      unsupported("condition-gate", "on-hit-without-attack-gate");
+    } else if (application.on === "hit") {
+      clauses.push(clause("condition-gate", "automated", "on-landed-attack"));
     }
     for (const conditionId of application.options) {
       if (conditionId === "exhaustion") {
@@ -538,7 +703,9 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
                 outcomeIds: ["failure"],
                 quantifier: "any",
               }
-            : { inputId: "targets", kind: "input" },
+            : gatedByAttack && application.on === "hit"
+              ? attackOutcomeSelector(["hit", "critical-hit"])
+              : { inputId: "targets", kind: "input" },
         when: null,
       });
       clauses.push(clause(`condition-${conditionId}`, "automated"));
@@ -546,6 +713,10 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   }
   if (spell.conditionRemoval) {
     for (const conditionId of spell.conditionRemoval.options) {
+      if (conditionId === "exhaustion") {
+        unsupported("cure-exhaustion", "exhaustion-step-authoring-pending");
+        continue;
+      }
       steps.push({
         conditionId,
         kind: "condition",

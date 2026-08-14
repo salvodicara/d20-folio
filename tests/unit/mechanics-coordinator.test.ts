@@ -1621,4 +1621,247 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
     expect(state.vitals.hitPoints.current).toBe(0);
     expect(state.vitals.zeroHitPoints).not.toBeNull();
   });
+
+  interface AttackCastPlan {
+    /** d20 face per attack request, in request order. */
+    readonly attackFaces: readonly number[];
+    readonly bindings: Readonly<Record<string, number>>;
+    readonly slotLevel: number | null;
+    readonly spellId: string;
+    readonly targetSlots: number;
+  }
+
+  /** Drive one transcribed attack spell through the live protocol. */
+  async function runAttackCast(plan: AttackCastPlan) {
+    const { spells } = await import("@/data/spells");
+    const { transcribeSpell } = await import("@/lib/mechanics-transcription");
+    const spell = spells.find((entry) => entry.id === plan.spellId);
+    if (!spell) throw new Error(`${plan.spellId} fixture`);
+    const transcription = transcribeSpell(spell);
+    if (!transcription.program) {
+      throw new Error(
+        `${plan.spellId} program: ${JSON.stringify(transcription.clauses)}`
+      );
+    }
+    const authority = {
+      ...authorityReceipt(transcription.program),
+      staticBindings: plan.bindings,
+    };
+    const snapshot = (() => {
+      const base = createEmptyCharacterMaterialState(5, HERO, {
+        hitPoints: {
+          current: 20,
+          temporary: { current: 0, sourceOccurrence: null },
+        },
+        zeroHitPoints: null,
+      });
+      const parsed = parseMechanicsWorld({
+        documents: [
+          {
+            kind: "character",
+            material: HERO,
+            state: {
+              ...base,
+              resources: {
+                ...base.resources,
+                standardSpellSlots:
+                  plan.slotLevel === null
+                    ? {}
+                    : {
+                        [String(plan.slotLevel)]: {
+                          capacity: { base: { kind: "unbounded" }, override: null },
+                          current: 2,
+                          disabled: false,
+                          kind: "count",
+                        },
+                      },
+              },
+            },
+          },
+        ],
+        scope: HERO,
+      });
+      if (!parsed.ok) throw new Error(parsed.reason);
+      return parsed.value;
+    })();
+    const slotFacts =
+      plan.slotLevel === null
+        ? []
+        : [
+            {
+              address: [
+                "resource-definition",
+                "resources",
+                "standardSpellSlots",
+                String(plan.slotLevel),
+              ],
+              expected: {
+                present: true,
+                value: {
+                  bindings: {},
+                  spec: {
+                    capacity: { kind: "unbounded" },
+                    id: "standard-spell-slot",
+                    initial: { kind: "empty" },
+                    kind: "count",
+                    recoveries: [],
+                  },
+                },
+              },
+              lifecycle: "commit",
+              owner: SELF,
+            } as const,
+          ];
+    const trailIds = (value: unknown): string[] => [
+      ...new Set(
+        [...JSON.stringify(value).matchAll(/"trailId":"([^"]+)"/g)].map(
+          (match) => match[1] ?? ""
+        )
+      ),
+    ];
+    const answers: MechanicsAnswer[] = [];
+    const demandedDamageTrails: number[] = [];
+    const run = () =>
+      runMechanicsCausalAction({
+        answers,
+        authoritySnapshot: authoritySnapshot(authority),
+        facts: [MAX_HP_FACT, ...slotFacts],
+        frameAnswers: [],
+        intent: {
+          actionId: `cast-${plan.spellId}`,
+          factGuards: [],
+          frame: {
+            authority,
+            invocation: {
+              installation: authority.installation,
+              kind: "installed-capability",
+            },
+            rootReceipt: {
+              kind: "create",
+              materialEpoch: 0,
+              next: { execution: 1, phaseId: "resolve", triggerEventId: null },
+              root: ROOT,
+            },
+            trigger: { kind: "invocation" },
+          },
+        },
+        responses: [],
+        state: causalState(snapshot),
+        turnEconomy: [],
+      });
+    let outcome = run();
+    for (
+      let remaining = 10;
+      outcome.status === "needs-answer" && remaining > 0;
+      remaining -= 1
+    ) {
+      const requirement = outcome.requirement;
+      if (!requirement) throw new Error("missing requirement");
+      if (requirement.kind === "resource" && plan.slotLevel !== null) {
+        answers.push({
+          inputId: requirement.inputId,
+          kind: "resource",
+          resource: {
+            character: HERO,
+            kind: "standard-spell-slot",
+            level: plan.slotLevel,
+          },
+        });
+      } else if (requirement.kind === "entities") {
+        answers.push({
+          inputId: requirement.inputId,
+          kind: "entities",
+          targets: Array.from({ length: plan.targetSlots }, () => SELF),
+        });
+      } else if (requirement.kind === "d20") {
+        answers.push({
+          inputId: requirement.inputId,
+          kind: "d20",
+          requests: requirement.requests.map(({ identity, review }, index) => ({
+            identity,
+            observation: {
+              d20: {
+                aggregates: [],
+                trails: trailIds(review).map((trailId) => ({
+                  initialFace: plan.attackFaces[index] ?? 1,
+                  steps: [],
+                  trailId,
+                })),
+              },
+              enteredModifiers: [],
+              tableOverride: null,
+            },
+            payments: [],
+          })),
+        });
+      } else if (requirement.kind === "dice") {
+        for (const request of requirement.requests) {
+          demandedDamageTrails.push(trailIds(request.roll).length);
+        }
+        answers.push({
+          inputId: requirement.inputId,
+          kind: "dice",
+          requests: requirement.requests.map(({ identity, roll }) => ({
+            identity,
+            observation: {
+              aggregates: [],
+              trails: trailIds(roll).map((trailId) => ({
+                initialFace: 3,
+                steps: [],
+                trailId,
+              })),
+            },
+            payments: [],
+          })),
+        });
+      } else {
+        throw new Error(`unexpected requirement: ${requirement.kind}`);
+      }
+      outcome = run();
+    }
+    if (outcome.status === "rejected") throw new Error(JSON.stringify(outcome));
+    expect(outcome.status).toBe("complete");
+    if (outcome.status !== "complete") throw new Error("incomplete");
+    return { demandedDamageTrails, state: heroState(outcome.state) };
+  }
+
+  it("resolves scorching-ray rays independently: hit, natural-20 crit, miss", async () => {
+    const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
+    // Attack bonus +7 vs AC 15: 12 → 19 hits; natural 20 crits; 2 → 9 misses.
+    const { demandedDamageTrails, state } = await runAttackCast({
+      attackFaces: [12, 20, 2],
+      bindings: {
+        [TRANSCRIPTION_BINDINGS.attackBonus]: 7,
+        [TRANSCRIPTION_BINDINGS.targetArmorClass]: 15,
+      },
+      slotLevel: 3,
+      spellId: "scorching-ray",
+      targetSlots: 3,
+    });
+    // Slot 3 on a level-2 spell allows 4 ray slots; three were aimed. The hit
+    // ray rolls 2d6, the crit ray rolls doubled dice (4d6), the miss rolls
+    // nothing — its outcome-expanded inputs resolve themselves empty.
+    expect(demandedDamageTrails.sort((a, b) => a - b)).toEqual([2, 4]);
+    // All faces 3: hit 6 + crit 12 = 18 damage to the (self-targeted) hero.
+    expect(state.vitals.hitPoints.current).toBe(2);
+    expect(state.resources.standardSpellSlots["3"]?.current).toBe(1);
+  });
+
+  it("scales fire-bolt cantrip dice by character level and needs no slot", async () => {
+    const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
+    const { demandedDamageTrails, state } = await runAttackCast({
+      attackFaces: [11],
+      bindings: {
+        [TRANSCRIPTION_BINDINGS.attackBonus]: 7,
+        [TRANSCRIPTION_BINDINGS.characterLevel]: 11,
+        [TRANSCRIPTION_BINDINGS.targetArmorClass]: 15,
+      },
+      slotLevel: null,
+      spellId: "fire-bolt",
+      targetSlots: 1,
+    });
+    // Level 11 → 3d10 (the 5/11/17 progression); all faces 3 → 9 damage.
+    expect(demandedDamageTrails).toEqual([3]);
+    expect(state.vitals.hitPoints.current).toBe(11);
+  });
 });

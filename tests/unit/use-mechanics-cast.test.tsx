@@ -10,7 +10,13 @@ import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { User } from "firebase/auth";
 
-const DERIVED = { castingModifier: 3, maxHp: 60, saveDc: 15 } as const;
+const DERIVED = {
+  attackBonus: 7,
+  castingModifier: 3,
+  characterLevel: 3,
+  maxHp: 60,
+  saveDc: 15,
+} as const;
 
 afterEach(() => {
   useCharacterStore.setState({ character: null });

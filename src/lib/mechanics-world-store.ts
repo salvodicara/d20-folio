@@ -82,11 +82,9 @@ export function characterWorldState(
       current > 0
         ? null
         : {
-            deathSavingThrows: {
-              failures: Math.min(3, Math.max(0, session.deathFail)),
-              successes: Math.min(3, Math.max(0, session.deathSucc)),
-            },
-            stable: false,
+            failures: Math.min(3, Math.max(0, session.deathFail)),
+            kind: "dying" as const,
+            successes: Math.min(3, Math.max(0, session.deathSucc)),
           },
   });
   const slots = applySlotMaxOverrides(
@@ -140,17 +138,32 @@ export interface CharacterCastCapability {
   readonly transcription: SpellTranscription;
 }
 
+/** Build-derived numbers a transcribed spell program binds at cast time. */
+export interface CharacterCastDerived {
+  readonly attackBonus: number;
+  readonly castingModifier: number;
+  readonly characterLevel: number;
+  readonly maxHp: number;
+  readonly saveDc: number;
+  /**
+   * The chosen target's armor class, when the surface knows it (entity
+   * override, catalogue stat, or table-entered). Attack programs cannot
+   * review without it — the kernel stays catalogue-agnostic by doctrine.
+   */
+  readonly targetArmorClass?: number;
+}
+
 /**
  * The executable authority for one spell the character can cast: the
  * transcribed program closed into a capability snapshot, anchored on the
- * caster, with the build-derived save DC as a static binding and the
+ * caster, with the build-derived numbers as static bindings and the
  * build-derived maximum hit points as a caller-guarded fact.
  */
 export function characterSpellCapability(
   doc: Readonly<CharacterDoc>,
   uid: string,
   spellId: string,
-  derived: Readonly<{ castingModifier: number; maxHp: number; saveDc: number }>
+  derived: Readonly<CharacterCastDerived>
 ): CharacterCastCapability | null {
   const spell = spellIndex.get(spellId);
   if (!spell) return null;
@@ -186,8 +199,13 @@ export function characterSpellCapability(
     },
     source: { capability, kind: "capability", owner: self },
     staticBindings: {
+      [TRANSCRIPTION_BINDINGS.attackBonus]: derived.attackBonus,
       [TRANSCRIPTION_BINDINGS.castingModifier]: derived.castingModifier,
+      [TRANSCRIPTION_BINDINGS.characterLevel]: derived.characterLevel,
       [TRANSCRIPTION_BINDINGS.saveDc]: saveDc,
+      ...(derived.targetArmorClass !== undefined
+        ? { [TRANSCRIPTION_BINDINGS.targetArmorClass]: derived.targetArmorClass }
+        : {}),
     },
   });
   if (!authority) return null;
