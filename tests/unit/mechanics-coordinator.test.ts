@@ -1825,7 +1825,13 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
     if (outcome.status === "rejected") throw new Error(JSON.stringify(outcome));
     expect(outcome.status).toBe("complete");
     if (outcome.status !== "complete") throw new Error("incomplete");
-    return { demandedDamageTrails, state: heroState(outcome.state) };
+    return {
+      authority,
+      causal: outcome.state,
+      demandedDamageTrails,
+      facts: [MAX_HP_FACT, ...slotFacts] as const,
+      state: heroState(outcome.state),
+    };
   }
 
   it("resolves scorching-ray rays independently: hit, natural-20 crit, miss", async () => {
@@ -1973,6 +1979,122 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
         (occurrence) => occurrence.kind === "concentration"
       )
     ).toBe(true);
+  });
+
+  it("advances the moonbeam pulse via a root-pulse declaration end-to-end", async () => {
+    const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
+    const cast = await runAttackCast({
+      attackFaces: [],
+      bindings: { [TRANSCRIPTION_BINDINGS.saveDc]: 15 },
+      slotLevel: 3,
+      spellId: "moonbeam",
+      targetSlots: 0,
+    });
+    const trailIds = (value: unknown): string[] => [
+      ...new Set(
+        [...JSON.stringify(value).matchAll(/"trailId":"([^"]+)"/g)].map(
+          (match) => match[1] ?? ""
+        )
+      ),
+    ];
+    const answers: MechanicsAnswer[] = [];
+    const run = () =>
+      runMechanicsCausalAction({
+        answers,
+        authoritySnapshot: authoritySnapshot(cast.authority),
+        facts: cast.facts,
+        frameAnswers: [],
+        intent: {
+          actionId: "moonbeam-pulse-1",
+          factGuards: [],
+          frame: {
+            authority: cast.authority,
+            invocation: { kind: "program-root", occurrence: ROOT },
+            rootReceipt: {
+              expected: { execution: 0, phaseId: "pulse", triggerEventId: null },
+              kind: "advance",
+              next: { execution: 1, phaseId: "pulse", triggerEventId: "pulse.1" },
+              root: ROOT,
+            },
+            trigger: { eventId: "pulse", kind: "root-pulse", triggerEventId: "pulse.1" },
+          },
+        },
+        responses: [],
+        state: cast.causal,
+        turnEconomy: [],
+      });
+    let outcome = run();
+    for (
+      let remaining = 6;
+      outcome.status === "needs-answer" && remaining > 0;
+      remaining -= 1
+    ) {
+      const requirement = outcome.requirement;
+      if (!requirement) throw new Error("missing pulse requirement");
+      if (requirement.kind === "entities") {
+        answers.push({
+          inputId: requirement.inputId,
+          kind: "entities",
+          targets: [SELF],
+        });
+      } else if (requirement.kind === "d20") {
+        answers.push({
+          inputId: requirement.inputId,
+          kind: "d20",
+          requests: requirement.requests.map(({ identity, review }) => ({
+            identity,
+            observation: {
+              d20: {
+                aggregates: [],
+                trails: trailIds(review).map((trailId) => ({
+                  initialFace: 3,
+                  steps: [],
+                  trailId,
+                })),
+              },
+              enteredModifiers: [],
+              tableOverride: null,
+            },
+            payments: [],
+          })),
+        });
+      } else if (requirement.kind === "dice") {
+        answers.push({
+          inputId: requirement.inputId,
+          kind: "dice",
+          requests: requirement.requests.map(({ identity, roll }) => ({
+            identity,
+            observation: {
+              aggregates: [],
+              trails: trailIds(roll).map((trailId) => ({
+                initialFace: 3,
+                steps: [],
+                trailId,
+              })),
+            },
+            payments: [],
+          })),
+        });
+      } else {
+        throw new Error(`unexpected pulse requirement: ${requirement.kind}`);
+      }
+      outcome = run();
+    }
+    if (outcome.status === "rejected") throw new Error(JSON.stringify(outcome));
+    expect(outcome.status).toBe("complete");
+    if (outcome.status !== "complete") return;
+    const state = heroState(outcome.state);
+    // Cast at slot 3 → the register scales the pulse to 3d10; save 3 vs DC 15
+    // fails → full damage 9. The pulse phase advanced exactly once.
+    expect(state.vitals.hitPoints.current).toBe(11);
+    const root = Object.values(state.occurrences).find(
+      (occurrence) => occurrence.kind === "program"
+    );
+    if (root?.kind !== "program") throw new Error("missing root");
+    expect(root.phaseState["pulse"]).toMatchObject({
+      execution: 1,
+      lastTriggerEventId: "pulse.1",
+    });
   });
 
   it("omits the ray-of-sickness save entirely when the attack misses", async () => {

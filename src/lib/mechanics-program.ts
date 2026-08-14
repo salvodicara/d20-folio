@@ -975,6 +975,11 @@ function triggerMatches(
         "kind" in intent.actor &&
         intent.actor.authority === evidence.authority
       );
+    // The root's possessor declares the pulse (the player applies the zone's
+    // event the physical table just adjudicated); advance CAS on the exact
+    // execution + trigger event id makes each declaration single-use.
+    case "root-pulse":
+      return evidence.kind === "root-pulse" && trigger.eventId === evidence.eventId;
   }
 }
 

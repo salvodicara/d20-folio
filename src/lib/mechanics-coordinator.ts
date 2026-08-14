@@ -12,6 +12,7 @@
 
 import { canonicalFingerprint, canonicalJson } from "@/lib/canonical-fingerprint";
 import { planMechanicsWorldAction } from "@/lib/mechanics-action";
+import { conformMechanicsExecutionFrame } from "@/lib/mechanics-command-boundary";
 import { compileMechanicsFrame } from "@/lib/mechanics-compiler";
 import { resolveMechanicsLifetime } from "@/lib/mechanics-program-effects";
 import { deriveMechanicsSourceEndingEvents } from "@/lib/mechanics-execution";
@@ -180,8 +181,22 @@ export function runMechanicsCausalAction(
   const frameKey = (frame: Readonly<MechanicsExecutionFrame>): string =>
     canonicalFingerprint(frameRef(frame));
 
-  // The root intent reviews against the closed entry basis, before any push.
-  const rootReview = reviewMechanicsIntent(input.intent, input.answers, entryState);
+  // A CREATE root reviews against the closed entry basis before any push. A
+  // non-create root (a pulse advance) is admissible only as the pending TOP,
+  // so its frame pushes FIRST and the review runs on that pushed basis — the
+  // reviewed frame must then equal the pushed frame under the canonical form.
+  const preFrame = conformMechanicsExecutionFrame(input.intent.frame);
+  if (!preFrame) return rejectedResult("invalid-intent");
+
+  let state: Readonly<MechanicsCausalState> = entryState;
+  if (preFrame.rootReceipt.kind !== "create") {
+    const prePushed = pushMechanicsPendingFrame(entryState, preFrame);
+    if (!prePushed.ok) {
+      return rejectedResult("invalid-state", frameRef(preFrame), prePushed.reason);
+    }
+    state = prePushed.value;
+  }
+  const rootReview = reviewMechanicsIntent(input.intent, input.answers, state);
   if (rootReview.status !== "reviewed") {
     return rootReview.requirement !== null
       ? freezeDeep({
@@ -192,8 +207,10 @@ export function runMechanicsCausalAction(
       : rejectedResult(rootReview.reason, null, rootReview.referenceId);
   }
   const rootFrame = rootReview.reviewed.intent.frame;
+  if (canonicalFingerprint(rootFrame) !== canonicalFingerprint(preFrame)) {
+    return rejectedResult("invalid-intent", frameRef(preFrame), "frame-drift");
+  }
 
-  let state: Readonly<MechanicsCausalState> = entryState;
   if (rootFrame.rootReceipt.kind === "create") {
     const program = rootFrame.authority.snapshot.program;
     const rootEndRules = (program?.lifetime ?? []).flatMap((spec) => {
@@ -263,9 +280,12 @@ export function runMechanicsCausalAction(
     }
     state = created.state;
   }
-  const pushed = pushMechanicsPendingFrame(state, rootFrame);
-  if (!pushed.ok) {
-    return rejectedResult("invalid-state", frameRef(rootFrame), pushed.reason);
+  if (rootFrame.rootReceipt.kind === "create") {
+    const pushed = pushMechanicsPendingFrame(state, rootFrame);
+    if (!pushed.ok) {
+      return rejectedResult("invalid-state", frameRef(rootFrame), pushed.reason);
+    }
+    state = pushed.value;
   }
   frameRecords.set(frameKey(rootFrame), {
     chain: null,
@@ -527,7 +547,7 @@ export function runMechanicsCausalAction(
     baselineDepth: 0,
     deliveredWaves: new Set<string>(),
     finalizeWaves: true,
-    state: pushed.value,
+    state,
   };
   const outcome = drive(context);
   if (outcome) return outcome;

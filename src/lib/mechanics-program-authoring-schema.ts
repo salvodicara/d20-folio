@@ -513,6 +513,10 @@ export const PHASE_TRIGGER_SCHEMA = discriminatedUnionSchema("kind", {
     eventId: ID_SCHEMA,
     kind: literalSchema("manual-table-event"),
   }),
+  "root-pulse": objectSchema({
+    eventId: ID_SCHEMA,
+    kind: literalSchema("root-pulse"),
+  }),
 });
 export type PhaseTriggerSchemaShape = InferExactSchema<typeof PHASE_TRIGGER_SCHEMA>;
 

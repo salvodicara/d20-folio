@@ -101,6 +101,11 @@ export const MECHANICS_TRIGGER_EVIDENCE_SCHEMA = discriminatedUnionSchema("kind"
     kind: literalSchema("manual-table-event"),
     triggerEventId: ID_SCHEMA,
   }),
+  "root-pulse": objectSchema({
+    eventId: ID_SCHEMA,
+    kind: literalSchema("root-pulse"),
+    triggerEventId: ID_SCHEMA,
+  }),
 });
 
 export type MechanicsTriggerEvidenceSchemaShape = InferExactSchema<

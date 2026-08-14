@@ -1123,7 +1123,7 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
         inputs: pulseInputs,
         phaseId: "pulse",
         steps: pulseSteps,
-        trigger: { eventId: "pulse", kind: "manual-table-event" },
+        trigger: { eventId: "pulse", kind: "root-pulse" },
       };
     }
   } else if (deferred && whileActiveGrants.length > 0) {

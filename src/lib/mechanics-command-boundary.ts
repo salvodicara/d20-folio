@@ -360,6 +360,10 @@ function phaseTriggerMatches(
         owner.authority === evidence.authority
       );
     }
+    // The root's possessor declares the pulse; advance CAS on the exact
+    // execution + trigger event id keeps each declaration single-use.
+    case "root-pulse":
+      return evidence.kind === "root-pulse" && trigger.eventId === evidence.eventId;
   }
 }
 
