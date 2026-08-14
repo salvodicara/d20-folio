@@ -1807,8 +1807,12 @@ its own end rule — and then executes every engine-modeled RECOVERY as world tr
 from the SAME resolvers the legacy rest reads (`resolveTrackers` cadence rows,
 `getShortRestRecoveries`, the slot derivation, the exhaustion-recovery grants, `effectiveMaxHp`;
 the short rest's hit-dice heal rides in as the player's ENTERED roll, the recorded observation the
-modal already collects). A long rest additionally requests the end of every engine concentration
-occurrence (sleep is incapacitation). The commit mirrors pools, slots, hp, exhaustion, ended
+modal already collects). The recovery targets are computed from the PRE-REST session counters and
+ADOPTED into the world — the rest boundary is the rollout bridge's reconciliation point, so
+legacy-only writes since the last commit (hp damage taps, exhaustion steps, tracker pip spends)
+can never be resurrected from a stale world value, and after the commit both representations agree
+exactly. A long rest additionally requests the end of every engine concentration occurrence (sleep
+is incapacitation). The commit mirrors pools, slots, hp, exhaustion, ended
 condition chips and released concentration onto the legacy session in the same write, and
 `restFinalizedSession` reproduces the legacy-only bookkeeping the world does not own yet
 (tracker-entry canonical shape, rest-ended active states, equipment charges via the shared

@@ -15,7 +15,12 @@
  * - Combat page action cards (weapons + spells + feature actions)
  */
 
-import type { ActionData, CharacterDoc, TrackerData } from "@/types/character";
+import type {
+  ActionData,
+  CharacterData,
+  CharacterDoc,
+  TrackerData,
+} from "@/types/character";
 import type { ProficiencyToken } from "@/types/ids";
 import type {
   ActionType,
@@ -7454,7 +7459,33 @@ function resolveTemporaryHpActions(
   return actions;
 }
 
-// ─── Short Rest Recovery ────────────────────────────────────────────────────
+// ─── Rest Recovery ──────────────────────────────────────────────────────────
+
+/**
+ * The equipment charge map a Long Rest applies: magic-item `charges` with
+ * `recovery: "long-rest"` restore to max, and so do `recovery: "dawn"` charges
+ * (functionally identical for the player, dawn happens at the end of a Long
+ * Rest). Every other recovery (short-rest recharge wands, daily-cooldown rods)
+ * is left alone. ONE law shared by the legacy store rest (the fail-closed
+ * degradation) and the canonical rest boundary (rest-world-boundary.ts), so
+ * the two paths can never drift.
+ */
+export function equipmentAfterLongRest(
+  equipment: CharacterData["equipment"]
+): CharacterData["equipment"] {
+  return equipment.map((ref) => {
+    if (!ref.charges) return ref;
+    if (
+      ref.charges.recovery !== undefined &&
+      ref.charges.recovery !== "long-rest" &&
+      ref.charges.recovery !== "dawn"
+    ) {
+      return ref;
+    }
+    if (ref.charges.current === ref.charges.max) return ref;
+    return { ...ref, charges: { ...ref.charges, current: ref.charges.max } };
+  });
+}
 
 /**
  * Compute which trackers recover (and by how much) when a Short Rest is taken.

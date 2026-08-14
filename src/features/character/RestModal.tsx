@@ -2,12 +2,18 @@
  * RestModal — Rest as an ACTION (blueprint §2.4: "Rest is an action", not a tab).
  *
  * Re-homed verbatim from the pre-rewrite Rest page: the same short/long-rest phase
- * machine (idle → confirm → summary) reusing the existing `shortRest`/`longRest`
- * store flow — now hosted in the shared `ModalShell`, opened from the cockpit
- * header's Rest button instead of a route. The page header is dropped (the modal
- * provides the title); the summary's Done closes the modal.
+ * machine (idle → confirm → summary) — now hosted in the shared `ModalShell`,
+ * opened from the cockpit header's Rest button instead of a route. The page header
+ * is dropped (the modal provides the title); the summary's Done closes the modal.
  * - Short rest: spend hit dice to heal, reset short-rest trackers
  * - Long rest: restore HP, spell slots, all trackers, reduce exhaustion
+ *
+ * The confirm routes through `restThroughWorld` (rest-world-boundary.ts): the
+ * canonical mechanics runtime plans and commits the rest as one journal action
+ * over the character's persisted world (the kernel's `complete-rest` boundary +
+ * every engine-modeled recovery), wrapping the legacy `shortRest`/`longRest`
+ * store flow as the rollout write-through; a rejected world degrades fail-closed
+ * to that legacy flow alone.
  */
 
 import { useState, useMemo, useRef } from "react";
@@ -19,6 +25,7 @@ import { useCombatStore } from "@/stores/combatStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useItemResourceCommands } from "./center/useItemResourceCommands";
+import { restThroughWorld } from "./rest-world-boundary";
 import { canCharacterRest } from "@/lib/character-status";
 import {
   abilityModifier,
@@ -83,8 +90,6 @@ export function RestModal({ open, onClose }: { open: boolean; onClose: () => voi
 function RestFlow({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const character = useCharacterStore((s) => s.character);
-  const longRest = useCharacterStore((s) => s.longRest);
-  const shortRest = useCharacterStore((s) => s.shortRest);
   const setHP = useCharacterStore((s) => s.setHP);
   const updateSession = useCharacterStore((s) => s.updateSession);
   const sheetMode = useUIStore((s) => s.sheetMode);
@@ -184,13 +189,20 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     const newHp = Math.min(hpCurrent + healedHp, hpMax);
 
     // S4 — Ranger's Tireless: a Short Rest removes Exhaustion (computed BEFORE
-    // shortRest() applies it, so the summary can report it). 0 for anyone
+    // the rest applies it, so the summary can report it). 0 for anyone
     // without the grant.
     const exhaustionRemovedOnShort =
       getShortRestExhaustionRecovery(restCharacter) > 0 && session.exhaustion > 0;
 
-    // Apply short rest (also reduces Exhaustion via the Tireless grant)
-    shortRest();
+    // CUTOVER — the rest routes through the canonical mechanics runtime:
+    // `restThroughWorld` plans the kernel's rest boundary over the persisted
+    // world FIRST (rest-completed evidence, timed/until-rest lifetime endings,
+    // every engine-modeled recovery, the entered heal as the recorded roll),
+    // runs the wrapped legacy `shortRest()` as the write-through bridge, then
+    // commits the world action so the mirror re-asserts every world-owned
+    // field. Fail-closed: a rejected world plan degrades to the legacy rest
+    // alone, exactly the pre-cutover behavior (see rest-world-boundary.ts).
+    restThroughWorld("short", { healedHp });
     if (healedHp > 0) setHP(newHp);
     if (hitDiceToSpend > 0) {
       updateSession({ hitDice: { used: hitDiceUsed + hitDiceToSpend } });
@@ -241,7 +253,13 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     const inspirationGained =
       gainsHeroicInspirationOnLongRest(restCharacter) && !session.inspiration;
 
-    longRest();
+    // CUTOVER — engine plans first (rest-completed evidence, until-long-rest
+    // lifetime endings, concentration end requests, a lingering solo world
+    // encounter closed, every engine-modeled recovery), the wrapped legacy
+    // `longRest()` runs as the write-through bridge, then the world action
+    // commits and mirrors. Fail-closed degradation to the legacy rest alone
+    // when the world rejects (see rest-world-boundary.ts).
+    restThroughWorld("long");
     // A long rest ends the current fight — return combat to baseline.
     useCombatStore.getState().endCombat();
 

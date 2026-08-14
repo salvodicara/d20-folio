@@ -827,6 +827,25 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
   Concentration through the canonical concentration teardown first, including self-Polymorph reversion.
   Resource recovery and state expiry are deliberately separate facts resolved in the same post-rest
   snapshot (Rage regains one use on a Short Rest but is no longer active afterward).
+- **Rest execution rides the canonical runtime.** The RestModal's confirm routes through
+  `restThroughWorld` (`src/features/character/rest-world-boundary.ts`): ONE journal action over the
+  character's persisted world chains the kernel's `end-encounter` (a lingering solo encounter),
+  `advance-time` (1 hour / 8 hours, so timed engine lifetimes lapse exactly) and `complete-rest`
+  boundaries (the `rest-completed` evidence on the timeline clock ends every due "until you finish a
+  short/long rest" end rule), then executes every engine-modeled recovery as world transitions from
+  the SAME resolvers this section describes: pool full/fixed/partial restores at the exact
+  short/long cadence (`getShortRestRecoveries`, `longRestRecovery`, `autoRecover: false` and
+  `manual` never fabricate a table event), Pact Magic on both rests, standard slots + hp to the
+  effective max + hit dice + exhaustion (1 + `exhaustion-recovery` bonus) + death saves + Heroic
+  Inspiration (Resourceful) on a Long Rest, Tireless exhaustion on a Short Rest, and the entered
+  hit-dice heal as the recorded roll (never fabricated). Recovery targets are computed from the
+  PRE-REST session counters and adopted into the world (the rest is the rollout bridge's
+  reconciliation point: legacy-only pip spends and damage taps can never be resurrected from a
+  stale world value). A Long Rest also end-requests every engine concentration occurrence (sleep
+  is incapacitation). The commit mirrors each fact onto the legacy session; the legacy store
+  recoveries survive only as the fail-closed degradation when the world rejects. Typed item
+  resources keep their own exact rest boundary (below); dawn/dusk stay distinct day-phase
+  boundaries.
 - **Spell duration tiers.** Every spell-owned `while-active` wrapper declares its structured lifetime;
   `timedSpellDuration` derives the combat-round ceiling from printed minutes, while the two duration-upcast families declare ascending
   `byCastLevel` replacements. `whileActiveDurationAtCastLevel` is the only selector, shared by action
