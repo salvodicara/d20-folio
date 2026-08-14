@@ -2,10 +2,10 @@
 
 import type { ActionFactGuard } from "@/types/action-journal";
 import type { DamageAllocationObservation, DamageTableOverride } from "@/types/damage";
-import type { DiceObservation } from "@/types/dice-formula";
+import type { DiceObservation, DiceRollRequirement } from "@/types/dice-formula";
 import type { MechanicsAuthoritySnapshot } from "@/types/mechanics-authority";
 import type { MechanicsPostEventEmission } from "@/types/mechanics-execution";
-import type { OccurrenceGenerationRef } from "@/types/mechanics-reference";
+import type { EntityRef, OccurrenceGenerationRef } from "@/types/mechanics-reference";
 import type {
   MechanicsOperationExecution,
   MechanicsOperationConsequence,
@@ -74,26 +74,26 @@ export type MechanicsCompilerRequest =
   | {
       readonly kind: "zero-hit-points";
       readonly requestId: string;
-      readonly target: import("@/types/mechanics-reference").EntityRef;
+      readonly target: EntityRef;
     }
   | {
       readonly current: number;
       readonly incoming: number;
       readonly kind: "temporary-hit-points";
       readonly requestId: string;
-      readonly target: import("@/types/mechanics-reference").EntityRef;
+      readonly target: EntityRef;
     }
   | {
       readonly conditionId: string;
       readonly kind: "condition-immunity-override";
       readonly requestId: string;
-      readonly target: import("@/types/mechanics-reference").EntityRef;
+      readonly target: EntityRef;
     }
   | {
       readonly boundary: "capacity" | "initial" | "record-roll" | "recovery";
       readonly kind: "resource-observation";
       readonly requestId: string;
-      readonly requirement: import("@/types/dice-formula").DiceRollRequirement;
+      readonly requirement: DiceRollRequirement;
     };
 
 export interface MechanicsCompiledStepTrace {

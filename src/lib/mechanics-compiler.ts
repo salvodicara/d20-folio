@@ -6,6 +6,10 @@ import { conformDamageDefenseProfile, resolveDamage } from "@/lib/damage";
 import { evaluateIntegerExpression } from "@/lib/integer-expression";
 import { selectEffectiveDamageDefenseProfile } from "@/lib/mechanic-occurrences";
 import {
+  locateResolvedMaterialResource,
+  resourceDefinitionFactGuard,
+} from "@/lib/material-resource";
+import {
   conformNewInventoryInstance,
   conformNewMaterialEntity,
 } from "@/lib/material-state";
@@ -28,6 +32,7 @@ import {
   prepareMechanicsProgramCompilation,
   refreshMechanicsProgramProjectedCompilationContext,
   resolveMechanicsProgramAmount,
+  resolveMechanicsProgramResources,
   resolveMechanicsProgramTargets,
 } from "@/lib/mechanics-program";
 import {
@@ -66,10 +71,12 @@ import type {
   ManualInstruction,
   MechanicsProgramCompilationContext,
   MechanicsRequestIdentity,
-  ResolvedMechanicsAnswer,
 } from "@/types/mechanics-program";
 import type { MechanicsStep } from "@/types/mechanics-program-authoring";
 import type { EntityRef, OccurrenceGenerationRef } from "@/types/mechanics-reference";
+import type { ResourceRef, ResourceSpec } from "@/types/resource";
+import type { IntegerBindings } from "@/types/integer-expression";
+import type { DiceObservation } from "@/types/dice-formula";
 import type { MaterialEntity } from "@/types/material-state";
 import type {
   MechanicsCausalState,
@@ -859,30 +866,24 @@ function causesFor(
 function transactionFor(
   input: Readonly<CompileMechanicsFrameInput>,
   operations: readonly Readonly<MechanicsOperation>[],
-  causes: ReadonlyMap<string, Readonly<MechanicsOperationCause>>
+  causes: ReadonlyMap<string, Readonly<MechanicsOperationCause>>,
+  syntheticFacts: readonly Readonly<ActionFactGuard>[] = []
 ): MechanicsTransaction | null {
   const usedCauses = causesFor(operations, causes);
   const firstOperation = operations[0];
   if (!usedCauses || !firstOperation) return null;
+  const facts = new Map(
+    [...input.reviewed.intent.factGuards, ...input.facts, ...syntheticFacts].map(
+      (fact) => [canonicalJson(fact), fact] as const
+    )
+  );
   return {
     actionId: input.reviewed.intent.actionId,
     actor: input.reviewed.intent.frame.authority.installation.owner,
     causes: usedCauses,
-    factGuards: [...input.reviewed.intent.factGuards, ...input.facts],
+    factGuards: [...facts.values()],
     operations: [firstOperation, ...operations.slice(1)],
   };
-}
-
-function hasReviewedPayments(
-  resolved: Readonly<Record<string, ResolvedMechanicsAnswer>>
-): boolean {
-  return Object.values(resolved).some((answer) => {
-    if (answer.kind === "resource") return true;
-    return (
-      (answer.kind === "d20" || answer.kind === "dice") &&
-      answer.requests.some(({ payments }) => payments.length > 0)
-    );
-  });
 }
 
 function registerOperation(
@@ -1084,9 +1085,6 @@ export function compileMechanicsFrame(
   } else if (input.continuation !== null) {
     return rejected("invalid-response", phaseId, null, "unused-continuation");
   }
-  if (hasReviewedPayments(input.reviewed.resolved)) {
-    return rejected("unsupported-step", phaseId, null, "reviewed-payment");
-  }
 
   const authority: Readonly<MechanicsProgramAuthorityReceipt> =
     input.reviewed.intent.frame.authority;
@@ -1116,6 +1114,171 @@ export function compileMechanicsFrame(
       : null;
 
   const operations: Readonly<MechanicsOperation>[] = [];
+  const syntheticFacts: Readonly<ActionFactGuard>[] = [];
+
+  /**
+   * The exact {bindings, spec} for one physical resource: the caller-guarded
+   * resource-definition fact when present, else the capability snapshot's own
+   * closed pool spec (whose guard the compiler then emits itself).
+   */
+  const resolveResourceDefinition = (
+    resource: Readonly<ResourceRef>
+  ): {
+    readonly bindings: Readonly<IntegerBindings>;
+    readonly spec: Readonly<ResourceSpec>;
+  } | null => {
+    const location = locateResolvedMaterialResource(context.world, resource);
+    if (!location) return null;
+    const address = canonicalJson(["resource-definition", ...location.path]);
+    const ownerKey = canonicalJson(location.owner);
+    for (const fact of [...input.reviewed.intent.factGuards, ...input.facts]) {
+      if (
+        canonicalJson(fact.address) !== address ||
+        canonicalJson(fact.owner) !== ownerKey ||
+        !fact.expected.present ||
+        typeof fact.expected.value !== "object" ||
+        fact.expected.value === null
+      ) {
+        continue;
+      }
+      const value = fact.expected.value as {
+        readonly bindings?: Readonly<IntegerBindings>;
+        readonly spec?: Readonly<ResourceSpec>;
+      };
+      return value.spec && value.bindings
+        ? { bindings: value.bindings, spec: value.spec }
+        : null;
+    }
+    if (resource.kind === "pool") {
+      const spec = authority.snapshot.resources[resource.resourceId];
+      if (spec) {
+        const bindings = context.bindings;
+        syntheticFacts.push(resourceDefinitionFactGuard(location, spec, bindings));
+        return { bindings, spec };
+      }
+    }
+    return null;
+  };
+
+  /** Compile every reviewed payment debit exactly once, before the first step. */
+  const compilePaymentPrelude = (stepId: string): MechanicsFrameCompileResult | null => {
+    if (cursor.stage !== "step" || cursor.stepIndex !== 0 || cursor.nextSlot !== 1) {
+      return null;
+    }
+    const debits: {
+      readonly amount: number;
+      readonly resource: Readonly<ResourceRef>;
+    }[] = [];
+    for (const inputId of Object.keys(input.reviewed.resolved).sort()) {
+      const answer = input.reviewed.resolved[inputId];
+      if (!answer) continue;
+      if (answer.kind === "resource") {
+        debits.push({ amount: answer.amount, resource: answer.resource });
+      }
+      if (answer.kind === "d20" || answer.kind === "dice") {
+        for (const request of answer.requests) {
+          for (const payment of request.payments) {
+            debits.push({ amount: payment.amount, resource: payment.resource });
+          }
+        }
+      }
+    }
+    for (const [index, debit] of debits.entries()) {
+      if (debit.amount <= 0) continue;
+      const definition = resolveResourceDefinition(debit.resource);
+      if (!definition) {
+        return rejected("missing-compiler-fact", phaseId, stepId, "payment-definition");
+      }
+      const problem = project(
+        {
+          bindings: definition.bindings,
+          causeId: rootCause.causeId,
+          kind: "resource-transition",
+          operationId: operationId(input, stepId, index + 1, "payment-debit"),
+          resource: debit.resource,
+          spec: definition.spec,
+          transition: { amount: debit.amount, kind: "spend" },
+        },
+        stepId
+      );
+      if (problem) return problem;
+    }
+    return null;
+  };
+
+  /** Attach one recorded dice observation to the exact operation that demanded it. */
+  const attachObservation = (
+    operationIdValue: string,
+    boundary: "capacity" | "initial" | "record-roll" | "recovery",
+    observation: Readonly<DiceObservation>
+  ): boolean => {
+    const index = operations.findIndex(({ operationId: id }) => id === operationIdValue);
+    const operation = operations[index];
+    if (!operation) return false;
+    if (
+      operation.kind === "resource-transition" &&
+      (operation.transition.kind === "recover" ||
+        operation.transition.kind === "record-roll") &&
+      !("observation" in operation.transition)
+    ) {
+      operations[index] = {
+        ...operation,
+        transition: { ...operation.transition, observation },
+      };
+      return true;
+    }
+    if (
+      operation.kind === "resource-initialize" &&
+      (boundary === "capacity" || boundary === "initial") &&
+      operation.observations[boundary] === undefined
+    ) {
+      operations[index] = {
+        ...operation,
+        observations: { ...operation.observations, [boundary]: observation },
+      };
+      return true;
+    }
+    return false;
+  };
+
+  /** Run one kernel call, consuming recorded observations for re-encountered requests. */
+  const withObservationRetries = <Result extends { readonly status: string }>(
+    run: () => Result
+  ): Result => {
+    let result = run();
+    for (let remaining = responsePool.size; remaining > 0; remaining -= 1) {
+      if (
+        typeof result !== "object" ||
+        result.status !== "needs-observation" ||
+        !("requirement" in result) ||
+        !("boundary" in result) ||
+        !("operationId" in result)
+      ) {
+        return result;
+      }
+      const problem = result as unknown as Extract<
+        MechanicsTransactionSimulationResult,
+        { readonly status: "needs-observation" }
+      >;
+      const requestId = canonicalFingerprint({
+        boundary: problem.boundary,
+        operationId: problem.operationId,
+        requirement: problem.requirement,
+      });
+      const response = responsePool.get(requestId);
+      if (
+        !response ||
+        response.kind !== "resource-observation" ||
+        !attachObservation(problem.operationId, problem.boundary, response.observation)
+      ) {
+        return result;
+      }
+      responsePool.delete(requestId);
+      result = run();
+    }
+    return result;
+  };
+
   const project = (
     operation: Readonly<MechanicsOperation>,
     stepId: string
@@ -1124,11 +1287,18 @@ export function compileMechanicsFrame(
       return rejected("unresolved-step", phaseId, stepId, "operation-limit");
     }
     operations.push(operation);
-    const transaction = transactionFor(input, operations, causes);
-    if (!transaction) return rejected("kernel-rejected", phaseId, stepId);
-    const result = projectMechanicsTransaction(transaction, {
-      authoritySnapshot: input.authoritySnapshot,
-      state,
+    const result = withObservationRetries(() => {
+      const transaction = transactionFor(input, operations, causes, syntheticFacts);
+      return transaction
+        ? projectMechanicsTransaction(transaction, {
+            authoritySnapshot: input.authoritySnapshot,
+            state,
+          })
+        : ({
+            operationId: null,
+            reason: "invalid-transaction",
+            status: "rejected",
+          } as const);
     });
     if (result.status !== "projected") {
       operations.pop();
@@ -1177,11 +1347,18 @@ export function compileMechanicsFrame(
   };
 
   const simulateStep = (stepId: string): MechanicsFrameCompileResult => {
-    const transaction = transactionFor(input, operations, causes);
-    if (!transaction) return rejected("kernel-rejected", phaseId, stepId);
-    const simulation = simulateMechanicsTransaction(transaction, {
-      authoritySnapshot: input.authoritySnapshot,
-      state,
+    const simulation = withObservationRetries(() => {
+      const transaction = transactionFor(input, operations, causes, syntheticFacts);
+      return transaction
+        ? simulateMechanicsTransaction(transaction, {
+            authoritySnapshot: input.authoritySnapshot,
+            state,
+          })
+        : ({
+            operationId: null,
+            reason: "invalid-transaction",
+            status: "rejected",
+          } as const);
     });
     if (simulation.status !== "simulated" && simulation.status !== "no-change") {
       return transactionProblem(input, cursor, responsePool, simulation, phaseId, stepId);
@@ -1264,22 +1441,29 @@ export function compileMechanicsFrame(
     if (active === null) {
       return rejected("unresolved-predicate", phaseId, step.stepId);
     }
+    const prelude = compilePaymentPrelude(step.stepId);
+    if (prelude) return prelude;
     if (!active) {
-      return cursorOnly(
-        [],
-        [
-          {
-            executions: [],
-            operationIds: [],
-            status: "omitted",
-            stepId: step.stepId,
-          },
-        ]
-      );
+      return operations.length === 0
+        ? cursorOnly(
+            [],
+            [
+              {
+                executions: [],
+                operationIds: [],
+                status: "omitted",
+                stepId: step.stepId,
+              },
+            ]
+          )
+        : simulateStep(step.stepId);
     }
     if (step.kind === "manual-relocation" || step.kind === "manual-table") {
       const instruction = manualInstruction(step, context);
       if (!instruction) return rejected("unresolved-step", phaseId, step.stepId);
+      if (operations.length > 0) {
+        return rejected("unresolved-step", phaseId, step.stepId, "manual-after-payment");
+      }
       return cursorOnly(
         [instruction],
         [
@@ -1426,6 +1610,79 @@ export function compileMechanicsFrame(
           parent: receipt.root,
         };
         const problem = project(operation, step.stepId);
+        if (problem) return problem;
+      }
+      return operations.length === 0
+        ? cursorOnly(
+            [],
+            [
+              {
+                executions: [],
+                operationIds: [],
+                status: "compiled",
+                stepId: step.stepId,
+              },
+            ]
+          )
+        : simulateStep(step.stepId);
+    }
+    if (
+      step.kind === "resource-change" ||
+      step.kind === "resource-recover" ||
+      step.kind === "resource-state"
+    ) {
+      const selector =
+        step.kind === "resource-change" ? step.term.selector : step.resource;
+      const resources = resolveMechanicsProgramResources(selector, context);
+      if (!resources || resources.length === 0) {
+        return rejected("unresolved-step", phaseId, step.stepId, "resource");
+      }
+      if (step.kind === "resource-change" && resources.length !== 1) {
+        return rejected("unresolved-step", phaseId, step.stepId, "ambiguous-resource");
+      }
+      for (const [index, resource] of resources.entries()) {
+        const definition = resolveResourceDefinition(resource);
+        if (!definition) {
+          return rejected(
+            "missing-compiler-fact",
+            phaseId,
+            step.stepId,
+            "resource-definition"
+          );
+        }
+        let transition: Extract<
+          MechanicsOperation,
+          { readonly kind: "resource-transition" }
+        >["transition"];
+        if (step.kind === "resource-change") {
+          const amount = evaluateIntegerExpression(step.term.amount, context.bindings);
+          if (amount === null) {
+            return rejected("unresolved-step", phaseId, step.stepId, "amount");
+          }
+          if (amount <= 0) continue;
+          transition = { amount, kind: step.operation };
+        } else if (step.kind === "resource-recover") {
+          transition = { kind: "recover", trigger: step.trigger };
+        } else {
+          transition = step.operation;
+        }
+        const problem = project(
+          {
+            bindings: definition.bindings,
+            causeId: rootCause.causeId,
+            kind: "resource-transition",
+            operationId: operationId(
+              input,
+              step.stepId,
+              index + 1,
+              "resource-transition"
+            ),
+            resource,
+            spec: definition.spec,
+            transition,
+          },
+          step.stepId
+        );
         if (problem) return problem;
       }
       return operations.length === 0

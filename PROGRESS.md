@@ -225,6 +225,21 @@ Only focused affected-suite verification ran; no global gate ran. The fixed-poin
 coordinator, remaining compiler/corpus work, runtime cutover and final journal draft remain active; this
 is not an engine-completion claim.
 
+**Resource and payment compilers CLOSED on branch (2026-08-14):** the reviewed-payment prelude now
+compiles every resolved resource debit (chosen slot/pool payments and d20/dice riders) exactly once,
+deterministically before the first authored step of the frame's first segment; authored
+`resource-change`, `resource-recover` and `resource-state` steps execute through exact
+`resource-transition` operations. Resource definitions resolve fail-closed from caller-guarded
+`resource-definition` facts or the capability snapshot's own closed pool specs (whose guard the
+compiler then emits itself), and kernel `needs-observation` requests attach recorded dice
+observations from the response ledger and retry — proving the full suspend/record/resume cycle for a
+rolled Dawn-style recovery end-to-end. The review layer now issues possession-proofed reviewed
+intents: mutable eligibility (payment affordability, target liveness) is proved exactly once against
+the closed basis that reviewed it, and later compile segments authenticate the same frozen value
+instead of re-deriving truths the action itself has legitimately consumed — a cloned or reconstructed
+review still re-derives fully and fails closed on any drift. Focused verification only; no global
+gate ran.
+
 **Lifecycle step compilers CLOSED on branch (2026-08-14):** authored `entity-create`,
 `inventory-create`, `entity-change`, `entity-end`, `inventory-change`, `inventory-end` and
 `end-program` now compile into exact kernel operations. Creations materialize from CLOSED blueprints

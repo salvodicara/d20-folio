@@ -13,6 +13,7 @@ import type {
   ProgramPhaseStateSchemaShape,
   StandingFactSchemaShape,
 } from "@/lib/mechanic-occurrence-schema";
+import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
 
 export type OccurrenceId = string;
 export type EndRule = EndRuleSchemaShape;
@@ -24,11 +25,15 @@ export type ProgramPhaseStateEntry = ProgramPhaseStateEntrySchemaShape;
 export type ProgramPhaseState = ProgramPhaseStateSchemaShape;
 export type StandingFact = StandingFactSchemaShape;
 
-type MutableProjection<Value> = Value extends readonly (infer Entry)[]
-  ? MutableProjection<Entry>[]
-  : Value extends object
-    ? { -readonly [Key in keyof Value]: MutableProjection<Value[Key]> }
-    : Value;
+/** The immutable executable authority is projected as-is, never rebuilt. */
+type MutableProjection<Value> =
+  Value extends Readonly<MechanicsProgramAuthorityReceipt>
+    ? Value
+    : Value extends readonly (infer Entry)[]
+      ? MutableProjection<Entry>[]
+      : Value extends object
+        ? { -readonly [Key in keyof Value]: MutableProjection<Value[Key]> }
+        : Value;
 
 export type MechanicOccurrence = MutableProjection<MechanicOccurrenceSchemaShape>;
 export type ProgramOccurrence = Extract<MechanicOccurrence, { kind: "program" }>;

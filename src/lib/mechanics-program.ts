@@ -147,6 +147,15 @@ const ROLES = new Set<MechanicsRole>([
   "triggering-attacker",
   "victim",
 ]);
+/**
+ * Possession proofs for kernel-issued reviews. A reviewed intent's mutable
+ * eligibility (payment affordability, target liveness) is proved exactly once
+ * against the closed basis that reviewed it; later compile segments authenticate
+ * the same frozen value instead of re-deriving truths the action itself has
+ * legitimately consumed. A cloned or reconstructed review re-derives fully.
+ */
+const authenticReviewedIntents = new WeakSet<object>();
+
 const mechanicsEventSubscriberAudiences = new WeakMap<
   object,
   Readonly<MechanicsSubscriberSelectionResult>
@@ -338,7 +347,9 @@ function worldEntity(world: MechanicsWorld, ref: EntityRef): WorldEntity | null 
       : null;
   }
   const entity = document.state.entities[ref.entityId];
-  return entity?.ordinal === ref.ordinal && entity.availability === "present"
+  return entity !== undefined &&
+    entity.ordinal === ref.ordinal &&
+    entity.availability === "present"
     ? { document, entity, kind: entity.kind, ref }
     : null;
 }
@@ -460,7 +471,7 @@ function resolveTargets(
   const targets: MechanicsRequestIdentity[] = [];
   for (const { binding, requests } of groups.values()) {
     const matches = requests.map((request) =>
-      selector.outcomeIds.includes(request.result.outcome.outcomeId)
+      selector.outcomeIds.some((id) => id === request.result.outcome.outcomeId)
     );
     if (quantifies(matches, selector.quantifier) !== true) continue;
     if (selector.cardinality === "unique-entity") {
@@ -1004,7 +1015,7 @@ function eventSelectionContext(
 ): MechanicsExecutionContext | null {
   const expected = root.phaseState[phase.phaseId];
   if (!expected || expected.execution >= Number.MAX_SAFE_INTEGER) return null;
-  const intent = {
+  const intent = conformMechanicsIntent({
     actionId: eventId,
     factGuards: [],
     frame: {
@@ -1026,8 +1037,8 @@ function eventSelectionContext(
       },
       trigger: evidence,
     },
-  } as const satisfies MechanicsIntent;
-  return executionContext(intent);
+  });
+  return intent ? executionContext(intent) : null;
 }
 
 /**
@@ -1401,13 +1412,15 @@ export function prepareMechanicsProgramCompilation(
   if (validated.executionMode === "replay") {
     return freezeDeep({ status: "replay" as const });
   }
-  const rereview = reviewMechanicsIntentValidated(validated, reviewedValue.answers);
-  if (rereview.status !== "reviewed" || !exactEqual(rereview.reviewed, reviewedValue)) {
-    return freezeDeep({
-      reason: "invalid-reviewed-intent" as const,
-      referenceId: null,
-      status: "rejected" as const,
-    });
+  if (!authenticReviewedIntents.has(reviewedValue)) {
+    const rereview = reviewMechanicsIntentValidated(validated, reviewedValue.answers);
+    if (rereview.status !== "reviewed" || !exactEqual(rereview.reviewed, reviewedValue)) {
+      return freezeDeep({
+        reason: "invalid-reviewed-intent" as const,
+        referenceId: null,
+        status: "rejected" as const,
+      });
+    }
   }
   const context = refreshMechanicsProgramCompilationContext(reviewedValue, state.value);
   return context
@@ -1873,7 +1886,7 @@ function expandedDiceIdentities(
       ? {
           identities: source.requests.flatMap(({ identity, result }) =>
             input.expansion.kind === "d20-outcomes" &&
-            input.expansion.outcomeIds.includes(result.outcome.outcomeId)
+            input.expansion.outcomeIds.some((id) => id === result.outcome.outcomeId)
               ? [identity]
               : []
           ),
@@ -2534,15 +2547,14 @@ function reviewMechanicsIntentValidated(
   if (answerIndex !== answers.length) {
     return reviewRejected("unexpected-answer", answers[answerIndex]?.inputId ?? null);
   }
-  return freezeDeep({
-    reviewed: freezeDeep({
-      answers,
-      intent: validated.intent,
-      requirements,
-      resolved,
-    }),
-    status: "reviewed",
+  const reviewed = freezeDeep({
+    answers,
+    intent: validated.intent,
+    requirements,
+    resolved,
   });
+  authenticReviewedIntents.add(reviewed);
+  return freezeDeep({ reviewed, status: "reviewed" });
 }
 
 /** Exact staged review against a re-proved source-readable causal state. */

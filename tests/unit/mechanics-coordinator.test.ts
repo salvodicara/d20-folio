@@ -128,7 +128,10 @@ function authoritySnapshot(
   return { definitions: [authorityDefinition(authority)] };
 }
 
-function world(occurrences: Record<string, MechanicOccurrence> = {}): MechanicsWorld {
+function world(
+  occurrences: Record<string, MechanicOccurrence> = {},
+  pools: Record<string, number> = {}
+): MechanicsWorld {
   const base = createEmptyCharacterMaterialState(5, HERO, {
     hitPoints: {
       current: 20,
@@ -143,7 +146,25 @@ function world(occurrences: Record<string, MechanicOccurrence> = {}): MechanicsW
       {
         kind: "character",
         material: HERO,
-        state: { ...base, nextOccurrenceOrdinal, occurrences },
+        state: {
+          ...base,
+          nextOccurrenceOrdinal,
+          occurrences,
+          resources: {
+            ...base.resources,
+            pools: Object.fromEntries(
+              Object.entries(pools).map(([resourceId, current]) => [
+                resourceId,
+                {
+                  capacity: { base: { kind: "unbounded" }, override: null },
+                  current,
+                  disabled: false,
+                  kind: "count",
+                },
+              ])
+            ),
+          },
+        },
       },
     ],
     scope: HERO,
@@ -1134,5 +1155,191 @@ describe("runMechanicsCausalAction lifecycles", () => {
       definition: { itemId: "shadow-blade" },
       quantity: { current: 1 },
     });
+  });
+});
+
+describe("runMechanicsCausalAction resources", () => {
+  const FOCUS_SPEC = {
+    capacity: { kind: "unbounded" },
+    id: "focus",
+    initial: { kind: "empty" },
+    kind: "count",
+    recoveries: [
+      {
+        amount: {
+          kind: "formula",
+          formula: {
+            terms: [
+              {
+                count: { kind: "fixed", value: 1 },
+                kind: "dice",
+                operation: "add",
+                sides: 4,
+                termId: "focus-die",
+              },
+            ],
+          },
+        },
+        trigger: { kind: "manual" },
+      },
+    ],
+  } as const;
+
+  function focusAuthority(program: MechanicsProgram) {
+    const authority = authorityReceipt(program);
+    return {
+      ...authority,
+      snapshot: { ...authority.snapshot, resources: { focus: FOCUS_SPEC } },
+    };
+  }
+
+  function focusInput(
+    program: MechanicsProgram,
+    snapshot: MechanicsWorld,
+    authority: ReturnType<typeof focusAuthority>,
+    overrides: Partial<MechanicsCoordinationInput> = {}
+  ): MechanicsCoordinationInput {
+    return {
+      answers: [],
+      authoritySnapshot: authoritySnapshot(authority),
+      facts: [],
+      frameAnswers: [],
+      intent: {
+        actionId: "coordinated-action",
+        factGuards: [],
+        frame: {
+          authority,
+          invocation: {
+            installation: authority.installation,
+            kind: "installed-capability",
+          },
+          rootReceipt: {
+            kind: "create",
+            materialEpoch: 0,
+            next: { execution: 1, phaseId: "resolve", triggerEventId: null },
+            root: ROOT,
+          },
+          trigger: { kind: "invocation" },
+        },
+      },
+      responses: [],
+      state: causalState(snapshot),
+      ...overrides,
+    };
+  }
+
+  it("debits the reviewed resource payment before the first step", () => {
+    const program = conformed({
+      id: "coordinated-payment",
+      phases: [
+        {
+          inputs: [
+            {
+              inputId: "spend-focus",
+              kind: "resource",
+              term: {
+                amount: { kind: "fixed", value: 2 },
+                selector: { kind: "pool", owner: "owner", resourceId: "focus" },
+              },
+              when: null,
+            },
+          ],
+          phaseId: "resolve",
+          steps: [
+            {
+              conditionId: "poisoned",
+              kind: "condition",
+              lifetime: { kind: "manual" },
+              operation: "apply",
+              stepId: "apply-poison",
+              target: { kind: "role", role: "target" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const authority = focusAuthority(program);
+    const snapshot = world({}, { focus: 3 });
+    const answer: MechanicsAnswer = {
+      inputId: "spend-focus",
+      kind: "resource",
+      resource: { kind: "pool", owner: SELF, resourceId: "focus" },
+    };
+    const result = runMechanicsCausalAction(
+      focusInput(program, snapshot, authority, { answers: [answer] })
+    );
+    if (result.status === "rejected") throw new Error(JSON.stringify(result));
+    expect(result.status).toBe("complete");
+    if (result.status !== "complete") return;
+    const state = heroState(result.state);
+    expect(state.resources.pools.focus?.current).toBe(1);
+    expect(
+      Object.values(state.occurrences).some(({ kind }) => kind === "condition")
+    ).toBe(true);
+  });
+
+  it("spends an authored resource change and recovers through a recorded roll", () => {
+    const program = conformed({
+      id: "coordinated-recover",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              kind: "resource-recover",
+              resource: { kind: "pool", owner: "owner", resourceId: "focus" },
+              stepId: "recover-focus",
+              trigger: { kind: "manual" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const authority = focusAuthority(program);
+    const snapshot = world({}, { focus: 0 });
+    const suspended = runMechanicsCausalAction(focusInput(program, snapshot, authority));
+    expect(suspended).toMatchObject({
+      request: { boundary: "recovery", kind: "resource-observation" },
+      status: "needs-response",
+    });
+    if (
+      suspended.status !== "needs-response" ||
+      suspended.request.kind !== "resource-observation"
+    ) {
+      return;
+    }
+
+    const resumed = runMechanicsCausalAction(
+      focusInput(program, snapshot, authority, {
+        responses: [
+          {
+            kind: "resource-observation",
+            observation: {
+              aggregates: [],
+              trails: [
+                {
+                  initialFace: 3,
+                  steps: [],
+                  trailId: suspended.request.requirement.trails[0]?.trailId ?? "",
+                },
+              ],
+            },
+            requestId: suspended.request.requestId,
+          },
+        ],
+      })
+    );
+    expect(resumed.status).toBe("complete");
+    if (resumed.status !== "complete") return;
+    expect(heroState(resumed.state).resources.pools.focus?.current).toBe(3);
   });
 });

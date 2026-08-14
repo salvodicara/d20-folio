@@ -52,7 +52,7 @@ function exactMaterialEntity(
 ): Readonly<MaterialEntity> | null {
   if (owner.entityId === "self") return null;
   const entity = document.state.entities[owner.entityId];
-  return entity?.ordinal === owner.ordinal ? entity : null;
+  return entity !== undefined && entity.ordinal === owner.ordinal ? entity : null;
 }
 
 /** Resolve one exact physical cell and its journal address from a conformed world. */
@@ -202,125 +202,127 @@ export function replaceResolvedMaterialResource(
   const located = documentFor(world, location.material);
   if (!located) return null;
 
-  const documents = world.documents.map((document, index) => {
-    if (index !== located.index || document.kind !== "character") {
-      if (index !== located.index || resource.kind !== "pool") return document;
-    }
-    if (resource.kind === "pool") {
-      if (resource.owner.entityId === "self") {
-        if (document.kind !== "character") return document;
+  const documents = world.documents.map(
+    (document, index): Readonly<MechanicsDocument> => {
+      if (index !== located.index || document.kind !== "character") {
+        if (index !== located.index || resource.kind !== "pool") return document;
+      }
+      if (resource.kind === "pool") {
+        if (resource.owner.entityId === "self") {
+          if (document.kind !== "character") return document;
+          return {
+            ...document,
+            state: {
+              ...document.state,
+              resources: {
+                ...document.state.resources,
+                pools: { ...document.state.resources.pools, [resource.resourceId]: cell },
+              },
+            },
+          };
+        }
+        const entity = exactMaterialEntity(document, resource.owner);
+        if (!entity) return document;
         return {
           ...document,
           state: {
             ...document.state,
-            resources: {
-              ...document.state.resources,
-              pools: { ...document.state.resources.pools, [resource.resourceId]: cell },
+            entities: {
+              ...document.state.entities,
+              [resource.owner.entityId]: replaceEntityCell(
+                entity,
+                resource.resourceId,
+                cell
+              ),
             },
           },
         };
       }
-      const entity = exactMaterialEntity(document, resource.owner);
-      if (!entity) return document;
-      return {
-        ...document,
-        state: {
-          ...document.state,
-          entities: {
-            ...document.state.entities,
-            [resource.owner.entityId]: replaceEntityCell(
-              entity,
-              resource.resourceId,
-              cell
-            ),
-          },
-        },
-      };
-    }
-    if (document.kind !== "character") return document;
-    switch (resource.kind) {
-      case "standard-spell-slot":
-        return {
-          ...document,
-          state: {
-            ...document.state,
-            resources: {
-              ...document.state.resources,
-              standardSpellSlots: {
-                ...document.state.resources.standardSpellSlots,
-                [String(resource.level)]: cell,
-              },
-            },
-          },
-        };
-      case "pact-spell-slot":
-        return {
-          ...document,
-          state: {
-            ...document.state,
-            resources: { ...document.state.resources, pactSpellSlot: cell },
-          },
-        };
-      case "hit-die":
-        return {
-          ...document,
-          state: {
-            ...document.state,
-            resources: {
-              ...document.state.resources,
-              hitDice: { ...document.state.resources.hitDice, [resource.die]: cell },
-            },
-          },
-        };
-      case "currency":
-        return cell.kind === "count"
-          ? {
-              ...document,
-              state: {
-                ...document.state,
-                resources: {
-                  ...document.state.resources,
-                  currency: {
-                    ...document.state.resources.currency,
-                    [resource.denomination]: cell,
-                  },
+      if (document.kind !== "character") return document;
+      switch (resource.kind) {
+        case "standard-spell-slot":
+          return {
+            ...document,
+            state: {
+              ...document.state,
+              resources: {
+                ...document.state.resources,
+                standardSpellSlots: {
+                  ...document.state.resources.standardSpellSlots,
+                  [String(resource.level)]: cell,
                 },
               },
-            }
-          : document;
-      case "item-resource": {
-        const instance = document.state.inventory[resource.instanceId];
-        if (instance?.ordinal !== resource.instanceOrdinal) return document;
-        return {
-          ...document,
-          state: {
-            ...document.state,
-            inventory: {
-              ...document.state.inventory,
-              [resource.instanceId]: {
-                ...instance,
-                resources: { ...instance.resources, [resource.resourceId]: cell },
+            },
+          };
+        case "pact-spell-slot":
+          return {
+            ...document,
+            state: {
+              ...document.state,
+              resources: { ...document.state.resources, pactSpellSlot: cell },
+            },
+          };
+        case "hit-die":
+          return {
+            ...document,
+            state: {
+              ...document.state,
+              resources: {
+                ...document.state.resources,
+                hitDice: { ...document.state.resources.hitDice, [resource.die]: cell },
               },
             },
-          },
-        };
-      }
-      case "item-quantity": {
-        const instance = document.state.inventory[resource.instanceId];
-        if (!instance || cell.kind !== "count") return document;
-        return {
-          ...document,
-          state: {
-            ...document.state,
-            inventory: {
-              ...document.state.inventory,
-              [resource.instanceId]: { ...instance, quantity: cell },
+          };
+        case "currency":
+          return cell.kind === "count"
+            ? {
+                ...document,
+                state: {
+                  ...document.state,
+                  resources: {
+                    ...document.state.resources,
+                    currency: {
+                      ...document.state.resources.currency,
+                      [resource.denomination]: cell,
+                    },
+                  },
+                },
+              }
+            : document;
+        case "item-resource": {
+          const instance = document.state.inventory[resource.instanceId];
+          if (instance?.ordinal !== resource.instanceOrdinal) return document;
+          return {
+            ...document,
+            state: {
+              ...document.state,
+              inventory: {
+                ...document.state.inventory,
+                [resource.instanceId]: {
+                  ...instance,
+                  resources: { ...instance.resources, [resource.resourceId]: cell },
+                },
+              },
             },
-          },
-        };
+          };
+        }
+        case "item-quantity": {
+          const instance = document.state.inventory[resource.instanceId];
+          if (!instance || cell.kind !== "count") return document;
+          return {
+            ...document,
+            state: {
+              ...document.state,
+              inventory: {
+                ...document.state.inventory,
+                [resource.instanceId]: { ...instance, quantity: cell },
+              },
+            },
+          };
+        }
       }
     }
-  });
+  );
   return { documents, scope: world.scope };
 }
 
@@ -364,102 +366,104 @@ export function insertResolvedMaterialResource(
   ) {
     return null;
   }
-  const documents = world.documents.map((document, index) => {
-    if (index !== located.index) return document;
-    if (resource.kind === "pool") {
-      if (resource.owner.entityId === "self") {
-        if (document.kind !== "character") return document;
+  const documents = world.documents.map(
+    (document, index): Readonly<MechanicsDocument> => {
+      if (index !== located.index) return document;
+      if (resource.kind === "pool") {
+        if (resource.owner.entityId === "self") {
+          if (document.kind !== "character") return document;
+          return {
+            ...document,
+            state: {
+              ...document.state,
+              resources: {
+                ...document.state.resources,
+                pools: { ...document.state.resources.pools, [resource.resourceId]: cell },
+              },
+            },
+          };
+        }
+        const entity = exactMaterialEntity(document, resource.owner);
+        if (!entity) return document;
         return {
           ...document,
           state: {
             ...document.state,
-            resources: {
-              ...document.state.resources,
-              pools: { ...document.state.resources.pools, [resource.resourceId]: cell },
+            entities: {
+              ...document.state.entities,
+              [resource.owner.entityId]: replaceEntityCell(
+                entity,
+                resource.resourceId,
+                cell
+              ),
             },
           },
         };
       }
-      const entity = exactMaterialEntity(document, resource.owner);
-      if (!entity) return document;
-      return {
-        ...document,
-        state: {
-          ...document.state,
-          entities: {
-            ...document.state.entities,
-            [resource.owner.entityId]: replaceEntityCell(
-              entity,
-              resource.resourceId,
-              cell
-            ),
-          },
-        },
-      };
-    }
-    if (document.kind !== "character") return document;
-    switch (resource.kind) {
-      case "standard-spell-slot":
-        return cell.kind === "count"
-          ? {
-              ...document,
-              state: {
-                ...document.state,
-                resources: {
-                  ...document.state.resources,
-                  standardSpellSlots: {
-                    ...document.state.resources.standardSpellSlots,
-                    [String(resource.level)]: cell,
+      if (document.kind !== "character") return document;
+      switch (resource.kind) {
+        case "standard-spell-slot":
+          return cell.kind === "count"
+            ? {
+                ...document,
+                state: {
+                  ...document.state,
+                  resources: {
+                    ...document.state.resources,
+                    standardSpellSlots: {
+                      ...document.state.resources.standardSpellSlots,
+                      [String(resource.level)]: cell,
+                    },
                   },
                 },
-              },
-            }
-          : document;
-      case "pact-spell-slot":
-        return cell.kind === "count"
-          ? {
-              ...document,
-              state: {
-                ...document.state,
-                resources: { ...document.state.resources, pactSpellSlot: cell },
-              },
-            }
-          : document;
-      case "hit-die":
-        return cell.kind === "count"
-          ? {
-              ...document,
-              state: {
-                ...document.state,
-                resources: {
-                  ...document.state.resources,
-                  hitDice: { ...document.state.resources.hitDice, [resource.die]: cell },
+              }
+            : document;
+        case "pact-spell-slot":
+          return cell.kind === "count"
+            ? {
+                ...document,
+                state: {
+                  ...document.state,
+                  resources: { ...document.state.resources, pactSpellSlot: cell },
+                },
+              }
+            : document;
+        case "hit-die":
+          return cell.kind === "count"
+            ? {
+                ...document,
+                state: {
+                  ...document.state,
+                  resources: {
+                    ...document.state.resources,
+                    hitDice: {
+                      ...document.state.resources.hitDice,
+                      [resource.die]: cell,
+                    },
+                  },
+                },
+              }
+            : document;
+        case "item-resource": {
+          const instance = document.state.inventory[resource.instanceId];
+          if (instance?.ordinal !== resource.instanceOrdinal) return document;
+          return {
+            ...document,
+            state: {
+              ...document.state,
+              inventory: {
+                ...document.state.inventory,
+                [resource.instanceId]: {
+                  ...instance,
+                  resources: { ...instance.resources, [resource.resourceId]: cell },
                 },
               },
-            }
-          : document;
-      case "item-resource": {
-        const instance = document.state.inventory[resource.instanceId];
-        if (instance?.ordinal !== resource.instanceOrdinal) return document;
-        return {
-          ...document,
-          state: {
-            ...document.state,
-            inventory: {
-              ...document.state.inventory,
-              [resource.instanceId]: {
-                ...instance,
-                resources: { ...instance.resources, [resource.resourceId]: cell },
-              },
             },
-          },
-        };
+          };
+        }
       }
-      case "currency":
-      case "item-quantity":
-        return document;
     }
-  });
+  );
   const candidate = { documents, scope: world.scope };
   return locateResolvedMaterialResource(candidate, resource) ? candidate : null;
 }
@@ -479,95 +483,97 @@ export function removeResolvedMaterialResource(
   }
   const located = documentFor(world, location.material);
   if (!located) return null;
-  const documents = world.documents.map((document, index) => {
-    if (index !== located.index) return document;
-    if (resource.kind === "pool") {
-      if (resource.owner.entityId === "self") {
-        if (document.kind !== "character") return document;
-        return {
-          ...document,
-          state: {
-            ...document.state,
-            resources: {
-              ...document.state.resources,
-              pools: withoutKey(document.state.resources.pools, resource.resourceId),
+  const documents = world.documents.map(
+    (document, index): Readonly<MechanicsDocument> => {
+      if (index !== located.index) return document;
+      if (resource.kind === "pool") {
+        if (resource.owner.entityId === "self") {
+          if (document.kind !== "character") return document;
+          return {
+            ...document,
+            state: {
+              ...document.state,
+              resources: {
+                ...document.state.resources,
+                pools: withoutKey(document.state.resources.pools, resource.resourceId),
+              },
             },
-          },
-        };
-      }
-      const entity = exactMaterialEntity(document, resource.owner);
-      if (!entity) return document;
-      return {
-        ...document,
-        state: {
-          ...document.state,
-          entities: {
-            ...document.state.entities,
-            [resource.owner.entityId]: {
-              ...entity,
-              resources: withoutKey(entity.resources, resource.resourceId),
-            },
-          },
-        },
-      };
-    }
-    if (document.kind !== "character") return document;
-    switch (resource.kind) {
-      case "standard-spell-slot":
+          };
+        }
+        const entity = exactMaterialEntity(document, resource.owner);
+        if (!entity) return document;
         return {
           ...document,
           state: {
             ...document.state,
-            resources: {
-              ...document.state.resources,
-              standardSpellSlots: withoutKey(
-                document.state.resources.standardSpellSlots,
-                String(resource.level)
-              ),
-            },
-          },
-        };
-      case "pact-spell-slot":
-        return {
-          ...document,
-          state: {
-            ...document.state,
-            resources: { ...document.state.resources, pactSpellSlot: null },
-          },
-        };
-      case "hit-die":
-        return {
-          ...document,
-          state: {
-            ...document.state,
-            resources: {
-              ...document.state.resources,
-              hitDice: withoutKey(document.state.resources.hitDice, resource.die),
-            },
-          },
-        };
-      case "item-resource": {
-        const instance = document.state.inventory[resource.instanceId];
-        if (!instance) return document;
-        return {
-          ...document,
-          state: {
-            ...document.state,
-            inventory: {
-              ...document.state.inventory,
-              [resource.instanceId]: {
-                ...instance,
-                resources: withoutKey(instance.resources, resource.resourceId),
+            entities: {
+              ...document.state.entities,
+              [resource.owner.entityId]: {
+                ...entity,
+                resources: withoutKey(entity.resources, resource.resourceId),
               },
             },
           },
         };
       }
-      case "currency":
-      case "item-quantity":
-        return document;
+      if (document.kind !== "character") return document;
+      switch (resource.kind) {
+        case "standard-spell-slot":
+          return {
+            ...document,
+            state: {
+              ...document.state,
+              resources: {
+                ...document.state.resources,
+                standardSpellSlots: withoutKey(
+                  document.state.resources.standardSpellSlots,
+                  String(resource.level)
+                ),
+              },
+            },
+          };
+        case "pact-spell-slot":
+          return {
+            ...document,
+            state: {
+              ...document.state,
+              resources: { ...document.state.resources, pactSpellSlot: null },
+            },
+          };
+        case "hit-die":
+          return {
+            ...document,
+            state: {
+              ...document.state,
+              resources: {
+                ...document.state.resources,
+                hitDice: withoutKey(document.state.resources.hitDice, resource.die),
+              },
+            },
+          };
+        case "item-resource": {
+          const instance = document.state.inventory[resource.instanceId];
+          if (!instance) return document;
+          return {
+            ...document,
+            state: {
+              ...document.state,
+              inventory: {
+                ...document.state.inventory,
+                [resource.instanceId]: {
+                  ...instance,
+                  resources: withoutKey(instance.resources, resource.resourceId),
+                },
+              },
+            },
+          };
+        }
+        case "currency":
+        case "item-quantity":
+          return document;
+      }
     }
-  });
+  );
   const candidate = { documents, scope: world.scope };
   return locateResolvedMaterialResource(candidate, resource) === null ? candidate : null;
 }
