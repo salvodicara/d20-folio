@@ -228,6 +228,11 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
           type: "bonus",
           economyCategory: "hide",
           skillCheck: { dc: 15, skill: "stealth" },
+          // 2024 (Hide action): a passed DC 15 DEX (Stealth) check grants the
+          // Invisible condition; its end (attacking, casting, being found) is
+          // circumstance-owned, so the lifetime stays with the table.
+          conditionApplication: { options: ["invisible"], on: "passed-check" },
+          targeting: { affinity: "self", maxTargets: 1 },
         },
       ],
     },

@@ -1,0 +1,5 @@
+---
+"d20-folio": minor
+---
+
+The transcription corpus reaches its fixpoint: all 8 blocked SRD spells become executable (Divine Smite's table-confirmed creature-type bonus dice, Goodberry's conjured berry batch with a canonical consume program, Ice Knife's attack-plus-area-save second target set, Vampiric Touch healing half its landed damage, Wall of Fire's follow-up pulse, Geas' cast-level condition tiers, Greater Restoration's exhaustion cure, Mass Heal's per-target pool split), and the feature-action long tail compiles (Hide's Stealth check granting Invisible, Tactical Mind's refundable die, Bardic Inspiration's standing granted die, Uncanny Metabolism's focus top-up, Wild Companion's alternate cost, Steady Aim's standing buff, session-resolved class dies and level tiers). Kernel extensions, all conformance-locked: entity-expanded integer inputs with a reviewed sum cap (the pool-split law), the landed-damage frame ledger threaded through the coordinator, exhaustion-change emissions, root-scoped turn-claim identity with the once-per-turn manual-boundary law, and declared per-turn caps compiling canonical turn-claims against the solo turn economy.

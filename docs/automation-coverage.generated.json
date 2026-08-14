@@ -1404,11 +1404,21 @@
         },
         {
           "clauseId": "bonus-damage-against",
-          "detail": "creature-type-gated-damage",
-          "status": "unsupported"
+          "detail": "table-confirms-creature-type",
+          "status": "automated"
+        },
+        {
+          "clauseId": "bonus-damage-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "bonus-damage-creature-type",
+          "detail": "table-verifies-creature-type",
+          "status": "table"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "divine-smite"
     },
     {
@@ -1757,17 +1767,17 @@
           "status": "automated"
         },
         {
-          "clauseId": "healing-application",
-          "detail": "flat-amount",
+          "clauseId": "healing-consumable",
+          "detail": "conjured-batch-heals-on-consume",
           "status": "automated"
         },
         {
-          "clauseId": "healing-consumable",
-          "detail": "consumable-item-creation-pending",
-          "status": "unsupported"
+          "clauseId": "consumable-lifetime",
+          "detail": "expires-by-duration",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "goodberry"
     },
     {
@@ -2086,8 +2096,13 @@
         },
         {
           "clauseId": "attack-and-save",
-          "detail": "two-target-set-combo-pending",
-          "status": "unsupported"
+          "detail": "attack-plus-area-save",
+          "status": "automated"
+        },
+        {
+          "clauseId": "burst-area-selection",
+          "detail": "table-selects-occupants",
+          "status": "spatial"
         },
         {
           "clauseId": "attack-roll",
@@ -2130,8 +2145,8 @@
           "status": "physical-input"
         },
         {
-          "clauseId": "secondary-damage-roll-crit-dice",
-          "detail": "doubled",
+          "clauseId": "secondary-damage-roll-on-save",
+          "detail": "negates",
           "status": "automated"
         },
         {
@@ -2140,7 +2155,7 @@
           "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "ice-knife"
     },
     {
@@ -6312,6 +6327,11 @@
           "status": "automated"
         },
         {
+          "clauseId": "self-healing-from-damage",
+          "detail": "half-landed-damage",
+          "status": "automated"
+        },
+        {
           "clauseId": "concentration",
           "detail": null,
           "status": "automated"
@@ -6330,14 +6350,9 @@
           "clauseId": "pulse-occupancy",
           "detail": "table-signals-pulse",
           "status": "spatial"
-        },
-        {
-          "clauseId": "self-healing-from-damage",
-          "detail": "landed-damage-feedback-pending",
-          "status": "unsupported"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "vampiric-touch"
     },
     {
@@ -7710,11 +7725,26 @@
         },
         {
           "clauseId": "follow-up",
-          "detail": "follow-up-action-pending",
-          "status": "unsupported"
+          "detail": "table-signaled-pulse-damage",
+          "status": "automated"
+        },
+        {
+          "clauseId": "follow-up-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "follow-up-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "follow-up-application",
+          "detail": null,
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "wall-of-fire"
     },
     {
@@ -8517,8 +8547,18 @@
         },
         {
           "clauseId": "condition-charmed-lifetime",
-          "detail": "cast-level-scaled-lifetime-pending",
-          "status": "unsupported"
+          "detail": "cast-level-tiers",
+          "status": "automated"
+        },
+        {
+          "clauseId": "condition-charmed-lifetime-top-tier",
+          "detail": "until-removed-table-owned",
+          "status": "table"
+        },
+        {
+          "clauseId": "condition-charmed",
+          "detail": null,
+          "status": "automated"
         },
         {
           "clauseId": "duration",
@@ -8526,7 +8566,7 @@
           "status": "table"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "geas"
     },
     {
@@ -8548,8 +8588,8 @@
         },
         {
           "clauseId": "cure-exhaustion",
-          "detail": "exhaustion-step-authoring-pending",
-          "status": "unsupported"
+          "detail": "one-level-removed",
+          "status": "automated"
         },
         {
           "clauseId": "cure-petrified",
@@ -8562,7 +8602,7 @@
           "status": "table"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "greater-restoration"
     },
     {
@@ -11725,14 +11765,9 @@
           "status": "automated"
         },
         {
-          "clauseId": "healing-application",
-          "detail": "flat-amount",
-          "status": "automated"
-        },
-        {
           "clauseId": "healing-pool",
-          "detail": "per-target-pool-split-pending",
-          "status": "unsupported"
+          "detail": "per-target-chosen-split",
+          "status": "automated"
         },
         {
           "clauseId": "cure-blinded",
@@ -11745,7 +11780,7 @@
           "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "mass-heal"
     },
     {
@@ -12545,15 +12580,15 @@
       "id": "wish"
     }
   ],
-  "executablePrograms": 273,
+  "executablePrograms": 286,
   "family": "spells",
   "totalEntities": 422,
   "totals": {
-    "automated": 1811,
-    "physical-input": 368,
-    "table": 212,
-    "spatial": 175,
+    "automated": 1838,
+    "physical-input": 375,
+    "table": 214,
+    "spatial": 179,
     "narrative": 128,
-    "unsupported": 22
+    "unsupported": 9
   }
 }

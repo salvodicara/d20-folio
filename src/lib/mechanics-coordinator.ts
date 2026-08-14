@@ -66,6 +66,10 @@ interface FrameRecord {
   } | null;
   /** Root ends deferred by `end-program` segments to this frame's phase CAS. */
   endRequests: readonly Readonly<OccurrenceGenerationRef>[];
+  /** The frame's landed-damage ledger: per damage step, per part, the net
+   *  amounts earlier segments applied — fed back into every later segment so
+   *  `landed-damage` amounts/predicates resolve across step frames. */
+  landed: Readonly<Record<string, Readonly<Record<string, number>>>>;
   readonly reviewed: Readonly<ReviewedMechanicsIntent>;
 }
 
@@ -294,6 +298,7 @@ export function runMechanicsCausalAction(
   frameRecords.set(frameKey(rootFrame), {
     chain: null,
     endRequests: [],
+    landed: {},
     reviewed: rootReview.reviewed,
   });
 
@@ -353,6 +358,7 @@ export function runMechanicsCausalAction(
     frameRecords.set(frameKey(dispatched.frame), {
       chain: null,
       endRequests: [],
+      landed: {},
       reviewed: review.reviewed,
     });
     target.state = dispatched.state;
@@ -372,6 +378,7 @@ export function runMechanicsCausalAction(
       authoritySnapshot: input.authoritySnapshot,
       continuation: record.chain?.continuation ?? null,
       facts: input.facts,
+      landedDamage: record.landed,
       responses: record.chain?.responses ?? [],
       reviewed: record.reviewed,
       state: target.state,
@@ -380,6 +387,15 @@ export function runMechanicsCausalAction(
     if (result.status === "compiled") {
       record.chain = null;
       record.endRequests = [...record.endRequests, ...result.segment.endRequests];
+      if (Object.keys(result.segment.landed).length > 0) {
+        const merged: Record<string, Readonly<Record<string, number>>> = {
+          ...record.landed,
+        };
+        for (const [stepId, parts] of Object.entries(result.segment.landed)) {
+          merged[stepId] = { ...merged[stepId], ...parts };
+        }
+        record.landed = merged;
+      }
       target.state = result.segment.state;
       if (result.segment.trace.length > 0 || result.segment.manual.length > 0) {
         trace.push(

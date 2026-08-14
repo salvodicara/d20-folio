@@ -1548,6 +1548,27 @@ describe("movement, gates, overrides, and manual boundaries", () => {
         claimId: "manual.1",
       },
     ]);
+    // The boundary is a once-per-turn recorded fact: the identical claim
+    // replays idempotently, while a NEW claim on the SAME boundary (a capped
+    // program's second use this turn) rejects.
+    expect(
+      reduceTurnEconomy(current, projection(), {
+        authority: "table",
+        boundaryId: "ruling.trigger-observed",
+        claimId: "manual.1",
+        kind: "record-manual-boundary",
+      })
+    ).toMatchObject({ reason: "already-claimed", status: "no-change" });
+    expect(
+      rejection(
+        reduceTurnEconomy(current, projection(), {
+          authority: "table",
+          boundaryId: "ruling.trigger-observed",
+          claimId: "manual.2",
+          kind: "record-manual-boundary",
+        })
+      )
+    ).toBe("manual-boundary-recorded");
   });
 
   it("is idempotent for exact claim replay and rejects identity collisions", () => {

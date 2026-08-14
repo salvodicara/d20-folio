@@ -219,10 +219,44 @@ healing clamp makes the 1000 domain bound exact); and **recurrence** — a `puls
 the table-signaled `manual-table-event` re-runs the whole resolution suite with phase-prefixed
 identities, the chosen cast level rides the `cast-level` program register into every later pulse,
 `resolveOnCast: false` zones (Moonbeam) resolve nothing at cast, and `endsOnSuccessfulSave` ends
-the program from a successful repeat save. Kernel laws added for the corpus: a compile-time step
+the program from a successful repeat save; **two-target-set combos** — the attack resolves its
+primary target while an independent burst set the table selects saves apart (Ice Knife's
+explosion as a `secondaryDamage` area save; Searing Orb's `primaryTargetOnly` attack with the
+condition saving over the area); **creature-type bonus dice** (Divine Smite's +1d8 vs
+Fiends/Undead) as an opt-in boolean the table confirms gating an extra automatic-delivery roll
+(the type VERIFICATION stays a table fact); **deterministic leech** (Vampiric Touch) — the caster
+heals half of what the attack-gated damage steps actually LANDED, read back through the kernel's
+landed-damage ledger (zero on a miss); **cast-level condition tiers** (Geas: 30 days, a year from
+7th, until-removed at 9th) as one condition step per level segment gated on the chosen
+`input.slot.level` (an `indefinite` top tier keeps the table-owned manual end); **exhaustion as a
+vitality change** — `conditionRemoval`/pool cures remove one level through `exhaustion-change`
+(Greater Restoration, a safe no-op at zero) and `conditionApplication` gains one (Sickening
+Radiance), any authored early end staying a table correction; **pool splits** (Mass Heal's 700,
+Power Word Fortify's Temp-HP 120) through the expanded-integer law below; **conjured
+consumables** (Goodberry) — `consumableItem` compiles an `inventory-create` of the closed
+blueprint in `src/data/conjured-items.ts` (batch count + the 24-hour duration clock), and the
+item's own canonical consume program pays one quantity and heals its `healDice`; and the
+**follow-up pulse** (Wall of Fire, Witch Bolt) — an automatic-damage `followUp` becomes its own
+`root-pulse` phase re-reading the `cast-level` register for upcast dice.
+
+Kernel laws added for the corpus: a compile-time step
 selector referencing an input OMITTED by its activation predicate resolves to zero targets (a
-review always resolves every active input, so absence proves omission); and a `turn-boundary`
-lifetime outside an active encounter freezes to its 6-seconds-per-turn timeline equivalent.
+review always resolves every active input, so absence proves omission); a `turn-boundary`
+lifetime outside an active encounter freezes to its 6-seconds-per-turn timeline equivalent; the
+**expanded-integer (pool-split) law** — an `integer` input may expand over an earlier `entities`
+input (one chosen value per target SLOT), reviewed against the per-answer `minimum`/`maximum` AND
+the `totalMaximum` SUM cap, consumed per identity through the `integer-input` amount spec
+(`per-target-request` must target the same entities input; `shared` and the single-value
+`input.<id>.value` binding are lawful only for the un-expanded form, and `answer-integer`
+predicates never read the expanded one); the **landed-damage frame ledger** — every executed
+damage step publishes its per-part net amounts (zero-filled when nothing landed, a single-part
+table override replacing the computed net exactly), the coordinator accumulates each segment's
+contribution per frame and feeds it back, so later `landed-damage` amounts/predicates resolve
+across step frames; and **root-scoped claim identity** — the compiler namespaces an authored
+turn-claim's NEW-claim ids by root generation + phase execution, so each USE claims fresh ledger
+identity (a second capped use can genuinely reject) while a replay of the same use stays
+idempotent, and `record-manual-boundary` rejects re-recording the SAME boundary under a NEW claim
+(the once-per-turn manual-boundary law).
 
 **Feature-action transcription** (`transcribeFeatureAction`, same module) extends the same honest
 ledger to `mechanics.actions`: tracker payment as a world-pool debit (`costTracker` /
@@ -242,9 +276,26 @@ is the `feature-bonus` binding, save-gated with half-on-save (Radiance of the Da
 same rolled total, and the ancestry-bundle damage type arriving as the caller-resolved
 `attackDamageType`; the **attack-roll gate** for `attackType` actions (spell-attack bonus vs the
 bound armor class, hit/crit dice expansion); and `maintainsActiveKey` actions honestly closed as
-table facts (the rounds ledger is table-owned in solo play). `maxUsesPerTurn` stays a table clause:
-the kernel's `turn-claim` step compiles only under an encounter turn-economy projection, so solo
-per-turn caps remain legacy-enforced. **Weapon-attack transcription** (`transcribeWeaponAttack`)
+table facts (the rounds ledger is table-owned in solo play). The long tail now compiles too:
+**skill checks** (Hide's DC 15 Stealth) as a real `ability-check` request with ONE required
+table-entered `skill-modifier` and a `passed-check` condition gate (the Invisible grant);
+the **refundable check bonus** (Tactical Mind) — the die rolls onto the failed check, a
+table-confirmed "turned it" boolean alone triggers the conditional `resource-change` debit; the
+**granted die** (Bardic Inspiration) as a standing `program-fact` on the chosen creature carrying
+the resolved die face for the RAW hour (ADDING it to a roll stays player-applied by design);
+**tracker top-ups** (Uncanny Metabolism) as a `resource-recover` firing the target tracker's own
+full-recovery rest, read off the catalogue into `topUpRecovery`; **alternate costs** (Wild
+Companion's Wild Shape use OR a slot; Psi Warrior's tracker alternates) as a payment `choice`
+gating two conditional resource inputs; **Steady Aim** — the next-attack-advantage buff is a real
+standing fact until the caster's turn-end (applying the advantage stays player-owned, the
+speed-0 lock stays a spatial table fact); `classSpecific:*` heal/Temp-HP/grant dies resolving
+through the session `classDie`, `fromLevel` Temp-HP unlocks gating on `scalingLevel` (Warding
+Flare's level-6 rider no longer leaks below 6), and non-uniform `diceByLevel` faces plus
+`damageTypeChoicesByLevel` picking their session-level tier. A DECLARED `maxUsesPerTurn: 1`
+compiles the canonical `turn-claim` — the slot claim for a typed action (one bonus action per
+turn IS Martial Arts' cap), the once-per-turn manual boundary for a free action (Redirect) —
+enforced by the solo turn-economy projection every dispatch now feeds; only multi-use caps stay
+table clauses. **Weapon-attack transcription** (`transcribeWeaponAttack`)
 compiles the resolved profile of one weapon row — the SAME `resolveActions` summary the sheet
 renders (breakdown-derived to-hit, folded damage formula, expanded crit threshold, `masteryNumbers`)
 — into the canonical attack program: attack d20 vs the table-entered armor-class binding, hit/crit

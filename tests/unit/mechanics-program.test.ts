@@ -2714,4 +2714,200 @@ describe("MechanicsProgram terminal kernel", () => {
       })
     ).toBeNull();
   });
+
+  it("splits an expanded integer pool per target and conformance-caps the sum", () => {
+    const targetsInput = {
+      eligibility: "creature",
+      inputId: "targets",
+      kind: "entities",
+      maximum: { kind: "fixed", value: 2 },
+      minimum: { kind: "fixed", value: 0 },
+      multiplicity: "slots",
+      when: null,
+    } as const;
+    const portionsInput = {
+      expansion: { inputId: "targets", kind: "entities" },
+      inputId: "portions",
+      kind: "integer",
+      maximum: { kind: "fixed", value: 40 },
+      minimum: FIXED_ONE,
+      totalMaximum: { kind: "fixed", value: 50 },
+      when: null,
+    } as const;
+    const splitHeal = {
+      amount: {
+        cardinality: "per-target-request",
+        inputId: "portions",
+        kind: "integer-input",
+        transform: { bindingId: "input-total", kind: "binding" },
+      },
+      kind: "heal",
+      stepId: "split-heal",
+      target: { inputId: "targets", kind: "input" },
+      when: null,
+    } as const;
+    const program = conformed({
+      id: "pool-split",
+      phases: [
+        {
+          inputs: [targetsInput, portionsInput],
+          phaseId: "resolve",
+          steps: [splitHeal],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const answers = (values: readonly number[]) => [
+      {
+        inputId: "targets",
+        kind: "entities" as const,
+        targets: values.map(() => SELF),
+      },
+      {
+        inputId: "portions",
+        kind: "integer" as const,
+        requests: values.map((value, index) => ({
+          identity: { binding: SELF, ordinal: index + 1 },
+          value,
+        })),
+      },
+    ];
+    // Two slot identities of the SAME creature each carry their own portion.
+    const reviewed = reviewMechanicsIntent(
+      intent(program),
+      answers([30, 20]),
+      causalState(world())
+    );
+    expect(reviewed.status).toBe("reviewed");
+    if (reviewed.status === "reviewed") {
+      expect(reviewed.reviewed.resolved.portions).toMatchObject({
+        kind: "integer",
+        requests: [
+          { identity: { ordinal: 1 }, value: 30 },
+          { identity: { ordinal: 2 }, value: 20 },
+        ],
+      });
+    }
+    // The SUM cap is review-enforced: 31 + 20 exceeds the authored 50.
+    expect(
+      reviewMechanicsIntent(intent(program), answers([31, 20]), causalState(world()))
+    ).toMatchObject({ status: "rejected" });
+    // Each portion still honors the per-answer maximum.
+    expect(
+      reviewMechanicsIntent(intent(program), answers([41, 1]), causalState(world()))
+    ).toMatchObject({ status: "rejected" });
+    // A single-value answer cannot satisfy the expanded requirement.
+    expect(
+      reviewMechanicsIntent(
+        intent(program),
+        [
+          { inputId: "targets", kind: "entities", targets: [SELF] },
+          { inputId: "portions", kind: "integer", value: 5 },
+        ],
+        causalState(world())
+      )
+    ).toMatchObject({ status: "rejected" });
+    // Zero chosen targets: the expanded requirement self-resolves empty.
+    const empty = reviewMechanicsIntent(
+      intent(program),
+      [{ inputId: "targets", kind: "entities", targets: [] }],
+      causalState(world())
+    );
+    expect(empty.status).toBe("reviewed");
+    if (empty.status === "reviewed") {
+      expect(empty.reviewed.resolved.portions).toMatchObject({
+        kind: "integer",
+        requests: [],
+      });
+    }
+    // Authoring laws: the expansion must name an EARLIER entities input; the
+    // single-value `input.<id>.value` binding never reads an expanded input;
+    // a shared integer-input amount never reads one either.
+    expect(
+      conformMechanicsProgram({
+        id: "pool-split-unordered",
+        phases: [
+          {
+            inputs: [portionsInput, targetsInput],
+            phaseId: "resolve",
+            steps: [splitHeal],
+            trigger: { kind: "invocation" },
+          },
+        ],
+        registers: [],
+        version: 1,
+      })
+    ).toBeNull();
+    expect(
+      conformMechanicsProgram({
+        id: "pool-split-single-binding",
+        phases: [
+          {
+            inputs: [targetsInput, portionsInput],
+            phaseId: "resolve",
+            steps: [
+              {
+                ...splitHeal,
+                amount: {
+                  expression: { bindingId: "input.portions.value", kind: "binding" },
+                  kind: "integer",
+                },
+              },
+            ],
+            trigger: { kind: "invocation" },
+          },
+        ],
+        registers: [],
+        version: 1,
+      })
+    ).toBeNull();
+    expect(
+      conformMechanicsProgram({
+        id: "pool-split-shared",
+        phases: [
+          {
+            inputs: [targetsInput, portionsInput],
+            phaseId: "resolve",
+            steps: [
+              {
+                ...splitHeal,
+                amount: { ...splitHeal.amount, cardinality: "shared" },
+              },
+            ],
+            trigger: { kind: "invocation" },
+          },
+        ],
+        registers: [],
+        version: 1,
+      })
+    ).toBeNull();
+    // And an `answer-integer` predicate can never read the expanded form.
+    expect(
+      conformMechanicsProgram({
+        id: "pool-split-predicate",
+        phases: [
+          {
+            inputs: [targetsInput, portionsInput],
+            phaseId: "resolve",
+            steps: [
+              {
+                ...splitHeal,
+                when: {
+                  comparison: "gte",
+                  inputId: "portions",
+                  kind: "answer-integer",
+                  value: FIXED_ONE,
+                },
+              },
+            ],
+            trigger: { kind: "invocation" },
+          },
+        ],
+        registers: [],
+        version: 1,
+      })
+    ).toBeNull();
+  });
 });

@@ -86,6 +86,11 @@ export type MechanicsRequirement =
       readonly kind: "integer";
       readonly maximum: number;
       readonly minimum: number;
+      /** Entity-expanded form only: one chosen value per request identity. */
+      readonly pendingEntityInputId?: string | null;
+      readonly requests?: readonly { readonly identity: MechanicsRequestIdentity }[];
+      /** Review-enforced ceiling on the SUM of every answered value. */
+      readonly totalMaximum?: number | null;
     })
   | (MechanicsRequirementBase & { readonly kind: "boolean" })
   | (MechanicsRequirementBase & {
@@ -166,6 +171,15 @@ export type ResolvedMechanicsAnswer =
       readonly inputId: string;
       readonly kind: "integer";
       readonly value: number;
+    }
+  | {
+      readonly inputId: string;
+      readonly kind: "integer";
+      readonly requests: readonly {
+        readonly identity: MechanicsRequestIdentity;
+        readonly value: number;
+      }[];
+      readonly value?: undefined;
     }
   | {
       readonly inputId: string;

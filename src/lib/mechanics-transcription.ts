@@ -12,6 +12,7 @@
  */
 
 import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
+import { ALL_SKILLS } from "@/lib/skills";
 import type { SrdActionDef, SrdSpellData } from "@/data/types";
 import type { AbilityCode } from "@/types/ability";
 import type { IntegerExpression } from "@/types/integer-expression";
@@ -53,6 +54,31 @@ export const TRANSCRIPTION_BINDINGS = {
   saveDc: "spell-save-dc",
   targetArmorClass: "target-armor-class",
 } as const;
+
+/** Skill id → governing ability, from the single `ALL_SKILLS` source. */
+const SKILL_ABILITY = new Map<string, AbilityCode>(
+  ALL_SKILLS.map((skill) => [skill.id, skill.ability])
+);
+
+/** The catalogue's `byLevel` tier rule: the highest threshold at or below the
+ *  scaling level wins (the same `pickByLevel` semantics the action card uses). */
+function pickLevelTier<Value>(
+  byLevel: Readonly<Record<number, Value>>,
+  level: number
+): Value | null {
+  let best: { readonly threshold: number; readonly value: Value } | null = null;
+  for (const [key, value] of Object.entries(byLevel)) {
+    const threshold = Number(key);
+    if (
+      Number.isSafeInteger(threshold) &&
+      threshold <= level &&
+      (best === null || threshold > best.threshold)
+    ) {
+      best = { threshold, value };
+    }
+  }
+  return best === null ? null : best.value;
+}
 
 const DICE_PATTERN = /^(\d+)d(\d+)(?:\s*\+\s*(\d+))?$/;
 
@@ -358,6 +384,9 @@ function clause(
 }
 
 interface SpellDamageComponent {
+  /** The Ice Knife shape: this component saves over its OWN burst target set
+   *  instead of riding the primary attack gate. */
+  readonly areaSave: boolean;
   readonly damageOnSave: "half" | null;
   readonly damageType: string;
   readonly dice: ParsedDice;
@@ -471,7 +500,17 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   // the same creature may occupy several slots, and each slot is its own attack.
   const maxTargets = spell.targeting?.maxTargets;
   const instances = spell.instances;
-  const targetMaximum = typeof maxTargets === "number" ? maxTargets : spell.area ? 20 : 1;
+  // A healing/Temp-HP pool divides among "any number" of creatures — the same
+  // 20-slot domain bound the area path uses. A `primaryTargetOnly` attack aims
+  // exactly ONE target even under an area (the burst set is selected apart).
+  const targetMaximum =
+    typeof maxTargets === "number"
+      ? maxTargets
+      : hasAttack && spell.primaryTargetOnly === true
+        ? 1
+        : spell.area || spell.healingPool !== undefined || spell.tempHpPool !== undefined
+          ? 20
+          : 1;
   const dynamicTargets = typeof maxTargets === "string";
   if (dynamicTargets) {
     unsupported("targeting", `dynamic-max-targets:${String(maxTargets)}`);
@@ -492,21 +531,46 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   }
 
   // A combined gate (Ray of Sickness): the attack gates the damage, and only a
-  // landed hit forces the saving throw, which gates the condition. One target
-  // set only — a second area-saving component (Ice Knife) stays unexpressed.
+  // landed hit forces the saving throw, which gates the condition. A SECOND
+  // target set (Ice Knife) is the other lawful combo: the attack resolves the
+  // primary target while the save runs over an independent burst set the table
+  // selects — the explosion happens hit or miss, so the save is never
+  // attack-gated.
   const combinedGates = hasAttack && hasSave;
+  const secondaryAreaSave =
+    combinedGates &&
+    spell.secondaryDamage !== undefined &&
+    spell.secondaryDamage.resolution === "save" &&
+    spell.secondaryDamage.area === true &&
+    spell.damageOnSave === undefined &&
+    !spell.area;
+  // The same second-set machinery with NO secondary dice (Searing Orb): the
+  // attack damages only its primary target while the area's occupants save
+  // against the condition rider.
+  const primaryOnlyAreaSave =
+    combinedGates &&
+    spell.area === true &&
+    spell.primaryTargetOnly === true &&
+    spell.secondaryDamage === undefined &&
+    spell.damageOnSave === undefined;
+  const burstSave = secondaryAreaSave || primaryOnlyAreaSave;
   const comboExpressible =
     combinedGates &&
     spell.damageOnSave === undefined &&
     !spell.secondaryDamage &&
     !spell.area;
-  if (combinedGates && !comboExpressible) {
+  if (combinedGates && !comboExpressible && !burstSave) {
     unsupported(
       "attack-and-save",
       spell.damageOnSave !== undefined
         ? "save-halved-damage-under-attack-gate"
         : "two-target-set-combo-pending"
     );
+  } else if (burstSave) {
+    clauses.push(clause("attack-and-save", "automated", "attack-plus-area-save"));
+    if (secondaryAreaSave) {
+      clauses.push(clause("burst-area-selection", "spatial", "table-selects-occupants"));
+    }
   } else if (combinedGates) {
     clauses.push(clause("attack-and-save", "automated", "hit-then-save"));
   }
@@ -541,6 +605,7 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
       unsupported("damage", `dice:${spell.damageDice}`);
     } else {
       components.push({
+        areaSave: false,
         damageOnSave: spell.damageOnSave ?? null,
         damageType: spell.damageType,
         dice,
@@ -559,6 +624,7 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
       unsupported("secondary-damage", `dice:${spell.secondaryDamage.dice}`);
     } else {
       components.push({
+        areaSave: secondaryAreaSave,
         damageOnSave: spell.secondaryDamage.damageOnSave ?? null,
         damageType: spell.secondaryDamage.damageType,
         dice,
@@ -579,7 +645,15 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     if (spell.level === 0 && spell.cantripInstances !== true) {
       clauses.push(clause(`${component.inputId}-cantrip-scaling`, "automated"));
     }
-    if (gatedByAttack) {
+    if (component.areaSave) {
+      clauses.push(
+        clause(
+          `${component.inputId}-on-save`,
+          "automated",
+          component.damageOnSave === "half" ? null : "negates"
+        )
+      );
+    } else if (gatedByAttack) {
       clauses.push(clause(`${component.inputId}-crit-dice`, "automated", "doubled"));
     } else if (hasSave && component.damageOnSave === "half") {
       clauses.push(clause(`${component.inputId}-on-save`, "automated"));
@@ -627,7 +701,22 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
       when: null,
     });
     if (hasAttack) into.inputs.push(attackInput(p));
-    if (spell.saveAbility !== undefined) {
+    if (spell.saveAbility !== undefined && burstSave) {
+      // The burst set (the primary target and every creature around it) is a
+      // SECOND table-selected target set; the explosion saves hit or miss.
+      into.inputs.push({
+        eligibility: "creature",
+        inputId: p("burst-targets"),
+        kind: "entities",
+        maximum: fixed(20),
+        minimum: fixed(0),
+        multiplicity: "slots",
+        when: null,
+      });
+      into.inputs.push(
+        savingThrowInput(spell.saveAbility, null, p("saves"), p("burst-targets"))
+      );
+    } else if (spell.saveAbility !== undefined) {
       into.inputs.push(
         savingThrowInput(
           spell.saveAbility,
@@ -650,6 +739,56 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
               spell.level,
               levelBindingId
             );
+      if (component.areaSave) {
+        // The burst component: one shared roll, save-delivered over the burst
+        // set; a successful save negates (or halves when declared).
+        into.inputs.push(diceInput(p(component.inputId), component.dice, scaledCount));
+        into.steps.push({
+          delivery: "saving-throw",
+          kind: "damage",
+          parts: [
+            {
+              amount: sharedDiceAmount(p(component.inputId), INPUT_TOTAL),
+              damageType: component.damageType,
+              partId: p(`${component.inputId}-full`),
+            },
+          ],
+          stepId: p(`${component.inputId}-apply`),
+          target: {
+            cardinality: "per-request",
+            inputId: p("saves"),
+            kind: "d20-outcome",
+            outcomeIds: ["failure"],
+            quantifier: "any",
+          },
+          traits: ["spell"],
+          when: null,
+        });
+        if (component.damageOnSave === "half") {
+          into.steps.push({
+            delivery: "saving-throw",
+            kind: "damage",
+            parts: [
+              {
+                amount: sharedDiceAmount(p(component.inputId), HALF_INPUT_TOTAL),
+                damageType: component.damageType,
+                partId: p(`${component.inputId}-half`),
+              },
+            ],
+            stepId: p(`${component.inputId}-apply-half`),
+            target: {
+              cardinality: "per-request",
+              inputId: p("saves"),
+              kind: "d20-outcome",
+              outcomeIds: ["success"],
+              quantifier: "any",
+            },
+            traits: ["spell"],
+            when: null,
+          });
+        }
+        continue;
+      }
       if (gatedByAttack) {
         // One damage roll per landed request; critical hits double the DICE
         // (never the flat bonus), so they ride their own doubled-count input.
@@ -776,10 +915,100 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
         });
       }
     }
+    // Creature-type-gated bonus dice (Divine Smite's +1d8 vs Fiends/Undead):
+    // the table confirms the target's type through an opt-in boolean, and the
+    // confirmed roll lands with the same automatic delivery as the primary
+    // smite damage. The weapon hit that licensed the cast already happened in
+    // its own program, so a critical's doubled smite dice stay with the table.
+    const bonus = spell.bonusDamageAgainst;
+    const bonusDice = bonus ? parseDice(bonus.dice) : null;
+    if (bonus && bonusDice && !hasAttack && !hasSave) {
+      const confirmed: Readonly<Record<string, unknown>> = {
+        equals: true,
+        inputId: p("bonus-type-confirm"),
+        kind: "answer-boolean",
+      };
+      into.inputs.push({
+        inputId: p("bonus-type-confirm"),
+        kind: "boolean",
+        when: null,
+      });
+      into.inputs.push(
+        diceInput(
+          p("bonus-damage-roll"),
+          bonusDice,
+          fixed(bonusDice.count),
+          { binding: "caster", kind: "single" },
+          confirmed
+        )
+      );
+      into.steps.push({
+        delivery: "automatic",
+        kind: "damage",
+        parts: [
+          {
+            amount: sharedDiceAmount(p("bonus-damage-roll"), INPUT_TOTAL),
+            damageType: bonus.damageType,
+            partId: p("bonus-damage-full"),
+          },
+        ],
+        stepId: p("bonus-damage-apply"),
+        target: { inputId: p("targets"), kind: "input" },
+        traits: ["spell"],
+        when: confirmed,
+      });
+    }
+    // Deterministic leech (Vampiric Touch): the caster heals half the damage
+    // the attack-gated steps actually LANDED — read back through the kernel's
+    // landed-damage ledger, one heal per hit/crit family, zero on a miss.
+    const leech = spell.selfHealingFromDamage;
+    if (leech && leech.fraction === 0.5 && hasAttack && !hasSave) {
+      for (const component of components) {
+        for (const suffix of ["", "-crit"] as const) {
+          into.steps.push({
+            amount: {
+              kind: "landed-damage",
+              partId: null,
+              stepId: p(`${component.inputId}${suffix}-apply`),
+              transform: HALF_INPUT_TOTAL,
+            },
+            kind: "heal",
+            stepId: p(`${component.inputId}${suffix}-leech`),
+            target: { kind: "role", role: "caster" },
+            when: null,
+          });
+        }
+      }
+    }
   };
   if (!deferred) emitResolutionSuite({ inputs, steps });
   if (spell.bonusDamageAgainst) {
-    unsupported("bonus-damage-against", "creature-type-gated-damage");
+    const bonusDice = parseDice(spell.bonusDamageAgainst.dice);
+    if (!bonusDice) {
+      unsupported("bonus-damage-against", `dice:${spell.bonusDamageAgainst.dice}`);
+    } else if (hasAttack || hasSave) {
+      unsupported("bonus-damage-against", "creature-type-bonus-under-gates-pending");
+    } else {
+      clauses.push(
+        clause("bonus-damage-against", "automated", "table-confirms-creature-type")
+      );
+      clauses.push(clause("bonus-damage-roll", "physical-input"));
+      clauses.push(
+        clause("bonus-damage-creature-type", "table", "table-verifies-creature-type")
+      );
+    }
+  }
+  if (spell.selfHealingFromDamage) {
+    if (spell.selfHealingFromDamage.fraction === 0.5 && hasAttack && !hasSave) {
+      clauses.push(clause("self-healing-from-damage", "automated", "half-landed-damage"));
+    } else {
+      unsupported(
+        "self-healing-from-damage",
+        hasAttack && !hasSave
+          ? `fraction:${String(spell.selfHealingFromDamage.fraction)}`
+          : "leech-without-attack-gate-pending"
+      );
+    }
   }
   if (spell.damageAddsCastMod === true) {
     clauses.push(clause("damage-cast-modifier", "unsupported", "per-part-attribution"));
@@ -793,14 +1022,20 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   const flatHealPerUpcast = /^\d+$/.test(spell.healDicePerUpcast?.trim() ?? "")
     ? Number(spell.healDicePerUpcast)
     : null;
+  // A healing POOL or a CONSUMABLE batch carries the heal itself — the plain
+  // heal emission is suppressed for both (the pool splits per target below;
+  // the consumable heals when each conjured item is eaten).
+  const plainHealing =
+    spell.healingPool === undefined && spell.healingMode !== "consumable";
   if (
+    plainHealing &&
     spell.healDice !== undefined &&
     flatHeal !== null &&
     spell.healDicePerUpcast !== undefined &&
     flatHealPerUpcast === null
   ) {
     unsupported("healing", `mixed-flat-and-dice-upcast:${spell.healDicePerUpcast}`);
-  } else if (spell.healDice !== undefined && flatHeal !== null) {
+  } else if (plainHealing && spell.healDice !== undefined && flatHeal !== null) {
     steps.push({
       amount: {
         expression:
@@ -816,7 +1051,7 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     });
     clauses.push(clause("healing-application", "automated", "flat-amount"));
     if (flatHealPerUpcast !== null) clauses.push(clause("healing-upcast", "automated"));
-  } else if (spell.healDice !== undefined) {
+  } else if (plainHealing && spell.healDice !== undefined) {
     const dice = parseDice(spell.healDice);
     const perUpcast =
       spell.healDicePerUpcast === undefined ? null : parseDice(spell.healDicePerUpcast);
@@ -873,11 +1108,58 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
       when: null,
     });
     clauses.push(clause("healing-full-restore", "automated", "clamped-domain-bound"));
-  } else if (spell.healingMode !== undefined) {
-    unsupported("healing-consumable", "consumable-item-creation-pending");
+  } else if (spell.healingMode === "consumable") {
+    // The cast conjures a closed consumable batch (Goodberry's ten berries);
+    // each item's own canonical program heals when it is eaten, and the whole
+    // batch expires on the authored lifetime clock.
+    const batch = spell.consumableItem;
+    if (!batch) {
+      unsupported("healing-consumable", "consumable-item-facts-missing");
+    } else {
+      steps.push({
+        instanceKey: batch.itemId,
+        itemId: batch.itemId,
+        kind: "inventory-create",
+        lifetime: {
+          kind: "duration",
+          seconds: fixed(batch.lifetimeHours * 3600),
+        },
+        owner: "caster",
+        quantity: fixed(batch.count),
+        stepId: "conjure-consumables",
+        when: null,
+      });
+      clauses.push(
+        clause("healing-consumable", "automated", "conjured-batch-heals-on-consume")
+      );
+      clauses.push(clause("consumable-lifetime", "automated", "expires-by-duration"));
+    }
   }
   if (spell.healingPool !== undefined) {
-    unsupported("healing-pool", "per-target-pool-split-pending");
+    // The pool split (Mass Heal): the player chooses each target's portion;
+    // the review caps every portion and their SUM at the authored pool.
+    inputs.push({
+      expansion: { inputId: "targets", kind: "entities" },
+      inputId: "portions",
+      kind: "integer",
+      maximum: fixed(spell.healingPool),
+      minimum: fixed(1),
+      totalMaximum: fixed(spell.healingPool),
+      when: null,
+    });
+    steps.push({
+      amount: {
+        cardinality: "per-target-request",
+        inputId: "portions",
+        kind: "integer-input",
+        transform: INPUT_TOTAL,
+      },
+      kind: "heal",
+      stepId: "pool-split-heal",
+      target: { inputId: "targets", kind: "input" },
+      when: null,
+    });
+    clauses.push(clause("healing-pool", "automated", "per-target-chosen-split"));
   }
 
   // Temporary hit points.
@@ -914,7 +1196,34 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     }
   }
   if (spell.tempHpPool !== undefined) {
-    unsupported("temporary-hit-points-pool", "pooled-temp-hp-pending");
+    // The Temp-HP pool split (Power Word Fortify): the healing-pool law with a
+    // temporary-hit-points step per chosen portion.
+    inputs.push({
+      expansion: { inputId: "targets", kind: "entities" },
+      inputId: "temp-hp-portions",
+      kind: "integer",
+      maximum: fixed(spell.tempHpPool),
+      minimum: fixed(1),
+      totalMaximum: fixed(spell.tempHpPool),
+      when: null,
+    });
+    steps.push({
+      amount: {
+        cardinality: "per-target-request",
+        inputId: "temp-hp-portions",
+        kind: "integer-input",
+        transform: INPUT_TOTAL,
+      },
+      decision: "replace",
+      kind: "temporary-hit-points",
+      lifetime: { kind: "manual" },
+      stepId: "temp-hp-pool-split",
+      target: { inputId: "targets", kind: "input" },
+      when: null,
+    });
+    clauses.push(
+      clause("temporary-hit-points-pool", "automated", "per-target-chosen-split")
+    );
   }
 
   // Conditions — classified once; emitted into every phase that carries the
@@ -922,8 +1231,12 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   // each table-signaled event re-applies to that event's failed saves).
   const conditionEntries: {
     readonly conditionId: string;
+    /** Chosen-slot-level gates (cast-level duration tiers) — empty ⇒ ungated. */
+    readonly levelGates: readonly { comparison: "gte" | "lte"; value: number }[];
     readonly lifetime: Readonly<Record<string, unknown>>;
+    readonly suffix: string;
   }[] = [];
+  let exhaustionApplication = false;
   if (spell.conditionApplication) {
     const application = spell.conditionApplication;
     if (application.max !== undefined && application.max < application.options.length) {
@@ -933,10 +1246,20 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
       unsupported("condition-gate", "on-hit-without-attack-gate");
     } else if (application.on === "hit") {
       clauses.push(clause("condition-gate", "automated", "on-landed-attack"));
+    } else if (application.on === "passed-check") {
+      unsupported("condition-gate", "passed-check-is-action-only");
     }
     for (const conditionId of application.options) {
       if (conditionId === "exhaustion") {
-        unsupported("condition-exhaustion", "exhaustion-uses-exhaustion-change");
+        // Exhaustion is a vitality LEVEL, not a tracked occurrence: the gain
+        // is one exhaustion-change; any authored early end (Sickening
+        // Radiance's levels vanishing when the spell ends) stays a table
+        // correction because levels carry no source identity.
+        exhaustionApplication = true;
+        clauses.push(clause("condition-exhaustion", "automated", "one-level-gained"));
+        clauses.push(
+          clause("condition-exhaustion-end", "table", "level-removal-table-owned")
+        );
         continue;
       }
       const authored =
@@ -951,11 +1274,67 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
         conditionLifetime = { kind: "source-end" };
         clauses.push(clause(`condition-${conditionId}-lifetime`, "automated"));
       } else if (authored.kind === "timed") {
-        if (authored.byCastLevel) {
-          unsupported(
-            `condition-${conditionId}-lifetime`,
-            "cast-level-scaled-lifetime-pending"
+        if (authored.byCastLevel !== undefined && authored.byCastLevel.length > 0) {
+          // Cast-level duration tiers (Geas: 30 days, a year from 7th,
+          // until removed at 9th): one condition step per level SEGMENT,
+          // gated on the chosen slot level, each with its exact duration —
+          // an `indefinite` top tier keeps the table-owned manual end.
+          const tiers = [...authored.byCastLevel].sort(
+            (left, right) => left.minLevel - right.minLevel
           );
+          const tierable =
+            spell.level > 0 &&
+            new Set(tiers.map((tier) => tier.minLevel)).size === tiers.length &&
+            tiers.every(
+              (tier) =>
+                tier.minLevel > spell.level &&
+                tier.minLevel <= 9 &&
+                (tier.indefinite === true || typeof tier.minutes === "number")
+            );
+          if (!tierable) {
+            unsupported(`condition-${conditionId}-lifetime`, "cast-level-tier-shape");
+            continue;
+          }
+          const segments = [
+            { from: spell.level, indefinite: false, minutes: authored.minutes },
+            ...tiers.map((tier) => ({
+              from: tier.minLevel,
+              indefinite: tier.indefinite === true,
+              minutes: tier.minutes ?? 0,
+            })),
+          ];
+          for (const [index, segment] of segments.entries()) {
+            const to =
+              segments[index + 1] !== undefined
+                ? (segments[index + 1]?.from ?? 10) - 1
+                : 9;
+            conditionEntries.push({
+              conditionId,
+              levelGates: [
+                ...(segment.from > spell.level
+                  ? [{ comparison: "gte" as const, value: segment.from }]
+                  : []),
+                ...(to < 9 ? [{ comparison: "lte" as const, value: to }] : []),
+              ],
+              lifetime: segment.indefinite
+                ? { kind: "manual" }
+                : { kind: "duration", seconds: fixed(segment.minutes * 60) },
+              suffix: index === 0 ? "" : `-t${segment.from}`,
+            });
+          }
+          clauses.push(
+            clause(`condition-${conditionId}-lifetime`, "automated", "cast-level-tiers")
+          );
+          if (segments.some((segment) => segment.indefinite)) {
+            clauses.push(
+              clause(
+                `condition-${conditionId}-lifetime-top-tier`,
+                "table",
+                "until-removed-table-owned"
+              )
+            );
+          }
+          clauses.push(clause(`condition-${conditionId}`, "automated"));
           continue;
         }
         conditionLifetime = {
@@ -972,37 +1351,64 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
         };
         clauses.push(clause(`condition-${conditionId}-lifetime`, "automated"));
       }
-      conditionEntries.push({ conditionId, lifetime: conditionLifetime });
+      conditionEntries.push({
+        conditionId,
+        levelGates: [],
+        lifetime: conditionLifetime,
+        suffix: "",
+      });
       clauses.push(clause(`condition-${conditionId}`, "automated"));
     }
   }
   const emitConditionSuite = (
     into: { steps: Record<string, unknown>[] },
+    levelBindingId = "input.slot.level",
     prefix = ""
   ): void => {
     const application = spell.conditionApplication;
     if (!application) return;
     const p = (id: string): string => `${prefix}${id}`;
+    const gatedTarget = (): Readonly<Record<string, unknown>> =>
+      hasSave && application.on !== "automatic"
+        ? {
+            cardinality: "per-request",
+            inputId: p("saves"),
+            kind: "d20-outcome",
+            outcomeIds: ["failure"],
+            quantifier: "any",
+          }
+        : gatedByAttack && application.on === "hit"
+          ? attackOutcomeSelector(["hit", "critical-hit"], p)
+          : { inputId: p("targets"), kind: "input" };
+    if (exhaustionApplication) {
+      into.steps.push({
+        amount: fixed(1),
+        kind: "exhaustion-change",
+        operation: "gain",
+        stepId: p("condition-exhaustion"),
+        target: gatedTarget(),
+        when: null,
+      });
+    }
     for (const entry of conditionEntries) {
       into.steps.push({
         conditionId: entry.conditionId,
         kind: "condition",
         lifetime: entry.lifetime,
         operation: "apply",
-        stepId: p(`condition-${entry.conditionId}`),
-        target:
-          hasSave && application.on !== "automatic"
-            ? {
-                cardinality: "per-request",
-                inputId: p("saves"),
-                kind: "d20-outcome",
-                outcomeIds: ["failure"],
-                quantifier: "any",
-              }
-            : gatedByAttack && application.on === "hit"
-              ? attackOutcomeSelector(["hit", "critical-hit"], p)
-              : { inputId: p("targets"), kind: "input" },
-        when: null,
+        stepId: p(`condition-${entry.conditionId}${entry.suffix}`),
+        target: gatedTarget(),
+        when:
+          entry.levelGates.length === 0
+            ? null
+            : allOf(
+                ...entry.levelGates.map((gate) => ({
+                  bindingId: levelBindingId,
+                  comparison: gate.comparison,
+                  kind: "binding",
+                  value: fixed(gate.value),
+                }))
+              ),
       });
     }
   };
@@ -1010,7 +1416,18 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   if (spell.conditionRemoval) {
     for (const conditionId of spell.conditionRemoval.options) {
       if (conditionId === "exhaustion") {
-        unsupported("cure-exhaustion", "exhaustion-step-authoring-pending");
+        // Exhaustion lives on the vitality track, not the condition ledger:
+        // the cure is one exhaustion level removed (Greater Restoration), a
+        // safe no-op at level 0.
+        steps.push({
+          amount: fixed(1),
+          kind: "exhaustion-change",
+          operation: "remove",
+          stepId: "cure-exhaustion",
+          target: { inputId: "targets", kind: "input" },
+          when: null,
+        });
+        clauses.push(clause("cure-exhaustion", "automated", "one-level-removed"));
         continue;
       }
       steps.push({
@@ -1180,7 +1597,11 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
       `register.${CAST_LEVEL_REGISTER}`,
       "pulse-"
     );
-    emitConditionSuite({ steps: pulseSteps }, "pulse-");
+    emitConditionSuite(
+      { steps: pulseSteps },
+      `register.${CAST_LEVEL_REGISTER}`,
+      "pulse-"
+    );
     if (spell.endsOnSuccessfulSave === true && hasSave) {
       pulseSteps.push({
         kind: "end-program",
@@ -1220,17 +1641,121 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   } else if (deferred) {
     unsupported("deferred-resolution", "resolve-later-without-recurrence");
   }
-  if (spell.followUp) unsupported("follow-up", "follow-up-action-pending");
+  // The persistent follow-up (Wall of Fire: the standing wall damages whoever
+  // enters it or ends their turn beside it): the SAME root-pulse machinery a
+  // recurring spell uses, carrying only the follow-up's own automatic-damage
+  // suite. The table signals each occurrence; the engine rolls and applies.
+  let followUpPhase: Record<string, unknown> | null = null;
+  let followUpUsesRegister = false;
+  if (spell.followUp) {
+    const followUp = spell.followUp;
+    const followUpAttack = followUp.attack;
+    const followUpDice =
+      followUpAttack?.dice !== undefined ? parseDice(followUpAttack.dice) : null;
+    const followUpPer =
+      followUpAttack?.dicePerUpcast !== undefined
+        ? parseDice(followUpAttack.dicePerUpcast)
+        : null;
+    const followUpMax = followUp.targeting?.maxTargets;
+    const expressible =
+      !pulse &&
+      !deferred &&
+      followUpAttack !== undefined &&
+      followUpAttack.resolution === "automatic" &&
+      followUpDice !== null &&
+      (followUpAttack.dicePerUpcast === undefined ||
+        (followUpPer !== null && followUpPer.sides === followUpDice.sides)) &&
+      followUpAttack.damageType !== undefined &&
+      followUpAttack.mode === undefined &&
+      followUp.saveAbility === undefined &&
+      followUp.attackType === undefined &&
+      followUp.conditionApplication === undefined &&
+      followUp.heal === undefined &&
+      typeof followUpMax !== "string";
+    if (!expressible) {
+      unsupported("follow-up", "follow-up-shape-unexpressed");
+    } else {
+      followUpUsesRegister = spell.level > 0 && followUpPer !== null;
+      followUpPhase = {
+        inputs: [
+          {
+            eligibility: "creature",
+            inputId: "follow-up-targets",
+            kind: "entities",
+            maximum: fixed(
+              typeof followUpMax === "number"
+                ? followUpMax
+                : followUp.area === true
+                  ? 20
+                  : 1
+            ),
+            minimum: fixed(0),
+            multiplicity: "slots",
+            when: null,
+          },
+          diceInput(
+            "follow-up-roll",
+            followUpDice,
+            followUpUsesRegister
+              ? upcastCount(
+                  followUpDice.count,
+                  followUpPer?.count ?? null,
+                  spell.level,
+                  `register.${CAST_LEVEL_REGISTER}`
+                )
+              : fixed(followUpDice.count)
+          ),
+        ],
+        phaseId: "follow-up",
+        steps: [
+          {
+            delivery: "automatic",
+            kind: "damage",
+            parts: [
+              {
+                amount: sharedDiceAmount("follow-up-roll", INPUT_TOTAL),
+                damageType: followUpAttack.damageType,
+                partId: "follow-up-damage",
+              },
+            ],
+            stepId: "follow-up-apply",
+            target: { inputId: "follow-up-targets", kind: "input" },
+            traits: ["spell"],
+            when: null,
+          },
+        ],
+        trigger: { eventId: "follow-up", kind: "root-pulse" },
+      };
+      clauses.push(clause("follow-up", "automated", "table-signaled-pulse-damage"));
+      clauses.push(clause("follow-up-roll", "physical-input"));
+      clauses.push(clause("follow-up-occupancy", "spatial", "table-signals-pulse"));
+      clauses.push(clause("follow-up-application", "automated"));
+    }
+  }
   if (spell.endsOnSuccessfulSave === true && !pulse) {
     unsupported("ends-on-save", "repeat-save-without-recurrence");
   }
-  if (spell.selfHealingFromDamage) {
-    unsupported("self-healing-from-damage", "landed-damage-feedback-pending");
+
+  // The chosen cast level is recorded once at resolution for every later
+  // triggered phase that re-reads it (a recurring pulse spliced its own
+  // recorder above; an upcasting follow-up needs the same record).
+  if (followUpUsesRegister && pulsePhase === null) {
+    steps.splice(0, 0, {
+      kind: "register",
+      operation: {
+        kind: "set-integer",
+        value: { bindingId: "input.slot.level", kind: "binding" },
+      },
+      registerId: CAST_LEVEL_REGISTER,
+      stepId: "record-cast-level",
+      when: null,
+    });
   }
 
   const phases: Record<string, unknown>[] = [
     { inputs, phaseId: "resolve", steps, trigger: { kind: "invocation" } },
     ...(pulsePhase ? [pulsePhase] : []),
+    ...(followUpPhase ? [followUpPhase] : []),
   ];
   if (spell.concentration) {
     phases.push({
@@ -1242,7 +1767,7 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   }
 
   const blocked = clauses.some((entry) => entry.status === "unsupported");
-  const stepless = steps.length === 0 && pulsePhase === null;
+  const stepless = steps.length === 0 && pulsePhase === null && followUpPhase === null;
   if (blocked || stepless) {
     return {
       clauses:
@@ -1259,7 +1784,7 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     ...(lifetime.length > 0 ? { lifetime } : {}),
     phases,
     registers:
-      pulsePhase !== null && spell.level > 0
+      (pulsePhase !== null && spell.level > 0) || followUpUsesRegister
         ? [{ initial: spell.level, registerId: CAST_LEVEL_REGISTER }]
         : [],
     version: 1,
@@ -1302,14 +1827,24 @@ export interface FeatureActionContext {
    * catalogue alone cannot name it. Absent ⇒ the attack stays unexpressed.
    */
   readonly attackDamageType?: string;
+  /** The RESOLVED `classSpecific:*` die of this action's heal/Temp-HP/granted
+   *  die ("d8" — the monk's Martial Arts die at the character's level, the
+   *  bard's Inspiration die tier). Session-derived except where a tracker's
+   *  own base `die` declares it. Absent ⇒ the sentinel stays unexpressed. */
+  readonly classDie?: string;
   /** The die a DICE payment pool holds ("d12" — Warrior of the Gods), read off
    *  the pool tracker's own `die` declaration. Present ⇒ a pool spend rolls
    *  the chosen number of these dice and heals the total; absent ⇒ the pool
    *  holds points and the chosen amount heals exactly (Lay on Hands). */
   readonly poolDie?: string;
   /** The action's owning-class/character scaling level — gates `fromLevel`
-   *  cures. Absent ⇒ only ungated cures transcribe. */
+   *  cures/Temp-HP and picks `diceByLevel`/`damageTypeChoicesByLevel` tiers.
+   *  Absent ⇒ only ungated facts transcribe. */
   readonly scalingLevel?: number;
+  /** The TARGET tracker's own full-recovery rest for a `trackerTopUp` action
+   *  (Uncanny Metabolism refills Focus exactly as its short rest would), read
+   *  off that tracker's `recovery` declaration. Absent ⇒ top-up unexpressed. */
+  readonly topUpRecovery?: "long-rest" | "short-rest";
   readonly trackerId?: string;
   readonly whileActive?: readonly Readonly<{
     readonly activeKey: string;
@@ -1331,28 +1866,86 @@ export function transcribeFeatureAction(
     clauses.push(clause(clauseId, "unsupported", detail));
   };
 
+  // The two structural boundaries left: a legacy authored program awaiting its
+  // canonical rewrite, an attack SEQUENCE whose unarmed-strike profile is
+  // session-resolved (the weapon-attack seam's future work), and a reaction
+  // whose damage-taken trigger only the encounter runtime can fire.
   const blockers: readonly (readonly [boolean, string, string])[] = [
     [action.effectProgram !== undefined, "effect-program", "legacy-program-migration"],
-    [action.skillCheck !== undefined, "skill-check", "check-flow-pending"],
-    [action.checkBonus !== undefined, "check-bonus", "check-flow-pending"],
-    [action.attackSequence !== undefined, "attack-sequence", "attack-flow-pending"],
-    [action.damageReduction !== undefined, "damage-reduction", "reaction-flow-pending"],
-    [action.alternateCost !== undefined, "alternate-cost", "cost-choice-pending"],
-    [action.grantDie !== undefined, "grant-die", "granted-die-pending"],
-    [action.trackerTopUp !== undefined, "tracker-topup", "topup-flow-pending"],
     [
-      action.grantsNextAttackAdvantage === true,
-      "next-attack-advantage",
-      "turn-fact-pending",
+      action.attackSequence !== undefined,
+      "attack-sequence",
+      "session-attack-profile-pending",
     ],
-    [action.locksMovement === true, "locks-movement", "turn-fact-pending"],
+    [
+      action.damageReduction !== undefined,
+      "damage-reduction",
+      "reaction-runtime-pending",
+    ],
   ];
   for (const [present, clauseId, detail] of blockers) {
     if (present) unsupported(clauseId, detail);
   }
+  if (action.locksMovement === true) {
+    // Movement is spatial truth the app deliberately does not model in solo
+    // play — the speed-0 lock stays a table fact (Steady Aim).
+    clauses.push(clause("locks-movement", "table", "speed-zero-table-owned"));
+  }
 
-  // Turn economy and prerequisites stay with the table until the turn runtime.
-  clauses.push(clause("economy", "table", `table-spends-${action.type}`));
+  // Turn economy: a DECLARED per-turn cap compiles the canonical turn-claim
+  // against the caster's turn-economy projection — the slot claim for a typed
+  // action (one bonus action per turn IS Martial Arts' cap), a once-per-turn
+  // manual boundary for a free action (Redirect). The compiler scopes each
+  // use's claim identity by root generation, so a second capped use in the
+  // SAME turn genuinely re-claims and rejects, and the next round's reset
+  // ledger admits it again. Uncapped economy stays a table fact until the
+  // dispatch layer claims it.
+  const perTurnCapped = action.maxUsesPerTurn === 1;
+  if (perTurnCapped) {
+    const capKey = `per-turn.${featureId}.${action.id ?? String(ordinal)}`;
+    const claim: Readonly<Record<string, unknown>> =
+      action.type === "bonus"
+        ? {
+            bonusAction: { kind: "action", requirementId: capKey },
+            claimId: capKey,
+            kind: "claim-bonus-action",
+          }
+        : action.type === "action"
+          ? { action: { kind: "magic" }, claimId: capKey, kind: "claim-action" }
+          : action.type === "reaction"
+            ? {
+                claimId: capKey,
+                kind: "claim-reaction",
+                reaction: { kind: "program", requirementId: capKey },
+              }
+            : {
+                authority: "table",
+                boundaryId: capKey,
+                claimId: capKey,
+                kind: "record-manual-boundary",
+              };
+    steps.push({
+      claim,
+      combatant: "caster",
+      kind: "turn-claim",
+      stepId: "per-turn-claim",
+      when: null,
+    });
+    clauses.push(
+      clause(
+        "per-turn-cap",
+        "automated",
+        action.type === "free" ? "manual-boundary-claim" : "turn-slot-claim"
+      )
+    );
+  } else if (action.maxUsesPerTurn !== undefined) {
+    clauses.push(clause("per-turn-cap", "table", "multi-use-cap-table-owned"));
+  }
+  clauses.push(
+    perTurnCapped && action.type !== "free"
+      ? clause("economy", "automated", `kernel-claims-${action.type}`)
+      : clause("economy", "table", `table-spends-${action.type}`)
+  );
   if (action.trigger !== undefined) {
     clauses.push(clause("reaction-trigger", "table", `table-signals-${action.trigger}`));
   }
@@ -1362,9 +1955,6 @@ export function transcribeFeatureAction(
     action.requiresActionCategoryThisTurn !== undefined
   ) {
     clauses.push(clause("turn-prerequisite", "table", "table-verifies-prerequisite"));
-  }
-  if (action.maxUsesPerTurn !== undefined) {
-    clauses.push(clause("per-turn-cap", "table", "table-enforces-cap"));
   }
 
   // A maintainer re-ups an already-active state for the current round: the
@@ -1388,17 +1978,76 @@ export function transcribeFeatureAction(
   if (isPoolSpend && paymentTracker === undefined) {
     unsupported("pool-spend", "pool-spend-without-tracker");
   }
-  if (paymentTracker !== undefined && !isPoolSpend) {
-    inputs.push({
-      inputId: "uses",
-      kind: "resource",
-      term: {
-        amount: fixed(action.trackerCost ?? 1),
-        selector: { kind: "pool", owner: "caster", resourceId: paymentTracker },
-      },
-      when: null,
-    });
-    clauses.push(clause("tracker-payment", "automated"));
+  // A refund-on-fail check bonus (Tactical Mind) never pays up front: the use
+  // is expended only when the die turns the failed check into a success, so
+  // its debit is a conditional step below instead of a payment input.
+  const refundableCheck = action.checkBonus?.refundOnFail === true;
+  if (paymentTracker !== undefined && !isPoolSpend && !refundableCheck) {
+    const primaryTerm = {
+      amount: fixed(action.trackerCost ?? 1),
+      selector: { kind: "pool", owner: "caster", resourceId: paymentTracker },
+    };
+    const alternate = action.alternateCost;
+    const alternateTerm =
+      alternate === undefined
+        ? null
+        : alternate.kind === "spell-slot"
+          ? {
+              amount: fixed(1),
+              selector: {
+                kind: "spell-slot",
+                level: { kind: "minimum", value: alternate.minLevel },
+                owner: "caster",
+                pool: "either",
+              },
+            }
+          : alternate.kind === "tracker"
+            ? {
+                amount: fixed(alternate.amount ?? 1),
+                selector: {
+                  kind: "pool",
+                  owner: "caster",
+                  resourceId: alternate.trackerId,
+                },
+              }
+            : null;
+    if (alternate !== undefined && alternateTerm === null) {
+      unsupported("alternate-cost", `cost-kind:${alternate.kind}`);
+    } else if (alternateTerm !== null) {
+      // Two independent ways to pay (Wild Companion: a Wild Shape use OR a
+      // spell slot): the player picks one; each payment activates on its arm.
+      inputs.push({
+        inputId: "cost-choice",
+        kind: "choice",
+        options: ["primary", "alternate"],
+        when: null,
+      });
+      inputs.push({
+        inputId: "uses",
+        kind: "resource",
+        term: primaryTerm,
+        when: { choiceId: "primary", inputId: "cost-choice", kind: "answer-choice" },
+      });
+      inputs.push({
+        inputId: "alternate-cost",
+        kind: "resource",
+        term: alternateTerm,
+        when: { choiceId: "alternate", inputId: "cost-choice", kind: "answer-choice" },
+      });
+      clauses.push(clause("cost-choice", "automated", "player-picks-payment"));
+      clauses.push(clause("tracker-payment", "automated", "chosen-of-two-costs"));
+      clauses.push(clause("alternate-cost", "automated", "chosen-of-two-costs"));
+    } else {
+      inputs.push({
+        inputId: "uses",
+        kind: "resource",
+        term: primaryTerm,
+        when: null,
+      });
+      clauses.push(clause("tracker-payment", "automated"));
+    }
+  } else if (action.alternateCost !== undefined) {
+    unsupported("alternate-cost", "alternate-without-primary-tracker");
   }
 
   // Activating a feature that carries while-active buffs lights each key on
@@ -1447,6 +2096,150 @@ export function transcribeFeatureAction(
     }
   }
 
+  // The flat skill check (Hide's DC 15 DEX/Stealth): a real ability-check
+  // request against the authored DC; the actor's skill bonus arrives as ONE
+  // required table-entered modifier (the sheet knows it, the kernel verifies
+  // the arithmetic). Consequences gate on the check outcome below.
+  if (action.skillCheck !== undefined) {
+    inputs.push({
+      expansion: { binding: "caster", kind: "single" },
+      inputId: "check",
+      kind: "d20",
+      payments: [],
+      request: {
+        ability: SKILL_ABILITY.get(action.skillCheck.skill) ?? "STR",
+        actor: "caster",
+        difficultyClass: fixed(action.skillCheck.dc),
+        enteredModifiers: [
+          {
+            kind: "exact",
+            maximum: fixed(30),
+            minimum: fixed(-10),
+            required: true,
+            sourceId: "skill-modifier",
+          },
+        ],
+        kind: "ability-check",
+        modifiers: [],
+        resolution: { kind: "rolled" },
+        rollRules: CANONICAL_ROLL_RULES,
+        target: null,
+        testId: "skill-check",
+      },
+      when: null,
+    });
+    clauses.push(clause("skill-check", "physical-input"));
+    clauses.push(clause("skill-check-adjudication", "automated", "vs-authored-dc"));
+  }
+
+  // The refundable check bonus (Tactical Mind): the die is rolled onto an
+  // already-failed check; the table confirms whether it turned the check, and
+  // only that confirmed success spends the use.
+  if (action.checkBonus !== undefined) {
+    const bonusDice = parseDice(action.checkBonus.dice);
+    if (bonusDice === null) {
+      unsupported("check-bonus", `dice:${action.checkBonus.dice}`);
+    } else {
+      inputs.push(diceInput("check-bonus-roll", bonusDice, fixed(bonusDice.count)));
+      clauses.push(clause("check-bonus-roll", "physical-input"));
+      clauses.push(clause("check-bonus", "automated", "die-added-to-failed-check"));
+      clauses.push(clause("check-outcome", "table", "table-adjudicates-final-check"));
+      if (refundableCheck && paymentTracker !== undefined) {
+        const turned: Readonly<Record<string, unknown>> = {
+          equals: true,
+          inputId: "check-turned-success",
+          kind: "answer-boolean",
+        };
+        inputs.push({ inputId: "check-turned-success", kind: "boolean", when: null });
+        steps.push({
+          kind: "resource-change",
+          operation: "spend",
+          stepId: "refundable-use",
+          term: {
+            amount: fixed(action.trackerCost ?? 1),
+            selector: { kind: "pool", owner: "caster", resourceId: paymentTracker },
+          },
+          when: turned,
+        });
+        clauses.push(
+          clause("tracker-payment", "automated", "debited-only-on-turned-success")
+        );
+      }
+    }
+  }
+
+  // A granted held die (Bardic Inspiration): a standing program-fact on the
+  // chosen creature carrying the die face, alive for the RAW hour; ADDING the
+  // die to a later roll stays player-applied by design (the Hex-rider rule).
+  if (action.grantDie !== undefined) {
+    const dieToken = action.grantDie.die;
+    const face = dieToken.startsWith("classSpecific:") ? feature.classDie : dieToken;
+    if (face === undefined || parseDice(`1${face}`) === null) {
+      unsupported("grant-die", "session-die-unresolved");
+    } else {
+      steps.push({
+        fact: { factId: `${featureId}-die`, kind: "program-fact", value: face },
+        kind: "standing",
+        lifetime: { kind: "duration", seconds: fixed(3600) },
+        operation: "start",
+        stepId: "grant-die",
+        target: { inputId: "targets", kind: "input" },
+        when: null,
+      });
+      clauses.push(clause("grant-die", "automated", "standing-die-fact-one-hour"));
+      clauses.push(clause("grant-die-use", "table", "player-applies-die-by-design"));
+    }
+  }
+
+  // A full tracker top-up (Uncanny Metabolism refills Focus): the SAME
+  // recovery the target tracker's own rest performs, fired now.
+  if (action.trackerTopUp !== undefined) {
+    if (action.trackerTopUp.upTo !== "full") {
+      unsupported("tracker-topup", "partial-topup-pending");
+    } else if (feature.topUpRecovery === undefined) {
+      unsupported("tracker-topup", "target-tracker-recovery-unresolved");
+    } else {
+      steps.push({
+        kind: "resource-recover",
+        resource: {
+          kind: "pool",
+          owner: "caster",
+          resourceId: action.trackerTopUp.trackerId,
+        },
+        stepId: "topup-recover",
+        trigger: { kind: feature.topUpRecovery },
+        when: null,
+      });
+      clauses.push(clause("tracker-topup", "automated", "full-recovery-now"));
+    }
+  }
+
+  // Next-attack advantage (Steady Aim): the buff is a real standing fact until
+  // the caster's turn ends; APPLYING the advantage on the next roll stays
+  // player-owned by design, like every rider.
+  if (action.grantsNextAttackAdvantage === true) {
+    steps.push({
+      fact: { factId: "next-attack-advantage", kind: "program-fact", value: true },
+      kind: "standing",
+      lifetime: {
+        combatant: "caster",
+        kind: "turn-boundary",
+        // Offset 1 = the NEXT end-of-turn boundary, i.e. the end of the
+        // caster's current turn (the kernel's one-based boundary convention).
+        offsetTurns: fixed(1),
+        phase: "end",
+      },
+      operation: "start",
+      stepId: "standing-next-attack-advantage",
+      target: { kind: "role", role: "caster" },
+      when: null,
+    });
+    clauses.push(clause("next-attack-advantage", "automated", "standing-until-turn-end"));
+    clauses.push(
+      clause("next-attack-advantage-use", "table", "player-applies-advantage-by-design")
+    );
+  }
+
   // Pool spend at a chosen amount (Lay on Hands): the player picks how many
   // pool points to draw; the SAME chosen number is the pool debit and the heal
   // (a dice-unit pool rolls that many dice instead — Warrior of the Gods).
@@ -1469,13 +2262,7 @@ export function transcribeFeatureAction(
         );
       }
     }
-    const cures = availableCures.filter((cure) => {
-      if (cure.condition === "exhaustion") {
-        unsupported("cure-exhaustion", "exhaustion-uses-exhaustion-change");
-        return false;
-      }
-      return true;
-    });
+    const cures = availableCures;
     const healable = cures.length > 0 ? { minimum: 0 } : { minimum: 1 };
     inputs.push({
       inputId: "amount",
@@ -1526,15 +2313,26 @@ export function transcribeFeatureAction(
         },
         when: opted,
       });
-      steps.push({
-        conditionId: cure.condition,
-        kind: "condition",
-        lifetime: null,
-        operation: "remove",
-        stepId: `cure-${cure.condition}`,
-        target: { inputId: "targets", kind: "input" },
-        when: opted,
-      });
+      steps.push(
+        cure.condition === "exhaustion"
+          ? {
+              amount: fixed(1),
+              kind: "exhaustion-change",
+              operation: "remove",
+              stepId: `cure-${cure.condition}`,
+              target: { inputId: "targets", kind: "input" },
+              when: opted,
+            }
+          : {
+              conditionId: cure.condition,
+              kind: "condition",
+              lifetime: null,
+              operation: "remove",
+              stepId: `cure-${cure.condition}`,
+              target: { inputId: "targets", kind: "input" },
+              when: opted,
+            }
+      );
       clauses.push(clause(`cure-${cure.condition}-cost`, "automated", "pool-priced"));
       clauses.push(clause(`cure-${cure.condition}`, "automated"));
     }
@@ -1586,9 +2384,16 @@ export function transcribeFeatureAction(
     });
     clauses.push(clause("attack-mode-choice", "automated", "player-picks-each-use"));
   }
+  // Level-scaled type choices (Deflect Attacks' Redirect widening at 13)
+  // resolve through the session scaling level; the catalogue alone cannot
+  // pick the tier.
+  const scaledTypeChoices =
+    attack?.damageTypeChoicesByLevel !== undefined && feature.scalingLevel !== undefined
+      ? pickLevelTier(attack.damageTypeChoicesByLevel, feature.scalingLevel)
+      : null;
   const attackTypeChoices =
     attack !== undefined && attack.damageType === undefined
-      ? (attack.damageTypeChoices ?? null)
+      ? (attack.damageTypeChoices ?? scaledTypeChoices ?? null)
       : null;
   if (attackTypeChoices !== null && attackTypeChoices.length > 0) {
     inputs.push({
@@ -1617,9 +2422,9 @@ export function transcribeFeatureAction(
       [attack.dicePerUpcast !== undefined, "attack-upcast", "spell-slot-context-pending"],
       [attack.resolution !== undefined, "attack-gate", "resolution-override-pending"],
       [
-        attack.damageTypeChoicesByLevel !== undefined,
+        attack.damageTypeChoicesByLevel !== undefined && scaledTypeChoices === null,
         "attack-damage-type",
-        "level-scaled-type-choices-pending",
+        "level-scaled-type-choices-need-session-level",
       ],
     ];
     for (const [present, clauseId, detail] of attackBlockers) {
@@ -1651,13 +2456,24 @@ export function transcribeFeatureAction(
         tiers.every(
           (tier) => tier !== null && tier.sides === first.sides && tier.bonus === 0
         );
-      if (!uniform) {
-        unsupported("attack-dice", "level-scaled-die-face-pending");
-      } else {
+      // A tier ladder that changes the die FACE (Redirect's 2d6 → 2d12) is
+      // only resolvable at the session level; the tier then fixes both the
+      // count and the face exactly.
+      const sessionTier =
+        !uniform && feature.scalingLevel !== undefined
+          ? pickLevelTier(attack.diceByLevel, feature.scalingLevel)
+          : null;
+      const sessionDice = sessionTier !== null ? parseDice(sessionTier) : null;
+      if (uniform) {
         roll = { count: boundCount, dice: first };
         clauses.push(
           clause("attack-dice-scaling", "automated", "caller-resolved-level-count")
         );
+      } else if (sessionDice !== null) {
+        roll = { count: fixed(sessionDice.count), dice: sessionDice };
+        clauses.push(clause("attack-dice-scaling", "automated", "session-level-tier"));
+      } else {
+        unsupported("attack-dice", "level-scaled-die-face-needs-session-level");
       }
     } else if (attack.dice !== undefined) {
       const die = parseDice(attack.dice);
@@ -1862,19 +2678,25 @@ export function transcribeFeatureAction(
     }
   }
 
-  // Healing: a fixed dice formula plus the caller-resolved flat bonus.
+  // Healing: a fixed dice formula plus the caller-resolved flat bonus. A
+  // `classSpecific:*` sentinel (the monk's Martial Arts die) resolves to one
+  // roll of the caller-resolved `classDie`.
   if (action.heal !== undefined) {
     const formula = action.heal.dice;
     const dice =
       formula !== undefined && !formula.startsWith("classSpecific:")
         ? parseDice(formula)
-        : null;
+        : formula !== undefined && feature.classDie !== undefined
+          ? parseDice(`1${feature.classDie}`)
+          : null;
     if (action.heal.diceCount !== undefined || formula === undefined || dice === null) {
       unsupported(
         "healing",
         action.heal.diceCount !== undefined
           ? "variable-die-count-pending"
-          : `dice:${formula ?? "none"}`
+          : formula?.startsWith("classSpecific:") === true
+            ? "session-class-die-unresolved"
+            : `dice:${formula ?? "none"}`
       );
     } else {
       inputs.push(diceInput("heal-roll", dice, fixed(dice.count)));
@@ -1904,11 +2726,22 @@ export function transcribeFeatureAction(
     }
   }
 
-  // Conditions this action applies (save-gated when the action carries a save).
-  if (action.conditionApplication !== undefined) {
+  // Conditions this action applies (save-gated when the action carries a
+  // save; check-gated when it rides the action's own skill check — Hide's
+  // Invisible on a passed Stealth check).
+  if (
+    action.conditionApplication !== undefined &&
+    action.conditionApplication.on === "passed-check" &&
+    action.skillCheck === undefined
+  ) {
+    unsupported("condition-gate", "passed-check-without-skill-check");
+  } else if (action.conditionApplication !== undefined) {
     const application = action.conditionApplication;
     if (application.max !== undefined && application.max < application.options.length) {
       clauses.push(clause("condition-choice", "table", "table-picks-subset"));
+    }
+    if (application.on === "passed-check") {
+      clauses.push(clause("condition-gate", "automated", "on-passed-check"));
     }
     for (const conditionId of application.options) {
       if (conditionId === "exhaustion") {
@@ -1952,7 +2785,9 @@ export function transcribeFeatureAction(
         operation: "apply",
         stepId: `condition-${conditionId}`,
         target:
-          action.saveAbility !== undefined && application.on !== "automatic"
+          action.saveAbility !== undefined &&
+          application.on !== "automatic" &&
+          application.on !== "passed-check"
             ? {
                 cardinality: "per-request",
                 inputId: "saves",
@@ -1961,7 +2796,15 @@ export function transcribeFeatureAction(
                 quantifier: "any",
               }
             : { inputId: "targets", kind: "input" },
-        when: null,
+        when:
+          application.on === "passed-check"
+            ? {
+                inputId: "check",
+                kind: "answer-d20",
+                outcomeId: "success",
+                quantifier: "any",
+              }
+            : null,
       });
       clauses.push(clause(`condition-${conditionId}`, "automated"));
     }
@@ -1971,7 +2814,15 @@ export function transcribeFeatureAction(
   if (action.conditionRemoval !== undefined) {
     for (const conditionId of action.conditionRemoval.options) {
       if (conditionId === "exhaustion") {
-        unsupported("cure-exhaustion", "exhaustion-step-authoring-pending");
+        steps.push({
+          amount: fixed(1),
+          kind: "exhaustion-change",
+          operation: "remove",
+          stepId: "cure-exhaustion",
+          target: { inputId: "targets", kind: "input" },
+          when: null,
+        });
+        clauses.push(clause("cure-exhaustion", "automated", "one-level-removed"));
         continue;
       }
       steps.push({
@@ -1990,18 +2841,39 @@ export function transcribeFeatureAction(
     }
   }
 
-  // Temporary hit points: N rolls of one fixed die, plus the caller-resolved
-  // flat term; class-scaling dice stay a boundary until the die resolver.
-  if (action.tempHpRoll !== undefined) {
+  // Temporary hit points: N rolls of one fixed die (or the caller-resolved
+  // `classDie` behind a `classSpecific:*` sentinel), plus the caller-resolved
+  // flat term; a `fromLevel` unlock below the scaling level stays locked.
+  if (
+    action.tempHpRoll !== undefined &&
+    action.tempHpRoll.fromLevel !== undefined &&
+    (feature.scalingLevel === undefined ||
+      feature.scalingLevel < action.tempHpRoll.fromLevel)
+  ) {
+    clauses.push(
+      clause("temporary-hit-points-locked", "narrative", "below-unlock-level")
+    );
+  } else if (action.tempHpRoll !== undefined) {
     const roll = action.tempHpRoll;
     const dice = roll.die.startsWith("classSpecific:")
-      ? null
+      ? feature.classDie !== undefined
+        ? parseDice(`${roll.rolls}${feature.classDie}`)
+        : null
       : parseDice(`${roll.rolls}${roll.die}`);
     if (dice === null) {
-      unsupported("temporary-hit-points", `die:${roll.die}`);
+      unsupported(
+        "temporary-hit-points",
+        roll.die.startsWith("classSpecific:")
+          ? "session-class-die-unresolved"
+          : `die:${roll.die}`
+      );
     } else {
       inputs.push(diceInput("temp-hp-roll", dice, fixed(dice.count)));
       clauses.push(clause("temporary-hit-points-roll", "physical-input"));
+      const multiplied: Readonly<IntegerExpression> =
+        roll.multiplier !== undefined && roll.multiplier !== 1
+          ? { factors: [fixed(roll.multiplier), INPUT_TOTAL], kind: "multiply" }
+          : INPUT_TOTAL;
       steps.push({
         amount: sharedDiceAmount(
           "temp-hp-roll",
@@ -2009,11 +2881,11 @@ export function transcribeFeatureAction(
             ? {
                 kind: "add",
                 terms: [
-                  INPUT_TOTAL,
+                  multiplied,
                   { bindingId: TRANSCRIPTION_BINDINGS.featureBonus, kind: "binding" },
                 ],
               }
-            : INPUT_TOTAL
+            : multiplied
         ),
         decision: "replace",
         kind: "temporary-hit-points",
@@ -2026,6 +2898,9 @@ export function transcribeFeatureAction(
         clauses.push(
           clause("temporary-hit-points-bonus", "automated", "caller-resolved-term")
         );
+      }
+      if (roll.multiplier !== undefined && roll.multiplier !== 1) {
+        clauses.push(clause("temporary-hit-points-multiplier", "automated"));
       }
       clauses.push(clause("temporary-hit-points", "automated"));
     }

@@ -75,7 +75,9 @@ export interface CombatResolutionSpec {
   conditionApplication?: {
     options: string[];
     max?: number;
-    on: "hit" | "failed-save" | "automatic";
+    /** `passed-check` (Hide's Invisible on a passed Stealth check) resolves in
+     *  the mechanics engine; this legacy resolver treats it as automatic. */
+    on: "hit" | "failed-save" | "automatic" | "passed-check";
     lifetime?: CombatConditionLifetime;
     lifetimes?: Partial<Record<string, CombatConditionLifetime>>;
   };

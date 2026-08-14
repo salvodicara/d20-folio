@@ -117,6 +117,15 @@ export interface CompileMechanicsFrameInput {
   readonly continuation: Readonly<MechanicsCompilerContinuation> | null;
   /** Trusted, guarded facts not already represented by MechanicsWorld. */
   readonly facts: readonly Readonly<ActionFactGuard>[];
+  /**
+   * The frame-scoped landed-damage ledger: per damage step, per part, the net
+   * amounts the kernel applied in EARLIER segments of this same frame. The
+   * coordinator accumulates each compiled segment's `landed` contribution and
+   * feeds the ledger back so later steps' `landed-damage` amounts/predicates
+   * resolve (Vampiric Touch heals half the necrotic damage its earlier damage
+   * step dealt). Omitted ⇒ empty.
+   */
+  readonly landedDamage?: Readonly<Record<string, Readonly<Record<string, number>>>>;
   readonly responses: readonly Readonly<MechanicsCompilerResponse>[];
   readonly reviewed: Readonly<ReviewedMechanicsIntent>;
   readonly state: Readonly<MechanicsCausalState>;
@@ -158,6 +167,12 @@ export interface MechanicsCompiledSegment {
   readonly emissions: readonly Readonly<MechanicsPostEventEmission>[];
   /** Root ends this segment defers to the frame's phase CAS. */
   readonly endRequests: readonly Readonly<OccurrenceGenerationRef>[];
+  /**
+   * This segment's landed-damage contribution: for an executed damage step,
+   * the per-part net amounts applied (zero-filled when the step ran but no
+   * request landed). The coordinator merges it into the frame's ledger.
+   */
+  readonly landed: Readonly<Record<string, Readonly<Record<string, number>>>>;
   readonly manual: readonly ManualInstruction[];
   readonly state: Readonly<MechanicsCausalState>;
   readonly trace: readonly MechanicsCompiledStepTrace[];

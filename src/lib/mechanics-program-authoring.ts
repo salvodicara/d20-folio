@@ -420,6 +420,18 @@ function answerPredicateKind(
   }
 }
 
+/** An answer predicate must name an input of its kind; the single-value
+ *  `answer-integer` additionally requires the UN-EXPANDED integer form. */
+function answerPredicateReferenceMatches(
+  predicate: MechanicsPredicate,
+  referenced: MechanicsInput | undefined
+): boolean {
+  const expectedKind = answerPredicateKind(predicate);
+  if (!expectedKind) return true;
+  if (referenced?.kind !== expectedKind) return false;
+  return !(referenced.kind === "integer" && referenced.expansion !== undefined);
+}
+
 function selectorInputReference(
   selector: MechanicsEntitySelector
 ): StepInputReference | null {
@@ -682,9 +694,13 @@ function programSemantics(program: MechanicsProgram): boolean {
           const value = /^input\.(.+)\.value$/.exec(bindingId);
           if (value?.[1] !== undefined) {
             const integerInputId = value[1];
+            // An EXPANDED integer input has one value per entity slot, so the
+            // single-value binding is only lawful for the un-expanded form.
             return !phase.inputs.some(
               (candidate) =>
-                candidate.kind === "integer" && candidate.inputId === integerInputId
+                candidate.kind === "integer" &&
+                candidate.inputId === integerInputId &&
+                candidate.expansion === undefined
             );
           }
           return true;
@@ -736,6 +752,11 @@ function programSemantics(program: MechanicsProgram): boolean {
           (inputs.get(input.expansion.inputId)?.kind !== "entities" ||
             (inputIndex.get(input.expansion.inputId) ?? Number.POSITIVE_INFINITY) >=
               index)) ||
+        (input.kind === "integer" &&
+          input.expansion !== undefined &&
+          (inputs.get(input.expansion.inputId)?.kind !== "entities" ||
+            (inputIndex.get(input.expansion.inputId) ?? Number.POSITIVE_INFINITY) >=
+              index)) ||
         (input.kind === "dice" &&
           input.expansion.kind !== "single" &&
           (inputs.get(input.expansion.inputId)?.kind !==
@@ -761,9 +782,8 @@ function programSemantics(program: MechanicsProgram): boolean {
         !collectPredicateReferences(input.when, (predicate) => {
           const expectedKind = answerPredicateKind(predicate);
           if (!expectedKind || !("inputId" in predicate)) return true;
-          const referenced = inputs.get(predicate.inputId);
           return (
-            referenced?.kind === expectedKind &&
+            answerPredicateReferenceMatches(predicate, inputs.get(predicate.inputId)) &&
             (inputIndex.get(predicate.inputId) ?? Number.POSITIVE_INFINITY) < index
           );
         })
@@ -829,6 +849,23 @@ function programSemantics(program: MechanicsProgram): boolean {
         ) {
           return false;
         }
+        const integerInput =
+          amountSpec.kind === "integer-input"
+            ? inputs.get(amountSpec.inputId)
+            : undefined;
+        if (
+          amountSpec.kind === "integer-input" &&
+          (integerInput?.kind !== "integer" ||
+            (amountSpec.cardinality === "shared" &&
+              integerInput.expansion !== undefined) ||
+            (amountSpec.cardinality === "per-target-request" &&
+              (integerInput.expansion === undefined ||
+                targetSelector === null ||
+                targetSelector.kind !== "input" ||
+                targetSelector.inputId !== integerInput.expansion.inputId)))
+        ) {
+          return false;
+        }
         if (
           amountSpec.kind !== "integer" &&
           !validAmountTransform(amountSpec.transform)
@@ -857,7 +894,10 @@ function programSemantics(program: MechanicsProgram): boolean {
         !collectPredicateReferences(step.when, (predicate) => {
           const expectedKind = answerPredicateKind(predicate);
           if (expectedKind && "inputId" in predicate) {
-            return inputs.get(predicate.inputId)?.kind === expectedKind;
+            return answerPredicateReferenceMatches(
+              predicate,
+              inputs.get(predicate.inputId)
+            );
           }
           if (predicate.kind === "register") return registerIds.has(predicate.registerId);
           if (predicate.kind === "phase-executions") {

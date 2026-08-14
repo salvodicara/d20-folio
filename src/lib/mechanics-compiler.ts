@@ -820,6 +820,37 @@ function locateInventoryCopy(
     : null;
 }
 
+/**
+ * Namespace an authored turn-claim's NEW-claim identities by root generation
+ * and phase execution: each USE of a program claims fresh ledger identity (so
+ * a second capped use in the same turn genuinely re-claims and can reject),
+ * while a REPLAY of the same use re-issues the identical claim and stays
+ * idempotent under the reducer's duplicate affordance. Reference fields that
+ * name claims made elsewhere are never rewritten.
+ */
+function rootScopedTurnClaim(
+  claim: Readonly<Extract<MechanicsStep, { readonly kind: "turn-claim" }>["claim"]>,
+  root: Readonly<OccurrenceGenerationRef>,
+  execution: number
+): typeof claim {
+  const scope = (id: string): string =>
+    `${root.occurrence.occurrenceId}.${execution}.${id}`;
+  if (claim.kind === "claim-action" && claim.action.kind === "attack") {
+    return {
+      ...claim,
+      action: {
+        ...claim.action,
+        firstAttack: {
+          ...claim.action.firstAttack,
+          claimId: scope(claim.action.firstAttack.claimId),
+        },
+      },
+      claimId: scope(claim.claimId),
+    };
+  }
+  return { ...claim, claimId: scope(claim.claimId) };
+}
+
 function rejected(
   reason: MechanicsFrameCompileRejection,
   phaseId: string | null,
@@ -1050,7 +1081,11 @@ export function compileMechanicsFrame(
   ) {
     return rejected("invalid-state", phaseId, null, "pending-frame");
   }
-  const preparation = prepareMechanicsProgramCompilation(input.reviewed, input.state);
+  const preparation = prepareMechanicsProgramCompilation(
+    input.reviewed,
+    input.state,
+    input.landedDamage ?? {}
+  );
   if (preparation.status === "replay") {
     return rejected("invalid-state", phaseId, null, "pending-frame-replay");
   }
@@ -1124,6 +1159,8 @@ export function compileMechanicsFrame(
 
   const operations: Readonly<MechanicsOperation>[] = [];
   const syntheticFacts: Readonly<ActionFactGuard>[] = [];
+  /** This segment's landed-damage contribution (per damage step, per part). */
+  const segmentLanded: Record<string, Record<string, number>> = {};
 
   /**
    * The exact {bindings, spec} for one physical resource: the caller-guarded
@@ -1347,6 +1384,7 @@ export function compileMechanicsFrame(
       consequences: [],
       emissions: [],
       endRequests,
+      landed: segmentLanded,
       manual,
       state: advanced.value,
       trace,
@@ -1389,6 +1427,7 @@ export function compileMechanicsFrame(
       consequences: simulation.consequences,
       emissions: deriveMechanicsPostEventEmissions(simulation.stages),
       endRequests: [],
+      landed: segmentLanded,
       manual: [],
       state: advanced.value,
       trace: [
@@ -1433,6 +1472,7 @@ export function compileMechanicsFrame(
       consequences: simulation.consequences,
       emissions: deriveMechanicsPostEventEmissions(simulation.stages),
       endRequests: [],
+      landed: {},
       manual: [],
       state: simulation.state,
       trace: [],
@@ -1800,7 +1840,7 @@ export function compileMechanicsFrame(
         {
           causeId: rootCause.causeId,
           combatant,
-          command: step.claim,
+          command: rootScopedTurnClaim(step.claim, receipt.root, context.execution),
           kind: "turn-economy-transition",
           operationId: operationId(input, step.stepId, 1, "turn-economy-transition"),
           projection,
@@ -2088,6 +2128,13 @@ export function compileMechanicsFrame(
     if (isVitalityStep(step)) {
       const slots = vitalitySlots(step, context, cursor.nextSlot);
       if (!slots) return rejected("unresolved-step", phaseId, step.stepId, "targets");
+      if (step.kind === "damage") {
+        // An EXECUTED damage step always publishes a landed record — zero when
+        // nothing landed — so a later `landed-damage` amount reads an exact 0
+        // instead of an unresolvable absence (an all-miss Vampiric Touch).
+        const zeroed = (segmentLanded[step.stepId] ??= {});
+        for (const part of step.parts) zeroed[part.partId] ??= 0;
+      }
       const anchors = input.reviewed.intent.frame.authority.anchors;
       const guardSources = [...input.reviewed.intent.factGuards, ...input.facts];
       const vitalityId = (slot: number, kind: string): string =>
@@ -2155,6 +2202,36 @@ export function compileMechanicsFrame(
           }
           if (!resolution || resolution.kind !== "resolved") {
             return rejected("unresolved-step", phaseId, step.stepId, "damage");
+          }
+          {
+            // Record this slot's landed per-part net amounts. A single-part
+            // table override replaces the computed net exactly; a multi-part
+            // override keeps the computed per-part truth (no exact per-part
+            // attribution exists for it, and no transcribed leech spell has
+            // multi-part damage).
+            const landedRecord = (segmentLanded[step.stepId] ??= {});
+            const resolvedDamage = resolution.resolution;
+            const overriddenPart =
+              resolvedDamage.effective.kind === "net-total" &&
+              resolvedDamage.computed.parts.length === 1
+                ? resolvedDamage.computed.parts[0]
+                : undefined;
+            const contributions =
+              overriddenPart !== undefined &&
+              resolvedDamage.effective.kind === "net-total"
+                ? [
+                    {
+                      amount: resolvedDamage.effective.amount,
+                      partId: overriddenPart.partId,
+                    },
+                  ]
+                : resolvedDamage.computed.parts.map((part) => ({
+                    amount: part.netAmount,
+                    partId: part.partId,
+                  }));
+            for (const { amount, partId } of contributions) {
+              landedRecord[partId] = (landedRecord[partId] ?? 0) + amount;
+            }
           }
           const maximumValue = guardedMaximumHitPoints(guardSources, target);
           const maximumHitPoints =

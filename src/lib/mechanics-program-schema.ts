@@ -96,11 +96,23 @@ export const MECHANICS_ANSWERS_SCHEMA = arraySchema(
       inputId: ID_SCHEMA,
       kind: literalSchema("choice"),
     }),
-    integer: objectSchema({
-      inputId: ID_SCHEMA,
-      kind: literalSchema("integer"),
-      value: SIGNED_INTEGER_SCHEMA,
-    }),
+    integer: objectSchema(
+      {
+        inputId: ID_SCHEMA,
+        kind: literalSchema("integer"),
+      },
+      {
+        /** One chosen value per request of an entity-EXPANDED integer input
+         *  (the pool-split law); exactly one of `value`/`requests` answers. */
+        requests: arraySchema(
+          objectSchema({
+            identity: REQUEST_IDENTITY_SCHEMA,
+            value: SIGNED_INTEGER_SCHEMA,
+          })
+        ),
+        value: SIGNED_INTEGER_SCHEMA,
+      }
+    ),
     boolean: objectSchema({
       inputId: ID_SCHEMA,
       kind: literalSchema("boolean"),

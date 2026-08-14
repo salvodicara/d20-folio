@@ -1171,6 +1171,19 @@ export function reduceTurnEconomy(
     case "record-manual-boundary": {
       const duplicate = duplicateResult(state, command, command.claimId);
       if (duplicate) return duplicate;
+      // A manual boundary is a once-per-turn recorded fact: re-recording the
+      // SAME boundary under a NEW claim is exactly a per-turn cap violation
+      // (a program's second use this turn), while the identical claim above
+      // stays the idempotent replay affordance.
+      if (
+        state.manualBoundaries.some(
+          (entry) =>
+            entry.authority === command.authority &&
+            entry.boundaryId === command.boundaryId
+        )
+      ) {
+        return reject("manual-boundary-recorded");
+      }
       return planned(
         state,
         {

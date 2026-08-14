@@ -60,13 +60,13 @@
     {
       "clauses": [
         {
-          "clauseId": "economy",
-          "detail": "table-spends-free",
-          "status": "table"
+          "clauseId": "per-turn-cap",
+          "detail": "manual-boundary-claim",
+          "status": "automated"
         },
         {
-          "clauseId": "per-turn-cap",
-          "detail": "table-enforces-cap",
+          "clauseId": "economy",
+          "detail": "table-spends-free",
           "status": "table"
         },
         {
@@ -143,11 +143,6 @@
     {
       "clauses": [
         {
-          "clauseId": "grant-die",
-          "detail": "granted-die-pending",
-          "status": "unsupported"
-        },
-        {
           "clauseId": "economy",
           "detail": "table-spends-bonus",
           "status": "table"
@@ -161,9 +156,19 @@
           "clauseId": "targeting",
           "detail": null,
           "status": "automated"
+        },
+        {
+          "clauseId": "grant-die",
+          "detail": "standing-die-fact-one-hour",
+          "status": "automated"
+        },
+        {
+          "clauseId": "grant-die-use",
+          "detail": "player-applies-die-by-design",
+          "status": "table"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "action:bard-bardic-inspiration:0"
     },
     {
@@ -479,24 +484,34 @@
     {
       "clauses": [
         {
-          "clauseId": "alternate-cost",
-          "detail": "cost-choice-pending",
-          "status": "unsupported"
-        },
-        {
           "clauseId": "economy",
           "detail": "table-spends-action",
           "status": "table"
         },
         {
+          "clauseId": "cost-choice",
+          "detail": "player-picks-payment",
+          "status": "automated"
+        },
+        {
           "clauseId": "tracker-payment",
-          "detail": null,
+          "detail": "chosen-of-two-costs",
+          "status": "automated"
+        },
+        {
+          "clauseId": "alternate-cost",
+          "detail": "chosen-of-two-costs",
           "status": "automated"
         },
         {
           "clauseId": "targeting",
           "detail": null,
           "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
         }
       ],
       "executable": false,
@@ -624,49 +639,59 @@
     {
       "clauses": [
         {
-          "clauseId": "check-bonus",
-          "detail": "check-flow-pending",
-          "status": "unsupported"
-        },
-        {
           "clauseId": "economy",
           "detail": "table-spends-free",
           "status": "table"
         },
         {
-          "clauseId": "tracker-payment",
+          "clauseId": "targeting",
           "detail": null,
           "status": "automated"
         },
         {
-          "clauseId": "targeting",
+          "clauseId": "check-bonus-roll",
           "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "check-bonus",
+          "detail": "die-added-to-failed-check",
+          "status": "automated"
+        },
+        {
+          "clauseId": "check-outcome",
+          "detail": "table-adjudicates-final-check",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": "debited-only-on-turned-success",
           "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "action:fighter-tactical-mind:0"
     },
     {
       "clauses": [
         {
           "clauseId": "attack-sequence",
-          "detail": "attack-flow-pending",
+          "detail": "session-attack-profile-pending",
           "status": "unsupported"
         },
         {
+          "clauseId": "per-turn-cap",
+          "detail": "turn-slot-claim",
+          "status": "automated"
+        },
+        {
           "clauseId": "economy",
-          "detail": "table-spends-bonus",
-          "status": "table"
+          "detail": "kernel-claims-bonus",
+          "status": "automated"
         },
         {
           "clauseId": "turn-prerequisite",
           "detail": "table-verifies-prerequisite",
-          "status": "table"
-        },
-        {
-          "clauseId": "per-turn-cap",
-          "detail": "table-enforces-cap",
           "status": "table"
         },
         {
@@ -681,11 +706,6 @@
     {
       "clauses": [
         {
-          "clauseId": "tracker-topup",
-          "detail": "topup-flow-pending",
-          "status": "unsupported"
-        },
-        {
           "clauseId": "economy",
           "detail": "table-spends-free",
           "status": "table"
@@ -701,8 +721,13 @@
           "status": "automated"
         },
         {
+          "clauseId": "tracker-topup",
+          "detail": "full-recovery-now",
+          "status": "automated"
+        },
+        {
           "clauseId": "healing",
-          "detail": "dice:classSpecific:martialArtsDie",
+          "detail": "session-class-die-unresolved",
           "status": "unsupported"
         }
       ],
@@ -713,7 +738,7 @@
       "clauses": [
         {
           "clauseId": "attack-sequence",
-          "detail": "attack-flow-pending",
+          "detail": "session-attack-profile-pending",
           "status": "unsupported"
         },
         {
@@ -774,9 +799,14 @@
           "status": "automated"
         },
         {
-          "clauseId": "temporary-hit-points",
-          "detail": "die:classSpecific:martialArtsDie",
-          "status": "unsupported"
+          "clauseId": "temporary-hit-points-locked",
+          "detail": "below-unlock-level",
+          "status": "narrative"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
         }
       ],
       "executable": false,
@@ -833,7 +863,7 @@
       "clauses": [
         {
           "clauseId": "damage-reduction",
-          "detail": "reaction-flow-pending",
+          "detail": "reaction-runtime-pending",
           "status": "unsupported"
         },
         {
@@ -858,6 +888,11 @@
     {
       "clauses": [
         {
+          "clauseId": "per-turn-cap",
+          "detail": "manual-boundary-claim",
+          "status": "automated"
+        },
+        {
           "clauseId": "economy",
           "detail": "table-spends-free",
           "status": "table"
@@ -865,11 +900,6 @@
         {
           "clauseId": "turn-prerequisite",
           "detail": "table-verifies-prerequisite",
-          "status": "table"
-        },
-        {
-          "clauseId": "per-turn-cap",
-          "detail": "table-enforces-cap",
           "status": "table"
         },
         {
@@ -889,12 +919,12 @@
         },
         {
           "clauseId": "attack-damage-type",
-          "detail": "level-scaled-type-choices-pending",
+          "detail": "level-scaled-type-choices-need-session-level",
           "status": "unsupported"
         },
         {
           "clauseId": "attack-dice",
-          "detail": "level-scaled-die-face-pending",
+          "detail": "level-scaled-die-face-needs-session-level",
           "status": "unsupported"
         },
         {
@@ -1018,7 +1048,7 @@
         },
         {
           "clauseId": "healing",
-          "detail": "dice:classSpecific:martialArtsDie",
+          "detail": "session-class-die-unresolved",
           "status": "unsupported"
         }
       ],
@@ -1354,11 +1384,6 @@
     {
       "clauses": [
         {
-          "clauseId": "skill-check",
-          "detail": "check-flow-pending",
-          "status": "unsupported"
-        },
-        {
           "clauseId": "economy",
           "detail": "table-spends-bonus",
           "status": "table"
@@ -1367,22 +1392,42 @@
           "clauseId": "targeting",
           "detail": null,
           "status": "automated"
+        },
+        {
+          "clauseId": "skill-check",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "skill-check-adjudication",
+          "detail": "vs-authored-dc",
+          "status": "automated"
+        },
+        {
+          "clauseId": "condition-gate",
+          "detail": "on-passed-check",
+          "status": "automated"
+        },
+        {
+          "clauseId": "condition-invisible-lifetime",
+          "detail": "table-owned-end",
+          "status": "table"
+        },
+        {
+          "clauseId": "condition-invisible",
+          "detail": null,
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "action:rogue-cunning-action:hide"
     },
     {
       "clauses": [
         {
-          "clauseId": "next-attack-advantage",
-          "detail": "turn-fact-pending",
-          "status": "unsupported"
-        },
-        {
           "clauseId": "locks-movement",
-          "detail": "turn-fact-pending",
-          "status": "unsupported"
+          "detail": "speed-zero-table-owned",
+          "status": "table"
         },
         {
           "clauseId": "economy",
@@ -1393,9 +1438,19 @@
           "clauseId": "targeting",
           "detail": null,
           "status": "automated"
+        },
+        {
+          "clauseId": "next-attack-advantage",
+          "detail": "standing-until-turn-end",
+          "status": "automated"
+        },
+        {
+          "clauseId": "next-attack-advantage-use",
+          "detail": "player-applies-advantage-by-design",
+          "status": "table"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "action:rogue-steady-aim:0"
     },
     {
@@ -1746,15 +1801,15 @@
       "id": "action:dragonborn-draconic-flight:0"
     }
   ],
-  "executablePrograms": 42,
+  "executablePrograms": 45,
   "family": "feature-actions",
   "totalEntities": 231,
   "totals": {
     "table": 312,
-    "automated": 461,
-    "narrative": 173,
-    "unsupported": 26,
-    "physical-input": 16,
+    "automated": 475,
+    "narrative": 179,
+    "physical-input": 17,
+    "unsupported": 17,
     "spatial": 3
   }
 }

@@ -781,7 +781,9 @@ export type CombatConditionLifetime =
 export interface CombatConditionApplication {
   options: ConditionId[];
   max?: number;
-  on: "hit" | "failed-save" | "automatic";
+  /** `passed-check` gates on the SAME action's {@link SrdActionDef.skillCheck}
+   *  succeeding (Hide: a passed DC 15 Stealth check grants Invisible). */
+  on: "hit" | "failed-save" | "automatic" | "passed-check";
   /** Typed maximum lifetime for this exact condition occurrence. Early exits
    * (repeat saves, damage, assistance, leaving an area) remain explicit table
    * corrections because this companion cannot observe them. */
@@ -1295,6 +1297,19 @@ export interface SrdSpellData {
   targeting?: CombatTargeting;
   /** Healing semantics that are not an ordinary rolled amount. */
   healingMode?: "full" | "consumable";
+  /**
+   * The conjured consumable batch a `healingMode: "consumable"` spell creates
+   * (Goodberry: 10 berries, each healing {@link healDice} when eaten, potent
+   * for 24 hours). `itemId` names the closed conjured-item blueprint the
+   * mechanics compiler instantiates (`src/data/conjured-items.ts`); the batch
+   * expires after `lifetimeHours`. Set exactly when `healingMode` is
+   * `"consumable"`.
+   */
+  consumableItem?: {
+    itemId: string;
+    count: number;
+    lifetimeHours: number;
+  };
   /** One rolled/flat amount divided among the selected targets (Mass Heal). */
   healingPool?: number;
   /** One temporary-HP pool divided among selected targets (Power Word Fortify). */

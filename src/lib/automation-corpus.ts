@@ -153,6 +153,7 @@ const SPELL_FIELDS: Readonly<Record<string, FieldRule>> = {
   conditionApplication: compiled("action"),
   targeting: compiled("action"),
   healingMode: compiled("action"),
+  consumableItem: compiled("action"),
   healingPool: compiled("action"),
   tempHpPool: compiled("action"),
   selfHealingFromDamage: compiled("action"),

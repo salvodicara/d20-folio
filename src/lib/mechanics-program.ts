@@ -232,6 +232,7 @@ function conformMechanicsAnswers(value: unknown): Readonly<MechanicsAnswers> | n
     answers.every(
       (answer) =>
         (answer.kind !== "entities" || answer.targets.length <= MAX_TARGETS) &&
+        (answer.kind !== "integer" || (answer.requests?.length ?? 0) <= MAX_TARGETS) &&
         ((answer.kind !== "d20" && answer.kind !== "dice") ||
           (answer.requests.length <= MAX_TARGETS &&
             answer.requests.every((request) => request.payments.length <= MAX_PAYMENTS)))
@@ -704,7 +705,9 @@ function resolvedAnswerBindings(
   for (const answer of Object.values(resolved)) {
     if (answer.kind === "resource" && answer.resource.kind === "standard-spell-slot") {
       bindings[`input.${answer.inputId}.level`] = answer.resource.level;
-    } else if (answer.kind === "integer") {
+    } else if (answer.kind === "integer" && answer.value !== undefined) {
+      // Entity-EXPANDED integer answers carry one value per request and bind
+      // nothing here; steps read them through the `integer-input` amount spec.
       bindings[`input.${answer.inputId}.value`] = answer.value;
     }
   }
@@ -1415,7 +1418,8 @@ export function refreshMechanicsProgramProjectedCompilationContext(
 /** Re-review the exact causal basis once and distinguish replay before compiling. */
 export function prepareMechanicsProgramCompilation(
   reviewedValue: Readonly<ReviewedMechanicsIntent>,
-  stateValue: unknown
+  stateValue: unknown,
+  landedDamage: Readonly<Record<string, Readonly<Record<string, number>>>> = {}
 ): Readonly<MechanicsProgramCompilationPreparation> {
   if (typeof reviewedValue !== "object" || !Object.isFrozen(reviewedValue)) {
     return freezeDeep({
@@ -1457,7 +1461,11 @@ export function prepareMechanicsProgramCompilation(
       });
     }
   }
-  const context = refreshMechanicsProgramCompilationContext(reviewedValue, state.value);
+  const context = refreshMechanicsProgramCompilationContext(
+    reviewedValue,
+    state.value,
+    landedDamage
+  );
   return context
     ? freezeDeep({ context, state: state.value, status: "ready" as const })
     : freezeDeep({
@@ -1598,7 +1606,9 @@ function evaluatePredicate(
     case "answer-integer": {
       const answer = context.resolved[predicate.inputId];
       const value = predicateExpression(predicate.value, context);
-      return answer?.kind === "integer" && value !== null
+      // Entity-expanded integer answers carry no single value; the authoring
+      // conformer already rejects predicates over them (fail closed here).
+      return answer?.kind === "integer" && answer.value !== undefined && value !== null
         ? comparison(answer.value, predicate.comparison, value)
         : null;
     }
@@ -1814,6 +1824,22 @@ export function resolveMechanicsProgramAmount(
     return amount === undefined
       ? null
       : transformedInputAmount(amount, spec.transform, context.bindings);
+  }
+  if (spec.kind === "integer-input") {
+    const chosen = context.resolved[spec.inputId];
+    if (chosen?.kind !== "integer") return null;
+    if (spec.cardinality === "shared") {
+      return chosen.value === undefined
+        ? null
+        : transformedInputAmount(chosen.value, spec.transform, context.bindings);
+    }
+    if (chosen.value !== undefined || identity === null) return null;
+    const request = chosen.requests.find(({ identity: candidate }) =>
+      exactEqual(candidate, identity)
+    );
+    return request
+      ? transformedInputAmount(request.value, spec.transform, context.bindings)
+      : null;
   }
   const answer = context.resolved[spec.inputId];
   if (answer?.kind !== "dice") return null;
@@ -2054,9 +2080,37 @@ function requirementForInput(
     case "integer": {
       const minimum = evaluateIntegerExpression(input.minimum, context.bindings);
       const maximum = evaluateIntegerExpression(input.maximum, context.bindings);
-      return minimum !== null && maximum !== null && minimum <= maximum
-        ? { ...base, kind: "integer", maximum, minimum }
-        : null;
+      if (minimum === null || maximum === null || minimum > maximum) return null;
+      if (input.expansion === undefined) {
+        return { ...base, kind: "integer", maximum, minimum };
+      }
+      const totalMaximum =
+        input.totalMaximum === undefined
+          ? null
+          : evaluateIntegerExpression(input.totalMaximum, context.bindings);
+      if (input.totalMaximum !== undefined && totalMaximum === null) return null;
+      const source = context.resolved[input.expansion.inputId];
+      if (!source) {
+        return {
+          ...base,
+          kind: "integer",
+          maximum,
+          minimum,
+          pendingEntityInputId: input.expansion.inputId,
+          requests: [],
+          totalMaximum,
+        };
+      }
+      if (source.kind !== "entities") return null;
+      return {
+        ...base,
+        kind: "integer",
+        maximum,
+        minimum,
+        pendingEntityInputId: null,
+        requests: requestIdentities(source.targets).map((identity) => ({ identity })),
+        totalMaximum,
+      };
     }
     case "boolean":
       return { ...base, kind: "boolean" };
@@ -2446,12 +2500,46 @@ function resolveAnswer(
       return answer.kind === "choice" && requirement.options.includes(answer.choiceId)
         ? { choiceId: answer.choiceId, inputId: answer.inputId, kind: "choice" }
         : null;
-    case "integer":
-      return answer.kind === "integer" &&
-        answer.value >= requirement.minimum &&
-        answer.value <= requirement.maximum
-        ? { inputId: answer.inputId, kind: "integer", value: answer.value }
-        : null;
+    case "integer": {
+      if (answer.kind !== "integer") return null;
+      if (requirement.requests === undefined) {
+        return answer.requests === undefined &&
+          answer.value !== undefined &&
+          answer.value >= requirement.minimum &&
+          answer.value <= requirement.maximum
+          ? { inputId: answer.inputId, kind: "integer", value: answer.value }
+          : null;
+      }
+      if (
+        (requirement.pendingEntityInputId ?? null) !== null ||
+        answer.value !== undefined ||
+        answer.requests === undefined ||
+        answer.requests.length !== requirement.requests.length
+      ) {
+        return null;
+      }
+      const requests: { identity: MechanicsRequestIdentity; value: number }[] = [];
+      let total = 0;
+      for (let index = 0; index < requirement.requests.length; index += 1) {
+        const expected = requirement.requests[index];
+        const supplied = answer.requests[index];
+        if (!expected || !supplied || !exactEqual(supplied.identity, expected.identity)) {
+          return null;
+        }
+        if (
+          supplied.value < requirement.minimum ||
+          supplied.value > requirement.maximum
+        ) {
+          return null;
+        }
+        total += supplied.value;
+        if (!Number.isSafeInteger(total)) return null;
+        requests.push({ identity: expected.identity, value: supplied.value });
+      }
+      const totalMaximum = requirement.totalMaximum ?? null;
+      if (totalMaximum !== null && total > totalMaximum) return null;
+      return { inputId: answer.inputId, kind: "integer", requests };
+    }
     case "boolean":
       return answer.kind === "boolean"
         ? { inputId: answer.inputId, kind: "boolean", value: answer.value }
@@ -2568,19 +2656,23 @@ function reviewMechanicsIntentValidated(
     if (
       (exactRequirement.kind === "d20" &&
         exactRequirement.pendingEntityInputId !== null) ||
-      (exactRequirement.kind === "dice" && exactRequirement.pendingInputId !== null)
+      (exactRequirement.kind === "dice" && exactRequirement.pendingInputId !== null) ||
+      (exactRequirement.kind === "integer" &&
+        (exactRequirement.pendingEntityInputId ?? null) !== null)
     ) {
       return reviewRejected(
         "invalid-requirement",
-        exactRequirement.kind === "d20"
-          ? exactRequirement.pendingEntityInputId
+        exactRequirement.kind === "d20" || exactRequirement.kind === "integer"
+          ? (exactRequirement.pendingEntityInputId ?? null)
           : exactRequirement.pendingInputId
       );
     }
     // A roll requirement whose expansion produced zero requests carries zero
     // physical information — it resolves itself without consuming an answer
     // (an outcome-expanded damage roll after an all-miss attack). An explicit
-    // empty answer for it is still accepted through the ordinary path.
+    // empty answer for it is still accepted through the ordinary path. An
+    // entity-expanded integer requirement with zero chosen targets resolves
+    // the same way.
     if (
       (exactRequirement.kind === "d20" || exactRequirement.kind === "dice") &&
       exactRequirement.requests.length === 0 &&
@@ -2590,6 +2682,16 @@ function reviewMechanicsIntentValidated(
         exactRequirement.kind === "d20"
           ? { inputId: input.inputId, kind: "d20", requests: [] }
           : { inputId: input.inputId, kind: "dice", requests: [] };
+      refreshContextBindings();
+      continue;
+    }
+    if (
+      exactRequirement.kind === "integer" &&
+      exactRequirement.requests !== undefined &&
+      exactRequirement.requests.length === 0 &&
+      answer?.inputId !== input.inputId
+    ) {
+      resolved[input.inputId] = { inputId: input.inputId, kind: "integer", requests: [] };
       refreshContextBindings();
       continue;
     }

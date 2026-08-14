@@ -16,6 +16,9 @@ import {
 } from "@/lib/mechanics-world-store";
 
 import { runMechanicsCausalAction } from "@/lib/mechanics-coordinator";
+import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
+import { CONJURED_ITEM_BLUEPRINTS, CONJURED_ITEM_PROGRAMS } from "@/data/conjured-items";
+import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
 import { mechanicsAuthorityDefinitionFingerprint } from "@/lib/mechanics-authority";
 import {
   mechanicsDefinitionFactAddress,
@@ -1453,4 +1456,529 @@ describe("mechanics world store", () => {
       expect(miss.committed.world.vitals.hitPoints.current).toBe(25);
     }
   );
+});
+
+describe("corpus endgame e2e", () => {
+  /** A high-level single-class doc (9th-level slots) with clean usage. */
+  const endgameDoc = (session: Partial<CharacterDoc["session"]> = {}): CharacterDoc => ({
+    ...MOCK_CHARACTER,
+    character: {
+      ...MOCK_CHARACTER.character,
+      classes: [{ classId: "bard", level: 17, subclassId: "college-of-lore" }],
+    },
+    session: {
+      ...MOCK_CHARACTER.session,
+      hp: { ...MOCK_CHARACTER.session.hp, current: 50, temp: 0 },
+      spellSlots: {},
+      trackers: {},
+      ...session,
+    },
+  });
+
+  /** Generic answer factory: entities/self, d20 by face, dice by face. */
+  const answersBy = (opts: {
+    readonly d20Face?: number;
+    readonly diceFace?: number;
+    readonly booleans?: Readonly<Record<string, boolean>>;
+    readonly integers?: Readonly<Record<string, readonly number[]>>;
+    readonly self: ReturnType<typeof characterSelfRef>;
+    readonly slotLevel?: number;
+    readonly targets?: number;
+    readonly uid: string;
+    readonly doc: CharacterDoc;
+  }) => {
+    return (requirement: MechanicsRequirement): MechanicsAnswer => {
+      if (requirement.kind === "resource") {
+        return {
+          inputId: requirement.inputId,
+          kind: "resource",
+          resource: {
+            character: characterMaterialRef(opts.doc, opts.uid),
+            kind: "standard-spell-slot",
+            level: opts.slotLevel ?? 1,
+          },
+        };
+      }
+      if (requirement.kind === "entities") {
+        return {
+          inputId: requirement.inputId,
+          kind: "entities",
+          targets: Array.from({ length: opts.targets ?? 1 }, () => opts.self),
+        };
+      }
+      if (requirement.kind === "boolean") {
+        return {
+          inputId: requirement.inputId,
+          kind: "boolean",
+          value: opts.booleans?.[requirement.inputId] ?? true,
+        };
+      }
+      if (requirement.kind === "integer") {
+        const values = opts.integers?.[requirement.inputId];
+        if (values === undefined || requirement.requests === undefined) {
+          throw new Error(`unexpected integer requirement: ${requirement.inputId}`);
+        }
+        return {
+          inputId: requirement.inputId,
+          kind: "integer",
+          requests: requirement.requests.map(({ identity }, index) => ({
+            identity,
+            value: values[index] ?? 0,
+          })),
+        };
+      }
+      if (requirement.kind === "d20") {
+        return {
+          inputId: requirement.inputId,
+          kind: "d20",
+          requests: requirement.requests.map(({ identity, review }) => ({
+            identity,
+            observation: {
+              d20: {
+                aggregates: [],
+                trails: trailIdsOf(review).map((trailId) => ({
+                  initialFace: opts.d20Face ?? 10,
+                  steps: [],
+                  trailId,
+                })),
+              },
+              enteredModifiers: [],
+              tableOverride: null,
+            },
+            payments: [],
+          })),
+        };
+      }
+      if (requirement.kind === "dice") {
+        return {
+          inputId: requirement.inputId,
+          kind: "dice",
+          requests: requirement.requests.map(({ identity, roll }) => ({
+            identity,
+            observation: {
+              aggregates: [],
+              trails: trailIdsOf(roll).map((trailId) => ({
+                initialFace: opts.diceFace ?? 4,
+                steps: [],
+                trailId,
+              })),
+            },
+            payments: [],
+          })),
+        };
+      }
+      throw new Error(`unexpected requirement: ${requirement.kind}`);
+    };
+  };
+
+  const spellCapabilityOrThrow = (
+    doc: CharacterDoc,
+    spellId: string,
+    derived: Parameters<typeof characterSpellCapability>[3]
+  ): CharacterCastCapability => {
+    const capability = characterSpellCapability(doc, "test-uid", spellId, derived);
+    if (!capability) throw new Error(`${spellId}: no capability`);
+    return capability;
+  };
+
+  it("greater restoration removes one exhaustion level and mirrors the legacy session", () => {
+    const doc = endgameDoc({ exhaustion: 3 });
+    const world = characterWorldState(doc, "test-uid", 60);
+    if (!world) throw new Error("world fixture");
+    expect(world.exhaustion).toBe(3);
+    const capability = spellCapabilityOrThrow(doc, "greater-restoration", {
+      attackBonus: 0,
+      castingModifier: 4,
+      characterLevel: 17,
+      maxHp: 60,
+      saveDc: 15,
+    });
+    const self = characterSelfRef(doc, "test-uid");
+    const outcome = driveCapability({
+      actionId: "cast-greater-restoration",
+      answerFor: answersBy({ doc, self, slotLevel: 5, uid: "test-uid" }),
+      capability: {
+        ...capability,
+        facts: [
+          ...capability.facts,
+          ...characterSlotDefinitionFacts(doc, "test-uid", world),
+        ],
+      },
+      doc,
+      occurrenceId: "greater-restoration-1",
+      uid: "test-uid",
+      world,
+    });
+    const committed = commitDriven(doc, "test-uid", world, outcome);
+    expect(committed.world.exhaustion).toBe(2);
+    expect(committed.session.exhaustion).toBe(2);
+    expect(committed.world.resources.standardSpellSlots["5"]?.current).toBe(
+      (world.resources.standardSpellSlots["5"]?.current ?? 0) - 1
+    );
+  });
+
+  it("divine smite lands its base dice plus the confirmed creature-type bonus", () => {
+    const doc = endgameDoc();
+    const world = characterWorldState(doc, "test-uid", 60);
+    if (!world) throw new Error("world fixture");
+    const capability = spellCapabilityOrThrow(doc, "divine-smite", {
+      attackBonus: 0,
+      castingModifier: 3,
+      characterLevel: 17,
+      maxHp: 60,
+      saveDc: 15,
+    });
+    const self = characterSelfRef(doc, "test-uid");
+    const outcome = driveCapability({
+      actionId: "cast-divine-smite",
+      answerFor: answersBy({
+        booleans: { "bonus-type-confirm": true },
+        doc,
+        self,
+        slotLevel: 1,
+        uid: "test-uid",
+      }),
+      capability: {
+        ...capability,
+        facts: [
+          ...capability.facts,
+          ...characterSlotDefinitionFacts(doc, "test-uid", world),
+        ],
+      },
+      doc,
+      occurrenceId: "divine-smite-1",
+      uid: "test-uid",
+      world,
+    });
+    const committed = commitDriven(doc, "test-uid", world, outcome);
+    // 2d8 base (2 x 4) plus the confirmed 1d8 undead/fiend bonus (4): 50 - 12.
+    expect(committed.world.vitals.hitPoints.current).toBe(38);
+  });
+
+  // Two full coordinator drives (hit and miss) over the replay protocol;
+  // headroom mirrors the weapon-attack proof above.
+  it(
+    "vampiric touch heals the caster half the necrotic damage it landed",
+    { timeout: 30000 },
+    () => {
+      const doc = endgameDoc();
+      const world = characterWorldState(doc, "test-uid", 60);
+      if (!world) throw new Error("world fixture");
+      const capability = spellCapabilityOrThrow(doc, "vampiric-touch", {
+        attackBonus: 5,
+        castingModifier: 4,
+        characterLevel: 17,
+        maxHp: 60,
+        saveDc: 15,
+        targetArmorClass: 15,
+      });
+      const self = characterSelfRef(doc, "test-uid");
+      const drive = (d20Face: number, occurrenceId: string) =>
+        commitDriven(
+          doc,
+          "test-uid",
+          world,
+          driveCapability({
+            actionId: `cast-${occurrenceId}`,
+            answerFor: answersBy({
+              d20Face,
+              doc,
+              self,
+              slotLevel: 3,
+              uid: "test-uid",
+            }),
+            capability: {
+              ...capability,
+              facts: [
+                ...capability.facts,
+                ...characterSlotDefinitionFacts(doc, "test-uid", world),
+              ],
+            },
+            doc,
+            occurrenceId,
+            uid: "test-uid",
+            world,
+          })
+        );
+      // Hit (12 + 5 vs AC 15): 3d6 necrotic lands 12, the caster leeches
+      // floor(12 / 2) = 6 back in the same action: 50 - 12 + 6 = 44.
+      expect(drive(12, "vampiric-hit").world.vitals.hitPoints.current).toBe(44);
+      // Miss (3 + 5): the zero-filled landed ledger heals exactly nothing.
+      expect(drive(3, "vampiric-miss").world.vitals.hitPoints.current).toBe(50);
+    }
+  );
+
+  it("mass heal splits the chosen pool portions across the target slots", () => {
+    const doc = endgameDoc({
+      hp: { ...MOCK_CHARACTER.session.hp, current: 12, temp: 0 },
+    });
+    const world = characterWorldState(doc, "test-uid", 60);
+    if (!world) throw new Error("world fixture");
+    expect(world.resources.standardSpellSlots["9"]?.current).toBeGreaterThan(0);
+    const capability = spellCapabilityOrThrow(doc, "mass-heal", {
+      attackBonus: 0,
+      castingModifier: 4,
+      characterLevel: 17,
+      maxHp: 60,
+      saveDc: 15,
+    });
+    const self = characterSelfRef(doc, "test-uid");
+    const outcome = driveCapability({
+      actionId: "cast-mass-heal",
+      answerFor: answersBy({
+        doc,
+        integers: { portions: [13, 20] },
+        self,
+        slotLevel: 9,
+        targets: 2,
+        uid: "test-uid",
+      }),
+      capability: {
+        ...capability,
+        facts: [
+          ...capability.facts,
+          ...characterSlotDefinitionFacts(doc, "test-uid", world),
+        ],
+      },
+      doc,
+      occurrenceId: "mass-heal-1",
+      uid: "test-uid",
+      world,
+    });
+    const committed = commitDriven(doc, "test-uid", world, outcome);
+    // Two slot identities of the same creature: 12 + 13 + 20 = 45.
+    expect(committed.world.vitals.hitPoints.current).toBe(45);
+  });
+
+  it("geas scales the charmed lifetime by the chosen slot level", () => {
+    const doc = endgameDoc();
+    const world = characterWorldState(doc, "test-uid", 60);
+    if (!world) throw new Error("world fixture");
+    const capability = spellCapabilityOrThrow(doc, "geas", {
+      attackBonus: 0,
+      castingModifier: 4,
+      characterLevel: 17,
+      maxHp: 60,
+      saveDc: 15,
+    });
+    const self = characterSelfRef(doc, "test-uid");
+    const charmedAt = (slotLevel: number, occurrenceId: string) => {
+      const committed = commitDriven(
+        doc,
+        "test-uid",
+        world,
+        driveCapability({
+          actionId: `cast-${occurrenceId}`,
+          answerFor: answersBy({
+            d20Face: 1,
+            doc,
+            self,
+            slotLevel,
+            uid: "test-uid",
+          }),
+          capability: {
+            ...capability,
+            facts: [
+              ...capability.facts,
+              ...characterSlotDefinitionFacts(doc, "test-uid", world),
+            ],
+          },
+          doc,
+          occurrenceId,
+          uid: "test-uid",
+          world,
+        })
+      );
+      const charmed = Object.values(committed.world.occurrences).filter(
+        (occurrence) =>
+          occurrence.kind === "condition" && occurrence.conditionId === "charmed"
+      );
+      expect(charmed).toHaveLength(1);
+      return charmed[0];
+    };
+    // A 7th-level slot: the year tier (365 days) owns the duration clock.
+    const year = charmedAt(7, "geas-seven");
+    expect(
+      year?.endRules.some(
+        (rule) =>
+          rule.kind === "time-reached" && rule.elapsedSeconds === 365 * 24 * 60 * 60
+      )
+    ).toBe(true);
+    // A 9th-level slot: the indefinite tier keeps a table-owned manual end.
+    const indefinite = charmedAt(9, "geas-nine");
+    expect(indefinite?.endRules).toHaveLength(0);
+  });
+
+  it("goodberry conjures the berry batch and one eaten berry heals exactly 1", () => {
+    const doc = endgameDoc({
+      hp: { ...MOCK_CHARACTER.session.hp, current: 30, temp: 0 },
+    });
+    const world = characterWorldState(doc, "test-uid", 60);
+    if (!world) throw new Error("world fixture");
+    const base = spellCapabilityOrThrow(doc, "goodberry", {
+      attackBonus: 0,
+      castingModifier: 4,
+      characterLevel: 17,
+      maxHp: 60,
+      saveDc: 15,
+    });
+    // The store closes the authority; the conjured-item blueprint rides the
+    // snapshot's closed blueprint channel (the world-store wiring the modal
+    // agent lands reuses this exact map).
+    const capability: CharacterCastCapability = {
+      ...base,
+      authority: {
+        ...base.authority,
+        snapshot: {
+          ...base.authority.snapshot,
+          blueprints: { entities: {}, items: CONJURED_ITEM_BLUEPRINTS },
+        },
+      },
+    };
+    const self = characterSelfRef(doc, "test-uid");
+    const outcome = driveCapability({
+      actionId: "cast-goodberry",
+      answerFor: answersBy({ doc, self, slotLevel: 1, uid: "test-uid" }),
+      capability: {
+        ...capability,
+        facts: [
+          ...capability.facts,
+          ...characterSlotDefinitionFacts(doc, "test-uid", world),
+        ],
+      },
+      doc,
+      occurrenceId: "goodberry-1",
+      uid: "test-uid",
+      world,
+    });
+    const committed = commitDriven(doc, "test-uid", world, outcome);
+    const copies = Object.entries(committed.world.inventory);
+    expect(copies).toHaveLength(1);
+    const [instanceId, instance] = copies[0] ?? ["", null];
+    expect(instance).toMatchObject({
+      definition: { itemId: "goodberry-berry" },
+      quantity: { current: 10 },
+    });
+    // The batch expires on the authored 24-hour clock.
+    const lifecycle = Object.values(committed.world.occurrences).find(
+      (occurrence) => occurrence.kind === "material-lifecycle"
+    );
+    expect(
+      lifecycle?.endRules.some(
+        (rule) => rule.kind === "time-reached" && rule.elapsedSeconds === 24 * 3600
+      )
+    ).toBe(true);
+
+    // Eating one berry: the item-sourced canonical program pays 1 quantity
+    // from THIS instance and heals exactly 1.
+    const material = characterMaterialRef(doc, "test-uid");
+    const berryProgram = conformMechanicsProgram(
+      CONJURED_ITEM_PROGRAMS["goodberry-berry"]
+    );
+    expect(berryProgram).not.toBeNull();
+    if (!berryProgram || !instance) return;
+    const berryCapabilityRef = {
+      capabilityId: berryProgram.id,
+      definition: {
+        catalogueKind: "item" as const,
+        entityId: "goodberry-berry",
+        kind: "catalogue" as const,
+        mechanicsRevision: canonicalFingerprint({ program: berryProgram }),
+      },
+      kind: "program" as const,
+    };
+    const berryAuthority = {
+      anchors: {
+        activator: self,
+        caster: self,
+        owner: self,
+        source: self,
+        target: self,
+      },
+      installation: {
+        capability: berryCapabilityRef,
+        generation: 1,
+        installationId: `item.${instanceId}`,
+        owner: self,
+      },
+      schema: 1,
+      snapshot: {
+        grantGroups: {},
+        program: berryProgram,
+        ref: berryCapabilityRef,
+        resources: {},
+        schema: 1,
+      },
+      source: {
+        instanceId,
+        instanceOrdinal: instance.ordinal,
+        kind: "inventory-item" as const,
+        owner: material,
+      },
+      staticBindings: {},
+    } as CharacterCastCapability["authority"];
+    const quantityDefinitionFact = {
+      address: ["resource-definition", "inventory", instanceId, "quantity"] as const,
+      expected: {
+        present: true,
+        value: {
+          bindings: {},
+          spec: {
+            capacity: { kind: "unbounded" as const },
+            id: "quantity",
+            initial: { kind: "empty" as const },
+            kind: "count" as const,
+            recoveries: [],
+          },
+        },
+      },
+      lifecycle: "commit" as const,
+      owner: self,
+    };
+    const eaten = driveCapability({
+      actionId: "eat-goodberry",
+      answerFor: (requirement) => {
+        if (requirement.kind === "resource") {
+          return {
+            inputId: requirement.inputId,
+            kind: "resource",
+            resource: {
+              character: material,
+              instanceId,
+              instanceOrdinal: instance.ordinal,
+              kind: "item-quantity",
+            },
+          };
+        }
+        if (requirement.kind === "entities") {
+          return { inputId: requirement.inputId, kind: "entities", targets: [self] };
+        }
+        throw new Error(`unexpected requirement: ${requirement.kind}`);
+      },
+      capability: {
+        authority: berryAuthority,
+        facts: [
+          {
+            address: ["hit-point-maximum"],
+            expected: { present: true, value: 60 },
+            lifecycle: "commit-redo",
+            owner: self,
+          },
+          quantityDefinitionFact,
+        ],
+        transcription: {
+          clauses: [],
+          entityId: "goodberry-berry",
+          program: berryProgram,
+        },
+      },
+      doc,
+      occurrenceId: "goodberry-eat-1",
+      uid: "test-uid",
+      world: committed.world,
+    });
+    const afterEating = commitDriven(doc, "test-uid", committed.world, eaten);
+    expect(afterEating.world.vitals.hitPoints.current).toBe(31);
+    expect(afterEating.world.inventory[instanceId]?.quantity.current).toBe(9);
+  });
 });

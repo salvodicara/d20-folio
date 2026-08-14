@@ -359,6 +359,19 @@ export const AMOUNT_SPEC_SCHEMA = discriminatedUnionSchema("kind", {
     kind: literalSchema("dice-input"),
     transform: INTEGER_EXPRESSION_SCHEMA,
   }),
+  /** A player-chosen integer per request (the pool-split law — Mass Heal's
+   *  per-target portions). `shared` reads a single un-expanded integer input;
+   *  `per-target-request` reads the entry whose identity matches the step's
+   *  target request, exactly like a per-request dice amount. */
+  "integer-input": objectSchema({
+    cardinality: unionSchema([
+      literalSchema("shared"),
+      literalSchema("per-target-request"),
+    ]),
+    inputId: ID_SCHEMA,
+    kind: literalSchema("integer-input"),
+    transform: INTEGER_EXPRESSION_SCHEMA,
+  }),
   "landed-damage": objectSchema({
     kind: literalSchema("landed-damage"),
     partId: unionSchema([ID_SCHEMA, NULL_SCHEMA]),
@@ -442,12 +455,27 @@ export const MECHANICS_INPUT_SCHEMA = discriminatedUnionSchema("kind", {
     kind: literalSchema("choice"),
     options: arraySchema(ID_SCHEMA, 1),
   }),
-  integer: objectSchema({
-    ...COMMON_INPUT_FIELDS,
-    kind: literalSchema("integer"),
-    maximum: INTEGER_EXPRESSION_SCHEMA,
-    minimum: INTEGER_EXPRESSION_SCHEMA,
-  }),
+  integer: objectSchema(
+    {
+      ...COMMON_INPUT_FIELDS,
+      kind: literalSchema("integer"),
+      maximum: INTEGER_EXPRESSION_SCHEMA,
+      minimum: INTEGER_EXPRESSION_SCHEMA,
+    },
+    {
+      /** One chosen integer per entity SLOT of the referenced entities input
+       *  (the pool-split law). Absent ⇒ the classic single chosen amount. */
+      expansion: discriminatedUnionSchema("kind", {
+        entities: objectSchema({
+          inputId: ID_SCHEMA,
+          kind: literalSchema("entities"),
+        }),
+      }),
+      /** Review-enforced ceiling on the SUM of every answered value (a healing
+       *  pool's total). Per-answer bounds stay `minimum`/`maximum`. */
+      totalMaximum: INTEGER_EXPRESSION_SCHEMA,
+    }
+  ),
   boolean: objectSchema({
     ...COMMON_INPUT_FIELDS,
     kind: literalSchema("boolean"),

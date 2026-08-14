@@ -101,10 +101,35 @@ function featureActionSubjects(): readonly FeatureActionSubject[] {
         tracker.isPool === true
           ? tracker.die
           : undefined;
+      // A granted die's BASE face comes off the owning feature's own tracker
+      // declaration (Bardic Inspiration's d6; level tiers refine it at
+      // runtime through the session-resolved `classDie`).
+      const grantDieBase =
+        action.grantDie !== undefined &&
+        feature.mechanics?.tracker !== undefined &&
+        "die" in feature.mechanics.tracker
+          ? feature.mechanics.tracker.die
+          : undefined;
+      // A top-up target tracker's full-recovery rest is a catalogue fact of
+      // the TARGET feature (Uncanny Metabolism refills Focus as its short
+      // rest would).
+      const topUpTarget =
+        action.trackerTopUp !== undefined
+          ? (classFeatureIndex.get(action.trackerTopUp.trackerId) ??
+            FEATS_BY_ID.get(action.trackerTopUp.trackerId) ??
+            raceFeatureIndex.get(action.trackerTopUp.trackerId))
+          : undefined;
+      const topUpRecovery =
+        topUpTarget?.mechanics?.tracker?.recovery === "short-rest" ||
+        topUpTarget?.mechanics?.tracker?.recovery === "long-rest"
+          ? topUpTarget.mechanics.tracker.recovery
+          : undefined;
       const context: FeatureActionContext = {
         ...(feature.mechanics?.tracker ? { trackerId: feature.id } : {}),
         ...(whileActive.length > 0 ? { whileActive } : {}),
         ...(poolDie !== undefined ? { poolDie } : {}),
+        ...(grantDieBase !== undefined ? { classDie: grantDieBase } : {}),
+        ...(topUpRecovery !== undefined ? { topUpRecovery } : {}),
       };
       return { action, context, featureId: feature.id, ordinal, srd };
     });

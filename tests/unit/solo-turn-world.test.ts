@@ -13,6 +13,7 @@ import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { concentrationValue } from "@/lib/concentration";
 import { runMechanicsCausalAction } from "@/lib/mechanics-coordinator";
 import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
+import { transcribeFeatureAction } from "@/lib/mechanics-transcription";
 import { conformMechanicsProgramAuthorityReceipt } from "@/lib/mechanics-program-receipt";
 import { beginMechanicsCausalState } from "@/lib/mechanics-world";
 import {
@@ -43,6 +44,7 @@ import type { User } from "firebase/auth";
 import type { CharacterDoc } from "@/types/character";
 import type { CharacterMaterialState } from "@/types/material-state";
 import type { MechanicsCoordinationResult } from "@/types/mechanics-coordinator";
+import type { MechanicsAnswer } from "@/types/mechanics-program";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
 
 const UID = "test-uid";
@@ -139,7 +141,8 @@ function drive(
   doc: CharacterDoc,
   world: Readonly<CharacterMaterialState>,
   authority: Readonly<MechanicsProgramAuthorityReceipt>,
-  actionId: string
+  actionId: string,
+  answers: readonly Readonly<MechanicsAnswer>[] = []
 ): Readonly<MechanicsCoordinationResult> {
   const material = characterMaterialRef(doc, UID);
   const state = beginMechanicsCausalState({
@@ -148,7 +151,7 @@ function drive(
   });
   if (!state.ok) throw new Error(`causal state: ${state.reason}`);
   return runMechanicsCausalAction({
-    answers: [],
+    answers,
     authoritySnapshot: { definitions: [mechanicsAuthorityDefinition(authority)] },
     facts: [
       {
@@ -393,6 +396,49 @@ describe("per-turn kernel claims", () => {
       "claim-idle"
     );
     expect(outcome.status).toBe("rejected");
+  });
+
+  it("a transcribed per-turn-capped action claims once, rejects the same-turn repeat and resets next round", () => {
+    const doc = fixture();
+    let state = startedSolo(doc);
+    // The declared cap alone drives the emission: a free action capped at one
+    // use per turn compiles the once-per-turn manual-boundary claim.
+    const transcription = transcribeFeatureAction(
+      "synthetic-cap",
+      { grantsNextAttackAdvantage: true, maxUsesPerTurn: 1, type: "free" },
+      0,
+      {}
+    );
+    expect(transcription.program).not.toBeNull();
+    expect(
+      transcription.clauses.find((entry) => entry.clauseId === "per-turn-cap")
+    ).toMatchObject({ detail: "manual-boundary-claim", status: "automated" });
+    if (!transcription.program) return;
+    const authority = authoredAuthority(doc, transcription.program);
+    const noTargets: MechanicsAnswer[] = [
+      { inputId: "targets", kind: "entities", targets: [] },
+    ];
+
+    const first = drive(state.doc, state.world, authority, "capped-a", noTargets);
+    if (first.status !== "complete") throw new Error(JSON.stringify(first));
+    if (!first.action) throw new Error("no action");
+    state = committed(state.doc, state.world, first.action);
+    expect(selfEconomy(state.world).manualBoundaries).toHaveLength(1);
+
+    // The SAME action again this turn: the fresh root re-claims the recorded
+    // boundary and the kernel rejects the whole dispatch.
+    const second = drive(state.doc, state.world, authority, "capped-b", noTargets);
+    expect(second.status).toBe("rejected");
+    expect(selfEconomy(state.world).manualBoundaries).toHaveLength(1);
+
+    // Next round: the boundary ledger resets and the capped use is legal again.
+    const boundary = planSoloTurnBoundary(state.doc, UID, state.world, "capped-turn-1");
+    expect(boundary).not.toBeNull();
+    if (!boundary) return;
+    state = committed(state.doc, state.world, boundary);
+    expect(selfEconomy(state.world).manualBoundaries).toHaveLength(0);
+    const third = drive(state.doc, state.world, authority, "capped-c", noTargets);
+    expect(third.status).toBe("complete");
   });
 });
 

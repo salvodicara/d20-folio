@@ -450,6 +450,9 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: false,
     healDice: "1",
     healingMode: "consumable",
+    // 2024 (spell:goodberry): ten berries; a Bonus Action eats one for 1 HP;
+    // uneaten berries lose their potency 24 hours after the casting.
+    consumableItem: { itemId: "goodberry-berry", count: 10, lifetimeHours: 24 },
     effectTag: "heal",
     source: "SRD",
   },

@@ -523,6 +523,7 @@ export type TurnEconomyRejection =
   | "movement-unavailable"
   | "movement-requirement-unavailable"
   | "free-interaction-unavailable"
+  | "manual-boundary-recorded"
   | "invalid-after";
 
 export type TurnEconomyNoChangeReason =
