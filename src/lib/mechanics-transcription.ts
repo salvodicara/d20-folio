@@ -180,7 +180,10 @@ const CANONICAL_ROLL_RULES = {
   totalFloors: [],
 } as const;
 
-function savingThrowInput(ability: AbilityCode): Record<string, unknown> {
+function savingThrowInput(
+  ability: AbilityCode,
+  when: Readonly<Record<string, unknown>> | null = null
+): Record<string, unknown> {
   return {
     expansion: { bind: "actor", inputId: "targets", kind: "entities" },
     inputId: "saves",
@@ -201,9 +204,23 @@ function savingThrowInput(ability: AbilityCode): Record<string, unknown> {
       target: "caster",
       testId: "spell-save",
     },
-    when: null,
+    when,
   };
 }
+
+/** True once the resolved attack input landed at least one hit or critical. */
+const ATTACK_LANDED: Readonly<Record<string, unknown>> = {
+  kind: "any",
+  predicates: [
+    { inputId: "attack", kind: "answer-d20", outcomeId: "hit", quantifier: "any" },
+    {
+      inputId: "attack",
+      kind: "answer-d20",
+      outcomeId: "critical-hit",
+      quantifier: "any",
+    },
+  ],
+};
 
 /**
  * One spell-attack request per answered target slot: the caster rolls, each
@@ -337,11 +354,11 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     unsupported("targeting", `dynamic-max-targets:${maxTargets}`);
   } else {
     const slotMaximum: IntegerExpression =
-      instances !== undefined && hasAttack && spell.level > 0
-        ? upcastCount(instances, spell.instancesPerUpcast ?? null, spell.level)
-        : instances !== undefined && hasAttack
-          ? fixed(instances)
-          : fixed(targetMaximum);
+      instances !== undefined
+        ? spell.level > 0
+          ? upcastCount(instances, spell.instancesPerUpcast ?? null, spell.level)
+          : fixed(instances)
+        : fixed(targetMaximum);
     inputs.push({
       eligibility: "creature",
       inputId: "targets",
@@ -354,21 +371,36 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     clauses.push(clause("targeting", "automated"));
     if (instances !== undefined && hasAttack) {
       clauses.push(clause("instances", "automated", "one-target-slot-per-ray"));
+    } else if (instances !== undefined && !hasSave) {
+      clauses.push(clause("instances", "automated", "one-roll-per-instance-slot"));
     } else if (instances !== undefined) {
-      unsupported("instances", "per-instance-rolls-pending");
+      unsupported("instances", "per-instance-save-rolls-pending");
     }
     if (spell.area) {
       clauses.push(clause("area-selection", "spatial", "table-selects-occupants"));
     }
   }
 
-  if (spell.saveAbility !== undefined) {
-    inputs.push(savingThrowInput(spell.saveAbility));
-    clauses.push(clause("saving-throw", "physical-input"));
+  // A combined gate (Ray of Sickness): the attack gates the damage, and only a
+  // landed hit forces the saving throw, which gates the condition. One target
+  // set only — a second area-saving component (Ice Knife) stays unexpressed.
+  const combinedGates = hasAttack && hasSave;
+  const comboExpressible =
+    combinedGates &&
+    spell.damageOnSave === undefined &&
+    !spell.secondaryDamage &&
+    !spell.area;
+  if (combinedGates && !comboExpressible) {
+    unsupported(
+      "attack-and-save",
+      spell.damageOnSave !== undefined
+        ? "save-halved-damage-under-attack-gate"
+        : "two-target-set-combo-pending"
+    );
+  } else if (combinedGates) {
+    clauses.push(clause("attack-and-save", "automated", "hit-then-save"));
   }
-  if (hasAttack && hasSave) {
-    unsupported("attack-and-save", "combined-gate-sequencing-pending");
-  } else if (hasAttack) {
+  if (hasAttack) {
     inputs.push(attackInput());
     clauses.push(clause("attack-roll", "physical-input"));
     clauses.push(
@@ -381,6 +413,14 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
       )
     );
     clauses.push(clause("attack-range", "spatial", `table-verifies-${spell.attackType}`));
+  }
+  if (spell.saveAbility !== undefined) {
+    inputs.push(
+      savingThrowInput(spell.saveAbility, combinedGates ? ATTACK_LANDED : null)
+    );
+    clauses.push(
+      clause("saving-throw", "physical-input", combinedGates ? "only-on-hit" : null)
+    );
   }
 
   // Damage components.
@@ -421,7 +461,9 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
       });
     }
   }
-  const gatedByAttack = hasAttack && !hasSave;
+  // Damage always rides the attack when one exists; a combined save gates only
+  // the condition rider, never the damage (Ray of Sickness).
+  const gatedByAttack = hasAttack;
   for (const component of components) {
     // Base + cantrip/upcast scaling on the rolled dice count.
     const scaledCount: IntegerExpression =
@@ -482,6 +524,38 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
       if (spell.level === 0) {
         clauses.push(clause(`${component.inputId}-cantrip-scaling`, "automated"));
       }
+      continue;
+    }
+    if (!hasSave && instances !== undefined) {
+      // One automatic-delivery roll per instance slot (Magic Missile darts).
+      inputs.push(
+        diceInput(component.inputId, component.dice, scaledCount, {
+          inputId: "targets",
+          kind: "entities",
+        })
+      );
+      steps.push({
+        delivery: "automatic",
+        kind: "damage",
+        parts: [
+          {
+            amount: {
+              cardinality: "per-target-request",
+              inputId: component.inputId,
+              kind: "dice-input",
+              transform: INPUT_TOTAL,
+            },
+            damageType: component.damageType,
+            partId: `${component.inputId}-full`,
+          },
+        ],
+        stepId: `${component.inputId}-apply`,
+        target: { inputId: "targets", kind: "input" },
+        traits: ["spell"],
+        when: null,
+      });
+      clauses.push(clause(component.inputId, "physical-input"));
+      clauses.push(clause(`${component.inputId}-application`, "automated"));
       continue;
     }
     inputs.push(diceInput(component.inputId, component.dice, scaledCount));
@@ -552,8 +626,38 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     clauses.push(clause("damage-cast-modifier", "unsupported", "per-part-attribution"));
   }
 
-  // Healing.
-  if (spell.healDice !== undefined) {
+  // Healing. A flat formula ("70", "1") needs no roll — the amount is exact,
+  // upcast by the flat per-level increment when one is declared.
+  const flatHeal = /^\d+$/.test(spell.healDice?.trim() ?? "")
+    ? Number(spell.healDice)
+    : null;
+  const flatHealPerUpcast = /^\d+$/.test(spell.healDicePerUpcast?.trim() ?? "")
+    ? Number(spell.healDicePerUpcast)
+    : null;
+  if (
+    spell.healDice !== undefined &&
+    flatHeal !== null &&
+    spell.healDicePerUpcast !== undefined &&
+    flatHealPerUpcast === null
+  ) {
+    unsupported("healing", `mixed-flat-and-dice-upcast:${spell.healDicePerUpcast}`);
+  } else if (spell.healDice !== undefined && flatHeal !== null) {
+    steps.push({
+      amount: {
+        expression:
+          spell.level > 0
+            ? upcastCount(flatHeal, flatHealPerUpcast, spell.level)
+            : fixed(flatHeal),
+        kind: "integer",
+      },
+      kind: "heal",
+      stepId: "heal-apply",
+      target: { inputId: "targets", kind: "input" },
+      when: null,
+    });
+    clauses.push(clause("healing-application", "automated", "flat-amount"));
+    if (flatHealPerUpcast !== null) clauses.push(clause("healing-upcast", "automated"));
+  } else if (spell.healDice !== undefined) {
     const dice = parseDice(spell.healDice);
     const perUpcast =
       spell.healDicePerUpcast === undefined ? null : parseDice(spell.healDicePerUpcast);

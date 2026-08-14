@@ -1761,9 +1761,15 @@ export function resolveMechanicsProgramTargets(
   context: Readonly<MechanicsProgramCompilationContext>
 ): readonly MechanicsRequestIdentity[] | null {
   const internal = compilationPredicateContext(context);
-  return internal
-    ? resolveTargets(selector, internal.intent, internal.resolved, internal.bindings)
-    : null;
+  if (!internal) return null;
+  // Compilation always follows a complete review, which resolves every ACTIVE
+  // input — so a selector referencing an absent answer points at an input whose
+  // activation predicate omitted it (a save that never happened after a missed
+  // attack). The selector resolves to zero targets, never to a rejection.
+  if (selector.kind !== "role" && internal.resolved[selector.inputId] === undefined) {
+    return [];
+  }
+  return resolveTargets(selector, internal.intent, internal.resolved, internal.bindings);
 }
 
 function transformedInputAmount(

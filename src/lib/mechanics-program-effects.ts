@@ -200,7 +200,20 @@ function resolvedTurnBoundary(
     encounter.state.phase !== "turns" ||
     encounter.state.currentCombatantId === null
   ) {
-    return null;
+    // No active turn order: freeze the turn-boundary to its 2024 timeline
+    // equivalent — a round is 6 seconds, so N turn boundaries ≈ 6·N seconds
+    // on the combatant's timeline. Uniform for every authored lifetime.
+    const seconds = 6 * turns;
+    const elapsed = clocks?.timeline.state.elapsedSeconds;
+    return clocks !== null &&
+      elapsed !== undefined &&
+      elapsed <= Number.MAX_SAFE_INTEGER - seconds
+      ? {
+          clock: clocks.timeline.clock,
+          elapsedSeconds: elapsed + seconds,
+          kind: "time-reached",
+        }
+      : null;
   }
 
   const combatantKey = entityRefKey(combatant);

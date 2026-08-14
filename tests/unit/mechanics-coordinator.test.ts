@@ -1623,8 +1623,8 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
   });
 
   interface AttackCastPlan {
-    /** d20 face per attack request, in request order. */
-    readonly attackFaces: readonly number[];
+    /** One face-list per d20 requirement (attack first, then saves), request order. */
+    readonly attackFaces: readonly (readonly number[])[];
     readonly bindings: Readonly<Record<string, number>>;
     readonly slotLevel: number | null;
     readonly spellId: string;
@@ -1721,6 +1721,7 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
     ];
     const answers: MechanicsAnswer[] = [];
     const demandedDamageTrails: number[] = [];
+    let d20RequirementIndex = 0;
     const run = () =>
       runMechanicsCausalAction({
         answers,
@@ -1774,6 +1775,8 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
           targets: Array.from({ length: plan.targetSlots }, () => SELF),
         });
       } else if (requirement.kind === "d20") {
+        const faces = plan.attackFaces[d20RequirementIndex] ?? [];
+        d20RequirementIndex += 1;
         answers.push({
           inputId: requirement.inputId,
           kind: "d20",
@@ -1783,7 +1786,7 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
               d20: {
                 aggregates: [],
                 trails: trailIds(review).map((trailId) => ({
-                  initialFace: plan.attackFaces[index] ?? 1,
+                  initialFace: faces[index] ?? 1,
                   steps: [],
                   trailId,
                 })),
@@ -1829,7 +1832,7 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
     const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
     // Attack bonus +7 vs AC 15: 12 → 19 hits; natural 20 crits; 2 → 9 misses.
     const { demandedDamageTrails, state } = await runAttackCast({
-      attackFaces: [12, 20, 2],
+      attackFaces: [[12, 20, 2]],
       bindings: {
         [TRANSCRIPTION_BINDINGS.attackBonus]: 7,
         [TRANSCRIPTION_BINDINGS.targetArmorClass]: 15,
@@ -1850,7 +1853,7 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
   it("scales fire-bolt cantrip dice by character level and needs no slot", async () => {
     const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
     const { demandedDamageTrails, state } = await runAttackCast({
-      attackFaces: [11],
+      attackFaces: [[11]],
       bindings: {
         [TRANSCRIPTION_BINDINGS.attackBonus]: 7,
         [TRANSCRIPTION_BINDINGS.characterLevel]: 11,
@@ -1863,5 +1866,64 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
     // Level 11 → 3d10 (the 5/11/17 progression); all faces 3 → 9 damage.
     expect(demandedDamageTrails).toEqual([3]);
     expect(state.vitals.hitPoints.current).toBe(11);
+  });
+
+  it("rolls each magic-missile dart on its own slot with automatic delivery", async () => {
+    const { demandedDamageTrails, state } = await runAttackCast({
+      attackFaces: [],
+      bindings: {},
+      slotLevel: 2,
+      spellId: "magic-missile",
+      targetSlots: 3,
+    });
+    // Slot 2 allows 4 darts; three aimed, each its own 1d4+1 → face 3 → 4 each.
+    expect(demandedDamageTrails).toEqual([1, 1, 1]);
+    expect(state.vitals.hitPoints.current).toBe(20 - 12);
+  });
+
+  it("gates ray-of-sickness: damage on the hit, condition on the failed save", async () => {
+    const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
+    const { state } = await runAttackCast({
+      // Attack 12+7=19 vs AC 15 → hit; only then CON save 3 vs DC 15 → failure.
+      attackFaces: [[12], [3]],
+      bindings: {
+        [TRANSCRIPTION_BINDINGS.attackBonus]: 7,
+        [TRANSCRIPTION_BINDINGS.saveDc]: 15,
+        [TRANSCRIPTION_BINDINGS.targetArmorClass]: 15,
+      },
+      slotLevel: 1,
+      spellId: "ray-of-sickness",
+      targetSlots: 1,
+    });
+    // 2d8 at face 3 → 6 damage; the failed save poisons the target.
+    expect(state.vitals.hitPoints.current).toBe(14);
+    const conditions = Object.values(state.occurrences).filter(
+      (occurrence) =>
+        occurrence.kind === "condition" && occurrence.conditionId === "poisoned"
+    );
+    expect(conditions).toHaveLength(1);
+  });
+
+  it("omits the ray-of-sickness save entirely when the attack misses", async () => {
+    const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
+    const { demandedDamageTrails, state } = await runAttackCast({
+      attackFaces: [[2]],
+      bindings: {
+        [TRANSCRIPTION_BINDINGS.attackBonus]: 7,
+        [TRANSCRIPTION_BINDINGS.saveDc]: 15,
+        [TRANSCRIPTION_BINDINGS.targetArmorClass]: 15,
+      },
+      slotLevel: 1,
+      spellId: "ray-of-sickness",
+      targetSlots: 1,
+    });
+    // Miss: no damage roll demanded, no save demanded, slot still spent.
+    expect(demandedDamageTrails).toEqual([]);
+    expect(state.vitals.hitPoints.current).toBe(20);
+    const conditions = Object.values(state.occurrences).filter(
+      (occurrence) => occurrence.kind === "condition"
+    );
+    expect(conditions).toHaveLength(0);
+    expect(state.resources.standardSpellSlots["1"]?.current).toBe(1);
   });
 });

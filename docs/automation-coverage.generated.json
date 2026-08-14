@@ -1517,9 +1517,9 @@
           "status": "automated"
         },
         {
-          "clauseId": "healing",
-          "detail": "dice:1",
-          "status": "unsupported"
+          "clauseId": "healing-application",
+          "detail": "flat-amount",
+          "status": "automated"
         },
         {
           "clauseId": "healing-pool",
@@ -1810,14 +1810,29 @@
           "status": "automated"
         },
         {
-          "clauseId": "saving-throw",
+          "clauseId": "attack-and-save",
+          "detail": "two-target-set-combo-pending",
+          "status": "unsupported"
+        },
+        {
+          "clauseId": "attack-roll",
           "detail": null,
           "status": "physical-input"
         },
         {
-          "clauseId": "attack-and-save",
-          "detail": "combined-gate-sequencing-pending",
-          "status": "unsupported"
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-ranged",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "saving-throw",
+          "detail": "only-on-hit",
+          "status": "physical-input"
         },
         {
           "clauseId": "damage-roll",
@@ -1825,8 +1840,8 @@
           "status": "physical-input"
         },
         {
-          "clauseId": "damage-roll-on-save",
-          "detail": "negates",
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
           "status": "automated"
         },
         {
@@ -1840,8 +1855,8 @@
           "status": "physical-input"
         },
         {
-          "clauseId": "secondary-damage-roll-on-save",
-          "detail": "negates",
+          "clauseId": "secondary-damage-roll-crit-dice",
+          "detail": "doubled",
           "status": "automated"
         },
         {
@@ -2008,8 +2023,8 @@
         },
         {
           "clauseId": "instances",
-          "detail": "per-instance-rolls-pending",
-          "status": "unsupported"
+          "detail": "one-roll-per-instance-slot",
+          "status": "automated"
         },
         {
           "clauseId": "damage-roll",
@@ -2022,7 +2037,7 @@
           "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "magic-missile"
     },
     {
@@ -2085,14 +2100,29 @@
           "status": "automated"
         },
         {
-          "clauseId": "saving-throw",
+          "clauseId": "attack-and-save",
+          "detail": "hit-then-save",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-roll",
           "detail": null,
           "status": "physical-input"
         },
         {
-          "clauseId": "attack-and-save",
-          "detail": "combined-gate-sequencing-pending",
-          "status": "unsupported"
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-ranged",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "saving-throw",
+          "detail": "only-on-hit",
+          "status": "physical-input"
         },
         {
           "clauseId": "damage-roll",
@@ -2100,8 +2130,8 @@
           "status": "physical-input"
         },
         {
-          "clauseId": "damage-roll-on-save",
-          "detail": "negates",
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
           "status": "automated"
         },
         {
@@ -2120,7 +2150,7 @@
           "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "ray-of-sickness"
     },
     {
@@ -3690,14 +3720,29 @@
           "status": "automated"
         },
         {
-          "clauseId": "saving-throw",
+          "clauseId": "attack-and-save",
+          "detail": "hit-then-save",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-roll",
           "detail": null,
           "status": "physical-input"
         },
         {
-          "clauseId": "attack-and-save",
-          "detail": "combined-gate-sequencing-pending",
-          "status": "unsupported"
+          "clauseId": "attack-adjudication",
+          "detail": "hit-vs-bound-armor-class",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-ranged",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "saving-throw",
+          "detail": "only-on-hit",
+          "status": "physical-input"
         },
         {
           "clauseId": "concentration",
@@ -3710,7 +3755,7 @@
           "status": "table"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "ray-of-enfeeblement"
     },
     {
@@ -8233,9 +8278,9 @@
           "status": "automated"
         },
         {
-          "clauseId": "healing",
-          "detail": "dice:70",
-          "status": "unsupported"
+          "clauseId": "healing-application",
+          "detail": "flat-amount",
+          "status": "automated"
         },
         {
           "clauseId": "cure-blinded",
@@ -8248,7 +8293,7 @@
           "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "heal"
     },
     {
@@ -10010,9 +10055,9 @@
           "status": "automated"
         },
         {
-          "clauseId": "healing",
-          "detail": "dice:700",
-          "status": "unsupported"
+          "clauseId": "healing-application",
+          "detail": "flat-amount",
+          "status": "automated"
         },
         {
           "clauseId": "healing-pool",
@@ -10310,15 +10355,15 @@
       "id": "wish"
     }
   ],
-  "executablePrograms": 203,
+  "executablePrograms": 207,
   "family": "spells",
   "totalEntities": 422,
   "totals": {
-    "automated": 1356,
-    "physical-input": 306,
-    "table": 202,
-    "spatial": 94,
+    "automated": 1366,
+    "physical-input": 311,
+    "table": 203,
+    "spatial": 99,
     "narrative": 141,
-    "unsupported": 99
+    "unsupported": 94
   }
 }
