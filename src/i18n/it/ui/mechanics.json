@@ -1,0 +1,19 @@
+{
+  "mechanics": {
+    "cast": {
+      "title": "Risolvi lancio",
+      "slotPrompt": "Scegli lo slot incantesimo da spendere",
+      "slotOption": "Slot di livello {{level}} — {{remaining}} rimasti",
+      "targetsPrompt": "Scegli il bersaglio",
+      "targetSelf": "Te stesso",
+      "dicePrompt": "Tira {{dice}} e inserisci ogni dado",
+      "d20Prompt": "Tira il d20 e inserisci la faccia",
+      "dieFace": "Dado {{index}}",
+      "confirm": "Applica",
+      "cancel": "Annulla",
+      "ready": "Tutto risolto — applicare il risultato?",
+      "rejected": "Il motore ha rifiutato questo lancio: {{reason}}",
+      "unavailable": "Questo incantesimo non è ancora eseguibile dal motore"
+    }
+  }
+}
