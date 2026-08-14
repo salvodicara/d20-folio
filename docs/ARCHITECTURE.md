@@ -1674,7 +1674,21 @@ surface still reads a session field the world now owns (hp, exhaustion, spell-sl
 commit mirrors that exact field write-through so the two representations can never diverge. The
 bridge is a golden-rule-10 rollout state, not a resting state: each fact family migrates its
 surfaces atomically, and the mirror plus the legacy field are deleted together once no reader
-remains.
+remains. The concentration mirror moves the legacy field on ENGINE TRANSITIONS only (start/swap
+stamps the spell; release clears the field only while it still shows the released spell) — a
+commit that leaves the engine concentration unchanged never touches it, so a legacy-held swap
+can never be resurrected by an unrelated later commit.
+
+**The first UI-read migration off the bridge — world standings.** Standing occurrences carry
+`active-key` facts in the exact key vocabulary the legacy `session.activeFeatures` chips use.
+`src/lib/world-standing-grants.ts` projects the LIVE self-targeted keys out of the raw persisted
+`session.world` (a fail-closed narrow walk — no full parse on the aggregation hot path), and
+`aggregateCharacterGrants` unions them with the legacy chips into the ONE active-key set the
+grants evaluator gates `while-active` grants on. An engine-cast buff (Shield's +5 AC, Blur's
+incoming-attack disadvantage) therefore reaches `effectiveAC` and every derived stat with NO
+legacy activation row — and a buff active both ways during the rollout dedupes by key identity
+(a set union cannot double-count). This is a READ migration, not a mirror: the world stays the
+sole owner of the standing's lifetime, and no session field is written for it.
 
 The executable authority for a cast is closed at build level: `characterSpellCapability` seals the
 transcribed program (see `src/lib/mechanics-transcription.ts`) into a capability snapshot anchored
@@ -1767,11 +1781,44 @@ Extra-Attack weapon swing — the attack-pips ledger claim/ride instead of a who
 Engine damage landing on the character itself surfaces the SAME entered-d20 Concentration
 prompt seam the legacy damage path owns (`queueConcentrationSaveForDamage`; an engine commit
 that leaves the character at 0 HP breaks concentration outright through the one authoritative
-teardown). Honest boundaries that stay legacy this wave: REACTIONS (the reaction marker + the
-while-active activation the sheet's AC reads — Shield's program is engine-executable but its
-standing occurrence has no sheet read yet) and any cast whose while-active grant CARRIES
-mechanics (empty duration-marker grants, e.g. Hold Monster's, dispatch engine since the
-world's concentration occurrence already owns that truth).
+teardown). With the world-standing read in place (see the read-migration section above),
+REACTION casts and SELF-owned mechanics-carrying while-active casts dispatch engine in and out
+of combat: an engine Shield's standing lifts the sheet's AC through the projection, and the
+commit marks the round's Reaction through the SAME `useReaction` CAS the legacy reaction commit
+performed (the economy mirror). A legacy authoritative concentration drop — the failed
+entered-d20 save, the 0-HP outright break, a manual stop, a legacy swap — ends an ENGINE-held
+concentration through the canonical kernel end machinery in the same motion
+(`planEngineConcentrationEnd`: one end request over the owning program root; the concentration
+effect and every sourced standing end in the same wave; `setConcentration` commits it as one
+journal action, exactly reversed by the undo pairing), so neither the world nor the session can
+hold a dropped spell. Honest boundaries that stay legacy: TARGET-BOUND standings (a selected
+recipient or a Hex-style mark scope — the legacy target-binding flow still owns whom the buff
+rides), maintainers, use-applies, and the concentration swap confirm (an engine cast never
+starts while already concentrating).
+
+**RESTS ride the same runtime** (`src/features/character/rest-world-boundary.ts`, driven by the
+RestModal's confirm). A confirmed Short/Long Rest plans ONE journal action over the character's
+persisted world by chaining the kernel's own table boundaries — `end-encounter` when a local solo
+encounter lingers (a rest always returns combat to baseline), `advance-time` for the rest's RAW
+duration (1 hour / 8 hours, so timed lifetimes lapse exactly), then `complete-rest`, which
+allocates the timeline's next boundary ordinal and emits the `rest-completed` evidence on the
+character's timeline clock, ending every due "until you finish a short/long rest" lifetime through
+its own end rule — and then executes every engine-modeled RECOVERY as world transitions computed
+from the SAME resolvers the legacy rest reads (`resolveTrackers` cadence rows,
+`getShortRestRecoveries`, the slot derivation, the exhaustion-recovery grants, `effectiveMaxHp`;
+the short rest's hit-dice heal rides in as the player's ENTERED roll, the recorded observation the
+modal already collects). A long rest additionally requests the end of every engine concentration
+occurrence (sleep is incapacitation). The commit mirrors pools, slots, hp, exhaustion, ended
+condition chips and released concentration onto the legacy session in the same write, and
+`restFinalizedSession` reproduces the legacy-only bookkeeping the world does not own yet
+(tracker-entry canonical shape, rest-ended active states, equipment charges via the shared
+`equipmentAfterLongRest` law, hit dice spent, death saves, the event log, the combat-state
+persist, the undo fence) with the exact legacy laws, so a legacy read cannot tell which path ran.
+The legacy store `shortRest`/`longRest` recoveries survive ONLY as the fail-closed degradation: a
+world that fails its parse or a rejected boundary/plan/commit runs them alone, exactly the
+pre-cutover behavior, and nothing engine-side moves. Typed item resources stay on the item seam's
+own exact boundary in the same confirm flow (dawn/dusk remain distinct day-phase boundaries, never
+conflated with a rest).
 
 ## Persistence + offline
 

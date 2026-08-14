@@ -38,7 +38,10 @@ import {
 import {
   advanceMechanicsBoundary,
   beginMechanicsBoundary,
+  beginMechanicsCausalState,
   completeMechanicsBoundaryCheckpoint,
+  finalizeMechanicsCausalEndWave,
+  rebaseMechanicsCausalState,
 } from "@/lib/mechanics-world";
 import { applySlotMaxOverrides, deriveSpellSlots } from "@/lib/multiclass-slots";
 import {
@@ -58,7 +61,11 @@ import type { CharacterDoc, SessionState } from "@/types/character";
 import type { CharacterMaterialState } from "@/types/material-state";
 import type { MechanicsAuthorityDefinition } from "@/types/mechanics-authority";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
-import type { CharacterMaterialRef, EntityRef } from "@/types/mechanics-reference";
+import type {
+  CharacterMaterialRef,
+  EntityRef,
+  OccurrenceGenerationRef,
+} from "@/types/mechanics-reference";
 import type { MechanicsBoundaryCommand, MechanicsWorld } from "@/types/mechanics-world";
 import type { ProgramOccurrence } from "@/types/mechanic-occurrence";
 import type { TurnEconomyProjection } from "@/types/turn-economy";
@@ -891,20 +898,111 @@ export function commitCharacterAction(
   return mirroredCommit(doc, world, next);
 }
 
+/** The world's LIVE engine concentration: the owning program root's exact
+ * generation ref (the end-request target — ending the root cascades to the
+ * concentration effect and every standing it sourced) plus the catalogue
+ * spell it holds, when the root's capability is a catalogue spell. */
+export interface EngineConcentrationHandle {
+  readonly root: Readonly<OccurrenceGenerationRef>;
+  readonly spellId: string | null;
+}
+
+export function engineConcentrationHandle(
+  world: Readonly<CharacterMaterialState>
+): EngineConcentrationHandle | null {
+  for (const occurrence of Object.values(world.occurrences)) {
+    if (occurrence.kind !== "concentration" || occurrence.ending !== null) continue;
+    const rootRef = occurrence.origin.root;
+    const root = world.occurrences[rootRef.occurrence.occurrenceId];
+    if (root?.kind !== "program" || root.ordinal !== rootRef.ordinal) continue;
+    const definition = root.authority.snapshot.ref.definition;
+    return {
+      root: structuredClone(rootRef),
+      spellId:
+        definition.kind === "catalogue" && definition.catalogueKind === "spell"
+          ? definition.entityId
+          : null,
+    };
+  }
+  return null;
+}
+
 /** The catalogue spell held by the world's active engine concentration, if any. */
 function engineConcentrationSpell(
   world: Readonly<CharacterMaterialState>
 ): string | null {
-  for (const occurrence of Object.values(world.occurrences)) {
-    if (occurrence.kind !== "concentration") continue;
-    const root = world.occurrences[occurrence.origin.root.occurrence.occurrenceId];
-    if (root?.kind !== "program") continue;
-    const definition = root.authority.snapshot.ref.definition;
-    if (definition.kind === "catalogue" && definition.catalogueKind === "spell") {
-      return definition.entityId;
-    }
+  return engineConcentrationHandle(world)?.spellId ?? null;
+}
+
+/**
+ * The owning uid a persisted `session.world` value carries in its own clock
+ * binding — the fail-closed narrow read that lets a Firebase-free store seam
+ * (the legacy concentration teardown) address the world without an auth read.
+ * Null when the value is not a character-play world.
+ */
+export function persistedWorldUid(world: unknown): string | null {
+  if (typeof world !== "object" || world === null) return null;
+  const binding = (world as { clockBinding?: unknown }).clockBinding;
+  if (typeof binding !== "object" || binding === null) return null;
+  const timeline = (binding as { timeline?: unknown }).timeline;
+  if (typeof timeline !== "object" || timeline === null) return null;
+  const material = (timeline as { material?: unknown }).material;
+  if (typeof material !== "object" || material === null) return null;
+  const ref = material as { kind?: unknown; uid?: unknown };
+  return ref.kind === "character-play" && typeof ref.uid === "string" && ref.uid !== ""
+    ? ref.uid
+    : null;
+}
+
+/**
+ * Plan the CANONICAL end of the engine-held concentration: one causal end
+ * request over the owning program root, driven through the kernel's end-wave
+ * machinery (dependents — the concentration effect and every standing the
+ * source carries — end in the same wave; cascades finalize to quiescence),
+ * planned as one committable journal action. The commit's mirror then clears
+ * `session.concentration` in the same motion, so neither the world nor the
+ * session holds the spell afterwards. Plain wave acceptance is exactly the
+ * coordinator's drive here for the same reason `planCharacterBoundary` accepts
+ * checkpoints unchanged: no transcribed program subscribes to source-ending
+ * events today, so every audience is empty by construction. Null when the
+ * world holds no live engine concentration or the kernel rejects — the caller
+ * degrades fail-closed (the legacy teardown still runs; the transitions-only
+ * mirror guard keeps the field from resurrecting).
+ */
+export function planEngineConcentrationEnd(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  actionId: string
+): Readonly<JournalActionDraft> | null {
+  const handle = engineConcentrationHandle(world);
+  if (!handle) return null;
+  const material = characterMaterialRef(doc, uid);
+  const value = characterWorldValue(material, world);
+  const begun = beginMechanicsCausalState(value);
+  if (!begun.ok) return null;
+  const requested = rebaseMechanicsCausalState(
+    begun.value.world,
+    begun.value,
+    [],
+    [handle.root]
+  );
+  if (!requested.ok) return null;
+  let state = requested.value;
+  let remaining = 16;
+  while (state.context.endWave !== null && remaining > 0) {
+    const finalized = finalizeMechanicsCausalEndWave(state);
+    if (!finalized.ok) return null;
+    state = finalized.value;
+    remaining -= 1;
   }
-  return null;
+  if (state.context.endWave !== null) return null;
+  const planned = planMechanicsWorldAction(value, state.world, {
+    actor: { authority: "table", kind: "material-authority", material },
+    facts: [],
+    id: actionId,
+  });
+  return planned.status === "planned" ? planned.action : null;
 }
 
 /** The LIVE condition ids the world holds on this character itself. */
@@ -957,14 +1055,19 @@ function mirroredCommit(
       used: Math.max(0, used + (beforeCell.current - cell.current)),
     };
   }
-  // Concentration mirror: only ENGINE transitions move the legacy field —
-  // a legacy-held concentration is never clobbered, and an engine release
-  // clears the field only when the engine had set it.
+  // Concentration mirror: only ENGINE TRANSITIONS move the legacy field — an
+  // engine start/swap stamps the spell, an engine release clears the field
+  // only when it still shows the released spell, and a commit that leaves the
+  // engine concentration UNCHANGED never touches it (so a legacy-held swap to
+  // another spell while an engine occurrence lives can never be resurrected
+  // by an unrelated later commit).
   const concentrationBefore = engineConcentrationSpell(world);
   const concentrationAfter = engineConcentrationSpell(next);
   const concentration =
     concentrationAfter !== null
-      ? concentrationValue(concentrationAfter)
+      ? concentrationAfter !== concentrationBefore
+        ? concentrationValue(concentrationAfter)
+        : doc.session.concentration
       : concentrationBefore !== null &&
           doc.session.concentration === concentrationValue(concentrationBefore)
         ? ""

@@ -107,7 +107,7 @@ export function SpellsTab() {
       actionId: string;
       economyCategory: EconomyActionCategory | null;
       nameLoc?: LocText;
-      slot: "action" | "bonus" | "free";
+      slot: "action" | "bonus" | "reaction" | "free";
       spellLevel: number;
       triggersAttack: boolean;
     } | null;
@@ -357,9 +357,12 @@ export function SpellsTab() {
       // would silently bypass the legacy concentration swap confirm, and —
       // the same conservative line the Play-tab gate holds — actions whose
       // legacy commit carries semantics the engine mirror does not own yet
-      // (the reaction marker, while-active activation states, use-applies),
-      // plus a slot the character's conditions currently forbid (the legacy
-      // path owns that block and its feedback).
+      // (target-bound standing effects, use-applies), plus a slot the
+      // character's conditions currently forbid (the legacy path owns that
+      // block and its feedback). Reaction casts and SELF-owned while-active
+      // buffs dispatch engine now: the standing occurrence projects onto the
+      // sheet (world-standing-grants) and the reaction marker rides the
+      // economy mirror.
       const combatState = useCombatStore.getState();
       const turnKey = turnEconomyKey(
         useCombatStatusStore.getState().status,
@@ -373,19 +376,20 @@ export function SpellsTab() {
         character !== null ? effectiveSessionConditions(character.session) : []
       ).blockedSlots;
       const gatedSlot =
-        action?.type === "action" || action?.type === "bonus" ? action.type : null;
-      // A while-active grant that CARRIES mechanics (Shield's +5 AC, Hex's
-      // mark rider) still lives on the legacy activation chip — the engine's
-      // standing occurrence has no sheet read yet, so those casts stay
-      // legacy. An EMPTY marker grant (Hold Monster's duration chip) owns no
-      // sheet truth beyond the concentration the engine already mirrors.
-      const carriesActiveState =
-        vm.data !== null &&
-        (vm.data.grants ?? []).some(
-          (grant) =>
-            grant.type === "while-active" &&
-            (grant.grants.length > 0 || grant.targetScope !== undefined)
-        );
+        action?.type === "action" ||
+        action?.type === "bonus" ||
+        action?.type === "reaction"
+          ? action.type
+          : null;
+      // A SELF-owned while-active buff (Shield's +5 AC, Divine Favor's rider)
+      // now lives in the engine world as a standing occurrence the sheet
+      // reads through the world-standing projection, so those casts dispatch
+      // engine. Target-BOUND standings (a selected recipient or a Hex-style
+      // mark scope) still carry the legacy target-binding flow — the
+      // `standingEffect` gate below keeps them legacy. A spent (or
+      // condition-blocked) Reaction keeps the legacy path, which owns that
+      // block's feedback.
+      const reactionSpent = action?.type === "reaction" && combatState.reactionUsed;
       // Every cast option must be an ordinary (non-pact) slot — free-cast,
       // pool and pact sources still resolve through the legacy option flow.
       const plainOptionsOnly =
@@ -403,8 +407,7 @@ export function SpellsTab() {
       const plainCast =
         action !== undefined &&
         action.castPoolSourceId === undefined &&
-        action.type !== "reaction" &&
-        !carriesActiveState &&
+        !reactionSpent &&
         action.maintainsActiveKey === undefined &&
         action.standingEffect === undefined &&
         (action.useEffects?.length ?? 0) === 0 &&
@@ -429,7 +432,9 @@ export function SpellsTab() {
                   ? "bonus"
                   : action.type === "action"
                     ? "action"
-                    : "free",
+                    : action.type === "reaction"
+                      ? "reaction"
+                      : "free",
               spellLevel: vm.data.level,
               triggersAttack:
                 action.summary.attackBonus != null || action.summary.saveAbility != null,

@@ -14,6 +14,12 @@
  * Routing EVERY full-aggregate call site through this single helper makes those
  * two arguments impossible to drop again. SoC-preserving: pure derivation over the
  * existing engine (views still only read + dispatch).
+ *
+ * The active-key set is the UNION of the legacy chips and the persisted engine
+ * world's live `active-key` standing occurrences (`world-standing-grants.ts`) —
+ * the first UI read migrated off the session bridge: an engine-cast buff reaches
+ * every derived stat here without a legacy activation row, and key-identity
+ * dedupe makes double-counting unrepresentable.
  */
 import { evaluateGrants, type AggregatedGrants } from "@/lib/grants";
 import {
@@ -41,6 +47,7 @@ import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
 import type { CharacterDoc } from "@/types/character";
 import type { StoredConcentration } from "@/types/ids";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
+import { worldStandingActiveKeys } from "@/lib/world-standing-grants";
 
 /**
  * Project the equipment that still exists as an active magic object. Catalogue
@@ -79,14 +86,30 @@ export type AggregationSession = Pick<
       | "encounterEffects"
       | "concentration"
       | "itemResources"
+      | "world"
     >
   >;
 
 /**
+ * The ONE active-key set every `while-active` grant gates on: the legacy
+ * `session.activeFeatures` chips UNIONED with the LIVE `active-key` standing
+ * occurrences of the character's persisted engine world (the first sheet read
+ * of the world — an engine-cast Shield's standing lights its +5 AC here with
+ * no legacy activation row). The union dedupes by key identity, so a buff
+ * active BOTH ways during the rollout still evaluates its grants exactly once.
+ */
+function aggregationActiveKeys(session: AggregationSession): Set<string> {
+  const keys = new Set(session.activeFeatures ?? []);
+  for (const key of worldStandingActiveKeys(session.world)) keys.add(key);
+  return keys;
+}
+
+/**
  * Aggregate every grant the character receives, threading the session's
- * while-active features AND chosen grant-bundle (lineage/circle) selections.
- * This is the canonical input for any sheet-wide derivation: senses, speeds,
- * resistances/immunities, ability-score floors, proficiencies, free-casts.
+ * while-active features (legacy chips + world standings) AND chosen
+ * grant-bundle (lineage/circle) selections. This is the canonical input for
+ * any sheet-wide derivation: senses, speeds, resistances/immunities,
+ * ability-score floors, proficiencies, free-casts.
  */
 export function aggregateCharacterGrants(
   character: CharacterDoc["character"],
@@ -95,7 +118,7 @@ export function aggregateCharacterGrants(
   const encounterSources = resolveCombatEffectGrantSources(session.encounterEffects);
   return evaluateGrants(
     [...resolveAllGrantSources(character, session.itemResources), ...encounterSources],
-    new Set(session.activeFeatures ?? []),
+    aggregationActiveKeys(session),
     new Map(Object.entries(session.grantBundleChoices ?? {})),
     {
       level: totalLevel(character),

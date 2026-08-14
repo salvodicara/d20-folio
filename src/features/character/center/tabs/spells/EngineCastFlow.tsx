@@ -32,7 +32,7 @@ export interface EngineCastFlowProps {
     readonly economyCategory: EconomyActionCategory | null;
     /** Stable persisted name, so a hydrated turn re-localizes the entry. */
     readonly nameLoc?: LocText;
-    readonly slot: "action" | "bonus" | "free";
+    readonly slot: "action" | "bonus" | "reaction" | "free";
     readonly spellLevel: number;
     /** The cast counts as an "attack" turn event (Rage-style maintenance). */
     readonly triggersAttack: boolean;
@@ -77,8 +77,10 @@ export function EngineCastFlow({
 
   const engineCast = useMechanicsCast(spellId, derived);
   // The rollout bridge mirrors a successful engine commit onto the legacy turn
-  // economy: the slot-per-turn claim and the occupied economy slot, so legacy
-  // limiters and the turn strip keep one truth while both runtimes coexist.
+  // economy: the slot-per-turn claim and the occupied economy slot — or, for a
+  // reaction cast, the round's Reaction marker (the exact CAS the legacy
+  // reaction commit performs) — so legacy limiters and the turn strip keep
+  // one truth while both runtimes coexist.
   const cast = useMemo(
     () => ({
       ...engineCast,
@@ -92,16 +94,20 @@ export function EngineCastFlow({
             combat.round
           );
           if (economy.spellLevel > 0) combat.commitSpellSlotCast(key);
-          combat.selectAction({
-            id: economy.actionId,
-            name: spellName,
-            ...(economy.nameLoc ? { nameLoc: economy.nameLoc } : {}),
-            slot: economy.slot,
-            ...(economy.economyCategory
-              ? { economyCategory: economy.economyCategory }
-              : {}),
-            ...(economy.triggersAttack ? { triggerEvents: ["attack"] as const } : {}),
-          });
+          if (economy.slot === "reaction") {
+            combat.useReaction(economy.actionId);
+          } else {
+            combat.selectAction({
+              id: economy.actionId,
+              name: spellName,
+              ...(economy.nameLoc ? { nameLoc: economy.nameLoc } : {}),
+              slot: economy.slot,
+              ...(economy.economyCategory
+                ? { economyCategory: economy.economyCategory }
+                : {}),
+              ...(economy.triggersAttack ? { triggerEvents: ["attack"] as const } : {}),
+            });
+          }
         }
         return committed;
       },

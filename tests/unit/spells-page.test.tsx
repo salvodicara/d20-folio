@@ -33,6 +33,7 @@ import { useAuthStore } from "@/stores/authStore";
 import type { User } from "firebase/auth";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { asRaceId } from "@/data/srd-names";
+import { effectiveAC } from "@/lib/aggregate-character";
 import type { CharacterDoc } from "@/types/character";
 import { makeCharacterDoc } from "./_helpers";
 
@@ -293,30 +294,47 @@ describe("SpellsTab", () => {
     expect(useCombatStore.getState().spellSlotCastsThisTurn).toBe(1);
   });
 
-  // Reaction buff spells (Shield) carry legacy semantics the engine mirror
-  // does not own yet (the reaction marker + the while-active activation), so
-  // the gate keeps them on the legacy path — in and out of combat.
-  it("keeps a reaction buff spell on the legacy path", async () => {
+  // Reaction buff spells (Shield) dispatch ENGINE now: the standing occurrence
+  // projects its +5 AC onto the sheet through the world-standing read, and the
+  // reaction marker rides the economy mirror — the exact CAS the legacy
+  // reaction commit performed. The legacy activation chip stays untouched.
+  it("routes a reaction buff spell through the engine with the reaction mirrored", async () => {
     const doc = makeCharacterDoc({ classId: "wizard", level: 5 });
     doc.character.spells = [{ srdId: "shield", prepared: true }];
     doc.character.spellSlots = [{ level: 1, total: 2 }];
     doc.session.spellSlots = {};
     load(doc);
     renderPage();
+    const acBefore = effectiveAC(doc.character, doc.session);
 
     const card = screen.getByText("Shield").closest(".uc") as HTMLElement;
     fireEvent.click(card.querySelector(".uc-chevron") as HTMLElement);
     fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 1/i }));
 
-    // The legacy reaction commit lands: reaction spent, slot debited by the
-    // legacy counters, active buff lit — and no engine modal ever opened.
-    await waitFor(() => expect(useCombatStore.getState().reactionUsed).toBe(true));
-    expect(screen.queryByText(/Resolve cast/)).toBeNull();
-    expect(useCombatStore.getState().reactionUsedId).toBe("spell-shield");
-    expect(useCharacterStore.getState().character?.session.spellSlots["1"]?.used).toBe(1);
-    expect(
-      useCharacterStore.getState().character?.session.activeFeatures ?? []
-    ).toContain("spell-shield");
+    // The engine modal resolves the cast: pay the level-1 slot, choose the
+    // warded target (yourself), then commit.
+    await screen.findByText(/Resolve cast/);
+    const modal = () => within(screen.getByRole("dialog"));
+    fireEvent.click(modal().getByRole("button", { name: /Level 1 slot/ }));
+    fireEvent.click(await modal().findByRole("button", { name: "Yourself" }));
+    await modal().findByText(/Everything resolved/);
+    fireEvent.click(modal().getByRole("button", { name: "Apply" }));
+    await waitFor(() => expect(screen.queryByText(/Resolve cast/)).toBeNull());
+
+    // The reaction marker mirrored exactly as the legacy commit marked it,
+    // and the world's slot debit mirrored onto the legacy counter.
+    const combat = useCombatStore.getState();
+    expect(combat.reactionUsed).toBe(true);
+    expect(combat.reactionUsedId).toBe("spell-shield");
+    const session = useCharacterStore.getState().character?.session;
+    expect(session?.spellSlots["1"]?.used).toBe(1);
+    // No legacy activation row: the buff lives as a WORLD standing the sheet
+    // reads through the projection — effective AC gains Shield's +5.
+    expect(session?.activeFeatures ?? []).not.toContain("spell-shield");
+    const after = useCharacterStore.getState().character;
+    expect(after).not.toBeNull();
+    if (!after) return;
+    expect(effectiveAC(after.character, after.session)).toBe(acBefore + 5);
   });
 
   it("casts an extended-time spell without claiming turn economy", async () => {

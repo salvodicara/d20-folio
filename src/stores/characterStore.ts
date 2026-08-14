@@ -29,6 +29,7 @@ import {
 import type { StoredConcentration } from "@/types/ids";
 import { saveLogToIDB, clearLogFromIDB } from "@/lib/log-persistence";
 import {
+  equipmentAfterLongRest,
   getShortRestRecoveries,
   gainsHeroicInspirationOnLongRest,
   applyShortRestExhaustion,
@@ -105,6 +106,15 @@ import {
   type MechanicsPlan,
   type MechanicsReceipt,
 } from "@/lib/mechanics-command";
+import {
+  boundaryCommitFacts,
+  characterWorldState,
+  commitCharacterAction,
+  engineConcentrationHandle,
+  persistedWorldUid,
+  planEngineConcentrationEnd,
+  undoCharacterAction,
+} from "@/lib/mechanics-world-store";
 import {
   canCharacterRest,
   DEATH_FAIL_LIMIT,
@@ -955,6 +965,68 @@ function causalD20CommandUndo(
     void saveLogToIDB(restoredCharacter.id, restoredCharacter.session.logEntries);
     return true;
   };
+}
+
+/**
+ * End the ENGINE-held concentration occurrence when the legacy authority drops
+ * the same spell — the world-side twin of `setConcentration`'s teardown. The
+ * end runs through the canonical kernel machinery (`planEngineConcentrationEnd`:
+ * one end request over the owning program root; dependents — the concentration
+ * effect and every standing buff it sourced — end in the same wave), committed
+ * as one journal action whose mirror keeps `session.concentration` coherent.
+ * After it, neither the world nor the session holds the spell (no re-mirror
+ * zombie). Reads the world's own persisted uid, so this store stays
+ * Firebase-free. Returns the committed action id (the undo pairing) or null
+ * when the world holds no matching engine concentration — the legacy teardown
+ * alone is then complete.
+ */
+function endEngineConcentrationWorld(
+  get: () => CharacterState,
+  droppedSpell: string
+): string | null {
+  const doc = get().character;
+  if (!doc || doc.session.world === undefined) return null;
+  const uid = persistedWorldUid(doc.session.world);
+  if (uid === null) return null;
+  const world = characterWorldState(doc, uid, doc.character.hp.max);
+  if (!world) return null;
+  const handle = engineConcentrationHandle(world);
+  if (
+    !handle ||
+    handle.spellId === null ||
+    concentrationValue(handle.spellId) !== droppedSpell
+  ) {
+    return null;
+  }
+  const actionId = `concentration-break-${crypto.randomUUID()}`;
+  const action = planEngineConcentrationEnd(doc, uid, world, actionId);
+  if (!action) return null;
+  const committed = commitCharacterAction(
+    doc,
+    uid,
+    world,
+    action,
+    boundaryCommitFacts(action)
+  );
+  if (!committed) return null;
+  useCharacterStore.setState({ character: { ...doc, session: committed.session } });
+  return actionId;
+}
+
+/** Exactly reverse one committed engine concentration end (the undo pairing of
+ * {@link endEngineConcentrationWorld}) through the canonical journal reverse;
+ * a conflicting or already-reversed action is a silent no-op (the legacy field
+ * restore still lands — a legacy-held concentration, never a zombie). */
+function undoEngineConcentrationEnd(get: () => CharacterState, actionId: string): void {
+  const doc = get().character;
+  if (!doc || doc.session.world === undefined) return;
+  const uid = persistedWorldUid(doc.session.world);
+  if (uid === null) return;
+  const world = characterWorldState(doc, uid, doc.character.hp.max);
+  if (!world) return;
+  const undone = undoCharacterAction(doc, uid, world, actionId);
+  if (!undone) return;
+  useCharacterStore.setState({ character: { ...doc, session: undone.session } });
 }
 
 export const useCharacterStore = create<CharacterState>()((set, get) => ({
@@ -2088,6 +2160,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // beats: starting (or swapping into) a concentration spell, or ending one. A pure
     // swap (prev → spell) logs the END of the old + the START of the new. Wrapped so the
     // CLEAR case can run it inside an undo-stack `execute` (redo re-applies it).
+    // When the dropped spell is ENGINE-held (an engine cast set it through the
+    // world mirror), the same motion ends the world's concentration occurrence
+    // through the canonical kernel end machinery — the failed-save, 0-HP-break,
+    // manual-stop, and legacy-swap paths all converge here, so no path can
+    // leave a world-side zombie whose standings keep buffing the sheet.
+    let engineEndActionId: string | null = null;
     const applyChange = (): string[] => {
       set({
         combatActiveEffects: nextLocalEffects,
@@ -2124,6 +2202,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           },
         },
       });
+      // The engine twin of the teardown (fresh read: it composes ONTO the doc
+      // the set above just wrote, so the legacy field changes are never lost).
+      if (prev && prev !== spell) {
+        engineEndActionId = endEngineConcentrationWorld(get, prev) ?? engineEndActionId;
+      }
       persistCombat(get);
       flushParentPersistence(get);
       if (opts?.silent) return [];
@@ -2149,6 +2232,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         () => {
           loggedIds = applyChange();
           return () => {
+            // Reverse the ENGINE end first (the exact journal reverse restores
+            // the world occurrence and re-mirrors the spell), so the legacy
+            // field restores below compose onto the already-restored world.
+            if (engineEndActionId !== null) {
+              undoEngineConcentrationEnd(get, engineEndActionId);
+            }
             const cur = get().character;
             if (!cur) return;
             // When clearing also retracted a Polymorph form, the whole prior doc
@@ -2719,22 +2808,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       evaluateGrants(
         resolveAllGrantSources(character.character, character.session.itemResources)
       ).exhaustionRecoveryBonus;
-    // Magic-item charges with `recovery: "long-rest"` restore to max. (Items
-    // with `recovery: "dawn"` are functionally identical for the player —
-    // dawn happens at the end of a Long Rest.) Other recoveries (short-rest
-    // recharge wands, daily-cooldown rods) are left alone here.
-    const newEquipment = character.character.equipment.map((ref) => {
-      if (!ref.charges) return ref;
-      if (
-        ref.charges.recovery !== undefined &&
-        ref.charges.recovery !== "long-rest" &&
-        ref.charges.recovery !== "dawn"
-      ) {
-        return ref;
-      }
-      if (ref.charges.current === ref.charges.max) return ref;
-      return { ...ref, charges: { ...ref.charges, current: ref.charges.max } };
-    });
+    // Magic-item charges with `recovery: "long-rest"` (and "dawn") restore to
+    // max through the ONE shared law (`equipmentAfterLongRest`, smart-tracker),
+    // the same map the canonical rest boundary applies, so the engine path and
+    // this fail-closed degradation can never drift.
+    const newEquipment = equipmentAfterLongRest(character.character.equipment);
     // S4 — Human's Resourceful: finishing a Long Rest auto-grants Heroic
     // Inspiration. The consumer (`gainsHeroicInspirationOnLongRest`) decides the
     // default only; override-first — the player can still toggle the chip off
