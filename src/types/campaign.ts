@@ -329,6 +329,20 @@ export interface EncounterState {
   effectOps?: CombatEffectOp[];
   /** Durable exact-occurrence program cursors for this shared encounter. */
   effectLifecycles?: ReadonlyArray<CombatEffectLifecycleRuntime>;
+  /**
+   * The canonical shared-combat engine layer for THIS fight (a schema-4
+   * `SharedMaterialState`): the action journal, mechanic occurrences
+   * (condition facts with end rules), ordinal allocators, turn economies and
+   * the material timeline — everything ONLY the engine owns. Written by the
+   * engine command boundary (`encounter-world-command.ts`) in the same motion
+   * as the mirrored legacy fields; re-proved FAIL-CLOSED at every read by
+   * `encounterWorldState` (`src/lib/encounter-world-store.ts`), which overlays
+   * the encounter-owned facts (membership, hp, AC, round/turn) on top. Typed
+   * `unknown` deliberately: the ONLY reader is that fail-closed parser, and
+   * no surface may reach into it unproven. Absent until the first engine
+   * action of a fight; dropped with the whole field at "End encounter".
+   */
+  world?: unknown;
 }
 
 export type MemberCombatEffect =

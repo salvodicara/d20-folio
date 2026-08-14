@@ -138,10 +138,10 @@ import {
 } from "@/features/campaigns/encounter";
 import {
   recordMonsterHp,
-  recordMonsterDamage,
   recordCondition,
   recordPcHp,
 } from "@/features/campaigns/combat-chronicle";
+import { applyAdversaryDamage } from "@/features/campaigns/encounter-world-command";
 import {
   setEncounterInitiative,
   writeCampaignCombatEffect,
@@ -1641,12 +1641,15 @@ function TurnHint({ label, glyph }: { label: string; glyph: string }) {
  */
 export function MonsterCard({
   monster,
+  campaignId,
   isCurrent,
   initLocked = false,
   apply,
   reorder,
 }: {
   monster: EncounterMonster;
+  /** The owning campaign — the engine command boundary's shared-combat material key. */
+  campaignId: string;
   isCurrent: boolean;
   /** C3 — turns have BEGUN (the order is frozen): the typed-initiative chip goes READ-ONLY
    *  (the DM reorders via drag, never a silent live re-sort of a retyped value). */
@@ -1768,7 +1771,11 @@ export function MonsterCard({
 
       <MonsterHpControl
         monster={monster}
-        onDamage={(amount) => apply((e) => recordMonsterDamage(e, monster.id, amount))}
+        // The engine command boundary: damage routes derive → coordinator →
+        // journal commit → legacy mirror, then rides the SAME apply seam.
+        onDamage={(amount) =>
+          apply((e) => applyAdversaryDamage(e, campaignId, monster.id, amount))
+        }
         onHeal={(amount) =>
           apply((e) => recordMonsterHp(e, monster.id, monster.hp.current + amount))
         }

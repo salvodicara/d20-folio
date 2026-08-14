@@ -1136,6 +1136,7 @@ function CombatLayer({
             <MonsterCard
               key={row.id}
               monster={{ ...monster, conditions: row.conditions }}
+              campaignId={ctx.campaignId}
               isCurrent={row.id === view.currentId}
               initLocked={!gathering}
               apply={apply}

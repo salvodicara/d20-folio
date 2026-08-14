@@ -1682,6 +1682,36 @@ on the caster, carrying build-derived truths the world does not hold — the spe
 casting modifier as static bindings, the maximum hit points and per-slot resource definitions as
 caller-guarded facts the kernel re-emits and the commit validates.
 
+**The encounter/adversary seam (`src/lib/encounter-world-store.ts` +
+`src/features/campaigns/encounter-world-command.ts`).** The same runtime serves DM-run
+adversaries: the campaign's live encounter projects into a canonical shared-combat
+`SharedMaterialState`. Ownership is split by layer — the campaign encounter document owns the
+adversary/table facts (membership, hp trio, AC, conditions chips, initiative, the frozen order and
+turn pointer; every still-legacy surface keeps reading and writing them), while the optional
+`encounter.world` field on the same document carries what only the engine owns (the action
+journal, mechanic occurrences with their end rules, ordinal allocators, turn economies, the
+material timeline). `encounterWorldState` is the one-way read-time projection: the persisted
+engine layer is re-proved FAIL-CLOSED (`parseSharedMaterialState`; a corrupt `world` field
+rejects, never silently re-derives), the encounter-owned facts are overlaid on top (so legacy
+writes can never diverge — the world adopts them at the next read; entity ordinals continue the
+persisted generation; effects referencing a removed adversary row are swept to a fixpoint), and
+the composed candidate is re-parsed to prove it. Adversary rows keep their `srdId` as a
+`catalogue-monster` template REFERENCE (never a statblock copy; a hand-typed NPC gets a `custom`
+definition from its typed statline); a DM-typed initiative total splits losslessly into the
+canonical 1..20 roll plus an entity initiative-bonus override. The v1 composition scope is the
+shared document alone: the canonical encounter lists adversary participants only, in the "turns"
+phase exactly while the legacy pointer rests on a rolled adversary — any other pointer projects
+the between-turns posture, where the kernel's 6-seconds-per-turn timeline law carries
+turn-anchored lifetimes; composing the party's character documents through the kernel's
+start-encounter lease boundary is the next chunk. Commits route back through the owner: the
+feature-side command boundary (`applyAdversaryDamage`, dispatched by the DM's damage tap on the
+monster card; `applyAdversaryCondition` for engine-lifetimed conditions) runs one causal action
+through the coordinator, commits through `reduceActionJournal` over the shared root, then mirrors
+the world-owned adversary facts onto the exact legacy fields (hp/temp via the legacy clamps, the
+condition chips, the Combat Chronicle beat) and persists the committed world in the same
+`setEncounter` write — the identical rollout-bridge doctrine as the character side, with the
+legacy arithmetic surviving only INSIDE the boundary as the fail-closed degradation.
+
 ## Persistence + offline
 
 Firestore SDK handles real-time sync + offline persistence transparently. Writes are

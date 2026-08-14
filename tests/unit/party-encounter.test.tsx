@@ -180,7 +180,14 @@ function ogre(): EncounterMonster {
 describe("MonsterInitChip (via MonsterCard) — focusing the edit input never scrolls the page (B27)", () => {
   it("calls focus with { preventScroll: true } when the DM opens the initiative editor", () => {
     const focusSpy = vi.spyOn(HTMLElement.prototype, "focus");
-    render(<MonsterCard monster={ogre()} isCurrent={false} apply={vi.fn()} />);
+    render(
+      <MonsterCard
+        campaignId="camp-test"
+        monster={ogre()}
+        isCurrent={false}
+        apply={vi.fn()}
+      />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Initiative for Ogre" }));
     expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true });
   });
@@ -190,7 +197,14 @@ describe("MonsterInitChip (via MonsterCard) — focusing the edit input never sc
 
 describe("MonsterCard — DM statblock disclosure (§C.1/§C.2)", () => {
   it("keeps the DM disclosure collapsed when the turn lands on the monster", () => {
-    render(<MonsterCard monster={goblinWithSrd()} isCurrent apply={vi.fn()} />);
+    render(
+      <MonsterCard
+        campaignId="camp-test"
+        monster={goblinWithSrd()}
+        isCurrent
+        apply={vi.fn()}
+      />
+    );
     expect(screen.getByRole("button", { name: "Goblin A 1" })).toHaveAttribute(
       "aria-expanded",
       "false"
@@ -204,7 +218,7 @@ describe("MonsterCard — DM statblock disclosure (§C.1/§C.2)", () => {
       portraitUrl: "https://x/obsolete-override.jpeg",
     });
     const { container } = render(
-      <MonsterCard monster={hawk} isCurrent apply={vi.fn()} />
+      <MonsterCard campaignId="camp-test" monster={hawk} isCurrent apply={vi.fn()} />
     );
     expect(container.querySelector("img")?.getAttribute("src")).toBe(
       monsterPortraitUrl("hawk")
@@ -212,19 +226,30 @@ describe("MonsterCard — DM statblock disclosure (§C.1/§C.2)", () => {
   });
 
   it("a DM card with srdId shows the Statblock button", () => {
-    render(<MonsterCard monster={goblinWithSrd()} isCurrent apply={vi.fn()} />);
+    render(
+      <MonsterCard
+        campaignId="camp-test"
+        monster={goblinWithSrd()}
+        isCurrent
+        apply={vi.fn()}
+      />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Goblin A 1" }));
     expect(screen.getByRole("button", { name: "Statblock" })).toBeTruthy();
   });
 
   it("a DM card WITHOUT srdId shows no Statblock button (hand-typed monster)", () => {
     const noSrd = goblinWithSrd({ srdId: undefined });
-    render(<MonsterCard monster={noSrd} isCurrent apply={vi.fn()} />);
+    render(
+      <MonsterCard campaignId="camp-test" monster={noSrd} isCurrent apply={vi.fn()} />
+    );
     expect(screen.queryByRole("button", { name: "Statblock" })).toBeNull();
   });
 
   it("a PLAYER card (no apply) shows NO disclosure body even with srdId (byte-identical player card)", () => {
-    render(<MonsterCard monster={goblinWithSrd()} isCurrent={false} />);
+    render(
+      <MonsterCard campaignId="camp-test" monster={goblinWithSrd()} isCurrent={false} />
+    );
     // No DM affordances at all — no statblock, no rename, no remove.
     expect(screen.queryByRole("button", { name: "Statblock" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Monster name" })).toBeNull();
@@ -234,7 +259,14 @@ describe("MonsterCard — DM statblock disclosure (§C.1/§C.2)", () => {
 describe("MonsterCard — DM rename-in-place routes through apply (§C.4)", () => {
   it("committing a new name calls apply (setMonsterName)", () => {
     const apply = vi.fn();
-    render(<MonsterCard monster={goblinWithSrd()} isCurrent apply={apply} />);
+    render(
+      <MonsterCard
+        campaignId="camp-test"
+        monster={goblinWithSrd()}
+        isCurrent
+        apply={apply}
+      />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Goblin A 1" }));
     fireEvent.click(screen.getByRole("button", { name: "Monster name" }));
     const input = screen.getByLabelText("Monster name");
@@ -248,6 +280,7 @@ describe("MonsterCard — init-chip null relaxation once turns begin (§D.3)", (
   it("initLocked + a NULL initiative keeps the chip EDITABLE (a fresh reinforcement)", () => {
     render(
       <MonsterCard
+        campaignId="camp-test"
         monster={goblinWithSrd({ initiative: null })}
         isCurrent={false}
         initLocked
@@ -260,6 +293,7 @@ describe("MonsterCard — init-chip null relaxation once turns begin (§D.3)", (
   it("initLocked + a SET initiative renders the STATIC chip (locked like every frozen row)", () => {
     render(
       <MonsterCard
+        campaignId="camp-test"
         monster={goblinWithSrd({ initiative: 12 })}
         isCurrent={false}
         initLocked
@@ -469,5 +503,57 @@ describe("EncounterBudgetReadout — teaching tooltips (explain-on-demand sweep)
     } finally {
       await i18n.changeLanguage("en");
     }
+  });
+});
+
+// ─── The engine command boundary — the DM damage tap dispatches through it ──────
+
+describe("MonsterCard — damage dispatches through the engine command boundary", () => {
+  it("the popover's Damage apply reduces through applyAdversaryDamage (world + mirror)", () => {
+    // A REAL encounter document built through the actual reducers; the card's
+    // apply captures the dispatched reducer exactly like Party's ApplyFn.
+    let encounter = addMonster(startEncounter({}, [], 1), {
+      name: "Ogre Brute",
+      ac: 11,
+      maxHp: 59,
+      count: 1,
+      initiative: 12,
+      srdId: "ogre",
+    });
+    const apply = vi.fn((fn: (e: typeof encounter) => typeof encounter) => {
+      encounter = fn(encounter);
+    });
+    render(
+      <MonsterCard
+        campaignId="camp-test"
+        monster={encounter.combatants[0] as EncounterMonster}
+        isCurrent={false}
+        apply={apply}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Ogre Brute", expanded: false }));
+    fireEvent.click(
+      screen
+        .getAllByLabelText("Ogre Brute")
+        .find((el) => el.classList.contains("vital-hp")) as HTMLElement
+    );
+    fireEvent.change(screen.getByLabelText(/amount of damage/i), {
+      target: { value: "7" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Damage$/ }));
+
+    expect(apply).toHaveBeenCalledTimes(1);
+    const ogre = encounter.combatants[0] as EncounterMonster;
+    // The engine signature: the mirrored legacy hp, the chronicle beat AND the
+    // committed canonical world persisted on the same encounter value — the
+    // legacy-only reducer never produced a `world`.
+    expect(ogre.hp.current).toBe(52);
+    expect(encounter.events?.[0]).toMatchObject({
+      kind: "hp-damage",
+      amount: 7,
+      current: 52,
+      targetId: "monster-1",
+    });
+    expect(encounter.world).toBeDefined();
   });
 });
