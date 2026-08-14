@@ -11,6 +11,7 @@
 // serializable cost shape shared with the immediate-commit combat path.
 import type { CostSpec } from "@/lib/cost-engine";
 import type { CombatAbilityCode, CombatOutcomePredicate } from "@/types/combat-outcome";
+import type { DamageType } from "@/types/damage";
 // Type-only — the stable weapon/armor proficiency token brand (golden rule 7 +
 // 22): a class table references a proficiency KIND by id, never a display string.
 import type { ProficiencyToken } from "@/types/ids";
@@ -147,6 +148,7 @@ export type ReactionTrigger =
   // Ranger Fey Wanderer "Beguiling Twist": you or a creature within 120 ft
   // SUCCEEDS on a save to avoid or end the Charmed or Frightened condition.
   | "savedVsCharmOrFear"
+  | "succeedDexSaveForHalf"
   | "targetAttacks"
   | "takeDamage";
 
@@ -162,6 +164,7 @@ export const ALL_REACTION_TRIGGERS = [
   "hitByAttack",
   "hitOrMagicMissileTarget",
   "savedVsCharmOrFear",
+  "succeedDexSaveForHalf",
   "targetAttacks",
   "takeDamage",
 ] as const satisfies ExhaustiveTuple<
@@ -177,6 +180,7 @@ export const ALL_REACTION_TRIGGERS = [
     "hitByAttack",
     "hitOrMagicMissileTarget",
     "savedVsCharmOrFear",
+    "succeedDexSaveForHalf",
     "targetAttacks",
     "takeDamage",
   ]
@@ -200,6 +204,76 @@ export type Recovery =
   | "dawn"
   | "per-turn"
   | "manual";
+
+/**
+ * The authored item-resource language — the typed catalogue dialect every
+ * `SrdMagicItemData.resources` entry is written in. Table-entered rolls are
+ * physical dice the player rolls (`entered-roll` / `entered-d20`); the app
+ * never fabricates a result. Recovery boundaries reuse the engine's exact
+ * trigger vocabulary so dawn/dusk never alias to a rest.
+ */
+export type { ResourceRecoveryTrigger } from "@/types/resource";
+import type { ResourceRecoveryTrigger } from "@/types/resource";
+
+/** One physical dice instruction the table resolves (e.g. `1d6 + 1`). */
+export interface ResourceEnteredRoll {
+  dice: number;
+  sides: number;
+  modifier?: number;
+}
+
+/** Display unit of one typed item resource; keys the i18n label pair. */
+export type ResourceUnit = "charges" | "uses" | "beads" | "rounds";
+
+export type ResourceCapacitySpec =
+  | { kind: "fixed"; amount: number }
+  | { kind: "entered-roll"; roll: ResourceEnteredRoll };
+
+export type ResourceInitialSpec =
+  | { kind: "full" }
+  | { kind: "empty" }
+  | { kind: "fixed"; amount: number }
+  | { kind: "entered-roll"; roll: ResourceEnteredRoll };
+
+export type ResourceRecoveryAmount =
+  | { kind: "full" }
+  | { kind: "fixed"; amount: number }
+  | { kind: "entered-roll"; roll: ResourceEnteredRoll };
+
+export interface ResourceRecoverySpec {
+  trigger: ResourceRecoveryTrigger;
+  amount: ResourceRecoveryAmount;
+}
+
+/** Structured consequence of a depletion band; never free-text prose. */
+export interface ResourceDepletionOutcome {
+  kind: "set-item-disposition";
+  disposition: "destroyed" | "nonmagical";
+}
+
+/** One inclusive d20 band; a valid rule's bands cover 1–20 without overlap. */
+export interface ResourceDepletionBand {
+  min: number;
+  max: number;
+  outcomes: ReadonlyArray<ResourceDepletionOutcome>;
+}
+
+/** Entered-d20 table consulted when the last unit of the resource is spent. */
+export interface ResourceDepletionRule {
+  kind: "entered-d20";
+  bands: ReadonlyArray<ResourceDepletionBand>;
+}
+
+/** Typed, instance-owned mutable pool declared by one catalogue item. */
+export interface ResourceSpec {
+  kind: "counter";
+  id: string;
+  unit: ResourceUnit;
+  capacity: ResourceCapacitySpec;
+  initial: ResourceInitialSpec;
+  recoveries?: ReadonlyArray<ResourceRecoverySpec>;
+  onEmpty?: ResourceDepletionRule;
+}
 
 /** Level-gated override for a tracker — applied when character level ≥ `from` */
 export interface TrackerLevelOverride {
@@ -416,61 +490,6 @@ export interface OnCastRegainLowerSlotSpec extends OnCastTriggerBase {
 export interface OnCastWildMagicSurgeSpec extends OnCastTriggerBase {
   effect: "wild-magic-surge";
 }
-
-/** Damage types */
-export type DamageType =
-  | "acid"
-  | "bludgeoning"
-  | "cold"
-  | "fire"
-  | "force"
-  | "lightning"
-  | "necrotic"
-  | "piercing"
-  | "poison"
-  | "psychic"
-  | "radiant"
-  | "slashing"
-  | "thunder";
-
-/**
- * Canonical runtime list of the 13 damage types (the `DamageType` union made
- * enumerable) — the source of truth, exhaustive by construction. Feeds the
- * `srd.damage_<type>` and `srd.damageShort_<type>` i18n keys. Iterate this
- * instead of re-spelling the list (golden rule 6).
- */
-export const ALL_DAMAGE_TYPES = [
-  "acid",
-  "bludgeoning",
-  "cold",
-  "fire",
-  "force",
-  "lightning",
-  "necrotic",
-  "piercing",
-  "poison",
-  "psychic",
-  "radiant",
-  "slashing",
-  "thunder",
-] as const satisfies ExhaustiveTuple<
-  DamageType,
-  [
-    "acid",
-    "bludgeoning",
-    "cold",
-    "fire",
-    "force",
-    "lightning",
-    "necrotic",
-    "piercing",
-    "poison",
-    "psychic",
-    "radiant",
-    "slashing",
-    "thunder",
-  ]
->;
 
 /**
  * A damage SOURCE a creature can be resistant to — keyed to the *origin* of the
@@ -774,6 +793,8 @@ export interface CombatTargeting {
   affinity: "ally" | "enemy" | "self" | "any";
   /** The caster is not a legal target even when they match the affinity. */
   excludeSelf?: boolean;
+  /** Only creatures of these authored types are legal targets. */
+  creatureTypes?: ReadonlyArray<CreatureType>;
   maxTargets?: number;
   maxTargetsPerUpcast?: number;
   sharedAmount?: boolean;
@@ -783,6 +804,411 @@ export interface CombatTargeting {
  * ability form to a concrete {@link CombatTargeting.maxTargets} before rendering. */
 export interface ActionTargeting extends Omit<CombatTargeting, "maxTargets"> {
   maxTargets?: number | AbilityCode | "PB";
+}
+
+/**
+ * Ordered, locale-free combat effect program. The authored data declares facts;
+ * a reviewed artifact supplies every physical roll and table choice before the
+ * pure interpreter may mutate only a disposable planning draft.
+ */
+export type CombatEffectScope = "program" | "target" | "instance";
+
+/** A role bound by the reviewed occurrence, never inferred from prose. */
+export type CombatEffectParticipantRole =
+  | "owner"
+  | "caster"
+  | "activator"
+  | "triggering-attacker"
+  | "victim";
+
+export type CombatEffectSubject = "source" | "target" | CombatEffectParticipantRole;
+
+export type CombatEffectBinding =
+  | "caster-spell-save-dc"
+  | "caster-spellcasting-modifier"
+  | "triggering-damage";
+
+export type CombatEffectBoundValue =
+  | number
+  | { kind: "binding"; binding: CombatEffectBinding };
+
+export type CombatEffectTrigger =
+  | { kind: "resolve" }
+  | {
+      kind: "turn-start" | "turn-end";
+      subject: "source" | "target";
+      offsetTurns?: number;
+      everyTurns?: number;
+    }
+  | { kind: "enter-area" | "leave-area" }
+  | { kind: "activate"; action: ActionType }
+  | { kind: "source-end"; phaseId: string }
+  | { kind: "layer-destroyed"; layerId: string }
+  | { kind: "manual"; eventId: string };
+
+/** Integer authored formula resolved from explicit execution context, never RNG. */
+export interface CombatEffectScaledValue {
+  base: number;
+  perSlot?: { above: number; amount: number };
+  byCharacterLevel?: ReadonlyArray<{ minLevel: number; value: number }>;
+  perCounter?: { counterId: string; amount: number };
+}
+
+export interface CombatEffectRollSpec {
+  count: number | CombatEffectScaledValue;
+  sides: number;
+  bonus?: number;
+  /** Multiply authored dice count when this exact attack gate resolves critical. */
+  critical?: { gateId: string; multiplier: number };
+}
+
+export type CombatEffectGate =
+  | {
+      id: string;
+      kind: "attack";
+      scope: CombatEffectScope;
+      attackType?: "melee" | "ranged";
+      when?: CombatEffectPredicate;
+    }
+  | {
+      id: string;
+      kind: "save";
+      scope: CombatEffectScope;
+      /** One fixed ability, or the target's reviewed choice from this allowed set. */
+      ability: AbilityCode | ReadonlyArray<AbilityCode>;
+      dc?: CombatEffectBoundValue;
+      when?: CombatEffectPredicate;
+      sizeAdvantage?: CombatEffectSizeAdvantage;
+    }
+  | {
+      id: string;
+      kind: "check";
+      scope: CombatEffectScope;
+      /** One fixed ability, or the actor's reviewed choice from this allowed set. */
+      ability: AbilityCode | ReadonlyArray<AbilityCode>;
+      dc: CombatEffectBoundValue;
+      /** One fixed skill, or the actor's reviewed choice from this allowed set. */
+      skill?: string | ReadonlyArray<string>;
+      when?: CombatEffectPredicate;
+      sizeAdvantage?: CombatEffectSizeAdvantage;
+    };
+
+export interface CombatEffectSizeAdvantage {
+  subject: CombatEffectSubject;
+  comparison: "lte" | "gte";
+  size: CreatureSize;
+  sourceId: string;
+}
+
+export type CombatEffectInput =
+  | {
+      id: string;
+      kind: "roll" | "table-roll";
+      scope: CombatEffectScope;
+      roll: CombatEffectRollSpec;
+      when?: CombatEffectPredicate;
+      /** Every listed face must be replaced until the final accepted face is outside the set. */
+      rerollValues?: ReadonlyArray<number>;
+    }
+  | {
+      id: string;
+      kind: "choice";
+      scope: CombatEffectScope;
+      options: ReadonlyArray<string>;
+      when?: CombatEffectPredicate;
+    };
+
+export interface CombatEffectCounter {
+  id: string;
+  initial: number;
+  /** Defaults to program for compatibility with existing authored counters. */
+  scope?: CombatEffectScope;
+}
+
+export interface CombatEffectLayer {
+  id: string;
+  scope: CombatEffectScope;
+  initial: "active" | "destroyed";
+}
+
+export type CombatEffectAreaFact =
+  | "difficult-terrain"
+  | "obscured"
+  | "ranged-weapon-impossible"
+  | "strong-wind";
+
+export type CombatEffectAmountTerm =
+  | {
+      kind: "fixed";
+      value: number;
+      multiplier?: number;
+      add?: number;
+      rounding?: "floor" | "ceil";
+    }
+  | {
+      kind: "input";
+      inputId: string;
+      multiplier?: number;
+      add?: number;
+      rounding?: "floor" | "ceil";
+    }
+  | {
+      kind: "counter";
+      counterId: string;
+      multiplier?: number;
+      add?: number;
+      rounding?: "floor" | "ceil";
+    }
+  | {
+      kind: "scaled";
+      value: CombatEffectScaledValue;
+      multiplier?: number;
+      add?: number;
+      rounding?: "floor" | "ceil";
+    }
+  | {
+      kind: "binding";
+      binding: CombatEffectBinding;
+      multiplier?: number;
+      add?: number;
+      rounding?: "floor" | "ceil";
+    };
+
+export type CombatEffectAmountSpec =
+  | CombatEffectAmountTerm
+  | {
+      /** Adds independently resolved reviewed facts before applying this transform. */
+      kind: "sum";
+      terms: ReadonlyArray<CombatEffectAmountTerm>;
+      multiplier?: number;
+      add?: number;
+      rounding?: "floor" | "ceil";
+    };
+
+export type CombatEffectDamageTypeSpec =
+  | { kind: "fixed"; damageType: DamageType }
+  | { kind: "choice"; inputId: string }
+  | {
+      kind: "table";
+      inputId: string;
+      rows: ReadonlyArray<{ min: number; max: number; damageType: DamageType }>;
+    };
+
+export type CombatEffectComparison = "eq" | "ne" | "lt" | "lte" | "gt" | "gte";
+
+export type CombatEffectGateResult =
+  | "hit"
+  | "miss"
+  | "critical-hit"
+  | "success"
+  | "failure";
+
+export type CombatEffectPredicate =
+  | { kind: "gate"; gateId: string; result: CombatEffectGateResult }
+  | { kind: "choice"; inputId: string; equals: string }
+  | { kind: "table-roll"; inputId: string; min: number; max: number }
+  | {
+      kind: "counter";
+      counterId: string;
+      comparison: CombatEffectComparison;
+      value: number;
+    }
+  | {
+      kind: "layer";
+      layerId: string;
+      state: "active" | "destroyed";
+    }
+  | {
+      kind: "trigger-fact";
+      fact: "attack-result";
+      equals: "hit" | "miss";
+    }
+  | {
+      kind: "trigger-fact";
+      fact: "attack-critical";
+      equals: boolean;
+    }
+  | {
+      kind: "trigger-fact";
+      fact: "triggering-damage" | "triggering-range";
+      comparison: CombatEffectComparison;
+      value: number;
+    }
+  | {
+      kind: "trigger-fact";
+      fact: "triggering-damage-source" | "triggering-damage-type";
+      equals: string;
+    }
+  | {
+      kind: "state";
+      subject: CombatEffectSubject;
+      field: "hp" | "max-hp" | "temp-hp";
+      comparison: CombatEffectComparison;
+      value: number;
+    }
+  | {
+      kind: "resource";
+      subject: CombatEffectSubject;
+      resourceId: string;
+      comparison: CombatEffectComparison;
+      value: number;
+    }
+  | {
+      kind: "condition";
+      subject: CombatEffectSubject;
+      condition: ConditionId;
+      present: boolean;
+    }
+  | {
+      kind: "standing";
+      subject: CombatEffectSubject;
+      effectId: string;
+      present: boolean;
+    }
+  | { kind: "stable"; subject: CombatEffectSubject; value: boolean }
+  | {
+      kind: "landed-damage";
+      stepId: string;
+      comparison: CombatEffectComparison;
+      value: number;
+    }
+  | { kind: "not"; predicate: CombatEffectPredicate }
+  | { kind: "all" | "any"; predicates: ReadonlyArray<CombatEffectPredicate> };
+
+export interface CombatEffectGateUse {
+  gateId: string;
+  pass: "hit" | "miss" | "success" | "failure";
+  otherwise: "skip" | "half";
+}
+
+export type CombatEffectLifetime =
+  | { kind: "source-end" }
+  | { kind: "manual" }
+  | { kind: "phase-end"; phaseId: string }
+  | {
+      kind: "turn-boundary";
+      subject: "source" | "target";
+      phase: "turn-start" | "turn-end";
+      offsetTurns: number;
+    }
+  | {
+      /** Exact authored duration fact; expiration remains owned by an external clock. */
+      kind: "elapsed";
+      amount: number;
+      unit: "round" | "minute" | "hour" | "day";
+    };
+
+interface CombatEffectStepBase {
+  id: string;
+  scope: CombatEffectScope;
+  when?: CombatEffectPredicate;
+}
+
+export type CombatEffectStep =
+  | (CombatEffectStepBase & {
+      kind: "damage";
+      subject: CombatEffectSubject;
+      amount: CombatEffectAmountSpec;
+      damageType: CombatEffectDamageTypeSpec;
+      /** Typed origin for source-based defenses; never inferred from an id. */
+      damageSource?: DamageSource;
+      gate?: CombatEffectGateUse;
+      /** Contiguous same-id components land as one lifecycle/concentration packet. */
+      packetId?: string;
+    })
+  | (CombatEffectStepBase & {
+      kind: "heal" | "temp-hp";
+      subject: CombatEffectSubject;
+      amount: CombatEffectAmountSpec;
+    })
+  | (CombatEffectStepBase & {
+      kind: "condition";
+      subject: CombatEffectSubject;
+      operation: "apply" | "remove";
+      condition: ConditionId;
+      lifetime?: CombatEffectLifetime;
+    })
+  | (CombatEffectStepBase & {
+      kind: "standing";
+      subject: CombatEffectSubject;
+      operation: "start" | "end";
+      effectId: string;
+      lifetime?: CombatEffectLifetime;
+    })
+  | (CombatEffectStepBase & {
+      kind: "resource";
+      subject: CombatEffectSubject;
+      operation: "spend" | "gain";
+      resourceId: string;
+      amount: CombatEffectAmountSpec;
+    })
+  | (CombatEffectStepBase & {
+      kind: "stabilize";
+      subject: CombatEffectSubject;
+    })
+  | (CombatEffectStepBase & {
+      kind: "counter";
+      counterId: string;
+      operation: "add" | "set";
+      amount: CombatEffectAmountSpec;
+    })
+  | (CombatEffectStepBase & {
+      kind: "layer";
+      layerId: string;
+      operation: "destroy" | "restore";
+    })
+  | (CombatEffectStepBase & {
+      kind: "damage-reduction";
+      subject: CombatEffectSubject;
+      amount: CombatEffectAmountSpec;
+      damageTypes?: ReadonlyArray<DamageType>;
+    })
+  | (CombatEffectStepBase & {
+      kind: "area-state";
+      operation: "apply" | "remove";
+      fact: CombatEffectAreaFact;
+      lifetime?: CombatEffectLifetime;
+    })
+  | (CombatEffectStepBase & {
+      kind: "relocation-event";
+      subject: CombatEffectSubject;
+      mode: "teleport" | "plane-transfer";
+      destination: { kind: "manual" } | { kind: "table"; inputId: string };
+    })
+  | (CombatEffectStepBase & {
+      kind: "end-program";
+    })
+  | (CombatEffectStepBase & {
+      kind: "heal-from-landed-damage";
+      subject: CombatEffectSubject;
+      damageStepIds: ReadonlyArray<string>;
+      fraction: number;
+    });
+
+export interface CombatEffectPhase {
+  id: string;
+  trigger: CombatEffectTrigger;
+  /** Overrides the parent spell/action target shape for this phase. */
+  targeting?: CombatTargeting;
+  /** Exact independent packet/attack count. Defaults to one. */
+  instances?: number | CombatEffectScaledValue;
+  steps: ReadonlyArray<CombatEffectStep>;
+  /** One execution per external cadence occurrence; never a synchronous loop. */
+  repeat?: {
+    id: string;
+    maxOccurrences: number;
+    endWhen?: CombatEffectPredicate;
+  };
+}
+
+export interface CombatEffectProgram {
+  version: 1;
+  id: string;
+  gates?: ReadonlyArray<CombatEffectGate>;
+  inputs?: ReadonlyArray<CombatEffectInput>;
+  counters?: ReadonlyArray<CombatEffectCounter>;
+  layers?: ReadonlyArray<CombatEffectLayer>;
+  phases: ReadonlyArray<CombatEffectPhase>;
 }
 
 /** Conditions a feature/homebrew action can end, optionally unlocked by its
@@ -851,6 +1277,8 @@ export interface SpellTempHpRoll {
 export interface SrdSpellData {
   /** Unique slug ID: "fireball", "cure-wounds" */
   id: string;
+  /** Ordered deterministic resolution; legacy scalar fields remain compatible. */
+  effectProgram?: CombatEffectProgram;
   /** 0 = cantrip, 1-9 for leveled spells */
   level: number;
   /** Conditions this spell can end on its target. `max` omitted means every matching
@@ -980,6 +1408,12 @@ export interface SrdSpellData {
   /** S12b — extra {@link instances} per spell-slot level above the spell's own
    *  (Magic Missile / Scorching Ray: 1). Ignored unless `instances` is set. */
   instancesPerUpcast?: number;
+  /** The instance count follows the 5/11/17 cantrip progression instead of
+   *  upcast (Eldritch Blast beams: 1 → 2 → 3 → 4 by CHARACTER level). The
+   *  per-instance dice stay fixed — the count is what scales. Only meaningful
+   *  with {@link instances} on a cantrip; never combine with
+   *  {@link instancesPerUpcast}. */
+  cantripInstances?: true;
   /** The spell can affect multiple creatures in one resolution. This is target
    * shape only; never infer its save consequence from this flag. Persistent
    * zones use {@link recurrence} instead. */
@@ -1259,6 +1693,8 @@ export type ActionEconomyCategory = "attack" | "dash" | "disengage" | "hide" | "
 export interface SrdActionDef {
   /** Optional stable suffix when one feature declares several actions of the same type. */
   id?: string;
+  /** Ordered deterministic resolution; legacy scalar fields remain compatible. */
+  effectProgram?: CombatEffectProgram;
   /** Action economy cost */
   type: ActionType;
   /** Rules identity independent of the card id (Cunning Action Dash, Haste, etc.). */
@@ -1966,7 +2402,7 @@ export type CreatureType =
   | "undead";
 
 /** Runtime list — source of truth for the `srd.creatureType_<id>` i18n keys,
- *  exhaustive by construction (like {@link ALL_DAMAGE_TYPES}). */
+ *  exhaustive by construction. */
 export const ALL_CREATURE_TYPES = [
   "aberration",
   "beast",
@@ -2904,6 +3340,9 @@ export interface SrdMagicItemData {
   properties?: string[];
   /** A4 — Declarative effects this item grants when equipped (AC bonus, etc.). */
   grants?: ReadonlyArray<import("@/lib/grants").Grant>;
+  /** Typed, instance-owned mutable pools. Prose and grants may consume a
+   * resource by id, but never redeclare its capacity or recovery. */
+  resources?: ReadonlyArray<ResourceSpec>;
   /**
    * S9 — a CONSUMED buff potion's timed duration, in COMBAT ROUNDS (1 round =
    * 6 seconds, so 1 minute = 10, 1 hour = 600). When set, drinking the potion

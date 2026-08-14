@@ -1930,6 +1930,26 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
     ).toBe(true);
   });
 
+  it("fires eldritch-blast beams per character level with fixed dice", async () => {
+    const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
+    // Level 11 → 3 beams. Hit (face 12+7), natural-20 crit, miss (face 2).
+    const { demandedDamageTrails, state } = await runAttackCast({
+      attackFaces: [[12, 20, 2]],
+      bindings: {
+        [TRANSCRIPTION_BINDINGS.attackBonus]: 7,
+        [TRANSCRIPTION_BINDINGS.characterLevel]: 11,
+        [TRANSCRIPTION_BINDINGS.targetArmorClass]: 15,
+      },
+      slotLevel: null,
+      spellId: "eldritch-blast",
+      targetSlots: 3,
+    });
+    // Each beam stays 1d10 — the crit beam rolls 2d10, the miss rolls nothing.
+    expect(demandedDamageTrails.sort((a, b) => a - b)).toEqual([1, 2]);
+    // Faces 3: hit 3 + crit 6 = 9 damage.
+    expect(state.vitals.hitPoints.current).toBe(11);
+  });
+
   it("omits the ray-of-sickness save entirely when the attack misses", async () => {
     const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
     const { demandedDamageTrails, state } = await runAttackCast({

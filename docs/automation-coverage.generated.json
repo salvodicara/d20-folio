@@ -123,11 +123,51 @@
       "clauses": [
         {
           "clauseId": "effect-program",
-          "detail": "legacy-authored-program-migration",
-          "status": "unsupported"
+          "detail": "superseded-by-declarative",
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "instances",
+          "detail": "scale-with-character-level",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-adjudication",
+          "detail": "shared-armor-class-binding-per-ray-override",
+          "status": "table"
+        },
+        {
+          "clauseId": "attack-range",
+          "detail": "table-verifies-ranged",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "damage-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "damage-roll-crit-dice",
+          "detail": "doubled",
+          "status": "automated"
+        },
+        {
+          "clauseId": "damage-roll-application",
+          "detail": null,
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "eldritch-blast"
     },
     {
@@ -10405,15 +10445,15 @@
       "id": "wish"
     }
   ],
-  "executablePrograms": 233,
+  "executablePrograms": 234,
   "family": "spells",
   "totalEntities": 422,
   "totals": {
-    "automated": 1402,
-    "physical-input": 311,
-    "table": 203,
-    "spatial": 126,
+    "automated": 1407,
+    "physical-input": 313,
+    "table": 204,
+    "spatial": 127,
     "narrative": 141,
-    "unsupported": 50
+    "unsupported": 49
   }
 }

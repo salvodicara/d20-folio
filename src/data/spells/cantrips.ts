@@ -68,6 +68,61 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
   },
   {
     id: "eldritch-blast",
+    effectProgram: {
+      version: 1,
+      id: "spell.eldritch-blast",
+      gates: [
+        {
+          id: "beam-attack",
+          kind: "attack",
+          scope: "instance",
+          attackType: "ranged",
+        },
+      ],
+      inputs: [
+        {
+          id: "beam-roll",
+          kind: "roll",
+          scope: "instance",
+          roll: {
+            count: 1,
+            sides: 10,
+            critical: { gateId: "beam-attack", multiplier: 2 },
+          },
+        },
+      ],
+      phases: [
+        {
+          id: "resolve",
+          trigger: { kind: "resolve" },
+          instances: {
+            base: 1,
+            byCharacterLevel: [
+              { minLevel: 5, value: 2 },
+              { minLevel: 11, value: 3 },
+              { minLevel: 17, value: 4 },
+            ],
+          },
+          steps: [
+            {
+              id: "beam-damage",
+              kind: "damage",
+              scope: "instance",
+              subject: "target",
+              amount: { kind: "input", inputId: "beam-roll" },
+              damageType: { kind: "fixed", damageType: "force" },
+              damageSource: "spell",
+              gate: {
+                gateId: "beam-attack",
+                pass: "hit",
+                otherwise: "skip",
+              },
+              packetId: "beam",
+            },
+          ],
+        },
+      ],
+    },
     level: 0,
     school: "evocation",
     classes: ["warlock"],
@@ -79,6 +134,10 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     damageType: "force",
     damageDice: "1d10",
     attackType: "ranged",
+    // S12b-cantrip — one ranged beam per cantrip step (1/2/3/4 at character
+    // levels 5/11/17), each its own attack for 1d10 Force at any mix of targets.
+    instances: 1,
+    cantripInstances: true,
     source: "SRD",
   },
   {

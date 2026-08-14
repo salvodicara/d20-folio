@@ -77,6 +77,13 @@ function fixed(value: number): IntegerExpression {
 const CAST_LEVEL_REGISTER = "cast-level";
 
 /**
+ * Legacy authored effect-programs whose ENTIRE semantics the declarative
+ * transcription now reproduces — their `effectProgram` field is dead weight
+ * kept only for the not-yet-cut-over legacy executor and is deleted with it.
+ */
+const SUPERSEDED_LEGACY_PROGRAMS: ReadonlySet<string> = new Set(["eldritch-blast"]);
+
+/**
  * base + perUpcast × max(0, chosen slot level − spell level). The cast phase
  * reads the slot answer directly; a recurring pulse phase reads the cast level
  * recorded into the {@link CAST_LEVEL_REGISTER} at resolution.
@@ -335,11 +342,14 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     clauses.push(clause(clauseId, "unsupported", detail));
   };
 
-  if (spell.effectProgram) {
+  if (spell.effectProgram && !SUPERSEDED_LEGACY_PROGRAMS.has(spell.id)) {
     clauses.push(
       clause("effect-program", "unsupported", "legacy-authored-program-migration")
     );
     return { clauses, entityId: spell.id, program: null };
+  }
+  if (spell.effectProgram) {
+    clauses.push(clause("effect-program", "automated", "superseded-by-declarative"));
   }
 
   // Slot payment.
@@ -380,7 +390,9 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     unsupported("targeting", `dynamic-max-targets:${String(maxTargets)}`);
   } else {
     clauses.push(clause("targeting", "automated"));
-    if (instances !== undefined && hasAttack) {
+    if (instances !== undefined && spell.cantripInstances === true) {
+      clauses.push(clause("instances", "automated", "scale-with-character-level"));
+    } else if (instances !== undefined && hasAttack) {
       clauses.push(clause("instances", "automated", "one-target-slot-per-ray"));
     } else if (instances !== undefined && !hasSave) {
       clauses.push(clause("instances", "automated", "one-roll-per-instance-slot"));
@@ -475,7 +487,7 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   // Classification — once per mechanic, phase-independent.
   for (const component of components) {
     clauses.push(clause(component.inputId, "physical-input"));
-    if (spell.level === 0) {
+    if (spell.level === 0 && spell.cantripInstances !== true) {
       clauses.push(clause(`${component.inputId}-cantrip-scaling`, "automated"));
     }
     if (gatedByAttack) {
@@ -512,7 +524,9 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
               spell.level,
               levelBindingId
             )
-          : fixed(instances)
+          : spell.cantripInstances === true
+            ? cantripScaledCount(instances)
+            : fixed(instances)
         : fixed(targetMaximum);
     into.inputs.push({
       eligibility: "creature",
@@ -538,7 +552,9 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
       // Base + cantrip/upcast scaling on the rolled dice count.
       const scaledCount: IntegerExpression =
         spell.level === 0
-          ? cantripScaledCount(component.dice.count)
+          ? spell.cantripInstances === true
+            ? fixed(component.dice.count)
+            : cantripScaledCount(component.dice.count)
           : upcastCount(
               component.dice.count,
               component.perUpcast?.count ?? null,
