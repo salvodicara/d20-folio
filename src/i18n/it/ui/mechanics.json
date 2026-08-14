@@ -14,7 +14,18 @@
       "unavailable": "Questo incantesimo non è ancora eseguibile dal motore",
       "armorClassPrompt": "Qual è la Classe Armatura del bersaglio? Chiedi al tavolo.",
       "attackVs": "Attacco {{index}}: d20 contro CA {{value}} (si applica {{modifier}})",
-      "saveVs": "TS {{index}}: d20 contro CD {{value}} (si applica {{modifier}})"
+      "saveVs": "TS {{index}}: d20 contro CD {{value}} (si applica {{modifier}})",
+      "amountPrompt": "Quanti punti attingi dalla riserva? (da {{minimum}} a {{maximum}})",
+      "amountLabel": "Punti",
+      "choicePrompt": "Fai la tua scelta",
+      "booleanPrompt": "Vuoi usare questa opzione?",
+      "booleanCure": "Spendi punti della riserva per terminare la condizione {{condition}}?",
+      "booleanTopple": "Usi Rovesciamento? Il bersaglio effettua un TS o cade Prono.",
+      "targetNone": "Nessun bersaglio nella scheda (risolvi al tavolo)",
+      "optionDamage": "Danni",
+      "optionOneHanded": "A una mano",
+      "optionTwoHanded": "A due mani",
+      "attackTitle": "Risolvi attacco"
     },
     "pulse": {
       "strip": "Effetti attivi del motore",

@@ -14,7 +14,18 @@
       "unavailable": "This spell is not runnable by the engine yet",
       "armorClassPrompt": "What is the target's Armor Class? Ask the table.",
       "attackVs": "Attack {{index}}: d20 vs AC {{value}} ({{modifier}} applies)",
-      "saveVs": "Save {{index}}: d20 vs DC {{value}} ({{modifier}} applies)"
+      "saveVs": "Save {{index}}: d20 vs DC {{value}} ({{modifier}} applies)",
+      "amountPrompt": "How many points do you draw from the pool? ({{minimum}} to {{maximum}})",
+      "amountLabel": "Points",
+      "choicePrompt": "Make your choice",
+      "booleanPrompt": "Use this option?",
+      "booleanCure": "Spend pool points to end the {{condition}} condition?",
+      "booleanTopple": "Use Topple? The target saves or falls Prone.",
+      "targetNone": "No sheet target (resolve at the table)",
+      "optionDamage": "Damage",
+      "optionOneHanded": "One-handed",
+      "optionTwoHanded": "Two-handed",
+      "attackTitle": "Resolve attack"
     },
     "pulse": {
       "strip": "Active engine effects",

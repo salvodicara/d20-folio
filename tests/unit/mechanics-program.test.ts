@@ -2561,4 +2561,157 @@ describe("MechanicsProgram terminal kernel", () => {
       deriveMechanicsRequirements(next, pendingState(after, next.frame)).status
     ).toBe("derived");
   });
+
+  it("binds a chosen integer answer for later inputs and rejects the unordered read", () => {
+    const poolWorld = (): MechanicsWorld => {
+      const base = createEmptyCharacterMaterialState(5, HERO, {
+        hitPoints: {
+          current: 20,
+          temporary: { current: 0, sourceOccurrence: null },
+        },
+        zeroHitPoints: null,
+      });
+      const parsed = parseMechanicsWorld({
+        documents: [
+          {
+            kind: "character",
+            material: HERO,
+            state: {
+              ...base,
+              resources: {
+                ...base.resources,
+                pools: {
+                  vitality: {
+                    capacity: { base: { kind: "unbounded" }, override: null },
+                    current: 5,
+                    disabled: false,
+                    kind: "count",
+                  },
+                },
+              },
+            },
+          },
+        ],
+        scope: HERO,
+      });
+      if (!parsed.ok) throw new Error(parsed.reason);
+      return parsed.value;
+    };
+    const amountInput = {
+      inputId: "amount",
+      kind: "integer",
+      maximum: { kind: "fixed", value: 10 },
+      minimum: FIXED_ONE,
+      when: null,
+    } as const;
+    const paymentInput = {
+      inputId: "pay",
+      kind: "resource",
+      term: {
+        amount: { bindingId: "input.amount.value", kind: "binding" },
+        selector: { kind: "pool", owner: "caster", resourceId: "vitality" },
+      },
+      when: null,
+    } as const;
+    const healStep = {
+      amount: {
+        expression: { bindingId: "input.amount.value", kind: "binding" },
+        kind: "integer",
+      },
+      kind: "heal",
+      stepId: "heal-chosen",
+      target: { kind: "role", role: "caster" },
+      when: null,
+    } as const;
+    const program = conformed({
+      id: "chosen-amount",
+      phases: [
+        {
+          inputs: [amountInput, paymentInput],
+          phaseId: "resolve",
+          steps: [healStep],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const answers = (value: number) => [
+      { inputId: "amount", kind: "integer" as const, value },
+      {
+        inputId: "pay",
+        kind: "resource" as const,
+        resource: { kind: "pool" as const, owner: SELF, resourceId: "vitality" },
+      },
+    ];
+    // The chosen 4 becomes the payment requirement's amount via the
+    // `input.amount.value` binding refreshed after the integer answer.
+    const reviewed = reviewMechanicsIntent(
+      intent(program),
+      answers(4),
+      causalState(poolWorld())
+    );
+    expect(reviewed.status).toBe("reviewed");
+    if (reviewed.status === "reviewed") {
+      expect(reviewed.reviewed.resolved.pay).toMatchObject({
+        amount: 4,
+        kind: "resource",
+      });
+    }
+    // A chosen amount the pool cannot afford fails the resource review.
+    expect(
+      reviewMechanicsIntent(intent(program), answers(9), causalState(poolWorld()))
+    ).toMatchObject({ status: "rejected" });
+    // The binding is ORDER-BOUND: a payment authored before the integer input
+    // it reads can never derive its amount.
+    const unordered = conformMechanicsProgram({
+      id: "chosen-amount-unordered",
+      phases: [
+        {
+          inputs: [paymentInput, amountInput],
+          phaseId: "resolve",
+          steps: [healStep],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    expect(unordered).not.toBeNull();
+    if (!unordered) return;
+    expect(
+      reviewMechanicsIntent(
+        intent(unordered),
+        answers(4).reverse(),
+        causalState(poolWorld())
+      )
+    ).toMatchObject({ status: "rejected" });
+    // And the authoring law rejects a binding that names a non-integer input.
+    expect(
+      conformMechanicsProgram({
+        id: "chosen-amount-dangling",
+        phases: [
+          {
+            inputs: [amountInput],
+            phaseId: "resolve",
+            steps: [
+              {
+                ...healStep,
+                amount: {
+                  expression: {
+                    bindingId: "input.missing.value",
+                    kind: "binding",
+                  },
+                  kind: "integer",
+                },
+              },
+            ],
+            trigger: { kind: "invocation" },
+          },
+        ],
+        registers: [],
+        version: 1,
+      })
+    ).toBeNull();
+  });
 });

@@ -803,7 +803,14 @@ pulse surface declares armed phases, and the bridge mirrors hp/slots/exhaustion/
    document migration (schema-4 world becomes the only source; pre-world docs derive once,
    fixtures re-validated).
 
-Remaining order-5/6 work: feature-action + item transcription (SrdActionDef → programs; tracker
-pools already expressible via the `pool` selector), the encounter/adversary world, the 14
-authored programs (agent in flight), then the deletions above, the document migration, order 7's
-single full dual-build gate, and order 8's explainer.
+Remaining order-5/6 work: the feature-action long tail beyond the transcribed families —
+pool-spend at a chosen amount + pool-priced cures, the declarative save/auto/attack-roll attacks,
+tracker payments, conditions/cures, standings and weapon attacks (with Graze/Topple) are DONE with
+Play-tab dual dispatch (42/231 composed actions executable; the honest boundaries: class-die
+sentinels, check flows, damage-reduction reactions, alternate costs, attack sequences,
+level-scaled die faces, granted dice, top-ups, turn facts —
+`docs/automation-coverage.feature-actions.generated.json`); item transcription; the
+encounter/adversary world; the 14 authored programs (agent in flight); then the deletions above,
+the document migration, order 7's single full dual-build gate, and order 8's explainer. Solo
+per-turn caps stay table-classified: the `turn-claim` step compiles only under an encounter
+turn-economy projection, so kernel-side cap enforcement lands with the encounter seam.

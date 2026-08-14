@@ -666,14 +666,28 @@ function programSemantics(program: MechanicsProgram): boolean {
           );
         }
         if (bindingId.startsWith("input.")) {
-          const match = /^input\.(.+)\.level$/.exec(bindingId);
-          return (
-            !match?.[1] ||
-            !phase.inputs.some(
+          // The two answer-derived binding families: `input.<id>.level` reads a
+          // RESOURCE input's chosen slot level; `input.<id>.value` reads an
+          // INTEGER input's chosen amount (the chosen-amount law — Lay on
+          // Hands' variable pool spend). Each must name an input of exactly
+          // that kind in this phase; any other `input.*` binding is invalid.
+          const level = /^input\.(.+)\.level$/.exec(bindingId);
+          if (level?.[1] !== undefined) {
+            const resourceInputId = level[1];
+            return !phase.inputs.some(
               (candidate) =>
-                candidate.kind === "resource" && candidate.inputId === match[1]
-            )
-          );
+                candidate.kind === "resource" && candidate.inputId === resourceInputId
+            );
+          }
+          const value = /^input\.(.+)\.value$/.exec(bindingId);
+          if (value?.[1] !== undefined) {
+            const integerInputId = value[1];
+            return !phase.inputs.some(
+              (candidate) =>
+                candidate.kind === "integer" && candidate.inputId === integerInputId
+            );
+          }
+          return true;
         }
         return false;
       })

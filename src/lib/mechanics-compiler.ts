@@ -1494,17 +1494,21 @@ export function compileMechanicsFrame(
       if (occurrences.length > 0) {
         return suspend({ kind: "occurrence-end", occurrences });
       }
-      return cursorOnly(
-        [],
-        [
-          {
-            executions: [],
-            operationIds: [],
-            status: "compiled",
-            stepId: step.stepId,
-          },
-        ]
-      );
+      // A no-op end must still materialize any pending payment-prelude
+      // operations (the operations-aware pattern every no-op branch shares).
+      return operations.length === 0
+        ? cursorOnly(
+            [],
+            [
+              {
+                executions: [],
+                operationIds: [],
+                status: "compiled",
+                stepId: step.stepId,
+              },
+            ]
+          )
+        : simulateStep(step.stepId);
     }
     if (isEffectEndStep(step)) {
       const slots = effectSlots(step, context);
@@ -1527,17 +1531,22 @@ export function compileMechanicsFrame(
       if (occurrences.length > 0) {
         return suspend({ kind: "occurrence-end", occurrences });
       }
-      return cursorOnly(
-        [],
-        [
-          {
-            executions: [],
-            operationIds: [],
-            status: "compiled",
-            stepId: step.stepId,
-          },
-        ]
-      );
+      // Ending an effect nothing holds (curing a condition the world never
+      // owned) is a no-op for occurrences — but any pending payment-prelude
+      // operations must still materialize instead of being silently dropped.
+      return operations.length === 0
+        ? cursorOnly(
+            [],
+            [
+              {
+                executions: [],
+                operationIds: [],
+                status: "compiled",
+                stepId: step.stepId,
+              },
+            ]
+          )
+        : simulateStep(step.stepId);
     }
     if (isEffectStartStep(step)) {
       const slots = effectSlots(step, context, cursor.nextSlot);

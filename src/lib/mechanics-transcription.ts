@@ -39,10 +39,16 @@ export interface SpellTranscription {
 
 /** Static bindings the runtime authority must supply for transcribed programs. */
 export const TRANSCRIPTION_BINDINGS = {
+  /** The resolved die COUNT of a feature action's level/ability-scaled attack
+   *  dice (Breath Weapon's 2 at character level 5, Sear Undead's WIS-mod many —
+   *  the same `pickByLevel`/`resolveDiceCount` numbers the action card shows). */
+  attackDiceCount: "feature-attack-dice-count",
   attackBonus: "spell-attack-bonus",
   castingModifier: "spellcasting-modifier",
   characterLevel: "character-level",
-  /** The resolved flat bonus of a feature action's heal/THP term. */
+  /** The resolved flat bonus of a feature action's heal/THP/attack term (a
+   *  class-level or ability-modifier additive — Second Wind's Fighter level,
+   *  Divine Spark's +WIS, Radiance of the Dawn's +Cleric level). */
   featureBonus: "feature-bonus",
   saveDc: "spell-save-dc",
   targetArmorClass: "target-armor-class",
@@ -156,7 +162,8 @@ function diceInput(
   inputId: string,
   dice: ParsedDice,
   count: Readonly<IntegerExpression>,
-  expansion: Readonly<Record<string, unknown>> = { binding: "caster", kind: "single" }
+  expansion: Readonly<Record<string, unknown>> = { binding: "caster", kind: "single" },
+  when: Readonly<Record<string, unknown>> | null = null
 ): Record<string, unknown> {
   const terms: Record<string, unknown>[] = [
     {
@@ -183,8 +190,22 @@ function diceInput(
     kind: "dice",
     payments: [],
     replacementPolicy: [],
-    when: null,
+    when,
   };
+}
+
+/** Conjoin optional gates: none ⇒ ungated, one ⇒ itself, several ⇒ `all`. */
+function allOf(
+  ...gates: readonly (Readonly<Record<string, unknown>> | null)[]
+): Readonly<Record<string, unknown>> | null {
+  const present = gates.filter(
+    (gate): gate is Readonly<Record<string, unknown>> => gate !== null
+  );
+  return present.length === 0
+    ? null
+    : present.length === 1
+      ? (present[0] ?? null)
+      : { kind: "all", predicates: present };
 }
 
 const CANONICAL_ROLL_RULES = {
@@ -201,7 +222,11 @@ function savingThrowInput(
   ability: AbilityCode,
   when: Readonly<Record<string, unknown>> | null = null,
   inputId = "saves",
-  targetsInputId = "targets"
+  targetsInputId = "targets",
+  overrides: Readonly<{
+    difficultyClass?: Readonly<IntegerExpression>;
+    testId?: string;
+  }> = {}
 ): Record<string, unknown> {
   return {
     expansion: { bind: "actor", inputId: targetsInputId, kind: "entities" },
@@ -211,7 +236,7 @@ function savingThrowInput(
     request: {
       ability,
       actor: "target",
-      difficultyClass: {
+      difficultyClass: overrides.difficultyClass ?? {
         bindingId: TRANSCRIPTION_BINDINGS.saveDc,
         kind: "binding",
       },
@@ -221,7 +246,7 @@ function savingThrowInput(
       resolution: { kind: "rolled" },
       rollRules: CANONICAL_ROLL_RULES,
       target: "caster",
-      testId: "spell-save",
+      testId: overrides.testId ?? "spell-save",
     },
     when,
   };
@@ -253,7 +278,15 @@ function attackLanded(p: (id: string) => string): Readonly<Record<string, unknow
  * request adjudicates against the bound target armor class, and the observation
  * keeps the table-override channel for adjudication the world cannot see.
  */
-function attackInput(p: (id: string) => string): Record<string, unknown> {
+function attackInput(
+  p: (id: string) => string,
+  overrides: Readonly<{
+    bonus?: Readonly<IntegerExpression>;
+    criticalThreshold?: number;
+    sourceId?: string;
+    testId?: string;
+  }> = {}
+): Record<string, unknown> {
   return {
     expansion: { bind: "target", inputId: p("targets"), kind: "entities" },
     inputId: p("attack"),
@@ -266,19 +299,22 @@ function attackInput(p: (id: string) => string): Record<string, unknown> {
         kind: "binding",
       },
       automaticCriticalSourceIds: [],
-      criticalThreshold: fixed(20),
+      criticalThreshold: fixed(overrides.criticalThreshold ?? 20),
       enteredModifiers: [],
       kind: "attack",
       modifiers: [
         {
-          sourceId: "spell-attack-bonus",
-          value: { bindingId: TRANSCRIPTION_BINDINGS.attackBonus, kind: "binding" },
+          sourceId: overrides.sourceId ?? "spell-attack-bonus",
+          value: overrides.bonus ?? {
+            bindingId: TRANSCRIPTION_BINDINGS.attackBonus,
+            kind: "binding",
+          },
         },
       ],
       resolution: { kind: "rolled" },
       rollRules: CANONICAL_ROLL_RULES,
       target: "target",
-      testId: "spell-attack",
+      testId: overrides.testId ?? "spell-attack",
     },
     when: null,
   };
@@ -1257,8 +1293,23 @@ export interface FeatureActionTranscription {
  * caller-resolved `feature-bonus` binding. Fields beyond this first family
  * report explicit unsupported boundaries — never silently green.
  */
-/** The feature-level facts an action inherits (its tracker, its standing buffs). */
+/** The feature-level facts an action inherits (its tracker, its standing buffs)
+ *  plus the caller-resolved facts a level/session-dependent emission needs. */
 export interface FeatureActionContext {
+  /**
+   * The concrete damage type of a `damageTypeFromBundle` attack (Breath
+   * Weapon's chosen Draconic Ancestry element) — session-derived, so the
+   * catalogue alone cannot name it. Absent ⇒ the attack stays unexpressed.
+   */
+  readonly attackDamageType?: string;
+  /** The die a DICE payment pool holds ("d12" — Warrior of the Gods), read off
+   *  the pool tracker's own `die` declaration. Present ⇒ a pool spend rolls
+   *  the chosen number of these dice and heals the total; absent ⇒ the pool
+   *  holds points and the chosen amount heals exactly (Lay on Hands). */
+  readonly poolDie?: string;
+  /** The action's owning-class/character scaling level — gates `fromLevel`
+   *  cures. Absent ⇒ only ungated cures transcribe. */
+  readonly scalingLevel?: number;
   readonly trackerId?: string;
   readonly whileActive?: readonly Readonly<{
     readonly activeKey: string;
@@ -1284,16 +1335,11 @@ export function transcribeFeatureAction(
     [action.effectProgram !== undefined, "effect-program", "legacy-program-migration"],
     [action.skillCheck !== undefined, "skill-check", "check-flow-pending"],
     [action.checkBonus !== undefined, "check-bonus", "check-flow-pending"],
-    [action.attack !== undefined, "attack", "feature-attack-pending"],
     [action.attackSequence !== undefined, "attack-sequence", "attack-flow-pending"],
-    [action.attackType !== undefined, "attack-type", "feature-attack-pending"],
     [action.damageReduction !== undefined, "damage-reduction", "reaction-flow-pending"],
     [action.alternateCost !== undefined, "alternate-cost", "cost-choice-pending"],
-    [action.poolSpendEffect !== undefined, "pool-spend", "entered-pool-spend-pending"],
-    [action.cureConditions !== undefined, "cure-cost-pool", "pool-priced-cures-pending"],
     [action.grantDie !== undefined, "grant-die", "granted-die-pending"],
     [action.trackerTopUp !== undefined, "tracker-topup", "topup-flow-pending"],
-    [action.maintainsActiveKey !== undefined, "maintain", "maintenance-flow-pending"],
     [
       action.grantsNextAttackAdvantage === true,
       "next-attack-advantage",
@@ -1321,12 +1367,28 @@ export function transcribeFeatureAction(
     clauses.push(clause("per-turn-cap", "table", "table-enforces-cap"));
   }
 
-  // Tracker payment as a world pool: the action's own tracker, or the owning
-  // feature's tracker when the action is that feature's activator (Rage).
+  // A maintainer re-ups an already-active state for the current round: the
+  // standing key is already lit and the rounds ledger is table-owned, so the
+  // whole use is a table fact in solo play (the encounter runtime's turn
+  // economy is the future owner of the round extension).
   const isMaintainer = action.maintainsActiveKey !== undefined;
+  if (isMaintainer) {
+    clauses.push(clause("maintain", "table", "maintained-duration-table-owned"));
+  }
+
+  // Tracker payment as a world pool: the action's own tracker (or the bound
+  // extra tracker), or the owning feature's tracker when the action is that
+  // feature's activator (Rage). A pool-spend action pays a CHOSEN number of
+  // points instead of a fixed use count, so it owns its payment below.
   const paymentTracker =
-    action.costTracker ?? (isMaintainer ? undefined : feature.trackerId);
-  if (paymentTracker !== undefined) {
+    action.costTracker ??
+    action.costTrackerOverride ??
+    (isMaintainer ? undefined : feature.trackerId);
+  const isPoolSpend = action.poolSpendEffect !== undefined;
+  if (isPoolSpend && paymentTracker === undefined) {
+    unsupported("pool-spend", "pool-spend-without-tracker");
+  }
+  if (paymentTracker !== undefined && !isPoolSpend) {
     inputs.push({
       inputId: "uses",
       kind: "resource",
@@ -1363,7 +1425,7 @@ export function transcribeFeatureAction(
     }
   }
 
-  // Targeting.
+  // Targeting: the table selects who is inside an area; the engine applies.
   const maxTargets = action.targeting?.maxTargets;
   if (typeof maxTargets === "string") {
     unsupported("targeting", `dynamic-max-targets:${maxTargets}`);
@@ -1372,18 +1434,432 @@ export function transcribeFeatureAction(
       eligibility: "creature",
       inputId: "targets",
       kind: "entities",
-      maximum: fixed(typeof maxTargets === "number" ? maxTargets : 1),
+      maximum: fixed(
+        typeof maxTargets === "number" ? maxTargets : action.area === true ? 20 : 1
+      ),
       minimum: fixed(0),
       multiplicity: "slots",
       when: null,
     });
     clauses.push(clause("targeting", "automated"));
+    if (action.area === true) {
+      clauses.push(clause("area-selection", "spatial", "table-selects-occupants"));
+    }
   }
 
-  // Saving throw (the DC binding is caller-resolved, like a spell's).
+  // Pool spend at a chosen amount (Lay on Hands): the player picks how many
+  // pool points to draw; the SAME chosen number is the pool debit and the heal
+  // (a dice-unit pool rolls that many dice instead — Warrior of the Gods).
+  // Pool-priced cures ride the same use as opt-in booleans, each paying its own
+  // fixed debit from the SAME pool; RAW: cure points never also restore HP.
+  const chosenAmount: IntegerExpression = {
+    bindingId: "input.amount.value",
+    kind: "binding",
+  };
+  if (isPoolSpend && paymentTracker !== undefined) {
+    const availableCures = (action.cureConditions ?? []).filter(
+      (cure) =>
+        cure.fromLevel === undefined ||
+        (feature.scalingLevel !== undefined && feature.scalingLevel >= cure.fromLevel)
+    );
+    for (const cure of action.cureConditions ?? []) {
+      if (!availableCures.includes(cure)) {
+        clauses.push(
+          clause(`cure-${cure.condition}-locked`, "narrative", "below-unlock-level")
+        );
+      }
+    }
+    const cures = availableCures.filter((cure) => {
+      if (cure.condition === "exhaustion") {
+        unsupported("cure-exhaustion", "exhaustion-uses-exhaustion-change");
+        return false;
+      }
+      return true;
+    });
+    const healable = cures.length > 0 ? { minimum: 0 } : { minimum: 1 };
+    inputs.push({
+      inputId: "amount",
+      kind: "integer",
+      // 1000 is the same clamped domain bound the full-restore heal uses: no
+      // 2024 pool exceeds it, and the pool payment itself enforces the real
+      // ceiling (an unaffordable chosen amount fails the resource review).
+      maximum: fixed(1000),
+      minimum: fixed(healable.minimum),
+      when: null,
+    });
+    clauses.push(clause("pool-spend-amount", "automated", "player-chosen-pool-points"));
+    const healChosen: Readonly<Record<string, unknown>> = {
+      comparison: "gte",
+      inputId: "amount",
+      kind: "answer-integer",
+      value: fixed(1),
+    };
+    inputs.push({
+      inputId: "uses",
+      kind: "resource",
+      term: {
+        amount: chosenAmount,
+        selector: { kind: "pool", owner: "caster", resourceId: paymentTracker },
+      },
+      when: cures.length > 0 ? healChosen : null,
+    });
+    clauses.push(clause("tracker-payment", "automated", "chosen-amount-debit"));
+    for (const cure of cures) {
+      // The opt-in input carries the `-opt` suffix: inputs and steps share one
+      // program-wide id namespace, and the remove step below owns the bare id.
+      const opted: Readonly<Record<string, unknown>> = {
+        equals: true,
+        inputId: `cure-${cure.condition}-opt`,
+        kind: "answer-boolean",
+      };
+      inputs.push({
+        inputId: `cure-${cure.condition}-opt`,
+        kind: "boolean",
+        when: null,
+      });
+      inputs.push({
+        inputId: `cure-${cure.condition}-payment`,
+        kind: "resource",
+        term: {
+          amount: fixed(cure.costHp),
+          selector: { kind: "pool", owner: "caster", resourceId: paymentTracker },
+        },
+        when: opted,
+      });
+      steps.push({
+        conditionId: cure.condition,
+        kind: "condition",
+        lifetime: null,
+        operation: "remove",
+        stepId: `cure-${cure.condition}`,
+        target: { inputId: "targets", kind: "input" },
+        when: opted,
+      });
+      clauses.push(clause(`cure-${cure.condition}-cost`, "automated", "pool-priced"));
+      clauses.push(clause(`cure-${cure.condition}`, "automated"));
+    }
+    // The pool's own `die` declaration is the discriminator: a dice pool rolls
+    // the chosen number of dice (Warrior of the Gods, Boon of Recovery); a
+    // die-less pool holds points and heals the chosen amount (Lay on Hands).
+    const poolDice =
+      feature.poolDie !== undefined ? parseDice(`1${feature.poolDie}`) : null;
+    if (feature.poolDie !== undefined && poolDice === null) {
+      unsupported("pool-spend-healing", `pool-die:${feature.poolDie}`);
+    } else if (poolDice !== null) {
+      inputs.push(diceInput("pool-roll", poolDice, chosenAmount));
+      steps.push({
+        amount: sharedDiceAmount("pool-roll", INPUT_TOTAL),
+        kind: "heal",
+        stepId: "pool-heal-apply",
+        target: { inputId: "targets", kind: "input" },
+        when: cures.length > 0 ? healChosen : null,
+      });
+      clauses.push(clause("pool-spend-roll", "physical-input"));
+      clauses.push(clause("pool-spend-healing", "automated", "rolled-total"));
+    } else {
+      steps.push({
+        amount: { expression: chosenAmount, kind: "integer" },
+        kind: "heal",
+        stepId: "pool-heal-apply",
+        target: { inputId: "targets", kind: "input" },
+        when: cures.length > 0 ? healChosen : null,
+      });
+      clauses.push(clause("pool-spend-healing", "automated", "heals-chosen-amount"));
+    }
+  } else if (action.cureConditions !== undefined) {
+    unsupported("cure-cost-pool", "pool-priced-cures-without-pool");
+  }
+
+  // The declarative attack (S11): its choice inputs must precede the save it
+  // gates, so the mode/type questions are asked before any die is rolled.
+  const attack = action.attack;
+  const healOrDamage = attack?.mode === "heal-or-damage";
+  const damageMode: Readonly<Record<string, unknown>> | null = healOrDamage
+    ? { choiceId: "damage", inputId: "attack-mode", kind: "answer-choice" }
+    : null;
+  if (healOrDamage) {
+    inputs.push({
+      inputId: "attack-mode",
+      kind: "choice",
+      options: ["heal", "damage"],
+      when: null,
+    });
+    clauses.push(clause("attack-mode-choice", "automated", "player-picks-each-use"));
+  }
+  const attackTypeChoices =
+    attack !== undefined && attack.damageType === undefined
+      ? (attack.damageTypeChoices ?? null)
+      : null;
+  if (attackTypeChoices !== null && attackTypeChoices.length > 0) {
+    inputs.push({
+      inputId: "attack-damage-type",
+      kind: "choice",
+      options: [...attackTypeChoices],
+      when: damageMode,
+    });
+    clauses.push(clause("attack-damage-type-choice", "automated", "player-picks-type"));
+  }
+
+  // Saving throw (the DC binding is caller-resolved, like a spell's). Under a
+  // heal-or-damage attack the save exists only when the damage mode is chosen.
   if (action.saveAbility !== undefined) {
-    inputs.push(savingThrowInput(action.saveAbility));
+    inputs.push(savingThrowInput(action.saveAbility, damageMode));
     clauses.push(clause("saving-throw", "physical-input"));
+  }
+
+  // The declarative attack's damage: one shared roll whose die COUNT is either
+  // fixed (Radiance of the Dawn's 2d10) or the caller-resolved
+  // `feature-attack-dice-count` binding (Breath Weapon's level tier, Sear
+  // Undead's WIS-many d8) — the same numbers the action card already resolves.
+  // The flat additive (addMod/addLevel) is the caller-resolved `feature-bonus`.
+  if (attack !== undefined) {
+    const attackBlockers: readonly (readonly [boolean, string, string])[] = [
+      [attack.dicePerUpcast !== undefined, "attack-upcast", "spell-slot-context-pending"],
+      [attack.resolution !== undefined, "attack-gate", "resolution-override-pending"],
+      [
+        attack.damageTypeChoicesByLevel !== undefined,
+        "attack-damage-type",
+        "level-scaled-type-choices-pending",
+      ],
+    ];
+    for (const [present, clauseId, detail] of attackBlockers) {
+      if (present) unsupported(clauseId, detail);
+    }
+    // Die resolution — the FACE always comes from the catalogue; a scaled COUNT
+    // arrives as a binding so the program exists independent of the character.
+    let roll: {
+      readonly count: Readonly<IntegerExpression>;
+      readonly dice: ParsedDice;
+    } | null = null;
+    const boundCount: IntegerExpression = {
+      bindingId: TRANSCRIPTION_BINDINGS.attackDiceCount,
+      kind: "binding",
+    };
+    if (attack.diceCount !== undefined && attack.dieFace !== undefined) {
+      const die = parseDice(`1${attack.dieFace}`);
+      if (die === null) {
+        unsupported("attack-dice", `die:${attack.dieFace}`);
+      } else {
+        roll = { count: boundCount, dice: die };
+        clauses.push(clause("attack-dice-count", "automated", "caller-resolved-count"));
+      }
+    } else if (attack.diceByLevel !== undefined) {
+      const tiers = Object.values(attack.diceByLevel).map((value) => parseDice(value));
+      const first = tiers[0] ?? null;
+      const uniform =
+        first !== null &&
+        tiers.every(
+          (tier) => tier !== null && tier.sides === first.sides && tier.bonus === 0
+        );
+      if (!uniform) {
+        unsupported("attack-dice", "level-scaled-die-face-pending");
+      } else {
+        roll = { count: boundCount, dice: first };
+        clauses.push(
+          clause("attack-dice-scaling", "automated", "caller-resolved-level-count")
+        );
+      }
+    } else if (attack.dice !== undefined) {
+      const die = parseDice(attack.dice);
+      if (die === null) {
+        unsupported("attack-dice", `dice:${attack.dice}`);
+      } else {
+        roll = { count: fixed(die.count), dice: die };
+      }
+    } else {
+      unsupported("attack-dice", "no-dice-declared");
+    }
+    // Damage type: a fixed id, a player choice (its input is already up), or
+    // the session-derived ancestry element the caller resolved.
+    const damageTypes: readonly string[] =
+      attack.damageType !== undefined
+        ? [attack.damageType]
+        : attackTypeChoices !== null && attackTypeChoices.length > 0
+          ? attackTypeChoices
+          : attack.damageTypeFromBundle !== undefined
+            ? feature.attackDamageType !== undefined
+              ? [feature.attackDamageType]
+              : []
+            : [];
+    if (
+      attack.damageTypeFromBundle !== undefined &&
+      feature.attackDamageType === undefined
+    ) {
+      unsupported("attack-damage-type", "ancestry-damage-type-unresolved");
+    } else if (attack.damageTypeFromBundle !== undefined) {
+      clauses.push(clause("attack-damage-type", "automated", "ancestry-bundle-resolved"));
+    } else if (
+      damageTypes.length === 0 &&
+      attack.damageTypeChoicesByLevel === undefined
+    ) {
+      unsupported("attack-damage-type", "no-damage-type-declared");
+    }
+    if (healOrDamage && action.attackType !== undefined) {
+      unsupported("attack-mode", "heal-or-damage-under-attack-roll-pending");
+    }
+    const hasFlat = attack.addMod !== undefined || attack.addLevel === true;
+    if (hasFlat) {
+      clauses.push(clause("attack-bonus-term", "automated", "caller-resolved-term"));
+    }
+    const totalOf = (transform: Readonly<IntegerExpression>): IntegerExpression =>
+      hasFlat
+        ? {
+            kind: "add",
+            terms: [
+              transform,
+              { bindingId: TRANSCRIPTION_BINDINGS.featureBonus, kind: "binding" },
+            ],
+          }
+        : transform;
+    const typeGate = (damageType: string): Readonly<Record<string, unknown>> | null =>
+      attackTypeChoices !== null && attackTypeChoices.length > 0
+        ? {
+            choiceId: damageType,
+            inputId: "attack-damage-type",
+            kind: "answer-choice",
+          }
+        : null;
+    if (roll !== null && damageTypes.length > 0) {
+      if (action.attackType !== undefined) {
+        // Attack-roll gate: one spell-attack request per target slot against
+        // the bound armor class; hits roll the damage, criticals double the
+        // DICE (never the flat term); misses self-resolve with no roll.
+        const p = (id: string): string => id;
+        inputs.push(attackInput(p));
+        clauses.push(clause("attack-roll", "physical-input"));
+        clauses.push(
+          clause(
+            "attack-adjudication",
+            typeof maxTargets !== "number" || maxTargets === 1 ? "automated" : "table",
+            typeof maxTargets !== "number" || maxTargets === 1
+              ? "hit-vs-bound-armor-class"
+              : "shared-armor-class-binding-override"
+          )
+        );
+        clauses.push(
+          clause("attack-range", "spatial", `table-verifies-${action.attackType}`)
+        );
+        const families = [
+          { count: roll.count, inputId: "attack-damage-roll", outcomeIds: ["hit"] },
+          {
+            count: { factors: [fixed(2), roll.count], kind: "multiply" as const },
+            inputId: "attack-damage-roll-crit",
+            outcomeIds: ["critical-hit"],
+          },
+        ] as const;
+        for (const family of families) {
+          inputs.push(
+            diceInput(family.inputId, roll.dice, family.count, {
+              inputId: "attack",
+              kind: "d20-outcomes",
+              outcomeIds: family.outcomeIds,
+            })
+          );
+          for (const damageType of damageTypes) {
+            steps.push({
+              delivery: "attack",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "per-target-request",
+                    inputId: family.inputId,
+                    kind: "dice-input",
+                    transform: totalOf(INPUT_TOTAL),
+                  },
+                  damageType,
+                  partId: `${family.inputId}-${damageType}`,
+                },
+              ],
+              stepId: `${family.inputId}-${damageType}-apply`,
+              target: attackOutcomeSelector([...family.outcomeIds], p),
+              traits: [],
+              when: typeGate(damageType),
+            });
+          }
+        }
+        clauses.push(clause("attack-damage-roll", "physical-input"));
+        clauses.push(clause("attack-damage-crit-dice", "automated", "doubled"));
+        clauses.push(clause("attack-damage-application", "automated"));
+      } else {
+        // Save-gated (or automatic) shared roll, exactly like a save spell.
+        inputs.push(diceInput("attack-damage-roll", roll.dice, roll.count));
+        clauses.push(clause("attack-damage-roll", "physical-input"));
+        const saved = action.saveAbility !== undefined;
+        const failedTarget = saved
+          ? {
+              cardinality: "per-request",
+              inputId: "saves",
+              kind: "d20-outcome",
+              outcomeIds: ["failure"],
+              quantifier: "any",
+            }
+          : { inputId: "targets", kind: "input" };
+        for (const damageType of damageTypes) {
+          steps.push({
+            delivery: saved ? "saving-throw" : "automatic",
+            kind: "damage",
+            parts: [
+              {
+                amount: sharedDiceAmount("attack-damage-roll", totalOf(INPUT_TOTAL)),
+                damageType,
+                partId: `attack-damage-${damageType}-full`,
+              },
+            ],
+            stepId: `attack-damage-${damageType}-apply`,
+            target: failedTarget,
+            traits: [],
+            when: allOf(damageMode, typeGate(damageType)),
+          });
+          if (saved && attack.damageOnSave === "half") {
+            steps.push({
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: sharedDiceAmount("attack-damage-roll", {
+                    dividend: totalOf(INPUT_TOTAL),
+                    divisor: fixed(2),
+                    kind: "divide",
+                    rounding: "floor",
+                  }),
+                  damageType,
+                  partId: `attack-damage-${damageType}-half`,
+                },
+              ],
+              stepId: `attack-damage-${damageType}-apply-half`,
+              target: {
+                cardinality: "per-request",
+                inputId: "saves",
+                kind: "d20-outcome",
+                outcomeIds: ["success"],
+                quantifier: "any",
+              },
+              traits: [],
+              when: allOf(damageMode, typeGate(damageType)),
+            });
+          }
+        }
+        if (saved && attack.damageOnSave === "half") {
+          clauses.push(clause("attack-damage-on-save", "automated"));
+        } else if (saved) {
+          clauses.push(clause("attack-damage-on-save", "automated", "negates"));
+        }
+        clauses.push(clause("attack-damage-application", "automated"));
+      }
+      // Heal-or-damage: the SAME rolled total heals the target instead when the
+      // player picks the heal mode (Divine Spark).
+      if (healOrDamage) {
+        steps.push({
+          amount: sharedDiceAmount("attack-damage-roll", totalOf(INPUT_TOTAL)),
+          kind: "heal",
+          stepId: "attack-heal-apply",
+          target: { inputId: "targets", kind: "input" },
+          when: { choiceId: "heal", inputId: "attack-mode", kind: "answer-choice" },
+        });
+        clauses.push(clause("attack-heal", "automated", "same-rolled-total"));
+      }
+    }
   }
 
   // Healing: a fixed dice formula plus the caller-resolved flat bonus.
@@ -1553,6 +2029,283 @@ export function transcribeFeatureAction(
       }
       clauses.push(clause("temporary-hit-points", "automated"));
     }
+  }
+
+  const blocked = clauses.some((entry) => entry.status === "unsupported");
+  if (blocked || steps.length === 0) {
+    return {
+      actionId,
+      clauses:
+        steps.length === 0 && !blocked
+          ? [...clauses, clause("resolution", "narrative", "no-mechanical-steps")]
+          : clauses,
+      program: null,
+    };
+  }
+  const program = conformMechanicsProgram({
+    id: actionId,
+    phases: [{ inputs, phaseId: "resolve", steps, trigger: { kind: "invocation" } }],
+    registers: [],
+    version: 1,
+  });
+  if (!program) {
+    return {
+      actionId,
+      clauses: clauses.map((entry) =>
+        entry.status === "automated"
+          ? clause(entry.clauseId, "unsupported", "program-conformance")
+          : entry
+      ),
+      program: null,
+    };
+  }
+  return { actionId, clauses, program };
+}
+
+/**
+ * The resolved profile of ONE weapon attack row, read off the SAME sheet seam
+ * every combat surface renders (`resolveActions`' weapon summary): the to-hit
+ * total, the folded damage formula, the mastery numbers. The transcriber never
+ * re-derives weapon math — it transcribes the sheet's already-single-sourced
+ * numbers into the canonical attack program.
+ */
+export interface WeaponAttackProfile {
+  /** The stable resolved action-row id ("weapon-longsword"). */
+  readonly actionId: string;
+  /** The resolved to-hit total (ability + PB + styles + enchant − exhaustion). */
+  readonly attackBonus: number;
+  /** Lowest natural d20 that crits (Champion 19/18). Default 20. */
+  readonly critThreshold?: number;
+  /** The resolved one-handed damage formula ("1d8+5"). */
+  readonly damage: string;
+  readonly damageType: string;
+  /** The resolved Graze on-miss damage (= attack ability modifier, ≥ 0). */
+  readonly grazeDamage?: number;
+  /** The weapon's OWNED mastery token, when the character mastered it. */
+  readonly mastery?: string;
+  /** The resolved Topple save DC (8 + attack ability modifier + PB). */
+  readonly toppleDc?: number;
+  /** The resolved TWO-HANDED damage formula for a Versatile weapon. */
+  readonly versatileDamage?: string;
+}
+
+export interface WeaponAttackTranscription {
+  readonly actionId: string;
+  readonly clauses: readonly TranscriptionClause[];
+  readonly program: Readonly<MechanicsProgram> | null;
+}
+
+/**
+ * Transcribe one weapon attack: the attack d20 against the table-entered
+ * armor-class binding with the weapon's resolved to-hit folded in, hit/crit
+ * damage expansion (criticals double the DICE, never the flat modifier), a
+ * Versatile grip choice, and the deterministic masteries (Graze's on-miss
+ * modifier damage, Topple's opt-in save → Prone). Misses self-resolve — an
+ * all-miss attack leaves the damage inputs with zero requests. Every other
+ * mastery stays a table fact: its effect lives on the un-modeled enemy's turn
+ * (Vex/Sap/Slow) or in the turn economy (Nick/Cleave) or in space (Push).
+ */
+export function transcribeWeaponAttack(
+  profile: Readonly<WeaponAttackProfile>
+): WeaponAttackTranscription {
+  const actionId = `weapon:${profile.actionId}`;
+  const clauses: TranscriptionClause[] = [];
+  const inputs: Record<string, unknown>[] = [];
+  const steps: Record<string, unknown>[] = [];
+  const unsupported = (clauseId: string, detail: string): void => {
+    clauses.push(clause(clauseId, "unsupported", detail));
+  };
+  const p = (id: string): string => id;
+
+  inputs.push({
+    eligibility: "creature",
+    inputId: "targets",
+    kind: "entities",
+    maximum: fixed(1),
+    minimum: fixed(0),
+    multiplicity: "slots",
+    when: null,
+  });
+  clauses.push(clause("targeting", "automated"));
+
+  // Versatile grip: the player picks the grip before rolling; each grip owns
+  // its dice family below. Non-versatile weapons skip the question entirely.
+  const grips: readonly {
+    readonly formula: string;
+    readonly gate: Readonly<Record<string, unknown>> | null;
+    readonly suffix: string;
+  }[] =
+    profile.versatileDamage !== undefined
+      ? [
+          {
+            formula: profile.damage,
+            gate: {
+              choiceId: "one-handed",
+              inputId: "grip",
+              kind: "answer-choice",
+            },
+            suffix: "",
+          },
+          {
+            formula: profile.versatileDamage,
+            gate: {
+              choiceId: "two-handed",
+              inputId: "grip",
+              kind: "answer-choice",
+            },
+            suffix: "-two-handed",
+          },
+        ]
+      : [{ formula: profile.damage, gate: null, suffix: "" }];
+  if (profile.versatileDamage !== undefined) {
+    inputs.push({
+      inputId: "grip",
+      kind: "choice",
+      options: ["one-handed", "two-handed"],
+      when: null,
+    });
+    clauses.push(clause("versatile-grip", "automated", "player-chooses-grip"));
+  }
+
+  inputs.push(
+    attackInput(p, {
+      bonus: fixed(profile.attackBonus),
+      criticalThreshold: profile.critThreshold ?? 20,
+      sourceId: "weapon-attack-bonus",
+      testId: "weapon-attack",
+    })
+  );
+  clauses.push(clause("attack-roll", "physical-input"));
+  clauses.push(clause("attack-adjudication", "automated", "hit-vs-bound-armor-class"));
+  clauses.push(clause("attack-range", "spatial", "table-verifies-range"));
+  if (profile.critThreshold !== undefined && profile.critThreshold < 20) {
+    clauses.push(clause("crit-range", "automated", "expanded-threshold"));
+  }
+
+  for (const grip of grips) {
+    const dice = parseDice(grip.formula);
+    if (dice === null) {
+      unsupported(`damage${grip.suffix}`, `formula:${grip.formula}`);
+      continue;
+    }
+    const families = [
+      {
+        count: fixed(dice.count),
+        inputId: `damage-roll${grip.suffix}`,
+        outcomeIds: ["hit"],
+      },
+      {
+        count: { factors: [fixed(2), fixed(dice.count)], kind: "multiply" as const },
+        inputId: `damage-roll${grip.suffix}-crit`,
+        outcomeIds: ["critical-hit"],
+      },
+    ] as const;
+    for (const family of families) {
+      inputs.push(
+        diceInput(
+          family.inputId,
+          dice,
+          family.count,
+          { inputId: "attack", kind: "d20-outcomes", outcomeIds: family.outcomeIds },
+          grip.gate
+        )
+      );
+      steps.push({
+        delivery: "attack",
+        kind: "damage",
+        parts: [
+          {
+            amount: {
+              cardinality: "per-target-request",
+              inputId: family.inputId,
+              kind: "dice-input",
+              transform: INPUT_TOTAL,
+            },
+            damageType: profile.damageType,
+            partId: `${family.inputId}-full`,
+          },
+        ],
+        stepId: `${family.inputId}-apply`,
+        target: attackOutcomeSelector([...family.outcomeIds], p),
+        traits: ["weapon"],
+        when: grip.gate,
+      });
+    }
+  }
+  clauses.push(clause("damage-roll", "physical-input"));
+  clauses.push(clause("damage-crit-dice", "automated", "doubled"));
+  clauses.push(clause("damage-application", "automated"));
+
+  // Masteries. Graze and Topple are the two whose whole effect the kernel can
+  // carry (modifier damage on a miss; an opt-in save into the Prone condition
+  // whose end stays table-owned). The rest are honest table facts.
+  const mastery = profile.mastery?.toLowerCase();
+  if (mastery === "graze") {
+    if (profile.grazeDamage !== undefined && profile.grazeDamage > 0) {
+      steps.push({
+        delivery: "attack",
+        kind: "damage",
+        parts: [
+          {
+            amount: { expression: fixed(profile.grazeDamage), kind: "integer" },
+            damageType: profile.damageType,
+            partId: "graze-damage",
+          },
+        ],
+        stepId: "graze-apply",
+        target: attackOutcomeSelector(["miss"], p),
+        traits: ["weapon"],
+        when: null,
+      });
+      clauses.push(clause("mastery-graze", "automated", "modifier-damage-on-miss"));
+    } else {
+      clauses.push(clause("mastery-graze", "narrative", "zero-modifier-no-damage"));
+    }
+  } else if (mastery === "topple") {
+    if (profile.toppleDc !== undefined) {
+      const opted: Readonly<Record<string, unknown>> = {
+        equals: true,
+        inputId: "use-topple",
+        kind: "answer-boolean",
+      };
+      inputs.push({
+        inputId: "use-topple",
+        kind: "boolean",
+        when: attackLanded(p),
+      });
+      inputs.push(
+        savingThrowInput("CON", allOf(attackLanded(p), opted), "topple-save", "targets", {
+          difficultyClass: fixed(profile.toppleDc),
+          testId: "weapon-mastery-save",
+        })
+      );
+      steps.push({
+        conditionId: "prone",
+        kind: "condition",
+        lifetime: { kind: "manual" },
+        operation: "apply",
+        stepId: "topple-prone",
+        target: {
+          cardinality: "per-request",
+          inputId: "topple-save",
+          kind: "d20-outcome",
+          outcomeIds: ["failure"],
+          quantifier: "any",
+        },
+        // The landed-attack gate comes FIRST: on an all-miss attack the opt-in
+        // boolean is omitted, and `all` must short-circuit to false before the
+        // unanswerable `answer-boolean` could leave the step unresolved.
+        when: allOf(attackLanded(p), opted),
+      });
+      clauses.push(clause("mastery-topple-choice", "automated", "opt-in-on-hit"));
+      clauses.push(clause("mastery-topple-save", "physical-input"));
+      clauses.push(clause("mastery-topple-prone", "automated"));
+      clauses.push(clause("mastery-topple-lifetime", "table", "table-owned-end"));
+    } else {
+      clauses.push(clause("mastery-topple", "table", "unresolved-save-dc"));
+    }
+  } else if (mastery !== undefined) {
+    clauses.push(clause(`mastery-${mastery}`, "table", "table-applies-mastery"));
   }
 
   const blocked = clauses.some((entry) => entry.status === "unsupported");

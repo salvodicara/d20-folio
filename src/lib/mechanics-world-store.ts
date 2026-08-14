@@ -17,14 +17,26 @@ import {
   createEmptyCharacterMaterialState,
   parseCharacterMaterialState,
 } from "@/lib/material-state";
+import { mechanicsAuthorityDefinitionFingerprint } from "@/lib/mechanics-authority";
+import {
+  mechanicsDefinitionFactAddress,
+  mechanicsInstallationFactAddress,
+} from "@/lib/mechanics-authority-ref";
+import { mechanicsCapabilitySnapshotFingerprint } from "@/lib/mechanics-capability";
 import { conformMechanicsProgramAuthorityReceipt } from "@/lib/mechanics-program-receipt";
 import {
   transcribeFeatureAction,
   transcribeSpell,
+  transcribeWeaponAttack,
   TRANSCRIPTION_BINDINGS,
   type SpellTranscription,
+  type WeaponAttackProfile,
 } from "@/lib/mechanics-transcription";
 import { applySlotMaxOverrides, deriveSpellSlots } from "@/lib/multiclass-slots";
+import {
+  resolveActions,
+  resolveTrackers as resolveActionsTrackerRows,
+} from "@/lib/smart-tracker";
 import type {
   ActionFactGuard,
   ActionJournalWorld,
@@ -33,6 +45,7 @@ import type {
 } from "@/types/action-journal";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import type { CharacterMaterialState } from "@/types/material-state";
+import type { MechanicsAuthorityDefinition } from "@/types/mechanics-authority";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
 import type { CharacterMaterialRef, EntityRef } from "@/types/mechanics-reference";
 import type { ProgramOccurrence } from "@/types/mechanic-occurrence";
@@ -48,6 +61,53 @@ export function characterSelfRef(doc: { readonly id: string }, uid: string): Ent
   return { entityId: "self", material: characterMaterialRef(doc, uid) };
 }
 
+/**
+ * Close one capability receipt into the self-witnessing authority definition
+ * the coordinator verifies (definition + installation guards fingerprinting
+ * the snapshot and the definition itself). The ONE shape every engine dispatch
+ * surface and proof shares, so a surface can never wire a capability with a
+ * differently-guarded authority.
+ */
+export function mechanicsAuthorityDefinition(
+  authority: Readonly<MechanicsProgramAuthorityReceipt>
+): MechanicsAuthorityDefinition {
+  const definition: MechanicsAuthorityDefinition = {
+    actorSpec: { kind: "role", role: "owner" },
+    anchors: authority.anchors,
+    definitionGuards: [
+      {
+        address: mechanicsDefinitionFactAddress(authority.snapshot.ref.definition),
+        expected: {
+          present: true,
+          value: mechanicsCapabilitySnapshotFingerprint(authority.snapshot),
+        },
+        lifecycle: "commit",
+        owner: authority.installation.owner,
+      },
+    ],
+    installation: authority.installation,
+    installationGuards: [],
+    owner: authority.installation.owner,
+    snapshot: authority.snapshot,
+    source: authority.source,
+    staticBindings: authority.staticBindings,
+  };
+  return {
+    ...definition,
+    installationGuards: [
+      {
+        address: mechanicsInstallationFactAddress(authority.installation),
+        expected: {
+          present: true,
+          value: mechanicsAuthorityDefinitionFingerprint(definition),
+        },
+        lifecycle: "commit",
+        owner: authority.installation.owner,
+      },
+    ],
+  };
+}
+
 function countCell(current: number) {
   return {
     capacity: { base: { kind: "unbounded" as const }, override: null },
@@ -55,6 +115,23 @@ function countCell(current: number) {
     disabled: false,
     kind: "count" as const,
   };
+}
+
+/**
+ * The character's legacy tracker counters as world-pool seeds, from the ONE
+ * tracker resolver every rail/rest surface reads (`resolveTrackers`). Passed
+ * into {@link characterWorldState}, which seeds each pool EXACTLY ONCE — an
+ * already-persisted pool is world truth and is never reseeded.
+ */
+export function characterTrackerSeeds(
+  doc: Readonly<CharacterDoc>
+): Readonly<Record<string, { total: number; used: number }>> {
+  return Object.fromEntries(
+    resolveActionsTrackerRows(doc).map((tracker) => [
+      tracker.id,
+      { total: tracker.total, used: tracker.used },
+    ])
+  );
 }
 
 /**
@@ -268,11 +345,22 @@ export function characterFeatureActionCapability(
   featureId: string,
   action: Readonly<import("@/data/types").SrdActionDef>,
   ordinal: number,
-  derived: Readonly<{ featureBonus: number; maxHp: number; saveDc: number }>,
+  derived: Readonly<{
+    /** Spell-attack bonus, for the rare `attackType` action (bound only then). */
+    attackBonus?: number;
+    /** Resolved level/ability-scaled die count for the action's attack dice. */
+    attackDiceCount?: number;
+    featureBonus: number;
+    maxHp: number;
+    saveDc: number;
+    /** Table-entered target armor class, for `attackType` actions. */
+    targetArmorClass?: number;
+  }>,
   feature: Readonly<import("@/lib/mechanics-transcription").FeatureActionContext> = {}
 ): CharacterCastCapability | null {
   const paymentTracker =
     action.costTracker ??
+    action.costTrackerOverride ??
     (action.maintainsActiveKey === undefined ? feature.trackerId : undefined);
   const transcription = transcribeFeatureAction(featureId, action, ordinal, feature);
   if (!transcription.program) return null;
@@ -307,6 +395,15 @@ export function characterFeatureActionCapability(
     staticBindings: {
       [TRANSCRIPTION_BINDINGS.featureBonus]: derived.featureBonus,
       [TRANSCRIPTION_BINDINGS.saveDc]: derived.saveDc,
+      ...(derived.attackBonus !== undefined
+        ? { [TRANSCRIPTION_BINDINGS.attackBonus]: derived.attackBonus }
+        : {}),
+      ...(derived.attackDiceCount !== undefined
+        ? { [TRANSCRIPTION_BINDINGS.attackDiceCount]: derived.attackDiceCount }
+        : {}),
+      ...(derived.targetArmorClass !== undefined
+        ? { [TRANSCRIPTION_BINDINGS.targetArmorClass]: derived.targetArmorClass }
+        : {}),
     },
   });
   if (!authority) return null;
@@ -351,6 +448,100 @@ export function characterFeatureActionCapability(
     transcription: {
       clauses: transcription.clauses,
       entityId: featureId,
+      program: transcription.program,
+    },
+  };
+}
+
+/**
+ * The executable authority for one of the character's weapon attack rows. The
+ * attack bonus, damage formula, crit threshold and mastery numbers come from
+ * the SAME resolved action row every combat surface renders (`resolveActions`
+ * — breakdown-derived to-hit, folded damage modifier, `masteryNumbers`), so
+ * the engine can never disagree with the sheet. The target's armor class stays
+ * the table-entered binding, exactly like a transcribed attack spell.
+ */
+export function characterWeaponAttackCapability(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  weaponActionId: string,
+  derived: Readonly<{ maxHp: number; targetArmorClass?: number }>
+): CharacterCastCapability | null {
+  const row = resolveActions(doc).find(
+    (candidate) => candidate.id === weaponActionId && candidate.source === "weapon"
+  );
+  if (!row || row.summary.attackBonus === undefined || row.summary.damage === undefined) {
+    return null;
+  }
+  const summary = row.summary;
+  const profile: WeaponAttackProfile = {
+    actionId: row.id,
+    attackBonus: summary.attackBonus ?? 0,
+    ...(summary.critRange !== undefined ? { critThreshold: summary.critRange } : {}),
+    damage: summary.damage ?? "",
+    damageType: summary.damageType ?? "bludgeoning",
+    ...(summary.masteryDetail?.grazeDamage !== undefined
+      ? { grazeDamage: summary.masteryDetail.grazeDamage }
+      : {}),
+    ...(summary.weaponMastery !== undefined ? { mastery: summary.weaponMastery } : {}),
+    ...(summary.masteryDetail?.toppleDc !== undefined
+      ? { toppleDc: summary.masteryDetail.toppleDc }
+      : {}),
+    ...(summary.versatileDamage !== undefined
+      ? { versatileDamage: summary.versatileDamage }
+      : {}),
+  };
+  const transcription = transcribeWeaponAttack(profile);
+  if (!transcription.program) return null;
+  const self = characterSelfRef(doc, uid);
+  const capability = {
+    capabilityId: transcription.program.id,
+    definition: {
+      catalogueKind: "weapon" as const,
+      entityId: row.weaponId ?? row.id,
+      kind: "catalogue" as const,
+      mechanicsRevision: canonicalFingerprint({ program: transcription.program }),
+    },
+    kind: "program" as const,
+  };
+  const authority = conformMechanicsProgramAuthorityReceipt({
+    anchors: { activator: self, caster: self, owner: self, source: self, target: self },
+    installation: {
+      capability,
+      generation: 1,
+      installationId: transcription.program.id,
+      owner: self,
+    },
+    schema: 1,
+    snapshot: {
+      grantGroups: {},
+      program: transcription.program,
+      ref: capability,
+      resources: {},
+      schema: 1,
+    },
+    source: { capability, kind: "capability", owner: self },
+    staticBindings: {
+      ...(derived.targetArmorClass !== undefined
+        ? { [TRANSCRIPTION_BINDINGS.targetArmorClass]: derived.targetArmorClass }
+        : {}),
+    },
+  });
+  if (!authority) return null;
+  const facts: ActionFactGuard[] = [
+    {
+      address: ["hit-point-maximum"],
+      expected: { present: true, value: derived.maxHp },
+      lifecycle: "commit-redo",
+      owner: self,
+    },
+  ];
+  return {
+    authority,
+    facts,
+    transcription: {
+      clauses: transcription.clauses,
+      entityId: row.id,
       program: transcription.program,
     },
   };
@@ -467,6 +658,26 @@ function engineConcentrationSpell(
   return null;
 }
 
+/** The LIVE condition ids the world holds on this character itself. */
+function selfConditionIds(
+  state: Readonly<CharacterMaterialState>,
+  characterId: string
+): ReadonlySet<string> {
+  const ids = new Set<string>();
+  for (const occurrence of Object.values(state.occurrences)) {
+    if (occurrence.kind !== "condition" || occurrence.ending !== null) continue;
+    const target = occurrence.target;
+    if (
+      target.entityId === "self" &&
+      target.material.kind === "character-play" &&
+      target.material.characterId === characterId
+    ) {
+      ids.add(occurrence.conditionId);
+    }
+  }
+  return ids;
+}
+
 /** Mirror the world-owned facts onto the legacy session bridge fields. */
 function mirroredCommit(
   doc: Readonly<CharacterDoc>,
@@ -509,9 +720,29 @@ function mirroredCommit(
           doc.session.concentration === concentrationValue(concentrationBefore)
         ? ""
         : doc.session.concentration;
+  // Condition mirror: only ENGINE transitions on the character ITSELF move the
+  // legacy chips — a self-condition the engine applies lights its chip, an
+  // engine end/cure clears it, and a manually-chipped condition the world has
+  // never owned is untouched (its cure is the dispatching flow's mirror).
+  const conditionsBefore = selfConditionIds(world, doc.id);
+  const conditionsAfter = selfConditionIds(next, doc.id);
+  const conditionsRemoved = [...conditionsBefore].filter(
+    (id) => !conditionsAfter.has(id)
+  );
+  const conditionsAdded = [...conditionsAfter].filter(
+    (id) => !conditionsBefore.has(id) && !doc.session.conditions.includes(id)
+  );
+  const conditions =
+    conditionsAdded.length > 0 || conditionsRemoved.length > 0
+      ? [
+          ...doc.session.conditions.filter((id) => !conditionsRemoved.includes(id)),
+          ...conditionsAdded,
+        ]
+      : doc.session.conditions;
   const session: SessionState = {
     ...doc.session,
     concentration,
+    conditions,
     trackers,
     hp: {
       ...doc.session.hp,

@@ -1,79 +1,41 @@
 /**
- * One replay-driven cast through the deterministic mechanics engine.
+ * One replay-driven engine action through the deterministic mechanics engine.
  *
  * The hook owns only the collected answer/response ledgers; every render-time
  * truth (requirement, outcome) is recomputed by replaying the coordinator over
  * the character's persisted world, so the UI can never disagree with the
  * engine. Committing routes the planned action through the canonical journal
  * reducer and the store's ordinary session update (auto-save included).
+ *
+ * `useMechanicsEngineAction` is the shared protocol core; `useMechanicsCast`
+ * closes it over a transcribed SPELL capability, and the actions surface closes
+ * it over feature-action/weapon-attack capabilities (`EngineActionFlow`).
  */
 
 import { useCallback, useMemo, useState } from "react";
 
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
-import { mechanicsAuthorityDefinitionFingerprint } from "@/lib/mechanics-authority";
-import {
-  mechanicsDefinitionFactAddress,
-  mechanicsInstallationFactAddress,
-} from "@/lib/mechanics-authority-ref";
-import { mechanicsCapabilitySnapshotFingerprint } from "@/lib/mechanics-capability";
 import { runMechanicsCausalAction } from "@/lib/mechanics-coordinator";
 import {
   characterMaterialRef,
   characterSlotDefinitionFacts,
   characterSpellCapability,
+  characterTrackerSeeds,
   characterWorldState,
   commitCharacterAction,
+  mechanicsAuthorityDefinition,
+  type CharacterCastCapability,
   type CharacterCastDerived,
 } from "@/lib/mechanics-world-store";
 import { beginMechanicsCausalState } from "@/lib/mechanics-world";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
-import type { MechanicsAuthorityDefinition } from "@/types/mechanics-authority";
+import type { ActionFactGuard } from "@/types/action-journal";
+import type { CharacterDoc } from "@/types/character";
+import type { CharacterMaterialState } from "@/types/material-state";
 import type { MechanicsCoordinationResult } from "@/types/mechanics-coordinator";
 import type { MechanicsAnswer, MechanicsRequirement } from "@/types/mechanics-program";
 import type { MechanicsCompilerResponse } from "@/types/mechanics-compiler";
-import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
-
-function authorityDefinition(
-  authority: Readonly<MechanicsProgramAuthorityReceipt>
-): MechanicsAuthorityDefinition {
-  const definition: MechanicsAuthorityDefinition = {
-    actorSpec: { kind: "role", role: "owner" },
-    anchors: authority.anchors,
-    definitionGuards: [
-      {
-        address: mechanicsDefinitionFactAddress(authority.snapshot.ref.definition),
-        expected: {
-          present: true,
-          value: mechanicsCapabilitySnapshotFingerprint(authority.snapshot),
-        },
-        lifecycle: "commit",
-        owner: authority.installation.owner,
-      },
-    ],
-    installation: authority.installation,
-    installationGuards: [],
-    owner: authority.installation.owner,
-    snapshot: authority.snapshot,
-    source: authority.source,
-    staticBindings: authority.staticBindings,
-  };
-  return {
-    ...definition,
-    installationGuards: [
-      {
-        address: mechanicsInstallationFactAddress(authority.installation),
-        expected: {
-          present: true,
-          value: mechanicsAuthorityDefinitionFingerprint(definition),
-        },
-        lifecycle: "commit",
-        owner: authority.installation.owner,
-      },
-    ],
-  };
-}
 
 export type MechanicsCastPhase =
   | { readonly kind: "unavailable"; readonly reason: string }
@@ -93,9 +55,26 @@ export interface MechanicsCastState {
   readonly respond: (value: MechanicsCompilerResponse) => void;
 }
 
-export function useMechanicsCast(
-  spellId: string,
-  derived: Readonly<CharacterCastDerived>
+/** One engine-executable capability closed for the replay protocol. */
+export interface EngineActionSource {
+  readonly capability: CharacterCastCapability;
+  /** Facts beyond the capability's own (a spell's slot definitions). */
+  readonly extraFacts?: readonly ActionFactGuard[];
+  /** Stable id stem for the run's action/occurrence identities. */
+  readonly key: string;
+}
+
+/**
+ * The shared replay protocol over ANY engine capability: derive the world,
+ * close the capability, and re-run the coordinator with the growing answer
+ * ledger until the planned action is complete, then commit it canonically.
+ */
+export function useMechanicsEngineAction(
+  sourceFor: (
+    doc: Readonly<CharacterDoc>,
+    uid: string,
+    world: Readonly<CharacterMaterialState>
+  ) => EngineActionSource | null
 ): MechanicsCastState {
   const doc = useCharacterStore((state) => state.character);
   const updateSession = useCharacterStore((state) => state.updateSession);
@@ -107,12 +86,18 @@ export function useMechanicsCast(
     if (!doc || uid === null) {
       return { phase: { kind: "unavailable", reason: "no-character" } as const };
     }
-    const world = characterWorldState(doc, uid, derived.maxHp);
+    const world = characterWorldState(
+      doc,
+      uid,
+      doc.character.hp.max,
+      {},
+      characterTrackerSeeds(doc)
+    );
     if (!world) {
       return { phase: { kind: "unavailable", reason: "world" } as const };
     }
-    const capability = characterSpellCapability(doc, uid, spellId, derived);
-    if (!capability) {
+    const source = sourceFor(doc, uid, world);
+    if (!source) {
       return { phase: { kind: "unavailable", reason: "not-transcribed" } as const };
     }
     const material = characterMaterialRef(doc, uid);
@@ -126,17 +111,17 @@ export function useMechanicsCast(
     const outcome = runMechanicsCausalAction({
       answers,
       authoritySnapshot: {
-        definitions: [authorityDefinition(capability.authority)],
+        definitions: [mechanicsAuthorityDefinition(source.capability.authority)],
       },
-      facts: [...capability.facts, ...characterSlotDefinitionFacts(doc, uid, world)],
+      facts: [...source.capability.facts, ...(source.extraFacts ?? [])],
       frameAnswers: [],
       intent: {
-        actionId: `cast:${spellId}:${canonicalFingerprint({ answers, spellId })}`,
+        actionId: `${source.key}:${canonicalFingerprint({ answers, key: source.key })}`,
         factGuards: [],
         frame: {
-          authority: capability.authority,
+          authority: source.capability.authority,
           invocation: {
-            installation: capability.authority.installation,
+            installation: source.capability.authority.installation,
             kind: "installed-capability",
           },
           rootReceipt: {
@@ -146,7 +131,7 @@ export function useMechanicsCast(
             root: {
               occurrence: {
                 material,
-                occurrenceId: `cast-${spellId}-${world.nextOccurrenceOrdinal}`,
+                occurrenceId: `${source.key}-${world.nextOccurrenceOrdinal}`,
               },
               ordinal: world.nextOccurrenceOrdinal,
             },
@@ -172,7 +157,7 @@ export function useMechanicsCast(
       return { phase: { kind: "rejected", reason: outcome.reason } as const };
     }
     return { outcome, phase: { kind: "ready", outcome } as const, world };
-  }, [answers, derived, doc, responses, spellId, uid]);
+  }, [answers, doc, responses, sourceFor, uid]);
 
   const answer = useCallback((value: MechanicsAnswer) => {
     setAnswers((current) => [...current, value]);
@@ -206,4 +191,27 @@ export function useMechanicsCast(
   }, [doc, replay, reset, uid, updateSession]);
 
   return { answer, answers, commit, phase: replay.phase, reset, respond };
+}
+
+export function useMechanicsCast(
+  spellId: string,
+  derived: Readonly<CharacterCastDerived>
+): MechanicsCastState {
+  const sourceFor = useCallback(
+    (
+      doc: Readonly<CharacterDoc>,
+      uid: string,
+      world: Readonly<CharacterMaterialState>
+    ): EngineActionSource | null => {
+      const capability = characterSpellCapability(doc, uid, spellId, derived);
+      if (!capability) return null;
+      return {
+        capability,
+        extraFacts: characterSlotDefinitionFacts(doc, uid, world),
+        key: `cast-${spellId}`,
+      };
+    },
+    [derived, spellId]
+  );
+  return useMechanicsEngineAction(sourceFor);
 }

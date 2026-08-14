@@ -687,14 +687,25 @@ function resourceRemaining(world: MechanicsWorld, ref: ResourceRef): number | nu
   return cell.kind === "count" ? cell.current : cell.values.length;
 }
 
-/** The chosen spell-slot level of every resolved resource answer, as bindings. */
-function resolvedResourceLevelBindings(
+/**
+ * Answer-derived bindings for later inputs and compile-time expressions: the
+ * chosen spell-slot level of every resolved resource answer
+ * (`input.<inputId>.level`) and the chosen value of every resolved integer
+ * answer (`input.<inputId>.value` — the chosen-amount law: a later resource
+ * payment or step amount reads the player-chosen quantity, Lay on Hands'
+ * variable pool spend). Review resolves answers in authored input order and
+ * refreshes these after each one, so an amount-bearing input must be authored
+ * BEFORE any input or step that binds it.
+ */
+function resolvedAnswerBindings(
   resolved: Readonly<Record<string, ResolvedMechanicsAnswer>>
 ): Readonly<Record<string, number>> {
   const bindings: Record<string, number> = {};
   for (const answer of Object.values(resolved)) {
     if (answer.kind === "resource" && answer.resource.kind === "standard-spell-slot") {
       bindings[`input.${answer.inputId}.level`] = answer.resource.level;
+    } else if (answer.kind === "integer") {
+      bindings[`input.${answer.inputId}.value`] = answer.value;
     }
   }
   return bindings;
@@ -1343,7 +1354,7 @@ export function refreshMechanicsProgramCompilationContext(
   return freezeDeep({
     bindings: {
       ...validated.bindings,
-      ...resolvedResourceLevelBindings(reviewed.resolved),
+      ...resolvedAnswerBindings(reviewed.resolved),
     },
     execution: validated.execution.execution,
     intent: reviewed.intent,
@@ -1389,7 +1400,7 @@ export function refreshMechanicsProgramProjectedCompilationContext(
   return freezeDeep({
     bindings: {
       ...validated.bindings,
-      ...resolvedResourceLevelBindings(reviewed.resolved),
+      ...resolvedAnswerBindings(reviewed.resolved),
     },
     execution: validated.execution.execution,
     intent: reviewed.intent,
@@ -2532,7 +2543,7 @@ function reviewMechanicsIntentValidated(
       ...context,
       bindings: {
         ...validated.bindings,
-        ...resolvedResourceLevelBindings(resolved),
+        ...resolvedAnswerBindings(resolved),
       },
     };
   };

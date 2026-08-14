@@ -13,6 +13,8 @@ import { useTranslation } from "react-i18next";
 
 import { Dialog, DialogBody, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useLocale } from "@/hooks/useLocale";
+import { conditionLabel } from "@/lib/views/tracker-view";
 import type { MechanicsCastState } from "@/features/character/useMechanicsCast";
 import type {
   MechanicsDiceRequirement,
@@ -38,6 +40,8 @@ function requirementDice(
 
 export interface MechanicsCastModalProps {
   readonly cast: MechanicsCastState;
+  /** Which title the dialog carries; the protocol below is identical. */
+  readonly flavor?: "action" | "attack" | "cast";
   readonly material: CharacterMaterialRef;
   readonly onClose: () => void;
   /**
@@ -53,6 +57,7 @@ export interface MechanicsCastModalProps {
 
 export function MechanicsCastModal({
   cast,
+  flavor = "cast",
   material,
   onClose,
   onArmorClass,
@@ -60,10 +65,40 @@ export function MechanicsCastModal({
   slotRemaining,
   spellName,
 }: MechanicsCastModalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { language: locale } = useLocale();
   const [faces, setFaces] = useState<Readonly<Record<string, number>>>({});
+  const [amountDraft, setAmountDraft] = useState("");
   const [armorClassDraft, setArmorClassDraft] = useState("");
   const phase = cast.phase;
+  const title =
+    flavor === "attack"
+      ? t("mechanics.cast.attackTitle")
+      : flavor === "action"
+        ? t("combat.resolveRubric")
+        : t("mechanics.cast.title");
+  /** Localized label for a choice option id (mode, grip, or a damage type). */
+  const optionLabel = (id: string): string => {
+    const known: Readonly<Record<string, string>> = {
+      damage: t("mechanics.cast.optionDamage"),
+      heal: t("combat.heal"),
+      "one-handed": t("mechanics.cast.optionOneHanded"),
+      "two-handed": t("mechanics.cast.optionTwoHanded"),
+    };
+    if (known[id] !== undefined) return known[id];
+    return i18n.exists(`srd.damage_${id}`) ? t(`srd.damage_${id}`) : id;
+  };
+  /** The question an opt-in boolean input asks (a pool-priced cure, Topple). */
+  const booleanPrompt = (inputId: string): string => {
+    const cure = /^cure-(.+)-opt$/.exec(inputId);
+    if (cure?.[1] !== undefined) {
+      return t("mechanics.cast.booleanCure", {
+        condition: conditionLabel(cure[1], locale),
+      });
+    }
+    if (inputId === "use-topple") return t("mechanics.cast.booleanTopple");
+    return t("mechanics.cast.booleanPrompt");
+  };
 
   const dice = useMemo(
     () =>
@@ -80,7 +115,7 @@ export function MechanicsCastModal({
 
   return (
     <Dialog open onOpenChange={(open) => (open ? undefined : close())}>
-      <DialogContent title={`${t("mechanics.cast.title")} — ${spellName}`}>
+      <DialogContent title={`${title} · ${spellName}`}>
         <DialogBody>
           {requiresArmorClass && (
             <div>
@@ -155,6 +190,110 @@ export function MechanicsCastModal({
               >
                 {t("mechanics.cast.targetSelf")}
               </Button>
+              {phase.requirement.minimum === 0 && (
+                <Button
+                  onClick={() =>
+                    cast.answer({
+                      inputId: phase.requirement.inputId,
+                      kind: "entities",
+                      targets: [],
+                    })
+                  }
+                  variant="ghost"
+                >
+                  {t("mechanics.cast.targetNone")}
+                </Button>
+              )}
+            </div>
+          )}
+          {phase.kind === "collecting" && phase.requirement.kind === "integer" && (
+            <div>
+              <p>
+                {t("mechanics.cast.amountPrompt", {
+                  maximum: phase.requirement.maximum,
+                  minimum: phase.requirement.minimum,
+                })}
+              </p>
+              <label>
+                {t("mechanics.cast.amountLabel")}
+                <input
+                  inputMode="numeric"
+                  max={phase.requirement.maximum}
+                  min={phase.requirement.minimum}
+                  onChange={(event) => setAmountDraft(event.target.value)}
+                  type="number"
+                  value={amountDraft}
+                />
+              </label>
+              <Button
+                disabled={
+                  !Number.isSafeInteger(Number(amountDraft)) ||
+                  Number(amountDraft) < phase.requirement.minimum ||
+                  Number(amountDraft) > phase.requirement.maximum
+                }
+                onClick={() => {
+                  if (phase.requirement.kind !== "integer") return;
+                  cast.answer({
+                    inputId: phase.requirement.inputId,
+                    kind: "integer",
+                    value: Number(amountDraft),
+                  });
+                  setAmountDraft("");
+                }}
+              >
+                {t("combat.apply")}
+              </Button>
+            </div>
+          )}
+          {phase.kind === "collecting" && phase.requirement.kind === "choice" && (
+            <div>
+              <p>{t("mechanics.cast.choicePrompt")}</p>
+              <div role="group">
+                {phase.requirement.options.map((optionId) => (
+                  <Button
+                    key={optionId}
+                    onClick={() =>
+                      cast.answer({
+                        choiceId: optionId,
+                        inputId: phase.requirement.inputId,
+                        kind: "choice",
+                      })
+                    }
+                  >
+                    {optionLabel(optionId)}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+          {phase.kind === "collecting" && phase.requirement.kind === "boolean" && (
+            <div>
+              <p>{booleanPrompt(phase.requirement.inputId)}</p>
+              <div role="group">
+                <Button
+                  onClick={() =>
+                    cast.answer({
+                      inputId: phase.requirement.inputId,
+                      kind: "boolean",
+                      value: true,
+                    })
+                  }
+                >
+                  {t("common.yes")}
+                </Button>
+                <Button
+                  onClick={() =>
+                    cast.answer({
+                      inputId: phase.requirement.inputId,
+                      kind: "boolean",
+                      value: false,
+                    })
+                  }
+                  variant="ghost"
+                >
+                  {t("common.no")}
+                </Button>
+              </div>
             </div>
           )}
           {phase.kind === "collecting" && phase.requirement.kind === "dice" && (

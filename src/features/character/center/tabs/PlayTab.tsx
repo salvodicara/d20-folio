@@ -25,7 +25,7 @@
  * - Reactions commit immediately too (their own section, same grammar).
  */
 
-import { useCallback, useState, useMemo, type ReactNode } from "react";
+import { lazy, Suspense, useCallback, useState, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { Layers } from "lucide-react";
@@ -116,6 +116,17 @@ import {
 } from "@/lib/views/tracker-view";
 import { useTurnEconomy, getEconomySlot } from "../useTurnEconomy";
 import { combatOutcomePrerequisiteMet } from "@/lib/combat-outcomes";
+// Engine dual-dispatch (rollout bridge): the deterministic-runtime side of the
+// actions surface. The gate transcribes on tap; the flow mounts lazily.
+import { useSheetCombat } from "../turn-state";
+import { useAuthStore } from "@/stores/authStore";
+import { totalLevel } from "@/lib/classes";
+import { getSrdFeatureSource } from "@/lib/srd-feature-lookup";
+import { transcribeFeatureAction } from "@/lib/mechanics-transcription";
+import { characterWeaponAttackCapability } from "@/lib/mechanics-world-store";
+import type { FeatureActionContext } from "@/lib/mechanics-transcription";
+import type { SrdActionDef } from "@/data/types";
+import type { EngineActionDispatch } from "./EngineActionFlow";
 // The verdict composers live in the sibling helpers module (the same pattern as
 // spell-card-helpers) so the chip-budget guard walks the REAL composer.
 import {
@@ -125,6 +136,13 @@ import {
   combatCtaState,
   committedOffHandId,
 } from "./combat-card-helpers";
+
+// The engine action flow joins the deterministic runtime, so it rides a lazy
+// leaf mounted only when an engine-executable action is used (the exact
+// pattern SpellsTab uses for EngineCastFlow).
+const EngineActionFlow = lazy(() =>
+  import("./EngineActionFlow").then((m) => ({ default: m.EngineActionFlow }))
+);
 
 type FilterType = "all" | "action" | "bonus" | "reaction" | "free";
 
@@ -337,6 +355,13 @@ export function PlayTab() {
   // board, base and reaction lists never share an id).
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  // Engine dual-dispatch (rollout bridge): outside an encounter, an
+  // engine-executable feature action or single-attack weapon row resolves
+  // through the deterministic runtime; everything else keeps the legacy commit
+  // loop until its own cutover wave deletes it (the SpellsTab pattern).
+  const sheetCombat = useSheetCombat();
+  const [engineDispatch, setEngineDispatch] = useState<EngineActionDispatch | null>(null);
+
   // Resolve all combat actions from SRD data (engine is locale-free; the view
   // localizes each row at the edge).
   const allActions = useMemo(
@@ -398,6 +423,148 @@ export function PlayTab() {
   const skillCheckBonusFor = useCallback(
     (skillId: string) => skillRows.find((r) => r.id === skillId)?.bonus ?? 0,
     [skillRows]
+  );
+
+  /**
+   * The engine gate: decide on TAP whether this row is engine-executable. A
+   * conservative allowlist — rows whose legacy commit carries semantics the
+   * engine does not model yet (activation toggles, turn prerequisites, per-turn
+   * caps, alternate costs, equipment costs, use-applies, riders, ammo, the
+   * Extra-Attack economy) stay legacy so the two runtimes never split a truth.
+   */
+  const engineDispatchFor = useCallback(
+    (action: ResolvedAction): EngineActionDispatch | null => {
+      if (sheetCombat || !character) return null;
+      if (
+        action.type === "reaction" ||
+        action.activatesKey !== undefined ||
+        action.maintainsActiveKey !== undefined ||
+        action.alternateCost !== undefined ||
+        action.requiresActionThisTurn !== undefined ||
+        action.requiresOutcomeThisTurn !== undefined ||
+        action.requiresActionCategoryThisTurn !== undefined ||
+        action.maxUsesPerTurn !== undefined ||
+        (action.useEffects?.length ?? 0) > 0 ||
+        action.costEquipment !== undefined ||
+        action.standingEffect !== undefined ||
+        action.effectProgram !== undefined
+      ) {
+        return null;
+      }
+      const uid = useAuthStore.getState().user?.uid;
+      if (uid === undefined) return null;
+      if (action.source === "weapon") {
+        if (
+          action.offhand === true ||
+          action.formAttack === true ||
+          action.summary.ammo !== undefined ||
+          (action.summary.extraDamage?.length ?? 0) > 0 ||
+          (action.summary.dieModifiers?.length ?? 0) > 0 ||
+          action.summary.onHitHeal !== undefined ||
+          attackBudget > 1
+        ) {
+          return null;
+        }
+        const capability = characterWeaponAttackCapability(character, uid, action.id, {
+          maxHp: character.character.hp.max,
+        });
+        if (!capability) return null;
+        return { actionName: action.name, kind: "weapon", legacyActionId: action.id };
+      }
+      if (action.source !== "feature" || action.id.startsWith("custom-")) return null;
+      // Recover the owning SRD feature + authored action from the stable row id
+      // (`<featureId>-<actionId|type>` — the resolver's own construction).
+      for (const ref of character.character.features) {
+        if ("custom" in ref) continue;
+        const srdFeature = getSrdFeatureSource(ref.srdId);
+        const authoredActions = srdFeature?.mechanics?.actions;
+        if (!srdFeature || !authoredActions) continue;
+        for (const [ordinal, authored] of authoredActions.entries()) {
+          const override =
+            ref.actionOverrides?.find(
+              (candidate) => candidate.id !== undefined && candidate.id === authored.id
+            ) ?? ref.actionOverrides?.[ordinal];
+          const merged = { ...authored, ...override } as SrdActionDef;
+          if (`${srdFeature.id}-${merged.id ?? merged.type}` !== action.id) continue;
+          // The OWNING class's level for a class feature (the B2 lesson), the
+          // total level otherwise — the same scaling the resolver's dice use.
+          const owningClass =
+            "class" in srdFeature
+              ? character.character.classes.find(
+                  (entry) => entry.classId === srdFeature.class
+                )
+              : undefined;
+          const scalingLevel = owningClass?.level ?? totalLevel(character.character);
+          // The resolved attack dice/flat come from the ROW's own summary (the
+          // one resolver seam), never re-derived: "2d8+3" carries the resolved
+          // count and the folded additive term.
+          const damageFormula = action.summary.damage ?? "";
+          const parsedCount = /^(\d+)d\d+/.exec(damageFormula);
+          const parsedFlat = /\+(\d+)$/.exec(damageFormula);
+          const scaledDice =
+            merged.attack !== undefined &&
+            (merged.attack.diceCount !== undefined ||
+              merged.attack.diceByLevel !== undefined);
+          if (scaledDice && parsedCount === null) return null;
+          const featureBonus =
+            merged.attack !== undefined
+              ? Number(parsedFlat?.[1] ?? 0)
+              : (action.summary.healApply?.bonus ?? 0);
+          const context: FeatureActionContext = {
+            ...(srdFeature.mechanics?.tracker ? { trackerId: srdFeature.id } : {}),
+            ...(action.costTrackerIsPool === true && action.summary.die !== undefined
+              ? { poolDie: action.summary.die }
+              : {}),
+            scalingLevel,
+            ...(merged.attack?.damageTypeFromBundle !== undefined &&
+            action.summary.damageType !== undefined
+              ? { attackDamageType: action.summary.damageType }
+              : {}),
+          };
+          const transcription = transcribeFeatureAction(
+            srdFeature.id,
+            merged,
+            ordinal,
+            context
+          );
+          if (!transcription.program) return null;
+          return {
+            action: merged,
+            actionName: action.name,
+            context,
+            derived: {
+              featureBonus,
+              saveDc: action.summary.saveDC ?? 8,
+              ...(scaledDice && parsedCount !== null
+                ? { attackDiceCount: Number(parsedCount[1]) }
+                : {}),
+              ...(merged.attackType !== undefined
+                ? { attackBonus: action.summary.attackBonus ?? 0 }
+                : {}),
+            },
+            economySlot: getEconomySlot(action),
+            featureId: srdFeature.id,
+            hasAttackRoll: merged.attackType !== undefined,
+            kind: "feature",
+            legacyActionId: action.id,
+            ordinal,
+          };
+        }
+      }
+      return null;
+    },
+    [attackBudget, character, sheetCombat]
+  );
+
+  /** One commit grammar for every non-reaction card: engine when executable,
+   *  the legacy loop otherwise. */
+  const dispatchAction = useCallback(
+    (action: ResolvedAction) => {
+      const dispatch = engineDispatchFor(action);
+      if (dispatch) setEngineDispatch(dispatch);
+      else commitAction(action);
+    },
+    [commitAction, engineDispatchFor]
   );
 
   // Inline-modifier state — the engine-derived advantage / disadvantage on the
@@ -1042,7 +1209,7 @@ export function PlayTab() {
                 skillCheckBonusFor={skillCheckBonusFor}
                 open={expandedId === action.id}
                 onOpenChange={(o) => setExpandedId(o ? action.id : null)}
-                onCommit={() => commitAction(action)}
+                onCommit={() => dispatchAction(action)}
                 onPin={() => togglePinnedAction(action.id, action.defaultPinned)}
               />
             ))}
@@ -1079,7 +1246,7 @@ export function PlayTab() {
               cunningStrike={cunningStrike}
               expandedId={expandedId}
               onExpand={setExpandedId}
-              onCommit={commitAction}
+              onCommit={dispatchAction}
               onPin={(action) => togglePinnedAction(action.id, action.defaultPinned)}
             />
           ))
@@ -1103,7 +1270,7 @@ export function PlayTab() {
               cunningStrike={cunningStrike}
               expandedId={expandedId}
               onExpand={setExpandedId}
-              onCommit={commitAction}
+              onCommit={dispatchAction}
               onPin={(action) => togglePinnedAction(action.id, action.defaultPinned)}
             />
           )}
@@ -1179,12 +1346,23 @@ export function PlayTab() {
                 skillCheckBonusFor={skillCheckBonusFor}
                 open={expandedId === action.id}
                 onOpenChange={(o) => setExpandedId(o ? action.id : null)}
-                onCommit={() => commitAction(action)}
+                onCommit={() => dispatchAction(action)}
                 onPin={() => togglePinnedAction(action.id, action.defaultPinned)}
               />
             ))}
           </div>
         </>
+      )}
+
+      {/* Engine dual-dispatch (rollout bridge): the lazy engine flow for an
+          engine-executable feature action or weapon attack. */}
+      {engineDispatch !== null && (
+        <Suspense fallback={null}>
+          <EngineActionFlow
+            dispatch={engineDispatch}
+            onClose={() => setEngineDispatch(null)}
+          />
+        </Suspense>
       )}
 
       {/* ── Empty state — one honest message when the filter surfaces nothing ── */}
