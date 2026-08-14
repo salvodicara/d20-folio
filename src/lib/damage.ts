@@ -408,7 +408,7 @@ function validComputation(computation: DamageComputation): boolean {
         case "resistance": {
           if (phase > 2) return false;
           phase = 2;
-          const shouldApply = !immune && !resisted;
+          const shouldApply: boolean = !immune && !resisted;
           if (
             application.applied !== shouldApply ||
             application.after !==
@@ -423,7 +423,7 @@ function validComputation(computation: DamageComputation): boolean {
         }
         case "vulnerability": {
           phase = 3;
-          const shouldApply = !immune && !vulnerable;
+          const shouldApply: boolean = !immune && !vulnerable;
           if (
             application.applied !== shouldApply ||
             application.after !==

@@ -1859,18 +1859,27 @@ export function conformNewMaterialEntity(
     ownerOccurrence: null,
   });
   if (!entity) return null;
-  const common = {
-    controller: entity.controller,
-    kind: entity.kind,
-    label: entity.label,
-    overrides: entity.overrides,
-    resources: entity.resources,
-    template: entity.template,
-    vitals: entity.vitals,
-  };
+  // Split per branch: a shared spread would cross the creature/object unions.
   return entity.kind === "creature"
-    ? { ...common, exhaustion: entity.exhaustion, kind: "creature" }
-    : { ...common, kind: "object" };
+    ? {
+        controller: entity.controller,
+        exhaustion: entity.exhaustion,
+        kind: "creature",
+        label: entity.label,
+        overrides: entity.overrides,
+        resources: entity.resources,
+        template: entity.template,
+        vitals: entity.vitals,
+      }
+    : {
+        controller: entity.controller,
+        kind: "object",
+        label: entity.label,
+        overrides: entity.overrides,
+        resources: entity.resources,
+        template: entity.template,
+        vitals: entity.vitals,
+      };
 }
 
 /** A creatable inventory body: everything but the allocator-owned identity fields. */

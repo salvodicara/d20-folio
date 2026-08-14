@@ -800,8 +800,11 @@ function claimAttack(
       return reject("attack-limit");
     }
   } else {
+    // The else branch proves authorization non-null; the local carries that
+    // narrowing into the callback, which TypeScript would otherwise reset.
+    const { authorization } = command;
     const qualifyingIndex = action.attacks.findIndex(
-      ({ claimId }) => claimId === command.authorization.qualifyingAttackClaimId
+      ({ claimId }) => claimId === authorization.qualifyingAttackClaimId
     );
     const qualifying = action.attacks[qualifyingIndex];
     if (

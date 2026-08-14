@@ -2593,7 +2593,7 @@ export function resolveItemResourceAvailability(
     identity,
     capacity: resolved.capacity,
     current: resolved.current,
-    recoveryTriggers: resolved.spec.recoveries.map(({ trigger }) => trigger),
+    recoveryTriggers: (resolved.spec.recoveries ?? []).map(({ trigger }) => trigger),
   };
 }
 

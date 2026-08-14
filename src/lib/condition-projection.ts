@@ -29,7 +29,9 @@ function creatureVitalsFor(
     return document.kind === "character" ? document.state.vitals : null;
   }
   const entity = document.state.entities[target.entityId];
-  return entity?.ordinal === target.ordinal && entity.kind === "creature"
+  return entity !== undefined &&
+    entity.ordinal === target.ordinal &&
+    entity.kind === "creature"
     ? entity.vitals
     : null;
 }

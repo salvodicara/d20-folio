@@ -1208,9 +1208,10 @@ describe("flat bounded action journal", () => {
     expect(conformed).not.toBe(input);
     expect(conformed?.owner).not.toBe(input.owner);
     Reflect.set(input.owner, "entityId", "changed");
-    expect("entityId" in (conformed?.owner ?? {}) && conformed.owner.entityId).toBe(
-      "self"
-    );
+    if (conformed === null || !("entityId" in conformed.owner)) {
+      throw new Error("conformed owner fixture");
+    }
+    expect(conformed.owner.entityId).toBe("self");
 
     const missingLifecycle = {
       owner: input.owner,

@@ -285,6 +285,7 @@ describe("world condition projection", () => {
     hero.nextEntityOrdinal = 2;
     hero.entities.familiar = {
       availability: "present",
+      controller: null,
       exhaustion: 0,
       kind: "creature",
       label: "",

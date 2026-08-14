@@ -282,15 +282,30 @@ function highWaterMutationIsValid(mutation: ActionMutation): boolean {
     const before = storedHighWater(mutation.before, mutation.path, highWater);
     const after = storedHighWater(mutation.after, mutation.path, highWater);
     if (!before || !after) return false;
-    const beforeCounter = before.present && isSafeCounter(before.value);
-    const afterCounter = after.present && isSafeCounter(after.value);
+    const beforeValue = before.present ? before.value : undefined;
+    const afterValue = after.present ? after.value : undefined;
     if (mutation.path.length === highWater.length) {
-      if (!beforeCounter || !afterCounter || after.value <= before.value) return false;
+      if (
+        !isSafeCounter(beforeValue) ||
+        !isSafeCounter(afterValue) ||
+        afterValue <= beforeValue
+      ) {
+        return false;
+      }
       continue;
     }
     if (before.present && after.present) {
-      if (!beforeCounter || !afterCounter || after.value < before.value) return false;
-    } else if (before.present === after.present || (!beforeCounter && !afterCounter)) {
+      if (
+        !isSafeCounter(beforeValue) ||
+        !isSafeCounter(afterValue) ||
+        afterValue < beforeValue
+      ) {
+        return false;
+      }
+    } else if (
+      before.present === after.present ||
+      (!isSafeCounter(beforeValue) && !isSafeCounter(afterValue))
+    ) {
       return false;
     }
   }
@@ -410,7 +425,12 @@ function isMutation(value: unknown): value is ActionMutation {
   ) {
     return false;
   }
-  return highWaterMutationIsValid(value);
+  return highWaterMutationIsValid({
+    after: value.after,
+    before: value.before,
+    path: value.path,
+    target: value.target,
+  });
 }
 
 function hasInvalidHighWaterMutation(value: unknown): boolean {

@@ -531,9 +531,20 @@ function damageProgram(
   });
 }
 
+type WardRule = Extract<
+  Extract<MechanicOccurrence, { kind: "standing" }>["fact"],
+  { kind: "damage-defense" }
+>["rule"];
+
+function wardResolvePhase(): (typeof WARD_PROGRAM_VALUE)["phases"][number] {
+  const phase = WARD_PROGRAM_VALUE.phases[0];
+  if (!phase) throw new Error("ward phase fixture");
+  return phase;
+}
+
 function wardOccurrences(
   wardProgram: MechanicsProgram,
-  rule: Record<string, unknown>
+  rule: WardRule
 ): Record<string, MechanicOccurrence> {
   return {
     "ward-root": {
@@ -678,7 +689,7 @@ describe("runMechanicsCausalAction vitality", () => {
   });
 
   it("suspends on damage allocation and resumes with the recorded observation", () => {
-    const hemRule = {
+    const hemRule: WardRule = {
       amount: -3,
       kind: "flat-adjustment",
       selector: {
@@ -688,15 +699,15 @@ describe("runMechanicsCausalAction vitality", () => {
         requiredTraits: [],
       },
       sourceId: "hem",
-    } as const;
+    };
     const wardProgram = conformed({
       ...WARD_PROGRAM_VALUE,
       id: "damage-ward-hem",
       phases: [
         {
-          ...WARD_PROGRAM_VALUE.phases[0],
+          ...wardResolvePhase(),
           steps: [
-            ...WARD_PROGRAM_VALUE.phases[0].steps,
+            ...wardResolvePhase().steps,
             {
               fact: { kind: "damage-defense", rule: hemRule },
               kind: "standing",
@@ -762,6 +773,9 @@ describe("runMechanicsCausalAction vitality", () => {
       status: "needs-response",
     });
     if (suspended.status !== "needs-response") return;
+    if (suspended.request.kind !== "damage-allocation") {
+      throw new Error("expected a damage-allocation request");
+    }
     expect(suspended.request.requirement).toMatchObject({
       amount: 3,
       operation: "reduction",
@@ -1198,7 +1212,6 @@ describe("runMechanicsCausalAction resources", () => {
   }
 
   function focusInput(
-    program: MechanicsProgram,
     snapshot: MechanicsWorld,
     authority: ReturnType<typeof focusAuthority>,
     overrides: Partial<MechanicsCoordinationInput> = {}
@@ -1275,13 +1288,15 @@ describe("runMechanicsCausalAction resources", () => {
       resource: { kind: "pool", owner: SELF, resourceId: "focus" },
     };
     const result = runMechanicsCausalAction(
-      focusInput(program, snapshot, authority, { answers: [answer] })
+      focusInput(snapshot, authority, { answers: [answer] })
     );
     if (result.status === "rejected") throw new Error(JSON.stringify(result));
     expect(result.status).toBe("complete");
     if (result.status !== "complete") return;
     const state = heroState(result.state);
-    expect(state.resources.pools.focus?.current).toBe(1);
+    const focusCell = state.resources.pools.focus;
+    if (focusCell?.kind !== "count") throw new Error("focus cell fixture");
+    expect(focusCell.current).toBe(1);
     expect(
       Object.values(state.occurrences).some(({ kind }) => kind === "condition")
     ).toBe(true);
@@ -1311,7 +1326,7 @@ describe("runMechanicsCausalAction resources", () => {
     });
     const authority = focusAuthority(program);
     const snapshot = world({}, { focus: 0 });
-    const suspended = runMechanicsCausalAction(focusInput(program, snapshot, authority));
+    const suspended = runMechanicsCausalAction(focusInput(snapshot, authority));
     expect(suspended).toMatchObject({
       request: { boundary: "recovery", kind: "resource-observation" },
       status: "needs-response",
@@ -1324,7 +1339,7 @@ describe("runMechanicsCausalAction resources", () => {
     }
 
     const resumed = runMechanicsCausalAction(
-      focusInput(program, snapshot, authority, {
+      focusInput(snapshot, authority, {
         responses: [
           {
             kind: "resource-observation",
@@ -1345,7 +1360,9 @@ describe("runMechanicsCausalAction resources", () => {
     );
     expect(resumed.status).toBe("complete");
     if (resumed.status !== "complete") return;
-    expect(heroState(resumed.state).resources.pools.focus?.current).toBe(3);
+    const resumedFocus = heroState(resumed.state).resources.pools.focus;
+    if (resumedFocus?.kind !== "count") throw new Error("focus cell fixture");
+    expect(resumedFocus.current).toBe(3);
   });
 });
 
