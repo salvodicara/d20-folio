@@ -916,6 +916,7 @@ function programRootCreateOperation(
 ): Extract<MechanicsOperation, { kind: "program-root-create" }> {
   return {
     causeId: INSTALLED_CAUSE.causeId,
+    endRules: [],
     kind: "program-root-create",
     materialEpoch: 0,
     operationId: `create-${occurrenceId}`,

@@ -871,12 +871,18 @@ const PROGRAM_PHASE_SCHEMA = objectSchema({
 });
 
 /** The only durable authored program format. */
-export const MECHANICS_PROGRAM_SCHEMA = objectSchema({
-  id: ID_SCHEMA,
-  phases: arraySchema(PROGRAM_PHASE_SCHEMA, 1),
-  registers: arraySchema(PROGRAM_REGISTER_SCHEMA),
-  version: POSITIVE_INTEGER_SCHEMA,
-});
+export const MECHANICS_PROGRAM_SCHEMA = objectSchema(
+  {
+    id: ID_SCHEMA,
+    phases: arraySchema(PROGRAM_PHASE_SCHEMA, 1),
+    registers: arraySchema(PROGRAM_REGISTER_SCHEMA),
+    version: POSITIVE_INTEGER_SCHEMA,
+  },
+  {
+    /** The whole root's own lifetime; the coordinator resolves it at creation. */
+    lifetime: arraySchema(LIFETIME_SPEC_SCHEMA, 1),
+  }
+);
 export type MechanicsProgramSchemaShape = InferExactSchema<
   typeof MECHANICS_PROGRAM_SCHEMA
 >;

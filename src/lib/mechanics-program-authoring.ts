@@ -590,6 +590,16 @@ function programSemantics(program: MechanicsProgram): boolean {
     return false;
   }
   const phaseIds = new Set(program.phases.map((phase) => phase.phaseId));
+  if (
+    program.lifetime?.some(
+      (spec) =>
+        spec.kind === "source-end" ||
+        spec.kind === "temporary-hit-points-empty" ||
+        (spec.kind === "program-phase-end" && !phaseIds.has(spec.phaseId))
+    )
+  ) {
+    return false;
+  }
   const registerIds = new Set(program.registers.map((register) => register.registerId));
   const allInputs = program.phases.flatMap((phase) => phase.inputs);
   const allSteps = program.phases.flatMap((phase) => phase.steps);
@@ -653,6 +663,16 @@ function programSemantics(program: MechanicsProgram): boolean {
           return (
             phase.trigger.kind !== "damage-taken" ||
             (bindingId !== "trigger.damage" && bindingId !== "trigger.raw-damage")
+          );
+        }
+        if (bindingId.startsWith("input.")) {
+          const match = /^input\.(.+)\.level$/.exec(bindingId);
+          return (
+            !match?.[1] ||
+            !phase.inputs.some(
+              (candidate) =>
+                candidate.kind === "resource" && candidate.inputId === match[1]
+            )
           );
         }
         return false;

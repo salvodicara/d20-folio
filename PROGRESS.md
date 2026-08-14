@@ -225,6 +225,25 @@ Only focused affected-suite verification ran; no global gate ran. The fixed-poin
 coordinator, remaining compiler/corpus work, runtime cutover and final journal draft remain active; this
 is not an engine-completion claim.
 
+**Corpus transcription OPEN → first family CLOSED on branch (2026-08-14):** the transcriber
+(`src/lib/mechanics-transcription.ts`) compiles each composed spell's declarative facts into one
+authored `MechanicsProgram` plus an honest clause-level classification DERIVED from the fields the
+entity actually declares (slot payment, targeting/area, saving throw, damage components with
+save-half and upcast scaling via the new `input.<id>.level` slot-level bindings, healing, Temporary
+HP, condition application with structured lifetimes, cures, concentration with a `source-end` →
+`end-program` release phase, root duration via the new authored program `lifetime`). A clause is
+`automated` only when the emitted structure passes program conformance; physical rolls are
+`physical-input`; area occupancy is `spatial`; table-owned ends and unstructured durations are
+`table`; anything declared but not yet expressible is `unsupported` — never silently green. The
+corpus-wide guard sweeps every composed spell with zero gaps, and the transcribed Fireball runs
+END-TO-END through the coordinator over the real needs-answer protocol: slot debited 2→1 under a
+caller-guarded slot definition, targets chosen, save rolled against the bound DC and failed, the
+shared 8d6 observation applied full, the character correctly falling dying at 0 HP. Attack-gated
+spells, pooled healing/THP, creature-type-gated bonus damage, cast-mod damage terms, recurrence,
+follow-ups, deferred resolution, repeat saves and the 21 legacy `effectProgram` pioneers remain
+explicit `unsupported` boundaries for the next transcription waves. Focused verification only; no
+global gate ran.
+
 **Authored step census COMPLETE on branch (2026-08-14):** every one of the 24 authorable
 `MechanicsStep` kinds now compiles into exact kernel operations — the last two being `turn-claim`
 (one `turn-economy-transition` per resolved combatant, its effective projection supplied by the

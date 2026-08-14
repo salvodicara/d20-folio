@@ -1441,3 +1441,184 @@ describe("runMechanicsCausalAction reactive adjustment", () => {
     });
   });
 });
+
+describe("runMechanicsCausalAction transcribed corpus", () => {
+  it("casts the transcribed fireball end-to-end with slot, saves and half damage", async () => {
+    const { spells } = await import("@/data/spells");
+    const { transcribeSpell, TRANSCRIPTION_BINDINGS } =
+      await import("@/lib/mechanics-transcription");
+    const fireball = spells.find((spell) => spell.id === "fireball");
+    if (!fireball) throw new Error("fireball fixture");
+    const transcription = transcribeSpell(fireball);
+    if (!transcription.program) throw new Error("fireball program fixture");
+    const program = transcription.program;
+
+    const baseAuthority = authorityReceipt(program);
+    const authority = {
+      ...baseAuthority,
+      staticBindings: { [TRANSCRIPTION_BINDINGS.saveDc]: 15 },
+    };
+    const snapshot = (() => {
+      const base = createEmptyCharacterMaterialState(5, HERO, {
+        hitPoints: {
+          current: 20,
+          temporary: { current: 0, sourceOccurrence: null },
+        },
+        zeroHitPoints: null,
+      });
+      const parsed = parseMechanicsWorld({
+        documents: [
+          {
+            kind: "character",
+            material: HERO,
+            state: {
+              ...base,
+              resources: {
+                ...base.resources,
+                standardSpellSlots: {
+                  "3": {
+                    capacity: { base: { kind: "unbounded" }, override: null },
+                    current: 2,
+                    disabled: false,
+                    kind: "count",
+                  },
+                },
+              },
+            },
+          },
+        ],
+        scope: HERO,
+      });
+      if (!parsed.ok) throw new Error(parsed.reason);
+      return parsed.value;
+    })();
+
+    const trailIds = (value: unknown): string[] => [
+      ...new Set(
+        [...JSON.stringify(value).matchAll(/"trailId":"([^"]+)"/g)].map(
+          (match) => match[1] ?? ""
+        )
+      ),
+    ];
+    const answers: MechanicsAnswer[] = [];
+    const run = () =>
+      runMechanicsCausalAction({
+        answers,
+        authoritySnapshot: authoritySnapshot(authority),
+        facts: [MAX_HP_FACT, slotFact],
+        frameAnswers: [],
+        intent: {
+          actionId: "cast-fireball",
+          factGuards: [],
+          frame: {
+            authority,
+            invocation: {
+              installation: authority.installation,
+              kind: "installed-capability",
+            },
+            rootReceipt: {
+              kind: "create",
+              materialEpoch: 0,
+              next: { execution: 1, phaseId: "resolve", triggerEventId: null },
+              root: ROOT,
+            },
+            trigger: { kind: "invocation" },
+          },
+        },
+        responses: [],
+        state: causalState(snapshot),
+        turnEconomy: [],
+      });
+
+    const slotFact = {
+      address: ["resource-definition", "resources", "standardSpellSlots", "3"],
+      expected: {
+        present: true,
+        value: {
+          bindings: {},
+          spec: {
+            capacity: { kind: "unbounded" },
+            id: "standard-spell-slot",
+            initial: { kind: "empty" },
+            kind: "count",
+            recoveries: [],
+          },
+        },
+      },
+      lifecycle: "commit",
+      owner: SELF,
+    } as const;
+
+    let outcome = run();
+    for (
+      let remaining = 8;
+      outcome.status === "needs-answer" && remaining > 0;
+      remaining -= 1
+    ) {
+      const requirement = outcome.requirement;
+      if (!requirement) throw new Error("missing requirement");
+      if (requirement.kind === "resource") {
+        answers.push({
+          inputId: requirement.inputId,
+          kind: "resource",
+          resource: { character: HERO, kind: "standard-spell-slot", level: 3 },
+        });
+      } else if (requirement.kind === "entities") {
+        answers.push({
+          inputId: requirement.inputId,
+          kind: "entities",
+          targets: [SELF],
+        });
+      } else if (requirement.kind === "d20") {
+        answers.push({
+          inputId: requirement.inputId,
+          kind: "d20",
+          requests: requirement.requests.map(({ identity, review }) => ({
+            identity,
+            observation: {
+              d20: {
+                aggregates: [],
+                trails: trailIds(review).map((trailId) => ({
+                  initialFace: 12,
+                  steps: [],
+                  trailId,
+                })),
+              },
+              enteredModifiers: [],
+              tableOverride: null,
+            },
+            payments: [],
+          })),
+        });
+      } else if (requirement.kind === "dice") {
+        answers.push({
+          inputId: requirement.inputId,
+          kind: "dice",
+          requests: requirement.requests.map(({ identity, roll }) => ({
+            identity,
+            observation: {
+              aggregates: [],
+              trails: trailIds(roll).map((trailId) => ({
+                initialFace: 3,
+                steps: [],
+                trailId,
+              })),
+            },
+            payments: [],
+          })),
+        });
+      } else {
+        throw new Error(`unexpected requirement: ${requirement.kind}`);
+      }
+      outcome = run();
+    }
+    if (outcome.status === "rejected") throw new Error(JSON.stringify(outcome));
+    expect(outcome.status).toBe("complete");
+    if (outcome.status !== "complete") return;
+    const state = heroState(outcome.state);
+    expect(state.resources.standardSpellSlots["3"]?.current).toBe(1);
+    // DC 15, save total 12 → failure → full damage: 8d6 all showing 3 = 24.
+    expect(state.vitals.hitPoints.current).toBe(0);
+    expect(state.vitals.zeroHitPoints).not.toBeNull();
+  });
+});

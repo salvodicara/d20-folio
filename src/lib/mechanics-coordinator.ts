@@ -13,6 +13,7 @@
 import { canonicalFingerprint, canonicalJson } from "@/lib/canonical-fingerprint";
 import { planMechanicsWorldAction } from "@/lib/mechanics-action";
 import { compileMechanicsFrame } from "@/lib/mechanics-compiler";
+import { resolveMechanicsLifetime } from "@/lib/mechanics-program-effects";
 import { deriveMechanicsSourceEndingEvents } from "@/lib/mechanics-execution";
 import { simulateMechanicsTransaction } from "@/lib/mechanics-operation";
 import {
@@ -194,6 +195,38 @@ export function runMechanicsCausalAction(
 
   let state: Readonly<MechanicsCausalState> = entryState;
   if (rootFrame.rootReceipt.kind === "create") {
+    const program = rootFrame.authority.snapshot.program;
+    const rootEndRules = (program?.lifetime ?? []).flatMap((spec) => {
+      const resolved = resolveMechanicsLifetime(spec, {
+        bindings: rootFrame.authority.staticBindings,
+        combatant:
+          spec.kind === "rest-completed" || spec.kind === "turn-boundary"
+            ? rootFrame.authority.anchors[
+                spec.combatant === "owner"
+                  ? "owner"
+                  : spec.combatant === "caster"
+                    ? "caster"
+                    : spec.combatant === "activator"
+                      ? "activator"
+                      : spec.combatant === "source"
+                        ? "source"
+                        : "target"
+              ]
+            : null,
+        currentPhaseId: rootFrame.rootReceipt.next.phaseId,
+        currentTurnPhase: "active",
+        execution: rootFrame.rootReceipt.next.execution,
+        phaseExecutions: Object.fromEntries(
+          program?.phases.map(({ phaseId }) => [phaseId, 0]) ?? []
+        ),
+        root: rootFrame.rootReceipt.root,
+        world: entryState.world,
+      });
+      return resolved ?? [null];
+    });
+    if (rootEndRules.some((rule) => rule === null)) {
+      return rejectedResult("root-create-rejected", frameRef(rootFrame), "root-lifetime");
+    }
     const cause: MechanicsOperationCause = {
       causeId: canonicalFingerprint({
         authority: rootFrame.authority,
@@ -209,6 +242,7 @@ export function runMechanicsCausalAction(
       operations: [
         {
           causeId: cause.causeId,
+          endRules: rootEndRules.filter((rule) => rule !== null),
           kind: "program-root-create",
           materialEpoch: rootFrame.rootReceipt.materialEpoch,
           operationId: `root-create:${canonicalFingerprint(rootFrame.rootReceipt)}`,

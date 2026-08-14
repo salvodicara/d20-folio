@@ -1087,6 +1087,7 @@ function programCreate(
 ): Extract<MechanicsOperation, { readonly kind: "program-root-create" }> {
   return {
     causeId: cause.causeId,
+    endRules: [],
     kind: "program-root-create",
     materialEpoch: 0,
     operationId,

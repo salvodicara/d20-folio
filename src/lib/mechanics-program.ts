@@ -687,6 +687,19 @@ function resourceRemaining(world: MechanicsWorld, ref: ResourceRef): number | nu
   return cell.kind === "count" ? cell.current : cell.values.length;
 }
 
+/** The chosen spell-slot level of every resolved resource answer, as bindings. */
+function resolvedResourceLevelBindings(
+  resolved: Readonly<Record<string, ResolvedMechanicsAnswer>>
+): Readonly<Record<string, number>> {
+  const bindings: Record<string, number> = {};
+  for (const answer of Object.values(resolved)) {
+    if (answer.kind === "resource" && answer.resource.kind === "standard-spell-slot") {
+      bindings[`input.${answer.inputId}.level`] = answer.resource.level;
+    }
+  }
+  return bindings;
+}
+
 function bindingsFor(
   intent: MechanicsExecutionContext,
   root: ProgramOccurrence | null
@@ -1323,7 +1336,10 @@ export function refreshMechanicsProgramCompilationContext(
   );
   if ("reason" in validated || validated.executionMode === "replay") return null;
   return freezeDeep({
-    bindings: validated.bindings,
+    bindings: {
+      ...validated.bindings,
+      ...resolvedResourceLevelBindings(reviewed.resolved),
+    },
     execution: validated.execution.execution,
     intent: reviewed.intent,
     landedDamage,
@@ -1366,7 +1382,10 @@ export function refreshMechanicsProgramProjectedCompilationContext(
   );
   if ("reason" in validated || validated.executionMode === "replay") return null;
   return freezeDeep({
-    bindings: validated.bindings,
+    bindings: {
+      ...validated.bindings,
+      ...resolvedResourceLevelBindings(reviewed.resolved),
+    },
     execution: validated.execution.execution,
     intent: reviewed.intent,
     landedDamage,
@@ -2490,12 +2509,21 @@ function reviewMechanicsIntentValidated(
   const resolved: Record<string, ResolvedMechanicsAnswer> = {};
   const requirements: MechanicsRequirement[] = [];
   let answerIndex = 0;
-  const context: PredicateContext = {
+  let context: PredicateContext = {
     bindings: validated.bindings,
     intent: validated.execution,
     resolved,
     root: validated.root,
     world: validated.world,
+  };
+  const refreshContextBindings = (): void => {
+    context = {
+      ...context,
+      bindings: {
+        ...validated.bindings,
+        ...resolvedResourceLevelBindings(resolved),
+      },
+    };
   };
 
   for (const input of validated.phase.inputs) {
@@ -2542,6 +2570,7 @@ function reviewMechanicsIntentValidated(
       );
     }
     resolved[input.inputId] = result;
+    refreshContextBindings();
     answerIndex += 1;
   }
   if (answerIndex !== answers.length) {

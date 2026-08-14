@@ -1459,7 +1459,7 @@ function simulateProgramRootCreate(
     located.document.state.occurrences[operation.root.occurrence.occurrenceId];
   const expectedRoot = {
     authority,
-    endRules: [],
+    endRules: operation.endRules,
     phaseState: Object.fromEntries(
       program.phases.map(({ phaseId }) => [
         phaseId,

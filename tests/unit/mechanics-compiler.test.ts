@@ -398,6 +398,7 @@ function rootCreatedState(
     operations: [
       {
         causeId: cause.causeId,
+        endRules: [],
         kind: "program-root-create",
         materialEpoch: frame.rootReceipt.materialEpoch,
         operationId: `root-create:${canonicalFingerprint(frame.rootReceipt)}`,

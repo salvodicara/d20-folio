@@ -377,6 +377,7 @@ export const MECHANICS_OPERATION_SCHEMA = discriminatedUnionSchema("kind", {
     kind: literalSchema("inventory-end"),
   }),
   "program-root-create": objectSchema({
+    endRules: arraySchema(END_RULE_VALUE_SCHEMA),
     ...OPERATION_COMMON_SCHEMA,
     kind: literalSchema("program-root-create"),
     materialEpoch: customSchema<"nonnegative-integer", number>("nonnegative-integer"),
