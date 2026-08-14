@@ -257,6 +257,35 @@ follow-ups, deferred resolution, repeat saves and the 21 legacy `effectProgram` 
 explicit `unsupported` boundaries for the next transcription waves. Focused verification only; no
 global gate ran.
 
+**Boot restored + engine surfaces LIVE on branch (2026-08-14, second block):** the work worktree
+boots again in real Chromium with a clean console — the missing item-resource persistence/command
+family (`decodeItemResourceState`, the self-verifying `planResourceCommand`/`applyResourceOperation`
+planner with exact reverts, the catalogue resource dialect) was implemented against its consumer
+tests (204 green), and local dev no longer initializes App Check (localhost is not a registered
+reCAPTCHA domain; `VITE_APPCHECK_DEBUG=true` stays the dev opt-in). The Spells tab now DISPATCHES
+engine-executable SRD casts to the deterministic runtime outside combat (lazy `EngineCastFlow` →
+the protocol modal: slot, targets, table-entered armor class for attacks, every physical die → one
+canonical journal commit with exact undo); not-yet-transcribed spells keep the legacy transaction
+until its deletion wave. Standing-buff casts (Hex's mark + active key, Divine Favor), pulse-phase
+condition re-application (Web, Sleet Storm), full-restore healing and the `cantripInstances` beam
+model (Eldritch Blast — first legacy `effectProgram` fully superseded) landed as waves 6–8;
+`mechanicsProgram` opened the hand-authored canonical-program channel (clause classification
+derived from the program itself) with Fire Shield as the worked example (choice → per-form
+standing → `standing-present`-gated retaliation). The kernel gained the possession-safe
+**root-pulse trigger** (the root's possessor declares each recurring/reactive event; single-use by
+advance CAS on execution + trigger event id) and the coordinator now admits non-create roots by
+pushing their frame before review — Moonbeam's pulse runs END-TO-END (register-scaled 3d10, failed
+save, exact phase-state CAS), and the full serialize→parse→advance round-trip over the PERSISTED
+`session.world` authenticates (the pulse surface: `useMechanicsPulse` + `EnginePulseStrip` reuse
+the cast modal protocol). The consumer layer moved onto the canonical contracts in the same block
+(d20 request/observation API across combat surfaces, the restored grant schema with the per-spell
+free-cast tracker suffix — fixing a real shared-tracker regression — exact store d20 result types,
+campaign fixtures on the migrated encounter model; tsc 556→171 via three agent sweeps), and the
+rollout bridge now mirrors engine-held concentration (engine transitions only). Coverage:
+**259/422 spells executable, ~36 unsupported clauses** — the remaining blockers are the 14 legacy
+`effectProgram` migrations (authored-program agent in flight), consumable/pool-split healing,
+two-target-set combos, and singletons. Focused verification only; no global gate ran.
+
 **Transcription waves 2–5 CLOSED on branch (2026-08-14):** the attack gate (per-target-slot attack
 requests vs bound armor class with the caster's attack bonus; hit/crit damage through two
 outcome-expanded roll inputs — crit dice doubled, flat bonuses never; misses self-resolve their
