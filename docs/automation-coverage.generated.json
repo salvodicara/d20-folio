@@ -4507,12 +4507,22 @@
           "status": "table"
         },
         {
+          "clauseId": "recurrence",
+          "detail": "pulse-on-on-enter-or-start-turn",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
           "clauseId": "deferred-resolution",
-          "detail": "deferred-non-damage-suite-pending",
-          "status": "unsupported"
+          "detail": "suite-lives-in-pulse",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "web"
     },
     {
@@ -5550,12 +5560,22 @@
           "status": "table"
         },
         {
+          "clauseId": "recurrence",
+          "detail": "pulse-on-on-enter-or-start-turn",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
           "clauseId": "deferred-resolution",
-          "detail": "deferred-non-damage-suite-pending",
-          "status": "unsupported"
+          "detail": "suite-lives-in-pulse",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "sleet-storm"
     },
     {
@@ -5745,12 +5765,22 @@
           "status": "table"
         },
         {
+          "clauseId": "recurrence",
+          "detail": "pulse-on-start-of-turn",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
           "clauseId": "deferred-resolution",
-          "detail": "deferred-non-damage-suite-pending",
-          "status": "unsupported"
+          "detail": "suite-lives-in-pulse",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "stinking-cloud"
     },
     {
@@ -6465,12 +6495,22 @@
           "status": "table"
         },
         {
+          "clauseId": "recurrence",
+          "detail": "pulse-on-on-enter-or-end-turn",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
           "clauseId": "deferred-resolution",
-          "detail": "deferred-non-damage-suite-pending",
-          "status": "unsupported"
+          "detail": "suite-lives-in-pulse",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "evards-black-tentacles"
     },
     {
@@ -7368,12 +7408,22 @@
           "status": "table"
         },
         {
+          "clauseId": "recurrence",
+          "detail": "pulse-on-on-enter-or-start-turn",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
           "clauseId": "deferred-resolution",
-          "detail": "deferred-non-damage-suite-pending",
-          "status": "unsupported"
+          "detail": "suite-lives-in-pulse",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "conjure-elemental"
     },
     {
@@ -8607,11 +8657,16 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "empty-pulse-suite",
-          "status": "unsupported"
+          "detail": "pulse-on-action-retrigger",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "eyebite"
     },
     {
@@ -10955,15 +11010,15 @@
       "id": "wish"
     }
   ],
-  "executablePrograms": 250,
+  "executablePrograms": 258,
   "family": "spells",
   "totalEntities": 422,
   "totals": {
-    "automated": 1571,
+    "automated": 1587,
     "physical-input": 310,
     "table": 211,
-    "spatial": 127,
+    "spatial": 136,
     "narrative": 128,
-    "unsupported": 46
+    "unsupported": 37
   }
 }

@@ -830,7 +830,13 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     unsupported("temporary-hit-points-pool", "pooled-temp-hp-pending");
   }
 
-  // Conditions.
+  // Conditions — classified once; emitted into every phase that carries the
+  // resolution suite (the cast normally; the pulse for recurring zones, where
+  // each table-signaled event re-applies to that event's failed saves).
+  const conditionEntries: {
+    readonly conditionId: string;
+    readonly lifetime: Readonly<Record<string, unknown>>;
+  }[] = [];
   if (spell.conditionApplication) {
     const application = spell.conditionApplication;
     if (application.max !== undefined && application.max < application.options.length) {
@@ -879,29 +885,41 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
         };
         clauses.push(clause(`condition-${conditionId}-lifetime`, "automated"));
       }
-      steps.push({
-        conditionId,
+      conditionEntries.push({ conditionId, lifetime: conditionLifetime });
+      clauses.push(clause(`condition-${conditionId}`, "automated"));
+    }
+  }
+  const emitConditionSuite = (
+    into: { steps: Record<string, unknown>[] },
+    prefix = ""
+  ): void => {
+    const application = spell.conditionApplication;
+    if (!application) return;
+    const p = (id: string): string => `${prefix}${id}`;
+    for (const entry of conditionEntries) {
+      into.steps.push({
+        conditionId: entry.conditionId,
         kind: "condition",
-        lifetime: conditionLifetime,
+        lifetime: entry.lifetime,
         operation: "apply",
-        stepId: `condition-${conditionId}`,
+        stepId: p(`condition-${entry.conditionId}`),
         target:
           hasSave && application.on !== "automatic"
             ? {
                 cardinality: "per-request",
-                inputId: "saves",
+                inputId: p("saves"),
                 kind: "d20-outcome",
                 outcomeIds: ["failure"],
                 quantifier: "any",
               }
             : gatedByAttack && application.on === "hit"
-              ? attackOutcomeSelector(["hit", "critical-hit"])
-              : { inputId: "targets", kind: "input" },
+              ? attackOutcomeSelector(["hit", "critical-hit"], p)
+              : { inputId: p("targets"), kind: "input" },
         when: null,
       });
-      clauses.push(clause(`condition-${conditionId}`, "automated"));
     }
-  }
+  };
+  if (!deferred) emitConditionSuite({ steps });
   if (spell.conditionRemoval) {
     for (const conditionId of spell.conditionRemoval.options) {
       if (conditionId === "exhaustion") {
@@ -1051,7 +1069,6 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     deferred &&
     (spell.healDice !== undefined ||
       spell.tempHpRoll !== undefined ||
-      spell.conditionApplication !== undefined ||
       spell.conditionRemoval !== undefined)
   ) {
     unsupported("deferred-resolution", "deferred-non-damage-suite-pending");
@@ -1076,6 +1093,7 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
       `register.${CAST_LEVEL_REGISTER}`,
       "pulse-"
     );
+    emitConditionSuite({ steps: pulseSteps }, "pulse-");
     if (spell.endsOnSuccessfulSave === true && hasSave) {
       pulseSteps.push({
         kind: "end-program",
