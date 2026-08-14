@@ -225,6 +225,20 @@ Only focused affected-suite verification ran; no global gate ran. The fixed-poin
 coordinator, remaining compiler/corpus work, runtime cutover and final journal draft remain active; this
 is not an engine-completion claim.
 
+**Bounded causal fixed-point coordinator CLOSED on branch (2026-08-14):** `runMechanicsCausalAction`
+is the one driver for one complete causal action: root review against the closed entry basis, the
+standalone root-create transaction, the LIFO pending-frame compile loop, frozen event audiences
+dispatched depth-first at their exact baseline depth, subscriber frames with intrinsic
+trigger-event-id dedup, readable end waves delivered exactly once per basis then finalized, boundary
+checkpoints driven by a non-finalizing checkpoint mode, terminal material cleanup, and exactly one
+`planMechanicsWorldAction` journal draft. Suspension is replay-shaped: review requirements and compiler
+requests surface with deterministic frame identities, and the caller re-invokes with extended
+answer/response ledgers — nothing coordinator-owned serializes. Proved end-to-end: a two-phase
+program-phase-end cascade completing in ONE action, wave-coordinated Concentration replacement across
+roots, needs-answer suspension and replay, work-budget exhaustion, and pending-frame entry rejection.
+The boundary path and the response-accept path get their end-to-end proofs with the entity/resource
+compilers. Focused verification only; no global gate ran.
+
 **Authentic response resumption CLOSED on branch (2026-08-14):** compiler continuations now exist only
 for genuine user responses. The private fiber binds the exact issuance causal state by identity plus the
 reviewed input, expected cursor, consumed response prefix and issued request; consumption is single-use

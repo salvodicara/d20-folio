@@ -73,9 +73,17 @@ and independently verified 2024 rules are the evidence.
    carries only its typed coordination value — the coordinator mutates state and restarts ordinary
    compilation. The end-to-end accept path becomes exercisable with the first observation-bearing step
    compiler (continuation order 4); every reject path is proved now.
-3. Build one bounded depth-first fixed-point coordinator over compiler segments, frozen event audiences,
-   selected subscriber frames and readable end waves. It owns LIFO ordering, global work budgets,
-   response/coordination suspension, final frame pops and exactly one final journal draft.
+3. ~~Build one bounded depth-first fixed-point coordinator.~~ **Done 2026-08-14** —
+   `runMechanicsCausalAction` (`src/lib/mechanics-coordinator.ts`) runs one complete causal action to
+   its bounded fixed point: root review, root creation, the LIFO compile loop, frozen audiences with
+   per-audience baseline depths, subscriber dispatch with intrinsic trigger-event dedup, readable
+   end-wave delivery then finalization, boundary checkpoints via a non-finalizing checkpoint drive, and
+   exactly one final `planMechanicsWorldAction` journal draft. Resumption is replay: answer/response
+   ledgers keyed by deterministic frame identity and request id; no coordinator state serializes.
+   Proved: the phase-end cascade in one action, wave-coordinated Concentration replacement,
+   needs-answer suspension/replay, budget exhaustion and pending-frame entry rejection. The boundary
+   path and response-accept path get their end-to-end proofs with the entity/resource compilers
+   (continuation order 4).
 4. Complete the remaining authored step compilers and reviewed-payment prelude: damage/healing/Temporary
    HP, Exhaustion, resources, entity/item lifecycle, turn claims, exact material blueprints, overrides,
    table observations and replayable manual outputs. Never ask for a fact the engine already knows.

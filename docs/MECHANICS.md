@@ -168,9 +168,10 @@ predicates. A root/phase created after emission was never selected; forged or cl
 stale authority, same-id ABA and repeat delivery fail closed. A `source-ending` child must still resolve
 to the selected owning program root. Only a kernel-issued selected-event frame may execute on a
 readable-ending root, and that permit blocks finalization through `phase-complete` until the exact LIFO top
-is popped. The state coordinator that drains these audiences remains open.
+is popped. `runMechanicsCausalAction` drains these audiences depth-first at their exact baseline
+depths under one bounded work budget and emits the single final journal draft.
 
-The compiler/coordinator and corpus transcription are still active work. Root allocation is a standalone
+The remaining subcompilers and corpus transcription are still active work. Root allocation is a standalone
 physical segment; only after its zeroed root is re-proved may the coordinator push the exact process-local
 frame. `compileMechanicsFrame` is the only intended program-to-transaction seam: it consumes only that
 exact LIFO top and its semantic cursor, compiles at most one authored step per segment, and reserves the
@@ -192,11 +193,11 @@ causal state by identity plus the reviewed input, expected cursor, consumed resp
 request. Consumption invalidates it even when the resumed compilation then rejects; resumption must
 extend the prefix by exactly one answer to that request; a response the compilation cannot consume, or
 one left unconsumed at completion, fails closed. It exposes no serializable
-state and cannot be cloned or replayed against another causal lineage. The pending-frame kernel is now
-complete; the bounded fixed-point coordinator that consumes those barriers is not. Remaining
+state and cannot be cloned or replayed against another causal lineage. The pending-frame kernel and the
+bounded fixed-point coordinator that consumes these barriers are now both complete. Remaining
 subcompilers must compile reviewed payments exactly once, allocate physical generations from each
-authentic causal segment, and resolve vitality/material/resource steps before that
-coordinator emits one journal action. Superseded authoring/executors are migration inputs only, never a
+authentic causal segment, and resolve vitality/material/resource steps inside that
+coordinator's one journal action. Superseded authoring/executors are migration inputs only, never a
 second supported model, and are deleted once the sole runtime consumes the full corpus.
 
 **Grant SOURCES** are assembled by `src/lib/resolve-grant-sources.ts → resolveAllGrantSources`:

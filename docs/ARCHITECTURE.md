@@ -650,7 +650,11 @@ an ordinary-event subscriber selected while that root was still active. For `sou
 names a child, its exact owning program root must still be that selected root. The selected-event permit
 remains on the LIFO frame through `phase-complete`, preventing end-wave finalization until the exact
 completed top is popped. An ordinary frame cannot acquire that exception. The bounded state coordinator
-that drains these frozen audiences remains open.
+that drains these frozen audiences is `runMechanicsCausalAction` (`src/lib/mechanics-coordinator.ts`):
+one depth-first drive owns the LIFO compile loop, per-audience baseline depths, end-wave delivery and
+finalization, boundary checkpoints and the single final journal draft, under one global work budget.
+Suspension is replay-shaped — answer/response ledgers keyed by deterministic frame identity — so no
+coordinator state ever serializes.
 
 This hardened foundation is implemented and covered by focused hostile-input tests, but the cutover is
 not yet a production runtime. A bounded, unforgeable `MechanicsCausalState` owns the exact LIFO stack of
@@ -683,13 +687,13 @@ producer for the exact current root generation across executions, slots and targ
 HP and entity/inventory material lifecycles. Producer-kind validation shares the same authority used to
 validate persisted origin kinds. `end-program` alone terminates the root. A nonempty end selection or an
 already-active exclusive replacement returns
-`needs-coordination`; the still-open fixed-point coordinator must latch and finalize that exact set before
-the frame is retried. A conflicting second exclusive start created in the same frame is invalid rather
+`needs-coordination`; the coordinator requests those exact ends, delivers the latched wave's
+`source-ending` audience, finalizes it and retries the frame. A conflicting second exclusive start created in the same frame is invalid rather
 than silently replacing transaction-local state.
 
 The active compiler work must now add the payment prelude and vitality/material/resource subcompilers,
-allocating every physical generation from the current authentic causal segment, then feed one bounded fixed-point
-coordinator that resolves the effect barriers, runs trigger/subscriber/source-ending waves and calls
+allocating every physical generation from the current authentic causal segment; the bounded fixed-point
+coordinator already resolves the effect barriers, runs trigger/subscriber/source-ending waves and calls
 `planMechanicsWorldAction` once for one reversible journal draft. The compiler audit has also exposed
 kernel/model prerequisites that remain open: a separately authorized table-override path,
 source-specific Temporary-HP replacement cleanup, guarded effective defense/healing/immunity facts, and
