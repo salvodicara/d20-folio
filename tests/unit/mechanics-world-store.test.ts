@@ -10,6 +10,7 @@ import {
   commitCharacterAction,
   undoCharacterAction,
 } from "@/lib/mechanics-world-store";
+import { activeEnginePulses } from "@/features/character/useMechanicsPulse";
 import { runMechanicsCausalAction } from "@/lib/mechanics-coordinator";
 import { mechanicsAuthorityDefinitionFingerprint } from "@/lib/mechanics-authority";
 import {
@@ -244,5 +245,259 @@ describe("mechanics world store", () => {
         key.includes(String(castLevel))
       )?.[1]?.used;
     expect(mirroredUsed).toBeGreaterThanOrEqual(1);
+  });
+
+  it("pulses a persisted moonbeam zone through the round-tripped authority", () => {
+    const world = characterWorldState(MOCK_CHARACTER, "test-uid", 60);
+    if (!world) throw new Error("world fixture");
+    const capability = characterSpellCapability(MOCK_CHARACTER, "test-uid", "moonbeam", {
+      attackBonus: 5,
+      castingModifier: 0,
+      characterLevel: 3,
+      maxHp: 60,
+      saveDc: 15,
+    });
+    if (!capability) throw new Error("moonbeam capability");
+    const self = characterSelfRef(MOCK_CHARACTER, "test-uid");
+    const material = characterMaterialRef(MOCK_CHARACTER, "test-uid");
+    const slotLevels = Object.keys(world.resources.standardSpellSlots)
+      .map(Number)
+      .sort((a, b) => a - b);
+    const castLevel = slotLevels.find((level) => level >= 2);
+    if (castLevel === undefined) throw new Error("no level-2 slot");
+
+    const trailIds = (value: unknown): string[] => [
+      ...new Set(
+        [...JSON.stringify(value).matchAll(/"trailId":"([^"]+)"/g)].map(
+          (match) => match[1] ?? ""
+        )
+      ),
+    ];
+    const begun = beginMechanicsCausalState({
+      documents: [{ kind: "character", material, state: world }],
+      scope: material,
+    });
+    if (!begun.ok) throw new Error(`begin: ${begun.reason}`);
+    const castAnswers: MechanicsAnswer[] = [];
+    const runCast = () =>
+      runMechanicsCausalAction({
+        answers: castAnswers,
+        authoritySnapshot: { definitions: [authorityDefinition(capability.authority)] },
+        facts: [
+          ...capability.facts,
+          ...characterSlotDefinitionFacts(MOCK_CHARACTER, "test-uid", world),
+        ],
+        frameAnswers: [],
+        intent: {
+          actionId: "cast-moonbeam",
+          factGuards: [],
+          frame: {
+            authority: capability.authority,
+            invocation: {
+              installation: capability.authority.installation,
+              kind: "installed-capability",
+            },
+            rootReceipt: {
+              kind: "create",
+              materialEpoch: 0,
+              next: { execution: 1, phaseId: "resolve", triggerEventId: null },
+              root: {
+                occurrence: { material, occurrenceId: "moonbeam-1" },
+                ordinal: world.nextOccurrenceOrdinal,
+              },
+            },
+            trigger: { kind: "invocation" },
+          },
+        },
+        responses: [],
+        state: begun.value,
+        turnEconomy: [],
+      });
+    let castOutcome = runCast();
+    for (
+      let remaining = 4;
+      castOutcome.status === "needs-answer" && remaining > 0;
+      remaining -= 1
+    ) {
+      const requirement = castOutcome.requirement;
+      if (requirement?.kind === "resource") {
+        castAnswers.push({
+          inputId: requirement.inputId,
+          kind: "resource",
+          resource: {
+            character: material,
+            kind: "standard-spell-slot",
+            level: castLevel,
+          },
+        });
+      } else {
+        throw new Error(`unexpected cast requirement: ${requirement?.kind ?? "none"}`);
+      }
+      castOutcome = runCast();
+    }
+    if (castOutcome.status !== "complete" || !castOutcome.action) {
+      throw new Error(`cast: ${JSON.stringify(castOutcome)}`);
+    }
+    const committed = commitCharacterAction(
+      MOCK_CHARACTER,
+      "test-uid",
+      world,
+      castOutcome.action,
+      castOutcome.action.guards.facts.map((fact) => ({
+        actual: fact.expected,
+        address: fact.address,
+        owner: fact.owner,
+      }))
+    );
+    if (!committed) throw new Error("cast commit");
+
+    // Round-trip: re-derive the world from the PERSISTED session document.
+    const persistedDoc = { ...MOCK_CHARACTER, session: committed.session };
+    const persisted = characterWorldState(persistedDoc, "test-uid", 60);
+    if (!persisted) throw new Error("persisted world");
+    const pulses = activeEnginePulses(persisted);
+    expect(pulses).toHaveLength(1);
+    const pulse = pulses[0];
+    if (!pulse) return;
+    expect(pulse.spellId).toBe("moonbeam");
+    expect(pulse.execution).toBe(0);
+
+    const root = persisted.occurrences[pulse.occurrenceId];
+    if (root?.kind !== "program") throw new Error("persisted root");
+    const rebegun = beginMechanicsCausalState({
+      documents: [{ kind: "character", material, state: persisted }],
+      scope: material,
+    });
+    if (!rebegun.ok) throw new Error(`rebegin: ${rebegun.reason}`);
+    const hpBefore = persisted.vitals.hitPoints.current;
+    const pulseAnswers: MechanicsAnswer[] = [];
+    const triggerEventId = `${pulse.phaseId}.1`;
+    const runPulse = () =>
+      runMechanicsCausalAction({
+        answers: pulseAnswers,
+        authoritySnapshot: { definitions: [] },
+        facts: [
+          {
+            address: ["hit-point-maximum"],
+            expected: { present: true, value: 60 },
+            lifecycle: "commit-redo",
+            owner: self,
+          },
+        ],
+        frameAnswers: [],
+        intent: {
+          actionId: "pulse-moonbeam-1",
+          factGuards: [],
+          frame: {
+            authority: root.authority,
+            invocation: {
+              kind: "program-root",
+              occurrence: {
+                occurrence: { material, occurrenceId: pulse.occurrenceId },
+                ordinal: root.ordinal,
+              },
+            },
+            rootReceipt: {
+              expected: {
+                execution: 0,
+                phaseId: pulse.phaseId,
+                triggerEventId: null,
+              },
+              kind: "advance",
+              next: { execution: 1, phaseId: pulse.phaseId, triggerEventId },
+              root: {
+                occurrence: { material, occurrenceId: pulse.occurrenceId },
+                ordinal: root.ordinal,
+              },
+            },
+            trigger: { eventId: pulse.eventId, kind: "root-pulse", triggerEventId },
+          },
+        },
+        responses: [],
+        state: rebegun.value,
+        turnEconomy: [],
+      });
+    let pulseOutcome = runPulse();
+    for (
+      let remaining = 5;
+      pulseOutcome.status === "needs-answer" && remaining > 0;
+      remaining -= 1
+    ) {
+      const requirement = pulseOutcome.requirement;
+      if (!requirement) throw new Error("missing pulse requirement");
+      if (requirement.kind === "entities") {
+        pulseAnswers.push({
+          inputId: requirement.inputId,
+          kind: "entities",
+          targets: [self],
+        });
+      } else if (requirement.kind === "d20") {
+        pulseAnswers.push({
+          inputId: requirement.inputId,
+          kind: "d20",
+          requests: requirement.requests.map(({ identity, review }) => ({
+            identity,
+            observation: {
+              d20: {
+                aggregates: [],
+                trails: trailIds(review).map((trailId) => ({
+                  initialFace: 3,
+                  steps: [],
+                  trailId,
+                })),
+              },
+              enteredModifiers: [],
+              tableOverride: null,
+            },
+            payments: [],
+          })),
+        });
+      } else if (requirement.kind === "dice") {
+        pulseAnswers.push({
+          inputId: requirement.inputId,
+          kind: "dice",
+          requests: requirement.requests.map(({ identity, roll }) => ({
+            identity,
+            observation: {
+              aggregates: [],
+              trails: trailIds(roll).map((trailId) => ({
+                initialFace: 3,
+                steps: [],
+                trailId,
+              })),
+            },
+            payments: [],
+          })),
+        });
+      } else {
+        throw new Error(`unexpected pulse requirement: ${requirement.kind}`);
+      }
+      pulseOutcome = runPulse();
+    }
+    if (pulseOutcome.status !== "complete" || !pulseOutcome.action) {
+      throw new Error(`pulse: ${JSON.stringify(pulseOutcome)}`);
+    }
+    const pulsed = commitCharacterAction(
+      persistedDoc,
+      "test-uid",
+      persisted,
+      pulseOutcome.action,
+      pulseOutcome.action.guards.facts.map((fact) => ({
+        actual: fact.expected,
+        address: fact.address,
+        owner: fact.owner,
+      }))
+    );
+    expect(pulsed).not.toBeNull();
+    if (!pulsed) return;
+    // The failed save takes the register-scaled moonbeam dice in full.
+    expect(pulsed.world.vitals.hitPoints.current).toBeLessThan(hpBefore);
+    const pulsedRoot = pulsed.world.occurrences[pulse.occurrenceId];
+    if (pulsedRoot?.kind !== "program") throw new Error("pulsed root");
+    expect(pulsedRoot.phaseState[pulse.phaseId]).toMatchObject({
+      execution: 1,
+      lastTriggerEventId: triggerEventId,
+    });
+    expect(activeEnginePulses(pulsed.world)[0]?.execution).toBe(1);
   });
 });

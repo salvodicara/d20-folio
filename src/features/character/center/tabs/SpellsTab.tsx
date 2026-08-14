@@ -64,6 +64,9 @@ import { useTurnEconomy } from "../useTurnEconomy";
 const EngineCastFlow = lazy(() =>
   import("./spells/EngineCastFlow").then((m) => ({ default: m.EngineCastFlow }))
 );
+const EnginePulseStrip = lazy(() =>
+  import("./spells/EnginePulseStrip").then((m) => ({ default: m.EnginePulseStrip }))
+);
 
 const FamiliarFormPicker = lazy(() =>
   Promise.all([
@@ -539,6 +542,10 @@ export function SpellsTab() {
       </div>
 
       <SpellAddModal open={spellModalOpen} onClose={() => setSpellModalOpen(false)} />
+
+      <Suspense fallback={null}>
+        <EnginePulseStrip maxHp={character.character.hp.max} />
+      </Suspense>
 
       {engineCast !== null && (
         <Suspense fallback={null}>

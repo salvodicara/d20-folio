@@ -18,6 +18,10 @@
       "armorClass": "AC",
       "attackVs": "Attack {{index}} — d20 vs AC {{value}} ({{modifier}} applies)",
       "saveVs": "Save {{index}} — d20 vs DC {{value}} ({{modifier}} applies)"
+    },
+    "pulse": {
+      "strip": "Active engine effects",
+      "declare": "Pulse — {{name}}"
     }
   }
 }

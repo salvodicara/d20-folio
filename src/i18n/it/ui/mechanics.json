@@ -18,6 +18,10 @@
       "armorClass": "CA",
       "attackVs": "Attacco {{index}} — d20 contro CA {{value}} (si applica {{modifier}})",
       "saveVs": "TS {{index}} — d20 contro CD {{value}} (si applica {{modifier}})"
+    },
+    "pulse": {
+      "strip": "Effetti attivi del motore",
+      "declare": "Impulso — {{name}}"
     }
   }
 }
