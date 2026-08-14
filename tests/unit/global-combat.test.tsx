@@ -88,6 +88,7 @@ function campWithEnc(
     treasury: { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 },
     treasuryLog: [],
     encounter: {
+      nextMonsterOrdinal: 1,
       round: 1,
       currentCombatantId,
       epoch,

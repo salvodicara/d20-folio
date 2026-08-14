@@ -61,7 +61,6 @@ const ROWS: EncounterCombatantView[] = [
     tempHp: 0,
     down: false,
     hidden: false,
-    tokens: [4],
   },
 ];
 
@@ -85,6 +84,7 @@ const reco = (
 function stateWith(events: CombatChronicleEvent[]): EncounterState {
   return {
     combatants: [],
+    nextMonsterOrdinal: 1,
     round: 1,
     currentCombatantId: "pc-mara",
     epoch: 1,
@@ -190,7 +190,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     // A CERTAIN auto-applied player hit still carries the DM's undo affordance.
     fireEvent.click(screen.getByRole("button", { name: "Undo this line" }));
     expect(apply).toHaveBeenCalledTimes(1);
-    // The reducer IS undoHpEvent — it clears the line and heals the token back to full.
+    // The reducer IS undoHpEvent — it clears the line and heals the monster back to full.
     const seed: EncounterState = {
       combatants: [
         {
@@ -200,10 +200,10 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
           ac: 13,
           initiative: 12,
           conditions: [],
-          maxHp: 12,
-          tokens: [4],
+          hp: { current: 4, temp: 0, max: 12 },
         },
       ],
+      nextMonsterOrdinal: 2,
       round: 1,
       currentCombatantId: "pc-mara",
       epoch: 1,
@@ -213,7 +213,9 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     const next = captured(seed);
     expect(next).toEqual(undoHpEvent(seed, "0"));
     expect(next.events).toEqual([]);
-    expect(next.combatants[0]).toMatchObject({ tokens: [12] }); // 4 + 8 healed back
+    expect(next.combatants[0]).toMatchObject({
+      hp: { current: 12, temp: 0, max: 12 }, // 4 + 8 healed back
+    });
   });
 
   it("shows NO undo on a PC-target HP line (a PC's HP is not on the encounter)", () => {
@@ -270,10 +272,10 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
           ac: 13,
           initiative: 12,
           conditions: ["prone"],
-          maxHp: 12,
-          tokens: [12],
+          hp: { current: 12, temp: 0, max: 12 },
         },
       ],
+      nextMonsterOrdinal: 2,
       round: 1,
       currentCombatantId: "monster-1",
       epoch: 1,
@@ -402,7 +404,7 @@ describe("EndEncounterDialog — the editable end entry", () => {
       damageEvent,
       { id: "1", round: 1, kind: "down", targetId: "monster-1" },
     ]),
-    // A defeated monster group in the roster → inferOutcome === "victory".
+    // A defeated monster in the roster → inferOutcome === "victory".
     combatants: [
       {
         kind: "monster",
@@ -411,8 +413,7 @@ describe("EndEncounterDialog — the editable end entry", () => {
         ac: 13,
         initiative: 12,
         conditions: [],
-        maxHp: 12,
-        tokens: [0],
+        hp: { current: 0, temp: 0, max: 12 },
       },
     ],
   };

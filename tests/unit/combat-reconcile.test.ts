@@ -30,6 +30,7 @@ import type { EncounterView } from "@/features/campaigns/encounter-view";
 /** A begun encounter whose FROZEN order runs my PC → a goblin; the pointer sits on me. */
 function encounter(over: Partial<EncounterState> = {}): EncounterState {
   return {
+    nextMonsterOrdinal: 2,
     round: 5,
     currentCombatantId: "pc-me",
     order: ["pc-me", "monster-1"],
@@ -44,8 +45,7 @@ function encounter(over: Partial<EncounterState> = {}): EncounterState {
         ac: 13,
         initiative: 10,
         conditions: [],
-        maxHp: 7,
-        tokens: [7],
+        hp: { current: 7, temp: 0, max: 7 },
       },
     ],
     ...over,

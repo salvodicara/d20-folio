@@ -194,6 +194,7 @@ function monstersOnlyGathering(allRolled: boolean): CampaignDoc {
   return {
     ...c,
     encounter: {
+      nextMonsterOrdinal: 3,
       round: 1,
       currentCombatantId: null,
       epoch: 1,
@@ -206,8 +207,7 @@ function monstersOnlyGathering(allRolled: boolean): CampaignDoc {
           ac: 13,
           initiative: 14,
           conditions: [],
-          maxHp: 7,
-          tokens: [7],
+          hp: { current: 7, temp: 0, max: 7 },
         },
         {
           kind: "monster",
@@ -216,8 +216,7 @@ function monstersOnlyGathering(allRolled: boolean): CampaignDoc {
           ac: 13,
           initiative: allRolled ? 9 : null,
           conditions: [],
-          maxHp: 15,
-          tokens: [15],
+          hp: { current: 15, temp: 0, max: 15 },
         },
       ],
     },
@@ -582,17 +581,17 @@ describe("Party combat — DM (editable layer)", () => {
   it("a monster reuses the shared HP popover with TEMP and clamps HP to [0, maxHp]", async () => {
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
-    // Expand the Goblin Chief row (single token [21], maxHp 21). A lone token reuses the
-    // PC card's `.vital-hp` chip + shared HpEditPopover and labels with the monster NAME
-    // (B9a) — the chip is the one carrying `.vital-hp` (the other "Goblin Chief" control
-    // is the row's disclosure toggle).
+    // Expand the Goblin Chief row (21/21 HP). A monster reuses the PC card's
+    // `.vital-hp` chip + shared HpEditPopover and labels with the monster NAME
+    // (B9a) — the chip is the one carrying `.vital-hp` (the other "Goblin Chief"
+    // control is the row's disclosure toggle).
     fireEvent.click(
       screen.getByRole("button", { name: /goblin chief/i, expanded: false })
     );
     const boss = () => currentEncounter().combatants.find((c) => c.id === "monster-2");
     const bossHp = (): number => {
       const b = boss();
-      return b && b.kind === "monster" ? (b.tokens[0] ?? -1) : -1;
+      return b && b.kind === "monster" ? b.hp.current : -1;
     };
     const openHp = (): void => {
       fireEvent.click(

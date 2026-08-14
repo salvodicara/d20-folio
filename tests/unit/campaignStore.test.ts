@@ -216,6 +216,7 @@ describe("campaignStore — state + mutations", () => {
     const before = useCampaignStore.getState().campaign;
     const encounter: EncounterState = {
       combatants: [],
+      nextMonsterOrdinal: 1,
       round: 1,
       currentCombatantId: null,
       epoch: 1,
@@ -237,6 +238,7 @@ describe("campaignStore — state + mutations", () => {
     useCampaignStore.getState().addTreasuryLogEntry(logEntry());
     useCampaignStore.getState().setEncounter({
       combatants: [],
+      nextMonsterOrdinal: 1,
       round: 1,
       currentCombatantId: null,
       epoch: 1,

@@ -1,8 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LocText } from "@/lib/loc-text";
 import type { CombatState, PersistedTurnAction } from "@/types/combat-state";
-import type { ActiveCombatEffect } from "@/types/combat-effect";
+import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
+import type {
+  CombatEffectCommandBatch,
+  CombatEffectCommandLifecycleReceipt,
+} from "@/lib/combat-effect-command";
+import {
+  atomicAddressKey,
+  conformCombatEffectAtomicReadSet,
+  type AtomicOwner,
+  type AtomicRead,
+  type CombatEffectAtomicReadSet,
+} from "@/lib/combat-effect-atomic";
 
 vi.mock("firebase/firestore", () => ({
   doc: (...segments: unknown[]) => ({ path: segments.slice(1).join("/") }),
@@ -14,10 +25,31 @@ vi.mock("@/lib/firebase", () => ({ db: { _type: "firestore" } }));
 vi.mock("@/lib/dev-bypass", () => ({ DEV_BYPASS_AUTH: false }));
 
 import { combatStateWriteData, parseCombatState } from "@/lib/combat-state-io";
+import {
+  conformCombatEffectLifecycleCollection,
+  serializeCombatEffectLifecycleCollection,
+} from "@/lib/combat-effect-lifecycle-collection";
+import {
+  reduceCombatEffectLifecycle,
+  type CombatEffectLifecycleRuntime,
+} from "@/lib/combat-effect-lifecycle";
+import { defaultCombatState, sessionToCombatState } from "@/lib/combat-state";
 import { economyClaimsForTurn } from "@/lib/combat-economy";
 import { combatOutcomePrerequisiteMet } from "@/lib/combat-outcomes";
 import { syncCombatFromSession } from "@/features/character/center/combat-hydration";
 import { useCombatStore } from "@/stores/combatStore";
+import { makeCharacterDoc } from "@tests/unit/_helpers";
+import { conc } from "./__helpers__/concentration";
+import {
+  parsePersistedPlayStateV1,
+  sessionToPlayStateV1,
+} from "@/lib/session-state-codec";
+
+function parseState(value: unknown): CombatState {
+  const result = parseCombatState(value);
+  if (!result.ok) throw new Error(result.reason);
+  return result.state;
+}
 
 const LOC_TEXTS = {
   custom: { custom: "Homebrew Feint" },
@@ -51,6 +83,131 @@ function receipt(
   };
 }
 
+function lifecycleReadSet(
+  occurrenceId: string,
+  programId: string,
+  sourceId: string
+): CombatEffectAtomicReadSet {
+  const owner: AtomicOwner = {
+    kind: "pc",
+    surface: "local",
+    uid: "user:fixture",
+    characterId: "character:fixture",
+    combatantId: sourceId,
+  };
+  const reads: AtomicRead[] = [
+    {
+      owner,
+      address: {
+        kind: "document-revision",
+        document: {
+          kind: "character-play",
+          uid: "user:fixture",
+          characterId: "character:fixture",
+        },
+      },
+      expected: 0,
+    },
+    {
+      owner,
+      address: { kind: "base-state" },
+      expected: {
+        hp: 10,
+        tempHp: 0,
+        stable: false,
+        deathSaves: { successes: 0, failures: 0 },
+        conditions: [],
+        conditionLifetimes: {},
+        standing: [],
+        standingLifetimes: {},
+        resources: {},
+        stateFlags: {},
+      },
+    },
+    { owner, address: { kind: "max-hp" }, expected: 10 },
+    {
+      owner,
+      address: { kind: "damage-defenses" },
+      expected: {
+        allDamageResistance: false,
+        resistances: [],
+        immunities: [],
+        vulnerabilities: [],
+        sourceResistances: [],
+        flatReductions: [],
+        saveDamageRules: [],
+      },
+    },
+    { owner, address: { kind: "zero-hp-floors" }, expected: [] },
+    { owner, address: { kind: "occurrence-heads" }, expected: [] },
+    {
+      owner,
+      address: { kind: "lifecycle-head", occurrenceId, programId, sourceId },
+      expected: { present: false },
+    },
+  ];
+  reads.sort((left, right) =>
+    atomicAddressKey(left.owner, left.address).localeCompare(
+      atomicAddressKey(right.owner, right.address)
+    )
+  );
+  const conformed = conformCombatEffectAtomicReadSet(
+    {
+      schema: 1,
+      bindings: [{ ref: { kind: "source", id: sourceId }, owner }],
+      reads,
+    },
+    { occurrenceId, programId, sourceId }
+  );
+  if (!conformed) throw new TypeError("Invalid lifecycle read-set fixture");
+  return conformed;
+}
+
+function lifecycleRuntime(
+  occurrenceId: string,
+  programId: string,
+  sourceId: string
+): Readonly<CombatEffectLifecycleRuntime> {
+  const lifecycle: CombatEffectCommandLifecycleReceipt = {
+    occurrenceId,
+    programId,
+    phaseId: "resolve",
+    sourceId,
+    occurrence: 0,
+    attempt: 0,
+    auxiliaryConsequences: [],
+    initialTallies: {},
+    finalTallies: {},
+    ended: false,
+  };
+  const commandId = [occurrenceId, programId, "resolve", sourceId, "0", "0"]
+    .map((part) => `${part.length}:${part}`)
+    .join("|");
+  const batch: CombatEffectCommandBatch = {
+    schema: 1,
+    commandId,
+    payloadIdentity: JSON.stringify(lifecycle),
+    adapterId: "coordinator",
+    surface: "local",
+    direction: "forward",
+    expectedCausalState: "available",
+    nextCausalState: "committed",
+    readSet: lifecycleReadSet(occurrenceId, programId, sourceId),
+    readSetPolicy: "initial",
+    coordinatesLifecycle: true,
+    lifecycle,
+    operations: [],
+  };
+  const result = reduceCombatEffectLifecycle(null, batch);
+  if (result.status !== "applied") {
+    throw new TypeError(`Unable to build lifecycle fixture: ${result.reason}`);
+  }
+  return result.runtime;
+}
+
+const LIFECYCLE_A = lifecycleRuntime("cast:a", "spell:alpha", "caster:a");
+const LIFECYCLE_B = lifecycleRuntime("cast:b", "spell:beta", "caster:b");
+
 const EFFECTS: ActiveCombatEffect[] = [
   {
     id: "effect-concentration",
@@ -60,7 +217,7 @@ const EFFECTS: ActiveCombatEffect[] = [
       memberUid: "u1",
       characterId: "char-1",
     },
-    target: { kind: "monster", combatantId: "monster-0", tokenIndex: 0 },
+    target: { kind: "monster", combatantId: "monster-0" },
     source: {
       kind: "spell",
       id: "hex",
@@ -92,7 +249,7 @@ const EFFECTS: ActiveCombatEffect[] = [
   },
   {
     id: "effect-condition",
-    actor: { kind: "monster", combatantId: "monster-1", tokenIndex: 1 },
+    actor: { kind: "monster", combatantId: "monster-1" },
     target: {
       kind: "pc",
       combatantId: "pc-u1",
@@ -127,8 +284,35 @@ const EFFECTS: ActiveCombatEffect[] = [
   },
 ];
 
+const LEGACY_ENCOUNTER_EFFECT = EFFECTS.at(2);
+if (!LEGACY_ENCOUNTER_EFFECT) throw new TypeError("missing effect fixture");
+
+const PROGRAM_EFFECT: ActiveCombatEffect = {
+  ...LEGACY_ENCOUNTER_EFFECT,
+  id: "program-effect",
+  payload: { kind: "program-standing", effectId: "burning-zone" },
+  programOwner: {
+    occurrenceId: "cast:program",
+    programId: "spell:test",
+    phaseId: "resolve",
+    stepId: "standing",
+    operationId: "command:program#0",
+    instance: null,
+    iteration: 0,
+  },
+};
+
+const APPLY_PROGRAM_EFFECT_OP: CombatEffectOp = {
+  id: "apply:program-effect",
+  kind: "apply",
+  effect: PROGRAM_EFFECT,
+};
+const EFFECT_OPS: CombatEffectOp[] = [APPLY_PROGRAM_EFFECT_OP];
+
 function completeState(): CombatState {
   return {
+    actionRevision: 4,
+    actionHead: null,
     hp: { current: 37, temp: 9 },
     conditions: ["prone", "frightened"],
     bardicInspirationDie: "d10",
@@ -149,7 +333,23 @@ function completeState(): CombatState {
       },
     ],
     activeEffects: EFFECTS,
+    effectOps: EFFECT_OPS,
+    effectLifecycles: [LIFECYCLE_A],
     appliedEncounterEffects: { epoch: 12, ids: ["effect-a", "effect-b"] },
+    pendingConcentrationSaves: [
+      {
+        id: "con-save-1",
+        spell: conc("haste"),
+        damage: 22,
+        difficultyClass: 11,
+      },
+      {
+        id: "con-save-2",
+        spell: conc("haste"),
+        damage: 80,
+        difficultyClass: 30,
+      },
+    ],
     turnEconomy: {
       key: "encounter:camp-1:12:8:pc-u1",
       selected: {
@@ -208,6 +408,7 @@ function completeState(): CombatState {
       movementUsedFt: 25,
       dashesThisTurn: 2,
       spellSlotCastsThisTurn: 1,
+      spellSlotCastTurnKey: "encounter:camp-1:12:8:pc-u1",
       damageTakenThisRound: true,
       nextAttackAdvantage: true,
       movementLocked: true,
@@ -222,7 +423,514 @@ describe("combat-state IO — full persistence contract", () => {
 
   it("round-trips every turn slot, category, event, receipt, counter, flag, LocText, and active-effect shape", () => {
     const state = completeState();
-    expect(parseCombatState(combatStateWriteData(state))).toEqual(state);
+    expect(parseState(combatStateWriteData(state))).toEqual(state);
+  });
+
+  it("persists v1 play ownership and defaults legacy action metadata", () => {
+    const state = sessionToCombatState(makeCharacterDoc().session);
+    const parsed = parseCombatState(combatStateWriteData(state));
+    expect(parsed).toMatchObject({
+      ok: true,
+      ownership: "v1",
+      state: { actionRevision: 0, actionHead: null, playState: { version: 1 } },
+    });
+
+    const legacy = combatStateWriteData({ ...state, playState: undefined });
+    delete legacy.actionRevision;
+    delete legacy.actionHead;
+    expect(parseCombatState(legacy)).toMatchObject({
+      ok: true,
+      ownership: "legacy",
+      state: { actionRevision: 0, actionHead: null },
+    });
+  });
+
+  it("round-trips every present v1-owned combat field without normalization", () => {
+    const state = {
+      ...completeState(),
+      playState: sessionToPlayStateV1(makeCharacterDoc().session),
+    };
+    expect(parseState(combatStateWriteData(state))).toEqual(state);
+  });
+
+  it.each([
+    {
+      name: "activeEffects",
+      patch: { activeEffects: [EFFECTS[0], { id: "broken" }] },
+      assertLegacy: (state: CombatState) =>
+        expect(state.activeEffects).toEqual([EFFECTS[0]]),
+    },
+    {
+      name: "effectLifecycles",
+      patch: {
+        effectLifecycles: [LIFECYCLE_A, { ...LIFECYCLE_B, sourceId: "" }],
+      },
+      assertLegacy: (state: CombatState) =>
+        expect(state).not.toHaveProperty("effectLifecycles"),
+    },
+    {
+      name: "effectOps",
+      patch: {
+        effectOps: [APPLY_PROGRAM_EFFECT_OP, { broken: true }, APPLY_PROGRAM_EFFECT_OP],
+      },
+      assertLegacy: (state: CombatState) => expect(state.effectOps).toEqual(EFFECT_OPS),
+    },
+    {
+      name: "pendingConcentrationSaves",
+      patch: {
+        pendingConcentrationSaves: [
+          { id: "valid", spell: "haste", damage: 20, difficultyClass: 10 },
+          { id: "stale-dc", spell: "haste", damage: 22, difficultyClass: 10 },
+        ],
+      },
+      assertLegacy: (state: CombatState) =>
+        expect(state.pendingConcentrationSaves).toEqual([
+          {
+            id: "valid",
+            spell: conc("haste"),
+            damage: 20,
+            difficultyClass: 10,
+          },
+        ]),
+    },
+    {
+      name: "turnEconomy",
+      patch: { turnEconomy: { key: "solo:turn" } },
+      assertLegacy: (state: CombatState) =>
+        expect(state.turnEconomy).toMatchObject({
+          key: "solo:turn",
+          selected: { action: [], bonus: [], free: [] },
+          attacksUsed: 0,
+        }),
+    },
+    {
+      name: "appliedEncounterEffects",
+      patch: { appliedEncounterEffects: { epoch: 12, ids: ["effect-a", 7] } },
+      assertLegacy: (state: CombatState) =>
+        expect(state.appliedEncounterEffects).toEqual({
+          epoch: 12,
+          ids: ["effect-a"],
+        }),
+    },
+    {
+      name: "recentActions",
+      patch: {
+        recentActions: [
+          {
+            id: "valid",
+            targetIds: ["monster-0"],
+            outcome: "hit",
+            round: 3,
+          },
+          { id: "broken", targetIds: [], outcome: "hit", round: 3 },
+        ],
+      },
+      assertLegacy: (state: CombatState) =>
+        expect(state.recentActions).toEqual([
+          {
+            id: "valid",
+            targetIds: ["monster-0"],
+            outcome: "hit",
+            round: 3,
+          },
+        ]),
+    },
+  ])("rejects malformed present v1 $name but preserves legacy tolerance", (testCase) => {
+    const legacyBase = combatStateWriteData(completeState());
+    const v1 = parseCombatState({
+      ...legacyBase,
+      playState: sessionToPlayStateV1(makeCharacterDoc().session),
+      ...testCase.patch,
+    });
+    expect(v1).toEqual({ ok: false, reason: "invalid-combat-state" });
+
+    const legacy = parseCombatState({ ...legacyBase, ...testCase.patch });
+    expect(legacy).toMatchObject({ ok: true, ownership: "legacy" });
+    if (legacy.ok) testCase.assertLegacy(legacy.state);
+  });
+
+  it("rejects noncanonical v1 ordering/nested shapes but tolerates future roots", () => {
+    const base = combatStateWriteData({
+      ...completeState(),
+      playState: sessionToPlayStateV1(makeCharacterDoc().session),
+    });
+    expect(
+      parseCombatState({ ...base, effectLifecycles: [LIFECYCLE_B, LIFECYCLE_A] })
+    ).toEqual({ ok: false, reason: "invalid-combat-state" });
+    expect(
+      parseCombatState({
+        ...base,
+        activeEffects: [{ ...EFFECTS[0], unknownNestedFact: true }],
+      })
+    ).toEqual({ ok: false, reason: "invalid-combat-state" });
+    expect(
+      parseCombatState({
+        ...base,
+        futureCombatFact: { version: 2, value: "preserved-by-newer-client" },
+      })
+    ).toMatchObject({ ok: true, ownership: "v1" });
+  });
+
+  it("rejects hostile present v1 fields without invoking accessors", () => {
+    const hostile = combatStateWriteData({
+      ...completeState(),
+      playState: sessionToPlayStateV1(makeCharacterDoc().session),
+    });
+    let getterRead = false;
+    Object.defineProperty(hostile, "recentActions", {
+      enumerable: true,
+      get: () => {
+        getterRead = true;
+        return [];
+      },
+    });
+    expect(parseCombatState(hostile)).toEqual({
+      ok: false,
+      reason: "invalid-combat-state",
+    });
+    expect(getterRead).toBe(false);
+  });
+
+  it("rejects malformed action CAS facts and incoherent lifecycle heads", () => {
+    const base = combatStateWriteData(completeState());
+    for (const patch of [
+      { actionRevision: -1 },
+      { actionRevision: 1.5 },
+      { actionRevision: "1" },
+      { actionHead: "" },
+      { actionHead: 7 },
+      { actionHead: "missing" },
+      {
+        actionHead: "command:a",
+        actionLifecycles: {
+          "command:a": {
+            payloadIdentity: "payload:a",
+            actor: {
+              kind: "pc",
+              surface: "local",
+              uid: "user:a",
+              characterId: "character:a",
+              combatantId: "pc:a",
+            },
+            state: "undone",
+            generation: 2,
+            predecessor: null,
+          },
+        },
+      },
+    ]) {
+      expect(parseCombatState({ ...base, ...patch })).toEqual({
+        ok: false,
+        reason: "invalid-combat-state",
+      });
+    }
+  });
+
+  it("rejects cyclic and cross-owner action lifecycle graphs", () => {
+    const actorA = {
+      kind: "pc" as const,
+      surface: "local" as const,
+      uid: "user:a",
+      characterId: "character:a",
+      combatantId: "pc:a",
+    };
+    const actorB = { ...actorA, uid: "user:b", characterId: "character:b" };
+    const record = (actor: typeof actorA, predecessor: string | null) => ({
+      payloadIdentity: "payload",
+      actor,
+      state: "committed" as const,
+      generation: 1,
+      predecessor,
+    });
+    const base = combatStateWriteData(completeState());
+    expect(
+      parseCombatState({
+        ...base,
+        actionHead: "a",
+        actionLifecycles: { a: record(actorA, "b"), b: record(actorA, "a") },
+      })
+    ).toEqual({ ok: false, reason: "invalid-combat-state" });
+    expect(
+      parseCombatState({
+        ...base,
+        actionHead: "b",
+        actionLifecycles: { a: record(actorA, null), b: record(actorB, "a") },
+      })
+    ).toEqual({ ok: false, reason: "invalid-combat-state" });
+  });
+
+  it("round-trips a coherent committed action lifecycle head", () => {
+    const actor = {
+      kind: "pc" as const,
+      surface: "local" as const,
+      uid: "user:a",
+      characterId: "character:a",
+      combatantId: "pc:a",
+    };
+    const lifecycle = {
+      payloadIdentity: "payload:a",
+      actor,
+      state: "committed" as const,
+      generation: 1,
+      predecessor: null,
+    };
+    const state: CombatState = {
+      ...completeState(),
+      actionHead: "command:a",
+      actionLifecycles: { "command:a": lifecycle },
+    };
+    expect(parseState(combatStateWriteData(state))).toMatchObject({
+      actionHead: "command:a",
+      actionLifecycles: { "command:a": lifecycle },
+    });
+  });
+
+  it("rejects partial combat docs instead of fabricating a 0-HP character", () => {
+    expect(parseCombatState({})).toEqual({
+      ok: false,
+      reason: "invalid-combat-state",
+    });
+    expect(
+      parseCombatState({ hp: {}, conditions: [], initiativeRoll: null, deathSaves: {} })
+    ).toEqual({ ok: false, reason: "invalid-combat-state" });
+  });
+
+  it("strictly rejects hostile v1 play-state containers without invoking accessors", () => {
+    const valid = sessionToPlayStateV1(makeCharacterDoc().session);
+    expect(parsePersistedPlayStateV1(valid).ok).toBe(true);
+    expect(parsePersistedPlayStateV1({ ...valid, extra: true })).toEqual({
+      ok: false,
+      reason: "invalid-play-state",
+    });
+    expect(
+      parsePersistedPlayStateV1({
+        version: 1,
+        state: { ...valid.state, hp: { current: 1 } },
+      })
+    ).toEqual({ ok: false, reason: "invalid-play-state" });
+
+    const sparse = new Array(1);
+    expect(
+      parsePersistedPlayStateV1({ version: 1, state: { pinnedActions: sparse } })
+    ).toEqual({ ok: false, reason: "invalid-play-state" });
+
+    let getterRead = false;
+    const accessor = { version: 1, state: {} };
+    Object.defineProperty(accessor.state, "notes", {
+      enumerable: true,
+      get: () => {
+        getterRead = true;
+        return "stolen";
+      },
+    });
+    expect(parsePersistedPlayStateV1(accessor)).toEqual({
+      ok: false,
+      reason: "invalid-play-state",
+    });
+    expect(getterRead).toBe(false);
+
+    const symbol = { version: 1, state: {} };
+    Object.defineProperty(symbol.state, Symbol("hidden"), {
+      enumerable: true,
+      value: true,
+    });
+    expect(parsePersistedPlayStateV1(symbol)).toEqual({
+      ok: false,
+      reason: "invalid-play-state",
+    });
+  });
+
+  it("canonicalizes, deeply freezes, and stably serializes lifecycle collections", () => {
+    const sameOccurrenceDifferentSource = lifecycleRuntime(
+      "cast:a",
+      "spell:alpha",
+      "caster:z"
+    );
+    const collection = conformCombatEffectLifecycleCollection([
+      LIFECYCLE_B,
+      sameOccurrenceDifferentSource,
+      LIFECYCLE_A,
+    ]);
+    expect(
+      collection?.map(({ occurrenceId, programId, sourceId }) => [
+        occurrenceId,
+        programId,
+        sourceId,
+      ])
+    ).toEqual([
+      ["cast:a", "spell:alpha", "caster:a"],
+      ["cast:a", "spell:alpha", "caster:z"],
+      ["cast:b", "spell:beta", "caster:b"],
+    ]);
+    expect(Object.isFrozen(collection)).toBe(true);
+    expect(Object.isFrozen(collection?.[0])).toBe(true);
+    expect(Object.isFrozen(collection?.[0]?.cursor.phases)).toBe(true);
+
+    const serialized = serializeCombatEffectLifecycleCollection([
+      LIFECYCLE_B,
+      LIFECYCLE_A,
+    ]);
+    expect(serializeCombatEffectLifecycleCollection(JSON.parse(serialized))).toBe(
+      serialized
+    );
+  });
+
+  it("rejects duplicate identities, one invalid runtime, and hostile collection roots", () => {
+    const duplicate: unknown = JSON.parse(JSON.stringify(LIFECYCLE_A));
+    expect(conformCombatEffectLifecycleCollection([LIFECYCLE_A, duplicate])).toBeNull();
+    expect(() =>
+      serializeCombatEffectLifecycleCollection([LIFECYCLE_A, duplicate])
+    ).toThrow(TypeError);
+    expect(
+      conformCombatEffectLifecycleCollection([
+        LIFECYCLE_A,
+        { ...LIFECYCLE_B, sourceId: "" },
+      ])
+    ).toBeNull();
+    expect(conformCombatEffectLifecycleCollection(new Array(1))).toBeNull();
+
+    let getterRead = false;
+    const accessor = new Array(1);
+    Object.defineProperty(accessor, "0", {
+      enumerable: true,
+      get: () => {
+        getterRead = true;
+        return LIFECYCLE_A;
+      },
+    });
+    expect(conformCombatEffectLifecycleCollection(accessor)).toBeNull();
+    expect(getterRead).toBe(false);
+
+    class RuntimeArray extends Array<unknown> {}
+    expect(
+      conformCombatEffectLifecycleCollection(new RuntimeArray(LIFECYCLE_A))
+    ).toBeNull();
+  });
+
+  it("tolerates an absent or malformed persisted collection as empty", () => {
+    const base = combatStateWriteData(completeState());
+    for (const effectLifecycles of [
+      undefined,
+      null,
+      {},
+      [LIFECYCLE_A, { broken: true }],
+      [LIFECYCLE_A, LIFECYCLE_A],
+    ]) {
+      expect(parseState({ ...base, effectLifecycles })).not.toHaveProperty(
+        "effectLifecycles"
+      );
+    }
+  });
+
+  it("canonicalizes non-empty writes, omits empty writes, and rejects invalid writes", () => {
+    const written = combatStateWriteData({
+      ...completeState(),
+      effectLifecycles: [LIFECYCLE_B, LIFECYCLE_A],
+    });
+    expect(
+      (written.effectLifecycles as CombatEffectLifecycleRuntime[]).map(
+        ({ occurrenceId }) => occurrenceId
+      )
+    ).toEqual(["cast:a", "cast:b"]);
+    expect(
+      combatStateWriteData({ ...completeState(), effectLifecycles: [] })
+    ).not.toHaveProperty("effectLifecycles");
+    expect(() =>
+      combatStateWriteData({
+        ...completeState(),
+        effectLifecycles: [{ ...LIFECYCLE_A, sourceId: "" }],
+      })
+    ).toThrow(TypeError);
+  });
+
+  it("tolerantly conforms persisted effect ops but strictly canonicalizes writes", () => {
+    const base = combatStateWriteData(completeState());
+    expect(
+      parseState({
+        ...base,
+        effectOps: [APPLY_PROGRAM_EFFECT_OP, { broken: true }, APPLY_PROGRAM_EFFECT_OP],
+      }).effectOps
+    ).toEqual(EFFECT_OPS);
+    expect(parseState({ ...base, effectOps: { not: "an array" } })).not.toHaveProperty(
+      "effectOps"
+    );
+
+    const withExtra = {
+      ...APPLY_PROGRAM_EFFECT_OP,
+      ignoredLegacyField: true,
+    } as unknown as CombatEffectOp;
+    const written = combatStateWriteData({
+      ...completeState(),
+      effectOps: [withExtra],
+    });
+    expect(written.effectOps).toEqual(EFFECT_OPS);
+    expect(
+      combatStateWriteData({ ...completeState(), effectOps: [] })
+    ).not.toHaveProperty("effectOps");
+    expect(() =>
+      combatStateWriteData({
+        ...completeState(),
+        effectOps: [APPLY_PROGRAM_EFFECT_OP, APPLY_PROGRAM_EFFECT_OP],
+      })
+    ).toThrow(TypeError);
+  });
+
+  it("preserves the durable collection through the pure session projection only", () => {
+    const projected = sessionToCombatState(
+      makeCharacterDoc().session,
+      1,
+      [],
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      [LIFECYCLE_A],
+      EFFECT_OPS
+    );
+    expect(projected.effectLifecycles).toEqual([LIFECYCLE_A]);
+    expect(projected.effectOps).toEqual(EFFECT_OPS);
+    expect(defaultCombatState(20)).not.toHaveProperty("effectLifecycles");
+    expect(makeCharacterDoc().session).not.toHaveProperty("effectLifecycles");
+  });
+
+  it("reads the Concentration FIFO defensively and treats a legacy absence as empty", () => {
+    const base = combatStateWriteData(completeState());
+    expect(
+      parseState({ ...base, pendingConcentrationSaves: undefined })
+    ).not.toHaveProperty("pendingConcentrationSaves");
+    expect(
+      parseState({
+        ...base,
+        pendingConcentrationSaves: [
+          {
+            id: "valid",
+            spell: "haste",
+            damage: 60,
+            difficultyClass: 30,
+          },
+          {
+            id: "stale-dc",
+            spell: "haste",
+            damage: 22,
+            difficultyClass: 10,
+          },
+          {
+            id: "valid",
+            spell: "haste",
+            damage: 60,
+            difficultyClass: 30,
+          },
+          { id: "bad-spell", spell: "", damage: 10, difficultyClass: 10 },
+        ],
+      }).pendingConcentrationSaves
+    ).toEqual([
+      {
+        id: "valid",
+        spell: conc("haste"),
+        damage: 60,
+        difficultyClass: 30,
+      },
+    ]);
   });
 
   it.each([
@@ -241,13 +949,13 @@ describe("combat-state IO — full persistence contract", () => {
       turn.selected = { action: [], bonus: [], free: [] };
       turn.selected[slot].push(only);
 
-      const parsed = parseCombatState(combatStateWriteData(state));
+      const parsed = parseState(combatStateWriteData(state));
       expect(parsed.turnEconomy?.selected[slot]).toEqual([only]);
     }
   );
 
   it("hydrates the parsed receipt once for its exact turn and preserves cadence/prerequisite facts", () => {
-    const parsed = parseCombatState(combatStateWriteData(completeState()));
+    const parsed = parseState(combatStateWriteData(completeState()));
     const turn = parsed.turnEconomy;
     if (!turn) throw new Error("missing turn economy");
 
@@ -262,6 +970,7 @@ describe("combat-state IO — full persistence contract", () => {
     ]);
     expect(restored.dashesThisTurn).toBe(2);
     expect(restored.spellSlotCastsThisTurn).toBe(1);
+    expect(restored.spellSlotCastTurnKey).toBe("encounter:camp-1:12:8:pc-u1");
     expect(restored.damageTakenThisRound).toBe(true);
     expect(restored.nextAttackAdvantage).toBe(true);
     expect(restored.movementLocked).toBe(true);
@@ -298,7 +1007,7 @@ describe("combat-state IO — full persistence contract", () => {
     });
   });
 
-  it("normalizes hostile turn data without preserving impossible success receipts", () => {
+  it("rejects a hostile combat core instead of preserving impossible success receipts", () => {
     const validEffect = EFFECTS[0];
     const parsed = parseCombatState({
       hp: { current: Number.NaN, temp: Number.POSITIVE_INFINITY },
@@ -347,72 +1056,35 @@ describe("combat-state IO — full persistence contract", () => {
         movementUsedFt: Number.POSITIVE_INFINITY,
         dashesThisTurn: -1,
         spellSlotCastsThisTurn: Number.NaN,
+        spellSlotCastTurnKey: 7,
         damageTakenThisRound: "true",
         nextAttackAdvantage: 1,
         movementLocked: null,
       },
     });
 
-    expect(parsed).toMatchObject({
-      hp: { current: 0, temp: 0 },
-      conditions: ["prone"],
-      initiativeRoll: null,
-      deathSaves: { successes: 0, failures: 2 },
-      round: 1,
-      recentActions: [],
-      activeEffects: [validEffect],
-      turnEconomy: {
-        key: "turn-1",
-        selected: {
-          action: [
-            {
-              id: "valid-action",
-              name: LOC_TEXTS.lit,
-              slot: "action",
-              triggerEvents: ["attack"],
-            },
-          ],
-          bonus: [],
-          free: [],
-        },
-        attacksUsed: 0,
-        attackSwings: [{ actionId: "valid-swing", outcomeOccurrenceId: "swing-1" }],
-        outcomeReceipts: [],
-        outcomeOrdinal: 2,
-        reactionUsed: false,
-        reactionUsedId: null,
-        reactionOutcomeOccurrenceId: null,
-        movementUsedFt: 0,
-        dashesThisTurn: 0,
-        spellSlotCastsThisTurn: 0,
-        damageTakenThisRound: false,
-        nextAttackAdvantage: false,
-        movementLocked: false,
-      },
-    });
-    expect(parsed.appliedEncounterEffects).toBeUndefined();
-    expect(
-      combatOutcomePrerequisiteMet(
-        {
-          actionId: "forged-reaction",
-          kind: "save",
-          result: "success",
-        },
-        parsed.turnEconomy?.outcomeReceipts ?? []
-      )
-    ).toBe(false);
+    expect(parsed).toEqual({ ok: false, reason: "invalid-combat-state" });
   });
 
   it.each([undefined, null, [], {}, { key: "" }, { key: 7 }])(
     "drops an invalid turn-economy root: %j",
     (turnEconomy) => {
-      expect(
-        parseCombatState({
-          hp: {},
-          deathSaves: {},
-          turnEconomy,
-        }).turnEconomy
-      ).toBeUndefined();
+      const base = combatStateWriteData(completeState());
+      const parsed = parseState({ ...base, turnEconomy });
+      expect(parsed.turnEconomy).toBeUndefined();
     }
   );
+
+  it("binds a legacy non-zero slot count to its enclosing turn key", () => {
+    const state = completeState();
+    const turn = state.turnEconomy;
+    if (!turn) throw new Error("missing turn economy");
+    delete turn.spellSlotCastTurnKey;
+
+    const parsed = parseState(combatStateWriteData(state));
+    expect(parsed.turnEconomy).toMatchObject({
+      spellSlotCastsThisTurn: 1,
+      spellSlotCastTurnKey: turn.key,
+    });
+  });
 });
