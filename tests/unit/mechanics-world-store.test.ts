@@ -351,6 +351,9 @@ describe("mechanics world store", () => {
     );
     if (!committed) throw new Error("cast commit");
 
+    // The rollout bridge mirrors the engine concentration for legacy readers.
+    expect(committed.session.concentration).toBe("moonbeam");
+
     // Round-trip: re-derive the world from the PERSISTED session document.
     const persistedDoc = { ...MOCK_CHARACTER, session: committed.session };
     const persisted = characterWorldState(persistedDoc, "test-uid", 60);

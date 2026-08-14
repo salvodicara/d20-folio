@@ -9,6 +9,7 @@
  */
 
 import { spellIndex } from "@/data/spells";
+import { concentrationValue } from "@/lib/concentration";
 import { reduceActionJournal } from "@/lib/action-journal";
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { slotUsageKey } from "@/lib/cast-options";
@@ -315,6 +316,22 @@ export function commitCharacterAction(
   return mirroredCommit(doc, world, next);
 }
 
+/** The catalogue spell held by the world's active engine concentration, if any. */
+function engineConcentrationSpell(
+  world: Readonly<CharacterMaterialState>
+): string | null {
+  for (const occurrence of Object.values(world.occurrences)) {
+    if (occurrence.kind !== "concentration") continue;
+    const root = world.occurrences[occurrence.origin.root.occurrence.occurrenceId];
+    if (root?.kind !== "program") continue;
+    const definition = root.authority.snapshot.ref.definition;
+    if (definition.kind === "catalogue" && definition.catalogueKind === "spell") {
+      return definition.entityId;
+    }
+  }
+  return null;
+}
+
 /** Mirror the world-owned facts onto the legacy session bridge fields. */
 function mirroredCommit(
   doc: Readonly<CharacterDoc>,
@@ -329,8 +346,21 @@ function mirroredCommit(
     const used = doc.session.spellSlots[key]?.used ?? 0;
     usedSlots[key] = { used: Math.max(0, used + (before.current - cell.current)) };
   }
+  // Concentration mirror: only ENGINE transitions move the legacy field —
+  // a legacy-held concentration is never clobbered, and an engine release
+  // clears the field only when the engine had set it.
+  const concentrationBefore = engineConcentrationSpell(world);
+  const concentrationAfter = engineConcentrationSpell(next);
+  const concentration =
+    concentrationAfter !== null
+      ? concentrationValue(concentrationAfter)
+      : concentrationBefore !== null &&
+          doc.session.concentration === concentrationValue(concentrationBefore)
+        ? ""
+        : doc.session.concentration;
   const session: SessionState = {
     ...doc.session,
+    concentration,
     hp: {
       ...doc.session.hp,
       current: next.vitals.hitPoints.current,
