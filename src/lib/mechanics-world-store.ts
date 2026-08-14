@@ -1,0 +1,305 @@
+/**
+ * The character-owned mechanics world: one persisted `CharacterMaterialState`
+ * per character (`session.world`), initialized once from the legacy session
+ * facts and thereafter the sole owner of every fact the engine models.
+ *
+ * Rollout bridge (deleted with the final document migration of this epic):
+ * while a legacy surface still reads a session field the world also owns, the
+ * commit mirrors that exact field write-through so the two can never diverge.
+ */
+
+import { spellIndex } from "@/data/spells";
+import { reduceActionJournal } from "@/lib/action-journal";
+import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
+import { slotUsageKey } from "@/lib/cast-options";
+import {
+  createEmptyCharacterMaterialState,
+  parseCharacterMaterialState,
+} from "@/lib/material-state";
+import { conformMechanicsProgramAuthorityReceipt } from "@/lib/mechanics-program-receipt";
+import {
+  transcribeSpell,
+  TRANSCRIPTION_BINDINGS,
+  type SpellTranscription,
+} from "@/lib/mechanics-transcription";
+import { applySlotMaxOverrides, deriveSpellSlots } from "@/lib/multiclass-slots";
+import type {
+  ActionFactGuard,
+  ActionJournalWorld,
+  JournalActionDraft,
+  ResolvedActionFact,
+} from "@/types/action-journal";
+import type { CharacterDoc, SessionState } from "@/types/character";
+import type { CharacterMaterialState } from "@/types/material-state";
+import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
+import type { CharacterMaterialRef, EntityRef } from "@/types/mechanics-reference";
+
+export function characterMaterialRef(
+  doc: { readonly id: string },
+  uid: string
+): CharacterMaterialRef {
+  return { characterId: doc.id, kind: "character-play", uid };
+}
+
+export function characterSelfRef(doc: { readonly id: string }, uid: string): EntityRef {
+  return { entityId: "self", material: characterMaterialRef(doc, uid) };
+}
+
+function countCell(current: number) {
+  return {
+    capacity: { base: { kind: "unbounded" as const }, override: null },
+    current: Math.max(0, current),
+    disabled: false,
+    kind: "count" as const,
+  };
+}
+
+/**
+ * The character's live mechanics world. A persisted world is re-proved
+ * fail-closed; a document that has never carried one derives it exactly once
+ * from the legacy session facts the world supersedes.
+ */
+export function characterWorldState(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  maxHp: number,
+  slotMaxOverrides: Readonly<Record<string, number>> = {}
+): Readonly<CharacterMaterialState> | null {
+  const material = characterMaterialRef(doc, uid);
+  if (doc.session.world !== undefined) {
+    const persisted = parseCharacterMaterialState(doc.session.world, material);
+    return persisted.ok ? persisted.value : null;
+  }
+
+  const session = doc.session;
+  const current = Math.max(0, Math.min(session.hp.current, maxHp));
+  const base = createEmptyCharacterMaterialState(0, material, {
+    hitPoints: {
+      current,
+      temporary: { current: Math.max(0, session.hp.temp), sourceOccurrence: null },
+    },
+    zeroHitPoints:
+      current > 0
+        ? null
+        : {
+            deathSavingThrows: {
+              failures: Math.min(3, Math.max(0, session.deathFail)),
+              successes: Math.min(3, Math.max(0, session.deathSucc)),
+            },
+            stable: false,
+          },
+  });
+  const slots = applySlotMaxOverrides(
+    deriveSpellSlots(doc.character.classes),
+    slotMaxOverrides
+  );
+  const pact = slots.find((slot) => slot.pactMagic);
+  const seed = {
+    ...structuredClone(base),
+    exhaustion: Math.min(6, Math.max(0, session.exhaustion)),
+    heroicInspiration: session.inspiration,
+    resources: {
+      ...structuredClone(base.resources),
+      currency: Object.fromEntries(
+        (["pp", "gp", "ep", "sp", "cp"] as const).map((denomination) => [
+          denomination,
+          countCell(session.currency[denomination]),
+        ])
+      ) as CharacterMaterialState["resources"]["currency"],
+      pactSpellSlot: pact
+        ? {
+            cell: countCell(
+              pact.total - (session.spellSlots[slotUsageKey(pact)]?.used ?? 0)
+            ),
+            level: pact.level,
+          }
+        : null,
+      standardSpellSlots: Object.fromEntries(
+        slots.flatMap((slot) =>
+          slot.pactMagic
+            ? []
+            : [
+                [
+                  String(slot.level),
+                  countCell(
+                    slot.total - (session.spellSlots[slotUsageKey(slot)]?.used ?? 0)
+                  ),
+                ],
+              ]
+        )
+      ),
+    },
+  };
+  const parsed = parseCharacterMaterialState(seed, material);
+  return parsed.ok ? parsed.value : null;
+}
+
+export interface CharacterCastCapability {
+  readonly authority: Readonly<MechanicsProgramAuthorityReceipt>;
+  readonly facts: readonly Readonly<ActionFactGuard>[];
+  readonly transcription: SpellTranscription;
+}
+
+/**
+ * The executable authority for one spell the character can cast: the
+ * transcribed program closed into a capability snapshot, anchored on the
+ * caster, with the build-derived save DC as a static binding and the
+ * build-derived maximum hit points as a caller-guarded fact.
+ */
+export function characterSpellCapability(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  spellId: string,
+  derived: Readonly<{ castingModifier: number; maxHp: number; saveDc: number }>
+): CharacterCastCapability | null {
+  const spell = spellIndex.get(spellId);
+  if (!spell) return null;
+  const transcription = transcribeSpell(spell);
+  if (!transcription.program) return null;
+  const self = characterSelfRef(doc, uid);
+  const saveDc = derived.saveDc;
+  const capability = {
+    capabilityId: transcription.program.id,
+    definition: {
+      catalogueKind: "spell" as const,
+      entityId: spell.id,
+      kind: "catalogue" as const,
+      mechanicsRevision: canonicalFingerprint({ program: transcription.program }),
+    },
+    kind: "program" as const,
+  };
+  const authority = conformMechanicsProgramAuthorityReceipt({
+    anchors: { activator: self, caster: self, owner: self, source: self, target: self },
+    installation: {
+      capability,
+      generation: 1,
+      installationId: `spell.${spell.id}`,
+      owner: self,
+    },
+    schema: 1,
+    snapshot: {
+      grantGroups: {},
+      program: transcription.program,
+      ref: capability,
+      resources: {},
+      schema: 1,
+    },
+    source: { capability, kind: "capability", owner: self },
+    staticBindings: {
+      [TRANSCRIPTION_BINDINGS.castingModifier]: derived.castingModifier,
+      [TRANSCRIPTION_BINDINGS.saveDc]: saveDc,
+    },
+  });
+  if (!authority) return null;
+  const facts: ActionFactGuard[] = [
+    {
+      address: ["hit-point-maximum"],
+      expected: { present: true, value: derived.maxHp },
+      lifecycle: "commit-redo",
+      owner: self,
+    },
+  ];
+  return { authority, facts, transcription };
+}
+
+/** One resource-definition guard for every standard slot level the world holds. */
+export function characterSlotDefinitionFacts(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  world: Readonly<CharacterMaterialState>
+): readonly Readonly<ActionFactGuard>[] {
+  const self = characterSelfRef(doc, uid);
+  const spec = (level: string) => ({
+    bindings: {},
+    spec: {
+      capacity: { kind: "unbounded" as const },
+      id: `standard-spell-slot-${level}`,
+      initial: { kind: "empty" as const },
+      kind: "count" as const,
+      recoveries: [],
+    },
+  });
+  return Object.keys(world.resources.standardSpellSlots).map((level) => ({
+    address: ["resource-definition", "resources", "standardSpellSlots", level],
+    expected: { present: true, value: structuredClone(spec(level)) },
+    lifecycle: "commit",
+    owner: self,
+  }));
+}
+
+export interface CharacterActionCommit {
+  readonly session: Readonly<SessionState>;
+  readonly world: Readonly<CharacterMaterialState>;
+}
+
+/**
+ * Commit one planned action through the canonical journal reducer and mirror
+ * the world-owned facts every still-legacy surface reads (rollout bridge).
+ */
+export function commitCharacterAction(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  action: Readonly<JournalActionDraft>,
+  facts: readonly Readonly<ResolvedActionFact>[]
+): CharacterActionCommit | null {
+  const material = characterMaterialRef(doc, uid);
+  const { actions, epoch, revision, ...data } = world;
+  const journalWorld: ActionJournalWorld = {
+    documents: [
+      {
+        data: data as unknown as Record<string, never>,
+        journal: { actions, epoch, revision },
+        material,
+      },
+    ],
+    scope: material,
+  };
+  const sortedFacts = [...facts].sort((left, right) => {
+    const key = (fact: Readonly<ResolvedActionFact>) =>
+      `${JSON.stringify(fact.owner)}\u0000${JSON.stringify(fact.address)}`;
+    return key(left) < key(right) ? -1 : key(left) > key(right) ? 1 : 0;
+  });
+  const result = reduceActionJournal(
+    journalWorld,
+    { action, kind: "commit" },
+    sortedFacts
+  );
+  if (result.status !== "applied" && result.status !== "already-applied") {
+    return null;
+  }
+  const nextDocument = result.world.documents[0];
+  if (!nextDocument) return null;
+  const reparsed = parseCharacterMaterialState(
+    {
+      ...nextDocument.data,
+      actions: nextDocument.journal.actions,
+      epoch: nextDocument.journal.epoch,
+      revision: nextDocument.journal.revision,
+    },
+    material
+  );
+  if (!reparsed.ok) return null;
+  const next = reparsed.value;
+
+  const usedSlots: SessionState["spellSlots"] = { ...doc.session.spellSlots };
+  for (const [level, cell] of Object.entries(next.resources.standardSpellSlots)) {
+    const before = world.resources.standardSpellSlots[level];
+    if (!before || before.current === cell.current) continue;
+    const key = slotUsageKey({ level: Number(level), pactMagic: false });
+    const used = doc.session.spellSlots[key]?.used ?? 0;
+    usedSlots[key] = { used: Math.max(0, used + (before.current - cell.current)) };
+  }
+  const session: SessionState = {
+    ...doc.session,
+    hp: {
+      ...doc.session.hp,
+      current: next.vitals.hitPoints.current,
+      temp: next.vitals.hitPoints.temporary.current,
+    },
+    exhaustion: next.exhaustion,
+    spellSlots: usedSlots,
+    world: next,
+  };
+  return { session, world: next };
+}

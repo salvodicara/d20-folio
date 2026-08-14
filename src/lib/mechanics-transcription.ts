@@ -386,24 +386,52 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     unsupported("bonus-damage-against", "creature-type-gated-damage");
   }
   if (spell.damageAddsCastMod === true) {
-    unsupported("damage-adds-cast-mod", "modifier-term-pending");
+    clauses.push(clause("damage-cast-modifier", "unsupported", "per-part-attribution"));
   }
 
   // Healing.
   if (spell.healDice !== undefined) {
     const dice = parseDice(spell.healDice);
-    if (!dice) {
+    const perUpcast =
+      spell.healDicePerUpcast === undefined ? null : parseDice(spell.healDicePerUpcast);
+    if (!dice || (spell.healDicePerUpcast !== undefined && !perUpcast)) {
       unsupported("healing", `dice:${spell.healDice}`);
     } else {
-      inputs.push(diceInput("heal-roll", dice, null, spell.level, false));
+      inputs.push(
+        diceInput(
+          "heal-roll",
+          dice,
+          perUpcast,
+          spell.level,
+          spell.level > 0 && perUpcast !== null
+        )
+      );
       steps.push({
-        amount: sharedDiceAmount("heal-roll", INPUT_TOTAL),
+        amount: sharedDiceAmount(
+          "heal-roll",
+          spell.healAddsCastMod === true
+            ? {
+                kind: "add",
+                terms: [
+                  INPUT_TOTAL,
+                  {
+                    bindingId: TRANSCRIPTION_BINDINGS.castingModifier,
+                    kind: "binding",
+                  },
+                ],
+              }
+            : INPUT_TOTAL
+        ),
         kind: "heal",
         stepId: "heal-apply",
         target: { inputId: "targets", kind: "input" },
         when: null,
       });
       clauses.push(clause("healing-roll", "physical-input"));
+      if (spell.healAddsCastMod === true) {
+        clauses.push(clause("healing-cast-modifier", "automated"));
+      }
+      if (perUpcast !== null) clauses.push(clause("healing-upcast", "automated"));
       clauses.push(clause("healing-application", "automated"));
     }
   }

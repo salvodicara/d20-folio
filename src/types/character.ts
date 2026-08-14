@@ -16,12 +16,13 @@ import type {
   ActionHeal,
   ActionTargeting,
   ActionTempHpRoll,
-  DamageType,
   Recovery,
+  ResourceRecoveryTrigger,
   SpellSchool,
   SrdActionDef,
   TrackerUnit,
 } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 import type { CombatEvent } from "@/types/combat-log";
 import type {
   StoredConcentration,
@@ -160,6 +161,8 @@ export interface CustomFeature {
 export interface SrdEquipmentRef {
   /** SRD equipment ID: "longsword", "potion-of-healing" */
   srdId: string;
+  /** Stable identity for one physical magic-item copy or independently mutable stack. */
+  instanceId?: string;
   /** Player's personal notes */
   notes?: string;
   /** Whether this armor/shield is currently worn/equipped */
@@ -511,15 +514,19 @@ export interface CharacterDoc {
    */
   portraitCrop: PortraitCrop | null;
   /**
-   * PUBLIC SHARE LINK — `true` while the owner has this character shared. The
-   * unguessable document path IS the link (`/view/{uid}/{charId}`), the flag is the
-   * whole grant, and revoking is flipping it off (`firestore.rules` → `allow get`).
-   * Firestore-doc metadata, NOT part of the portable v3 codec envelope: an
-   * export/import never carries it, so importing someone's shared JSON can never
-   * silently publish the copy. DERIVED at the read boundary (`readDocMeta`) — a doc
-   * written before the feature has no field and reads as `false`.
+   * PUBLICATION DECISION — `true` while the owner publishes the sanitized
+   * `public/sheet` projection addressed by `/view/{uid}/{charId}`. The private parent
+   * is never anonymously readable. Revocation atomically deletes the projection.
+   * Firestore metadata, not part of the portable v3 codec: export/import can never
+   * publish a copy. Derived at `readDocMeta`; absence means `false`.
    */
   shared: boolean;
+  /**
+   * Firestore ownership marker: when present, all mutable play-session facts are
+   * owned by the versioned `combat/state` subdoc. Metadata only — the portable
+   * v3 character codec never serializes it.
+   */
+  playStateVersion?: 1;
   /** Character lifecycle status */
   status: "active" | "retired" | "dead" | "archived";
 
@@ -827,7 +834,101 @@ export interface TrackerState {
   rolls?: ReadonlyArray<number | null>;
 }
 
+export interface ItemResourceCounterState {
+  capacity: number;
+  current: number;
+  disabled: boolean;
+}
+
+export interface ItemResourceLogicalState {
+  resources: Record<string, ItemResourceCounterState>;
+  disposition: "magical" | "nonmagical";
+  /** Compact causal stack head; semantic reverts restore the prior head. */
+  causalHead: string | null;
+}
+
+/** Full canonical intent retained for retry, collision, and undo semantics. */
+export type ItemResourceTransitionIntent =
+  | {
+      kind: "spend";
+      occurrenceId: string;
+      expectedRevision: number;
+      itemId: string;
+      instanceId: string;
+      resourceId: string;
+      amount: number;
+      inputs: {
+        capacityRoll?: number;
+        initialRoll?: number;
+        depletionD20?: number;
+      };
+    }
+  | {
+      kind: "gain";
+      occurrenceId: string;
+      expectedRevision: number;
+      itemId: string;
+      instanceId: string;
+      resourceId: string;
+      amount: number;
+      inputs: {
+        capacityRoll?: number;
+        initialRoll?: number;
+      };
+    }
+  | {
+      kind: "recover";
+      occurrenceId: string;
+      expectedRevision: number;
+      itemId: string;
+      instanceId: string;
+      resourceId: string;
+      trigger: ResourceRecoveryTrigger;
+      inputs: {
+        capacityRoll?: number;
+        initialRoll?: number;
+        recoveryRoll?: number;
+      };
+    };
+
+export interface ItemResourceTransitionFingerprint {
+  intent: ItemResourceTransitionIntent;
+  before: ItemResourceLogicalState;
+  after: ItemResourceLogicalState;
+}
+
+export type ItemResourceLastTransition =
+  | {
+      status: "applied";
+      expectedRevision: number;
+      intent: ItemResourceTransitionIntent;
+    }
+  | {
+      status: "reverted";
+      occurrenceId: string;
+      expectedRevision: number;
+      original: ItemResourceTransitionFingerprint;
+    };
+
+/** The eventual sole mutable owner for every resource on one physical item. */
+export interface ItemResourceState {
+  itemId: string;
+  instanceId: string;
+  revision: number;
+  resources: Record<string, ItemResourceCounterState>;
+  disposition: "magical" | "nonmagical";
+  causalHead: string | null;
+  lastTransition?: ItemResourceLastTransition;
+}
+
 export interface SessionState {
+  /**
+   * The character's persisted mechanics world (`CharacterMaterialState`,
+   * schema 4) — the sole owner of every fact the deterministic engine models.
+   * Legacy session fields it supersedes are write-through mirrors during the
+   * cutover rollout and are deleted with the final document migration.
+   */
+  world?: unknown;
   hp: {
     current: number;
     temp: number;
@@ -844,6 +945,8 @@ export interface SessionState {
   };
   /** Tracker usage and optional table-entered rolls, keyed by tracker ID. */
   trackers: Record<string, TrackerState>;
+  /** Instance-owned item resources, keyed by strict `SrdEquipmentRef.instanceId`. */
+  itemResources?: Record<string, ItemResourceState>;
   /** Spell slot usage state, keyed by slot level */
   spellSlots: Record<string, { used: number }>;
   currency: {
