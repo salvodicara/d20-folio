@@ -225,6 +225,19 @@ Only focused affected-suite verification ran; no global gate ran. The fixed-poin
 coordinator, remaining compiler/corpus work, runtime cutover and final journal draft remain active; this
 is not an engine-completion claim.
 
+**Application cutover OPEN — the world landed (2026-08-14):** every character now owns one
+persisted mechanics world (`session.world`, schema-4 `CharacterMaterialState`), derived exactly once
+from the legacy session and re-proved fail-closed on load. Casting runs through the replay-driven
+`useMechanicsCast` hook → coordinator → one canonical `reduceActionJournal` commit with exact
+undo (`undoCharacterAction`), all proved against the real mock and the transcribed corpus
+(Cure Wounds end-to-end in the store test; the full requirement protocol in the hook render test).
+Legacy session fields the world supersedes are write-through mirrors (a golden-rule-10 rollout
+bridge deleted with the final document migration). The generated clause coverage report
+(`docs/automation-coverage.generated.json`) counts 422 composed spells, 190 with complete
+executable programs, 2107 clauses classified. Remaining cutover waves: boot-blocker consumer
+migration (in flight), combat/rail/item surfaces, the legacy executor deletions, and the live
+document migration. Focused verification only; no global gate ran.
+
 **Corpus transcription OPEN → first family CLOSED on branch (2026-08-14):** the transcriber
 (`src/lib/mechanics-transcription.ts`) compiles each composed spell's declarative facts into one
 authored `MechanicsProgram` plus an honest clause-level classification DERIVED from the fields the

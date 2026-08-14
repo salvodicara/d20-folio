@@ -1656,6 +1656,32 @@ stmts/fns, ≥75% branches.
 
 ---
 
+### The persisted mechanics world + the cutover rollout bridge
+
+Every character owns one persisted `CharacterMaterialState` at `session.world` — the sole home of
+every fact the deterministic engine models. `src/lib/mechanics-world-store.ts` is the seam: a
+document that has never carried a world derives it exactly once from the legacy session facts it
+supersedes (fail-closed through `parseCharacterMaterialState`); a persisted world is re-proved on
+every load and never re-derived. Cast/action surfaces run `runMechanicsCausalAction` over that
+world through the replay-driven `useMechanicsCast` hook (requirements surface one at a time; the
+outcome is recomputed from the ledgers on every render, so the UI can never disagree with the
+engine), and the planned `JournalActionDraft` commits through `reduceActionJournal` — the one
+canonical reducer that owns fences, generations and byte budgets. `undoCharacterAction` reverses a
+committed action through the same reducer, exactly.
+
+**Rollout bridge (temporary, deleted with this epic's final document migration):** while a legacy
+surface still reads a session field the world now owns (hp, exhaustion, spell-slot usage), the
+commit mirrors that exact field write-through so the two representations can never diverge. The
+bridge is a golden-rule-10 rollout state, not a resting state: each fact family migrates its
+surfaces atomically, and the mirror plus the legacy field are deleted together once no reader
+remains.
+
+The executable authority for a cast is closed at build level: `characterSpellCapability` seals the
+transcribed program (see `src/lib/mechanics-transcription.ts`) into a capability snapshot anchored
+on the caster, carrying build-derived truths the world does not hold — the spell save DC and
+casting modifier as static bindings, the maximum hit points and per-slot resource definitions as
+caller-guarded facts the kernel re-emits and the commit validates.
+
 ## Persistence + offline
 
 Firestore SDK handles real-time sync + offline persistence transparently. Writes are
