@@ -905,3 +905,234 @@ describe("runMechanicsCausalAction vitality", () => {
     });
   });
 });
+
+describe("runMechanicsCausalAction lifecycles", () => {
+  it("ends its own root through the terminal end-program step", () => {
+    const program = conformed({
+      id: "coordinated-one-shot",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              delivery: "automatic",
+              kind: "damage",
+              parts: [
+                {
+                  amount: { expression: { kind: "fixed", value: 4 }, kind: "integer" },
+                  damageType: "force",
+                  partId: "force",
+                },
+              ],
+              stepId: "deal-damage",
+              target: { kind: "role", role: "target" },
+              traits: ["spell"],
+              when: null,
+            },
+            { kind: "end-program", stepId: "finish", when: null },
+          ],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const result = runMechanicsCausalAction(
+      actionInput(program, world(), { facts: [MAX_HP_FACT] })
+    );
+    expect(result.status).toBe("complete");
+    if (result.status !== "complete") return;
+    const state = heroState(result.state);
+    expect(state.vitals.hitPoints.current).toBe(16);
+    expect(state.occurrences).toEqual({});
+    expect(result.state.context.pendingFrames).toEqual([]);
+    expect(result.action).not.toBeNull();
+  });
+
+  it("summons a closed-blueprint companion under the caster's control", () => {
+    const program = conformed({
+      id: "coordinated-summon",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              controller: "owner",
+              entityKey: "owl",
+              kind: "entity-create",
+              lifetime: { kind: "manual" },
+              stepId: "summon-owl",
+              template: { kind: "companion", sourceId: "familiar", variantId: "owl" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const authority = authorityReceipt(program);
+    const blueprint = {
+      controller: null,
+      exhaustion: 0,
+      kind: "creature",
+      label: "",
+      overrides: {
+        armorClass: null,
+        hitPointMaximum: null,
+        initiativeBonus: null,
+        speedFt: null,
+      },
+      resources: {},
+      template: { kind: "catalogue-companion", sourceId: "familiar", variantId: "owl" },
+      vitals: {
+        hitPoints: { current: 3, temporary: { current: 0, sourceOccurrence: null } },
+        zeroHitPoints: null,
+      },
+    } as const;
+    const withBlueprints = {
+      ...authority,
+      snapshot: {
+        ...authority.snapshot,
+        blueprints: { entities: { "companion:familiar:owl": blueprint }, items: {} },
+      },
+    };
+    const result = runMechanicsCausalAction({
+      answers: [],
+      authoritySnapshot: authoritySnapshot(withBlueprints),
+      facts: [],
+      frameAnswers: [],
+      intent: {
+        actionId: "coordinated-action",
+        factGuards: [],
+        frame: {
+          authority: withBlueprints,
+          invocation: {
+            installation: withBlueprints.installation,
+            kind: "installed-capability",
+          },
+          rootReceipt: {
+            kind: "create",
+            materialEpoch: 0,
+            next: { execution: 1, phaseId: "resolve", triggerEventId: null },
+            root: ROOT,
+          },
+          trigger: { kind: "invocation" },
+        },
+      },
+      responses: [],
+      state: causalState(world()),
+    });
+    expect(result.status).toBe("complete");
+    if (result.status !== "complete") return;
+    const state = heroState(result.state);
+    const summoned = Object.entries(state.entities).find(([entityId]) =>
+      entityId.startsWith("owl-")
+    );
+    expect(summoned?.[1]).toMatchObject({
+      controller: { entityId: "self" },
+      kind: "creature",
+      template: { kind: "catalogue-companion", variantId: "owl" },
+    });
+    const lifecycles = Object.values(state.occurrences).filter(
+      ({ kind }) => kind === "material-lifecycle"
+    );
+    expect(lifecycles).toHaveLength(1);
+  });
+
+  it("creates an owned item copy from the closed item blueprint", () => {
+    const program = conformed({
+      id: "coordinated-conjure-item",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              instanceKey: "conjured-blade",
+              itemId: "shadow-blade",
+              kind: "inventory-create",
+              lifetime: { kind: "manual" },
+              owner: "owner",
+              quantity: { kind: "fixed", value: 1 },
+              stepId: "conjure-blade",
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const authority = authorityReceipt(program);
+    const itemBlueprint = {
+      attuned: false,
+      definition: { itemId: "shadow-blade", kind: "catalogue" },
+      disposition: "magical",
+      enchantment: null,
+      equipped: false,
+      notes: "",
+      overrides: {
+        armorClass: null,
+        attackBonus: null,
+        damageFormula: null,
+        damageType: null,
+        name: null,
+      },
+      quantity: {
+        capacity: { base: { kind: "unbounded" }, override: null },
+        current: 1,
+        disabled: false,
+        kind: "count",
+      },
+      resources: {},
+      tags: [],
+    } as const;
+    const withBlueprints = {
+      ...authority,
+      snapshot: {
+        ...authority.snapshot,
+        blueprints: { entities: {}, items: { "shadow-blade": itemBlueprint } },
+      },
+    };
+    const result = runMechanicsCausalAction({
+      answers: [],
+      authoritySnapshot: authoritySnapshot(withBlueprints),
+      facts: [],
+      frameAnswers: [],
+      intent: {
+        actionId: "coordinated-action",
+        factGuards: [],
+        frame: {
+          authority: withBlueprints,
+          invocation: {
+            installation: withBlueprints.installation,
+            kind: "installed-capability",
+          },
+          rootReceipt: {
+            kind: "create",
+            materialEpoch: 0,
+            next: { execution: 1, phaseId: "resolve", triggerEventId: null },
+            root: ROOT,
+          },
+          trigger: { kind: "invocation" },
+        },
+      },
+      responses: [],
+      state: causalState(world()),
+    });
+    expect(result.status).toBe("complete");
+    if (result.status !== "complete") return;
+    const state = heroState(result.state);
+    const copies = Object.entries(state.inventory);
+    expect(copies).toHaveLength(1);
+    expect(copies[0]?.[1]).toMatchObject({
+      definition: { itemId: "shadow-blade" },
+      quantity: { current: 1 },
+    });
+  });
+});

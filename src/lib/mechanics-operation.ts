@@ -25,7 +25,11 @@ import {
   replaceResolvedMaterialResource,
   resourceDefinitionFactGuard,
 } from "@/lib/material-resource";
-import { conformInventoryInstance, conformMaterialEntity } from "@/lib/material-state";
+import {
+  conformInventoryInstance,
+  conformNewInventoryInstance,
+  conformNewMaterialEntity,
+} from "@/lib/material-state";
 import {
   addOccurrence,
   addTransitionedProgramOccurrence,
@@ -118,8 +122,6 @@ import {
   type MechanicsOperationExecution,
   type MechanicsOperationNoChange,
   type MechanicsOperationNoChangeReasonByKind,
-  type NewInventoryInstance,
-  type NewMaterialEntity,
   type MechanicsOperationRejection,
   type MechanicsOperationSchemaCustomTypes,
   type MechanicsOperationStage,
@@ -191,70 +193,6 @@ function exactRecord(value: unknown, keys: readonly string[]): value is UnknownR
 function conformMaterialEntityRef(value: unknown): Readonly<MaterialEntityRef> | null {
   const reference = conformEntityRef(value);
   return reference?.entityId === "self" ? null : reference;
-}
-
-function conformNewMaterialEntity(value: unknown): Readonly<NewMaterialEntity> | null {
-  if (
-    typeof value !== "object" ||
-    value === null ||
-    Array.isArray(value) ||
-    Object.hasOwn(value, "availability") ||
-    Object.hasOwn(value, "ordinal") ||
-    Object.hasOwn(value, "ownerOccurrence")
-  ) {
-    return null;
-  }
-  const entity = conformMaterialEntity({
-    ...value,
-    availability: "present",
-    ordinal: 1,
-    ownerOccurrence: null,
-  });
-  if (!entity) return null;
-  const common = {
-    controller: entity.controller,
-    kind: entity.kind,
-    label: entity.label,
-    overrides: entity.overrides,
-    resources: entity.resources,
-    template: entity.template,
-    vitals: entity.vitals,
-  };
-  return entity.kind === "creature"
-    ? { ...common, exhaustion: entity.exhaustion, kind: "creature" }
-    : { ...common, kind: "object" };
-}
-
-function conformNewInventoryInstance(
-  value: unknown
-): Readonly<NewInventoryInstance> | null {
-  if (
-    typeof value !== "object" ||
-    value === null ||
-    Array.isArray(value) ||
-    Object.hasOwn(value, "ordinal") ||
-    Object.hasOwn(value, "ownerOccurrence")
-  ) {
-    return null;
-  }
-  const instance = conformInventoryInstance({
-    ...value,
-    ordinal: 1,
-    ownerOccurrence: null,
-  });
-  if (!instance) return null;
-  return {
-    attuned: instance.attuned,
-    definition: instance.definition,
-    disposition: instance.disposition,
-    enchantment: instance.enchantment,
-    equipped: instance.equipped,
-    notes: instance.notes,
-    overrides: instance.overrides,
-    quantity: instance.quantity,
-    resources: instance.resources,
-    tags: instance.tags,
-  };
 }
 
 function journalActor(value: unknown): JournalActorRef | null {

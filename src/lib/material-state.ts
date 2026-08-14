@@ -8,6 +8,10 @@ import {
 import { isActionJournal, materialRefKey } from "@/lib/action-journal";
 import { conformExhaustionLevel } from "@/lib/condition";
 import { conformDamageDefenseProfile } from "@/lib/damage";
+import type {
+  NewInventoryInstance,
+  NewMaterialEntity,
+} from "@/types/mechanics-operation";
 import { conformDiceFormula } from "@/lib/dice-formula";
 import {
   createOccurrenceState,
@@ -1832,4 +1836,72 @@ export function createEmptySharedMaterialState(): Readonly<SharedMaterialState> 
     encounter: null,
     timeline: { epoch: 0, elapsedSeconds: 0, nextBoundaryOrdinal: 1 },
   });
+}
+
+/** A creatable entity body: everything but the allocator-owned identity fields. */
+export function conformNewMaterialEntity(
+  value: unknown
+): Readonly<NewMaterialEntity> | null {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    Array.isArray(value) ||
+    Object.hasOwn(value, "availability") ||
+    Object.hasOwn(value, "ordinal") ||
+    Object.hasOwn(value, "ownerOccurrence")
+  ) {
+    return null;
+  }
+  const entity = conformMaterialEntity({
+    ...value,
+    availability: "present",
+    ordinal: 1,
+    ownerOccurrence: null,
+  });
+  if (!entity) return null;
+  const common = {
+    controller: entity.controller,
+    kind: entity.kind,
+    label: entity.label,
+    overrides: entity.overrides,
+    resources: entity.resources,
+    template: entity.template,
+    vitals: entity.vitals,
+  };
+  return entity.kind === "creature"
+    ? { ...common, exhaustion: entity.exhaustion, kind: "creature" }
+    : { ...common, kind: "object" };
+}
+
+/** A creatable inventory body: everything but the allocator-owned identity fields. */
+export function conformNewInventoryInstance(
+  value: unknown
+): Readonly<NewInventoryInstance> | null {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    Array.isArray(value) ||
+    Object.hasOwn(value, "ordinal") ||
+    Object.hasOwn(value, "ownerOccurrence")
+  ) {
+    return null;
+  }
+  const instance = conformInventoryInstance({
+    ...value,
+    ordinal: 1,
+    ownerOccurrence: null,
+  });
+  if (!instance) return null;
+  return {
+    attuned: instance.attuned,
+    definition: instance.definition,
+    disposition: instance.disposition,
+    enchantment: instance.enchantment,
+    equipped: instance.equipped,
+    notes: instance.notes,
+    overrides: instance.overrides,
+    quantity: instance.quantity,
+    resources: instance.resources,
+    tags: instance.tags,
+  };
 }

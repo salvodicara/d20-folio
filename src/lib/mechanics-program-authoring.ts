@@ -610,7 +610,11 @@ function programSemantics(program: MechanicsProgram): boolean {
       phase.inputs.length > MAX_PHASE_INPUTS ||
       phase.steps.length > MAX_PHASE_STEPS ||
       (phase.trigger.kind === "program-phase-end" &&
-        (!phaseIds.has(phase.trigger.phaseId) || phase.trigger.phaseId === phase.phaseId))
+        (!phaseIds.has(phase.trigger.phaseId) ||
+          phase.trigger.phaseId === phase.phaseId)) ||
+      phase.steps.some(
+        (step, index) => step.kind === "end-program" && index !== phase.steps.length - 1
+      )
     ) {
       return false;
     }

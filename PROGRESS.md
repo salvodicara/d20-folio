@@ -225,6 +225,20 @@ Only focused affected-suite verification ran; no global gate ran. The fixed-poin
 coordinator, remaining compiler/corpus work, runtime cutover and final journal draft remain active; this
 is not an engine-completion claim.
 
+**Lifecycle step compilers CLOSED on branch (2026-08-14):** authored `entity-create`,
+`inventory-create`, `entity-change`, `entity-end`, `inventory-change`, `inventory-end` and
+`end-program` now compile into exact kernel operations. Creations materialize from CLOSED blueprints
+carried inside the capability snapshot (`snapshot.blueprints`, canonical opaque records re-proved by
+the full material conformer at the exact point of use, so catalogue lookups never happen at runtime
+and a malformed blueprint fails the authored step closed); each creation writes its material
+lifecycle with the resolved lifetime and exact preallocated generations. `end-program` is conformance
+-enforced terminal and its root end request travels through the compiled segment to the coordinator,
+which latches it at the frame's pop — the only moment the kernel permits an ordinary frame's own root
+to end — so a one-shot program's damage persists while its root, children and lifecycles vanish in
+the same causal action. Proved end-to-end: the one-shot damage program, a closed-blueprint companion
+summoned under the caster's control, and a conjured item copy. Focused verification only; no global
+gate ran.
+
 **Vitality step compilers CLOSED on branch (2026-08-14):** `compileMechanicsFrame` now compiles
 authored `damage`, `heal`, `temporary-hit-points`, `clear-temporary-hit-points`, `exhaustion-change`,
 `stabilize` and `death` steps into exact kernel operations. Damage builds one packet per expanded

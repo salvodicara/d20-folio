@@ -146,6 +146,8 @@ export interface MechanicsCompiledSegment {
   readonly actionFacts: readonly Readonly<ActionFactGuard>[];
   readonly consequences: readonly Readonly<MechanicsOperationConsequence>[];
   readonly emissions: readonly Readonly<MechanicsPostEventEmission>[];
+  /** Root ends this segment defers to the frame's phase CAS. */
+  readonly endRequests: readonly Readonly<OccurrenceGenerationRef>[];
   readonly manual: readonly ManualInstruction[];
   readonly state: Readonly<MechanicsCausalState>;
   readonly trace: readonly MechanicsCompiledStepTrace[];

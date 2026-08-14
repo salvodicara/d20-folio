@@ -5,6 +5,10 @@ import { canonicalFingerprint, canonicalJson } from "@/lib/canonical-fingerprint
 import { conformDamageDefenseProfile, resolveDamage } from "@/lib/damage";
 import { evaluateIntegerExpression } from "@/lib/integer-expression";
 import { selectEffectiveDamageDefenseProfile } from "@/lib/mechanic-occurrences";
+import {
+  conformNewInventoryInstance,
+  conformNewMaterialEntity,
+} from "@/lib/material-state";
 import { deriveMechanicsPostEventEmissions } from "@/lib/mechanics-execution";
 import {
   projectMechanicsTransaction,
@@ -425,6 +429,37 @@ function rootOccurrenceOrdinal(
     : null;
 }
 
+function documentAllocator(
+  context: Readonly<MechanicsProgramCompilationContext>,
+  key: "nextEntityOrdinal" | "nextInventoryOrdinal"
+): number | null {
+  const material = context.intent.frame.rootReceipt.root.occurrence.material;
+  const document = context.world.documents.find(
+    (candidate) => materialRefKey(candidate.material) === materialRefKey(material)
+  );
+  const state = document?.state;
+  const ordinal =
+    state && key in state ? (state as Record<typeof key, number>)[key] : undefined;
+  return ordinal !== undefined &&
+    Number.isSafeInteger(ordinal) &&
+    ordinal > 0 &&
+    ordinal < Number.MAX_SAFE_INTEGER
+    ? ordinal
+    : null;
+}
+
+function blueprintEntityKey(
+  template: Readonly<
+    Extract<MechanicsStep, { readonly kind: "entity-create" }>["template"]
+  >
+): string {
+  return template.kind === "monster"
+    ? `monster:${template.monsterId}`
+    : template.kind === "companion"
+      ? `companion:${template.sourceId}:${template.variantId}`
+      : `object:${template.objectId}`;
+}
+
 function uniqueOccurrences(
   values: readonly Readonly<OccurrenceGenerationRef>[]
 ): readonly Readonly<OccurrenceGenerationRef>[] {
@@ -720,6 +755,53 @@ function selectRootTemporaryHitPointSources(
         : []
     )
   );
+}
+
+/** Active root-owned material lifecycles still targeting the holder. */
+function selectRootMaterialLifecycles(
+  world: Readonly<MechanicsProgramCompilationContext["world"]>,
+  root: Readonly<OccurrenceGenerationRef>,
+  target: Readonly<EntityRef>
+): readonly Readonly<OccurrenceGenerationRef>[] {
+  const document = world.documents.find(
+    (candidate) => materialRefKey(candidate.material) === materialRefKey(target.material)
+  );
+  if (!document) return [];
+  const rootKey = occurrenceGenerationRefKey(root);
+  return uniqueOccurrences(
+    Object.entries(document.state.occurrences).flatMap(([occurrenceId, occurrence]) =>
+      occurrence.kind === "material-lifecycle" &&
+      occurrence.ending === null &&
+      occurrenceGenerationRefKey(occurrence.origin.root) === rootKey &&
+      entityRefKey(occurrence.target) === entityRefKey(target)
+        ? [
+            {
+              occurrence: { material: document.material, occurrenceId },
+              ordinal: occurrence.ordinal,
+            },
+          ]
+        : []
+    )
+  );
+}
+
+/** Locate one exact owned inventory copy and its current enchantment bearer. */
+function locateInventoryCopy(
+  world: Readonly<MechanicsProgramCompilationContext["world"]>,
+  item: Readonly<{
+    readonly instanceId: string;
+    readonly instanceOrdinal: number;
+    readonly owner: Readonly<EntityRef["material"]>;
+  }>
+): Readonly<{ enchantment: Readonly<unknown> | null }> | null {
+  const document = world.documents.find(
+    (candidate) => materialRefKey(candidate.material) === materialRefKey(item.owner)
+  );
+  if (document?.kind !== "character") return null;
+  const instance = document.state.inventory[item.instanceId];
+  return instance && instance.ordinal === item.instanceOrdinal
+    ? { enchantment: instance.enchantment }
+    : null;
 }
 
 function rejected(
@@ -1072,7 +1154,8 @@ export function compileMechanicsFrame(
 
   const cursorOnly = (
     manual: readonly Readonly<ManualInstruction>[],
-    trace: readonly Readonly<MechanicsCompiledStepTrace>[]
+    trace: readonly Readonly<MechanicsCompiledStepTrace>[],
+    endRequests: readonly Readonly<OccurrenceGenerationRef>[] = []
   ): MechanicsFrameCompileResult => {
     const unused = unusedResponses();
     if (unused) return unused;
@@ -1084,6 +1167,7 @@ export function compileMechanicsFrame(
       actionFacts: [],
       consequences: [],
       emissions: [],
+      endRequests,
       manual,
       state: advanced.value,
       trace,
@@ -1118,6 +1202,7 @@ export function compileMechanicsFrame(
       actionFacts: simulation.actionFacts,
       consequences: simulation.consequences,
       emissions: deriveMechanicsPostEventEmissions(simulation.stages),
+      endRequests: [],
       manual: [],
       state: advanced.value,
       trace: [
@@ -1161,6 +1246,7 @@ export function compileMechanicsFrame(
       actionFacts: simulation.actionFacts,
       consequences: simulation.consequences,
       emissions: deriveMechanicsPostEventEmissions(simulation.stages),
+      endRequests: [],
       manual: [],
       state: simulation.state,
       trace: [],
@@ -1355,6 +1441,273 @@ export function compileMechanicsFrame(
             ]
           )
         : simulateStep(step.stepId);
+    }
+    if (step.kind === "end-program") {
+      return cursorOnly(
+        [],
+        [
+          {
+            executions: [],
+            operationIds: [],
+            status: "compiled",
+            stepId: step.stepId,
+          },
+        ],
+        [receipt.root]
+      );
+    }
+    if (step.kind === "entity-create" || step.kind === "inventory-create") {
+      const blueprints = input.reviewed.intent.frame.authority.snapshot.blueprints;
+      const lifetimeTarget = lifetimeCombatant(step.lifetime, context);
+      if (!lifetimeTarget.ok) {
+        return rejected("unresolved-step", phaseId, step.stepId, "lifetime-combatant");
+      }
+      const endRules = resolveMechanicsLifetime(step.lifetime, {
+        bindings: context.bindings,
+        combatant: lifetimeTarget.combatant,
+        currentPhaseId: context.phase.phaseId,
+        currentTurnPhase: currentTurnPhase(context, state, lifetimeTarget.combatant),
+        execution: context.execution,
+        phaseExecutions: Object.fromEntries(
+          input.reviewed.intent.frame.authority.snapshot.program?.phases.map(
+            ({ phaseId: authoredPhaseId }) => [
+              authoredPhaseId,
+              context.root?.phaseState[authoredPhaseId]?.execution ?? 0,
+            ]
+          ) ?? []
+        ),
+        root: receipt.root,
+        world: context.world,
+      });
+      const occurrenceOrdinal = rootOccurrenceOrdinal(context);
+      if (!endRules || occurrenceOrdinal === null) {
+        return rejected("unresolved-step", phaseId, step.stepId, "effect-occurrence");
+      }
+      const origin: ProgramStepOccurrenceOrigin = {
+        execution: context.execution,
+        kind: "program-step",
+        phaseId: context.phase.phaseId,
+        root: receipt.root,
+        slot: cursor.nextSlot,
+        stepId: step.stepId,
+      };
+      const lifecycleId = mechanicsProgramEffectOccurrenceId(origin);
+      if (lifecycleId === null) {
+        return rejected("unresolved-step", phaseId, step.stepId, "effect-occurrence");
+      }
+      const lifecycle: OccurrenceGenerationRef = {
+        occurrence: {
+          material: receipt.root.occurrence.material,
+          occurrenceId: lifecycleId,
+        },
+        ordinal: occurrenceOrdinal,
+      };
+      if (step.kind === "entity-create") {
+        const blueprint = conformNewMaterialEntity(
+          blueprints?.entities[blueprintEntityKey(step.template)]
+        );
+        if (!blueprint) {
+          return rejected("missing-compiler-fact", phaseId, step.stepId, "blueprint");
+        }
+        const controller =
+          step.controller === null
+            ? null
+            : (resolveMechanicsProgramTargets(
+                { kind: "role", role: step.controller },
+                context
+              )?.[0]?.binding ?? null);
+        if (step.controller !== null && controller === null) {
+          return rejected("unresolved-step", phaseId, step.stepId, "controller");
+        }
+        const entityOrdinal = documentAllocator(context, "nextEntityOrdinal");
+        if (entityOrdinal === null) {
+          return rejected("unresolved-step", phaseId, step.stepId, "entity-allocator");
+        }
+        const problem = project(
+          {
+            causeId: rootCause.causeId,
+            endRules,
+            entity: {
+              entityId: `${step.entityKey}-${entityOrdinal}`,
+              material: receipt.root.occurrence.material,
+              ordinal: entityOrdinal,
+            },
+            kind: "entity-create",
+            lifecycle,
+            operationId: operationId(
+              input,
+              step.stepId,
+              cursor.nextSlot,
+              "entity-create"
+            ),
+            origin,
+            parent: receipt.root,
+            value: { ...structuredClone(blueprint), controller },
+          },
+          step.stepId
+        );
+        if (problem) return problem;
+        return simulateStep(step.stepId);
+      }
+      const blueprint = conformNewInventoryInstance(blueprints?.items[step.itemId]);
+      if (!blueprint) {
+        return rejected("missing-compiler-fact", phaseId, step.stepId, "blueprint");
+      }
+      const quantity = evaluateIntegerExpression(step.quantity, context.bindings);
+      if (quantity === null || quantity <= 0) {
+        return rejected("unresolved-step", phaseId, step.stepId, "quantity");
+      }
+      const ownerEntity = resolveMechanicsProgramTargets(
+        { kind: "role", role: step.owner },
+        context
+      )?.[0]?.binding;
+      if (!ownerEntity || ownerEntity.material.kind !== "character-play") {
+        return rejected("unresolved-step", phaseId, step.stepId, "owner");
+      }
+      const inventoryOrdinal = documentAllocator(context, "nextInventoryOrdinal");
+      if (inventoryOrdinal === null) {
+        return rejected("unresolved-step", phaseId, step.stepId, "inventory-allocator");
+      }
+      const instance = structuredClone(blueprint);
+      const problem = project(
+        {
+          causeId: rootCause.causeId,
+          endRules,
+          instance: {
+            ...instance,
+            quantity: { ...instance.quantity, current: quantity },
+          },
+          item: {
+            instanceId: `${step.instanceKey}-${inventoryOrdinal}`,
+            instanceOrdinal: inventoryOrdinal,
+            owner: ownerEntity.material,
+          },
+          kind: "inventory-create",
+          lifecycle,
+          operationId: operationId(
+            input,
+            step.stepId,
+            cursor.nextSlot,
+            "inventory-create"
+          ),
+          origin,
+          parent: receipt.root,
+        },
+        step.stepId
+      );
+      if (problem) return problem;
+      return simulateStep(step.stepId);
+    }
+    if (step.kind === "entity-change" || step.kind === "entity-end") {
+      const identities = resolveMechanicsProgramTargets(step.target, context);
+      if (!identities) {
+        return rejected("unresolved-step", phaseId, step.stepId, "targets");
+      }
+      for (const identity of identities) {
+        const target = identity.binding;
+        if (target.entityId === "self" || target.ordinal === undefined) {
+          return rejected("unresolved-step", phaseId, step.stepId, "wrong-target-kind");
+        }
+        if (step.kind === "entity-end") {
+          const lifecycles = selectRootMaterialLifecycles(
+            context.world,
+            receipt.root,
+            target
+          );
+          if (lifecycles.length > 0) {
+            return suspend({ kind: "occurrence-end", occurrences: lifecycles });
+          }
+          continue;
+        }
+        const problem = project(
+          {
+            availability: step.availability,
+            causeId: rootCause.causeId,
+            kind: "entity-availability",
+            operationId: operationId(
+              input,
+              step.stepId,
+              identity.ordinal,
+              "entity-availability"
+            ),
+            target: {
+              entityId: target.entityId,
+              material: target.material,
+              ordinal: target.ordinal,
+            },
+          },
+          step.stepId
+        );
+        if (problem) return problem;
+      }
+      return operations.length === 0
+        ? cursorOnly(
+            [],
+            [
+              {
+                executions: [],
+                operationIds: [],
+                status: "compiled",
+                stepId: step.stepId,
+              },
+            ]
+          )
+        : simulateStep(step.stepId);
+    }
+    if (step.kind === "inventory-change" || step.kind === "inventory-end") {
+      const source = input.reviewed.intent.frame.authority.source;
+      const answer =
+        step.item.kind === "input" ? context.resolved[step.item.inputId] : null;
+      const item =
+        step.item.kind === "source-item"
+          ? source.kind === "inventory-item"
+            ? {
+                instanceId: source.instanceId,
+                instanceOrdinal: source.instanceOrdinal,
+                owner: source.owner,
+              }
+            : null
+          : answer?.kind === "item"
+            ? {
+                instanceId: answer.instanceId,
+                instanceOrdinal: answer.instanceOrdinal,
+                owner: answer.owner,
+              }
+            : null;
+      if (!item) {
+        return rejected("unresolved-step", phaseId, step.stepId, "item");
+      }
+      const copy = locateInventoryCopy(context.world, item);
+      if (!copy) {
+        return rejected("unresolved-step", phaseId, step.stepId, "missing-item");
+      }
+      const enchantmentBearer =
+        copy.enchantment === null
+          ? null
+          : (copy.enchantment as Readonly<
+              Extract<MechanicsOperation, { readonly kind: "inventory-end" }>
+            >["enchantmentBearer"]);
+      const problem = project(
+        step.kind === "inventory-end"
+          ? {
+              causeId: rootCause.causeId,
+              enchantmentBearer,
+              item,
+              kind: "inventory-end",
+              operationId: operationId(input, step.stepId, 1, "inventory-end"),
+            }
+          : {
+              causeId: rootCause.causeId,
+              change: step.change,
+              enchantmentBearer,
+              item,
+              kind: "inventory-transition",
+              operationId: operationId(input, step.stepId, 1, "inventory-transition"),
+            },
+        step.stepId
+      );
+      if (problem) return problem;
+      return simulateStep(step.stepId);
     }
     if (isVitalityStep(step)) {
       const slots = vitalitySlots(step, context, cursor.nextSlot);

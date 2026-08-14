@@ -51,6 +51,7 @@ import type {
   MechanicsOperationCause,
   MechanicsTransaction,
 } from "@/types/mechanics-operation";
+import type { OccurrenceGenerationRef } from "@/types/mechanics-reference";
 import type { MechanicsCausalState } from "@/types/mechanics-world";
 
 const DEFAULT_WORK_BUDGET = 2_048;
@@ -60,6 +61,8 @@ interface FrameRecord {
     readonly continuation: Readonly<MechanicsCompilerContinuation>;
     readonly responses: readonly Readonly<MechanicsCompilerResponse>[];
   } | null;
+  /** Root ends deferred by `end-program` segments to this frame's phase CAS. */
+  endRequests: readonly Readonly<OccurrenceGenerationRef>[];
   readonly reviewed: Readonly<ReviewedMechanicsIntent>;
 }
 
@@ -229,7 +232,11 @@ export function runMechanicsCausalAction(
   if (!pushed.ok) {
     return rejectedResult("invalid-state", frameRef(rootFrame), pushed.reason);
   }
-  frameRecords.set(frameKey(rootFrame), { chain: null, reviewed: rootReview.reviewed });
+  frameRecords.set(frameKey(rootFrame), {
+    chain: null,
+    endRequests: [],
+    reviewed: rootReview.reviewed,
+  });
 
   /** Select every emission's audience and push nonempty ones depth-first. */
   const enqueueAudiences = (
@@ -286,6 +293,7 @@ export function runMechanicsCausalAction(
     }
     frameRecords.set(frameKey(dispatched.frame), {
       chain: null,
+      endRequests: [],
       reviewed: review.reviewed,
     });
     target.state = dispatched.state;
@@ -311,6 +319,7 @@ export function runMechanicsCausalAction(
     });
     if (result.status === "compiled") {
       record.chain = null;
+      record.endRequests = [...record.endRequests, ...result.segment.endRequests];
       target.state = result.segment.state;
       if (result.segment.trace.length > 0 || result.segment.manual.length > 0) {
         trace.push(
@@ -403,8 +412,14 @@ export function runMechanicsCausalAction(
       const depth = target.state.context.pendingFrames.length;
       const top = topMechanicsPendingFrame(target.state);
       if (top && depth > target.baselineDepth && top.cursor.stage === "phase-complete") {
-        const popped = popMechanicsPendingFrame(target.state, top.frame);
+        const record = frameRecords.get(frameKey(top.frame));
+        const popped = popMechanicsPendingFrame(
+          target.state,
+          top.frame,
+          record?.endRequests ?? []
+        );
         if (!popped.ok) return rejectedResult("invalid-state", null, popped.reason);
+        if (record) record.endRequests = [];
         target.state = popped.value;
         continue;
       }

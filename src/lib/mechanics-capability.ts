@@ -30,10 +30,17 @@ type MechanicsCapabilitySchemaRefTypes = {
   readonly "material-ref": MaterialRefSchemaShape;
 };
 
+function conformBlueprintRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
 /** Shared custom bindings for schemas that embed a capability snapshot. */
 export const MECHANICS_CAPABILITY_SCHEMA_CUSTOMS: ExactSchemaCustomConformers<MechanicsCapabilitySchemaCustomTypes> =
   {
     ...MECHANICS_AUTHORITY_REF_SCHEMA_CUSTOMS,
+    "blueprint-record": conformBlueprintRecord,
     grant: conformGrant,
     "mechanics-program": conformMechanicsProgram,
     "resource-spec": conformResourceSpec,
@@ -67,6 +74,13 @@ function snapshotSemantics(snapshot: MechanicsCapabilitySnapshot): boolean {
 
   for (const [resourceId, spec] of Object.entries(snapshot.resources)) {
     if (conformMechanicId(resourceId) === null || spec.id !== resourceId) return false;
+  }
+
+  for (const key of [
+    ...Object.keys(snapshot.blueprints?.entities ?? {}),
+    ...Object.keys(snapshot.blueprints?.items ?? {}),
+  ]) {
+    if (conformMechanicId(key) === null) return false;
   }
 
   const allGrantIds = new Set<string>();

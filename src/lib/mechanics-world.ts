@@ -2615,7 +2615,8 @@ export function acceptMechanicsPendingFramePhaseTransition(
 /** Pop only the exact completed LIFO top; no arbitrary stack setter exists. */
 export function popMechanicsPendingFrame(
   stateValue: unknown,
-  frameValue: unknown
+  frameValue: unknown,
+  endRequests: readonly Readonly<OccurrenceGenerationRef>[] = []
 ): MechanicsCausalStateResult {
   const state = exactCausalState(stateValue);
   const frame = exactExecutionFrame(frameValue);
@@ -2625,7 +2626,9 @@ export function popMechanicsPendingFrame(
     !frame ||
     !top ||
     !exactEqual(top.frame, frame) ||
-    top.cursor.stage !== "phase-complete"
+    top.cursor.stage !== "phase-complete" ||
+    !isDenseArray(endRequests) ||
+    !endRequests.every((request) => exactEqual(request, frame.rootReceipt.root))
   ) {
     return { ok: false, reason: "invalid-transition" };
   }
@@ -2633,7 +2636,7 @@ export function popMechanicsPendingFrame(
     state.world,
     state,
     [],
-    [],
+    endRequests,
     state.context.pendingFrames.slice(0, -1)
   );
 }
