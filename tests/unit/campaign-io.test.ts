@@ -1171,6 +1171,67 @@ describe("campaign-io — reviewed combat effects", () => {
     });
   });
 
+  it("threads ONE correlation identity through a declared attack: the engine action id and its chronicle beat share the pc-action seed", async () => {
+    const caster = {
+      kind: "pc" as const,
+      id: "pc-attacker",
+      memberUid: "attacker",
+      characterId: "attacker-character",
+    };
+    const live: EncounterState = {
+      nextMonsterOrdinal: 2,
+      round: 1,
+      currentCombatantId: caster.id,
+      order: [caster.id, "monster-1"],
+      epoch: 1,
+      status: "active",
+      combatants: [
+        caster,
+        {
+          kind: "monster",
+          id: "monster-1",
+          name: "Goblin",
+          ac: 12,
+          initiative: 9,
+          conditions: [],
+          hp: { current: 10, temp: 0, max: 10 },
+        },
+      ],
+    };
+    const update = vi.fn<(ref: unknown, data: Record<string, unknown>) => void>();
+    runTransactionMock.mockImplementationOnce(async (_db, fn) =>
+      fn({
+        get: () =>
+          Promise.resolve({ data: () => ({ memberDetails: {}, encounter: live }) }),
+        update,
+      })
+    );
+
+    await applyDeclaredCombatEffects(
+      "camp1",
+      [{ kind: "damage", intake: "resolved", targetId: "monster-1", amount: 4 }],
+      {
+        actorId: caster.id,
+        action: { custom: "Shortsword" },
+        round: 1,
+        outcomeOccurrenceId: "outcome-7",
+        pcTargets: [],
+        hitTargetIds: ["monster-1"],
+      }
+    );
+
+    const written = update.mock.calls[0]?.[1];
+    const events = written?.["encounter.events"] as EncounterState["events"];
+    const beat = (events ?? []).find((event) => event.kind === "hp-damage");
+    expect(beat?.engineActionId).toMatch(/^pc-action:sha256:[0-9a-f]+:damage:monster-1$/);
+    // The engine world rides the SAME transaction write and records the SAME
+    // correlated action id on the shared journal.
+    const world = written?.["encounter.world"] as
+      | { actions?: Array<{ id: string }> }
+      | undefined;
+    expect(world?.actions?.some(({ id }) => id === beat?.engineActionId)).toBe(true);
+  });
+
   it("consumes multiple one-shot wards in one multi-target action", async () => {
     const monsters = ["monster-2", "monster-3"];
     const wards: ActiveCombatEffect[] = monsters.map((combatantId) => ({

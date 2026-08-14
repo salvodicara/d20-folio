@@ -60,6 +60,8 @@ import {
   applyAdversaryHeal,
   stepEncounterTurn,
 } from "@/features/campaigns/encounter-world-command";
+import { commitPartyAttackParticipation } from "@/features/campaigns/party-world-lease";
+import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { attachViolatesOneCampaign } from "@/features/campaigns/attach-guard";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { pushVersion } from "@/features/campaigns/chronicle-versions";
@@ -1568,8 +1570,19 @@ export async function applyDeclaredCombatEffects(
     }
   }
   if (applicable.length === 0 && (context?.consumeEffectIds?.length ?? 0) === 0) return;
+  // ONE correlation identity per declare, minted BEFORE the transaction so
+  // retries reuse it: the encounter-side journal actions (and their mirrored
+  // chronicle beats) carry it as their id prefix, and the acting member's own
+  // character journal records the SAME id as its participation claim - the
+  // two-commit cross-material correlation (the composed-model comment in
+  // `src/lib/encounter-world-store.ts`). Secondary transfers (retaliation,
+  // shared-damage links) keep their legacy ids: they are the table's chained
+  // effects, not the declared action itself.
+  const engineActionSeed = context ? declaredEngineActionSeed(context) : undefined;
   if (devBypassEnabled()) {
-    return applyDeclaredEffectsOptimistic(campaignId, applicable, context);
+    applyDeclaredEffectsOptimistic(campaignId, applicable, context, engineActionSeed);
+    stampDeclaredParticipation(campaignId, context, engineActionSeed);
+    return;
   }
   const ref = campaignDoc(campaignId);
   await runTransaction(db, async (txn) => {
@@ -1811,7 +1824,8 @@ export async function applyDeclaredCombatEffects(
           campaignId,
           [effect],
           context ? { actorId: context.actorId, action: context.action } : undefined,
-          effectsForTarget(nextEffectOps, effect.targetId)
+          effectsForTarget(nextEffectOps, effect.targetId),
+          engineActionSeed
         );
         continue;
       }
@@ -1823,7 +1837,8 @@ export async function applyDeclaredCombatEffects(
         hitTargetIds.has(effect.targetId)
           ? { attacker: attackerRef, attackMode: context?.attackMode }
           : undefined,
-        { actorId: context?.actorId, action: context?.action }
+        { actorId: context?.actorId, action: context?.action },
+        engineActionSeed
       );
       chronicle = result.encounter;
       enqueueTransfers(result.transfers);
@@ -2016,6 +2031,32 @@ export async function applyDeclaredCombatEffects(
       updatedAt: serverTimestamp(),
     });
   });
+  stampDeclaredParticipation(campaignId, context, engineActionSeed);
+}
+
+/** One correlation identity per declare. `outcomeOccurrenceId` (the turn
+ * engine's stable per-use identity) makes it retry-safe when present; a
+ * declare without one mints a fresh identity per invocation. */
+function declaredEngineActionSeed(context: DeclaredCombatContext): string {
+  return `pc-action:${canonicalFingerprint({
+    actorId: context.actorId,
+    occurrence: context.outcomeOccurrenceId ?? null,
+    ...(context.outcomeOccurrenceId === undefined ? { minted: Date.now() } : {}),
+  })}`;
+}
+
+/** The PC side of the declared action's correlation - the acting member's own
+ * character journal records the same identity as a turn-economy claim.
+ * Best-effort and fail-closed inside `commitPartyAttackParticipation`; runs
+ * only AFTER the encounter side landed (the adversary's state is table truth
+ * and always books first). */
+function stampDeclaredParticipation(
+  campaignId: string,
+  context: DeclaredCombatContext | undefined,
+  engineActionSeed: string | undefined
+): void {
+  if (!context || engineActionSeed === undefined) return;
+  commitPartyAttackParticipation(campaignId, context.actorId, engineActionSeed);
 }
 
 /**
@@ -2585,7 +2626,8 @@ function reducePersistentMonsterDamage(
   effect: DeclaredDamageEffect,
   effectOps: ReadonlyArray<CombatEffectOp>,
   hit?: { attacker: CombatantRef | null; attackMode?: "melee" | "ranged" },
-  provenance?: { actorId?: string; action?: LocText }
+  provenance?: { actorId?: string; action?: LocText },
+  engineActionSeed?: string
 ): PersistentMonsterDamageResult {
   const monster = encounter.combatants.find(
     (combatant): combatant is EncounterMonster =>
@@ -2626,7 +2668,8 @@ function reducePersistentMonsterDamage(
       {
         ...(provenance?.actorId !== undefined ? { actorId: provenance.actorId } : {}),
         ...(provenance?.action !== undefined ? { action: provenance.action } : {}),
-      }
+      },
+      engineActionSeed
     ),
     transfers: [
       ...outcome.transfers.map((transfer) => ({
@@ -2663,7 +2706,8 @@ export function reduceDeclaredEffects(
   campaignId: string,
   effects: ReadonlyArray<DeclaredCombatEffect>,
   provenance?: { actorId: string; action: LocText },
-  persistentEffects: ReadonlyArray<ActiveCombatEffect> = []
+  persistentEffects: ReadonlyArray<ActiveCombatEffect> = [],
+  engineActionSeed?: string
 ): EncounterState {
   let next = encounter;
   for (const effect of effects) {
@@ -2712,9 +2756,23 @@ export function reduceDeclaredEffects(
       continue;
     }
     if (effect.kind === "damage") {
-      next = applyAdversaryDamage(next, campaignId, targetId, effect.amount, provenance);
+      next = applyAdversaryDamage(
+        next,
+        campaignId,
+        targetId,
+        effect.amount,
+        provenance,
+        engineActionSeed
+      );
     } else if (!healingBlockedByEffects(persistentEffects)) {
-      next = applyAdversaryHeal(next, campaignId, targetId, effect.amount, provenance);
+      next = applyAdversaryHeal(
+        next,
+        campaignId,
+        targetId,
+        effect.amount,
+        provenance,
+        engineActionSeed
+      );
     }
   }
   return next;
@@ -2726,7 +2784,8 @@ export function reduceDeclaredEffects(
 function applyDeclaredEffectsOptimistic(
   campaignId: string,
   effects: ReadonlyArray<DeclaredCombatEffect>,
-  context?: DeclaredCombatContext
+  context?: DeclaredCombatContext,
+  engineActionSeed?: string
 ): void {
   const store = useCampaignStore.getState();
   const campaign = store.campaign;
@@ -2897,7 +2956,8 @@ function applyDeclaredEffectsOptimistic(
         campaignId,
         [effect],
         context ? { actorId: context.actorId, action: context.action } : undefined,
-        effectsForTarget(nextEffectOps, effect.targetId)
+        effectsForTarget(nextEffectOps, effect.targetId),
+        engineActionSeed
       );
       continue;
     }
@@ -2909,7 +2969,8 @@ function applyDeclaredEffectsOptimistic(
       hitTargetIds.has(effect.targetId)
         ? { attacker: attackerRef, attackMode: context?.attackMode }
         : undefined,
-      { actorId: context?.actorId, action: context?.action }
+      { actorId: context?.actorId, action: context?.action },
+      engineActionSeed
     );
     next = result.encounter;
     enqueueTransfers(result.transfers);

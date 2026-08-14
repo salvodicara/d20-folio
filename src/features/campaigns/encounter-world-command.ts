@@ -67,6 +67,20 @@ export interface AdversaryActionProvenance {
 }
 
 /**
+ * The encounter-side journal action id for one cross-material commit: the
+ * caller-minted correlation id (the SAME identity the acting member stamps on
+ * its own character journal - `partyAttackParticipationCapability`) suffixed
+ * with the target row, so one declare that lands on several adversaries books
+ * one distinct journal action per target while every id still carries the one
+ * correlation prefix. See the composed-model comment in
+ * `src/lib/encounter-world-store.ts` for why the two materials correlate by
+ * identity instead of sharing one atomic multi-document action.
+ */
+function correlatedActionId(seed: string, kind: string, monsterId: string): string {
+  return `${seed}:${kind}:${monsterId}`;
+}
+
+/**
  * Mirror the world-owned adversary facts onto the exact legacy encounter
  * fields every still-legacy surface reads (hp trio + conditions + the combat
  * chronicle beat), and persist the committed world in the same value — one
@@ -212,7 +226,8 @@ export function applyAdversaryDamage(
   campaignId: string,
   monsterId: string,
   amount: number,
-  provenance?: AdversaryActionProvenance
+  provenance?: AdversaryActionProvenance,
+  engineActionSeed?: string
 ): EncounterState {
   if (!Number.isFinite(amount)) return encounter;
   const landed = Math.max(0, Math.round(amount));
@@ -230,11 +245,13 @@ export function applyAdversaryDamage(
         adversaryEntityRef(campaignId, monsterId, entity.ordinal),
         landed
       ),
-      `adversary-damage:${canonicalFingerprint({
-        amount: landed,
-        monsterId,
-        revision: world.revision,
-      })}`,
+      engineActionSeed !== undefined
+        ? correlatedActionId(engineActionSeed, "damage", monsterId)
+        : `adversary-damage:${canonicalFingerprint({
+            amount: landed,
+            monsterId,
+            revision: world.revision,
+          })}`,
       provenance
     );
     if (committed) return committed;
@@ -309,7 +326,8 @@ export function applyAdversaryHeal(
   campaignId: string,
   monsterId: string,
   amount: number,
-  provenance?: AdversaryActionProvenance
+  provenance?: AdversaryActionProvenance,
+  engineActionSeed?: string
 ): EncounterState {
   if (!Number.isFinite(amount)) return encounter;
   const restored = Math.max(0, Math.round(amount));
@@ -328,11 +346,13 @@ export function applyAdversaryHeal(
           adversaryEntityRef(campaignId, monsterId, entity.ordinal),
           restored
         ),
-        `adversary-heal:${canonicalFingerprint({
-          amount: restored,
-          monsterId,
-          revision: world.revision,
-        })}`,
+        engineActionSeed !== undefined
+          ? correlatedActionId(engineActionSeed, "heal", monsterId)
+          : `adversary-heal:${canonicalFingerprint({
+              amount: restored,
+              monsterId,
+              revision: world.revision,
+            })}`,
         provenance
       );
       if (committed) return committed;
@@ -352,12 +372,16 @@ export function applyAdversaryHeal(
  * exactly when the table steps the tracker — and the commit mirrors the
  * expiries back onto the legacy chips + chronicle in the SAME encounter value
  * (one write). A pointer resting on a PC or roll-less adversary ends no
- * canonical turn (the v1 composition scope lists adversary participants
- * only), so those steps move the legacy pointer alone — which is also what
- * keeps a PLAYER'S own-turn advance inside the member `turnFieldsOnlyChanged`
- * rules grant. When the engine layer cannot serve (corrupt world, boundary
- * reject), the pointer still steps and booked lifetimes STAND — fail-closed
- * never expires anything early.
+ * canonical SHARED turn (the shared composition scope lists adversary
+ * participants only), so those steps move the legacy pointer alone - which is
+ * also what keeps a PLAYER'S own-turn advance inside the member
+ * `turnFieldsOnlyChanged` rules grant. A PC's turn ends on the CHARACTER
+ * material instead: the member client, observing the pointer pass off its own
+ * PC, fires the character-side `complete-turn` through the party lease
+ * (`party-world-lease.ts` - the DM never writes member documents). When the
+ * engine layer cannot serve (corrupt world, boundary reject), the pointer
+ * still steps and booked lifetimes STAND - fail-closed never expires anything
+ * early.
  *
  * BACK-STEP DEGRADATION (the documented model): the kernel's complete-turn
  * boundary is one-way — end waves latch and finalize; there is no un-fire.

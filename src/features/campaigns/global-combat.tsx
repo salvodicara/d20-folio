@@ -36,7 +36,11 @@ import {
   revokePersistentCombatEffectsBySource,
   subscribeToSharedCampaigns,
 } from "@/features/campaigns/campaign-io";
-import { viewerActiveEncounters } from "@/features/campaigns/encounter";
+import { encounterRollFor, viewerActiveEncounters } from "@/features/campaigns/encounter";
+import {
+  observePartyWorldFights,
+  type PartyFightSnapshot,
+} from "@/features/campaigns/party-world-lease";
 import { useLiveEncounter } from "@/features/campaigns/useLiveEncounter";
 import {
   makeDevPip,
@@ -85,6 +89,10 @@ export function GlobalCombatMount(): null {
     (s) => s.character?.session.concentration ?? ""
   );
   const [campaigns, setCampaigns] = useState<CampaignDoc[]>([]);
+  // The membership listener has delivered at least one snapshot (possibly empty).
+  // The party-world lease reconcile waits for it: an unsettled empty list must
+  // never read as "every fight ended" and release a live lease.
+  const [campaignsSettled, setCampaignsSettled] = useState(false);
   const deliveringEffects = useRef<string | null>(null);
   const observedConcentration = useRef<{
     scope: string;
@@ -130,6 +138,7 @@ export function GlobalCombatMount(): null {
     const settle = (next: CampaignDoc[]): void => {
       if (cancelled) return;
       setCampaigns(next);
+      setCampaignsSettled(true);
     };
     if (!uid) {
       void Promise.resolve().then(() => settle([]));
@@ -172,6 +181,49 @@ export function GlobalCombatMount(): null {
   const primaryIsDm = encounters.find((e) => e.campaignId === primaryId)?.role === "dm";
 
   const live = useLiveEncounter(uid, primaryId, primaryIsDm);
+
+  // THE PARTY-WORLD LEASE (member flow) - every active own-PC fight reduced to
+  // the snapshot `observePartyWorldFights` reconciles the OPEN character's
+  // local engine encounter against: join on the surfaced rolled fight (ending
+  // a lingering solo encounter first), fire the character-side complete-turn
+  // when the pointer passes off the viewer's PC, release the lease when its
+  // fight ends. Derived from the SAME membership listener as the pip (no new
+  // reads); suppressed under the dev seeds, which are shot fixtures, not
+  // plumbing. `openCharacterId` re-runs the reconcile when the player opens
+  // their sheet mid-fight (the idempotent late join).
+  const partyFights = useMemo<PartyFightSnapshot[]>(() => {
+    if (!uid || devPip || devCombat || replayMode) return [];
+    return encounters.flatMap((entry) => {
+      if (entry.role !== "pc" || entry.characterId === null) return [];
+      const campaign = mergedCampaigns.find((c) => c.id === entry.campaignId);
+      return [
+        {
+          campaignId: entry.campaignId,
+          characterId: entry.characterId,
+          encounterEpoch: entry.epoch,
+          initiativeRoll: campaign ? encounterRollFor(campaign.encounterInit, uid) : null,
+          isMyTurn: entry.isMyTurn,
+          round: entry.round,
+          turnsBegun: !entry.gathering,
+        },
+      ];
+    });
+  }, [uid, devPip, devCombat, replayMode, encounters, mergedCampaigns]);
+  const observedFights = useRef<readonly PartyFightSnapshot[] | null>(null);
+  useEffect(() => {
+    if (!uid || !campaignsSettled || devPip || devCombat || replayMode) return;
+    observePartyWorldFights(observedFights.current, partyFights, primaryId);
+    observedFights.current = partyFights;
+  }, [
+    uid,
+    campaignsSettled,
+    devPip,
+    devCombat,
+    replayMode,
+    partyFights,
+    primaryId,
+    openCharacterId,
+  ]);
 
   // The viewer's OWN PC status (the sheet shape) — built only when the primary is the
   // viewer's PC fight (a PC-less DM primary publishes no sheet status; their cockpit isn't

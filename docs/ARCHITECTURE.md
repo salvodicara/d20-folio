@@ -1712,12 +1712,12 @@ persisted generation; effects referencing a removed adversary row are swept to a
 the composed candidate is re-parsed to prove it. Adversary rows keep their `srdId` as a
 `catalogue-monster` template REFERENCE (never a statblock copy; a hand-typed NPC gets a `custom`
 definition from its typed statline); a DM-typed initiative total splits losslessly into the
-canonical 1..20 roll plus an entity initiative-bonus override. The v1 composition scope is the
-shared document alone: the canonical encounter lists adversary participants only, in the "turns"
-phase exactly while the legacy pointer rests on a rolled adversary — any other pointer projects
-the between-turns posture, where the kernel's 6-seconds-per-turn timeline law carries
-turn-anchored lifetimes; composing the party's character documents through the kernel's
-start-encounter lease boundary is the next chunk. Commits route back through the owner: the
+canonical 1..20 roll plus an entity initiative-bonus override. The SHARED composition scope is
+the shared document alone: the canonical shared encounter lists adversary participants only, in
+the "turns" phase exactly while the legacy pointer rests on a rolled adversary - any other
+pointer projects the between-turns posture, where the kernel's 6-seconds-per-turn timeline law
+carries turn-anchored lifetimes; PC participants compose through the PARTY LEASE on their own
+character material (the dedicated paragraph below). Commits route back through the owner: the
 feature-side command boundary (`applyAdversaryDamage` for the DM's damage tap AND the universal
 resolver's per-adversary landed totals; `applyAdversaryHeal` for the heal tap and resolver
 healing — exact kernel semantics: clamp at max, temporary HP untouched, a 0-HP revive stays a
@@ -1823,6 +1823,52 @@ world that fails its parse or a rejected boundary/plan/commit runs them alone, e
 pre-cutover behavior, and nothing engine-side moves. Typed item resources stay on the item seam's
 own exact boundary in the same confirm flow (dawn/dusk remain distinct day-phase boundaries, never
 conflated with a rest).
+
+**PC PARTICIPANTS join the composed encounter through the PARTY LEASE**
+(`src/lib/encounter-world-store.ts` → "The PC party lease" +
+`src/features/campaigns/party-world-lease.ts`, wired at `GlobalCombatMount`). The kernel's native
+shared-encounter lease (`start-encounter` over a shared material whose seed lists character-play
+combatants: end each character's local encounter, rebase its timeline rules onto the shared clock,
+install the `clockBinding` lease - one atomic multi-document finalize, with `validateLeases`
+making every half-state unparseable) has no honest carrier in this app's write topology: the
+character document and the encounter document have DIFFERENT OWNERS (owner-scoped character
+writes; the DM cannot write member docs), different debounced writers, and offline-first
+last-write-wins semantics - no cross-document atomic commit exists, and a persisted half-flip
+would fail-close every reader of whichever side landed first. So the lease is carried by
+IDENTITY: the member client - the only writer of its character doc - joins through the kernel's
+own `start-encounter` boundary over the CHARACTER material (the solo machinery's exact shape),
+with the single participant id carrying the fight (`party:<epoch>:<campaignId>`). The join rides
+the member's OWN subscription flow: `GlobalCombatMount` reduces every active own-PC fight (from
+the same membership listener the pip reads - no new reads) into snapshots, and
+`observePartyWorldFights` reconciles the OPEN character's world against them, idempotent by lease
+identity and FAIL-CLOSED (a corrupt member world degrades only the member's own join; the
+encounter document is never touched from this seam). Joining ends any lingering LOCAL solo
+encounter first through the kernel's `end-encounter` boundary - the rest wave's collision
+precedent - and a lease whose fight leaves the active set (ended, epoch replaced, PC removed)
+releases the same way, with encounter-anchored lifetimes rebinding through the kernel's
+combat-end machinery. **PC-turn-anchored lifetimes fire on the real tracker**: when the shared
+pointer passes OFF the viewer's own PC, the member client commits the character-side
+`complete-turn` (the mirror of the solo End-Turn wiring; the DM stepping the tracker never writes
+member docs), so buffs anchored to the PC's turns expire exactly - once per (fight, round),
+enforced by the boundary action id, so back-and-forward pointer steps cannot double-expire.
+Clock behaviour is EQUIVALENT to the kernel's rebase by construction: the character's timeline
+never leaves its own clock and advances six seconds per observed shared round (the kernel's own
+per-round law, in lockstep with the table), so a 1-minute buff cast before joining keeps its
+remaining duration across join, fight, and leave - and leaving needs no un-rebase. Inherited
+honestly from the single-participant model: one observed pass-off crosses turn-end, the 6-second
+round, and next-turn-start in one boundary, so "until the start of your next turn" collapses onto
+"until the end of your turn" (exact separation needs kernel support for suspending a local
+encounter between turns). **Cross-material actions are TWO single-material commits correlated by
+ONE action identity** - never one multi-document journal action, for the same topology reason:
+a member-declared attack mints one `pc-action:` seed per declare
+(`applyDeclaredCombatEffects`), the adversary's damage books on the encounter journal under the
+seed-prefixed action id (stamped on the mirrored chronicle beat as `engineActionId`), and the
+acting member's own character journal records the SAME seed as a `record-manual-boundary`
+turn-economy claim on the leased participant (`commitPartyAttackParticipation` - best-effort and
+fail-closed; the adversary's state is table truth and always books first; secondary transfers
+like retaliation keep their legacy ids). A member whose sheet is closed simply joins late and
+misses pass-offs: lifetimes STAND until the next observed boundary - fail-closed is always late,
+never early.
 
 ## Persistence + offline
 

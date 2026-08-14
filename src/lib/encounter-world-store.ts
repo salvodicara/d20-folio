@@ -28,14 +28,19 @@
  *   (hp/temp/conditions + the combat chronicle beat) so both stay in step in
  *   one write (the rollout-bridge doctrine of `mechanics-world-store`).
  *
- * COMPOSITION SCOPE (v1): the assembled world holds the shared document
- * alone, so the canonical encounter lists ADVERSARY participants only. The
- * canonical phase is "turns" exactly while the legacy pointer rests on an
+ * COMPOSITION SCOPE: the assembled SHARED world holds the shared document
+ * alone, so the canonical shared encounter lists ADVERSARY participants only.
+ * The canonical phase is "turns" exactly while the legacy pointer rests on an
  * adversary with a typed initiative; any other pointer (a PC's turn, or a
  * roll-less adversary) projects the between-turns "initiative" posture, where
  * the kernel's own 6-seconds-per-turn timeline law carries turn-anchored
- * lifetimes. Composing the party's character documents (clock leases via the
- * kernel's start-encounter boundary) is the next chunk of this epic.
+ * lifetimes. PC PARTICIPANTS compose through the PARTY LEASE below ("The PC
+ * party lease"): each member's CHARACTER material carries a lease-identified
+ * local encounter driven by the member's own observation of the shared
+ * tracker, and cross-material actions correlate the two journals by one
+ * action identity - never by a multi-document commit (the composed-model
+ * comment explains why the kernel's atomic clock lease cannot ride this
+ * app's split-ownership write topology).
  *
  * PURE: no React, no Firebase, no catalogue import — `srdId`s stay references
  * on the derived templates, resolved by render-layer consumers as today.
@@ -77,6 +82,7 @@ import type {
   EncounterState as LegacyEncounterState,
 } from "@/types/campaign";
 import type {
+  CharacterMaterialState,
   CreatureMaterialEntity,
   EncounterParticipant,
   EncounterState,
@@ -85,8 +91,12 @@ import type {
 } from "@/types/material-state";
 import type { MechanicOccurrence } from "@/types/mechanic-occurrence";
 import type { MechanicsAuthorityDefinition } from "@/types/mechanics-authority";
-import type { MechanicsCoordinationResult } from "@/types/mechanics-coordinator";
 import type {
+  MechanicsCoordinationInput,
+  MechanicsCoordinationResult,
+} from "@/types/mechanics-coordinator";
+import type {
+  CharacterMaterialRef,
   EntityRef,
   MaterialEntityRef,
   SharedMaterialRef,
@@ -647,7 +657,7 @@ export function adversaryConditionCapability(
 }
 
 /** The coordinator's authority-snapshot entry for one seam capability. */
-function adversaryAuthorityDefinition(
+function seamAuthorityDefinition(
   authority: Readonly<MechanicsProgramAuthorityReceipt>
 ): MechanicsAuthorityDefinition {
   const definition: MechanicsAuthorityDefinition = {
@@ -703,7 +713,7 @@ export function runAdversaryAction(
   return runMechanicsCausalAction({
     answers: [],
     authoritySnapshot: {
-      definitions: [adversaryAuthorityDefinition(capability.authority)],
+      definitions: [seamAuthorityDefinition(capability.authority)],
     },
     facts: [],
     frameAnswers: [],
@@ -887,6 +897,391 @@ export function undoEncounterWorldAction(
     material
   );
   return reparsed.ok ? reparsed.value : null;
+}
+
+// ─── The PC party lease: characters join the fight on their OWN material ───
+//
+// THE COMPOSED MODEL (v2 of the seam - the honest resolution of "PC
+// participants join via the kernel's start-encounter lease boundary"):
+//
+// The kernel's native shared-encounter lease (`start-encounter` over a
+// shared-combat material whose seed lists character-play combatants) is a
+// MULTI-DOCUMENT ATOMIC transition: it ends each character's local encounter,
+// rebases the character's timeline rules onto the shared clock, and installs
+// the `clockBinding` lease in the SAME finalize as the shared encounter's
+// creation - and `validateLeases` makes every intermediate state unparseable
+// (a shared encounter listing a PC whose document is absent is
+// `missing-reference`; a leased character without its shared document is
+// `invalid-lease`). That atomicity has no honest carrier in this app's write
+// topology: the character document and the campaign encounter document have
+// DIFFERENT OWNERS (owner-scoped character writes; the DM cannot write member
+// docs), different debounced writers, and offline-first last-write-wins
+// semantics - no cross-document commit exists, and a persisted half-flip
+// would fail-close EVERY reader of whichever side lands first (the DM's
+// adversary boundary would reject on the PC participant it cannot resolve).
+//
+// So the lease is carried by IDENTITY instead of by clock references: the
+// character joins the fight through the kernel's OWN `start-encounter`
+// boundary over the CHARACTER material (the solo machinery's exact shape - a
+// local single-participant "turns"-phase encounter), with the participant id
+// carrying the fight's identity (`party:<epoch>:<campaignId>`). The member
+// client - the only writer of the character doc - commits the join through
+// its own journal when its subscription observes the rolled fight, ends any
+// lingering LOCAL solo encounter first (the rest wave's precedent), and fires
+// the kernel's `complete-turn` boundary each time the shared pointer passes
+// off its own PC (the mirror of the solo End-Turn wiring). Clock behaviour is
+// EQUIVALENT to the kernel's rebase by construction: the character's timeline
+// never leaves its own clock, and the kernel's 6-seconds-per-ROUND law
+// advances it exactly once per observed shared round - a 1-minute buff cast
+// before joining keeps its remaining duration across join, fight, and leave,
+// and leaving needs no un-rebase because nothing was ever rebased. Turn-
+// anchored lifetimes booked while the lease runs anchor to the LOCAL
+// follower encounter and expire exactly at the observed boundaries. (The
+// single-participant collapse is inherited from the solo model: one observed
+// pass-off crosses end-of-turn, the 6s round, and start-of-next-turn in one
+// boundary, so "until the start of your next turn" fires with "until the end
+// of your turn" - the honest approximation until the kernel can suspend and
+// resume a between-turns local encounter.)
+//
+// Ownership stays split exactly as before: the encounter document never
+// learns about the lease (the shared derivation stays adversary-only, so the
+// DM-side world is untouched by member state - a corrupt member world can
+// degrade only the member's own join, never the table), and the character
+// document never holds shared-clock references. Cross-material actions are
+// TWO single-material commits correlated by one action identity (see
+// `applyAdversaryDamage`'s engineActionSeed and the campaign-io declare
+// seam), never one multi-document journal action - same reason, documented
+// once here.
+
+/** The lease participant id binding one character's local encounter to one fight. */
+export function partyLeaseParticipantId(
+  campaignId: string,
+  encounterEpoch: number
+): string {
+  return `party:${encounterEpoch}:${campaignId}`;
+}
+
+export interface PartyLeaseIdentity {
+  readonly campaignId: string;
+  readonly encounterEpoch: number;
+}
+
+/**
+ * The fight a character world's local encounter is leased to, if any: a
+ * single-participant encounter whose participant id carries the party-lease
+ * prefix. A solo encounter (the tracker's `self` participant) is NOT a lease.
+ */
+export function partyLeaseIdentity(
+  world: Pick<Readonly<CharacterMaterialState>, "encounter">
+): PartyLeaseIdentity | null {
+  const encounter = world.encounter;
+  if (!encounter) return null;
+  const ids = Object.keys(encounter.participants);
+  const match = ids.length === 1 ? /^party:([1-9]\d*):(.+)$/.exec(ids[0] ?? "") : null;
+  const epoch = match?.[1] === undefined ? Number.NaN : Number(match[1]);
+  return match?.[2] !== undefined && Number.isSafeInteger(epoch)
+    ? { campaignId: match[2], encounterEpoch: epoch }
+    : null;
+}
+
+function characterPlayMaterial(characterId: string, uid: string): CharacterMaterialRef {
+  return { characterId, kind: "character-play", uid };
+}
+
+function characterPlaySelf(characterId: string, uid: string): EntityRef {
+  return { entityId: "self", material: characterPlayMaterial(characterId, uid) };
+}
+
+function characterWorldValue(
+  material: Readonly<CharacterMaterialRef>,
+  world: Readonly<CharacterMaterialState>
+): MechanicsWorld {
+  return { documents: [{ kind: "character", material, state: world }], scope: material };
+}
+
+/**
+ * Drive one table boundary over the character's own world to completion and
+ * plan it as one committable journal action - the character-material twin of
+ * {@link planAdversaryTurnBoundary}, with the identical checkpoint discipline
+ * (every audience is empty by construction; latched end waves still finalize
+ * every due lifetime). Null when the boundary rejects: fail-closed, nothing
+ * ever expires early.
+ */
+function planPartyCharacterBoundary(
+  characterId: string,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  command: unknown,
+  actionId: string
+): Readonly<JournalActionDraft> | null {
+  const material = characterPlayMaterial(characterId, uid);
+  const value = characterWorldValue(material, world);
+  let result = beginMechanicsBoundary(value, command);
+  let remaining = 64;
+  while (result.status === "checkpoint" && remaining > 0) {
+    const completion = completeMechanicsBoundaryCheckpoint(
+      result.continuation,
+      result.checkpoint.state
+    );
+    if (!completion) return null;
+    result = advanceMechanicsBoundary(result.continuation, completion);
+    remaining -= 1;
+  }
+  if (result.status !== "complete" || result.outcome !== "applied") return null;
+  const planned = planMechanicsWorldAction(value, result.state.world, {
+    actor: { authority: "table", kind: "material-authority", material },
+    facts: [],
+    id: actionId,
+  });
+  return planned.status === "planned" ? planned.action : null;
+}
+
+/**
+ * Plan the canonical JOIN of one character into one campaign fight: the
+ * kernel's `start-encounter` boundary over the CHARACTER material, seeding
+ * the lease-identified single participant in the "turns" phase at the shared
+ * fight's round, with the PC's own raw d20 roll (the `encounterInit` value;
+ * an absent or out-of-range roll seeds the solo law's neutral 10 - a lone
+ * participant needs no ordering, but the turns phase requires a rolled
+ * value). Null while ANY local encounter still runs (the caller ends it
+ * first - the solo-collision rule) or when the boundary rejects.
+ */
+export function planPartyEncounterJoin(
+  characterId: string,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  fight: Readonly<PartyLeaseIdentity & { round: number }>,
+  initiativeRoll: number | null,
+  actionId: string
+): Readonly<JournalActionDraft> | null {
+  if (world.encounter !== null) return null;
+  const participantId = partyLeaseParticipantId(fight.campaignId, fight.encounterEpoch);
+  const rolled =
+    initiativeRoll !== null &&
+    Number.isSafeInteger(initiativeRoll) &&
+    initiativeRoll >= 1 &&
+    initiativeRoll <= 20
+      ? initiativeRoll
+      : 10;
+  const round = Number.isSafeInteger(fight.round) && fight.round >= 1 ? fight.round : 1;
+  return planPartyCharacterBoundary(
+    characterId,
+    uid,
+    world,
+    {
+      kind: "start-encounter",
+      material: characterPlayMaterial(characterId, uid),
+      seed: {
+        currentCombatantId: participantId,
+        nextCombatantOrdinal: 2,
+        order: [participantId],
+        participants: {
+          [participantId]: {
+            combatant: characterPlaySelf(characterId, uid),
+            initiativeRoll: rolled,
+            ordinal: 1,
+            skipped: false,
+          },
+        },
+        phase: "turns",
+        round,
+      },
+    },
+    actionId
+  );
+}
+
+/**
+ * Plan the canonical LEAVE: the kernel's `end-encounter` boundary over the
+ * character material - encounter clocks release and encounter-anchored
+ * lifetimes rebind through the kernel's own combat-end machinery. Works on
+ * ANY local encounter (a party lease OR a lingering solo encounter - the
+ * join's collision rule ends the latter through this same plan). Null when
+ * no local encounter runs or the boundary rejects.
+ */
+export function planPartyEncounterLeave(
+  characterId: string,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  actionId: string
+): Readonly<JournalActionDraft> | null {
+  if (world.encounter === null) return null;
+  return planPartyCharacterBoundary(
+    characterId,
+    uid,
+    world,
+    { kind: "end-encounter", material: characterPlayMaterial(characterId, uid) },
+    actionId
+  );
+}
+
+/**
+ * Plan the character-side `complete-turn` for one observed shared pointer
+ * pass off the viewer's own PC: the end wave latches and finalizes every due
+ * turn-anchored lifetime, six seconds pass (the kernel's per-round law, in
+ * lockstep with the shared table's rounds), and the next local turn opens
+ * with a fresh own-turn economy. Null when no leased encounter runs.
+ */
+export function planPartyTurnBoundary(
+  characterId: string,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  actionId: string
+): Readonly<JournalActionDraft> | null {
+  if (world.encounter?.phase !== "turns" || partyLeaseIdentity(world) === null) {
+    return null;
+  }
+  return planPartyCharacterBoundary(
+    characterId,
+    uid,
+    world,
+    {
+      excludeCurrent: null,
+      kind: "complete-turn",
+      material: characterPlayMaterial(characterId, uid),
+    },
+    actionId
+  );
+}
+
+/**
+ * The closed system program stamping one cross-material action's PC side: a
+ * single `record-manual-boundary` turn claim whose boundary id IS the
+ * correlation id shared with the encounter-side journal action. It commits
+ * into the leased participant's own-turn economy ledger (the kernel's
+ * table-authority per-turn record), so the character journal carries the
+ * action identity AND the turn it was spent on - the minimal composed commit
+ * the current machinery supports (see the seam comment above for why the two
+ * materials never share one atomic journal action).
+ */
+function participationProgram(correlationId: string) {
+  return conformedProgram({
+    id: "party-attack-participation",
+    phases: [
+      {
+        inputs: [],
+        phaseId: "resolve",
+        steps: [
+          {
+            claim: {
+              authority: "table",
+              boundaryId: correlationId,
+              claimId: correlationId,
+              kind: "record-manual-boundary",
+            },
+            combatant: "owner",
+            kind: "turn-claim",
+            stepId: "record-participation",
+            when: null,
+          },
+          { kind: "end-program", stepId: "finish", when: null },
+        ],
+        trigger: { kind: "invocation" },
+      },
+    ],
+    registers: [],
+    version: 1,
+  });
+}
+
+export interface PartyActionCapability {
+  readonly authority: Readonly<MechanicsProgramAuthorityReceipt>;
+}
+
+/** The participation authority for one correlation id, anchored on the character. */
+export function partyAttackParticipationCapability(
+  characterId: string,
+  uid: string,
+  correlationId: string
+): PartyActionCapability | null {
+  const trimmed = correlationId.trim();
+  if (trimmed === "" || trimmed !== correlationId || correlationId.length > 128) {
+    return null;
+  }
+  const program = participationProgram(correlationId);
+  const self = characterPlaySelf(characterId, uid);
+  const capability = {
+    capabilityId: program.id,
+    definition: {
+      catalogueKind: "class-feature" as const,
+      entityId: program.id,
+      kind: "catalogue" as const,
+      mechanicsRevision: canonicalFingerprint({ program }),
+    },
+    kind: "program" as const,
+  };
+  const authority = conformMechanicsProgramAuthorityReceipt({
+    anchors: { activator: self, caster: self, owner: self, source: self, target: self },
+    installation: {
+      capability,
+      generation: 1,
+      installationId: `${program.id}.${characterId}`,
+      owner: self,
+    },
+    schema: 1,
+    snapshot: {
+      grantGroups: {},
+      program,
+      ref: capability,
+      resources: {},
+      schema: 1,
+    },
+    source: { capability, kind: "capability", owner: self },
+    staticBindings: {},
+  });
+  return authority ? { authority } : null;
+}
+
+/** Run one party capability to its fixed point over the character's world. */
+export function runPartyCharacterAction(
+  characterId: string,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  capability: Readonly<PartyActionCapability>,
+  actionId: string,
+  turnEconomy: MechanicsCoordinationInput["turnEconomy"]
+): Readonly<MechanicsCoordinationResult> | null {
+  const material = characterPlayMaterial(characterId, uid);
+  const state = beginMechanicsCausalState({
+    documents: [{ kind: "character", material, state: world }],
+    scope: material,
+  });
+  if (!state.ok) return null;
+  return runMechanicsCausalAction({
+    answers: [],
+    authoritySnapshot: {
+      definitions: [seamAuthorityDefinition(capability.authority)],
+    },
+    facts: [],
+    frameAnswers: [],
+    intent: {
+      actionId,
+      factGuards: [],
+      frame: {
+        authority: capability.authority,
+        invocation: {
+          installation: capability.authority.installation,
+          kind: "installed-capability",
+        },
+        rootReceipt: {
+          kind: "create",
+          materialEpoch: world.epoch,
+          next: { execution: 1, phaseId: "resolve", triggerEventId: null },
+          root: {
+            occurrence: {
+              material,
+              occurrenceId: `party-${world.nextOccurrenceOrdinal}`,
+            },
+            ordinal: world.nextOccurrenceOrdinal,
+          },
+        },
+        trigger: { kind: "invocation" },
+      },
+    },
+    responses: [],
+    state: state.value,
+    turnEconomy,
+  });
 }
 
 /** Active engine condition ids on one shared entity, for the legacy mirror. */
