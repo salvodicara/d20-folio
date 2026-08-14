@@ -236,16 +236,12 @@ export interface CharacterActionCommit {
  * Commit one planned action through the canonical journal reducer and mirror
  * the world-owned facts every still-legacy surface reads (rollout bridge).
  */
-export function commitCharacterAction(
-  doc: Readonly<CharacterDoc>,
-  uid: string,
-  world: Readonly<CharacterMaterialState>,
-  action: Readonly<JournalActionDraft>,
-  facts: readonly Readonly<ResolvedActionFact>[]
-): CharacterActionCommit | null {
-  const material = characterMaterialRef(doc, uid);
+function journalWorldFor(
+  material: Readonly<CharacterMaterialRef>,
+  world: Readonly<CharacterMaterialState>
+): ActionJournalWorld {
   const { actions, epoch, revision, ...data } = world;
-  const journalWorld: ActionJournalWorld = {
+  return {
     documents: [
       {
         data: data as unknown as Record<string, never>,
@@ -255,15 +251,31 @@ export function commitCharacterAction(
     ],
     scope: material,
   };
-  const sortedFacts = [...facts].sort((left, right) => {
-    const key = (fact: Readonly<ResolvedActionFact>) =>
-      `${JSON.stringify(fact.owner)}\u0000${JSON.stringify(fact.address)}`;
-    return key(left) < key(right) ? -1 : key(left) > key(right) ? 1 : 0;
-  });
+}
+
+function sortedResolvedFacts(
+  facts: readonly Readonly<ResolvedActionFact>[]
+): readonly Readonly<ResolvedActionFact>[] {
+  const key = (fact: Readonly<ResolvedActionFact>) =>
+    `${JSON.stringify(fact.owner)}\u0000${JSON.stringify(fact.address)}`;
+  return [...facts].sort((left, right) =>
+    key(left) < key(right) ? -1 : key(left) > key(right) ? 1 : 0
+  );
+}
+
+export function commitCharacterAction(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  action: Readonly<JournalActionDraft>,
+  facts: readonly Readonly<ResolvedActionFact>[]
+): CharacterActionCommit | null {
+  const material = characterMaterialRef(doc, uid);
+  const journalWorld = journalWorldFor(material, world);
   const result = reduceActionJournal(
     journalWorld,
     { action, kind: "commit" },
-    sortedFacts
+    sortedResolvedFacts(facts)
   );
   if (result.status !== "applied" && result.status !== "already-applied") {
     return null;
@@ -282,6 +294,15 @@ export function commitCharacterAction(
   if (!reparsed.ok) return null;
   const next = reparsed.value;
 
+  return mirroredCommit(doc, world, next);
+}
+
+/** Mirror the world-owned facts onto the legacy session bridge fields. */
+function mirroredCommit(
+  doc: Readonly<CharacterDoc>,
+  world: Readonly<CharacterMaterialState>,
+  next: Readonly<CharacterMaterialState>
+): CharacterActionCommit {
   const usedSlots: SessionState["spellSlots"] = { ...doc.session.spellSlots };
   for (const [level, cell] of Object.entries(next.resources.standardSpellSlots)) {
     const before = world.resources.standardSpellSlots[level];
@@ -302,4 +323,50 @@ export function commitCharacterAction(
     world: next,
   };
   return { session, world: next };
+}
+
+/**
+ * Exactly reverse one committed action (generation 1 → 2) through the same
+ * canonical reducer, mirroring the world-owned facts back onto the legacy
+ * session fields the rollout bridge still serves.
+ */
+export function undoCharacterAction(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  actionId: string
+): CharacterActionCommit | null {
+  const material = characterMaterialRef(doc, uid);
+  const committed = world.actions.find(
+    (action) => action.id === actionId && action.generation % 2 === 1
+  );
+  if (!committed) return null;
+  const { generation, ...body } = committed;
+  const journalWorld = journalWorldFor(material, world);
+  const result = reduceActionJournal(
+    journalWorld,
+    {
+      action: body,
+      documents: [{ epoch: world.epoch, material, revision: world.revision }],
+      expectedGeneration: generation,
+      kind: "undo",
+    },
+    []
+  );
+  if (result.status !== "applied" && result.status !== "already-applied") {
+    return null;
+  }
+  const nextDocument = result.world.documents[0];
+  if (!nextDocument) return null;
+  const reparsed = parseCharacterMaterialState(
+    {
+      ...nextDocument.data,
+      actions: nextDocument.journal.actions,
+      epoch: nextDocument.journal.epoch,
+      revision: nextDocument.journal.revision,
+    },
+    material
+  );
+  if (!reparsed.ok) return null;
+  return mirroredCommit(doc, world, reparsed.value);
 }

@@ -7,6 +7,7 @@ import {
   characterSpellCapability,
   characterWorldState,
   commitCharacterAction,
+  undoCharacterAction,
 } from "@/lib/mechanics-world-store";
 import { runMechanicsCausalAction } from "@/lib/mechanics-coordinator";
 import { mechanicsAuthorityDefinitionFingerprint } from "@/lib/mechanics-authority";
@@ -221,6 +222,19 @@ describe("mechanics world store", () => {
       before - 1
     );
     expect(committed.session.world).toBeDefined();
+    const undone = undoCharacterAction(
+      { ...MOCK_CHARACTER, session: committed.session },
+      "test-uid",
+      committed.world,
+      outcome.action.id
+    );
+    expect(undone).not.toBeNull();
+    if (undone) {
+      expect(undone.world.resources.standardSpellSlots[String(castLevel)]?.current).toBe(
+        before
+      );
+    }
+
     const mirroredUsed =
       committed.session.spellSlots[`slot-${castLevel}`]?.used ??
       Object.entries(committed.session.spellSlots).find(([key]) =>
