@@ -484,8 +484,10 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   // the condition rider, never the damage (Ray of Sickness).
   const gatedByAttack = hasAttack;
 
-  // Classification — once per mechanic, phase-independent.
-  for (const component of components) {
+  // Classification — once per mechanic, phase-independent. A deferred spell
+  // with no pulse never rolls its dice at all (Hex: the die belongs to the
+  // standing rider), so its component clauses live with the rider instead.
+  for (const component of pulse || !deferred ? components : []) {
     clauses.push(clause(component.inputId, "physical-input"));
     if (spell.level === 0 && spell.cantripInstances !== true) {
       clauses.push(clause(`${component.inputId}-cantrip-scaling`, "automated"));
@@ -922,6 +924,104 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     }
   }
 
+  // Standing buffs (`while-active` grants): the cast lights the buff's active
+  // key on the caster — and marks the chosen creature when the buff is
+  // target-scoped (Hex). The rider the buff carries stays with the DERIVED
+  // grant layer: by product design the app models no enemy in solo play, so
+  // the extra die is player-applied on a hit, never auto-summed.
+  const whileActiveGrants = (spell.grants ?? []).flatMap((grant) =>
+    grant.type === "while-active" ? [grant] : []
+  );
+  let standingNeedsTargets = false;
+  for (const grant of whileActiveGrants) {
+    const timed =
+      grant.duration !== undefined && grant.duration.kind === "timed"
+        ? grant.duration
+        : null;
+    const turnBounded =
+      grant.duration !== undefined && grant.duration.kind === "turn-boundary"
+        ? grant.duration
+        : null;
+    const standingLifetime: Record<string, unknown> =
+      spell.concentration || grant.duration === undefined
+        ? { kind: "source-end" }
+        : timed !== null
+          ? { kind: "duration", seconds: fixed(timed.minutes * 60) }
+          : turnBounded !== null
+            ? {
+                combatant: "caster",
+                kind: "turn-boundary",
+                offsetTurns: fixed(turnBounded.turns),
+                phase: turnBounded.phase === "turn-start" ? "start" : "end",
+              }
+            : { kind: "source-end" };
+    if (grant.duration?.kind === "maintained") {
+      clauses.push(
+        clause(`standing-${grant.activeKey}-duration`, "table", "maintained-by-table")
+      );
+    } else if (timed?.byCastLevel !== undefined) {
+      clauses.push(
+        clause(
+          `standing-${grant.activeKey}-upcast-duration`,
+          "table",
+          "cast-level-duration-tiers"
+        )
+      );
+    } else if (!spell.concentration && grant.duration !== undefined) {
+      clauses.push(clause(`standing-${grant.activeKey}-duration`, "automated"));
+    }
+    steps.push({
+      fact: { key: grant.activeKey, kind: "active-key" },
+      kind: "standing",
+      lifetime: standingLifetime,
+      operation: "start",
+      stepId: `standing-${grant.activeKey}`,
+      target: { kind: "role", role: "caster" },
+      when: null,
+    });
+    clauses.push(clause(`standing-${grant.activeKey}`, "automated"));
+    if (grant.targetScope !== undefined) {
+      standingNeedsTargets = true;
+      steps.push({
+        fact: {
+          kind: "target-mark",
+          markId: grant.targetScope,
+          marked: { inputId: "targets", kind: "input" },
+        },
+        kind: "standing",
+        lifetime: standingLifetime,
+        operation: "start",
+        stepId: `mark-${grant.targetScope}`,
+        target: { kind: "role", role: "caster" },
+        when: null,
+      });
+      clauses.push(clause(`mark-${grant.targetScope}`, "automated"));
+    }
+    for (const inner of grant.grants) {
+      clauses.push(
+        inner.type === "damage-rider"
+          ? clause(
+              `rider-${grant.activeKey}`,
+              "table",
+              "player-applies-die-on-hit-by-design"
+            )
+          : clause(`standing-grant-${inner.type}`, "automated", "derived-grant-layer")
+      );
+    }
+  }
+  if (standingNeedsTargets && deferred && !pulse && !dynamicTargets) {
+    // A deferred standing cast still chooses whom to mark.
+    inputs.push({
+      eligibility: "creature",
+      inputId: "targets",
+      kind: "entities",
+      maximum: fixed(targetMaximum),
+      minimum: fixed(1),
+      multiplicity: "slots",
+      when: null,
+    });
+  }
+
   // Concentration and duration.
   if (spell.concentration) {
     steps.push({
@@ -1008,6 +1108,10 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
         trigger: { eventId: "pulse", kind: "manual-table-event" },
       };
     }
+  } else if (deferred && whileActiveGrants.length > 0) {
+    clauses.push(
+      clause("deferred-resolution", "automated", "suite-lives-in-standing-rider")
+    );
   } else if (deferred) {
     unsupported("deferred-resolution", "resolve-later-without-recurrence");
   }

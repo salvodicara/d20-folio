@@ -1950,6 +1950,31 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
     expect(state.vitals.hitPoints.current).toBe(11);
   });
 
+  it("casts hex as a deferred standing curse: mark lit, no dice at cast", async () => {
+    const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
+    const { demandedDamageTrails, state } = await runAttackCast({
+      attackFaces: [],
+      bindings: { [TRANSCRIPTION_BINDINGS.saveDc]: 15 },
+      slotLevel: 1,
+      spellId: "hex",
+      targetSlots: 1,
+    });
+    // No roll happens at cast — the die belongs to the standing rider.
+    expect(demandedDamageTrails).toEqual([]);
+    expect(state.vitals.hitPoints.current).toBe(20);
+    expect(state.resources.standardSpellSlots["1"]?.current).toBe(1);
+    const standings = Object.values(state.occurrences).filter(
+      (occurrence) => occurrence.kind === "standing"
+    );
+    // The caster's active-key buff plus the cursed target mark.
+    expect(standings.length).toBe(2);
+    expect(
+      Object.values(state.occurrences).some(
+        (occurrence) => occurrence.kind === "concentration"
+      )
+    ).toBe(true);
+  });
+
   it("omits the ray-of-sickness save entirely when the attack misses", async () => {
     const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
     const { demandedDamageTrails, state } = await runAttackCast({

@@ -77,6 +77,21 @@
           "clauseId": "damage-roll-application",
           "detail": null,
           "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-chill-touch-duration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-chill-touch",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-healing-blocked",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         }
       ],
       "executable": true,
@@ -482,6 +497,21 @@
           "clauseId": "damage-roll-application",
           "detail": null,
           "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-ray-of-frost-duration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-ray-of-frost",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-speed",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         }
       ],
       "executable": true,
@@ -762,6 +792,21 @@
           "clauseId": "damage-roll-application",
           "detail": null,
           "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-vicious-mockery-duration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-vicious-mockery",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-disadvantage-on",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         }
       ],
       "executable": true,
@@ -842,6 +887,21 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "standing-spell-bane",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-roll-die-adjustment",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-roll-die-adjustment",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
           "clauseId": "concentration",
           "detail": null,
           "status": "automated"
@@ -865,6 +925,21 @@
         {
           "clauseId": "targeting",
           "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-bless",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-roll-die-adjustment",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-roll-die-adjustment",
+          "detail": "derived-grant-layer",
           "status": "automated"
         },
         {
@@ -1282,22 +1357,27 @@
           "status": "automated"
         },
         {
-          "clauseId": "damage-roll",
-          "detail": null,
-          "status": "physical-input"
-        },
-        {
-          "clauseId": "damage-roll-application",
+          "clauseId": "standing-spell-divine-favor-duration",
           "detail": null,
           "status": "automated"
         },
         {
+          "clauseId": "standing-spell-divine-favor",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "rider-spell-divine-favor",
+          "detail": "player-applies-die-on-hit-by-design",
+          "status": "table"
+        },
+        {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-without-recurrence",
-          "status": "unsupported"
+          "detail": "suite-lives-in-standing-rider",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "divine-favor"
     },
     {
@@ -1375,6 +1455,11 @@
           "status": "automated"
         },
         {
+          "clauseId": "standing-spell-entangle",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "concentration",
           "detail": null,
           "status": "automated"
@@ -1435,6 +1520,16 @@
           "clauseId": "saving-throw",
           "detail": null,
           "status": "physical-input"
+        },
+        {
+          "clauseId": "standing-spell-faerie-fire",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-incoming-attack-advantage",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         },
         {
           "clauseId": "concentration",
@@ -1742,6 +1837,21 @@
           "status": "automated"
         },
         {
+          "clauseId": "standing-spell-heroism",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-condition-immunity",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-regen-at-turn-start",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
           "clauseId": "concentration",
           "detail": null,
           "status": "automated"
@@ -1768,14 +1878,24 @@
           "status": "automated"
         },
         {
-          "clauseId": "damage-roll",
-          "detail": null,
-          "status": "physical-input"
+          "clauseId": "standing-spell-hex-upcast-duration",
+          "detail": "cast-level-duration-tiers",
+          "status": "table"
         },
         {
-          "clauseId": "damage-roll-application",
+          "clauseId": "standing-spell-hex",
           "detail": null,
           "status": "automated"
+        },
+        {
+          "clauseId": "mark-cursed",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "rider-spell-hex",
+          "detail": "player-applies-die-on-hit-by-design",
+          "status": "table"
         },
         {
           "clauseId": "concentration",
@@ -1789,11 +1909,11 @@
         },
         {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-without-recurrence",
-          "status": "unsupported"
+          "detail": "suite-lives-in-standing-rider",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "hex"
     },
     {
@@ -1809,14 +1929,24 @@
           "status": "automated"
         },
         {
-          "clauseId": "damage-roll",
-          "detail": null,
-          "status": "physical-input"
+          "clauseId": "standing-spell-hunters-mark-upcast-duration",
+          "detail": "cast-level-duration-tiers",
+          "status": "table"
         },
         {
-          "clauseId": "damage-roll-application",
+          "clauseId": "standing-spell-hunters-mark",
           "detail": null,
           "status": "automated"
+        },
+        {
+          "clauseId": "mark-marked",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "rider-spell-hunters-mark",
+          "detail": "player-applies-die-on-hit-by-design",
+          "status": "table"
         },
         {
           "clauseId": "concentration",
@@ -1830,11 +1960,11 @@
         },
         {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-without-recurrence",
-          "status": "unsupported"
+          "detail": "suite-lives-in-standing-rider",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "hunters-mark"
     },
     {
@@ -2020,12 +2150,22 @@
           "status": "automated"
         },
         {
-          "clauseId": "resolution",
-          "detail": "no-mechanical-steps",
-          "status": "narrative"
+          "clauseId": "standing-spell-longstrider-duration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-longstrider",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-speed",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "longstrider"
     },
     {
@@ -2041,12 +2181,22 @@
           "status": "automated"
         },
         {
-          "clauseId": "resolution",
-          "detail": "no-mechanical-steps",
-          "status": "narrative"
+          "clauseId": "standing-spell-mage-armor-duration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-mage-armor",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-ac-formula",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "mage-armor"
     },
     {
@@ -2243,12 +2393,22 @@
           "status": "automated"
         },
         {
-          "clauseId": "resolution",
-          "detail": "no-mechanical-steps",
-          "status": "narrative"
+          "clauseId": "standing-spell-shield-duration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-shield",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-ac-bonus",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "shield"
     },
     {
@@ -2261,6 +2421,16 @@
         {
           "clauseId": "targeting",
           "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-shield-of-faith",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-ac-bonus",
+          "detail": "derived-grant-layer",
           "status": "automated"
         },
         {
@@ -2336,6 +2506,11 @@
           "status": "automated"
         },
         {
+          "clauseId": "standing-spell-sleep",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "concentration",
           "detail": null,
           "status": "automated"
@@ -2404,6 +2579,11 @@
         },
         {
           "clauseId": "condition-incapacitated",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-tashas-hideous-laughter",
           "detail": null,
           "status": "automated"
         },
@@ -2517,12 +2697,22 @@
           "status": "automated"
         },
         {
-          "clauseId": "resolution",
-          "detail": "no-mechanical-steps",
-          "status": "narrative"
+          "clauseId": "standing-spell-aid-duration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-aid",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-hp-flat",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "aid"
     },
     {
@@ -2632,12 +2822,22 @@
           "status": "automated"
         },
         {
-          "clauseId": "resolution",
-          "detail": "no-mechanical-steps",
-          "status": "narrative"
+          "clauseId": "standing-spell-barkskin-duration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-barkskin",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-ac-formula",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "barkskin"
     },
     {
@@ -2701,6 +2901,16 @@
         {
           "clauseId": "targeting",
           "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-blur",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-incoming-attack-disadvantage",
+          "detail": "derived-grant-layer",
           "status": "automated"
         },
         {
@@ -2808,12 +3018,22 @@
           "status": "automated"
         },
         {
-          "clauseId": "resolution",
-          "detail": "no-mechanical-steps",
-          "status": "narrative"
+          "clauseId": "standing-spell-darkvision-duration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-darkvision",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-darkvision",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "darkvision"
     },
     {
@@ -3251,6 +3471,11 @@
           "status": "automated"
         },
         {
+          "clauseId": "standing-spell-hold-person",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "concentration",
           "detail": null,
           "status": "automated"
@@ -3283,6 +3508,11 @@
         },
         {
           "clauseId": "condition-invisible",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-invisibility",
           "detail": null,
           "status": "automated"
         },
@@ -3552,12 +3782,22 @@
           "status": "automated"
         },
         {
-          "clauseId": "resolution",
-          "detail": "no-mechanical-steps",
-          "status": "narrative"
+          "clauseId": "standing-spell-mirror-image-duration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-mirror-image",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-defense-note",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "mirror-image"
     },
     {
@@ -4011,6 +4251,11 @@
           "status": "automated"
         },
         {
+          "clauseId": "standing-spell-silence",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "concentration",
           "detail": null,
           "status": "automated"
@@ -4034,6 +4279,16 @@
         {
           "clauseId": "targeting",
           "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-spider-climb",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-climb-speed",
+          "detail": "derived-grant-layer",
           "status": "automated"
         },
         {
@@ -4171,12 +4426,37 @@
           "status": "automated"
         },
         {
-          "clauseId": "resolution",
-          "detail": "no-mechanical-steps",
-          "status": "narrative"
+          "clauseId": "standing-spell-warding-bond-duration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-warding-bond",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-ac-bonus",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-save-bonus",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-all-damage-resistance",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-damage-transfer",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "warding-bond"
     },
     {
@@ -4208,6 +4488,11 @@
         },
         {
           "clauseId": "condition-restrained",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-web",
           "detail": null,
           "status": "automated"
         },
@@ -4625,6 +4910,11 @@
           "status": "automated"
         },
         {
+          "clauseId": "standing-spell-fear",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "concentration",
           "detail": null,
           "status": "automated"
@@ -4689,6 +4979,16 @@
         {
           "clauseId": "targeting",
           "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-fly",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-fly-speed",
+          "detail": "derived-grant-layer",
           "status": "automated"
         },
         {
@@ -4770,6 +5070,31 @@
           "status": "automated"
         },
         {
+          "clauseId": "standing-spell-haste",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-speed-multiplier",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-ac-bonus",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-advantage-on",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-extra-action",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
           "clauseId": "concentration",
           "detail": null,
           "status": "automated"
@@ -4822,6 +5147,11 @@
         },
         {
           "clauseId": "condition-incapacitated",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-hypnotic-pattern",
           "detail": null,
           "status": "automated"
         },
@@ -5086,6 +5416,16 @@
           "status": "automated"
         },
         {
+          "clauseId": "standing-spell-protection-from-energy",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-choice-resistance",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
           "clauseId": "concentration",
           "detail": null,
           "status": "automated"
@@ -5191,6 +5531,11 @@
         },
         {
           "clauseId": "condition-prone",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-sleet-storm",
           "detail": null,
           "status": "automated"
         },
@@ -5381,6 +5726,11 @@
         },
         {
           "clauseId": "condition-incapacitated",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-stinking-cloud",
           "detail": null,
           "status": "automated"
         },
@@ -5946,12 +6296,22 @@
           "status": "automated"
         },
         {
-          "clauseId": "resolution",
-          "detail": "no-mechanical-steps",
-          "status": "narrative"
+          "clauseId": "standing-spell-death-ward-duration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-death-ward",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-zero-hp-floor",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "death-ward"
     },
     {
@@ -6024,6 +6384,11 @@
           "status": "automated"
         },
         {
+          "clauseId": "standing-spell-dominate-beast",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "concentration",
           "detail": null,
           "status": "automated"
@@ -6081,6 +6446,11 @@
         },
         {
           "clauseId": "condition-restrained",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-evards-black-tentacles",
           "detail": null,
           "status": "automated"
         },
@@ -6148,12 +6518,32 @@
           "status": "automated"
         },
         {
-          "clauseId": "resolution",
-          "detail": "no-mechanical-steps",
-          "status": "narrative"
+          "clauseId": "standing-spell-freedom-of-movement-duration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-freedom-of-movement",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-condition-immunity",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-condition-immunity",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-swim-speed",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "freedom-of-movement"
     },
     {
@@ -6201,6 +6591,11 @@
         },
         {
           "clauseId": "condition-invisible",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-greater-invisibility",
           "detail": null,
           "status": "automated"
         },
@@ -6529,6 +6924,26 @@
         {
           "clauseId": "targeting",
           "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-stoneskin",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-damage-resistance",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-damage-resistance",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-damage-resistance",
+          "detail": "derived-grant-layer",
           "status": "automated"
         },
         {
@@ -6938,6 +7353,11 @@
           "status": "automated"
         },
         {
+          "clauseId": "standing-spell-conjure-elemental",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "concentration",
           "detail": null,
           "status": "automated"
@@ -7079,6 +7499,16 @@
         },
         {
           "clauseId": "condition-charmed",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-dominate-person-upcast-duration",
+          "detail": "cast-level-duration-tiers",
+          "status": "table"
+        },
+        {
+          "clauseId": "standing-spell-dominate-person",
           "detail": null,
           "status": "automated"
         },
@@ -7294,6 +7724,11 @@
           "status": "automated"
         },
         {
+          "clauseId": "standing-spell-hold-monster",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "concentration",
           "detail": null,
           "status": "automated"
@@ -7480,6 +7915,11 @@
         },
         {
           "clauseId": "condition-charmed",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-modify-memory",
           "detail": null,
           "status": "automated"
         },
@@ -8151,6 +8591,11 @@
           "status": "automated"
         },
         {
+          "clauseId": "standing-spell-eyebite",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "concentration",
           "detail": null,
           "status": "automated"
@@ -8219,6 +8664,11 @@
         },
         {
           "clauseId": "condition-restrained",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-flesh-to-stone",
           "detail": null,
           "status": "automated"
         },
@@ -8632,6 +9082,11 @@
           "status": "automated"
         },
         {
+          "clauseId": "standing-spell-sunbeam",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "concentration",
           "detail": null,
           "status": "automated"
@@ -8689,12 +9144,22 @@
           "status": "automated"
         },
         {
-          "clauseId": "resolution",
-          "detail": "no-mechanical-steps",
-          "status": "narrative"
+          "clauseId": "standing-spell-true-seeing-duration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-true-seeing",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-truesight",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "true-seeing"
     },
     {
@@ -9691,6 +10156,11 @@
           "status": "automated"
         },
         {
+          "clauseId": "standing-spell-dominate-monster",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "concentration",
           "detail": null,
           "status": "automated"
@@ -9733,6 +10203,11 @@
         },
         {
           "clauseId": "condition-prone",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-earthquake",
           "detail": null,
           "status": "automated"
         },
@@ -9902,12 +10377,27 @@
           "status": "automated"
         },
         {
-          "clauseId": "resolution",
-          "detail": "no-mechanical-steps",
-          "status": "narrative"
+          "clauseId": "standing-spell-mind-blank-duration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-mind-blank",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-damage-immunity",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-condition-immunity",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "mind-blank"
     },
     {
@@ -10072,12 +10562,32 @@
           "status": "automated"
         },
         {
-          "clauseId": "resolution",
-          "detail": "no-mechanical-steps",
-          "status": "narrative"
+          "clauseId": "standing-spell-foresight-duration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-foresight",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-advantage-on",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-advantage-on",
+          "detail": "derived-grant-layer",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-grant-advantage-on",
+          "detail": "derived-grant-layer",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "foresight"
     },
     {
@@ -10445,15 +10955,15 @@
       "id": "wish"
     }
   ],
-  "executablePrograms": 234,
+  "executablePrograms": 250,
   "family": "spells",
   "totalEntities": 422,
   "totals": {
-    "automated": 1407,
-    "physical-input": 313,
-    "table": 204,
+    "automated": 1571,
+    "physical-input": 310,
+    "table": 211,
     "spatial": 127,
-    "narrative": 141,
-    "unsupported": 49
+    "narrative": 128,
+    "unsupported": 46
   }
 }
