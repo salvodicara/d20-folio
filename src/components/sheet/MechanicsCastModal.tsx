@@ -40,6 +40,12 @@ export interface MechanicsCastModalProps {
   readonly cast: MechanicsCastState;
   readonly material: CharacterMaterialRef;
   readonly onClose: () => void;
+  /**
+   * Attack programs review against the target's armor class; when the caller
+   * does not know it yet, the modal asks the table for it first.
+   */
+  readonly onArmorClass?: (value: number) => void;
+  readonly requiresArmorClass?: boolean;
   /** Remaining count per standard slot level, for the payment prompt. */
   readonly slotRemaining: Readonly<Record<number, number>>;
   readonly spellName: string;
@@ -49,11 +55,14 @@ export function MechanicsCastModal({
   cast,
   material,
   onClose,
+  onArmorClass,
+  requiresArmorClass = false,
   slotRemaining,
   spellName,
 }: MechanicsCastModalProps) {
   const { t } = useTranslation();
   const [faces, setFaces] = useState<Readonly<Record<string, number>>>({});
+  const [armorClassDraft, setArmorClassDraft] = useState("");
   const phase = cast.phase;
 
   const dice = useMemo(
@@ -73,8 +82,34 @@ export function MechanicsCastModal({
     <Dialog open onOpenChange={(open) => (open ? undefined : close())}>
       <DialogContent title={`${t("mechanics.cast.title")} — ${spellName}`}>
         <DialogBody>
-          {phase.kind === "unavailable" && <p>{t("mechanics.cast.unavailable")}</p>}
-          {phase.kind === "rejected" && (
+          {requiresArmorClass && (
+            <div>
+              <p>{t("mechanics.cast.armorClassPrompt")}</p>
+              <label>
+                {t("mechanics.cast.armorClass")}
+                <input
+                  inputMode="numeric"
+                  min={1}
+                  onChange={(event) => setArmorClassDraft(event.target.value)}
+                  type="number"
+                  value={armorClassDraft}
+                />
+              </label>
+              <Button
+                disabled={
+                  !Number.isSafeInteger(Number(armorClassDraft)) ||
+                  Number(armorClassDraft) < 1
+                }
+                onClick={() => onArmorClass?.(Number(armorClassDraft))}
+              >
+                {t("mechanics.cast.confirm")}
+              </Button>
+            </div>
+          )}
+          {phase.kind === "unavailable" && !requiresArmorClass && (
+            <p>{t("mechanics.cast.unavailable")}</p>
+          )}
+          {phase.kind === "rejected" && !requiresArmorClass && (
             <p role="alert">{t("mechanics.cast.rejected", { reason: phase.reason })}</p>
           )}
           {phase.kind === "collecting" && phase.requirement.kind === "resource" && (
@@ -169,6 +204,84 @@ export function MechanicsCastModal({
                       },
                       payments: [],
                     })),
+                  });
+                  setFaces({});
+                }}
+              >
+                {t("mechanics.cast.confirm")}
+              </Button>
+            </div>
+          )}
+          {phase.kind === "collecting" && phase.requirement.kind === "d20" && (
+            <div>
+              <p>{t("mechanics.cast.d20Prompt")}</p>
+              {phase.requirement.requests.map((request, index) => {
+                const trailId =
+                  request.review.d20Requirement?.trails[0]?.trailId ?? `d20-${index}`;
+                const target = request.review.targetNumber;
+                return (
+                  <label key={trailId}>
+                    {t(
+                      target?.kind === "armor-class"
+                        ? "mechanics.cast.attackVs"
+                        : "mechanics.cast.saveVs",
+                      {
+                        index: index + 1,
+                        modifier: request.review.deterministicModifier,
+                        value: target?.value ?? 0,
+                      }
+                    )}
+                    <input
+                      inputMode="numeric"
+                      max={20}
+                      min={1}
+                      onChange={(event) => {
+                        const face = Number(event.target.value);
+                        setFaces((current) => ({ ...current, [trailId]: face }));
+                      }}
+                      type="number"
+                      value={faces[trailId] ?? ""}
+                    />
+                  </label>
+                );
+              })}
+              <Button
+                disabled={phase.requirement.requests.some((request, index) => {
+                  const trailId =
+                    request.review.d20Requirement?.trails[0]?.trailId ?? `d20-${index}`;
+                  const face = faces[trailId];
+                  return (
+                    !Number.isSafeInteger(face) || (face ?? 0) < 1 || (face ?? 0) > 20
+                  );
+                })}
+                onClick={() => {
+                  if (phase.requirement.kind !== "d20") return;
+                  cast.answer({
+                    inputId: phase.requirement.inputId,
+                    kind: "d20",
+                    requests: phase.requirement.requests.map((request, index) => {
+                      const trailId =
+                        request.review.d20Requirement?.trails[0]?.trailId ??
+                        `d20-${index}`;
+                      return {
+                        identity: request.identity,
+                        observation: {
+                          d20: {
+                            aggregates: [],
+                            trails: (request.review.d20Requirement?.trails ?? []).map(
+                              (trail) => ({
+                                initialFace: faces[trailId] ?? 1,
+                                steps: [],
+                                trailId: trail.trailId,
+                              })
+                            ),
+                          },
+                          enteredModifiers: [],
+                          tableOverride: null,
+                        },
+                        payments: [],
+                      };
+                    }),
                   });
                   setFaces({});
                 }}

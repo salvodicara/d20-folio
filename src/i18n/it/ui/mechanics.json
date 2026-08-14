@@ -13,7 +13,11 @@
       "cancel": "Annulla",
       "ready": "Tutto risolto — applicare il risultato?",
       "rejected": "Il motore ha rifiutato questo lancio: {{reason}}",
-      "unavailable": "Questo incantesimo non è ancora eseguibile dal motore"
+      "unavailable": "Questo incantesimo non è ancora eseguibile dal motore",
+      "armorClassPrompt": "Qual è la Classe Armatura del bersaglio? Chiedi al tavolo.",
+      "armorClass": "CA",
+      "attackVs": "Attacco {{index}} — d20 contro CA {{value}} (si applica {{modifier}})",
+      "saveVs": "TS {{index}} — d20 contro CD {{value}} (si applica {{modifier}})"
     }
   }
 }

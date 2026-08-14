@@ -13,7 +13,11 @@
       "cancel": "Cancel",
       "ready": "Everything resolved — apply the result?",
       "rejected": "The engine refused this cast: {{reason}}",
-      "unavailable": "This spell is not runnable by the engine yet"
+      "unavailable": "This spell is not runnable by the engine yet",
+      "armorClassPrompt": "What is the target's Armor Class? Ask the table.",
+      "armorClass": "AC",
+      "attackVs": "Attack {{index}} — d20 vs AC {{value}} ({{modifier}} applies)",
+      "saveVs": "Save {{index}} — d20 vs DC {{value}} ({{modifier}} applies)"
     }
   }
 }
