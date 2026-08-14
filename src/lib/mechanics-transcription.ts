@@ -1290,16 +1290,7 @@ export function transcribeFeatureAction(
     [action.damageReduction !== undefined, "damage-reduction", "reaction-flow-pending"],
     [action.alternateCost !== undefined, "alternate-cost", "cost-choice-pending"],
     [action.poolSpendEffect !== undefined, "pool-spend", "entered-pool-spend-pending"],
-    [
-      action.conditionApplication !== undefined,
-      "condition-application",
-      "feature-conditions-pending",
-    ],
-    [
-      action.conditionRemoval !== undefined || action.cureConditions !== undefined,
-      "condition-removal",
-      "feature-cures-pending",
-    ],
+    [action.cureConditions !== undefined, "cure-cost-pool", "pool-priced-cures-pending"],
     [action.grantDie !== undefined, "grant-die", "granted-die-pending"],
     [action.trackerTopUp !== undefined, "tracker-topup", "topup-flow-pending"],
     [action.maintainsActiveKey !== undefined, "maintain", "maintenance-flow-pending"],
@@ -1434,6 +1425,92 @@ export function transcribeFeatureAction(
         clauses.push(clause("healing-bonus", "automated", "caller-resolved-term"));
       }
       clauses.push(clause("healing-application", "automated"));
+    }
+  }
+
+  // Conditions this action applies (save-gated when the action carries a save).
+  if (action.conditionApplication !== undefined) {
+    const application = action.conditionApplication;
+    if (application.max !== undefined && application.max < application.options.length) {
+      clauses.push(clause("condition-choice", "table", "table-picks-subset"));
+    }
+    for (const conditionId of application.options) {
+      if (conditionId === "exhaustion") {
+        unsupported("condition-exhaustion", "exhaustion-uses-exhaustion-change");
+        continue;
+      }
+      const authored =
+        application.lifetimes?.[conditionId] ?? application.lifetime ?? null;
+      let conditionLifetime: Record<string, unknown>;
+      if (authored === null || authored.kind === "manual") {
+        conditionLifetime = { kind: "manual" };
+        clauses.push(
+          clause(`condition-${conditionId}-lifetime`, "table", "table-owned-end")
+        );
+      } else if (authored.kind === "source") {
+        conditionLifetime = { kind: "source-end" };
+        clauses.push(clause(`condition-${conditionId}-lifetime`, "automated"));
+      } else if (authored.kind === "timed") {
+        if (authored.byCastLevel) {
+          unsupported(
+            `condition-${conditionId}-lifetime`,
+            "cast-level-scaled-lifetime-pending"
+          );
+          continue;
+        }
+        conditionLifetime = { kind: "duration", seconds: fixed(authored.minutes * 60) };
+        clauses.push(clause(`condition-${conditionId}-lifetime`, "automated"));
+      } else {
+        conditionLifetime = {
+          combatant: authored.anchor === "target" ? "target" : "caster",
+          kind: "turn-boundary",
+          offsetTurns: fixed(authored.turns),
+          phase: authored.phase === "turn-start" ? "start" : "end",
+        };
+        clauses.push(clause(`condition-${conditionId}-lifetime`, "automated"));
+      }
+      steps.push({
+        conditionId,
+        kind: "condition",
+        lifetime: conditionLifetime,
+        operation: "apply",
+        stepId: `condition-${conditionId}`,
+        target:
+          action.saveAbility !== undefined && application.on !== "automatic"
+            ? {
+                cardinality: "per-request",
+                inputId: "saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              }
+            : { inputId: "targets", kind: "input" },
+        when: null,
+      });
+      clauses.push(clause(`condition-${conditionId}`, "automated"));
+    }
+  }
+
+  // Plain fixed cures (no pool price attached).
+  if (action.conditionRemoval !== undefined) {
+    for (const conditionId of action.conditionRemoval.options) {
+      if (conditionId === "exhaustion") {
+        unsupported("cure-exhaustion", "exhaustion-step-authoring-pending");
+        continue;
+      }
+      steps.push({
+        conditionId,
+        kind: "condition",
+        lifetime: null,
+        operation: "remove",
+        stepId: `cure-${conditionId}`,
+        target: { inputId: "targets", kind: "input" },
+        when: null,
+      });
+      clauses.push(clause(`cure-${conditionId}`, "automated"));
+    }
+    if (action.conditionRemoval.max !== undefined) {
+      clauses.push(clause("cure-choice", "table", "table-picks-subset"));
     }
   }
 
