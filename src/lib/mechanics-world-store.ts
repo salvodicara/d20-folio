@@ -232,13 +232,12 @@ export function characterWorldState(
           countCell(session.currency[denomination]),
         ])
       ) as CharacterMaterialState["resources"]["currency"],
+      // The canonical world holds the pact pool as a bare count cell — the
+      // slot's LEVEL is a capability fact resolved from the doc at dispatch,
+      // never material state (a wrapped {cell, level} seed fails the parser
+      // and silently degraded every pact caster to the legacy path).
       pactSpellSlot: pact
-        ? {
-            cell: countCell(
-              pact.total - (session.spellSlots[slotUsageKey(pact)]?.used ?? 0)
-            ),
-            level: pact.level,
-          }
+        ? countCell(pact.total - (session.spellSlots[slotUsageKey(pact)]?.used ?? 0))
         : null,
       pools: Object.fromEntries(
         Object.entries(trackerSeeds).map(([trackerId, seed]) => [

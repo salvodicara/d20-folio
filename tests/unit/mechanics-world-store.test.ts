@@ -189,6 +189,19 @@ describe("mechanics world store", () => {
     expect(world.resources.currency.gp.current).toBe(MOCK_CHARACTER.session.currency.gp);
   });
 
+  it("derives a pact caster's world with the pact pool as a bare count cell", () => {
+    // Regression pin: a wrapped {cell, level} pact seed fails the material
+    // parser and silently degraded EVERY pact caster to the legacy path.
+    const warlock = structuredClone(MOCK_CHARACTER);
+    warlock.character.classes = [{ classId: "warlock", level: 3 }];
+    warlock.character.spellSlots = [{ level: 2, total: 2, pactMagic: true }];
+    warlock.session.spellSlots = { "pact-2": { used: 1 } };
+    const world = characterWorldState(warlock, "test-uid", 24);
+    expect(world).not.toBeNull();
+    if (!world) return;
+    expect(world.resources.pactSpellSlot).toMatchObject({ current: 1, kind: "count" });
+  });
+
   it("casts a transcribed spell against the derived world and mirrors the slot", () => {
     const world = characterWorldState(MOCK_CHARACTER, "test-uid", 60);
     if (!world) throw new Error("world fixture");
