@@ -429,6 +429,7 @@ function pendingCompilationInput(
     authoritySnapshot: authoritySnapshot(value.intent.frame.authority),
     continuation: null,
     facts: [],
+    turnEconomy: [],
     responses,
     reviewed: value,
     state: pushed.value,
@@ -445,6 +446,7 @@ function rawCompilationInput(
     authoritySnapshot: authoritySnapshot(value.intent.frame.authority),
     continuation: null,
     facts: [],
+    turnEconomy: [],
     responses: [],
     reviewed: value,
     state: begun.value,
@@ -468,6 +470,7 @@ function pendingAdvanceInput(
     authoritySnapshot: authoritySnapshot(intent.frame.authority),
     continuation: null,
     facts: [],
+    turnEconomy: [],
     responses: [],
     reviewed: result.reviewed,
     state: pushed.value,
@@ -489,6 +492,7 @@ function pendingInputFromState(
     authoritySnapshot: authoritySnapshot(intent.frame.authority),
     continuation: null,
     facts: [],
+    turnEconomy: [],
     responses: [],
     reviewed: result.reviewed,
     state: pushed.value,
@@ -2223,7 +2227,7 @@ describe("compileMechanicsFrame segmented SSOT", () => {
     });
   });
 
-  it("keeps unsupported authored mechanics fail-closed at the exact current step", () => {
+  it("keeps unguarded turn claims fail-closed at the exact current step", () => {
     const program = conformed({
       id: "compiler-unsupported",
       phases: [
@@ -2258,8 +2262,8 @@ describe("compileMechanicsFrame segmented SSOT", () => {
     expect(compileMechanicsFrame(input)).toEqual({
       operationId: null,
       phaseId: "resolve",
-      reason: "unsupported-step",
-      referenceId: "turn-claim",
+      reason: "missing-compiler-fact",
+      referenceId: "turn-economy-projection",
       status: "rejected",
       stepId: "claim-dodge",
     });

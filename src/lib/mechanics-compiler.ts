@@ -1699,6 +1699,95 @@ export function compileMechanicsFrame(
           )
         : simulateStep(step.stepId);
     }
+    if (step.kind === "incoming-damage-adjustment") {
+      const trigger = input.reviewed.intent.frame.trigger;
+      if (trigger.kind !== "damage-taken") {
+        return rejected("unresolved-step", phaseId, step.stepId, "trigger");
+      }
+      const amount = resolveMechanicsProgramAmount(step.amount, context, null);
+      if (amount === null) {
+        return rejected("unresolved-step", phaseId, step.stepId, "amount");
+      }
+      const target = trigger.resolution.packet.target;
+      const reduction = Math.min(amount, trigger.resolution.effective.amount);
+      if (reduction <= 0) {
+        return cursorOnly(
+          [],
+          [
+            {
+              executions: [],
+              operationIds: [],
+              status: "compiled",
+              stepId: step.stepId,
+            },
+          ]
+        );
+      }
+      const located = locateVitalityTarget(context.world, target);
+      if (!located || !vitalityTargetIsCreature(located)) {
+        return rejected("unresolved-step", phaseId, step.stepId, "wrong-target-kind");
+      }
+      const guarded = guardedMaximumHitPoints(
+        [...input.reviewed.intent.factGuards, ...input.facts],
+        target
+      );
+      const maximumHitPoints = guarded ?? materialMaximumHitPoints(located);
+      if (maximumHitPoints === null) {
+        return rejected(
+          "missing-compiler-fact",
+          phaseId,
+          step.stepId,
+          "hit-point-maximum"
+        );
+      }
+      const problem = project(
+        {
+          causeId: rootCause.causeId,
+          input: { amount: reduction, maximumHitPoints },
+          kind: "creature-healing",
+          maximumHitPointsSource:
+            guarded !== null ? { kind: "fact" } : { kind: "material" },
+          operationId: operationId(input, step.stepId, 1, "creature-healing"),
+          target,
+        },
+        step.stepId
+      );
+      if (problem) return problem;
+      return simulateStep(step.stepId);
+    }
+    if (step.kind === "turn-claim") {
+      const combatant = resolveMechanicsProgramTargets(
+        { kind: "role", role: step.combatant },
+        context
+      )?.[0]?.binding;
+      if (!combatant) {
+        return rejected("unresolved-step", phaseId, step.stepId, "combatant");
+      }
+      const projection = input.turnEconomy.find(
+        (entry) => entityRefKey(entry.combatant) === entityRefKey(combatant)
+      )?.projection;
+      if (!projection) {
+        return rejected(
+          "missing-compiler-fact",
+          phaseId,
+          step.stepId,
+          "turn-economy-projection"
+        );
+      }
+      const problem = project(
+        {
+          causeId: rootCause.causeId,
+          combatant,
+          command: step.claim,
+          kind: "turn-economy-transition",
+          operationId: operationId(input, step.stepId, 1, "turn-economy-transition"),
+          projection,
+        },
+        step.stepId
+      );
+      if (problem) return problem;
+      return simulateStep(step.stepId);
+    }
     if (step.kind === "end-program") {
       return cursorOnly(
         [],

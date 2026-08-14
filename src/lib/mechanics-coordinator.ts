@@ -122,6 +122,7 @@ const INPUT_KEYS = [
   "intent",
   "responses",
   "state",
+  "turnEconomy",
 ] as const;
 
 function isExactInput(value: unknown): value is Readonly<MechanicsCoordinationInput> {
@@ -316,6 +317,7 @@ export function runMechanicsCausalAction(
       responses: record.chain?.responses ?? [],
       reviewed: record.reviewed,
       state: target.state,
+      turnEconomy: input.turnEconomy,
     });
     if (result.status === "compiled") {
       record.chain = null;

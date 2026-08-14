@@ -18,6 +18,7 @@ import type {
   ReviewedMechanicsIntent,
 } from "@/types/mechanics-program";
 import type { MechanicsCausalState } from "@/types/mechanics-world";
+import type { TurnEconomyProjection } from "@/types/turn-economy";
 
 export type MechanicsCompilerResponse =
   | {
@@ -119,6 +120,15 @@ export interface CompileMechanicsFrameInput {
   readonly responses: readonly Readonly<MechanicsCompilerResponse>[];
   readonly reviewed: Readonly<ReviewedMechanicsIntent>;
   readonly state: Readonly<MechanicsCausalState>;
+  /**
+   * Caller-supplied effective turn-economy projections, one per combatant the
+   * frame may claim for. The kernel re-emits and commit-validates each used
+   * projection as a fingerprint fact guard, so a stale projection fails closed.
+   */
+  readonly turnEconomy: readonly Readonly<{
+    readonly combatant: EntityRef;
+    readonly projection: TurnEconomyProjection;
+  }>[];
 }
 
 declare const MECHANICS_COMPILER_CONTINUATION: unique symbol;

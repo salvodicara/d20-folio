@@ -215,6 +215,7 @@ function actionInput(
     intent: createIntent(program, program.phases[0].phaseId, authority),
     responses: [],
     state: causalState(snapshot),
+    turnEconomy: [],
     ...overrides,
   };
 }
@@ -877,6 +878,7 @@ describe("runMechanicsCausalAction vitality", () => {
       },
       responses: [],
       state: granted.state,
+      turnEconomy: [],
     });
     expect(cleared.status).toBe("complete");
     if (cleared.status !== "complete") return;
@@ -1046,6 +1048,7 @@ describe("runMechanicsCausalAction lifecycles", () => {
       },
       responses: [],
       state: causalState(world()),
+      turnEconomy: [],
     });
     expect(result.status).toBe("complete");
     if (result.status !== "complete") return;
@@ -1145,6 +1148,7 @@ describe("runMechanicsCausalAction lifecycles", () => {
       },
       responses: [],
       state: causalState(world()),
+      turnEconomy: [],
     });
     expect(result.status).toBe("complete");
     if (result.status !== "complete") return;
@@ -1224,6 +1228,7 @@ describe("runMechanicsCausalAction resources", () => {
       },
       responses: [],
       state: causalState(snapshot),
+      turnEconomy: [],
       ...overrides,
     };
   }
@@ -1341,5 +1346,98 @@ describe("runMechanicsCausalAction resources", () => {
     expect(resumed.status).toBe("complete");
     if (resumed.status !== "complete") return;
     expect(heroState(resumed.state).resources.pools.focus?.current).toBe(3);
+  });
+});
+
+describe("runMechanicsCausalAction reactive adjustment", () => {
+  it("reduces triggering damage through the deflecting reaction", () => {
+    const wardProgram = conformed({
+      id: "deflecting-ward",
+      phases: [
+        {
+          inputs: [],
+          phaseId: "resolve",
+          steps: [
+            {
+              fact: { key: "deflect-ready", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "manual" },
+              operation: "start",
+              stepId: "raise-guard",
+              target: { kind: "role", role: "target" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [],
+          phaseId: "deflect",
+          steps: [
+            {
+              amount: { expression: { kind: "fixed", value: 3 }, kind: "integer" },
+              kind: "incoming-damage-adjustment",
+              selector: {
+                damageTypes: [],
+                deliveries: [],
+                forbiddenTraits: [],
+                requiredTraits: [],
+              },
+              sourceId: "deflect",
+              stepId: "deflect-blow",
+              when: null,
+            },
+          ],
+          trigger: { kind: "damage-taken", target: "target" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const snapshot = world({
+      "ward-root": {
+        authority: authorityReceipt(wardProgram),
+        endRules: [],
+        ending: null,
+        kind: "program",
+        ordinal: 1,
+        phaseState: {
+          deflect: { execution: 0, lastTriggerEventId: null },
+          resolve: { execution: 1, lastTriggerEventId: null },
+        },
+        registers: {},
+      },
+    });
+    const program = damageProgram(
+      [{ amount: 6, damageType: "fire", partId: "fire" }],
+      "coordinated-deflected"
+    );
+    const result = runMechanicsCausalAction(
+      actionInput(program, snapshot, {
+        facts: [MAX_HP_FACT],
+        intent: {
+          ...createIntent(program, "resolve"),
+          frame: {
+            ...createIntent(program, "resolve").frame,
+            rootReceipt: {
+              kind: "create",
+              materialEpoch: 0,
+              next: { execution: 1, phaseId: "resolve", triggerEventId: null },
+              root: {
+                occurrence: { material: HERO, occurrenceId: "attack-root" },
+                ordinal: 2,
+              },
+            },
+          },
+        },
+      })
+    );
+    expect(result.status).toBe("complete");
+    if (result.status !== "complete") return;
+    const state = heroState(result.state);
+    expect(state.vitals.hitPoints.current).toBe(17);
+    expect(state.occurrences["ward-root"]).toMatchObject({
+      phaseState: { deflect: { execution: 1 } },
+    });
   });
 });

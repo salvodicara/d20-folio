@@ -84,9 +84,17 @@ and independently verified 2024 rules are the evidence.
    needs-answer suspension/replay, budget exhaustion and pending-frame entry rejection. The boundary
    path and response-accept path get their end-to-end proofs with the entity/resource compilers
    (continuation order 4).
-4. Complete the remaining authored step compilers and reviewed-payment prelude: damage/healing/Temporary
-   HP, Exhaustion, resources, entity/item lifecycle, turn claims, exact material blueprints, overrides,
-   table observations and replayable manual outputs. Never ask for a fact the engine already knows.
+4. ~~Complete the remaining authored step compilers and reviewed-payment prelude.~~ **Done
+   2026-08-14** — all 24 authorable step kinds compile: vitality (damage through effective standing
+   defenses with allocation suspend/resume, healing, atomic Temporary-HP source+grant, exhaustion,
+   stabilize, death), lifecycles (closed-blueprint entity/inventory creation, availability, ends,
+   terminal `end-program` latched at the frame pop), resources (reviewed-payment prelude compiled
+   exactly once, change/recover/state with recorded-observation resume), `turn-claim` with
+   caller-supplied guarded projections, and reactive `incoming-damage-adjustment` as an exact
+   compensating reduction. The data-shaped audit residue (table-override authorization,
+   source-specific THP teardown, death-prevention standing policies, enchantment attach/transfer,
+   same-frame created selectors, explicit critical-hit input, replayable manual outputs) acquires its
+   real consumers in continuation orders 5–6.
 5. Compile the actual SRD + private pack corpus into that one runtime and generate clause-level coverage
    from real authoring data. A deterministic clause is green only with structured data, compiler,
    runtime consumer, persistence/undo behavior and conformance tests. Classify unavoidable physical-roll,

@@ -225,6 +225,19 @@ Only focused affected-suite verification ran; no global gate ran. The fixed-poin
 coordinator, remaining compiler/corpus work, runtime cutover and final journal draft remain active; this
 is not an engine-completion claim.
 
+**Authored step census COMPLETE on branch (2026-08-14):** every one of the 24 authorable
+`MechanicsStep` kinds now compiles into exact kernel operations — the last two being `turn-claim`
+(one `turn-economy-transition` per resolved combatant, its effective projection supplied by the
+caller and re-emitted by the kernel as a commit-validated fingerprint guard) and
+`incoming-damage-adjustment` (conformance-locked to `damage-taken` phases; the reaction compiles as
+an exact compensating reduction bounded by the triggering resolution's effective damage, proved
+end-to-end by a Deflect-style ward reducing 6 incoming fire to 3 within the attacker's own causal
+action). The remaining audit items — table-override authorization, source-specific Temporary-HP
+replacement teardown, death-prevention standing policies, enchantment attach/transfer, same-frame
+created selectors, the explicit critical-hit resolver input and replayable manual outputs — are
+data-shaped: they acquire their real consumers during corpus transcription and application cutover
+and are tracked there. Focused verification only; no global gate ran.
+
 **Resource and payment compilers CLOSED on branch (2026-08-14):** the reviewed-payment prelude now
 compiles every resolved resource debit (chosen slot/pool payments and d20/dice riders) exactly once,
 deterministically before the first authored step of the frame's first segment; authored

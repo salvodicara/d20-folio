@@ -14,8 +14,9 @@ import type {
   MechanicsRequirement,
   MechanicsReviewRejection,
 } from "@/types/mechanics-program";
-import type { OccurrenceGenerationRef } from "@/types/mechanics-reference";
+import type { EntityRef, OccurrenceGenerationRef } from "@/types/mechanics-reference";
 import type { MechanicsCausalState } from "@/types/mechanics-world";
+import type { TurnEconomyProjection } from "@/types/turn-economy";
 
 /**
  * Deterministic identity of one execution frame inside one causal action:
@@ -50,6 +51,11 @@ export interface MechanicsCoordinationInput {
   readonly intent: Readonly<MechanicsIntent>;
   readonly responses: readonly Readonly<MechanicsCompilerResponse>[];
   readonly state: Readonly<MechanicsCausalState>;
+  /** Effective turn-economy projections for combatants this action may claim for. */
+  readonly turnEconomy: readonly Readonly<{
+    readonly combatant: EntityRef;
+    readonly projection: TurnEconomyProjection;
+  }>[];
   /** Override the default work budget; smaller only. Absent means the default. */
   readonly workBudget?: number;
 }
