@@ -1904,6 +1904,32 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
     expect(conditions).toHaveLength(1);
   });
 
+  it("casts deferred moonbeam: slot spent, cast level recorded, pulse phase armed", async () => {
+    const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
+    const { state } = await runAttackCast({
+      attackFaces: [],
+      bindings: { [TRANSCRIPTION_BINDINGS.saveDc]: 15 },
+      slotLevel: 3,
+      spellId: "moonbeam",
+      targetSlots: 0,
+    });
+    // Deferred: no damage at cast; the slot is spent, concentration is held,
+    // and the pulse phase sits armed at execution 0 with the cast level saved.
+    expect(state.vitals.hitPoints.current).toBe(20);
+    expect(state.resources.standardSpellSlots["3"]?.current).toBe(1);
+    const root = Object.values(state.occurrences).find(
+      (occurrence) => occurrence.kind === "program"
+    );
+    if (root?.kind !== "program") throw new Error("missing program root");
+    expect(root.registers["cast-level"]).toBe(3);
+    expect(root.phaseState["pulse"]).toMatchObject({ execution: 0 });
+    expect(
+      Object.values(state.occurrences).some(
+        (occurrence) => occurrence.kind === "concentration"
+      )
+    ).toBe(true);
+  });
+
   it("omits the ray-of-sickness save entirely when the attack misses", async () => {
     const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
     const { demandedDamageTrails, state } = await runAttackCast({

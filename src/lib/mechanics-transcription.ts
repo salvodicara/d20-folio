@@ -73,11 +73,19 @@ function fixed(value: number): IntegerExpression {
   return { kind: "fixed", value };
 }
 
-/** base + perUpcast × max(0, chosen slot level − spell level). */
+/** The register carrying the chosen cast level into later triggered phases. */
+const CAST_LEVEL_REGISTER = "cast-level";
+
+/**
+ * base + perUpcast × max(0, chosen slot level − spell level). The cast phase
+ * reads the slot answer directly; a recurring pulse phase reads the cast level
+ * recorded into the {@link CAST_LEVEL_REGISTER} at resolution.
+ */
 function upcastCount(
   base: number,
   perUpcast: number | null,
-  spellLevel: number
+  spellLevel: number,
+  levelBindingId = "input.slot.level"
 ): IntegerExpression {
   if (perUpcast === null || perUpcast === 0) return fixed(base);
   return {
@@ -94,7 +102,7 @@ function upcastCount(
               {
                 kind: "add",
                 terms: [
-                  { bindingId: "input.slot.level", kind: "binding" },
+                  { bindingId: levelBindingId, kind: "binding" },
                   fixed(-spellLevel),
                 ],
               },
@@ -182,11 +190,13 @@ const CANONICAL_ROLL_RULES = {
 
 function savingThrowInput(
   ability: AbilityCode,
-  when: Readonly<Record<string, unknown>> | null = null
+  when: Readonly<Record<string, unknown>> | null = null,
+  inputId = "saves",
+  targetsInputId = "targets"
 ): Record<string, unknown> {
   return {
-    expansion: { bind: "actor", inputId: "targets", kind: "entities" },
-    inputId: "saves",
+    expansion: { bind: "actor", inputId: targetsInputId, kind: "entities" },
+    inputId,
     kind: "d20",
     payments: [],
     request: {
@@ -209,28 +219,35 @@ function savingThrowInput(
 }
 
 /** True once the resolved attack input landed at least one hit or critical. */
-const ATTACK_LANDED: Readonly<Record<string, unknown>> = {
-  kind: "any",
-  predicates: [
-    { inputId: "attack", kind: "answer-d20", outcomeId: "hit", quantifier: "any" },
-    {
-      inputId: "attack",
-      kind: "answer-d20",
-      outcomeId: "critical-hit",
-      quantifier: "any",
-    },
-  ],
-};
+function attackLanded(p: (id: string) => string): Readonly<Record<string, unknown>> {
+  return {
+    kind: "any",
+    predicates: [
+      {
+        inputId: p("attack"),
+        kind: "answer-d20",
+        outcomeId: "hit",
+        quantifier: "any",
+      },
+      {
+        inputId: p("attack"),
+        kind: "answer-d20",
+        outcomeId: "critical-hit",
+        quantifier: "any",
+      },
+    ],
+  };
+}
 
 /**
  * One spell-attack request per answered target slot: the caster rolls, each
  * request adjudicates against the bound target armor class, and the observation
  * keeps the table-override channel for adjudication the world cannot see.
  */
-function attackInput(): Record<string, unknown> {
+function attackInput(p: (id: string) => string): Record<string, unknown> {
   return {
-    expansion: { bind: "target", inputId: "targets", kind: "entities" },
-    inputId: "attack",
+    expansion: { bind: "target", inputId: p("targets"), kind: "entities" },
+    inputId: p("attack"),
     kind: "d20",
     payments: [],
     request: {
@@ -266,10 +283,13 @@ function sharedDiceAmount(
 }
 
 /** A per-attack-outcome damage roll: input expansion and step target must match. */
-function attackOutcomeSelector(outcomeIds: readonly string[]): Record<string, unknown> {
+function attackOutcomeSelector(
+  outcomeIds: readonly string[],
+  p: (id: string) => string
+): Record<string, unknown> {
   return {
     cardinality: "per-request",
-    inputId: "attack",
+    inputId: p("attack"),
     kind: "d20-outcome",
     outcomeIds,
     quantifier: "any",
@@ -310,6 +330,7 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   const inputs: Record<string, unknown>[] = [];
   const steps: Record<string, unknown>[] = [];
   const lifetime: Record<string, unknown>[] = [];
+  let pulsePhase: Record<string, unknown> | null = null;
   const unsupported = (clauseId: string, detail: string): void => {
     clauses.push(clause(clauseId, "unsupported", detail));
   };
@@ -343,6 +364,10 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   // Resolution gates (read early so targeting can express per-ray slots).
   const hasSave = spell.saveAbility !== undefined;
   const hasAttack = spell.attackType !== undefined;
+  // A recurring spell re-runs its whole resolution suite on each table-signaled
+  // pulse; a deferred one (`resolveOnCast: false`) resolves ONLY there.
+  const pulse = spell.recurrence !== undefined;
+  const deferred = spell.resolveOnCast === false;
 
   // Targeting: the table selects who is inside an area; the engine applies.
   // An instanced attack spell (Scorching Ray) targets one entity SLOT per ray —
@@ -350,24 +375,10 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   const maxTargets = spell.targeting?.maxTargets;
   const instances = spell.instances;
   const targetMaximum = typeof maxTargets === "number" ? maxTargets : spell.area ? 20 : 1;
-  if (typeof maxTargets === "string") {
-    unsupported("targeting", `dynamic-max-targets:${maxTargets}`);
+  const dynamicTargets = typeof maxTargets === "string";
+  if (dynamicTargets) {
+    unsupported("targeting", `dynamic-max-targets:${String(maxTargets)}`);
   } else {
-    const slotMaximum: IntegerExpression =
-      instances !== undefined
-        ? spell.level > 0
-          ? upcastCount(instances, spell.instancesPerUpcast ?? null, spell.level)
-          : fixed(instances)
-        : fixed(targetMaximum);
-    inputs.push({
-      eligibility: "creature",
-      inputId: "targets",
-      kind: "entities",
-      maximum: slotMaximum,
-      minimum: fixed(0),
-      multiplicity: "slots",
-      when: null,
-    });
     clauses.push(clause("targeting", "automated"));
     if (instances !== undefined && hasAttack) {
       clauses.push(clause("instances", "automated", "one-target-slot-per-ray"));
@@ -401,7 +412,6 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     clauses.push(clause("attack-and-save", "automated", "hit-then-save"));
   }
   if (hasAttack) {
-    inputs.push(attackInput());
     clauses.push(clause("attack-roll", "physical-input"));
     clauses.push(
       clause(
@@ -414,10 +424,7 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     );
     clauses.push(clause("attack-range", "spatial", `table-verifies-${spell.attackType}`));
   }
-  if (spell.saveAbility !== undefined) {
-    inputs.push(
-      savingThrowInput(spell.saveAbility, combinedGates ? ATTACK_LANDED : null)
-    );
+  if (hasSave) {
     clauses.push(
       clause("saving-throw", "physical-input", combinedGates ? "only-on-hit" : null)
     );
@@ -464,152 +471,16 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   // Damage always rides the attack when one exists; a combined save gates only
   // the condition rider, never the damage (Ray of Sickness).
   const gatedByAttack = hasAttack;
+
+  // Classification — once per mechanic, phase-independent.
   for (const component of components) {
-    // Base + cantrip/upcast scaling on the rolled dice count.
-    const scaledCount: IntegerExpression =
-      spell.level === 0
-        ? cantripScaledCount(component.dice.count)
-        : upcastCount(
-            component.dice.count,
-            component.perUpcast?.count ?? null,
-            spell.level
-          );
-    if (gatedByAttack) {
-      // One damage roll per landed request; critical hits double the DICE
-      // (never the flat bonus), so they ride their own doubled-count input.
-      const critCount: IntegerExpression = {
-        factors: [fixed(2), scaledCount],
-        kind: "multiply",
-      };
-      const families = [
-        { count: scaledCount, inputId: component.inputId, outcomeIds: ["hit"] },
-        {
-          count: critCount,
-          inputId: `${component.inputId}-crit`,
-          outcomeIds: ["critical-hit"],
-        },
-      ] as const;
-      for (const family of families) {
-        inputs.push(
-          diceInput(family.inputId, component.dice, family.count, {
-            inputId: "attack",
-            kind: "d20-outcomes",
-            outcomeIds: family.outcomeIds,
-          })
-        );
-        steps.push({
-          delivery: "attack",
-          kind: "damage",
-          parts: [
-            {
-              amount: {
-                cardinality: "per-target-request",
-                inputId: family.inputId,
-                kind: "dice-input",
-                transform: INPUT_TOTAL,
-              },
-              damageType: component.damageType,
-              partId: `${family.inputId}-full`,
-            },
-          ],
-          stepId: `${family.inputId}-apply`,
-          target: attackOutcomeSelector(family.outcomeIds),
-          traits: ["spell"],
-          when: null,
-        });
-      }
-      clauses.push(clause(component.inputId, "physical-input"));
-      clauses.push(clause(`${component.inputId}-crit-dice`, "automated", "doubled"));
-      clauses.push(clause(`${component.inputId}-application`, "automated"));
-      if (spell.level === 0) {
-        clauses.push(clause(`${component.inputId}-cantrip-scaling`, "automated"));
-      }
-      continue;
-    }
-    if (!hasSave && instances !== undefined) {
-      // One automatic-delivery roll per instance slot (Magic Missile darts).
-      inputs.push(
-        diceInput(component.inputId, component.dice, scaledCount, {
-          inputId: "targets",
-          kind: "entities",
-        })
-      );
-      steps.push({
-        delivery: "automatic",
-        kind: "damage",
-        parts: [
-          {
-            amount: {
-              cardinality: "per-target-request",
-              inputId: component.inputId,
-              kind: "dice-input",
-              transform: INPUT_TOTAL,
-            },
-            damageType: component.damageType,
-            partId: `${component.inputId}-full`,
-          },
-        ],
-        stepId: `${component.inputId}-apply`,
-        target: { inputId: "targets", kind: "input" },
-        traits: ["spell"],
-        when: null,
-      });
-      clauses.push(clause(component.inputId, "physical-input"));
-      clauses.push(clause(`${component.inputId}-application`, "automated"));
-      continue;
-    }
-    inputs.push(diceInput(component.inputId, component.dice, scaledCount));
     clauses.push(clause(component.inputId, "physical-input"));
     if (spell.level === 0) {
       clauses.push(clause(`${component.inputId}-cantrip-scaling`, "automated"));
     }
-    const delivery = hasSave ? "saving-throw" : "automatic";
-    const failedTarget = hasSave
-      ? {
-          cardinality: "per-request",
-          inputId: "saves",
-          kind: "d20-outcome",
-          outcomeIds: ["failure"],
-          quantifier: "any",
-        }
-      : { inputId: "targets", kind: "input" };
-    steps.push({
-      delivery,
-      kind: "damage",
-      parts: [
-        {
-          amount: sharedDiceAmount(component.inputId, INPUT_TOTAL),
-          damageType: component.damageType,
-          partId: `${component.inputId}-full`,
-        },
-      ],
-      stepId: `${component.inputId}-apply`,
-      target: failedTarget,
-      traits: ["spell"],
-      when: null,
-    });
-    if (hasSave && component.damageOnSave === "half") {
-      steps.push({
-        delivery,
-        kind: "damage",
-        parts: [
-          {
-            amount: sharedDiceAmount(component.inputId, HALF_INPUT_TOTAL),
-            damageType: component.damageType,
-            partId: `${component.inputId}-half`,
-          },
-        ],
-        stepId: `${component.inputId}-apply-half`,
-        target: {
-          cardinality: "per-request",
-          inputId: "saves",
-          kind: "d20-outcome",
-          outcomeIds: ["success"],
-          quantifier: "any",
-        },
-        traits: ["spell"],
-        when: null,
-      });
+    if (gatedByAttack) {
+      clauses.push(clause(`${component.inputId}-crit-dice`, "automated", "doubled"));
+    } else if (hasSave && component.damageOnSave === "half") {
       clauses.push(clause(`${component.inputId}-on-save`, "automated"));
     } else if (hasSave && component.damageOnSave === null) {
       clauses.push(clause(`${component.inputId}-on-save`, "automated", "negates"));
@@ -619,6 +490,189 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   if (gatedByAttack && spell.damageOnMiss !== undefined) {
     unsupported("damage-on-miss", "half-on-miss-roll-attribution-pending");
   }
+
+  // Emission — the full targeting/gate/damage suite, once per carrying phase
+  // (the cast phase normally; the recurring pulse phase re-runs it verbatim).
+  const emitResolutionSuite = (
+    into: {
+      inputs: Record<string, unknown>[];
+      steps: Record<string, unknown>[];
+    },
+    levelBindingId = "input.slot.level",
+    prefix = ""
+  ): void => {
+    if (dynamicTargets) return;
+    const p = (id: string): string => `${prefix}${id}`;
+    const slotMaximum: IntegerExpression =
+      instances !== undefined
+        ? spell.level > 0
+          ? upcastCount(
+              instances,
+              spell.instancesPerUpcast ?? null,
+              spell.level,
+              levelBindingId
+            )
+          : fixed(instances)
+        : fixed(targetMaximum);
+    into.inputs.push({
+      eligibility: "creature",
+      inputId: p("targets"),
+      kind: "entities",
+      maximum: slotMaximum,
+      minimum: fixed(0),
+      multiplicity: "slots",
+      when: null,
+    });
+    if (hasAttack) into.inputs.push(attackInput(p));
+    if (spell.saveAbility !== undefined) {
+      into.inputs.push(
+        savingThrowInput(
+          spell.saveAbility,
+          combinedGates ? attackLanded(p) : null,
+          p("saves"),
+          p("targets")
+        )
+      );
+    }
+    for (const component of components) {
+      // Base + cantrip/upcast scaling on the rolled dice count.
+      const scaledCount: IntegerExpression =
+        spell.level === 0
+          ? cantripScaledCount(component.dice.count)
+          : upcastCount(
+              component.dice.count,
+              component.perUpcast?.count ?? null,
+              spell.level,
+              levelBindingId
+            );
+      if (gatedByAttack) {
+        // One damage roll per landed request; critical hits double the DICE
+        // (never the flat bonus), so they ride their own doubled-count input.
+        const critCount: IntegerExpression = {
+          factors: [fixed(2), scaledCount],
+          kind: "multiply",
+        };
+        const families = [
+          { count: scaledCount, inputId: p(component.inputId), outcomeIds: ["hit"] },
+          {
+            count: critCount,
+            inputId: p(`${component.inputId}-crit`),
+            outcomeIds: ["critical-hit"],
+          },
+        ] as const;
+        for (const family of families) {
+          into.inputs.push(
+            diceInput(family.inputId, component.dice, family.count, {
+              inputId: p("attack"),
+              kind: "d20-outcomes",
+              outcomeIds: family.outcomeIds,
+            })
+          );
+          into.steps.push({
+            delivery: "attack",
+            kind: "damage",
+            parts: [
+              {
+                amount: {
+                  cardinality: "per-target-request",
+                  inputId: family.inputId,
+                  kind: "dice-input",
+                  transform: INPUT_TOTAL,
+                },
+                damageType: component.damageType,
+                partId: `${family.inputId}-full`,
+              },
+            ],
+            stepId: `${family.inputId}-apply`,
+            target: attackOutcomeSelector(family.outcomeIds, p),
+            traits: ["spell"],
+            when: null,
+          });
+        }
+        continue;
+      }
+      if (!hasSave && instances !== undefined) {
+        // One automatic-delivery roll per instance slot (Magic Missile darts).
+        into.inputs.push(
+          diceInput(p(component.inputId), component.dice, scaledCount, {
+            inputId: p("targets"),
+            kind: "entities",
+          })
+        );
+        into.steps.push({
+          delivery: "automatic",
+          kind: "damage",
+          parts: [
+            {
+              amount: {
+                cardinality: "per-target-request",
+                inputId: p(component.inputId),
+                kind: "dice-input",
+                transform: INPUT_TOTAL,
+              },
+              damageType: component.damageType,
+              partId: p(`${component.inputId}-full`),
+            },
+          ],
+          stepId: p(`${component.inputId}-apply`),
+          target: { inputId: p("targets"), kind: "input" },
+          traits: ["spell"],
+          when: null,
+        });
+        continue;
+      }
+      into.inputs.push(diceInput(p(component.inputId), component.dice, scaledCount));
+      const delivery = hasSave ? "saving-throw" : "automatic";
+      const failedTarget = hasSave
+        ? {
+            cardinality: "per-request",
+            inputId: p("saves"),
+            kind: "d20-outcome",
+            outcomeIds: ["failure"],
+            quantifier: "any",
+          }
+        : { inputId: p("targets"), kind: "input" };
+      into.steps.push({
+        delivery,
+        kind: "damage",
+        parts: [
+          {
+            amount: sharedDiceAmount(p(component.inputId), INPUT_TOTAL),
+            damageType: component.damageType,
+            partId: p(`${component.inputId}-full`),
+          },
+        ],
+        stepId: p(`${component.inputId}-apply`),
+        target: failedTarget,
+        traits: ["spell"],
+        when: null,
+      });
+      if (hasSave && component.damageOnSave === "half") {
+        into.steps.push({
+          delivery,
+          kind: "damage",
+          parts: [
+            {
+              amount: sharedDiceAmount(p(component.inputId), HALF_INPUT_TOTAL),
+              damageType: component.damageType,
+              partId: p(`${component.inputId}-half`),
+            },
+          ],
+          stepId: p(`${component.inputId}-apply-half`),
+          target: {
+            cardinality: "per-request",
+            inputId: p("saves"),
+            kind: "d20-outcome",
+            outcomeIds: ["success"],
+            quantifier: "any",
+          },
+          traits: ["spell"],
+          when: null,
+        });
+      }
+    }
+  };
+  if (!deferred) emitResolutionSuite({ inputs, steps });
   if (spell.bonusDamageAgainst) {
     unsupported("bonus-damage-against", "creature-type-gated-damage");
   }
@@ -857,14 +911,78 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     lifetime.push({ kind: "manual" });
   }
 
-  // Boundary facts that stay with the table by design.
-  if (spell.recurrence) unsupported("recurrence", "recurrent-cadence-pending");
-  if (spell.followUp) unsupported("follow-up", "follow-up-action-pending");
-  if (spell.resolveOnCast === false) {
-    unsupported("deferred-resolution", "resolve-later-pending");
+  // The recurring pulse phase: the table signals each recurrence event (who is
+  // in the area when — spatial truth); the engine re-runs the full resolution
+  // suite. A deferred spell carries its suite ONLY here (Moonbeam); a repeating
+  // one re-rolls the same suite it resolved at cast (Sunbeam). A successful
+  // repeat save can end the whole program (Searing Smite).
+  if (
+    deferred &&
+    (spell.healDice !== undefined ||
+      spell.tempHpRoll !== undefined ||
+      spell.conditionApplication !== undefined ||
+      spell.conditionRemoval !== undefined)
+  ) {
+    unsupported("deferred-resolution", "deferred-non-damage-suite-pending");
+  } else if (pulse) {
+    const pulseInputs: Record<string, unknown>[] = [];
+    const pulseSteps: Record<string, unknown>[] = [];
+    if (spell.level > 0) {
+      // The pulse re-reads the cast level recorded when the slot was paid.
+      steps.splice(0, 0, {
+        kind: "register",
+        operation: {
+          kind: "set-integer",
+          value: { bindingId: "input.slot.level", kind: "binding" },
+        },
+        registerId: CAST_LEVEL_REGISTER,
+        stepId: "record-cast-level",
+        when: null,
+      });
+    }
+    emitResolutionSuite(
+      { inputs: pulseInputs, steps: pulseSteps },
+      `register.${CAST_LEVEL_REGISTER}`,
+      "pulse-"
+    );
+    if (spell.endsOnSuccessfulSave === true && hasSave) {
+      pulseSteps.push({
+        kind: "end-program",
+        stepId: "pulse-ends-on-save",
+        when: {
+          inputId: "pulse-saves",
+          kind: "answer-d20",
+          outcomeId: "success",
+          quantifier: "any",
+        },
+      });
+      clauses.push(clause("ends-on-save", "automated", "repeat-save-ends-program"));
+    } else if (spell.endsOnSuccessfulSave === true) {
+      unsupported("ends-on-save", "no-saving-throw-to-repeat");
+    }
+    if (pulseSteps.length === 0) {
+      unsupported("recurrence", "empty-pulse-suite");
+    } else {
+      clauses.push(
+        clause("recurrence", "automated", `pulse-on-${spell.recurrence ?? "event"}`)
+      );
+      clauses.push(clause("pulse-occupancy", "spatial", "table-signals-pulse"));
+      if (deferred) {
+        clauses.push(clause("deferred-resolution", "automated", "suite-lives-in-pulse"));
+      }
+      pulsePhase = {
+        inputs: pulseInputs,
+        phaseId: "pulse",
+        steps: pulseSteps,
+        trigger: { eventId: "pulse", kind: "manual-table-event" },
+      };
+    }
+  } else if (deferred) {
+    unsupported("deferred-resolution", "resolve-later-without-recurrence");
   }
-  if (spell.endsOnSuccessfulSave === true) {
-    unsupported("ends-on-save", "repeat-save-pending");
+  if (spell.followUp) unsupported("follow-up", "follow-up-action-pending");
+  if (spell.endsOnSuccessfulSave === true && !pulse) {
+    unsupported("ends-on-save", "repeat-save-without-recurrence");
   }
   if (spell.selfHealingFromDamage) {
     unsupported("self-healing-from-damage", "landed-damage-feedback-pending");
@@ -872,6 +990,7 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
 
   const phases: Record<string, unknown>[] = [
     { inputs, phaseId: "resolve", steps, trigger: { kind: "invocation" } },
+    ...(pulsePhase ? [pulsePhase] : []),
   ];
   if (spell.concentration) {
     phases.push({
@@ -883,10 +1002,11 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   }
 
   const blocked = clauses.some((entry) => entry.status === "unsupported");
-  if (blocked || steps.length === 0) {
+  const stepless = steps.length === 0 && pulsePhase === null;
+  if (blocked || stepless) {
     return {
       clauses:
-        steps.length === 0 && !blocked
+        stepless && !blocked
           ? [...clauses, clause("resolution", "narrative", "no-mechanical-steps")]
           : clauses,
       entityId: spell.id,
@@ -898,7 +1018,10 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     id: `spell:${spell.id}`,
     ...(lifetime.length > 0 ? { lifetime } : {}),
     phases,
-    registers: [],
+    registers:
+      pulsePhase !== null && spell.level > 0
+        ? [{ initial: spell.level, registerId: CAST_LEVEL_REGISTER }]
+        : [],
     version: 1,
   });
   if (!program) {

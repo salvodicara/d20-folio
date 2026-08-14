@@ -64,17 +64,17 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-cantrip-scaling",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-crit-dice",
           "detail": "doubled",
           "status": "automated"
         },
         {
           "clauseId": "damage-roll-application",
-          "detail": null,
-          "status": "automated"
-        },
-        {
-          "clauseId": "damage-roll-cantrip-scaling",
           "detail": null,
           "status": "automated"
         }
@@ -174,17 +174,17 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-cantrip-scaling",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-crit-dice",
           "detail": "doubled",
           "status": "automated"
         },
         {
           "clauseId": "damage-roll-application",
-          "detail": null,
-          "status": "automated"
-        },
-        {
-          "clauseId": "damage-roll-cantrip-scaling",
           "detail": null,
           "status": "automated"
         }
@@ -321,17 +321,17 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-cantrip-scaling",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-crit-dice",
           "detail": "doubled",
           "status": "automated"
         },
         {
           "clauseId": "damage-roll-application",
-          "detail": null,
-          "status": "automated"
-        },
-        {
-          "clauseId": "damage-roll-cantrip-scaling",
           "detail": null,
           "status": "automated"
         }
@@ -383,17 +383,17 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-cantrip-scaling",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-crit-dice",
           "detail": "doubled",
           "status": "automated"
         },
         {
           "clauseId": "damage-roll-application",
-          "detail": null,
-          "status": "automated"
-        },
-        {
-          "clauseId": "damage-roll-cantrip-scaling",
           "detail": null,
           "status": "automated"
         }
@@ -429,17 +429,17 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-cantrip-scaling",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-crit-dice",
           "detail": "doubled",
           "status": "automated"
         },
         {
           "clauseId": "damage-roll-application",
-          "detail": null,
-          "status": "automated"
-        },
-        {
-          "clauseId": "damage-roll-cantrip-scaling",
           "detail": null,
           "status": "automated"
         }
@@ -548,17 +548,17 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-cantrip-scaling",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-crit-dice",
           "detail": "doubled",
           "status": "automated"
         },
         {
           "clauseId": "damage-roll-application",
-          "detail": null,
-          "status": "automated"
-        },
-        {
-          "clauseId": "damage-roll-cantrip-scaling",
           "detail": null,
           "status": "automated"
         }
@@ -641,17 +641,17 @@
           "status": "physical-input"
         },
         {
+          "clauseId": "damage-roll-cantrip-scaling",
+          "detail": null,
+          "status": "automated"
+        },
+        {
           "clauseId": "damage-roll-crit-dice",
           "detail": "doubled",
           "status": "automated"
         },
         {
           "clauseId": "damage-roll-application",
-          "detail": null,
-          "status": "automated"
-        },
-        {
-          "clauseId": "damage-roll-cantrip-scaling",
           "detail": null,
           "status": "automated"
         }
@@ -1253,7 +1253,7 @@
         },
         {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-pending",
+          "detail": "resolve-later-without-recurrence",
           "status": "unsupported"
         }
       ],
@@ -1749,7 +1749,7 @@
         },
         {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-pending",
+          "detail": "resolve-later-without-recurrence",
           "status": "unsupported"
         }
       ],
@@ -1790,7 +1790,7 @@
         },
         {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-pending",
+          "detail": "resolve-later-without-recurrence",
           "status": "unsupported"
         }
       ],
@@ -3058,16 +3058,21 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
+          "detail": "pulse-on-bonus-action-move",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         },
         {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-pending",
-          "status": "unsupported"
+          "detail": "suite-lives-in-pulse",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "flaming-sphere"
     },
     {
@@ -3166,11 +3171,16 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
+          "detail": "pulse-on-bonus-action-retrigger",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "heat-metal"
     },
     {
@@ -3580,16 +3590,21 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
+          "detail": "pulse-on-on-enter-or-end-turn",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         },
         {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-pending",
-          "status": "unsupported"
+          "detail": "suite-lives-in-pulse",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "moonbeam"
     },
     {
@@ -4060,11 +4075,16 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
+          "detail": "pulse-on-bonus-action-retrigger",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "spiritual-weapon"
     },
     {
@@ -4162,13 +4182,8 @@
           "status": "table"
         },
         {
-          "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
-        },
-        {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-pending",
+          "detail": "deferred-non-damage-suite-pending",
           "status": "unsupported"
         }
       ],
@@ -4349,11 +4364,16 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
+          "detail": "pulse-on-action-retrigger",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "call-lightning"
     },
     {
@@ -4431,11 +4451,16 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
+          "detail": "pulse-on-bonus-action-move",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "conjure-animals"
     },
     {
@@ -5140,13 +5165,8 @@
           "status": "table"
         },
         {
-          "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
-        },
-        {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-pending",
+          "detail": "deferred-non-damage-suite-pending",
           "status": "unsupported"
         }
       ],
@@ -5275,16 +5295,21 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
+          "detail": "pulse-on-on-enter-or-end-turn",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         },
         {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-pending",
-          "status": "unsupported"
+          "detail": "suite-lives-in-pulse",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "spirit-guardians"
     },
     {
@@ -5330,13 +5355,8 @@
           "status": "table"
         },
         {
-          "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
-        },
-        {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-pending",
+          "detail": "deferred-non-damage-suite-pending",
           "status": "unsupported"
         }
       ],
@@ -5418,8 +5438,13 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
+          "detail": "pulse-on-action-retrigger",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         },
         {
           "clauseId": "self-healing-from-damage",
@@ -5825,11 +5850,16 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
+          "detail": "pulse-on-bonus-action-move",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "conjure-woodland-beings"
     },
     {
@@ -6025,13 +6055,8 @@
           "status": "table"
         },
         {
-          "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
-        },
-        {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-pending",
+          "detail": "deferred-non-damage-suite-pending",
           "status": "unsupported"
         }
       ],
@@ -6725,16 +6750,21 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
+          "detail": "pulse-on-on-enter-or-end-turn",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         },
         {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-pending",
-          "status": "unsupported"
+          "detail": "suite-lives-in-pulse",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "cloudkill"
     },
     {
@@ -6878,13 +6908,8 @@
           "status": "table"
         },
         {
-          "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
-        },
-        {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-pending",
+          "detail": "deferred-non-damage-suite-pending",
           "status": "unsupported"
         }
       ],
@@ -7291,16 +7316,21 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
+          "detail": "pulse-on-on-enter-or-end-turn",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         },
         {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-pending",
-          "status": "unsupported"
+          "detail": "suite-lives-in-pulse",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "insect-plague"
     },
     {
@@ -7804,16 +7834,21 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
+          "detail": "pulse-on-on-enter-or-end-turn",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         },
         {
           "clauseId": "deferred-resolution",
-          "detail": "resolve-later-pending",
-          "status": "unsupported"
+          "detail": "suite-lives-in-pulse",
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "blade-barrier"
     },
     {
@@ -8087,7 +8122,7 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
+          "detail": "empty-pulse-suite",
           "status": "unsupported"
         }
       ],
@@ -8568,11 +8603,16 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
+          "detail": "pulse-on-action-retrigger",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "sunbeam"
     },
     {
@@ -9094,11 +9134,16 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
+          "detail": "pulse-on-bonus-action-retrigger",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "mordenkainens-sword"
     },
     {
@@ -9766,11 +9811,16 @@
         },
         {
           "clauseId": "recurrence",
-          "detail": "recurrent-cadence-pending",
-          "status": "unsupported"
+          "detail": "pulse-on-on-enter-or-end-turn",
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "incendiary-cloud"
     },
     {
@@ -10355,15 +10405,15 @@
       "id": "wish"
     }
   ],
-  "executablePrograms": 207,
+  "executablePrograms": 232,
   "family": "spells",
   "totalEntities": 422,
   "totals": {
-    "automated": 1366,
+    "automated": 1401,
     "physical-input": 311,
     "table": 203,
-    "spatial": 99,
+    "spatial": 126,
     "narrative": 141,
-    "unsupported": 94
+    "unsupported": 51
   }
 }
