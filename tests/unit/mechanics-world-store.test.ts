@@ -1,24 +1,28 @@
 import { describe, expect, it } from "vitest";
 
 import { MOCK_CHARACTER } from "@/lib/mock";
+import { classFeatureIndex } from "@/data/classes";
 import {
   activeEnginePulses,
+  boundaryCommitFacts,
+  characterConjuredItemCapability,
   characterFeatureActionCapability,
   characterMaterialRef,
   characterSelfRef,
   characterSlotDefinitionFacts,
   characterSpellCapability,
+  characterTrackerSeeds,
   characterWeaponAttackCapability,
   characterWorldState,
   commitCharacterAction,
+  engineConcentrationHandle,
+  engineConsumableRows,
+  planEngineConcentrationEnd,
   undoCharacterAction,
   type CharacterCastCapability,
 } from "@/lib/mechanics-world-store";
 
 import { runMechanicsCausalAction } from "@/lib/mechanics-coordinator";
-import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
-import { CONJURED_ITEM_BLUEPRINTS, CONJURED_ITEM_PROGRAMS } from "@/data/conjured-items";
-import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
 import { mechanicsAuthorityDefinitionFingerprint } from "@/lib/mechanics-authority";
 import {
   mechanicsDefinitionFactAddress,
@@ -406,7 +410,9 @@ describe("mechanics world store", () => {
         type: "bonus",
       },
       0,
-      { featureBonus: 3, maxHp: 60, saveDc: 8 }
+      { featureBonus: 3, maxHp: 60, saveDc: 8 },
+      {},
+      world
     );
     expect(capability).not.toBeNull();
     if (!capability) return;
@@ -548,7 +554,8 @@ describe("mechanics world store", () => {
       {
         trackerId: "barbarian-rage",
         whileActive: [{ activeKey: "barbarian-rage", maintained: true }],
-      }
+      },
+      world
     );
     expect(capability).not.toBeNull();
     if (!capability) return;
@@ -969,7 +976,8 @@ describe("mechanics world store", () => {
       },
       0,
       { featureBonus: 0, maxHp: 62, saveDc: 8 },
-      { scalingLevel: 3, trackerId: "paladin-lay-on-hands" }
+      { scalingLevel: 3, trackerId: "paladin-lay-on-hands" },
+      world
     );
     expect(capability).not.toBeNull();
     if (!capability) return;
@@ -1060,7 +1068,8 @@ describe("mechanics world store", () => {
       },
       0,
       { featureBonus: 0, maxHp: 62, saveDc: 8 },
-      { trackerId: "paladin-lay-on-hands" }
+      { trackerId: "paladin-lay-on-hands" },
+      world
     );
     if (!capability) throw new Error("capability");
     const self = characterSelfRef(doc, "test-uid");
@@ -1136,7 +1145,8 @@ describe("mechanics world store", () => {
       {
         poolDie: "d12",
         trackerId: "barbarian-zealot-warrior-of-the-gods",
-      }
+      },
+      world
     );
     if (!capability) throw new Error("capability");
     const self = characterSelfRef(doc, "test-uid");
@@ -1828,26 +1838,18 @@ describe("corpus endgame e2e", () => {
     });
     const world = characterWorldState(doc, "test-uid", 60);
     if (!world) throw new Error("world fixture");
-    const base = spellCapabilityOrThrow(doc, "goodberry", {
+    // The store's own capability carries the conjured-item blueprint on the
+    // snapshot's closed blueprint channel — no manual wiring.
+    const capability = spellCapabilityOrThrow(doc, "goodberry", {
       attackBonus: 0,
       castingModifier: 4,
       characterLevel: 17,
       maxHp: 60,
       saveDc: 15,
     });
-    // The store closes the authority; the conjured-item blueprint rides the
-    // snapshot's closed blueprint channel (the world-store wiring the modal
-    // agent lands reuses this exact map).
-    const capability: CharacterCastCapability = {
-      ...base,
-      authority: {
-        ...base.authority,
-        snapshot: {
-          ...base.authority.snapshot,
-          blueprints: { entities: {}, items: CONJURED_ITEM_BLUEPRINTS },
-        },
-      },
-    };
+    expect(
+      capability.authority.snapshot.blueprints?.items["goodberry-berry"]
+    ).toBeDefined();
     const self = characterSelfRef(doc, "test-uid");
     const outcome = driveCapability({
       actionId: "cast-goodberry",
@@ -1881,73 +1883,23 @@ describe("corpus endgame e2e", () => {
         (rule) => rule.kind === "time-reached" && rule.elapsedSeconds === 24 * 3600
       )
     ).toBe(true);
+    // The conjured batch surfaces as ONE consumable row for the UI strip.
+    expect(engineConsumableRows(committed.world)).toEqual([
+      { instanceId, instanceOrdinal: 1, itemId: "goodberry-berry", quantity: 10 },
+    ]);
 
-    // Eating one berry: the item-sourced canonical program pays 1 quantity
+    // Eating one berry: the store's item-sourced capability pays 1 quantity
     // from THIS instance and heals exactly 1.
     const material = characterMaterialRef(doc, "test-uid");
-    const berryProgram = conformMechanicsProgram(
-      CONJURED_ITEM_PROGRAMS["goodberry-berry"]
+    const berryCapability = characterConjuredItemCapability(
+      doc,
+      "test-uid",
+      committed.world,
+      instanceId,
+      60
     );
-    expect(berryProgram).not.toBeNull();
-    if (!berryProgram || !instance) return;
-    const berryCapabilityRef = {
-      capabilityId: berryProgram.id,
-      definition: {
-        catalogueKind: "item" as const,
-        entityId: "goodberry-berry",
-        kind: "catalogue" as const,
-        mechanicsRevision: canonicalFingerprint({ program: berryProgram }),
-      },
-      kind: "program" as const,
-    };
-    const berryAuthority = {
-      anchors: {
-        activator: self,
-        caster: self,
-        owner: self,
-        source: self,
-        target: self,
-      },
-      installation: {
-        capability: berryCapabilityRef,
-        generation: 1,
-        installationId: `item.${instanceId}`,
-        owner: self,
-      },
-      schema: 1,
-      snapshot: {
-        grantGroups: {},
-        program: berryProgram,
-        ref: berryCapabilityRef,
-        resources: {},
-        schema: 1,
-      },
-      source: {
-        instanceId,
-        instanceOrdinal: instance.ordinal,
-        kind: "inventory-item" as const,
-        owner: material,
-      },
-      staticBindings: {},
-    } as CharacterCastCapability["authority"];
-    const quantityDefinitionFact = {
-      address: ["resource-definition", "inventory", instanceId, "quantity"] as const,
-      expected: {
-        present: true,
-        value: {
-          bindings: {},
-          spec: {
-            capacity: { kind: "unbounded" as const },
-            id: "quantity",
-            initial: { kind: "empty" as const },
-            kind: "count" as const,
-            recoveries: [],
-          },
-        },
-      },
-      lifecycle: "commit" as const,
-      owner: self,
-    };
+    expect(berryCapability).not.toBeNull();
+    if (!berryCapability || !instance) return;
     const eaten = driveCapability({
       actionId: "eat-goodberry",
       answerFor: (requirement) => {
@@ -1968,23 +1920,7 @@ describe("corpus endgame e2e", () => {
         }
         throw new Error(`unexpected requirement: ${requirement.kind}`);
       },
-      capability: {
-        authority: berryAuthority,
-        facts: [
-          {
-            address: ["hit-point-maximum"],
-            expected: { present: true, value: 60 },
-            lifecycle: "commit-redo",
-            owner: self,
-          },
-          quantityDefinitionFact,
-        ],
-        transcription: {
-          clauses: [],
-          entityId: "goodberry-berry",
-          program: berryProgram,
-        },
-      },
+      capability: berryCapability,
       doc,
       occurrenceId: "goodberry-eat-1",
       uid: "test-uid",
@@ -1993,5 +1929,423 @@ describe("corpus endgame e2e", () => {
     const afterEating = commitDriven(doc, "test-uid", committed.world, eaten);
     expect(afterEating.world.vitals.hitPoints.current).toBe(31);
     expect(afterEating.world.inventory[instanceId]?.quantity.current).toBe(9);
+  });
+
+  it("a concentration swap ends the held spell and casts the next as two exact actions", () => {
+    // The swap model the dispatchers ship: the confirmed swap ENDS the held
+    // spell through the canonical kernel end (`planEngineConcentrationEnd`,
+    // the exact seam `setConcentration("")` commits), then the new cast
+    // commits against the clean world. Two exact journal actions, each
+    // exactly reversible. (The compiler's own `concentration-replacement`
+    // coordination exists but does not converge through the coordinator
+    // today, so the one-action form stays out of reach.)
+    const doc = endgameDoc();
+    const world = characterWorldState(doc, "test-uid", 60);
+    if (!world) throw new Error("world fixture");
+    const self = characterSelfRef(doc, "test-uid");
+    const derived = {
+      attackBonus: 0,
+      castingModifier: 4,
+      characterLevel: 17,
+      maxHp: 60,
+      saveDc: 15,
+    };
+    const castCommitted = (
+      current: CharacterDoc,
+      state: Readonly<CharacterMaterialState>,
+      spellId: string,
+      occurrenceId: string
+    ) => {
+      const capability = spellCapabilityOrThrow(current, spellId, derived);
+      const outcome = driveCapability({
+        actionId: `cast-${occurrenceId}`,
+        answerFor: answersBy({
+          doc: current,
+          self,
+          slotLevel: 2,
+          uid: "test-uid",
+        }),
+        capability: {
+          ...capability,
+          facts: [
+            ...capability.facts,
+            ...characterSlotDefinitionFacts(current, "test-uid", state),
+          ],
+        },
+        doc: current,
+        occurrenceId,
+        uid: "test-uid",
+        world: state,
+      });
+      return commitDriven(current, "test-uid", state, outcome);
+    };
+
+    // Cast the first concentration spell: the world holds it and the mirror
+    // stamps the legacy session field.
+    const first = castCommitted(doc, world, "bless", "swap-first");
+    expect(engineConcentrationHandle(first.world)?.spellId).toBe("bless");
+    expect(first.session.concentration).toBe("bless");
+
+    // Exact action 1 — the canonical END of the held occurrence: the root and
+    // its dependents end in one wave; the mirror clears the session field.
+    const docAfterFirst = { ...doc, session: first.session };
+    const endAction = planEngineConcentrationEnd(
+      docAfterFirst,
+      "test-uid",
+      first.world,
+      "swap-end-bless"
+    );
+    expect(endAction).not.toBeNull();
+    if (!endAction) return;
+    const ended = commitCharacterAction(
+      docAfterFirst,
+      "test-uid",
+      first.world,
+      endAction,
+      boundaryCommitFacts(endAction)
+    );
+    expect(ended).not.toBeNull();
+    if (!ended) return;
+    expect(engineConcentrationHandle(ended.world)).toBeNull();
+    expect(ended.session.concentration).toBe("");
+
+    // Exact action 2 — the new cast commits against the clean world and the
+    // mirror stamps the replacement spell.
+    const docAfterEnd = { ...doc, session: ended.session };
+    const second = castCommitted(docAfterEnd, ended.world, "moonbeam", "swap-second");
+    expect(engineConcentrationHandle(second.world)?.spellId).toBe("moonbeam");
+    expect(second.session.concentration).toBe("moonbeam");
+
+    // Reversal: undoing the two exact actions in reverse order restores the
+    // held spell AND its session mirror.
+    const docAfterSecond = { ...doc, session: second.session };
+    const undoneCast = undoCharacterAction(
+      docAfterSecond,
+      "test-uid",
+      second.world,
+      "cast-swap-second"
+    );
+    expect(undoneCast).not.toBeNull();
+    if (!undoneCast) return;
+    expect(engineConcentrationHandle(undoneCast.world)).toBeNull();
+    expect(undoneCast.session.concentration).toBe("");
+    const docAfterUndoCast = { ...doc, session: undoneCast.session };
+    const undoneEnd = undoCharacterAction(
+      docAfterUndoCast,
+      "test-uid",
+      undoneCast.world,
+      "swap-end-bless"
+    );
+    expect(undoneEnd).not.toBeNull();
+    if (!undoneEnd) return;
+    expect(engineConcentrationHandle(undoneEnd.world)?.spellId).toBe("bless");
+    expect(undoneEnd.session.concentration).toBe("bless");
+  });
+});
+
+describe("dispatch context enrichment e2e", () => {
+  /** A single-class Monk doc carrying the real catalogue features. */
+  const monkDoc = (
+    level: number,
+    session: Partial<CharacterDoc["session"]> = {}
+  ): CharacterDoc => ({
+    ...MOCK_CHARACTER,
+    character: {
+      ...MOCK_CHARACTER.character,
+      classes: [{ classId: "monk", level }],
+      features: [
+        { srdId: "monk-focus" },
+        { srdId: "monk-uncanny-metabolism" },
+        { srdId: "monk-patient-defense" },
+      ],
+    },
+    session: {
+      ...MOCK_CHARACTER.session,
+      hp: { ...MOCK_CHARACTER.session.hp, current: 30, temp: 0 },
+      spellSlots: {},
+      trackers: {},
+      ...session,
+    },
+  });
+
+  it("uncanny metabolism heals on the derived martial arts die and refills focus", () => {
+    const doc = monkDoc(5, { trackers: { "monk-focus": { used: 3 } } });
+    const world = characterWorldState(
+      doc,
+      "test-uid",
+      60,
+      {},
+      characterTrackerSeeds(doc)
+    );
+    if (!world) throw new Error("world fixture");
+    expect(world.resources.pools["monk-focus"]).toMatchObject({ current: 2 });
+    const feature = classFeatureIndex.get("monk-uncanny-metabolism");
+    const action = feature?.mechanics?.actions?.[0];
+    if (!action) throw new Error("catalogue action");
+    // No classDie/topUpRecovery passed: the capability derives BOTH from the
+    // class table and the tracker resolver (the dispatch-context enrichment).
+    const capability = characterFeatureActionCapability(
+      doc,
+      "test-uid",
+      "monk-uncanny-metabolism",
+      action,
+      0,
+      { featureBonus: 5, maxHp: 60, saveDc: 8 },
+      { scalingLevel: 5, trackerId: "monk-uncanny-metabolism" },
+      world
+    );
+    expect(capability).not.toBeNull();
+    if (!capability) return;
+    const self = characterSelfRef(doc, "test-uid");
+    const outcome = driveCapability({
+      actionId: "use-uncanny-metabolism",
+      answerFor: (requirement) => {
+        if (requirement.kind === "resource") {
+          return {
+            inputId: requirement.inputId,
+            kind: "resource",
+            resource: {
+              kind: "pool",
+              owner: self,
+              resourceId: "monk-uncanny-metabolism",
+            },
+          };
+        }
+        if (requirement.kind === "entities") {
+          return { inputId: requirement.inputId, kind: "entities", targets: [self] };
+        }
+        if (requirement.kind === "dice") {
+          // The heal die is the DERIVED d8 martial arts die at Monk 5.
+          const first = requirement.requests[0];
+          if (!first) throw new Error("missing dice request");
+          expect(first.roll.trails.map(({ sides }) => sides)).toEqual([8]);
+          return {
+            inputId: requirement.inputId,
+            kind: "dice",
+            requests: requirement.requests.map(({ identity, roll }) => ({
+              identity,
+              observation: {
+                aggregates: [],
+                trails: trailIdsOf(roll).map((trailId) => ({
+                  initialFace: 6,
+                  steps: [],
+                  trailId,
+                })),
+              },
+              payments: [],
+            })),
+          };
+        }
+        throw new Error(`unexpected requirement: ${requirement.kind}`);
+      },
+      capability,
+      doc,
+      occurrenceId: "uncanny-metabolism-1",
+      uid: "test-uid",
+      world,
+    });
+    const committed = commitDriven(doc, "test-uid", world, outcome);
+    // 1d8 face 6 + the caller-resolved Monk level 5 → 30 + 11 = 41 HP.
+    expect(committed.world.vitals.hitPoints.current).toBe(41);
+    // The use is paid AND Focus refills to FULL, exactly as its short rest
+    // would (the derived top-up recovery boundary).
+    expect(committed.world.resources.pools["monk-uncanny-metabolism"]).toMatchObject({
+      current: 0,
+    });
+    expect(committed.world.resources.pools["monk-focus"]).toMatchObject({ current: 5 });
+    expect(committed.session.trackers["monk-uncanny-metabolism"]?.used).toBe(1);
+    expect(committed.session.trackers["monk-focus"]?.used).toBe(0);
+  });
+
+  it("patient defense pays focus and rolls temp hp on the derived class die", () => {
+    const doc = monkDoc(11);
+    const world = characterWorldState(
+      doc,
+      "test-uid",
+      60,
+      {},
+      characterTrackerSeeds(doc)
+    );
+    if (!world) throw new Error("world fixture");
+    const feature = classFeatureIndex.get("monk-patient-defense");
+    const action = feature?.mechanics?.actions?.[1];
+    if (!action) throw new Error("catalogue action");
+    const capability = characterFeatureActionCapability(
+      doc,
+      "test-uid",
+      "monk-patient-defense",
+      action,
+      1,
+      { featureBonus: 0, maxHp: 60, saveDc: 8 },
+      { scalingLevel: 11 },
+      world
+    );
+    expect(capability).not.toBeNull();
+    if (!capability) return;
+    const self = characterSelfRef(doc, "test-uid");
+    const outcome = driveCapability({
+      actionId: "use-patient-defense",
+      answerFor: (requirement) => {
+        if (requirement.kind === "resource") {
+          return {
+            inputId: requirement.inputId,
+            kind: "resource",
+            resource: { kind: "pool", owner: self, resourceId: "monk-focus" },
+          };
+        }
+        if (requirement.kind === "entities") {
+          return { inputId: requirement.inputId, kind: "entities", targets: [self] };
+        }
+        if (requirement.kind === "dice") {
+          // Heightened Focus: TWO rolls of the DERIVED d10 die at Monk 11.
+          const first = requirement.requests[0];
+          if (!first) throw new Error("missing dice request");
+          expect(first.roll.trails.map(({ sides }) => sides)).toEqual([10, 10]);
+          return {
+            inputId: requirement.inputId,
+            kind: "dice",
+            requests: requirement.requests.map(({ identity, roll }) => ({
+              identity,
+              observation: {
+                aggregates: [],
+                trails: trailIdsOf(roll).map((trailId) => ({
+                  initialFace: 7,
+                  steps: [],
+                  trailId,
+                })),
+              },
+              payments: [],
+            })),
+          };
+        }
+        throw new Error(`unexpected requirement: ${requirement.kind}`);
+      },
+      capability,
+      doc,
+      occurrenceId: "patient-defense-1",
+      uid: "test-uid",
+      world,
+    });
+    const committed = commitDriven(doc, "test-uid", world, outcome);
+    // Two d10 faces of 7 → 14 temporary hit points; one Focus point paid.
+    expect(committed.world.vitals.hitPoints.temporary.current).toBe(14);
+    expect(committed.world.resources.pools["monk-focus"]).toMatchObject({
+      current: 10,
+    });
+    expect(committed.session.trackers["monk-focus"]?.used).toBe(1);
+  });
+
+  it("redirect attack transcribes once the runtime supplies its scaling level", () => {
+    // The census (no session facts) honestly blocks Redirect Attack on its
+    // level-scaled dice; the runtime capability closes it. Its dispatch also
+    // needs the solo encounter's turn ledger (the once-per-turn kernel
+    // claim), so the Play gate opens it only while a solo world encounter
+    // runs; the transcription flip is the census delta pinned here.
+    const doc = monkDoc(5);
+    const feature = classFeatureIndex.get("monk-deflect-attacks");
+    const redirect = feature?.mechanics?.actions?.find(
+      (candidate) => candidate.id === "redirect"
+    );
+    if (!redirect) throw new Error("catalogue action");
+    const world = characterWorldState(
+      doc,
+      "test-uid",
+      60,
+      {},
+      characterTrackerSeeds(doc)
+    );
+    if (!world) throw new Error("world fixture");
+    const capability = characterFeatureActionCapability(
+      doc,
+      "test-uid",
+      "monk-deflect-attacks",
+      redirect,
+      1,
+      { attackDiceCount: 2, featureBonus: 3, maxHp: 60, saveDc: 13 },
+      { scalingLevel: 5 },
+      world
+    );
+    expect(capability).not.toBeNull();
+    expect(
+      capability?.transcription.clauses.find((entry) => entry.clauseId === "per-turn-cap")
+        ?.status
+    ).toBe("automated");
+  });
+
+  it("a dynamic ability-derived max target count threads into the targeting", () => {
+    const action: Readonly<import("@/data/types").SrdActionDef> = {
+      heal: { dice: "1d4" },
+      targeting: { affinity: "ally", maxTargets: "WIS" },
+      type: "action",
+    };
+    const world = characterWorldState(MOCK_CHARACTER, "test-uid", 60);
+    if (!world) throw new Error("world fixture");
+    // Without the caller-resolved count the dynamic cap stays an honest
+    // transcription boundary: no program, no capability.
+    expect(
+      characterFeatureActionCapability(
+        MOCK_CHARACTER,
+        "test-uid",
+        "test-dynamic-targets",
+        action,
+        0,
+        { featureBonus: 0, maxHp: 60, saveDc: 8 },
+        {},
+        world
+      )
+    ).toBeNull();
+    const capability = characterFeatureActionCapability(
+      MOCK_CHARACTER,
+      "test-uid",
+      "test-dynamic-targets",
+      action,
+      0,
+      { featureBonus: 0, maxHp: 60, maxTargets: 3, saveDc: 8 },
+      {},
+      world
+    );
+    expect(capability).not.toBeNull();
+    if (!capability) return;
+    const self = characterSelfRef(MOCK_CHARACTER, "test-uid");
+    let seenMaximum: number | null = null;
+    const outcome = driveCapability({
+      actionId: "use-dynamic-targets",
+      answerFor: (requirement) => {
+        if (requirement.kind === "entities") {
+          seenMaximum = requirement.maximum;
+          return { inputId: requirement.inputId, kind: "entities", targets: [self] };
+        }
+        if (requirement.kind === "dice") {
+          return {
+            inputId: requirement.inputId,
+            kind: "dice",
+            requests: requirement.requests.map(({ identity, roll }) => ({
+              identity,
+              observation: {
+                aggregates: [],
+                trails: trailIdsOf(roll).map((trailId) => ({
+                  initialFace: 3,
+                  steps: [],
+                  trailId,
+                })),
+              },
+              payments: [],
+            })),
+          };
+        }
+        throw new Error(`unexpected requirement: ${requirement.kind}`);
+      },
+      capability,
+      doc: MOCK_CHARACTER,
+      occurrenceId: "dynamic-targets-1",
+      uid: "test-uid",
+      world,
+    });
+    // The caller-resolved WIS-modifier cap IS the targeting domain bound.
+    expect(seenMaximum).toBe(3);
+    const committed = commitDriven(MOCK_CHARACTER, "test-uid", world, outcome);
+    expect(committed.world.vitals.hitPoints.current).toBe(
+      Math.min(60, MOCK_CHARACTER.session.hp.current + 3)
+    );
   });
 });

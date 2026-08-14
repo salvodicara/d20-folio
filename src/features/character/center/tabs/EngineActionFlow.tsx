@@ -30,6 +30,7 @@ import type { FeatureActionContext } from "@/lib/mechanics-transcription";
 import type { LocText } from "@/lib/loc-text";
 import type { SrdActionDef } from "@/data/types";
 import type { CharacterDoc } from "@/types/character";
+import type { CharacterMaterialState } from "@/types/material-state";
 
 /** One engine-eligible feature action, resolved by the Play-tab gate. */
 export interface EngineFeatureDispatch {
@@ -41,6 +42,8 @@ export interface EngineFeatureDispatch {
     readonly attackBonus?: number;
     readonly attackDiceCount?: number;
     readonly featureBonus: number;
+    /** Caller-resolved concrete count for a dynamic `targeting.maxTargets`. */
+    readonly maxTargets?: number;
     readonly saveDc: number;
   }>;
   /** Rules category mirrored onto the economy entry (restricted-slot truth). */
@@ -89,7 +92,11 @@ export function EngineActionFlow({ dispatch, onClose }: EngineActionFlowProps) {
   const needsArmorClass = dispatch.kind === "weapon" || dispatch.hasAttackRoll;
 
   const sourceFor = useCallback(
-    (document: Readonly<CharacterDoc>, ownerUid: string): EngineActionSource | null => {
+    (
+      document: Readonly<CharacterDoc>,
+      ownerUid: string,
+      world: Readonly<CharacterMaterialState>
+    ): EngineActionSource | null => {
       const maxHp = document.character.hp.max;
       if (dispatch.kind === "weapon") {
         const capability = characterWeaponAttackCapability(
@@ -114,7 +121,8 @@ export function EngineActionFlow({ dispatch, onClose }: EngineActionFlowProps) {
           maxHp,
           ...(targetArmorClass !== null ? { targetArmorClass } : {}),
         },
-        dispatch.context
+        dispatch.context,
+        world
       );
       return capability ? { capability, key: `use-${dispatch.legacyActionId}` } : null;
     },

@@ -8,6 +8,7 @@
  * commit mirrors that exact field write-through so the two can never diverge.
  */
 
+import { CONJURED_ITEM_BLUEPRINTS, CONJURED_ITEM_PROGRAMS } from "@/data/conjured-items";
 import { spellIndex } from "@/data/spells";
 import { concentrationValue } from "@/lib/concentration";
 import { reduceActionJournal } from "@/lib/action-journal";
@@ -26,6 +27,7 @@ import {
   mechanicsInstallationFactAddress,
 } from "@/lib/mechanics-authority-ref";
 import { mechanicsCapabilitySnapshotFingerprint } from "@/lib/mechanics-capability";
+import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
 import { conformMechanicsProgramAuthorityReceipt } from "@/lib/mechanics-program-receipt";
 import {
   transcribeFeatureAction,
@@ -47,6 +49,7 @@ import { applySlotMaxOverrides, deriveSpellSlots } from "@/lib/multiclass-slots"
 import {
   attacksPerActionForCharacter,
   effectiveWalkingSpeedFt,
+  featureClassRow,
   resolveActions,
   resolveTrackers as resolveActionsTrackerRows,
 } from "@/lib/smart-tracker";
@@ -138,6 +141,23 @@ function countCell(current: number) {
 }
 
 /**
+ * A TRACKER pool cell carries its resolved total as a DERIVED capacity — the
+ * kernel's full-recovery law (`Uncanny Metabolism` refills Focus "as its rest
+ * would") is only lawful against a finite cell, and the total already comes
+ * from the ONE tracker resolver every rail/rest surface reads. Slots, pact and
+ * currency cells stay unbounded (nothing full-recovers them mid-action).
+ */
+function poolCell(current: number, total: number) {
+  const value = Math.max(0, total);
+  return {
+    capacity: { base: { kind: "derived" as const, value }, override: null },
+    current: Math.min(Math.max(0, current), value),
+    disabled: false,
+    kind: "count" as const,
+  };
+}
+
+/**
  * The character's legacy tracker counters as world-pool seeds, from the ONE
  * tracker resolver every rail/rest surface reads (`resolveTrackers`). Passed
  * into {@link characterWorldState}, which seeds each pool EXACTLY ONCE — an
@@ -172,12 +192,20 @@ export function characterWorldState(
     if (!persisted.ok) return null;
     // Incremental tracker migration: a pool the world has never seen seeds
     // exactly once from the legacy counters at read time (one-way, additive —
-    // an existing pool is world truth and is never reseeded). The next commit
-    // persists the migrated pool with the action that first paid from it.
+    // an existing pool is world truth and is never reseeded). A pool persisted
+    // BEFORE pools carried their derived capacity upgrades its capacity
+    // metadata in the same read (current value preserved, clamped to the
+    // resolved total) — capacity is derivation, not table truth, so this is
+    // not a reseed. The next commit persists the migrated cells with the
+    // action that first paid from them.
     const missing = Object.entries(trackerSeeds).filter(
       ([trackerId]) => persisted.value.resources.pools[trackerId] === undefined
     );
-    if (missing.length === 0) return persisted.value;
+    const legacyShaped = Object.entries(trackerSeeds).filter(([trackerId]) => {
+      const cell = persisted.value.resources.pools[trackerId];
+      return cell?.kind === "count" && cell.capacity.base.kind === "unbounded";
+    });
+    if (missing.length === 0 && legacyShaped.length === 0) return persisted.value;
     const reseeded = parseCharacterMaterialState(
       {
         ...structuredClone(persisted.value),
@@ -186,9 +214,16 @@ export function characterWorldState(
           pools: {
             ...structuredClone(persisted.value.resources.pools),
             ...Object.fromEntries(
+              legacyShaped.map(([trackerId, seed]) => {
+                const cell = persisted.value.resources.pools[trackerId];
+                const current = cell?.kind === "count" ? cell.current : 0;
+                return [trackerId, poolCell(current, seed.total)];
+              })
+            ),
+            ...Object.fromEntries(
               missing.map(([trackerId, seed]) => [
                 trackerId,
-                countCell(Math.max(0, seed.total - seed.used)),
+                poolCell(Math.max(0, seed.total - seed.used), seed.total),
               ])
             ),
           },
@@ -242,7 +277,7 @@ export function characterWorldState(
       pools: Object.fromEntries(
         Object.entries(trackerSeeds).map(([trackerId, seed]) => [
           trackerId,
-          countCell(Math.max(0, seed.total - seed.used)),
+          poolCell(Math.max(0, seed.total - seed.used), seed.total),
         ])
       ),
       standardSpellSlots: Object.fromEntries(
@@ -538,6 +573,14 @@ export function characterSpellCapability(
   if (!spell) return null;
   const transcription = transcribeSpell(spell);
   if (!transcription.program) return null;
+  // A conjuring cast (Goodberry) instantiates its consumable batch from the
+  // snapshot's closed blueprint channel — the ONLY source the compiler's
+  // `inventory-create` reads. A conjuring spell whose blueprint is missing
+  // fails closed to the legacy path rather than dead-ending mid-cast.
+  const conjuredItemId = spell.consumableItem?.itemId;
+  const blueprint =
+    conjuredItemId === undefined ? undefined : CONJURED_ITEM_BLUEPRINTS[conjuredItemId];
+  if (conjuredItemId !== undefined && blueprint === undefined) return null;
   const self = characterSelfRef(doc, uid);
   const saveDc = derived.saveDc;
   const capability = {
@@ -560,6 +603,9 @@ export function characterSpellCapability(
     },
     schema: 1,
     snapshot: {
+      ...(conjuredItemId !== undefined && blueprint !== undefined
+        ? { blueprints: { entities: {}, items: { [conjuredItemId]: blueprint } } }
+        : {}),
       grantGroups: {},
       program: transcription.program,
       ref: capability,
@@ -589,16 +635,142 @@ export function characterSpellCapability(
   return { authority, facts, transcription };
 }
 
+/** The session/build facts a feature-action dispatch resolves at runtime. */
+export interface FeatureActionRuntime {
+  readonly action: Readonly<import("@/data/types").SrdActionDef>;
+  readonly context: Readonly<
+    import("@/lib/mechanics-transcription").FeatureActionContext
+  >;
+}
+
+/** Extract the `classSpecific:<key>` sentinel key of a die token, if any. */
+function classSpecificKey(token: string | undefined): string | null {
+  const match = token === undefined ? null : /^classSpecific:(.+)$/.exec(token);
+  return match?.[1] ?? null;
+}
+
+/**
+ * Close a feature action's SESSION-derived transcription context from the
+ * exact seams the sheet reads (rule 6): the `classSpecific:*` die of a
+ * heal/Temp-HP/granted-die term from the owning class's progression row at the
+ * character's level in that class (`featureClassRow` — the monk's Martial Arts
+ * die, the bard's Inspiration tier), a `trackerTopUp` target's full-recovery
+ * rest from the ONE tracker resolver, and a dynamic PB/ability-derived
+ * `targeting.maxTargets` collapsed to the caller-resolved concrete count (the
+ * row summary's resolved targeting). A fact that cannot resolve stays absent,
+ * so the transcriber keeps reporting its honest boundary.
+ */
+export function resolveFeatureActionRuntime(
+  doc: Readonly<CharacterDoc>,
+  featureId: string,
+  action: Readonly<import("@/data/types").SrdActionDef>,
+  feature: Readonly<import("@/lib/mechanics-transcription").FeatureActionContext> = {},
+  resolvedMaxTargets?: number
+): FeatureActionRuntime {
+  const context = { ...feature };
+  if (context.classDie === undefined) {
+    const key =
+      classSpecificKey(action.heal?.dice) ??
+      classSpecificKey(action.tempHpRoll?.die) ??
+      classSpecificKey(action.grantDie?.die);
+    if (key !== null) {
+      const face = featureClassRow(featureId, doc)?.[key];
+      if (typeof face === "string" && /^d\d+$/.test(face)) context.classDie = face;
+    }
+  }
+  if (context.topUpRecovery === undefined && action.trackerTopUp !== undefined) {
+    const recovery = resolveActionsTrackerRows(doc).find(
+      (row) => row.id === action.trackerTopUp?.trackerId
+    )?.recovery;
+    if (recovery === "short-rest" || recovery === "long-rest") {
+      context.topUpRecovery = recovery;
+    }
+  }
+  const targeting = action.targeting;
+  if (
+    targeting !== undefined &&
+    typeof targeting.maxTargets === "string" &&
+    resolvedMaxTargets !== undefined &&
+    Number.isSafeInteger(resolvedMaxTargets) &&
+    resolvedMaxTargets >= 1
+  ) {
+    return {
+      action: {
+        ...action,
+        targeting: { ...targeting, maxTargets: resolvedMaxTargets },
+      },
+      context,
+    };
+  }
+  return { action, context };
+}
+
+/** The resolved finite capacity of one tracker pool: the world's own derived
+ *  cell when given, else the ONE tracker resolver's total. Null when neither
+ *  source knows it — the caller fails closed. */
+function poolCapacityFor(
+  doc: Readonly<CharacterDoc>,
+  trackerId: string,
+  world: Readonly<CharacterMaterialState> | undefined
+): number | null {
+  const cell = world?.resources.pools[trackerId];
+  if (cell?.kind === "count" && cell.capacity.base.kind === "derived") {
+    return cell.capacity.override ?? cell.capacity.base.value;
+  }
+  if (cell !== undefined) return null;
+  const total = resolveActionsTrackerRows(doc).find((row) => row.id === trackerId)?.total;
+  return typeof total === "number" && Number.isSafeInteger(total) && total >= 0
+    ? total
+    : null;
+}
+
+/** One pool resource-definition fact: a bounded count spec mirroring the
+ *  world cell's derived capacity, plus any full-recovery boundaries. */
+function poolDefinitionFact(
+  self: Readonly<EntityRef>,
+  trackerId: string,
+  capacity: number,
+  recoveries: readonly Readonly<{ kind: "long-rest" | "short-rest" }>[]
+): ActionFactGuard {
+  return {
+    address: ["resource-definition", "resources", "pools", trackerId],
+    expected: {
+      present: true,
+      value: {
+        bindings: {},
+        spec: {
+          capacity: {
+            amount: { kind: "fixed" as const, value: capacity },
+            kind: "bounded" as const,
+          },
+          id: trackerId,
+          initial: { kind: "empty" as const },
+          kind: "count" as const,
+          recoveries: recoveries.map((trigger) => ({
+            amount: { kind: "full" as const },
+            trigger,
+          })),
+        },
+      },
+    },
+    lifecycle: "commit",
+    owner: self,
+  };
+}
+
 /**
  * The executable authority for one feature-granted action (Second Wind): the
  * transcribed program closed on the caster with the caller-resolved flat term
- * bound, plus the pool resource-definition fact for its tracker payment.
+ * bound, plus the pool resource-definition facts for its tracker payment and
+ * any tracker top-up target. The session-derived transcription context
+ * (`classDie`, `topUpRecovery`, a dynamic max-target count) resolves through
+ * {@link resolveFeatureActionRuntime} from the same seams the sheet reads.
  */
 export function characterFeatureActionCapability(
   doc: Readonly<CharacterDoc>,
   uid: string,
   featureId: string,
-  action: Readonly<import("@/data/types").SrdActionDef>,
+  authoredAction: Readonly<import("@/data/types").SrdActionDef>,
   ordinal: number,
   derived: Readonly<{
     /** Spell-attack bonus, for the rare `attackType` action (bound only then). */
@@ -606,13 +778,25 @@ export function characterFeatureActionCapability(
     /** Resolved level/ability-scaled die count for the action's attack dice. */
     attackDiceCount?: number;
     featureBonus: number;
+    /** Caller-resolved concrete count for a dynamic `targeting.maxTargets`. */
+    maxTargets?: number;
     maxHp: number;
     saveDc: number;
     /** Table-entered target armor class, for `attackType` actions. */
     targetArmorClass?: number;
   }>,
-  feature: Readonly<import("@/lib/mechanics-transcription").FeatureActionContext> = {}
+  featureContext: Readonly<
+    import("@/lib/mechanics-transcription").FeatureActionContext
+  > = {},
+  world?: Readonly<CharacterMaterialState>
 ): CharacterCastCapability | null {
+  const { action, context: feature } = resolveFeatureActionRuntime(
+    doc,
+    featureId,
+    authoredAction,
+    featureContext,
+    derived.maxTargets
+  );
   const paymentTracker =
     action.costTracker ??
     action.costTrackerOverride ??
@@ -662,6 +846,26 @@ export function characterFeatureActionCapability(
     },
   });
   if (!authority) return null;
+  // Every pool the program touches carries its definition fact: the payment
+  // pool, and a `trackerTopUp` target with its full-recovery boundary. A pool
+  // whose finite capacity neither the world cell nor the tracker resolver can
+  // name fails the whole capability closed — never a guessed spec.
+  const topUpTracker =
+    action.trackerTopUp !== undefined && feature.topUpRecovery !== undefined
+      ? action.trackerTopUp.trackerId
+      : undefined;
+  const poolRecoveries = new Map<string, { kind: "long-rest" | "short-rest" }[]>();
+  if (paymentTracker !== undefined) poolRecoveries.set(paymentTracker, []);
+  if (topUpTracker !== undefined && feature.topUpRecovery !== undefined) {
+    const entry = poolRecoveries.get(topUpTracker) ?? [];
+    poolRecoveries.set(topUpTracker, [...entry, { kind: feature.topUpRecovery }]);
+  }
+  const poolFacts: ActionFactGuard[] = [];
+  for (const [trackerId, recoveries] of poolRecoveries) {
+    const capacity = poolCapacityFor(doc, trackerId, world);
+    if (capacity === null) return null;
+    poolFacts.push(poolDefinitionFact(self, trackerId, capacity, recoveries));
+  }
   const facts: ActionFactGuard[] = [
     {
       address: ["hit-point-maximum"],
@@ -669,33 +873,7 @@ export function characterFeatureActionCapability(
       lifecycle: "commit-redo",
       owner: self,
     },
-    ...(paymentTracker !== undefined
-      ? [
-          {
-            address: [
-              "resource-definition",
-              "resources",
-              "pools",
-              paymentTracker,
-            ] as const,
-            expected: {
-              present: true,
-              value: {
-                bindings: {},
-                spec: {
-                  capacity: { kind: "unbounded" as const },
-                  id: paymentTracker,
-                  initial: { kind: "empty" as const },
-                  kind: "count" as const,
-                  recoveries: [],
-                },
-              },
-            },
-            lifecycle: "commit" as const,
-            owner: self,
-          },
-        ]
-      : []),
+    ...poolFacts,
   ];
   return {
     authority,
@@ -800,6 +978,127 @@ export function characterWeaponAttackCapability(
       program: transcription.program,
     },
   };
+}
+
+/** One consumable the character's engine world holds: a live inventory
+ *  instance whose catalogue item carries a canonical consume program. */
+export interface EngineConsumableRow {
+  readonly instanceId: string;
+  readonly instanceOrdinal: number;
+  readonly itemId: string;
+  readonly quantity: number;
+}
+
+/** Every consumable conjured into the character's engine world (Goodberry's
+ *  berries): live instances with remaining quantity whose item id owns a
+ *  canonical consume program. */
+export function engineConsumableRows(
+  world: Readonly<CharacterMaterialState> | null
+): readonly EngineConsumableRow[] {
+  if (!world) return [];
+  return Object.entries(world.inventory).flatMap(([instanceId, instance]) => {
+    const definition = instance.definition;
+    if (definition.kind !== "catalogue") return [];
+    if (CONJURED_ITEM_PROGRAMS[definition.itemId] === undefined) return [];
+    if (instance.quantity.current <= 0) return [];
+    return [
+      {
+        instanceId,
+        instanceOrdinal: instance.ordinal,
+        itemId: definition.itemId,
+        quantity: instance.quantity.current,
+      },
+    ];
+  });
+}
+
+/**
+ * The executable authority for CONSUMING one conjured inventory item (eating a
+ * Goodberry berry): the item's canonical consume program closed as an
+ * item-sourced authority on THIS instance, whose payment debits the instance's
+ * own quantity. Null when the instance is gone, carries no consume program, or
+ * the closure fails conformance — the caller shows nothing rather than a
+ * broken affordance.
+ */
+export function characterConjuredItemCapability(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  instanceId: string,
+  maxHp: number
+): CharacterCastCapability | null {
+  const instance = world.inventory[instanceId];
+  if (!instance || instance.definition.kind !== "catalogue") return null;
+  if (instance.quantity.current <= 0) return null;
+  const itemId = instance.definition.itemId;
+  const authored = CONJURED_ITEM_PROGRAMS[itemId];
+  if (authored === undefined) return null;
+  const program = conformMechanicsProgram(authored);
+  if (!program) return null;
+  const self = characterSelfRef(doc, uid);
+  const material = characterMaterialRef(doc, uid);
+  const capability = {
+    capabilityId: program.id,
+    definition: {
+      catalogueKind: "item" as const,
+      entityId: itemId,
+      kind: "catalogue" as const,
+      mechanicsRevision: canonicalFingerprint({ program }),
+    },
+    kind: "program" as const,
+  };
+  const authority = conformMechanicsProgramAuthorityReceipt({
+    anchors: { activator: self, caster: self, owner: self, source: self, target: self },
+    installation: {
+      capability,
+      generation: 1,
+      installationId: `item.${instanceId}`,
+      owner: self,
+    },
+    schema: 1,
+    snapshot: {
+      grantGroups: {},
+      program,
+      ref: capability,
+      resources: {},
+      schema: 1,
+    },
+    source: {
+      instanceId,
+      instanceOrdinal: instance.ordinal,
+      kind: "inventory-item",
+      owner: material,
+    },
+    staticBindings: {},
+  });
+  if (!authority) return null;
+  const facts: ActionFactGuard[] = [
+    {
+      address: ["hit-point-maximum"],
+      expected: { present: true, value: maxHp },
+      lifecycle: "commit-redo",
+      owner: self,
+    },
+    {
+      address: ["resource-definition", "inventory", instanceId, "quantity"],
+      expected: {
+        present: true,
+        value: {
+          bindings: {},
+          spec: {
+            capacity: { kind: "unbounded" as const },
+            id: "quantity",
+            initial: { kind: "empty" as const },
+            kind: "count" as const,
+            recoveries: [],
+          },
+        },
+      },
+      lifecycle: "commit",
+      owner: self,
+    },
+  ];
+  return { authority, facts, transcription: { clauses: [], entityId: itemId, program } };
 }
 
 /** One resource-definition guard for every standard slot level the world holds. */

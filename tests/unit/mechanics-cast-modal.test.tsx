@@ -76,6 +76,149 @@ describe("MechanicsCastModal", () => {
     });
   });
 
+  it("answers a pool payment with one spend confirm", () => {
+    const answer = vi.fn();
+    render(
+      <MechanicsCastModal
+        cast={castState(
+          {
+            kind: "collecting",
+            requirement: {
+              activation: "required",
+              activeWhen: null,
+              amount: 1,
+              inputId: "uses",
+              kind: "resource",
+              phaseId: "resolve",
+              term: {
+                amount: { kind: "fixed", value: 1 },
+                selector: { kind: "pool", owner: "caster", resourceId: "monk-focus" },
+              },
+            },
+          },
+          answer
+        )}
+        material={MATERIAL}
+        onClose={vi.fn()}
+        slotRemaining={{}}
+        spellName="Patient Defense"
+      />
+    );
+    fireEvent.click(screen.getByText(/Spend 1/));
+    expect(answer).toHaveBeenCalledWith({
+      inputId: "uses",
+      kind: "resource",
+      resource: {
+        kind: "pool",
+        owner: { entityId: "self", material: MATERIAL },
+        resourceId: "monk-focus",
+      },
+    });
+  });
+
+  it("answers a source-item quantity payment from the supplied instance", () => {
+    const answer = vi.fn();
+    render(
+      <MechanicsCastModal
+        cast={castState(
+          {
+            kind: "collecting",
+            requirement: {
+              activation: "required",
+              activeWhen: null,
+              amount: 1,
+              inputId: "berry",
+              kind: "resource",
+              phaseId: "resolve",
+              term: {
+                amount: { kind: "fixed", value: 1 },
+                selector: {
+                  item: { kind: "source-item" },
+                  kind: "item-quantity",
+                  owner: "owner",
+                },
+              },
+            },
+          },
+          answer
+        )}
+        material={MATERIAL}
+        onClose={vi.fn()}
+        slotRemaining={{}}
+        sourceItem={{ instanceId: "goodberry-berry-1", instanceOrdinal: 1 }}
+        spellName="Goodberry"
+      />
+    );
+    fireEvent.click(screen.getByText(/Consume 1/));
+    expect(answer).toHaveBeenCalledWith({
+      inputId: "berry",
+      kind: "resource",
+      resource: {
+        character: MATERIAL,
+        instanceId: "goodberry-berry-1",
+        instanceOrdinal: 1,
+        kind: "item-quantity",
+      },
+    });
+  });
+
+  it("splits a per-target integer under the live total cap", () => {
+    const answer = vi.fn();
+    const identity = (ordinal: number) => ({
+      binding: { entityId: "self" as const, material: MATERIAL },
+      ordinal,
+    });
+    render(
+      <MechanicsCastModal
+        cast={castState(
+          {
+            kind: "collecting",
+            requirement: {
+              activation: "required",
+              activeWhen: null,
+              inputId: "portions",
+              kind: "integer",
+              maximum: 25,
+              minimum: 1,
+              pendingEntityInputId: null,
+              phaseId: "resolve",
+              requests: [{ identity: identity(1) }, { identity: identity(2) }],
+              totalMaximum: 25,
+            },
+          },
+          answer
+        )}
+        material={MATERIAL}
+        onClose={vi.fn()}
+        slotRemaining={{}}
+        spellName="Mass Heal"
+      />
+    );
+    expect(screen.getByText("Target 1")).toBeTruthy();
+    expect(screen.getByText("Target 2")).toBeTruthy();
+    const confirm = screen.getByText("Apply");
+    expect(confirm.closest("button")?.disabled).toBe(true);
+    const inputs = screen.getAllByRole("spinbutton");
+    // 13 + 20 breaches the 25-point pool: the confirm stays disabled and the
+    // live remaining line reads zero left.
+    fireEvent.change(inputs[0] as Element, { target: { value: "13" } });
+    fireEvent.change(inputs[1] as Element, { target: { value: "20" } });
+    expect(confirm.closest("button")?.disabled).toBe(true);
+    expect(screen.getByText(/0 of 25 points remaining/)).toBeTruthy();
+    // 13 + 12 fits exactly; the answer carries one value per request identity.
+    fireEvent.change(inputs[1] as Element, { target: { value: "12" } });
+    expect(confirm.closest("button")?.disabled).toBe(false);
+    fireEvent.click(confirm);
+    expect(answer).toHaveBeenCalledWith({
+      inputId: "portions",
+      kind: "integer",
+      requests: [
+        { identity: identity(1), value: 13 },
+        { identity: identity(2), value: 12 },
+      ],
+    });
+  });
+
   it("collects each die face before allowing the roll confirm", () => {
     const answer = vi.fn();
     render(

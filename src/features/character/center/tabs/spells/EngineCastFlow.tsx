@@ -14,7 +14,9 @@ import { MechanicsCastModal } from "@/components/sheet/MechanicsCastModal";
 import { turnEconomyKey } from "@/features/character/center/combat-hydration";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { useCombatStore } from "@/stores/combatStore";
+import { useToastStore } from "@/stores/toastStore";
 import { abilityModifier } from "@/lib/compute";
+import { concentrationValue } from "@/lib/concentration";
 import { totalLevel } from "@/lib/classes";
 import { characterMaterialRef } from "@/lib/mechanics-world-store";
 import { useMechanicsCast } from "@/features/character/useMechanicsCast";
@@ -25,6 +27,15 @@ import type { EconomyActionCategory } from "@/lib/combat-economy";
 import type { LocText } from "@/lib/loc-text";
 
 export interface EngineCastFlowProps {
+  /**
+   * Non-null when this cast REPLACES a held concentration on the named spell:
+   * the dispatcher has ALREADY ended it through the canonical kernel end
+   * (`setConcentration("")` at swap-confirm — RAW, concentration ends the
+   * moment you START casting the next spell), so this flow replays against a
+   * clean world and, on commit, surfaces the replacement toast and the
+   * concentration-start story beat the silent pre-end skipped.
+   */
+  readonly concentrationSwap?: { readonly heldSpellId: string } | null;
   /** Legacy turn-economy identity mirrored on a successful engine commit. */
   readonly economy: {
     readonly actionId: string;
@@ -46,7 +57,30 @@ export interface EngineCastFlowProps {
   readonly summary: CastSummaryVM | null;
 }
 
+/**
+ * Mirror a committed engine concentration SWAP onto the player-facing chrome:
+ * the same replacement toast the legacy swap shows, plus the
+ * concentration-start story beat. The teardown of the DROPPED spell (legacy
+ * chips, timers, cast level, the engine occurrence's canonical kernel end and
+ * its "concentration-end" log beat) already ran at swap-confirm through the
+ * ONE `setConcentration("")` seam; the committed cast's own journal mirror
+ * restamped `session.concentration` with the new spell.
+ */
+function mirrorConcentrationSwap(heldSpellId: string, nextSpellId: string): void {
+  const store = useCharacterStore.getState();
+  useToastStore.getState().showToast({
+    duration: 5000,
+    intent: {
+      kind: "concentration-replaced",
+      next: concentrationValue(nextSpellId),
+      previous: concentrationValue(heldSpellId),
+    },
+  });
+  store.logEvent({ kind: "concentration-start", spell: concentrationValue(nextSpellId) });
+}
+
 export function EngineCastFlow({
+  concentrationSwap = null,
   economy,
   hasAttack,
   onClose,
@@ -86,6 +120,9 @@ export function EngineCastFlow({
       ...engineCast,
       commit: (): boolean => {
         const committed = engineCast.commit();
+        if (committed && concentrationSwap !== null) {
+          mirrorConcentrationSwap(concentrationSwap.heldSpellId, spellId);
+        }
         if (committed && economy !== null && doc) {
           const combat = useCombatStore.getState();
           const key = turnEconomyKey(
@@ -112,7 +149,7 @@ export function EngineCastFlow({
         return committed;
       },
     }),
-    [doc, economy, engineCast, spellName]
+    [concentrationSwap, doc, economy, engineCast, spellId, spellName]
   );
 
   const slotRemaining = useMemo(

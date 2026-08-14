@@ -37,21 +37,19 @@ import { SpellAddModal } from "@/components/sheet/SpellAddModal";
 import { BeastFormPicker } from "@/components/sheet/BeastFormPicker";
 import { resolvePolymorphForms } from "@/lib/polymorph";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
-import { economyActionCategory, type EconomyActionCategory } from "@/lib/combat-economy";
-import { resolveConditionEffects } from "@/lib/condition-effects";
-import { effectiveSessionConditions } from "@/lib/effective-conditions";
-import type { LocText } from "@/lib/loc-text";
 import { ensureSrdKind } from "@/i18n";
 import { slotUsageKey } from "@/lib/cast-options";
 import { deriveSpellSlots, applySlotMaxOverrides } from "@/lib/multiclass-slots";
 import { resolveSpellCastOptions } from "@/lib/views/spell-cast-sources";
-import { transcribeSpell } from "@/lib/mechanics-transcription";
 import { localizeSrd } from "@/i18n/resolver";
 import { buildSpellsViewModel, type SpellCardVM } from "@/lib/views/spells-view";
 import { useSheetCombat } from "../turn-state";
-import { turnEconomyKey } from "../combat-hydration";
-import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
-import { useCombatStore } from "@/stores/combatStore";
+import { useAuthStore } from "@/stores/authStore";
+import { confirmConcentrationSwap } from "@/features/character/confirm-concentration";
+import {
+  engineSpellCastRequest,
+  type EngineSpellCastRequest,
+} from "./spells/engine-spell-gate";
 import type { SrdSpellData } from "@/data/types";
 import type { SpellcastingConfig } from "@/types/character";
 import {
@@ -73,6 +71,11 @@ const EngineCastFlow = lazy(() =>
 );
 const EnginePulseStrip = lazy(() =>
   import("./spells/EnginePulseStrip").then((m) => ({ default: m.EnginePulseStrip }))
+);
+const EngineConsumablesStrip = lazy(() =>
+  import("./spells/EngineConsumablesStrip").then((m) => ({
+    default: m.EngineConsumablesStrip,
+  }))
 );
 
 const FamiliarFormPicker = lazy(() =>
@@ -102,19 +105,7 @@ export function SpellsTab() {
   /** When true, the Find Familiar form picker is open. */
   const [familiarPickerOpen, setFamiliarPickerOpen] = useState(false);
   /** Engine dual-dispatch (rollout): the open engine-driven cast, if any. */
-  const [engineCast, setEngineCast] = useState<{
-    economy: {
-      actionId: string;
-      economyCategory: EconomyActionCategory | null;
-      nameLoc?: LocText;
-      slot: "action" | "bonus" | "reaction" | "free";
-      spellLevel: number;
-      triggersAttack: boolean;
-    } | null;
-    hasAttack: boolean;
-    spellId: string;
-    spellName: string;
-  } | null>(null);
+  const [engineCast, setEngineCast] = useState<EngineSpellCastRequest | null>(null);
   const sheetCombat = useSheetCombat();
   const sheetMode = useUIStore((s) => s.sheetMode);
   const isEdit = sheetMode === "edit";
@@ -346,105 +337,58 @@ export function SpellsTab() {
 
   const handleCast = useCallback(
     (vm: SpellCardVM) => {
-      // Engine dual-dispatch (rollout bridge): outside an ENCOUNTER — solo
-      // combat included, whose turn boundaries now live in the character's
-      // own engine world — an engine-executable SRD spell resolves through
-      // the deterministic runtime; everything else still rides the legacy
-      // transaction until its cutover wave deletes it.
+      // Engine dual-dispatch (rollout bridge): outside a SHARED encounter —
+      // solo combat included, whose turn boundaries now live in the
+      // character's own engine world — an engine-executable SRD spell
+      // resolves through the deterministic runtime; everything else still
+      // rides the legacy transaction until its cutover wave deletes it. The
+      // layered gates live in the ONE shared `engineSpellCastRequest` (golden
+      // rule 6 — the Play board's spell cards run the same gate). A spell any
+      // OTHER row can cast through an item/feature pool keeps the legacy
+      // option flow (the picker owns those sources).
       const action = actionForSpell(vm);
-      // Flows whose choices the runtime does not model yet stay legacy:
-      // item-pool/free-cast payments, metamagic-capable casters, a cast that
-      // would silently bypass the legacy concentration swap confirm, and —
-      // the same conservative line the Play-tab gate holds — actions whose
-      // legacy commit carries semantics the engine mirror does not own yet
-      // (target-bound standing effects, use-applies), plus a slot the
-      // character's conditions currently forbid (the legacy path owns that
-      // block and its feedback). Reaction casts and SELF-owned while-active
-      // buffs dispatch engine now: the standing occurrence projects onto the
-      // sheet (world-standing-grants) and the reaction marker rides the
-      // economy mirror.
-      const combatState = useCombatStore.getState();
-      const turnKey = turnEconomyKey(
-        useCombatStatusStore.getState().status,
-        character?.id ?? "",
-        combatState.round
-      );
-      const slotSpentThisTurn =
-        combatState.spellSlotCastTurnKey === turnKey &&
-        combatState.spellSlotCastsThisTurn >= 1;
-      const blockedSlots = resolveConditionEffects(
-        character !== null ? effectiveSessionConditions(character.session) : []
-      ).blockedSlots;
-      const gatedSlot =
-        action?.type === "action" ||
-        action?.type === "bonus" ||
-        action?.type === "reaction"
-          ? action.type
-          : null;
-      // A SELF-owned while-active buff (Shield's +5 AC, Divine Favor's rider)
-      // now lives in the engine world as a standing occurrence the sheet
-      // reads through the world-standing projection, so those casts dispatch
-      // engine. Target-BOUND standings (a selected recipient or a Hex-style
-      // mark scope) still carry the legacy target-binding flow — the
-      // `standingEffect` gate below keeps them legacy. A spent (or
-      // condition-blocked) Reaction keeps the legacy path, which owns that
-      // block's feedback.
-      const reactionSpent = action?.type === "reaction" && combatState.reactionUsed;
-      // Every cast option must be an ordinary (non-pact) slot — free-cast,
-      // pool and pact sources still resolve through the legacy option flow.
-      const plainOptionsOnly =
-        vm.data === null ||
-        vm.data.level === 0 ||
-        (character !== null &&
-          resolveSpellCastOptions(character, vm.data.id, vm.data.level, true, locale, {
-            mastery: t("spellPrep.spellMasteryBadge"),
-            signature: t("spellPrep.signatureSpellBadge"),
-          }).every(
-            (option) =>
-              (option.kind === undefined || option.kind === "slot") &&
-              option.pactMagic !== true
-          ));
-      const plainCast =
+      const request =
+        character !== null &&
+        vm.kind === "srd" &&
+        vm.data !== null &&
         action !== undefined &&
-        action.castPoolSourceId === undefined &&
-        !reactionSpent &&
-        action.maintainsActiveKey === undefined &&
-        action.standingEffect === undefined &&
-        (action.useEffects?.length ?? 0) === 0 &&
-        !(gatedSlot !== null && blockedSlots.has(gatedSlot)) &&
-        plainOptionsOnly &&
-        !(vm.data !== null && vm.data.level > 0 && slotSpentThisTurn) &&
-        !(vm.data !== null && pooledSpellIds.has(vm.data.id)) &&
-        (character?.character.classes ?? []).every(
-          (entry) => (entry.metamagicChoices?.length ?? 0) === 0
-        ) &&
-        !(vm.data?.concentration === true && character?.session.concentration !== "");
-      if (!sheetCombat && vm.kind === "srd" && vm.data && plainCast) {
-        const transcription = transcribeSpell(vm.data);
-        if (transcription.program) {
-          setEngineCast({
-            economy: {
-              actionId: action.id,
-              economyCategory: economyActionCategory(action),
-              nameLoc: action.nameLoc,
-              slot:
-                action.type === "bonus"
-                  ? "bonus"
-                  : action.type === "action"
-                    ? "action"
-                    : action.type === "reaction"
-                      ? "reaction"
-                      : "free",
-              spellLevel: vm.data.level,
-              triggersAttack:
-                action.summary.attackBonus != null || action.summary.saveAbility != null,
-            },
-            hasAttack: vm.data.attackType !== undefined,
-            spellId: vm.data.id,
-            spellName: vm.name,
+        !pooledSpellIds.has(vm.data.id)
+          ? engineSpellCastRequest({
+              action,
+              badges: {
+                mastery: t("spellPrep.spellMasteryBadge"),
+                signature: t("spellPrep.signatureSpellBadge"),
+              },
+              character,
+              locale,
+              sheetCombat: sheetCombat !== null,
+              spell: vm.data,
+              spellName: vm.name,
+              uid: useAuthStore.getState().user?.uid ?? null,
+            })
+          : null;
+      if (request !== null) {
+        // Replacing a held concentration always ASKS first through the ONE
+        // shared gate; a declined swap cancels the cast entirely (never a
+        // silent fallback to the legacy transaction). A confirmed swap ENDS
+        // the held spell right away through the canonical `setConcentration`
+        // seam (RAW: concentration ends the moment you START casting the next
+        // spell) — legacy teardown plus the engine occurrence's kernel end in
+        // one motion — and the flow then replays against the clean world.
+        if (request.concentrationSwap !== null) {
+          void confirmConcentrationSwap(
+            { concentration: true, name: request.spellName, spellId: request.spellId },
+            t,
+            locale
+          ).then((confirmed) => {
+            if (!confirmed) return;
+            useCharacterStore.getState().setConcentration("", { undoable: false });
+            setEngineCast(request);
           });
           return;
         }
+        setEngineCast(request);
+        return;
       }
       if (action) executeAction(action);
     },
@@ -658,11 +602,13 @@ export function SpellsTab() {
 
       <Suspense fallback={null}>
         <EnginePulseStrip maxHp={character.character.hp.max} />
+        <EngineConsumablesStrip maxHp={character.character.hp.max} />
       </Suspense>
 
       {engineCast !== null && (
         <Suspense fallback={null}>
           <EngineCastFlow
+            concentrationSwap={engineCast.concentrationSwap}
             economy={engineCast.economy}
             hasAttack={engineCast.hasAttack}
             onClose={() => setEngineCast(null)}

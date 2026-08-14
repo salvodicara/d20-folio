@@ -118,13 +118,25 @@ import {
 import { useTurnEconomy, getEconomySlot } from "../useTurnEconomy";
 import { combatOutcomePrerequisiteMet } from "@/lib/combat-outcomes";
 // Engine dual-dispatch (rollout bridge): the deterministic-runtime side of the
-// actions surface. The gate transcribes on tap; the flow mounts lazily.
+// actions surface. The gate closes the capability on tap; the flow mounts lazily.
 import { useSheetCombat } from "../turn-state";
 import { useAuthStore } from "@/stores/authStore";
-import { totalLevel } from "@/lib/classes";
+import { totalLevel, primaryClassId } from "@/lib/classes";
 import { getSrdFeatureSource } from "@/lib/srd-feature-lookup";
-import { transcribeFeatureAction } from "@/lib/mechanics-transcription";
-import { characterWeaponAttackCapability } from "@/lib/mechanics-world-store";
+import { spellIndex } from "@/data/spells";
+import {
+  characterFeatureActionCapability,
+  characterTrackerSeeds,
+  characterWeaponAttackCapability,
+  characterWorldState,
+} from "@/lib/mechanics-world-store";
+import { buildSpellsViewModel } from "@/lib/views/spells-view";
+import { confirmConcentrationSwap } from "@/features/character/confirm-concentration";
+import {
+  engineSpellCastRequest,
+  type EngineSpellCastRequest,
+} from "./spells/engine-spell-gate";
+import type { CastSummaryVM, SlotSummaryVM } from "@/lib/views/spells-view";
 import type { FeatureActionContext } from "@/lib/mechanics-transcription";
 import type { SrdActionDef } from "@/data/types";
 import type { EngineActionDispatch } from "./EngineActionFlow";
@@ -143,6 +155,9 @@ import {
 // pattern SpellsTab uses for EngineCastFlow).
 const EngineActionFlow = lazy(() =>
   import("./EngineActionFlow").then((m) => ({ default: m.EngineActionFlow }))
+);
+const EngineCastFlow = lazy(() =>
+  import("./spells/EngineCastFlow").then((m) => ({ default: m.EngineCastFlow }))
 );
 
 type FilterType = "all" | "action" | "bonus" | "reaction" | "free";
@@ -362,6 +377,13 @@ export function PlayTab() {
   // loop until its own cutover wave deletes it (the SpellsTab pattern).
   const sheetCombat = useSheetCombat();
   const [engineDispatch, setEngineDispatch] = useState<EngineActionDispatch | null>(null);
+  /** The Play board's open engine-driven SPELL cast (the SpellsTab twin),
+   *  carrying the cast-summary and slot views the flow's derivation reads. */
+  const [engineSpellCast, setEngineSpellCast] = useState<{
+    request: EngineSpellCastRequest;
+    slots: readonly SlotSummaryVM[];
+    summary: CastSummaryVM | null;
+  } | null>(null);
 
   // Resolve all combat actions from SRD data (engine is locale-free; the view
   // localizes each row at the edge).
@@ -445,9 +467,7 @@ export function PlayTab() {
         action.maintainsActiveKey !== undefined ||
         action.alternateCost !== undefined ||
         action.requiresActionThisTurn !== undefined ||
-        action.requiresOutcomeThisTurn !== undefined ||
         action.requiresActionCategoryThisTurn !== undefined ||
-        action.maxUsesPerTurn !== undefined ||
         (action.useEffects?.length ?? 0) > 0 ||
         action.costEquipment !== undefined ||
         action.standingEffect !== undefined ||
@@ -465,6 +485,32 @@ export function PlayTab() {
       if (slot !== "free" && blockedSlots.has(slot)) return null;
       const uid = useAuthStore.getState().user?.uid;
       if (uid === undefined) return null;
+      // An UNMET turn-outcome prerequisite (Redirect Attack needs this turn's
+      // negated Deflect) keeps the legacy path, which owns the blocked-reason
+      // line and its feedback; a MET one dispatches engine — the prerequisite
+      // is a table-verified clause by the transcriber's own classification.
+      if (
+        action.requiresOutcomeThisTurn !== undefined &&
+        !combatOutcomePrerequisiteMet(action.requiresOutcomeThisTurn, outcomeReceipts)
+      ) {
+        return null;
+      }
+      // A once-per-turn cap compiles the kernel's own turn claim, which needs
+      // a RUNNING solo world encounter to claim against; already used this
+      // turn (or a multi-use cap, or no encounter) keeps the legacy story.
+      if (action.maxUsesPerTurn !== undefined) {
+        if (action.maxUsesPerTurn !== 1) return null;
+        const committed = Object.values(selected).flat();
+        if (committed.some((entry) => entry.id === action.id)) return null;
+        const world = characterWorldState(
+          character,
+          uid,
+          character.character.hp.max,
+          {},
+          characterTrackerSeeds(character)
+        );
+        if (world?.encounter?.phase !== "turns") return null;
+      }
       if (action.source === "weapon") {
         if (
           action.offhand === true ||
@@ -549,27 +595,40 @@ export function PlayTab() {
               ? { attackDamageType: action.summary.damageType }
               : {}),
           };
-          const transcription = transcribeFeatureAction(
+          const derived = {
+            featureBonus,
+            saveDc: action.summary.saveDC ?? 8,
+            ...(scaledDice && parsedCount !== null
+              ? { attackDiceCount: Number(parsedCount[1]) }
+              : {}),
+            ...(merged.attackType !== undefined
+              ? { attackBonus: action.summary.attackBonus ?? 0 }
+              : {}),
+            // A dynamic PB/ability-derived target cap arrives as the ROW's
+            // already-resolved concrete count (the one resolver seam).
+            ...(typeof merged.targeting?.maxTargets === "string" &&
+            typeof action.summary.targeting?.maxTargets === "number"
+              ? { maxTargets: action.summary.targeting.maxTargets }
+              : {}),
+          };
+          // The ONE gate truth is the capability itself (classDie/topUpRecovery
+          // and pool-definition facts resolve inside it): a row whose closed
+          // capability fails stays legacy, so the flow can never dead-end.
+          const capability = characterFeatureActionCapability(
+            character,
+            uid,
             srdFeature.id,
             merged,
             ordinal,
+            { ...derived, maxHp: character.character.hp.max },
             context
           );
-          if (!transcription.program) return null;
+          if (!capability) return null;
           return {
             action: merged,
             actionName: action.name,
             context,
-            derived: {
-              featureBonus,
-              saveDc: action.summary.saveDC ?? 8,
-              ...(scaledDice && parsedCount !== null
-                ? { attackDiceCount: Number(parsedCount[1]) }
-                : {}),
-              ...(merged.attackType !== undefined
-                ? { attackBonus: action.summary.attackBonus ?? 0 }
-                : {}),
-            },
+            derived,
             economyCategory: economyActionCategory(action),
             economySlot: getEconomySlot(action),
             featureId: srdFeature.id,
@@ -585,18 +644,90 @@ export function PlayTab() {
       }
       return null;
     },
-    [attackBudget, character, sheetCombat]
+    [attackBudget, character, outcomeReceipts, selected, sheetCombat]
   );
 
-  /** One commit grammar for every non-reaction card: engine when executable,
-   *  the legacy loop otherwise. */
+  /**
+   * The Play board's SPELL-row engine gate (Shield's reaction card included):
+   * the SAME shared `engineSpellCastRequest` the Spells tab runs (rule 6 — one
+   * dispatch truth), closed over this row's spell. Returns the mounted flow's
+   * whole payload: the request plus the cast-summary/slot views the flow's
+   * derivation reads (built on tap from the one spells presenter).
+   */
+  const engineSpellDispatchFor = useCallback(
+    (
+      action: ResolvedAction
+    ): {
+      request: EngineSpellCastRequest;
+      slots: readonly SlotSummaryVM[];
+      summary: CastSummaryVM | null;
+    } | null => {
+      if (!character || action.source !== "spell" || action.spellId === undefined) {
+        return null;
+      }
+      const spell = spellIndex.get(action.spellId);
+      if (!spell) return null;
+      const request = engineSpellCastRequest({
+        action,
+        badges: {
+          mastery: t("spellPrep.spellMasteryBadge"),
+          signature: t("spellPrep.signatureSpellBadge"),
+        },
+        character,
+        locale,
+        sheetCombat: sheetCombat !== null,
+        spell,
+        spellName: action.name,
+        uid: useAuthStore.getState().user?.uid ?? null,
+      });
+      if (request === null) return null;
+      const view = buildSpellsViewModel(
+        character,
+        primaryClassId(character.character),
+        locale,
+        false
+      );
+      return { request, slots: view.slots, summary: view.castSummary };
+    },
+    [character, locale, sheetCombat, t]
+  );
+
+  /** One commit grammar for every card: engine when executable (feature,
+   *  weapon, or spell row), the legacy loop otherwise. Replacing a held
+   *  concentration ASKS first through the one shared gate; a declined swap
+   *  cancels the cast entirely. */
   const dispatchAction = useCallback(
     (action: ResolvedAction) => {
+      const spellCast = engineSpellDispatchFor(action);
+      if (spellCast) {
+        // A confirmed swap ENDS the held spell right away through the
+        // canonical `setConcentration` seam (RAW: concentration ends the
+        // moment you START casting the next spell); a declined one cancels
+        // the cast entirely. The flow then replays against the clean world.
+        if (spellCast.request.concentrationSwap !== null) {
+          void confirmConcentrationSwap(
+            {
+              concentration: true,
+              name: spellCast.request.spellName,
+              spellId: spellCast.request.spellId,
+            },
+            t,
+            locale
+          ).then((confirmed) => {
+            if (!confirmed) return;
+            useCharacterStore.getState().setConcentration("", { undoable: false });
+            setEngineSpellCast(spellCast);
+          });
+          return;
+        }
+        setEngineSpellCast(spellCast);
+        return;
+      }
       const dispatch = engineDispatchFor(action);
       if (dispatch) setEngineDispatch(dispatch);
       else commitAction(action);
     },
-    [commitAction, engineDispatchFor]
+    [commitAction, engineDispatchFor, engineSpellDispatchFor, locale, t]
   );
 
   // Inline-modifier state — the engine-derived advantage / disadvantage on the
@@ -1335,7 +1466,7 @@ export function PlayTab() {
                 higherLevelsFor={higherLevelsFor}
                 open={expandedId === action.id}
                 onOpenChange={(o) => setExpandedId(o ? action.id : null)}
-                onUse={() => commitAction(action)}
+                onUse={() => dispatchAction(action)}
               />
             ))}
             {/* Off-list reaction bookkeeping — ONE clear "Mark used" row for a
@@ -1393,6 +1524,23 @@ export function PlayTab() {
           <EngineActionFlow
             dispatch={engineDispatch}
             onClose={() => setEngineDispatch(null)}
+          />
+        </Suspense>
+      )}
+
+      {/* The Play board's engine SPELL flow (the SpellsTab twin): the same
+          EngineCastFlow, mounted for an engine-executable spell row commit. */}
+      {engineSpellCast !== null && (
+        <Suspense fallback={null}>
+          <EngineCastFlow
+            concentrationSwap={engineSpellCast.request.concentrationSwap}
+            economy={engineSpellCast.request.economy}
+            hasAttack={engineSpellCast.request.hasAttack}
+            onClose={() => setEngineSpellCast(null)}
+            slots={engineSpellCast.slots}
+            spellId={engineSpellCast.request.spellId}
+            spellName={engineSpellCast.request.spellName}
+            summary={engineSpellCast.summary}
           />
         </Suspense>
       )}

@@ -52,6 +52,13 @@ export interface MechanicsCastModalProps {
   readonly requiresArmorClass?: boolean;
   /** Remaining count per standard slot level, for the payment prompt. */
   readonly slotRemaining: Readonly<Record<number, number>>;
+  /**
+   * The inventory instance an item-sourced program pays from (a conjured
+   * consumable's own quantity) — the answer for a `source-item` payment. The
+   * requirement's selector names no instance, so the flow that closed the
+   * capability supplies it.
+   */
+  readonly sourceItem?: Readonly<{ instanceId: string; instanceOrdinal: number }>;
   readonly spellName: string;
 }
 
@@ -63,12 +70,17 @@ export function MechanicsCastModal({
   onArmorClass,
   requiresArmorClass = false,
   slotRemaining,
+  sourceItem,
   spellName,
 }: MechanicsCastModalProps) {
   const { t, i18n } = useTranslation();
   const { language: locale } = useLocale();
   const [faces, setFaces] = useState<Readonly<Record<string, number>>>({});
   const [amountDraft, setAmountDraft] = useState("");
+  /** Per-request drafts of an entity-expanded integer input (one per target). */
+  const [portionDrafts, setPortionDrafts] = useState<Readonly<Record<number, string>>>(
+    {}
+  );
   const [armorClassDraft, setArmorClassDraft] = useState("");
   const phase = cast.phase;
   const title =
@@ -147,35 +159,101 @@ export function MechanicsCastModal({
           {phase.kind === "rejected" && !requiresArmorClass && (
             <p role="alert">{t("mechanics.cast.rejected", { reason: phase.reason })}</p>
           )}
-          {phase.kind === "collecting" && phase.requirement.kind === "resource" && (
-            <div>
-              <p>{t("mechanics.cast.slotPrompt")}</p>
-              <div role="group">
-                {Object.entries(slotRemaining)
-                  .map(([level, remaining]) => [Number(level), remaining] as const)
-                  .filter(([, remaining]) => remaining > 0)
-                  .sort(([a], [b]) => a - b)
-                  .map(([level, remaining]) => (
-                    <Button
-                      key={level}
-                      onClick={() =>
-                        cast.answer({
-                          inputId: phase.requirement.inputId,
-                          kind: "resource",
-                          resource: {
-                            character: material,
-                            kind: "standard-spell-slot",
-                            level,
-                          },
-                        })
-                      }
-                    >
-                      {t("mechanics.cast.slotOption", { level, remaining })}
-                    </Button>
-                  ))}
+          {phase.kind === "collecting" &&
+            phase.requirement.kind === "resource" &&
+            phase.requirement.term.selector.kind === "spell-slot" && (
+              <div>
+                <p>{t("mechanics.cast.slotPrompt")}</p>
+                <div role="group">
+                  {Object.entries(slotRemaining)
+                    .map(([level, remaining]) => [Number(level), remaining] as const)
+                    .filter(([, remaining]) => remaining > 0)
+                    .sort(([a], [b]) => a - b)
+                    .map(([level, remaining]) => (
+                      <Button
+                        key={level}
+                        onClick={() =>
+                          cast.answer({
+                            inputId: phase.requirement.inputId,
+                            kind: "resource",
+                            resource: {
+                              character: material,
+                              kind: "standard-spell-slot",
+                              level,
+                            },
+                          })
+                        }
+                      >
+                        {t("mechanics.cast.slotOption", { level, remaining })}
+                      </Button>
+                    ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          {phase.kind === "collecting" &&
+            phase.requirement.kind === "resource" &&
+            phase.requirement.term.selector.kind === "pool" && (
+              <div>
+                <p>
+                  {t("mechanics.cast.poolPayPrompt", {
+                    amount: phase.requirement.amount,
+                  })}
+                </p>
+                <Button
+                  onClick={() => {
+                    if (
+                      phase.requirement.kind !== "resource" ||
+                      phase.requirement.term.selector.kind !== "pool"
+                    ) {
+                      return;
+                    }
+                    cast.answer({
+                      inputId: phase.requirement.inputId,
+                      kind: "resource",
+                      resource: {
+                        kind: "pool",
+                        owner: { entityId: "self", material },
+                        resourceId: phase.requirement.term.selector.resourceId,
+                      },
+                    });
+                  }}
+                >
+                  {t("mechanics.cast.poolPayConfirm", {
+                    amount: phase.requirement.amount,
+                  })}
+                </Button>
+              </div>
+            )}
+          {phase.kind === "collecting" &&
+            phase.requirement.kind === "resource" &&
+            phase.requirement.term.selector.kind === "item-quantity" &&
+            sourceItem !== undefined && (
+              <div>
+                <p>
+                  {t("mechanics.cast.itemPayPrompt", {
+                    amount: phase.requirement.amount,
+                  })}
+                </p>
+                <Button
+                  onClick={() =>
+                    cast.answer({
+                      inputId: phase.requirement.inputId,
+                      kind: "resource",
+                      resource: {
+                        character: material,
+                        instanceId: sourceItem.instanceId,
+                        instanceOrdinal: sourceItem.instanceOrdinal,
+                        kind: "item-quantity",
+                      },
+                    })
+                  }
+                >
+                  {t("mechanics.cast.itemPayConfirm", {
+                    amount: phase.requirement.amount,
+                  })}
+                </Button>
+              </div>
+            )}
           {phase.kind === "collecting" && phase.requirement.kind === "entities" && (
             <div>
               <p>{t("mechanics.cast.targetsPrompt")}</p>
@@ -206,45 +284,127 @@ export function MechanicsCastModal({
               )}
             </div>
           )}
-          {phase.kind === "collecting" && phase.requirement.kind === "integer" && (
-            <div>
-              <p>
-                {t("mechanics.cast.amountPrompt", {
-                  maximum: phase.requirement.maximum,
-                  minimum: phase.requirement.minimum,
-                })}
-              </p>
-              <label>
-                {t("mechanics.cast.amountLabel")}
-                <input
-                  inputMode="numeric"
-                  max={phase.requirement.maximum}
-                  min={phase.requirement.minimum}
-                  onChange={(event) => setAmountDraft(event.target.value)}
-                  type="number"
-                  value={amountDraft}
-                />
-              </label>
-              <Button
-                disabled={
-                  !Number.isSafeInteger(Number(amountDraft)) ||
-                  Number(amountDraft) < phase.requirement.minimum ||
-                  Number(amountDraft) > phase.requirement.maximum
-                }
-                onClick={() => {
-                  if (phase.requirement.kind !== "integer") return;
-                  cast.answer({
-                    inputId: phase.requirement.inputId,
-                    kind: "integer",
-                    value: Number(amountDraft),
-                  });
-                  setAmountDraft("");
-                }}
-              >
-                {t("combat.apply")}
-              </Button>
-            </div>
-          )}
+          {phase.kind === "collecting" &&
+            phase.requirement.kind === "integer" &&
+            phase.requirement.requests === undefined && (
+              <div>
+                <p>
+                  {t("mechanics.cast.amountPrompt", {
+                    maximum: phase.requirement.maximum,
+                    minimum: phase.requirement.minimum,
+                  })}
+                </p>
+                <label>
+                  {t("mechanics.cast.amountLabel")}
+                  <input
+                    inputMode="numeric"
+                    max={phase.requirement.maximum}
+                    min={phase.requirement.minimum}
+                    onChange={(event) => setAmountDraft(event.target.value)}
+                    type="number"
+                    value={amountDraft}
+                  />
+                </label>
+                <Button
+                  disabled={
+                    !Number.isSafeInteger(Number(amountDraft)) ||
+                    Number(amountDraft) < phase.requirement.minimum ||
+                    Number(amountDraft) > phase.requirement.maximum
+                  }
+                  onClick={() => {
+                    if (phase.requirement.kind !== "integer") return;
+                    cast.answer({
+                      inputId: phase.requirement.inputId,
+                      kind: "integer",
+                      value: Number(amountDraft),
+                    });
+                    setAmountDraft("");
+                  }}
+                >
+                  {t("combat.apply")}
+                </Button>
+              </div>
+            )}
+          {phase.kind === "collecting" &&
+            phase.requirement.kind === "integer" &&
+            phase.requirement.requests !== undefined &&
+            (() => {
+              // The entity-expanded form (Mass Heal's pool split): one amount
+              // per selected target slot, each within [minimum, maximum], the
+              // SUM capped by the review-enforced total. The remaining count
+              // updates live so the player can divide the pool at a glance.
+              const requirement = phase.requirement;
+              const requests = requirement.requests ?? [];
+              const totalMaximum = requirement.totalMaximum ?? null;
+              const values = requests.map((_, index) =>
+                Number(portionDrafts[index] ?? "")
+              );
+              const eachValid = values.every(
+                (value) =>
+                  Number.isSafeInteger(value) &&
+                  value >= requirement.minimum &&
+                  value <= requirement.maximum
+              );
+              const sum = values.reduce(
+                (acc, value) => acc + (Number.isSafeInteger(value) ? value : 0),
+                0
+              );
+              const overTotal = totalMaximum !== null && sum > totalMaximum;
+              return (
+                <div>
+                  <p>
+                    {t("mechanics.cast.portionPrompt", {
+                      maximum: requirement.maximum,
+                      minimum: requirement.minimum,
+                    })}
+                  </p>
+                  {requests.map((request, index) => (
+                    <label key={request.identity.ordinal}>
+                      {t("mechanics.cast.portionLabel", { index: index + 1 })}
+                      <input
+                        inputMode="numeric"
+                        max={requirement.maximum}
+                        min={requirement.minimum}
+                        onChange={(event) => {
+                          const next = event.target.value;
+                          setPortionDrafts((current) => ({
+                            ...current,
+                            [index]: next,
+                          }));
+                        }}
+                        type="number"
+                        value={portionDrafts[index] ?? ""}
+                      />
+                    </label>
+                  ))}
+                  {totalMaximum !== null && (
+                    <p role="status">
+                      {t("mechanics.cast.portionRemaining", {
+                        remaining: Math.max(0, totalMaximum - sum),
+                        total: totalMaximum,
+                      })}
+                    </p>
+                  )}
+                  <Button
+                    disabled={!eachValid || overTotal}
+                    onClick={() => {
+                      if (phase.requirement.kind !== "integer") return;
+                      cast.answer({
+                        inputId: requirement.inputId,
+                        kind: "integer",
+                        requests: requests.map(({ identity }, index) => ({
+                          identity,
+                          value: values[index] ?? 0,
+                        })),
+                      });
+                      setPortionDrafts({});
+                    }}
+                  >
+                    {t("combat.apply")}
+                  </Button>
+                </div>
+              );
+            })()}
           {phase.kind === "collecting" && phase.requirement.kind === "choice" && (
             <div>
               <p>{t("mechanics.cast.choicePrompt")}</p>

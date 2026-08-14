@@ -17,6 +17,13 @@
       "saveVs": "Save {{index}}: d20 vs DC {{value}} ({{modifier}} applies)",
       "amountPrompt": "How many points do you draw from the pool? ({{minimum}} to {{maximum}})",
       "amountLabel": "Points",
+      "portionPrompt": "Choose each target's share ({{minimum}} to {{maximum}} each)",
+      "portionLabel": "Target {{index}}",
+      "portionRemaining": "{{remaining}} of {{total}} points remaining",
+      "poolPayPrompt": "This use spends {{amount}} from the feature's resource pool.",
+      "poolPayConfirm": "Spend {{amount}}",
+      "itemPayPrompt": "This consumes {{amount}} from the item's remaining quantity.",
+      "itemPayConfirm": "Consume {{amount}}",
       "choicePrompt": "Make your choice",
       "booleanPrompt": "Use this option?",
       "booleanCure": "Spend pool points to end the {{condition}} condition?",
@@ -30,6 +37,10 @@
     "pulse": {
       "strip": "Active engine effects",
       "declare": "Pulse: {{name}}"
+    },
+    "consumables": {
+      "strip": "Conjured items",
+      "consume": "Consume: {{name}} ({{count}} left)"
     }
   }
 }

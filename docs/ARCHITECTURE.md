@@ -1694,7 +1694,31 @@ The executable authority for a cast is closed at build level: `characterSpellCap
 transcribed program (see `src/lib/mechanics-transcription.ts`) into a capability snapshot anchored
 on the caster, carrying build-derived truths the world does not hold — the spell save DC and
 casting modifier as static bindings, the maximum hit points and per-slot resource definitions as
-caller-guarded facts the kernel re-emits and the commit validates.
+caller-guarded facts the kernel re-emits and the commit validates. A conjuring cast (Goodberry)
+additionally carries its consumable's `NewInventoryInstance` template on the snapshot's closed
+blueprint channel (`src/data/conjured-items.ts` → `CONJURED_ITEM_BLUEPRINTS`, the only source the
+compiler's `inventory-create` instantiates from); the conjured batch lands in the WORLD's
+inventory with its authored expiry lifetime, surfaces as the Spells tab's conjured-items strip
+(`EngineConsumablesStrip`, localized from the creating spell's catalogue name), and each consume
+runs the item's canonical program (`CONJURED_ITEM_PROGRAMS`) through
+`characterConjuredItemCapability` — an item-sourced authority whose payment debits THIS instance's
+own quantity.
+
+Feature-action capabilities close their SESSION-derived transcription context through
+`resolveFeatureActionRuntime`, from the exact seams the sheet reads: the `classSpecific:*` die of
+a heal/Temp-HP/granted-die term from the owning class's progression row at the character's level
+in that class (`featureClassRow` — the monk's Martial Arts die, the bard's Inspiration tier), a
+`trackerTopUp` target's full-recovery rest from the one tracker resolver, and a dynamic
+PB/ability-derived `targeting.maxTargets` collapsed to the row summary's already-resolved concrete
+count. The corpus census (`mechanics-transcription.guard.test.ts`) deliberately omits these
+session facts, so rows like Uncanny Metabolism and Patient Defense's Heightened Focus report an
+honest census boundary while the RUNTIME capability executes them. Tracker pools seed into the
+world as DERIVED-capacity count cells (the resolved total from the one tracker resolver; a world
+persisted before this shape upgrades its capacity metadata once at read, current value preserved)
+because the kernel's full-recovery law is only lawful against a finite cell — the capability
+emits each touched pool's resource-definition fact as a bounded spec mirroring that capacity,
+plus the top-up target's full-recovery boundary, so Uncanny Metabolism's Focus refill commits as
+a real `resource-recover` transition.
 
 **The encounter/adversary seam (`src/lib/encounter-world-store.ts` +
 `src/features/campaigns/encounter-world-command.ts`).** The same runtime serves DM-run
@@ -1771,9 +1795,12 @@ coordinator the character's live **turn-economy projection**
 condition-gated incapacitation from the same build seams the sheet reads), so an authored
 `turn-claim` step compiles for solo dispatches and its claim commits against the participant's
 own-turn ledger: a per-turn-capped program is REJECTED by the kernel on a second same-turn
-dispatch and allowed again after the boundary opens the next turn. (The transcriber does not
-yet emit `turn-claim` steps from declared per-turn caps — until it does, the legacy layered
-gates keep enforcing them at the UI.) Being in solo combat never forces the legacy path:
+dispatch and allowed again after the boundary opens the next turn. The transcriber emits those
+`turn-claim` steps from declared once-per-turn caps, and the Play gate dispatches such a row
+(Redirect Attack) to the engine exactly while a solo world encounter is running in its "turns"
+phase — the claim needs the participant's ledger to commit against; outside one, and for an
+unmet turn-outcome prerequisite or an already-used cap, the legacy layered gates keep the row
+and own its feedback. Being in solo combat never forces the legacy path:
 engine-executable casts/actions dispatch through `EngineCastFlow`/`EngineActionFlow` mid-combat,
 and each commit mirrors the EXACT legacy turn-economy entry (slot occupant with its rules
 category and "attack" turn event, the one-slot-per-turn claim on the solo turn key, and — for an
@@ -1791,10 +1818,19 @@ concentration through the canonical kernel end machinery in the same motion
 (`planEngineConcentrationEnd`: one end request over the owning program root; the concentration
 effect and every sourced standing end in the same wave; `setConcentration` commits it as one
 journal action, exactly reversed by the undo pairing), so neither the world nor the session can
-hold a dropped spell. Honest boundaries that stay legacy: TARGET-BOUND standings (a selected
-recipient or a Hex-style mark scope — the legacy target-binding flow still owns whom the buff
-rides), maintainers, use-applies, and the concentration swap confirm (an engine cast never
-starts while already concentrating).
+hold a dropped spell. The CONCENTRATION SWAP rides the same seam: casting a concentration spell
+while the ENGINE holds one runs the shared `confirmConcentrationSwap` gate first, and a
+confirmed swap commits as TWO exact journal actions — the canonical end of the held occurrence
+(the `setConcentration("")` motion above, fired at confirm; RAW, concentration ends the moment
+you start casting the next spell) and then the clean cast, whose commit fires the replacement
+toast and the concentration-start story beat. (The compiler's own `concentration-replacement`
+coordination exists, but its end wave does not converge through the coordinator's drive today,
+so the one-action replacement stays out of reach; a LEGACY-held concentration keeps the legacy
+swap flow, which owns that teardown.) The SPELL rows of the Play board dispatch through the SAME
+shared gate as the Spells tab (`engine-spell-gate.ts` → `engineSpellCastRequest` — one dispatch
+truth for both surfaces, Shield's reaction card included). Honest boundaries that stay legacy:
+TARGET-BOUND standings (a selected recipient or a Hex-style mark scope — the legacy
+target-binding flow still owns whom the buff rides), maintainers, and use-applies.
 
 **RESTS ride the same runtime** (`src/features/character/rest-world-boundary.ts`, driven by the
 RestModal's confirm). A confirmed Short/Long Rest plans ONE journal action over the character's
