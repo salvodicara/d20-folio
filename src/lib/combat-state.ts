@@ -26,6 +26,11 @@ import type { SessionState } from "@/types/character";
 import type { CombatState, RecentAttack } from "@/types/combat-state";
 import type { MemberCombatEffect } from "@/types/campaign";
 import { applyDamage, applyHealing, clampHp, clampTemp } from "@/lib/combat-hp";
+import { diedInPlay } from "@/lib/character-status";
+import {
+  parsePersistedPlayStateV1,
+  sessionToPlayStateV1,
+} from "@/lib/session-state-codec";
 
 /** The `recentActions` ring cap — the last few declared attacks are all the correlation
  *  window ever needs; older ones fall off (a fight rarely correlates beyond the round). */
@@ -138,9 +143,18 @@ export function sessionToCombatState(
   recentActions: RecentAttack[] = [],
   appliedEncounterEffects?: CombatState["appliedEncounterEffects"],
   turnEconomy?: CombatState["turnEconomy"],
-  activeEffects?: CombatState["activeEffects"]
+  activeEffects?: CombatState["activeEffects"],
+  pendingConcentrationSaves?: CombatState["pendingConcentrationSaves"],
+  effectLifecycles?: CombatState["effectLifecycles"],
+  effectOps?: CombatState["effectOps"],
+  actionMetadata?: Pick<CombatState, "actionRevision" | "actionHead" | "actionLifecycles">
 ): CombatState {
   return {
+    actionRevision: actionMetadata?.actionRevision ?? 0,
+    actionHead: actionMetadata?.actionHead ?? null,
+    ...(actionMetadata?.actionLifecycles
+      ? { actionLifecycles: actionMetadata.actionLifecycles }
+      : {}),
     hp: { current: session.hp.current, temp: session.hp.temp },
     conditions: session.conditions,
     initiativeRoll: initiativeToNumber(session.initiative),
@@ -149,11 +163,24 @@ export function sessionToCombatState(
     heroicInspiration: session.inspiration,
     round,
     recentActions,
+    playState: sessionToPlayStateV1(session),
     ...(activeEffects?.length ? { activeEffects } : {}),
     ...(appliedEncounterEffects ? { appliedEncounterEffects } : {}),
     ...(turnEconomy ? { turnEconomy } : {}),
+    ...(pendingConcentrationSaves?.length ? { pendingConcentrationSaves } : {}),
+    ...(effectLifecycles?.length ? { effectLifecycles } : {}),
+    ...(effectOps?.length ? { effectOps } : {}),
   };
 }
+
+export type PlayStateOwnership = "legacy" | 1;
+
+export type CombatSessionHydrationResult =
+  | { ok: true; session: SessionState }
+  | {
+      ok: false;
+      reason: "missing-v1-combat-state" | "invalid-v1-play-state";
+    };
 
 /**
  * Merge a {@link CombatState} subdoc (or its ABSENCE) onto an in-memory session — the
@@ -171,8 +198,26 @@ export function sessionToCombatState(
 export function applyCombatToSession(
   session: SessionState,
   combat: CombatState | null,
-  effectiveMax: number
-): SessionState {
+  effectiveMax: number,
+  ownership: PlayStateOwnership
+): CombatSessionHydrationResult {
+  if (ownership === 1 && !combat) {
+    return { ok: false, reason: "missing-v1-combat-state" };
+  }
+  const parsedPlayState =
+    ownership === 1 && combat ? parsePersistedPlayStateV1(combat.playState) : null;
+  if (ownership === 1 && (!parsedPlayState || !parsedPlayState.ok)) {
+    return { ok: false, reason: "invalid-v1-play-state" };
+  }
+  const baseSession =
+    parsedPlayState?.ok === true
+      ? {
+          ...parsedPlayState.session,
+          ...(session.encounterEffects
+            ? { encounterEffects: session.encounterEffects }
+            : {}),
+        }
+      : session;
   const clampDeath = (n: number): number => Math.max(0, Math.min(3, Math.round(n)));
   const trio = combat
     ? {
@@ -185,8 +230,8 @@ export function applyCombatToSession(
         deathSucc: clampDeath(combat.deathSaves.successes),
         deathFail: clampDeath(combat.deathSaves.failures),
         bardicInspirationDie:
-          combat.bardicInspirationDie ?? session.bardicInspirationDie ?? "",
-        inspiration: combat.heroicInspiration ?? session.inspiration,
+          combat.bardicInspirationDie ?? baseSession.bardicInspirationDie ?? "",
+        inspiration: combat.heroicInspiration ?? baseSession.inspiration,
       }
     : {
         // Absent subdoc (a genuinely fresh/undamaged char): full HP, never 0.
@@ -195,23 +240,23 @@ export function applyCombatToSession(
         initiative: "",
         deathSucc: 0,
         deathFail: 0,
-        bardicInspirationDie: session.bardicInspirationDie ?? "",
-        inspiration: session.inspiration,
+        bardicInspirationDie: baseSession.bardicInspirationDie ?? "",
+        inspiration: baseSession.inspiration,
       };
-  const merged: SessionState = { ...session, ...trio };
+  const merged: SessionState = { ...baseSession, ...trio };
   // RA-12 — the Hide action's find-DC (`hiddenDc`) rides the PARENT doc, but its
   // owning `invisible` condition lives in the combat/state subdoc (D9). This is
   // the ONE seam where both the hydrated trio-conditions and the session's
   // `hiddenDc` are known, so it is the ONLY correct place to normalize the
   // cross-doc pair: if `invisible` was cleared via a subdoc-only path (a DM's
-  // `setCombatCondition`/`reduceCondition`, which never touches the parent doc)
+  // `writeCampaignCombatEffect`/`reduceCondition`, which never touches the parent doc)
   // the find-DC is orphaned — drop it so no phantom " · DC N" resurfaces when
   // Invisible is later re-added by a non-Hide path. NEVER normalize at
   // parse/sanitize time: there the trio is stripped from the parent doc
   // (conditions is `[]`, `invisible` is hydrated from the subdoc afterwards), so
   // a legitimately-hidden character would wrongly lose its DC.
   if (!merged.conditions.includes("invisible")) merged.hiddenDc = undefined;
-  return merged;
+  return { ok: true, session: merged };
 }
 
 /** The full-HP default for an ABSENT subdoc (a genuinely fresh/undamaged character):
@@ -220,6 +265,8 @@ export function applyCombatToSession(
  *  offline write lands a complete shape — see `combat-state-io.ts`. */
 export function defaultCombatState(max: number): CombatState {
   return {
+    actionRevision: 0,
+    actionHead: null,
     hp: { current: max, temp: 0 },
     conditions: [],
     initiativeRoll: null,
@@ -296,6 +343,10 @@ export function reduceHpDelta(
     const after = applyDamage(s.hp.current, s.hp.temp, op.amount);
     return { ...s, hp: { current: after.current, temp: after.temp } };
   }
+  // Ordinary healing is not resurrection. Three failed Death Saves are a
+  // canonical death verdict; only the explicit absolute-HP/death-track override
+  // may clear it until a typed revival mechanic owns that transition.
+  if (diedInPlay({ deathFail: s.deathSaves.failures })) return s;
   const healed = applyHealing(s.hp.current, op.amount, max);
   return {
     ...s,

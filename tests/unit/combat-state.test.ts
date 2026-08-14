@@ -13,13 +13,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SessionState } from "@/types/character";
 import type { CombatState } from "@/types/combat-state";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
+import { conc } from "./__helpers__/concentration";
 import {
   initiativeToNumber,
   initiativeToString,
   sessionToCombatState,
   omitCombatTrio,
   nonCombatSessionChanged,
-  applyCombatToSession,
+  applyCombatToSession as hydrateCombatSession,
   defaultCombatState,
   reduceHpDelta,
   reduceDeathSave,
@@ -31,6 +32,16 @@ import {
   RECENT_ATTACK_CAP,
   reduceMemberCombatEffects,
 } from "@/lib/combat-state";
+
+function applyCombatToSession(
+  value: SessionState,
+  combat: CombatState | null,
+  effectiveMax: number
+): SessionState {
+  const result = hydrateCombatSession(value, combat, effectiveMax, "legacy");
+  if (!result.ok) throw new Error(result.reason);
+  return result.session;
+}
 
 function session(overrides: Partial<SessionState> = {}): SessionState {
   return {
@@ -136,6 +147,8 @@ describe("combat-state — initiative conversion (cockpit string ↔ canonical n
 describe("combat-state — session → CombatState projection", () => {
   it("projects the trio onto the canonical subdoc shape", () => {
     expect(sessionToCombatState(session())).toEqual<CombatState>({
+      actionRevision: 0,
+      actionHead: null,
       hp: { current: 20, temp: 4 },
       conditions: ["poisoned"],
       initiativeRoll: 15,
@@ -144,6 +157,7 @@ describe("combat-state — session → CombatState projection", () => {
       heroicInspiration: false,
       round: 1,
       recentActions: [],
+      playState: { version: 1, state: { usedHitDice: 1 } },
     });
   });
 
@@ -155,6 +169,45 @@ describe("combat-state — session → CombatState projection", () => {
     expect(
       sessionToCombatState(session(), 3, [], undefined, undefined, [localEffect()])
     ).toMatchObject({ round: 3, activeEffects: [localEffect()] });
+  });
+
+  it("carries a non-empty pending Concentration FIFO and omits an empty one", () => {
+    const pending = [
+      {
+        id: "con-save-1",
+        spell: conc("bless"),
+        damage: 22,
+        difficultyClass: 11,
+      },
+    ];
+    expect(
+      sessionToCombatState(session(), 1, [], undefined, undefined, undefined, pending)
+        .pendingConcentrationSaves
+    ).toEqual(pending);
+    expect(
+      sessionToCombatState(session(), 1, [], undefined, undefined, undefined, [])
+    ).not.toHaveProperty("pendingConcentrationSaves");
+  });
+
+  it("owns every non-combat play fact in the nested v1 projection", () => {
+    const projected = sessionToCombatState(
+      session({
+        notes: "subdoc-owned",
+        sessionDefenses: { resistance: ["fire"] },
+        trackers: { rage: { used: 2 } },
+      })
+    );
+    expect(projected.playState).toEqual({
+      version: 1,
+      state: {
+        usedHitDice: 1,
+        trackers: { rage: 2 },
+        sessionDefenses: { resistance: ["fire"] },
+        notes: "subdoc-owned",
+      },
+    });
+    expect(projected.playState?.state).not.toHaveProperty("hp");
+    expect(projected.playState?.state).not.toHaveProperty("conditions");
   });
 });
 
@@ -282,6 +335,33 @@ describe("combat-state — applyCombatToSession (the ONE trio-hydration merge)",
     expect(merged.conditions).toEqual(["invisible"]);
     expect(merged.hiddenDc).toBe(21);
   });
+
+  it("v1 hydrates non-combat play facts from the nested owner, not the stale parent", () => {
+    const combat = sessionToCombatState(
+      session({ notes: "owned", trackers: { rage: { used: 2 } } })
+    );
+    const result = hydrateCombatSession(
+      session({ notes: "stale", trackers: {} }),
+      combat,
+      30,
+      1
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      session: { notes: "owned", trackers: { rage: { used: 2 } } },
+    });
+  });
+
+  it("v1 fails closed when its combat document or nested owner is absent", () => {
+    expect(hydrateCombatSession(session(), null, 30, 1)).toEqual({
+      ok: false,
+      reason: "missing-v1-combat-state",
+    });
+    expect(hydrateCombatSession(session(), baseCombat, 30, 1)).toEqual({
+      ok: false,
+      reason: "invalid-v1-play-state",
+    });
+  });
 });
 
 const baseCombat: CombatState = {
@@ -345,6 +425,17 @@ describe("combat-state — reduceHpDelta (the transactional HP read-modify-write
     expect(reduceHpDelta(baseCombat, { kind: "heal", amount: 2 }, 30).deathSaves).toBe(
       baseCombat.deathSaves
     );
+  });
+
+  it("does not turn ordinary healing into resurrection after three failures", () => {
+    const dead: CombatState = {
+      ...baseCombat,
+      hp: { current: 0, temp: 0 },
+      deathSaves: { successes: 0, failures: 3 },
+    };
+    expect(reduceHpDelta(dead, { kind: "heal", amount: 99 }, 30)).toBe(dead);
+    // The explicit absolute setter remains the intentional manual override.
+    expect(setHpAbsolute(dead, 1, 30).hp.current).toBe(1);
   });
 });
 
@@ -463,6 +554,8 @@ describe("combat-state — absolute setters (one field, clamped)", () => {
 describe("combat-state — defaultCombatState (the absent-subdoc full-HP seed)", () => {
   it("seeds full current HP at max, no temp / conditions / roll / death saves", () => {
     expect(defaultCombatState(30)).toEqual<CombatState>({
+      actionRevision: 0,
+      actionHead: null,
       hp: { current: 30, temp: 0 },
       conditions: [],
       initiativeRoll: null,
@@ -542,6 +635,7 @@ describe("combat-state — nonCombatSessionChanged routes a transition to the ri
 // captures the payload so tests assert the field-locked whole-object shape.
 
 const setDocMock = vi.fn(() => Promise.resolve());
+const updateDocMock = vi.fn(() => Promise.resolve());
 let onSnapshotImpl: (
   ref: unknown,
   next: (snap: {
@@ -562,6 +656,7 @@ function lastSetPayload(): Record<string, unknown> {
 vi.mock("firebase/firestore", () => ({
   doc: (...segments: unknown[]) => ({ path: segments.slice(1).join("/") }),
   setDoc: (...args: unknown[]) => setDocMock(...(args as [])),
+  updateDoc: (...args: unknown[]) => updateDocMock(...(args as [])),
   onSnapshot: (ref: unknown, next: unknown, err: unknown) =>
     onSnapshotImpl(
       ref,
@@ -590,10 +685,6 @@ import {
   writeCombatTurnEconomy,
   subscribeCombatState,
   combatStateRef,
-  applyHpDelta,
-  tickDeathSave,
-  setCombatCondition,
-  setCombatTempHp,
 } from "@/lib/combat-state-io";
 
 const COMBAT: CombatState = {
@@ -608,6 +699,7 @@ const COMBAT: CombatState = {
 beforeEach(() => {
   setDocMock.mockClear();
   setDocMock.mockImplementation(() => Promise.resolve());
+  updateDocMock.mockClear();
   devBypass.value = false;
   onSnapshotImpl = () => () => {};
 });
@@ -646,7 +738,7 @@ describe("combat-state-io — write (last-write-wins overwrite)", () => {
     expect(lastSetPayload()).toMatchObject({ activeEffects: [localEffect()] });
   });
 
-  it("merges only round + turn economy for high-frequency turn persistence", async () => {
+  it("updates only round + turn economy without creating a partial document", async () => {
     await writeCombatTurnEconomy("u1", "c1", 3, {
       key: "encounter:c1:3",
       selected: { action: [], bonus: [], free: [] },
@@ -660,13 +752,13 @@ describe("combat-state-io — write (last-write-wins overwrite)", () => {
       movementUsedFt: 4,
       dashesThisTurn: 0,
       spellSlotCastsThisTurn: 0,
+      spellSlotCastTurnKey: null,
       damageTakenThisRound: false,
     });
 
-    const [ref, payload, options] = setDocMock.mock.calls[0] as unknown as [
+    const [ref, payload] = updateDocMock.mock.calls[0] as unknown as [
       { path: string },
       Record<string, unknown>,
-      { merge: boolean },
     ];
     expect(ref).toEqual({ path: "users/u1/characters/c1/combat/state" });
     expect(payload).toMatchObject({
@@ -674,7 +766,30 @@ describe("combat-state-io — write (last-write-wins overwrite)", () => {
       turnEconomy: { attacksUsed: 1, movementUsedFt: 4 },
       updatedAt: "server-ts",
     });
-    expect(options).toEqual({ merge: true });
+    expect(setDocMock).not.toHaveBeenCalled();
+  });
+
+  it("fails safely when turn economy targets a missing document", async () => {
+    updateDocMock.mockRejectedValueOnce(new Error("not-found"));
+    await expect(
+      writeCombatTurnEconomy("u1", "missing", 1, {
+        key: "solo:1",
+        selected: { action: [], bonus: [], free: [] },
+        attacksUsed: 0,
+        attackSwings: [],
+        outcomeReceipts: [],
+        outcomeOrdinal: 0,
+        reactionUsed: false,
+        reactionUsedId: null,
+        reactionOutcomeOccurrenceId: null,
+        movementUsedFt: 0,
+        dashesThisTurn: 0,
+        spellSlotCastsThisTurn: 0,
+        spellSlotCastTurnKey: null,
+        damageTakenThisRound: false,
+      })
+    ).rejects.toThrow("not-found");
+    expect(setDocMock).not.toHaveBeenCalled();
   });
 });
 
@@ -698,6 +813,8 @@ describe("combat-state-io — subscribe", () => {
     };
     subscribeCombatState("u1", "c1", (s) => received.push(s));
     expect(received[0]).toEqual<CombatState>({
+      actionRevision: 0,
+      actionHead: null,
       hp: { current: 5, temp: 1 },
       conditions: ["stunned"],
       initiativeRoll: 11,
@@ -806,124 +923,5 @@ describe("combat-state-io — subscribe", () => {
     expect(combatStateRef("u1", "c1")).toEqual({
       path: "users/u1/characters/c1/combat/state",
     });
-  });
-});
-
-describe("combat-state-io — base-reducing op helpers (offline-safe whole-object writes)", () => {
-  const BASE: CombatState = {
-    hp: { current: 20, temp: 3 },
-    conditions: ["poisoned"],
-    initiativeRoll: 14,
-    deathSaves: { successes: 0, failures: 0 },
-    round: 1,
-    recentActions: [],
-  };
-
-  /** Every op persists the EXACT field-locked shape via `setDoc(merge)` (no extra/missing
-   *  keys) — the offline-queueable primitive, never a transaction. */
-  function expectFieldLockedMerge(): void {
-    const [, payload, options] = setDocMock.mock.calls.at(-1) as unknown as [
-      unknown,
-      Record<string, unknown>,
-      { merge: boolean },
-    ];
-    expect(Object.keys(payload).sort()).toEqual([
-      "bardicInspirationDie",
-      "conditions",
-      "deathSaves",
-      "hp",
-      "initiativeRoll",
-      "recentActions",
-      "round",
-      "updatedAt",
-    ]);
-    expect(payload.updatedAt).toBe("server-ts");
-    expect(options).toBeUndefined(); // OVERWRITE (no merge) — drops stray/legacy keys
-  }
-
-  it("applyHpDelta reduces the given base and persists the FULL object via setDoc (overwrite)", async () => {
-    await applyHpDelta("u1", "c1", BASE, { kind: "damage", amount: 7 }, 30);
-    // The offline-queueable primitive was issued exactly once (NOT a transaction).
-    expect(setDocMock).toHaveBeenCalledTimes(1);
-    const payload = lastSetPayload();
-    // temp 3 absorbs, 4 spills onto current 20 → 16; temp → 0.
-    expect(payload.hp).toEqual({ current: 16, temp: 0 });
-    expect(payload.conditions).toEqual(["poisoned"]);
-    // Untouched fields (the roll) are PRESERVED, so an HP hit never clobbers a live roll.
-    expect(payload.initiativeRoll).toBe(14);
-    expectFieldLockedMerge();
-  });
-
-  it("REGRESSION (offline): the op DURABLY issues a setDoc even when the server write rejects — the edit is queued, not lost", async () => {
-    // Simulate the write path being offline: the underlying firestore write would not
-    // reach the server (its returned promise rejects). The FIX still ISSUES an
-    // offline-queueable `setDoc` (Firestore records it in the local cache + replays on
-    // reconnect) — the pre-fix `runTransaction` path never reached `setDoc` at all (and a
-    // transaction rejects offline WITHOUT queuing), so the damage silently vanished.
-    setDocMock.mockImplementationOnce(() => Promise.reject(new Error("unavailable")));
-    await expect(
-      applyHpDelta("u1", "c1", BASE, { kind: "damage", amount: 5 }, 30)
-    ).rejects.toThrow("unavailable");
-    // The durable write WAS issued (queued) with the reduced HP — the op did not silently
-    // drop the edit onto a transaction that offline rejects before writing anything.
-    expect(setDocMock).toHaveBeenCalledTimes(1);
-    expect(lastSetPayload().hp).toEqual({ current: 18, temp: 0 });
-  });
-
-  it("a NULL base (ABSENT subdoc) seeds the full-HP default THEN applies the op", async () => {
-    await applyHpDelta("u1", "c1", null, { kind: "damage", amount: 5 }, 24);
-    // default full HP 24 → damage 5 → 19 (proves the absent-doc default-then-reduce, and a
-    // FRESH write lands a rules-valid full shape).
-    expect(lastSetPayload().hp).toEqual({ current: 19, temp: 0 });
-    expectFieldLockedMerge();
-  });
-
-  // (setCombatInitiative is DELETED: an encounter roll is a campaign-doc field-path
-  // write — `campaign-io.setEncounterInitiative` — never a whole-subdoc rewrite, so
-  // "rolling clobbers a wound" is unrepresentable.)
-
-  it("applyHpDelta heal clamps to the client-passed effectiveMaxHp", async () => {
-    const low: CombatState = { ...BASE, hp: { current: 10, temp: 0 } };
-    await applyHpDelta("u1", "c1", low, { kind: "heal", amount: 99 }, 18);
-    expect((lastSetPayload().hp as { current: number }).current).toBe(18);
-  });
-
-  it("tickDeathSave bumps the NESTED count and caps at 3", async () => {
-    const downed: CombatState = {
-      ...BASE,
-      hp: { current: 0, temp: 0 },
-      deathSaves: { successes: 3, failures: 1 },
-    };
-    await tickDeathSave("u1", "c1", downed, "success", 20);
-    expect(lastSetPayload().deathSaves).toEqual({ successes: 3, failures: 1 }); // capped
-    expectFieldLockedMerge();
-  });
-
-  it("setCombatCondition add is idempotent and writes the full object", async () => {
-    await setCombatCondition(
-      "u1",
-      "c1",
-      BASE,
-      { kind: "add", conditionId: "stunned" },
-      20
-    );
-    expect(lastSetPayload().conditions).toEqual(["poisoned", "stunned"]);
-  });
-
-  it("setCombatTempHp sets temp and keeps current + the rest of the base", async () => {
-    await setCombatTempHp("u1", "c1", BASE, 7, 20);
-    const payload = lastSetPayload();
-    expect(payload.hp).toEqual({ current: 20, temp: 7 });
-    expect(payload.conditions).toEqual(["poisoned"]);
-    expectFieldLockedMerge();
-  });
-
-  it("every op is a no-op under DEV_BYPASS (optimistic store only, no write)", async () => {
-    devBypass.value = true;
-    await applyHpDelta("u1", "c1", BASE, { kind: "damage", amount: 5 }, 20);
-    await tickDeathSave("u1", "c1", BASE, "success", 20);
-    await setCombatCondition("u1", "c1", BASE, { kind: "add", conditionId: "prone" }, 20);
-    await setCombatTempHp("u1", "c1", BASE, 5, 20);
-    expect(setDocMock).not.toHaveBeenCalled();
   });
 });

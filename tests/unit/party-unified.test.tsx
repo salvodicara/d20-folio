@@ -29,7 +29,7 @@ import { MemoryRouter } from "react-router";
 const {
   authUid,
   isAdminState,
-  applyHpDeltaMock,
+  writeCombatEffectMock,
   setEncounterInitiativeMock,
   rosterRef,
   listSharedCampaignsMock,
@@ -40,11 +40,14 @@ const {
 } = vi.hoisted(() => ({
   authUid: { value: "mock-uid" },
   isAdminState: { value: false },
-  // The PC combat editor's HP-delta write — controllable per test (resolve / reject
-  // permission-denied) to exercise the DM self-heal recovery path.
-  applyHpDeltaMock: vi.fn<typeof import("@/lib/combat-state-io").applyHpDelta>(() =>
-    Promise.resolve()
-  ),
+  // The PC combat editor's write — the ONE fresh-read campaign transaction every HP /
+  // temp / condition / death-save edit routes through (`writeCampaignCombatEffect`,
+  // the effect-only patch/revision fence; it REPLACED the value-based
+  // `applyHpDelta`-family overwrites). Controllable per test (resolve / reject
+  // permission-denied) to exercise the honest-failure toast.
+  writeCombatEffectMock: vi.fn<
+    typeof import("@/features/campaigns/campaign-io").writeCampaignCombatEffect
+  >(() => Promise.resolve()),
   // The INIT write — a campaign-doc `encounterInit` row (the initiative SSOT);
   // asserted to store the RAW d20 roll (never the total).
   setEncounterInitiativeMock: vi.fn<
@@ -91,8 +94,10 @@ vi.mock("@/hooks/useIsAdmin", () => ({ useIsAdmin: () => isAdminState.value }));
 vi.mock("@/hooks/useCharacters", () => ({
   useCharacters: () => ({ characters: rosterRef.value, loading: false, error: null }),
 }));
-// Spy the two campaign-io seams the attach guard uses (membership read + the write);
-// the rest of campaign-io stays real.
+// Spy the campaign-io seams the wiring exercises — the attach guard's membership read +
+// write, the turn/initiative transactions, and the PC combat editor's
+// `writeCampaignCombatEffect` (a real Firestore transaction, so it MUST be mocked in
+// this CI-pure harness); the rest of campaign-io stays real.
 vi.mock("@/features/campaigns/campaign-io", async (orig) => {
   const actual = await orig<typeof import("@/features/campaigns/campaign-io")>();
   return {
@@ -102,6 +107,7 @@ vi.mock("@/features/campaigns/campaign-io", async (orig) => {
     attachMemberCharacter: attachMemberCharacterMock,
     advanceEncounterTurn: advanceEncounterTurnMock,
     setEncounterInitiative: setEncounterInitiativeMock,
+    writeCampaignCombatEffect: writeCombatEffectMock,
     persistStartEncounter: vi.fn(() => Promise.resolve()),
     persistEndEncounter: vi.fn(() => Promise.resolve()),
   };
@@ -139,12 +145,6 @@ vi.mock("@/lib/combat-state-io", () => ({
     return () => {};
   },
   writeCombatState: () => {},
-  // The PC editor's write primitives — applyHpDelta is the controllable spy; the
-  // others resolve (they are not exercised by these wiring tests).
-  applyHpDelta: applyHpDeltaMock,
-  setCombatCondition: () => Promise.resolve(),
-  setCombatTempHp: () => Promise.resolve(),
-  tickDeathSave: () => Promise.resolve(),
 }));
 // Keep `charsAffectedByAttach` real (the attach picker uses it); spy the eager DM-grant
 // End-encounter goes through a confirm dialog; auto-confirm it.
@@ -239,8 +239,8 @@ beforeEach(() => {
   authUid.value = "mock-uid"; // the fixture DM
   alertFixtureEnabled.value = false;
   isAdminState.value = false;
-  applyHpDeltaMock.mockReset();
-  applyHpDeltaMock.mockResolvedValue(undefined);
+  writeCombatEffectMock.mockReset();
+  writeCombatEffectMock.mockResolvedValue(undefined);
   setEncounterInitiativeMock.mockReset();
   setEncounterInitiativeMock.mockResolvedValue(undefined);
   rosterRef.value = [];
@@ -1088,7 +1088,7 @@ describe("PC combat editor — the multi-writer edit gate", () => {
     expect(screen.getAllByRole("button", { name: /hit points/i })).toHaveLength(2);
   });
 
-  it("a DM HP edit routes through applyHpDelta against the MEMBER's (uid, charId)", async () => {
+  it("a DM HP edit routes through the fresh-read campaign transaction against the MEMBER's (uid, charId)", async () => {
     setCampaign(overviewCampaign());
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
@@ -1099,23 +1099,23 @@ describe("PC combat editor — the multi-writer edit gate", () => {
       target: { value: "6" },
     });
     fireEvent.click(screen.getByRole("button", { name: /^Damage$/ }));
-    await waitFor(() => expect(applyHpDeltaMock).toHaveBeenCalledTimes(1));
-    // applyHpDelta(uid, charId, base, op, effectiveMaxHp) — the op moved to arg index 3.
-    const [uid, , , op] = applyHpDeltaMock.mock.calls[0] as unknown as [
-      string,
-      string,
-      unknown,
-      { kind: string; amount: number },
-    ];
+    await waitFor(() => expect(writeCombatEffectMock).toHaveBeenCalledTimes(1));
+    // writeCampaignCombatEffect(uid, charId, preview, maxHp, mutation) — the DM's edit
+    // is keyed to the MEMBER's identity (never the viewer's) and books a TYPED HP
+    // mutation the transaction reduces over a fresh read (no stale-base overwrite).
+    const call = writeCombatEffectMock.mock.calls[0];
+    if (!call) throw new Error("no combat-effect write recorded");
+    const [uid, charId, , , mutation] = call;
     expect(uid).toBe("member-mara");
-    expect(op).toMatchObject({ kind: "damage", amount: 6 });
+    expect(charId).toBe("team-catalion-bard");
+    expect(mutation).toEqual({ kind: "hp", operation: { kind: "damage", amount: 6 } });
   });
 
   it("a rejected DM write SURFACES an honest toast — no silent swallow, no retry theater", async () => {
     // There is no stale-grant machinery to "self-heal" anymore: the DM's authority
     // derives LIVE from the campaign doc in firestore.rules, so a denial is a real,
     // terminal authorization fact. The write must surface once and NOT auto-retry.
-    applyHpDeltaMock.mockRejectedValueOnce({ code: "permission-denied" });
+    writeCombatEffectMock.mockRejectedValueOnce({ code: "permission-denied" });
     setCampaign(overviewCampaign());
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
@@ -1133,6 +1133,6 @@ describe("PC combat editor — the multi-writer edit gate", () => {
           .toasts.some((t) => /couldn't be saved/i.test(t.message ?? ""))
       ).toBe(true)
     );
-    expect(applyHpDeltaMock).toHaveBeenCalledTimes(1); // one write, no retry
+    expect(writeCombatEffectMock).toHaveBeenCalledTimes(1); // one write, no retry
   });
 });

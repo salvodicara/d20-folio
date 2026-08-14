@@ -47,7 +47,7 @@
  * replica (`dev-document-store`): optimistic echoes, reload survival, and cross-tab
  * snapshots stay testable without touching Firebase.
  */
-import { doc, onSnapshot, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, onSnapshot, setDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { DEV_BYPASS_AUTH as IMPORTED_DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
@@ -56,18 +56,119 @@ import {
   updateDevDocument,
   writeDevDocument,
 } from "@/lib/dev-document-store";
-import {
-  defaultCombatState,
-  reduceCondition,
-  reduceDeathSave,
-  reduceHpDelta,
-  setTempAbsolute,
-} from "@/lib/combat-state";
-import type { CombatState, PersistedTurnEconomy } from "@/types/combat-state";
+import type {
+  CombatState,
+  PendingConcentrationSave,
+  PersistedTurnEconomy,
+} from "@/types/combat-state";
+import type { ConcentrationRef } from "@/types/ids";
 import { conformActiveCombatEffects } from "@/lib/combat-effect-io";
+import { conformCombatEffectLifecycleCollection } from "@/lib/combat-effect-lifecycle-collection";
+import { conformCombatEffectOps } from "@/lib/combat-effects";
 import { parseCombatOutcomeReceipt } from "@/lib/combat-outcomes";
+import { parsePersistedPlayStateV1 } from "@/lib/session-state-codec";
+import type { ActionLifecycleRecord } from "@/lib/action-command";
+import {
+  atomicOwnerKey,
+  isAtomicOccurrenceRuleIdentity,
+} from "@/lib/combat-effect-atomic";
 
 const DEV_COMBAT_COLLECTION = "combat-state";
+const ACTION_LIFECYCLE_LIMIT = 128;
+const STRICT_V1_FIELDS = [
+  "activeEffects",
+  "effectLifecycles",
+  "effectOps",
+  "pendingConcentrationSaves",
+  "turnEconomy",
+  "appliedEncounterEffects",
+  "recentActions",
+] as const;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isPlainJson(value: unknown, ancestors = new WeakSet<object>()): boolean {
+  if (value === null || typeof value === "string" || typeof value === "boolean") {
+    return true;
+  }
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value !== "object" || ancestors.has(value)) return false;
+  ancestors.add(value);
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+  const valid =
+    Object.getOwnPropertySymbols(value).length === 0 &&
+    (Array.isArray(value)
+      ? Object.getPrototypeOf(value) === Array.prototype &&
+        Object.keys(descriptors).length === value.length + 1 &&
+        Object.hasOwn(descriptors, "length") &&
+        Array.from(
+          { length: value.length },
+          (_, index) => descriptors[String(index)]
+        ).every(
+          (descriptor) =>
+            descriptor !== undefined &&
+            descriptor.enumerable &&
+            "value" in descriptor &&
+            isPlainJson(descriptor.value, ancestors)
+        )
+      : (Object.getPrototypeOf(value) === Object.prototype ||
+          Object.getPrototypeOf(value) === null) &&
+        Object.entries(descriptors).every(
+          ([key, descriptor]) =>
+            key.length > 0 &&
+            descriptor.enumerable &&
+            "value" in descriptor &&
+            isPlainJson(descriptor.value, ancestors)
+        ));
+  ancestors.delete(value);
+  return valid;
+}
+
+function sameJson(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) return true;
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return (
+      Array.isArray(left) &&
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((value, index) => sameJson(value, right[index]))
+    );
+  }
+  if (!isRecord(left) || !isRecord(right)) return false;
+  const leftKeys = Object.keys(left).sort();
+  const rightKeys = Object.keys(right).sort();
+  return (
+    leftKeys.length === rightKeys.length &&
+    leftKeys.every(
+      (key, index) => key === rightKeys[index] && sameJson(left[key], right[key])
+    )
+  );
+}
+
+function presentFieldIsCanonical(
+  data: Readonly<Record<string, unknown>>,
+  key: string,
+  parsed: unknown
+): boolean {
+  return (
+    !Object.hasOwn(data, key) || (parsed !== undefined && sameJson(data[key], parsed))
+  );
+}
+
+function presentFieldIsPlainJson(
+  data: Readonly<Record<string, unknown>>,
+  key: string
+): boolean {
+  const descriptor = Object.getOwnPropertyDescriptor(data, key);
+  return (
+    descriptor === undefined ||
+    (descriptor.enumerable === true &&
+      "value" in descriptor &&
+      isPlainJson(descriptor.value))
+  );
+}
 
 // Tests can still mock the canonical flag; production receives a compile-time false
 // and therefore does not ship the local replica used only by auth-bypass previews.
@@ -84,10 +185,135 @@ export function combatStateRef(uid: string, charId: string) {
   return doc(db, "users", uid, "characters", charId, "combat", "state");
 }
 
+function effectLifecyclesForWrite(
+  value: CombatState["effectLifecycles"]
+): NonNullable<CombatState["effectLifecycles"]> {
+  const collection = conformCombatEffectLifecycleCollection(value ?? []);
+  if (!collection) {
+    throw new TypeError("Invalid combat-effect lifecycle collection");
+  }
+  return collection;
+}
+
+function effectOpsForWrite(
+  value: CombatState["effectOps"]
+): NonNullable<CombatState["effectOps"]> {
+  const input = value ?? [];
+  const effectOps = conformCombatEffectOps(input);
+  if (effectOps.length !== input.length) {
+    throw new TypeError("Invalid combat-effect operation ledger");
+  }
+  return effectOps;
+}
+
+function parseActionLifecycleRecord(value: unknown): ActionLifecycleRecord | null {
+  if (
+    !isRecord(value) ||
+    !isRecord(value.actor) ||
+    Object.keys(value).length !== 5 ||
+    !["payloadIdentity", "actor", "state", "generation", "predecessor"].every((key) =>
+      Object.hasOwn(value, key)
+    )
+  ) {
+    return null;
+  }
+  try {
+    atomicOwnerKey(value.actor as ActionLifecycleRecord["actor"]);
+  } catch {
+    return null;
+  }
+  if (
+    typeof value.payloadIdentity !== "string" ||
+    value.payloadIdentity.length === 0 ||
+    (value.state !== "committed" && value.state !== "undone") ||
+    !Number.isSafeInteger(value.generation) ||
+    (value.generation as number) < 1 ||
+    (value.state === "committed"
+      ? (value.generation as number) % 2 !== 1
+      : (value.generation as number) % 2 !== 0) ||
+    !(
+      value.predecessor === null ||
+      (typeof value.predecessor === "string" && value.predecessor.length > 0)
+    )
+  ) {
+    return null;
+  }
+  return {
+    payloadIdentity: value.payloadIdentity,
+    actor: value.actor as ActionLifecycleRecord["actor"],
+    state: value.state,
+    generation: value.generation as number,
+    predecessor: value.predecessor,
+  };
+}
+
+function parseActionLifecycles(
+  value: unknown
+): Readonly<Record<string, ActionLifecycleRecord>> | null {
+  if (value === undefined) return {};
+  if (!isRecord(value)) return null;
+  const entries = Object.entries(value);
+  if (entries.length > ACTION_LIFECYCLE_LIMIT) return null;
+  const lifecycles: Record<string, ActionLifecycleRecord> = {};
+  for (const [commandId, candidate] of entries.sort(([left], [right]) =>
+    left < right ? -1 : left > right ? 1 : 0
+  )) {
+    if (commandId.length === 0) return null;
+    const lifecycle = parseActionLifecycleRecord(candidate);
+    if (!lifecycle) return null;
+    lifecycles[commandId] = lifecycle;
+  }
+  return lifecycles;
+}
+
+function validActionLifecycleGraph(
+  lifecycles: Readonly<Record<string, ActionLifecycleRecord>>,
+  head: string | null
+): boolean {
+  if (head !== null && lifecycles[head]?.state !== "committed") return false;
+  for (const [commandId, lifecycle] of Object.entries(lifecycles)) {
+    const actorKey = atomicOwnerKey(lifecycle.actor);
+    const seen = new Set([commandId]);
+    let predecessor = lifecycle.predecessor;
+    while (predecessor !== null) {
+      if (seen.has(predecessor)) return false;
+      seen.add(predecessor);
+      const prior = lifecycles[predecessor];
+      if (!prior || atomicOwnerKey(prior.actor) !== actorKey) return false;
+      predecessor = prior.predecessor;
+    }
+  }
+  return true;
+}
+
+/** The dev replica stores the same canonical optional collection, without a
+ * Firestore timestamp sentinel. */
+function combatStateForDevWrite(state: CombatState): CombatState {
+  const { updatedAt: _updatedAt, ...canonical } = combatStateWriteData(state);
+  void _updatedAt;
+  return canonical as unknown as CombatState;
+}
+
 /** The COMPLETE persisted shape, stamped server-side. One source so the two write
  *  paths can't drift. */
 export function combatStateWriteData(state: CombatState): Record<string, unknown> {
+  const effectLifecycles = effectLifecyclesForWrite(state.effectLifecycles);
+  const effectOps = effectOpsForWrite(state.effectOps);
+  const playState =
+    state.playState === undefined ? null : parsePersistedPlayStateV1(state.playState);
+  if (playState && !playState.ok) {
+    throw new TypeError(`Invalid combat play state: ${playState.reason}`);
+  }
+  const actionLifecycles = parseActionLifecycles(state.actionLifecycles);
+  if (!actionLifecycles) throw new TypeError("Invalid action lifecycle collection");
+  const actionHead = state.actionHead ?? null;
+  if (!validActionLifecycleGraph(actionLifecycles, actionHead)) {
+    throw new TypeError("Invalid action lifecycle graph");
+  }
   return {
+    actionRevision: state.actionRevision ?? 0,
+    actionHead,
+    ...(Object.keys(actionLifecycles).length > 0 ? { actionLifecycles } : {}),
     hp: { current: state.hp.current, temp: state.hp.temp },
     conditions: state.conditions,
     bardicInspirationDie: state.bardicInspirationDie ?? "",
@@ -102,52 +328,195 @@ export function combatStateWriteData(state: CombatState): Record<string, unknown
     round: state.round,
     recentActions: state.recentActions,
     ...(state.activeEffects?.length ? { activeEffects: state.activeEffects } : {}),
+    ...(effectLifecycles.length ? { effectLifecycles } : {}),
+    ...(effectOps.length ? { effectOps } : {}),
     ...(state.appliedEncounterEffects
       ? { appliedEncounterEffects: state.appliedEncounterEffects }
       : {}),
     ...(state.turnEconomy ? { turnEconomy: state.turnEconomy } : {}),
+    ...(state.pendingConcentrationSaves?.length
+      ? { pendingConcentrationSaves: state.pendingConcentrationSaves }
+      : {}),
+    ...(playState?.ok ? { playState: playState.value } : {}),
     updatedAt: serverTimestamp(),
   };
 }
 
-/** Defensively parse a stored combat-state doc (our own write, but never trust IO). */
-export function parseCombatState(data: Record<string, unknown>): CombatState {
-  const hp = (typeof data.hp === "object" && data.hp !== null ? data.hp : {}) as Record<
-    string,
-    unknown
-  >;
-  const ds = (
-    typeof data.deathSaves === "object" && data.deathSaves !== null ? data.deathSaves : {}
-  ) as Record<string, unknown>;
+export type CombatStateParseResult =
+  | { ok: true; ownership: "legacy" | "v1"; state: CombatState }
+  | {
+      ok: false;
+      reason: "invalid-combat-state" | "invalid-v1-play-state";
+    };
+
+/**
+ * Defensively parse a stored combat-state doc. A present document must carry the
+ * complete legacy combat core; malformed/partial documents are never reinterpreted
+ * as a valid 0-HP character.
+ */
+export function parseCombatState(data: unknown): CombatStateParseResult {
+  if (!isRecord(data) || !isRecord(data.hp) || !isRecord(data.deathSaves)) {
+    return { ok: false, reason: "invalid-combat-state" };
+  }
+  const hp = data.hp;
+  const ds = data.deathSaves;
   const num = (v: unknown, fallback: number): number =>
     typeof v === "number" && Number.isFinite(v) ? v : fallback;
+  if (
+    typeof hp.current !== "number" ||
+    !Number.isFinite(hp.current) ||
+    typeof hp.temp !== "number" ||
+    !Number.isFinite(hp.temp) ||
+    !Array.isArray(data.conditions) ||
+    !data.conditions.every((condition) => typeof condition === "string") ||
+    !(
+      data.initiativeRoll === null ||
+      (typeof data.initiativeRoll === "number" && Number.isFinite(data.initiativeRoll))
+    ) ||
+    typeof ds.successes !== "number" ||
+    !Number.isFinite(ds.successes) ||
+    typeof ds.failures !== "number" ||
+    !Number.isFinite(ds.failures) ||
+    (data.round !== undefined &&
+      (typeof data.round !== "number" || !Number.isFinite(data.round))) ||
+    (data.bardicInspirationDie !== undefined &&
+      typeof data.bardicInspirationDie !== "string") ||
+    (data.heroicInspiration !== undefined && typeof data.heroicInspiration !== "boolean")
+  ) {
+    return { ok: false, reason: "invalid-combat-state" };
+  }
+  const playState =
+    data.playState === undefined ? null : parsePersistedPlayStateV1(data.playState);
+  if (playState && !playState.ok) {
+    return { ok: false, reason: "invalid-v1-play-state" };
+  }
+  if (
+    playState?.ok &&
+    STRICT_V1_FIELDS.some((key) => !presentFieldIsPlainJson(data, key))
+  ) {
+    return { ok: false, reason: "invalid-combat-state" };
+  }
+  if (
+    (data.actionRevision !== undefined &&
+      (!Number.isSafeInteger(data.actionRevision) ||
+        (data.actionRevision as number) < 0)) ||
+    (data.actionHead !== undefined &&
+      data.actionHead !== null &&
+      (typeof data.actionHead !== "string" || data.actionHead.length === 0))
+  ) {
+    return { ok: false, reason: "invalid-combat-state" };
+  }
+  const actionLifecycles = parseActionLifecycles(data.actionLifecycles);
+  if (!actionLifecycles) return { ok: false, reason: "invalid-combat-state" };
+  const actionHead = typeof data.actionHead === "string" ? data.actionHead : null;
+  if (!validActionLifecycleGraph(actionLifecycles, actionHead)) {
+    return { ok: false, reason: "invalid-combat-state" };
+  }
   const applied = parseAppliedEncounterEffects(data.appliedEncounterEffects);
   const turnEconomy = parseTurnEconomy(data.turnEconomy);
   const activeEffects = conformActiveCombatEffects(data.activeEffects);
-  return {
-    hp: { current: num(hp.current, 0), temp: num(hp.temp, 0) },
-    conditions: Array.isArray(data.conditions)
-      ? data.conditions.filter((c): c is string => typeof c === "string")
-      : [],
+  const effectLifecycles =
+    conformCombatEffectLifecycleCollection(data.effectLifecycles) ?? [];
+  const effectOps = conformCombatEffectOps(data.effectOps);
+  const pendingConcentrationSaves = parsePendingConcentrationSaves(
+    data.pendingConcentrationSaves
+  );
+  const recentActions = parseRecentActions(data.recentActions);
+  if (
+    playState?.ok &&
+    (!presentFieldIsCanonical(data, "activeEffects", activeEffects) ||
+      activeEffects.some((effect) => !isAtomicOccurrenceRuleIdentity(effect)) ||
+      new Set(activeEffects.map(({ id }) => id)).size !== activeEffects.length ||
+      !presentFieldIsCanonical(data, "effectLifecycles", effectLifecycles) ||
+      !presentFieldIsCanonical(data, "effectOps", effectOps) ||
+      effectOps.some(
+        (operation) =>
+          operation.kind === "apply" && !isAtomicOccurrenceRuleIdentity(operation.effect)
+      ) ||
+      !presentFieldIsCanonical(
+        data,
+        "pendingConcentrationSaves",
+        pendingConcentrationSaves
+      ) ||
+      !presentFieldIsCanonical(data, "turnEconomy", turnEconomy) ||
+      !presentFieldIsCanonical(data, "appliedEncounterEffects", applied) ||
+      !presentFieldIsCanonical(data, "recentActions", recentActions))
+  ) {
+    return { ok: false, reason: "invalid-combat-state" };
+  }
+  const state: CombatState = {
+    actionRevision:
+      Number.isSafeInteger(data.actionRevision) && (data.actionRevision as number) >= 0
+        ? (data.actionRevision as number)
+        : 0,
+    actionHead,
+    ...(Object.keys(actionLifecycles).length > 0 ? { actionLifecycles } : {}),
+    hp: { current: hp.current, temp: hp.temp },
+    conditions: data.conditions,
     ...(typeof data.bardicInspirationDie === "string"
       ? { bardicInspirationDie: data.bardicInspirationDie }
       : {}),
     ...(typeof data.heroicInspiration === "boolean"
       ? { heroicInspiration: data.heroicInspiration }
       : {}),
-    initiativeRoll:
-      typeof data.initiativeRoll === "number" && Number.isFinite(data.initiativeRoll)
-        ? data.initiativeRoll
-        : null,
-    deathSaves: { successes: num(ds.successes, 0), failures: num(ds.failures, 0) },
+    initiativeRoll: data.initiativeRoll,
+    deathSaves: { successes: ds.successes, failures: ds.failures },
     // Absence-safe: a subdoc written before `round` moved here (or a fresh one) reads as
     // round 1 — a natural default, never a permanent read-shim (rule 10).
     round: num(data.round, 1),
-    recentActions: parseRecentActions(data.recentActions),
+    recentActions,
     ...(activeEffects.length ? { activeEffects } : {}),
+    ...(effectLifecycles.length ? { effectLifecycles } : {}),
+    ...(effectOps.length ? { effectOps } : {}),
     ...(applied ? { appliedEncounterEffects: applied } : {}),
     ...(turnEconomy ? { turnEconomy } : {}),
+    ...(pendingConcentrationSaves.length ? { pendingConcentrationSaves } : {}),
+    ...(playState?.ok ? { playState: playState.value } : {}),
   };
+  return { ok: true, ownership: playState ? "v1" : "legacy", state };
+}
+
+function parsedCombatState(data: unknown): CombatState {
+  const result = parseCombatState(data);
+  if (!result.ok) throw new TypeError(`Invalid combat state: ${result.reason}`);
+  return result.state;
+}
+
+function parsePendingConcentrationSaves(value: unknown): PendingConcentrationSave[] {
+  if (!Array.isArray(value)) return [];
+  const ids = new Set<string>();
+  const pending: PendingConcentrationSave[] = [];
+  for (const candidate of value) {
+    if (typeof candidate !== "object" || candidate === null) continue;
+    const row = candidate as Record<string, unknown>;
+    if (
+      typeof row.id !== "string" ||
+      row.id.length === 0 ||
+      ids.has(row.id) ||
+      typeof row.spell !== "string" ||
+      !/^(?:custom:.+|[a-z0-9]+(?:-[a-z0-9]+)*)$/.test(row.spell) ||
+      typeof row.damage !== "number" ||
+      !Number.isSafeInteger(row.damage) ||
+      row.damage <= 0 ||
+      typeof row.difficultyClass !== "number" ||
+      !Number.isSafeInteger(row.difficultyClass)
+    ) {
+      continue;
+    }
+    const expectedDifficultyClass = Math.min(
+      30,
+      Math.max(10, Math.floor(row.damage / 2))
+    );
+    if (row.difficultyClass !== expectedDifficultyClass) continue;
+    ids.add(row.id);
+    pending.push({
+      id: row.id,
+      spell: row.spell as ConcentrationRef,
+      damage: row.damage,
+      difficultyClass: row.difficultyClass,
+    });
+  }
+  return pending;
 }
 
 function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
@@ -265,6 +634,17 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
         return [receipt];
       })
     : [];
+  const spellSlotCastsThisTurn = Math.min(
+    1,
+    Math.floor(number(row.spellSlotCastsThisTurn))
+  );
+  const spellSlotCastTurnKey =
+    spellSlotCastsThisTurn > 0
+      ? typeof row.spellSlotCastTurnKey === "string" &&
+        row.spellSlotCastTurnKey.length > 0
+        ? row.spellSlotCastTurnKey
+        : row.key
+      : null;
   return {
     key: row.key,
     selected: parsedSelected,
@@ -277,7 +657,8 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
     reactionOutcomeOccurrenceId,
     movementUsedFt: number(row.movementUsedFt),
     dashesThisTurn: number(row.dashesThisTurn),
-    spellSlotCastsThisTurn: number(row.spellSlotCastsThisTurn),
+    spellSlotCastsThisTurn,
+    spellSlotCastTurnKey,
     damageTakenThisRound: row.damageTakenThisRound === true,
     nextAttackAdvantage: row.nextAttackAdvantage === true,
     movementLocked: row.movementLocked === true,
@@ -373,10 +754,21 @@ export function subscribeCombatState(
   onError?: (err: Error) => void
 ): () => void {
   if (devBypassEnabled()) {
-    return subscribeDevDocument<CombatState>(
+    return subscribeDevDocument<Record<string, unknown>>(
       DEV_COMBAT_COLLECTION,
       devCombatId(uid, charId),
-      (state) => cb(state, { hasPendingWrites: false })
+      (state) => {
+        if (!state) {
+          cb(null, { hasPendingWrites: false });
+          return;
+        }
+        const parsed = parseCombatState(state);
+        if (!parsed.ok) {
+          onError?.(new TypeError(`Invalid combat state: ${parsed.reason}`));
+          return;
+        }
+        cb(parsed.state, { hasPendingWrites: false });
+      }
     );
   }
   return onSnapshot(
@@ -385,9 +777,16 @@ export function subscribeCombatState(
       // `hasPendingWrites` distinguishes a LOCAL optimistic echo (true) from a
       // SERVER-originated update (false) — the own-sheet undo stack's remote fence
       // reads it so a snapshot-leg undo never clobbers another writer's edit.
-      cb(snap.exists() ? parseCombatState(snap.data()) : null, {
-        hasPendingWrites: snap.metadata.hasPendingWrites,
-      });
+      if (!snap.exists()) {
+        cb(null, { hasPendingWrites: snap.metadata.hasPendingWrites });
+        return;
+      }
+      const parsed = parseCombatState(snap.data());
+      if (!parsed.ok) {
+        onError?.(new TypeError(`Invalid combat state: ${parsed.reason}`));
+        return;
+      }
+      cb(parsed.state, { hasPendingWrites: snap.metadata.hasPendingWrites });
     },
     (err) => onError?.(err)
   );
@@ -404,7 +803,11 @@ export async function writeCombatState(
   state: CombatState
 ): Promise<void> {
   if (devBypassEnabled()) {
-    writeDevDocument(DEV_COMBAT_COLLECTION, devCombatId(uid, charId), state);
+    writeDevDocument(
+      DEV_COMBAT_COLLECTION,
+      devCombatId(uid, charId),
+      combatStateForDevWrite(state)
+    );
     return;
   }
   // OVERWRITE (not merge): `combatStateWriteData` ALWAYS emits the COMPLETE CombatState,
@@ -429,8 +832,11 @@ export function updateDevCombatState(
   return updateDevDocument(
     DEV_COMBAT_COLLECTION,
     devCombatId(uid, charId),
-    fallback,
-    update
+    combatStateForDevWrite(fallback),
+    (current) =>
+      combatStateForDevWrite(
+        update(parsedCombatState(current as unknown as Record<string, unknown>))
+      )
   );
 }
 
@@ -448,92 +854,21 @@ export async function writeCombatTurnEconomy(
 ): Promise<void> {
   if (devBypassEnabled()) {
     const id = devCombatId(uid, charId);
-    const current = readDevDocument<CombatState>(DEV_COMBAT_COLLECTION, id);
+    const current = readDevDocument<Record<string, unknown>>(DEV_COMBAT_COLLECTION, id);
     if (current) {
-      writeDevDocument(DEV_COMBAT_COLLECTION, id, { ...current, round, turnEconomy });
+      writeDevDocument(
+        DEV_COMBAT_COLLECTION,
+        id,
+        combatStateForDevWrite({ ...parsedCombatState(current), round, turnEconomy })
+      );
     }
     return;
   }
-  await setDoc(
-    combatStateRef(uid, charId),
-    { round, turnEconomy, updatedAt: serverTimestamp() },
-    { merge: true }
-  );
-}
-
-/**
- * The base a `base`-reducing op helper starts from: the caller's CURRENT
- * {@link CombatState} for this PC (its live subscription value), or, when the subdoc is
- * ABSENT (`null` — a fresh / not-yet-migrated PC), the full-HP {@link defaultCombatState}
- * at `effectiveMaxHp` — so the FIRST offline write of any op lands a rules-valid full
- * shape at the right HP ceiling (never a partial create, never a synthetic 0-HP seed).
- */
-function baseOrDefault(base: CombatState | null, effectiveMaxHp: number): CombatState {
-  return base ?? defaultCombatState(effectiveMaxHp);
-}
-
-/**
- * Apply an HP DELTA (damage / heal) over the caller's live `base` and persist the whole
- * result — offline-safe (`setDoc` overwrite, durably queued). `effectiveMaxHp` clamps healing
- * and seeds the absent-doc default. A no-op under DEV_BYPASS. Used by writers that hold the
- * current state as a value (the DM encounter row / topbar pip); the cockpit store persists
- * its own optimistic reduction via {@link writeCombatState}.
- */
-export function applyHpDelta(
-  uid: string,
-  charId: string,
-  base: CombatState | null,
-  op: { kind: "damage" | "heal"; amount: number },
-  effectiveMaxHp: number
-): Promise<void> {
-  return writeCombatState(
-    uid,
-    charId,
-    reduceHpDelta(baseOrDefault(base, effectiveMaxHp), op, effectiveMaxHp)
-  );
-}
-
-/** Tick a death save over `base` (NESTED `deathSaves`, capped `[0, 3]`) and persist. */
-export function tickDeathSave(
-  uid: string,
-  charId: string,
-  base: CombatState | null,
-  outcome: "success" | "failure",
-  effectiveMaxHp: number
-): Promise<void> {
-  return writeCombatState(
-    uid,
-    charId,
-    reduceDeathSave(baseOrDefault(base, effectiveMaxHp), outcome)
-  );
-}
-
-/** Add / remove a condition id over `base` (idempotent) and persist the result. */
-export function setCombatCondition(
-  uid: string,
-  charId: string,
-  base: CombatState | null,
-  op: { kind: "add" | "remove"; conditionId: string },
-  effectiveMaxHp: number
-): Promise<void> {
-  return writeCombatState(
-    uid,
-    charId,
-    reduceCondition(baseOrDefault(base, effectiveMaxHp), op)
-  );
-}
-
-/** Set temp HP to an exact value over `base` (floors at 0, leaves current) and persist. */
-export function setCombatTempHp(
-  uid: string,
-  charId: string,
-  base: CombatState | null,
-  temp: number,
-  effectiveMaxHp: number
-): Promise<void> {
-  return writeCombatState(
-    uid,
-    charId,
-    setTempAbsolute(baseOrDefault(base, effectiveMaxHp), temp)
-  );
+  // Update-only: a partial turn payload must never CREATE a malformed play owner
+  // (historically `setDoc(..., {merge:true})` could synthesize a 0-HP document).
+  await updateDoc(combatStateRef(uid, charId), {
+    round,
+    turnEconomy,
+    updatedAt: serverTimestamp(),
+  });
 }
