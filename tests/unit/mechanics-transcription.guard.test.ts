@@ -1,3 +1,6 @@
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { spells } from "@/data/spells";
@@ -30,6 +33,37 @@ describe("corpus transcription", () => {
     }
     const automated = breakdown.get("automated") ?? 0;
     expect(automated).toBeGreaterThan(0);
+
+    if (process.env.WRITE_AUTOMATION_COVERAGE === "1") {
+      const entities = spells.flatMap((spell) => {
+        if (spell.source !== "SRD") return [];
+        const transcription = transcribeSpell(spell);
+        return [
+          {
+            clauses: transcription.clauses,
+            executable: transcription.program !== null,
+            id: spell.id,
+          },
+        ];
+      });
+      const executable = spells.filter(
+        (spell) => transcribeSpell(spell).program !== null
+      ).length;
+      writeFileSync(
+        resolve(process.cwd(), "docs/automation-coverage.generated.json"),
+        `${JSON.stringify(
+          {
+            entities,
+            executablePrograms: executable,
+            family: "spells",
+            totalEntities: spells.length,
+            totals: Object.fromEntries(breakdown),
+          },
+          null,
+          2
+        )}\n`
+      );
+    }
   });
 
   it("emits an executable fireball program with save, half damage and upcast", () => {
