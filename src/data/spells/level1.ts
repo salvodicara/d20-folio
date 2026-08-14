@@ -403,6 +403,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    targeting: { affinity: "any", maxTargets: 5 },
     source: "SRD",
   },
   {
@@ -1030,6 +1031,482 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
   },
   {
     id: "ensnaring-strike",
+    // The canonical-runtime authored program (supersedes `effectProgram`): the
+    // cast arms the vines on the caster; the table declares the landed weapon
+    // attack as the "strike" pulse (STR save: failure restrains and roots the
+    // vines, success ends the spell), each restrained turn-start as a "pulse"
+    // (1d6 piercing, +1d6 per slot level above 1), and the escape action as an
+    // "escape" pulse (STR check vs the spell DC frees the target and ends the
+    // program). The Large-or-larger save advantage stays with the physical
+    // roller.
+    mechanicsProgram: {
+      id: "spell:ensnaring-strike",
+      phases: [
+        {
+          inputs: [
+            {
+              inputId: "slot",
+              kind: "resource",
+              term: {
+                amount: { kind: "fixed", value: 1 },
+                selector: {
+                  kind: "spell-slot",
+                  level: { kind: "minimum", value: 1 },
+                  owner: "caster",
+                  pool: "either",
+                },
+              },
+              when: null,
+            },
+          ],
+          phaseId: "resolve",
+          steps: [
+            {
+              kind: "register",
+              operation: {
+                kind: "set-integer",
+                value: { bindingId: "input.slot.level", kind: "binding" },
+              },
+              registerId: "cast-level",
+              stepId: "record-cast-level",
+              when: null,
+            },
+            {
+              fact: { key: "spell-ensnaring-strike", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "source-end" },
+              operation: "start",
+              stepId: "arm-vines",
+              target: { kind: "role", role: "caster" },
+              when: null,
+            },
+            {
+              kind: "concentration",
+              lifetime: { kind: "manual" },
+              operation: "start",
+              stepId: "hold-concentration",
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "strike-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 1 },
+              minimum: { kind: "fixed", value: 0 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              expansion: { bind: "actor", inputId: "strike-targets", kind: "entities" },
+              inputId: "strike-saves",
+              kind: "d20",
+              payments: [],
+              request: {
+                ability: "STR",
+                actor: "target",
+                difficultyClass: { bindingId: "spell-save-dc", kind: "binding" },
+                enteredModifiers: [],
+                kind: "saving-throw",
+                modifiers: [],
+                resolution: { kind: "rolled" },
+                rollRules: {
+                  advantageSourceIds: [],
+                  disadvantageSourceIds: [],
+                  extraD20SourceIds: [],
+                  faceFloors: [],
+                  replacements: [],
+                  substitutions: [],
+                  totalFloors: [],
+                },
+                target: "caster",
+                testId: "spell-save",
+              },
+              when: null,
+            },
+          ],
+          phaseId: "strike",
+          steps: [
+            {
+              conditionId: "restrained",
+              kind: "condition",
+              lifetime: { kind: "source-end" },
+              operation: "apply",
+              stepId: "strike-restrained",
+              target: {
+                cardinality: "per-request",
+                inputId: "strike-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              when: null,
+            },
+            {
+              fact: { key: "ensnaring-strike-vines", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "source-end" },
+              operation: "start",
+              stepId: "strike-vines",
+              target: {
+                cardinality: "per-request",
+                inputId: "strike-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              when: null,
+            },
+            {
+              kind: "end-program",
+              stepId: "strike-save-ends",
+              when: {
+                inputId: "strike-saves",
+                kind: "answer-d20",
+                outcomeId: "success",
+                quantifier: "any",
+              },
+            },
+          ],
+          trigger: { eventId: "strike", kind: "root-pulse" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "pulse-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 1 },
+              minimum: { kind: "fixed", value: 0 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              acceptancePolicy: [],
+              expansion: { binding: "caster", kind: "single" },
+              formula: {
+                terms: [
+                  {
+                    count: {
+                      kind: "add",
+                      terms: [
+                        { kind: "fixed", value: 1 },
+                        {
+                          factors: [
+                            { kind: "fixed", value: 1 },
+                            {
+                              kind: "max",
+                              values: [
+                                { kind: "fixed", value: 0 },
+                                {
+                                  kind: "add",
+                                  terms: [
+                                    { bindingId: "register.cast-level", kind: "binding" },
+                                    { kind: "fixed", value: -1 },
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                          kind: "multiply",
+                        },
+                      ],
+                    },
+                    kind: "dice",
+                    operation: "add",
+                    sides: 6,
+                    termId: "pulse-roll-die",
+                  },
+                ],
+              },
+              inputId: "pulse-roll",
+              kind: "dice",
+              payments: [],
+              replacementPolicy: [],
+              when: null,
+            },
+          ],
+          phaseId: "pulse",
+          steps: [
+            {
+              delivery: "automatic",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "pulse-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "piercing",
+                  partId: "pulse-piercing",
+                },
+              ],
+              stepId: "pulse-damage",
+              target: { inputId: "pulse-targets", kind: "input" },
+              traits: ["spell"],
+              when: {
+                fact: { key: "ensnaring-strike-vines", kind: "active-key" },
+                kind: "standing-present",
+                present: true,
+                quantifier: "any",
+                target: { inputId: "pulse-targets", kind: "input" },
+              },
+            },
+          ],
+          trigger: { eventId: "pulse", kind: "root-pulse" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "escape-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 1 },
+              minimum: { kind: "fixed", value: 0 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              expansion: { bind: "actor", inputId: "escape-targets", kind: "entities" },
+              inputId: "escape-check",
+              kind: "d20",
+              payments: [],
+              request: {
+                ability: "STR",
+                actor: "target",
+                difficultyClass: { bindingId: "spell-save-dc", kind: "binding" },
+                enteredModifiers: [],
+                kind: "ability-check",
+                modifiers: [],
+                resolution: { kind: "rolled" },
+                rollRules: {
+                  advantageSourceIds: [],
+                  disadvantageSourceIds: [],
+                  extraD20SourceIds: [],
+                  faceFloors: [],
+                  replacements: [],
+                  substitutions: [],
+                  totalFloors: [],
+                },
+                target: null,
+                testId: "escape-check",
+              },
+              when: null,
+            },
+          ],
+          phaseId: "escape",
+          steps: [
+            {
+              conditionId: "restrained",
+              kind: "condition",
+              lifetime: null,
+              operation: "remove",
+              stepId: "escape-freedom",
+              target: {
+                cardinality: "per-request",
+                inputId: "escape-check",
+                kind: "d20-outcome",
+                outcomeIds: ["success"],
+                quantifier: "any",
+              },
+              when: null,
+            },
+            {
+              fact: { key: "ensnaring-strike-vines", kind: "active-key" },
+              kind: "standing",
+              lifetime: null,
+              operation: "end",
+              stepId: "escape-severs",
+              target: {
+                cardinality: "per-request",
+                inputId: "escape-check",
+                kind: "d20-outcome",
+                outcomeIds: ["success"],
+                quantifier: "any",
+              },
+              when: null,
+            },
+            {
+              kind: "end-program",
+              stepId: "escape-ends",
+              when: {
+                inputId: "escape-check",
+                kind: "answer-d20",
+                outcomeId: "success",
+                quantifier: "any",
+              },
+            },
+          ],
+          trigger: { eventId: "escape", kind: "root-pulse" },
+        },
+        {
+          inputs: [],
+          phaseId: "release",
+          steps: [{ kind: "end-program", stepId: "release-spell", when: null }],
+          trigger: { kind: "source-end" },
+        },
+      ],
+      registers: [{ initial: 1, registerId: "cast-level" }],
+      version: 1,
+    },
+    effectProgram: {
+      version: 1,
+      id: "spell.ensnaring-strike",
+      gates: [
+        {
+          id: "vine-save",
+          kind: "save",
+          scope: "target",
+          ability: "STR",
+          dc: { kind: "binding", binding: "caster-spell-save-dc" },
+          when: { kind: "trigger-fact", fact: "attack-result", equals: "hit" },
+          sizeAdvantage: {
+            subject: "target",
+            comparison: "gte",
+            size: "Large",
+            sourceId: "ensnaring-strike-large-save-advantage",
+          },
+        },
+        {
+          id: "escape-check",
+          kind: "check",
+          scope: "target",
+          ability: "STR",
+          skill: "athletics",
+          dc: { kind: "binding", binding: "caster-spell-save-dc" },
+        },
+      ],
+      inputs: [
+        {
+          id: "vine-damage-roll",
+          kind: "roll",
+          scope: "target",
+          roll: {
+            count: { base: 1, perSlot: { above: 1, amount: 1 } },
+            sides: 6,
+          },
+        },
+      ],
+      phases: [
+        {
+          id: "ensnare",
+          trigger: { kind: "resolve" },
+          targeting: { affinity: "enemy", maxTargets: 1 },
+          steps: [
+            {
+              id: "apply-restrained",
+              kind: "condition",
+              scope: "target",
+              subject: "target",
+              operation: "apply",
+              condition: "restrained",
+              lifetime: { kind: "source-end" },
+              when: {
+                kind: "all",
+                predicates: [
+                  { kind: "trigger-fact", fact: "attack-result", equals: "hit" },
+                  { kind: "gate", gateId: "vine-save", result: "failure" },
+                ],
+              },
+            },
+            {
+              id: "start-vines",
+              kind: "standing",
+              scope: "target",
+              subject: "target",
+              operation: "start",
+              effectId: "ensnaring-strike-vines",
+              lifetime: { kind: "source-end" },
+              when: {
+                kind: "all",
+                predicates: [
+                  { kind: "trigger-fact", fact: "attack-result", equals: "hit" },
+                  { kind: "gate", gateId: "vine-save", result: "failure" },
+                ],
+              },
+            },
+            {
+              id: "miss-ends",
+              kind: "end-program",
+              scope: "target",
+              when: { kind: "trigger-fact", fact: "attack-result", equals: "miss" },
+            },
+            {
+              id: "initial-save-ends",
+              kind: "end-program",
+              scope: "target",
+              when: {
+                kind: "all",
+                predicates: [
+                  { kind: "trigger-fact", fact: "attack-result", equals: "hit" },
+                  { kind: "gate", gateId: "vine-save", result: "success" },
+                ],
+              },
+            },
+          ],
+        },
+        {
+          id: "restrained-turn",
+          trigger: { kind: "turn-start", subject: "target", everyTurns: 1 },
+          targeting: { affinity: "enemy", maxTargets: 1 },
+          steps: [
+            {
+              id: "vine-damage",
+              kind: "damage",
+              scope: "target",
+              subject: "target",
+              amount: { kind: "input", inputId: "vine-damage-roll" },
+              damageType: { kind: "fixed", damageType: "piercing" },
+              damageSource: "spell",
+              when: {
+                kind: "standing",
+                subject: "target",
+                effectId: "ensnaring-strike-vines",
+                present: true,
+              },
+            },
+          ],
+          repeat: { id: "ensnaring-strike-duration", maxOccurrences: 10 },
+        },
+        {
+          id: "escape-vines",
+          trigger: { kind: "manual", eventId: "action-to-break-ensnaring-vines" },
+          targeting: { affinity: "any", maxTargets: 1 },
+          steps: [
+            {
+              id: "remove-restrained",
+              kind: "condition",
+              scope: "target",
+              subject: "target",
+              operation: "remove",
+              condition: "restrained",
+              when: { kind: "gate", gateId: "escape-check", result: "success" },
+            },
+            {
+              id: "end-vines",
+              kind: "standing",
+              scope: "target",
+              subject: "target",
+              operation: "end",
+              effectId: "ensnaring-strike-vines",
+              when: { kind: "gate", gateId: "escape-check", result: "success" },
+            },
+            {
+              id: "escape-ends-program",
+              kind: "end-program",
+              scope: "target",
+              when: { kind: "gate", gateId: "escape-check", result: "success" },
+            },
+          ],
+        },
+      ],
+    },
     level: 1,
     school: "conjuration",
     classes: ["ranger"],
@@ -1148,6 +1625,382 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
   },
   {
     id: "searing-smite",
+    // The canonical-runtime authored program (supersedes `effectProgram`): the
+    // cast arms the smite on the caster for one minute; the table declares the
+    // landed weapon attack as the "strike" pulse (1d6 fire, +1d6 per slot level
+    // above 1, and the target starts burning) and each burning turn-start as a
+    // "pulse" (CON save: failure takes the same roll again, success ends the
+    // program — the 2024 shape; the legacy program dealt the turn damage before
+    // adjudicating the save).
+    mechanicsProgram: {
+      id: "spell:searing-smite",
+      phases: [
+        {
+          inputs: [
+            {
+              inputId: "slot",
+              kind: "resource",
+              term: {
+                amount: { kind: "fixed", value: 1 },
+                selector: {
+                  kind: "spell-slot",
+                  level: { kind: "minimum", value: 1 },
+                  owner: "caster",
+                  pool: "either",
+                },
+              },
+              when: null,
+            },
+          ],
+          phaseId: "resolve",
+          steps: [
+            {
+              kind: "register",
+              operation: {
+                kind: "set-integer",
+                value: { bindingId: "input.slot.level", kind: "binding" },
+              },
+              registerId: "cast-level",
+              stepId: "record-cast-level",
+              when: null,
+            },
+            {
+              fact: { key: "spell-searing-smite", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "duration", seconds: { kind: "fixed", value: 60 } },
+              operation: "start",
+              stepId: "arm-smite",
+              target: { kind: "role", role: "caster" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "strike-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 1 },
+              minimum: { kind: "fixed", value: 0 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              acceptancePolicy: [],
+              expansion: { binding: "caster", kind: "single" },
+              formula: {
+                terms: [
+                  {
+                    count: {
+                      kind: "add",
+                      terms: [
+                        { kind: "fixed", value: 1 },
+                        {
+                          factors: [
+                            { kind: "fixed", value: 1 },
+                            {
+                              kind: "max",
+                              values: [
+                                { kind: "fixed", value: 0 },
+                                {
+                                  kind: "add",
+                                  terms: [
+                                    { bindingId: "register.cast-level", kind: "binding" },
+                                    { kind: "fixed", value: -1 },
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                          kind: "multiply",
+                        },
+                      ],
+                    },
+                    kind: "dice",
+                    operation: "add",
+                    sides: 6,
+                    termId: "strike-roll-die",
+                  },
+                ],
+              },
+              inputId: "strike-roll",
+              kind: "dice",
+              payments: [],
+              replacementPolicy: [],
+              when: null,
+            },
+          ],
+          phaseId: "strike",
+          steps: [
+            {
+              delivery: "automatic",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "strike-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "fire",
+                  partId: "strike-fire",
+                },
+              ],
+              stepId: "strike-damage",
+              target: { inputId: "strike-targets", kind: "input" },
+              traits: ["spell"],
+              when: null,
+            },
+            {
+              fact: { key: "searing-smite-burning", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "duration", seconds: { kind: "fixed", value: 60 } },
+              operation: "start",
+              stepId: "strike-burning",
+              target: { inputId: "strike-targets", kind: "input" },
+              when: null,
+            },
+          ],
+          trigger: { eventId: "strike", kind: "root-pulse" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "pulse-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 1 },
+              minimum: { kind: "fixed", value: 0 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              expansion: { bind: "actor", inputId: "pulse-targets", kind: "entities" },
+              inputId: "pulse-saves",
+              kind: "d20",
+              payments: [],
+              request: {
+                ability: "CON",
+                actor: "target",
+                difficultyClass: { bindingId: "spell-save-dc", kind: "binding" },
+                enteredModifiers: [],
+                kind: "saving-throw",
+                modifiers: [],
+                resolution: { kind: "rolled" },
+                rollRules: {
+                  advantageSourceIds: [],
+                  disadvantageSourceIds: [],
+                  extraD20SourceIds: [],
+                  faceFloors: [],
+                  replacements: [],
+                  substitutions: [],
+                  totalFloors: [],
+                },
+                target: "caster",
+                testId: "spell-save",
+              },
+              when: null,
+            },
+            {
+              acceptancePolicy: [],
+              expansion: { binding: "caster", kind: "single" },
+              formula: {
+                terms: [
+                  {
+                    count: {
+                      kind: "add",
+                      terms: [
+                        { kind: "fixed", value: 1 },
+                        {
+                          factors: [
+                            { kind: "fixed", value: 1 },
+                            {
+                              kind: "max",
+                              values: [
+                                { kind: "fixed", value: 0 },
+                                {
+                                  kind: "add",
+                                  terms: [
+                                    { bindingId: "register.cast-level", kind: "binding" },
+                                    { kind: "fixed", value: -1 },
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                          kind: "multiply",
+                        },
+                      ],
+                    },
+                    kind: "dice",
+                    operation: "add",
+                    sides: 6,
+                    termId: "pulse-roll-die",
+                  },
+                ],
+              },
+              inputId: "pulse-roll",
+              kind: "dice",
+              payments: [],
+              replacementPolicy: [],
+              when: null,
+            },
+          ],
+          phaseId: "pulse",
+          steps: [
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "pulse-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "fire",
+                  partId: "pulse-fire",
+                },
+              ],
+              stepId: "pulse-damage",
+              target: {
+                cardinality: "per-request",
+                inputId: "pulse-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: null,
+            },
+            {
+              kind: "end-program",
+              stepId: "pulse-ends-on-save",
+              when: {
+                inputId: "pulse-saves",
+                kind: "answer-d20",
+                outcomeId: "success",
+                quantifier: "any",
+              },
+            },
+          ],
+          trigger: { eventId: "pulse", kind: "root-pulse" },
+        },
+      ],
+      registers: [{ initial: 1, registerId: "cast-level" }],
+      version: 1,
+    },
+    effectProgram: {
+      version: 1,
+      id: "spell.searing-smite",
+      gates: [
+        {
+          id: "flame-save",
+          kind: "save",
+          scope: "target",
+          ability: "CON",
+          dc: { kind: "binding", binding: "caster-spell-save-dc" },
+        },
+      ],
+      inputs: [
+        {
+          id: "impact-roll",
+          kind: "roll",
+          scope: "target",
+          roll: {
+            count: { base: 1, perSlot: { above: 1, amount: 1 } },
+            sides: 6,
+          },
+          when: { kind: "trigger-fact", fact: "attack-result", equals: "hit" },
+        },
+        {
+          id: "ongoing-roll",
+          kind: "roll",
+          scope: "target",
+          roll: {
+            count: { base: 1, perSlot: { above: 1, amount: 1 } },
+            sides: 6,
+          },
+        },
+      ],
+      phases: [
+        {
+          id: "ignite",
+          trigger: { kind: "resolve" },
+          targeting: { affinity: "enemy", maxTargets: 1 },
+          steps: [
+            {
+              id: "impact-fire",
+              kind: "damage",
+              scope: "target",
+              subject: "target",
+              amount: { kind: "input", inputId: "impact-roll" },
+              damageType: { kind: "fixed", damageType: "fire" },
+              damageSource: "spell",
+              when: { kind: "trigger-fact", fact: "attack-result", equals: "hit" },
+            },
+            {
+              id: "start-burning",
+              kind: "standing",
+              scope: "target",
+              subject: "target",
+              operation: "start",
+              effectId: "searing-smite-burning",
+              lifetime: { kind: "elapsed", amount: 1, unit: "minute" },
+              when: { kind: "trigger-fact", fact: "attack-result", equals: "hit" },
+            },
+            {
+              id: "miss-ends",
+              kind: "end-program",
+              scope: "target",
+              when: { kind: "trigger-fact", fact: "attack-result", equals: "miss" },
+            },
+          ],
+        },
+        {
+          id: "burning-turn",
+          trigger: { kind: "turn-start", subject: "target", everyTurns: 1 },
+          targeting: { affinity: "enemy", maxTargets: 1 },
+          steps: [
+            {
+              id: "ongoing-fire",
+              kind: "damage",
+              scope: "target",
+              subject: "target",
+              amount: { kind: "input", inputId: "ongoing-roll" },
+              damageType: { kind: "fixed", damageType: "fire" },
+              damageSource: "spell",
+              when: {
+                kind: "standing",
+                subject: "target",
+                effectId: "searing-smite-burning",
+                present: true,
+              },
+            },
+            {
+              id: "successful-save-ends-burning",
+              kind: "standing",
+              scope: "target",
+              subject: "target",
+              operation: "end",
+              effectId: "searing-smite-burning",
+              when: { kind: "gate", gateId: "flame-save", result: "success" },
+            },
+            {
+              id: "successful-save-ends-program",
+              kind: "end-program",
+              scope: "target",
+              when: { kind: "gate", gateId: "flame-save", result: "success" },
+            },
+          ],
+          repeat: { id: "searing-smite-duration", maxOccurrences: 10 },
+        },
+      ],
+    },
     level: 1,
     school: "evocation",
     classes: ["paladin"],

@@ -1414,12 +1414,117 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "legacy-authored-program-migration",
-          "status": "unsupported"
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-slot",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-record-cast-level",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-arm-vines",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-hold-concentration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "strike-strike-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "strike-strike-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "strike-strike-restrained",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "strike-strike-vines",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "strike-strike-save-ends",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "strike-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "pulse-pulse-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-pulse-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "pulse-pulse-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "escape-escape-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "escape-escape-check",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "escape-escape-freedom",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "escape-escape-severs",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "escape-escape-ends",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "escape-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "release-release-spell",
+          "detail": null,
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "ensnaring-strike"
     },
     {
@@ -2372,12 +2477,82 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "legacy-authored-program-migration",
-          "status": "unsupported"
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-slot",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-record-cast-level",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-arm-smite",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "strike-strike-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "strike-strike-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "strike-strike-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "strike-strike-burning",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "strike-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "pulse-pulse-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-pulse-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "pulse-pulse-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "pulse-pulse-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-pulse-ends-on-save",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "searing-smite"
     },
     {
@@ -3070,12 +3245,137 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "legacy-authored-program-migration",
-          "status": "unsupported"
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-slot",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-breath-form",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-imbue-target",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-record-cast-level",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-imbue-acid",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-imbue-cold",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-imbue-fire",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-imbue-lightning",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-imbue-poison",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-hold-concentration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "exhale-exhale-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "exhale-exhale-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "exhale-exhale-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "exhale-exhale-acid-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "exhale-exhale-acid-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "exhale-exhale-cold-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "exhale-exhale-cold-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "exhale-exhale-fire-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "exhale-exhale-fire-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "exhale-exhale-lightning-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "exhale-exhale-lightning-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "exhale-exhale-poison-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "exhale-exhale-poison-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "exhale-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "release-release-spell",
+          "detail": null,
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "dragons-breath"
     },
     {
@@ -3715,12 +4015,82 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "legacy-authored-program-migration",
-          "status": "unsupported"
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-slot",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-arrow-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-arrow-attack",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "resolve-impact-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "resolve-impact-crit-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "resolve-impact-miss-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "resolve-impact-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-impact-crit-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-impact-splash-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "afterburn-afterburn-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "afterburn-afterburn-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "afterburn-afterburn-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "afterburn-afterburn-ends",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "afterburn-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "melfs-acid-arrow"
     },
     {
@@ -3937,12 +4307,67 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "legacy-authored-program-migration",
-          "status": "unsupported"
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-slot",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-illusion-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-illusion-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "resolve-root-illusion",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-hold-concentration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-save-ends",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "phantasm-phantasm-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "phantasm-phantasm-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "phantasm-phantasm-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "phantasm-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "release-release-spell",
+          "detail": null,
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "phantasmal-force"
     },
     {
@@ -4308,12 +4733,52 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "legacy-authored-program-migration",
-          "status": "unsupported"
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-slot",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-grow-spikes",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-hold-concentration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "movement-movement-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "movement-movement-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "movement-movement-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "movement-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "release-release-spell",
+          "detail": null,
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "spike-growth"
     },
     {
@@ -6939,12 +7404,97 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "legacy-authored-program-migration",
-          "status": "unsupported"
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-slot",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-nightmare-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-nightmare-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "resolve-nightmare-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "resolve-record-cast-level",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-nightmare-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-nightmare-damage-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-nightmare-frightened",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-hold-concentration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-initial-save-ends",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-pulse-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-pulse-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "pulse-pulse-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "pulse-pulse-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-pulse-ends-on-save",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "release-release-spell",
+          "detail": null,
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "phantasmal-killer"
     },
     {
@@ -7048,12 +7598,67 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "legacy-authored-program-migration",
-          "status": "unsupported"
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-slot",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-sphere-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-sphere-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "resolve-sphere-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "resolve-sphere-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-sphere-damage-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "afterburn-afterburn-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "afterburn-afterburn-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "afterburn-afterburn-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "afterburn-afterburn-ends",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "afterburn-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "vitriolic-sphere"
     },
     {
@@ -7510,12 +8115,202 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "legacy-authored-program-migration",
-          "status": "unsupported"
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-slot",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-infect-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-infect-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "resolve-infect-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "resolve-blight-choice",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-infect-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-infect-poisoned",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-blight-str",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-blight-dex",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-blight-con",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-blight-int",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-blight-wis",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-blight-cha",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-initial-save-ends",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "series-series-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "series-series-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "series-series-success",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "series-series-failure",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "series-series-cleansed",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "series-series-clear-str",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "series-series-clear-dex",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "series-series-clear-con",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "series-series-clear-int",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "series-series-clear-wis",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "series-series-clear-cha",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "series-series-overcome-ends",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "series-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "cure-cure-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cure-cure-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "cure-cure-cleansed",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cure-cure-clear-str",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cure-cure-clear-dex",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cure-cure-clear-con",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cure-cure-clear-int",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cure-cure-clear-wis",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cure-cure-clear-cha",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cure-cure-ends",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cure-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "contagion"
     },
     {
@@ -9480,12 +10275,72 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "legacy-authored-program-migration",
-          "status": "unsupported"
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-slot",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-store-upcast-dice",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-hold-concentration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "accrue-store-die",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "accrue-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "detonate-blast-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "detonate-blast-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "detonate-blast-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "detonate-blast-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "detonate-blast-damage-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "detonate-detonation-ends",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "detonate-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "delayed-blast-fireball"
     },
     {
@@ -9780,12 +10635,127 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "legacy-authored-program-migration",
-          "status": "unsupported"
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-slot",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "ray-ray-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "ray-ray-table",
+          "detail": "table-adjudicated-input",
+          "status": "table"
+        },
+        {
+          "clauseId": "ray-ray-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "ray-ray-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "ray-ray-red-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "ray-ray-red-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "ray-ray-orange-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "ray-ray-orange-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "ray-ray-yellow-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "ray-ray-yellow-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "ray-ray-green-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "ray-ray-green-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "ray-ray-blue-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "ray-ray-blue-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "ray-ray-indigo-restrained",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "ray-ray-violet-blinded",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "ray-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "violet-fate-fate-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "violet-fate-fate-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "violet-fate-fate-sight",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "violet-fate-fate-banishment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "violet-fate-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "prismatic-spray"
     },
     {
@@ -10904,12 +11874,327 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "legacy-authored-program-migration",
-          "status": "unsupported"
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-slot",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-raise-wall",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "proximity-proximity-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "proximity-proximity-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "proximity-proximity-blinded",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "proximity-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "cross-red-cross-red-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-red-cross-red-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "cross-red-cross-red-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "cross-red-cross-red-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-red-cross-red-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-red-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "cross-orange-cross-orange-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-orange-cross-orange-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "cross-orange-cross-orange-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "cross-orange-cross-orange-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-orange-cross-orange-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-orange-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "cross-yellow-cross-yellow-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-yellow-cross-yellow-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "cross-yellow-cross-yellow-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "cross-yellow-cross-yellow-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-yellow-cross-yellow-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-yellow-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "cross-green-cross-green-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-green-cross-green-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "cross-green-cross-green-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "cross-green-cross-green-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-green-cross-green-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-green-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "cross-blue-cross-blue-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-blue-cross-blue-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "cross-blue-cross-blue-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "cross-blue-cross-blue-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-blue-cross-blue-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-blue-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "cross-indigo-cross-indigo-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-indigo-cross-indigo-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "cross-indigo-indigo-restrained",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-indigo-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "cross-violet-cross-violet-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-violet-cross-violet-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "cross-violet-violet-blinded",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cross-violet-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "violet-fate-fate-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "violet-fate-fate-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "violet-fate-fate-sight",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "violet-fate-fate-banishment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "violet-fate-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "destroy-red-destroy-red-layer",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "destroy-red-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "destroy-orange-destroy-orange-layer",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "destroy-orange-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "destroy-yellow-destroy-yellow-layer",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "destroy-yellow-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "destroy-green-destroy-green-layer",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "destroy-green-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "destroy-blue-destroy-blue-layer",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "destroy-blue-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "destroy-indigo-destroy-indigo-layer",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "destroy-indigo-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "destroy-violet-destroy-violet-layer",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "destroy-violet-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "prismatic-wall"
     },
     {
@@ -10941,12 +12226,142 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "legacy-authored-program-migration",
-          "status": "unsupported"
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-slot",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-storm-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-storm-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "resolve-storm-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "resolve-storm-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-storm-deafened",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-hold-concentration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "acid-rain-acid-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "acid-rain-acid-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "acid-rain-acid-rain-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "acid-rain-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "lightning-bolt-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "lightning-bolt-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "lightning-bolt-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "lightning-bolt-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "lightning-bolt-damage-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "lightning-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "hail-hail-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "hail-hail-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "hail-hail-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "hail-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "freezing-rain-rain-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "freezing-rain-rain-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "freezing-rain-rain-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "freezing-rain-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "release-release-spell",
+          "detail": null,
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "storm-of-vengeance"
     },
     {
@@ -11025,12 +12440,87 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "legacy-authored-program-migration",
-          "status": "unsupported"
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-slot",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-terror-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-terror-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "resolve-terror-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "resolve-terror-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-terror-damage-half",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-terror-frightened",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-hold-concentration",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-pulse-targets",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-pulse-saves",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "pulse-pulse-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "pulse-pulse-damage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-pulse-calms",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "pulse-occupancy",
+          "detail": "table-signals-pulse",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "release-release-spell",
+          "detail": null,
+          "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "weird"
     },
     {
@@ -11055,15 +12545,15 @@
       "id": "wish"
     }
   ],
-  "executablePrograms": 259,
+  "executablePrograms": 273,
   "family": "spells",
   "totalEntities": 422,
   "totals": {
-    "automated": 1595,
-    "physical-input": 311,
-    "table": 211,
-    "spatial": 137,
+    "automated": 1811,
+    "physical-input": 368,
+    "table": 212,
+    "spatial": 175,
     "narrative": 128,
-    "unsupported": 36
+    "unsupported": 22
   }
 }
