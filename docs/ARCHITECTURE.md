@@ -664,10 +664,14 @@ at the prepare/coordinator boundary.
 Register writes are individual compare-and-swap `program-register-transition` operations rather than a
 final lump, operation ids are deterministic, trusted compiler fact guards join the transaction, and the
 result is a closed typed union (`compiled`, `needs-response`, `needs-coordination`, `rejected`).
-Every response or coordination barrier carries an opaque process-local compiler continuation. It binds
-only the immutable frame/input, exact expected causal cursor, response prefix and frozen barrier
-generations—never a second world, projected prefix or independent progress model. Resumption remains
-owned by the fixed-point coordinator.
+Only a genuine response barrier mints an opaque process-local compiler continuation: a single-use
+capability whose private fiber binds the exact issuance causal state by identity plus the immutable
+reviewed input, expected cursor, consumed response prefix and the issued request—never a second world,
+projected prefix or independent progress model. Consuming it invalidates it even when the resumed
+compilation then rejects, resumed responses must extend the fiber's prefix by exactly one answer to its
+request, and any surviving unconsumed answer fails the compilation closed. Causal coordination mints no
+continuation at all: the coordinator latches/finalizes the required end state and restarts ordinary
+compilation on the mutated basis.
 The executable vertical now covers register/manual steps plus exact condition, standing,
 Concentration and polymorph starts. Stable expansion slots bind every selected target and materialized
 standing fact; Concentration has no authored target and is derived solely from the receipt's exact caster.

@@ -65,10 +65,14 @@ and independently verified 2024 rules are the evidence.
 
 1. ~~Close the transient projection proof above and checkpoint it with only focused verification.~~
    **Done 2026-08-14** — see the closed checkpoint below.
-2. Repair compiler continuation semantics: current fibers do not bind the issuance causal state;
-   every nonempty `responses` array is rejected; there is no response conformer/classifier or resume API.
-   Keep continuations only for genuine user responses, bind the exact causal basis, make them single-use,
-   and let causal coordination mutate state then restart ordinary compilation without a fake continuation.
+2. ~~Repair compiler continuation semantics.~~ **Done 2026-08-14** — continuations exist only for
+   genuine user responses: the private fiber binds the exact issuance causal state by identity plus the
+   reviewed input, cursor, consumed response prefix and issued request; consumption is single-use even
+   when the resumed compilation then rejects; resumption must extend the prefix by exactly one answer to
+   the issued request, an unanswered/unconsumable/unused response fails closed, and `needs-coordination`
+   carries only its typed coordination value — the coordinator mutates state and restarts ordinary
+   compilation. The end-to-end accept path becomes exercisable with the first observation-bearing step
+   compiler (continuation order 4); every reject path is proved now.
 3. Build one bounded depth-first fixed-point coordinator over compiler segments, frozen event audiences,
    selected subscriber frames and readable end waves. It owns LIFO ordering, global work budgets,
    response/coordination suspension, final frame pops and exactly one final journal draft.

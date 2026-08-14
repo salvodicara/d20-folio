@@ -70,30 +70,21 @@ type CompilerCoordination = Extract<
   { readonly status: "needs-coordination" }
 >["coordination"];
 
-type CompilerBarrier =
-  | {
-      readonly kind: "coordination";
-      readonly value: Readonly<CompilerCoordination>;
-    }
-  | {
-      readonly kind: "request";
-      readonly value: Readonly<
-        Extract<
-          MechanicsFrameCompileResult,
-          { readonly status: "needs-response" }
-        >["request"]
-      >;
-    };
+type CompilerRequest = Extract<
+  MechanicsFrameCompileResult,
+  { readonly status: "needs-response" }
+>["request"];
 
 interface MechanicsCompilerFiber {
   readonly binding: ReturnType<typeof canonicalFingerprint>;
-  readonly barrier: Readonly<CompilerBarrier>;
   readonly cursor: Readonly<MechanicsPendingFrameCursor>;
   readonly frame: Readonly<CompileMechanicsFrameInput["reviewed"]["intent"]["frame"]>;
+  readonly request: Readonly<CompilerRequest>;
   readonly responsePrefix: readonly Readonly<
     CompileMechanicsFrameInput["responses"][number]
   >[];
-  readonly seal: ReturnType<typeof canonicalFingerprint>;
+  /** The exact issuance causal state; resumption on any other state fails closed. */
+  readonly state: Readonly<CompileMechanicsFrameInput["state"]>;
 }
 
 const compilerFibers = new WeakMap<object, Readonly<MechanicsCompilerFiber>>();
@@ -160,68 +151,69 @@ function compilerInputBinding(
   });
 }
 
-function compilerFiberSeal(
-  fiber: Omit<MechanicsCompilerFiber, "seal">
-): ReturnType<typeof canonicalFingerprint> {
-  return canonicalFingerprint(fiber);
-}
-
 function compilerContinuation(
   input: Readonly<CompileMechanicsFrameInput>,
   cursor: Readonly<MechanicsPendingFrameCursor>,
-  barrier: Readonly<CompilerBarrier>
+  request: Readonly<CompilerRequest>
 ): Readonly<MechanicsCompilerContinuation> {
-  const privateState = {
+  const fiber = Object.freeze({
     binding: compilerInputBinding(input),
-    barrier: freezeDeep(structuredClone(barrier)),
     cursor: freezeDeep(structuredClone(cursor)),
     frame: input.reviewed.intent.frame,
+    request: freezeDeep(structuredClone(request)),
     responsePrefix: freezeDeep(structuredClone(input.responses)),
-  } satisfies Omit<MechanicsCompilerFiber, "seal">;
-  const fiber = Object.freeze({
-    ...privateState,
-    seal: compilerFiberSeal(privateState),
+    state: input.state,
   }) satisfies MechanicsCompilerFiber;
   const continuation = freezeDeep({}) as Readonly<MechanicsCompilerContinuation>;
   compilerFibers.set(continuation, fiber);
   return continuation;
 }
 
-function responsePrefixMatches(
-  prefix: MechanicsCompilerFiber["responsePrefix"],
-  responses: CompileMechanicsFrameInput["responses"]
+function compilerFiberMatches(
+  fiber: Readonly<MechanicsCompilerFiber>,
+  input: Readonly<CompileMechanicsFrameInput>
 ): boolean {
-  return canonicalFingerprint(prefix) === canonicalFingerprint(responses);
+  try {
+    const top = topMechanicsPendingFrame(input.state);
+    return (
+      top !== null &&
+      fiber.state === input.state &&
+      fiber.binding === compilerInputBinding(input) &&
+      canonicalFingerprint(top.frame) === canonicalFingerprint(fiber.frame) &&
+      canonicalFingerprint(top.cursor) === canonicalFingerprint(fiber.cursor)
+    );
+  } catch {
+    return false;
+  }
 }
 
-/** Runtime proof that a process-local cursor belongs to one exact compiler input. */
+/** Runtime proof that a continuation was issued for exactly this input and basis. */
 export function isMechanicsCompilerContinuationFor(
   value: unknown,
   input: Readonly<CompileMechanicsFrameInput>
 ): value is Readonly<MechanicsCompilerContinuation> {
   if (typeof value !== "object" || value === null) return false;
   const fiber = compilerFibers.get(value);
-  if (!fiber) return false;
-  try {
-    const top = topMechanicsPendingFrame(input.state);
-    return (
-      top !== null &&
-      fiber.binding === compilerInputBinding(input) &&
-      canonicalFingerprint(top.frame) === canonicalFingerprint(fiber.frame) &&
-      canonicalFingerprint(top.cursor) === canonicalFingerprint(fiber.cursor) &&
-      responsePrefixMatches(fiber.responsePrefix, input.responses) &&
-      fiber.seal ===
-        compilerFiberSeal({
-          barrier: fiber.barrier,
-          binding: fiber.binding,
-          cursor: fiber.cursor,
-          frame: fiber.frame,
-          responsePrefix: fiber.responsePrefix,
-        })
-    );
-  } catch {
-    return false;
-  }
+  return (
+    fiber !== undefined &&
+    compilerFiberMatches(fiber, input) &&
+    canonicalFingerprint(fiber.responsePrefix) === canonicalFingerprint(input.responses)
+  );
+}
+
+/**
+ * Authenticate and consume the single-use continuation for one resumption.
+ * Consumption invalidates it even when the resumed compilation then rejects.
+ */
+function consumeCompilerContinuation(
+  value: unknown,
+  input: Readonly<CompileMechanicsFrameInput>
+): Readonly<MechanicsCompilerFiber> | null {
+  if (typeof value !== "object" || value === null) return null;
+  const fiber = compilerFibers.get(value);
+  if (!fiber) return null;
+  compilerFibers.delete(value);
+  return compilerFiberMatches(fiber, input) ? fiber : null;
 }
 
 function compareCodeUnits(left: string, right: string): number {
@@ -724,6 +716,10 @@ function phaseTransitionOperation(
 function transactionProblem(
   input: Readonly<CompileMechanicsFrameInput>,
   cursor: Readonly<MechanicsPendingFrameCursor>,
+  responses: ReadonlyMap<
+    string,
+    Readonly<CompileMechanicsFrameInput["responses"][number]>
+  >,
   result: Extract<
     MechanicsTransactionSimulationResult,
     {
@@ -734,16 +730,8 @@ function transactionProblem(
   stepId: string | null
 ): MechanicsFrameCompileResult {
   if (result.status === "needs-boundary") {
-    const coordination = freezeDeep({
-      boundary: result.boundary,
-      kind: "boundary" as const,
-    });
     return freezeDeep({
-      continuation: compilerContinuation(input, cursor, {
-        kind: "coordination",
-        value: coordination,
-      }),
-      coordination,
+      coordination: { boundary: result.boundary, kind: "boundary" as const },
       segment: null,
       status: "needs-coordination" as const,
     });
@@ -759,11 +747,17 @@ function transactionProblem(
       }),
       requirement: result.requirement,
     });
+    if (responses.has(request.requestId)) {
+      return rejected(
+        "invalid-response",
+        phaseId,
+        stepId,
+        "unconsumable-response",
+        result.operationId
+      );
+    }
     return freezeDeep({
-      continuation: compilerContinuation(input, cursor, {
-        kind: "request",
-        value: request,
-      }),
+      continuation: compilerContinuation(input, cursor, request),
       request,
       segment: null,
       status: "needs-response" as const,
@@ -800,8 +794,35 @@ export function compileMechanicsFrame(
       preparation.referenceId ?? preparation.reason
     );
   }
+  const responsePool = new Map<
+    string,
+    Readonly<CompileMechanicsFrameInput["responses"][number]>
+  >();
   if (input.responses.length > 0) {
-    return rejected("invalid-response", phaseId, null, "unused-response");
+    const fiber = consumeCompilerContinuation(input.continuation, input);
+    if (!fiber) {
+      return rejected("invalid-response", phaseId, null, "unauthentic-continuation");
+    }
+    const prefix = fiber.responsePrefix;
+    const answer = input.responses.at(-1);
+    if (
+      input.responses.length !== prefix.length + 1 ||
+      canonicalFingerprint(input.responses.slice(0, prefix.length)) !==
+        canonicalFingerprint(prefix) ||
+      !answer ||
+      answer.requestId !== fiber.request.requestId ||
+      answer.kind !== fiber.request.kind
+    ) {
+      return rejected("invalid-response", phaseId, null, "response-mismatch");
+    }
+    for (const response of input.responses) {
+      if (responsePool.has(response.requestId)) {
+        return rejected("invalid-response", phaseId, null, "duplicate-response");
+      }
+      responsePool.set(response.requestId, response);
+    }
+  } else if (input.continuation !== null) {
+    return rejected("invalid-response", phaseId, null, "unused-continuation");
   }
   if (hasReviewedPayments(input.reviewed.resolved)) {
     return rejected("unsupported-step", phaseId, null, "reviewed-payment");
@@ -824,14 +845,15 @@ export function compileMechanicsFrame(
     coordination: Readonly<CompilerCoordination>
   ): MechanicsFrameCompileResult =>
     freezeDeep({
-      continuation: compilerContinuation(input, cursor, {
-        kind: "coordination",
-        value: coordination,
-      }),
       coordination,
       segment: null,
       status: "needs-coordination" as const,
     });
+
+  const unusedResponses = (): MechanicsFrameCompileResult | null =>
+    responsePool.size > 0
+      ? rejected("invalid-response", phaseId, null, "unused-response")
+      : null;
 
   const operations: Readonly<MechanicsOperation>[] = [];
   const project = (
@@ -850,7 +872,7 @@ export function compileMechanicsFrame(
     });
     if (result.status !== "projected") {
       operations.pop();
-      return transactionProblem(input, cursor, result, phaseId, stepId);
+      return transactionProblem(input, cursor, responsePool, result, phaseId, stepId);
     }
     const refreshed = refreshMechanicsProgramProjectedCompilationContext(
       input.reviewed,
@@ -874,6 +896,8 @@ export function compileMechanicsFrame(
     manual: readonly Readonly<ManualInstruction>[],
     trace: readonly Readonly<MechanicsCompiledStepTrace>[]
   ): MechanicsFrameCompileResult => {
+    const unused = unusedResponses();
+    if (unused) return unused;
     const advanced = advanceMechanicsPendingFrameStep(state, top.frame);
     if (!advanced.ok) {
       return rejected("kernel-rejected", phaseId, trace[0]?.stepId ?? null);
@@ -898,8 +922,10 @@ export function compileMechanicsFrame(
       state,
     });
     if (simulation.status !== "simulated" && simulation.status !== "no-change") {
-      return transactionProblem(input, cursor, simulation, phaseId, stepId);
+      return transactionProblem(input, cursor, responsePool, simulation, phaseId, stepId);
     }
+    const unused = unusedResponses();
+    if (unused) return unused;
     const advanced = advanceMechanicsPendingFrameStep(simulation.state, top.frame);
     if (!advanced.ok) {
       return rejected("kernel-rejected", phaseId, stepId, "cursor-advance");
@@ -941,8 +967,10 @@ export function compileMechanicsFrame(
       state,
     });
     if (simulation.status !== "simulated" && simulation.status !== "no-change") {
-      return transactionProblem(input, cursor, simulation, phaseId, null);
+      return transactionProblem(input, cursor, responsePool, simulation, phaseId, null);
     }
+    const unused = unusedResponses();
+    if (unused) return unused;
     const nextTop = topMechanicsPendingFrame(simulation.state);
     if (
       nextTop === null ||

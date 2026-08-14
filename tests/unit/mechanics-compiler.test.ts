@@ -17,7 +17,6 @@ import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
 import { mechanicsProgramEffectOccurrenceId } from "@/lib/mechanics-program-effects";
 import { createEmptyCharacterMaterialState } from "@/lib/material-state";
 import {
-  advanceMechanicsPendingFrameStep,
   beginMechanicsCausalState,
   parseMechanicsWorld,
   pushMechanicsPendingFrame,
@@ -428,6 +427,7 @@ function pendingCompilationInput(
   if (!pushed.ok) throw new Error(`pending fixture was rejected: ${pushed.reason}`);
   return {
     authoritySnapshot: authoritySnapshot(value.intent.frame.authority),
+    continuation: null,
     facts: [],
     responses,
     reviewed: value,
@@ -443,6 +443,7 @@ function rawCompilationInput(
   if (!begun.ok) throw new Error(`causal fixture was rejected: ${begun.reason}`);
   return {
     authoritySnapshot: authoritySnapshot(value.intent.frame.authority),
+    continuation: null,
     facts: [],
     responses: [],
     reviewed: value,
@@ -465,6 +466,7 @@ function pendingAdvanceInput(
   }
   return {
     authoritySnapshot: authoritySnapshot(intent.frame.authority),
+    continuation: null,
     facts: [],
     responses: [],
     reviewed: result.reviewed,
@@ -485,6 +487,7 @@ function pendingInputFromState(
   }
   return {
     authoritySnapshot: authoritySnapshot(intent.frame.authority),
+    continuation: null,
     facts: [],
     responses: [],
     reviewed: result.reviewed,
@@ -925,7 +928,7 @@ describe("compileMechanicsFrame segmented SSOT", () => {
     );
     const result = compileMechanicsFrame(input);
 
-    expect(result).toMatchObject({
+    expect(result).toEqual({
       coordination: {
         kind: "concentration-replacement",
         occurrences: [
@@ -939,52 +942,32 @@ describe("compileMechanicsFrame segmented SSOT", () => {
       status: "needs-coordination",
     });
     if (result.status !== "needs-coordination") return;
-    expect(Object.keys(result.continuation)).toEqual([]);
-    expect(JSON.stringify(result.continuation)).toBe("{}");
-    expect(Object.isFrozen(result.continuation)).toBe(true);
-    expect(isMechanicsCompilerContinuationFor(result.continuation, input)).toBe(true);
-    expect(
-      isMechanicsCompilerContinuationFor(structuredClone(result.continuation), input)
-    ).toBe(false);
-    expect(
-      isMechanicsCompilerContinuationFor(result.continuation, {
-        ...input,
-        facts: [
-          {
-            address: ["changed"],
-            expected: null,
-            lifecycle: "commit",
-            owner: SELF,
-          },
-        ],
-      })
-    ).toBe(false);
+    expect(Object.isFrozen(result.coordination)).toBe(true);
 
     const response: MechanicsCompilerResponse = {
       kind: "damage-override",
       override: null,
       requestId: "future-response",
     };
-    const extended = { ...input, responses: [response] };
-    expect(isMechanicsCompilerContinuationFor(result.continuation, extended)).toBe(false);
-    expect(compileMechanicsFrame(extended)).toMatchObject({
+    expect(compileMechanicsFrame({ ...input, responses: [response] })).toMatchObject({
       reason: "invalid-response",
-      referenceId: "unused-response",
+      referenceId: "unauthentic-continuation",
       status: "rejected",
     });
-
-    const advanced = advanceMechanicsPendingFrameStep(
-      input.state,
-      input.reviewed.intent.frame
-    );
-    expect(advanced.ok).toBe(true);
-    if (!advanced.ok) return;
+    const forged = Object.freeze({}) as CompileMechanicsFrameInput["continuation"];
     expect(
-      isMechanicsCompilerContinuationFor(
-        result.continuation,
-        withState(input, advanced.value)
-      )
-    ).toBe(false);
+      compileMechanicsFrame({ ...input, continuation: forged, responses: [response] })
+    ).toMatchObject({
+      reason: "invalid-response",
+      referenceId: "unauthentic-continuation",
+      status: "rejected",
+    });
+    expect(isMechanicsCompilerContinuationFor(forged, input)).toBe(false);
+    expect(compileMechanicsFrame({ ...input, continuation: forged })).toMatchObject({
+      reason: "invalid-response",
+      referenceId: "unused-continuation",
+      status: "rejected",
+    });
   });
 
   it("preserves unspent occurrence ordinals across immune no-changes and the next segment", () => {

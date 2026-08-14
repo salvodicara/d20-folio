@@ -2288,6 +2288,7 @@ describe("simultaneous resolution groups", () => {
     if (reviewed.status !== "reviewed") throw new Error("first review fixture");
     const committed = compileMechanicsFrame({
       authoritySnapshot: { definitions: [] },
+      continuation: null,
       facts: [],
       responses: [],
       reviewed: reviewed.reviewed,
@@ -2481,6 +2482,7 @@ describe("simultaneous resolution groups", () => {
     if (reviewed.status !== "reviewed") return;
     const committed = compileMechanicsFrame({
       authoritySnapshot: { definitions: [] },
+      continuation: null,
       facts: [],
       responses: [],
       reviewed: reviewed.reviewed,

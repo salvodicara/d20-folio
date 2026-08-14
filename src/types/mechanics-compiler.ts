@@ -108,6 +108,12 @@ export interface MechanicsCompiledStepTrace {
 
 export interface CompileMechanicsFrameInput {
   readonly authoritySnapshot: Readonly<MechanicsAuthoritySnapshot>;
+  /**
+   * The single-use response continuation being consumed. Required exactly when
+   * `responses` is nonempty: the responses must extend that continuation's
+   * consumed prefix by one answer to its issued request.
+   */
+  readonly continuation: Readonly<MechanicsCompilerContinuation> | null;
   /** Trusted, guarded facts not already represented by MechanicsWorld. */
   readonly facts: readonly Readonly<ActionFactGuard>[];
   readonly responses: readonly Readonly<MechanicsCompilerResponse>[];
@@ -118,9 +124,13 @@ export interface CompileMechanicsFrameInput {
 declare const MECHANICS_COMPILER_CONTINUATION: unique symbol;
 
 /**
- * Process-local proof for one exact compiler barrier. It carries no world,
- * transaction prefix or progress model and can never be persisted. Response
- * resumption remains fail-closed until the coordinator owns that protocol.
+ * Single-use process-local capability for resuming one suspended compilation
+ * with a genuine user response. Its private fiber binds the exact issuance
+ * causal state, reviewed input, cursor, consumed response prefix and issued
+ * request; it carries no world, transaction prefix or progress model and can
+ * never be persisted. Consumption invalidates it even when the resumed
+ * compilation then rejects; causal coordination never mints one — the
+ * coordinator mutates state and restarts ordinary compilation instead.
  */
 export interface MechanicsCompilerContinuation {
   readonly [MECHANICS_COMPILER_CONTINUATION]: true;
@@ -181,7 +191,6 @@ export type MechanicsFrameCompileResult =
             readonly kind: "occurrence-end";
             readonly occurrences: readonly OccurrenceGenerationRef[];
           };
-      readonly continuation: Readonly<MechanicsCompilerContinuation>;
       readonly segment: null;
       readonly status: "needs-coordination";
     }

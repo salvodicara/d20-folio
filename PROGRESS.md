@@ -225,6 +225,16 @@ Only focused affected-suite verification ran; no global gate ran. The fixed-poin
 coordinator, remaining compiler/corpus work, runtime cutover and final journal draft remain active; this
 is not an engine-completion claim.
 
+**Authentic response resumption CLOSED on branch (2026-08-14):** compiler continuations now exist only
+for genuine user responses. The private fiber binds the exact issuance causal state by identity plus the
+reviewed input, expected cursor, consumed response prefix and issued request; consumption is single-use
+even when the resumed compilation then rejects; resumption must extend the prefix by exactly one answer
+to the issued request; an unanswered, unconsumable or unused response fails closed. `needs-coordination`
+now carries only its typed coordination value — the coordinator latches/finalizes end state and restarts
+ordinary compilation on the mutated basis instead of resuming a fake continuation. The accept path
+becomes exercisable with the first observation-bearing step compiler; every reject path is proved now.
+Focused verification only; no global gate ran.
+
 **Deterministic automation gap sweep — ACTIVE (2026-08-04):** six truth-gated milestones are closed and
 branch-pushed: persistent/reactive-effect lifecycle, target-bound on-hit retaliation, variable-level
 charged-item casts, activated-item tracker/timer lifecycle, bounded spell-pool execution, and variable

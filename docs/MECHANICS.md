@@ -183,10 +183,15 @@ sets are idempotent no-ops. Authored cleanup has one additional exact form:
 `occurrence-end.childStepId` selects every active direct child produced by that step for the current root
 generation, across executions, slots and targets—including Temporary-HP, entity and inventory lifecycle
 children. `end-program` is the sole root terminator.
-Nonempty end sets and committed exclusive replacements deliberately return a
-`needs-coordination` barrier with an opaque process-local continuation. The continuation binds only the
-immutable frame/input, exact expected causal cursor, response prefix and frozen barrier generations; it
-does not retain a second world, projected prefix or independent progress model. It exposes no serializable
+Nonempty end sets and committed exclusive replacements deliberately return a plain
+`needs-coordination` barrier carrying only the typed coordination value: the coordinator latches or
+finalizes the required end state and restarts ordinary compilation on the mutated basis, so causal
+coordination never rides a fake continuation. Only a genuine user-response barrier mints the opaque
+process-local compiler continuation — a single-use capability privately bound to the exact issuance
+causal state by identity plus the reviewed input, expected cursor, consumed response prefix and issued
+request. Consumption invalidates it even when the resumed compilation then rejects; resumption must
+extend the prefix by exactly one answer to that request; a response the compilation cannot consume, or
+one left unconsumed at completion, fails closed. It exposes no serializable
 state and cannot be cloned or replayed against another causal lineage. The pending-frame kernel is now
 complete; the bounded fixed-point coordinator that consumes those barriers is not. Remaining
 subcompilers must compile reviewed payments exactly once, allocate physical generations from each
