@@ -288,7 +288,7 @@ two-target-set combos, and singletons. Focused verification only; no global gate
 
 **The fourteen authored programs CLOSED on branch (2026-08-14, third block):** every spell that
 still carried only a legacy `effectProgram` now holds a hand-authored canonical-runtime program —
-Ensnaring Strike, Searing Smite, Dragon's Breath, Melf's Acid Arrow, Spike Growth, Phantasmal
+Ensnaring Strike, Searing Smite, Dragon's Breath, Acid Arrow, Spike Growth, Phantasmal
 Force, Phantasmal Killer, Vitriolic Sphere, Contagion, Delayed Blast Fireball, Prismatic Spray,
 Prismatic Wall, Storm of Vengeance and Weird — using register-driven counters (Delayed Blast's
 beam accumulator rolls `register.beam-accumulator` d6 at detonation), choice-branched standing

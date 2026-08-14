@@ -1218,7 +1218,7 @@ export function CombatResolver({
                 ? t("combat.rollMode.advantage")
                 : firstResult?.review.mode === "disadvantage"
                   ? t("combat.rollMode.disadvantage")
-                  : t("combat.resolveStraightRoll")}
+                  : t("abilities.straightRoll")}
             </Badge>
             {forcedCritical && (
               <Badge color="var(--semantic-warning)" size="sm">
@@ -1239,7 +1239,7 @@ export function CombatResolver({
           </summary>
           <div className="combat-attack-fact-grid">
             <label>
-              <span>{t("combat.resolveRangeBand")}</span>
+              <span>{t("spells.range")}</span>
               <select
                 aria-label={t("combat.resolveRangeBandFor", { name: target.label })}
                 value={table.rangeBand}
@@ -1255,7 +1255,7 @@ export function CombatResolver({
               </select>
             </label>
             <label>
-              <span>{t("combat.resolveCover")}</span>
+              <span>{t("combat.rulesReference.cover")}</span>
               <select
                 aria-label={t("combat.resolveCoverFor", { name: target.label })}
                 value={table.cover}

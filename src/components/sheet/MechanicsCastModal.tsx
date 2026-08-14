@@ -86,7 +86,7 @@ export function MechanicsCastModal({
             <div>
               <p>{t("mechanics.cast.armorClassPrompt")}</p>
               <label>
-                {t("mechanics.cast.armorClass")}
+                {t("stats.ac")}
                 <input
                   inputMode="numeric"
                   min={1}
@@ -102,7 +102,7 @@ export function MechanicsCastModal({
                 }
                 onClick={() => onArmorClass?.(Number(armorClassDraft))}
               >
-                {t("mechanics.cast.confirm")}
+                {t("combat.apply")}
               </Button>
             </div>
           )}
@@ -208,7 +208,7 @@ export function MechanicsCastModal({
                   setFaces({});
                 }}
               >
-                {t("mechanics.cast.confirm")}
+                {t("combat.apply")}
               </Button>
             </div>
           )}
@@ -286,7 +286,7 @@ export function MechanicsCastModal({
                   setFaces({});
                 }}
               >
-                {t("mechanics.cast.confirm")}
+                {t("combat.apply")}
               </Button>
             </div>
           )}
@@ -294,7 +294,7 @@ export function MechanicsCastModal({
         </DialogBody>
         <DialogFooter>
           <Button onClick={close} variant="ghost">
-            {t("mechanics.cast.cancel")}
+            {t("common.cancel")}
           </Button>
           {phase.kind === "ready" && (
             <Button
@@ -302,7 +302,7 @@ export function MechanicsCastModal({
                 if (cast.commit()) onClose();
               }}
             >
-              {t("mechanics.cast.confirm")}
+              {t("combat.apply")}
             </Button>
           )}
         </DialogFooter>

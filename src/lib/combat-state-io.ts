@@ -61,7 +61,7 @@ import type {
   PendingConcentrationSave,
   PersistedTurnEconomy,
 } from "@/types/combat-state";
-import type { ConcentrationRef } from "@/types/ids";
+import { normalizeConcentrationRef } from "@/lib/concentration";
 import { conformActiveCombatEffects } from "@/lib/combat-effect-io";
 import { conformCombatEffectLifecycleCollection } from "@/lib/combat-effect-lifecycle-collection";
 import { conformCombatEffectOps } from "@/lib/combat-effects";
@@ -511,7 +511,7 @@ function parsePendingConcentrationSaves(value: unknown): PendingConcentrationSav
     ids.add(row.id);
     pending.push({
       id: row.id,
-      spell: row.spell as ConcentrationRef,
+      spell: normalizeConcentrationRef(row.spell),
       damage: row.damage,
       difficultyClass: row.difficultyClass,
     });

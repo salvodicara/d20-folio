@@ -102,6 +102,11 @@ const TRIGGERS = [
     kind: "manual-table-event",
     triggerEventId: "event-manual-table",
   },
+  {
+    eventId: "pulse",
+    kind: "root-pulse",
+    triggerEventId: "event-root-pulse",
+  },
 ] as const;
 
 describe("mechanics trigger evidence", () => {

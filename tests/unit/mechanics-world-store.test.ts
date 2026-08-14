@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { MOCK_CHARACTER } from "@/lib/mock";
 import {
+  activeEnginePulses,
   characterFeatureActionCapability,
   characterMaterialRef,
   characterSelfRef,
@@ -11,7 +12,7 @@ import {
   commitCharacterAction,
   undoCharacterAction,
 } from "@/lib/mechanics-world-store";
-import { activeEnginePulses } from "@/features/character/useMechanicsPulse";
+
 import { runMechanicsCausalAction } from "@/lib/mechanics-coordinator";
 import { mechanicsAuthorityDefinitionFingerprint } from "@/lib/mechanics-authority";
 import {

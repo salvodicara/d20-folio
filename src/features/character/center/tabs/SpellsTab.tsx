@@ -45,6 +45,9 @@ import { transcribeSpell } from "@/lib/mechanics-transcription";
 import { localizeSrd } from "@/i18n/resolver";
 import { buildSpellsViewModel, type SpellCardVM } from "@/lib/views/spells-view";
 import { useSheetCombat } from "../turn-state";
+import { turnEconomyKey } from "../combat-hydration";
+import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
+import { useCombatStore } from "@/stores/combatStore";
 import type { SrdSpellData } from "@/data/types";
 import type { SpellcastingConfig } from "@/types/character";
 import {
@@ -96,6 +99,11 @@ export function SpellsTab() {
   const [familiarPickerOpen, setFamiliarPickerOpen] = useState(false);
   /** Engine dual-dispatch (rollout): the open engine-driven cast, if any. */
   const [engineCast, setEngineCast] = useState<{
+    economy: {
+      actionId: string;
+      slot: "action" | "bonus" | "free";
+      spellLevel: number;
+    } | null;
     hasAttack: boolean;
     spellId: string;
     spellName: string;
@@ -130,14 +138,28 @@ export function SpellsTab() {
   // The spellbook and Play cards resolve from the same action model. Spellbook
   // scope retains extended and currently-unprepared rows; the card owns their
   // preparation gate, while the transaction owner handles every cast consequence.
+  const allSpellbookActions = useMemo(
+    () => (character ? localizeActions(character, locale, "spellbook") : []),
+    [character, locale]
+  );
   const spellActions = useMemo(
     () =>
-      character
-        ? localizeActions(character, locale, "spellbook").filter(
-            (action) => action.source === "spell" && !action.summary.recurringUse
-          )
-        : [],
-    [character, locale]
+      allSpellbookActions.filter(
+        (action) => action.source === "spell" && !action.summary.recurringUse
+      ),
+    [allSpellbookActions]
+  );
+  /** Spells whose casts can ride an item/feature pool — always legacy-routed. */
+  const pooledSpellIds = useMemo(
+    () =>
+      new Set(
+        allSpellbookActions.flatMap((action) =>
+          action.castPoolSourceId !== undefined && action.spellId !== undefined
+            ? [action.spellId]
+            : []
+        )
+      ),
+    [allSpellbookActions]
   );
   const actionForSpell = useCallback(
     (vm: SpellCardVM): CombatAction | undefined =>
@@ -321,10 +343,59 @@ export function SpellsTab() {
       // engine-executable SRD spell resolves through the deterministic
       // runtime; everything else still rides the legacy transaction until
       // its cutover wave deletes it.
-      if (!sheetCombat && vm.kind === "srd" && vm.data) {
+      const action = actionForSpell(vm);
+      // Engine dual-dispatch (rollout bridge): outside an encounter, an
+      // ordinary engine-executable SRD cast resolves through the runtime.
+      // Flows whose choices the runtime does not model yet stay legacy:
+      // item-pool/free-cast payments, metamagic-capable casters, and a cast
+      // that would silently bypass the legacy concentration swap confirm.
+      const combatState = useCombatStore.getState();
+      const turnKey = turnEconomyKey(
+        useCombatStatusStore.getState().status,
+        character?.id ?? "",
+        combatState.round
+      );
+      const slotSpentThisTurn =
+        combatState.spellSlotCastTurnKey === turnKey &&
+        combatState.spellSlotCastsThisTurn >= 1;
+      // Every cast option must be an ordinary (non-pact) slot — free-cast,
+      // pool and pact sources still resolve through the legacy option flow.
+      const plainOptionsOnly =
+        vm.data === null ||
+        vm.data.level === 0 ||
+        (character !== null &&
+          resolveSpellCastOptions(character, vm.data.id, vm.data.level, true, locale, {
+            mastery: t("spellPrep.spellMasteryBadge"),
+            signature: t("spellPrep.signatureSpellBadge"),
+          }).every(
+            (option) =>
+              (option.kind === undefined || option.kind === "slot") &&
+              option.pactMagic !== true
+          ));
+      const plainCast =
+        action !== undefined &&
+        action.castPoolSourceId === undefined &&
+        plainOptionsOnly &&
+        !(vm.data !== null && vm.data.level > 0 && slotSpentThisTurn) &&
+        !(vm.data !== null && pooledSpellIds.has(vm.data.id)) &&
+        (character?.character.classes ?? []).every(
+          (entry) => (entry.metamagicChoices?.length ?? 0) === 0
+        ) &&
+        !(vm.data?.concentration === true && character?.session.concentration !== "");
+      if (!sheetCombat && vm.kind === "srd" && vm.data && plainCast) {
         const transcription = transcribeSpell(vm.data);
         if (transcription.program) {
           setEngineCast({
+            economy: {
+              actionId: action.id,
+              slot:
+                action.type === "bonus"
+                  ? "bonus"
+                  : action.type === "action"
+                    ? "action"
+                    : "free",
+              spellLevel: vm.data.level,
+            },
             hasAttack: vm.data.attackType !== undefined,
             spellId: vm.data.id,
             spellName: vm.name,
@@ -332,10 +403,9 @@ export function SpellsTab() {
           return;
         }
       }
-      const action = actionForSpell(vm);
       if (action) executeAction(action);
     },
-    [actionForSpell, executeAction, sheetCombat]
+    [actionForSpell, character, executeAction, locale, pooledSpellIds, sheetCombat, t]
   );
 
   /** Cast a spell as a ritual (no slot expended). */
@@ -550,6 +620,7 @@ export function SpellsTab() {
       {engineCast !== null && (
         <Suspense fallback={null}>
           <EngineCastFlow
+            economy={engineCast.economy}
             hasAttack={engineCast.hasAttack}
             onClose={() => setEngineCast(null)}
             slots={view.slots}

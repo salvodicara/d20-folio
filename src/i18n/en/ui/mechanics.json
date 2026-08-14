@@ -3,25 +3,22 @@
     "cast": {
       "title": "Resolve cast",
       "slotPrompt": "Choose the spell slot to spend",
-      "slotOption": "Level {{level}} slot — {{remaining}} left",
+      "slotOption": "Level {{level}} slot ({{remaining}} left)",
       "targetsPrompt": "Choose the target",
       "targetSelf": "Yourself",
       "dicePrompt": "Roll {{dice}} and enter each die",
       "d20Prompt": "Roll the d20 and enter the face",
       "dieFace": "Die {{index}}",
-      "confirm": "Apply",
-      "cancel": "Cancel",
-      "ready": "Everything resolved — apply the result?",
+      "ready": "Everything resolved. Apply the result?",
       "rejected": "The engine refused this cast: {{reason}}",
       "unavailable": "This spell is not runnable by the engine yet",
       "armorClassPrompt": "What is the target's Armor Class? Ask the table.",
-      "armorClass": "AC",
-      "attackVs": "Attack {{index}} — d20 vs AC {{value}} ({{modifier}} applies)",
-      "saveVs": "Save {{index}} — d20 vs DC {{value}} ({{modifier}} applies)"
+      "attackVs": "Attack {{index}}: d20 vs AC {{value}} ({{modifier}} applies)",
+      "saveVs": "Save {{index}}: d20 vs DC {{value}} ({{modifier}} applies)"
     },
     "pulse": {
       "strip": "Active engine effects",
-      "declare": "Pulse — {{name}}"
+      "declare": "Pulse: {{name}}"
     }
   }
 }

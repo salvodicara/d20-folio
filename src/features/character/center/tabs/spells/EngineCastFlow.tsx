@@ -11,6 +11,9 @@
 import { useMemo, useState } from "react";
 
 import { MechanicsCastModal } from "@/components/sheet/MechanicsCastModal";
+import { turnEconomyKey } from "@/features/character/center/combat-hydration";
+import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
+import { useCombatStore } from "@/stores/combatStore";
 import { abilityModifier } from "@/lib/compute";
 import { totalLevel } from "@/lib/classes";
 import { characterMaterialRef } from "@/lib/mechanics-world-store";
@@ -20,6 +23,12 @@ import { useCharacterStore } from "@/stores/characterStore";
 import type { CastSummaryVM, SlotSummaryVM } from "@/lib/views/spells-view";
 
 export interface EngineCastFlowProps {
+  /** Legacy turn-economy identity mirrored on a successful engine commit. */
+  readonly economy: {
+    readonly actionId: string;
+    readonly slot: "action" | "bonus" | "free";
+    readonly spellLevel: number;
+  } | null;
   /** The spell requires a target armor class before its attack can review. */
   readonly hasAttack: boolean;
   readonly onClose: () => void;
@@ -30,6 +39,7 @@ export interface EngineCastFlowProps {
 }
 
 export function EngineCastFlow({
+  economy,
   hasAttack,
   onClose,
   slots,
@@ -57,7 +67,34 @@ export function EngineCastFlow({
     };
   }, [doc, summary, targetArmorClass]);
 
-  const cast = useMechanicsCast(spellId, derived);
+  const engineCast = useMechanicsCast(spellId, derived);
+  // The rollout bridge mirrors a successful engine commit onto the legacy turn
+  // economy: the slot-per-turn claim and the occupied economy slot, so legacy
+  // limiters and the turn strip keep one truth while both runtimes coexist.
+  const cast = useMemo(
+    () => ({
+      ...engineCast,
+      commit: (): boolean => {
+        const committed = engineCast.commit();
+        if (committed && economy !== null && doc) {
+          const combat = useCombatStore.getState();
+          const key = turnEconomyKey(
+            useCombatStatusStore.getState().status,
+            doc.id,
+            combat.round
+          );
+          if (economy.spellLevel > 0) combat.commitSpellSlotCast(key);
+          combat.selectAction({
+            id: economy.actionId,
+            name: spellName,
+            slot: economy.slot,
+          });
+        }
+        return committed;
+      },
+    }),
+    [doc, economy, engineCast, spellName]
+  );
 
   const slotRemaining = useMemo(
     () =>

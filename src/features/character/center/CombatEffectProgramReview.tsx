@@ -149,7 +149,7 @@ function stateChanges(
   }
   if (!sameJson(before.standing, after.standing)) {
     changes.push({
-      label: t("combat.effectReview.activeEffects"),
+      label: t("combat.statusEffects"),
       before: joined(before.standing.map(resolveFactLabel), t("abilities.none")),
       after: joined(after.standing.map(resolveFactLabel), t("abilities.none")),
     });

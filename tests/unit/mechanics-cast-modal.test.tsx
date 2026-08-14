@@ -1,6 +1,14 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/firebase", () => ({
+  app: {},
+  auth: {},
+  db: {},
+  functions: {},
+  storage: {},
+}));
+
 import { MechanicsCastModal } from "@/components/sheet/MechanicsCastModal";
 import type { MechanicsCastState } from "@/features/character/useMechanicsCast";
 

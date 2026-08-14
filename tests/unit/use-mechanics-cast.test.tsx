@@ -1,5 +1,13 @@
 import { act, renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/firebase", () => ({
+  app: {},
+  auth: {},
+  db: {},
+  functions: {},
+  storage: {},
+}));
 
 import { MOCK_CHARACTER } from "@/lib/mock";
 import {

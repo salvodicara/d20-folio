@@ -1,3 +1,10 @@
+vi.mock("@/lib/firebase", () => ({
+  app: {},
+  auth: {},
+  db: {},
+  functions: {},
+  storage: {},
+}));
 /**
  * SpellsTab (folio §5.7 — canonical card-page reference)
  *
@@ -14,22 +21,45 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, fireEvent, within, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { SpellsTab } from "@/features/character/center/tabs/SpellsTab";
+import { ItemResourceCommandProvider } from "@/features/character/center/ItemResourceCommandProvider";
+import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useCombatStore } from "@/stores/combatStore";
+import { useUndoStore } from "@/stores/undoStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useConfirmStore } from "@/stores/confirmStore";
+import { useAuthStore } from "@/stores/authStore";
+import type { User } from "firebase/auth";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { asRaceId } from "@/data/srd-names";
 import type { CharacterDoc } from "@/types/character";
+import { makeCharacterDoc } from "./_helpers";
 
 function load(doc: CharacterDoc = structuredClone(MOCK_CHARACTER)): void {
   useCharacterStore.setState({ character: doc, loading: false, error: null });
+  // The engine dual-dispatch derives the character's world from (doc, uid).
+  useAuthStore.setState({ user: { uid: "test-uid" } as User });
 }
 
 function renderPage() {
   return render(
     <MemoryRouter>
-      <SpellsTab />
+      <TurnEconomyProvider>
+        <SpellsTab />
+      </TurnEconomyProvider>
+    </MemoryRouter>
+  );
+}
+
+function renderPageWithItemResources() {
+  return render(
+    <MemoryRouter>
+      <ItemResourceCommandProvider>
+        <TurnEconomyProvider>
+          <SpellsTab />
+        </TurnEconomyProvider>
+      </ItemResourceCommandProvider>
     </MemoryRouter>
   );
 }
@@ -40,6 +70,8 @@ describe("SpellsTab", () => {
     useUIStore.setState({ sheetMode: "play" });
     useToastStore.setState({ toasts: [], timers: {} });
     useConfirmStore.setState({ open: false, options: null, _resolve: null });
+    useCombatStore.getState().endCombat();
+    useUndoStore.getState().clear(null);
   });
   afterEach(() => {
     useUIStore.setState({ sheetMode: "play" });
@@ -132,31 +164,268 @@ describe("SpellsTab", () => {
     expect(document.querySelector(".fchip")).toBeNull();
   });
 
-  it("casts a leveled spell immediately and fires an undo toast (slot spend)", async () => {
-    // Drop the mock's active concentration so casting Hold Monster (itself a
-    // concentration spell) doesn't gate on the swap confirm — that flow has its
-    // own regression test below.
+  it("routes an engine-executable leveled cast into the deterministic modal", async () => {
+    // Hold Monster transcribes to an executable program, so outside combat the
+    // dual dispatch opens the engine resolution modal instead of the legacy
+    // immediate transaction (whose economy contract Misty Step still covers).
     const doc = structuredClone(MOCK_CHARACTER);
     doc.session.concentration = "";
     load(doc);
     renderPage();
-    // Hold Monster is level 5 — the mock has exactly one open L5 slot and no
-    // higher levels, so Cast resolves directly (no upcast modal).
     const spell = screen.getByText(/Hold Monster/i);
     const card = spell.closest(".uc") as HTMLElement;
-    const chevron = card.querySelector(".uc-chevron") as HTMLElement;
-    fireEvent.click(chevron);
-    const castBtn = within(card).getByRole("button", { name: /Cast · Lv 5/i });
+    fireEvent.click(card.querySelector(".uc-chevron") as HTMLElement);
     const before =
       useCharacterStore.getState().character?.session.spellSlots["5"]?.used ?? 0;
-    fireEvent.click(castBtn);
-    await waitFor(() => {
-      const after =
-        useCharacterStore.getState().character?.session.spellSlots["5"]?.used ?? 0;
-      expect(after).toBe(before + 1);
+    fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 5/i }));
+    // The engine modal opens on the slot-payment requirement; nothing legacy
+    // was spent and no legacy economy claim was made.
+    await screen.findByText(/Resolve cast/);
+    expect(
+      useCharacterStore.getState().character?.session.spellSlots["5"]?.used ?? 0
+    ).toBe(before);
+    expect(useCombatStore.getState().selected.action).toEqual([]);
+    expect(useCombatStore.getState().spellSlotCastsThisTurn).toBe(0);
+  });
+
+  it("claims the bonus-action economy for a bonus-action spell", async () => {
+    const doc = makeCharacterDoc({ classId: "wizard", level: 5 });
+    doc.character.spells = [{ srdId: "misty-step", prepared: true }];
+    doc.character.spellSlots = [{ level: 2, total: 1 }];
+    doc.session.spellSlots = {};
+    load(doc);
+    renderPage();
+
+    const card = screen.getByText("Misty Step").closest(".uc") as HTMLElement;
+    fireEvent.click(card.querySelector(".uc-chevron") as HTMLElement);
+    fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 2/i }));
+
+    await waitFor(() =>
+      expect(useCombatStore.getState().selected.bonus).toContainEqual(
+        expect.objectContaining({ id: "spell-misty-step" })
+      )
+    );
+    expect(useCombatStore.getState().selected.action).toEqual([]);
+    expect(useCombatStore.getState().spellSlotCastsThisTurn).toBe(1);
+  });
+
+  it("cancels target review as a strict no-op", async () => {
+    const doc = makeCharacterDoc({ classId: "cleric", level: 3 });
+    doc.character.spells = [{ srdId: "healing-word", prepared: true }];
+    doc.character.spellSlots = [{ level: 1, total: 1 }];
+    doc.session.spellSlots = {};
+    doc.session.hp = { current: 5, temp: 0 };
+    load(doc);
+    renderPage();
+
+    const card = screen.getByText("Healing Word").closest(".uc") as HTMLElement;
+    fireEvent.click(card.querySelector(".uc-chevron") as HTMLElement);
+    fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 1/i }));
+
+    // Healing Word routes to the engine modal; cancelling it is a strict no-op.
+    await screen.findByText(/Resolve cast/);
+    expect(useCharacterStore.getState().character?.session.spellSlots).toEqual({});
+    expect(useCombatStore.getState().selected.bonus).toEqual([]);
+    expect(useUndoStore.getState().past).toEqual([]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByText(/Resolve cast/)).toBeNull());
+    expect(useCharacterStore.getState().character?.session).toMatchObject({
+      hp: { current: 5, temp: 0 },
+      spellSlots: {},
     });
-    // A toast was raised.
-    expect(useToastStore.getState().toasts.length).toBeGreaterThan(0);
+    expect(useCombatStore.getState()).toMatchObject({
+      selected: { action: [], bonus: [], free: [] },
+      spellSlotCastsThisTurn: 0,
+    });
+    expect(useUndoStore.getState().past).toEqual([]);
+  });
+
+  it("casts an extended-time spell without claiming turn economy", async () => {
+    const doc = structuredClone(MOCK_CHARACTER);
+    doc.character.spells = [
+      {
+        custom: true,
+        name: "Patient Ward",
+        level: 1,
+        school: "abjuration",
+        castingTime: "1 minute",
+        range: "Touch",
+        components: { v: true, s: true, m: false },
+        duration: "1 hour",
+        concentration: false,
+        description: "A deliberately slow ward.",
+      },
+    ];
+    doc.character.spellSlots = [{ level: 1, total: 1 }];
+    doc.session.spellSlots = {};
+    doc.session.concentration = "";
+    load(doc);
+    renderPage();
+
+    const card = screen.getByText("Patient Ward").closest(".uc") as HTMLElement;
+    fireEvent.click(card.querySelector(".uc-chevron") as HTMLElement);
+    fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 1/i }));
+
+    await waitFor(() =>
+      expect(useCharacterStore.getState().character?.session.spellSlots["1"]?.used).toBe(
+        1
+      )
+    );
+    expect(useCombatStore.getState()).toMatchObject({
+      selected: { action: [], bonus: [], free: [] },
+      reactionUsed: false,
+      spellSlotCastsThisTurn: 1,
+    });
+    expect(useUndoStore.getState().past.at(-1)?.turnScoped).toBe(false);
+  });
+
+  it("blocks a second slot expenditure while leaving the other economy slot free", async () => {
+    // Knock (still legacy — purely narrative program) spends the turn's one
+    // slot from the ACTION economy; Misty Step's bonus-slot attempt then hits
+    // the shared per-turn slot limiter while the bonus slot itself stays free.
+    const doc = makeCharacterDoc({ classId: "wizard", level: 5 });
+    doc.character.spells = [
+      { srdId: "knock", prepared: true },
+      { srdId: "misty-step", prepared: true },
+    ];
+    doc.character.spellSlots = [{ level: 2, total: 2 }];
+    doc.session.spellSlots = {};
+    load(doc);
+    renderPage();
+
+    const knock = screen.getByText("Knock").closest(".uc") as HTMLElement;
+    fireEvent.click(knock.querySelector(".uc-chevron") as HTMLElement);
+    fireEvent.click(within(knock).getByRole("button", { name: /Cast · Lv 2/i }));
+    await waitFor(() =>
+      expect(useCharacterStore.getState().character?.session.spellSlots["2"]?.used).toBe(
+        1
+      )
+    );
+    const undoDepth = useUndoStore.getState().past.length;
+
+    const mistyStep = screen.getByText("Misty Step").closest(".uc") as HTMLElement;
+    fireEvent.click(mistyStep.querySelector(".uc-chevron") as HTMLElement);
+    fireEvent.click(within(mistyStep).getByRole("button", { name: /Cast · Lv 2/i }));
+
+    await waitFor(() =>
+      expect(useToastStore.getState().toasts.at(-1)?.message).toMatch(
+        /one spell slot per turn/i
+      )
+    );
+    expect(
+      useCharacterStore.getState().character?.session.spellSlots["2"]?.used ?? 0
+    ).toBe(1);
+    expect(useCombatStore.getState()).toMatchObject({
+      selected: {
+        action: [expect.objectContaining({ id: "spell-knock" })],
+        bonus: [],
+      },
+      spellSlotCastsThisTurn: 1,
+    });
+    expect(useUndoStore.getState().past).toHaveLength(undoDepth);
+  });
+
+  it("casts an item list-pool spell from its exact physical resource", async () => {
+    const instanceId = "cube-of-force-copy";
+    const doc = makeCharacterDoc({
+      classId: "fighter",
+      level: 5,
+      equipment: [
+        {
+          srdId: "cube-of-force",
+          instanceId,
+          equipped: true,
+          attuned: true,
+          quantity: 1,
+        },
+      ],
+    });
+    doc.session.itemResources = {
+      [instanceId]: {
+        itemId: "cube-of-force",
+        instanceId,
+        revision: 0,
+        resources: {
+          charges: { capacity: 10, current: 10, disabled: false },
+        },
+        disposition: "magical",
+        causalHead: null,
+      },
+    };
+    load(doc);
+    renderPageWithItemResources();
+
+    const spell = screen.getByText("Shield");
+    const card = spell.closest(".uc") as HTMLElement;
+    fireEvent.click(card.querySelector(".uc-chevron") as HTMLElement);
+    fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 1/i }));
+
+    await waitFor(() =>
+      expect(
+        useCharacterStore.getState().character?.session.itemResources?.[instanceId]
+          ?.resources.charges?.current
+      ).toBe(9)
+    );
+    expect(useCharacterStore.getState().character?.session.spellSlots).toEqual({});
+    expect(useCombatStore.getState()).toMatchObject({
+      reactionUsed: true,
+      spellSlotCastsThisTurn: 0,
+    });
+  });
+
+  it("still permits an item free-cast after this turn already expended a slot", async () => {
+    const instanceId = "cube-after-slot";
+    const doc = makeCharacterDoc({
+      classId: "wizard",
+      level: 5,
+      equipment: [
+        {
+          srdId: "cube-of-force",
+          instanceId,
+          equipped: true,
+          attuned: true,
+          quantity: 1,
+        },
+      ],
+    });
+    doc.character.spells = [{ srdId: "knock", prepared: true }];
+    doc.character.spellSlots = [{ level: 2, total: 1 }];
+    doc.session.spellSlots = {};
+    doc.session.itemResources = {
+      [instanceId]: {
+        itemId: "cube-of-force",
+        instanceId,
+        revision: 0,
+        resources: {
+          charges: { capacity: 10, current: 10, disabled: false },
+        },
+        disposition: "magical",
+        causalHead: null,
+      },
+    };
+    load(doc);
+    renderPageWithItemResources();
+
+    const knock = screen.getByText("Knock").closest(".uc") as HTMLElement;
+    fireEvent.click(knock.querySelector(".uc-chevron") as HTMLElement);
+    fireEvent.click(within(knock).getByRole("button", { name: /Cast · Lv 2/i }));
+    await waitFor(() => expect(useCombatStore.getState().spellSlotCastsThisTurn).toBe(1));
+
+    const shield = screen.getByText("Shield").closest(".uc") as HTMLElement;
+    fireEvent.click(shield.querySelector(".uc-chevron") as HTMLElement);
+    fireEvent.click(within(shield).getByRole("button", { name: /Cast · Lv 1/i }));
+
+    await waitFor(() =>
+      expect(
+        useCharacterStore.getState().character?.session.itemResources?.[instanceId]
+          ?.resources.charges?.current
+      ).toBe(9)
+    );
+    expect(useCombatStore.getState()).toMatchObject({
+      reactionUsed: true,
+      spellSlotCastsThisTurn: 1,
+    });
   });
 
   // The shared concentration-conflict gate (golden rule 6 — the Spells tab casts
@@ -245,9 +514,14 @@ describe("SpellsTab", () => {
       .find((b) => /PACT/i.test(b.textContent)) as HTMLElement;
     fireEvent.click(pactBtn);
 
-    const slots = useCharacterStore.getState().character?.session.spellSlots;
-    expect(slots?.["pact-1"]?.used).toBe(1); // pact pool spent
-    expect(slots?.["1"]).toBeUndefined(); // normal pool UNTOUCHED
+    await waitFor(() =>
+      expect(
+        useCharacterStore.getState().character?.session.spellSlots["pact-1"]?.used
+      ).toBe(1)
+    ); // pact pool spent
+    expect(
+      useCharacterStore.getState().character?.session.spellSlots["1"]
+    ).toBeUndefined(); // normal pool UNTOUCHED
   });
 
   // G6/W3 — a Sorcerer casts a CANTRIP with Quickened: the slotless cast debits
@@ -296,10 +570,15 @@ describe("SpellsTab", () => {
     expect(footerCast).toBeDefined();
     if (footerCast) fireEvent.click(footerCast);
 
-    const st = useCharacterStore.getState();
     // SP debited by Quickened's cost (2); NO spell slot spent.
-    expect(st.character?.session.trackers["sorcerer-font-of-magic"]?.used).toBe(2);
-    expect(st.character?.session.spellSlots).toEqual({});
+    await waitFor(() =>
+      expect(
+        useCharacterStore.getState().character?.session.trackers["sorcerer-font-of-magic"]
+          ?.used
+      ).toBe(2)
+    );
+    expect(useCharacterStore.getState().character?.session.spellSlots).toEqual({});
+    expect(useCombatStore.getState().spellSlotCastsThisTurn).toBe(0);
 
     // The cast toast carries an undo that restores the SP.
     const toast = useToastStore.getState().toasts.at(-1);
@@ -338,6 +617,15 @@ describe("SpellsTab", () => {
     const after =
       useCharacterStore.getState().character?.session.spellSlots["1"]?.used ?? 0;
     expect(after).toBe(before); // no slot spent
+    expect(useCombatStore.getState()).toMatchObject({
+      selected: { action: [], bonus: [], free: [] },
+      reactionUsed: false,
+      spellSlotCastsThisTurn: 0,
+    });
+    expect(useCharacterStore.getState().character?.session.concentration).toBe(
+      "detect-magic"
+    );
+    expect(useUndoStore.getState().past.at(-1)?.turnScoped).toBe(false);
   });
 
   it("shows the '+10 min · no slot' ritual-cost note beside the ritual affordance (RA-24)", () => {
@@ -487,6 +775,8 @@ describe("SpellsTab — custom spell form uses the folio Select shell", () => {
     useCharacterStore.setState({ character: null, loading: false, error: null });
     useUIStore.setState({ sheetMode: "edit" });
     useToastStore.setState({ toasts: [], timers: {} });
+    useCombatStore.getState().endCombat();
+    useUndoStore.getState().clear(null);
   });
   afterEach(() => {
     useUIStore.setState({ sheetMode: "play" });

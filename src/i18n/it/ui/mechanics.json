@@ -3,25 +3,22 @@
     "cast": {
       "title": "Risolvi lancio",
       "slotPrompt": "Scegli lo slot incantesimo da spendere",
-      "slotOption": "Slot di livello {{level}} — {{remaining}} rimasti",
+      "slotOption": "Slot di livello {{level}} ({{remaining}} rimasti)",
       "targetsPrompt": "Scegli il bersaglio",
       "targetSelf": "Te stesso",
       "dicePrompt": "Tira {{dice}} e inserisci ogni dado",
       "d20Prompt": "Tira il d20 e inserisci la faccia",
       "dieFace": "Dado {{index}}",
-      "confirm": "Applica",
-      "cancel": "Annulla",
-      "ready": "Tutto risolto — applicare il risultato?",
+      "ready": "Tutto risolto. Applicare il risultato?",
       "rejected": "Il motore ha rifiutato questo lancio: {{reason}}",
       "unavailable": "Questo incantesimo non è ancora eseguibile dal motore",
       "armorClassPrompt": "Qual è la Classe Armatura del bersaglio? Chiedi al tavolo.",
-      "armorClass": "CA",
-      "attackVs": "Attacco {{index}} — d20 contro CA {{value}} (si applica {{modifier}})",
-      "saveVs": "TS {{index}} — d20 contro CD {{value}} (si applica {{modifier}})"
+      "attackVs": "Attacco {{index}}: d20 contro CA {{value}} (si applica {{modifier}})",
+      "saveVs": "TS {{index}}: d20 contro CD {{value}} (si applica {{modifier}})"
     },
     "pulse": {
       "strip": "Effetti attivi del motore",
-      "declare": "Impulso — {{name}}"
+      "declare": "Impulso: {{name}}"
     }
   }
 }

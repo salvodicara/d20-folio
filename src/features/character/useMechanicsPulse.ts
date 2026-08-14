@@ -17,7 +17,9 @@ import {
   characterSelfRef,
   characterWorldState,
   commitCharacterAction,
+  type EnginePulseRef,
 } from "@/lib/mechanics-world-store";
+export { activeEnginePulses, type EnginePulseRef } from "@/lib/mechanics-world-store";
 import { beginMechanicsCausalState } from "@/lib/mechanics-world";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -25,62 +27,8 @@ import type {
   MechanicsCastPhase,
   MechanicsCastState,
 } from "@/features/character/useMechanicsCast";
-import type { CharacterMaterialState } from "@/types/material-state";
 import type { MechanicsAnswer } from "@/types/mechanics-program";
 import type { MechanicsCompilerResponse } from "@/types/mechanics-compiler";
-import type { ProgramOccurrence } from "@/types/mechanic-occurrence";
-
-/** One armed pulse phase of one active engine program root. */
-export interface EnginePulseRef {
-  readonly eventId: string;
-  readonly execution: number;
-  readonly lastTriggerEventId: string | null;
-  readonly occurrenceId: string;
-  readonly phaseId: string;
-  /** The catalogue spell id when the root's capability is a catalogue spell. */
-  readonly spellId: string | null;
-}
-
-function programRoots(
-  world: Readonly<CharacterMaterialState>
-): readonly (readonly [string, Readonly<ProgramOccurrence>])[] {
-  return Object.entries(world.occurrences).flatMap(([occurrenceId, occurrence]) =>
-    occurrence.kind === "program" && occurrence.ending === null
-      ? [[occurrenceId, occurrence] as const]
-      : []
-  );
-}
-
-/** Every armed root-pulse phase in the character's persisted engine world. */
-export function activeEnginePulses(
-  world: Readonly<CharacterMaterialState> | null
-): readonly EnginePulseRef[] {
-  if (!world) return [];
-  return programRoots(world).flatMap(([occurrenceId, root]) => {
-    const program = root.authority.snapshot.program;
-    if (!program) return [];
-    const definition = root.authority.snapshot.ref.definition;
-    const spellId =
-      definition.kind === "catalogue" && definition.catalogueKind === "spell"
-        ? definition.entityId
-        : null;
-    return program.phases.flatMap((phase) => {
-      if (phase.trigger.kind !== "root-pulse") return [];
-      const state = root.phaseState[phase.phaseId];
-      if (!state) return [];
-      return [
-        {
-          eventId: phase.trigger.eventId,
-          execution: state.execution,
-          lastTriggerEventId: state.lastTriggerEventId,
-          occurrenceId,
-          phaseId: phase.phaseId,
-          spellId,
-        },
-      ];
-    });
-  });
-}
 
 export function useMechanicsPulse(
   pulse: Readonly<EnginePulseRef> | null,
