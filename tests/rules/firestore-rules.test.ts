@@ -620,8 +620,9 @@ describe("firestore.rules — /campaigns access", () => {
   // rolled writes the target MONSTER's HP + the appended chronicle events on the
   // CAMPAIGN doc the DM owns. The two-user topology is exactly DM (owns camp1) + a
   // MEMBER-owned PC applying to it. A member may write ONLY `encounter.{combatants,
-  // events}` for new actions (the `combatEffectFieldsOnlyChanged()` grant): monster HP
-  // plus chronicle events. Legacy `memberEffects` remains append-only solely for
+  // events, world}` for new actions (the `combatEffectFieldsOnlyChanged()` grant):
+  // monster HP plus chronicle events plus the engine layer the adversary world seam
+  // commits in the same transaction. Legacy `memberEffects` remains append-only solely for
   // transition draining. The combatants COUNT is unchanged (no add/remove) while events
   // only GROW (no deleting the DM's lines). Any other encounter edit, a combatant add/remove,
   // or an events shrink stays DM-only; a non-member is denied outright.
@@ -671,6 +672,23 @@ describe("firestore.rules — /campaigns access", () => {
         updateDoc(doc(db, "campaigns", "camp1"), {
           "encounter.combatants": damaged,
           "encounter.events": [appliedEvent],
+        })
+      );
+    });
+
+    it("a member MAY persist the engine world beside the mirrored fields (adversary world seam)", async () => {
+      // The resolver's monster damage/healing commits through the deterministic
+      // engine's journal; the committed `encounter.world` rides the SAME member
+      // transaction as the mirrored combatants + chronicle beats. A corrupt world
+      // fails CLOSED at read time (`encounterWorldState` rejects; the boundary
+      // degrades to legacy arithmetic), so this stays inside the coarse-grant,
+      // DM-remediable posture the grant already accepts for combatants.
+      const db = testEnv.authenticatedContext("member").firestore();
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.combatants": damaged,
+          "encounter.events": [{ ...appliedEvent, engineActionId: "adversary-damage:x" }],
+          "encounter.world": { schema: 1, revision: 1 },
         })
       );
     });

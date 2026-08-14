@@ -206,13 +206,14 @@ export function recordPcHp(
   return out;
 }
 
-/** Record a condition gain (`added`) or loss on a combatant. */
+/** Record a condition gain (`added`) or loss on a combatant. `engineActionId` links
+ *  an engine-mirrored beat to its journal action for the exact chronicle undo. */
 export function recordCondition(
   state: EncounterState,
   targetId: string,
   conditionId: string,
   added: boolean,
-  provenance?: { actorId?: string; action?: LocText }
+  provenance?: { actorId?: string; action?: LocText; engineActionId?: string }
 ): EncounterState {
   return appendEvent(state, {
     kind: added ? "condition-gain" : "condition-loss",
@@ -221,6 +222,7 @@ export function recordCondition(
     ...(added && provenance?.actorId ? { attackerId: provenance.actorId } : {}),
     ...(!added && provenance?.actorId ? { actorId: provenance.actorId } : {}),
     ...(provenance?.action ? { action: provenance.action } : {}),
+    ...(provenance?.engineActionId ? { engineActionId: provenance.engineActionId } : {}),
   });
 }
 

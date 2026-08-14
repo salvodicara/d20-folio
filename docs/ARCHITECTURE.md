@@ -1704,13 +1704,37 @@ phase exactly while the legacy pointer rests on a rolled adversary — any other
 the between-turns posture, where the kernel's 6-seconds-per-turn timeline law carries
 turn-anchored lifetimes; composing the party's character documents through the kernel's
 start-encounter lease boundary is the next chunk. Commits route back through the owner: the
-feature-side command boundary (`applyAdversaryDamage`, dispatched by the DM's damage tap on the
-monster card; `applyAdversaryCondition` for engine-lifetimed conditions) runs one causal action
-through the coordinator, commits through `reduceActionJournal` over the shared root, then mirrors
-the world-owned adversary facts onto the exact legacy fields (hp/temp via the legacy clamps, the
-condition chips, the Combat Chronicle beat) and persists the committed world in the same
-`setEncounter` write — the identical rollout-bridge doctrine as the character side, with the
-legacy arithmetic surviving only INSIDE the boundary as the fail-closed degradation.
+feature-side command boundary (`applyAdversaryDamage` for the DM's damage tap AND the universal
+resolver's per-adversary landed totals; `applyAdversaryHeal` for the heal tap and resolver
+healing — exact kernel semantics: clamp at max, temporary HP untouched, a 0-HP revive stays a
+documented legacy degradation because the canonical world models it as dead;
+`applyAdversaryCondition` for engine-lifetimed conditions) runs one causal action through the
+coordinator, commits through `reduceActionJournal` over the shared root, then mirrors the
+world-owned adversary facts onto the exact legacy fields (hp/temp via the legacy clamps, the
+condition chips, the Combat Chronicle beat — each mirrored beat stamped with its
+`engineActionId`) and persists the committed world in the same `setEncounter` write (or, for the
+resolver, the same member transaction — `firestore.rules`' `combatEffectFieldsOnlyChanged` grant
+admits `world` beside `combatants`/`events`) — the identical rollout-bridge doctrine as the
+character side, with the legacy arithmetic surviving only INSIDE the boundary as the fail-closed
+degradation.
+
+**Turn stepping is ENGINE-FIRST** (`stepEncounterTurn`, dispatched by both the
+`advanceEncounterTurn` transaction and the dev-bypass path): advancing off a rolled adversary
+fires the kernel's own `complete-turn` boundary over the derived world
+(`planAdversaryTurnBoundary` — begin/checkpoint/advance to completion, then
+`planMechanicsWorldAction` compiles the diff into one journal action under the table's
+material-authority actor), so booked lifetimes expire EXACTLY when the table steps the tracker,
+with the expiries mirrored onto the legacy chips + chronicle in the same value. A pointer leaving
+a PC ends no canonical turn (the v1 adversary-only composition scope), which is precisely what
+keeps a player's own-turn advance inside the member `turnFieldsOnlyChanged` rules grant — only DM
+advances carry the wider engine fields. Back-step is a DOCUMENTED degradation: the boundary is
+one-way (end waves latch and finalize; no un-fire), so `prev` rewinds only the legacy pointer and
+engine-expired lifetimes stand — the DM re-books manually or reverses the exact expiry from its
+chronicle line. **Chronicle undo is exact**: `undoAdversaryChronicleEvent` reverses an
+engine-stamped beat's journal action (generation 1 → 2 through the same reducer, the shared-root
+twin of `undoCharacterAction`), restoring hp trio, temporary HP, condition occurrences and their
+booked lifetimes precisely, dropping every line of the undone action; a pre-world beat degrades
+to the legacy one-tap arithmetic inside the boundary.
 
 ## Persistence + offline
 

@@ -76,16 +76,15 @@ import {
 } from "@/features/campaigns/useMemberCharacterDocs";
 import { usePartyCombatStates } from "@/features/campaigns/usePartyCombatStates";
 import {
-  advanceTurn,
   beginEncounterTurns,
   clearInitiativeSwap,
   encounterRollFor,
-  prevTurn,
   reorderCombatant,
   setInitiativeSwap,
   startEncounter,
   type EncounterPcSeed,
 } from "@/features/campaigns/encounter";
+import { stepEncounterTurn } from "@/features/campaigns/encounter-world-command";
 import {
   addReinforcement,
   buildBudgetView,
@@ -732,11 +731,11 @@ function CombatLayer({
     setAdvancing(true);
     // DEV ONLY — under bypass `advanceEncounterTurn` is a no-op (no Firestore + no listener
     // echo), so the shared pointer would never move. Advance it optimistically through the
-    // SAME pure reducer the transaction uses, so the dev/e2e turn order + round genuinely
-    // step through the real Next/Prev controls (and the combat-chronicle demo can reach
-    // round 3). Only the DM (`apply`) can, mirroring the live authority.
+    // SAME engine-first stepper the transaction uses (boundary fire + expiry mirror
+    // included), so the dev/e2e turn order + round genuinely step through the real
+    // Next/Prev controls. Only the DM (`apply`) can, mirroring the live authority.
     if (DEV_BYPASS_AUTH && apply) {
-      apply((e) => (dir === "next" ? advanceTurn(e) : prevTurn(e)));
+      apply((e) => stepEncounterTurn(e, ctx.campaignId, dir));
       setAdvancing(false);
       return;
     }
@@ -1085,6 +1084,7 @@ function CombatLayer({
             which only the DM writes; exact monster HP must not leak to a player). */}
         {isDm && apply && (
           <ChronicleFeed
+            campaignId={ctx.campaignId}
             events={reconciled}
             rows={view.rows}
             memberDetails={memberDetails}

@@ -157,6 +157,7 @@ import {
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import { deleteCampaignBanner } from "@/lib/storage";
+import { encounterWorldState } from "@/lib/encounter-world-store";
 import { makeCharacterDoc } from "./_helpers";
 import type {
   CampaignDoc,
@@ -416,7 +417,7 @@ describe("campaign-io — reviewed combat effects", () => {
   });
 
   it("lands healing and an idempotent condition in one pure reduction", () => {
-    const next = reduceDeclaredEffects(encounter, [
+    const next = reduceDeclaredEffects(encounter, "camp-test", [
       { kind: "healing", targetId: "monster-1", amount: 4 },
       {
         kind: "condition",
@@ -438,9 +439,71 @@ describe("campaign-io — reviewed combat effects", () => {
     ]);
   });
 
+  it("resolves declared damage over TWO adversaries through the engine boundary", () => {
+    // Each adversary delta is ONE committed coordinator action on the shared
+    // journal (CAS-guarded, revision per commit) with the exact legacy mirror
+    // (hp + chronicle beat, provenance attributed, action id stamped) landing
+    // on the same encounter value the debounced writer persists.
+    const pack: EncounterState = {
+      ...encounter,
+      nextMonsterOrdinal: 3,
+      combatants: [
+        ...encounter.combatants,
+        {
+          kind: "monster",
+          id: "monster-2",
+          name: "Wolf",
+          ac: 12,
+          initiative: 11,
+          conditions: [],
+          hp: { current: 11, temp: 0, max: 11 },
+        },
+      ],
+    };
+    const next = reduceDeclaredEffects(
+      pack,
+      "camp-test",
+      [
+        { kind: "damage", intake: "resolved", targetId: "monster-1", amount: 3 },
+        { kind: "damage", intake: "resolved", targetId: "monster-2", amount: 5 },
+      ],
+      { actorId: "pc-a", action: { custom: "Scorching Ray" } }
+    );
+    expect(next.combatants.find((c) => c.id === "monster-1")).toMatchObject({
+      hp: { current: 2, temp: 0, max: 7 },
+    });
+    expect(next.combatants.find((c) => c.id === "monster-2")).toMatchObject({
+      hp: { current: 6, temp: 0, max: 11 },
+    });
+    expect(next.events).toHaveLength(2);
+    expect(next.events?.[0]).toMatchObject({
+      kind: "hp-damage",
+      targetId: "monster-1",
+      amount: 3,
+      attackerId: "pc-a",
+      action: { custom: "Scorching Ray" },
+    });
+    expect(next.events?.[1]).toMatchObject({
+      kind: "hp-damage",
+      targetId: "monster-2",
+      amount: 5,
+      attackerId: "pc-a",
+    });
+    expect(next.events?.every((event) => event.engineActionId !== undefined)).toBe(true);
+    // Two engine commits on the persisted shared journal: revision 2, both
+    // actions committed (generation 1), the vitals proven world-side too.
+    const world = encounterWorldState(next, "camp-test");
+    expect(world).not.toBeNull();
+    expect(world?.revision).toBe(2);
+    expect(world?.actions.map(({ generation }) => generation)).toEqual([1, 1]);
+    const wolf = world?.entities["monster-2"];
+    expect(wolf?.kind === "creature" ? wolf.vitals.hitPoints.current : null).toBe(6);
+  });
+
   it("prevents monster healing while Chill Touch is active", () => {
     const next = reduceDeclaredEffects(
       encounter,
+      "camp-test",
       [{ kind: "healing", targetId: "monster-1", amount: 4 }],
       undefined,
       [chillTouchEffect]
@@ -451,7 +514,7 @@ describe("campaign-io — reviewed combat effects", () => {
   });
 
   it("does not duplicate a condition on transaction-style replay", () => {
-    const once = reduceDeclaredEffects(encounter, [
+    const once = reduceDeclaredEffects(encounter, "camp-test", [
       {
         kind: "condition",
         targetId: "monster-1",
@@ -459,7 +522,7 @@ describe("campaign-io — reviewed combat effects", () => {
         active: true,
       },
     ]);
-    const twice = reduceDeclaredEffects(once, [
+    const twice = reduceDeclaredEffects(once, "camp-test", [
       {
         kind: "condition",
         targetId: "monster-1",
@@ -471,7 +534,7 @@ describe("campaign-io — reviewed combat effects", () => {
   });
 
   it("leaves PC state to the direct combat-subdocument reducer", () => {
-    const next = reduceDeclaredEffects(encounter, [
+    const next = reduceDeclaredEffects(encounter, "camp-test", [
       { kind: "healing", targetId: "pc-a", amount: 6 },
       { kind: "temp-hp", targetId: "pc-a", amount: 9 },
       {
@@ -766,6 +829,7 @@ describe("campaign-io — reviewed combat effects", () => {
   it("tracks Bardic Inspiration on an NPC ally and records the grant", () => {
     const next = reduceDeclaredEffects(
       encounter,
+      "camp-test",
       [
         {
           kind: "resource",
@@ -788,6 +852,7 @@ describe("campaign-io — reviewed combat effects", () => {
   it("tracks Heroic Inspiration on an NPC ally without stacking it", () => {
     const next = reduceDeclaredEffects(
       encounter,
+      "camp-test",
       [
         {
           kind: "resource",
@@ -806,7 +871,7 @@ describe("campaign-io — reviewed combat effects", () => {
       targetId: "monster-1",
     });
     expect(
-      reduceDeclaredEffects(next, [
+      reduceDeclaredEffects(next, "camp-test", [
         {
           kind: "resource",
           targetId: "monster-1",
@@ -1967,11 +2032,11 @@ describe("campaign-io — reviewed combat effects", () => {
   });
 
   it("applies Temporary HP to monsters with max-wins semantics and consumes it first", () => {
-    const fortified = reduceDeclaredEffects(encounter, [
+    const fortified = reduceDeclaredEffects(encounter, "camp-test", [
       { kind: "temp-hp", targetId: "monster-1", amount: 4 },
       { kind: "temp-hp", targetId: "monster-1", amount: 2 },
     ]);
-    const damaged = reduceDeclaredEffects(fortified, [
+    const damaged = reduceDeclaredEffects(fortified, "camp-test", [
       { kind: "damage", intake: "resolved", targetId: "monster-1", amount: 6 },
     ]);
     expect(damaged.combatants.find((c) => c.id === "monster-1")).toMatchObject({
@@ -3791,7 +3856,7 @@ describe("campaign-io — shared effect lifecycle persistence", () => {
         },
       ],
     };
-    const next = reduceDeclaredEffects(encounter, [
+    const next = reduceDeclaredEffects(encounter, "camp-test", [
       { kind: "temp-hp", targetId: "monster-1", amount: 3 },
     ]);
     expect(next).not.toBe(encounter);

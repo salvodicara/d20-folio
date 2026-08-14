@@ -44,8 +44,6 @@ import {
 import { db } from "@/lib/firebase";
 import { DEV_BYPASS_AUTH as IMPORTED_DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
-  advanceTurn,
-  prevTurn,
   removeCombatant,
   parseEncounterState,
   setMonsterCondition,
@@ -55,10 +53,13 @@ import {
 import {
   appendEvent,
   recordCondition,
-  recordMonsterDamage,
-  recordMonsterHp,
   recordPcHp,
 } from "@/features/campaigns/combat-chronicle";
+import {
+  applyAdversaryDamage,
+  applyAdversaryHeal,
+  stepEncounterTurn,
+} from "@/features/campaigns/encounter-world-command";
 import { attachViolatesOneCampaign } from "@/features/campaigns/attach-guard";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { pushVersion } from "@/features/campaigns/chronicle-versions";
@@ -613,7 +614,8 @@ export async function setCampaignBanner(
  * BOTH the DM and a player advancing their own turn (the debounced whole-encounter writer
  * is reserved for STRUCTURE). A `runTransaction` re-reads the encounter FRESH inside the
  * txn (so a concurrent DM/player advance never double-steps — the id-based
- * {@link advanceTurn}/{@link prevTurn} step from the live pointer), RE-VALIDATES that the
+ * {@link stepEncounterTurn} steps from the live pointer, firing the engine's
+ * complete-turn boundary when a rolled adversary's turn ends), RE-VALIDATES that the
  * caller may advance (the DM, or the player who OWNS the current turn — the rules can't
  * iterate the combatants array to prove this, so the strict who-is-current check lives
  * here, inside the txn, on the fresh state), then writes ONLY the two turn fields with a
@@ -649,7 +651,9 @@ export async function advanceEncounterTurn(
     const encounter = currentDevEncounter(campaignId);
     if (!encounter || encounter.currentCombatantId !== expectedCurrentId) return;
     if (!caller.isDm && encounter.currentCombatantId !== `pc-${caller.uid}`) return;
-    const next = dir === "next" ? advanceTurn(encounter) : prevTurn(encounter);
+    // ENGINE-FIRST stepping: advancing off a rolled adversary fires the kernel's
+    // complete-turn boundary and mirrors the expiries in the same value.
+    const next = stepEncounterTurn(encounter, campaignId, dir);
     useCampaignStore.getState().setEncounter(next);
     if (dir === "next") {
       const position = encounterPosition(next);
@@ -684,7 +688,27 @@ export async function advanceEncounterTurn(
     // is the authoritative who-is-current check (tolerant no-op otherwise).
     const ownsCurrentTurn = encounter.currentCombatantId === `pc-${caller.uid}`;
     if (!caller.isDm && !ownsCurrentTurn) return;
-    const next = dir === "next" ? advanceTurn(encounter) : prevTurn(encounter);
+    // ENGINE-FIRST stepping: advancing off a rolled adversary fires the kernel's
+    // complete-turn boundary over the derived `encounter.world`, expiring the
+    // lifetimes booked against that turn's boundaries and mirroring the chip
+    // releases + chronicle beats onto the same encounter value. A PLAYER only
+    // ever advances off their OWN PC (the ownership check above), which ends no
+    // canonical adversary turn — so a member write stays exactly the two turn
+    // fields the `turnFieldsOnlyChanged` rules grant allows; only DM advances
+    // (off a monster) carry the wider engine fields, on the unconstrained DM
+    // branch.
+    const next = stepEncounterTurn(encounter, campaignId, dir);
+    const engineFields: Record<string, unknown> = {
+      ...(next.combatants !== encounter.combatants
+        ? { "encounter.combatants": next.combatants }
+        : {}),
+      ...(next.events !== encounter.events
+        ? { "encounter.events": next.events ?? [] }
+        : {}),
+      ...(next.world !== undefined && next.world !== encounter.world
+        ? { "encounter.world": next.world }
+        : {}),
+    };
     const position = {
       order: next.order ?? [],
       currentCombatantId: next.currentCombatantId,
@@ -710,19 +734,23 @@ export async function advanceEncounterTurn(
       txn.update(ref, {
         "encounter.currentCombatantId": next.currentCombatantId,
         "encounter.round": next.round,
+        ...engineFields,
         updatedAt: serverTimestamp(),
       });
       return;
     }
+    // The mirrored `next` is the base the legacy effect-op deltas compose onto,
+    // so an engine chip release and a persistent HP tick land in ONE write.
     await applyPersistentCombatEffectOperations(
       txn,
       ref,
       snap.data() as CampaignDoc,
-      encounter,
+      next,
       lifecycleOps,
       {
         "encounter.currentCombatantId": next.currentCombatantId,
         "encounter.round": next.round,
+        ...engineFields,
       }
     );
   });
@@ -1780,6 +1808,7 @@ export async function applyDeclaredCombatEffects(
       if (effect.kind !== "damage") {
         chronicle = reduceDeclaredEffects(
           chronicle,
+          campaignId,
           [effect],
           context ? { actorId: context.actorId, action: context.action } : undefined,
           effectsForTarget(nextEffectOps, effect.targetId)
@@ -1788,6 +1817,7 @@ export async function applyDeclaredCombatEffects(
       }
       const result = reducePersistentMonsterDamage(
         chronicle,
+        campaignId,
         { ...effect, kind: "damage" },
         nextEffectOps,
         hitTargetIds.has(effect.targetId)
@@ -1931,6 +1961,7 @@ export async function applyDeclaredCombatEffects(
       } else {
         const result = reducePersistentMonsterDamage(
           chronicle,
+          campaignId,
           {
             kind: "damage",
             intake: transfer.intake,
@@ -1976,6 +2007,12 @@ export async function applyDeclaredCombatEffects(
       "encounter.combatants": chronicle.combatants,
       "encounter.events": chronicle.events ?? [],
       ...(effectOpsChanged ? { "encounter.effectOps": nextEffectOps } : {}),
+      // The engine world committed by the boundary commands above rides the
+      // SAME transaction (the member rules grant admits `world`; a degraded
+      // legacy-only reduction leaves it untouched and writes no world key).
+      ...(chronicle.world !== undefined && chronicle.world !== encounter.world
+        ? { "encounter.world": chronicle.world }
+        : {}),
       updatedAt: serverTimestamp(),
     });
   });
@@ -2431,10 +2468,13 @@ async function applyPersistentCombatEffectOperations(
   }
   txn.update(campaignRef, {
     "encounter.effectOps": nextOps,
+    // Extra fields first: when the caller passes an engine-mirrored combatants
+    // array AND a persistent delta also landed, the delta-composed array below
+    // (built ON TOP of the caller's encounter) must win — never the reverse.
+    ...extraCampaignFields,
     ...(nextEncounter !== encounter
       ? { "encounter.combatants": nextEncounter.combatants }
       : {}),
-    ...extraCampaignFields,
     updatedAt: serverTimestamp(),
   });
   return true;
@@ -2541,6 +2581,7 @@ interface PersistentMonsterDamageResult {
 /** Monster twin of {@link reduceDirectPcEffects}' persistent damage leg. */
 function reducePersistentMonsterDamage(
   encounter: EncounterState,
+  campaignId: string,
   effect: DeclaredDamageEffect,
   effectOps: ReadonlyArray<CombatEffectOp>,
   hit?: { attacker: CombatantRef | null; attackMode?: "melee" | "ranged" },
@@ -2573,12 +2614,19 @@ function reducePersistentMonsterDamage(
       : {}),
   });
   return {
-    encounter: recordMonsterDamage(
+    // The RESOLVED landed total (post persistent-effect interception and
+    // defenses) books through the engine command boundary — coordinator run,
+    // journal commit, exact legacy mirror; legacy arithmetic only as its
+    // internal fail-closed degradation.
+    encounter: applyAdversaryDamage(
       encounter,
+      campaignId,
       effect.targetId,
       outcome.targetDamage,
-      provenance?.actorId,
-      provenance?.action
+      {
+        ...(provenance?.actorId !== undefined ? { actorId: provenance.actorId } : {}),
+        ...(provenance?.action !== undefined ? { action: provenance.action } : {}),
+      }
     ),
     transfers: [
       ...outcome.transfers.map((transfer) => ({
@@ -2600,12 +2648,19 @@ function reducePersistentMonsterDamage(
   };
 }
 
-/** Apply every declared hit to the encounter through the pure {@link recordMonsterHp}
- *  recorder (updates one creature + appends the unattributed chronicle event).
- *  PURE — shared by the live transaction and the dev-bypass optimistic path so both
- *  behave identically. Returns the SAME state when nothing landed. */
+/** Apply every declared effect to the encounter. Adversary HP deltas (damage and
+ *  healing) route through the engine command boundary ({@link applyAdversaryDamage} /
+ *  {@link applyAdversaryHeal} — coordinator run, journal commit, exact legacy mirror;
+ *  the legacy arithmetic survives only INSIDE that boundary as the fail-closed
+ *  degradation). Conditions, temporary HP and resource grants stay legacy-side
+ *  deliberately: a declared condition carries no duration, so it IS the manual-chip
+ *  domain the engine never clobbers (an engine-lifetimed booking goes through
+ *  `applyAdversaryCondition`). PURE — shared by the live transaction and the
+ *  dev-bypass optimistic path so both behave identically. Returns the SAME state
+ *  when nothing landed. */
 export function reduceDeclaredEffects(
   encounter: EncounterState,
+  campaignId: string,
   effects: ReadonlyArray<DeclaredCombatEffect>,
   provenance?: { actorId: string; action: LocText },
   persistentEffects: ReadonlyArray<ActiveCombatEffect> = []
@@ -2657,9 +2712,9 @@ export function reduceDeclaredEffects(
       continue;
     }
     if (effect.kind === "damage") {
-      next = recordMonsterDamage(next, targetId, effect.amount);
+      next = applyAdversaryDamage(next, campaignId, targetId, effect.amount, provenance);
     } else if (!healingBlockedByEffects(persistentEffects)) {
-      next = recordMonsterHp(next, targetId, monster.hp.current + effect.amount);
+      next = applyAdversaryHeal(next, campaignId, targetId, effect.amount, provenance);
     }
   }
   return next;
@@ -2839,6 +2894,7 @@ function applyDeclaredEffectsOptimistic(
     if (effect.kind !== "damage") {
       next = reduceDeclaredEffects(
         next,
+        campaignId,
         [effect],
         context ? { actorId: context.actorId, action: context.action } : undefined,
         effectsForTarget(nextEffectOps, effect.targetId)
@@ -2847,6 +2903,7 @@ function applyDeclaredEffectsOptimistic(
     }
     const result = reducePersistentMonsterDamage(
       next,
+      campaignId,
       { ...effect, kind: "damage" },
       nextEffectOps,
       hitTargetIds.has(effect.targetId)
@@ -2883,6 +2940,7 @@ function applyDeclaredEffectsOptimistic(
     }
     const result = reducePersistentMonsterDamage(
       next,
+      campaignId,
       {
         kind: "damage",
         intake: transfer.intake,

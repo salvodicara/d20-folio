@@ -16,18 +16,27 @@
  * DM damage taps dispatch {@link applyAdversaryDamage} — it REPLACED the
  * direct `recordMonsterDamage` callsite (the legacy arithmetic survives only
  * INSIDE this boundary as the fail-closed degradation, so a corrupt persisted
- * world can never freeze a live table). No caller ever chooses a path.
+ * world can never freeze a live table). No caller ever chooses a path. The
+ * same doctrine covers the DM heal tap ({@link applyAdversaryHeal}, replacing
+ * `recordMonsterHp`), the table's turn stepping ({@link stepEncounterTurn} —
+ * each advance off a rolled adversary fires the kernel's own `complete-turn`
+ * boundary so booked lifetimes expire exactly when the table steps), and the
+ * chronicle's one-tap undo ({@link undoAdversaryChronicleEvent} — an
+ * engine-mirrored beat reverses its exact journal action, never arithmetic).
  */
 
 import {
   adversaryConditionCapability,
   adversaryDamageCapability,
   adversaryEntityRef,
+  adversaryHealCapability,
   commitEncounterWorldAction,
   encounterWorldState,
   engineConditionIds,
   legacyMonsters,
+  planAdversaryTurnBoundary,
   runAdversaryAction,
+  undoEncounterWorldAction,
   type AdversaryActionCapability,
 } from "@/lib/encounter-world-store";
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
@@ -35,9 +44,14 @@ import {
   appendEvent,
   recordCondition,
   recordMonsterDamage,
+  recordMonsterHp,
+  undoConditionEvent,
+  undoHpEvent,
 } from "@/features/campaigns/combat-chronicle";
 import {
+  advanceTurn,
   isDown,
+  prevTurn,
   setHp,
   setMonsterCondition,
   setMonsterTempHp,
@@ -56,14 +70,18 @@ export interface AdversaryActionProvenance {
  * Mirror the world-owned adversary facts onto the exact legacy encounter
  * fields every still-legacy surface reads (hp trio + conditions + the combat
  * chronicle beat), and persist the committed world in the same value — one
- * write through the same debounced campaign writer.
+ * write through the same debounced campaign writer. `engineActionId` stamps
+ * every appended beat with the journal action it mirrors, so the chronicle
+ * undo can reverse THAT action exactly ({@link undoAdversaryChronicleEvent}).
  */
 export function mirrorAdversaryCommit(
   encounter: EncounterState,
   before: Readonly<SharedMaterialState>,
   after: Readonly<SharedMaterialState>,
-  provenance?: AdversaryActionProvenance
+  provenance?: AdversaryActionProvenance,
+  engineActionId?: string
 ): EncounterState {
+  const stamp = engineActionId ? { engineActionId } : {};
   let next: EncounterState = encounter;
   for (const monster of legacyMonsters(encounter)) {
     const beforeEntity = before.entities[monster.id];
@@ -97,6 +115,7 @@ export function mirrorAdversaryCommit(
           ...(tempAbsorbed > 0 ? { tempAbsorbed } : {}),
           ...(provenance?.actorId ? { attackerId: provenance.actorId } : {}),
           ...(provenance?.action ? { action: provenance.action } : {}),
+          ...stamp,
         });
       } else if (landed < 0) {
         next = appendEvent(next, {
@@ -107,10 +126,11 @@ export function mirrorAdversaryCommit(
           targetId: monster.id,
           ...(provenance?.actorId ? { actorId: provenance.actorId } : {}),
           ...(provenance?.action ? { action: provenance.action } : {}),
+          ...stamp,
         });
       }
       if (!wasDown && afterVitals.current === 0) {
-        next = appendEvent(next, { kind: "down", targetId: monster.id });
+        next = appendEvent(next, { kind: "down", targetId: monster.id, ...stamp });
       }
     }
     const beforeConditions = engineConditionIds(before, monster.id);
@@ -119,7 +139,10 @@ export function mirrorAdversaryCommit(
       if (beforeConditions.has(conditionId) || monster.conditions.includes(conditionId))
         continue;
       next = setMonsterCondition(next, monster.id, conditionId, true);
-      next = recordCondition(next, monster.id, conditionId, true, provenance);
+      next = recordCondition(next, monster.id, conditionId, true, {
+        ...provenance,
+        ...stamp,
+      });
     }
     for (const conditionId of beforeConditions) {
       // Only ENGINE-held conditions release the legacy chip: a DM's manual
@@ -127,7 +150,10 @@ export function mirrorAdversaryCommit(
       if (afterConditions.has(conditionId) || !monster.conditions.includes(conditionId))
         continue;
       next = setMonsterCondition(next, monster.id, conditionId, false);
-      next = recordCondition(next, monster.id, conditionId, false, provenance);
+      next = recordCondition(next, monster.id, conditionId, false, {
+        ...provenance,
+        ...stamp,
+      });
     }
   }
   return { ...next, world: after };
@@ -152,7 +178,13 @@ function completedCommit(
     }))
   );
   if (!committed) return null;
-  return mirrorAdversaryCommit(encounter, world, committed, provenance);
+  return mirrorAdversaryCommit(
+    encounter,
+    world,
+    committed,
+    provenance,
+    outcome.action.id
+  );
 }
 
 function runCapability(
@@ -258,4 +290,198 @@ export function applyAdversaryCondition(
       provenance
     ) ?? encounter
   );
+}
+
+/**
+ * Book one healing total onto one adversary through the deterministic engine —
+ * the same boundary discipline as {@link applyAdversaryDamage}. The kernel's
+ * healing law gives the exact legacy semantics: current HP rises by the booked
+ * amount clamped at the maximum (never an overheal), temporary hit points
+ * untouched, and a full-HP heal is a clean no-op (no beat). A 0-HP adversary
+ * takes the DEGRADATION deliberately: the canonical world models it as DEAD
+ * (encounter adversaries carry no death saves, and `healCreature` rejects a
+ * dead creature — resurrection is a separate program), so the DM's revive tap
+ * is a table correction that stays on the legacy arithmetic until the
+ * encounter model carries typed down-states.
+ */
+export function applyAdversaryHeal(
+  encounter: EncounterState,
+  campaignId: string,
+  monsterId: string,
+  amount: number,
+  provenance?: AdversaryActionProvenance
+): EncounterState {
+  if (!Number.isFinite(amount)) return encounter;
+  const restored = Math.max(0, Math.round(amount));
+  if (restored <= 0) return encounter;
+  const monster = encounter.combatants.find(({ id }) => id === monsterId);
+  if (!monster || monster.kind !== "monster") return encounter;
+  if (monster.hp.current > 0) {
+    const world = encounterWorldState(encounter, campaignId);
+    const entity = world?.entities[monsterId];
+    if (world && entity?.kind === "creature") {
+      const committed = runCapability(
+        encounter,
+        campaignId,
+        world,
+        adversaryHealCapability(
+          adversaryEntityRef(campaignId, monsterId, entity.ordinal),
+          restored
+        ),
+        `adversary-heal:${canonicalFingerprint({
+          amount: restored,
+          monsterId,
+          revision: world.revision,
+        })}`,
+        provenance
+      );
+      if (committed) return committed;
+    }
+  }
+  // Fail-closed degradation (corrupt persisted world, or the 0-HP revive tap
+  // documented above). Reached only from INSIDE this boundary.
+  return recordMonsterHp(encounter, monsterId, monster.hp.current + restored);
+}
+
+/**
+ * Step the table's turn pointer, ENGINE-FIRST: when the pre-step pointer rests
+ * on a rolled adversary (the derived canonical phase is "turns"), advancing
+ * fires the kernel's own `complete-turn` boundary over the derived world —
+ * that adversary's turn ends canonically, so every lifetime booked against
+ * the crossed boundaries (condition ends, damage-over-time ends) expires
+ * exactly when the table steps the tracker — and the commit mirrors the
+ * expiries back onto the legacy chips + chronicle in the SAME encounter value
+ * (one write). A pointer resting on a PC or roll-less adversary ends no
+ * canonical turn (the v1 composition scope lists adversary participants
+ * only), so those steps move the legacy pointer alone — which is also what
+ * keeps a PLAYER'S own-turn advance inside the member `turnFieldsOnlyChanged`
+ * rules grant. When the engine layer cannot serve (corrupt world, boundary
+ * reject), the pointer still steps and booked lifetimes STAND — fail-closed
+ * never expires anything early.
+ *
+ * BACK-STEP DEGRADATION (the documented model): the kernel's complete-turn
+ * boundary is one-way — end waves latch and finalize; there is no un-fire.
+ * Stepping back therefore rewinds ONLY the legacy pointer; engine-expired
+ * lifetimes stay expired (an expiry is a fact the table crossed, not an
+ * animation to rewind), and the DM re-books a genuinely lost condition
+ * manually — or reverses the exact expiry from its chronicle line
+ * ({@link undoAdversaryChronicleEvent}). Honest over pretend-reversal.
+ */
+export function stepEncounterTurn(
+  encounter: EncounterState,
+  campaignId: string,
+  dir: "next" | "prev"
+): EncounterState {
+  if (dir === "prev") return prevTurn(encounter);
+  const stepped = advanceTurn(encounter);
+  if (stepped === encounter) return encounter;
+  const world = encounterWorldState(encounter, campaignId);
+  if (!world || world.encounter?.phase !== "turns") return stepped;
+  const actionId = `adversary-turn:${canonicalFingerprint({
+    from: encounter.currentCombatantId,
+    revision: world.revision,
+    round: encounter.round,
+  })}`;
+  const action = planAdversaryTurnBoundary(campaignId, world, actionId);
+  if (!action) return stepped;
+  const committed = commitEncounterWorldAction(
+    campaignId,
+    world,
+    action,
+    action.guards.facts.map((fact) => ({
+      actual: fact.expected,
+      address: fact.address,
+      owner: fact.owner,
+    }))
+  );
+  if (!committed) return stepped;
+  return mirrorAdversaryCommit(stepped, world, committed, undefined, actionId);
+}
+
+/**
+ * UNDO one chronicle beat, ENGINE-FIRST: a beat stamped with its journal
+ * action (`engineActionId` — every engine-mirrored beat carries one) reverses
+ * THAT action through the canonical journal reducer (generation 1 → 2), so hp
+ * trio, temporary hit points, condition occurrences and their booked
+ * lifetimes all restore EXACTLY — never blind arithmetic. The mirror then
+ * writes the reverted world-owned facts back onto the legacy fields WITHOUT
+ * appending new beats (an undo removes lines, it never narrates), drops every
+ * line of the undone action plus a now-stale `down` line, and persists the
+ * reverted world in the same value. A beat that predates the world layer (no
+ * `engineActionId`), a corrupt persisted world, or a journal conflict (a
+ * later action moved the same facts) degrades to the legacy one-tap
+ * arithmetic (`undoHpEvent`/`undoConditionEvent`) — reached only from INSIDE
+ * this boundary; no caller ever picks a path.
+ */
+export function undoAdversaryChronicleEvent(
+  encounter: EncounterState,
+  campaignId: string,
+  eventId: string
+): EncounterState {
+  const event = encounter.events?.find((candidate) => candidate.id === eventId);
+  if (!event) return encounter;
+  const isHp = event.kind === "hp-damage" || event.kind === "hp-heal";
+  const isCondition = event.kind === "condition-gain" || event.kind === "condition-loss";
+  if (!isHp && !isCondition) return encounter;
+  const target = encounter.combatants.find(({ id }) => id === event.targetId);
+  if (!target || target.kind !== "monster") return encounter;
+  const actionId = event.engineActionId;
+  const world =
+    actionId === undefined ? null : encounterWorldState(encounter, campaignId);
+  const reverted =
+    world && actionId !== undefined
+      ? undoEncounterWorldAction(campaignId, world, actionId)
+      : null;
+  if (!world || !reverted) {
+    return isCondition
+      ? undoConditionEvent(encounter, eventId)
+      : undoHpEvent(encounter, eventId);
+  }
+  // The exact silent mirror: legacy hp trio + engine-held chips follow the
+  // reverted world; no new chronicle beats are appended.
+  let next: EncounterState = encounter;
+  for (const monster of legacyMonsters(encounter)) {
+    const beforeEntity = world.entities[monster.id];
+    const afterEntity = reverted.entities[monster.id];
+    if (beforeEntity?.kind !== "creature" || afterEntity?.kind !== "creature") continue;
+    const beforeVitals = beforeEntity.vitals.hitPoints;
+    const afterVitals = afterEntity.vitals.hitPoints;
+    if (
+      beforeVitals.current !== afterVitals.current ||
+      beforeVitals.temporary.current !== afterVitals.temporary.current
+    ) {
+      next = setMonsterTempHp(next, monster.id, afterVitals.temporary.current);
+      next = setHp(next, monster.id, afterVitals.current);
+    }
+    const beforeConditions = engineConditionIds(world, monster.id);
+    const afterConditions = engineConditionIds(reverted, monster.id);
+    for (const conditionId of afterConditions) {
+      if (!beforeConditions.has(conditionId)) {
+        next = setMonsterCondition(next, monster.id, conditionId, true);
+      }
+    }
+    for (const conditionId of beforeConditions) {
+      if (!afterConditions.has(conditionId) && monster.conditions.includes(conditionId)) {
+        next = setMonsterCondition(next, monster.id, conditionId, false);
+      }
+    }
+  }
+  // Drop EVERY line of the undone action (one commit can mirror several
+  // beats), then any `down` line whose target stands again after the restore.
+  const removedTargets = new Set<string>();
+  const withoutAction = (next.events ?? []).filter((candidate) => {
+    if (candidate.engineActionId !== actionId) return true;
+    if ("targetId" in candidate && typeof candidate.targetId === "string") {
+      removedTargets.add(candidate.targetId);
+    }
+    return false;
+  });
+  const events = withoutAction.filter((candidate) => {
+    if (candidate.kind !== "down" || !removedTargets.has(candidate.targetId)) {
+      return true;
+    }
+    const monster = next.combatants.find(({ id }) => id === candidate.targetId);
+    return monster?.kind === "monster" && isDown(monster);
+  });
+  return { ...next, events, world: reverted };
 }

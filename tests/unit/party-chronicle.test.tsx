@@ -98,6 +98,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     const apply = vi.fn();
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[reco(damageEvent)]}
         rows={ROWS}
         memberDetails={{}}
@@ -119,6 +120,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     });
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[reco(damageEvent)]}
         rows={ROWS}
         memberDetails={{}}
@@ -144,6 +146,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     });
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[reco(damageEvent)]}
         rows={ROWS}
         memberDetails={{}}
@@ -161,6 +164,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
   it("no attacker picker once the hit is attributed", () => {
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[reco({ ...damageEvent, attackerId: "pc-mara" })]}
         rows={ROWS}
         memberDetails={{}}
@@ -180,6 +184,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     });
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[reco({ ...damageEvent, attackerId: "pc-mara" }, { auto: true })]}
         rows={ROWS}
         memberDetails={{}}
@@ -221,6 +226,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
   it("shows NO undo on a PC-target HP line (a PC's HP is not on the encounter)", () => {
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[
           reco({
             id: "0",
@@ -255,6 +261,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     };
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[reco(event)]}
         rows={ROWS}
         memberDetails={{}}
@@ -289,6 +296,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
   it("a CERTAIN auto-attributed hit reads as a confirmed line with no picker", () => {
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[reco({ ...damageEvent, attackerId: "pc-mara" }, { auto: true })]}
         rows={ROWS}
         memberDetails={{}}
@@ -303,6 +311,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
   it("an UNCERTAIN auto-attribution wears the marker AND offers the override picker", () => {
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[
           reco(
             { ...damageEvent, attackerId: "pc-mara" },
@@ -324,6 +333,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
   it("renders a synthesized player-declared MISS line (certain, no picker)", () => {
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[
           reco({
             id: "miss-mara:1:monster-1",
@@ -346,6 +356,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
   it("records ONLY what landed — the feed has no miss/pass logging affordance", () => {
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[]}
         rows={ROWS}
         memberDetails={{}}
@@ -381,6 +392,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     );
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[fused]}
         rows={rows3}
         memberDetails={{}}

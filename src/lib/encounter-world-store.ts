@@ -47,6 +47,7 @@ import {
   createEmptySharedMaterialState,
   parseSharedMaterialState,
 } from "@/lib/material-state";
+import { planMechanicsWorldAction } from "@/lib/mechanics-action";
 import { mechanicsAuthorityDefinitionFingerprint } from "@/lib/mechanics-authority";
 import {
   mechanicsDefinitionFactAddress,
@@ -56,7 +57,12 @@ import { mechanicsCapabilitySnapshotFingerprint } from "@/lib/mechanics-capabili
 import { runMechanicsCausalAction } from "@/lib/mechanics-coordinator";
 import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
 import { conformMechanicsProgramAuthorityReceipt } from "@/lib/mechanics-program-receipt";
-import { beginMechanicsCausalState } from "@/lib/mechanics-world";
+import {
+  advanceMechanicsBoundary,
+  beginMechanicsBoundary,
+  beginMechanicsCausalState,
+  completeMechanicsBoundaryCheckpoint,
+} from "@/lib/mechanics-world";
 import {
   createBetweenTurnsEconomyState,
   createTurnEconomyState,
@@ -86,6 +92,7 @@ import type {
   SharedMaterialRef,
 } from "@/types/mechanics-reference";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
+import type { MechanicsWorld } from "@/types/mechanics-world";
 
 /** The canonical shared-combat material of one campaign's encounter table. */
 export function encounterMaterialRef(campaignId: string): SharedMaterialRef {
@@ -475,6 +482,42 @@ function bookedDamageProgram() {
 }
 
 /**
+ * The closed system program for one table-entered healing total booked onto a
+ * LIVING adversary. The kernel's healing law applies unchanged: current HP
+ * rises by the booked amount, clamped at the effective maximum (no overheal),
+ * temporary hit points untouched, and a dead creature rejects (`healCreature`
+ * — the command boundary degrades the revive tap to the legacy arithmetic
+ * instead of ever reaching that rejection).
+ */
+function bookedHealProgram() {
+  return conformedProgram({
+    id: "adversary-booked-heal",
+    phases: [
+      {
+        inputs: [],
+        phaseId: "resolve",
+        steps: [
+          {
+            amount: {
+              expression: { bindingId: BOOKED_AMOUNT_BINDING, kind: "binding" },
+              kind: "integer",
+            },
+            kind: "heal",
+            stepId: "book-heal",
+            target: { kind: "role", role: "target" },
+            when: null,
+          },
+          { kind: "end-program", stepId: "finish", when: null },
+        ],
+        trigger: { kind: "invocation" },
+      },
+    ],
+    registers: [],
+    version: 1,
+  });
+}
+
+/**
  * The closed system program for one table-booked adversary condition with a
  * turn-boundary lifetime: the condition fact ends at the target's own turn
  * boundary `offsetTurns` turns out (or its 6s/turn timeline equivalent while
@@ -574,6 +617,17 @@ export function adversaryDamageCapability(
 ): AdversaryActionCapability | null {
   if (!Number.isSafeInteger(amount) || amount <= 0) return null;
   return adversaryCapability(bookedDamageProgram(), adversary, {
+    [BOOKED_AMOUNT_BINDING]: amount,
+  });
+}
+
+/** The booked-heal authority for one adversary and one healing total. */
+export function adversaryHealCapability(
+  adversary: MaterialEntityRef,
+  amount: number
+): AdversaryActionCapability | null {
+  if (!Number.isSafeInteger(amount) || amount <= 0) return null;
+  return adversaryCapability(bookedHealProgram(), adversary, {
     [BOOKED_AMOUNT_BINDING]: amount,
   });
 }
@@ -727,6 +781,98 @@ export function commitEncounterWorldAction(
     journalWorldFor(material, world),
     { action, kind: "commit" },
     sortedResolvedFacts(facts)
+  );
+  if (result.status !== "applied" && result.status !== "already-applied") return null;
+  const nextDocument = result.world.documents[0];
+  if (!nextDocument) return null;
+  const reparsed = parseSharedMaterialState(
+    {
+      ...nextDocument.data,
+      actions: nextDocument.journal.actions,
+      epoch: nextDocument.journal.epoch,
+      revision: nextDocument.journal.revision,
+    },
+    material
+  );
+  return reparsed.ok ? reparsed.value : null;
+}
+
+/**
+ * Plan the canonical `complete-turn` boundary over the derived shared world as
+ * one committable journal action: fire the kernel's own boundary machinery
+ * (the current canonical adversary's turn ends — its end wave latches and
+ * finalizes every due turn-anchored lifetime), then compile the before→after
+ * world diff through `planMechanicsWorldAction` under the table's own
+ * material-authority actor. Returns null when no canonical turn is running or
+ * the boundary rejects (the caller degrades: the legacy pointer still steps
+ * and booked lifetimes STAND — fail-closed never expires anything early).
+ *
+ * Each checkpoint is accepted unchanged: the v1 seam installs no reaction
+ * capabilities on the shared material, so every checkpoint's audience is
+ * empty by construction and plain acceptance is exactly the coordinator's
+ * drive (`runBoundary` with nothing to deliver).
+ */
+export function planAdversaryTurnBoundary(
+  campaignId: string,
+  world: Readonly<SharedMaterialState>,
+  actionId: string
+): Readonly<JournalActionDraft> | null {
+  const material = encounterMaterialRef(campaignId);
+  const value: MechanicsWorld = {
+    documents: [{ kind: "shared", material, state: world }],
+    scope: material,
+  };
+  let result = beginMechanicsBoundary(value, {
+    excludeCurrent: null,
+    kind: "complete-turn",
+    material,
+  });
+  let remaining = 64;
+  while (result.status === "checkpoint" && remaining > 0) {
+    const completion = completeMechanicsBoundaryCheckpoint(
+      result.continuation,
+      result.checkpoint.state
+    );
+    if (!completion) return null;
+    result = advanceMechanicsBoundary(result.continuation, completion);
+    remaining -= 1;
+  }
+  if (result.status !== "complete" || result.outcome !== "applied") return null;
+  const planned = planMechanicsWorldAction(value, result.state.world, {
+    actor: { authority: "table", kind: "material-authority", material },
+    facts: [],
+    id: actionId,
+  });
+  return planned.status === "planned" ? planned.action : null;
+}
+
+/**
+ * Exactly reverse one committed adversary action (generation 1 → 2) through
+ * the same canonical journal reducer — the shared-root twin of
+ * `undoCharacterAction`. Returns the re-proved reverted state, or null when
+ * the action is unknown/already undone or the reducer rejects (a later
+ * conflicting action), which the command boundary treats as its degradation.
+ */
+export function undoEncounterWorldAction(
+  campaignId: string,
+  world: Readonly<SharedMaterialState>,
+  actionId: string
+): Readonly<SharedMaterialState> | null {
+  const material = encounterMaterialRef(campaignId);
+  const committed = world.actions.find(
+    (action) => action.id === actionId && action.generation % 2 === 1
+  );
+  if (!committed) return null;
+  const { generation, ...body } = committed;
+  const result = reduceActionJournal(
+    journalWorldFor(material, world),
+    {
+      action: body,
+      documents: [{ epoch: world.epoch, material, revision: world.revision }],
+      expectedGeneration: generation,
+      kind: "undo",
+    },
+    []
   );
   if (result.status !== "applied" && result.status !== "already-applied") return null;
   const nextDocument = result.world.documents[0];

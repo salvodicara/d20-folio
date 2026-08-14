@@ -38,6 +38,14 @@ interface ChronicleEventBase {
   /** The combat round the event occurred in (read from state at append) — drives the
    *  round-grouped feed + the chapter's round markers. */
   round: number;
+  /**
+   * The engine journal action this beat mirrors (`encounter.world` — the
+   * adversary world seam), stamped by `mirrorAdversaryCommit`. The chronicle
+   * UNDO tap reverses THAT action through the journal (exact revert) instead
+   * of blind arithmetic; absent on legacy/manual beats (they undo through the
+   * legacy arithmetic — the documented degradation). An id, never prose.
+   */
+  engineActionId?: string;
 }
 
 /**

@@ -136,12 +136,11 @@ import {
   setMonsterCondition,
   monsterInstanceName,
 } from "@/features/campaigns/encounter";
+import { recordCondition, recordPcHp } from "@/features/campaigns/combat-chronicle";
 import {
-  recordMonsterHp,
-  recordCondition,
-  recordPcHp,
-} from "@/features/campaigns/combat-chronicle";
-import { applyAdversaryDamage } from "@/features/campaigns/encounter-world-command";
+  applyAdversaryDamage,
+  applyAdversaryHeal,
+} from "@/features/campaigns/encounter-world-command";
 import {
   setEncounterInitiative,
   writeCampaignCombatEffect,
@@ -1771,13 +1770,13 @@ export function MonsterCard({
 
       <MonsterHpControl
         monster={monster}
-        // The engine command boundary: damage routes derive → coordinator →
-        // journal commit → legacy mirror, then rides the SAME apply seam.
+        // The engine command boundary: damage AND healing route derive →
+        // coordinator → journal commit → legacy mirror, on the SAME apply seam.
         onDamage={(amount) =>
           apply((e) => applyAdversaryDamage(e, campaignId, monster.id, amount))
         }
         onHeal={(amount) =>
-          apply((e) => recordMonsterHp(e, monster.id, monster.hp.current + amount))
+          apply((e) => applyAdversaryHeal(e, campaignId, monster.id, amount))
         }
         onTemp={(amount) =>
           apply((e) => setMonsterTempHp(e, monster.id, Math.max(monster.hp.temp, amount)))

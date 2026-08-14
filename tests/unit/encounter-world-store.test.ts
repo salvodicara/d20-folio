@@ -13,6 +13,15 @@
  * (c) A booked condition's turn-boundary lifetime expires on the RIGHT turn
  *     under the kernel's own complete-turn boundary machinery, and the mirror
  *     releases the legacy chip.
+ * (d) `stepEncounterTurn` fires that SAME boundary from the production turn
+ *     stepper — expiries land exactly when the table steps, the chip release
+ *     mirrors in the same value, a PC-pointer step ends no canonical turn,
+ *     and back-step is the documented legacy-pointer-only degradation.
+ * (e) `applyAdversaryHeal` books healing with the exact legacy semantics
+ *     (clamp at max, temp untouched, full-HP no-op, 0-HP revive degrades).
+ * (f) `undoAdversaryChronicleEvent` reverses an engine-mirrored beat through
+ *     its exact journal action (hp trio, temp, occurrences, lifetimes) and
+ *     degrades to the legacy arithmetic for a pre-world beat.
  */
 import { describe, expect, it } from "vitest";
 
@@ -27,8 +36,12 @@ import {
 import {
   applyAdversaryCondition,
   applyAdversaryDamage,
+  applyAdversaryHeal,
   mirrorAdversaryCommit,
+  stepEncounterTurn,
+  undoAdversaryChronicleEvent,
 } from "@/features/campaigns/encounter-world-command";
+import { undoHpEvent } from "@/features/campaigns/combat-chronicle";
 import { encounterMaterialRef, encounterWorldState } from "@/lib/encounter-world-store";
 import {
   advanceMechanicsBoundary,
@@ -408,5 +421,275 @@ describe("applyAdversaryCondition end-to-end", () => {
         (event) => event.kind === "condition-loss" && event.targetId === "monster-2"
       )
     ).toBe(true);
+  });
+});
+
+describe("stepEncounterTurn — engine-first turn advancement", () => {
+  it("expires exactly the lifetime booked for the crossed boundary and mirrors the chip", () => {
+    // Poisoned until the END of monster-2's turn, booked during monster-1's turn.
+    const cursed = applyAdversaryCondition(
+      turnsEncounter(),
+      CAMPAIGN_ID,
+      "monster-2",
+      "poisoned",
+      { phase: "end", turns: 1 }
+    );
+
+    // Step 1 — monster-1's turn ends, the pointer hands to monster-2: the
+    // boundary COMMITS (a journal action; revision bumps) but the condition
+    // still stands, chip intact.
+    const first = stepEncounterTurn(cursed, CAMPAIGN_ID, "next");
+    expect(first.currentCombatantId).toBe("monster-2");
+    expect(monsterIn(first, "monster-2").conditions).toEqual(["poisoned"]);
+    const firstWorld = encounterWorldState(first, CAMPAIGN_ID);
+    expect(firstWorld).not.toBeNull();
+    if (!firstWorld) return;
+    expect(firstWorld.revision).toBe(2);
+    expect(
+      Object.values(firstWorld.occurrences).some(
+        (occurrence) => occurrence.kind === "condition"
+      )
+    ).toBe(true);
+
+    // Step 2 — monster-2's OWN turn ends: the lifetime expires in the boundary's
+    // end wave, the chip releases and the condition-loss beat lands with its
+    // committing action stamped, all in the same encounter value.
+    const second = stepEncounterTurn(first, CAMPAIGN_ID, "next");
+    expect(second.currentCombatantId).toBe("monster-3");
+    expect(monsterIn(second, "monster-2").conditions).toEqual([]);
+    const loss = second.events?.find((event) => event.kind === "condition-loss");
+    expect(loss).toMatchObject({ conditionId: "poisoned", targetId: "monster-2" });
+    expect(loss?.engineActionId).toBeDefined();
+    const secondWorld = encounterWorldState(second, CAMPAIGN_ID);
+    expect(secondWorld).not.toBeNull();
+    if (!secondWorld) return;
+    expect(secondWorld.revision).toBe(3);
+    expect(
+      Object.values(secondWorld.occurrences).some(
+        (occurrence) => occurrence.kind === "condition"
+      )
+    ).toBe(false);
+  });
+
+  it("a step off a PC pointer ends no canonical turn (narrow member write shape)", () => {
+    let state = startEncounter({ hero: { characterId: "char-hero" } }, ["hero"], 1_000);
+    state = addMonster(state, {
+      ac: 15,
+      count: 1,
+      initiative: 12,
+      maxHp: 10,
+      name: "Goblin",
+      srdId: "goblin-warrior",
+    });
+    state = beginEncounterTurns(state, ["pc-hero", "monster-1"]);
+    expect(state.currentCombatantId).toBe("pc-hero");
+    const next = stepEncounterTurn(state, CAMPAIGN_ID, "next");
+    // The pointer moved, but NOTHING engine-owned was written: no world field,
+    // no combatants edit, no events — exactly the two turn fields a player's
+    // own-turn advance is allowed to change under `turnFieldsOnlyChanged`.
+    expect(next.currentCombatantId).toBe("monster-1");
+    expect(next.world).toBeUndefined();
+    expect(next.combatants).toBe(state.combatants);
+    expect(next.events).toBe(state.events);
+  });
+
+  it("back-step rewinds ONLY the legacy pointer (the documented degradation)", () => {
+    const cursed = applyAdversaryCondition(
+      turnsEncounter(),
+      CAMPAIGN_ID,
+      "monster-2",
+      "poisoned",
+      { phase: "end", turns: 1 }
+    );
+    const forward = stepEncounterTurn(cursed, CAMPAIGN_ID, "next");
+    const back = stepEncounterTurn(forward, CAMPAIGN_ID, "prev");
+    // The pointer rewound; the engine world is BYTE-IDENTICAL to the forward
+    // step's (no boundary un-fire) and the standing condition is untouched.
+    expect(back.currentCombatantId).toBe("monster-1");
+    expect(back.world).toBe(forward.world);
+    expect(back.events).toBe(forward.events);
+    expect(monsterIn(back, "monster-2").conditions).toEqual(["poisoned"]);
+  });
+
+  it("keeps stepping on the legacy pointer when the world fails closed", () => {
+    const corrupt = { ...turnsEncounter(), world: { bogus: true } };
+    const next = stepEncounterTurn(corrupt, CAMPAIGN_ID, "next");
+    expect(next.currentCombatantId).toBe("monster-2");
+    // Fail-closed: the corrupt world field is untouched, nothing expired.
+    expect(next.world).toEqual({ bogus: true });
+  });
+});
+
+describe("applyAdversaryHeal end-to-end", () => {
+  it("restores current HP exactly, leaves temp untouched, and mirrors the beat", () => {
+    const shielded = setMonsterTempHp(turnsEncounter(), "monster-1", 3);
+    const damaged = applyAdversaryDamage(shielded, CAMPAIGN_ID, "monster-1", 7);
+    expect(monsterIn(damaged, "monster-1").hp).toEqual({ current: 6, max: 10, temp: 0 });
+    const reshielded = setMonsterTempHp(damaged, "monster-1", 2);
+    const healed = applyAdversaryHeal(reshielded, CAMPAIGN_ID, "monster-1", 3);
+    const monster = monsterIn(healed, "monster-1");
+    // Healing raises CURRENT only; the fresh temp pool is untouched.
+    expect(monster.hp).toEqual({ current: 9, max: 10, temp: 2 });
+    const beat = healed.events?.at(-1);
+    expect(beat).toMatchObject({
+      amount: 3,
+      current: 9,
+      kind: "hp-heal",
+      targetId: "monster-1",
+    });
+    expect(beat?.engineActionId).toBeDefined();
+    const world = encounterWorldState(healed, CAMPAIGN_ID);
+    expect(world).not.toBeNull();
+    if (!world) return;
+    expect(creatureIn(world, "monster-1").vitals.hitPoints.current).toBe(9);
+    expect(world.revision).toBe(2);
+  });
+
+  it("clamps at the maximum — no overheal beyond max", () => {
+    const damaged = applyAdversaryDamage(turnsEncounter(), CAMPAIGN_ID, "monster-1", 4);
+    const healed = applyAdversaryHeal(damaged, CAMPAIGN_ID, "monster-1", 100);
+    expect(monsterIn(healed, "monster-1").hp.current).toBe(10);
+    // The beat records the RESTORED share (4), never the requested 100.
+    expect(healed.events?.at(-1)).toMatchObject({
+      amount: 4,
+      current: 10,
+      kind: "hp-heal",
+    });
+  });
+
+  it("a full-HP heal is a clean no-op (no beat, same value)", () => {
+    const start = turnsEncounter();
+    const healed = applyAdversaryHeal(start, CAMPAIGN_ID, "monster-1", 5);
+    expect(monsterIn(healed, "monster-1").hp.current).toBe(10);
+    expect(healed.events).toBeUndefined();
+  });
+
+  it("revives a 0-HP adversary through the documented legacy degradation", () => {
+    const down = applyAdversaryDamage(turnsEncounter(), CAMPAIGN_ID, "monster-1", 25);
+    expect(monsterIn(down, "monster-1").hp.current).toBe(0);
+    const revived = applyAdversaryHeal(down, CAMPAIGN_ID, "monster-1", 5);
+    expect(monsterIn(revived, "monster-1").hp.current).toBe(5);
+    // The revive is legacy-only: the persisted world still holds the death
+    // commit (revision 1) and adopts the legacy write at the next derivation.
+    expect(revived.world).toBe(down.world);
+    const world = encounterWorldState(revived, CAMPAIGN_ID);
+    expect(world?.revision).toBe(1);
+    expect(world ? creatureIn(world, "monster-1").vitals.hitPoints.current : null).toBe(
+      5
+    );
+  });
+
+  it("keeps healing on the legacy arithmetic when the world fails closed", () => {
+    const corrupt = {
+      ...applyHp(turnsEncounter(), "monster-1", -4),
+      world: { bogus: true },
+    };
+    const healed = applyAdversaryHeal(corrupt, CAMPAIGN_ID, "monster-1", 2);
+    expect(monsterIn(healed, "monster-1").hp.current).toBe(8);
+    expect(healed.world).toEqual({ bogus: true });
+  });
+});
+
+describe("undoAdversaryChronicleEvent — exact revert through the journal", () => {
+  it("undoes a damage beat exactly: hp trio restored, line dropped, journal reversed", () => {
+    const shielded = setMonsterTempHp(turnsEncounter(), "monster-1", 3);
+    const damaged = applyAdversaryDamage(shielded, CAMPAIGN_ID, "monster-1", 5);
+    expect(monsterIn(damaged, "monster-1").hp).toEqual({ current: 8, max: 10, temp: 0 });
+    const beat = damaged.events?.[0];
+    expect(beat?.engineActionId).toBeDefined();
+    const undone = undoAdversaryChronicleEvent(damaged, CAMPAIGN_ID, "0");
+    // Temp AND current restore exactly (5 = 3 temp + 2 hp), the line is gone.
+    expect(monsterIn(undone, "monster-1").hp).toEqual({ current: 10, max: 10, temp: 3 });
+    expect(undone.events).toEqual([]);
+    const world = encounterWorldState(undone, CAMPAIGN_ID);
+    expect(world).not.toBeNull();
+    if (!world) return;
+    expect(creatureIn(world, "monster-1").vitals.hitPoints).toEqual({
+      current: 10,
+      temporary: { current: 3, sourceOccurrence: null },
+    });
+    // The journal reflects the revert: the action stands at generation 2.
+    expect(world.actions.map(({ generation }) => generation)).toEqual([2]);
+  });
+
+  it("drops the derived down line once the target stands again", () => {
+    const down = applyAdversaryDamage(turnsEncounter(), CAMPAIGN_ID, "monster-1", 25);
+    expect(down.events?.map((event) => event.kind)).toEqual(["hp-damage", "down"]);
+    const undone = undoAdversaryChronicleEvent(down, CAMPAIGN_ID, "0");
+    expect(monsterIn(undone, "monster-1").hp.current).toBe(10);
+    expect(undone.events).toEqual([]);
+  });
+
+  it("undoes a booked condition: chip released, occurrence and lifetime gone", () => {
+    const cursed = applyAdversaryCondition(
+      turnsEncounter(),
+      CAMPAIGN_ID,
+      "monster-2",
+      "poisoned",
+      { phase: "end", turns: 1 }
+    );
+    const undone = undoAdversaryChronicleEvent(cursed, CAMPAIGN_ID, "0");
+    expect(monsterIn(undone, "monster-2").conditions).toEqual([]);
+    expect(undone.events).toEqual([]);
+    const world = encounterWorldState(undone, CAMPAIGN_ID);
+    expect(world).not.toBeNull();
+    if (!world) return;
+    expect(
+      Object.values(world.occurrences).some(
+        (occurrence) => occurrence.kind === "condition"
+      )
+    ).toBe(false);
+  });
+
+  it("undoes a turn-boundary expiry: the chip relights and the lifetime stands again", () => {
+    const cursed = applyAdversaryCondition(
+      turnsEncounter(),
+      CAMPAIGN_ID,
+      "monster-2",
+      "poisoned",
+      { phase: "end", turns: 1 }
+    );
+    const first = stepEncounterTurn(cursed, CAMPAIGN_ID, "next");
+    const second = stepEncounterTurn(first, CAMPAIGN_ID, "next");
+    expect(monsterIn(second, "monster-2").conditions).toEqual([]);
+    const loss = second.events?.find((event) => event.kind === "condition-loss");
+    expect(loss).toBeDefined();
+    if (!loss) return;
+    const undone = undoAdversaryChronicleEvent(second, CAMPAIGN_ID, loss.id);
+    expect(monsterIn(undone, "monster-2").conditions).toEqual(["poisoned"]);
+    const world = encounterWorldState(undone, CAMPAIGN_ID);
+    expect(world).not.toBeNull();
+    if (!world) return;
+    expect(
+      Object.values(world.occurrences).some(
+        (occurrence) => occurrence.kind === "condition" && occurrence.ending === null
+      )
+    ).toBe(true);
+  });
+
+  it("degrades to the legacy arithmetic for a beat that predates the world layer", () => {
+    // A legacy-authored beat (no engineActionId) built straight onto the doc.
+    const legacy: EncounterState = {
+      ...turnsEncounter(),
+      combatants: turnsEncounter().combatants.map((combatant) =>
+        combatant.kind === "monster" && combatant.id === "monster-1"
+          ? { ...combatant, hp: { ...combatant.hp, current: 6 } }
+          : combatant
+      ),
+      events: [
+        {
+          amount: 4,
+          current: 6,
+          id: "0",
+          kind: "hp-damage",
+          max: 10,
+          round: 1,
+          targetId: "monster-1",
+        },
+      ],
+    };
+    const undone = undoAdversaryChronicleEvent(legacy, CAMPAIGN_ID, "0");
+    expect(undone).toEqual(undoHpEvent(legacy, "0"));
+    expect(monsterIn(undone, "monster-1").hp.current).toBe(10);
   });
 });

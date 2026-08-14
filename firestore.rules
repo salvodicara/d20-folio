@@ -616,7 +616,11 @@ service cloud.firestore {
       // monster damage, healing, conditions, and standing-effect operations to the
       // shared encounter, so a
       // regular member's update is ALSO allowed when the encounter diff touches ONLY
-      // `combatants` (the monster HP) + `events` (the appended chronicle beats) — every
+      // `combatants` (the monster HP) + `events` (the appended chronicle beats) +
+      // `world` (the engine layer the adversary world seam persists in the SAME
+      // transaction — the resolver's monster damage/healing now commits through the
+      // deterministic engine's journal, and dropping the `world` write would strand
+      // the journal behind the mirrored legacy fields) — every
       // OTHER encounter field (round · order · currentCombatantId · status · epoch) stays
       // byte-identical, so a member can never advance/rewind the fight, freeze the order,
       // or end it through this path. The encounter must EXIST on both sides (a member
@@ -626,14 +630,16 @@ service cloud.firestore {
       // operation remains present in a bounded ledger (the exact inverse is another
       // operation, never a shared-snapshot restore). Like `turnFieldsOnlyChanged()` this is intentionally COARSE — the rules
       // cannot iterate the combatants array to prove ONLY scalar combat state changed, so a member
-      // could in principle over-edit a monster's HP, which is exactly the DM-remediable,
-      // low-risk case the owner's remediability mandate covers. Same
+      // could in principle over-edit a monster's HP or write a corrupt `world`, which is exactly the DM-remediable,
+      // low-risk case the owner's remediability mandate covers (a corrupt world FAILS
+      // CLOSED at read time — `encounterWorldState` rejects it and the boundary
+      // degrades to the legacy arithmetic; it can never freeze a live table). Same
       // diff().affectedKeys().hasOnly() construct proven in turnFieldsOnlyChanged().
       function combatEffectFieldsOnlyChanged() {
         return resource.data.get('encounter', null) != null
           && request.resource.data.get('encounter', null) != null
           && request.resource.data.encounter.diff(resource.data.encounter)
-               .affectedKeys().hasOnly(['combatants', 'events', 'memberEffects', 'effectOps', 'currentCombatantId', 'round'])
+               .affectedKeys().hasOnly(['combatants', 'events', 'memberEffects', 'effectOps', 'currentCombatantId', 'round', 'world'])
           && request.resource.data.encounter.combatants.size()
                == resource.data.encounter.combatants.size()
           && request.resource.data.encounter.get('events', []).size()

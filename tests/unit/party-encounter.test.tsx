@@ -20,7 +20,7 @@ import {
   EncounterBudgetReadout,
   EncounterRoundBar,
 } from "@/features/campaigns/party-encounter";
-import { addMonster, startEncounter } from "@/features/campaigns/encounter";
+import { addMonster, applyHp, startEncounter } from "@/features/campaigns/encounter";
 import { monsterPortraitUrl } from "@/data/monster-art";
 import enGlossary from "@/i18n/en/ui/glossary.json";
 import itGlossary from "@/i18n/it/ui/glossary.json";
@@ -554,6 +554,54 @@ describe("MonsterCard — damage dispatches through the engine command boundary"
       current: 52,
       targetId: "monster-1",
     });
+    expect(encounter.world).toBeDefined();
+  });
+
+  it("the popover's Heal apply reduces through applyAdversaryHeal (world + mirror)", () => {
+    // Start the ogre already wounded (real reducers only), then heal 5 through
+    // the card's popover: exact current semantics (no overheal, temp untouched),
+    // the hp-heal beat, and the committed world on the same encounter value.
+    let encounter = addMonster(startEncounter({}, [], 1), {
+      name: "Ogre Brute",
+      ac: 11,
+      maxHp: 59,
+      count: 1,
+      initiative: 12,
+      srdId: "ogre",
+    });
+    encounter = applyHp(encounter, "monster-1", -20);
+    const apply = vi.fn((fn: (e: typeof encounter) => typeof encounter) => {
+      encounter = fn(encounter);
+    });
+    render(
+      <MonsterCard
+        campaignId="camp-test"
+        monster={encounter.combatants[0] as EncounterMonster}
+        isCurrent={false}
+        apply={apply}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Ogre Brute", expanded: false }));
+    fireEvent.click(
+      screen
+        .getAllByLabelText("Ogre Brute")
+        .find((el) => el.classList.contains("vital-hp")) as HTMLElement
+    );
+    fireEvent.change(screen.getByLabelText(/amount of damage/i), {
+      target: { value: "5" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Heal$/ }));
+
+    expect(apply).toHaveBeenCalledTimes(1);
+    const ogre = encounter.combatants[0] as EncounterMonster;
+    expect(ogre.hp).toEqual({ current: 44, temp: 0, max: 59 });
+    expect(encounter.events?.[0]).toMatchObject({
+      kind: "hp-heal",
+      amount: 5,
+      current: 44,
+      targetId: "monster-1",
+    });
+    expect(encounter.events?.[0]?.engineActionId).toBeDefined();
     expect(encounter.world).toBeDefined();
   });
 });
