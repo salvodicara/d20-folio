@@ -257,6 +257,29 @@ follow-ups, deferred resolution, repeat saves and the 21 legacy `effectProgram` 
 explicit `unsupported` boundaries for the next transcription waves. Focused verification only; no
 global gate ran.
 
+**Transcription waves 2–5 CLOSED on branch (2026-08-14):** the attack gate (per-target-slot attack
+requests vs bound armor class with the caster's attack bonus; hit/crit damage through two
+outcome-expanded roll inputs — crit dice doubled, flat bonuses never; misses self-resolve their
+empty roll requirements engine-side), combined attack-then-save gates (Ray of Sickness: the save
+only on a landed hit via an `answer-d20` predicate), per-instance dart rolls (Magic Missile),
+2024 cantrip scaling (damage dice by character level, or `cantripInstances` scaling beam SLOTS
+with fixed dice — Eldritch Blast is the first legacy `effectProgram` fully superseded
+declaratively), flat + full-restore healing (Heal / Power Word Heal), and RECURRENCE — a
+table-signaled `pulse` phase re-running the whole resolution suite with phase-prefixed identities,
+the cast level carried by a program register, deferred zones (Moonbeam) resolving nothing at cast,
+and repeat-save `end-program` (Searing Smite). Two kernel laws landed with the waves: omitted-input
+selectors resolve to zero targets at compile (review-completeness proves omission), and
+turn-boundary lifetimes outside an encounter freeze to their 6-seconds-per-turn timeline
+equivalent. Coverage now: 422 composed spells, 234 executable programs, unsupported clauses down
+to 49 (15 legacy `effectProgram` migrations + healing-pool/consumable, two-target-set combos,
+deferred standing riders, per-part cast-mod attribution, and singletons). Scorching Ray,
+Fire Bolt, Magic Missile, Ray of Sickness (hit and miss paths), Moonbeam (deferred cast) and
+Eldritch Blast (3 beams at L11: hit/crit/miss) all run END-TO-END through the coordinator
+protocol. Pulse EXECUTION end-to-end awaits the table-authority action seam (the
+`manual-table-event` evidence demands a material-authority actor) — queued with the cutover.
+The 6 live-team fixtures derive canonical worlds (pack conformance suite green). Focused
+verification only; no global gate ran.
+
 **Authored step census COMPLETE on branch (2026-08-14):** every one of the 24 authorable
 `MechanicsStep` kinds now compiles into exact kernel operations — the last two being `turn-claim`
 (one `turn-economy-transition` per resolved combatant, its effective projection supplied by the
