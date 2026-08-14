@@ -771,3 +771,39 @@ The automation epic is done only when all of the following are true:
 - UX is owner-approved in both themes and responsive layouts;
 - full hooks pass without bypass, the branches are rebased, and the owner explicitly authorizes the
   merge and later deployment.
+
+### 2026-08-14 second block — engine surfaces + the deletion map
+
+Orders 1–5 remain closed; order 5's spell corpus stands at **259/422 executable** with the
+authored-program channel (`spell.mechanicsProgram`, Fire Shield worked example) and the
+possession-safe `root-pulse` trigger executing recurring phases end-to-end over the PERSISTED
+world (serialize → parse → advance authenticates). Order 6 is a live rollout: the Spells tab
+dual-dispatches engine-executable casts (modal protocol → one journal commit + exact undo), the
+pulse surface declares armed phases, and the bridge mirrors hp/slots/exhaustion/concentration.
+
+**The deletion map (executes when the canonical runtime covers each flow):**
+
+1. **Branch-born intermediate combat generation** (`combat-economy`, `combat-effect-atomic`,
+   `combat-effect-command`, `combat-effect-io`, `combat-effect-lifecycle*`,
+   `combat-effect-planning-state`, `combat-effect-program`, `combat-effects`, `combat-outcomes`,
+   `combat-transition`, `automation-compiler` — none exist on `main`): the migration's own
+   half-way runtime. Deleted per-flow as feature/weapon/item transcription plus the encounter
+   world land. (`combat-effect-state-reducer` was stillborn — already removed.)
+2. **Main-era legacy** (`cost-engine`, `smart-tracker` consequence paths, `combat-hp`,
+   `combat-resolution`, `combat-state`, `combat-state-io`, `spell-combat-castable`): survives the
+   longest — it serves the live UI for everything not yet transcribed. Falls with the final
+   surface cutovers.
+3. **Item-resource bridge** (`item-resources`, `item-resource-commands`,
+   `item-resource-boundaries` + `src/lib/resources.ts` item-command block): completed on the
+   branch to restore boot; deleted when items resolve through the engine's material
+   inventory/payment model.
+4. **Legacy `effectProgram` fields** on the 15 authored spells + `SUPERSEDED_LEGACY_PROGRAMS`:
+   dropped with generation 1's executor once the authored `mechanicsProgram` twins are live.
+5. **Bridge mirrors + `characterWorldState` legacy derivation**: dropped with the one-off live
+   document migration (schema-4 world becomes the only source; pre-world docs derive once,
+   fixtures re-validated).
+
+Remaining order-5/6 work: feature-action + item transcription (SrdActionDef → programs; tracker
+pools already expressible via the `pool` selector), the encounter/adversary world, the 14
+authored programs (agent in flight), then the deletions above, the document migration, order 7's
+single full dual-build gate, and order 8's explainer.
