@@ -1522,8 +1522,8 @@
           "status": "automated"
         },
         {
-          "clauseId": "healing-pool",
-          "detail": "pooled-healing-pending",
+          "clauseId": "healing-consumable",
+          "detail": "consumable-item-creation-pending",
           "status": "unsupported"
         }
       ],
@@ -10111,7 +10111,7 @@
         },
         {
           "clauseId": "healing-pool",
-          "detail": "pooled-healing-pending",
+          "detail": "per-target-pool-split-pending",
           "status": "unsupported"
         },
         {
@@ -10197,9 +10197,9 @@
           "status": "automated"
         },
         {
-          "clauseId": "healing-pool",
-          "detail": "pooled-healing-pending",
-          "status": "unsupported"
+          "clauseId": "healing-full-restore",
+          "detail": "clamped-domain-bound",
+          "status": "automated"
         },
         {
           "clauseId": "cure-charmed",
@@ -10227,7 +10227,7 @@
           "status": "automated"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "power-word-heal"
     },
     {
@@ -10405,15 +10405,15 @@
       "id": "wish"
     }
   ],
-  "executablePrograms": 232,
+  "executablePrograms": 233,
   "family": "spells",
   "totalEntities": 422,
   "totals": {
-    "automated": 1401,
+    "automated": 1402,
     "physical-input": 311,
     "table": 203,
     "spatial": 126,
     "narrative": 141,
-    "unsupported": 51
+    "unsupported": 50
   }
 }

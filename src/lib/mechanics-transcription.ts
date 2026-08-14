@@ -756,8 +756,23 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
       clauses.push(clause("healing-application", "automated"));
     }
   }
-  if (spell.healingMode !== undefined || spell.healingPool !== undefined) {
-    unsupported("healing-pool", "pooled-healing-pending");
+  if (spell.healingMode === "full") {
+    // "Regains all its hit points": the kernel clamps healing at the target's
+    // maximum, and 1000 exceeds every legal 2024 hit-point maximum, so the
+    // clamp makes the domain bound exact — no sentinel semantics.
+    steps.push({
+      amount: { expression: fixed(1000), kind: "integer" },
+      kind: "heal",
+      stepId: "heal-full",
+      target: { inputId: "targets", kind: "input" },
+      when: null,
+    });
+    clauses.push(clause("healing-full-restore", "automated", "clamped-domain-bound"));
+  } else if (spell.healingMode !== undefined) {
+    unsupported("healing-consumable", "consumable-item-creation-pending");
+  }
+  if (spell.healingPool !== undefined) {
+    unsupported("healing-pool", "per-target-pool-split-pending");
   }
 
   // Temporary hit points.
