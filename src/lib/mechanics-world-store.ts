@@ -71,7 +71,34 @@ export function characterWorldState(
   const material = characterMaterialRef(doc, uid);
   if (doc.session.world !== undefined) {
     const persisted = parseCharacterMaterialState(doc.session.world, material);
-    return persisted.ok ? persisted.value : null;
+    if (!persisted.ok) return null;
+    // Incremental tracker migration: a pool the world has never seen seeds
+    // exactly once from the legacy counters at read time (one-way, additive —
+    // an existing pool is world truth and is never reseeded). The next commit
+    // persists the migrated pool with the action that first paid from it.
+    const missing = Object.entries(trackerSeeds).filter(
+      ([trackerId]) => persisted.value.resources.pools[trackerId] === undefined
+    );
+    if (missing.length === 0) return persisted.value;
+    const reseeded = parseCharacterMaterialState(
+      {
+        ...structuredClone(persisted.value),
+        resources: {
+          ...structuredClone(persisted.value.resources),
+          pools: {
+            ...structuredClone(persisted.value.resources.pools),
+            ...Object.fromEntries(
+              missing.map(([trackerId, seed]) => [
+                trackerId,
+                countCell(Math.max(0, seed.total - seed.used)),
+              ])
+            ),
+          },
+        },
+      },
+      material
+    );
+    return reseeded.ok ? reseeded.value : null;
   }
 
   const session = doc.session;

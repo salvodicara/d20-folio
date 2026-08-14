@@ -510,6 +510,49 @@ describe("mechanics world store", () => {
     expect(standings).toHaveLength(1);
   });
 
+  it("seeds a missing tracker pool into an already-persisted world exactly once", () => {
+    const doc = {
+      ...MOCK_CHARACTER,
+      session: { ...MOCK_CHARACTER.session, trackers: {} },
+    };
+    const first = characterWorldState(doc, "test-uid", 60);
+    if (!first) throw new Error("world fixture");
+    const persistedDoc = {
+      ...doc,
+      session: { ...doc.session, world: first },
+    };
+    // The persisted world predates the tracker; the read seeds it additively.
+    const reseeded = characterWorldState(
+      persistedDoc,
+      "test-uid",
+      60,
+      {},
+      {
+        "fighter-second-wind": { total: 3, used: 1 },
+      }
+    );
+    expect(reseeded?.resources.pools["fighter-second-wind"]).toMatchObject({
+      current: 2,
+    });
+    // An existing pool is world truth — a different seed never reseeds it.
+    const worldWithPool = {
+      ...persistedDoc,
+      session: { ...persistedDoc.session, world: reseeded },
+    };
+    const again = characterWorldState(
+      worldWithPool,
+      "test-uid",
+      60,
+      {},
+      {
+        "fighter-second-wind": { total: 5, used: 0 },
+      }
+    );
+    expect(again?.resources.pools["fighter-second-wind"]).toMatchObject({
+      current: 2,
+    });
+  });
+
   it("pulses a persisted moonbeam zone through the round-tripped authority", () => {
     const world = characterWorldState(MOCK_CHARACTER, "test-uid", 60);
     if (!world) throw new Error("world fixture");
