@@ -2232,18 +2232,13 @@ describe("compileMechanicsFrame segmented SSOT", () => {
           phaseId: "resolve",
           steps: [
             {
-              delivery: "automatic",
-              kind: "damage",
-              parts: [
-                {
-                  amount: { expression: FIXED_ONE, kind: "integer" },
-                  damageType: "fire",
-                  partId: "fire",
-                },
-              ],
-              stepId: "deal-damage",
-              target: { kind: "role", role: "target" },
-              traits: ["spell"],
+              kind: "resource-change",
+              operation: "spend",
+              stepId: "spend-focus",
+              term: {
+                amount: FIXED_ONE,
+                selector: { kind: "pool", owner: "owner", resourceId: "focus" },
+              },
               when: null,
             },
           ],
@@ -2263,9 +2258,9 @@ describe("compileMechanicsFrame segmented SSOT", () => {
       operationId: null,
       phaseId: "resolve",
       reason: "unsupported-step",
-      referenceId: "damage",
+      referenceId: "resource-change",
       status: "rejected",
-      stepId: "deal-damage",
+      stepId: "spend-focus",
     });
     expect(topMechanicsPendingFrame(input.state)?.cursor).toEqual({
       nextSlot: 1,

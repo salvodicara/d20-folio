@@ -225,6 +225,21 @@ Only focused affected-suite verification ran; no global gate ran. The fixed-poin
 coordinator, remaining compiler/corpus work, runtime cutover and final journal draft remain active; this
 is not an engine-completion claim.
 
+**Vitality step compilers CLOSED on branch (2026-08-14):** `compileMechanicsFrame` now compiles
+authored `damage`, `heal`, `temporary-hit-points`, `clear-temporary-hit-points`, `exhaustion-change`,
+`stabilize` and `death` steps into exact kernel operations. Damage builds one packet per expanded
+target, resolves it against the target's effective defense profile (standing `damage-defense` facts
+merged with the custom-template/override material profile), consumes recorded damage-allocation
+observations and suspends with a single-use continuation when the table must allocate a flat
+adjustment; creature maximums come from caller-guarded `hit-point-maximum` facts (re-emitted and
+validated by the kernel) or the material template, and zero-HP policy defaults to the 2024 rule
+(characters fall dying, other creatures die). Temporary HP creates its per-target source occurrence
+and grant atomically, with the emptied source discovered and ended by the causal wave. Proved
+end-to-end through the coordinator: multi-part damage through resistance firing a damage-taken
+reaction in the same action, allocation suspend/resume (the response-accept path), source-bound THP
+grant/clear with automatic source ending, exhaustion gain, and fail-closed missing-maximum
+rejection. Focused verification only; no global gate ran.
+
 **Bounded causal fixed-point coordinator CLOSED on branch (2026-08-14):** `runMechanicsCausalAction`
 is the one driver for one complete causal action: root review against the closed entry basis, the
 standalone root-create transaction, the LIFO pending-frame compile loop, frozen event audiences

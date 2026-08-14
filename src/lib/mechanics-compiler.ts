@@ -1,8 +1,10 @@
 /** The single MechanicsProgram → ordered physical transaction compiler. */
 
 import { materialRefKey } from "@/lib/action-journal";
-import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
+import { canonicalFingerprint, canonicalJson } from "@/lib/canonical-fingerprint";
+import { conformDamageDefenseProfile, resolveDamage } from "@/lib/damage";
 import { evaluateIntegerExpression } from "@/lib/integer-expression";
+import { selectEffectiveDamageDefenseProfile } from "@/lib/mechanic-occurrences";
 import { deriveMechanicsPostEventEmissions } from "@/lib/mechanics-execution";
 import {
   projectMechanicsTransaction,
@@ -21,6 +23,7 @@ import {
   mechanicsProgramStepIsActive,
   prepareMechanicsProgramCompilation,
   refreshMechanicsProgramProjectedCompilationContext,
+  resolveMechanicsProgramAmount,
   resolveMechanicsProgramTargets,
 } from "@/lib/mechanics-program";
 import {
@@ -31,6 +34,8 @@ import {
   advanceMechanicsPendingFrameStep,
   topMechanicsPendingFrame,
 } from "@/lib/mechanics-world";
+import type { ActionFactGuard } from "@/types/action-journal";
+import type { DamageAllocationObservation, DamageDefenseProfile } from "@/types/damage";
 import type {
   CompileMechanicsFrameInput,
   MechanicsCompiledSegment,
@@ -39,6 +44,7 @@ import type {
   MechanicsFrameCompileRejection,
   MechanicsFrameCompileResult,
 } from "@/types/mechanics-compiler";
+import { HIT_POINT_MAXIMUM_FACT_ADDRESS } from "@/types/mechanics-operation";
 import type {
   MechanicsOperation,
   MechanicsOperationCause,
@@ -47,6 +53,7 @@ import type {
 } from "@/types/mechanics-operation";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
 import type {
+  MechanicOccurrence,
   NewMechanicOccurrence,
   ProgramStepOccurrenceOrigin,
   StandingFact,
@@ -54,10 +61,12 @@ import type {
 import type {
   ManualInstruction,
   MechanicsProgramCompilationContext,
+  MechanicsRequestIdentity,
   ResolvedMechanicsAnswer,
 } from "@/types/mechanics-program";
 import type { MechanicsStep } from "@/types/mechanics-program-authoring";
 import type { EntityRef, OccurrenceGenerationRef } from "@/types/mechanics-reference";
+import type { MaterialEntity } from "@/types/material-state";
 import type {
   MechanicsCausalState,
   MechanicsPendingFrameCursor,
@@ -350,10 +359,9 @@ function effectEndOccurrences(
 }
 
 function lifetimeCombatant(
-  step: Readonly<EffectStartStep>,
+  lifetime: Readonly<NonNullable<EffectStep["lifetime"]>>,
   context: Readonly<MechanicsProgramCompilationContext>
 ): { readonly combatant: Readonly<EntityRef> | null; readonly ok: boolean } {
-  const lifetime = step.lifetime;
   if (lifetime.kind !== "rest-completed" && lifetime.kind !== "turn-boundary") {
     return { combatant: null, ok: true };
   }
@@ -542,6 +550,176 @@ function effectOccurrence(
     return { ...common, formId: step.formId, kind: "polymorph-form" };
   }
   return slot.fact ? { ...common, fact: slot.fact, kind: "standing" } : null;
+}
+
+type VitalityStep = Extract<
+  MechanicsStep,
+  {
+    readonly kind:
+      | "damage"
+      | "heal"
+      | "temporary-hit-points"
+      | "clear-temporary-hit-points"
+      | "exhaustion-change"
+      | "stabilize"
+      | "death";
+  }
+>;
+
+function isVitalityStep(step: Readonly<MechanicsStep>): step is VitalityStep {
+  return (
+    step.kind === "damage" ||
+    step.kind === "heal" ||
+    step.kind === "temporary-hit-points" ||
+    step.kind === "clear-temporary-hit-points" ||
+    step.kind === "exhaustion-change" ||
+    step.kind === "stabilize" ||
+    step.kind === "death"
+  );
+}
+
+interface VitalitySlot {
+  readonly identity: Readonly<MechanicsRequestIdentity>;
+  readonly slot: number;
+  readonly target: Readonly<EntityRef>;
+}
+
+function vitalitySlots(
+  step: Readonly<VitalityStep>,
+  context: Readonly<MechanicsProgramCompilationContext>,
+  firstSlot: number
+): readonly Readonly<VitalitySlot>[] | null {
+  const identities = resolveMechanicsProgramTargets(step.target, context);
+  if (!identities) return null;
+  const result: VitalitySlot[] = [];
+  for (const [index, identity] of identities.entries()) {
+    const offset = mechanicsProgramExpansionSlot(index);
+    const slot = offset === null ? null : firstSlot + offset - 1;
+    if (slot === null || !Number.isSafeInteger(slot) || slot < firstSlot) return null;
+    result.push({ identity, slot, target: identity.binding });
+  }
+  return result;
+}
+
+type LocatedVitalityTarget =
+  | { readonly kind: "character" }
+  | { readonly entity: Readonly<MaterialEntity>; readonly kind: "entity" };
+
+function locateVitalityTarget(
+  world: Readonly<MechanicsProgramCompilationContext["world"]>,
+  target: Readonly<EntityRef>
+): Readonly<LocatedVitalityTarget> | null {
+  const document = world.documents.find(
+    (candidate) => materialRefKey(candidate.material) === materialRefKey(target.material)
+  );
+  if (!document) return null;
+  if (target.entityId === "self") {
+    return document.kind === "character" ? { kind: "character" } : null;
+  }
+  const entity = document.state.entities[target.entityId];
+  return entity?.ordinal === target.ordinal && entity.availability === "present"
+    ? { entity, kind: "entity" }
+    : null;
+}
+
+function vitalityTargetIsCreature(located: Readonly<LocatedVitalityTarget>): boolean {
+  return located.kind === "character" || located.entity.kind === "creature";
+}
+
+/** Material defenses (object override or custom template) merged with standing facts. */
+function effectiveVitalityDefenseProfile(
+  world: Readonly<MechanicsProgramCompilationContext["world"]>,
+  target: Readonly<EntityRef>,
+  located: Readonly<LocatedVitalityTarget>
+): Readonly<DamageDefenseProfile> | null {
+  const document = world.documents.find(
+    (candidate) => materialRefKey(candidate.material) === materialRefKey(target.material)
+  );
+  if (!document) return null;
+  const standing = selectEffectiveDamageDefenseProfile(document.state, target);
+  if (located.kind === "character" || located.entity.kind === "creature") {
+    return standing;
+  }
+  const explicit = located.entity.overrides.damageDefenseProfile;
+  if (explicit !== null) return explicit;
+  const template =
+    located.entity.template.kind === "custom"
+      ? located.entity.template.definition.damageDefenseProfile
+      : null;
+  const seen = new Set(standing.rules.map(({ sourceId }) => sourceId));
+  const rules = [
+    ...standing.rules,
+    ...(template?.rules ?? []).filter(({ sourceId }) => !seen.has(sourceId)),
+  ];
+  return conformDamageDefenseProfile({
+    damageThreshold: template?.damageThreshold ?? null,
+    rules,
+  });
+}
+
+/** The caller-guarded effective maximum, or null when no guard names the target. */
+function guardedMaximumHitPoints(
+  facts: readonly Readonly<ActionFactGuard>[],
+  target: Readonly<EntityRef>
+): number | null {
+  const targetKey = canonicalJson(target);
+  for (const fact of facts) {
+    if (
+      canonicalJson(fact.address) !== canonicalJson(HIT_POINT_MAXIMUM_FACT_ADDRESS) ||
+      canonicalJson(fact.owner) !== targetKey ||
+      !fact.expected.present ||
+      typeof fact.expected.value !== "number" ||
+      !Number.isSafeInteger(fact.expected.value) ||
+      fact.expected.value <= 0
+    ) {
+      continue;
+    }
+    return fact.expected.value;
+  }
+  return null;
+}
+
+function materialMaximumHitPoints(
+  located: Readonly<LocatedVitalityTarget>
+): number | null {
+  if (located.kind !== "entity") return null;
+  return (
+    located.entity.overrides.hitPointMaximum ??
+    (located.entity.template.kind === "custom"
+      ? located.entity.template.definition.hitPointMaximum
+      : null)
+  );
+}
+
+/** Active root-owned Temporary-HP sources still targeting the holder. */
+function selectRootTemporaryHitPointSources(
+  world: Readonly<MechanicsProgramCompilationContext["world"]>,
+  root: Readonly<OccurrenceGenerationRef>,
+  target: Readonly<EntityRef>
+): readonly Readonly<OccurrenceGenerationRef>[] {
+  const document = world.documents.find(
+    (candidate) => materialRefKey(candidate.material) === materialRefKey(target.material)
+  );
+  if (!document) return [];
+  const rootKey = occurrenceGenerationRefKey(root);
+  const matches = (occurrence: Readonly<MechanicOccurrence>): boolean =>
+    occurrence.kind === "standing" &&
+    occurrence.ending === null &&
+    occurrenceGenerationRefKey(occurrence.origin.root) === rootKey &&
+    entityRefKey(occurrence.target) === entityRefKey(target) &&
+    occurrence.endRules.some((rule) => rule.kind === "temporary-hp-empty");
+  return uniqueOccurrences(
+    Object.entries(document.state.occurrences).flatMap(([occurrenceId, occurrence]) =>
+      matches(occurrence)
+        ? [
+            {
+              occurrence: { material: document.material, occurrenceId },
+              ordinal: occurrence.ordinal,
+            },
+          ]
+        : []
+    )
+  );
 }
 
 function rejected(
@@ -1091,7 +1269,7 @@ export function compileMechanicsFrame(
       ) {
         return rejected("unresolved-step", phaseId, step.stepId, "wrong-target-kind");
       }
-      const lifetimeTarget = lifetimeCombatant(step, context);
+      const lifetimeTarget = lifetimeCombatant(step.lifetime, context);
       if (!lifetimeTarget.ok) {
         return rejected("unresolved-step", phaseId, step.stepId, "lifetime-combatant");
       }
@@ -1162,6 +1340,339 @@ export function compileMechanicsFrame(
           parent: receipt.root,
         };
         const problem = project(operation, step.stepId);
+        if (problem) return problem;
+      }
+      return operations.length === 0
+        ? cursorOnly(
+            [],
+            [
+              {
+                executions: [],
+                operationIds: [],
+                status: "compiled",
+                stepId: step.stepId,
+              },
+            ]
+          )
+        : simulateStep(step.stepId);
+    }
+    if (isVitalityStep(step)) {
+      const slots = vitalitySlots(step, context, cursor.nextSlot);
+      if (!slots) return rejected("unresolved-step", phaseId, step.stepId, "targets");
+      const anchors = input.reviewed.intent.frame.authority.anchors;
+      const guardSources = [...input.reviewed.intent.factGuards, ...input.facts];
+      const vitalityId = (slot: number, kind: string): string =>
+        operationId(input, step.stepId, slot, kind);
+      for (const { identity, slot, target } of slots) {
+        const located = locateVitalityTarget(context.world, target);
+        if (!located) {
+          return rejected("unresolved-step", phaseId, step.stepId, "missing-target");
+        }
+        const creature = vitalityTargetIsCreature(located);
+        if (step.kind !== "damage" && step.kind !== "heal" && !creature) {
+          return rejected("unresolved-step", phaseId, step.stepId, "wrong-target-kind");
+        }
+        if (step.kind === "damage") {
+          const parts: { amount: number; damageType: string; partId: string }[] = [];
+          for (const part of step.parts) {
+            const amount = resolveMechanicsProgramAmount(part.amount, context, identity);
+            if (amount === null) {
+              return rejected("unresolved-step", phaseId, step.stepId, "amount");
+            }
+            if (amount > 0) {
+              parts.push({ amount, damageType: part.damageType, partId: part.partId });
+            }
+          }
+          if (parts.length === 0) continue;
+          const profile = effectiveVitalityDefenseProfile(context.world, target, located);
+          if (!profile) {
+            return rejected("unresolved-step", phaseId, step.stepId, "defense-profile");
+          }
+          const packet = {
+            delivery: step.delivery,
+            packetId: vitalityId(slot, "damage-packet"),
+            parts,
+            target,
+            traits: [...step.traits],
+          };
+          const allocations: Readonly<DamageAllocationObservation>[] = [];
+          let resolution = resolveDamage(packet, profile, allocations);
+          for (
+            let remaining = step.parts.length + 1;
+            resolution?.kind === "review-required" && remaining > 0;
+            remaining -= 1
+          ) {
+            const request = freezeDeep({
+              kind: "damage-allocation" as const,
+              requestId: canonicalFingerprint({
+                kind: "damage-allocation",
+                packetId: packet.packetId,
+                requirement: resolution.requirement,
+              }),
+              requirement: structuredClone(resolution.requirement),
+            });
+            const response = responsePool.get(request.requestId);
+            if (!response || response.kind !== "damage-allocation") {
+              return freezeDeep({
+                continuation: compilerContinuation(input, cursor, request),
+                request,
+                segment: null,
+                status: "needs-response" as const,
+              });
+            }
+            responsePool.delete(request.requestId);
+            allocations.push(response.observation);
+            resolution = resolveDamage(packet, profile, allocations);
+          }
+          if (!resolution || resolution.kind !== "resolved") {
+            return rejected("unresolved-step", phaseId, step.stepId, "damage");
+          }
+          const maximumValue = guardedMaximumHitPoints(guardSources, target);
+          const maximumHitPoints =
+            maximumValue !== null
+              ? ({ kind: "fact", value: maximumValue } as const)
+              : materialMaximumHitPoints(located) !== null
+                ? ({ kind: "material" } as const)
+                : null;
+          if (!maximumHitPoints) {
+            return rejected(
+              "missing-compiler-fact",
+              phaseId,
+              step.stepId,
+              "hit-point-maximum"
+            );
+          }
+          const common = {
+            attacker: anchors.source,
+            causeId: rootCause.causeId,
+            criticalHit: false,
+            damage: resolution.resolution,
+            maximumHitPoints,
+          } as const;
+          const problem = project(
+            creature
+              ? {
+                  ...common,
+                  kind: "creature-damage",
+                  operationId: vitalityId(slot, "creature-damage"),
+                  zeroHitPointsPolicy: located.kind === "character" ? "dying" : "dead",
+                }
+              : {
+                  ...common,
+                  kind: "object-damage",
+                  operationId: vitalityId(slot, "object-damage"),
+                },
+            step.stepId
+          );
+          if (problem) return problem;
+          continue;
+        }
+        if (step.kind === "heal") {
+          const amount = resolveMechanicsProgramAmount(step.amount, context, identity);
+          if (amount === null) {
+            return rejected("unresolved-step", phaseId, step.stepId, "amount");
+          }
+          if (amount <= 0) continue;
+          const guarded = guardedMaximumHitPoints(guardSources, target);
+          const material = materialMaximumHitPoints(located);
+          const maximumHitPoints = guarded ?? material;
+          if (maximumHitPoints === null) {
+            return rejected(
+              "missing-compiler-fact",
+              phaseId,
+              step.stepId,
+              "hit-point-maximum"
+            );
+          }
+          const source =
+            guarded !== null
+              ? ({ kind: "fact" } as const)
+              : ({ kind: "material" } as const);
+          const problem = project(
+            creature
+              ? {
+                  causeId: rootCause.causeId,
+                  input: { amount, maximumHitPoints },
+                  kind: "creature-healing",
+                  maximumHitPointsSource: source,
+                  operationId: vitalityId(slot, "creature-healing"),
+                  target,
+                }
+              : {
+                  causeId: rootCause.causeId,
+                  input: { amount, maximumHitPoints },
+                  kind: "object-repair",
+                  maximumHitPointsSource: source,
+                  operationId: vitalityId(slot, "object-repair"),
+                  target,
+                },
+            step.stepId
+          );
+          if (problem) return problem;
+          continue;
+        }
+        if (step.kind === "temporary-hit-points") {
+          const amount = resolveMechanicsProgramAmount(step.amount, context, identity);
+          if (amount === null) {
+            return rejected("unresolved-step", phaseId, step.stepId, "amount");
+          }
+          if (amount <= 0) continue;
+          const lifetimeTarget = lifetimeCombatant(step.lifetime, context);
+          if (!lifetimeTarget.ok) {
+            return rejected(
+              "unresolved-step",
+              phaseId,
+              step.stepId,
+              "lifetime-combatant"
+            );
+          }
+          const authoredRules = resolveMechanicsLifetime(step.lifetime, {
+            bindings: context.bindings,
+            combatant: lifetimeTarget.combatant,
+            currentPhaseId: context.phase.phaseId,
+            currentTurnPhase: currentTurnPhase(context, state, lifetimeTarget.combatant),
+            execution: context.execution,
+            phaseExecutions: Object.fromEntries(
+              input.reviewed.intent.frame.authority.snapshot.program?.phases.map(
+                ({ phaseId: authoredPhaseId }) => [
+                  authoredPhaseId,
+                  context.root?.phaseState[authoredPhaseId]?.execution ?? 0,
+                ]
+              ) ?? []
+            ),
+            root: receipt.root,
+            world: context.world,
+          });
+          const ordinal = rootOccurrenceOrdinal(context);
+          if (!authoredRules || ordinal === null) {
+            return rejected("unresolved-step", phaseId, step.stepId, "effect-occurrence");
+          }
+          const origin: ProgramStepOccurrenceOrigin = {
+            execution: context.execution,
+            kind: "program-step",
+            phaseId: context.phase.phaseId,
+            root: receipt.root,
+            slot,
+            stepId: step.stepId,
+          };
+          const occurrenceId = mechanicsProgramEffectOccurrenceId(origin);
+          if (occurrenceId === null) {
+            return rejected("unresolved-step", phaseId, step.stepId, "effect-occurrence");
+          }
+          const created: OccurrenceGenerationRef = {
+            occurrence: { material: receipt.root.occurrence.material, occurrenceId },
+            ordinal,
+          };
+          const problem = project(
+            {
+              causeId: rootCause.causeId,
+              conditionImmunityOverride: null,
+              created,
+              kind: "occurrence-create",
+              occurrence: {
+                endRules: [...authoredRules, { kind: "temporary-hp-empty" }],
+                fact: { factId: step.stepId, kind: "program-fact", value: true },
+                kind: "standing",
+                origin,
+                parentId: receipt.root.occurrence.occurrenceId,
+                target,
+              },
+              operationId: vitalityId(slot, "occurrence-create"),
+              parent: receipt.root,
+            },
+            step.stepId
+          );
+          if (problem) return problem;
+          const grantProblem = project(
+            {
+              causeId: rootCause.causeId,
+              grant: {
+                amount,
+                decision: step.decision,
+                sourceOccurrence: created,
+              },
+              kind: "temporary-hit-points-grant",
+              operationId: vitalityId(slot, "temporary-hit-points-grant"),
+              target,
+            },
+            step.stepId
+          );
+          if (grantProblem) return grantProblem;
+          continue;
+        }
+        if (step.kind === "clear-temporary-hit-points") {
+          if (step.source === "all") {
+            const problem = project(
+              {
+                causeId: rootCause.causeId,
+                clear: { kind: "all" },
+                kind: "temporary-hit-points-clear",
+                operationId: vitalityId(slot, "temporary-hit-points-clear"),
+                target,
+              },
+              step.stepId
+            );
+            if (problem) return problem;
+            continue;
+          }
+          const sources = selectRootTemporaryHitPointSources(
+            context.world,
+            receipt.root,
+            target
+          );
+          for (const [index, sourceOccurrence] of sources.entries()) {
+            const problem = project(
+              {
+                causeId: rootCause.causeId,
+                clear: { kind: "source", sourceOccurrence },
+                kind: "temporary-hit-points-clear",
+                operationId: vitalityId(slot, `temporary-hit-points-clear-${index + 1}`),
+                target,
+              },
+              step.stepId
+            );
+            if (problem) return problem;
+          }
+          continue;
+        }
+        if (step.kind === "exhaustion-change") {
+          const amount = evaluateIntegerExpression(step.amount, context.bindings);
+          if (amount === null) {
+            return rejected("unresolved-step", phaseId, step.stepId, "amount");
+          }
+          if (amount <= 0) continue;
+          const problem = project(
+            {
+              causeId: rootCause.causeId,
+              kind: "exhaustion-transition",
+              operationId: vitalityId(slot, "exhaustion-transition"),
+              target,
+              transition: {
+                amount,
+                kind: step.operation === "gain" ? "gain" : "remove",
+              },
+            },
+            step.stepId
+          );
+          if (problem) return problem;
+          continue;
+        }
+        const problem = project(
+          step.kind === "stabilize"
+            ? {
+                causeId: rootCause.causeId,
+                kind: "creature-stabilize",
+                operationId: vitalityId(slot, "creature-stabilize"),
+                target,
+              }
+            : {
+                causeId: rootCause.causeId,
+                kind: "creature-kill",
+                operationId: vitalityId(slot, "creature-kill"),
+                target,
+              },
+          step.stepId
+        );
         if (problem) return problem;
       }
       return operations.length === 0
