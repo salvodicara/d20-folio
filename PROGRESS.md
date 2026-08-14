@@ -286,6 +286,28 @@ rollout bridge now mirrors engine-held concentration (engine transitions only). 
 `effectProgram` migrations (authored-program agent in flight), consumable/pool-split healing,
 two-target-set combos, and singletons. Focused verification only; no global gate ran.
 
+**The fourteen authored programs CLOSED on branch (2026-08-14, third block):** every spell that
+still carried only a legacy `effectProgram` now holds a hand-authored canonical-runtime program —
+Ensnaring Strike, Searing Smite, Dragon's Breath, Melf's Acid Arrow, Spike Growth, Phantasmal
+Force, Phantasmal Killer, Vitriolic Sphere, Contagion, Delayed Blast Fireball, Prismatic Spray,
+Prismatic Wall, Storm of Vengeance and Weird — using register-driven counters (Delayed Blast's
+beam accumulator rolls `register.beam-accumulator` d6 at detonation), choice-branched standing
+keys (Dragon's Breath's five elements), repeat-save pulses with `end-program` on success, the
+physical-table d8 ray rows of the prismatics, and possessor-declared `root-pulse` cadences for
+every legacy `manual`/turn event. End-to-end proofs: Searing Smite (cast → strike → failing burn →
+succeeding burn ends the program and its standings) and Delayed Blast Fireball (two accrues → 14d6
+detonation, 42 damage, root consumed). Each deliberate simplification vs the legacy model is
+recorded in the authoring agent's honesty ledger (per-target petrification series and destroy
+qualifications stay table-owned; Contagion's root survives as the disease carrier because children
+die with their root). The automation corpus registers the canonical `mechanics-program` handler
+beside the legacy one. **Spell corpus stands at 273/422 executable, 8 spells blocked on 22
+unsupported clauses out of 2,716 (99.2% resolved); the ~141 remaining non-executable spells are
+purely narrative (no mechanical steps to automate).** The FEATURE-ACTION wave opened in the same
+block: `transcribeFeatureAction` compiles the tracker-payment family (Second Wind end-to-end:
+seeded pool 2→1, 1d10 + resolved class bonus, the spent use mirrored onto the legacy tracker),
+with the 166-action census mapping v2 (standing/spend-only ≈42, feature attacks 4, cures 3).
+Focused verification only; no global gate ran.
+
 **Transcription waves 2–5 CLOSED on branch (2026-08-14):** the attack gate (per-target-slot attack
 requests vs bound armor class with the caster's attack bonus; hit/crit damage through two
 outcome-expanded roll inputs — crit dice doubled, flat bonuses never; misses self-resolve their
