@@ -1,5 +1,7 @@
 {
   "featChoices": {
+    "complete": "Complete choices",
+    "completeTitle": "Complete {{name}}",
     "pickCantrips_one": "Pick {{count}} Cantrip",
     "pickCantrips_other": "Pick {{count}} Cantrips",
     "pickSpells_one": "Pick {{count}} Spell",

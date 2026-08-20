@@ -29,6 +29,7 @@ import { formatModifier, formatWeight } from "@/lib/utils";
 import { chipText } from "@/lib/views/combat-action-view";
 import type { Locale } from "@/lib/locale";
 import type { EnchantOptionVM, WeaponRowVM } from "@/lib/views/inventory-view";
+import { DAMAGE_TYPES } from "@/types/damage";
 import { QuantityEditor } from "./QuantityEditor";
 import { damageTypeAbbr, damageVerdictOutcome } from "./inventory-card-helpers";
 
@@ -51,22 +52,6 @@ export interface WeaponCardProps extends WeaponCardCallbacks {
    *  (PRIM-item-bound-bonus). Empty → the enchant picker is hidden. */
   enchantOptions: ReadonlyArray<EnchantOptionVM>;
 }
-
-const DAMAGE_TYPES = [
-  "slashing",
-  "piercing",
-  "bludgeoning",
-  "fire",
-  "cold",
-  "lightning",
-  "thunder",
-  "acid",
-  "poison",
-  "necrotic",
-  "radiant",
-  "psychic",
-  "force",
-] as const;
 
 export const WeaponCard = memo(function WeaponCard({
   vm,

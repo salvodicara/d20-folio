@@ -71,6 +71,8 @@ export interface RiderVM {
   dice?: string;
   /** Stable damage-type id ("force", "necrotic") — the edge localizes the word. */
   damageTypeId?: string;
+  /** Every type the player may choose for this rider when resolving the hit. */
+  damageTypeChoiceIds?: ReadonlyArray<string>;
   /**
    * G14 — `"attack-or-spell"` for a rider that rides ONE attack OR spell per turn
    * rather than this weapon (a species revelation's +PB). The component
@@ -139,6 +141,7 @@ export function buildRiders(summary: RawActionSummary, locale: Locale): RiderVM[
         : null,
       dice: r.dice,
       damageTypeId: r.damageType,
+      ...(r.damageTypeChoices ? { damageTypeChoiceIds: [...r.damageTypeChoices] } : {}),
       ...(r.scope ? { scope: r.scope } : {}),
       ...(r.vsMarkedTarget ? { vsMarkedTarget: r.vsMarkedTarget } : {}),
       ...(r.whileActive ? { whileActive: true } : {}),

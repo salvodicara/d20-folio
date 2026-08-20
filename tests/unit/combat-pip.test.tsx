@@ -41,6 +41,7 @@ function gc(over: Partial<GlobalCombat> = {}): GlobalCombat {
   return {
     campaignId: "mock-1",
     encounter: {
+      nextMonsterOrdinal: 1,
       round: 1,
       currentCombatantId: null,
       epoch: 7,

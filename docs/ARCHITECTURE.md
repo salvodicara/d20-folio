@@ -32,8 +32,9 @@ Vitest (unit) + Playwright (E2E)
 ESLint zero-warnings · Prettier · pre-commit + pre-push hooks (mandatory CI)
 ```
 
-The pre-push hook runs **typecheck + lint zero-warnings + the unit suite + coverage ≥ 80% +
-production build** before every push. Never `--no-verify`.
+Branch checkpoint pushes deliberately run no verification. The pre-push hook runs **typecheck +
+lint zero-warnings + the unit suite + coverage ≥ 80% + production build** exactly once, when the
+finished branch targets `main`. Never `--no-verify`.
 
 ---
 
@@ -226,7 +227,9 @@ seam:
   stable id — undoing the legacy BAKE), and `remapSessionTrackerIds` migrates persisted pip STATE onto the
   surviving race session id (a bounded ONE-WAY read-boundary conform, golden rule 10). **`skills`** is
   likewise subset-minimized for Jack-of-All-Trades (the derivable `halfProficiency` entries drop/refill;
-  picks + explicit opt-outs are kept).
+  picks + explicit opt-outs are kept). Class inference follows only `classTables.levels[].featureIds` plus
+  the selected subclass rows: catalogue option entries that no level table grants are choices, never silent
+  defaults. An explicitly stored legacy choice remains lossless and suppresses only its redundant placeholder.
 
 **Lossless by construction:** the invariant is **`rehydrate(minimize(x)) === rehydrate(x)`** — the app
 loads every doc through `rehydrateCharacter`, so minimizing is invisible on load. Anything that deviates
@@ -284,7 +287,7 @@ Each kind documents its evaluator merge rule:
 | { type: "speed";            amount: number }                // sum
 | { type: "ac-bonus";         amount: number }                // sum
 | { type: "fly-speed";        amount: number | "equal-to-walking" }  // max
-| { type: "free-cast-spell";  spellId; chargesPerRest; rest }
+| { type: "free-cast-spell";  spellId; chargesPerRest; rest; castLevels? }
 …
 ```
 
@@ -293,6 +296,12 @@ equipped magic items + invocations + **maneuvers** + backgrounds — assembled b
 `resolveAllGrantSources` in `src/lib/resolve-grant-sources.ts`) and aggregates into
 `AggregatedGrants` — the merged effect view (the `AggregatedGrants` interface in
 `src/lib/grants.ts` is the source of truth for its fields).
+
+Condition-disabled sources are removed at this same evaluator boundary, before a consumer can count
+them. A `save-bonus` may declare `suppressedByConditions`; Aura of Protection uses Incapacitated and
+Unconscious, so its Charisma bonus cannot leak onto the Paladin's own Death Save while the aura is
+inactive. This is typed source data plus the aggregate's effective-condition set, never a consumer-side
+name check.
 
 Sheet renderers consume `AggregatedGrants` instead of reading prose with regex. **No
 module in the codebase grep's English text to figure out what a feature does.** If it does,
@@ -315,7 +324,7 @@ taxonomy + the per-arm recipe lives in `docs/MECHANICS.md`.
 
 ## Trackers (resource pools)
 
-`src/lib/smart-tracker.ts` exposes `resolveTrackers(character, locale)` which returns the
+`src/lib/smart-tracker.ts` exposes `resolveTrackers(character)` which returns the locale-free
 character's current trackers (Channel Divinity, Bardic Inspiration, Rage uses, Spell
 Slots-as-pool, Sorcery Points, Lucky uses, …).
 
@@ -326,10 +335,14 @@ trait. The spec:
 interface TrackerSpec {
   total: string; // formula: "PB", "level", "CHA", "1+level", "floor(level/2)"
   recovery: Recovery; // "short-rest" | "long-rest" | "dawn" | "per-turn" | "manual" | …
+  autoRecover?: false; // cadence known; recovered amount requires table input
+  longRestRecovery?: number; // fixed partial amount; omitted means full recovery
   die?: string; // "d6" / "d8" / "d10" / "d12" for inspiration-style
+  recordedRolls?: { min: number; max: number }; // externally rolled values held until spent
   isPool?: boolean; // pool mode (Sorcery Points)
   unit?: string; // "pts" / "HP" / "uses"
   shortRestRecovery?: number | string; // partial recovery (Second Wind, Wild Shape)
+  refreshOnActivationOf?: string; // full refill when this stable active-state key starts
   levels?: TrackerLevelOverride[]; // per-level overrides for total/die/recovery
 }
 ```
@@ -339,8 +352,24 @@ The formula language supports constants, ability codes (`CHA`/`WIS`/…), `PB`, 
 resolve. Trackers scale via `levels[]` for class-table thresholds (e.g. CD uses 1 → 2 → 3 at L2/L6/L18);
 per-character `trackerOverrides` overlay the SRD defaults (the universal override pattern).
 
-Some tracker rows are **DERIVED, not hand-declared** (golden rules 2 + 6). A magic item's charge
-pool comes from its `free-cast-spell` grant (`resolveFreeCastItemTrackers`, S9); and a feat/feature that
+A tracker may additionally declare `recordedRolls`. This does not roll anything: it turns each
+remaining use into one bounded numeric entry for a physical-table result (Diviner Portent is the
+first consumer). The exact values live beside `used` in `session.trackers`, survive navigation and
+export/import, clear with the tracker's normal recovery, and are spent/corrected through the same
+immediate-commit + exact-undo seam as ordinary uses. Custom features expose the same optional range;
+the engine therefore gains one homebrew-capable primitive, not a Portent-specific state branch.
+
+An activation-scoped pool declares `refreshOnActivationOf` with the stable key of its owning state.
+The common action activation transaction refills every matching tracker only when that state was
+previously off; the returned inverse restores the exact pre-activation counters. Reusing an already-lit
+action or a maintenance action cannot refresh it. Fanatical Focus is the first composed consumer
+(`barbarian-rage`), but the field is part of `TrackerSpec`, resolved trackers and portable custom tracker
+data, so future features and homebrew use the same route. `recovery:"manual"` remains the honest rest
+cadence for such a pool; presenter copy names the activation trigger instead of exposing “Manual.”
+
+Some tracker rows are **DERIVED, not hand-declared** (golden rules 2 + 6). Legacy magic items still
+derive an item-id tracker temporarily, but every migrated mutable item instead declares catalogue
+`ResourceSpec` data and stores state under its physical `SrdEquipmentRef.instanceId`; and a feat/feature that
 grants **≥ 2 free-cast spells** (Fey/Shadow/Vampire-Touched, the multi-spell heritage feats) emits ONE
 INDEPENDENT 1/rest row PER SPELL via `resolveFreeCastFeatTrackers`, keyed `${featId}:${spellId}` — so
 casting one never locks the others (the prior shared-`total:2` counter deadlocked them). The row, the
@@ -349,6 +378,34 @@ one key (a shared `forEachFeatFreeCast` iterator builds the row + the recovery s
 A **single**-free-cast source keeps its bare-id `mechanics.tracker`. Spell SLOTS, like every tracker,
 are now manually editable on the rail (tap a gem to spend, a spent socket to restore) — override-first
 (golden rule 8), so any mis-spend is correctable, not just within the cast's undo window.
+
+A charged single-spell item may declare `castLevels: [{ level, cost }]` plus
+`resourceCost: { resourceId }` on that grant. The shared
+`resolveSpellCastOptions` path expands only affordable rows, the cast-level modal shows the scaled spell
+facts plus the exact charge cost, and both Play and encounter commits debit/undo that cost through the
+same physical-resource command. Omitting the schedule preserves the ordinary fixed-level, one-unit cast.
+An item-provided `always-prepared-spell` is only the visibility bridge for that item route: removing
+equipped items must leave the spell independently known before normal character slots are offered.
+
+A `free-cast-from-list` action carries both its spell-pool attribution and an explicit payment address.
+The source id selects the exact eligible list even when homebrew pools share a resource; after the spell pick,
+the provider materializes the ordinary resolved spell action and rejoins the same cast-level → target
+resolver → commit path. The selected turn record therefore names the spell and the actual charge payment,
+while action economy, effects, concentration, Chronicle provenance and undo are identical to an ordinary
+cast. Optional typed source overrides replace only the declared cast facts (fixed save DC, fixed spell
+attack bonus, concentration, maximum duration) through `lib/cast-source-profile.ts`, shared by fixed-spell
+and list casts on both solo and encounter routes. A concentration-free persistent source cast owns one source+spell active key and round
+timer, so recurring actions remain available until deterministic expiry without pretending the spell still
+uses Concentration. Confirmation and redo revalidate the live eligible pool and remaining resource before
+mutating.
+
+An equipped magic item's activated property declares its action economy and optional
+`resourceCost` on the existing `while-active` wrapper. `resolveMagicItemActivationActions` emits an
+ordinary Play action carrying the exact item/copy/resource address and `activatesKey`; the standard
+target-review transaction spends the resource, lights the state and arms its timer atomically.
+Inventory, Resources, rests and cast/action surfaces resolve that same owner. Variable Dawn dice are
+typed `entered-roll` recovery amounts requested from the table before commit; deterministic partial/full
+recovery is likewise data, and explicit Dawn/Dusk controls prevent any Long-Rest or wall-clock alias.
 
 ### Riders (passive scaling chips)
 
@@ -401,12 +458,276 @@ character holds, every race trait, every known invocation, plus spells, plus wea
 > This section is the durable contract for the combat model. (The original standalone design
 > doc has been folded in here; the exploratory history lives in git.)
 
+### Canonical mechanics runtime cutover (active)
+
+The destination runtime has one exact physical state model, `MechanicsWorld`, spanning the loaded
+character and shared-combat documents. Every executable capability resolves to an immutable
+`MechanicsProgramAuthorityReceipt`; a durable program-root occurrence is the sole carrier of that
+authority, while every effect occurrence is a direct child identified by `parentId`. Roots never
+duplicate actor/source/target/program identity, and effects never carry a second authority. Inventory
+and item/occurrence references include monotonic physical ordinals so deleting and recreating an id cannot
+make an old command, resource address or occurrence authority valid again. `EntityRef` is one exact union:
+character `self` is identified by its already-physical character material, while every mutable non-self
+entity carries its positive entity ordinal. A bare mutable entity id is only a storage slot and never a
+runtime reference.
+
+Physical material is governed by the same generation law. `InventoryGenerationRef` is the only runtime
+identity for an item copy; enchantment links and causal leases carry the complete owner + instance-id +
+ordinal reference. Every created entity or item atomically creates one dedicated
+`material-lifecycle` occurrence, and world validation proves that a lifecycle owns at most one physical
+generation. Dismissal changes availability, not identity: the dismissed entity and its own lifecycle stay
+addressable while ordinary effects that require its presence become eligible to end. Controller links are
+exact generation references, may cross loaded documents, and the world rejects every local or
+cross-document controller cycle.
+
+Every non-root occurrence also carries one structured `ProgramStepOccurrenceOrigin`: exact root
+generation, phase id, phase execution, globally unique authored step id and deterministic expansion
+slot. World validation resolves that origin against the root's frozen program, checks that occurrence
+kind matches the referenced step and rejects duplicate emissions. A closed world accepts only committed
+executions; an unforgeable pending-frame permit admits exactly its one-ahead execution, and only the LIFO
+top may create the current authored step's consecutive expansion slots. Root allocation is a standalone
+zero-state transaction before that frame is pushed. Effect provenance is therefore queryable data, never
+an occurrence-id naming convention or English/source regex.
+
+Public mechanics commands contain only invocation identity or answers to engine-issued requests. The
+trusted adapter constructs a complete, recoverable execution frame containing the authority receipt,
+invocation, exact root create/advance CAS receipt and typed trigger evidence. Terminal operations carry
+one canonical cause id whose public cause contains only the invocation. The kernel independently resolves
+installed authority from the trusted `MechanicsAuthoritySnapshot`, or program authority from the exact
+persisted root generation, then recomputes the id over `(authority, invocation)`. It also binds every
+operation to the installation owner and injects definition/installation guards; authority is therefore
+never self-attested by command JSON. Every distinct cause is resolved against the same immutable action
+basis before the first operation mutates anything, so consuming a source cannot make a later operation
+from that already-authorized source depend on array order. A transaction rejects missing, unused,
+duplicate or forged causes before simulation. The same envelope will produce one reversible `JournalActionDraft` for the whole
+causal action, never one draft per reaction or target.
+
+The low-level operation union owns every deterministic physical transition. Program, effect, entity and
+inventory creation all carry their exact preallocated generation and compare it with the relevant
+`next*Ordinal` high-water mark; entity/item creation also writes its lifecycle in the same atomic
+candidate. Entity availability/controller changes and inventory quantity/equipped/attuned/end changes
+operate only on exact generations. Reducing an item to zero preserves its lifecycle ownership, clears
+impossible equipment/attunement/outgoing-enchantment state, leases the exact source for the surrounding
+causal action and requests lifecycle ending. If another item points at that enchantment, the operation
+must name that exact inbound bearer and compare-and-swap both copies—there is no world scan whose result
+can silently depend on execution order.
+
+Allocator counters are high-water identity, not reversible game state. The journal rejects descendants of
+a high-water path, requires a direct write to move strictly forward and requires an ancestor snapshot to
+preserve or raise every nested counter; undo/redo therefore cannot smuggle a rollback. Rebase likewise accepts only a monotonic
+counter transition: an idle encounter may be created only at the prior `nextEncounterEpoch` while
+incrementing it exactly once, a live encounter keeps its epoch and nondecreasing combatant allocator, and
+ending it cannot lower either high-water. Ordinary game state remains reversible. Every terminal
+operation exposes its complete read, semantic-write and technical-write footprint, including references
+embedded in entity vitals/templates, effects and inventory enchantments. Shared reads remain disjoint;
+read/write or semantic-write overlap forms connected table-ordering partitions. Allocator overlap instead
+adds immutable ordinal precedence, merged topologically with the table's genuine choices and never exposed
+as freedom the user can reverse. The compiler must allocate every generation in causal order; duplicate,
+skipped, reversed or stale allocation chains fail closed in kernel simulation. An end rule that observes
+Temporary HP reads its target's vitals, and a persistent timeline-bound creation reads the owning
+document's clock binding—not merely the clock currently written into the rule—because releasing a final
+shared-combat lease rebases every such rule in that document.
+
+Rest and day-phase identity follows the same allocation law. Each material timeline owns the first-unused
+`nextBoundaryOrdinal`; beginning one of those qualitative boundaries allocates the current ordinal and
+increments the counter before the checkpoint or any subscriber can create another lifetime. A rest/day
+end rule records `minimumBoundaryOrdinal` and becomes due only for the same clock/selectors at an observed
+ordinal greater than or equal to that minimum. An effect created during boundary `N` therefore records
+`N + 1`, cannot expire retroactively on `N`, and remains compatible with a later matching boundary even
+when other qualitative boundaries occurred between them. Shared-clock release rebases the rule to the
+target timeline's current first-unused ordinal rather than copying a number from the detached clock. The
+branch-only `MaterialState` runtime shape is schema 4; no schema-3 `MaterialState` was ever deployed or
+persisted, so there is no live migration or compatibility reader to retain.
+
+Entity dismissal and encounter membership are one physical transition for a non-current participant:
+before the candidate is admitted back through the closed-world parser, the kernel removes that exact
+generation from every local/shared encounter, repairs initiative membership and releases any character
+whose final shared-combat lease has disappeared. Dismissing the current participant instead returns an
+exact `needs-boundary` command carrying the generation to exclude, without mutating the world. That
+authenticated complete-turn state machine emits the real end boundary, performs any round/time boundary,
+selects and emits start for the next surviving participant, or returns a sole-participant encounter to
+initiative. Only after it finishes does the retried operation own the entity dismissal and membership
+removal. Historical causal cleanup may remove the original current participant only inside this exact
+continuation before a successor starts; an unrelated, stale or post-start boundary fails closed.
+Controller writes (including controlled creation) share one semantic controller-graph address because
+cycle validation reads the whole loaded graph; encounter membership changes likewise share one semantic
+address. These real read dependencies
+must never be misclassified as disjoint target writes.
+
+The operation-level turn surface is claim-only: action, attack, Bonus Action, Reaction, movement,
+interaction and explicit table-boundary claims are isomorphic to the canonical `TurnEconomyClaimCommand`.
+`start-turn` and `end-turn` remain private lifecycle inputs to the encounter boundary state machine and
+cannot be forged by a program terminal step. All hostile arrays/records are accepted only through exact
+own enumerable data descriptors. The kernel snapshots descriptor values once and never rereads a hostile
+proxy after validation, so neither an accessor nor a stateful proxy trap can change a proposal or ordering
+answer between conformance and execution. A closed persisted encounter in turn phase must name exactly one
+current participant whose economy is `own-turn`; the boundary parser alone may carry the transitional
+`between-turns` shape while ending one turn and starting its successor.
+
+Operation mutation and causal closure are deliberately separate. A terminal change first preserves
+every active source so post-events and `source-end` subscribers can still resolve their authority. Each
+ordered operation produces only an authenticated process-local projection capability. Its public value
+carries the exact transaction-local `MechanicsWorld` and cumulative inventory-source leases; a private
+runtime fiber binds both to the original trusted causal basis. It is not a `MechanicsCausalState` or a
+reusable causal receipt, and cloned, serialized or reconstructed projections fail authentication. The
+ephemeral registries behind such capabilities (kernel causal states, event emissions, subscriber
+selections, compiler continuations, transaction projections) are possession proofs of kernel provenance
+only: every authoritative fact lives in the frozen value and the causal state, so a registry can never
+become a second history, progress or persistence model. Prefix
+projection validates protected journal epoch/revision/actions plus character build revision, but never
+runs end discovery, causal rebase or pending-phase acceptance. The compiler refresh validates the
+projected world against the already-conformed basis and its exact pending frames without conforming or
+rebasing that world. The transaction kernel re-proves the caller's basis with the fixed-point
+`conformMechanicsCausalState`; a `rebaseMechanicsCausalState` call therefore always means a genuine
+post-transaction closure. After the complete transaction, the simulation/commit path performs exactly one
+causal rebase and discovers/latches the net end wave. This lets one atomic transaction create a
+`temporary-hp-empty` source and grant its Temporary HP without observing an impossible intermediate
+expiry, while preserving any wave that was already latched when the transaction began. The coordinator
+then delivers subscribers, appends their consequences and finalizes dependent-first removals plus
+unreachable material cleanup. Concentration replacement remains an explicit barrier, not an eager delete
+hidden inside occurrence creation. Intermediate inventory tombstones are legal only under exact
+instance-id + ordinal leases and cannot escape as a persisted world.
+
+The only hostile causal entry begins from a closed `MechanicsWorld`; typed continuations are produced and
+advanced only by the kernel. Ending candidates are latched explicitly on their still-readable occurrences
+as canonical causes. One canonical closure request owns all observed boundaries, explicit end requests and
+inventory leases, including a checkpoint whose current wave is empty. This is pure serializable transient
+state—not a caller-supplied history, hidden object identity or persisted compatibility model—and the
+closed-world parser rejects it. After every complete atomic transaction the kernel monotonically extends
+that request and its latches, so newly due dependencies join the same causal action while ending sources
+remain readable without treating an intermediate ordered step as a causal boundary. A
+suspension stores fenced inputs and observations and replays from the closed basis; it never serializes a
+purportedly trusted continuation. End discovery is one bounded indexed worklist over dependency, boundary,
+Concentration, ownership, inventory, live-entity and Temporary-HP edges; it emits a deterministic
+dependent-first wave without recursive deletion or repeated whole-world scans.
+
+Source readability is not mechanical activity. An occurrence whose exact `ending` latch is present remains
+addressable only for authority, provenance, child traversal and `source-end` delivery; active conditions,
+grants, standing facts, damage/condition defenses, marks, Concentration, polymorph forms, item activations
+and deadlines exclude it. Active-only exclusivity permits a replacement Concentration, form or standing
+defense to begin in the same causal action while the old generation is still readable. Compiler/reviewer
+access to this transient is likewise singular: hostile requirement/review APIs continue to accept only a
+closed world, while the causal path re-proves the complete `{ context, world }` state from its exact wave,
+request, latches and leases and then uses only that canonical result as the basis for every authenticated
+prefix projection and final simulation. A raw readable world, forged context or unauthenticated projection
+is never a trusted compiler view.
+
+A program root's `phaseState` is the sole phase-completion truth. During that one post-transaction causal
+rebase, a child with a `program-phase-end` lifetime resolves its exact root generation, phase and authored
+execution: the current or an overdue execution latches an exact `program-phase-completed` cause, while a
+future execution stays live. The closure request carries no second phase-completion ledger. Exact root
+generation therefore closes same-id ABA without duplicating phase state.
+
+Program conformance also proves phase-lifetime liveness statically. A lifetime may end in its creating
+phase or in a strict downstream phase. A non-self lifetime cannot point backward or sideways into a
+one-shot invocation branch, and a source-end feedback path that would require the effect's own ending to
+reach its expiry phase is rejected. An accepted authored program therefore cannot create an immortal
+effect merely because its end phase is unreachable.
+
+Table time/rest/turn/encounter progression uses the pure `beginMechanicsBoundary` /
+`advanceMechanicsBoundary` state machine. Each checkpoint names the exact newly observed boundary, or
+`null` when it only extends the current end wave. `completeMechanicsBoundaryCheckpoint` is the sole
+production constructor for a completion: it re-proves the supplied causal state and binds it to the
+complete continuation fingerprint. Same-wave completion may finalize, while a wave created or extended
+during subscriber delivery must surface as another checkpoint first. Historical boundary proofs
+survive only the exact clock/encounter hand-off performed by that state machine. There is no injected
+resolver and no API through which a caller can return a replacement world.
+
+The authentic post-event set is intentionally small: `damage-taken`, `hit-points-zero` and
+`resource-depleted` derive only from exact applied operation stages. `program-root-create` allocates an
+all-zero phase map plus authored initial registers and emits no completion event;
+`program-phase-transition` is the final exact phase compare-and-swap and alone emits
+`program-phase-end` with the root occurrence generation, phase and completed execution for subscribers.
+Its acceptance marks the exact top frame `phase-complete` and performs the sole causal rebase, so any
+lifetime made due by that transition is latched in the same returned state before subscriber delivery.
+`source-ending` derives only from a re-proved readable end wave. Each
+non-invocation trigger evidence carries that emitted event's exact id, and the phase CAS receipt must carry
+the same id, so evidence cannot be replayed under an invented identity. Phase-completion events trail all
+ordinary events from the same complete transaction while retaining deterministic order among themselves;
+simulation/compiler results expose that sequence only as opaque process-local emissions: every ordinary
+event is paired with its producing stage's exact `after` world, while `source-ending` is paired with the
+exact re-proved readable end-wave world. A clone, serialization or reconstructed event is not an emission.
+Occurrence removal and condition/entity/inventory/turn/register/Temporary-HP cleanup do not invent generic
+semantic events because no authored trigger consumes them; their complete effect is the verified
+finalization delta and ultimately the single journal draft.
+
+Subscriber selection freezes the complete emission-time audience. The selector proves each authored
+trigger against the emission world, then orders exact root generations and phases canonically; its public
+capability retains only that root/phase membership while a private immutable fiber binds the authentic
+emission, trigger evidence and authority. Dispatch does not re-evaluate mutable trigger predicates. When
+the depth-first coordinator reaches a selected member, dispatch re-proves the exact live root generation
+and immutable authority and allocates that phase's current expected→next CAS at that moment. A root or
+phase created after emission was never in the audience, and clones, forgeries, selection reuse, stale
+generation/authority, same-id ABA and repeated event delivery all fail closed.
+
+Only the kernel's selected-event push may admit one of those frames on a readable-ending root, including
+an ordinary-event subscriber selected while that root was still active. For `source-ending`, if the event
+names a child, its exact owning program root must still be that selected root. The selected-event permit
+remains on the LIFO frame through `phase-complete`, preventing end-wave finalization until the exact
+completed top is popped. An ordinary frame cannot acquire that exception. The bounded state coordinator
+that drains these frozen audiences is `runMechanicsCausalAction` (`src/lib/mechanics-coordinator.ts`):
+one depth-first drive owns the LIFO compile loop, per-audience baseline depths, end-wave delivery and
+finalization, boundary checkpoints and the single final journal draft, under one global work budget.
+Suspension is replay-shaped — answer/response ledgers keyed by deterministic frame identity — so no
+coordinator state ever serializes.
+
+This hardened foundation is implemented and covered by focused hostile-input tests, but the cutover is
+not yet a production runtime. A bounded, unforgeable `MechanicsCausalState` owns the exact LIFO stack of
+incomplete frames. Root creation is a standalone zero-state segment before push; every later program-root
+operation is authorized only for the exact semantic cursor at the stack top, while older frames remain
+permits solely for provenance already present in the world. The canonical `compileMechanicsFrame` seam
+re-reviews the exact frozen intent, requires that exact nonterminal top, emits at most one authentic
+simulated step segment, and reserves a single-operation phase CAS to atomically mark the top
+`phase-complete` and latch every newly due phase lifetime. Replay is recognized before a frame is pushed,
+at the prepare/coordinator boundary.
+Register writes are individual compare-and-swap `program-register-transition` operations rather than a
+final lump, operation ids are deterministic, trusted compiler fact guards join the transaction, and the
+result is a closed typed union (`compiled`, `needs-response`, `needs-coordination`, `rejected`).
+Only a genuine response barrier mints an opaque process-local compiler continuation: a single-use
+capability whose private fiber binds the exact issuance causal state by identity plus the immutable
+reviewed input, expected cursor, consumed response prefix and the issued request—never a second world,
+projected prefix or independent progress model. Consuming it invalidates it even when the resumed
+compilation then rejects, resumed responses must extend the fiber's prefix by exactly one answer to its
+request, and any surviving unconsumed answer fails the compilation closed. Causal coordination mints no
+continuation at all: the coordinator latches/finalizes the required end state and restarts ordinary
+compilation on the mutated basis.
+The executable vertical now covers register/manual steps plus exact condition, standing,
+Concentration and polymorph starts. Stable expansion slots bind every selected target and materialized
+standing fact; Concentration has no authored target and is derived solely from the receipt's exact caster.
+Semantic end steps select active occurrences deterministically: condition removal is deliberately global
+for the exact target + condition, while standing, Concentration and polymorph endings are restricted to
+the current root plus their fully materialized fact/caster/form identity. Zero matches are an idempotent
+no-op. Authored `occurrence-end` contains only `childStepId`; it selects all active direct children of that
+producer for the exact current root generation across executions, slots and targets, including Temporary
+HP and entity/inventory material lifecycles. Producer-kind validation shares the same authority used to
+validate persisted origin kinds. `end-program` alone terminates the root. A nonempty end selection or an
+already-active exclusive replacement returns
+`needs-coordination`; the coordinator requests those exact ends, delivers the latched wave's
+`source-ending` audience, finalizes it and retries the frame. A conflicting second exclusive start created in the same frame is invalid rather
+than silently replacing transaction-local state.
+
+The active compiler work must now add the payment prelude and vitality/material/resource subcompilers,
+allocating every physical generation from the current authentic causal segment; the bounded fixed-point
+coordinator already resolves the effect barriers, runs trigger/subscriber/source-ending waves and calls
+`planMechanicsWorldAction` once for one reversible journal draft. The compiler audit has also exposed
+kernel/model prerequisites that remain open: a separately authorized table-override path,
+source-specific Temporary-HP replacement cleanup, guarded effective defense/healing/immunity facts, and
+closed entity/item materializations in capability snapshots. No second executor, compatibility planner
+or final register-write lump is permitted. Persistence adapters and corpus transcription remain open; the
+existing combat executors are migration inputs only and are deleted as their consumers move.
+
 The action economy is **immediate-commit-per-action-with-undo** (the owner's binding decision —
-**not** batch select-and-commit). Each action/cast/attack calls `planCommit` (pure, serializable
-`CommitOp[]`) + `applyCommitOps` (runs the mutation, returns a reverse-applier pushed into a 5 s
-undo toast), so the resource is deducted the instant it's used. `combatStore.endTurn()` is **pure
-bookkeeping** — advance round, restore reaction, reset movement, tick durations — so forgetting it
-is harmless. (In a campaign encounter, the sheet's End Turn ADVANCES the SHARED encounter turn only —
+**not** batch select-and-commit), so a resource is deducted the instant it is used.
+`cost-engine.ts` currently supplies a pure `CommitOp[]` planner only to resource conversions and
+tests; ordinary actions, attacks, casts and reactions still execute through handwritten composite
+branches in `TurnEconomyProvider`. Those branches revalidate several costs and compensate a failed
+later economy claim, but payment, character effects, turn ownership, logs and shared-target writes do
+not yet share one serializable transaction. The active automation epic is incrementally replacing
+that orchestration with the item-resource pattern: pure command planning, expected-state checks,
+one coordinated local commit and causal receipts. Until each caller migrates, do not describe
+`planCommit` as the production action engine or claim cross-store/shared atomicity.
+`combatStore.endTurn()` is **pure bookkeeping** — advance round, restore reaction, reset movement,
+tick durations — so forgetting it is harmless. (In a campaign encounter, the sheet's End Turn ADVANCES the SHARED encounter turn only —
 no private round bump; the per-turn economy resets at **turn-START**, when the shared pointer lands back
 on your PC, not on End Turn — so it is always fresh at the start of your turn even if you never formally
 end it. See the combat-subdoc + campaign section below.) The economy strip is a **budget meter derived
@@ -417,13 +738,108 @@ preserves every spent action/bonus/reaction until the shared turn pointer genuin
 PC (or solo End Turn runs). A different character id still resets the ledger before hydration. The
 store retains both the last own-turn identity and whether the pointer was observed away: a same-turn
 remount preserves, an observed away→own transition resets, and a later own-turn key catches an entire
-cycle missed while unmounted. The ledger remains client-only: route survival adds no listener and no
-per-action Firestore write.
-A committed action that ESTABLISHES a while-active state (Rage, Bladesong — its resolved action
+cycle missed while unmounted. Route survival adds no listener; the durable turn facts additionally
+persist to the `combat/state` subdoc key-fenced to the exact turn (below), so a reload restores only
+a matching, still-current turn.
+The resource rail follows the same single-source contract: committed spell slots and trackers render
+only their already-mutated session counters. `combatStore.selected` is the durable turn receipt used
+to fence action availability across navigation; it is never interpreted as a second “pending” debit.
+Slot/tracker mutators coalesce a parent-save flush in a microtask, after the whole synchronous cast
+has updated concentration/log/related resources. Play resources therefore do not wait behind the
+general 2 s edit debounce, while prose fields and other high-frequency edits still do.
+
+Resource conversions are the first migrated `MechanicsCommand` member. The command contains stable
+source/conversion ids and the chosen level/amount—not mutable counters or captured store operations. Its
+pure planner re-resolves the live grant, class gate, option legality and exact normal-slot/Pact-slot/
+tracker owners, then emits one canonical expected-state plan. `characterStore.applyMechanicsPlan`
+validates all legs against the same character snapshot and either replaces both resource maps in one
+Zustand mutation plus one persistence flush or changes nothing. The receipt plans causal undo without
+requiring the original grant to remain equipped/known; redo regenerates expectations from current state.
+This atomicity is limited to the owner character document and does not include campaign-owned effects.
+
+Physical magic-item resources use a stricter instance-owned transition seam. Catalogue
+`ResourceSpec` data declares each counter, capacity/initial facts, exact recovery triggers and
+depletion consequences; one durable `SrdEquipmentRef.instanceId` identifies each physical copy, and
+`session.itemResources[instanceId]` is its only mutable owner. `lib/resources.ts` plans a pure
+whole-item compare-and-swap operation from an exact command and table-entered facts. The shared
+`ItemResourceCommandProvider` resolves every required input before mutation, then the character store
+commits one operation or an entire recovery boundary atomically. Undo is causal LIFO, redo replans the
+same facts at a fresh revision, and a stale copy/attunement/state conflict mutates nothing. Short Rest,
+Long Rest, Dawn and Dusk are distinct typed boundaries: rests never impersonate sunrise, while the
+Table Clock exposes Dawn/Dusk as explicit story declarations rather than device-time events. A copy
+whose disposition becomes nonmagical, consumed or destroyed immediately stops contributing grants,
+casts, actions and intrinsic equipment bonuses. Legacy `ref.charges` and item-id session trackers are
+temporary corpus-migration inputs only; they are never fallback owners for a typed item.
+The pending owner-gated `scripts/migrate-item-resources.ts` one-off plans current documents and every
+snapshot together, backs up exact tagged Firestore values, commits the whole ≤500-document plan with
+per-document update-time preconditions, and requires reread/global/idempotency verification. Until that
+production check succeeds, compatibility inputs remain isolated at migration boundaries; afterward they
+and the spent script are deleted rather than becoming a permanent runtime projection.
+A committed action that ESTABLISHES a while-active state (Rage, Bladesong, an activated magic item — its resolved action
 carries an inferred `activatesKey`, see `docs/MECHANICS.md` "Activation seam") also flips that key
 into `session.activeFeatures` — the rail chip lights automatically, the state's grants (Rage's
 `weapon-damage-bonus`, resistances) flow into every derived figure, undo clears only a commit-lit
-key, and tapping the lit chip ends the state.
+key, and tapping the lit chip ends the state. `setActiveFeature` owns timer lifecycle for every entry:
+turning a state on arms a fresh declared timer and turning it off removes that timer, so action commits,
+undo, and manual correction cannot diverge.
+
+Active states also own their incompatibilities as data. Inner `spellcasting-blocked` /
+`concentration-blocked` grants project two aggregate facts consumed by both Play and Spells; a cast
+cannot bypass the gate through cantrip, ritual, custom-spell, prepared-target or reaction routes.
+Activation ends existing Concentration through `characterStore.setConcentration`, and the composite
+action undo restores the exact spell, cast level and concentration-bound active keys. Maintained
+states declare immediate-drop triggers in `duration.endsEarlyOn`; `resolveActiveStateBlocker` gates
+entry and `resolveActiveStatesEndingOn` lets the condition and equipment mutation seams retract every
+matching active key. This keeps Rage's 2024 Heavy-armor/Incapacitated and no-spells/no-Concentration
+rules generic rather than branching on `barbarian-rage`.
+Completed rests consume the same declared lifetimes. `resolveActiveStatesEndingOnRest` retracts
+maintained states, owner-turn-boundary states, and timed states whose minutes fit inside the completed
+rest; it also removes their timer/boundary/cast-level metadata while preserving unknown homebrew and
+indefinite toggles. A Long Rest first routes held Concentration through the canonical teardown, so
+concentration-bound grants and a self-Polymorph body cannot survive the sleep path. Resource recovery
+and effect expiry therefore rebuild one coherent post-rest session rather than updating counters only.
+Spell lifetimes use that same declaration: every spell `while-active` grant owns an enforceable
+duration, and optional ascending `byCastLevel` tiers select the lifetime from the slot actually spent.
+The cast compiler resolves the tier before target review, then the self timer, encounter standing
+effect, persisted cast-level provenance and rest-expiry query all consume that one result. Hex and
+Hunter's Mark therefore survive a Short Rest only when their stored upcast tier proves they can.
+Maintenance reads `SelectedAction.triggerEvents`, not whether an Action slot happens to be occupied:
+weapon/spell attacks and target-saving-throw actions stamp `"attack"`, while Dash/Help/other actions
+do not. The receipt is persisted with turn economy, so navigation cannot change the verdict.
+
+Compound feature actions remain one transaction. A resolved action may carry `trackerTopUp` alongside
+its cost and target consequence; commit spends the source use, restores the live destination pool and
+applies the reviewed consequence, while the shared undo reverses each mutation exactly and refuses to
+overwrite later manual edits. Optional "when you roll Initiative, you can" features therefore surface as
+ordinary player-chosen actions rather than the unconditional `initiative-tracker-topup` seam. Explicit
+`targeting.affinity:"self"` is preserved by `combatResolutionSpec`, so self-heals enter the same resolver
+in solo and encounter play instead of being misclassified as enemy actions.
+
+Conditional follow-ups use action provenance, not feature-specific UI state. An authored action can
+declare `requiresActionThisTurn` with the stable id of its prerequisite, or a typed
+`requiresOutcomeThisTurn` predicate when an observed attack, save or damage-reduction result is the gate.
+`lib/combat-outcomes.ts` compiles immutable receipts with exact occurrence/action/target identity and an
+exact instance only when the table supplied one; count-only multiattacks remain honest aggregates. The
+selected action, structured Attack swing or spent Reaction owns that occurrence id in persisted turn
+economy. Hydration accepts a receipt only when its owner/action association is valid, so navigation,
+undo/re-arm and repeated uses cannot forge or cross-satisfy a follow-up. Level-dependent option
+sets use the generic `pickByLevel` threshold helper shared with dice scaling, so Deflect Attacks' redirect
+widens its eligible damage types at Deflect Energy without a Monk branch in the resolver or UI.
+
+Turn-action facts that must survive navigation live beside the persisted economy receipt:
+`nextAttackAdvantage` and `movementLocked` make Steady Aim's pending roll and Speed-0 consequence
+durable and exactly undoable. Authored actions describe rules identity through `economyCategory`, not
+card ids, so every Dash reaches the one `commitDash` movement seam and every `skillCheck` reaches the
+one check resolver. On-hit riders become one reviewed damage plan: a tracker-backed rider is selected
+by its entered result; dependent fixed riders use `round1` + `requiresRiderTrackerId`; resource payment,
+shared/solo effects, structured log and undo commit together. No Rogue or Assassin id is branched on in
+the UI/store layers. A rider may declare either one fixed/weapon-derived type or a non-empty
+`damageTypeChoices` list. The grant evaluator normalizes the latter to a concrete fallback for existing
+readers while preserving the full list through `RawActionSummary` and the presenter; `combatDamageParts`
+then emits a choice component. The resolver requires a type only when that optional rider carries a
+positive entered result, and feeds the chosen type into the same per-component resistance/immunity/
+vulnerability calculation. Divine Fury is data, not a UI special case, and homebrew riders use the same
+pipeline.
 
 **Extra Attack is part of the action economy (the BG3 attack grammar — the count lives on the attack
 AFFORDANCE, the economy just spends).** A hero who makes N weapon attacks per Attack action has
@@ -490,6 +906,18 @@ controls share `useUndoActions`.
   re-validates every execute-side guard — "never trust the history", and never re-rolls/re-picks:
   golden rule 21). Labels mirror the toast contract exactly — UI callers pass a pre-localized `message`,
   store callers pass a structured `{ intent }` localized at render by the same `toastMessage` path.
+- **Engine commits ride the same grammar** (`src/features/character/engine-undo.ts` —
+  `registerEngineCommitUndo`, the one home): every successful engine dispatch (cast, feature action,
+  weapon attack, conjured consume; the damage-reaction pick registers its own snapshot pair through
+  `registerUndoableResult`) registers an entry whose `undo` is the EXACT journal reverse
+  (`undoCharacterAction` over the live persisted world — the mirror restores slots/pools/HP/
+  concentration/engine conditions in one motion) composed with the flow's legacy-chrome mirror revert
+  (the combat-store economy claims: occupied slot, one-slot-per-turn, Reaction marker, attack-pips
+  swing), and whose `redo` is the reducer's native redo transition (`redoCharacterAction`, generation
+  2 → 3 — the mutation CAS re-validates the world) plus the mirror re-applied. A journal reverse the
+  reducer rejects (the branch moved — e.g. a crossed one-way solo boundary sits atop) returns `false`
+  and touches NOTHING: fail-closed, the entry stays put, and the boundary itself already dismissed
+  the toast (`purgeTurnScoped`).
 - **`turnScoped`:** TRUE for per-turn economy commits (action/cast/swing/reaction/End Turn), FALSE for
   character-state (HP, conditions, out-of-combat tracker spends, concentration, defenses).
 - **Fences (§ boundaries):** character switch / unload → `clear(charId)` (rebind); **solo End Turn →
@@ -568,12 +996,44 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   post-defense damage. Per-roll damage bonuses stay in each instance formula; a bonus that applies to one
   roll of a cast is a separate fixed component assigned to exactly one reviewed target, so a multi-instance
   spell cannot multiply it accidentally. Every successful target still permits an explicit condition override.
+  Condition immunity follows the same override-first rule. An unconditional `condition-immunity`
+  contributes to the target's effective immunity set; a grant with `sourceId` contributes one exact
+  source-qualified clause (Fey Ancestry: Unconscious only from `sleep`). Both travel through the live-PC
+  presenter into target review. The resolver omits an immune modeled condition from its automatic
+  defaults and labels the choice, but keeps manual selection available for a table ruling or homebrew;
+  there is no race/spell branch and the state reducer never turns an advisory into an unoverridable gate.
   Outcome modifiers are grant-driven too: `spell-damage-outcome` changes the consequence of a declared
   miss/save without an Evoker or spell-id branch (Potent Cantrip is half damage, with additional effects
   still gated by the original successful outcome).
+  Reactions that reduce one observed incoming damage instance use this same boundary. Structured action
+  data supplies the external die formula, deterministic ability/class-level bonus and eligible damage
+  types; the table enters the incoming amount, type and physical roll. The remainder then passes through
+  the target's ordinary defenses and Temporary HP before one atomic HP/undo commit. A zero remainder is
+  persisted as a success receipt for any authored follow-up; ordinary damage resistance cannot falsely
+  create that receipt because success is tested before defenses.
   Linked healing is equally structural: `self-heal-on-other` fires once only when another selected target
   receives HP, and `maximize-spell-healing` turns a scaled healing formula into its deterministic maximum
   before the same target/effect transaction. Slot-level configuration therefore precedes both calculations.
+
+  Variable healing pools use the same boundary. `poolSpendEffect:"healing"` names only the effect;
+  the referenced tracker remains the single source for unit, die and remaining amount. An HP pool derives
+  its exact debit from the reviewed healing plus selected cure costs (Lay On Hands), while a dice pool asks
+  for the die count first, materializes `NdX`, then asks for the rolled total (Recover Vitality). The live
+  pool is re-read inside commit and redo, so a stale review cannot overdraw it. Optional `ActionData`
+  fields expose the identical path to inline homebrew actions; custom actions resolve the tracker they
+  actually name rather than assuming the feature's first tracker.
+
+  Rolled feature effects use the same path: `SrdActionDef` / homebrew `ActionData` project structured
+  healing, Temporary HP, condition removal and targeting into the flat action summary before React sees
+  them. Class-table dice sentinels and ability/PB-derived target limits resolve to concrete values at that
+  boundary; one shared roll may then heal or ward several reviewed targets. Wholeness of Body and Form of
+  Dread are data-only consumers of that same boundary (rolled heal vs rolled Temporary HP + condition
+  removal), and a timed `while-active` declaration arms Form of Dread's ten-round expiry through the
+  ordinary lifecycle engine; the same duration metadata ends it early on Incapacitated. Stable
+  per-action ids permit
+  multiple variants with the same action economy and let `actionOverrides` replace labels, effects and
+  targets without a feature-name branch. The v3 codec preserves those overrides even when the base class
+  feature is otherwise inferred, so reload/export cannot silently revert a homebrew table ruling.
 
   The boundary is deliberate: the table declares facts the SPA cannot observe (targets, hit/save results,
   rolled totals, range/line-of-sight and geometry); the engine resolves every modeled deterministic
@@ -583,16 +1043,146 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   parallel solo rules engine and no fake battlefield model.
 
   The resolver is a **true commit boundary**. `TurnEconomyProvider.prepareResolution` resolves slot level,
-  upcast scaling, instance count, free-cast source and metamagic **before** target selection, so targets see
-  the real cast-level facts. It then holds the resolution callback until the cast-option/reaction/action
+  item charge cost, upcast scaling, instance count, free-cast source and metamagic **before** target selection,
+  so targets see the real cast-level facts. It then holds the resolution callback until the cast-option/reaction/action
   transaction actually commits, so cancelling an upcast,
   concentration choice or nested picker spends nothing and applies nothing. Only then does one generic
-  `DeclaredCombatEffect` batch (`damage | healing | temp-hp | condition`) cross the Firebase-free dynamic bridge to
+  `DeclaredCombatEffect` batch (`damage | healing | temp-hp | condition | granted-die | heroic-inspiration`) cross the Firebase-free dynamic bridge to
   `campaign-io.applyDeclaredCombatEffects`, which re-reads the encounter and applies the reviewed effects
-  in one transaction. Self effects use the character store. Effects aimed at another PC append an
-  idempotent `EncounterState.memberEffects` command because Firestore correctly forbids writing a peer's
-  combat subdocument; the recipient applies each command to their own canonical combat state exactly once
-  and persists an epoch/id receipt, so reconnect/reload retries cannot duplicate it.
+  in one transaction. Self effects use the character store. Effects aimed at another PC are applied by
+  the acting client in the SAME fresh-read transaction as the Chronicle update: it reads the exact target
+  `combat/state`, reduces typed HP/temp/condition/held-resource effects, and merges only those combat fields. The target
+  client may be offline. Firestore authorizes this narrow subdocument to current table members while the
+  parent character/build/inventory remains owner-only; roster removal revokes the grant immediately.
+  Transaction retries compose simultaneous effects from fresh target state, so the app cannot report a
+  heal that failed to land (or vice versa).
+
+  PC damage has one pure transition kernel: `lib/combat-transition.ts → reducePcDamage`. Both
+  `characterStore.applyDamage` (the open sheet/solo adapter) and
+  `campaign-io.reduceDirectPcEffects` (the fresh-read peer adapter) pass the same HP, Temporary HP,
+  conditions, dying track, critical-hit fact and persistent-effect occurrences into it. The reducer owns
+  defense-stage routing, Temporary-HP absorption, damage at 0 HP, Stable reset, ordinary knockout,
+  massive-damage death, Unconscious lifecycle, post-resistance transfer/retaliation and one-shot zero-HP
+  floors. Damage declarations say whether their amount is `raw` or already `resolved`; reviewed resolver
+  totals are always `resolved`, so Warding Bond resistance cannot be applied twice while its transfer still
+  runs. The core event carries both pre-floor `incoming` damage and HP/temp actually `applied`: the local
+  character log keeps its established incoming-hit meaning, while the campaign Chronicle records the
+  applied reversible delta. `resolveCombatDamagePackets` preserves each entered hit/ray/missile occurrence;
+  adapters reduce those packets in order and remove consumed occurrences before the next packet. Damage
+  at 0 HP, Death Ward, Temporary HP depletion, concentration checks, transfer and retaliation therefore
+  happen at the rules' per-hit boundary rather than once against an action total. The adapters otherwise
+  only translate returned state/events into persistence and Chronicle shapes.
+
+  Reviewed combat outcomes are a separate immutable fact stream, never fields stamped onto reusable
+  action definitions. `CombatResolver` emits a prepared artifact containing the resolved action plus
+  target-bound receipts; the economy commit publishes both only after cost/effect commit succeeds and
+  returns their exact inverse. `CombatOutcomePredicate` supports an optional action id, so generic rules
+  can match any successful attack while source-specific follow-ups can require one exact action. Queries
+  return both matching receipts and their bound targets for target-constrained riders. `critical-hit` is a
+  first-class fact but is never inferred from damage; the current HIT/MISS UI therefore emits none yet.
+  Receipt publication is part of the owning `selectAction`, `commitAttackSwing` or `useReaction` store
+  mutation. Re-arm and undo use those same owner APIs, so no persisted turn snapshot can contain one half
+  of the owner/receipt relation.
+
+  Per-spell casting math is independent from class-slot ownership. `resolveSpellAbility` first honors a
+  literal per-spell override, then the character's deferred species choice, then the owning class. The
+  action compiler recomputes DC/attack whenever that ability diverges **or the character has no class
+  Spellcasting block**, so innate/feat spells on martials retain full PB-based rules without becoming
+  ordinary class spells. This is the same cascade the Spells presenter uses.
+
+  Composite cast undo is event-exact: the cast transaction captures its own concentration start/end event
+  ids, restores the prior concentration silently (without nesting another undo), and removes only those
+  captured events. Manual log edits and unrelated events made after the cast are never snapshot-clobbered.
+
+  **Target-bound standing effects use one append-only ledger.** `EncounterState.effectOps` stores only
+  typed apply/revoke operations over stable actor + exact target references (including a monster instance
+  index), spell-or-feature catalogue source ids, immutable cast bindings and duration.
+  `foldCombatEffectOps` is the one active-state projection; every reader passes it through
+  `resolveCombatEffectGrantSources`, which projects
+  the catalogue group's INNER grants directly onto the recipient. It never lights the catalogue's shared
+  `activeKey`, so a recipient who also prepared that spell cannot receive a duplicate bonus. The same
+  rules compiler also owns short timing and physical-roll modifiers. Catalogue `while-active.duration`
+  can declare an exact relative turn boundary or a slot-level-dependent round cap; encounter effects
+  resolve it against frozen turn order and the reviewed cast level,
+  while self effects persist the resulting `{round, phase}` in additive `session.effectBoundaries`.
+  Turn-start/end are the only expiry seams, and their inverse restores the toggle, boundary and log beat
+  together. Target grant projection exposes one-shot or every-roll `roll-die-adjustment`, Speed deltas
+  and `healing-blocked` to the resolver; campaign and solo HP reducers consume the same healing flag, so offline PCs and monsters
+  cannot diverge from the open sheet. One-shot roll modifiers are revoked by occurrence id in the same
+  transaction as the reviewed action's HP, conditions and Chronicle changes, then restored with a fresh
+  id on undo. The same transaction applies/revokes operations and any max/current-HP delta. Damage runs
+  the generic persistent reducer for universal resistance, exact post-resistance transfer, one-shot
+  zero-HP floors and successful-hit reactions. A hit is carried independently from its damage amount, so a modeled
+  `damage-retaliation` can still fire when resistance or Temporary HP makes the landed HP loss zero.
+  The action summary preserves melee/ranged mode; the effect occurrence supplies its exact wearer,
+  attacker and original cast level. Temp-HP-bound occurrences are revoked when their pool is depleted
+  or replaced by a stronger pool. Chained damage keeps its type and spell source through the ordinary
+  defense resolver (including non-stacking resistance), plus the retaliating source/action provenance
+  in the Chronicle. Turn
+  advance expires deterministic boundaries and emits typed successors (Haste's one-turn lethargy). The
+  ledger is capped at 512 operations and conform-read at the campaign boundary; no rule payload or
+  localized prose is copied into Firestore.
+
+  **The ledger is the KEPT cross-document seam (deletion-map L2, first half).** The census verdict,
+  recorded on `src/types/combat-effect.ts`: every canonical kernel world is single-document, the
+  shared encounter material composes adversary participants only, and a member client may write only
+  its own documents, so a player-cast effect that mechanically lands on ANOTHER combatant (Warding
+  Bond's transfer, Death Ward's floor on an ally, Bless dice on table-mates, source-projected
+  conditions, Aid's HP arithmetic) has no canonical carrier yet; the campaign `effectOps` ledger
+  stays as the smallest live seam for exactly that cross-document behavior. Character-side SELF
+  standings already ride the engine world (`active-key`/`target-mark` standings project through
+  `world-standing-grants.ts` into the one grants union, so solo Death Ward's floor reaches
+  `aggregate.zeroHpFloors` with no ledger involved). The wave deleted the seam's dead limbs: the
+  `set-active` compare-and-swap op kind (the algebra is two-op apply/revoke now; a stored CAS entry
+  is dropped fail-safe), the never-written local `CombatState.effectOps` mirror ledger with its
+  store/codec plumbing (`replaceCombatEffectOps`, the write/parse gates; a stored field is
+  codec-ignored), and the never-produced `authoredLifetime` field. The kernel vocabulary the closure
+  needed on the CHARACTER side now exists (the recipient-standing wave): `zero-hp-floor` /
+  `max-hp-delta` / `damage-transfer` standing facts with their kernel consumers (the damage
+  compiler's `remain-at-one` selector consumes a fired floor's whole source atomically; the heal
+  path carries same-cast max headroom; the transfer fact records the payer for the table), and
+  `transcribeSpell`'s standing block binds `recipient: "selected"` buffs to the SELECTED target
+  entities — gated like the condition suite on attack/save spells — so a self-selected Death
+  Ward / Aid / Heroism rides the caster's world end to end. What still keeps the ledger alive is
+  exactly the CROSS-DOCUMENT carrier: a buff landing on ANOTHER member's document has no canonical
+  channel; the remaining residue is itemized in `docs/AUTOMATION_HANDOFF.md`'s deletion map.
+
+  A one-shot floor may be visible briefly as both a sheet `activeFeatures` key and its exact campaign
+  occurrence. The damage kernel treats a shared `activeKey` as duplicate authority for one rule and returns
+  both the consumed state key and occurrence id. The sheet adapter removes both its local active key and
+  current projection before another local hit can reduce. The campaign ledger remains authoritative across
+  reloads: self-target encounter damage still needs to route occurrence revocation and returned partner
+  transfers through the shared transaction rather than relying only on that optimistic projection filter.
+  Its inverse must restore the exact occurrence as well as HP/state; these orchestration seams are tracked
+  in `PROGRESS.md`.
+
+  Conditions carried by a source are occurrences, not mutations of the manual condition list.
+  Encounter occurrences use the ledger's typed `condition` payload; solo play needs only
+  `session.concentrationConditions` because one actor can maintain one concentration.
+  `effectiveSessionConditions` is the one projection read
+  by grants, action gates, saves, movement, party cards and the status rail. This keeps a manual/homebrew
+  condition and two casters' identical conditions independent: ending one concentration revokes only
+  that actor/source's occurrences, while an explicit cure or DM override removes every matching
+  occurrence plus the manual layer. Incapacitation and 0 HP revoke all concentration-owned payload
+  kinds through the same generic lifecycle rule. The campaign transaction performs that revocation
+  even when the affected PC is offline; reconnect clears any stale character-owned concentration.
+  Firestore rules validate the condition payload at the same member-write seam as grants and marks, so
+  auth-bypass and production cannot diverge.
+
+  Each condition occurrence also owns one typed maximum lifetime through
+  `CombatConditionLifetime`: source-owned (normally Concentration), fixed minutes/rounds, an exact
+  actor/target turn boundary, or manual/table-observed. A condition application may declare one
+  shared lifetime or one per selectable condition (Symbol). `actionAtCastLevel` resolves any slot
+  tier before target review (Geas), and `CombatResolver` writes one occurrence per chosen condition,
+  so ending one never removes an unrelated manual condition or another caster's copy. Automatic
+  expiry clears held Concentration through the canonical concentration transaction; undo restores
+  the active key, timer/boundary, cast level, condition projection and both log entries together.
+  Outside an encounter, the same `ActiveCombatEffect` occurrences persist in the character's existing
+  `combat/state` subdocument and are composed with any campaign projection at the sheet read seam.
+  This gives solo casts the same grant/condition stacking, reload survival, manual revocation and
+  turn-boundary expiry without a second effect model or a parent-character mirror.
+  Repeat saves, damage, help and leaving an area are explicit table corrections because the app
+  cannot observe them; the typed maximum still prevents an effect surviving beyond RAW.
 
   Persistent spells use the same transaction rather than masquerading as another cast. `resolveOnCast:
 false` separates placement from the first later trigger; `recurrence` covers repeated copies of the cast
@@ -601,6 +1191,11 @@ false` separates placement from the first later trigger; `recurrence` covers rep
   `session.activeSpellCastLevels`. The generated active row spends no slot, does not restart concentration,
   preserves upcast dice, and still passes through `CombatResolver`. Clearing/swapping concentration or an
   active toggle retracts its stored level; undo restores spell, toggle and level atomically.
+  A recurring target-bound row defaults to the exact occurrence already owned by that caster, while the
+  resolver's Any-creature control remains the explicit table/homebrew override. A declared successful-save
+  ending retracts both the caster state and every matching target occurrence, and undo restores both. Damage
+  components may also declare eligible creature types; the resolver includes that component only for matching
+  targets, keeping typed resistance intake and roll entry separate (Divine Smite is the first consumer).
 
   **THE SOURCE-OF-TRUTH FLIP (owner 2026-08-02).** On a HIT the player types the damage they rolled and it
   **AUTO-APPLIES to the target monster's HP right away** — the chronicle now narrates the PLAYER's number,
@@ -610,13 +1205,14 @@ false` separates placement from the first later trigger; `recurrence` covers rep
   1. the effect application — `features/character/center/apply-damage.ts` (the historical Firebase-free
      dynamic-import bridge) → `campaign-io.applyDeclaredCombatEffects`, a **narrow cross-user dot-path
      transaction** that re-reads the encounter and applies damage/healing/condition effects to exact
-     monster instances through the pure recorders and queues peer-PC effects, writing back only
-     `encounter.{combatants,events,memberEffects}`.
+     monster instances through the pure recorders and writes peer-PC combat slices directly, writing back
+     only `encounter.{combatants,events}` plus the exact target subdocs.
      The monster state lives on the CAMPAIGN doc the player doesn't own, so `firestore.rules`
      `combatEffectFieldsOnlyChanged()`
-     grants a member that exact diff (`affectedKeys().hasOnly(['combatants','events','memberEffects'])` +
+     grants a member that exact new-action diff (`affectedKeys().hasOnly(['combatants','events'])` +
      combatants count unchanged + append-only events/effects), the SAME diff-scoped member-grant idiom as
-     `turnFieldsOnlyChanged()`.
+     `turnFieldsOnlyChanged()`. The deployed queue fields remain accepted only so an encounter already in
+     progress during the upgrade can drain once; new resolutions never append to them.
      A miss/successful save with no half damage applies nothing.
   2. the declaration — the exact action `LocText`, target SET + outcome (+ the multi-instance drop bound,
      or a `save` flag, + any
@@ -690,6 +1286,14 @@ NOT via `pendingChoices`. ALL of a feat's consequences (its own
 render in ONE container attributed to that cause (the feat's expanded entry, or the cause-attributed
 `FeatChoicesInline` block; every other source's slots render in the shared `FeatureChoicesSection`),
 honoring the ASI cap of 20 standard / 30 Epic Boons (one cause, one container).
+
+Grandfathered spell-choice repair reuses that same acquisition seam. The pure
+`incompleteFreeCastChoiceFeatIds` read boundary detects only a machine-verifiable missing
+`freeCastSource`; it never guesses which spell the player chose. The Features card then opens the
+ordinary `FeatSpellChoicesPicker`, and `applySpellChoicePicks` enriches an already-known selected spell
+in place (preserving notes and identity) or adds it normally. A different source's recorded free-cast
+provenance is never overwritten. Once materialized, the normal spell-card transaction owns casting,
+resource spend, persistence and undo with no repair-specific runtime branch.
 
 `level-up.ts` produces a `LevelUpPreview` with structured `LevelUpChange[]` so the wizard renders
 before-and-after diffs without re-deriving them on the UI side.
@@ -1113,6 +1717,401 @@ stmts/fns, ≥75% branches.
 
 ---
 
+### The persisted mechanics world + the cutover rollout bridge
+
+Every character owns one persisted `CharacterMaterialState` at `session.world` — the sole home of
+every fact the deterministic engine models. `src/lib/mechanics-world-store.ts` is the seam: a
+document that has never carried a world derives it exactly once from the legacy session facts it
+supersedes (fail-closed through `parseCharacterMaterialState`); a persisted world is re-proved on
+every load and never re-derived. Cast/action surfaces run `runMechanicsCausalAction` over that
+world through the replay-driven `useMechanicsCast` hook (requirements surface one at a time; the
+outcome is recomputed from the ledgers on every render, so the UI can never disagree with the
+engine), and the planned `JournalActionDraft` commits through `reduceActionJournal` — the one
+canonical reducer that owns fences, generations and byte budgets. `undoCharacterAction` reverses a
+committed action through the same reducer, exactly.
+
+**Rollout bridge (temporary, deleted with this epic's final document migration):** while a legacy
+surface still reads a session field the world now owns (hp, exhaustion, spell-slot usage), the
+commit mirrors that exact field write-through so the two representations can never diverge. The
+bridge is a golden-rule-10 rollout state, not a resting state: each fact family migrates its
+surfaces atomically, and the mirror plus the legacy field are deleted together once no reader
+remains. The concentration mirror moves the legacy field on ENGINE TRANSITIONS only (start/swap
+stamps the spell; release clears the field only while it still shows the released spell) — a
+commit that leaves the engine concentration unchanged never touches it, so a legacy-held swap
+can never be resurrected by an unrelated later commit.
+
+**The first UI-read migration off the bridge — world standings.** Standing occurrences carry
+`active-key` facts in the exact key vocabulary the legacy `session.activeFeatures` chips use.
+`src/lib/world-standing-grants.ts` projects the LIVE self-targeted keys out of the raw persisted
+`session.world` (a fail-closed narrow walk — no full parse on the aggregation hot path), and the
+shared `sessionActiveKeys` union (legacy chips + world standings, key-identity deduped) is the ONE
+active-key set EVERY gating read consumes — `aggregateCharacterGrants` for the sheet-wide
+derivations AND `smart-tracker`'s action-row aggregations (weapon-row damage riders, spell-attack
+marked riders, free-cast lists, maintainer-row visibility, temp-HP grants, at-zero-HP
+interrupts). An engine-cast buff (Shield's +5 AC, Hex's "+1d6 vs cursed target" chip on weapon
+AND spell-attack rows) therefore reaches every derived stat and every combat card with NO legacy
+activation row, and a buff active both ways during the rollout evaluates once by construction.
+The legacy chip LIFECYCLE machinery (timers, rest/trigger expiry sweeps, maintenance prompts)
+deliberately keeps reading the bare `session.activeFeatures` ledger it mutates: engine standings
+own their lifetimes in the kernel, and a legacy expiry sweep must never try to end one. A
+target-scoped buff (Hex) lands as TWO standings with one shared lifetime — the active key plus a
+`target-mark` fact recording whom the caster marked; `worldStandingTargetMarks` projects the live
+mark identities for the surfaces that will one day model per-target identity (the party board),
+while solo attack/damage flows read the KEY, exactly like legacy (the marked creature is
+table-abstract by product design — the player applies the die on the right hit). This is a READ
+migration, not a mirror: the world stays the sole owner of the standing's lifetime, and no
+session field is written for it.
+
+**Recipient standings (the L2 second-half kernel vocabulary).** A `recipient: "selected"`
+while-active spell buff (Warding Bond, Death Ward, Aid, Heroism, the debuff cantrips) binds its
+standings to the SELECTED target entities — the same entities the targeting input resolves, gated
+exactly like the condition suite (an attack spell applies its standing on the landed hit, a save
+spell on the failed save) — never to `role:"caster"`. In solo play the caster selects SELF for a
+self-ward and a table-abstract ally stays with the table; a modeled entity (companion, summon,
+adversary) receives the standing directly. Three conformance-locked standing FACT kinds carry the
+mechanics the active key alone cannot: `zero-hp-floor` (Death Ward — the damage compiler selects
+the kernel's `remain-at-one` policy from a live floor on the target, and the fired floor's SOURCE
+ends atomically inside the same transaction via an occurrence-end consequence on the
+`creature-damage` operation: "drops to 1 instead, and the spell ends"; a step-local consumed set
+keeps single-use exact across multi-hit slots), `max-hp-delta` (Aid — the RESOLVED cast-level
+amount materializes into the fact; the paired heal carries the same-cast headroom explicitly on
+the `creature-healing` operation so raise-then-heal works under the caller's pre-action maximum
+fact), and `damage-transfer` (Warding Bond — the ward's expressible half is a resistance-to-all
+`damage-defense` standing the damage kernel already consumes; the transfer half RECORDS the payer
+entity, and mirroring damage across creatures at damage time stays an honest table boundary).
+Heroism's per-turn Temp HP rides a `root-pulse` phase (`turn-thp`) granting the frozen
+`spellcasting-modifier` binding as a replace-decision pool — the recipient's turn-start SIGNAL is
+table-declared until the turn-boundary event bus exists. Sheet side,
+`worldStandingMaxHpDeltas` / `worldStandingZeroHpFloors` project SELF-owned facts into the one
+grants union: the exact world delta REPLACES the key-only base default in `evaluateGrants` (never
+double-counts), and world floors merge into `aggregate.zeroHpFloors` deduped by key.
+
+**The second UI-read migration — the core vitals.** `src/lib/character-vitals.ts` is the ONE
+projection seam every core vital read goes through: hit points + temp (`vitalHp`), the death-save
+track (`vitalDeathSaves`), exhaustion (`vitalExhaustion`), concentration (`vitalConcentration`),
+the manual condition ledger (`vitalConditions`, consumed by `effectiveSessionConditions` as its
+base term), spell-slot usage (`vitalSlotUsed` — the Spells-tab slot summary in
+`lib/views/spells-view.ts` and the rail's slot pips) and tracker-pool usage (`vitalTrackerUsed` —
+every resolved tracker row's `used` in `smart-tracker`'s row builders, which the rail's remaining
+counts render). The consuming surfaces are the shared HP engine (`useHpControls`, behind the
+header pill / edit popover / DyingBanner), the death-save pips, and the exhaustion/concentration
+chips (CombatHeader, LeftHud, ThisTurnTracker → StatusLedge, ResourceRail, the
+concentration-replace confirm). The projection's DRIFT LAW is rollout-bridge semantics, per fact:
+the commit mirror writes both representations on every engine commit, so agreement is the norm and
+the projection surfaces the (identical) value; disagreement means a LEGACY-ONLY write happened (a
+manual HP edit, a slot pip tap, a condition chip toggle, a tracker spend outside the engine) — the
+SESSION value wins, so a legacy-only spend can never be resurrected from a stale world (the same
+fail-closed direction the rest boundary reconciles in). Both arms therefore surface session truth
+today — the migration is an observable no-op by design; deleting the write-through mirrors later
+means flipping the arbitration world-first inside this one module (after the remaining legacy-only
+WRITE paths move onto engine commits), never re-touching the surfaces. Like the standings
+projection, the seam walks the raw persisted `session.world` with fail-closed structural guards
+(no full material-state parse on hot paths); tracker ROLLS stay a session-only fact (the world
+does not model recorded rolls).
+
+**The third movement — the vitals WRITE paths ride the world.** Every store vitals mutation in
+`src/stores/characterStore.ts` now plans against the persisted world FIRST and commits world +
+legacy session fields in ONE store update, so the world is written by every mutation and the
+mirror-flip gate above can close. The seam is `commitWorldVitals` (store-internal): derive the
+persisted world (`characterWorldState` with `characterTrackerSeeds` — a pool the world has never
+seen seeds exactly once with the first paid spend), move the fact fields on a clone (the rest
+boundary's rebase-on-session-truth discipline), compile the diff as ONE table-authority journal
+action (`planCharacterVitalsTransition` in `mechanics-world-store.ts` →
+`planMechanicsWorldAction`), and commit through `commitCharacterAction`, whose `mirroredCommit`
+writes the legacy fields — hp/temp absolutely, slots/pools by exact delta, exhaustion absolutely,
+the death track on TRANSITIONS ONLY (living → both counters reset; `dying` → its counts verbatim;
+`stable` → the legacy stabilize write 3/0; `dead` → the third failure asserted, successes
+standing). Converted families: hp/death (`setHP`, `setTempHP`, `applyDamage`, `applyHealing` /
+`gainTempHp` via the setters, `restoreHpSnapshot`, `setDeathSaves`, `applyAtZeroHpInterrupt`, the
+S7 wild-shape temp-HP writes), slots (`useSpellSlot`/`restoreSpellSlot` — every rail pip and
+TurnEconomyProvider cast/upcast/metamagic write rides these), trackers
+(`useTracker`/`restoreTracker`), the slot/pool composites (`recoverTrackerFromSpellSlot`,
+`recoverTrackerByAltCost`, `recoverTrackerByMinSlot`, `applyArcaneRecovery` — each ONE atomic
+journal action whose undo is the exact journal reverse via `undoWorldAction`), exhaustion (the
+new `setExhaustion` action — the rail's ONE pip seam), the MechanicsCommand CAS path
+(`applyMechanicsPlan` moves the same owner operations on the world cells alongside the legacy CAS
+write, `planMechanicsRevert` reverts riding the same leg), and MANUAL CONDITIONS: `addCondition`
+commits the chip as a real world condition occurrence through the manual-condition seam program
+(`planSelfConditionApply` — root and condition both carry the `manual` lifetime), and
+`removeCondition`/`removeConditionSilent` end every matching live occurrence through the kernel's
+end machinery (`planSelfConditionEnd` — a manual booking ends through its root; an engine-applied
+condition ends as the occurrence alone, its owning program untouched); EngineActionFlow's cure
+mirror routes through `removeConditionSilent` instead of a bare session write. FAIL-CLOSED
+DEGRADATION everywhere (the encounter seam's discipline): no persisted world, an unparseable
+world, an inexpressible transition (an empty slot cell, a full pool, a living exhaustion-6, a
+death-track write on a standing character, an uncatalogued condition id), or a rejected
+plan/commit keeps the legacy direct write alone and never moves the world. Undo integrity:
+snapshot undos (`causalD20CommandUndo`, whole-doc restores) carry the world BY VALUE inside the
+restored session; journal-committed families reverse through `undoWorldAction`
+(`undoCharacterAction` — the mirror restores every legacy field in the same motion). Deliberately
+session-only (the world does not model them): the recorded-roll ledger and its floor-restore
+writers (`setTrackerRoll`, `spendTrackerRoll`, `topUpTracker`, `applyInitiativeTrackerTopUps`,
+`recoverPerTurnTrackers` — entry-shape semantics the rest boundary reconciles), a legacy-held
+concentration SET (the transitions-only mirror's documented direction), `session.hitDice` outside
+the rest boundary, and the condition arrays a transition consumes as overlays (the knockout's
+Unconscious chip, `restoreHpSnapshot`'s conditions revert) — session wins on their drift by the
+projection's arbitration.
+
+The executable authority for a cast is closed at build level: `characterSpellCapability` seals the
+transcribed program (see `src/lib/mechanics-transcription.ts`) into a capability snapshot anchored
+on the caster, carrying build-derived truths the world does not hold — the spell save DC and
+casting modifier as static bindings, the maximum hit points and per-slot resource definitions as
+caller-guarded facts the kernel re-emits and the commit validates. A conjuring cast (Goodberry)
+additionally carries its consumable's `NewInventoryInstance` template on the snapshot's closed
+blueprint channel (`src/data/conjured-items.ts` → `CONJURED_ITEM_BLUEPRINTS`, the only source the
+compiler's `inventory-create` instantiates from); the conjured batch lands in the WORLD's
+inventory with its authored expiry lifetime, surfaces as the Spells tab's conjured-items strip
+(`EngineConsumablesStrip`, localized from the creating spell's catalogue name), and each consume
+runs the item's canonical program (`CONJURED_ITEM_PROGRAMS`) through
+`characterConjuredItemCapability` — an item-sourced authority whose payment debits THIS instance's
+own quantity.
+
+Feature-action capabilities close their SESSION-derived transcription context through
+`resolveFeatureActionRuntime`, from the exact seams the sheet reads: the `classSpecific:*` die of
+a heal/Temp-HP/granted-die term from the owning class's progression row at the character's level
+in that class (`featureClassRow` — the monk's Martial Arts die, the bard's Inspiration tier), a
+`trackerTopUp` target's full-recovery rest from the one tracker resolver, and a dynamic
+PB/ability-derived `targeting.maxTargets` collapsed to the row summary's already-resolved concrete
+count. The corpus census (`mechanics-transcription.guard.test.ts`) deliberately omits these
+session facts, so rows like Uncanny Metabolism and Patient Defense's Heightened Focus report an
+honest census boundary while the RUNTIME capability executes them. Tracker pools seed into the
+world as DERIVED-capacity count cells (the resolved total from the one tracker resolver; a world
+persisted before this shape upgrades its capacity metadata once at read, current value preserved)
+because the kernel's full-recovery law is only lawful against a finite cell — the capability
+emits each touched pool's resource-definition fact as a bounded spec mirroring that capacity,
+plus the top-up target's full-recovery boundary, so Uncanny Metabolism's Focus refill commits as
+a real `resource-recover` transition.
+
+**The encounter/adversary seam (`src/lib/encounter-world-store.ts` +
+`src/features/campaigns/encounter-world-command.ts`).** The same runtime serves DM-run
+adversaries: the campaign's live encounter projects into a canonical shared-combat
+`SharedMaterialState`. Ownership is split by layer — the campaign encounter document owns the
+adversary/table facts (membership, hp trio, AC, conditions chips, initiative, the frozen order and
+turn pointer; every still-legacy surface keeps reading and writing them), while the optional
+`encounter.world` field on the same document carries what only the engine owns (the action
+journal, mechanic occurrences with their end rules, ordinal allocators, turn economies, the
+material timeline). `encounterWorldState` is the one-way read-time projection: the persisted
+engine layer is re-proved FAIL-CLOSED (`parseSharedMaterialState`; a corrupt `world` field
+rejects, never silently re-derives), the encounter-owned facts are overlaid on top (so legacy
+writes can never diverge — the world adopts them at the next read; entity ordinals continue the
+persisted generation; effects referencing a removed adversary row are swept to a fixpoint), and
+the composed candidate is re-parsed to prove it. Adversary rows keep their `srdId` as a
+`catalogue-monster` template REFERENCE (never a statblock copy; a hand-typed NPC gets a `custom`
+definition from its typed statline); a DM-typed initiative total splits losslessly into the
+canonical 1..20 roll plus an entity initiative-bonus override. The SHARED composition scope is
+the shared document alone: the canonical shared encounter lists adversary participants only, in
+the "turns" phase exactly while the legacy pointer rests on a rolled adversary - any other
+pointer projects the between-turns posture, where the kernel's 6-seconds-per-turn timeline law
+carries turn-anchored lifetimes; PC participants compose through the PARTY LEASE on their own
+character material (the dedicated paragraph below). Commits route back through the owner: the
+feature-side command boundary (`applyAdversaryDamage` for the DM's damage tap AND the universal
+resolver's per-adversary landed totals; `applyAdversaryHeal` for the heal tap and resolver
+healing — exact kernel semantics: clamp at max, temporary HP untouched, a 0-HP revive stays a
+documented legacy degradation because the canonical world models it as dead;
+`applyAdversaryCondition` for engine-lifetimed conditions) runs one causal action through the
+coordinator, commits through `reduceActionJournal` over the shared root, then mirrors the
+world-owned adversary facts onto the exact legacy fields (hp/temp via the legacy clamps, the
+condition chips, the Combat Chronicle beat — each mirrored beat stamped with its
+`engineActionId`) and persists the committed world in the same `setEncounter` write (or, for the
+resolver, the same member transaction — `firestore.rules`' `combatEffectFieldsOnlyChanged` grant
+admits `world` beside `combatants`/`events`) — the identical rollout-bridge doctrine as the
+character side, with the legacy arithmetic surviving only INSIDE the boundary as the fail-closed
+degradation.
+
+**Turn stepping is ENGINE-FIRST** (`stepEncounterTurn`, dispatched by both the
+`advanceEncounterTurn` transaction and the dev-bypass path): advancing off a rolled adversary
+fires the kernel's own `complete-turn` boundary over the derived world
+(`planAdversaryTurnBoundary` — begin/checkpoint/advance to completion, then
+`planMechanicsWorldAction` compiles the diff into one journal action under the table's
+material-authority actor), so booked lifetimes expire EXACTLY when the table steps the tracker,
+with the expiries mirrored onto the legacy chips + chronicle in the same value. A pointer leaving
+a PC ends no canonical turn (the v1 adversary-only composition scope), which is precisely what
+keeps a player's own-turn advance inside the member `turnFieldsOnlyChanged` rules grant — only DM
+advances carry the wider engine fields. Back-step is a DOCUMENTED degradation: the boundary is
+one-way (end waves latch and finalize; no un-fire), so `prev` rewinds only the legacy pointer and
+engine-expired lifetimes stand — the DM re-books manually or reverses the exact expiry from its
+chronicle line. **Chronicle undo is exact**: `undoAdversaryChronicleEvent` reverses an
+engine-stamped beat's journal action (generation 1 → 2 through the same reducer, the shared-root
+twin of `undoCharacterAction`), restoring hp trio, temporary HP, condition occurrences and their
+booked lifetimes precisely, dropping every line of the undone action; a pre-world beat degrades
+to the legacy one-tap arithmetic inside the boundary.
+
+**The SOLO combat loop rides the same runtime** (`src/lib/mechanics-world-store.ts` +
+`src/features/character/center/solo-world-turn.ts`). The character's own material carries a LOCAL
+single-participant encounter: `planSoloEncounterStart` seeds it (the character as the one
+"turns"-phase participant, its own turn running at the tracker's round, the entered raw-d20
+initiative when the player typed one), `planSoloTurnBoundary` fires the kernel's `complete-turn`
+per solo round advance, and `planSoloEncounterEnd` closes it — all through the identical
+begin/checkpoint/advance boundary drive as the adversary seam, committed as one journal action
+under the character material's table authority and mirrored onto the legacy session
+(`commitCharacterAction` — condition chips, concentration, slots) in the same write. The wiring
+lives at the two tracker seams: the provider's solo End Turn calls `advanceSoloWorldTurn` (the
+encounter starts LAZILY on the first advance, so out-of-combat casts keep the
+6-seconds-per-turn timeline freeze), and the tracker's End Combat calls `endSoloWorldEncounter`.
+While the solo encounter runs, turn-anchored lifetimes freeze to EXACT turn-boundary end rules
+and expire precisely when the tracker steps — fail-closed and one-way exactly like the adversary
+boundary (a rejected plan leaves lifetimes standing; undoing an End Turn rewinds only the legacy
+round). Every character dispatch (`useMechanicsEngineAction` / `useMechanicsPulse`) feeds the
+coordinator the character's live **turn-economy projection**
+(`characterTurnEconomyProjection` — attacks per Attack action, walking Speed and
+condition-gated incapacitation from the same build seams the sheet reads), so an authored
+`turn-claim` step compiles for solo dispatches and its claim commits against the participant's
+own-turn ledger: a per-turn-capped program is REJECTED by the kernel on a second same-turn
+dispatch and allowed again after the boundary opens the next turn. The transcriber emits those
+`turn-claim` steps from declared once-per-turn caps, and the Play gate dispatches such a row
+(Redirect Attack) to the engine exactly while a solo world encounter is running in its "turns"
+phase — the claim needs the participant's ledger to commit against; outside one, and for an
+unmet turn-outcome prerequisite or an already-used cap, the legacy layered gates keep the row
+and own its feedback. Being in solo combat never forces the legacy path:
+engine-executable casts/actions dispatch through `EngineCastFlow`/`EngineActionFlow` mid-combat,
+and each commit mirrors the EXACT legacy turn-economy entry (slot occupant with its rules
+category and "attack" turn event, the one-slot-per-turn claim on the solo turn key, and — for an
+Extra-Attack weapon swing — the attack-pips ledger claim/ride instead of a whole Action slot)
+AND registers the product's native reversal affordance (`registerEngineCommitUndo` — see "The
+session undo stack"): the same "X used + Undo" toast grammar the legacy loop owns, whose undo
+drives the exact journal reverse and rolls the economy mirror back in the same motion.
+Engine damage landing on the character itself surfaces the SAME entered-d20 Concentration
+prompt seam the legacy damage path owns (`queueConcentrationSaveForDamage`; an engine commit
+that leaves the character at 0 HP breaks concentration outright through the one authoritative
+teardown). **The damage-entry reaction runtime** rides the same seams in the other direction:
+table-entered damage with an eligible ANSWER-FREE damage reaction (Uncanny Dodge; the pack's
+Interpose Shield) parks as the cockpit's `DamageReactionBanner` prompt instead of applying —
+the pick composes the entered hit into the reaction's own program
+(`src/lib/damage-reaction.ts`) and runs it as ONE causal action (the `damage-taken` phase's
+`incoming-damage-adjustment` compensates inside the same action; the Reaction claims against
+the solo encounter's economy ledger, started lazily exactly like the solo turn loop), the
+store's `commitDamageReactionEntry` mirrors the legacy reaction flag/event log/Concentration
+prompt and registers the exact snapshot undo, and a skip (or any kernel rejection) applies the
+plain damage path unchanged — never a dead end. With the world-standing read in place (see the
+read-migration section above),
+REACTION casts and SELF-owned mechanics-carrying while-active casts dispatch engine in and out
+of combat: an engine Shield's standing lifts the sheet's AC through the projection, and the
+commit marks the round's Reaction through the SAME `useReaction` CAS the legacy reaction commit
+performed (the economy mirror). A legacy authoritative concentration drop — the failed
+entered-d20 save, the 0-HP outright break, a manual stop, a legacy swap — ends an ENGINE-held
+concentration through the canonical kernel end machinery in the same motion
+(`planEngineConcentrationEnd`: one end request over the owning program root; the concentration
+effect and every sourced standing end in the same wave; `setConcentration` commits it as one
+journal action, exactly reversed by the undo pairing), so neither the world nor the session can
+hold a dropped spell. The CONCENTRATION SWAP is the kernel's ONE-ACTION replacement: casting a
+concentration spell while the ENGINE holds one runs the shared `confirmConcentrationSwap` gate
+first (the product decision — always ask), and on yes NOTHING ends at confirm: the engine flow
+replays over the world STILL holding the old spell, and the compiler's
+`concentration-replacement` coordination converges the whole swap as ONE bounded causal action
+— the coordinator keys each end wave's exactly-once delivery by its CANDIDATE SET (the identity
+that survives audience-driven rebasing, since every subscriber dispatch is a phase advance that
+moves the world basis) and `finalizeMechanicsCausalEndWave` grants the live frame stack's
+one-ahead provenance permits through the finalization's closed-boundary check, so the held
+occurrence, its root and its standings end mid-cast and the suspended frame resumes over the
+swept world (proven by the coordinator suite's transcribed hex-over-hex replacement and the
+spells-page flow test). ONE journal entry commits old-end + new-cast; the commit's transition
+mirror restamps `session.concentration`, the flow logs the end/start story beats and clears the
+dropped spell's now-moot pending-save queue, and the replacement toast IS the undo affordance —
+its undo is the exact journal reverse that restores the OLD spell whole (occurrence, standings,
+slot, session field). Backing out of the cast modal after confirming commits nothing — the old
+spell stays held. A LEGACY-held concentration keeps the legacy swap flow, which owns that
+teardown.
+The SPELL rows of the Play board dispatch through the SAME
+shared gate as the Spells tab (`engine-spell-gate.ts` → `engineSpellCastRequest` — one dispatch
+truth for both surfaces, Shield's reaction card included). PACT-SLOT casts dispatch engine: the
+transcriber's slot payment is a pool-"either" `spell-slot` selector, the world seeds the pact
+pool as its own cell, `characterSlotDefinitionFacts` guards its definition beside the standard
+levels, the cast modal offers the pact slot with its level shown (enforcing the selector's level
+floor on both pools), and the commit mirrors the debit onto the legacy `pact-<level>` usage
+counter exactly. CASTER-OWNED standing casts dispatch engine too — Hex included: the cast lands
+the active key + the target mark as world standings (see the read-migration section above), which
+is observably the legacy solo collapse (light the key on the caster; the mark is table-abstract).
+Honest boundaries that stay legacy, each documented at its exclusion site: an `excludeSelf`
+standing (Warding Bond — the buff's mechanics belong to a selected creature the solo world does
+not model); MAINTAINER rows (they re-run an established recurring effect without paying — a new
+engine cast would double-cast; the engine twin is the armed root-pulse phase on the world's own
+occurrence, `EnginePulseStrip`/`useMechanicsPulse`, which exists exactly when the cast itself went
+engine); and USE-APPLIES (the deterministic side effect is a sibling GRANT the transcriber's
+`SrdActionDef` input cannot see yet). The legacy effect-program runtime is DELETED (the
+combat-automation-gaps cutover): the authored `effectProgram` data field, its interpreter
+(`combat-effect-program`), the planning/command/atomic/lifecycle execution stack, and the outer
+`action-command` kernel are gone — the canonical MechanicsProgram runtime is the ONE executable
+truth. `tests/unit/effect-program-dispatch.guard.test.ts` pins the regression contract: every
+public spell the legacy runtime used to own (16, pinned literally) still transcribes and gates
+ENGINE, and Uncanny Dodge's reaction fires through the damage-entry reaction runtime. Stored
+remnants of the deleted runtime (`effectOps` entries with `programOwner`/`program-standing`
+payloads, `effectLifecycles`, `actionRevision`/`actionHead`/`actionLifecycles`) are ignored at
+every read boundary and shed by the next full write.
+
+**RESTS ride the same runtime** (`src/features/character/rest-world-boundary.ts`, driven by the
+RestModal's confirm). A confirmed Short/Long Rest plans ONE journal action over the character's
+persisted world by chaining the kernel's own table boundaries — `end-encounter` when a local solo
+encounter lingers (a rest always returns combat to baseline), `advance-time` for the rest's RAW
+duration (1 hour / 8 hours, so timed lifetimes lapse exactly), then `complete-rest`, which
+allocates the timeline's next boundary ordinal and emits the `rest-completed` evidence on the
+character's timeline clock, ending every due "until you finish a short/long rest" lifetime through
+its own end rule — and then executes every engine-modeled RECOVERY as world transitions computed
+from the SAME resolvers the legacy rest reads (`resolveTrackers` cadence rows,
+`getShortRestRecoveries`, the slot derivation, the exhaustion-recovery grants, `effectiveMaxHp`;
+the short rest's hit-dice heal rides in as the player's ENTERED roll, the recorded observation the
+modal already collects). The recovery targets are computed from the PRE-REST session counters and
+ADOPTED into the world — the rest boundary is the rollout bridge's reconciliation point, so
+legacy-only writes since the last commit (hp damage taps, exhaustion steps, tracker pip spends)
+can never be resurrected from a stale world value, and after the commit both representations agree
+exactly. A long rest additionally requests the end of every engine concentration occurrence (sleep
+is incapacitation). The commit mirrors pools, slots, hp, exhaustion, ended
+condition chips and released concentration onto the legacy session in the same write, and
+`restFinalizedSession` reproduces the legacy-only bookkeeping the world does not own yet
+(tracker-entry canonical shape, rest-ended active states, equipment charges via the shared
+`equipmentAfterLongRest` law, hit dice spent, death saves, the event log, the combat-state
+persist, the undo fence) with the exact legacy laws, so a legacy read cannot tell which path ran.
+The legacy store `shortRest`/`longRest` recoveries survive ONLY as the fail-closed degradation: a
+world that fails its parse or a rejected boundary/plan/commit runs them alone, exactly the
+pre-cutover behavior, and nothing engine-side moves. Typed item resources stay on the item seam's
+own exact boundary in the same confirm flow (dawn/dusk remain distinct day-phase boundaries, never
+conflated with a rest).
+
+**PC PARTICIPANTS join the composed encounter through the PARTY LEASE**
+(`src/lib/encounter-world-store.ts` → "The PC party lease" +
+`src/features/campaigns/party-world-lease.ts`, wired at `GlobalCombatMount`). The kernel's native
+shared-encounter lease (`start-encounter` over a shared material whose seed lists character-play
+combatants: end each character's local encounter, rebase its timeline rules onto the shared clock,
+install the `clockBinding` lease - one atomic multi-document finalize, with `validateLeases`
+making every half-state unparseable) has no honest carrier in this app's write topology: the
+character document and the encounter document have DIFFERENT OWNERS (owner-scoped character
+writes; the DM cannot write member docs), different debounced writers, and offline-first
+last-write-wins semantics - no cross-document atomic commit exists, and a persisted half-flip
+would fail-close every reader of whichever side landed first. So the lease is carried by
+IDENTITY: the member client - the only writer of its character doc - joins through the kernel's
+own `start-encounter` boundary over the CHARACTER material (the solo machinery's exact shape),
+with the single participant id carrying the fight (`party:<epoch>:<campaignId>`). The join rides
+the member's OWN subscription flow: `GlobalCombatMount` reduces every active own-PC fight (from
+the same membership listener the pip reads - no new reads) into snapshots, and
+`observePartyWorldFights` reconciles the OPEN character's world against them, idempotent by lease
+identity and FAIL-CLOSED (a corrupt member world degrades only the member's own join; the
+encounter document is never touched from this seam). Joining ends any lingering LOCAL solo
+encounter first through the kernel's `end-encounter` boundary - the rest wave's collision
+precedent - and a lease whose fight leaves the active set (ended, epoch replaced, PC removed)
+releases the same way, with encounter-anchored lifetimes rebinding through the kernel's
+combat-end machinery. **PC-turn-anchored lifetimes fire on the real tracker**: when the shared
+pointer passes OFF the viewer's own PC, the member client commits the character-side
+`complete-turn` (the mirror of the solo End-Turn wiring; the DM stepping the tracker never writes
+member docs), so buffs anchored to the PC's turns expire exactly - once per (fight, round),
+enforced by the boundary action id, so back-and-forward pointer steps cannot double-expire.
+Clock behaviour is EQUIVALENT to the kernel's rebase by construction: the character's timeline
+never leaves its own clock and advances six seconds per observed shared round (the kernel's own
+per-round law, in lockstep with the table), so a 1-minute buff cast before joining keeps its
+remaining duration across join, fight, and leave - and leaving needs no un-rebase. Inherited
+honestly from the single-participant model: one observed pass-off crosses turn-end, the 6-second
+round, and next-turn-start in one boundary, so "until the start of your next turn" collapses onto
+"until the end of your turn" (exact separation needs kernel support for suspending a local
+encounter between turns). **Cross-material actions are TWO single-material commits correlated by
+ONE action identity** - never one multi-document journal action, for the same topology reason:
+a member-declared attack mints one `pc-action:` seed per declare
+(`applyDeclaredCombatEffects`), the adversary's damage books on the encounter journal under the
+seed-prefixed action id (stamped on the mirrored chronicle beat as `engineActionId`), and the
+acting member's own character journal records the SAME seed as a `record-manual-boundary`
+turn-economy claim on the leased participant (`commitPartyAttackParticipation` - best-effort and
+fail-closed; the adversary's state is table truth and always books first; secondary transfers
+like retaliation keep their legacy ids). A member whose sheet is closed simply joins late and
+misses pass-offs: lifetimes STAND until the next observed boundary - fail-closed is always late,
+never early.
+
 ## Persistence + offline
 
 Firestore SDK handles real-time sync + offline persistence transparently. Writes are
@@ -1208,8 +2207,8 @@ produced by `serializeCharacterEnvelope` (`src/lib/character-codec.ts`, the shar
     death saves (from the subdoc) OR Exhaustion level 6 (RA-21). Exhaustion is the ONE fallen-hero input
     that is NOT in the combat trio: it persists on the parent `state`, so `cacheToRosterDoc` ALSO seeds
     `state.exhaustion` into the baseline (the only parent-`state` field the projection reads) — aligned
-    by construction, no denormalized copy. The dev path (`rosterProjectionFromDoc`, no subdoc under
-    bypass) reads the live session, the same combat source, so dev == prod.
+    by construction, no denormalized copy. Under auth bypass, the local document replica exposes the
+    same parent + combat-subdoc split, so the dev roster/party/sheet all observe one combat source too.
 - **The name is a branded `NonEmptyString`, UNREPRESENTABLE empty** — see the dedicated invariant
   section below for the construction-site contract; per-section fault isolation (the shared
   `ErrorBoundary` + `SectionErrorFallback` around each `CampaignHubPage` section) is the belt-and-
@@ -1220,21 +2219,47 @@ produced by `serializeCharacterEnvelope` (`src/lib/character-codec.ts`, the shar
 
 ### Combat-mutable state lives in a per-character subdoc (`combat/state`)
 
-The character's combat-mutable state — HP `{ current, temp }`, `conditions[]`, death saves, the SOLO
-`round`, and the SOLO `initiative` roll — has ONE persisted home: a per-character Firestore subdoc at
+The character's combat-mutable state — HP `{ current, temp }`, `conditions[]`, held Bardic Inspiration
+die, held Heroic Inspiration, death saves, the SOLO `round`, the SOLO `initiative` roll, and the FIFO of
+unresolved damage-triggered Concentration saves — has ONE persisted home: a
+per-character Firestore subdoc at
 `users/{uid}/characters/{charId}/combat/state` (`CombatState`, `src/types/combat-state.ts`) — its SOLE
 representation (golden rule 10). A CAMPAIGN ENCOUNTER's initiative is NOT here — it lives in the
 campaign's `encounterInit` table (the initiative SSOT — see the dedicated bullet below). The subdoc is
 **physically absent from the parent character doc**: the Firestore serialization boundary
 (`toStoredPayload`) omits the trio from `state` via `omitCombatTrio`, so the parent `state` carries no
-HP/conditions/initiative/death-save field. (The self-contained portable v3 EXPORT, which has no subdoc,
-still keeps the trio inline — see `docs/CHARACTER_SCHEMA.md`.) The subdoc is a tiny, SRD-free,
+HP/conditions/initiative/death-save/held-resource field. (The self-contained portable v3 EXPORT, which has no
+subdoc, still keeps the combat slice inline — see `docs/CHARACTER_SCHEMA.md`.) The subdoc is a tiny, SRD-free,
 id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-state seam that touches
 `firebase/firestore`, kept light off the always-eager bundle.
 
 - **Why** — so the cockpit sheet AND the in-hub party/encounter surface read THAT one document and are
-  aligned by construction (no drift between two surfaces showing the same HP). EVERY co-member reads it
-  live (the live campaign-membership grant); the owner and the campaign's DM write it.
+  aligned by construction (no drift between two surfaces showing the same HP). EVERY current table member
+  reads it live and may apply reviewed combat effects to it; the parent character remains owner-only.
+- **Held dice** — a reviewed `granted-die` effect writes the recipient's one held Bardic Inspiration die
+  through the same peer transaction, so an offline teammate still receives it. The recipient spends it
+  from the ordinary resource rail; short/long rest clears it because its 2024 duration is one hour. The
+  optional subdoc field falls back to a legacy parent value only when absent; an explicit empty string is
+  a real clear, so old characters migrate additively without creating two writable homes.
+- **Heroic Inspiration** — a reviewed `heroic-inspiration` effect uses the same peer transaction and
+  non-stacking state rule. Musician's Encouraging Song is a generic 1/Short-or-Long-Rest action capped at
+  the actor's resolved PB allies; an offline PC or encounter-owned NPC receives the token and Chronicle
+  provenance atomically. The optional subdoc boolean falls back to a legacy parent value only until the
+  first explicit write, after which receive/spend/correction all use this one home.
+- **Entered D20 Tests** — `types/d20-test.ts` + `lib/d20-test.ts` are the locale-free universal kernel:
+  callers provide the physical d20 face(s), optional replacement/adjustment dice and consumed-resource
+  ids; the kernel validates JSON-plain input, nets Advantage/Disadvantage, selects one natural face and
+  resolves totals/outcomes without rolling. Table overrides are exact, attributed facts: their reviewed
+  outcome is retained beside the computed outcome, and a declared two-failure Death Save is not mislabeled
+  as a natural 1. `lib/character-d20-tests.ts` is the live-character adapter.
+  Death Saves and Concentration maintenance are the first production consumers. Damage while a living
+  character concentrates appends one `PendingConcentrationSave` per ordered damage packet (never per
+  typed component) to `CombatState.pendingConcentrationSaves`; its stored spell ref, damage and capped DC
+  are trigger facts only. Commit rechecks the exact FIFO head + held spell, then rebuilds the live CON
+  save, Concentration-only modifiers, Exhaustion and net roll mode. Success removes one head; failure
+  routes through the canonical concentration teardown and clears the remainder; 0 HP clears it without a
+  prompt. Legacy absence is the empty queue, malformed/stale rows fail closed, and undo is a whole-command
+  CAS restoring character, local effects, log and queue exactly.
 - **In-memory** — `SessionState` still carries the trio, so every existing reader (compute /
   use-hp-controls / rest / level-up / smart-tracker) is unchanged. The store stays Firebase-free: it
   does the optimistic in-memory update (immediate UI) + side effects (concentration save, death-save
@@ -1259,9 +2284,9 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
   through the single offline-safe writer below. A mixed mutation (a Long Rest sets HP + slots) writes
   BOTH, each slice to its own doc.
 - **Offline-first writes (durably queued, never lost).** The combat-mutable state is OFFLINE-FIRST and
-  MULTI-WRITER — the owning player AND the campaign DM edit a PC's HP/conditions/death-saves from the
-  cockpit OR the in-hub encounter card, often OFFLINE (Firestore persistence + service worker), and the
-  views align by construction (both write the ONE subdoc). Every mutation persists through
+  MULTI-WRITER. Owner/DM manual corrections from the cockpit or in-hub encounter card may happen OFFLINE
+  (Firestore persistence + service worker), and the views align by construction because both write the ONE
+  subdoc. Those local/manual mutations persist through
   `writeCombatState` (`combat-state-io.ts`) — a single **`setDoc` OVERWRITE (no `merge`) of the FULL
   `CombatState`** (the payload is always the complete state, and the overwrite sheds stray/legacy keys —
   e.g. the retired `initiativeEpoch` — as a side effect). `setDoc` is **offline-queueable**: Firestore
@@ -1279,14 +2304,38 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
     each reduces the given `base` (seeding the full-HP `defaultCombatState` when the subdoc is absent — a
     genuinely fresh/undamaged PC) and persists the whole result. The CLIENT passes `effectiveMaxHp` (rules
     can't evaluate grants; the clamp is in the reducer + re-applied on read by `applyCombatToSession`).
-  - **Concurrency is whole-object last-write-wins.** Because each writer reduces over its LATEST
+  - **Manual-write concurrency is whole-object last-write-wins.** Because each manual writer reduces over its LATEST
     subscription-hydrated state, edits to DIFFERENT fields (or the same field at different times) both
     land; only an EXACTLY-simultaneous same-field write loses one — the accepted, DM-correctable tradeoff
-    (offline durability over lock-step). An emulator test pins that a FRESH absent-subdoc full-shape write
-    is authorized for owner/admin/DM (and denied for a read-only peer).
-- **Edit gate (mirrors the rules).** The UI offers a combat write only where the rules allow one: a PC
-  card is editable by the OWNING player (`isMe`) OR the DM/admin; a non-DM peer card is READ-ONLY
-  (`canEdit = isMe || isDm`). Structure edits (add/remove combatant, monster, turn/round, hidden toggle)
+    (offline durability over lock-step). Reviewed peer-target effects deliberately use a DIFFERENT seam:
+    `applyDeclaredCombatEffects` requires the acting client to reach Firestore, fresh-reads the target in a
+    transaction, and merges only HP/temp/conditions/death saves. Thus the target client may be OFFLINE,
+    simultaneous effects compose, and the Chronicle cannot claim an effect that failed to land. An emulator
+    test pins that a FRESH absent-subdoc full-shape write is authorized for owner/admin/current member (and
+    denied immediately after membership removal).
+    Stabilization uses this same typed batch: the transaction reads the target's current death-save state,
+    changes only an unstable 0-HP PC to `{ successes: 3, failures: 0 }`, preserves 0 HP + Unconscious,
+    emits one source/action-attributed Chronicle event, and becomes an idempotent no-op when already Stable.
+    Solo play applies the same effect through `characterStore.applyResolvedCombatEffects`, whose snapshot
+    undo restores the exact prior death track.
+  - **Turn economy is field-scoped.** The exact current-turn key plus selected actions, structured Attack
+    swings, reaction identity, occurrence ordinal, target-bound outcome receipts, movement, dashes, slot
+    casts and round damage flag live in optional
+    `turnEconomy`. This makes a
+    group↔sheet remount restore the SAME spent budget only when campaign/epoch/round/current-combatant still
+    match. Its high-frequency writer merges only `round + turnEconomy`, so navigation/action persistence
+    cannot overwrite HP or conditions another member committed concurrently. The IO contract is pinned by
+    a strict `parseCombatState(combatStateWriteData(state))` round-trip suite covering every slot/category,
+    localized action-reference shape, cadence fact, outcome receipt, counter, flag and active-effect
+    lifetime. At the untrusted read edge, malformed rows and empty identities are dropped, non-finite rolls
+    normalize safely, duplicate receipt ids are rejected, and a receipt survives only when an exact
+    selected-action/Attack-swing/Reaction owner binds its occurrence to the same action id; a corrupt or
+    stale subdoc therefore cannot reopen an outcome-gated follow-up. Owner creation/removal and its
+    validated receipts occur in one store mutation, including coin re-arm, so the high-frequency writer
+    never persists an intermediate owner-only or receipt-only snapshot.
+- **Edit gate (mirrors the rules).** Direct card correction remains the owning player/DM/admin affordance;
+  a co-member writes a peer only after confirming a typed effect in `CombatResolver`, never through a
+  generic character editor. Structure edits (add/remove combatant, monster, turn/round, hidden toggle)
   stay DM-only. A REJECTED write SURFACES an honest toast (`campaignHub.combatWriteFailed`) — never a
   silent swallow, and never a retry: with the live-derived grants below, a denial is a real, terminal
   authorization fact (e.g. removed from the campaign mid-fight), not a stale cache to reconverge. (The
@@ -1298,8 +2347,8 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
   doc at request time:
   - char-doc **READ**: `owner || isAdmin || (notBlocked && requester ∈ get(campaigns/{attachedCampaignId}).members)`;
   - combat-subdoc **READ**: owner / admin / any CURRENT member of the attached campaign (read-superset);
-  - combat-subdoc **WRITE**: owner / admin / the attached campaign's CURRENT `dmUid` (write-subset — a
-    peer reads but cannot write); the parent char-doc WRITE stays owner-only, untouched.
+  - combat-subdoc **WRITE**: owner / admin / any CURRENT member of the attached campaign; this is the tiny
+    table-effect surface only — the parent char-doc WRITE stays owner-only, untouched.
     A DM transfer or roster change is effective IMMEDIATELY on the next request — there is no
     client-maintained ACL to recompute, so the whole class of "stale grant" convergence failures (the old
     `dmReaders`/`campaignReaders` machinery, its attach-time recomputes, self-reconcile listeners, and
@@ -1314,7 +2363,9 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
 - **The encounter is a pure-REFERENCE read model (no PC stat copy).** `campaign.encounter` carries PC
   combatants as bare references — `EncounterPc = { kind, id, memberUid, characterId, hidden? }` (no
   AC/HP/name/conditions/initiative on the doc; monsters keep their own state since they have no char
-  doc). Each monster is one first-class combatant. Legacy grouped rows are expanded idempotently by
+  doc). Each monster/NPC is one first-class combatant with optional `side:"ally"` (absence = enemy).
+  Allegiance drives default target filtering, player-visible allied HP and encounter-budget/outcome math;
+  the DM may flip it at any time. Legacy grouped rows are expanded idempotently by
   `conformEncounterCreatures` at the campaign boundary into stable suffixed instance ids, preserving
   order and group labels without a migration write. A monster also carries an OPTIONAL, additive `srdId`
   — a DISPLAY-ONLY reference to the bestiary statblock the encounter picker
@@ -1381,6 +2432,15 @@ initiativeBonus` at the display/sort edge, the bonus engine-computed + override-
     round) — the cockpit turn meter routes its commit by phase (encounter → the campaign table; solo → the
     combat store/subdoc), so neither home ever mirrors the other (rule 10). The DM presses **Begin turns**
     (`beginEncounterTurns`) to point the turn at the top of the live order.
+- **Alert Initiative Swap is an encounter decision, never a rewritten roll.** During gathering,
+  `EncounterState.initiativeSwaps` stores `{sourceId,targetId}` pairs for Alert-bearing PCs and willing
+  PC/NPC allies. `buildEncounterView` applies those pairs over the current live-sorted ids, so a late roll
+  still produces the correct preview while `encounterInit` remains raw-d20 truth. `beginEncounterTurns`
+  freezes that resulting sequence into `encounter.order`; from there the ordinary frozen-order contract
+  takes over. Only the DM edits the structural decision, and can replace/remove it until turns begin.
+  Reducers reject self, missing, enemy-target and non-PC-source pairs and remove dangling pairs with a
+  departing combatant. Multiple Alert holders compose in explicit stored order rather than inventing a
+  second initiative model.
 - **The turn order is FROZEN onto the doc at Begin-turns (`EncounterState.order: string[]`).** `Begin turns`
   (`beginEncounterTurns`, DM-only) calls `freezeOrder` to SNAPSHOT the live-sorted ids (including hidden)
   into `encounter.order`, then points `currentCombatantId` at `order[0]`. From there `advanceTurn`/`prevTurn`
@@ -1398,12 +2458,15 @@ initiativeBonus` at the display/sort edge, the bonus engine-computed + override-
   structurally unskippable); `removeCombatant` splices a combatant out of both the membership and `order`.
   `order` is OPTIONAL/additive (absent or empty = the gathering phase) so a fresh `startEncounter` and any
   pre-feature doc stay valid.
-- **Begin-turns gate · initiative lock · DM drag-reorder · reinforcement auto-slot (C3 — the DM owns the
+- **Participation + begin-turns · initiative lock · DM drag-reorder · reinforcement auto-slot (C3 — the DM owns the
   order once combat starts).** Four behaviours make "the order locks once combat starts; the DM owns every
   reorder" real:
-  - **Gate:** Begin-turns is HARD-DISABLED until EVERY combatant — PCs and monsters — has an initiative; the
-    button shows the disabled reason (a `Lock` glyph + an "{rolled}/{total} rolled" count). RAW: combat
-    doesn't start until the order is set.
+  - **Participation/begin:** `encounterSkipped:{uid→true}` is a sibling per-encounter map. A member may
+    opt only themselves out/in during gathering; the DM/admin may correct anyone. The global combat pip
+    ignores opted-out viewers, so no initiative polling trap remains. Begin requires at least one roll but
+    may freeze only the rolled participants; its CTA states the exact `rolled/total`, and unrolled PCs are
+    marked skipped while remaining visible/targetable for later correction. Start/end reset both initiative
+    and participation maps atomically.
   - **Initiative lock:** once `currentCombatantId !== null` (turns begun), the shared `InitVital` chip on the
     party card AND the sheet turn-meter (`ThisTurnTracker`, gated on the `useTurnState` phase `my-turn`/
     `waiting`) go READ-ONLY, and the DM's typed monster-init chip locks too — the roll is fixed; the DM owns
@@ -1569,11 +2632,25 @@ the viewer's uid` on every entry) — the SAME cheap shared-campaigns snapshot t
   turn is fine, nothing breaks if the DM never runs the tool, a player never rolls, or a player is offline.
   (Pinned by emulator rules cases: member turn-only allowed; member structure/status/smuggled/`order` write
   denied; DM/admin `order` write allowed; DM full; non-member denied.)
-- **`DEV_BYPASS_AUTH`** — every combat read/write/listener is a no-op (mirrors `firestore.ts`), so dev
-  runs on the optimistic in-memory update alone. The dev fixture loader (`dev-fixtures.ts` →
-  `loadDevFixture`) seeds the trio to its absent-subdoc default (full effective HP) through the SAME
-  `applyCombatToSession(session, null, max)` converter, so every dev surface shows full HP even though the
-  fixtures carry no `state.hp` (the parsed default would otherwise be 0).
+- **Production-parity dev sandbox** — `pnpm dev:emulators` is the manual-dogfood default. A single
+  `firebase emulators:exec` process owns Auth + Firestore + Storage + Functions, runs the idempotent
+  `scripts/dev-seed-sandbox.ts` against the hard-guarded `demo-d20folio` project, then starts Vite with
+  demo-only Firebase config. `auth.ts` signs into the seeded Auth-emulator owner automatically, so the
+  app exercises the production Firebase adapters, security rules, listeners, transactions, persistence,
+  Storage and callable seams without Google OAuth or any live-project access. Ctrl-C tears down the whole
+  stack. The per-tab `devActAs` presentation dock remains available for deterministic multi-seat UI work;
+  authorization correctness itself stays emulator-rule-tested rather than being reimplemented client-side.
+- **`DEV_BYPASS_AUTH` parity replica** — the cheaper screenshot/E2E lane; fixtures/scenarios are INITIAL SEEDS, not a parallel runtime.
+  `dev-document-store.ts` provides one versioned local document adapter over `localStorage` (with an
+  in-memory fallback): initial snapshot, same-tab optimistic echo, cross-tab `storage` snapshots and
+  reload survival. Character dev persistence keeps the production split exactly: the parent projection
+  omits `COMBAT_SESSION_KEYS`, while `combat/state` owns HP/temp/conditions/held dice/death
+  saves/initiative/round,
+  declared actions and turn economy. Campaign documents use the same generic adapter and the shared
+  `useDocumentSubscription` lifecycle; party cards, peer read-only sheets, the live encounter and the
+  character cockpit therefore observe the same local documents. Domain modules still own seed/merge
+  semantics, so this is not a second rules engine or backend. `?reset-dev=1` clears only these replicas
+  before boot and reseeds from the current fixtures; theme, locale and scenario flags remain untouched.
 
 #### The combat-state migration is COMPLETE — the subdoc is the SOLE home (golden rule 10)
 
@@ -1710,11 +2787,14 @@ lands physically outside its owner's ref: dismissing on it unmounts the menu bet
 Signet's chain inert. A portaled surface manages its own dismissal (Radix's `DismissableLayer`), so
 nesting one inside a dismissable region is now safe by construction rather than per-consumer care.
 
-### Public share links — one boolean, one rules line, zero new infrastructure
+### Public share links — private aggregate + sanitized derived projection
 
 A player shares a CHARACTER (never a campaign — see the deliberate non-goal in
-`docs/POSITIONING.md`) by flipping ONE field on the character document: `shared: true`. There is no
-share collection, no mirror copy, no token table, no expiry, no server. The model in full:
+`docs/POSITIONING.md`) by flipping the private character metadata field `shared`. That flag is the
+publication decision; the anonymously readable object is the closed
+`users/{uid}/characters/{charId}/public/sheet` projection, never the private parent. The projection is
+a disposable read model, atomically rebuilt or deleted with every parent publication change; the
+private parent + canonical `combat/state` child remain the only engine truth. The model in full:
 
 - **The secret is the path.** The link is `/view/{uid}/{charId}` — literally the document's Firestore
   address. The auto-generated doc id is the unguessable half (the same "the unguessable id IS the
@@ -1724,35 +2804,37 @@ share collection, no mirror copy, no token table, no expiry, no server. The mode
   carries BOTH ids because a Firestore document is addressed by its full path; resolving a bare
   character id would need a collection-group query, an index and a broader rules grant, all of which
   the doc-path URL makes unnecessary.
-- **The grant.** `firestore.rules` gives the character document one extra arm:
-  `allow get: if resource.data.get("shared", false) == true` — with NO auth predicate, because the
-  entire point is a viewer with no account. It is `get`, deliberately never `read`: rules are not
-  filters, so a `read` grant would also satisfy an anonymous
-  `where("shared","==",true)` LIST over a known uid, i.e. an enumeration of everything that user has
-  ever shared. The subcollections (`snapshots`, `combat/state`) keep their own auth-requiring rules,
-  so the public view reads the parent document ONLY — which is also why it shows the BUILT character
-  and never live play state.
-- **Revoke is the same field.** Flipping `shared` back to `false` denies the very next read; there is
-  no cache to invalidate and no second surface to keep in sync. Pinned by the emulator rules suite
-  (`tests/rules/firestore-rules.test.ts` → "public share links"), which drives a genuinely
-  UNAUTHENTICATED context — a second signed-in uid would prove a different rule entirely.
+- **The anonymous grant is exact-document GET only.** `firestore.rules` grants unauthenticated `get`
+  solely on the literal `public/sheet` document after checking its exact allowlisted schema and exact
+  equality to the current private parent's publishable facts and `updatedAt` generation. Anonymous
+  `list` remains impossible, and the parent, `snapshots`, `combat/state`, every other public-doc id,
+  and every unknown future field remain private. The projection contains only `schema`, `build`, the
+  SRD-free roster `cache`, lifecycle `status`, a boolean portrait marker, a normalized crop, and the
+  source generation. It contains no play state, ownership/campaign metadata, Storage URL or share
+  flag.
+- **Publication is atomic.** Creating/revoking a share, metadata edits, full parent saves and deletion
+  write the parent and set/delete the exact projection in one batch or transaction. Rules use
+  `getAfter`/`existsAfter` to reject a shared parent without its matching projection, a revoked parent
+  with a surviving projection, or a stale projection from another parent generation. Revocation
+  therefore makes the next projection read unavailable without a read-time fallback to private data.
 - **The flag is DOC metadata, never codec payload.** `shared` lives beside `status`/`portraitUrl` on
   `CharacterDoc`, outside the `{ schema, build, state }` envelope, so an export cannot publish it and
   an import cannot inherit it (pinned in `tests/unit/character-io.test.ts`). It is derived at the read
   boundary (`readDocMeta`: `data.shared === true`), so every document written before the feature reads
   as `false` with no migration. The auto-save writes only `{ character, session }`, so a sheet edit can
   never clobber the flag.
-- **Portraits already work anonymously.** `portraitUrl` is a `getDownloadURL()` token URL, which
-  bypasses `storage.rules` by construction — so `storage.rules` needs no change and gains no public
-  arm.
+- **Portraits never expose Storage bearer URLs.** A shared projection records only `hasPortrait` and
+  the crop. The sheet receives the same-origin `/og/portrait/{uid}/{charId}.jpeg` URL; `ogImage`
+  revalidates the current projection before streaming the canonical Storage object with
+  `private, no-store` and `nosniff`. Revoked, stale, malformed and missing targets are identical 404s.
 - **The view reuses everything.** `SharedCharacterView` owns only the fetch, three states, and the
   noindex; the sheet itself is the SAME `CockpitView` the owner, the DM viewer and the admin viewer
   render, loaded through `characterStore.loadReadonly` so the `readonly` flag (glass-case CSS + the
   store's write guards + the Binder's Fob self-gate) makes it read-only by construction — there is no
-  second, "public" sheet to keep in step. The flag is re-checked CLIENT-side too, so the OWNER opening
-  their own revoked link sees the same honest dead-link page a stranger gets (their owner read arm
-  would otherwise hand them the sheet). A dead link — revoked, deleted, denied, or offline — resolves
-  to ONE quiet page, never four.
+  second, "public" sheet to keep in step. `parsePublicCharacterProjection` strictly validates the
+  projection, parses the build with an empty/default play state and presents full HP; it never reads
+  the private parent or combat child. A dead link — revoked, deleted, denied, or offline — resolves to
+  ONE quiet page, never four.
 - **The owner affordance is ONE ⋯ entry and ONE popover** (owner-ratified 2026-07-31 — the
   Docs / Notion / Drive shape every reader already knows). The Binder's Fob / Signet overflow carries
   a single **Share** item, which opens `SharePopover`
@@ -1771,19 +2853,21 @@ share collection, no mirror copy, no token table, no expiry, no server. The mode
     flip. It sets `onFocusOutside` to `preventDefault` because it opens FROM a menu, whose close
     returns focus to the trigger — a focus event outside the layer that would otherwise dismiss the
     popover the instant it appeared; outside CLICK and Escape still dismiss.
-    The write mirrors the portrait-metadata precedent: persist through `updateCharacter`, THEN reflect
-    on the store, so a failed write never leaves the sheet offering a link that does not work (it
-    toasts and the switch stays put). The item and the popover live in the shared `SheetExtrasCoin`, so
-    desktop and mobile cannot drift. The campaign card's ⋯ **Share invite link** opens the SAME
+    The write crosses `setCharacterSharing`, which compares the caller's parent generation and commits
+    the complete parent + projection atomically, THEN reflects on the store; a concurrent edit or
+    failed write can never leave the sheet offering a link for a different generation (it toasts and
+    the switch stays put). The item and the popover live in the shared `SheetExtrasCoin`, so desktop
+    and mobile cannot drift. The campaign card's ⋯ **Share invite link** opens the SAME
     component WITHOUT the switch — an invite is a functional join, not a visibility state (its kill
     switch is the hub's joins lock, beside the link it disables).
 - **noindex.** The route injects `<meta name="robots" content="noindex, nofollow">` while mounted and
   removes it on unmount. A static tag in `index.html` would deindex the whole app, and there is no
   server to vary the response per route; Google renders JS and honours a tag injected this way. The
   belt to that pair of braces is that a share URL is unguessable and linked from nowhere.
-- **Cost.** An anonymous view is one billed document read — a ONE-SHOT `getFullCharacter`, never a
-  listener (a public viewer has no use for one). At this scale that is free-tier noise, and SAFE-01
-  (the £1 kill switch) is the standing backstop.
+- **Cost.** An anonymous sheet view is one billed projection read — a ONE-SHOT `getPublicCharacter`,
+  never a listener. A portrait request additionally invokes the already-bounded `ogImage` function
+  and reads the Storage object only after publication validation. At this scale that is free-tier
+  noise, and SAFE-01 is the standing backstop.
 
 ### Link previews (Open Graph) — a static baseline plus one rewrite-fronted function
 
@@ -1815,7 +2899,7 @@ per-link previews on its own — every URL would unfurl as the same card. Two ti
   Cinzel + Alegreya, fetched by exact family + `font-weight`; system fonts are disabled). A character
   card shows the portrait (a circular medallion, or a per-seed tinted initial when there is none) with
   name / total level / class(es) / AC · HP; an invite shows the campaign name + party size. Every
-  drawn number is read STRAIGHT off the roster `cache` the gate already loaded — the engine is NEVER
+  drawn number is read STRAIGHT off the sanitized projection's roster `cache` — the engine is NEVER
   re-run server-side, so a wrong stat is structurally impossible; an unstamped stat (0) is omitted, not
   guessed. The renderer sits BEHIND the same gate as the tag (below), and `tryRender` folds any
   rasterise failure to the static-card redirect. `og-meta.ts` owns the image URLs (`characterImageUrl`
@@ -1836,15 +2920,16 @@ per-link previews on its own — every URL would unfurl as the same card. Two ti
   `127.0.0.1:8080` is the function's OWN container port, so a forged loopback host would make
   `ogShell` fetch itself, each leg hanging to timeout — self-SSRF, and billed time on a zero-budget
   project.
-- **What may be exposed, and nothing else.** A character: only when its document carries
-  `shared: true`, and then only name, total level, class, AC · HP (read off the SRD-free roster
-  `cache`) and — in the rendered image only — its portrait, fetched from Storage (`users/{uid}/
-portraits/{charId}.jpeg`) ONLY for a confirmed-shared doc that records one; a shared character's
-  portrait is fair game, the same grant the sheet itself rides. A campaign: only its NAME + party
+- **What may be exposed, and nothing else.** A character: only through a current, exact
+  `public/sheet` projection, and then only name, total level, class, AC · HP (read off its SRD-free
+  `cache`) and — in the rendered image or gated portrait response only — the canonical portrait
+  object when the projection records `hasPortrait`. The private parent and its Storage bearer URL
+  never enter an anonymous response. A campaign: only its NAME + party
   size, and only for an invite code that resolves to a campaign whose joins are still open — the code
   IS the campaign's document id, the same secret the join flow already treats as the grant. The Admin
-  SDK bypasses `firestore.rules`, so BOTH `ogShell` (the tag) and `ogImage` (the picture) re-check the
-  share flag and `joinsLocked` (the DM's kill switch for a leaked link) themselves. Every other case —
+  SDK bypasses `firestore.rules`, so BOTH `ogShell` (the tag) and `ogImage` (the picture/portrait)
+  revalidate the projection against a masked current parent; campaign previews re-check `joinsLocked`
+  (the DM's kill switch for a leaked link). Every other case —
   unshared, locked, unknown, malformed, lookup failed — is served the shell UNTOUCHED
   (`injectOgTags(shell, null)` returns it byte-for-byte, the baseline generic card) and the image route
   redirects to the static per-type card, so an unshared id is not even distinguishable from a
@@ -1912,12 +2997,12 @@ offline use) load only on the route/locale that needs them.
 
 ### Enforced ceilings (baseline + headroom)
 
-| Ceiling                          | Value      | Guard constant             | Headroom                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| -------------------------------- | ---------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| entry chunk gz                   | ≤ 65 KB    | `ENTRY_CEILING_KB`         | +17% (raised 60→61 KB 2026-07-10 for the eager global keyboard-shortcut listener + the nav-anchor chrome; the SHORTCUTS row table stays in the lazy ShortcutsSheet chunk; raised 61→62 KB 2026-07-24 for the ⌘K reference palette entries — the always-mounted palette's referenceHits memo + bilingual search-term arrays + the requestPlayRef seam, eager shell code; verified NO reference DATA module went eager, entry carries only ids + i18n keys; raised 62→63 KB 2026-07-31 for the anonymous-viewer topbar chrome — the logged-out `{user ? account : sign-in}` branch the eager Topbar renders in place of the account cluster (a single "Sign in" button routing to /login, no firebase/auth import; owner-simplified from a two-button form, and the post-view conversion card removed entirely); measured 62.14; raised 63→64 KB 2026-08-02 for the combat-chronicle in-encounter resolution panel — CombatResolver + the pure combat-resolution helpers on the eager PlayTab; the Firebase apply-damage write is dynamic-imported so the eager closure chunk families are unchanged; measured 63.61)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| eager closure gz (JS + CSS)      | ≤ 794 KB   | `EAGER_CEILING_KB`         | ~+4% (raised 750→755 2026-07-10 for the compendium school-enamel palette; +1→756 2026-07-16 — the day's two ratified features, main's rules-text colour grammar + the Gilded Reliquary ornament, left the closure at 755.006, within gzip/build noise of 755 and flipping the gate; +1 KB restores deterministic headroom; +17 KB 2026-07-17 — the content-pack partition: the same EN catalogue bytes ship as public+pack chunk pairs (slightly worse per-chunk gzip) plus the composed-build overlay + @pack seam, measured 769.7; baseline still 727.1 — near budget, see frontier #1; 2026-07-24 (bestiary) held FLAT at 773 — the monster corpus is fully lazy (zero eager delta), and a specs-barrel top-level `await` that had transiently fragmented the eager closure ~14→76 chunks (+13 KB gz of chunk wrappers + lost gzip cohesion, the entry chunk alone shed 62→24 KB) was FIXED by moving the load-before-render gate to the two runtime consumers, not absorbed by a raise — measured 771.4; +3 KB 2026-07-24 (style-A ornament, rebase onto the bestiary waves): raised 773→776 for the style-A per-corner ornament CSS (~+1 KB gz) atop the bestiary-held 771.4 KB baseline, chunk shape unchanged at 14 chunks, measured 773.2, +3 KB never-exact-fit headroom — see picker/specs/index.ts + bundle-budget.guard.test.ts; +3 KB 2026-07-30 (the quickbuild wave — creation opens on a ready-made build, plus the seeded randomizer): the eager closure keeps the SAME 14 chunk families, and tracing dist for each module's own string literals puts the PUBLIC preset record in the lazy `srd-content` chunk and the applicator/yardstick/randomizer in the lazy `CreationWizard` chunk; the PACK preset record is the one exception — it enters through the `@pack` barrel that eager modules already import, so ~8 presets of bare ids ride `cockpit-engine` (prising them out would mean restructuring the barrel for ~1 KB), and the remainder is shared-module churn; measured 776.5, +2.5 KB never-exact-fit headroom; 2026-07-31 the `@pack/monsters` lazy sub-entry took the pack bestiary OFF the eager-reachable barrel — the ceiling is UNCHANGED at 779 (ratchets are not trackers) and the new measured value is **776.50** across the same 14 chunks, `cockpit-engine` 387.7 → 386.3, entry unchanged at 61.81, with the wave-1 pilot ids now absent from every eager chunk; the ~1.4 KB freed is recorded slack, and this ratchet stays the regression guard for the seam — see the closed SEAM DEBT record in `tests/unit/bundle-budget.guard.test.ts`; +3 KB 2026-08-02 (custom-monster library + monster portraits): raised 779→782 for the owner-approved monster-art feature — the SAME 14 chunk families, the growth is the eagerly-loaded Option-B plate CSS in `folio.css` (~+2.7 KB gz); the feature's JS lands in LAZY chunks (the encounter editor, the portrait panel, the crop hook), not the eager closure; measured 779.2 KB gz (JS 702.9 + CSS 76.3), +~2.8 KB never-exact-fit headroom; +4 KB 2026-08-02 (the status ledge — BG3-style status badges on the turn meter): raised 782→786 for the owner-approved status-ledge — the SAME 14 chunk families (StatusLedge rides the eager PlayTab via ThisTurnTracker; its composeStatusBadges/composeTurnLimiters are in the already-eager combat-action-view, so no new lazy chunk went statically reachable), the growth is the component code (~+3.3 KB JS) + the `.status-ledge`/`.status-badge` folio.css grammar (~+0.7 KB gz); the dead-icon trim was applied first (the icon map now imports ONLY limiter-causing conditions and drops charmed/deafened/invisible, which have no self-side turn limiter and so are never badged today) but recovered ~0 KB — per-icon gz is negligible and the eager number was byte-identical before/after, confirming the icons were never the driver; legitimate eager play-surface weight, not a leak; measured 783.2 KB gz (JS 706.2 + CSS 77.0), +~2.8 KB never-exact-fit headroom)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| PWA precache                     | ≤ 8532 KiB | `PRECACHE_CEILING_KIB`     | +7% (raised 2026-06-11 for P1-PDF lazy renderer chunk; +1 KiB 2026-07-16 for the Gilded Reliquary per-theme corner ornament, after ~45% trimming the two `--frame-ornate` SVGs; +96 KiB 2026-07-17 — Batch-4 v2 plates P12–P14, encoded WebP q75 + sharp_yuv; +3 KiB deterministic headroom, same-day correction — the 7247 raise landed exact-fit against a 7247.22 measured build and flipped on the next rebuild; +2 KiB 2026-07-17 — the wave-2 identity strike's raw growth, build 7249.1, restoring the ~3 KiB never-exact-fit floor; +10 KiB 2026-07-17 — the content-pack partition's split catalogue chunk pairs + overlay, measured 7256.6; +14 KiB 2026-07-17 — the SRD repatriation's verbatim EN+IT prose on the 22 re-sourced entries atop the dual-SRD legal attribution, measured 7270.8; +757 KiB 2026-07-24 — the Batch-4 realm scenes P15–P23: the login-light/campaign-hall drop-in swaps + the six NEW per-realm plates (compendium/roster/creation dark+light), all WebP q75 + sharp_yuv, measured 8027.2; +6 KiB 2026-07-24 same-day, post-rebase — the atmosphere branch rebased onto origin/main's RA-wave SYSTEM-audit fixes, carrying in accumulated JS chunk growth, measured 8033.79; +7 KiB 2026-07-24 — the RA-wave W2 rules content (RA-18/19/20/21/32/34 + the Hex/Hunter's Mark toggle labels): ~28 new bilingual i18n strings + the four new BASE_ACTIONS entries grew existing JS/JSON chunks — NO new precache entries (still 276) and NO new images/fonts, measured 8040.32; +245 KiB 2026-07-24 (bestiary) — the lazy monster corpus: the `srd-monsters` / composed `monsters` data chunks + the EN/IT `monsters` i18n catalogue shards, all lazy (fetched only when the codex Monsters wing / palette opens) but precached for offline-first; NOT an eager regression — the eager closure stayed 14 chunks / ~771.4 KB gz (a specs-barrel top-level `await` that had fragmented it ~14→76 chunks was fixed in the SAME commit), measured 8273.55 KiB pre-rebase on the composed lane; ceiling set 8300 after combining with the W2 raise on the rebased tree (never-exact-fit headroom re-verified on the combined composed build), the SRD-only lane smaller under the same ceiling; +73 KiB 2026-07-24 (bestiary c-d wave) — the c-d tranche's 32 statblocks grew the EN/IT `monsters` catalogue shards by the wave's bilingual trait/action prose, still LAZY (precached for offline-first) with the eager closure unchanged, measured 8362.50 KiB on the composed lane, +~10 KiB never-exact-fit headroom; +135 KiB 2026-07-24 (bestiary e-g wave) — the e-g tranche's 64 statblocks (Eagle…Guardian Naga) grew the EN/IT `monsters` catalogue shards by the wave's bilingual trait/action prose, still LAZY (precached for offline-first) with the eager closure unchanged, measured 8498.07 KiB (285 entries) on the composed lane, +~10 KiB never-exact-fit headroom; +62 KiB 2026-07-24 (bestiary h-k wave) — the h-k tranche's 26 statblocks (Half-Dragon…Kraken) grew the EN/IT `monsters` catalogue shards by the wave's bilingual trait/action prose, still LAZY (precached for offline-first) with the eager closure unchanged, measured 8568.93 KiB (285 entries) on the composed lane, +~10 KiB never-exact-fit headroom; +59 KiB 2026-07-24 (bestiary l-m wave) — the l-m tranche's 21 statblocks (Lamia…Mummy Lord) grew the EN/IT `monsters` catalogue shards by the wave's bilingual trait/action prose, still LAZY (precached for offline-first) with the eager closure unchanged, measured 8628.04 KiB (285 entries) on the composed lane, +~10 KiB never-exact-fit headroom; +64 KiB 2026-07-24 (bestiary n-p wave) — the n-p tranche's 27 statblocks (Nalfeshnee…Purple Worm) grew the EN/IT `monsters` catalogue shards by the wave's bilingual trait/action prose, still LAZY (precached for offline-first) with the eager closure unchanged, measured 8691.76 KiB (285 entries) on the composed lane, +~10 KiB never-exact-fit headroom; +117 KiB 2026-07-24 (bestiary q-s wave) — the q-s tranche's 45 statblocks (Quasit…Swarm of Venomous Snakes) grew the EN/IT `monsters` catalogue shards by the wave's bilingual trait/action prose, still LAZY (precached for offline-first) with the eager closure unchanged, measured 8808.76 KiB (285 entries) on the composed lane, +~10 KiB never-exact-fit headroom; +126 KiB 2026-07-24 (bestiary t-z wave) — the t-z tranche's 46 statblocks (Tarrasque…Young White Dragon) grew the EN/IT `monsters` catalogue shards by the wave's bilingual trait/action prose, still LAZY (precached for offline-first) with the eager closure unchanged, measured 8934.23 KiB (285 entries) on the composed lane, +~10 KiB never-exact-fit headroom; +22 KiB 2026-07-30 (visual rollback) — the restored v0.22.0 chrome CSS re-adds the raw bytes the chrome reset had trimmed (the baseline vocabulary back in dist CSS + the feature-layer appendix), measured 8956.49 KiB (294 entries) on the composed lane, +~10 KiB never-exact-fit headroom; +22 KiB 2026-07-30 (the account-level homebrew library) — the feature's own code, ALL LAZY: the Custom tab rides the cockpit chunk and the listener/store/model/IO ride a 1.1 KB gz `libraryStore` chunk behind the lazy `LibraryMount`, so the ENTRY (61.8) and EAGER closure (775.6 across the same 14 chunks) are unchanged and only the precache — which counts every chunk, eager or not — grows; measured 8978.07 KiB (296 entries) on the composed lane, +~11 KiB never-exact-fit headroom; +20 KiB 2026-07-30 (binding corners) — the four hero-frame corner-fitting SVG masks externalized to `public/assets/ornaments/` (the eager CSS sheds the inline data-URIs — eager closure back under its ceiling; the fittings precache for offline-first), measured 9009.5 KiB (300 entries) on the composed lane, +~10 KiB never-exact-fit headroom; +13 KiB 2026-07-30 (the quickbuild wave) — the preset record, the applicator, the randomizer and the wave's bilingual strings grew EXISTING lazy chunks: still 300 precache entries, no new image/font, and the eager closure unchanged at 14 chunks; measured 9022.6 KiB on the composed lane, +~10 KiB never-exact-fit headroom; +22 KiB 2026-07-30 (MM-2025 bestiary pilot, wave 1) — the pack half's first 10 statblocks EN+IT, A/B'd on ONE app SHA with only the pack varying (pre-pilot vs pilot as `content-pack` symlink targets): precache 9023.64 KiB / 300 entries → 9044.06 KiB / 301 (+20.42, +1 entry), eager 776.64 → 777.88 KB gz across the same 14 chunks, entry 61.81 → 61.82; the pre-pilot figure lands on the quickbuild line's recorded 9022.6 KiB, confirming that baseline was correct and this is a genuine growth event, so the ceiling is the measured 9044.06 +~11 KiB never-exact-fit headroom. ⚠→✅ The same A/B exposed a SEAM DEBT, CLOSED 2026-07-31: `src/data/monsters/index.ts` is lazy but composed `packMonsters` from the eager-reachable `@pack` barrel, so pack monsters were double-shipped into the EAGER `cockpit-engine` chunk. Fixed by the `@pack/monsters` lazy sub-entry (see "The content-pack seam" above); the precache is UNCHANGED at 9044.04 KiB / 301 entries — the corpus moved chunks, it was never written to disk twice — so this pilot did not re-baseline; +11 KiB 2026-07-31 (share-links wave — feat/share-links's OWN new lazy chunks the PWA precaches: SharedCharacterView, SharePopover, the two `share-*` chunks, invite-code, the anonymous /view read seam) — ON TOP of main's seam-fixed 9044.04 KiB / 301 base: 9044.04 → 9055.07 KiB / 307 entries (+11.01, +6 entries, all lazy); EAGER (776.50 KB gz) and ENTRY (61.8 KB gz) unchanged and under their ceilings — the feature added only lazy chunks; measured 9055.07 KiB (307 entries) on the composed lane, +~11 KiB never-exact-fit headroom → 9066; +449 KiB 2026-08-02 (the full pack bestiary + 5 choice-damage monsters) — the 9066 line was the wave-1 PILOT baseline (10 pack statblocks); since then the pack bestiary was authored to ~160 statblocks across a-b…t-z, but that authoring lands in the PACK repo which has NO pre-push budget gate, so the composed lazy `monsters-*` catalogue shards (one entry per tranche × locale, ~16 new entries) grew UNTRACKED here — this is the first PUBLIC composed push to surface the accumulated drift; A/B on ONE app SHA, only the pack varying: 9481.90 KiB / 323 entries (pack origin/main) → 9503.94 KiB / 323 (these 5 monsters' EN+IT prose grew the EXISTING e-g/t-z shards, +22.04 KiB / +0 entries), the bulk 9055.07 → 9481.90 (+426.83 / +16 entries) being the pre-existing pack-tranche growth — all LAZY, EAGER closure unchanged (the corpus rides the `@pack/monsters` lazy sub-entry); measured 9503.94 KiB (323 entries) on the composed lane, +~11 KiB never-exact-fit headroom → 9515. NOTE the Value column above (8219, then 8255 below) is the CURRENT post-trim ceiling: the 2026-08-02 first-load precache trim moved the 12 heavy scene plates off the precache glob to a CacheFirst runtime route (see the guard-constant comment + DESIGN.md), dropping the composed precache from ~9503 to ~8207 KiB — this running narrative's 9515 tail predates that trim; +36 KiB 2026-08-02 (custom-monster library + monster portraits): raised 8219→8255 for the owner-approved monster-art feature — the growth is the new LAZY UI chunks precached for offline-first (the custom-monster editor `encounter-custom-monsters`, the Option-B portrait plate `MonsterPortraitPanel`/`MonsterArtHeader`, the `useMonsterPortrait` crop hook, the Option-B `folio.css`), none eager (the eager closure grew only marginally — see the eager row); measured 8243.51 KiB / 313 entries on the merged (rebased) tree, +~11.5 KiB never-exact-fit headroom; +45 KiB 2026-08-02 (combat-chronicle epic): raised 8255→8300 for the owner-approved auto-narrated combat chronicle — the new LAZY campaign/sheet chunks precached for offline-first (the recorders + reconciler, the EN/IT presenter, the party-chronicle live feed, the CombatResolver resolution panel); the eager entry grew +1 KB (its row) but the eager closure chunk families are unchanged (the Firebase apply-damage write is dynamic-imported); measured 8287.80 KiB / 315 entries on the merged (rebased) tree, +~12 KiB never-exact-fit headroom; +53 KiB 2026-08-02 (canonical Living Bestiary portraits): all 503 WebPs are excluded from first install and runtime-cached on view; only the lazy hashed-URL index stays precached for offline route integrity, measured 8340.67 KiB / 315 entries, +~12 KiB headroom → 8353) |
-| per NEW eager chunk gz (ratchet) | ≤ 50 KB    | `NEW_EAGER_CHUNK_LIMIT_KB` | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Ceiling                          | Value      | Guard constant             | Headroom                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| -------------------------------- | ---------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| entry chunk gz                   | ≤ 65 KB    | `ENTRY_CEILING_KB`         | +17% (raised 60→61 KB 2026-07-10 for the eager global keyboard-shortcut listener + the nav-anchor chrome; the SHORTCUTS row table stays in the lazy ShortcutsSheet chunk; raised 61→62 KB 2026-07-24 for the ⌘K reference palette entries — the always-mounted palette's referenceHits memo + bilingual search-term arrays + the requestPlayRef seam, eager shell code; verified NO reference DATA module went eager, entry carries only ids + i18n keys; raised 62→63 KB 2026-07-31 for the anonymous-viewer topbar chrome — the logged-out `{user ? account : sign-in}` branch the eager Topbar renders in place of the account cluster (a single "Sign in" button routing to /login, no firebase/auth import; owner-simplified from a two-button form, and the post-view conversion card removed entirely); measured 62.14; raised 63→64 KB 2026-08-02 for the combat-chronicle in-encounter resolution panel — CombatResolver + the pure combat-resolution helpers on the eager PlayTab; the Firebase apply-damage write is dynamic-imported so the eager closure chunk families are unchanged; measured 63.61)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| eager closure gz (JS + CSS)      | ≤ 844 KB   | `EAGER_CEILING_KB`         | ~+16% (raised 750→755 2026-07-10 for the compendium school-enamel palette; +1→756 2026-07-16 — the day's two ratified features, main's rules-text colour grammar + the Gilded Reliquary ornament, left the closure at 755.006, within gzip/build noise of 755 and flipping the gate; +1 KB restores deterministic headroom; +17 KB 2026-07-17 — the content-pack partition: the same EN catalogue bytes ship as public+pack chunk pairs (slightly worse per-chunk gzip) plus the composed-build overlay + @pack seam, measured 769.7; baseline still 727.1 — near budget, see frontier #1; 2026-07-24 (bestiary) held FLAT at 773 — the monster corpus is fully lazy (zero eager delta), and a specs-barrel top-level `await` that had transiently fragmented the eager closure ~14→76 chunks (+13 KB gz of chunk wrappers + lost gzip cohesion, the entry chunk alone shed 62→24 KB) was FIXED by moving the load-before-render gate to the two runtime consumers, not absorbed by a raise — measured 771.4; +3 KB 2026-07-24 (style-A ornament, rebase onto the bestiary waves): raised 773→776 for the style-A per-corner ornament CSS (~+1 KB gz) atop the bestiary-held 771.4 KB baseline, chunk shape unchanged at 14 chunks, measured 773.2, +3 KB never-exact-fit headroom — see picker/specs/index.ts + bundle-budget.guard.test.ts; +3 KB 2026-07-30 (the quickbuild wave — creation opens on a ready-made build, plus the seeded randomizer): the eager closure keeps the SAME 14 chunk families, and tracing dist for each module's own string literals puts the PUBLIC preset record in the lazy `srd-content` chunk and the applicator/yardstick/randomizer in the lazy `CreationWizard` chunk; the PACK preset record is the one exception — it enters through the `@pack` barrel that eager modules already import, so ~8 presets of bare ids ride `cockpit-engine` (prising them out would mean restructuring the barrel for ~1 KB), and the remainder is shared-module churn; measured 776.5, +2.5 KB never-exact-fit headroom; 2026-07-31 the `@pack/monsters` lazy sub-entry took the pack bestiary OFF the eager-reachable barrel — the ceiling is UNCHANGED at 779 (ratchets are not trackers) and the new measured value is **776.50** across the same 14 chunks, `cockpit-engine` 387.7 → 386.3, entry unchanged at 61.81, with the wave-1 pilot ids now absent from every eager chunk; the ~1.4 KB freed is recorded slack, and this ratchet stays the regression guard for the seam — see the closed SEAM DEBT record in `tests/unit/bundle-budget.guard.test.ts`; +3 KB 2026-08-02 (custom-monster library + monster portraits): raised 779→782 for the owner-approved monster-art feature — the SAME 14 chunk families, the growth is the eagerly-loaded Option-B plate CSS in `folio.css` (~+2.7 KB gz); the feature's JS lands in LAZY chunks (the encounter editor, the portrait panel, the crop hook), not the eager closure; measured 779.2 KB gz (JS 702.9 + CSS 76.3), +~2.8 KB never-exact-fit headroom; +4 KB 2026-08-02 (the status ledge — BG3-style status badges on the turn meter): raised 782→786 for the owner-approved status-ledge — the SAME 14 chunk families (StatusLedge rides the eager PlayTab via ThisTurnTracker; its composeStatusBadges/composeTurnLimiters are in the already-eager combat-action-view, so no new lazy chunk went statically reachable), the growth is the component code (~+3.3 KB JS) + the `.status-ledge`/`.status-badge` folio.css grammar (~+0.7 KB gz); the dead-icon trim was applied first (the icon map now imports ONLY limiter-causing conditions and drops charmed/deafened/invisible, which have no self-side turn limiter and so are never badged today) but recovered ~0 KB — per-icon gz is negligible and the eager number was byte-identical before/after, confirming the icons were never the driver; legitimate eager play-surface weight, not a leak; measured 783.2 KB gz (JS 706.2 + CSS 77.0), +~2.8 KB never-exact-fit headroom)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| PWA precache                     | ≤ 9501 KiB | `PRECACHE_CEILING_KIB`     | +7% (raised 2026-06-11 for P1-PDF lazy renderer chunk; +1 KiB 2026-07-16 for the Gilded Reliquary per-theme corner ornament, after ~45% trimming the two `--frame-ornate` SVGs; +96 KiB 2026-07-17 — Batch-4 v2 plates P12–P14, encoded WebP q75 + sharp_yuv; +3 KiB deterministic headroom, same-day correction — the 7247 raise landed exact-fit against a 7247.22 measured build and flipped on the next rebuild; +2 KiB 2026-07-17 — the wave-2 identity strike's raw growth, build 7249.1, restoring the ~3 KiB never-exact-fit floor; +10 KiB 2026-07-17 — the content-pack partition's split catalogue chunk pairs + overlay, measured 7256.6; +14 KiB 2026-07-17 — the SRD repatriation's verbatim EN+IT prose on the 22 re-sourced entries atop the dual-SRD legal attribution, measured 7270.8; +757 KiB 2026-07-24 — the Batch-4 realm scenes P15–P23: the login-light/campaign-hall drop-in swaps + the six NEW per-realm plates (compendium/roster/creation dark+light), all WebP q75 + sharp_yuv, measured 8027.2; +6 KiB 2026-07-24 same-day, post-rebase — the atmosphere branch rebased onto origin/main's RA-wave SYSTEM-audit fixes, carrying in accumulated JS chunk growth, measured 8033.79; +7 KiB 2026-07-24 — the RA-wave W2 rules content (RA-18/19/20/21/32/34 + the Hex/Hunter's Mark toggle labels): ~28 new bilingual i18n strings + the four new BASE_ACTIONS entries grew existing JS/JSON chunks — NO new precache entries (still 276) and NO new images/fonts, measured 8040.32; +245 KiB 2026-07-24 (bestiary) — the lazy monster corpus: the `srd-monsters` / composed `monsters` data chunks + the EN/IT `monsters` i18n catalogue shards, all lazy (fetched only when the codex Monsters wing / palette opens) but precached for offline-first; NOT an eager regression — the eager closure stayed 14 chunks / ~771.4 KB gz (a specs-barrel top-level `await` that had fragmented it ~14→76 chunks was fixed in the SAME commit), measured 8273.55 KiB pre-rebase on the composed lane; ceiling set 8300 after combining with the W2 raise on the rebased tree (never-exact-fit headroom re-verified on the combined composed build), the SRD-only lane smaller under the same ceiling; +73 KiB 2026-07-24 (bestiary c-d wave) — the c-d tranche's 32 statblocks grew the EN/IT `monsters` catalogue shards by the wave's bilingual trait/action prose, still LAZY (precached for offline-first) with the eager closure unchanged, measured 8362.50 KiB on the composed lane, +~10 KiB never-exact-fit headroom; +135 KiB 2026-07-24 (bestiary e-g wave) — the e-g tranche's 64 statblocks (Eagle…Guardian Naga) grew the EN/IT `monsters` catalogue shards by the wave's bilingual trait/action prose, still LAZY (precached for offline-first) with the eager closure unchanged, measured 8498.07 KiB (285 entries) on the composed lane, +~10 KiB never-exact-fit headroom; +62 KiB 2026-07-24 (bestiary h-k wave) — the h-k tranche's 26 statblocks (Half-Dragon…Kraken) grew the EN/IT `monsters` catalogue shards by the wave's bilingual trait/action prose, still LAZY (precached for offline-first) with the eager closure unchanged, measured 8568.93 KiB (285 entries) on the composed lane, +~10 KiB never-exact-fit headroom; +59 KiB 2026-07-24 (bestiary l-m wave) — the l-m tranche's 21 statblocks (Lamia…Mummy Lord) grew the EN/IT `monsters` catalogue shards by the wave's bilingual trait/action prose, still LAZY (precached for offline-first) with the eager closure unchanged, measured 8628.04 KiB (285 entries) on the composed lane, +~10 KiB never-exact-fit headroom; +64 KiB 2026-07-24 (bestiary n-p wave) — the n-p tranche's 27 statblocks (Nalfeshnee…Purple Worm) grew the EN/IT `monsters` catalogue shards by the wave's bilingual trait/action prose, still LAZY (precached for offline-first) with the eager closure unchanged, measured 8691.76 KiB (285 entries) on the composed lane, +~10 KiB never-exact-fit headroom; +117 KiB 2026-07-24 (bestiary q-s wave) — the q-s tranche's 45 statblocks (Quasit…Swarm of Venomous Snakes) grew the EN/IT `monsters` catalogue shards by the wave's bilingual trait/action prose, still LAZY (precached for offline-first) with the eager closure unchanged, measured 8808.76 KiB (285 entries) on the composed lane, +~10 KiB never-exact-fit headroom; +126 KiB 2026-07-24 (bestiary t-z wave) — the t-z tranche's 46 statblocks (Tarrasque…Young White Dragon) grew the EN/IT `monsters` catalogue shards by the wave's bilingual trait/action prose, still LAZY (precached for offline-first) with the eager closure unchanged, measured 8934.23 KiB (285 entries) on the composed lane, +~10 KiB never-exact-fit headroom; +22 KiB 2026-07-30 (visual rollback) — the restored v0.22.0 chrome CSS re-adds the raw bytes the chrome reset had trimmed (the baseline vocabulary back in dist CSS + the feature-layer appendix), measured 8956.49 KiB (294 entries) on the composed lane, +~10 KiB never-exact-fit headroom; +22 KiB 2026-07-30 (the account-level homebrew library) — the feature's own code, ALL LAZY: the Custom tab rides the cockpit chunk and the listener/store/model/IO ride a 1.1 KB gz `libraryStore` chunk behind the lazy `LibraryMount`, so the ENTRY (61.8) and EAGER closure (775.6 across the same 14 chunks) are unchanged and only the precache — which counts every chunk, eager or not — grows; measured 8978.07 KiB (296 entries) on the composed lane, +~11 KiB never-exact-fit headroom; +20 KiB 2026-07-30 (binding corners) — the four hero-frame corner-fitting SVG masks externalized to `public/assets/ornaments/` (the eager CSS sheds the inline data-URIs — eager closure back under its ceiling; the fittings precache for offline-first), measured 9009.5 KiB (300 entries) on the composed lane, +~10 KiB never-exact-fit headroom; +13 KiB 2026-07-30 (the quickbuild wave) — the preset record, the applicator, the randomizer and the wave's bilingual strings grew EXISTING lazy chunks: still 300 precache entries, no new image/font, and the eager closure unchanged at 14 chunks; measured 9022.6 KiB on the composed lane, +~10 KiB never-exact-fit headroom; +22 KiB 2026-07-30 (MM-2025 bestiary pilot, wave 1) — the pack half's first 10 statblocks EN+IT, A/B'd on ONE app SHA with only the pack varying (pre-pilot vs pilot as `content-pack` symlink targets): precache 9023.64 KiB / 300 entries → 9044.06 KiB / 301 (+20.42, +1 entry), eager 776.64 → 777.88 KB gz across the same 14 chunks, entry 61.81 → 61.82; the pre-pilot figure lands on the quickbuild line's recorded 9022.6 KiB, confirming that baseline was correct and this is a genuine growth event, so the ceiling is the measured 9044.06 +~11 KiB never-exact-fit headroom. ⚠→✅ The same A/B exposed a SEAM DEBT, CLOSED 2026-07-31: `src/data/monsters/index.ts` is lazy but composed `packMonsters` from the eager-reachable `@pack` barrel, so pack monsters were double-shipped into the EAGER `cockpit-engine` chunk. Fixed by the `@pack/monsters` lazy sub-entry (see "The content-pack seam" above); the precache is UNCHANGED at 9044.04 KiB / 301 entries — the corpus moved chunks, it was never written to disk twice — so this pilot did not re-baseline; +11 KiB 2026-07-31 (share-links wave — feat/share-links's OWN new lazy chunks the PWA precaches: SharedCharacterView, SharePopover, the two `share-*` chunks, invite-code, the anonymous /view read seam) — ON TOP of main's seam-fixed 9044.04 KiB / 301 base: 9044.04 → 9055.07 KiB / 307 entries (+11.01, +6 entries, all lazy); EAGER (776.50 KB gz) and ENTRY (61.8 KB gz) unchanged and under their ceilings — the feature added only lazy chunks; measured 9055.07 KiB (307 entries) on the composed lane, +~11 KiB never-exact-fit headroom → 9066; +449 KiB 2026-08-02 (the full pack bestiary + 5 choice-damage monsters) — the 9066 line was the wave-1 PILOT baseline (10 pack statblocks); since then the pack bestiary was authored to ~160 statblocks across a-b…t-z, but that authoring lands in the PACK repo which has NO pre-push budget gate, so the composed lazy `monsters-*` catalogue shards (one entry per tranche × locale, ~16 new entries) grew UNTRACKED here — this is the first PUBLIC composed push to surface the accumulated drift; A/B on ONE app SHA, only the pack varying: 9481.90 KiB / 323 entries (pack origin/main) → 9503.94 KiB / 323 (these 5 monsters' EN+IT prose grew the EXISTING e-g/t-z shards, +22.04 KiB / +0 entries), the bulk 9055.07 → 9481.90 (+426.83 / +16 entries) being the pre-existing pack-tranche growth — all LAZY, EAGER closure unchanged (the corpus rides the `@pack/monsters` lazy sub-entry); measured 9503.94 KiB (323 entries) on the composed lane, +~11 KiB never-exact-fit headroom → 9515. NOTE the Value column above (8219, then 8255 below) is the CURRENT post-trim ceiling: the 2026-08-02 first-load precache trim moved the 12 heavy scene plates off the precache glob to a CacheFirst runtime route (see the guard-constant comment + DESIGN.md), dropping the composed precache from ~9503 to ~8207 KiB — this running narrative's 9515 tail predates that trim; +36 KiB 2026-08-02 (custom-monster library + monster portraits): raised 8219→8255 for the owner-approved monster-art feature — the growth is the new LAZY UI chunks precached for offline-first (the custom-monster editor `encounter-custom-monsters`, the Option-B portrait plate `MonsterPortraitPanel`/`MonsterArtHeader`, the `useMonsterPortrait` crop hook, the Option-B `folio.css`), none eager (the eager closure grew only marginally — see the eager row); measured 8243.51 KiB / 313 entries on the merged (rebased) tree, +~11.5 KiB never-exact-fit headroom; +45 KiB 2026-08-02 (combat-chronicle epic): raised 8255→8300 for the owner-approved auto-narrated combat chronicle — the new LAZY campaign/sheet chunks precached for offline-first (the recorders + reconciler, the EN/IT presenter, the party-chronicle live feed, the CombatResolver resolution panel); the eager entry grew +1 KB (its row) but the eager closure chunk families are unchanged (the Firebase apply-damage write is dynamic-imported); measured 8287.80 KiB / 315 entries on the merged (rebased) tree, +~12 KiB never-exact-fit headroom; +53 KiB 2026-08-02 (canonical Living Bestiary portraits): all 503 WebPs are excluded from first install and runtime-cached on view; only the lazy hashed-URL index stays precached for offline route integrity, measured 8340.67 KiB / 315 entries, +~12 KiB headroom → 8353; +4 KiB 2026-08-04 (generic active-state automation): declarative spellcasting/concentration blockers, exact undo, and durable attack-maintenance receipts grew existing JS/i18n chunks only — no new precache entries; measured 8463.90 KiB / 321 entries, +~2 KiB deterministic headroom → 8466; +6 KiB 2026-08-04 (recorded physical rolls): the generic recorded-roll tracker contract, compact editor/rail controls, portable-state codec, and bilingual labels grow existing JS/i18n chunks only — no new precache entries; measured 8475.57 KiB / 321 entries, +~3 KiB deterministic headroom → 8479; +10 KiB 2026-08-04 (target-state automation) — exact short-effect timing, target roll/healing/Speed projection, atomic one-shot consumption, portable boundary state and bilingual labels grew existing JS/i18n chunks only; measured 8485.38 KiB / 321 entries, +0 entries and +~3 KiB deterministic headroom → 8489; +8 KiB 2026-08-04 (six-fixture combat conformance) — universal unarmed strikes, semantic action prerequisites, and target-bound roll effects grew existing JS/i18n chunks only; measured 8504.83 KiB / 321 entries, +0 entries and +~3 KiB deterministic headroom → 8508; +4 KiB 2026-08-04 (condition provenance) — source-owned condition lifecycle grew existing lazy JS chunks only, measured 8508.63 KiB / 321 entries, +0 entries and +~3 KiB deterministic headroom → 8512) |
+| per NEW eager chunk gz (ratchet) | ≤ 50 KB    | `NEW_EAGER_CHUNK_LIMIT_KB` | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 The 2026-08-04 breakdown WHY layer raised the eager closure 788 → 790 KB and the precache 8390 →
 8392 KiB. Both sides were MEASURED with the guard (main `cd1f93f` built into a throwaway worktree,
@@ -1928,6 +3013,86 @@ units. It is genuine feature weight, not a structural leak: 14 eager chunk famil
 entries on BOTH sides, so nothing lazy became statically reachable and no new asset family entered
 the precache. The bytes are the 28 new `breakdown.why.*` chrome strings (the `common` bundle is eager
 by design) plus the shared `WhyProse` component and the tip's accordion.
+
+The 2026-08-04 persistent-effects wave raised only the precache ceiling 8392 → 8447 KiB after
+removing a real eager leak. A composed A/B measured origin/main at **8390.11 KiB / 321 entries**
+and this branch at **8434.77 KiB / 321 entries** (+44.66 KiB, +0 entries): the added bytes are the
+typed effect/economy reducers, cross-user transaction logic, and production-faithful local replica
+inside existing offline chunks, not a new asset family. The always-mounted Command Palette and
+eager roster previously pulled all campaign IO into the shell merely to list campaigns during an
+open palette or detach a character during deletion; both calls now import that boundary on demand.
+That correction lowers this feature build to **55.52 KB entry / 781.64 KB eager** across the same
+14 families—comfortably below the unchanged 65 / 790 ceilings—while the 8447 KiB precache ceiling
+keeps ~12 KiB non-exact-fit headroom.
+
+The 2026-08-04 reactive-hit wave raised only the precache ceiling 8447 → 8462 KiB. The composed
+build measures **8449.63 KiB / 321 entries** (+2.63 KiB, +0 entries): the generic retaliation
+resolver and typed chained-damage path grow existing combat/data chunks, with no new asset family;
+the eager budgets remain green. The new ceiling restores ~12 KiB of non-exact-fit headroom.
+
+The 2026-08-04 held-die delivery raised only the precache ceiling 8466 → 8473 KiB. The composed
+build measures **8469.84 KiB / 321 entries**: the typed target effect, peer/NPC combat projection,
+Chronicle event and bilingual target context add under 4 KiB inside existing offline chunks. No new
+entry or asset family appears, the eager budgets remain green, and the ceiling retains ~3 KiB of
+deterministic headroom.
+
+The 2026-08-04 recorded-physical-roll wave raised only the precache ceiling 8473 → 8479 KiB. The
+composed build measures **8475.57 KiB / 321 entries**: the generic tracker value contract, compact
+editor/rail controls, portable codec and bilingual labels grow existing offline chunks. No new entry
+or asset family appears, and the ceiling retains ~3 KiB of deterministic headroom.
+
+The 2026-08-04 target-state automation wave raised only the precache ceiling 8479 → 8489 KiB. The
+composed build measures **8485.38 KiB / 321 entries**: exact short-effect timing, target roll/healing/
+Speed projection, atomic one-shot consumption, portable boundary state and bilingual labels grow
+existing offline chunks. No new entry or asset family appears, and the ceiling retains ~3 KiB of
+deterministic headroom.
+
+The 2026-08-04 Rogue combat-contract wave raised only the precache ceiling 8489 → 8494 KiB. The
+composed build measures **8490.94 KiB / 321 entries**: semantic action economy, durable turn
+effects, and atomic/dependent damage riders grew the same offline JS/i18n chunks. No new entry or
+asset family appears, and the ceiling retains ~3 KiB of deterministic headroom.
+
+The 2026-08-04 Paladin combat-contract wave raised only the precache ceiling 8494 → 8500 KiB. The
+composed build measures **8496.63 KiB / 321 entries**: target-bound spell/feature state,
+recurring-save lifecycle, creature-type damage and bilingual effect labels grew existing offline
+JS/i18n chunks. No new entry or asset family appears, and the ceiling retains ~3 KiB of
+deterministic headroom.
+
+The 2026-08-04 six-fixture combat-conformance wave raised only the precache ceiling 8500 → 8508
+KiB. The composed build measures **8504.83 KiB / 321 entries**: universal unarmed strikes,
+semantic action prerequisites and target-bound roll effects grew existing offline JS/i18n chunks.
+No new entry or asset family appears, and the ceiling retains ~3 KiB of deterministic headroom.
+
+The 2026-08-04 condition-provenance wave raised only the precache ceiling 8508 → 8512 KiB after
+reducing solo state to the single-concentration invariant. The composed build measures
+**8508.63 KiB / 321 entries**: source-owned condition lifecycle grew existing lazy JS chunks only.
+No new entry or asset family appears, and the ceiling retains ~3 KiB of deterministic headroom.
+
+The Heroic-Inspiration delivery wave keeps that ceiling unchanged. Resource delivery now shares
+one typed combat-effect seam, and the PWA no longer precaches the four editable SVG launch-icon
+siblings alongside their installed PNGs. The SVGs remain hosted (including the scalable manifest
+fallback); removing only that duplicate first-install payload restores budget headroom without
+weakening offline play or raising the ratchet.
+
+The 2026-08-04 persistent-spell lifetime contract raised the precache ceiling 8512 → 8515 KiB:
+42 persistent spells gained structured fixed/upcast timers in existing JS chunks, with no new entry or
+asset family. Shared duration construction first trimmed 1.2 KiB; the composed build measured 8512.79
+KiB across the same 317 entries.
+
+The 2026-08-04 condition/effect occurrence runtime raised the eager ceiling 790 → 792 KB and the
+precache ceiling 8515 → 8527 KiB. Source-owned local effects, exact condition lifetimes, cast-level
+expiry and Rage upkeep grew only existing chunks: the composed build measured 790.32 KB gz across the
+same 14 eager chunks and 8523.14 KiB across the same 317 precache entries.
+
+The 2026-08-04 incoming-damage reaction runtime raised only the precache ceiling 8527 → 8534 KiB.
+The generic reduction transaction, durable success receipt, exact undo and bilingual resolver controls
+grew existing JS/i18n chunks to 8530.75 KiB across the same 317 entries; the eager closure stayed below
+its unchanged ceiling and the new baseline keeps about 3 KiB of deterministic-build headroom.
+
+The 2026-08-12 ordered-outcome checkpoint raised only the precache ceiling 8534 → 8545 KiB. Canonical
+multi-occurrence damage/outcome receipts grew existing JS chunks to 8541.85 KiB across the same 317
+entries; no asset or chunk family entered the precache, and the baseline retains about 3 KiB of
+deterministic-build headroom.
 
 The 2026-08-05 compendium editorial-anatomy wave raised the eager closure 790 → 794 KB after a
 same-machine A/B against its parent measured **788.01 → 791.53 KB gz (+3.52)**. Both builds keep
@@ -1946,6 +3111,19 @@ returned below their existing ratchets without changing the approved iconography
 epic legitimately grows lazy UI/CSS, bilingual copy, and visual-regression contracts: composed PWA
 precache measures **8519.13 KiB / 329 entries**, so its ceiling is **8532 KiB**, leaving 12.87 KiB
 never-exact-fit headroom. Item and monster WebPs remain runtime-cached and outside first install.
+
+The 2026-08-20 mechanics-engine convergence raised the eager closure 794 → 844 KB and the precache
+8545 → 9501 KiB — an under-recording discovered at merge time, not merge weight. An A/B on the
+epic's own head (built in isolation against its pack twin) measured **837.62 KB gz across 17 eager
+chunk families** and **9359.56 KiB / 326 precache entries**: the epic's final canonical-program
+corpus checkpoint and production-faithful dev replica had outgrown its last recorded raise
+(792 / 8545) without a re-measure, and the three new eager chunk families are the branch's own
+dev-replica/effect chunks. The convergence itself added only already-recorded weight: main's
+compendium editorial prose on the eager EN facts catalogue (+3.3 KB gz) and main's UI/UX-closure +
+item-art lazy chunks (+129 KiB, +8 entries). The merged composed build measures **840.89 KB gz**
+eager and **9488.66 KiB / 334 entries** precache; both ceilings keep deterministic never-exact-fit
+headroom (~3 KB / ~12 KiB). The eager closure is now materially over its 727.1 KB baseline —
+frontier #1 (lazy-per-route SRD) grows correspondingly more valuable.
 
 The 2026-08-03 universal-combat wave raised these three ceilings only after feature CSS was split
 behind the campaign/resolver lazy boundaries and `PROMPT_28` was re-encoded from 86 KiB to
@@ -2095,6 +3273,13 @@ banner lines), `weapon-facts-view.ts` (the **unified weapon facts VM** — `buil
 `WeaponFactsVM` rendered by the SAME shared `WeaponFacts` component on BOTH the Combat and Inventory
 tabs, so the two weapon cards are identical by construction; a mastery chip appears only for an OWNED
 mastery), and `toast-intent.ts` (the toasts-as-data localizer).
+
+Skill ability substitution also terminates at this one presenter seam. The grant aggregate carries
+locale-free `skill-ability-option` facts; `deriveSavesAndChecks` chooses the better effective modifier
+for each named active check and exposes the resulting ability + bonus together. PDF export calls the
+same pure helper, so it cannot disagree with the cockpit. Passive scores intentionally stay on the
+skill's ordinary ability because an optional ability used when making a check is not a standing passive
+replacement. No class id or localized skill name participates in the decision.
 
 **`LocText` — the engine's localizable text REFERENCE (`src/lib/loc-text.ts`).** Engine-core carries a
 display string it cannot materialize (it has no IT and must not read the active locale) as a

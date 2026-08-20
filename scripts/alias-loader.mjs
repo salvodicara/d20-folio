@@ -39,6 +39,17 @@ register(
         return abs;
       }
       export async function resolve(specifier, context, next) {
+        // (0) the Vite "@pack" alias: the sibling pack when present, else the SRD-only stub.
+        if (specifier === "@pack" || specifier.startsWith("@pack/")) {
+          const packRoot = resolvePath(SRC, "..", "content-pack");
+          const sub = specifier === "@pack" ? "" : specifier.slice("@pack".length);
+          const packTarget = withExt(packRoot + (sub === "" ? "/index" : sub));
+          if (existsSync(packTarget)) {
+            return next(pathToFileURL(packTarget).href, context);
+          }
+          const stub = withExt(SRC + "/data/pack-empty");
+          return next(pathToFileURL(stub).href, context);
+        }
         // (1) the Vite "@/" alias → <repo>/src/…
         if (specifier.startsWith("@/")) {
           const abs = withExt(SRC + "/" + specifier.slice(2));

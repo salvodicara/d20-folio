@@ -16,12 +16,14 @@
 
 import {
   addMonster,
+  applyInitiativeSwaps,
   freezeOrder,
   isDown,
   sortByInitiative,
   type MonsterInput,
   monsterInstanceName,
 } from "@/features/campaigns/encounter";
+import type { CreatureType } from "@/data/types";
 import { totalLevel } from "@/lib/classes";
 import {
   budgetVerdict,
@@ -30,11 +32,35 @@ import {
   type BudgetVerdict,
   type XpBudget,
 } from "@/lib/encounter-difficulty";
-import type { EncounterMonster, EncounterState } from "@/types/campaign";
+import type {
+  CombatDefenseSnapshot,
+  EncounterMonster,
+  EncounterState,
+} from "@/types/campaign";
 import type { ClassEntry, PortraitCrop } from "@/types/character";
 import type { RaceId } from "@/types/ids";
 import type { ConditionId } from "@/data/types";
 import type { DamageDefenses } from "@/lib/damage-intake";
+import { effectsForTarget } from "@/lib/combat-effects";
+import { projectedEncounterConditions } from "@/lib/effective-conditions";
+import type { SourceConditionImmunity } from "@/lib/grants";
+
+/** Convert encounter-owned monster defense facts into the shared damage engine shape. */
+export function monsterDamageDefenses(
+  defenses: CombatDefenseSnapshot | undefined
+): DamageDefenses | undefined {
+  return defenses
+    ? {
+        allDamageResistance: false,
+        resistances: new Set(defenses.damageResistances ?? []),
+        immunities: new Set(defenses.damageImmunities ?? []),
+        vulnerabilities: new Set(defenses.damageVulnerabilities ?? []),
+        sourceResistances: new Set(),
+        flatReductions: [],
+        saveDamageRules: [],
+      }
+    : undefined;
+}
 
 /**
  * The LIVE facts for one PC, assembled by the caller from the member's character doc
@@ -50,6 +76,9 @@ export interface PcLive {
   currentHp: number;
   tempHp: number;
   conditions: string[];
+  bardicInspirationDie?: string;
+  heroicInspiration?: boolean;
+  deathSaves?: { successes: number; failures: number };
   initiative: number | null;
   /** The engine initiative BONUS (override-first); the pip's roll widget adds the typed
    *  d20 to it. */
@@ -64,6 +93,7 @@ export interface PcLive {
   /** Effective live defenses derived through the same seam as the character sheet. */
   defenses?: DamageDefenses;
   conditionImmunities?: ReadonlySet<ConditionId>;
+  sourceConditionImmunities?: readonly SourceConditionImmunity[];
 }
 
 /** One render-ready combatant row — a flat, localized-at-the-edge view-model. PC rows
@@ -71,6 +101,8 @@ export interface PcLive {
 export interface EncounterCombatantView {
   id: string;
   kind: "pc" | "monster";
+  /** Explicit table allegiance; omission derives the canonical side from kind. */
+  side?: "ally" | "enemy";
   name: string;
   ac: number;
   initiative: number | null;
@@ -81,13 +113,16 @@ export interface EncounterCombatantView {
    *  Monster: undefined. */
   initiativeRoll?: number | null;
   conditions: string[];
-  /** PC: live current HP. Monster: summed token HP. */
+  bardicInspirationDie?: string;
+  heroicInspiration?: boolean;
+  deathSaves?: { successes: number; failures: number };
+  /** Current HP from the owning play-state document. */
   currentHp: number;
-  /** PC: effective max HP. Monster: `maxHp × tokenCount`. */
+  /** Effective maximum HP from the owning play-state document. */
   maxHp: number;
-  /** PC: live temp HP. Monster: 0 (temp HP is a PC concept). */
+  /** Current Temporary HP from the owning play-state document. */
   tempHp: number;
-  /** Fully down/defeated (PC at 0 HP; monster all tokens dead). */
+  /** Fully down/defeated at 0 current HP. */
   down: boolean;
   /** The DM-only ambush flag (always false in a non-DM view — those rows are filtered). */
   hidden: boolean;
@@ -100,11 +135,12 @@ export interface EncounterCombatantView {
   portraitCrop?: PortraitCrop | null;
   defenses?: DamageDefenses;
   conditionImmunities?: ReadonlySet<ConditionId>;
+  sourceConditionImmunities?: readonly SourceConditionImmunity[];
   /** Conditional monster defenses require an explicit table declaration. */
   qualifiedDefenseCount?: number;
   // ── Monster state (present on `kind === "monster"`) ──
   srdId?: string;
-  tokens?: number[];
+  creatureType?: CreatureType;
 }
 
 export interface EncounterView {
@@ -142,17 +178,24 @@ export function buildEncounterView(
   // the display list is filtered afterwards. Hidden is a display filter, not a turn filter.
   const allRows: EncounterCombatantView[] = [];
   for (const c of encounter.combatants) {
+    const projectedConditions = projectedEncounterConditions(
+      effectsForTarget(encounter.effectOps, c.id)
+    );
     if (c.kind === "pc") {
       const live = pcLiveById[c.id];
       allRows.push({
         id: c.id,
         kind: "pc",
+        side: "ally",
         name: live?.name ?? "",
         ac: live?.ac ?? 0,
         initiative: live?.initiative ?? null,
         initiativeBonus: live?.initiativeBonus ?? 0,
         initiativeRoll: live?.initiativeRoll ?? null,
-        conditions: live?.conditions ?? [],
+        conditions: [...new Set([...(live?.conditions ?? []), ...projectedConditions])],
+        bardicInspirationDie: live?.bardicInspirationDie,
+        heroicInspiration: live?.heroicInspiration,
+        deathSaves: live?.deathSaves,
         currentHp: live?.currentHp ?? 0,
         maxHp: live?.maxHp ?? 0,
         tempHp: live?.tempHp ?? 0,
@@ -166,34 +209,29 @@ export function buildEncounterView(
         portraitCrop: live?.portraitCrop ?? null,
         defenses: live?.defenses,
         conditionImmunities: live?.conditionImmunities,
+        sourceConditionImmunities: live?.sourceConditionImmunities,
       });
     } else {
-      const currentHp = c.tokens.reduce((sum, hp) => sum + hp, 0);
       allRows.push({
         id: c.id,
         kind: "monster",
+        side: c.side ?? "enemy",
         name: monsterInstanceName(c),
         ac: c.ac,
         initiative: c.initiative,
-        conditions: c.conditions,
-        currentHp,
-        maxHp: c.maxHp * c.tokens.length,
-        tempHp: c.tempHp ?? 0,
+        conditions: [...new Set([...c.conditions, ...projectedConditions])],
+        bardicInspirationDie: c.bardicInspirationDie,
+        heroicInspiration: c.heroicInspiration,
+        currentHp: c.hp.current,
+        maxHp: c.hp.max,
+        tempHp: c.hp.temp,
         down: isDown(c),
         hidden: c.hidden ?? false,
         srdId: c.srdId,
+        creatureType: c.creatureType,
         portraitUrl: c.portraitUrl ?? null,
         portraitCrop: c.portraitCrop ?? null,
-        tokens: c.tokens,
-        defenses: c.defenses
-          ? {
-              resistances: new Set(c.defenses.damageResistances ?? []),
-              immunities: new Set(c.defenses.damageImmunities ?? []),
-              vulnerabilities: new Set(c.defenses.damageVulnerabilities ?? []),
-              sourceResistances: new Set(),
-              flatReductions: [],
-            }
-          : undefined,
+        defenses: monsterDamageDefenses(c.defenses),
         conditionImmunities: c.defenses?.conditionImmunities
           ? new Set(
               c.defenses.conditionImmunities.flatMap((entry) =>
@@ -201,6 +239,7 @@ export function buildEncounterView(
               )
             )
           : undefined,
+        sourceConditionImmunities: [],
         qualifiedDefenseCount: c.defenses?.qualifiedDefenses?.length ?? 0,
       });
     }
@@ -217,9 +256,12 @@ export function buildEncounterView(
   // "@/features/campaigns/encounter".reorderCombatant}) is reflected immediately. A combatant
   // missing from the frozen order (a freshly-added reinforcement not yet re-slotted) is
   // appended in its live-sorted position so it is never dropped from the view.
-  const liveSorted = sortByInitiative(
-    allRows.map((r) => ({ id: r.id, initiative: r.initiative }))
-  ).map((o) => o.id);
+  const liveSorted = applyInitiativeSwaps(
+    sortByInitiative(allRows.map((r) => ({ id: r.id, initiative: r.initiative }))).map(
+      (o) => o.id
+    ),
+    encounter.initiativeSwaps
+  );
   const frozen = encounter.order;
   const orderedIds =
     frozen && frozen.length > 0
@@ -256,9 +298,9 @@ export interface EncounterBudgetView {
   pendingPcs: number;
   /** PC characters counted into the budget (resolved live docs). */
   partySize: number;
-  /** SRD Step 3: Σ (xp × token count) over the costed monster groups. */
+  /** SRD Step 3: sum of XP over costed enemy creatures. */
   costedXp: number;
-  /** Monster groups with no XP (a stat-less custom monster, a pre-feature doc) — the
+  /** Enemy creatures with no XP (a stat-less custom monster) — the
    *  readout reports these as an un-costed floor, never guesses them. */
   uncostedGroups: number;
   /** null while budget is null, pendingPcs > 0, or no monster is costed yet. */
@@ -269,15 +311,15 @@ export interface EncounterBudgetView {
  * Build the DM XP-budget view-model.
  *
  * @param encounter   the campaign-doc structure (PC references + monster state,
- *                    each monster carrying its seeded `xp` + `tokens`).
+ *                    each monster carrying its seeded `xp`).
  * @param pcLiveById  the merged live facts per PC combatant id — the PC LEVEL sum
  *                    reads `PcLive.classes` (threaded from the member's live doc by
  *                    `derivePcLive`); `undefined` classes = that PC is still pending.
  *
- * Monster groups: HIDDEN ambush monsters and DEFEATED monsters BOTH count — the
+ * Monsters: HIDDEN ambush monsters and DEFEATED monsters BOTH count — the
  * readout is a DM-only planning number that grades the encounter AS BUILT (SRD Step
- * 3), not a live "remaining threat" meter, so it stays stable mid-fight. Group count
- * is `tokens.length` (Goblin ×3 = 3 × xp).
+ * 3), not a live "remaining threat" meter, so it stays stable mid-fight. A batch of
+ * three goblins is already represented by three independently costed combatants.
  */
 export function buildBudgetView(
   encounter: EncounterState,
@@ -285,21 +327,21 @@ export function buildBudgetView(
 ): EncounterBudgetView {
   const levels: number[] = [];
   let pendingPcs = 0;
-  const monsterGroups: { xp?: number; count: number }[] = [];
+  const enemyCosts: { xp?: number; count: 1 }[] = [];
   for (const c of encounter.combatants) {
     if (c.kind === "pc") {
       const classes = pcLiveById[c.id]?.classes;
       if (classes === undefined) pendingPcs += 1;
       else levels.push(totalLevel({ classes }));
-    } else {
-      monsterGroups.push({ xp: c.xp, count: c.tokens.length });
+    } else if ((c.side ?? "enemy") === "enemy") {
+      enemyCosts.push({ xp: c.xp, count: 1 });
     }
   }
   const budget = partyXpBudget(levels);
-  const { costedXp, uncostedGroups } = encounterXpCost(monsterGroups);
-  const costedGroups = monsterGroups.length - uncostedGroups;
+  const { costedXp, uncostedGroups } = encounterXpCost(enemyCosts);
+  const costedCreatures = enemyCosts.length - uncostedGroups;
   const verdict =
-    budget !== null && pendingPcs === 0 && costedGroups > 0
+    budget !== null && pendingPcs === 0 && costedCreatures > 0
       ? budgetVerdict(costedXp, budget)
       : null;
   return {

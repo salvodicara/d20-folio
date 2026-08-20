@@ -1,104 +1,150 @@
-/**
- * Multi-spell item-casters (S9) — SHIPPED. Four magic items cast ONE OF several
- * spells from a shared charge pool, at per-spell charge cost, through the SAME
- * `free-cast-from-list` guided picker Divine Intervention / War God's Blessing use.
- * RAW-verified per-spell costs (wikidot + D&D Beyond):
- *
- *   Wand of Binding (7 ch.)  — Hold Monster 5 / Hold Person 2   ← per-spell-different cost
- *   Wand of Fear (7 ch.)     — Command 1 + Fear 3 (both real spells)  ← per-spell-different cost
- *   Ring of Animal Influence (3 ch.) — Animal Friendship / Speak with Animals, ALL 1 (uniform)
- *   Staff of Charming (10 ch.)       — Charm Person / Command / Comprehend Languages, ALL 1 (uniform)
- *
- * This pins the wired data shape (golden rule 10): each item carries its charge
- * pool + a `free-cast-from-list` grant (with `spellCosts` for the two variable-cost
- * wands) + an `always-prepared-spell` grant per pool spell (so the spells show on
- * the Spells page). The item→pool ACTION bridge + the picker cost/disable behavior
- * are pinned by `item-pool-cast-actions.test.ts` and `divine-intervention-modal.test.tsx`.
- */
 import { describe, expect, it } from "vitest";
-import { getMagicItem } from "@/data/magic-items";
+import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
+import type { Grant } from "@/lib/grants";
 import { parseMagicItemCharges } from "@/lib/magic-item-utils";
+import magicItemEn from "@/i18n/en/srd/magic-items.json";
+import spellEn from "@/i18n/en/srd/spells.json";
 
-/** The four multi-spell item-casters, by stable id (golden rule 7). */
-const MULTI_SPELL_ITEMS = [
-  "wand-of-binding",
-  "wand-of-fear",
-  "ring-of-animal-influence",
-  "staff-of-charming",
-] as const;
+function optionalItemDescription(id: string): string | undefined {
+  const row = (magicItemEn as Record<string, { description?: unknown }>)[id];
+  return typeof row?.description === "string" ? row.description : undefined;
+}
 
-/** The RAW-verified pool + per-spell costs each item carries. */
-const EXPECTED: Record<
-  (typeof MULTI_SPELL_ITEMS)[number],
-  { charges: number; spells: string[]; spellCosts?: Record<string, number> }
-> = {
-  "wand-of-binding": {
-    charges: 7,
-    spells: ["hold-monster", "hold-person"],
-    spellCosts: { "hold-monster": 5, "hold-person": 2 },
-  },
-  "wand-of-fear": {
-    charges: 7,
-    spells: ["command", "fear"],
-    spellCosts: { command: 1, fear: 3 },
-  },
-  "ring-of-animal-influence": {
-    charges: 3,
-    spells: ["animal-friendship", "speak-with-animals"],
-  },
-  "staff-of-charming": {
-    charges: 10,
-    spells: ["charm-person", "command", "comprehend-languages"],
-  },
-};
+function itemDescription(id: string): string {
+  const description = optionalItemDescription(id);
+  if (!description) throw new Error(`missing EN rules: ${id}`);
+  return description;
+}
 
-describe("multi-spell item-casters — the shared-pool cast (S9, shipped)", () => {
-  it.each(MULTI_SPELL_ITEMS)(
-    "%s carries a free-cast-from-list pool + always-prepared spells matching its RAW charges/costs",
-    (id) => {
-      const item = getMagicItem(id);
-      expect(item, `${id} must exist in the SRD catalogue`).toBeDefined();
-      if (!item) return;
-      const spec = EXPECTED[id];
-
-      // The charge pool is still modeled (the auto-prefilled tracker).
-      expect(parseMagicItemCharges(item)).toBe(spec.charges);
-
-      const grants = item.grants ?? [];
-
-      // The multi-spell pool grant.
-      const pool = grants.find((g) => g.type === "free-cast-from-list");
-      expect(pool, `${id} must carry a free-cast-from-list pool`).toBeDefined();
-      if (pool?.type !== "free-cast-from-list") return;
-      expect([...(pool.spellIds ?? [])].sort()).toEqual([...spec.spells].sort());
-      expect(pool.chargesPerRest).toBe(spec.charges);
-      // Dawn regen ⇒ modeled as a long-rest recovery cadence (never auto-refilled).
-      expect(pool.rest).toBe("long");
-      // Variable-cost wands declare `spellCosts`; uniform-1 items omit it (default 1).
-      expect(pool.spellCosts).toEqual(spec.spellCosts);
-
-      // Each pool spell is also always-prepared (surfaces on the Spells page).
-      const prepared: string[] = [];
-      for (const g of grants) {
-        if (g.type === "always-prepared-spell") prepared.push(g.spellId);
-      }
-      for (const spellId of spec.spells) {
-        expect(prepared).toContain(spellId);
+function castSpellIds(grants: ReadonlyArray<Grant>): string[] {
+  const ids = new Set<string>();
+  const visit = (entries: ReadonlyArray<Grant>): void => {
+    for (const grant of entries) {
+      if (grant.type === "free-cast-spell" || grant.type === "at-will-cast-spell") {
+        ids.add(grant.spellId);
+      } else if (grant.type === "free-cast-from-list") {
+        for (const id of grant.spellIds ?? []) ids.add(id);
+      } else if (grant.type === "choice-grant-bundle") {
+        for (const option of grant.options) visit(option.grants);
       }
     }
-  );
+  };
+  visit(grants);
+  return [...ids].sort();
+}
 
-  it("free-cast-from-list accepts an optional per-spell spellCosts map", () => {
-    // A compile-time proof the grant shape gained the field (the two variable-cost
-    // wands rely on it). Building the literal with `spellCosts` must typecheck.
-    const grant = {
-      type: "free-cast-from-list" as const,
-      spellIds: ["hold-monster", "hold-person"] as const,
-      spellCosts: { "hold-monster": 5, "hold-person": 2 },
-      chargesPerRest: 7,
-      rest: "long" as const,
-    };
-    expect(grant.spellCosts["hold-monster"]).toBe(5);
-    expect(grant.spellCosts["hold-person"]).toBe(2);
+function poolGrants(
+  grants: ReadonlyArray<Grant>
+): Array<Extract<Grant, { type: "free-cast-from-list" }>> {
+  const pools: Array<Extract<Grant, { type: "free-cast-from-list" }>> = [];
+  const visit = (entries: ReadonlyArray<Grant>): void => {
+    for (const grant of entries) {
+      if (grant.type === "free-cast-from-list") pools.push(grant);
+      if (grant.type === "choice-grant-bundle") {
+        for (const option of grant.options) visit(option.grants);
+      }
+    }
+  };
+  visit(grants);
+  return pools;
+}
+
+function spellIdsNamedIn(table: string): string[] {
+  const ids: string[] = [];
+  for (const [id, row] of Object.entries(spellEn)) {
+    if (!("name" in row) || typeof row.name !== "string") continue;
+    const shortName = row.name.replace(/^[^'’]+['’]s /, "");
+    const names = [row.name, shortName].map((name) =>
+      name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    );
+    if (names.some((name) => new RegExp(`\\b${name}\\b(?=.{0,45}\\d)`).test(table))) {
+      ids.push(id);
+    }
+  }
+  return ids.sort();
+}
+
+describe("multi-spell magic-item casts are derived from their EN rules tables", () => {
+  const tableItems = SRD_MAGIC_ITEMS.filter((item) => {
+    return optionalItemDescription(item.id)?.includes("Spell Charge Cost") === true;
+  });
+
+  it("finds the charged-spell-table family from prose", () => {
+    expect(tableItems.length).toBeGreaterThan(0);
+  });
+
+  it.each(tableItems)("$id declares every spell named by its charge table", (item) => {
+    const description = itemDescription(item.id);
+    const table = description.slice(description.indexOf("Spell Charge Cost"));
+    expect(castSpellIds(item.grants ?? []), item.id).toEqual(spellIdsNamedIn(table));
+
+    const charges = parseMagicItemCharges(item);
+    expect(charges, item.id).toBeGreaterThan(0);
+    for (const pool of poolGrants(item.grants ?? [])) {
+      if (pool.resourceCost) {
+        const resourceId = pool.resourceCost.resourceId;
+        const resource = item.resources?.find((candidate) => candidate.id === resourceId);
+        expect(resource?.capacity, item.id).toEqual({
+          kind: "fixed",
+          amount: charges,
+        });
+        expect(
+          resource?.recoveries?.some((recovery) => recovery.trigger.kind === "dawn"),
+          item.id
+        ).toBe(true);
+        expect(
+          resource?.recoveries?.some((recovery) => recovery.trigger.kind === "long-rest"),
+          item.id
+        ).toBe(false);
+        expect(pool).not.toHaveProperty("chargesPerRest");
+        expect(pool).not.toHaveProperty("rest");
+      } else {
+        expect(pool.chargesPerRest, item.id).toBe(charges);
+        expect(pool.rest, item.id).toBe("long");
+      }
+      for (const spellId of pool.spellIds ?? []) {
+        expect(
+          item.grants?.some(
+            (grant) => grant.type === "always-prepared-spell" && grant.spellId === spellId
+          ),
+          `${item.id}:${spellId}`
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("derives every Ring of Elemental Command plane spell, including 0-charge Feather Fall", () => {
+    const item = SRD_MAGIC_ITEMS.find(
+      (candidate) => candidate.id === "ring-of-elemental-command"
+    );
+    if (!item) throw new Error("missing ring-of-elemental-command");
+    const description = itemDescription(item.id);
+    const table = description.slice(description.indexOf("Plane Spells (Charges)"));
+    expect(castSpellIds(item.grants ?? [])).toEqual(spellIdsNamedIn(table));
+    expect(castSpellIds(item.grants ?? [])).toContain("feather-fall");
+    expect(parseMagicItemCharges(item)).toBe(5);
+    for (const pool of poolGrants(item.grants ?? [])) {
+      expect(pool.resourceCost).toEqual({ resourceId: "charges" });
+      expect(pool).not.toHaveProperty("chargesPerRest");
+      expect(pool).not.toHaveProperty("rest");
+    }
+    expect(item.resources).toEqual([
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 5 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: {
+              kind: "entered-roll",
+              roll: { dice: 1, sides: 4, modifier: 1 },
+            },
+          },
+        ],
+      },
+    ]);
   });
 });

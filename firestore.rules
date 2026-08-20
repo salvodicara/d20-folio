@@ -27,6 +27,52 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get("role", "") == "admin";
     }
 
+    // The anonymous share surface is a SANITIZED, derived projection — never the
+    // private character parent. Its closed schema deliberately excludes state,
+    // portraitUrl, campaign attachment/invite facts, ownership markers, and every
+    // future internal field unless this allowlist is consciously widened.
+    function isExactPublicCharacterSheet(sheet, character) {
+      return sheet is map
+        && sheet.keys().hasAll([
+          'publicSchema',
+          'schema',
+          'build',
+          'cache',
+          'status',
+          'hasPortrait',
+          'portraitCrop',
+          'sourceUpdatedAt'
+        ])
+        && sheet.keys().hasOnly([
+          'publicSchema',
+          'schema',
+          'build',
+          'cache',
+          'status',
+          'hasPortrait',
+          'portraitCrop',
+          'sourceUpdatedAt'
+        ])
+        && sheet.publicSchema == 1
+        && sheet.schema == 3
+        && character.schema == 3
+        && character.playStateVersion == 1
+        && character.state is map
+        && character.state.size() == 0
+        && sheet.build == character.build
+        && sheet.cache == character.cache
+        && sheet.status == character.status
+        && sheet.status in ['active', 'retired', 'dead', 'archived']
+        && sheet.hasPortrait
+             == (character.get('portraitUrl', '') is string
+                 && character.get('portraitUrl', '').size() > 0)
+        && sheet.portraitCrop
+             == (sheet.hasPortrait ? character.get('portraitCrop', null) : null)
+        && character.updatedAt is timestamp
+        && sheet.sourceUpdatedAt is timestamp
+        && sheet.sourceUpdatedAt == character.updatedAt;
+    }
+
     // Users collection
     // - Read own doc: only auth required (no get() loop)
     // - Create own doc: first sign-in bootstrap — but MUST NOT self-assign the
@@ -67,22 +113,21 @@ service cloud.firestore {
     // CROSS-USER ACCESS IS DERIVED LIVE — THE SINGLE SOURCE OF TRUTH IS THE CAMPAIGN
     // DOC. The character carries ONE pointer, `attachedCampaignId` (written
     // ATOMICALLY with the campaign's `memberDetails` by the attach transaction —
-    // `campaign-io.attachMemberCharacter`); the grant is "the requester is a CURRENT
-    // member of THAT campaign", read live off the campaign doc here. There is NO
+    // `campaign-io.attachMemberCharacter`); the grant is "the requester AND target
+    // owner are CURRENT members of THAT campaign, whose target roster row names this
+    // exact character", read live off the campaign doc here. There is NO
     // stored reader list to recompute or go stale (the old client-maintained
     // `dmReaders`/`campaignReaders` ACLs — whose convergence failures produced the
     // "DM access out of date" outages — are deleted). A DM transfer or roster change
     // is effective IMMEDIATELY (the next request reads the live campaign doc).
-    // WRITE stays owner-only — neither a peer nor a DM ever writes a member's
-    // character doc.
+    // Ordinary WRITE stays owner-only. The sole cross-user exception is a campaign
+    // DM clearing exactly `attachedCampaignId` in the atomic member-removal or
+    // campaign-deletion operation that makes that old claim stale.
     //
-    // PUBLIC SHARE LINKS (owner-settled 2026-07-31) — CHARACTERS ONLY. A shared
-    // character carries `shared: true`, and its URL IS its document path
-    // (`/view/{uid}/{charId}`): the auto-generated Firestore id is the unguessable
-    // secret, exactly like the campaign invite code. An ANONYMOUS visitor may then
-    // GET that one document — no account, no auth (that is the whole point: a
-    // friend off the app opens the link and reads the sheet). Revoking is flipping
-    // the flag off; the very next read is denied.
+    // PUBLIC SHARE LINKS never expose this private parent. Anonymous GET lives at
+    // the closed `public/sheet` projection below. Parent + projection are one atomic
+    // publication invariant: shared=true requires an exact projection after every
+    // write; shared=false/deletion requires its absence.
     match /users/{uid}/characters/{charId} {
       // The campaign this character claims attachment to. Only evaluated AFTER the
       // has-a-claim guard below; a dangling claim (campaign deleted) errors the
@@ -90,52 +135,156 @@ service cloud.firestore {
       function attachedCampaign() {
         return get(/databases/$(database)/documents/campaigns/$(resource.data.attachedCampaignId)).data;
       }
-      // get(...,false) so a doc WITHOUT the field (every never-shared character)
-      // reads as "not shared" instead of erroring.
-      function isPubliclyShared() {
-        return resource.data.get("shared", false) == true;
+      // A campaign roster entry is the reciprocal half of attachment. The parent
+      // pointer alone is only a claim: stale data must not keep granting the table
+      // access after this character's owner is removed or attaches another char.
+      function isCurrentCampaignAttachment() {
+        let campaign = attachedCampaign();
+        return request.auth.uid in campaign.members
+          && uid in campaign.members
+          && campaign.get('memberDetails', {}).get(uid, {})
+               .get('characterId', '') == charId;
       }
       allow read:  if (isNotBlocked() && request.auth.uid == uid)
         || isAdmin()
         || (isNotBlocked()
             && resource.data.get("attachedCampaignId", "") != ""
-            && request.auth.uid in attachedCampaign().members);
-      // Deliberately `get`, NOT `read`. Firestore rules are not filters, so a
-      // `read` grant would also satisfy a LIST — an anonymous
-      // `where("shared","==",true)` query over a known uid's collection, i.e. an
-      // enumeration surface for everything that user has ever shared. `get` grants
-      // exactly the single-document read the link needs; `list` stays
-      // owner/admin/co-member. The subcollections are NOT covered either:
-      // `snapshots` and `combat/state` keep their own owner-scoped rules below,
-      // both of which require auth — so the public view reads the parent doc ONLY
-      // (which is also why it shows the built character, never live play state).
-      allow get:   if isPubliclyShared();
-      allow write: if isNotBlocked() && request.auth.uid == uid;
+            && isCurrentCampaignAttachment());
+      function publicSheetMatchesAfter() {
+        let sheetPath = /databases/$(database)/documents/users/$(uid)/characters/$(charId)/public/sheet;
+        return (request.resource.data.get('shared', false) == true
+                && existsAfter(sheetPath)
+                && isExactPublicCharacterSheet(
+                     getAfter(sheetPath).data,
+                     request.resource.data
+                   ))
+          || (request.resource.data.get('shared', false) != true
+              && !existsAfter(sheetPath));
+      }
+      // A v1 marker may be born only when the post-write combat owner exists and
+      // carries the v1 envelope. Existing marker presence/value is otherwise
+      // immutable. This admits the atomic legacy cutover/restore transaction while
+      // denying a parent-only marker that would strand mutable state between homes.
+      function hasV1CombatOwnerAfter() {
+        return existsAfter(/databases/$(database)/documents/users/$(uid)/characters/$(charId)/combat/state)
+          && getAfter(/databases/$(database)/documents/users/$(uid)/characters/$(charId)/combat/state)
+               .data.playState is map
+          && getAfter(/databases/$(database)/documents/users/$(uid)/characters/$(charId)/combat/state)
+               .data.playState.version == 1
+          && getAfter(/databases/$(database)/documents/users/$(uid)/characters/$(charId)/combat/state)
+               .data.playState.state is map;
+      }
+      function validPlayStateVersionOnCreate() {
+        return !request.resource.data.keys().hasAny(['playStateVersion'])
+          || (request.resource.data.playStateVersion == 1
+              && hasV1CombatOwnerAfter());
+      }
+      function playStateVersionUnchanged() {
+        return request.resource.data.keys().hasAny(['playStateVersion'])
+               == resource.data.keys().hasAny(['playStateVersion'])
+          && request.resource.data.get('playStateVersion', null)
+               == resource.data.get('playStateVersion', null);
+      }
+      function validPlayStateVersionOnUpdate() {
+        return playStateVersionUnchanged()
+          || (!resource.data.keys().hasAny(['playStateVersion'])
+              && request.resource.data.playStateVersion == 1
+              && hasV1CombatOwnerAfter());
+      }
+      // The campaign DM may clear only a departing target's stale claim, and only
+      // in the SAME atomic operation that removes the target from both roster
+      // projections. Reading the old campaign proves this is a transition, not a
+      // standalone edit against an already-stale roster.
+      function isCampaignDmDetach() {
+        let changed = request.resource.data.diff(resource.data).affectedKeys();
+        let campaign = attachedCampaign();
+        return request.auth.uid != uid
+          && resource.data.get('attachedCampaignId', '') != ''
+          && campaign.dmUid == request.auth.uid
+          && uid in campaign.members
+          && campaign.get('memberDetails', {}).get(uid, {})
+               .get('characterId', '') == charId
+          && (!existsAfter(/databases/$(database)/documents/campaigns/$(resource.data.attachedCampaignId))
+              || (!(uid in getAfter(/databases/$(database)/documents/campaigns/$(resource.data.attachedCampaignId)).data.members)
+                  && !getAfter(/databases/$(database)/documents/campaigns/$(resource.data.attachedCampaignId)).data
+                       .get('memberDetails', {}).keys().hasAny([uid])))
+          && changed == ['attachedCampaignId'].toSet()
+          && !request.resource.data.keys().hasAny(['attachedCampaignId']);
+      }
+      allow create: if isNotBlocked()
+        && request.auth.uid == uid
+        && validPlayStateVersionOnCreate()
+        && publicSheetMatchesAfter();
+      allow update: if isNotBlocked()
+        && ((request.auth.uid == uid && validPlayStateVersionOnUpdate())
+            || isCampaignDmDetach())
+        && publicSheetMatchesAfter();
+      allow delete: if isNotBlocked()
+        && request.auth.uid == uid
+        && !existsAfter(/databases/$(database)/documents/users/$(uid)/characters/$(charId)/public/sheet);
     }
 
-    // Per-character combat-state subdoc — the character's OWN combat-mutable state
-    // (HP / conditions / death saves / the solo round + initiative roll) at
-    // `…/combat/state`. READ and WRITE have DIFFERENT grants (read-superset /
-    // write-subset), both DERIVED LIVE from the parent char's `attachedCampaignId`
-    // pointer + the campaign doc (same model as the char-doc read above — no stored
-    // ACL, nothing to go stale):
-    //   - READ:  the OWNER, the admin, OR any CURRENT MEMBER of the attached
-    //     campaign (every campaign peer may watch a teammate's live combat state).
-    //   - WRITE: the OWNER, the admin, OR the attached campaign's CURRENT DM
-    //     (`dmUid`) — a co-member may READ a peer's combat but NOT write it.
-    // The OR is ordered so the cheap owner check short-circuits BEFORE any get();
-    // a cross-user request costs at most two extra gets (parent char + campaign,
-    // deduped per request), well under the 10-get cap.
+    // The ONE anonymous character document. Literal `sheet` + `allow get` means no
+    // alternate public document id and no collection enumeration. Owner writes are
+    // permitted only while an atomic parent write produces the exact source snapshot
+    // this projection mirrors; revoke/delete remove both sides in the same batch.
+    match /users/{uid}/characters/{charId}/public/sheet {
+      function parentPath() {
+        return /databases/$(database)/documents/users/$(uid)/characters/$(charId);
+      }
+      function publishedParent() {
+        return get(parentPath()).data;
+      }
+      function parentChangedAfter() {
+        return existsAfter(parentPath())
+          && (!exists(parentPath())
+              || getAfter(parentPath()).data != get(parentPath()).data);
+      }
+      function exactPublishedSheet() {
+        return exists(parentPath())
+          && publishedParent().get('shared', false) == true
+          && isExactPublicCharacterSheet(resource.data, publishedParent());
+      }
+      function exactPublishedSheetAfter() {
+        return parentChangedAfter()
+          && getAfter(parentPath()).data.get('shared', false) == true
+          && isExactPublicCharacterSheet(
+               request.resource.data,
+               getAfter(parentPath()).data
+             );
+      }
+      function parentRevokedOrDeletedAfter() {
+        return exists(parentPath())
+          && (!existsAfter(parentPath())
+              || (getAfter(parentPath()).data != get(parentPath()).data
+                  && getAfter(parentPath()).data.get('shared', false) != true));
+      }
+      allow get: if exactPublishedSheet();
+      allow create, update: if isNotBlocked()
+        && request.auth.uid == uid
+        && exactPublishedSheetAfter();
+      allow delete: if isNotBlocked()
+        && request.auth.uid == uid
+        && parentRevokedOrDeletedAfter();
+    }
+
+    // Per-character combat-state subdoc. Owners/admins keep additive-field-tolerant
+    // full control: a newer client may add owner-private state without waiting for a
+    // rules deploy. A current attached peer has a different, deliberately narrow
+    // capability: apply reviewed table effects to HP, conditions, held inspiration,
+    // death saves, the concentration-save queue, or the legacy delivery receipt.
+    // Every such update advances `actionRevision` exactly once. This makes a peer
+    // write visible to the outer compare-and-swap seam while protecting playState,
+    // action history, round, recent actions, turn economy, and every future private
+    // root byte-for-byte.
     //
-    // NO shape validation, DELIBERATELY. The old field-locked isValidCombatState()
-    // (`keys().hasOnly([...])`) rejected EVERY combat write whenever the DEPLOYED
-    // rules lagged the client's payload by a single field — the "initiative never
-    // saves" production outage (new client wrote `round`; prod rules didn't allow
-    // the key yet) — and every writer here is already trusted (owner / admin / the
-    // campaign's own DM) while the client parses the doc DEFENSIVELY on read
-    // (`combat-state-io.parseCombatState`). The lock bought no real safety and
-    // carried a standing whole-feature outage class; authorization is the rule's
-    // job, shape tolerance is the client's.
+    // A legacy parent without `playStateVersion: 1` may still need its first combat
+    // document created while the target is offline. That one create is restricted to
+    // the parseable core plus the same effect roots and a neutral initiative value.
+    // Once the parent marks v1 ownership, a missing combat document fails closed.
+    // Cross-user access still derives live from the reciprocal parent attachment +
+    // campaign roster; requester removal, target removal, or a target character swap
+    // revokes it immediately.
     match /users/{uid}/characters/{charId}/combat/{stateId} {
       function parentChar() {
         return get(/databases/$(database)/documents/users/$(uid)/characters/$(charId)).data;
@@ -146,16 +295,233 @@ service cloud.firestore {
       function hasAttachedCampaign() {
         return parentChar().get("attachedCampaignId", "") != "";
       }
+      function isCurrentCampaignAttachment() {
+        let campaign = parentCampaign();
+        return request.auth.uid in campaign.members
+          && uid in campaign.members
+          && campaign.get('memberDetails', {}).get(uid, {})
+               .get('characterId', '') == charId;
+      }
+      function isAttachedPeer() {
+        return request.auth.uid != uid
+          && hasAttachedCampaign()
+          && isCurrentCampaignAttachment();
+      }
+      function validPeerEffectState(data) {
+        return data.actionRevision is int
+          && data.actionRevision >= 0
+          && data.actionRevision <= 9007199254740991
+          && data.hp is map
+          && data.hp.keys().hasOnly(['current', 'temp'])
+          && data.hp.keys().hasAll(['current', 'temp'])
+          && data.hp.current is number
+          && data.hp.current >= 0
+          && data.hp.current <= 9007199254740991
+          && data.hp.temp is number
+          && data.hp.temp >= 0
+          && data.hp.temp <= 9007199254740991
+          && data.conditions is list
+          && data.conditions.size() <= 64
+          && data.deathSaves is map
+          && data.deathSaves.keys().hasOnly(['successes', 'failures'])
+          && data.deathSaves.keys().hasAll(['successes', 'failures'])
+          && data.deathSaves.successes is int
+          && data.deathSaves.successes >= 0
+          && data.deathSaves.successes <= 3
+          && data.deathSaves.failures is int
+          && data.deathSaves.failures >= 0
+          && data.deathSaves.failures <= 3
+          && data.get('bardicInspirationDie', '') is string
+          && data.get('heroicInspiration', false) is bool
+          && (!data.keys().hasAny(['updatedAt']) || data.updatedAt is timestamp);
+      }
+      function coreConditions() {
+        return [
+            'blinded',
+            'charmed',
+            'deafened',
+            'exhaustion',
+            'frightened',
+            'grappled',
+            'incapacitated',
+            'invisible',
+            'paralyzed',
+            'petrified',
+            'poisoned',
+            'prone',
+            'restrained',
+            'stunned',
+            'unconscious'
+          ].toSet();
+      }
+      function validPeerConditions(before, after) {
+        return after is list
+          && after.size() <= 64
+          && after.size() == after.toSet().size()
+          // Only the delta must be a closed-set core condition. An unchanged
+          // preexisting custom string remains byte-preserved and cannot block a
+          // legitimate peer effect on the same list.
+          && after.toSet().difference(before.toSet()).hasOnly(coreConditions())
+          && before.toSet().difference(after.toSet()).hasOnly(coreConditions());
+      }
+      function peerEffectUpdate() {
+        let changed = request.resource.data.diff(resource.data).affectedKeys();
+        return validPeerEffectState(request.resource.data)
+          // A legacy/custom string condition remains parseable and must not block
+          // an unrelated HP delivery. If a peer changes the root, however, the new
+          // additions/removals are constrained to the closed core set Rules can
+          // validate soundly.
+          && (!changed.hasAny(['conditions'])
+              || validPeerConditions(resource.data.conditions,
+                                     request.resource.data.conditions))
+          && changed.hasOnly([
+            'hp',
+            'conditions',
+            'bardicInspirationDie',
+            'heroicInspiration',
+            'deathSaves',
+            'actionRevision',
+            'updatedAt'
+          ])
+          && changed.hasAny([
+            'hp',
+            'conditions',
+            'bardicInspirationDie',
+            'heroicInspiration',
+            'deathSaves'
+          ])
+          && request.resource.data.actionRevision
+               == resource.data.get('actionRevision', 0) + 1;
+      }
+      function actionMetadataUnchanged() {
+        // Missing and canonical-empty are parser-equivalent on legacy documents;
+        // normalizing either during the additive revision-0 write is not an action.
+        return request.resource.data.get('actionHead', null)
+               == resource.data.get('actionHead', null)
+          && request.resource.data.get('actionLifecycles', {})
+               == resource.data.get('actionLifecycles', {});
+      }
+      function validLifecycleRecord(lifecycles, key) {
+        let record = lifecycles.get(key, {});
+        return lifecycles.keys().hasAny([key])
+          && record is map
+          && record.keys().hasAll([
+            'payloadIdentity',
+            'actor',
+            'state',
+            'generation',
+            'predecessor'
+          ])
+          && record.keys().hasOnly([
+            'payloadIdentity',
+            'actor',
+            'state',
+            'generation',
+            'predecessor'
+          ])
+          && record.payloadIdentity is string
+          && record.payloadIdentity.size() > 0
+          && record.actor is map
+          && record.actor.size() > 0
+          && record.state in ['committed', 'undone']
+          && record.generation is int
+          && record.generation >= 1
+          && record.generation <= 9007199254740991
+          && (record.predecessor == null
+              || (record.predecessor is string
+                  && record.predecessor.size() > 0
+                  && record.predecessor != key));
+      }
+      function validAdvancedActionMetadata() {
+        let changed = request.resource.data.diff(resource.data).affectedKeys();
+        let head = request.resource.data.get('actionHead', null);
+        let priorHead = resource.data.get('actionHead', null);
+        let lifecycles = request.resource.data.get('actionLifecycles', {});
+        let lifecycleChanged = lifecycles
+          .diff(resource.data.get('actionLifecycles', {})).affectedKeys();
+        return changed.hasAll(['actionHead', 'actionLifecycles'])
+          && request.resource.data.keys().hasAll(['actionHead', 'actionLifecycles'])
+          && lifecycles is map
+          && lifecycles.size() > 0
+          && lifecycles.size() <= 128
+          && lifecycleChanged.size() == 1
+          && ((head is string && lifecycleChanged.hasAny([head]))
+              || (priorHead is string && lifecycleChanged.hasAny([priorHead])))
+          && (head != null || priorHead != null)
+          && (head == null
+              || (head is string
+                  && head.size() > 0
+                  && validLifecycleRecord(lifecycles, head)
+                  && lifecycles.get(head, {}).state == 'committed'
+                  ))
+          && (priorHead == null
+              || (priorHead is string
+                  && priorHead.size() > 0
+                  && validLifecycleRecord(lifecycles, priorHead)));
+      }
+      function validOwnerAdminRevisionUpdate() {
+        let beforeHas = resource.data.keys().hasAny(['actionRevision']);
+        let afterHas = request.resource.data.keys().hasAny(['actionRevision']);
+        return (beforeHas
+                && afterHas
+                && request.resource.data.actionRevision is int
+                && request.resource.data.actionRevision >= 0
+                && request.resource.data.actionRevision <= 9007199254740991
+                && ((request.resource.data.actionRevision
+                       == resource.data.actionRevision
+                      && actionMetadataUnchanged())
+                    || (request.resource.data.actionRevision
+                          == resource.data.actionRevision + 1
+                        && validAdvancedActionMetadata())))
+          || (!beforeHas
+              && afterHas
+              && request.resource.data.actionRevision == 0
+              && actionMetadataUnchanged())
+          || (!beforeHas
+              && !afterHas
+              && actionMetadataUnchanged());
+      }
+      function peerLegacyCoreCreate() {
+        let data = request.resource.data;
+        return !parentChar().keys().hasAny(['playStateVersion'])
+          && data.keys().hasAll([
+            'actionRevision',
+            'hp',
+            'conditions',
+            'initiativeRoll',
+            'deathSaves'
+          ])
+          && data.keys().hasOnly([
+            'actionRevision',
+            'hp',
+            'conditions',
+            'bardicInspirationDie',
+            'heroicInspiration',
+            'initiativeRoll',
+            'deathSaves',
+            'updatedAt'
+          ])
+          && data.actionRevision == 1
+          && data.initiativeRoll == null
+          && validPeerConditions([], data.conditions)
+          && validPeerEffectState(data);
+      }
       allow read: if isNotBlocked() && (
         request.auth.uid == uid
         || isAdmin()
-        || (hasAttachedCampaign() && request.auth.uid in parentCampaign().members)
+        || (hasAttachedCampaign() && isAttachedPeer())
       );
-      allow write: if isNotBlocked() && (
+      allow create: if isNotBlocked() && (
         request.auth.uid == uid
         || isAdmin()
-        || (hasAttachedCampaign() && request.auth.uid == parentCampaign().dmUid)
+        || (isAttachedPeer() && peerLegacyCoreCreate())
       );
+      allow update: if isNotBlocked() && (
+        ((request.auth.uid == uid || isAdmin())
+          && validOwnerAdminRevisionUpdate())
+        || (isAttachedPeer() && peerEffectUpdate())
+      );
+      allow delete: if isNotBlocked() && (request.auth.uid == uid || isAdmin());
     }
 
     // Character snapshots
@@ -247,32 +613,264 @@ service cloud.firestore {
       }
 
       // COMBAT RESOLUTION: a player who confirms a reviewed target effect AUTO-APPLIES
-      // monster damage, healing, and conditions to the shared encounter, so a
+      // monster damage, healing, conditions, and standing-effect operations to the
+      // shared encounter, so a
       // regular member's update is ALSO allowed when the encounter diff touches ONLY
-      // `combatants` (the monster HP) + `events` (the appended chronicle beats) — every
+      // `combatants` (the monster HP) + `events` (the appended chronicle beats) +
+      // `world` (the engine layer the adversary world seam persists in the SAME
+      // transaction — the resolver's monster damage/healing now commits through the
+      // deterministic engine's journal, and dropping the `world` write would strand
+      // the journal behind the mirrored legacy fields) — every
       // OTHER encounter field (round · order · currentCombatantId · status · epoch) stays
       // byte-identical, so a member can never advance/rewind the fight, freeze the order,
       // or end it through this path. The encounter must EXIST on both sides (a member
       // can't conjure or clear a fight). TWO cheap structural guards keep it scoped: the
-      // combatants COUNT is unchanged (no add/remove — a member only edits existing token
-      // HP), and the events array only GROWS (append-only — a member can never delete the
-      // DM's chronicle lines; edit/undo of a line stays DM-only, the unconstrained isDm()
-      // branch). Like `turnFieldsOnlyChanged()` this is intentionally COARSE — the rules
-      // cannot iterate the combatants array to prove ONLY a token dropped, so a member
-      // could in principle over-edit a monster's HP, which is exactly the DM-remediable,
-      // low-risk case the owner's remediability mandate covers. Same
+      // combatants COUNT is unchanged (no add/remove — a member only edits an existing
+      // HP), the events/member-delivery arrays only GROW, and every old standing-effect
+      // operation remains present in a bounded ledger (the exact inverse is another
+      // operation, never a shared-snapshot restore). Like `turnFieldsOnlyChanged()` this is intentionally COARSE — the rules
+      // cannot iterate the combatants array to prove ONLY scalar combat state changed, so a member
+      // could in principle over-edit a monster's HP or write a corrupt `world`, which is exactly the DM-remediable,
+      // low-risk case the owner's remediability mandate covers (a corrupt world FAILS
+      // CLOSED at read time — `encounterWorldState` rejects it and the boundary
+      // degrades to the legacy arithmetic; it can never freeze a live table). Same
       // diff().affectedKeys().hasOnly() construct proven in turnFieldsOnlyChanged().
       function combatEffectFieldsOnlyChanged() {
         return resource.data.get('encounter', null) != null
           && request.resource.data.get('encounter', null) != null
           && request.resource.data.encounter.diff(resource.data.encounter)
-               .affectedKeys().hasOnly(['combatants', 'events', 'memberEffects'])
+               .affectedKeys().hasOnly(['combatants', 'events', 'memberEffects', 'effectOps', 'currentCombatantId', 'round', 'world'])
           && request.resource.data.encounter.combatants.size()
                == resource.data.encounter.combatants.size()
           && request.resource.data.encounter.get('events', []).size()
                >= resource.data.encounter.get('events', []).size()
           && request.resource.data.encounter.get('memberEffects', []).size()
-               >= resource.data.encounter.get('memberEffects', []).size();
+               >= resource.data.encounter.get('memberEffects', []).size()
+          && validCombatEffectOpsChange();
+      }
+
+      function nonEmptyEffectString(value) {
+        return value is string && value.size() > 0 && value.size() <= 256;
+      }
+
+      function validCombatantRef(ref) {
+        return ref is map
+          && nonEmptyEffectString(ref.get('combatantId', ''))
+          && (
+            (ref.get('kind', '') == 'monster'
+              && ref.keys().hasOnly(['kind', 'combatantId']))
+            ||
+            (ref.get('kind', '') == 'pc'
+              && nonEmptyEffectString(ref.get('memberUid', ''))
+              && nonEmptyEffectString(ref.get('characterId', ''))
+              && ref.keys().hasOnly(['kind', 'combatantId', 'memberUid', 'characterId']))
+          );
+      }
+
+      function validEffectDuration(effectDuration) {
+        return effectDuration is map && (
+          (effectDuration.get('kind', '') == 'encounter'
+            && effectDuration.keys().hasOnly(['kind']))
+          ||
+          (effectDuration.get('kind', '') == 'concentration'
+            && nonEmptyEffectString(effectDuration.get('actorId', ''))
+            && nonEmptyEffectString(effectDuration.get('sourceId', ''))
+            && effectDuration.keys().hasOnly(['kind', 'actorId', 'sourceId']))
+          ||
+          (effectDuration.get('kind', '') == 'turn-boundary'
+            && nonEmptyEffectString(effectDuration.get('combatantId', ''))
+            && effectDuration.get('round', -1) is number
+            && effectDuration.get('phase', '') in ['turn-start', 'turn-end']
+            && effectDuration.keys().hasOnly(['kind', 'combatantId', 'round', 'phase']))
+        );
+      }
+
+      function validMemberApplyOperation(operation) {
+        let effect = operation.get('effect', {});
+        let actor = effect.get('actor', {});
+        let source = effect.get('source', {});
+        let payload = effect.get('payload', {});
+        let bindings = effect.get('bindings', null);
+        let applied = effect.get('applied', null);
+        return operation is map
+          && operation.keys().hasOnly(['id', 'kind', 'effect'])
+          && nonEmptyEffectString(operation.get('id', ''))
+          && operation.get('kind', '') == 'apply'
+          && effect is map
+          && effect.keys().hasOnly(['id', 'actor', 'target', 'source', 'payload', 'bindings', 'applied', 'duration'])
+          && nonEmptyEffectString(effect.get('id', ''))
+          && actor is map
+          && actor.get('kind', '') == 'pc'
+          && actor.get('memberUid', '') == request.auth.uid
+          && actor.get('combatantId', '') == 'pc-' + request.auth.uid
+          && validCombatantRef(actor)
+          && validCombatantRef(effect.get('target', {}))
+          && source is map
+          && source.get('kind', '') in ['spell', 'feature']
+          && nonEmptyEffectString(source.get('id', ''))
+          && nonEmptyEffectString(source.get('actionId', ''))
+          && source.keys().hasOnly(['kind', 'id', 'actionId', 'castLevel'])
+          && payload is map
+          && (
+            (source.get('kind', '') == 'spell'
+              && payload.get('kind', '') == 'grant-group'
+              && nonEmptyEffectString(payload.get('activeKey', ''))
+              && payload.get('phase', 'active') in ['active', 'aftereffect']
+              && payload.keys().hasOnly(['kind', 'activeKey', 'phase']))
+            ||
+            (payload.get('kind', '') == 'target-mark'
+              && nonEmptyEffectString(payload.get('activeKey', ''))
+              && payload.get('scope', '') in ['marked', 'cursed', 'vowed']
+              && payload.keys().hasOnly(['kind', 'activeKey', 'scope']))
+            ||
+            (payload.get('kind', '') == 'condition'
+              && nonEmptyEffectString(payload.get('conditionId', ''))
+              && payload.keys().hasOnly(['kind', 'conditionId']))
+          )
+          && (bindings == null
+            || (bindings is map
+              && bindings.keys().hasOnly(['spellcastingModifier'])
+              && bindings.get('spellcastingModifier', 0) is number))
+          && (applied == null
+            || (applied is map
+              && applied.keys().hasOnly(['currentHpDelta'])
+              && applied.get('currentHpDelta', 0) is number
+              && applied.get('currentHpDelta', 0) >= -10000
+              && applied.get('currentHpDelta', 0) <= 10000))
+          && validEffectDuration(effect.get('duration', {}));
+      }
+
+      function validMemberRevokeOperation(operation) {
+        return operation is map
+          && operation.keys().hasOnly(['id', 'kind', 'effectId', 'actorId', 'targetId'])
+          && nonEmptyEffectString(operation.get('id', ''))
+          && operation.get('kind', '') == 'revoke'
+          && nonEmptyEffectString(operation.get('effectId', ''))
+          && nonEmptyEffectString(operation.get('actorId', ''))
+          && nonEmptyEffectString(operation.get('targetId', ''));
+      }
+
+      function validMemberEffectOperation(operation) {
+        return validMemberApplyOperation(operation) || validMemberRevokeOperation(operation);
+      }
+
+      function validMemberBulkRevokeOperation(operation) {
+        return operation is map
+          && operation.keys().hasOnly(['id', 'kind', 'effectId', 'actorId', 'targetId'])
+          && operation.get('kind', '') == 'revoke'
+          && operation.get('id', null) is string
+          && operation.get('effectId', null) is string
+          && operation.get('actorId', null) is string
+          && operation.get('targetId', null) is string;
+      }
+
+      // An end-state lifecycle pair is always `revoke + data-derived successor`. Keep
+      // this narrow validator below Firestore Rules' 1000-expression ceiling; the
+      // tolerant client boundary still drops malformed nested catalogue references.
+      function validLifecycleSuccessorOperation(operation) {
+        let effect = operation.get('effect', {});
+        let source = effect.get('source', {});
+        let payload = effect.get('payload', {});
+        return operation is map
+          && operation.keys().hasOnly(['id', 'kind', 'effect'])
+          && operation.get('kind', '') == 'apply'
+          && nonEmptyEffectString(operation.get('id', ''))
+          && effect is map
+          && nonEmptyEffectString(effect.get('id', ''))
+          && validCombatantRef(effect.get('actor', {}))
+          && validCombatantRef(effect.get('target', {}))
+          && source is map
+          && source.get('kind', '') == 'spell'
+          && nonEmptyEffectString(source.get('id', ''))
+          && payload is map
+          && payload.get('kind', '') == 'grant-group'
+          && payload.get('phase', '') == 'aftereffect'
+          && validEffectDuration(effect.get('duration', {}));
+      }
+
+      // One reviewed multi-target action can consume several one-shot protections
+      // (for example, multiple Death Wards) in the SAME atomic campaign update. Those
+      // batches contain revokes only; support the resolver's bounded target fan-out
+      // without weakening apply provenance or allowing arbitrary operation payloads.
+      function validMemberRevokeBatch(after, before, start, added) {
+        return (
+            added == 2
+            && after.removeAll([after[start], after[start + 1]]) == before
+            && validMemberBulkRevokeOperation(after[start])
+            && validMemberBulkRevokeOperation(after[start + 1])
+          ) || (
+            added == 3
+            && after.removeAll([after[start], after[start + 1], after[start + 2]]) == before
+            && validMemberBulkRevokeOperation(after[start])
+            && validMemberBulkRevokeOperation(after[start + 1])
+            && validMemberBulkRevokeOperation(after[start + 2])
+          ) || (
+            added == 4
+            && after.removeAll([after[start], after[start + 1], after[start + 2], after[start + 3]]) == before
+            && validMemberBulkRevokeOperation(after[start])
+            && validMemberBulkRevokeOperation(after[start + 1])
+            && validMemberBulkRevokeOperation(after[start + 2])
+            && validMemberBulkRevokeOperation(after[start + 3])
+          ) || (
+            added == 5
+            && after.removeAll([after[start], after[start + 1], after[start + 2], after[start + 3], after[start + 4]]) == before
+            && validMemberBulkRevokeOperation(after[start])
+            && validMemberBulkRevokeOperation(after[start + 1])
+            && validMemberBulkRevokeOperation(after[start + 2])
+            && validMemberBulkRevokeOperation(after[start + 3])
+            && validMemberBulkRevokeOperation(after[start + 4])
+          ) || (
+            added == 6
+            && after.removeAll([after[start], after[start + 1], after[start + 2], after[start + 3], after[start + 4], after[start + 5]]) == before
+            && validMemberBulkRevokeOperation(after[start])
+            && validMemberBulkRevokeOperation(after[start + 1])
+            && validMemberBulkRevokeOperation(after[start + 2])
+            && validMemberBulkRevokeOperation(after[start + 3])
+            && validMemberBulkRevokeOperation(after[start + 4])
+            && validMemberBulkRevokeOperation(after[start + 5])
+          ) || (
+            added == 7
+            && after.removeAll([after[start], after[start + 1], after[start + 2], after[start + 3], after[start + 4], after[start + 5], after[start + 6]]) == before
+            && validMemberBulkRevokeOperation(after[start])
+            && validMemberBulkRevokeOperation(after[start + 1])
+            && validMemberBulkRevokeOperation(after[start + 2])
+            && validMemberBulkRevokeOperation(after[start + 3])
+            && validMemberBulkRevokeOperation(after[start + 4])
+            && validMemberBulkRevokeOperation(after[start + 5])
+            && validMemberBulkRevokeOperation(after[start + 6])
+          ) || (
+            added == 8
+            && after.removeAll([after[start], after[start + 1], after[start + 2], after[start + 3], after[start + 4], after[start + 5], after[start + 6], after[start + 7]]) == before
+            && validMemberBulkRevokeOperation(after[start])
+            && validMemberBulkRevokeOperation(after[start + 1])
+            && validMemberBulkRevokeOperation(after[start + 2])
+            && validMemberBulkRevokeOperation(after[start + 3])
+            && validMemberBulkRevokeOperation(after[start + 4])
+            && validMemberBulkRevokeOperation(after[start + 5])
+            && validMemberBulkRevokeOperation(after[start + 6])
+            && validMemberBulkRevokeOperation(after[start + 7])
+          );
+      }
+
+      function validCombatEffectOpsChange() {
+        let before = resource.data.encounter.get('effectOps', []);
+        let after = request.resource.data.encounter.get('effectOps', []);
+        let added = after.size() - before.size();
+        let start = before.size();
+        return after is list
+          && before is list
+          && after.size() <= 512
+          && (
+            (added == 0 && after == before)
+            || (added == 1
+              && after.removeAll([after[start]]) == before
+              && validMemberEffectOperation(after[start]))
+            || (added == 2
+              && after.removeAll([after[start], after[start + 1]]) == before
+              && validMemberRevokeOperation(after[start])
+              && validLifecycleSuccessorOperation(after[start + 1]))
+            || validMemberRevokeBatch(after, before, start, added)
+          );
       }
 
       // INIT-SSOT — the `encounterInit` initiative table (`uid → raw d20 roll`, the
@@ -289,6 +887,15 @@ service cloud.firestore {
       function encounterInitOwnEntryOnly() {
         return request.resource.data.get('encounterInit', {})
           .diff(resource.data.get('encounterInit', {}))
+          .affectedKeys().hasOnly([request.auth.uid]);
+      }
+
+      // ENCOUNTER PARTICIPATION — a member may opt only themselves out/in while
+      // gathering. The DM/admin branch below may mark absent players when beginning
+      // turns. Per-key map diffs compose and reset atomically with each encounter.
+      function encounterSkippedOwnEntryOnly() {
+        return request.resource.data.get('encounterSkipped', {})
+          .diff(resource.data.get('encounterSkipped', {}))
           .affectedKeys().hasOnly([request.auth.uid]);
       }
 
@@ -325,6 +932,8 @@ service cloud.firestore {
           && request.resource.data.status == resource.data.status
           && request.resource.data.get('joinsLocked', false)
                == resource.data.get('joinsLocked', false)
+          && request.resource.data.get('encounterSkipped', {})
+               == resource.data.get('encounterSkipped', {})
           && request.resource.data.name == resource.data.name;
       }
 
@@ -348,7 +957,7 @@ service cloud.firestore {
       // own member entry; the DM manages the roster + the encounter tracker; the
       // admin may write any DM-tool field; a non-member may self-join. Only the DM
       // may delete the campaign.
-      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged() || combatEffectFieldsOnlyChanged()) && encounterInitOwnEntryOnly() && joinsLockedUnchanged())
+      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged() || combatEffectFieldsOnlyChanged()) && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged())
         || isDm()
         || isAdmin()
         || isSelfJoin();

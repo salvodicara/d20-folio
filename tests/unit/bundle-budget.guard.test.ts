@@ -131,13 +131,25 @@ const ENTRY_CEILING_KB = 65; // baseline 53.7 → +17% (2026-07-10: +1 for the g
 // the active locale) plus the shared `WhyProse` component and the tip's
 // accordion. Structurally clean: the SAME 14 eager chunk families on both sides,
 // so no lazy chunk became statically reachable. → ~1.3 KB headroom.
+// 2026-08-04: raised 790 → 792 for the condition/effect occurrence runtime and
+// hidden spell-lifecycle expiry. Measured 790.32 KB gz across the SAME 14 eager
+// chunks; +~1.7 KB deterministic headroom, with no new eager family.
 // 2026-08-05: raised 790 → 794 for the owner-approved compendium editorial
 // anatomy. A same-machine A/B against parent 93646e6 measured 788.01 → 791.53
 // KB gz (+3.52): the SAME 14 eager chunk families, so no lazy boundary leaked.
 // The weight is the previously-empty equipment descriptions in the statically
 // resident EN facts catalogue plus the shared tag / rules-prose reading grammar
 // and 0.11 KB CSS. 794 leaves ~2.5 KB deterministic headroom without exact-fit.
-const EAGER_CEILING_KB = 794; // baseline 727.1 → ~+9% (near budget — see ARCHITECTURE P3 frontier #1)
+// 2026-08-20 (mechanics-engine convergence): raised 794 → 844. The engine epic's
+// final corpus commits (the canonical spell/effect programs + the production-
+// faithful dev replica) had outgrown the branch's last recorded raise without a
+// re-measure: the branch head ALONE builds 837.62 KB gz across 17 eager chunk
+// families (the three new families are the branch's own dev-replica/effect
+// chunks — measured on the branch head in isolation, so NOT a merge leak), and
+// the convergence adds only main's already-recorded compendium editorial weight
+// (+3.3 KB). Merged build measured 840.89 KB gz (JS 761.6 + CSS 79.3); 844
+// leaves ~3 KB deterministic never-exact-fit headroom.
+const EAGER_CEILING_KB = 844; // baseline 727.1 → ~+16% (over budget — see ARCHITECTURE P3 frontier #1)
 // 2026-06-11: raised from 6480 → 7150 for the lazy PDF-export renderer chunk
 // (character-pdf-*.js, ~428 KB raw / ~178 KB gz). The chunk is LAZY (loaded only
 // on demand from the PDF export flow) and correctly precached for offline-first.
@@ -383,6 +395,54 @@ const EAGER_CEILING_KB = 794; // baseline 727.1 → ~+9% (near budget — see AR
 // raw (≈ the +2.90 KB gz the eager closure grew by). Entry count unchanged and no
 // new asset family entered the precache — it is the WHY layer's own bytes. (The
 // 8376.51 figure recorded on 2026-08-03 drifted +0.62 KiB on main since.)
+// 2026-08-04 (persistent encounter effects + production-faithful dev replica): raised
+// 8392 → 8447 only after removing campaign IO from the eager shell. A composed A/B
+// measured origin/main at 8390.11 KiB / 321 entries and this branch at 8434.77 KiB /
+// 321 entries (+44.66 KiB, +0 entries): typed effect/economy reducers, cross-user
+// transaction logic, and the local replica grow existing offline chunks, not an asset
+// family. The Command Palette and roster delete path now dynamically import campaign IO,
+// dropping the feature build to 55.52 KB entry / 781.64 KB eager across the same 14
+// families; +~12 KiB never-exact-fit precache headroom → 8447.
+// 2026-08-04 (reactive-hit automation): raised 8447 → 8462 after the generic
+// damage-retaliation resolver grew existing combat/data chunks. Measured 8449.63
+// KiB / 321 entries: +2.63 KiB, +0 entries, no new asset family; +~12 KiB
+// never-exact-fit headroom → 8462.
+// 2026-08-04 (held-die delivery): raised 8466 → 8473 after the typed target effect,
+// peer-combat transaction projection, Chronicle event, and bilingual target context grew
+// existing JS/i18n chunks to 8469.84 KiB / 321 entries. No new entry or asset family;
+// +~3 KiB deterministic headroom.
+// 2026-08-04 (recorded physical rolls): raised 8473 → 8479 after the generic
+// recorded-roll tracker contract, compact editor/rail controls, portable-state codec,
+// and bilingual labels grew existing JS/i18n chunks to 8475.57 KiB / 321 entries.
+// No new entry or asset family; +~3 KiB deterministic headroom.
+// 2026-08-04 (target-state automation): raised 8479 → 8489 after exact short-effect
+// timing, target roll/healing/Speed projection, atomic one-shot consumption, codec state,
+// and bilingual labels grew existing JS/i18n chunks to 8485.38 KiB / 321 entries.
+// No new entry or asset family; +~3 KiB deterministic headroom.
+// 2026-08-04 (Rogue combat contract): raised 8489 → 8494 after semantic action
+// economy, durable turn effects, and atomic/dependent damage riders grew the same
+// existing JS/i18n chunks to 8490.94 KiB / 321 entries. No new entry or asset family;
+// +~3 KiB deterministic headroom.
+// 2026-08-04 (Paladin combat contract): raised 8494 → 8500 after target-bound
+// feature/spell effects, recurring-save lifecycle, creature-type damage and their
+// bilingual labels grew the same chunks to 8496.63 KiB / 321 entries. No new entry
+// or asset family; +~3 KiB deterministic headroom.
+// 2026-08-04 (six-fixture combat conformance): raised 8500 → 8508 after universal
+// unarmed strikes, semantic action prerequisites, and target-bound roll effects grew
+// the same chunks to 8504.83 KiB / 321 entries. No new entry or asset family;
+// +~3 KiB deterministic headroom.
+// 2026-08-04 (condition provenance): raised 8508 → 8512 after source-owned
+// condition lifecycle grew existing lazy JS chunks to 8508.63 KiB / 321 entries.
+// No new entry or asset family; +~3 KiB deterministic headroom.
+// 2026-08-04 (persistent spell lifetimes): raised 8512 → 8515 after 42 persistent
+// spells gained structured timers/upcast tiers in existing JS chunks. Shared duration
+// construction trimmed 1.2 KiB first; measured 8512.79 KiB / 317 entries, +0 entries.
+// 2026-08-04 (incoming-damage reactions): raised 8527 → 8534 after the generic
+// reduction transaction and durable success receipt grew existing chunks to
+// 8530.75 KiB / the same 317 entries; +~3 KiB deterministic headroom.
+// 2026-08-12 (ordered outcome occurrences): raised 8534 → 8545 after the
+// canonical multi-occurrence damage/outcome receipt contract grew only existing
+// JS chunks to 8541.85 KiB / the same 317 entries; +~3 KiB build headroom.
 // 2026-08-04 (Compendium item-art pilot): raised 8392 → 8420. The 84.1 KiB of
 // Longsword + Ring WebPs are NOT in the manifest (dedicated CacheFirst runtime
 // family); the measured composed precache is 8407.30 KiB / 322 entries. The
@@ -396,7 +456,13 @@ const EAGER_CEILING_KB = 794; // baseline 727.1 → ~+9% (near budget — see AR
 // entry + eager closure are back below their existing ceilings. The remaining
 // measured 8519.13 KiB / 329 entries is genuine lazy UI/CSS + bilingual contract
 // weight from the completed epic; +12.87 KiB preserves never-exact-fit headroom.
-const PRECACHE_CEILING_KIB = 8532;
+// 2026-08-20 (mechanics-engine convergence): raised 8545 → 9501. Same finding as
+// the eager raise: the branch head alone measures 9359.56 KiB / 326 entries
+// (its canonical-program corpus checkpoint was never re-measured), and the
+// convergence adds main's recorded UI/UX-closure + item-art lazy weight
+// (+129 KiB, +8 entries). Merged composed build measured 9488.66 KiB / 334
+// entries; +~12 KiB never-exact-fit headroom → 9501.
+const PRECACHE_CEILING_KIB = 9501;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

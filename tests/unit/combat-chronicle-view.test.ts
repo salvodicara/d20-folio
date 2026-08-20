@@ -57,6 +57,13 @@ const SAMPLES: Record<CombatChronicleEventKind, CombatChronicleEvent> = {
     current: 9,
     max: 22,
   },
+  stabilized: {
+    ...base,
+    kind: "stabilized",
+    targetId: "pc-mara",
+    actorId: "pc-ivo",
+    action: { lit: { en: "Healer's Kit", it: "Kit da guaritore" } },
+  },
   down: { ...base, kind: "down", targetId: "monster-1" },
   "attack-miss": {
     ...base,
@@ -97,6 +104,14 @@ const SAMPLES: Record<CombatChronicleEventKind, CombatChronicleEvent> = {
     targetId: "pc-mara",
     conditionId: "frightened",
   },
+  "resource-grant": {
+    ...base,
+    kind: "resource-grant",
+    targetId: "pc-mara",
+    resource: "bardic-inspiration-die",
+    value: "d6",
+    actorId: "pc-catalion",
+  },
 };
 
 describe("localizeChronicleEvent — every kind routes to a distinct non-empty line", () => {
@@ -118,6 +133,18 @@ describe("localizeChronicleEvent — every kind routes to a distinct non-empty l
       attackerId: "pc-mara",
     };
     expect(localize(attributed)).toContain("combatChronicle.damageBy");
+  });
+
+  it("uses the Heroic Inspiration line for that resource grant", () => {
+    expect(
+      localize({
+        ...base,
+        kind: "resource-grant",
+        targetId: "pc-mara",
+        resource: "heroic-inspiration",
+        actorId: "pc-catalion",
+      })
+    ).toContain("combatChronicle.heroicInspirationGrant");
   });
 
   it("a player-declared miss uses missBy with the attacker + target", () => {

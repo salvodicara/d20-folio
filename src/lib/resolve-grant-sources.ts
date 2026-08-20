@@ -20,6 +20,7 @@ import type {
   SrdSpellRef,
   CustomSpell,
   ClassEntry,
+  ItemResourceState,
 } from "@/types/character";
 import { getSrdFeatureSource, srdRefForFeatureSource } from "@/lib/srd-feature-lookup";
 import { attunementSatisfied } from "@/lib/attunement";
@@ -33,7 +34,9 @@ import { findBackground } from "@/data/backgrounds";
 import { getClassTable } from "@/data/classes";
 import type { ToolChoiceContext } from "@/data/background-equipment";
 import { toolEnNameById, umbrellaToolChoiceOptions } from "@/lib/tool-names";
-import type { SrdRaceTrait } from "@/data/types";
+import type { SrdRaceTrait, SrdSpellData } from "@/data/types";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
+import { isValidItemInstanceId } from "@/lib/resources";
 
 const INVOCATION_BY_ID = new Map(SRD_INVOCATIONS.map((inv) => [inv.id, inv]));
 const MANEUVER_BY_ID = new Map(SRD_MANEUVERS.map((m) => [m.id, m]));
@@ -165,7 +168,8 @@ export function resolveGrantSourcesForFeatures(
  * Custom equipment carries no SRD grants and is skipped.
  */
 export function resolveGrantSourcesForEquipment(
-  equipment: ReadonlyArray<SrdEquipmentRef | CustomEquipment>
+  equipment: ReadonlyArray<SrdEquipmentRef | CustomEquipment>,
+  itemResources?: Readonly<Record<string, ItemResourceState>>
 ): GrantSource[] {
   const sources: GrantSource[] = [];
   for (const e of equipment) {
@@ -174,10 +178,21 @@ export function resolveGrantSourcesForEquipment(
     if (!attunementSatisfied(e)) continue; // attunement-required, not yet attuned
     const item = getMagicItem(e.srdId);
     if (!item?.grants?.length) continue;
+    const instanceId = isValidItemInstanceId(e.instanceId) ? e.instanceId : undefined;
+    const itemState = instanceId ? itemResources?.[instanceId] : undefined;
+    if (
+      itemState &&
+      (itemState.itemId !== item.id ||
+        itemState.instanceId !== instanceId ||
+        itemState.disposition !== "magical")
+    ) {
+      continue;
+    }
     sources.push({
-      id: item.id,
+      id: instanceId ? `magic-item:${instanceId}` : item.id,
       grants: item.grants,
       ref: { kind: "magic-item", key: item.id },
+      ...(instanceId ? { item: { itemId: item.id, instanceId } } : {}),
     });
   }
   return sources;
@@ -189,17 +204,40 @@ export function resolveGrantSourcesForEquipment(
  * duration (Mage Armor's AC formula, Fly's Fly Speed, Stoneskin's resistances,
  * Foresight's advantage, …) carries those facts as `while-active` grants on
  * its `SrdSpellData.grants`. A PREPARED (or always-prepared) spell whose data
- * carries grants becomes a source, which lands its toggle in
+ * carries a caster-side active state becomes a source, which lands its toggle in
  * `activatableGroups` — the SAME ActivatableFeaturesBar/`session.activeFeatures`
- * seam items like Boots of Speed already use. Default off → casting is still
- * the player's act; flipping the toggle applies the standing effect for the
- * duration (override-first; the engine never tracks the clock).
+ * seam items like Boots of Speed already use. Duration-only wrappers stay out of
+ * the rail: their lifecycle belongs to the effect occurrence / Concentration.
+ * Default off → casting is still the player's act; flipping the toggle applies
+ * the standing effect for the duration. The lifecycle engine tracks declared
+ * durations separately, including wrappers that deliberately stay out of this
+ * user-facing resolver.
  *
  * Cast-time effects (damage/heal/single saves) stay on the structured spell
  * fields the cast model consumes — NOT duplicated here (spell discipline (b)).
  */
 export function resolveGrantSourcesForSpells(
   spells: ReadonlyArray<SrdSpellRef | CustomSpell>
+): GrantSource[] {
+  return resolveSpellGrantSources(spells, (spell) =>
+    spell.grants?.filter((grant) => spellGrantSurfacesActiveControl(spell, grant))
+  );
+}
+
+/** Engine-only spell wrappers whose active keys own a deterministic lifetime.
+ * Kept separate from the user-facing resolver so a duration-only spell can arm
+ * and expire its timer without becoming a redundant feature-rail toggle. */
+export function resolveGrantSourcesForSpellLifecycles(
+  spells: ReadonlyArray<SrdSpellRef | CustomSpell>
+): GrantSource[] {
+  return resolveSpellGrantSources(spells, (spell) =>
+    spell.grants?.filter((grant) => grant.type === "while-active")
+  );
+}
+
+function resolveSpellGrantSources(
+  spells: ReadonlyArray<SrdSpellRef | CustomSpell>,
+  selectGrants: (spell: SrdSpellData) => ReadonlyArray<Grant> | undefined
 ): GrantSource[] {
   const sources: GrantSource[] = [];
   const seen = new Set<string>();
@@ -209,11 +247,104 @@ export function resolveGrantSourcesForSpells(
     if (seen.has(s.srdId)) continue;
     const spell = getSpellById(s.srdId);
     if (!spell?.grants?.length) continue;
+    const selectedGrants = selectGrants(spell);
+    if (!selectedGrants?.length) continue;
     seen.add(s.srdId);
     sources.push({
       id: spell.id,
-      grants: spell.grants,
+      grants: selectedGrants,
       ref: { kind: "spell", key: spell.id },
+    });
+  }
+  return sources;
+}
+
+/**
+ * A `while-active` wrapper can own either a user-facing mechanical state or an
+ * engine-only lifetime. Only the former belongs in the feature rail. Empty
+ * concentration wrappers still receive a hidden `session.activeFeatures` key so
+ * their maximum duration can expire deterministically; they simply do not become
+ * redundant user controls. A non-Concentration recurring effect (Searing Smite)
+ * surfaces because its durable key owns the follow-up lifecycle.
+ */
+export function spellGrantSurfacesActiveControl(
+  spell: SrdSpellData,
+  grant: Grant
+): grant is WhileActiveGrant {
+  if (grant.type !== "while-active") return false;
+  if (grant.grants.length > 0) return true;
+  return (
+    !spell.concentration &&
+    grant.recipient !== "selected" &&
+    (spell.recurrence !== undefined || spell.followUp !== undefined)
+  );
+}
+
+export type WhileActiveGrant = Extract<Grant, { type: "while-active" }>;
+
+/** Resolve one persistent instance to its catalogue-owned standing rule. */
+export function resolveCombatEffectGrantGroup(
+  effect: ActiveCombatEffect
+): WhileActiveGrant | null {
+  if (effect.source.kind !== "spell" || effect.payload.kind !== "grant-group")
+    return null;
+  const spell = getSpellById(effect.source.id);
+  const activeKey = effect.payload.activeKey;
+  return (
+    spell?.grants?.find(
+      (grant): grant is WhileActiveGrant =>
+        grant.type === "while-active" && grant.activeKey === activeKey
+    ) ?? null
+  );
+}
+
+/** Inner grants active for this instance phase. Target marks carry identity only. */
+export function resolveCombatEffectGrants(
+  effect: ActiveCombatEffect
+): ReadonlyArray<Grant> {
+  if (effect.payload.kind !== "grant-group") return [];
+  const group = resolveCombatEffectGrantGroup(effect);
+  if (!group) return [];
+  return effect.payload.phase === "aftereffect"
+    ? (group.afterEffect?.grants ?? [])
+    : group.grants;
+}
+
+/**
+ * Resolve campaign-owned target effects back to their catalogue grant group.
+ * The registry stores only stable references, so a rules/data correction updates
+ * every live projection without copying or migrating Grant payloads.
+ */
+export function resolveCombatEffectGrantSources(
+  effects: ReadonlyArray<ActiveCombatEffect> | undefined
+): GrantSource[] {
+  const sources: GrantSource[] = [];
+  const seen = new Set<string>();
+  for (const effect of effects ?? []) {
+    if (effect.payload.kind !== "grant-group") continue;
+    const phase = effect.payload.phase ?? "active";
+    const key = `${effect.source.kind}:${effect.source.id}:${effect.payload.activeKey}:${phase}`;
+    if (seen.has(key)) continue;
+    const spell = getSpellById(effect.source.id);
+    const group = resolveCombatEffectGrantGroup(effect);
+    if (!spell || !group) continue;
+    const grants = resolveCombatEffectGrants(effect);
+    if (grants.length === 0) continue;
+    seen.add(key);
+    sources.push({
+      id: `combat-effect:${effect.id}`,
+      // A persisted effect is already active by definition. Project its inner
+      // grants directly instead of replaying the catalogue's `while-active`
+      // wrapper: lighting that shared key would also activate a prepared copy
+      // of the same spell on the recipient and apply the bonus twice.
+      grants,
+      ref: { kind: "spell", key: spell.id },
+      runtime: {
+        ...(effect.source.castLevel !== undefined
+          ? { castLevel: effect.source.castLevel }
+          : {}),
+        ...(effect.bindings ? { bindings: effect.bindings } : {}),
+      },
     });
   }
   return sources;
@@ -521,18 +652,21 @@ export function resolveGrantSourcesForToolChoices(
  * non-Warlocks / non-Battle-Masters / background-less or legacy docs pass
  * nothing — they contribute no extra grants.
  */
-export function resolveAllGrantSources(character: {
-  race?: string;
-  features: ReadonlyArray<SrdFeatureRef | CustomFeature>;
-  equipment: ReadonlyArray<SrdEquipmentRef | CustomEquipment>;
-  /** PROSE sweep — prepared buff spells with standing while-active grants. */
-  spells?: ReadonlyArray<SrdSpellRef | CustomSpell>;
-  /** R4 — class-scoped picks live on each entry; flattened across all of them. */
-  classes?: ReadonlyArray<ClassEntry>;
-  background?: string;
-  /** Tool-CHOICE picks (slot id → chosen tool ids) — derived into proficiencies. */
-  toolChoices?: Record<string, ReadonlyArray<string>>;
-}): GrantSource[] {
+export function resolveAllGrantSources(
+  character: {
+    race?: string;
+    features: ReadonlyArray<SrdFeatureRef | CustomFeature>;
+    equipment: ReadonlyArray<SrdEquipmentRef | CustomEquipment>;
+    /** PROSE sweep — prepared buff spells with standing while-active grants. */
+    spells?: ReadonlyArray<SrdSpellRef | CustomSpell>;
+    /** R4 — class-scoped picks live on each entry; flattened across all of them. */
+    classes?: ReadonlyArray<ClassEntry>;
+    background?: string;
+    /** Tool-CHOICE picks (slot id → chosen tool ids) — derived into proficiencies. */
+    toolChoices?: Record<string, ReadonlyArray<string>>;
+  },
+  itemResources?: Readonly<Record<string, ItemResourceState>>
+): GrantSource[] {
   // The creation wizard stores species traits in `features[]`, but this assembler
   // ALSO resolves them from `character.race` via `resolveGrantSourcesForRace`.
   // Counting both would DOUBLE every species grant. So the race path is the single
@@ -550,7 +684,7 @@ export function resolveAllGrantSources(character: {
   return [
     ...resolveGrantSourcesForRace(character.race),
     ...resolveGrantSourcesForFeatures(nonRaceFeatures),
-    ...resolveGrantSourcesForEquipment(character.equipment),
+    ...resolveGrantSourcesForEquipment(character.equipment, itemResources),
     ...resolveGrantSourcesForSpells(character.spells ?? []),
     ...resolveGrantSourcesForInvocations(invocations),
     ...resolveGrantSourcesForManeuvers(maneuvers),

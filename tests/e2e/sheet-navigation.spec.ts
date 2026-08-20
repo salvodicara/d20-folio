@@ -99,4 +99,35 @@ test.describe("Sheet Navigation", () => {
     await expect(page).toHaveURL(/\/characters$/);
     await expect(page.getByText("Lyra Voss").first()).toBeVisible();
   });
+
+  test("dev bypass preserves committed resources across route remounts and reloads", async ({
+    page,
+  }) => {
+    // Explicit reseed gives this regression a deterministic 2/4 L1 baseline without
+    // clearing locale/theme/scenario flags used by the wider visual harness.
+    await page.goto("/characters/mock-1?reset-dev=1");
+    await expect(page).not.toHaveURL(/reset-dev/);
+    const before = page.getByRole("group", { name: "2 of 4 level-1 slots available" });
+    await expect(before).toBeVisible();
+    await before
+      .getByRole("button", { name: "Spend a level-1 spell slot" })
+      .first()
+      .evaluate((button: HTMLButtonElement) => button.click());
+    await expect(
+      page.getByRole("group", { name: "1 of 4 level-1 slots available" })
+    ).toBeVisible();
+
+    // Both are full document reloads, not SPA state retention. The old fixture-only
+    // bypass reset the resource to 2/4 here while production Firestore retained 1/4.
+    await page.goto("/campaigns/DEVCAMPAIGN24");
+    await expect(page.getByText("The Starless Keep").first()).toBeVisible();
+    await page.goto("/characters/mock-1");
+    await expect(
+      page.getByRole("group", { name: "1 of 4 level-1 slots available" })
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByRole("group", { name: "1 of 4 level-1 slots available" })
+    ).toBeVisible();
+  });
 });

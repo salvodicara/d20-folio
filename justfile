@@ -19,9 +19,11 @@ setup:
 dev:
     pnpm dev --open
 
-# Start dev server with Firebase emulators
+# Start the complete seeded local sandbox (Auth + Firestore + Storage + Functions).
+# One process owns the emulator lifecycle, seeds deterministic users/campaign data,
+# starts Vite, and shuts everything down together on Ctrl-C.
 dev-emulators:
-    pnpm dev:emulators --open
+    pnpm dev:emulators
 
 # Preview production build locally
 preview: build

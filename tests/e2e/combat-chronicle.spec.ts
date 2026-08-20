@@ -244,7 +244,7 @@ test.describe("Combat Chronicle — the sheet CombatResolver banner", () => {
  *  `combat/state` rings. Keyed by member uid; the reconcile fuses them with the DM's
  *  live-booked HP below. Target ids + rounds are chosen so each (target, round) has ONE
  *  claimant (clean, un-ambiguous lines). Monster ids match the begun dev encounter:
- *  monster-1 Goblin (×3 tokens), monster-2 Goblin Chief, monster-3 Shadow. */
+ *  monster-1 Goblin (the aggregate Goblin row), monster-2 Goblin Chief, monster-3 Shadow. */
 const DEV_DECLARATIONS = {
   "member-mara": [
     // R2 — a weapon swing that also knocks Prone (a Topple-mastery rider).

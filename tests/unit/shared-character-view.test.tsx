@@ -14,14 +14,16 @@ import { MemoryRouter, Routes, Route } from "react-router";
 import i18n from "@/i18n";
 import type { CharacterDoc } from "@/types/character";
 
-const { getFullCharacterMock, navigateMock, loadReadonlyMock } = vi.hoisted(() => ({
-  getFullCharacterMock: vi.fn<(uid: string, charId: string) => Promise<unknown>>(),
+const { getPublicCharacterMock, navigateMock, loadReadonlyMock } = vi.hoisted(() => ({
+  getPublicCharacterMock: vi.fn<(uid: string, charId: string) => Promise<unknown>>(),
   navigateMock: vi.fn(),
   loadReadonlyMock: vi.fn(),
 }));
 
 vi.mock("@/lib/firebase", () => ({ db: {} }));
-vi.mock("@/lib/firestore", () => ({ getFullCharacter: getFullCharacterMock }));
+vi.mock("@/lib/firestore", () => ({
+  getPublicCharacter: getPublicCharacterMock,
+}));
 // Exercise the PRODUCTION path: the dev-bypass branch is a preview seam, not the
 // behaviour that ships.
 vi.mock("@/lib/dev-bypass", () => ({ DEV_BYPASS_AUTH: false }));
@@ -41,9 +43,9 @@ vi.mock("react-router", async () => {
 
 import { SharedCharacterView } from "@/features/character/SharedCharacterView";
 
-/** The only fields this route reads off the doc; the body is stubbed. */
-function doc(shared: boolean): CharacterDoc {
-  return { id: "c1", shared } as CharacterDoc;
+/** The projection parser guarantees a shared read-only document. */
+function doc(): CharacterDoc {
+  return { id: "c1", shared: true } as CharacterDoc;
 }
 
 function renderAt(uid: string, charId: string) {
@@ -60,7 +62,7 @@ const robotsTag = () => document.head.querySelector('meta[name="robots"]');
 
 describe("SharedCharacterView", () => {
   beforeEach(() => {
-    getFullCharacterMock.mockReset();
+    getPublicCharacterMock.mockReset();
     navigateMock.mockReset();
     loadReadonlyMock.mockReset();
   });
@@ -78,7 +80,7 @@ describe("SharedCharacterView", () => {
     await act(async () => {
       await i18n.changeLanguage("it");
     });
-    getFullCharacterMock.mockResolvedValue(doc(false));
+    getPublicCharacterMock.mockResolvedValue(null);
     renderAt("owner-1", "char-1");
     expect(
       await screen.findByText("Questo personaggio non è più condiviso")
@@ -89,28 +91,26 @@ describe("SharedCharacterView", () => {
   });
 
   it("renders the read-only sheet for a shared character", async () => {
-    getFullCharacterMock.mockResolvedValue(doc(true));
+    getPublicCharacterMock.mockResolvedValue(doc());
     renderAt("owner-1", "char-1");
     expect(await screen.findByTestId("cockpit")).toBeInTheDocument();
     // Loaded READ-ONLY — the flag every mutating affordance self-gates on.
-    expect(loadReadonlyMock).toHaveBeenCalledWith(doc(true));
-    expect(getFullCharacterMock).toHaveBeenCalledWith("owner-1", "char-1");
+    expect(loadReadonlyMock).toHaveBeenCalledWith(doc());
+    expect(getPublicCharacterMock).toHaveBeenCalledWith("owner-1", "char-1");
   });
 
-  it("shows the quiet dead-link page when the character is not shared", async () => {
-    // The OWNER's own read arm still returns the document, so the client re-check is
-    // what makes an owner opening their revoked link see what a stranger sees.
-    getFullCharacterMock.mockResolvedValue(doc(false));
+  it("shows the quiet dead-link page after the projection is revoked", async () => {
+    getPublicCharacterMock.mockResolvedValue(null);
     renderAt("owner-1", "char-1");
     expect(
       await screen.findByText("This character is no longer shared")
     ).toBeInTheDocument();
     expect(screen.queryByTestId("cockpit")).not.toBeInTheDocument();
-    expect(loadReadonlyMock).not.toHaveBeenCalledWith(doc(false));
+    expect(loadReadonlyMock).not.toHaveBeenCalled();
   });
 
   it("shows the same page for a deleted character and for a DENIED read", async () => {
-    getFullCharacterMock.mockResolvedValue(null);
+    getPublicCharacterMock.mockResolvedValue(null);
     renderAt("owner-1", "gone");
     expect(
       await screen.findByText("This character is no longer shared")
@@ -118,7 +118,7 @@ describe("SharedCharacterView", () => {
 
     // A revoked link REJECTS with a permission error — the expected outcome for a
     // dead link, never an unhandled crash or a stuck spinner.
-    getFullCharacterMock.mockRejectedValue(new Error("permission-denied"));
+    getPublicCharacterMock.mockRejectedValue(new Error("permission-denied"));
     renderAt("owner-1", "revoked");
     await waitFor(() => {
       expect(screen.getAllByText("This character is no longer shared")).toHaveLength(2);
@@ -126,7 +126,7 @@ describe("SharedCharacterView", () => {
   });
 
   it("holds a loading state until the fetch settles (never a flash of dead-link)", () => {
-    getFullCharacterMock.mockReturnValue(new Promise(() => {}));
+    getPublicCharacterMock.mockReturnValue(new Promise(() => {}));
     renderAt("owner-1", "char-1");
     expect(screen.queryByText("This character is no longer shared")).toBeNull();
     expect(screen.queryByTestId("cockpit")).toBeNull();
@@ -134,7 +134,7 @@ describe("SharedCharacterView", () => {
 
   it("marks the page noindex while mounted and removes the tag on unmount", async () => {
     expect(robotsTag()).toBeNull();
-    getFullCharacterMock.mockResolvedValue(doc(true));
+    getPublicCharacterMock.mockResolvedValue(doc());
     const { unmount } = renderAt("owner-1", "char-1");
     await screen.findByTestId("cockpit");
     expect(robotsTag()?.getAttribute("content")).toBe("noindex, nofollow");
@@ -143,7 +143,7 @@ describe("SharedCharacterView", () => {
   });
 
   it("clears the stranger's character out of the store on unmount", async () => {
-    getFullCharacterMock.mockResolvedValue(doc(true));
+    getPublicCharacterMock.mockResolvedValue(doc());
     const { unmount } = renderAt("owner-1", "char-1");
     await screen.findByTestId("cockpit");
     unmount();

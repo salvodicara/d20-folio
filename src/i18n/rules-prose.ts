@@ -16,7 +16,7 @@
  * variants list the extra full forms beyond the catalogue name.
  */
 
-import type { DamageType } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 import type { Locale } from "@/lib/locale";
 
 export interface RulesProseVocab {

@@ -145,6 +145,31 @@ describe("codec — byte-identity round-trip", () => {
     // No portrait → no meta key.
     expect(JSON.parse(serializeCharacter(MOCK_CHARACTER))).not.toHaveProperty("meta");
   });
+
+  it("never serializes Firestore play-state ownership metadata", () => {
+    const env = JSON.parse(
+      serializeCharacter({ ...MOCK_CHARACTER, playStateVersion: 1 })
+    ) as Record<string, unknown>;
+    expect(env).not.toHaveProperty("playStateVersion");
+    expect(env.state).not.toHaveProperty("playStateVersion");
+  });
+
+  it("round-trips the session defense overlay through the shared compact codec", () => {
+    const doc: CharacterDoc = {
+      ...MOCK_CHARACTER,
+      session: {
+        ...MOCK_CHARACTER.session,
+        sessionDefenses: {
+          resistance: ["fire"],
+          conditionImmunity: ["frightened"],
+        },
+      },
+    };
+    const res = parseCharacter(serializeCharacter(doc));
+    expect(res.success).toBe(true);
+    if (!res.success) return;
+    expect(res.doc.session.sessionDefenses).toEqual(doc.session.sessionDefenses);
+  });
 });
 
 describe("codec — schema-3 is the ONLY supported format (no upgrade-on-read)", () => {
@@ -528,9 +553,13 @@ describe("codec — state restoration", () => {
         hp: { current: 31, temp: 5 },
         currency: { pp: 1, gp: 27, ep: 0, sp: 4, cp: 0 },
         conditions: ["poisoned"],
+        concentrationConditions: ["paralyzed"],
         exhaustion: 2,
         spellSlots: { "1": { used: 2 }, "2": { used: 0 } },
-        trackers: { "bard-bardic-inspiration": { used: 1 } },
+        trackers: {
+          "bard-bardic-inspiration": { used: 1 },
+          "wizard-diviner-portent": { used: 0, rolls: [17, null] },
+        },
         concentration: conc("hold-monster"),
         inspiration: true,
         logEntries: [
@@ -555,10 +584,15 @@ describe("codec — state restoration", () => {
     expect(s.hp.temp).toBe(5);
     expect(s.currency).toEqual({ pp: 1, gp: 27, ep: 0, sp: 4, cp: 0 });
     expect(s.conditions).toEqual(["poisoned"]);
+    expect(s.concentrationConditions).toEqual(["paralyzed"]);
     expect(s.exhaustion).toBe(2);
     expect(s.spellSlots["1"]).toEqual({ used: 2 });
     expect(s.spellSlots["2"]).toBeUndefined(); // spent 0 → omitted, re-defaults absent
     expect(s.trackers["bard-bardic-inspiration"]).toEqual({ used: 1 });
+    expect(s.trackers["wizard-diviner-portent"]).toEqual({
+      used: 0,
+      rolls: [17, null],
+    });
     expect(s.concentration).toBe(conc("hold-monster"));
     expect(s.inspiration).toBe(true);
     expect(s.logEntries[0]).toMatchObject({
@@ -595,6 +629,24 @@ describe("codec — state restoration", () => {
     // Byte-identical round-trip.
     const x = canonical(doc);
     expect(serializeCharacter(lift(parseCharacter(x)))).toBe(x);
+  });
+
+  it("round-trips exact active-state turn boundaries", () => {
+    const doc: CharacterDoc = {
+      ...MOCK_CHARACTER,
+      session: {
+        ...MOCK_CHARACTER.session,
+        activeFeatures: ["spell-shield"],
+        effectBoundaries: {
+          "spell-shield": { round: 4, phase: "turn-start" },
+        },
+      },
+    };
+    const restored = lift(parseCharacter(serializeCharacter(doc)));
+    expect(restored.session.effectBoundaries).toEqual({
+      "spell-shield": { round: 4, phase: "turn-start" },
+    });
+    expect(serializeCharacter(restored)).toBe(serializeCharacter(doc));
   });
 
   it("round-trips persistent spell cast levels for later deterministic uses", () => {

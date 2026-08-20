@@ -21,10 +21,13 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useCombatStore } from "@/stores/combatStore";
 import {
+  snapshotTurnEconomy,
   syncCombatFromSession,
   syncCombatTurnContext,
 } from "@/features/character/center/combat-hydration";
 import type { GlobalCombat } from "@/features/campaigns/global-combat-context";
+import type { CombatState } from "@/types/combat-state";
+import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 
 function encounter(round: number, isMyTurn = true): GlobalCombat {
   return {
@@ -41,14 +44,30 @@ function encounter(round: number, isMyTurn = true): GlobalCombat {
   };
 }
 
+const receipt = (occurrenceId: string, actionId: string): CombatOutcomeReceipt => ({
+  id: `${occurrenceId}:0`,
+  occurrenceId,
+  actionId,
+  instance: 0,
+  count: 1,
+  target: { combatantId: "monster-1" },
+  fact: { kind: "attack", result: "hit" },
+});
+
 /**
  * Thin wrapper around the real policy, so each `arrive` reads like one Firestore snapshot.
  * The bound character id lives in combatStore itself: unlike a provider ref it survives
  * a route remount. `round` is hydrated from the `combat/state` subdoc.
  */
 function makeArriver() {
-  return function arrive(id: string, round: number, init: string): boolean {
-    return syncCombatFromSession(id, round, init);
+  return function arrive(
+    id: string,
+    round: number,
+    init: string,
+    turnEconomy?: CombatState["turnEconomy"],
+    currentTurnKey?: string
+  ): boolean {
+    return syncCombatFromSession(id, round, init, turnEconomy, currentTurnKey);
   };
 }
 
@@ -165,6 +184,74 @@ describe("Combat sync — async character arrival", () => {
     expect(arrive("char-1", 7, "")).toBe(true);
     expect(useCombatStore.getState().round).toBe(7);
     expect(useCombatStore.getState().initiative).toBe("");
+  });
+
+  it("restores spent actions, maintenance events, reaction, and movement", () => {
+    const key = "encounter:camp:9:3:pc-member";
+    useCombatStore.getState().selectAction(
+      {
+        id: "vicious-mockery",
+        name: "Vicious Mockery",
+        nameLoc: { custom: "Vicious Mockery" },
+        slot: "action",
+        triggerEvents: ["attack"],
+        outcomeOccurrenceId: "mockery-1",
+      },
+      [receipt("mockery-1", "vicious-mockery")]
+    );
+    useCombatStore.getState().selectAction({
+      id: "barbarian-rage-extend",
+      name: "Extend Rage",
+      nameLoc: { custom: "Extend Rage" },
+      slot: "bonus",
+      triggerEvents: ["bonus-extend"],
+    });
+    useCombatStore
+      .getState()
+      .useReaction("cutting-words", "reaction-1", [
+        receipt("reaction-1", "cutting-words"),
+      ]);
+    useCombatStore.getState().setMovementUsed(15);
+    useCombatStore.getState().grantNextAttackAdvantage();
+    useCombatStore.getState().lockMovement();
+    const persisted = snapshotTurnEconomy(useCombatStore.getState(), key);
+    useCombatStore.getState().endCombat();
+
+    const arrive = makeArriver();
+    arrive("char-1", 1, "", persisted, key);
+    const restored = useCombatStore.getState();
+    expect(restored.selected.action.map((action) => action.id)).toEqual([
+      "vicious-mockery",
+    ]);
+    expect(restored.selected.action[0]?.triggerEvents).toEqual(["attack"]);
+    expect(restored.selected.action[0]?.outcomeOccurrenceId).toBe("mockery-1");
+    expect(restored.selected.bonus[0]?.triggerEvents).toEqual(["bonus-extend"]);
+    expect(restored.reactionUsedId).toBe("cutting-words");
+    expect(restored.reactionOutcomeOccurrenceId).toBe("reaction-1");
+    expect(restored.outcomeReceipts).toHaveLength(2);
+    expect(restored.movementUsedFt).toBe(15);
+    expect(restored.nextAttackAdvantage).toBe(true);
+    expect(restored.movementLocked).toBe(true);
+  });
+
+  it("never restores a spent action into a different turn pointer", () => {
+    const persisted = {
+      ...snapshotTurnEconomy(useCombatStore.getState(), "encounter:camp:9:3:pc-member"),
+      selected: {
+        action: [
+          {
+            id: "attack",
+            name: { custom: "Attack" },
+            slot: "action" as const,
+          },
+        ],
+        bonus: [],
+        free: [],
+      },
+    };
+    const arrive = makeArriver();
+    arrive("char-1", 1, "", persisted, "encounter:camp:9:3:monster-1");
+    expect(useCombatStore.getState().selected.action).toEqual([]);
   });
 });
 

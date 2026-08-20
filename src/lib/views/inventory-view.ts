@@ -26,8 +26,9 @@
  *    carries stable ids / structured fields / numbers for those; only SRD CONTENT
  *    (name / description) and the weapon property/category strings are pre-localized.
  *  - No icon resolution: seals are React glyphs (component layer). The VM carries
- *    the stable identity (`id` / `isCustom` / `magicItemType`) the section needs to
- *    pick a seal via `weaponSealIcon` / `equipmentSealIconById` / `magicItemSealIcon`.
+ *    the catalogue identity (`id` / `isCustom` / `magicItemType`) the section needs
+ *    to pick a seal via `weaponSealIcon` / `equipmentSealIconById` /
+ *    `magicItemSealIcon`; the separate `rowId` is UI-state identity only.
  *
  * The result is a STABLE set of row VMs keyed on the character/locale — search runs
  * on top of them in the orchestrator without recreating any VM, so the memo'd cards
@@ -43,7 +44,8 @@ import type {
   SrdWeaponRef,
   CustomWeapon,
 } from "@/types/character";
-import type { AbilityCode, CurrencyUnit, DamageType, MagicItemType } from "@/data/types";
+import type { AbilityCode, CurrencyUnit, MagicItemType } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 import type { ProficiencyToken } from "@/types/ids";
 import { WEAPONS_BY_ID } from "@/data/weapons";
 import { GEAR_BY_ID } from "@/data/gear";
@@ -78,7 +80,7 @@ import {
   featureClassRow,
   attackStatWhy,
   weaponDieWhy,
-  freeCastItemChargeMax,
+  magicItemChargeMax,
   masteryNumbers,
 } from "@/lib/smart-tracker";
 import { breakdownTotal } from "@/lib/value-breakdown";
@@ -96,6 +98,10 @@ import { appendAbilityModToDice } from "@/lib/utils";
 import { buildWeaponFacts, type WeaponFactsVM } from "@/lib/views/weapon-facts-view";
 import { resolveItemConsumable } from "@/lib/srd-resolve";
 import { localizeSrd, localizeCustom, hasSrd } from "@/i18n/resolver";
+import {
+  buildItemResourceViewModels,
+  type ItemResourceVM,
+} from "@/lib/views/item-resource-view";
 
 type WeaponRef = SrdWeaponRef | CustomWeapon;
 type EquipRef = SrdEquipmentRef | CustomEquipment;
@@ -114,7 +120,7 @@ export interface ChargesVM {
   current: number;
   max: number;
   /**
-   * Set when the pool is TRACKER-BACKED (a `free-cast-spell` charge pool keyed
+   * Set when the pool is TRACKER-BACKED (a cast or activated-property pool keyed
    * by the item id — the SAME counter the Play-board cast debits and the rail
    * shows, golden rule 6). The spend affordance then routes to the session
    * tracker; `null` means the pool lives on the stored `ref.charges` (manual /
@@ -189,7 +195,10 @@ export interface WeaponRowVM {
 
 /** One armor / gear / potion / magic-item row's view-model. */
 export interface ItemRowVM {
+  /** Catalogue identity for localization, seals, and rules (homebrew keeps its custom token). */
   id: string;
+  /** Unique opaque row identity for React keys and disclosure state. Never render it. */
+  rowId: string;
   idx: number;
   isCustom: boolean;
   /** Which section this row belongs to. */
@@ -215,6 +224,9 @@ export interface ItemRowVM {
   potionFormula: string | undefined;
   isPool: boolean;
   unit: string | undefined;
+  /** Typed counters owned by this exact physical copy. Never collapsed by item id. */
+  resources: ItemResourceVM[];
+  /** Legacy counter only; typed items use `resources` as their sole owner. */
   charges: ChargesVM | null;
 
   // ── attunement / wearing ──
@@ -643,9 +655,11 @@ function buildItemVM(
     /** Session tracker spend state — the one source a `free-cast-spell` charge
      *  pool lives in (the same id the Play-board cast debits). */
     trackers: Readonly<Record<string, { used: number }>>;
+    /** Typed resources already resolved for this exact physical copy. */
+    resources: ItemResourceVM[];
   }
 ): ItemRowVM {
-  const { locale, armorProficiencies } = ctx;
+  const { locale, armorProficiencies, resources } = ctx;
   const isCustom = "custom" in ref;
   const srdItem = isCustom
     ? undefined
@@ -703,20 +717,26 @@ function buildItemVM(
   // reads (and spends) THAT, never a parallel `ref.charges` copy that could
   // drift. Items without a tracker pool keep the stored `ref.charges` counter.
   const poolId = !isCustom && magicItem ? ref.srdId : null;
-  const poolMax = poolId && magicItem ? freeCastItemChargeMax(magicItem.grants) : 0;
+  const poolMax = poolId && magicItem ? magicItemChargeMax(magicItem.grants) : 0;
   const charges: ChargesVM | null =
-    poolId && poolMax > 0
-      ? {
-          current: Math.max(0, poolMax - (ctx.trackers[poolId]?.used ?? 0)),
-          max: poolMax,
-          trackerId: poolId,
-        }
-      : ref.charges
-        ? { current: ref.charges.current, max: ref.charges.max, trackerId: null }
-        : null;
+    resources.length > 0
+      ? null
+      : poolId && poolMax > 0
+        ? {
+            current: Math.max(0, poolMax - (ctx.trackers[poolId]?.used ?? 0)),
+            max: poolMax,
+            trackerId: poolId,
+          }
+        : ref.charges
+          ? { current: ref.charges.current, max: ref.charges.max, trackerId: null }
+          : null;
 
   return {
     id: isCustom ? `custom-${ref.name}` : ref.srdId,
+    rowId:
+      !isCustom && ref.instanceId !== undefined
+        ? `equipment-instance:${ref.instanceId}`
+        : `equipment-legacy:${idx}`,
     idx,
     isCustom,
     category: isArmor ? "armor" : "gear",
@@ -734,6 +754,7 @@ function buildItemVM(
     potionFormula,
     isPool: ref.isPool ?? false,
     unit: ref.unit,
+    resources,
     charges,
     requiresAttunement: requiresAttunement(ref),
     attuned: ref.attuned === true,
@@ -814,6 +835,16 @@ export function buildInventoryViewModel(
   // force-added heavy-armor override drops "Untrained" here AND the clause together).
   const armorProficiencies = [...effectiveArmorProficiencies(character)];
 
+  // Typed physical-item resources resolve ONCE for the complete document. The
+  // exact instance id is used only as an internal join key and never rendered.
+  const resourceViews = buildItemResourceViewModels(doc).resources;
+  const resourcesByInstance = new Map<string, ItemResourceVM[]>();
+  for (const resource of resourceViews) {
+    const owned = resourcesByInstance.get(resource.identity.instanceId) ?? [];
+    owned.push(resource);
+    resourcesByInstance.set(resource.identity.instanceId, owned);
+  }
+
   const weapons = character.weapons.map((ref, idx) =>
     buildWeaponVM(ref, idx, {
       doc,
@@ -834,6 +865,10 @@ export function buildInventoryViewModel(
       locale,
       armorProficiencies,
       trackers: doc.session.trackers,
+      resources:
+        "custom" in ref || ref.instanceId === undefined
+          ? []
+          : (resourcesByInstance.get(ref.instanceId) ?? []),
     })
   );
   const armor = items.filter((i) => i.category === "armor");

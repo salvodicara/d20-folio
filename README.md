@@ -122,7 +122,7 @@ asdf install         # installs Node 24.16.0 + Temurin 25 from .tool-versions
 pnpm install         # install root app dependencies
 
 pnpm dev             # Vite dev server (real Firebase, no emulators)
-pnpm dev:emulators   # dev against Firebase emulators (sets VITE_USE_EMULATORS=true)
+pnpm dev:emulators   # one-command seeded Auth/Firestore/Storage/Functions sandbox
 
 pnpm test            # Vitest unit run
 pnpm test:e2e        # Playwright E2E (chromium)
@@ -137,7 +137,9 @@ Configuration goes in `.env.local` (uncommitted; copy from `.env.example`). The 
 pnpm tsc -b && pnpm lint --max-warnings 0 && pnpm test --run && pnpm build
 ```
 
-Git hooks in `.githooks/` enforce this: pre-commit is fast (staged-file lint plus a changeset doc-guard), pre-push runs the full gate. A `justfile` collects common recipes.
+Git hooks in `.githooks/` enforce this: pre-commit is fast (staged-file lint plus a changeset
+doc-guard), branch checkpoint pushes are immediate, and pre-push runs the full gate only for the
+finished push to `main`. A `justfile` collects common recipes.
 
 ### Deployment
 

@@ -177,6 +177,34 @@ describe("useDocumentSubscription — §7 listener discipline", () => {
     expect(loadDevBypass).toHaveBeenCalledTimes(1);
     expect(h.subscribe).not.toHaveBeenCalled();
   });
+
+  it("uses an injected dev document lifecycle, including guarded snapshots and saves", () => {
+    devBypass.value = true;
+    let devSnapshot: ((doc: FakeDoc | null) => void) | null = null;
+    const devUnsubscribe = vi.fn();
+    const devSubscribe = vi.fn<FakeConfig["subscribe"]>((_uid, _id, onData) => {
+      devSnapshot = onData;
+      return devUnsubscribe;
+    });
+    const devSave = vi.fn<(data: FakeSave) => void>();
+    const devFlush = vi.fn(() => Promise.resolve());
+    const h = makeHarness({
+      subscribeDevBypass: devSubscribe,
+      createDevBypassSave: () => ({ save: devSave, flush: devFlush }),
+    });
+    const { unmount } = renderHook(() => useDocumentSubscription(h.config));
+
+    expect(h.subscribe).not.toHaveBeenCalled();
+    expect(devSubscribe).toHaveBeenCalledTimes(1);
+    act(() => devSnapshot?.({ id: "d1" }));
+    expect(h.applySnapshot).toHaveBeenCalledWith({ id: "d1" });
+    expect(devSave).not.toHaveBeenCalled();
+    act(() => h.fireStore({ value: 4 }, { value: 1 }));
+    expect(devSave).toHaveBeenCalledWith({ v: 4 });
+    unmount();
+    expect(devFlush).toHaveBeenCalledTimes(1);
+    expect(devUnsubscribe).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("createDebouncedWriter", () => {

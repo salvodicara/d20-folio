@@ -16,6 +16,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { RestModal } from "@/features/character/RestModal";
+import { ItemResourceCommandProvider } from "@/features/character/center/ItemResourceCommandProvider";
 import { useCharacterStore } from "@/stores/characterStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
 
@@ -35,7 +36,11 @@ describe("RestModal — short-rest CON preview reads EFFECTIVE scores (B8)", () 
     ];
     useCharacterStore.setState({ character: doc, loading: false, error: null });
 
-    render(<RestModal open={true} onClose={() => {}} />);
+    render(
+      <ItemResourceCommandProvider>
+        <RestModal open={true} onClose={() => {}} />
+      </ItemResourceCommandProvider>
+    );
     // Idle → confirm-short: open the spend/confirm flow.
     fireEvent.click(screen.getByText("Short Rest"));
 

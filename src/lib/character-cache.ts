@@ -172,7 +172,13 @@ export interface RosterCharacter {
  */
 export interface RosterCharacterDoc extends Pick<
   CharacterDoc,
-  "id" | "createdAt" | "updatedAt" | "portraitUrl" | "portraitCrop" | "status"
+  | "id"
+  | "createdAt"
+  | "updatedAt"
+  | "portraitUrl"
+  | "portraitCrop"
+  | "playStateVersion"
+  | "status"
 > {
   character: RosterCharacter;
   session: SessionState;
@@ -200,7 +206,12 @@ export function cacheToRosterDoc(
   data: Record<string, unknown>,
   meta: Pick<
     CharacterDoc,
-    "createdAt" | "updatedAt" | "portraitUrl" | "portraitCrop" | "status"
+    | "createdAt"
+    | "updatedAt"
+    | "portraitUrl"
+    | "portraitCrop"
+    | "playStateVersion"
+    | "status"
   >
 ): RosterCharacterDoc | null {
   const cache = readCache(data.cache);
@@ -214,23 +225,24 @@ export function cacheToRosterDoc(
   // in `useCharacters`) then folds the real HP / conditions / death saves on top —
   // giving live updates on every HP tap.
   //
-  // RA-21 — Exhaustion is the ONE fallen-hero input that is NOT in the combat trio:
-  // it persists on the PARENT doc's `state` (`SessionState.exhaustion`). Seed it into
-  // the baseline so the fallen predicate (`isCharacterDead`) sees a level-6 Exhaustion
-  // death on the roster tile, matching the dev path (`rosterProjectionFromDoc`, which
-  // reads the full session). Without this, the prod projection would carry
-  // `exhaustion: 0` and the tile would show Fallen in dev/tests but not in prod.
+  // Legacy RA-21: Exhaustion lived on the parent and must seed the fallen predicate.
+  // A v1 parent instead owns it in playState, so its unresolved shell must not reuse a
+  // stale legacy copy; the valid combat overlay supplies the authoritative value.
   const persistedState =
     typeof data.state === "object" && data.state !== null
       ? (data.state as Record<string, unknown>)
       : {};
   const exhaustion =
     typeof persistedState.exhaustion === "number" ? persistedState.exhaustion : 0;
-  const session = applyCombatToSession(
-    sanitizeSession({ exhaustion }),
-    null,
-    cache.hpMax
-  );
+  const ownership = meta.playStateVersion === 1 ? 1 : "legacy";
+  const baselineSession = sanitizeSession({
+    exhaustion: ownership === "legacy" ? exhaustion : 0,
+  });
+  const baseline = applyCombatToSession(baselineSession, null, cache.hpMax, ownership);
+  // A v1 parent is not allowed to manufacture a plausible full-HP session while its
+  // canonical play document is unresolved. Keep a non-authoritative, zeroed shell for
+  // the roster card (whose HP is gated by `hpReady`) until the subdoc proves a value.
+  const session = baseline.ok ? baseline.session : baselineSession;
   return { id, ...meta, character: cacheToRosterCharacter(cache), session };
 }
 
@@ -253,11 +265,16 @@ export function applyCombatToRosterDoc(
   doc: RosterCharacterDoc,
   combat: CombatState | null | undefined
 ): RosterCharacterDoc {
-  if (!combat) return doc;
-  return {
-    ...doc,
-    session: applyCombatToSession(doc.session, combat, doc.character.hp.max),
-  };
+  if (combat === undefined) return doc;
+  const hydrated = applyCombatToSession(
+    doc.session,
+    combat,
+    doc.character.hp.max,
+    doc.playStateVersion === 1 ? 1 : "legacy"
+  );
+  // Keep the roster identity visible but retain its non-authoritative shell on a v1
+  // integrity failure; `useCharacters` keeps HP hidden until ownership is proven.
+  return hydrated.ok ? { ...doc, session: hydrated.session } : doc;
 }
 
 /** The {@link RosterCharacter} half from a normalized {@link CharacterCache}. */
@@ -295,6 +312,7 @@ export function rosterProjectionFromDoc(doc: CharacterDoc): RosterCharacterDoc {
     updatedAt: doc.updatedAt,
     portraitUrl: doc.portraitUrl,
     portraitCrop: doc.portraitCrop,
+    playStateVersion: doc.playStateVersion,
     status: doc.status,
     character: cacheToRosterCharacter(cache),
     session: doc.session,

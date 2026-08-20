@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
-# Pre-commit hook (LEAN — fast): changeset doc-guard + lint-staged + the FAST unit
-# lane (jsdom-free, a few seconds). The FULL gate (typecheck + lint
-# --max-warnings 0 + test:coverage over BOTH lanes + build + budget) runs at
-# pre-push (see .githooks/pre-push — the authoritative gate; ci.yml mirrors it
-# remotely on public push/PR), so broken code can never be PUSHED — while
-# commits stay fast.
-# Owner decision 2026-05-30; fast-lane smoke added 2026-06-09 (R5).
+# Pre-commit hook (LEAN): changeset doc-guard + lint-staged only. Tests are run
+# focally while a milestone is engineered; no branch checkpoint runs a suite.
+# The FULL gate (typecheck + lint --max-warnings 0 + test:coverage over BOTH
+# lanes + build + budget) runs exactly once when finished work targets main
+# (see .githooks/pre-push; ci.yml mirrors main remotely).
+# Owner decision 2026-08-12 (golden rule 14).
 # Install: git config core.hooksPath .githooks   ·   NEVER use --no-verify.
 
 set -euo pipefail
 
-echo "==> Pre-commit (fast): doc-guard + lint-staged + fast unit lane..."
+echo "==> Pre-commit: doc-guard + lint-staged..."
 
 # ── Doc guard (AI agent workflow) ─────────────────────────────────────────────
 # Every commit must stage a changeset (.changeset/<slug>.md) describing the
@@ -26,10 +25,4 @@ fi
 # ── Lint + format staged files only (fast) ────────────────────────────────────
 pnpm lint-staged
 
-# ── Fast unit lane (jsdom-free pure-logic .test.ts — seconds) ─────────────────
-# A quick smoke that the engine/data logic still holds. The slow (render/jsdom)
-# lane + coverage thresholds run at pre-push, not here, to keep commits fast.
-echo "--- Fast unit lane (jsdom-free smoke) ---"
-pnpm test:fast
-
-echo "==> Pre-commit OK. (The full gate — both lanes + coverage — runs at pre-push.)"
+echo "==> Pre-commit OK. (The sole full gate runs for the finished push to main.)"

@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { timedConditionLifetime } from "./duration";
 
 export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
   {
@@ -25,6 +26,208 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
   },
   {
     id: "delayed-blast-fireball",
+    // The canonical-runtime authored program: the
+    // cast plants the bead — the beam accumulator starts at the base 12d6 plus
+    // one die per slot level above 7 — and holds concentration; each of the
+    // caster's turn-ends the table declares an "accrue" pulse (+1d6 stored);
+    // the "detonate" pulse rolls the accumulated dice against a DEX save, half
+    // on a success, and consumes the program. Ending concentration early is
+    // the table declaring the detonation; the bead-touch DEX save stays a
+    // table-side roll.
+    mechanicsProgram: {
+      id: "spell:delayed-blast-fireball",
+      phases: [
+        {
+          inputs: [
+            {
+              inputId: "slot",
+              kind: "resource",
+              term: {
+                amount: { kind: "fixed", value: 1 },
+                selector: {
+                  kind: "spell-slot",
+                  level: { kind: "minimum", value: 7 },
+                  owner: "caster",
+                  pool: "either",
+                },
+              },
+              when: null,
+            },
+          ],
+          phaseId: "resolve",
+          steps: [
+            {
+              kind: "register",
+              operation: {
+                kind: "add",
+                value: {
+                  kind: "max",
+                  values: [
+                    { kind: "fixed", value: 0 },
+                    {
+                      kind: "add",
+                      terms: [
+                        { bindingId: "input.slot.level", kind: "binding" },
+                        { kind: "fixed", value: -7 },
+                      ],
+                    },
+                  ],
+                },
+              },
+              registerId: "beam-accumulator",
+              stepId: "store-upcast-dice",
+              when: null,
+            },
+            {
+              kind: "concentration",
+              lifetime: { kind: "manual" },
+              operation: "start",
+              stepId: "hold-concentration",
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [],
+          phaseId: "accrue",
+          steps: [
+            {
+              kind: "register",
+              operation: { kind: "add", value: { kind: "fixed", value: 1 } },
+              registerId: "beam-accumulator",
+              stepId: "store-die",
+              when: null,
+            },
+          ],
+          trigger: { eventId: "accrue", kind: "root-pulse" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "blast-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 20 },
+              minimum: { kind: "fixed", value: 0 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              expansion: { bind: "actor", inputId: "blast-targets", kind: "entities" },
+              inputId: "blast-saves",
+              kind: "d20",
+              payments: [],
+              request: {
+                ability: "DEX",
+                actor: "target",
+                difficultyClass: { bindingId: "spell-save-dc", kind: "binding" },
+                enteredModifiers: [],
+                kind: "saving-throw",
+                modifiers: [],
+                resolution: { kind: "rolled" },
+                rollRules: {
+                  advantageSourceIds: [],
+                  disadvantageSourceIds: [],
+                  extraD20SourceIds: [],
+                  faceFloors: [],
+                  replacements: [],
+                  substitutions: [],
+                  totalFloors: [],
+                },
+                target: "caster",
+                testId: "spell-save",
+              },
+              when: null,
+            },
+            {
+              acceptancePolicy: [],
+              expansion: { binding: "caster", kind: "single" },
+              formula: {
+                terms: [
+                  {
+                    count: { bindingId: "register.beam-accumulator", kind: "binding" },
+                    kind: "dice",
+                    operation: "add",
+                    sides: 6,
+                    termId: "blast-roll-die",
+                  },
+                ],
+              },
+              inputId: "blast-roll",
+              kind: "dice",
+              payments: [],
+              replacementPolicy: [],
+              when: null,
+            },
+          ],
+          phaseId: "detonate",
+          steps: [
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "blast-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "fire",
+                  partId: "blast-fire",
+                },
+              ],
+              stepId: "blast-damage",
+              target: {
+                cardinality: "per-request",
+                inputId: "blast-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: null,
+            },
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "blast-roll",
+                    kind: "dice-input",
+                    transform: {
+                      dividend: { bindingId: "input-total", kind: "binding" },
+                      divisor: { kind: "fixed", value: 2 },
+                      kind: "divide",
+                      rounding: "floor",
+                    },
+                  },
+                  damageType: "fire",
+                  partId: "blast-fire-half",
+                },
+              ],
+              stepId: "blast-damage-half",
+              target: {
+                cardinality: "per-request",
+                inputId: "blast-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["success"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: null,
+            },
+            { kind: "end-program", stepId: "detonation-ends", when: null },
+          ],
+          trigger: { eventId: "detonate", kind: "root-pulse" },
+        },
+      ],
+      registers: [{ initial: 12, registerId: "beam-accumulator" }],
+      version: 1,
+    },
     level: 7,
     school: "evocation",
     classes: ["sorcerer", "wizard"],
@@ -42,6 +245,7 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
     saveAbility: "DEX",
     area: true,
     damageOnSave: "half",
+    resolveOnCast: false,
     source: "SRD",
   },
   {
@@ -253,6 +457,521 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
   },
   {
     id: "prismatic-spray",
+    // The canonical-runtime authored program: the
+    // cast fires the spray; the table declares one "ray" pulse per struck
+    // creature — the physical d8 enters as a table row, a DEX save adjudicates
+    // it, rows 1-5 deal 12d6 of that color (half on a success), row 6 (indigo)
+    // restrains, row 7 (violet) blinds, and row 8 means the table declares two
+    // more ray pulses for that creature. The violet next-turn WIS save is its
+    // own "violet-fate" pulse (sight returns; failure is a plane transfer).
+    // The indigo petrification save-series needs per-target counters the
+    // program vocabulary does not have — it stays table-adjudicated beyond the
+    // restrained condition.
+    mechanicsProgram: {
+      id: "spell:prismatic-spray",
+      phases: [
+        {
+          inputs: [
+            {
+              inputId: "slot",
+              kind: "resource",
+              term: {
+                amount: { kind: "fixed", value: 1 },
+                selector: {
+                  kind: "spell-slot",
+                  level: { kind: "minimum", value: 7 },
+                  owner: "caster",
+                  pool: "either",
+                },
+              },
+              when: null,
+            },
+          ],
+          phaseId: "resolve",
+          steps: [],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "ray-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 1 },
+              minimum: { kind: "fixed", value: 0 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              inputId: "ray-table",
+              kind: "table",
+              rows: [
+                "red",
+                "orange",
+                "yellow",
+                "green",
+                "blue",
+                "indigo",
+                "violet",
+                "two-rays",
+              ],
+              when: null,
+            },
+            {
+              expansion: { bind: "actor", inputId: "ray-targets", kind: "entities" },
+              inputId: "ray-saves",
+              kind: "d20",
+              payments: [],
+              request: {
+                ability: "DEX",
+                actor: "target",
+                difficultyClass: { bindingId: "spell-save-dc", kind: "binding" },
+                enteredModifiers: [],
+                kind: "saving-throw",
+                modifiers: [],
+                resolution: { kind: "rolled" },
+                rollRules: {
+                  advantageSourceIds: [],
+                  disadvantageSourceIds: [],
+                  extraD20SourceIds: [],
+                  faceFloors: [],
+                  replacements: [],
+                  substitutions: [],
+                  totalFloors: [],
+                },
+                target: "caster",
+                testId: "spell-save",
+              },
+              when: {
+                kind: "not",
+                predicate: {
+                  inputId: "ray-table",
+                  kind: "answer-table",
+                  rowId: "two-rays",
+                },
+              },
+            },
+            {
+              acceptancePolicy: [],
+              expansion: { binding: "caster", kind: "single" },
+              formula: {
+                terms: [
+                  {
+                    count: { kind: "fixed", value: 12 },
+                    kind: "dice",
+                    operation: "add",
+                    sides: 6,
+                    termId: "ray-roll-die",
+                  },
+                ],
+              },
+              inputId: "ray-roll",
+              kind: "dice",
+              payments: [],
+              replacementPolicy: [],
+              when: {
+                kind: "any",
+                predicates: [
+                  { inputId: "ray-table", kind: "answer-table", rowId: "red" },
+                  { inputId: "ray-table", kind: "answer-table", rowId: "orange" },
+                  { inputId: "ray-table", kind: "answer-table", rowId: "yellow" },
+                  { inputId: "ray-table", kind: "answer-table", rowId: "green" },
+                  { inputId: "ray-table", kind: "answer-table", rowId: "blue" },
+                ],
+              },
+            },
+          ],
+          phaseId: "ray",
+          steps: [
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "ray-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "fire",
+                  partId: "red-full",
+                },
+              ],
+              stepId: "ray-red-damage",
+              target: {
+                cardinality: "per-request",
+                inputId: "ray-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: { inputId: "ray-table", kind: "answer-table", rowId: "red" },
+            },
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "ray-roll",
+                    kind: "dice-input",
+                    transform: {
+                      dividend: { bindingId: "input-total", kind: "binding" },
+                      divisor: { kind: "fixed", value: 2 },
+                      kind: "divide",
+                      rounding: "floor",
+                    },
+                  },
+                  damageType: "fire",
+                  partId: "red-half",
+                },
+              ],
+              stepId: "ray-red-half",
+              target: {
+                cardinality: "per-request",
+                inputId: "ray-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["success"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: { inputId: "ray-table", kind: "answer-table", rowId: "red" },
+            },
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "ray-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "acid",
+                  partId: "orange-full",
+                },
+              ],
+              stepId: "ray-orange-damage",
+              target: {
+                cardinality: "per-request",
+                inputId: "ray-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: { inputId: "ray-table", kind: "answer-table", rowId: "orange" },
+            },
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "ray-roll",
+                    kind: "dice-input",
+                    transform: {
+                      dividend: { bindingId: "input-total", kind: "binding" },
+                      divisor: { kind: "fixed", value: 2 },
+                      kind: "divide",
+                      rounding: "floor",
+                    },
+                  },
+                  damageType: "acid",
+                  partId: "orange-half",
+                },
+              ],
+              stepId: "ray-orange-half",
+              target: {
+                cardinality: "per-request",
+                inputId: "ray-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["success"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: { inputId: "ray-table", kind: "answer-table", rowId: "orange" },
+            },
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "ray-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "lightning",
+                  partId: "yellow-full",
+                },
+              ],
+              stepId: "ray-yellow-damage",
+              target: {
+                cardinality: "per-request",
+                inputId: "ray-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: { inputId: "ray-table", kind: "answer-table", rowId: "yellow" },
+            },
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "ray-roll",
+                    kind: "dice-input",
+                    transform: {
+                      dividend: { bindingId: "input-total", kind: "binding" },
+                      divisor: { kind: "fixed", value: 2 },
+                      kind: "divide",
+                      rounding: "floor",
+                    },
+                  },
+                  damageType: "lightning",
+                  partId: "yellow-half",
+                },
+              ],
+              stepId: "ray-yellow-half",
+              target: {
+                cardinality: "per-request",
+                inputId: "ray-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["success"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: { inputId: "ray-table", kind: "answer-table", rowId: "yellow" },
+            },
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "ray-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "poison",
+                  partId: "green-full",
+                },
+              ],
+              stepId: "ray-green-damage",
+              target: {
+                cardinality: "per-request",
+                inputId: "ray-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: { inputId: "ray-table", kind: "answer-table", rowId: "green" },
+            },
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "ray-roll",
+                    kind: "dice-input",
+                    transform: {
+                      dividend: { bindingId: "input-total", kind: "binding" },
+                      divisor: { kind: "fixed", value: 2 },
+                      kind: "divide",
+                      rounding: "floor",
+                    },
+                  },
+                  damageType: "poison",
+                  partId: "green-half",
+                },
+              ],
+              stepId: "ray-green-half",
+              target: {
+                cardinality: "per-request",
+                inputId: "ray-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["success"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: { inputId: "ray-table", kind: "answer-table", rowId: "green" },
+            },
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "ray-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "cold",
+                  partId: "blue-full",
+                },
+              ],
+              stepId: "ray-blue-damage",
+              target: {
+                cardinality: "per-request",
+                inputId: "ray-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: { inputId: "ray-table", kind: "answer-table", rowId: "blue" },
+            },
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "ray-roll",
+                    kind: "dice-input",
+                    transform: {
+                      dividend: { bindingId: "input-total", kind: "binding" },
+                      divisor: { kind: "fixed", value: 2 },
+                      kind: "divide",
+                      rounding: "floor",
+                    },
+                  },
+                  damageType: "cold",
+                  partId: "blue-half",
+                },
+              ],
+              stepId: "ray-blue-half",
+              target: {
+                cardinality: "per-request",
+                inputId: "ray-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["success"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: { inputId: "ray-table", kind: "answer-table", rowId: "blue" },
+            },
+            {
+              conditionId: "restrained",
+              kind: "condition",
+              lifetime: { kind: "manual" },
+              operation: "apply",
+              stepId: "ray-indigo-restrained",
+              target: {
+                cardinality: "per-request",
+                inputId: "ray-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              when: { inputId: "ray-table", kind: "answer-table", rowId: "indigo" },
+            },
+            {
+              conditionId: "blinded",
+              kind: "condition",
+              lifetime: { kind: "manual" },
+              operation: "apply",
+              stepId: "ray-violet-blinded",
+              target: {
+                cardinality: "per-request",
+                inputId: "ray-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              when: { inputId: "ray-table", kind: "answer-table", rowId: "violet" },
+            },
+          ],
+          trigger: { eventId: "ray", kind: "root-pulse" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "fate-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 1 },
+              minimum: { kind: "fixed", value: 0 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              expansion: { bind: "actor", inputId: "fate-targets", kind: "entities" },
+              inputId: "fate-saves",
+              kind: "d20",
+              payments: [],
+              request: {
+                ability: "WIS",
+                actor: "target",
+                difficultyClass: { bindingId: "spell-save-dc", kind: "binding" },
+                enteredModifiers: [],
+                kind: "saving-throw",
+                modifiers: [],
+                resolution: { kind: "rolled" },
+                rollRules: {
+                  advantageSourceIds: [],
+                  disadvantageSourceIds: [],
+                  extraD20SourceIds: [],
+                  faceFloors: [],
+                  replacements: [],
+                  substitutions: [],
+                  totalFloors: [],
+                },
+                target: "caster",
+                testId: "spell-save",
+              },
+              when: null,
+            },
+          ],
+          phaseId: "violet-fate",
+          steps: [
+            {
+              conditionId: "blinded",
+              kind: "condition",
+              lifetime: null,
+              operation: "remove",
+              stepId: "fate-sight",
+              target: { inputId: "fate-targets", kind: "input" },
+              when: null,
+            },
+            {
+              instructionId: "prismatic-violet-transfer",
+              kind: "manual-relocation",
+              mode: "plane-transfer",
+              stepId: "fate-banishment",
+              target: {
+                cardinality: "per-request",
+                inputId: "fate-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              when: null,
+            },
+          ],
+          trigger: { eventId: "violet-fate", kind: "root-pulse" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    },
     level: 7,
     school: "evocation",
     classes: ["bard", "sorcerer", "wizard"],
@@ -266,6 +985,7 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
     damageTypes: ["fire", "acid", "lightning", "poison", "cold"],
     damageDice: "12d6",
     saveAbility: "DEX",
+    area: true,
     source: "SRD",
   },
   {
@@ -299,7 +1019,11 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
       consumed: true,
     },
     concentration: false,
-    conditionApplication: { options: ["invisible"], on: "automatic" },
+    conditionApplication: {
+      options: ["invisible", "unconscious"],
+      on: "automatic",
+      lifetime: { kind: "manual" },
+    },
     targeting: { affinity: "ally", maxTargets: 1 },
     source: "SRD",
   },
@@ -324,6 +1048,12 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
       options: ["frightened", "incapacitated", "unconscious", "stunned"],
       max: 1,
       on: "failed-save",
+      lifetimes: {
+        frightened: timedConditionLifetime(1),
+        incapacitated: timedConditionLifetime(1),
+        unconscious: timedConditionLifetime(10),
+        stunned: timedConditionLifetime(1),
+      },
     },
     source: "SRD",
   },

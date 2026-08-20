@@ -9,11 +9,11 @@ import type {
   AbilityCode,
   ClassId,
   CreatureSize,
-  DamageType,
   ConditionId,
   WeaponAttackCantripData,
 } from "@/data/types";
 import { CREATURE_SIZE_ORDER } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 import { appendAbilityModToDice } from "@/lib/utils";
 // Ability modifier lives in the SRD-free `@/lib/ability` module so eager callers
 // (the persistence-layer sanitizer) can use the formula without dragging compute's
@@ -78,6 +78,23 @@ export function exhaustionPenalty(level: number): number {
  */
 export function exhaustionSpeedReductionFt(level: number): number {
   return clampExhaustion(level) * 5;
+}
+
+/** Resolve an optional alternate ability for a skill check. Optional rules use
+ * the better modifier; ties keep the skill's ordinary ability. */
+export function effectiveSkillAbility(
+  skillId: string,
+  base: AbilityCode,
+  options: ReadonlyArray<{ skills: ReadonlyArray<string>; ability: AbilityCode }>,
+  scores: Readonly<Record<AbilityCode, number>>
+): AbilityCode {
+  return options.reduce(
+    (best, option) =>
+      option.skills.includes(skillId) && scores[option.ability] > scores[best]
+        ? option.ability
+        : best,
+    base
+  );
 }
 
 /**
@@ -588,12 +605,12 @@ function resolveItemAcFormulaGrants(
 
 /**
  * H6 — Concentration save DC when the caster takes damage (2024 RAW):
- * DC = max(10, floor(damage / 2)). Returns 0 for non-positive damage so
- * the caller can short-circuit (no save when HP didn't drop).
+ * DC = min(30, max(10, floor(damage / 2))). Returns 0 for non-positive
+ * or invalid damage so the caller can short-circuit (no save when HP didn't drop).
  */
 export function concentrationSaveDc(damage: number): number {
   if (!Number.isFinite(damage) || damage <= 0) return 0;
-  return Math.max(10, Math.floor(damage / 2));
+  return Math.min(30, Math.max(10, Math.floor(damage / 2)));
 }
 
 /** How a single Death Saving Throw d20 result resolves (2024 RAW). */

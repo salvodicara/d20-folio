@@ -610,6 +610,701 @@ blocking on owner screenshots):
 
 ## Current state
 
+> **Continuation handoff (2026-08-04):** `docs/AUTOMATION_HANDOFF.md` is the exact branch-level
+> starting point for the next session: worktrees, pushed heads, verified behavior, known gaps,
+> architecture diagnosis and definition of done. The deterministic audit below is substantial but
+> is **not** a corpus-wide completion certificate.
+
+> **Engine-model ratification (owner, 2026-08-12):** the destination is one canonical,
+> storage-aware deterministic action engine for solo, campaign, spells, features, items and every
+> other executable rule. Existing document or Firestore decisions remain only when they are still
+> optimal. Every knowable consequence is automatic; irreducible rolls/table facts enter as typed
+> observations; every result remains explicitly overrideable and reversible. No compatibility
+> architecture may survive the cutover: migrate and verify live data, then delete every superseded
+> field, parser, writer, fallback, test, script and reference so the repository and production data
+> expose exactly one current model.
+
+**Canonical engine foundation checkpoint CLOSED on branch (2026-08-12; runtime cutover ACTIVE):**
+the new core now has exact monotonic material identity, one targetless program-root authority carrier,
+direct child effects, immutable capability/authority receipts, recoverable create/advance execution
+frames, typed trigger evidence and cause-complete atomic transactions. Commands cannot inject actor,
+program, roles, source or bindings; item/resource identities include physical ordinals; forged, missing
+or unused causes and stale root CAS receipts fail closed. Terminal mutation no longer implicitly erases
+Concentration or other sources before their end subscribers can run, and Concentration replacement is an
+explicit causal barrier. Focused foundation verification is green. This is deliberately not the engine
+completion claim: the MechanicsProgram terminal compiler, subscriber/end-wave coordinator, multi-frame
+suspension replay, full SRD+pack transcription, UI/store/Firestore cutover, autonomous live migration and
+legacy deletion remain active. Branch checkpoints run no global gate; the sole authoritative gate stays
+reserved for the final rebased push to `main`.
+
+**Canonical causal-kernel hardening checkpoint CLOSED on branch (2026-08-12; compiler/coordinator
+ACTIVE):** operation authority is independently resolved from the trusted capability snapshot or exact
+persisted root generation, never accepted inside a cause; actor ownership and immutable
+definition/installation guards fail closed. Every mutable non-self entity and every occurrence authority
+carries its physical generation, closing same-id ABA across targets, actors, owners, participants,
+durations and delayed events. Ending causes and the one cumulative closure request live in explicit pure
+transient causal state. Table progression is now a `begin`/`advance` state machine whose continuation is
+bound to its complete checkpoint; a wave created or extended during event delivery always produces a new
+source-readable checkpoint before finalization. The old resolver-returned-world API is deleted. The
+authentic event surface is deliberately closed to damage taken, zero HP, resource depletion and source
+ending; finalization re-proves the exact wave and returns the resulting world without synthetic catch-all
+events. The universal physical-D20 dependency is branch-complete too: exact inputs reject numeric aliases,
+and table-entered two-failure Death Saves retain provenance distinct from a natural 1. Focused cross-seam
+verification is green (408 tests across 20 directly affected suites); by owner rule no
+global branch gate ran. The single step compiler has since reached the effect/lifetime/boundary slice
+below; the fixed-point subscriber/suspension coordinator and one final journal draft remain open.
+
+**Exact physical-operation checkpoint CLOSED on branch (2026-08-12; compiler/coordinator ACTIVE):**
+program/effect/entity/item creation now carries exact preallocated generations and atomic lifecycle
+ownership; every allocator is monotonic high-water state that undo/redo cannot lower. Inventory
+transition/end uses exact generation leases and an explicit inbound enchantment-bearer CAS. Non-current
+entity dismissal removes its exact generation from local and shared encounters before closed-world
+validation and releases a final shared clock lease. Current-participant dismissal instead returns an
+exact `needs-boundary` command carrying that generation: the boundary emits the authentic end/time/start
+sequence while excluding it from successor selection (or returns a sole-participant encounter to
+initiative), then the retried operation owns the dismissal and membership removal. Historical cleanup may
+remove a current participant only inside that exact complete-turn continuation before a successor starts;
+every other boundary fails closed. Controller links are cross-document exact references, global cycles
+fail closed, and their complete graph dependency participates in collision ordering. The access model
+distinguishes shared reads, table-owned semantic writes and immutable allocator precedence; embedded
+effect, item and entity references are part of the footprint, so no hidden validation scan can make
+execution order-dependent. Program terminal turn steps are claim-only; encounter lifecycle alone may
+start/end a turn. Exact hostile boundaries reject accessor arrays and proxy traps without evaluating
+them or rereading stateful proxy values. Every cause is authorized against the same immutable action
+basis before mutation. Ordered terminal steps now produce transaction-local world projections and one
+final causal rebase, so newly satisfied end rules observe the atomic net result while already-latched
+waves remain readable; this closes the real create-source/assign-Temporary-HP lifecycle. Timeline-bound
+creation collides on the owning document's clock binding, and a persisted current combatant must be in
+`own-turn`. Transaction projection and causal rebase also preserve every document's journal
+epoch/revision/actions and a character's build revision. The independent operation-layer P0/P1 audit's
+then-known gaps are closed. The focused kernel proof is 401 tests across 14 suites, with no global branch
+gate run. Compiler progress is recorded below; payment/vitality/material/resource compilation, one bounded
+fixed-point causal coordinator and one final reversible journal draft remain active.
+
+**Compiler/provenance vertical ACTIVE on branch (2026-08-12):** persistent effects and material
+lifecycles now carry exact structured origin `{root, phase, execution, step, slot}` validated against the
+root's frozen program; duplicate or semantically mismatched emissions fail closed, including across a
+transaction's pending next execution. Register mutation is an individual compare-and-swap physical
+operation. Root allocation is a standalone zero-state segment before the exact frame is pushed. The
+prepare/coordinator boundary recognizes replay before push; `compileMechanicsFrame` then re-proves reviewed
+input and compiles only the authored step named by the exact nonterminal LIFO top cursor. The final phase
+CAS is its own segment.
+Its executable slice now
+includes register/manual work plus exact condition, standing, Concentration and polymorph starts and
+semantic end selection; unsupported steps still reject explicitly. The follow-up real-play audit found
+additional P0 prerequisites (separately authorized overrides, THP source replacement, guarded effective
+defense/healing/Exhaustion facts and death interrupts, reviewed payment debits, resource cardinality,
+closed materialization, same-frame created selectors and enchantment transfer), so this is an honest
+vertical rather than an engine-completion claim. Focused verification only; the sole full gate remains
+reserved for the final rebased integration to `main`.
+
+**Exact program-phase completion checkpoint CLOSED on branch (2026-08-12; compiler/coordinator
+ACTIVE):** the exact program root's `phaseState` is the sole completion truth. One post-transaction causal
+rebase derives `program-phase-completed` from the child's exact root generation, phase and execution,
+latching current or overdue lifetimes while future executions remain live; the closure request carries no
+duplicate completion state, and exact generation closes same-id ABA. Applied `program-phase-transition`
+stages emit the authentic exact `program-phase-end` post-event for subscribers after ordinary events. Every
+non-invocation evidence and its phase CAS receipt share that exact event id. Ending sources stay structurally
+readable but are absent from every effective projection, so replacements can begin without double-active
+state. Hostile APIs still reject a raw latched world; causal review and compilation re-prove the entire
+transient and use only its canonical result. Focused verification is green (254 tests across nine suites);
+by owner rule no global branch gate ran. The effect/lifetime/boundary checkpoint below is the current
+continuation truth.
+
+**Exact root/phase split + pending-frame checkpoint CLOSED on branch (2026-08-12; coordinator
+ACTIVE):** root allocation and phase completion now have separate physical meanings.
+`program-root-create` derives the complete zeroed phase map and initial registers without publishing a
+completion; final `program-phase-transition` performs the exact selected-phase CAS and alone publishes
+`program-phase-end`. Register writes remain individual CAS operations between those boundaries. A bounded,
+unforgeable causal state now owns the exact LIFO frame stack: root creation is a standalone segment before
+push, program operations belong only to the exact top cursor, and final phase CAS atomically marks that top
+complete while the same causal rebase latches every lifetime made due by the new phase state. Compiler
+barriers may bind the immutable input/cursor and frozen target generations, but never a
+second world or progress model. Only focused verification runs during branch engineering; the global gate
+remains reserved for final convergence. The per-step segmented compiler is closed; the active next slice
+is the bounded fixed-point subscriber/end-wave coordinator.
+
+**Effect/lifetime/qualitative-boundary compiler checkpoint CLOSED on branch (2026-08-12;
+coordinator/runtime cutover ACTIVE):** exact condition, standing, Concentration and polymorph starts now
+compile with stable target slots, structured provenance and enforceable lifetimes. Concentration has no
+authored target: the receipt's exact caster is its single source of truth. Semantic condition removal
+selects every active exact target + condition occurrence across roots, while standing, Concentration and
+polymorph end selections are restricted to the current root plus the full fact/caster/form identity. Empty
+sets are idempotent; nonempty sets and committed exclusive replacements remain explicit
+`needs-coordination` barriers for the unfinished fixed-point coordinator, and same-frame conflicting
+exclusive starts fail closed. Authored `occurrence-end` has one exact `childStepId` grammar that selects
+all active direct children of that producer for the current root generation; `end-program` alone terminates
+the root. Program conformance now rejects unreachable phase lifetimes and source-end
+feedback. Rest/day boundaries allocate an exact monotonic ordinal before the checkpoint; rules match the
+same selectors at or after their stored minimum, so effects created during boundary `N` begin at `N + 1`
+and survive `N`. Shared-clock rebase resets that minimum from the destination timeline. The branch-only
+`MaterialState` shape is schema 4; no schema-3 state was deployed or persisted, so no live migration or
+compatibility path is needed. Checkpoints expose their exact boundary (or `null` for wave-only extension),
+and only the kernel can brand a completion; an unavailable source retains authority solely through its
+exact readable owned root. Focused verification is green (275 tests across nine affected suites); the only global gate remains
+the final post-convergence, post-rebase push to `main`. Payment, vitality, material/resource steps, the
+fixed-point subscriber/end-wave coordinator, remaining audited prerequisites, corpus transcription,
+persistence/UI cutover and complete deletion of superseded executors remain active.
+
+**Exact event-audience/dispatch checkpoint CLOSED on branch (2026-08-12; coordinator ACTIVE):** every
+event is now an opaque process-local emission paired with its producing stage's exact `after` world, or
+for `source-ending`, the re-proved readable end-wave world. Full semantic trigger proof freezes a canonical
+root-generation/phase audience at emission; dispatch later allocates the current phase CAS, re-proves the
+exact live root generation and authority, and does not re-evaluate mutable predicates. Only kernel-issued
+selected-event frames may execute on readable-ending roots, `source-ending` children must resolve their
+owning root, and those frames pin finalization through `phase-complete` until exact LIFO pop. Clones,
+forgeries, reuse, ABA, stale authority and roots/phases created after emission fail closed. Only focused
+affected-suite verification ran; by owner rule no global gate ran. The bounded fixed-point state
+coordinator and the remaining compiler/runtime cutover are still active; this is not engine completion.
+
+**Authenticated compiler-prefix projection checkpoint CLOSED on branch (2026-08-14; coordinator/runtime
+cutover ACTIVE):** successful prefix projection is now a distinct process-local capability whose frozen
+public value carries the exact projected world and cumulative inventory-source leases while a private
+runtime fiber binds both to the original trusted causal basis. It is never a causal-state receipt: prefix
+projection performs no end discovery, causal rebase or pending-phase acceptance, and clones, spreads,
+serialization and reconstruction fail closed. Compiler context refresh authenticates that capability and
+validates its readable world against the already-conformed basis and exact pending frames without
+conforming or rebasing the projection. One authored step still expands into one atomic transaction; only
+final simulation or the real phase commit performs the single causal rebase and latches the net endings.
+The closing review resolved both open points: the kernel's transaction entries now re-prove the
+already-authentic basis through `conformMechanicsCausalState` (a fixed-point re-proof that fails closed on
+any non-canonical state) so a basis re-proof can never read as a world rebase, and a world containing a
+one-execution-ahead program origin is constructible only through the kernel while its exact recoverable
+frame is active — the phase-CAS proof builds its mid-frame state through the real create transaction.
+Only focused affected-suite verification ran; no global gate ran. The fixed-point subscriber/end-wave
+coordinator, remaining compiler/corpus work, runtime cutover and final journal draft remain active; this
+is not an engine-completion claim.
+
+**Application cutover OPEN — the world landed (2026-08-14):** every character now owns one
+persisted mechanics world (`session.world`, schema-4 `CharacterMaterialState`), derived exactly once
+from the legacy session and re-proved fail-closed on load. Casting runs through the replay-driven
+`useMechanicsCast` hook → coordinator → one canonical `reduceActionJournal` commit with exact
+undo (`undoCharacterAction`), all proved against the real mock and the transcribed corpus
+(Cure Wounds end-to-end in the store test; the full requirement protocol in the hook render test).
+Legacy session fields the world supersedes are write-through mirrors (a golden-rule-10 rollout
+bridge deleted with the final document migration). The generated clause coverage report
+(`docs/automation-coverage.generated.json`) counts 422 composed spells, 190 with complete
+executable programs, 2107 clauses classified. Remaining cutover waves: boot-blocker consumer
+migration (in flight), combat/rail/item surfaces, the legacy executor deletions, and the live
+document migration. Focused verification only; no global gate ran.
+
+**Corpus transcription OPEN → first family CLOSED on branch (2026-08-14):** the transcriber
+(`src/lib/mechanics-transcription.ts`) compiles each composed spell's declarative facts into one
+authored `MechanicsProgram` plus an honest clause-level classification DERIVED from the fields the
+entity actually declares (slot payment, targeting/area, saving throw, damage components with
+save-half and upcast scaling via the new `input.<id>.level` slot-level bindings, healing, Temporary
+HP, condition application with structured lifetimes, cures, concentration with a `source-end` →
+`end-program` release phase, root duration via the new authored program `lifetime`). A clause is
+`automated` only when the emitted structure passes program conformance; physical rolls are
+`physical-input`; area occupancy is `spatial`; table-owned ends and unstructured durations are
+`table`; anything declared but not yet expressible is `unsupported` — never silently green. The
+corpus-wide guard sweeps every composed spell with zero gaps, and the transcribed Fireball runs
+END-TO-END through the coordinator over the real needs-answer protocol: slot debited 2→1 under a
+caller-guarded slot definition, targets chosen, save rolled against the bound DC and failed, the
+shared 8d6 observation applied full, the character correctly falling dying at 0 HP. Attack-gated
+spells, pooled healing/THP, creature-type-gated bonus damage, cast-mod damage terms, recurrence,
+follow-ups, deferred resolution, repeat saves and the 21 legacy `effectProgram` pioneers remain
+explicit `unsupported` boundaries for the next transcription waves. Focused verification only; no
+global gate ran.
+
+**Boot restored + engine surfaces LIVE on branch (2026-08-14, second block):** the work worktree
+boots again in real Chromium with a clean console — the missing item-resource persistence/command
+family (`decodeItemResourceState`, the self-verifying `planResourceCommand`/`applyResourceOperation`
+planner with exact reverts, the catalogue resource dialect) was implemented against its consumer
+tests (204 green), and local dev no longer initializes App Check (localhost is not a registered
+reCAPTCHA domain; `VITE_APPCHECK_DEBUG=true` stays the dev opt-in). The Spells tab now DISPATCHES
+engine-executable SRD casts to the deterministic runtime outside combat (lazy `EngineCastFlow` →
+the protocol modal: slot, targets, table-entered armor class for attacks, every physical die → one
+canonical journal commit with exact undo); not-yet-transcribed spells keep the legacy transaction
+until its deletion wave. Standing-buff casts (Hex's mark + active key, Divine Favor), pulse-phase
+condition re-application (Web, Sleet Storm), full-restore healing and the `cantripInstances` beam
+model (Eldritch Blast — first legacy `effectProgram` fully superseded) landed as waves 6–8;
+`mechanicsProgram` opened the hand-authored canonical-program channel (clause classification
+derived from the program itself) with Fire Shield as the worked example (choice → per-form
+standing → `standing-present`-gated retaliation). The kernel gained the possession-safe
+**root-pulse trigger** (the root's possessor declares each recurring/reactive event; single-use by
+advance CAS on execution + trigger event id) and the coordinator now admits non-create roots by
+pushing their frame before review — Moonbeam's pulse runs END-TO-END (register-scaled 3d10, failed
+save, exact phase-state CAS), and the full serialize→parse→advance round-trip over the PERSISTED
+`session.world` authenticates (the pulse surface: `useMechanicsPulse` + `EnginePulseStrip` reuse
+the cast modal protocol). The consumer layer moved onto the canonical contracts in the same block
+(d20 request/observation API across combat surfaces, the restored grant schema with the per-spell
+free-cast tracker suffix — fixing a real shared-tracker regression — exact store d20 result types,
+campaign fixtures on the migrated encounter model; tsc 556→171 via three agent sweeps), and the
+rollout bridge now mirrors engine-held concentration (engine transitions only). Coverage:
+**259/422 spells executable, ~36 unsupported clauses** — the remaining blockers are the 14 legacy
+`effectProgram` migrations (authored-program agent in flight), consumable/pool-split healing,
+two-target-set combos, and singletons. Focused verification only; no global gate ran.
+
+**The cutover convergence waves CLOSED on branch (2026-08-14 fourth block through 2026-08-19; ten
+checkpoint commits, public 549d9da..7112cd3 + pack bcc90a17/62a36ae7):** the S9 typed item-resource
+wave consolidated (per-instance counters, atomic table-entered spend/recovery, the universal
+entered-d20 kernel for death and concentration saves, the MechanicsCommand CAS path; PDF ledger and
+dev-scenario builder aligned to the post-migration model; full census 18,943/18,943 green at the
+consolidation point). Then, in one continuous multi-agent push: (1) the ADVERSARY ENCOUNTER WORLD —
+the campaign encounter document carries an additive engine-owned layer re-proved fail-closed and
+overlaid with doc-owned facts, DM damage/heal/condition taps and the universal resolver dispatch
+through booked boundary programs, turn stepping fires the kernel's `complete-turn` (expiries
+mirrored onto chips + chronicle in the same write), and chronicle undo reverts exactly through the
+shared-root journal; (2) the TRANSCRIPTION FIXPOINT — zero blocked SRD spells (286/422 executable;
+actions 45/231), the eight blockers automated with coordinator proofs (Divine Smite, Goodberry via
+closed conjured-item blueprints, Ice Knife, Vampiric Touch over the new landed-damage ledger, Wall
+of Fire, Geas, Greater Restoration, Mass Heal via expanded per-target integer inputs), turn-claim
+emission from declared per-turn caps, and the feature-attack/pool-spend/weapon families (Graze and
+Topple automated; census generated beside the spells file); (3) SOLO COMBAT ON THE CANONICAL TURN
+WORLD — a local single-participant encounter on the character material, End Turn firing the kernel
+boundary so booked lifetimes expire exactly, Extra Attack and per-turn caps enforced by the kernel,
+economy mirrors exact; (4) the FIRST UI-READ MIGRATIONS — the sheet reads world standing
+occurrences through one projection seam (engine Shield lifts AC with no legacy chip; a pre-existing
+concentration-mirror resurrect bug fixed; every authoritative concentration drop ends the engine
+occurrence canonically), and RESTS commit one journal action chaining end-encounter, RAW
+advance-time and complete-rest with recoveries as world transitions; (5) PC PARTICIPANTS join the
+shared encounter by identity-carried lease (members commit their own kernel start-encounter
+boundary, pass-off boundaries fire per observed round, cross-material actions correlate as two
+commits sharing one deterministic seed — the offline-first split-owner topology cannot carry the
+kernel's atomic multi-document finalize, documented at the seam); (6) DISPATCH CLOSURE — runtime
+context enrichment (monk class-die actions run end-to-end), Goodberry conjures and consumes in-app,
+Mass Heal splits in the modal, one shared spell-gate truth serving SpellsTab, PlayTab and reaction
+cards, and the two-action concentration swap (a coordinator replacement-livelock defect found and
+documented; fix in flight). The Warlock pact-slot seed bug (wrapped cell rejected by the parser,
+silently degrading every pact caster) was found and regression-pinned. Remaining active: the last
+dispatch gaps (pact casts through the gate, target-bound standings, maintainers/use-applies), the
+legacy deletion map L2-L3 (the main-era executor + bridge mirrors with the one-off live-document
+migration), convergence, and the Italian architecture explainer. Focused verification only per
+wave; the one full dual-build gate remains reserved for convergence. **Deletion map L0+L1
+EXECUTED (2026-08-20):** the legacy effect-program generation is DELETED — every `effectProgram`
+data field (public 16 spells + Uncanny Dodge; pack 4 spells + Shield Master, rule 28 same motion),
+the corpus/transcriber/routing plumbing, the interpreter + planning/command/atomic/lifecycle
+execution stack, the dead outer `action-command` kernel and the unmounted review UI (~19k LOC).
+The persistent standing-effect seam (`combat-effects`/`combat-effect-io`/`types/combat-effect` —
+fed by the declared-effects resolver and campaign persistent ops, never by programs) stays live
+with its program-owned payloads pruned; every read boundary strips stored program remnants
+fail-safe. The dispatch guard pins the 16-spell roster literally as the regression contract; both
+coverage censuses regenerated with zero effect-program clauses.\*\* **Deletion map L2 first half
+EXECUTED (2026-08-20, the standing-effect census wave):** the persistent standing-effect family
+was censused producer-by-producer and reader-by-reader against the canonical seams; the verdict
+(charter on `src/types/combat-effect.ts`, residue in `docs/AUTOMATION_HANDOFF.md`) is that the
+campaign `effectOps` ledger stays as the SMALLEST live cross-document seam (its behavior, Warding
+Bond transfer, Death Ward ally floor, Bless dice, marks, projected conditions, Aid HP arithmetic,
+lands on OTHER combatants, which single-document kernel worlds and owner-scoped
+writes cannot carry yet) while the seam's dead limbs are DELETED: the `set-active` CAS op kind
+and algebra (never had a shipped producer), the local `CombatState.effectOps` mirror ledger with
+`replaceCombatEffectOps` and its codec gates (never had a production writer; stored fields now
+codec-ignored fail-safe), `authoredLifetime`/`CombatEffectLifetime`, and `markedTargetForActor`.
+Character-side SELF standings already ride the world (active-key/target-mark standings through
+`world-standing-grants.ts`); the mission-premised monster damage-over-time tick turned out not
+to exist in the legacy system (nothing to migrate). The second half lands with the kernel
+residue: transfer/floor/max-HP standing facts + consumers, recipient-aware standing targets,
+and a cross-document carrier.
+
+**The fourteen authored programs CLOSED on branch (2026-08-14, third block):** every spell that
+still carried only a legacy `effectProgram` now holds a hand-authored canonical-runtime program —
+Ensnaring Strike, Searing Smite, Dragon's Breath, Acid Arrow, Spike Growth, Phantasmal
+Force, Phantasmal Killer, Vitriolic Sphere, Contagion, Delayed Blast Fireball, Prismatic Spray,
+Prismatic Wall, Storm of Vengeance and Weird — using register-driven counters (Delayed Blast's
+beam accumulator rolls `register.beam-accumulator` d6 at detonation), choice-branched standing
+keys (Dragon's Breath's five elements), repeat-save pulses with `end-program` on success, the
+physical-table d8 ray rows of the prismatics, and possessor-declared `root-pulse` cadences for
+every legacy `manual`/turn event. End-to-end proofs: Searing Smite (cast → strike → failing burn →
+succeeding burn ends the program and its standings) and Delayed Blast Fireball (two accrues → 14d6
+detonation, 42 damage, root consumed). Each deliberate simplification vs the legacy model is
+recorded in the authoring agent's honesty ledger (per-target petrification series and destroy
+qualifications stay table-owned; Contagion's root survives as the disease carrier because children
+die with their root). The automation corpus registers the canonical `mechanics-program` handler
+beside the legacy one. **Spell corpus stands at 273/422 executable, 8 spells blocked on 22
+unsupported clauses out of 2,716 (99.2% resolved); the ~141 remaining non-executable spells are
+purely narrative (no mechanical steps to automate).** The FEATURE-ACTION wave opened in the same
+block: `transcribeFeatureAction` compiles the tracker-payment family (Second Wind end-to-end:
+seeded pool 2→1, 1d10 + resolved class bonus, the spent use mirrored onto the legacy tracker),
+with the 166-action census mapping v2 (standing/spend-only ≈42, feature attacks 4, cures 3).
+Focused verification only; no global gate ran.
+
+**Transcription waves 2–5 CLOSED on branch (2026-08-14):** the attack gate (per-target-slot attack
+requests vs bound armor class with the caster's attack bonus; hit/crit damage through two
+outcome-expanded roll inputs — crit dice doubled, flat bonuses never; misses self-resolve their
+empty roll requirements engine-side), combined attack-then-save gates (Ray of Sickness: the save
+only on a landed hit via an `answer-d20` predicate), per-instance dart rolls (Magic Missile),
+2024 cantrip scaling (damage dice by character level, or `cantripInstances` scaling beam SLOTS
+with fixed dice — Eldritch Blast is the first legacy `effectProgram` fully superseded
+declaratively), flat + full-restore healing (Heal / Power Word Heal), and RECURRENCE — a
+table-signaled `pulse` phase re-running the whole resolution suite with phase-prefixed identities,
+the cast level carried by a program register, deferred zones (Moonbeam) resolving nothing at cast,
+and repeat-save `end-program` (Searing Smite). Two kernel laws landed with the waves: omitted-input
+selectors resolve to zero targets at compile (review-completeness proves omission), and
+turn-boundary lifetimes outside an encounter freeze to their 6-seconds-per-turn timeline
+equivalent. Coverage now: 422 composed spells, 234 executable programs, unsupported clauses down
+to 49 (15 legacy `effectProgram` migrations + healing-pool/consumable, two-target-set combos,
+deferred standing riders, per-part cast-mod attribution, and singletons). Scorching Ray,
+Fire Bolt, Magic Missile, Ray of Sickness (hit and miss paths), Moonbeam (deferred cast) and
+Eldritch Blast (3 beams at L11: hit/crit/miss) all run END-TO-END through the coordinator
+protocol. Pulse EXECUTION end-to-end awaits the table-authority action seam (the
+`manual-table-event` evidence demands a material-authority actor) — queued with the cutover.
+The 6 live-team fixtures derive canonical worlds (pack conformance suite green). Focused
+verification only; no global gate ran.
+
+**Authored step census COMPLETE on branch (2026-08-14):** every one of the 24 authorable
+`MechanicsStep` kinds now compiles into exact kernel operations — the last two being `turn-claim`
+(one `turn-economy-transition` per resolved combatant, its effective projection supplied by the
+caller and re-emitted by the kernel as a commit-validated fingerprint guard) and
+`incoming-damage-adjustment` (conformance-locked to `damage-taken` phases; the reaction compiles as
+an exact compensating reduction bounded by the triggering resolution's effective damage, proved
+end-to-end by a Deflect-style ward reducing 6 incoming fire to 3 within the attacker's own causal
+action). The remaining audit items — table-override authorization, source-specific Temporary-HP
+replacement teardown, death-prevention standing policies, enchantment attach/transfer, same-frame
+created selectors, the explicit critical-hit resolver input and replayable manual outputs — are
+data-shaped: they acquire their real consumers during corpus transcription and application cutover
+and are tracked there. Focused verification only; no global gate ran.
+
+**Resource and payment compilers CLOSED on branch (2026-08-14):** the reviewed-payment prelude now
+compiles every resolved resource debit (chosen slot/pool payments and d20/dice riders) exactly once,
+deterministically before the first authored step of the frame's first segment; authored
+`resource-change`, `resource-recover` and `resource-state` steps execute through exact
+`resource-transition` operations. Resource definitions resolve fail-closed from caller-guarded
+`resource-definition` facts or the capability snapshot's own closed pool specs (whose guard the
+compiler then emits itself), and kernel `needs-observation` requests attach recorded dice
+observations from the response ledger and retry — proving the full suspend/record/resume cycle for a
+rolled Dawn-style recovery end-to-end. The review layer now issues possession-proofed reviewed
+intents: mutable eligibility (payment affordability, target liveness) is proved exactly once against
+the closed basis that reviewed it, and later compile segments authenticate the same frozen value
+instead of re-deriving truths the action itself has legitimately consumed — a cloned or reconstructed
+review still re-derives fully and fails closed on any drift. Focused verification only; no global
+gate ran.
+
+**Lifecycle step compilers CLOSED on branch (2026-08-14):** authored `entity-create`,
+`inventory-create`, `entity-change`, `entity-end`, `inventory-change`, `inventory-end` and
+`end-program` now compile into exact kernel operations. Creations materialize from CLOSED blueprints
+carried inside the capability snapshot (`snapshot.blueprints`, canonical opaque records re-proved by
+the full material conformer at the exact point of use, so catalogue lookups never happen at runtime
+and a malformed blueprint fails the authored step closed); each creation writes its material
+lifecycle with the resolved lifetime and exact preallocated generations. `end-program` is conformance
+-enforced terminal and its root end request travels through the compiled segment to the coordinator,
+which latches it at the frame's pop — the only moment the kernel permits an ordinary frame's own root
+to end — so a one-shot program's damage persists while its root, children and lifecycles vanish in
+the same causal action. Proved end-to-end: the one-shot damage program, a closed-blueprint companion
+summoned under the caster's control, and a conjured item copy. Focused verification only; no global
+gate ran.
+
+**Vitality step compilers CLOSED on branch (2026-08-14):** `compileMechanicsFrame` now compiles
+authored `damage`, `heal`, `temporary-hit-points`, `clear-temporary-hit-points`, `exhaustion-change`,
+`stabilize` and `death` steps into exact kernel operations. Damage builds one packet per expanded
+target, resolves it against the target's effective defense profile (standing `damage-defense` facts
+merged with the custom-template/override material profile), consumes recorded damage-allocation
+observations and suspends with a single-use continuation when the table must allocate a flat
+adjustment; creature maximums come from caller-guarded `hit-point-maximum` facts (re-emitted and
+validated by the kernel) or the material template, and zero-HP policy defaults to the 2024 rule
+(characters fall dying, other creatures die). Temporary HP creates its per-target source occurrence
+and grant atomically, with the emptied source discovered and ended by the causal wave. Proved
+end-to-end through the coordinator: multi-part damage through resistance firing a damage-taken
+reaction in the same action, allocation suspend/resume (the response-accept path), source-bound THP
+grant/clear with automatic source ending, exhaustion gain, and fail-closed missing-maximum
+rejection. Focused verification only; no global gate ran.
+
+**Bounded causal fixed-point coordinator CLOSED on branch (2026-08-14):** `runMechanicsCausalAction`
+is the one driver for one complete causal action: root review against the closed entry basis, the
+standalone root-create transaction, the LIFO pending-frame compile loop, frozen event audiences
+dispatched depth-first at their exact baseline depth, subscriber frames with intrinsic
+trigger-event-id dedup, readable end waves delivered exactly once per basis then finalized, boundary
+checkpoints driven by a non-finalizing checkpoint mode, terminal material cleanup, and exactly one
+`planMechanicsWorldAction` journal draft. Suspension is replay-shaped: review requirements and compiler
+requests surface with deterministic frame identities, and the caller re-invokes with extended
+answer/response ledgers — nothing coordinator-owned serializes. Proved end-to-end: a two-phase
+program-phase-end cascade completing in ONE action, wave-coordinated Concentration replacement across
+roots, needs-answer suspension and replay, work-budget exhaustion, and pending-frame entry rejection.
+The boundary path and the response-accept path get their end-to-end proofs with the entity/resource
+compilers. Focused verification only; no global gate ran.
+
+**Authentic response resumption CLOSED on branch (2026-08-14):** compiler continuations now exist only
+for genuine user responses. The private fiber binds the exact issuance causal state by identity plus the
+reviewed input, expected cursor, consumed response prefix and issued request; consumption is single-use
+even when the resumed compilation then rejects; resumption must extend the prefix by exactly one answer
+to the issued request; an unanswered, unconsumable or unused response fails closed. `needs-coordination`
+now carries only its typed coordination value — the coordinator latches/finalizes end state and restarts
+ordinary compilation on the mutated basis instead of resuming a fake continuation. The accept path
+becomes exercisable with the first observation-bearing step compiler; every reject path is proved now.
+Focused verification only; no global gate ran.
+
+**Deterministic automation gap sweep — ACTIVE (2026-08-04):** six truth-gated milestones are closed and
+branch-pushed: persistent/reactive-effect lifecycle, target-bound on-hit retaliation, variable-level
+charged-item casts, activated-item tracker/timer lifecycle, bounded spell-pool execution, and variable
+healing-pool execution. Lay On Hands now applies reviewed healing and paid condition cures together with
+one exact live-validated pool debit; Recover Vitality chooses its d10 count before target review, then
+heals from the entered roll. Both share solo/encounter targeting, peer-offline delivery, exact resource
+undo and stale-redo guards; own-sheet effects reverse with that same undo, and inline homebrew actions use
+the same typed capability. Divine
+Intervention, War God's Blessing and multi-spell items now rejoin the ordinary resolved-spell pipeline after
+the spell pick: configuration precedes target review; action economy, deterministic effects, concentration,
+structured log/Chronicle provenance, exact tracker payment and undo share one path. Typed source overrides
+also preserve fixed save DCs and War God's Blessing's concentration-free 10-round persistent/recurring
+state. Item-only spell visibility cannot invent a class-slot route, shared-resource homebrew pools select by
+stable source id, and stale commit/redo proposals cannot overdraw live slots or charges. The remaining
+deterministic corpus audit follows as separate, truth-gated milestones; queued UI dogfood remains after
+engine closure. Nothing from this sweep merges to `main` without the owner's final permission.
+
+**Canonical PC damage transition CLOSED on branch (2026-08-05):** open-sheet/solo damage and
+fresh-read peer-PC damage now share one pure reducer for resolved-vs-raw intake, Temporary HP, damage at
+0 HP, Stable reset, critical failures, knockout/massive death, Unconscious, Warding Bond transfer and
+Death Ward consumption. Focused adapter-parity tests execute the same packets through both production
+paths. A duplicated local active key + projected occurrence is consumed together and removed from the
+current projection, preventing a second local trigger. **Next orchestration seam:** self-target encounter
+damage must revoke/restore the consumed occurrence in the authoritative campaign ledger and apply/reverse
+returned partner transfers through the shared transaction. The current optimistic projection filter is
+intentionally not claimed as reload-durable or as the complete inverse.
+
+**Occurrence-based combat outcomes CLOSED on branch (2026-08-05):** reviewed attacks, saves and
+damage-reduction reactions now emit locale-free receipts keyed by exact turn, action use, target and,
+when the table supplied it, exact instance. Aggregate hit counts remain explicitly aggregate instead of
+inventing ray/swing order. A monotonic persisted ordinal keeps repeated uses distinct; actions, Attack
+swings and the spent Reaction own their occurrence ids, so hydration rejects dangling/forged receipts and
+undo/re-arm removes only the matching facts. Follow-ups use typed predicates (`requiresOutcomeThisTurn`),
+with Deflect Attacks redirect migrated off its former coarse success boolean. Critical hits are admitted by
+the engine contract but remain unproduced until an explicit table input is added to the resolver UI.
+
+**Ordered combat occurrences CLOSED on branch (2026-08-05):** multi-hit attacks, rays and missiles
+now cross defenses, Temporary HP, 0-HP rules, one-shot floors and successful-hit retaliation one entered
+packet at a time instead of collapsing into one total. Death Ward can stop the first qualifying packet
+without erasing later hits; damage at 0 accrues per hit; per-hit retaliation repeats while its exact
+effect remains active. Ordinary actions, Attack swings and Reactions now publish their owner plus all
+validated receipts in one Zustand mutation, and every undo/re-arm removes or restores that pair in the
+same mutation, so the persisted turn writer cannot observe an owner/fact half-state. Fixed and timed
+active states also share the same declarative `endsEarlyOn` trigger consumer. The separate campaign
+effect/inverse transaction remains the next orchestration seam described above.
+
+**Entered-D20 lifecycle vertical CLOSED for solo play on branch (2026-08-05):** one locale-free,
+JSON-plain kernel now validates the exact physical d20 face input, nets Advantage/Disadvantage, selects
+the natural face and resolves typed outcomes without rolling. Death Saves rebuild live all-save,
+Exhaustion and critical-threshold facts at every commit/replay. Damage while concentrating persists one
+FIFO prompt per authored packet with its exact capped DC; resolution rebuilds the live CON save and
+Concentration-only facts, then advances the queue or runs the canonical full teardown. Malformed or stale
+prompts fail closed, and Death Saves, save results and lethal damage all own causal compare-and-swap
+undo/replay across character, log, active effects and the persisted queue. The campaign-target bridge
+remains part of the shared resolver transaction: it must load the target PC's parent session, enqueue the
+same combat-subdocument prompt and reverse it with the campaign effect rather than adding a second rules
+path in `campaign-io`.
+
+**Physical magic-item resource architecture CLOSED on branch (2026-08-05; corpus migration ACTIVE):**
+mutable items now have exact physical-copy identity and a typed catalogue-defined counter model with
+strict persistence parsing, pure spend/gain/recovery planning, whole-item revisions, atomic multi-copy
+boundaries and causal fact-preserving undo/replay. Combat actions, item spell casts, alternate costs,
+Inventory controls and rests share one command/input/CAS provider; a cancelled roll, lost reaction,
+unequipped owner or stale state changes nothing. Dawn and Dusk are explicit Table Clock declarations,
+not Long Rest or device-time aliases, and exact recovery cadence renders in EN+IT. A disposed copy stops
+contributing every grant and intrinsic equipment calculation. The typed scalar proof set is now 30
+items: 26 public items plus the pack Spirit Board, Mythallar Cloak, Niko's Mace and Wave. The public
+set is the original Wand of Magic Missiles/Winged Boots pair plus the first 24-item source-verified
+counter wave; it includes variable-cost wands/staves, explicit last-charge rolls and their distinct
+destroyed/nonmagical outcomes. The pack closure removes three false Long-Rest/Dawn tracker aliases:
+Mythallar and Niko now recover their entered d10/d6 charge rolls at Dawn, while Wave owns an entered
+d3 charge pool and an independent full-at-Dawn Globe use. This closes exact counter ownership and payment
+for the casts/properties already structurally authored; it deliberately does **not** claim the same
+items' still-prose-only properties (for example Reflect Enchantment, Insect Cloud and Tree Form). The
+composed magic-item census is repairing those action clauses and migrating the remaining scalar,
+multi-resource and collection corpus in separate source-verified waves. Item-id trackers,
+`ref.charges`, the false Long-Rest/Dawn alias and the one-off live migration cannot be removed until the
+catalogue guard reaches zero and every live current doc + saved snapshot passes the post-migration check.
+The guarded one-off `scripts/migrate-item-resources.ts` is prepared and locally proved in composed and
+SRD-only modes: dry-run/check are read-only, apply requires a fresh private backup directory, every write
+uses the discovered `updateTime` precondition in one ≤500-document batch, and reread/global/idempotency
+checks follow. It has **not** been run against production; the autonomous snapshot-verified live apply
+and immediate superseded-path/script deletion remain open.
+
+**MechanicsCommand transaction seam — resource conversions CLOSED on branch (2026-08-05):** Font of
+Magic in both directions, Nature Magician and Pact-slot recovery no longer execute captured
+`CommitOp[]` through sequential clamping mutators. A locale-free `resource-conversion` command stores
+only the stable source, conversion and player's selected level/amount; every execute and redo re-resolves
+the live grant, class gate, affordability and headroom, rejects non-safe numeric facts, and compiles all
+touched owners into one canonical compare-and-swap plan. The character store validates every leg against
+one snapshot, mutates slot/tracker maps in one Zustand notification and schedules one persistence flush;
+undo applies the receipt's exact causal inverse and stays retryable on conflict. This is the first generic
+owner-state command member, not a claim that casts/actions or campaign-owned effects have migrated yet.
+
+**Composed spell-source census — first exact data wave CLOSED on branch (2026-08-05):** the audit
+started from the actual public + private spell catalogues and 2024 rules source rather than prior
+coverage claims. Feather Fall now carries its exact five-creature target ceiling, Hold Person models
+one additional target per upcast level, Slow carries its six-enemy ceiling, and Conjure Barrage /
+Conjure Volley now expose their exact Force-damage and Dexterity-save packets (including Barrage's
+upcast progression). Trigger eligibility, repeat-save lifecycles, geometry and material handling stay
+explicitly outside this narrow data correction and remain engine work, not falsely claimed automation.
+
+**Live-team truth audit — activation-scoped resources CLOSED on branch (2026-08-04):** Santaera's
+future Zealot progression exposed a false rest approximation: Fanatical Focus is once per Rage, not
+once per Short Rest. `TrackerSpec.refreshOnActivationOf` now declares that lifecycle using the same
+stable active-state key as Rage. A fresh activation refills every linked tracker atomically; repeat
+commits against an already-active state and the explicit Extend Rage action do not. The standard
+action undo restores the exact prior tracker state. Resolved trackers, custom/homebrew tracker data,
+compendium copy and the live feature ledger all share the primitive, and the real Santaera fixture at
+level 6 proves activation, recovery metadata and reversal without any Barbarian-specific store code.
+
+**Live-team truth audit — source-qualified condition immunity CLOSED on branch (2026-08-04):**
+Chiaviddu's Fey Ancestry now models immunity to the `sleep` spell's Unconscious effect without granting
+blanket immunity to Unconscious. `condition-immunity.sourceId` is a generic data primitive carried from
+the grant aggregate through live party stats and encounter target snapshots. The universal resolver
+uses it only to suppress the safe automatic default; the target card labels the immunity and still lets
+the table explicitly apply the condition as an override. Public evaluator/resolver regressions and the
+real Chiaviddu fixture lock the distinction without an Elf- or spell-name branch in React.
+
+**Persistent-spell lifetime contract CLOSED on branch (2026-08-04):** the composed-catalogue census
+found 34 persistent spell effects whose mechanical grants could activate but had no structured expiry.
+Every spell-owned `while-active` state now declares its real fixed lifetime; Hex and Hunter's Mark add
+slot-level duration tiers. One pure selector feeds cast configuration before target review, self timers,
+exact-target encounter effects and Short/Long Rest expiry from the stored cast level. A whole-catalogue
+guard (mutation-proved against Bane) prevents any future persistent spell from shipping without an
+enforceable duration or with inconsistent minute/round math. The six-fixture feature audit continues.
+
+**Condition-lifetime + explicit Rage maintenance CLOSED on branch (2026-08-04):** every condition
+application in the composed spell catalogue now declares a typed maximum: source/Concentration,
+fixed time, exact actor/target turn boundary, or manual table-observed end, with per-condition
+overrides and slot tiers where RAW differs. Encounter occurrences expire independently; Geas resolves
+30 days / 365 days / indefinite before target review; Symbol keeps its 1- versus 10-minute outcomes;
+solo casts persist the same occurrence shape in `combat/state`, survive route/reload, compose with the
+campaign projection and expire at the same exact boundary. Expired source state ends Concentration and
+one undo restores the full timer/cast/log projection. Whole-catalogue guards cover initial and recurring
+applications. The same audit found that Rage's documented
+Bonus-Action maintenance was only a cost-free override: Santaera now gets a real **Extend Rage** action,
+available only while raging, occupying the durable Bonus slot without consuming another Rage use.
+Feign Death now projects Speed 0, Poisoned immunity and every non-Psychic resistance in addition to its
+two conditions. The non-VTT early exits remain explicit corrections rather than fabricated observation.
+
+**Live-team truth audit — Divine Fury damage choice CLOSED on branch (2026-08-04):** Santaera's
+Zealot rider no longer silently forces Radiant damage. `damage-rider` now models a non-empty
+per-hit type choice as first-class data; aggregation keeps a backward-compatible fallback while the
+shared rider chip shows every option and `CombatResolver` requires the actual choice whenever the
+rider is used. The selected type enters the ordinary per-component defense math, transaction and
+undo path. The primitive is feature-agnostic, so future content and homebrew riders inherit the same
+behavior without a Zealot branch. Public pipeline tests and the imported Santaera contract pin
+weapon and Unarmed Strike parity. The six-fixture deterministic census continues.
+
+**Live-team truth audit — Barbarian/Monk follow-up CLOSED on branch (2026-08-04):** two remaining L3
+facts that were still prose now use reusable engine primitives. Primal Knowledge projects a typed
+optional STR ability onto its five active checks only while Rage is active; the cockpit and PDF share
+the same derivation and passives remain unchanged. Deflect Attacks now asks for the observed incoming
+amount/type and physical d10 roll, adds DEX + Monk level, routes only the remainder through the ordinary
+defense/Temporary-HP/undo pipeline and exposes its 1-Focus redirect only when that reduction reached 0.
+The successful Reaction receipt survives navigation/reload. Redirect then uses the ordinary free-target
+→ DEX-save → entered-damage → resource/log/undo flow. Martial Arts dice scale by Monk level and Deflect
+Energy widens eligible types at L13 (every damage type) through the generic level-threshold resolver.
+Public unit contracts and the real Santaera/Bo fixtures lock both behaviors; the wider deterministic
+corpus audit continues.
+
+**Live-team truth audit — Divine Fury attack scope CLOSED on branch (2026-08-04):** the audit caught
+a green-test rules defect: Santaera's Divine Fury was restricted to melee weapons even though the 2024
+feature applies to any weapon or Unarmed Strike. The reusable `weapon-or-unarmed` rider scope now covers
+melee weapons, ranged weapons and Unarmed Strikes through the one shared attack resolver. Public
+SRD-only scope regressions plus Santaera's real Shortbow/Greatsword/Unarmed rows prevent the content
+contract from silently narrowing again.
+
+**Live-team truth audit — Rage contract CLOSED on branch (2026-08-04):** the Barbarian fixture exposed
+a stale 2014 maintainer and two missing 2024 restrictions. Rage now declares no-spell/no-Concentration
+and Heavy-armor/Incapacitated incompatibilities as generic active-state data. Every cast route is
+hard-gated, activation ends held Concentration with exact undo, condition/equipment changes end the
+state, and taking damage no longer falsely maintains it. Fixture-driven regressions cover activation,
+duration, blockers, aggregate effects and the composite undo. Bard/Wizard/Rogue/Paladin fixture audits
+continue as separate truth-gated milestones.
+
+**Live-team truth audit — Monk contract CLOSED on branch (2026-08-04):** the fixture exposed a
+false-positive automation claim: Uncanny Metabolism restored Focus on every Initiative without spending
+its 1/LR use and never applied its heal. It is now one optional atomic action that spends the use,
+restores Focus, resolves the entered Martial Arts die + Monk level as healing, persists immediately and
+undoes exactly. The generic action schema now supports tracker top-ups (including homebrew overrides),
+and the target compiler no longer misclassifies explicit self-target effects as enemy-only in solo play.
+Step of the Wind now exposes both the free Dash and the 1-Focus Dash+Disengage/double-jump variant. The
+real Bo fixture proves the rendered action → target review → healing/resource commit → undo path.
+
+**Live-team truth audit — Bard contract CLOSED on branch (2026-08-04):** Bardic Inspiration
+previously spent the Bard's use but delivered no die. It is now one typed ally-target effect: the
+level-scaled die reaches an online or offline party member, or an encounter-owned NPC ally, through the
+same reviewed transaction as other combat effects; persists in the recipient's `combat/state`; appears
+in target context; logs exact actor/action provenance; and has explicit spend/correction and rest expiry.
+The additive read fallback preserves existing held dice while establishing the subdoc as the only new
+write home. Pure support actions no longer create fake attack declarations. The real team fixture
+locks CHA uses, d6 scaling and the ally/exclude-self target contract. The live Bard's Musician feat now
+models Encouraging Song as a 1/rest generic resource action: its `PB` target cap resolves before review,
+Heroic Inspiration reaches online/offline PCs or NPC allies without stacking, the target card exposes an
+already-held token, and the Chronicle records actor + action provenance. Heroic Inspiration now shares the
+combat-state SSOT and additive legacy fallback used by held Bardic dice, so spending and peer delivery cannot
+fork parent/subdoc state. Wizard/Rogue/Paladin fixture audits
+continue as separate truth-gated milestones.
+
+**Live-team truth audit — Diviner Portent contract CLOSED on branch (2026-08-04):** the tracker
+previously counted uses but discarded the two d20 results the player must physically roll after a
+Long Rest. A generic recorded-roll tracker now stores one bounded value per remaining use, spends the
+exact chosen result with correction/undo, survives navigation plus schema-3 export/import, and clears
+through the normal recovery seam. The app still never rolls dice. The same opt-in is available to
+homebrew feature trackers, and the real Wizard/Diviner fixture locks the 2→3/LR d20 contract. The
+fixture's combat-spell audit is closed in the next milestone below; Rogue/Paladin follow.
+
+**Live-team truth audit — Wizard combat-spell contract CLOSED on branch (2026-08-04):** Briox's full
+prepared combat loadout now has a fixture-level resolver contract. Shield declares its real trigger and
+expires at the exact next turn-start with composite undo. Mind Sliver persists a typed −1d4 on the exact
+target's next save, shows it during target review, consumes it only when that save is adjudicated and
+restores it on undo. The audit also caught two omitted cantrip riders: Chill Touch now blocks HP recovery
+for PCs (including offline peers) and exact monster instances without blocking condition cures; Ray of
+Frost projects its −10 ft/−3 m Speed until the caster's next turn. Ice Knife, Sleep, Magic Missile and
+Cloud of Daggers are locked to their attack/save, free-target, instance and recurrence shapes; Misty Step
+and Mage Hand correctly remain table-positioning actions because the app is not a VTT.
+
+**Live-team truth audit — Rogue/Assassin contract CLOSED on branch (2026-08-04):** Chiaviddu exposed
+three prose-shaped seams. Sneak Attack is now a Finesse-or-Ranged `damage-rider` whose per-turn tracker
+is spent only with the reviewed hit and restored by the same undo. Steady Aim persists its one-attack
+Advantage and movement lock through navigation, consumes only the roll on the next attack, and rejects
+use after movement. Cunning Action is three real Bonus Actions—Dash, Disengage, Hide—routing through
+the universal movement/economy/Stealth-check seams. Assassinate's round-1 Rogue-level damage now appears
+only after Sneak Attack is entered on the same hit; the target/order facts remain table-supplied. The
+real fixture locks all four contracts plus Alert and the subclass's scoped initiative/first-strike rules.
+The Paladin and final six-fixture conformance passes follow.
+
+**Live-team truth audit — Paladin/Vengeance contract CLOSED on branch (2026-08-04):** the real fixture
+exposed a false default Fighting Style and four target-state gaps. Class inference now grants only the
+features named by the level table plus the selected subclass; an explicit historical choice remains
+lossless, but an orphan catalogue option can never silently add +1 CA. Bless projects +1d4 to every
+attack/save on each selected ally for the Concentration lifetime. Vow of Enmity is a feature-owned exact
+target mark; after that creature reaches 0 PF its free transfer preserves the original duration and spends
+no second Channel Divinity. Divine Smite adds its separate +1d8 only for Fiends/Undead. Searing Smite
+separates initial damage from the bound target's start-turn damage/save loop, preserves upcast level,
+ends both sides on a successful save and restores them on undo. Compelled Duel now records its exact
+failed-save target for the Concentration lifetime. The real fixture locks CA 20, Lay On Hands 15, Channel
+Divinity 2, Lucky 2 and every resolved target contract. The final six-fixture conformance pass follows.
+
+**Live-team truth audit — six-fixture combat conformance CLOSED on branch (2026-08-04):** the final
+Carretto pass imports all six real portable characters and pins every battle-bearing action they expose.
+Any character now gets one resolved Unarmed Strike; Martial Arts and Flurry reuse that compiler, enforce
+their prior-Attack/once-per-turn rules and emit the real one/two-strike sequence (three from Monk 10).
+Reckless Attack is one reversible free action ending at the next turn start; Danger Sense is declaratively
+suspended by Incapacitated. Bane/Bless affect exact targets' attack/save rolls, Faerie Fire affects
+incoming attacks against freely selected failed-save targets, and Vicious Mockery affects only the
+target's next attack. Hex/Hunter's Mark are target marks, not fake immediate damage. Species/feat spells
+derive DC and spell attack from their own ability even without a class Spellcasting block (Chiaviddu's
+Drow Faerie Fire = CHA DC 12). Contracts cover the Bard, Diviner, Assassin, Vengeance Paladin, Mercy
+Monk and Zealot Barbarian; condition lifetime and remaining corpus seams continue separately.
+
+**Live-team truth audit — Alert contract CLOSED on branch (2026-08-04):** Alert's +PB initiative bonus
+was already computed, but its willing-ally Initiative Swap was still prose. During gathering, the DM can
+now choose an Alert-bearing PC and any willing PC/NPC ally with initiative. The encounter stores only
+that reviewed pair, applies it over the live preview without rewriting either raw d20, and freezes the
+result through the existing turn-order SSOT. The choice can be replaced or removed before turns begin;
+invalid/enemy/dangling pairs are rejected or cleaned. UI and reducer/view regressions cover apply,
+reopen, remove, sequential swaps, NPC allies and participant removal; Bo and Chiaviddu's real fixtures
+pin the feat and their exact +PB totals. The real-team long-tail audit continues with Lucky and Savage
+Attacker.
+
+**Live-team truth audit — Origin-feat follow-up CLOSED on branch (2026-08-04):** Lucky now exposes its
+two distinct PB/Long-Rest spends (grant Advantage to self or impose Disadvantage on an attacker) through
+one shared tracker, while Santaera's Savage Attacker contract is pinned to once per turn and weapon-only.
+Briox then exposed a grandfathered Magic Initiate choice whose known spell had never received its free-cast
+provenance. The engine now detects only that verifiable absence and routes the player through the normal
+feat spell picker; selecting an already-known spell enriches the existing ref without duplication, fixture
+rewrites, guessing or overwriting another feature's provenance. Once complete, the ordinary cast/resource/
+undo pipeline takes over. The six-fixture long-tail audit continues with equipment and item resources.
+
+**Live-team truth audit — equipment combat contract CLOSED on branch (2026-08-04):** the real fixtures
+now pin the Bard's imported Potion of Healing (Bonus Action, 2d4+2, exact quantity spend), both carried
+shortbows to their exact 20-arrow stocks, the Paladin's custom weapon overrides (+6 / 1d8+4) and
+plate+shield AC 20, plus the worn Half Plate/Plate Stealth Disadvantage. The discovered deterministic
+gap is closed generically: ordinary equipment can own the same declarative tracker/action shape as a
+feature. The Barbarian's Healer's Kit therefore exposes one ten-use Utilize action that targets only an
+unstable 0-HP PC, works for an offline table-mate, preserves 0 HP + Unconscious, sets the death-save track
+to Stable, writes exact Chronicle provenance, survives Long Rest as a manual stock, and undoes exactly.
+The six-fixture long-tail audit continues with remaining inventory/resource lifecycle seams.
+
 **CODE-COMPLETE encounter correction + battle-resolution overhaul — HELD for owner screenshot approval
 (2026-08-03):** dogfooding found two encounter UI regressions: the light-theme compact single-encounter topbar chip inherited dark
 ink for its nested glyph/count despite the carved socket's correct fixed ink, and the end-encounter
@@ -640,8 +1335,35 @@ one slot-scaled self-heal only when another creature is healed, and Supreme Heal
 maximum with no fake roll input. Unit, rules and focused Chromium regressions cover the seams. Not merged pending
 the visual gate (golden rule 25).
 
-**Released on `main` at v0.22.0** — the same version **deployed to production**
-(https://d20-folio.web.app, owner-confirmed live 2026-07-23), so `main` and live are currently **in
+**URGENT dogfood corrections — CODE-COMPLETE, HELD for owner visual approval (2026-08-03):**
+peer healing/damage/conditions now fresh-read and update the recipient's narrow `combat/state` directly
+in the same transaction as the Chronicle, so the recipient may be offline; campaign membership rules
+permit only that combat slice and revoke immediately on removal. Turn economy persists under an exact
+fight/round/actor key through a field-scoped writer, so group↔sheet navigation neither resets actions nor
+clobbers concurrent HP. The resource rail also dropped its obsolete pre-commit preview: a committed cast
+now has one slot debit and one durable turn receipt, never a second “pending” gem after navigation.
+Slot/tracker mutations also coalesce an immediate save flush after the composite cast, closing the
+short receipt-vs-resource race without making ordinary text editing write on every keystroke.
+The bypass dev runtime now reproduces the production document lifecycle instead of mixing regenerated
+fixtures with no-op persistence: one versioned local replica backs character parent state, the separate
+combat subdoc and campaigns, including optimistic/local echoes, cross-tab snapshots and hard-reload
+survival. Fixtures are seed-only and `?reset-dev=1` explicitly reseeds them. Real-browser proof casts Bane
+(L1 2/4 → 1/4), hard-navigates sheet→campaign→sheet and reloads again; the spent slot and durable “Used”
+turn receipt remain aligned on every mount (the former bypass reset reproduced 2/4 + available).
+Manual dogfood now has a stronger one-command lane too: `pnpm dev:emulators` starts and owns a seeded,
+demo-project-only Auth/Firestore/Storage/Functions sandbox, auto-signs into a real local Auth account and
+runs the production adapters/rules/listeners/transactions instead of any bypass. The local replica remains
+only the fast screenshot/E2E lane; permission, multi-client, offline, Storage and callable checks use the
+emulator sandbox.
+Gathering adds explicit self skip/rejoin and DM partial begin; NPC allies are
+first-class, targetable, budget-neutral combatants with one reversible side field. Legal composes the
+Compendium tome texture in both themes. (The branch's release-triggered deploy experiment was NOT
+retained at convergence — deploys stay dispatch-only, owner-fired, promoting a verified SHA per
+golden rule 22 and main's gate split.) Emulator rules (134) plus
+focused state/engine/UI regressions are green; screenshot matrix and full gates remain before merge.
+
+**Released on `main` at v0.23.1** — the same version **deployed to production**
+(https://d20-folio.web.app, workflow-confirmed live 2026-08-03), so `main` and live are currently **in
 step**. Deploys stay owner-gated (golden rule 22), so `main` may run ahead of live at any time.
 **6 real users** have been playing since 2026-06-08. The repo went **open-source + split-repo**
 (2026-07-17), the **full-BG3 identity pivot** is **COMPLETE** (asset integration closed 2026-07-24 —
@@ -1181,19 +1903,44 @@ follows the visual sign-off.
   resistance/immunity/vulnerability/flat reduction, PC and monster Temporary HP, healing/condition cures,
   and linked self-healing in one reviewed commit. Grapple/Shove use the same save/condition grammar.
   Geometry, range/LOS and forced movement stay table declarations because this app is not a VTT.
+- **Generic rolled feature effects (2026-08-04)** — class/race/invocation/homebrew actions now project
+  healing, condition removal and Temporary HP through the same resolver as spells, including class-table
+  dice, deterministic bonuses/multipliers, shared rolls and ability-derived target caps. Stable action ids
+  model same-economy variants correctly (Patient Defense stays free; its paid variant spends Focus and
+  gains the Temporary-HP rider at L10),
+  and v3 export/import preserves action overrides on inferred features. Pack data now wires Mantle of
+  Inspiration, Improved Warding Flare, Hand of Healing/Physician's Touch and Fortifying Soul through this
+  contract; movement/reaction choices that require battlefield observation remain table declarations.
 - **Persistent actions (2026-08-03)** — placement-only zones no longer pretend to damage on cast;
   `recurrence`/`followUp` emits a later active row with the right action economy, no second slot and the
   original upcast level. Concentration/active-state undo restores the exact spell, toggle and cast level.
+- **Target-bound standing effects (2026-08-04)** — exact PC/monster-instance effects now live in one
+  append-only encounter ledger and project catalogue grants onto the recipient. Aid, Heroism, Warding
+  Bond, Death Ward, Haste and marked-target effects therefore survive offline peers, navigation and
+  reloads; duration/concentration revocation, max-HP deltas, universal resistance, shared damage,
+  drop-to-1 consumption and Haste's restricted extra action/aftereffect resolve through typed primitives,
+  never spell-name branches. The recipient's prepared copy cannot be accidentally activated or doubled.
+- **Source-owned condition lifecycle (2026-08-04)** — concentrated conditions are now exact
+  actor/source/target occurrences in both solo and encounter play instead of destructive writes into a
+  shared condition array. Overlapping casters coexist; breaking one concentration removes only its own
+  effects; cures and DM overrides clear every matching source occurrence plus manual state; party cards
+  and the cockpit read the same effective projection. A PC going to 0 HP loses all concentration-owned
+  effects transactionally even while offline, reconnect clears stale concentration, and Firestore
+  emulator coverage proves the production permission contract accepts the structured payload.
+- **Reactive hit lifecycle (2026-08-04)** — successful attack hits now remain distinct from their
+  damage amount and carry melee/ranged mode into the same persistent-effect transaction. The new generic
+  `damage-retaliation` grant resolves the exact attacker, stored cast-level scaling and Chronicle action
+  provenance; its Temp-HP-bound occurrence expires when that pool is depleted or replaced. Armor of
+  Agathys is wired as pack data through this seam, including zero-damage melee hits, with no spell-id
+  branch. SOLO still shows/applies its self Temp HP but cannot mutate an enemy it does not model.
 - **The write (permissions — the careful part)** — reviewed monster effects land on the encounter (a
   CAMPAIGN doc the player doesn't own) via one NARROW cross-user transaction
   `campaign-io.applyDeclaredCombatEffects` (reached through the Firebase-free `apply-damage.ts` bridge),
-  writing ONLY `encounter.{combatants, events, memberEffects}` — exact-instance
-  damage/healing/Temporary-HP/condition changes plus
-  their structured events. `firestore.rules` `combatEffectFieldsOnlyChanged()` grants a member exactly that diff
-  (`affectedKeys().hasOnly(['combatants','events','memberEffects'])` + combatants count fixed +
-  events/effects append-only), the
-  SAME diff-scoped idiom as the turn-pointer grant. **Proven with a real two-user topology** (DM owns the
-  campaign, a member applies) in `tests/rules/firestore-rules.test.ts`.
+  writing ONLY `encounter.{combatants, events, effectOps}` plus the exact peer `combat/state` slices —
+  exact-instance damage/healing/Temporary-HP/condition changes, standing-effect operations and their
+  structured events. Current table membership grants only those narrow combat surfaces; parent character
+  data remains owner-only. **Proven with a real two-user topology** (DM owns the campaign, a member applies
+  to an offline peer) in `tests/rules/firestore-rules.test.ts`.
 - **Reconcile is UNCHANGED** — the amount already came from the `hp-damage` event; only the WRITER flipped
   (player, not DM), so the whole fusion pipeline (single/multi/save/rider) is untouched.
 - **DM remediability is airtight** (owner — "mistakes should always be remediable") — the DM freely
@@ -1369,13 +2116,15 @@ push-drag-lift surfacing, the 2024 languages creation step, travel-pace + mounte
 reference tables, the scoped-Grappled + crit-rule + slot-count-override fixes). Two are **residual
 by design** (reviewer-adjudicated, docs-only): **RA-31** — the self-side Cover AC toggle DECLINED
 (no enforceable lifetime, DM double-count, the settled Dodge precedent; the `COVER_REFERENCE` table
-is the shipped treatment); **RA-35** — Musician's Encouraging Song grants no caster self-inspiration
-(ally-targeted under every reading; the universal insp-toggle already covers the caster). The
+is the shipped treatment); **RA-35** originally recorded only that Musician grants no caster
+self-inspiration (ally-targeted under every reading). The later live-team truth audit closed its deterministic
+ally-delivery residual through the generic Heroic-Inspiration effect; the original self-target verdict remains.
+The
 **W9 reference-disclosure follow-up** made the Combat tab's playbook + rules-reference blocks
 on-demand (its own entry below). The **Hex / Hunter's Mark** marked-target rider (display-only "vs
 marked/cursed target", never auto-summed) landed in the same campaign. The **D11 pack-side handoff
 was executed** the moment the pack was workable — the 17-spell material-cost fill + the IT-lexicon
-sweeps + the RA-35 status-quo residual lock in `content-pack/`. Housekeeping: **`fast-uri` patched**
+sweeps + the original RA-35 self-target verdict lock in `content-pack/`. Housekeeping: **`fast-uri` patched**
 (the Dependabot advisory, entry below). The tracking-doc reconciliation truth-sweep (this wave)
 verified the three tracking docs against the merged code; the forward frontier is now the DDB-parity
 bestiary epic, the react-router advisory triage, and parked backups/observability/legal [since
@@ -2437,14 +3186,16 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   The supplied 1672×941 source is now the exact source of `public/assets/textures/parchment.webp`
   (WebP q50 + sharp_yuv, 17.5 KiB, no creative regrading); the earlier false shipment claim is no
   longer carried forward.
-- **Public share links: SHIPPED 2026-07-31 — CHARACTERS ONLY, industry standard.** The
-  decided LIVE model shipped as decided — a `shared: true` flag on the character doc + the unguessable doc id
-  as the URL; rules allow anonymous read-only when flagged; revoke = flip the flag; noindex;
-  reuses the MemberSheetView read-only rendering. Owner requirements folded in (2026-07-31): the
+- **Public share links: SHIPPED 2026-07-31; privacy-hardened 2026-08-12 — CHARACTERS ONLY.** The
+  private parent keeps the publication decision (`shared`), while anonymous reads are restricted to
+  an exact, sanitized, atomically maintained `public/sheet` projection at the unguessable character
+  path; revoke deletes the projection in the same transaction. Parent, play state, campaign metadata
+  and Storage bearer URLs are never anonymously readable. The public route is noindex and reuses the
+  established read-only sheet rendering. Owner requirements folded in (2026-07-31): the
   share affordance uses the state-of-the-art sharing surface — the **Web Share API native sheet on
   mobile** (WhatsApp/Telegram/iMessage for free) with **copy-link as the universal fallback**;
-  viewers need **NO account** (that is the point — friends off the app see the sheet read-only);
-  DB/auth stay maximally simple (one flag, one rules line, zero auth changes). **Campaigns
+  viewers need **NO account** (that is the point — friends off the app see the sheet read-only).
+  **Campaigns
   deliberately have NO share model** (industry standard — DDB/Roll20 campaigns are private member
   spaces): a table shares a campaign by each player sharing their own character, which keeps
   consent per-owner and adds zero rules surface; an opt-in campaign-surface design is noted as the
@@ -2458,14 +3209,14 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   invite · generic, owner gate 2026-07-31), all kept out of the precache),
   and **per-link dynamic tags on the two shared route families** (`/view/**`, `/join/**`) from a
   lightweight Cloud Function behind Hosting rewrites that serves the SPA shell with the entity's
-  tags injected — a shared character reads its `shared: true` doc (an unshared or unknown id gets
-  the shell's own baseline tags, never a leak), a campaign invite exposes the campaign NAME and
+  tags injected — a shared character is loaded only through the validated projection (an unshared,
+  stale or unknown id gets the shell's own baseline tags, never a leak), a campaign invite exposes the campaign NAME and
   nothing else, for a valid code whose joins are still open. Crawlers must get the tags with NO
   JavaScript.
-  **All of it shipped in the same wave.** What landed: `CharacterDoc.shared` (replacing the
-  never-implemented `shareId` scaffolding and the unused public `/shared` collection it pointed at);
-  ONE `allow get` arm in `firestore.rules`, deliberately `get` and not `read` so it can never widen
-  into an enumeration query; the public `/view/:uid/:charId` route reusing `CockpitView` through
+  **All of it shipped in the same wave; the 2026-08-12 hardening replaced direct-parent exposure.**
+  What now exists: `CharacterDoc.shared`; an exact `public/sheet` schema with atomic publication and
+  generation fences; an anonymous exact-document `get` rule that can never widen into an enumeration
+  or parent read; a projection-gated same-origin portrait endpoint; the public `/view/:uid/:charId` route reusing `CockpitView` through
   `loadReadonly`, with one quiet page for revoked / deleted / denied / offline and a per-route
   noindex; the sheet's ⋯ menu gaining ONE **Share** entry that opens the shared **share popover**
   (owner gate: the Docs/Notion shape — a visibility switch that IS share-and-revoke, no confirm, and
@@ -2951,9 +3702,11 @@ documented in `docs/MECHANICS.md` + `DESIGN.md`.
    max-wins `gainTempHp` seam, one-tap start-of-turn banner). **Wild Magic Surge on-cast SHIPPED
    2026-07-09** (a third `onCast` effect kind `wild-magic-surge` — a display-only post-cast reminder
    toast, no roll). **The defensive-buff consumers SHIPPED 2026-07-09** — Blur (new
-   `incoming-attack-disadvantage` grant), Warding Bond (+1 AC/+1 saves + a `defense-note` line), Death
-   Ward (a deterministic 0-HP interrupt in `applyDamage`, undoable), Mirror Image (a `defense-note`
-   three-duplicate reminder) — all display-only, no rolls. **Death Strike SHIPPED 2026-07-09** — a new
+   `incoming-attack-disadvantage` grant), Warding Bond (+1 AC/+1 saves), Death Ward (a deterministic
+   0-HP interrupt, undoable), Mirror Image (a `defense-note` three-duplicate reminder). Warding Bond and
+   Death Ward were later promoted from self-side reminders/toggles to the 2026-08-04 target-bound typed
+   effect runtime above; Mirror Image remains table-managed because interception requires a die roll.
+   **Death Strike SHIPPED 2026-07-09** — a new
    `round1-damage-double` grant kind surfaces a round-1-gated "DC N CON save or double damage" reminder in
    the turn tracker (never auto-doubles). **The new-primitive tier is now CLOSED.**
    **Two fast-follows on the shipped marked-target model (tasks #26/#27) — BOTH SHIPPED.**
@@ -3321,6 +4074,8 @@ The workstreams below are COARSE headlines — the detailed per-seam frontier li
       `docs/AUTOMATION_COVERAGE.md` + `docs/MECHANICS.md`.
 - [x] **S8** — one-tap apply of computed HP numbers (override-first; golden rule 21 — the app never rolls a die). The DETERMINISTIC legs are true one-tap, undoable: slot-LESS temp-HP cards (Dark One's Blessing, Celestial Resilience, Vitality of the Tree, Inspiring Leader) now carry the resolved amount as a structured `useEffects` entry and apply through the store `gainTempHp` max-wins seam on commit (the slot-gated Adrenaline Rush already did — this mirrors it); the start-of-turn **regen banner** (Heroic Rally 5+CON while Bloodied) gained a one-tap "Heal N" button (`applyHealing` + undo). The DICE leg is roll-entry-then-apply, never auto-rolled: Second Wind (`1d10 + level`) shows the formula + a clamped roll-entry input (`summary.healApply:{dice,bonus}` → `PlayTab.HealRollEntry`); the player enters their d10 and the app applies roll + the deterministic Fighter-level bonus. **Deferred (DICE, display-only):** the pack species' Healing Hands, Wholeness of Body, Form of Dread's Facsimile of Life — auto-apply is forbidden (golden rule 21); there are no dice-free self-heals in the data.
 - [x] **S9** — magic-item charge-cast: charged wand/staff items emit a cast row through the `free-cast-spell` seam (debiting an item-charge tracker, shown + editable in the rail Resources); consumed buff potions arm a self-sustaining duration countdown reusing A2's `effectTimers`; set-score items (Headband of Intellect…) reach combat math via `combatAbilityScores`. **Multi-spell item-casters shipped** — Wand of Binding/Fear, Ring of Animal Influence, Staff of Charming cast ONE OF several spells from a shared charge pool via a new item→pool action bridge (`resolveItemPoolCastActions`) reusing the `free-cast-from-list` guided picker, with per-spell charge costs (`spellCosts`: Hold Monster 5 / Hold Person 2, Command 1 / Fear 3) debited + undone at the selected spell's exact cost.
+- [x] **S9 activated-item closure (2026-08-04)** — equipped activated properties now enter the same Play action → optional item-id tracker → `while-active` state → round-timer → undo path as class features. Wired Boots of Speed, Winged Boots, Wings of Flying, Armor of Invulnerability, plus the composed-pack Mythallar Cloak (including its timed flight and once-per-turn Radiant rider). Manual rail correction atomically clears/restarts timers; Long Rest preserves true `manual` cooldowns instead of fabricating elapsed table time. Boots of Speed deliberately has no false 1/LR counter: its 10 minutes are a cumulative, incrementally usable table-time reservoir, so the action/current timer are automated and the across-scenes remainder stays explicit.
+- [x] **S9 charged-cast recovery reconciliation (2026-08-04)** — the public + pack tracker-backed charged-caster census now stamps `autoRecover:false` wherever dawn recovery requires a die roll; Long Rest preserves the spent count for table input instead of filling it. Deterministic partial recovery uses `longRestRecovery:N` (Spirit Board restores exactly 1); full-recovery items keep the zero-config default (Eyes of Charming). Corpus guards compare the typed declarations with EN descriptions in tests only — runtime never parses prose.
 - [x] **S10** (first wave) — data-wiring batch: the genuinely-open bare-prose items wired as PURE declarations on existing grant kinds (no new primitive for the wiring). Free-cast links: Star Map / Misty Wanderer / Mapping Magic (ability-scaled), Fey Reinforcements / Dragon Companion / Gift of the Depths (1/LR). Missing tracker spells: the three pack fey/elemental lineages (per-spell free-cast, old pool tracker removed), Illusionist Minor Illusion. While-active effects: Zealot Divine Fury rider, Reckless Attack advantage, Trance of Order roll-floors, Heroism Frightened-immunity. Action rows: Thief Fast Hands, Dhampir Vampiric Bite. The ONE near-primitive: `chargesFormula` now resolves ability mods (WIS/INT) via the shared `resolveChargesFormula`, not only `"PB"`. **Deferred at the time (need NEW primitives, tracked in `docs/AUTOMATION_BACKLOG.md` S10) — since narrowed:** Sacred Weapon to-hit, War God's Blessing 2-spell free-cast, false-life rolled temp-HP, Gaze of Two Minds invocation actions, and the Hex/Hunter's-Mark marked-target model have all SHIPPED; the genuinely-open remainder is the blur/mirror-image/warding-bond/death-ward defensive consumers. Verified byte-identical against the 6 team fixtures.
 - [x] **Cadence-mechanics wiring** (the 4 fenced behind "review S3 cadence first"): **now all 4 WIRED (Death Strike shipped 2026-07-09)** (no half-models — golden rule 19). **Stunning Strike** (Monk L5) — a SELF-SIDE Ki affordance: the existing `free` action (1 `monk-focus`) now also surfaces the "CON save · DC N" line, the DC routed through the ONE `featureSaveDc` (8 + PB + WIS mod) via a generic `saveAbility`/`saveDcAbility` pair on `SrdActionDef`; the app NEVER models the enemy nor applies a Stunned condition (BG3 on-rails). **Studied Attacks** (Fighter L13) — a player-armed `while-active` toggle wrapping `advantage-on { attack }` with a `timed maxRounds:2` duration = the shipped until-next-turn cadence (no miss event exists, so the player arms it after a miss; override-first). **Dread Ambusher's Ambusher's Leap** (Gloom Stalker L3, 2026-06-25) — a `round1` `speed` grant (+10 ft on the first combat turn), the SPEED counterpart of Assassinate's `advantage-on { round1 }`: routed into the `round1SpeedBonusFt` aggregate and applied by `effectiveWalkingSpeedFt(char, resolveSrd, round)` only when `round === 1`; its Dreadful Strike rider + WIS-initiative were already wired. (The 2014 "first-turn extra attack" does NOT exist in 2024 — verified vs `ranger:gloom-stalker` — so there's no extra-attack gap.) **Death Strike SHIPPED 2026-07-09** — a NEW `round1-damage-double` grant kind (`{ saveAbility: "CON", saveDcAbility: "DEX" }`) surfaces a DISPLAY-ONLY round-1 reminder ("DC N CON save or double damage", DC via `featureSaveDc`) in `ThisTurnTracker`, gated on `round === 1`; the app never auto-doubles (no modeled enemy). Verified byte-identical against the 6 team fixtures (none is an Assassin-L17 / Gloom-Stalker / Fighter-L13 / Monk-L5 with these active). See `docs/AUTOMATION_BACKLOG.md` → "Cadence-dependent mechanics unblocked by S3".
 - [x] **S11** — save-based action primitive: `SrdActionDef` gained `attack?: ActionAttack`
@@ -3660,7 +4415,8 @@ weaponAttackAbilities, isMonkMelee})` (`compute.ts`, REPLACING `resolveWeaponSta
       it still fails)" (en+it); Tactical Shift stays narrative. **G19 Paladin Lay On Hands** — a new
       `SrdActionDef.cureConditions` field (id-keyed, `fromLevel`-gated): base 5-HP cure-**Poisoned** + L14
       Restoring Touch's six extra conditions (5 HP each), resolved onto `summary.cureOptions` and localized
-      via `conditionLabel` + `combat.cureConditions` (en+it); pool never auto-debited (override-first). All
+      via `conditionLabel` + `combat.cureConditions` (en+it). The later variable-pool execution milestone
+      routes those choices through `CombatResolutionSpec`, combining healing + cures into one exact debit. All
       three pinned in `s10-data-wiring.table.test.ts` Family G (cheapest engine-fact pin, golden rule 13),
       fail-before proven for each. The LIVE Paladin fixture (Oath of Vengeance L3): Lay on Hands now
       exposes `[{poisoned, 5 HP}]` (Restoring Touch correctly gated out at L3). 6 team fixtures byte-identical;
@@ -3782,6 +4538,21 @@ weaponAttackAbilities, isMonkMelee})` (`compute.ts`, REPLACING `resolveWeaponSta
       applicability, the `toggleMetamagicSelection` swap + SP-sum), `spell-cast-sources.test.ts` (Fire Bolt /
       Sacred Flame cantrip options), `spells-page.test.tsx` (cantrip + Quickened debits SP, no slot, undoes).
       6 team fixtures byte-identical — none is a Sorcerer (`git status content-pack/fixtures/team/` clean).
+
+- [x] **Live-team resource lifecycle + rest-state reconciliation (2026-08-04)** — the six composed
+      fixtures now form an executable resource contract: every paid action must resolve its tracker;
+      Focus, Bardic Inspiration, Musician, Lucky, Lay on Hands, Channel Divinity, Portent, Rage and the
+      Healer's Kit are pinned through spend/recovery/manual/recorded-roll lifecycles. The audit found and
+      fixed a real state split: rests recovered Rage uses but could leave Rage (or another temporary
+      state) active. Rest completion now expires declared lifetimes generically, clears their timer /
+      boundary / cast-level provenance, preserves unknown homebrew toggles, and runs Long-Rest
+      Concentration through the canonical teardown so self-Polymorph cannot survive sleep.
+- [x] **Rolled feature-effect closure (2026-08-04)** — the last two recorded dice-entry omissions now
+      use the existing resolver rather than descriptive prose: Open Hand Wholeness of Body applies the
+      reviewed Martial Arts die + WIS heal to self, and Undead Form of Dread applies reviewed 1d10 plus
+      Warlock level Temporary HP, clears Frightened and arms its exact one-minute/ten-round lifetime
+      with early Incapacitated expiry.
+      Targeting, resource spend, max-wins Temp HP, log and undo remain the shared transaction.
 
 ## Deferred / owner-gated
 

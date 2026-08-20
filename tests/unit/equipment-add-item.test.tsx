@@ -16,17 +16,20 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { srd } from "../_harness/loc";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { InventoryTab } from "@/features/character/center/tabs/InventoryTab";
+import { ItemResourceCommandProvider } from "@/features/character/center/ItemResourceCommandProvider";
 import { AddItemModal } from "@/components/sheet/AddItemModal";
 import { magicItemSpec } from "@/features/compendium/picker/specs/magic-item";
+import { createMagicItemEquipmentRefs } from "@/lib/magic-item-equipment";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useToastStore } from "@/stores/toastStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { CharacterDoc } from "@/types/character";
+import type { SrdMagicItemData } from "@/data/types";
 
 function load(doc: CharacterDoc = structuredClone(MOCK_CHARACTER)): void {
   useCharacterStore.setState({ character: doc, loading: false, error: null });
@@ -35,7 +38,9 @@ function load(doc: CharacterDoc = structuredClone(MOCK_CHARACTER)): void {
 function renderPage() {
   return render(
     <MemoryRouter>
-      <InventoryTab />
+      <ItemResourceCommandProvider>
+        <InventoryTab />
+      </ItemResourceCommandProvider>
     </MemoryRouter>
   );
 }
@@ -61,31 +66,53 @@ describe("InventoryTab — unified Add Item", () => {
     expect(screen.getByRole("searchbox")).toBeInTheDocument();
   });
 
-  it("spending a tracker-backed charge debits the SESSION tracker with a 5s undo", () => {
-    // §2.6 — one-tap spend, undoable. The wand's pool is the item-id tracker
-    // the Play-board cast debits (rule 6), never a parallel ref.charges copy.
+  it("spends one exact physical resource with a 5s causal undo", async () => {
+    // §2.6 — one-tap spend, undoable. The wand's pool belongs to this exact
+    // physical copy; neither a session tracker nor ref.charges may shadow it.
     const doc = structuredClone(MOCK_CHARACTER);
+    const instanceId = "wand-add-flow";
     doc.character.equipment.push({
       srdId: "wand-of-web",
+      instanceId,
       quantity: 1,
       equipped: true,
       attuned: true,
     });
-    doc.session.trackers["wand-of-web"] = { used: 2 };
+    doc.session.itemResources = {
+      [instanceId]: {
+        itemId: "wand-of-web",
+        instanceId,
+        revision: 0,
+        resources: {
+          charges: { capacity: 7, current: 5, disabled: false },
+        },
+        disposition: "magical",
+        causalHead: null,
+      },
+    };
     load(doc);
     renderPage();
     const wandRow = screen.getByText("Wand of Web").closest("article");
     expect(wandRow).not.toBeNull();
     fireEvent.click(within(wandRow as HTMLElement).getByRole("button", { name: "Use" }));
+    await waitFor(() =>
+      expect(
+        useCharacterStore.getState().character?.session.itemResources?.[instanceId]
+          ?.resources.charges?.current
+      ).toBe(4)
+    );
     expect(
       useCharacterStore.getState().character?.session.trackers["wand-of-web"]
-    ).toEqual({ used: 3 });
+    ).toBeUndefined();
     const toast = useToastStore.getState().toasts.at(-1);
     expect(toast?.onUndo).toBeDefined();
     toast?.onUndo?.();
-    expect(
-      useCharacterStore.getState().character?.session.trackers["wand-of-web"]
-    ).toEqual({ used: 2 });
+    await waitFor(() =>
+      expect(
+        useCharacterStore.getState().character?.session.itemResources?.[instanceId]
+          ?.resources.charges?.current
+      ).toBe(5)
+    );
   });
 
   it("offers the add trigger in PLAY mode too (Constitution §2.8 — loot lands mid-session)", () => {
@@ -214,6 +241,72 @@ describe("InventoryTab — unified Add Item", () => {
       target: { value: "Potion of Healing" },
     });
     expect(within(dialog).getByText(/Potion of Healing/i)).toBeInTheDocument();
+  });
+});
+
+describe("magic-item physical identity", () => {
+  it("creates one stable ref per resource-bearing copy without legacy owners", () => {
+    const item = {
+      id: "test-wand",
+      rarity: "uncommon",
+      type: "wand",
+      attunement: false,
+      source: "SRD",
+      properties: ["charges: 999"],
+      resources: [
+        {
+          kind: "counter",
+          id: "charges",
+          unit: "charges",
+          capacity: { kind: "fixed", amount: 7 },
+          initial: { kind: "full" },
+        },
+      ],
+    } as SrdMagicItemData;
+    let next = 0;
+    const refs = createMagicItemEquipmentRefs(item, 2, () => `WAND-${++next}`);
+
+    expect(refs).toEqual([
+      { srdId: "test-wand", equipped: false, quantity: 1, instanceId: "wand-1" },
+      { srdId: "test-wand", equipped: false, quantity: 1, instanceId: "wand-2" },
+    ]);
+    expect(refs.every((ref) => ref.charges === undefined)).toBe(true);
+  });
+
+  it("keeps a stateless consumable as one stackable quantity ref", () => {
+    const item = {
+      id: "plain-potion",
+      rarity: "common",
+      type: "potion",
+      attunement: false,
+      source: "SRD",
+    } as SrdMagicItemData;
+
+    expect(createMagicItemEquipmentRefs(item, 3, () => "unused")).toEqual([
+      {
+        srdId: "plain-potion",
+        equipped: false,
+        quantity: 3,
+        isConsumable: true,
+        isPotion: true,
+      },
+    ]);
+  });
+
+  it("splits durable non-resource magic items into physical copies", () => {
+    const item = {
+      id: "plain-token",
+      rarity: "common",
+      type: "wondrous",
+      attunement: false,
+      source: "SRD",
+    } as SrdMagicItemData;
+    let next = 0;
+
+    expect(createMagicItemEquipmentRefs(item, 2, () => `TOKEN-${++next}`)).toEqual([
+      { srdId: "plain-token", equipped: false, quantity: 1, instanceId: "token-1" },
+      { srdId: "plain-token", equipped: false, quantity: 1, instanceId: "token-2" },
+    ]);
   });
 });
 

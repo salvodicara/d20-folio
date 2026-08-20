@@ -17,6 +17,7 @@
     "recoverShortRest": "Short Rest",
     "recoverLongRest": "Long Rest",
     "recoverManual": "Manual",
+    "recoverOnActivation": "When {{name}} starts",
     "recoverShortBadge": "SR",
     "recoverLongBadge": "LR",
     "formulaProficiencyBonus": "proficiency bonus",

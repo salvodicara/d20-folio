@@ -75,6 +75,68 @@ describe("resolveGrantSourcesForEquipment — activity gate", () => {
       resolveGrantSourcesForEquipment([{ srdId: "longsword", equipped: true }])
     ).toEqual([]);
   });
+
+  it("keeps identical physical copies distinct while retaining one catalogue ref", () => {
+    const sources = resolveGrantSourcesForEquipment([
+      {
+        srdId: "wand-of-magic-missiles",
+        instanceId: "wand-copy-a",
+        equipped: true,
+      },
+      {
+        srdId: "wand-of-magic-missiles",
+        instanceId: "wand-copy-b",
+        equipped: true,
+      },
+    ]);
+
+    expect(sources.map((source) => source.id)).toEqual([
+      "magic-item:wand-copy-a",
+      "magic-item:wand-copy-b",
+    ]);
+    expect(sources.map((source) => source.ref?.key)).toEqual([
+      "wand-of-magic-missiles",
+      "wand-of-magic-missiles",
+    ]);
+    expect(evaluateGrants(sources).freeCasts.map((entry) => entry.payment)).toEqual([
+      {
+        kind: "item-resource",
+        itemId: "wand-of-magic-missiles",
+        instanceId: "wand-copy-a",
+        resourceId: "charges",
+        key: "item:wand-copy-a:charges",
+      },
+      {
+        kind: "item-resource",
+        itemId: "wand-of-magic-missiles",
+        instanceId: "wand-copy-b",
+        resourceId: "charges",
+        key: "item:wand-copy-b:charges",
+      },
+    ]);
+  });
+
+  it("fails closed when the exact physical copy is no longer magical", () => {
+    const equipment: SrdEquipmentRef[] = [
+      {
+        srdId: "wand-of-magic-missiles",
+        instanceId: "wand-copy-a",
+        equipped: true,
+      },
+    ];
+    expect(
+      resolveGrantSourcesForEquipment(equipment, {
+        "wand-copy-a": {
+          itemId: "wand-of-magic-missiles",
+          instanceId: "wand-copy-a",
+          revision: 0,
+          resources: {},
+          disposition: "destroyed",
+          causalHead: null,
+        },
+      })
+    ).toEqual([]);
+  });
 });
 
 describe("resolveAllGrantSources — features + equipment", () => {

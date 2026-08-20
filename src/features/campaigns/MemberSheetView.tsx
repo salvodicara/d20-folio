@@ -24,7 +24,6 @@
  * UI gate is a UX nicety, not the security boundary.
  */
 
-import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useNavigate, useParams } from "react-router";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
@@ -32,13 +31,11 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
 import { FolioLoader } from "@/components/shared/FolioLoader";
-import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { PERSONAL_CAMPAIGN_ID } from "@/app/_data/personal-campaign";
 import { useAuthStore } from "@/stores/authStore";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { useCampaignSubscription } from "@/features/campaigns/useCampaignSubscription";
-import { makeDevCampaign } from "@/features/campaigns/dev-fixture";
 import { useMemberCharacterSubscription } from "@/features/campaigns/useMemberCharacterSubscription";
 import { useCharacterStore } from "@/stores/characterStore";
 import { CockpitView } from "@/features/character/CharacterCockpit";
@@ -67,15 +64,9 @@ function MemberSheet({
   const isAdmin = useIsAdmin();
 
   // The campaign tells us (a) the requester is its DM/admin and (b) the member's
-  // attached characterId. Reuse the hub's scoped subscription + dev seed.
+  // attached characterId. Reuse the hub's scoped subscription; under dev bypass it
+  // reads the same local campaign replica.
   useCampaignSubscription(campaignId);
-  useEffect(() => {
-    if (!DEV_BYPASS_AUTH) return;
-    const store = useCampaignStore.getState();
-    if (store.campaign?.id !== campaignId) {
-      store.setCampaign(makeDevCampaign(campaignId));
-    }
-  }, [campaignId]);
 
   const campaign = useCampaignStore((s) => s.campaign);
   const campaignError = useCampaignStore((s) => s.error);

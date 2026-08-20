@@ -15,6 +15,9 @@
  * they are invocations rather than a separate L3 choice.
  */
 
+import { withPackGrantExtensions } from "@/lib/pack-grant-extensions";
+import { packGrantExtensions } from "@pack";
+
 export interface SrdEldritchInvocation {
   id: string;
   /** Prerequisite text in English ("" when none). */
@@ -55,7 +58,7 @@ export interface SrdEldritchInvocation {
   };
 }
 
-export const SRD_INVOCATIONS: SrdEldritchInvocation[] = [
+const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "agonizing-blast",
     prerequisite: "Level 2+ Warlock, a Warlock Cantrip That Deals Damage",
@@ -459,3 +462,20 @@ export const SRD_INVOCATIONS: SrdEldritchInvocation[] = [
     grants: [{ type: "truesight", range: 30 }],
   },
 ];
+
+/** Public invocations with any typed pack-only mechanics merged in place. */
+export const SRD_INVOCATIONS: SrdEldritchInvocation[] = PUBLIC_INVOCATIONS.map(
+  (invocation) => {
+    const sourceKey = `invocation:${invocation.id}`;
+    return packGrantExtensions[sourceKey]?.length
+      ? {
+          ...invocation,
+          grants: withPackGrantExtensions(
+            sourceKey,
+            invocation.grants,
+            packGrantExtensions
+          ),
+        }
+      : invocation;
+  }
+);

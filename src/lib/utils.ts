@@ -93,21 +93,28 @@ export function scaleCantripDice(
  * aura-effect (`auraVMs`) AND form-attack (`resolveFormAttacks`) resolvers read,
  * so a Circle-of-Stars die scales 1d8→2d8 at L10 identically on both surfaces.
  */
+export function pickByLevel<T>(
+  byLevel: Readonly<Record<number, T>> | undefined,
+  level: number
+): T | undefined {
+  if (!byLevel) return undefined;
+  let bestThreshold = -Infinity;
+  let best: T | undefined;
+  for (const [thresholdStr, value] of Object.entries(byLevel)) {
+    const threshold = Number(thresholdStr);
+    if (level >= threshold && threshold > bestThreshold) {
+      bestThreshold = threshold;
+      best = value;
+    }
+  }
+  return best;
+}
+
 export function pickDiceByLevel(
   byLevel: Readonly<Record<number, string>> | undefined,
   level: number
 ): string | undefined {
-  if (!byLevel) return undefined;
-  let bestThreshold = -Infinity;
-  let best: string | undefined;
-  for (const [thresholdStr, dice] of Object.entries(byLevel)) {
-    const threshold = Number(thresholdStr);
-    if (level >= threshold && threshold > bestThreshold) {
-      bestThreshold = threshold;
-      best = dice;
-    }
-  }
-  return best;
+  return pickByLevel(byLevel, level);
 }
 
 /**

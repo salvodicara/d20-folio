@@ -3,7 +3,8 @@
  *
  * Shown ONLY at 0 HP, it carries the dying CONTROLS the header pill no longer
  * holds: the markable `DeathSaves` pips + a one-field quick heal driving the
- * SAME shared `useHpControls` engine (so healing off 0 clears the death saves).
+ * SAME shared `useHpControls` engine (so healing a living, dying hero off 0
+ * clears the death saves; ordinary healing never revives a dead hero).
  * Announced assertively (`role="status"` + `aria-live="assertive"`). The store is
  * the real Zustand store hydrated with MOCK_CHARACTER.
  */
@@ -106,6 +107,28 @@ describe("DyingBanner — RA-11 death-save roll entry + the verdict label", () =
     expect(session?.deathFail).toBe(0);
   });
 
+  it("Champion Survivor enters both physical faces and applies the selected 18+ natural benefit", () => {
+    const champion = structuredClone(MOCK_CHARACTER);
+    champion.character.classes = [
+      { classId: "fighter", subclassId: "champion", level: 18 },
+    ];
+    champion.character.features = [{ srdId: "fighter-champion-survivor" }];
+    champion.session.hp.current = 0;
+    champion.session.deathSucc = 0;
+    champion.session.deathFail = 0;
+    useCharacterStore.setState({ character: champion });
+    render(<DyingBanner />);
+    expect(screen.getByText(/^advantage$/i)).toBeInTheDocument();
+    const first = screen.getByLabelText(/first physical d20 result/i);
+    const second = screen.getByLabelText(/second physical d20 result/i);
+    fireEvent.change(first, { target: { value: "1" } });
+    fireEvent.blur(first);
+    fireEvent.change(second, { target: { value: "18" } });
+    fireEvent.blur(second);
+    fireEvent.click(screen.getByRole("button", { name: /^apply$/i }));
+    expect(useCharacterStore.getState().character?.session.hp.current).toBe(1);
+  });
+
   it("STABLE (3 successes): the verdict label reads Stable and the roll entry is gone", () => {
     load({ hp: { ...MOCK_CHARACTER.session.hp, current: 0 }, deathSucc: 3 });
     render(<DyingBanner />);
@@ -118,6 +141,8 @@ describe("DyingBanner — RA-11 death-save roll entry + the verdict label", () =
     render(<DyingBanner />);
     expect(screen.getByText(/^dead$/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/death-save d20/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/healing amount/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^heal$/i })).not.toBeInTheDocument();
   });
 
   // REGRESSION (post-sweep h1) — the banner bailed on `current > 0`, so the

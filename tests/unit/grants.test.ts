@@ -72,6 +72,36 @@ describe("evaluateGrants — damage resistances (union, deduped)", () => {
   });
 });
 
+describe("evaluateGrants — source-qualified condition immunities", () => {
+  it("keeps a source-specific immunity separate from blanket condition immunity", () => {
+    const out = evaluateGrants([
+      make("fey-ancestry", [
+        {
+          type: "condition-immunity",
+          condition: "unconscious",
+          sourceId: "sleep",
+        },
+      ]),
+    ]);
+
+    expect(out.conditionImmunities.has("unconscious")).toBe(false);
+    expect(out.sourceConditionImmunities).toEqual([
+      { condition: "unconscious", sourceId: "sleep" },
+    ]);
+  });
+
+  it("deduplicates identical source-specific clauses", () => {
+    const grant: Grant = {
+      type: "condition-immunity",
+      condition: "unconscious",
+      sourceId: "sleep",
+    };
+    const out = evaluateGrants([make("elf-a", [grant]), make("elf-b", [grant])]);
+
+    expect(out.sourceConditionImmunities).toHaveLength(1);
+  });
+});
+
 describe("evaluateGrants — numeric aggregates sum, ability/skill grants set-union", () => {
   it("speed + AC bonus + HP/level all add", () => {
     const out = evaluateGrants([
@@ -201,6 +231,7 @@ describe("evaluateGrants — exhaustiveness: every Grant kind lands in the aggre
     { type: "spell-attack-bonus", amount: 1, scope: "all" },
     { type: "save-bonus", ability: "CHA", min: 1 },
     { type: "ability-check-bonus", appliesTo: "all-checks", value: 1, min: 0 },
+    { type: "skill-ability-option", skills: ["stealth"], ability: "STR" },
     { type: "initiative-bonus", amount: 2 },
     {
       type: "damage-rider",
@@ -325,7 +356,7 @@ describe("evaluateGrants — exhaustiveness: every Grant kind lands in the aggre
   it("covers exactly the 70 distinct Grant kinds (roster guard)", () => {
     const kinds = new Set(sample.map((g) => g.type));
     expect(kinds.size).toBe(sample.length); // no duplicate kinds in the roster
-    expect(kinds.size).toBe(70);
+    expect(kinds.size).toBe(71);
   });
 
   it("each kind writes its expected aggregate field (nothing silently dropped)", () => {
@@ -382,6 +413,7 @@ describe("evaluateGrants — exhaustiveness: every Grant kind lands in the aggre
     expect(out.spellAttackBonus).toHaveLength(1);
     expect(out.saveBonusAbilities).toHaveLength(1);
     expect(out.abilityCheckBonuses).toHaveLength(1);
+    expect(out.skillAbilityOptions).toEqual([{ skills: ["stealth"], ability: "STR" }]);
     expect(out.initiativeBonusFlat).toBe(2);
     expect(out.damageRiders).toHaveLength(1);
     expect(out.spellDamageBonuses).toHaveLength(1);

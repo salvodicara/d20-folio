@@ -22,6 +22,7 @@ export function HealRollEntry({
   bonus,
   onApply,
   applyLabel,
+  disabled = false,
 }: {
   dice: string;
   bonus: number;
@@ -29,6 +30,8 @@ export function HealRollEntry({
   /** Optional override for the Apply-button copy (RA-02: "Heal & rest"); when
    *  omitted the shared `combat.healRoll*` copy is used. */
   applyLabel?: string;
+  /** Prevent duplicate commits while an async parent transaction is in flight. */
+  disabled?: boolean;
 }) {
   const { t } = useTranslation();
   // The die's max face (1d10 → 10), so the entry can't exceed a single die's
@@ -55,6 +58,7 @@ export function HealRollEntry({
       <Button
         variant="secondary"
         size="sm"
+        disabled={disabled}
         onClick={(e) => {
           e.stopPropagation();
           onApply(roll + bonus);

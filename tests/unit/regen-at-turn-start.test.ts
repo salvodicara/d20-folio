@@ -33,6 +33,7 @@ import { isBloodied, resolveStartOfTurnRegen } from "@/lib/smart-tracker";
 import { concentrationValue } from "@/lib/concentration";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { CharacterDoc } from "@/types/character";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 const src = (id: string, grants: Grant[]): GrantSource => ({
   id,
@@ -207,9 +208,18 @@ describe("resolveStartOfTurnRegen — Heroic Rally (real Champion SRD data)", ()
 // ─── Heroism — recurring per-turn TEMPORARY HP (asTempHp) ───────────────────
 
 describe("resolveStartOfTurnRegen — Heroism per-turn temp HP (real spell data)", () => {
-  // A CHA-20 (+5) Bard (MOCK) with Heroism prepared. `active` lights the
-  // `spell-heroism` while-active toggle (as the cast auto-lights it via S1).
-  function heroismCaster(activeKeys: string[], current = 40): CharacterDoc {
+  // A CHA-20 (+5) Bard (MOCK) receiving the persistent Heroism effect. The
+  // source modifier is frozen on cast, so the recipient never reads its own CHA.
+  function heroismCaster(active: boolean, current = 40): CharacterDoc {
+    const effect: ActiveCombatEffect = {
+      id: "heroism-target",
+      actor: { kind: "monster", combatantId: "caster" },
+      target: { kind: "monster", combatantId: "target" },
+      source: { kind: "spell", id: "heroism", actionId: "spell-heroism" },
+      payload: { kind: "grant-group", activeKey: "spell-heroism" },
+      bindings: { spellcastingModifier: 5 },
+      duration: { kind: "concentration", actorId: "caster", sourceId: "heroism" },
+    };
     return {
       ...MOCK_CHARACTER,
       character: {
@@ -220,16 +230,17 @@ describe("resolveStartOfTurnRegen — Heroism per-turn temp HP (real spell data)
         ...MOCK_CHARACTER.session,
         hp: { ...MOCK_CHARACTER.session.hp, current },
         concentration: concentrationValue("heroism"),
-        activeFeatures: activeKeys,
+        activeFeatures: [],
+        encounterEffects: active ? [effect] : [],
       },
     };
   }
 
   it("LIT: emits a temp-HP entry = CHA modifier, active regardless of HP band", () => {
-    const out = resolveStartOfTurnRegen(heroismCaster(["spell-heroism"]));
+    const out = resolveStartOfTurnRegen(heroismCaster(true));
     expect(out).toHaveLength(1);
     expect(out[0]).toMatchObject({
-      sourceId: "heroism",
+      sourceId: "combat-effect:heroism-target",
       amount: 5, // CHA 20 → +5
       condition: "always",
       active: true,
@@ -239,13 +250,13 @@ describe("resolveStartOfTurnRegen — Heroism per-turn temp HP (real spell data)
 
   it("fires even at 0 HP (temp HP is unguarded — no requiresMinHp gate)", () => {
     // A heal never fires at 0 HP; Heroism's temp HP does (it doesn't revive you).
-    const out = resolveStartOfTurnRegen(heroismCaster(["spell-heroism"], 0));
+    const out = resolveStartOfTurnRegen(heroismCaster(true, 0));
     expect(out[0]?.active).toBe(true);
     expect(out[0]?.asTempHp).toBe(true);
   });
 
   it("FAIL-BEFORE: with the toggle OFF, Heroism contributes no entry", () => {
-    expect(resolveStartOfTurnRegen(heroismCaster([]))).toEqual([]);
+    expect(resolveStartOfTurnRegen(heroismCaster(false))).toEqual([]);
   });
 });
 

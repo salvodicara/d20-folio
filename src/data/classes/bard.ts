@@ -203,6 +203,11 @@ export const BARD_FEATURES: SrdClassFeatureData[] = [
       actions: [
         {
           type: "bonus",
+          grantDie: {
+            kind: "bardic-inspiration",
+            die: "classSpecific:bardicInspirationDie",
+          },
+          targeting: { affinity: "ally", maxTargets: 1, excludeSelf: true },
         },
       ],
     },
@@ -332,6 +337,7 @@ export const BARD_FEATURES: SrdClassFeatureData[] = [
         {
           type: "reaction",
           costTracker: "bard-bardic-inspiration",
+          trigger: "creatureSucceedsRollOrDealsDamage",
         },
       ],
     },

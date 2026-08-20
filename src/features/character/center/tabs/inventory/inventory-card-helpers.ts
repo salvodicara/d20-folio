@@ -9,6 +9,11 @@
  */
 import type { TFunction } from "i18next";
 import type { VerdictOutcome } from "@/components/shared/UniversalCard";
+import {
+  itemResourceRecoveryTranslationKey,
+  type ItemResourceVM,
+} from "@/lib/views/item-resource-view";
+import type { ItemRowVM } from "@/lib/views/inventory-view";
 
 /**
  * Map an SRD damage-type id to the ONE folio verdict outcome (drives the
@@ -44,4 +49,33 @@ export function damageVerdictOutcome(damageType: string | undefined): VerdictOut
  */
 export function damageTypeAbbr(damageType: string, t: TFunction): string {
   return t(`srd.damageShort_${damageType}`);
+}
+
+/** Player-facing copy name: deterministic inventory order, never an opaque UUID. */
+export function inventoryItemDisplayName(vm: ItemRowVM, t: TFunction): string {
+  const copyNumber = vm.resources[0]?.copyNumber;
+  return copyNumber == null
+    ? vm.name
+    : t("magicItems.resourceCopy", { name: vm.name, number: copyNumber });
+}
+
+/** Localized count + unit, or an honest prompt when initialization needs a roll. */
+export function itemResourceCountLabel(resource: ItemResourceVM, t: TFunction): string {
+  if (resource.current == null || resource.capacity == null) {
+    return t("magicItems.resourceNeedsRoll");
+  }
+  return `${resource.current} / ${resource.capacity} ${t(resource.unitKey)}`;
+}
+
+/** Exact cadence from typed triggers; dawn/dusk never collapse into rest labels. */
+export function itemResourceRecoveryLabel(
+  resource: ItemResourceVM,
+  t: TFunction
+): string {
+  if (resource.recoveryTriggers.length === 0) {
+    return t("combat.resourceRecoveryNone");
+  }
+  return resource.recoveryTriggers
+    .map((trigger) => t(itemResourceRecoveryTranslationKey(trigger)))
+    .join(" · ");
 }

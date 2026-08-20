@@ -15,7 +15,7 @@
  * dashed border so it never reads as real product chrome. Plain literal strings (no i18n)
  * are deliberate: this is throwaway dev scaffolding, never shown to a real user.
  *
- * See `dev-impersonate.ts` (the param reader) + `content-pack/scripts/dev-seed-sandbox.ts` (the seed).
+ * See `dev-impersonate.ts` (the param reader) + `scripts/dev-seed-sandbox.ts` (the seed).
  */
 
 import { useState } from "react";

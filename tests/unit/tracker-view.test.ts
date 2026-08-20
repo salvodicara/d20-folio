@@ -95,6 +95,16 @@ describe("tracker-view — localizeTrackerRecovery", () => {
     expect(localizeTrackerRecovery("per-turn", t)).toBeNull();
     expect(localizeTrackerRecovery(undefined, t)).toBeNull();
   });
+
+  it("presents an activation-scoped refresh instead of the fallback rest cadence", () => {
+    const interpolatingT = (key: string, opts?: Record<string, unknown>) => {
+      const name = typeof opts?.name === "string" ? opts.name : "";
+      return `${key}:${name}`;
+    };
+    expect(localizeTrackerRecovery("manual", interpolatingT, "Rage")).toBe(
+      "features.recoverOnActivation:Rage"
+    );
+  });
 });
 
 describe("tracker-view — trackerRecoveryBadgeBucket (the SR/LR badge single source)", () => {

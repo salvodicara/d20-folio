@@ -115,8 +115,10 @@ export function conformStoredFeatures(character: {
       trackerIdRemap.set(f.srdId, raceTraitSessionId(raceTrait.raceId, raceTrait.trait));
       return false;
     }
-    // The class table re-derives a class/subclass feature under the SAME srdId — no remap.
-    return !derivedClassIds.has(f.srdId);
+    // The class table re-derives a BARE class/subclass ref under the SAME srdId.
+    // A ref carrying notes/overrides is user data; the codec merges it onto the
+    // inferred ref instead of throwing the override away.
+    return !derivedClassIds.has(f.srdId) || Object.keys(f).some((key) => key !== "srdId");
   });
 
   // Preserve referential identity when nothing was dropped (idempotent re-runs).

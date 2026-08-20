@@ -36,8 +36,8 @@ runs MANDATORILY before code reaches a USER, each in exactly ONE lane, never twi
 
 | Lane                          | What it runs                                                                                                                           | Cost                           | Where                          |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------------------ |
-| **pre-commit**                | doc-guard + `lint-staged` + fast unit lane                                                                                             | ~5 s                           | `.githooks/pre-commit`         |
-| **pre-push → topic branch**   | no gate — topic branches are recoverable remote checkpoints                                                                           | instant                        | `.githooks/pre-push`           |
+| **pre-commit**                | changeset doc-guard + `lint-staged` only (focused tests are engineering probes, not a gate)                                            | staged files only              | `.githooks/pre-commit`         |
+| **pre-push → topic branch**   | no gate — topic branches are recoverable remote checkpoints                                                                            | instant                        | `.githooks/pre-push`           |
 | **pre-push → `main`**         | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e**       | ~3 min (max of three, not sum) | `.githooks/pre-push`           |
 | **per merge — CI** (`ci.yml`) | the SRD-only gate: typecheck + lint ∥ unit ∥ build + budget as **parallel jobs**, every push to `main` + every PR                      | ~4 min wall, free              | `.github/workflows/ci.yml`     |
 | **per merge — Verify**        | the COMPOSED verdict: pack unit suite + the **full Playwright e2e matrix sharded 8×** across parallel runners, every push to `main`    | ~10 min wall, free             | `.github/workflows/verify.yml` |
@@ -109,6 +109,10 @@ lands; the remote lanes are the standing verdict every SHA carries after.
 > per-merge remote lane (`ci.yml` / `verify.yml`), not on every push. Keep `--cache` everywhere it
 > helps (eslint `.eslintcache`, tsc incremental) so a no-op re-run is seconds.
 
+During implementation, run only the focused tests and lint targets that prove the kernel being
+changed. Those are engineering probes, not a second mandatory gate; the repository-wide suite runs
+once after convergence and rebase, immediately before the final push to `main`.
+
 ### The convergence step (before every merge — golden rule 12)
 
 Every task converges through an adversarial review BEFORE its merge to `main`: the author builds
@@ -119,8 +123,9 @@ reason; subsequent passes are DELTA-SCOPED (only the fixes + rebuttals — the i
 round, guaranteeing convergence). Converged = a pass with zero actionable findings (most tasks: 1
 pass); hard cap 3 passes, then a still-open dispute surfaces to the owner. Only then does the task
 rebase onto the latest `origin/main` and merge (`git push origin HEAD:main` from its worktree —
-the full flow in `docs/WORKTREES.md`). The gate (typecheck/lint/tests/build) still runs after
-convergence via the hooks; convergence replaces PR review, not the gate.
+the full flow in `docs/WORKTREES.md`). That final push runs the one complete
+typecheck/lint/tests/build gate; checkpoint pushes never do. Convergence replaces PR review, not
+the final gate.
 
 ### The i18n build-time leak-lock (lock 6)
 
@@ -134,7 +139,7 @@ detectors over EN + IT and every `srd/` catalogue and **fails the build (non-zer
   English (the `STRONG_EN` heuristic; loanwords / proper nouns / abbreviations never trip it),
 - a **static `t("…")` literal** in `src/` whose key is absent from the catalogue.
 
-It's free on `pnpm build` (so it runs in pre-push, `just deploy`, and CI automatically), and you can
+It's free on `pnpm build` (so it runs in the final main pre-push, `just deploy`, and CI automatically), and you can
 run it standalone with **`pnpm i18n:check`** (prints each problem + a non-zero exit). When it fails,
 **fix the leak** — translate via the IT SRD 5.2.1 cascade (never leave IT == EN-English), or add the
 missing key to BOTH `src/i18n/{en,it}/ui/<group>.json` shards. Do NOT weaken the detector to make it
@@ -231,12 +236,12 @@ ln -s ../d20-folio-content/content-pack content-pack
 
 **Task worktrees are composed automatically.** `just wt-new` replicates that
 same relative symlink into each new worktree whenever the pack sibling exists,
-so the pack-mode gate runs composed there **by default** — closing the gap where
+so the final main gate runs composed there **by default** — closing the gap where
 a pack-absent worktree would silently gate SRD-only and let a public API change
 break the pack undetected. When no pack sibling exists (external contributors),
 `wt-new` skips the link and the worktree gates SRD-only, unchanged (that is the
 correct, complete build for a public tree). As a backstop, `.githooks/pre-push`
-prints a loud WARNING if a worktree gates SRD-only while the pack actually
+prints a loud WARNING at the final main gate if a worktree gates SRD-only while the pack actually
 exists on disk. Because the pack's files
 REALLY live outside the repo root, pack tests import public-root helpers only
 through the root-anchored `@tests/*` / `@scripts/*` aliases (never physical
@@ -435,6 +440,26 @@ not capturable, add it to that test's
 > for verification, never a second mock. Production never loads them (the only caller is the dead
 > `DEV_BYPASS_AUTH` branch).
 
+> **Two dev lanes, one deliberate boundary.** Use `pnpm dev:emulators` for manual dogfood: one command
+> builds Functions, starts Auth + Firestore + Storage + Functions emulators on the isolated
+> `demo-d20folio` project, seeds deterministic users/characters plus `/campaigns/SANDBOX`, signs the app
+> into the local owner account, and opens Vite. This is the production-parity lane: the real Firebase
+> adapters, auth token, rules, listeners, transactions, offline queue, Storage and callable endpoints run;
+> Ctrl-C shuts the whole sandbox down. The `?devActAs=<uid>` dock can open the seeded party seats in
+> separate windows. No `.env.local` production project or owner uid is used.
+>
+> Use `DEV_BYPASS_AUTH` only for fast screenshot/E2E/scenario work where starting Firebase is needless.
+> A bypass fixture is only the first seed. Character
+> parent state, its separate `combat/state`, and campaign state then persist through the single local
+> document adapter (`src/lib/dev-document-store.ts`), including reload/navigation survival and cross-tab
+> snapshots. This is intentional: dogfooding in dev must reproduce Firestore's document lifecycle instead
+> of silently resetting spent slots, actions, HP, conditions, or an encounter. To discard local dogfood
+> state after changing a fixture, append `?reset-dev=1` to ANY preview URL once (for example,
+> `/characters/mock-1?reset-dev=1`); boot removes the parameter and reseeds. Do not add a feature-specific
+> localStorage cache/no-op bypass — add the document to this adapter and keep the production projection.
+> The replica tests client lifecycle; the emulator sandbox is authoritative whenever permissions,
+> multiple users, transactions, Storage, Functions, or true offline replay matter.
+
 ### I want to SELF-VALIDATE a mechanic on any class/subclass (screenshot proof)
 
 > **The mock is a single Bard — that is never a reason to ask the owner to build a character.**
@@ -569,7 +594,7 @@ npm install -g firebase-tools    # the emulator runner (already present if you d
 pnpm test:rules
 ```
 
-The pre-push hook uses `java` from your PATH (asdf's Temurin) and, when the asdf shims aren't on
+The final-main pre-push hook uses `java` from your PATH (asdf's Temurin) and, when the asdf shims aren't on
 PATH (e.g. an IDE's git), resolves the JDK pinned in `.tool-versions` directly from
 `~/.asdf/installs/java/`. If no JDK is found on a rules-changing push it fails with an `asdf install`
 hint rather than letting an unverified rules change through — no Homebrew JDK required.
@@ -596,7 +621,7 @@ hint rather than letting an unverified rules change through — no Homebrew JDK 
   visual surface (`tests/e2e/surface-manifest.ts` + `surfaces.ts`). The route-coverage guard
   fails CI otherwise. See "I'm adding a new page / form / wizard step / modal" above.
 - **Rules change → emulator tests.** Touching `firestore.rules` / `tests/rules/**` runs
-  `pnpm test:rules` at pre-push (needs a JDK; emulator-only `demo-` project, no cost). See
+  `pnpm test:rules` at the final `main` pre-push (needs a JDK; emulator-only `demo-` project, no cost). See
   "Firestore security rules".
 
 ---
@@ -674,7 +699,7 @@ BEFORE a merge lands. Exactly three workflows live in `.github/workflows/`:
   `FIREBASE_SERVICE_ACCOUNT` secret — no re-verification, ~6 min. The local twin is
   `just deploy` (it skips its local e2e leg on the same green-Verify condition).
 
-There is deliberately **no release workflow** — releases are owner-triggered, agent-executed
+There is deliberately **no automated versioning workflow** — releases are owner-triggered, agent-executed
 (`just release`, synthesized changelog — golden rule 17). There is no remote pixel-diff or
 baseline-regen workflow either: the visual lane is on-demand and local (`VISUAL=1`, no committed
 baselines — see "Visual baselines" above), and the rules-emulator suite gates on the `main` pre-push.

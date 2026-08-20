@@ -29,7 +29,11 @@ import {
   saveStatusCallbacks,
   type DebouncedSaveHandle,
 } from "@/lib/firestore";
-import { subscribeCombatState, writeCombatState } from "@/lib/combat-state-io";
+import {
+  subscribeCombatState,
+  writeCombatState,
+  writeCombatTurnEconomy,
+} from "@/lib/combat-state-io";
 import {
   nonCombatSessionChanged,
   combatTrioDiffers,
@@ -38,18 +42,50 @@ import {
 import { loadLogFromIDB } from "@/lib/log-persistence";
 import { normalizeLogEntry } from "@/lib/sanitize-session";
 import { normalizeLogEntryConcentration } from "@/lib/concentration";
-import type { LogEntry } from "@/types/character";
+import { sessionToPlayStateV1 } from "@/lib/session-state-codec";
+import type { CharacterDoc, LogEntry } from "@/types/character";
 import type { CombatState, CombatPersistence } from "@/types/combat-state";
-import { effectiveAC } from "@/lib/aggregate-character";
-import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
+import { effectiveAC, effectiveMaxHp } from "@/lib/aggregate-character";
+import { DEV_BYPASS_AUTH as IMPORTED_DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { MOCK_CHARACTER, MOCK_COMBAT_ROUND } from "@/lib/mock";
 import { isDevFixtureId, loadDevFixture } from "@/lib/dev-fixtures";
 import { isDevScenarioRouteId } from "@/lib/dev-scenario-id";
+import {
+  readDevDocument,
+  subscribeDevDocument,
+  writeDevDocument,
+} from "@/lib/dev-document-store";
+import {
+  DEV_CHARACTER_COLLECTION,
+  devCharacterDocumentId,
+  mergeDevCharacterParent,
+  projectDevCharacterParent,
+  type DevCharacterParent,
+} from "@/lib/dev-character-document";
 import {
   createAttachedCampaignTracker,
   refreshAttachedSheets,
   type AttachedCampaignTracker,
 } from "@/features/campaigns/refresh-attached-sheets";
+
+// Keep unit-test mocking and dev dogfood intact, while letting the production build
+// erase the local document-replica path (and its fixture-only dependencies).
+function devBypassEnabled(): boolean {
+  return import.meta.env.PROD ? false : IMPORTED_DEV_BYPASS_AUTH;
+}
+
+function canonicalJson(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalJson);
+  if (typeof value === "object" && value !== null) {
+    const record = value as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.keys(record)
+        .sort()
+        .map((key) => [key, canonicalJson(record[key])])
+    );
+  }
+  return value;
+}
 
 /**
  * Subscribe to a character document in Firestore.
@@ -79,10 +115,10 @@ export function useCharacterSubscription(characterId: string | undefined): void 
   const isFromServerRef = useRef(false);
 
   /**
-   * True while the combat-mutable trio is being hydrated from the `combat/state`
+   * True while the combat-mutable slice is being hydrated from the `combat/state`
    * subdoc into the in-memory session. The parent-doc auto-save subscriber checks it
    * (alongside `isFromServerRef`) so a combat-doc echo never re-persists the parent
-   * doc (the snapshot → save → snapshot loop). The combat trio itself no longer has a
+   * doc (the snapshot → save → snapshot loop). The combat slice itself no longer has a
    * blanket writer: each store mutator self-persists its op through the injected
    * {@link CombatPersistence} (see below), so there is exactly ONE write per op.
    */
@@ -90,23 +126,161 @@ export function useCharacterSubscription(characterId: string | undefined): void 
 
   // Set up subscription (or load mock in dev bypass mode)
   useEffect(() => {
-    // Dev bypass: load mock character directly, no Firestore
-    if (DEV_BYPASS_AUTH) {
+    // Dev bypass: fixtures are only the initial seed. The same parent + combat/state
+    // document split then runs through the local replica, including optimistic echoes,
+    // reload survival, and cross-tab updates.
+    if (devBypassEnabled()) {
       const id = characterId ?? "mock-1";
+      const uid = user?.uid ?? "mock-uid";
+      const storageId = devCharacterDocumentId(uid, id);
+      let cancelled = false;
+      let unsubscribeParent = () => {};
+      let unsubscribeCombat = () => {};
+
+      const activate = (seed: CharacterDoc, seedRound = 1): void => {
+        if (cancelled) return;
+        setLoading(true);
+        let persisted = readDevDocument<DevCharacterParent>(
+          DEV_CHARACTER_COLLECTION,
+          storageId
+        );
+        // A new replica crosses the ownership boundary child-first, then exposes the
+        // marked parent. There is never an observable marked parent without its complete
+        // play document. Existing unmarked replicas remain legacy-compatible.
+        if (!persisted) {
+          const markedSeed = { ...seed, playStateVersion: 1 as const };
+          void writeCombatState(
+            uid,
+            id,
+            sessionToCombatState(markedSeed.session, seedRound)
+          );
+          persisted = projectDevCharacterParent(markedSeed);
+          writeDevDocument(DEV_CHARACTER_COLLECTION, storageId, persisted);
+        }
+
+        let quarantined = false;
+        let persistenceEnabled = true;
+        let pendingState: CombatState | null = null;
+        let playWriteQueued = false;
+        const writeComplete = (state: CombatState): void => {
+          if (!persistenceEnabled) return;
+          const marked = useCharacterStore.getState().character?.playStateVersion === 1;
+          if (!marked) {
+            void writeCombatState(uid, id, state);
+            return;
+          }
+          pendingState = state;
+          if (playWriteQueued) return;
+          playWriteQueued = true;
+          queueMicrotask(() => {
+            playWriteQueued = false;
+            const next = pendingState;
+            pendingState = null;
+            if (next && persistenceEnabled) void writeCombatState(uid, id, next);
+          });
+        };
+        useCharacterStore.getState().setCombatPersistence({
+          write: writeComplete,
+          writeTurnEconomy: (round, turnEconomy) =>
+            void writeCombatTurnEconomy(uid, id, round, turnEconomy),
+        });
+
+        let latestParent: DevCharacterParent | undefined;
+        let latestCombat: CombatState | null | undefined;
+        const quarantine = (message: string): void => {
+          if (quarantined) return;
+          quarantined = true;
+          persistenceEnabled = false;
+          pendingState = null;
+          useCharacterStore.getState().setCombatPersistence(null);
+          useCharacterStore.getState().setParentPersistenceFlush(null);
+          setCharacter(null);
+          setError(message);
+          setLoading(false);
+        };
+        const publish = (): void => {
+          if (quarantined || !latestParent) return;
+          const current = useCharacterStore.getState().character;
+          let parent: CharacterDoc;
+          try {
+            parent = mergeDevCharacterParent(
+              current?.id === id ? current : seed,
+              latestParent
+            );
+          } catch (error) {
+            quarantine(error instanceof Error ? error.message : String(error));
+            return;
+          }
+          if (parent.playStateVersion === 1 && latestCombat === undefined) return;
+          isFromServerRef.current = true;
+          let loaded: boolean;
+          try {
+            loaded =
+              latestCombat === undefined
+                ? (setCharacter(parent), true)
+                : useCharacterStore
+                    .getState()
+                    .loadCharacterWithCombat(parent, latestCombat, false);
+          } catch (error) {
+            quarantine(error instanceof Error ? error.message : String(error));
+            return;
+          } finally {
+            isFromServerRef.current = false;
+          }
+          if (!loaded) {
+            quarantine("Invalid play state");
+            return;
+          }
+          setLoading(false);
+        };
+
+        unsubscribeParent = subscribeDevDocument<DevCharacterParent>(
+          DEV_CHARACTER_COLLECTION,
+          storageId,
+          (parent) => {
+            if (quarantined) return;
+            if (!parent) {
+              quarantine("Character not found");
+              return;
+            }
+            latestParent = parent;
+            publish();
+          }
+        );
+        unsubscribeCombat = subscribeCombatState(
+          uid,
+          id,
+          (combat) => {
+            if (quarantined) return;
+            latestCombat = combat;
+            publish();
+          },
+          (err) => {
+            if (quarantined) return;
+            latestCombat = undefined;
+            quarantine(err.message);
+          }
+        );
+      };
+
+      const cleanup = (): void => {
+        cancelled = true;
+        unsubscribeParent();
+        unsubscribeCombat();
+        useCharacterStore.getState().setCombatPersistence(null);
+        useCharacterStore.getState().setParentPersistenceFlush(null);
+        setCharacter(null);
+      };
+
       // A `team-<kebab>` id loads one of the 6 real team fixtures (async — the
       // importer + JSON are lazy chunks). Every other id keeps the unchanged
       // synchronous MOCK path so existing previews/tests are untouched.
       if (isDevFixtureId(id)) {
         setLoading(true);
-        let cancelled = false;
         void loadDevFixture(id).then((doc) => {
-          if (cancelled) return;
-          setCharacter(doc ?? { ...MOCK_CHARACTER, id });
-          setLoading(false);
+          activate(doc ?? { ...MOCK_CHARACTER, id });
         });
-        return () => {
-          cancelled = true;
-        };
+        return cleanup;
       }
       // A `scn-<name>` id BUILDS one of the registered dev scenarios (any
       // class/subclass/level) from a concise spec — the general counterpart of
@@ -116,30 +290,13 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         // The scenario builder + the engine it pulls are dev-only — lazy-import so
         // they never weigh on the eager cockpit bundle (mirrors the fixture path).
         setLoading(true);
-        let cancelled = false;
         void import("@/lib/dev-scenarios").then(({ buildDevScenario }) => {
-          if (cancelled) return;
-          setCharacter(buildDevScenario(id) ?? { ...MOCK_CHARACTER, id });
-          setLoading(false);
+          activate(buildDevScenario(id) ?? { ...MOCK_CHARACTER, id });
         });
-        return () => {
-          cancelled = true;
-        };
+        return cleanup;
       }
-      setCharacter({ ...MOCK_CHARACTER, id });
-      // Dev-bypass loads no `combat/state` subdoc, so the mock's persisted SOLO round
-      // (Lyra is mid-combat at round 5) would never reach the turn engine — it would
-      // read the round-1 default. Mirror prod: hydrate a combat state derived from the
-      // mock session + its canonical round, so the meter seeds `combatStore.round` like
-      // a real loaded character. Round-trips the trio identically (same HP/conditions),
-      // so only the round differs from the default.
-      useCharacterStore
-        .getState()
-        .hydrateCombatState(
-          sessionToCombatState(MOCK_CHARACTER.session, MOCK_COMBAT_ROUND)
-        );
-      setLoading(false);
-      return;
+      activate({ ...MOCK_CHARACTER, id }, MOCK_COMBAT_ROUND);
+      return cleanup;
     }
 
     if (!user || !characterId) {
@@ -153,42 +310,132 @@ export function useCharacterSubscription(characterId: string | undefined): void 
 
     // Create debounced save for auto-persistence
     debouncedSaveRef.current = createDebouncedSave(user.uid, characterId);
-    // The combat-mutable trio persists to its own `combat/state` subdoc (not the
+    // Slot/tracker mutators request this AFTER their synchronous composite action.
+    // The microtask in characterStore lets the autosave subscriber arm the latest
+    // full payload first, then this flush makes the play resource durable immediately.
+    useCharacterStore
+      .getState()
+      .setParentPersistenceFlush(() => void debouncedSaveRef.current?.flush());
+    // The combat-mutable slice persists to its own `combat/state` subdoc (not the
     // parent char doc), through the injected persistence seam below.
     const uid = user.uid;
-    // Inject the (uid, charId)-bound combat-state persistence. The store computes the
-    // optimistic NEXT combat state for every op and persists THAT whole object through
-    // `writeCombatState` — an offline-queueable `setDoc(merge)`, so a damage / heal /
-    // condition / death-save taken OFFLINE is durably queued and replayed on reconnect
-    // (the old `runTransaction` path REJECTED offline and silently dropped the edit).
-    // Owner writes are always authorized; a transient/network failure is logged (the
-    // live subscription reconciles), never thrown.
+    // Marked play writes are microtask-coalesced: a synchronous command that changes
+    // HP + resources + concentration + log emits one complete child write, not one per
+    // store mutator. Legacy combat-only writes retain their immediate behavior.
     const logWrite = (err: unknown): void => {
       console.error("Combat-state write failed", err);
     };
+    let persistenceEnabled = true;
+    let pendingPlayWrite: CombatState | null = null;
+    let playWriteQueued = false;
+    const writeCompletePlayState = (state: CombatState): void => {
+      if (!persistenceEnabled) return;
+      const marked = useCharacterStore.getState().character?.playStateVersion === 1;
+      if (!marked) {
+        void writeCombatState(uid, characterId, state).catch(logWrite);
+        return;
+      }
+      pendingPlayWrite = state;
+      if (playWriteQueued) return;
+      playWriteQueued = true;
+      queueMicrotask(() => {
+        playWriteQueued = false;
+        const next = pendingPlayWrite;
+        pendingPlayWrite = null;
+        if (next && persistenceEnabled) {
+          void writeCombatState(uid, characterId, next).catch(logWrite);
+        }
+      });
+    };
     const persistence: CombatPersistence = {
-      write: (state) => void writeCombatState(uid, characterId, state).catch(logWrite),
+      write: writeCompletePlayState,
+      writeTurnEconomy: (round, turnEconomy) =>
+        void writeCombatTurnEconomy(uid, characterId, round, turnEconomy).catch(logWrite),
     };
     useCharacterStore.getState().setCombatPersistence(persistence);
     // T4 — the lazy attached-campaign resolver for the DM-sheet fan-out (one
     // membership-scoped read on the first save; nothing until the owner edits).
     attachedCampaignsRef.current = createAttachedCampaignTracker(user.uid, characterId);
 
-    // Latest combat-subdoc snapshot (`undefined` = none yet, `null` = doc absent).
-    // Held so whichever of the char load / combat snapshot arrives SECOND can
-    // reconcile — the char-doc parse is async (lazy SRD), so the tiny combat doc
-    // usually lands first, before there's a character to hydrate.
+    let lastParent: CharacterDoc | null | undefined = undefined;
     let lastCombat: CombatState | null | undefined = undefined;
-    const applyCombatHydration = () => {
-      if (lastCombat === undefined) return; // no combat snapshot yet — wait
-      const store = useCharacterStore.getState();
-      if (!store.character || store.character.id !== characterId) return;
-      // Behind the from-combat guard so hydrating the trio never echoes back out as
-      // a save (to either doc). An ABSENT subdoc (`lastCombat === null`) hydrates the
-      // full-HP default (a genuinely fresh/undamaged character).
+    let idbRestoreStarted = false;
+    let quarantined = false;
+
+    const quarantine = (message: string): void => {
+      if (quarantined) return;
+      quarantined = true;
+      persistenceEnabled = false;
+      pendingPlayWrite = null;
+      debouncedSaveRef.current?.cancel();
+      debouncedSaveRef.current = null;
+      attachedCampaignsRef.current = null;
+      useCharacterStore.getState().setCombatPersistence(null);
+      useCharacterStore.getState().setParentPersistenceFlush(null);
+      setCharacter(null);
+      setError(message);
+      setLoading(false);
+    };
+
+    const restoreLocalLog = (loaded: CharacterDoc): void => {
+      if (idbRestoreStarted || loaded.session.logEntries.length !== 0) return;
+      idbRestoreStarted = true;
+      void loadLogFromIDB(loaded.id).then((entries) => {
+        if (quarantined || !entries || entries.length === 0) return;
+        const current = useCharacterStore.getState().character;
+        if (
+          !current ||
+          current.id !== loaded.id ||
+          current.session.logEntries.length !== 0
+        ) {
+          return;
+        }
+        const logEntries = entries
+          .map(normalizeLogEntry)
+          .filter((entry): entry is LogEntry => entry !== null)
+          .map(normalizeLogEntryConcentration);
+        useCharacterStore.getState().updateSession({ logEntries });
+      });
+    };
+
+    const publishResolvedPair = (): void => {
+      if (quarantined) return;
+      if (lastParent === undefined) return;
+      if (lastParent === null) {
+        quarantine("Character not found");
+        return;
+      }
+      const marked = lastParent.playStateVersion === 1;
+      if (marked && lastCombat === undefined) return;
+      if (marked && lastCombat === null) {
+        quarantine("Invalid play state: missing-v1-combat-state");
+        return;
+      }
+
+      isFromServerRef.current = true;
       isFromCombatRef.current = true;
-      store.hydrateCombatState(lastCombat ?? null);
-      isFromCombatRef.current = false;
+      let loaded: boolean;
+      try {
+        loaded =
+          lastCombat === undefined
+            ? (setCharacter(lastParent), true)
+            : useCharacterStore
+                .getState()
+                .loadCharacterWithCombat(lastParent, lastCombat, false);
+      } catch (error) {
+        quarantine(error instanceof Error ? error.message : String(error));
+        return;
+      } finally {
+        isFromCombatRef.current = false;
+        isFromServerRef.current = false;
+      }
+      if (!loaded) {
+        quarantine("Invalid play state");
+        return;
+      }
+      const current = useCharacterStore.getState().character;
+      if (current) restoreLocalLog(current);
+      setLoading(false);
     };
 
     // REMOTE-CHANGE FENCE (§5.4) — whether an incoming combat snapshot materially
@@ -198,67 +445,30 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     const combatMateriallyDiffers = (combat: CombatState | null): boolean => {
       const cur = useCharacterStore.getState().character;
       if (!cur || cur.id !== characterId || !combat) return false;
-      return combatTrioDiffers(cur.session, combat);
+      if (combatTrioDiffers(cur.session, combat)) return true;
+      if (cur.playStateVersion !== 1) return false;
+      if (!combat.playState) return true;
+      return (
+        JSON.stringify(canonicalJson(sessionToPlayStateV1(cur.session))) !==
+        JSON.stringify(canonicalJson(combat.playState))
+      );
     };
 
     const unsubscribe = subscribeToCharacter(
       user.uid,
       characterId,
       (doc) => {
-        if (doc) {
-          // Mark as server-sourced so the store subscriber skips the save.
-          // `subscribeToCharacter` already returns a FULLY-PARSED doc through the
-          // unified codec (`parseCharacterEnvelope` → rehydrate + conform the
-          // race-trait pip remap + the weapon-action-id normalization + AC stamp),
-          // so the cockpit consumes it directly — ONE parse path (no double work).
-          isFromServerRef.current = true;
-          setCharacter(doc);
-          isFromServerRef.current = false;
-          // Re-apply the combat trio onto the freshly-loaded character (the combat
-          // snapshot may have arrived before there was a character to hydrate).
-          applyCombatHydration();
-
-          // Restore action log from IndexedDB if Firestore data has no entries
-          if (doc.session.logEntries.length === 0) {
-            void loadLogFromIDB(doc.id).then((entries) => {
-              if (entries && entries.length > 0) {
-                const current = useCharacterStore.getState().character;
-                if (
-                  current &&
-                  current.id === doc.id &&
-                  current.session.logEntries.length === 0
-                ) {
-                  // Route IDB-restored entries through the SAME GR10 boundary as the
-                  // Firestore path (sanitize-session): a pre-refactor IDB log carries
-                  // legacy `actionName`/`riderName` (no `action`/`rider`), which would
-                  // crash the id-ref combat-log view and round-trip the bad shape back
-                  // to Firestore on the next auto-save. Conform-on-read here.
-                  const logEntries = entries
-                    .map(normalizeLogEntry)
-                    .filter((e): e is LogEntry => e !== null)
-                    // SRD-aware conform of a legacy concentration-row `event.spell` (a bare
-                    // NAME from a pre-id IDB log) so it can never reach the strict
-                    // concentrationLabel resolver. The SRD-free `normalizeLogEntry` can't do
-                    // this; the ONE shared helper the codec read path also uses (golden rule
-                    // 6b) — symmetric boundaries across Firestore / JSON-import / IDB.
-                    .map(normalizeLogEntryConcentration);
-                  useCharacterStore.getState().updateSession({ logEntries });
-                }
-              }
-            });
-          }
-        } else {
-          setError("Character not found");
-          setCharacter(null);
-        }
-        setLoading(false);
+        if (quarantined) return;
+        lastParent = doc;
+        publishResolvedPair();
       },
       (err) => {
+        if (quarantined) return;
         // A12 — surface subscription errors (permission denied, network) instead
         // of silently leaving the sheet stuck on "loading".
         console.error("Character subscription error", err);
-        setError(err.message);
-        setLoading(false);
+        lastParent = undefined;
+        quarantine(err.message);
       }
     );
 
@@ -268,6 +478,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       user.uid,
       characterId,
       (combat, meta) => {
+        if (quarantined) return;
         // REMOTE-CHANGE FENCE (§5.4): a SERVER-originated combat update (another
         // device / god-mode) that materially differs from the live trio drops the
         // own-sheet undo stack — a snapshot-leg reverse-applier would otherwise clobber
@@ -279,10 +490,13 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           useUndoStore.getState().clear();
         }
         lastCombat = combat;
-        applyCombatHydration();
+        publishResolvedPair();
       },
       (err) => {
+        if (quarantined) return;
         console.error("Combat-state subscription error", err);
+        lastCombat = undefined;
+        quarantine(err.message);
       }
     );
 
@@ -298,29 +512,58 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       // Clear the injected persistence so a later (uid/char)-less render never writes
       // to a stale subdoc; the trio mutators fall back to optimistic-only.
       useCharacterStore.getState().setCombatPersistence(null);
+      useCharacterStore.getState().setParentPersistenceFlush(null);
       attachedCampaignsRef.current = null;
       setCharacter(null);
     };
   }, [user, characterId, setCharacter, setLoading, setError]);
 
-  // Auto-save the PARENT character doc on a NON-combat change. The combat trio
-  // (HP / conditions / initiative / death saves) is stripped from this payload —
-  // it persists to the `combat/state` subdoc instead (the subscriber below) — and a
-  // trio-ONLY change is skipped here entirely, so an HP tap never writes the parent.
+  // Legacy parents retain their noncombat session save. A v1 parent persists only
+  // build/cache/meta; every SessionState mutation is routed to the complete child.
   useEffect(() => {
     const unsubscribe = useCharacterStore.subscribe((state, prevState) => {
       // Ignore changes that originated from an incoming server / combat snapshot.
       if (isFromServerRef.current || isFromCombatRef.current) return;
 
       if (
-        state.character &&
-        prevState.character &&
-        state.character.id === prevState.character.id &&
-        (nonCombatSessionChanged(prevState.character.session, state.character.session) ||
-          state.character.character !== prevState.character.character)
+        !state.character ||
+        !prevState.character ||
+        state.character.id !== prevState.character.id
       ) {
-        if (DEV_BYPASS_AUTH) {
-          // Simulate save status transitions in dev bypass mode
+        return;
+      }
+
+      const marked = state.character.playStateVersion === 1;
+      const sessionChanged = prevState.character.session !== state.character.session;
+      const buildChanged = state.character.character !== prevState.character.character;
+      const cacheChanged =
+        marked &&
+        sessionChanged &&
+        (effectiveAC(prevState.character.character, prevState.character.session) !==
+          effectiveAC(state.character.character, state.character.session) ||
+          effectiveMaxHp(prevState.character.character, prevState.character.session) !==
+            effectiveMaxHp(state.character.character, state.character.session));
+      const parentChanged =
+        buildChanged ||
+        cacheChanged ||
+        (!marked &&
+          nonCombatSessionChanged(prevState.character.session, state.character.session));
+
+      // In v1 every mutable SessionState field lives in the complete child. Explicit
+      // combat mutators call the same seam; its microtask coalescer collapses both
+      // routes into one write for a composite command.
+      if (marked && sessionChanged) state.persistPlayState();
+
+      if (parentChanged) {
+        if (devBypassEnabled()) {
+          // Persist the same parent/non-combat projection production sends to Firestore.
+          const uid = useAuthStore.getState().user?.uid ?? "mock-uid";
+          writeDevDocument(
+            DEV_CHARACTER_COLLECTION,
+            devCharacterDocumentId(uid, state.character.id),
+            projectDevCharacterParent(state.character)
+          );
+          // Simulate save status transitions in dev bypass mode.
           saveStatusCallbacks.onPending();
           setTimeout(() => {
             saveStatusCallbacks.onSaving();
@@ -337,30 +580,31 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           const charData = state.character.character;
           const stampedAc = effectiveAC(charData, state.character.session);
           // Always save both together to prevent snapshot-overwrite races. The combat
-          // trio (HP/conditions/initiative/death saves) is omitted from the parent doc at
+          // combat slice (HP/conditions/held dice/initiative/death saves) is omitted from the parent doc at
           // the Firestore serialization boundary (`toStoredPayload`) — it lives ONLY in
           // the `combat/state` subdoc (the writer below).
           debouncedSaveRef.current.save({
-            session: state.character.session,
+            ...state.character,
             character:
               charData.ac === stampedAc ? charData : { ...charData, ac: stampedAc },
           });
-          // T4 — fan the fresh sheet out to every campaign this hero is attached
-          // to (DM-readable full copy + lite party snapshot), so the DM sees
-          // reasonably-live data. Fire-and-forget + self-swallowing: it never
-          // blocks/fails the character save and never loops (it writes CAMPAIGN
-          // docs, which the character store does not read back). The owner + id
-          // are stable for the lifetime of this character subscription.
-          const owner = useAuthStore.getState().user?.uid;
-          const tracker = attachedCampaignsRef.current;
-          if (owner && tracker) {
-            const acStamped =
-              charData.ac === stampedAc ? charData : { ...charData, ac: stampedAc };
-            void refreshAttachedSheets(tracker, owner, {
-              ...state.character,
-              character: acStamped,
-            });
-          }
+        }
+      }
+
+      // T4 fan-out reflects the complete live sheet and therefore follows any
+      // session/build edit even when a marked session edit correctly skips the parent.
+      if (sessionChanged || buildChanged) {
+        const owner = useAuthStore.getState().user?.uid;
+        const tracker = attachedCampaignsRef.current;
+        if (owner && tracker) {
+          const charData = state.character.character;
+          const stampedAc = effectiveAC(charData, state.character.session);
+          const acStamped =
+            charData.ac === stampedAc ? charData : { ...charData, ac: stampedAc };
+          void refreshAttachedSheets(tracker, owner, {
+            ...state.character,
+            character: acStamped,
+          });
         }
       }
     });
@@ -368,13 +612,8 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     return unsubscribe;
   }, []);
 
-  // NB: the combat trio (HP / conditions / initiative / death saves) is NOT persisted by
-  // a blanket store subscriber. Each trio mutator self-persists the WHOLE resulting state
-  // through the injected `CombatPersistence.write` (see the subscribe effect above) — one
-  // offline-queueable `setDoc(merge)` per op (whole-object last-write-wins; a fresh
-  // subscription-hydrated base makes different-field / different-time edits compose). The
-  // inbound reconcile is unchanged: a write lands → `subscribeCombatState` snapshot →
-  // `hydrateCombatState` (guarded by `isFromCombatRef`, so it never re-persists).
+  // Explicit combat mutators and the v1 session subscriber share one microtask-coalesced
+  // complete writer. Inbound snapshots stay behind the hydration guards and never echo.
 
   // Flush any pending debounced PARENT-doc save when the tab is closed / reloaded /
   // navigated away from. Without this, an edit made within the debounce

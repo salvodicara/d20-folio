@@ -1,0 +1,5 @@
+---
+"d20-folio": minor
+---
+
+Complete the encounter cutover onto the adversary world seam: turn stepping is now engine-first (each advance off a rolled adversary fires the kernel's own complete-turn boundary over the derived world, journal-committed, so booked condition lifetimes expire exactly when the table steps the tracker, with chip releases and chronicle beats mirrored in the same write; back-step stays a documented legacy-pointer-only rewind), the DM heal tap and the universal resolver's adversary damage/healing route through the engine command boundary with exact legacy semantics (clamp at max, temporary HP untouched, 0-HP revive degrades to the legacy arithmetic by design), every engine-mirrored chronicle beat carries its journal action id, and the chronicle's one-tap undo reverses that exact action through the canonical reducer (hp trio, temp, occurrences and lifetimes restore precisely) instead of blind arithmetic — with the member combat-resolution rules grant widened to persist `encounter.world` in the same transaction.

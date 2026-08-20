@@ -5,11 +5,27 @@
 import { describe, it, expect } from "vitest";
 import {
   buildCastOptions,
+  classifySpellCastingTime,
   metamagicOptionsForCast,
   toggleMetamagicSelection,
   type MetamagicSpellFacts,
 } from "@/lib/cast-options";
 import { METAMAGIC_BY_ID } from "@/data/metamagic";
+
+describe("classifySpellCastingTime", () => {
+  it.each([
+    ["1 action", "action"],
+    ["1 action or 8 hours", "action"],
+    ["bonus action", "bonus"],
+    ["1 bonus action", "bonus"],
+    ["reaction, which you take when hit", "reaction"],
+    ["1 minute", "extended"],
+    ["10 minutes", "extended"],
+    ["1 hour", "extended"],
+  ] as const)("classifies %s as %s", (castingTime, expected) => {
+    expect(classifySpellCastingTime(castingTime)).toBe(expected);
+  });
+});
 
 describe("buildCastOptions", () => {
   const slots = [
@@ -98,6 +114,32 @@ describe("buildCastOptions", () => {
     expect(opts.map((o) => o.level)).toEqual([1, 3, 4]);
   });
 
+  it("marks a tracker-backed scoped extra slot as an actual slot expenditure", () => {
+    const opts = buildCastOptions(
+      [],
+      {},
+      1,
+      [],
+      [],
+      [
+        {
+          sourceId: "potent-spellcasting-slot",
+          sourceName: "Potent Spellcasting",
+          level: 2,
+          usedNow: 0,
+          rest: "long",
+        },
+      ]
+    );
+    expect(opts).toEqual([
+      expect.objectContaining({
+        kind: "free-cast",
+        level: 2,
+        expendsSpellSlot: true,
+      }),
+    ]);
+  });
+
   describe("free-cast sources (Fey-Touched / Shadow-Touched / Magic Initiate)", () => {
     it("appends a free-cast row after the slot rows when the source has charges", () => {
       const opts = buildCastOptions(slots, {}, 2, [
@@ -106,7 +148,7 @@ describe("buildCastOptions", () => {
           sourceName: "Fey-Touched",
           usesPerRest: 1,
           usedNow: 0,
-          rest: "long",
+          recovery: { kind: "tracker", rest: "long" },
         },
       ]);
       // Slots first (2,3,4), then the free-cast.
@@ -118,9 +160,70 @@ describe("buildCastOptions", () => {
         expect(last.sourceName).toBe("Fey-Touched");
         expect(last.remaining).toBe(1);
         expect(last.total).toBe(1);
-        expect(last.rest).toBe("long");
+        expect(last.recovery).toEqual({ kind: "tracker", rest: "long" });
         expect(last.level).toBe(2);
+        expect(last.cost).toBe(1);
       }
+    });
+
+    it("keeps source overrides on that free-cast row only", () => {
+      const opts = buildCastOptions([{ level: 2, total: 1 }], {}, 2, [
+        {
+          sourceId: "item-copy",
+          sourceName: "ITEM",
+          usesPerRest: 1,
+          usedNow: 0,
+          recovery: { kind: "item-resource", triggers: [{ kind: "dawn" }] },
+          castOverrides: { saveDC: 15, attackBonus: 5 },
+        },
+      ]);
+
+      expect(opts[0]).not.toHaveProperty("castOverrides");
+      expect(opts[1]).toMatchObject({
+        kind: "free-cast",
+        castOverrides: { saveDC: 15, attackBonus: 5 },
+      });
+    });
+
+    it("offers only affordable item-provided cast levels at their exact cost", () => {
+      const opts = buildCastOptions([], {}, 3, [
+        {
+          sourceId: "wand-of-fireballs",
+          sourceName: "Wand of Fireballs",
+          usesPerRest: 7,
+          usedNow: 5,
+          recovery: { kind: "item-resource", triggers: [{ kind: "dawn" }] },
+          castLevels: [
+            { level: 3, cost: 1 },
+            { level: 4, cost: 2 },
+            { level: 5, cost: 3 },
+          ],
+        },
+      ]);
+      expect(opts).toEqual([
+        {
+          kind: "free-cast",
+          sourceId: "wand-of-fireballs",
+          sourceName: "Wand of Fireballs",
+          level: 3,
+          remaining: 2,
+          total: 7,
+          recovery: { kind: "item-resource", triggers: [{ kind: "dawn" }] },
+          cost: 1,
+          explicitCost: true,
+        },
+        {
+          kind: "free-cast",
+          sourceId: "wand-of-fireballs",
+          sourceName: "Wand of Fireballs",
+          level: 4,
+          remaining: 2,
+          total: 7,
+          recovery: { kind: "item-resource", triggers: [{ kind: "dawn" }] },
+          cost: 2,
+          explicitCost: true,
+        },
+      ]);
     });
 
     it("drops a free-cast source whose tracker is already fully spent", () => {
@@ -130,7 +233,7 @@ describe("buildCastOptions", () => {
           sourceName: "Fey-Touched",
           usesPerRest: 1,
           usedNow: 1, // spent already
-          rest: "long",
+          recovery: { kind: "tracker", rest: "long" },
         },
       ]);
       expect(opts.some((o) => o.kind === "free-cast")).toBe(false);
@@ -143,14 +246,14 @@ describe("buildCastOptions", () => {
           sourceName: "Fey-Touched",
           usesPerRest: 1,
           usedNow: 0,
-          rest: "long",
+          recovery: { kind: "tracker", rest: "long" },
         },
         {
           sourceId: "some-other-feat",
           sourceName: "Mystery Feat",
           usesPerRest: 2,
           usedNow: 0,
-          rest: "short",
+          recovery: { kind: "tracker", rest: "short" },
         },
       ]);
       const frees = opts.filter((o) => o.kind === "free-cast");
@@ -164,7 +267,7 @@ describe("buildCastOptions", () => {
           sourceName: "Fey-Touched",
           usesPerRest: 1,
           usedNow: 0,
-          rest: "long",
+          recovery: { kind: "tracker", rest: "long" },
         },
       ]);
       expect(opts).toHaveLength(1);
@@ -209,7 +312,7 @@ describe("buildCastOptions", () => {
             sourceName: "Fey-Touched",
             usesPerRest: 1,
             usedNow: 0,
-            rest: "long",
+            recovery: { kind: "tracker", rest: "long" },
           },
         ],
         [{ sourceName: "MASTERY" }]

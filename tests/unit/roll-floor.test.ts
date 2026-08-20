@@ -43,6 +43,44 @@ describe("evaluateGrants — roll-floor aggregation", () => {
   });
 });
 
+describe("evaluateGrants — physical roll-die adjustments", () => {
+  it("keeps the roll scope, sign, die and one-shot policy typed", () => {
+    const source: GrantSource = {
+      id: "mind-effect",
+      grants: [
+        {
+          type: "roll-die-adjustment",
+          rollType: "save",
+          operation: "subtract",
+          dice: "1d4",
+          consume: "next",
+        },
+      ],
+    };
+    expect(evaluateGrants([source]).rollDieAdjustments).toEqual([
+      {
+        sourceId: "mind-effect",
+        rollType: "save",
+        operation: "subtract",
+        dice: "1d4",
+        consume: "next",
+      },
+    ]);
+    expect(evaluateGrants([]).rollDieAdjustments).toEqual([]);
+  });
+});
+
+describe("evaluateGrants — healing prevention", () => {
+  it("collapses any active healing block to one deterministic flag", () => {
+    const source: GrantSource = {
+      id: "chill-touch-effect",
+      grants: [{ type: "healing-blocked" }],
+    };
+    expect(evaluateGrants([source]).healingBlocked).toBe(true);
+    expect(evaluateGrants([]).healingBlocked).toBe(false);
+  });
+});
+
 describe("Rogue Reliable Talent declares the roll-floor", () => {
   it("carries a check floor of 10 on proficient checks", () => {
     const grants = classFeatureIndex.get("rogue-reliable-talent")?.grants ?? [];

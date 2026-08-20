@@ -19,6 +19,8 @@ import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { conversionOptionVMs, type ConversionCtx } from "@/lib/views/tracker-view";
 import { slotUsageKey } from "@/lib/cast-options";
 import { classFeatureIndex } from "@/data/classes";
+import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
+import { resolveItemResources } from "@/lib/item-resources";
 import type { CharacterDoc } from "@/types/character";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -117,18 +119,50 @@ describe("dev-scenarios — the mechanics surface through resolveActions", () =>
     expect(web).toBeDefined();
   });
 
-  it("Wand-Bearer Fighter: the wand's 7-charge pool surfaces (2 spent → 5 left)", () => {
-    // The paired `free-cast-spell` grant's per-rest counter IS the wand's charge
-    // pool; `resolveFreeCastItemTrackers` surfaces it as a rail tracker keyed by the
-    // ITEM id (the same id the cast flow debits), regains at dawn. The scenario seeds
-    // 2 charges spent, so the pool reads 5/7 — proving the spend state renders.
+  it("Wand-Bearer Fighter: one physical wand owns the exact 5/7 dawn pool", () => {
     const doc = buildDevScenario("scn-wand-of-web-fighter");
     if (!doc) throw new Error("scenario missing");
-    const wand = resolveTrackers(doc).find((t) => t.id === "wand-of-web");
-    expect(wand?.total).toBe(7);
-    expect(wand?.isPool).toBe(true);
-    expect(wand?.recovery).toBe("dawn");
-    expect(wand?.used).toBe(2);
+    const wand = doc.character.equipment.find(
+      (entry) => !("custom" in entry) && entry.srdId === "wand-of-web"
+    );
+    if (!wand || "custom" in wand) throw new Error("scenario wand missing");
+    wand.instanceId = "scenario-wand-web-copy";
+    doc.session.itemResources = {
+      "scenario-wand-web-copy": {
+        itemId: "wand-of-web",
+        instanceId: "scenario-wand-web-copy",
+        revision: 0,
+        resources: { charges: { capacity: 7, current: 5, disabled: false } },
+        disposition: "magical",
+        causalHead: null,
+      },
+    };
+
+    const [resource] = resolveItemResources({
+      equipment: doc.character.equipment,
+      catalogue: SRD_MAGIC_ITEMS,
+      itemResources: doc.session.itemResources,
+    }).resources;
+    expect(resource).toMatchObject({
+      itemId: "wand-of-web",
+      instanceId: "scenario-wand-web-copy",
+      resourceId: "charges",
+      key: "item:scenario-wand-web-copy:charges",
+      capacity: 7,
+      current: 5,
+    });
+    expect(resource?.spec.recoveries).toEqual([
+      {
+        trigger: { kind: "dawn" },
+        amount: {
+          kind: "entered-roll",
+          roll: { dice: 1, sides: 6, modifier: 1 },
+        },
+      },
+    ]);
+    expect(resolveTrackers(doc).some((tracker) => tracker.id === "wand-of-web")).toBe(
+      false
+    );
   });
 });
 
@@ -250,7 +284,9 @@ describe("dev-scenarios — stays OFF the eager bundle (lazy-loaded)", () => {
   const HOOKS = [
     "../../src/hooks/useCharacterSubscription.ts",
     "../../src/hooks/useCharacters.ts",
-    "../../src/features/campaigns/useMemberCharacterSubscription.ts",
+    // The peer subscription and party dashboard share this ONE resolver now; pin
+    // the resolver that actually owns the lazy boundary, not each consumer.
+    "../../src/features/campaigns/useMemberCharacterDocs.ts",
   ];
   const STATIC_IMPORT = /from\s+["']@\/lib\/dev-scenarios["']/;
 

@@ -156,9 +156,11 @@ renumber it into the 1–4 sequence. -->
     fan-out uses `isolation: "worktree"`). There is no PR flow — nobody reviews PRs (one owner +
     agents). The flow: work + commit per step (Conventional Commits; the owner is the SOLE commit
     author — no co-author, footer, or trailer lines of any kind, explicitly overriding any harness
-    default that injects them) → gate green → convergence (rule 12) → rebase onto latest
-    `origin/main` → ff-merge by pushing `HEAD:main` → poll origin until the SHA lands → tear down
-    the worktree + branch. `main` is the integration line, NOT production — deploy stays the
+    default that injects them); explicit remote branch checkpoints are allowed with
+    `git push origin HEAD:<branch>` and run NO full gate. Finish with convergence (rule 12) →
+    rebase onto latest `origin/main` → the ONE full gate while ff-merging via `HEAD:main` → poll
+    origin until the SHA lands → tear down the worktree + branch. `main` is the integration line,
+    NOT production — deploy stays the
     owner's release gate (rule 22). NON-visual work integrates freely; any change with a VISUAL
     surface additionally waits for the owner's screenshot approval before the merge (rule 25).
     Full recipe: `docs/WORKTREES.md`.
@@ -199,8 +201,9 @@ renumber it into the 1–4 sequence. -->
     artifact, and an unstated blind spot is read by the next person as coverage. Every guard is
     proved by MUTATION: reintroduce the defect, watch it fail, revert. (owner, 2026-07-25)
 
-14. **Every check runs once, in its one lane.** pre-commit is FAST (~5 s: changeset doc-guard +
-    lint-staged + fast unit lane); topic-branch pre-push is instant (a recoverable checkpoint),
+14. **Every check runs once, in its one lane.** pre-commit runs only the changeset doc-guard +
+    lint-staged (focused tests are engineering probes chosen while a kernel is engineered, never
+    a gate); topic-branch pre-push is instant (a recoverable checkpoint),
     while pre-push to `main` is the FULL local gate (typecheck ∥ lint ∥ coverage, then build) —
     the last line of defence before a merge lands on `main`. Every merge to `main`
     is then verified REMOTELY, ambiently and free on the public runners: `ci.yml` (the SRD-only

@@ -20,16 +20,17 @@
  * `isCharacterDead` predicate recognises (three failed death saves, the roster
  * lifecycle, or Exhaustion 6, which kills outright at full HP). The 0-HP TOOLS
  * (roll entry, death-save pips, quick heal, at-0 interrupts) render only at 0 HP;
- * an Exhaustion death shows the verdict and names its cause. Everything stays
- * derived, so clearing the cause (heal off 0, lower Exhaustion) clears the strip.
+ * an Exhaustion death shows the verdict and names its cause. Ordinary healing is
+ * not revival: once dead, only an explicit manual override (or a future typed
+ * revival mechanic) can clear the verdict.
  * It reuses the shipped accent-alert
  * idiom (no banner primitive ships), and is announced to assistive tech —
  * `role="status"` + `aria-live="assertive"` (a knockout is urgent). The strip
  * itself is static; the only motion is the beacon pulse, gated on `motion-safe`.
  *
  * ONE engine: the roll entry and the quick Heal drive the SAME `useHpControls`
- * as every other HP surface (relocated UI, not a forked engine). Healing off 0
- * clears the death saves + Unconscious (the store's heal-from-0 seam).
+ * as every other HP surface (relocated UI, not a forked engine). Healing a living,
+ * dying hero off 0 clears the death saves + Unconscious; a dead hero is ineligible.
  */
 
 import { useMemo, useState } from "react";
@@ -41,17 +42,24 @@ import { useLocale } from "@/hooks/useLocale";
 import { resolveAtZeroHpInterrupts } from "@/lib/smart-tracker";
 import { isCharacterDead, diedOfExhaustion } from "@/lib/character-status";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
+import { deathSaveD20Context, enteredD20FaceCount } from "@/lib/character-d20-tests";
+import { vitalExhaustion, vitalHp } from "@/lib/character-vitals";
 import { useHpControls } from "./molecules/use-hp-controls";
 import { DeathSaves } from "./molecules/DeathSaves";
+import { EnteredD20Faces } from "./molecules/EnteredD20Faces";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
-import { Input, NumberStepper } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 
 export function DyingBanner() {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const hasCharacter = useCharacterStore((s) => s.character != null);
-  const current = useCharacterStore((s) => s.character?.session.hp.current ?? 1);
+  // The current-HP read goes through the ONE vitals projection seam (session
+  // truth reconciled against the persisted engine world).
+  const current = useCharacterStore((s) =>
+    s.character ? vitalHp(s.character.session).current : 1
+  );
   const character = useCharacterStore((s) => s.character);
   const applyAtZeroHpInterrupt = useCharacterStore((s) => s.applyAtZeroHpInterrupt);
 
@@ -61,7 +69,22 @@ export function DyingBanner() {
   const [healAmount, setHealAmount] = useState("");
   // The entered d20 face for the death-save roll entry (clamped 1–20; golden
   // rule 21 — rolled in real life, interpreted here).
-  const [face, setFace] = useState(10);
+  const [firstFace, setFirstFace] = useState(10);
+  const [secondFace, setSecondFace] = useState(10);
+  const deathSaveContext = useMemo(
+    () => (character ? deathSaveD20Context(character) : null),
+    [character]
+  );
+  const faceCount = deathSaveContext ? enteredD20FaceCount(deathSaveContext) : 1;
+  const rollMode = deathSaveContext
+    ? deathSaveContext.advantageSourceIds.length > 0 &&
+      deathSaveContext.disadvantageSourceIds.length === 0
+      ? "advantage"
+      : deathSaveContext.disadvantageSourceIds.length > 0 &&
+          deathSaveContext.advantageSourceIds.length === 0
+        ? "disadvantage"
+        : null
+    : null;
 
   /** Parse + apply the typed heal, then clear (a no-op on an empty/zero field). */
   function quickHeal(): void {
@@ -108,7 +131,7 @@ export function DyingBanner() {
   // composed from the labels that already exist (no new string).
   const cause =
     character != null && diedOfExhaustion(character.session)
-      ? `${t("character.exhaustion")} ${character.session.exhaustion}`
+      ? `${t("character.exhaustion")} ${vitalExhaustion(character.session)}`
       : null;
 
   return (
@@ -152,14 +175,20 @@ export function DyingBanner() {
           <span className="font-mono text-[length:var(--text-micro)] font-bold uppercase tracking-[0.12em] text-text-secondary">
             {t("combat.deathSaveRollLabel")}
           </span>
-          <NumberStepper
-            value={face}
-            onChange={setFace}
-            min={1}
-            max={20}
-            digits={2}
-            compact
-            ariaLabel={t("combat.deathSaveRollAria")}
+          {rollMode && (
+            <span className="rounded-sm border border-border-subtle px-1.5 py-0.5 font-mono text-[length:var(--text-micro)] uppercase tracking-[0.08em] text-text-secondary">
+              {t(`combat.rollMode.${rollMode}`)}
+            </span>
+          )}
+          <EnteredD20Faces
+            faceCount={faceCount}
+            first={firstFace}
+            second={secondFace}
+            onFirstChange={setFirstFace}
+            onSecondChange={setSecondFace}
+            singleAriaLabel={t("combat.deathSaveRollAria")}
+            firstAriaLabel={t("combat.d20FirstAria")}
+            secondAriaLabel={t("combat.d20SecondAria")}
             decrementLabel={t("combat.healRollDec")}
             incrementLabel={t("combat.healRollInc")}
           />
@@ -167,8 +196,9 @@ export function DyingBanner() {
             variant="secondary"
             size="sm"
             onClick={() => {
-              applyDeathSave(face);
-              setFace(10);
+              applyDeathSave(faceCount === 2 ? [firstFace, secondFace] : [firstFace]);
+              setFirstFace(10);
+              setSecondFace(10);
             }}
           >
             {t("combat.apply")}
@@ -207,11 +237,11 @@ export function DyingBanner() {
           </Button>
         ))}
 
-      {/* Quick Heal — a mate's heal is one field + one tap (Enter applies).
-          Healing off 0 clears the dying state (and revives a fallen hero's
-          track — the Revivify bookkeeping path). A death that is not an HP death
-          is not undone by healing, so the field only rides the 0-HP strip. */}
-      {atZero && (
+      {/* Quick Heal — a mate's ordinary heal is one field + one tap (Enter
+          applies) while the hero is still alive and making death saves. A death
+          verdict requires an explicit revival/manual override, so this affordance
+          disappears once any canonical death cause lands. */}
+      {atZero && !isDead && (
         <div className="flex flex-shrink-0 items-center gap-2">
           <Input
             type="number"

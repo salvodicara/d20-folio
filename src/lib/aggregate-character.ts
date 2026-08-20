@@ -14,9 +14,18 @@
  * Routing EVERY full-aggregate call site through this single helper makes those
  * two arguments impossible to drop again. SoC-preserving: pure derivation over the
  * existing engine (views still only read + dispatch).
+ *
+ * The active-key set is the UNION of the legacy chips and the persisted engine
+ * world's live `active-key` standing occurrences (`world-standing-grants.ts`) —
+ * the first UI read migrated off the session bridge: an engine-cast buff reaches
+ * every derived stat here without a legacy activation row, and key-identity
+ * dedupe makes double-counting unrepresentable.
  */
 import { evaluateGrants, type AggregatedGrants } from "@/lib/grants";
-import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
+import {
+  resolveAllGrantSources,
+  resolveCombatEffectGrantSources,
+} from "@/lib/resolve-grant-sources";
 import {
   computeAC,
   computeACDetailed,
@@ -33,30 +42,101 @@ import {
 } from "@/lib/value-breakdown";
 import { srdText } from "@/lib/loc-text";
 import { getEquipment } from "@/data/equipment";
+import { getSpellById } from "@/data/spells";
 import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
 import type { CharacterDoc } from "@/types/character";
 import type { StoredConcentration } from "@/types/ids";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
+import {
+  sessionActiveKeys,
+  worldStandingMaxHpDeltas,
+  worldStandingZeroHpFloors,
+} from "@/lib/world-standing-grants";
+
+/**
+ * Project the equipment that still exists as an active magic object. Catalogue
+ * defaults have no stored state, so an absent entry remains active; once a typed
+ * transition marks an exact physical copy nonmagical, consumed, or destroyed,
+ * every intrinsic equipment calculation must stop reading that copy. Identity
+ * mismatches fail closed instead of lending another copy's state.
+ */
+export function effectiveEquipmentForItemResources(
+  equipment: CharacterDoc["character"]["equipment"],
+  itemResources?: CharacterDoc["session"]["itemResources"]
+): CharacterDoc["character"]["equipment"] {
+  if (!itemResources) return equipment;
+  return equipment.filter((ref) => {
+    if ("custom" in ref || ref.instanceId === undefined) return true;
+    const state = itemResources[ref.instanceId];
+    return (
+      state === undefined ||
+      (state.itemId === ref.srdId &&
+        state.instanceId === ref.instanceId &&
+        state.disposition === "magical")
+    );
+  });
+}
 
 /** The session slices that feed sheet-wide grant aggregation. */
 export type AggregationSession = Pick<
   CharacterDoc["session"],
   "activeFeatures" | "grantBundleChoices"
->;
+> &
+  Partial<
+    Pick<
+      CharacterDoc["session"],
+      | "conditions"
+      | "concentrationConditions"
+      | "encounterEffects"
+      | "concentration"
+      | "itemResources"
+      | "world"
+    >
+  >;
+
+/**
+ * The ONE active-key set every `while-active` grant gates on: the shared
+ * legacy-chips-plus-world-standings union (`sessionActiveKeys`), so an
+ * engine-cast Shield's standing lights its +5 AC here with no legacy
+ * activation row, and a buff active BOTH ways during the rollout still
+ * evaluates its grants exactly once (key-identity dedupe).
+ */
+function aggregationActiveKeys(session: AggregationSession): Set<string> {
+  return sessionActiveKeys(session);
+}
 
 /**
  * Aggregate every grant the character receives, threading the session's
- * while-active features AND chosen grant-bundle (lineage/circle) selections.
- * This is the canonical input for any sheet-wide derivation: senses, speeds,
- * resistances/immunities, ability-score floors, proficiencies, free-casts.
+ * while-active features (legacy chips + world standings) AND chosen
+ * grant-bundle (lineage/circle) selections. This is the canonical input for
+ * any sheet-wide derivation: senses, speeds, resistances/immunities,
+ * ability-score floors, proficiencies, free-casts.
  */
 export function aggregateCharacterGrants(
   character: CharacterDoc["character"],
   session: AggregationSession
 ): AggregatedGrants {
+  const encounterSources = resolveCombatEffectGrantSources(session.encounterEffects);
   return evaluateGrants(
-    resolveAllGrantSources(character),
-    new Set(session.activeFeatures ?? []),
-    new Map(Object.entries(session.grantBundleChoices ?? {}))
+    [...resolveAllGrantSources(character, session.itemResources), ...encounterSources],
+    aggregationActiveKeys(session),
+    new Map(Object.entries(session.grantBundleChoices ?? {})),
+    {
+      level: totalLevel(character),
+      conditions: new Set(
+        effectiveSessionConditions({
+          conditions: session.conditions ?? [],
+          concentration: session.concentration ?? "",
+          concentrationConditions: session.concentrationConditions,
+          encounterEffects: session.encounterEffects,
+        })
+      ),
+      // The engine world's standing-fact projections: the exact Aid amount
+      // (cast level included) and Death Ward's single-use floor, both scoped
+      // to SELF-owned live standings (`world-standing-grants.ts`).
+      worldMaxHpDeltas: worldStandingMaxHpDeltas(session.world),
+      worldZeroHpFloors: worldStandingZeroHpFloors(session.world),
+    }
   );
 }
 
@@ -67,23 +147,23 @@ export function aggregateCharacterGrants(
  * clear from the dropped spell's STABLE ref — NEVER its English name (golden
  * rule 7).
  *
- * A {@link StoredConcentration} ref is the spell's bare srdId, which equals the
- * grant SOURCE id `resolveGrantSourcesForSpells` assigns a prepared spell-with-
- * grants (id = `spell.id`). So the dropped spell's standing while-active keys are
- * exactly the `activatableGroups` entries whose `sourceId` is that ref, read off
- * the grant's `key` (== the grant's `activeKey`) — the SAME single source the cast
- * path stamps. A "" (not concentrating) or a `custom:`-marked homebrew ref (no SRD
- * grant) yields [] — nothing to clear, correct by construction.
+ * A {@link StoredConcentration} ref is the spell's bare srdId. Resolve its own
+ * wrappers directly so hidden lifecycle timers (condition-only spells) clear
+ * alongside visible mechanical states. This also clears legacy/manual active
+ * keys for selected-recipient buffs; their occurrence records remain independent.
+ * A "" or custom concentration yields [] by construction.
  */
 export function activeKeysForConcentration(
-  character: CharacterDoc["character"],
-  session: AggregationSession,
+  _character: CharacterDoc["character"],
+  _session: AggregationSession,
   ref: StoredConcentration
 ): string[] {
   if (ref === "" || ref.startsWith(CUSTOM_CONCENTRATION_PREFIX)) return [];
-  return aggregateCharacterGrants(character, session)
-    .activatableGroups.filter((g) => g.sourceId === ref)
-    .map((g) => g.key);
+  return (
+    getSpellById(ref)?.grants?.flatMap((grant) =>
+      grant.type === "while-active" ? [grant.activeKey] : []
+    ) ?? []
+  );
 }
 
 /**
@@ -102,7 +182,8 @@ export function computeCharacterAC(
     | "acBonusAbilities"
     | "acBonus"
     | "acFormulas"
-  >
+  >,
+  itemResources?: CharacterDoc["session"]["itemResources"]
 ): number {
   const scores = effectiveAbilityScores(
     character.abilityScores,
@@ -111,7 +192,7 @@ export function computeCharacterAC(
     agg.itemAbilityScoreCap
   );
   return computeAC(
-    character.equipment,
+    effectiveEquipmentForItemResources(character.equipment, itemResources),
     scores,
     getEquipment,
     character.features,
@@ -150,7 +231,8 @@ export function computeCharacterAcBreakdown(
     | "acBonusAbilities"
     | "acBonus"
     | "acFormulas"
-  >
+  >,
+  itemResources?: CharacterDoc["session"]["itemResources"]
 ): RawBreakdownPart[] {
   const scores = effectiveAbilityScores(
     character.abilityScores,
@@ -159,7 +241,7 @@ export function computeCharacterAcBreakdown(
     agg.itemAbilityScoreCap
   );
   return computeACDetailed(
-    character.equipment,
+    effectiveEquipmentForItemResources(character.equipment, itemResources),
     scores,
     getEquipment,
     character.features,
@@ -189,9 +271,10 @@ export function acFromAggregate(
     | "acBonusAbilities"
     | "acBonus"
     | "acFormulas"
-  >
+  >,
+  itemResources?: CharacterDoc["session"]["itemResources"]
 ): number {
-  return character.acOverride ?? computeCharacterAC(character, agg);
+  return character.acOverride ?? computeCharacterAC(character, agg, itemResources);
 }
 
 /**
@@ -205,7 +288,11 @@ export function effectiveAC(
   character: CharacterDoc["character"],
   session: AggregationSession
 ): number {
-  return acFromAggregate(character, aggregateCharacterGrants(character, session));
+  return acFromAggregate(
+    character,
+    aggregateCharacterGrants(character, session),
+    session.itemResources
+  );
 }
 
 // ─── Max HP — the by-the-book composition (#95) ─────────────────────────────────

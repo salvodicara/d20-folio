@@ -317,8 +317,8 @@ export function makeDevNotes(): SharedNote[] {
 
 /**
  * The dev `encounterInit` roll table for the BEGUN encounter demo (`d20-dev-encounter`
- * = `"1"`): with turns begun the order is FROZEN, a state production only reaches once
- * EVERY combatant has rolled (Begin-turns hard-gates on it) — so the dev campaign doc
+ * = `"1"`): with turns begun the order is FROZEN; this all-participants demo therefore
+ * carries every combatant's roll, so the dev campaign doc
  * must carry the members' rolls, or the demo shows an impossible mid-fight "INIT —" +
  * a misleading red needs-roll pip. Rides the campaign doc exactly like production (the
  * initiative SSOT); `{}` in every other mode (gathering keeps its un-rolled urgency
@@ -690,6 +690,7 @@ export function makeTurnFlickerSteps(): TurnFlickerStep[] {
     round,
     currentCombatantId: myId,
     order: [myId, "monster-1"],
+    nextMonsterOrdinal: 2,
     epoch: 1,
     status: "active",
     combatants: [
@@ -701,8 +702,7 @@ export function makeTurnFlickerSteps(): TurnFlickerStep[] {
         ac: 13,
         initiative: 12,
         conditions: [],
-        maxHp: 7,
-        tokens: [7],
+        hp: { current: 7, temp: 0, max: 7 },
       },
     ],
   };
@@ -789,6 +789,7 @@ export function makeDevGlobalCombat(mode: DevPipMode | null): GlobalCombat | nul
   const encounter: EncounterState = {
     round,
     currentCombatantId: currentId,
+    nextMonsterOrdinal: 2,
     epoch: 1,
     status: "active",
     combatants: [
@@ -800,8 +801,7 @@ export function makeDevGlobalCombat(mode: DevPipMode | null): GlobalCombat | nul
         ac: 13,
         initiative: 14,
         conditions: [],
-        maxHp: 7,
-        tokens: [7],
+        hp: { current: 7, temp: 0, max: 7 },
       },
     ],
   };
@@ -893,6 +893,7 @@ function pipScenarioCampaign(id: keyof typeof DEV_PIP_EPOCHS, name: string): Cam
     encounter: {
       round: 1,
       currentCombatantId: null,
+      nextMonsterOrdinal: 1,
       epoch: DEV_PIP_EPOCHS[id],
       status: "active",
       combatants: [
@@ -955,9 +956,14 @@ export function resolveDevCampaign(id: string): CampaignDoc {
  * production). The PCs are PURE REFERENCES (single source — golden rule 6): their name /
  * AC / HP / conditions / initiative are read LIVE from the member's char doc + projected
  * `combat/state` (in dev, the team-fixture session), never copied here. The genuine
- * encounter-owned state is the monsters: a Goblin ×3 group with one downed token (one
- * prone), a single Goblin Chief, and a HIDDEN Shadow (DM ambush — the `hidden` flag demos
- * the filter). IDs only — names are user content.
+ * encounter-owned state is the monsters: a battered "Goblin" pack fought as ONE demo
+ * combatant (prone, carrying the pack's aggregate 10/21 HP + 150 XP cost), a single
+ * Goblin Chief, and a HIDDEN Shadow (DM ambush — the `hidden` flag demos the filter).
+ * IDs only — names are user content. Exactly THREE monsters (`monster-1..3`,
+ * `nextMonsterOrdinal: 4`): the party-unified suite + the combat-chronicle e2e pin the
+ * exact name "Goblin", the 5-slot frozen order, and the next reinforcement minting
+ * `monster-4` — batch ×N per-creature groups stay a live capability via `addMonster`
+ * (demoed by the encounter-picker e2e), never pre-seeded here.
  *
  *   • `"begun"` — turns have started: the FROZEN order is set and the current turn sits on
  *     Coralino's card. Matches the live initiative sort (Shadow 16 · Goblin 14 · Boss 12 ·
@@ -987,6 +993,7 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
             "pc-member-mara",
           ],
         }),
+    nextMonsterOrdinal: 4,
     // A FIXED epoch so the dev harness is deterministic (never Date.now()). The PC combat
     // fixtures carry the matching `initiativeEpoch` so they read as rolled.
     epoch: 1,
@@ -1002,18 +1009,19 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
         kind: "monster",
         id: "monster-1",
         name: "Goblin",
-        // A picker-added group: its `srdId` reaches the DM statblock disclosure. The
-        // user name "Goblin" deliberately differs from the statblock name ("Goblin
-        // Warrior") to demo §C.3's dual-title. `xp: 50` (Goblin Warrior CR 1/4) seeds
-        // the DM budget readout; "Goblin Chief"/"Shadow" carry none, so the readout
-        // renders its un-costed marker at rest (screenshot/a11y matrix coverage).
+        // A picker-added combatant: its `srdId` reaches the DM statblock disclosure.
+        // The user name "Goblin" deliberately differs from the statblock name ("Goblin
+        // Warrior") to demo §C.3's dual-title. The demo creature carries a goblin PACK's
+        // aggregates — 10/21 HP (a player reads the Bloodied band) and `xp: 150` (3 ×
+        // Goblin Warrior CR 1/4) so the DM budget readout grades a real cost; "Goblin
+        // Chief"/"Shadow" carry none, so the readout renders its un-costed marker at
+        // rest (screenshot/a11y matrix coverage).
         srdId: "goblin-warrior",
-        xp: 50,
+        xp: 150,
         ac: 13,
         initiative: 14,
         conditions: ["prone"],
-        maxHp: 7,
-        tokens: [7, 3, 0],
+        hp: { current: 10, temp: 0, max: 21 },
         // The encounter resolves canonical art from this combatant's `srdId`.
         creatureType: "humanoid",
       },
@@ -1029,8 +1037,7 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
         // gate is DISABLED with its rolled/total reason; begun: typed initiative 12.
         initiative: gathering ? null : 12,
         conditions: [],
-        maxHp: 21,
-        tokens: [21],
+        hp: { current: 21, temp: 0, max: 21 },
         creatureType: "humanoid", // Ad-hoc: no srdId, so the monogram is intentional.
       },
       {
@@ -1040,8 +1047,7 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
         ac: 12,
         initiative: 16,
         conditions: [],
-        maxHp: 16,
-        tokens: [16],
+        hp: { current: 16, temp: 0, max: 16 },
         hidden: true,
         creatureType: "undead", // Ad-hoc: no srdId, so the monogram is intentional.
       },
@@ -1065,8 +1071,8 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
               kind: "hp-damage" as const,
               targetId: "monster-1",
               amount: 8,
-              current: 3,
-              max: 7,
+              current: 10,
+              max: 21,
               attackerId: "pc-member-mara",
             },
             {
@@ -1145,7 +1151,6 @@ export function makeDevChronicleCombat(): GlobalCombat | null {
       tempHp: 0,
       down: false,
       hidden: false,
-      tokens: [12],
     },
     {
       id: "monster-2",
@@ -1159,7 +1164,6 @@ export function makeDevChronicleCombat(): GlobalCombat | null {
       tempHp: 0,
       down: false,
       hidden: false,
-      tokens: [21],
     },
     {
       id: "monster-3",
@@ -1173,7 +1177,6 @@ export function makeDevChronicleCombat(): GlobalCombat | null {
       tempHp: 0,
       down: false,
       hidden: false,
-      tokens: [59],
     },
   ];
   const turnOrderIds = [myId, "monster-1", "monster-2", "monster-3"];
@@ -1181,6 +1184,7 @@ export function makeDevChronicleCombat(): GlobalCombat | null {
     round,
     currentCombatantId: myId,
     order: turnOrderIds,
+    nextMonsterOrdinal: 4,
     epoch: 1,
     status: "active",
     combatants: [
@@ -1197,8 +1201,7 @@ export function makeDevChronicleCombat(): GlobalCombat | null {
         ac: 13,
         initiative: 14,
         conditions: [],
-        maxHp: 12,
-        tokens: [12],
+        hp: { current: 12, temp: 0, max: 12 },
       },
       {
         kind: "monster",
@@ -1207,8 +1210,7 @@ export function makeDevChronicleCombat(): GlobalCombat | null {
         ac: 17,
         initiative: 12,
         conditions: [],
-        maxHp: 21,
-        tokens: [21],
+        hp: { current: 21, temp: 0, max: 21 },
       },
       {
         kind: "monster",
@@ -1217,8 +1219,7 @@ export function makeDevChronicleCombat(): GlobalCombat | null {
         ac: 11,
         initiative: 8,
         conditions: [],
-        maxHp: 59,
-        tokens: [59],
+        hp: { current: 59, temp: 0, max: 59 },
       },
     ],
   };

@@ -8,31 +8,40 @@ import { Button } from "@/components/ui/button";
 export function ChargeUse({
   current,
   max,
+  disabled = false,
+  uninitializedLabel,
   onUse,
   chargesLabel,
   useLabel,
   useTitle,
 }: {
-  current: number;
-  max: number;
+  current: number | null;
+  max: number | null;
+  /** Additional rules-derived gate (equip, attunement, disposition, disabled pool). */
+  disabled?: boolean;
+  /** Honest display while the first command still needs a table-entered roll. */
+  uninitializedLabel?: string;
   onUse: () => void;
   chargesLabel: string;
   useLabel: string;
   useTitle: string;
 }) {
+  const count =
+    current == null || max == null ? (uninitializedLabel ?? "—") : `${current} / ${max}`;
+
   return (
     <span className="flex items-center gap-1.5">
       <span
         className="font-mono text-[0.65rem] font-bold text-info"
         title={chargesLabel}
-        aria-label={`${chargesLabel}: ${current} / ${max}`}
+        aria-label={`${chargesLabel}: ${count}`}
       >
-        {current} / {max}
+        {count}
       </span>
       <Button
         size="sm"
         variant="secondary"
-        disabled={current <= 0}
+        disabled={disabled || current === 0}
         title={useTitle}
         onClick={(e) => {
           e.stopPropagation();

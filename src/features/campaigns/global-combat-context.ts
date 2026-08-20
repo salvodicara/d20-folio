@@ -243,6 +243,16 @@ export function usePipCombat(): PipModel | null {
 
 const PIN_KEY = "d20-combat-pin";
 
+function browserStorage(): Partial<Storage> | undefined {
+  const storage: unknown = Reflect.get(globalThis, "localStorage");
+  return typeof storage === "object" && storage !== null ? storage : undefined;
+}
+
+function readPinnedCampaign(): string | null {
+  const storage = browserStorage();
+  return typeof storage?.getItem === "function" ? storage.getItem(PIN_KEY) : null;
+}
+
 interface PinStore {
   /** The campaign the viewer pinned in the multi-encounter chooser, or `null` (default to
    *  the most-recent). A LOCAL UI pref — persisted to `localStorage`, NOT a synced fact
@@ -254,11 +264,15 @@ interface PinStore {
 /** The local (non-synced) pinned-encounter preference. Read by the producer to choose the
  *  primary; written by the pip's chooser. Survives reload via `localStorage`. */
 export const usePinStore = create<PinStore>((set) => ({
-  pin: typeof localStorage !== "undefined" ? localStorage.getItem(PIN_KEY) : null,
+  pin: readPinnedCampaign(),
   setPin: (campaignId) => {
-    if (typeof localStorage !== "undefined") {
-      if (campaignId) localStorage.setItem(PIN_KEY, campaignId);
-      else localStorage.removeItem(PIN_KEY);
+    const storage = browserStorage();
+    if (
+      typeof storage?.setItem === "function" &&
+      typeof storage.removeItem === "function"
+    ) {
+      if (campaignId) storage.setItem(PIN_KEY, campaignId);
+      else storage.removeItem(PIN_KEY);
     }
     set({ pin: campaignId });
   },

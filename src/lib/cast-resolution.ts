@@ -5,6 +5,8 @@
  */
 import type { SrdSpellData } from "@/data/types";
 import type { ResolvedAction } from "@/lib/smart-tracker";
+import { whileActiveDurationAtCastLevel } from "@/lib/grants";
+import { conditionLifetimeAtCastLevel } from "@/data/spells/duration";
 import { scaleUpcastDice, spellInstanceCount } from "@/lib/utils";
 
 type ScalableCombatSummary = Pick<
@@ -37,10 +39,54 @@ export function actionAtCastLevel(
 ): ResolvedAction {
   if (!spell || castLevel <= spell.level) return action;
 
+  const activeKey = action.activatesKey ?? action.standingEffect?.activeKey;
+  const durationGrant = spell.grants?.find(
+    (grant) => grant.type === "while-active" && grant.activeKey === activeKey
+  );
+  const duration =
+    durationGrant?.type === "while-active"
+      ? whileActiveDurationAtCastLevel(durationGrant.duration, castLevel)
+      : undefined;
+  const conditionApplication = action.summary.conditionApplication;
+  const conditionLifetime = conditionLifetimeAtCastLevel(
+    conditionApplication?.lifetime,
+    castLevel
+  );
+  const conditionLifetimes = conditionApplication?.lifetimes
+    ? Object.fromEntries(
+        Object.entries(conditionApplication.lifetimes).map(([conditionId, lifetime]) => [
+          conditionId,
+          conditionLifetimeAtCastLevel(lifetime, castLevel),
+        ])
+      )
+    : undefined;
+
   return {
     ...action,
     slotLevel: castLevel,
-    summary: scaleCombatSummaryAtCastLevel(action.summary, spell, castLevel),
+    ...(action.activatesKey && duration?.maxRounds !== undefined
+      ? { activeDurationRounds: duration.maxRounds }
+      : {}),
+    ...(action.standingEffect && duration?.maxRounds !== undefined
+      ? {
+          standingEffect: {
+            ...action.standingEffect,
+            maxRounds: duration.maxRounds,
+          },
+        }
+      : {}),
+    summary: {
+      ...scaleCombatSummaryAtCastLevel(action.summary, spell, castLevel),
+      ...(conditionApplication && (conditionLifetime || conditionLifetimes)
+        ? {
+            conditionApplication: {
+              ...conditionApplication,
+              ...(conditionLifetime ? { lifetime: conditionLifetime } : {}),
+              ...(conditionLifetimes ? { lifetimes: conditionLifetimes } : {}),
+            },
+          }
+        : {}),
+    },
   };
 }
 

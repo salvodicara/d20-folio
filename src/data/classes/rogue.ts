@@ -141,6 +141,27 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
     id: "rogue-sneak-attack",
     class: "rogue",
     level: 1,
+    grants: [
+      {
+        type: "damage-rider",
+        dice: "1d6",
+        diceByLevel: {
+          3: "2d6",
+          5: "3d6",
+          7: "4d6",
+          9: "5d6",
+          11: "6d6",
+          13: "7d6",
+          15: "8d6",
+          17: "9d6",
+          19: "10d6",
+        },
+        damageType: "same-as-weapon",
+        appliesTo: "finesse-or-ranged-weapon",
+        oncePerTurn: true,
+        resourceCost: { trackerId: "rogue-sneak-attack" },
+      },
+    ],
     mechanics: {
       // Once per turn (the single "use"); the die field carries the scaling damage
       // (⌈level/2⌉d6) so the actual Sneak Attack dice are visible, not a flat "d6".
@@ -193,7 +214,25 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
     mechanics: {
       actions: [
         {
+          id: "dash",
           type: "bonus",
+          economyCategory: "dash",
+        },
+        {
+          id: "disengage",
+          type: "bonus",
+          economyCategory: "disengage",
+        },
+        {
+          id: "hide",
+          type: "bonus",
+          economyCategory: "hide",
+          skillCheck: { dc: 15, skill: "stealth" },
+          // 2024 (Hide action): a passed DC 15 DEX (Stealth) check grants the
+          // Invisible condition; its end (attacking, casting, being found) is
+          // circumstance-owned, so the lifetime stays with the table.
+          conditionApplication: { options: ["invisible"], on: "passed-check" },
+          targeting: { affinity: "self", maxTargets: 1 },
         },
       ],
     },
@@ -207,6 +246,8 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
       actions: [
         {
           type: "bonus",
+          grantsNextAttackAdvantage: true,
+          locksMovement: true,
         },
       ],
     },
@@ -220,7 +261,80 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
       actions: [
         {
           type: "reaction",
-          trigger: "takeDamage",
+          // The click affirms the table-only visibility fact; the trigger still
+          // excludes saves, hazards, and automatic damage at the data boundary.
+          trigger: "hitByAttack",
+          targeting: { affinity: "self", maxTargets: 1 },
+          // The canonical-runtime authored program:
+          // declaring the reaction claims the round's Reaction slot; the
+          // damage-taken phase compiles the exact compensating reduction —
+          // reduce the triggering attack's damage by ⌈half⌉, so the rogue TAKES
+          // ⌊half⌋ (2024 RAW halving rounds down) — bounded by the triggering
+          // resolution's effective damage, then the spent reaction ends. Fired
+          // by the damage-entry runtime (`lib/damage-reaction.ts`), which
+          // composes the table-entered hit around this program so the whole
+          // exchange commits as ONE causal action; the attack-delivered fact is
+          // affirmed by the player's pick, exactly like the legacy card's click.
+          mechanicsProgram: {
+            id: "action:rogue-uncanny-dodge:0",
+            phases: [
+              {
+                inputs: [],
+                phaseId: "resolve",
+                steps: [
+                  {
+                    claim: {
+                      claimId: "reaction.rogue-uncanny-dodge.0",
+                      kind: "claim-reaction",
+                      reaction: {
+                        kind: "program",
+                        // Must equal `damageReactionClaimId("rogue-uncanny-dodge",
+                        // action, 0)` — the projection's requirement roster and
+                        // this claim share that one identity (guard-tested).
+                        requirementId: "reaction.rogue-uncanny-dodge.0",
+                      },
+                    },
+                    combatant: "caster",
+                    kind: "turn-claim",
+                    stepId: "claim-reaction",
+                    when: null,
+                  },
+                ],
+                trigger: { kind: "invocation" },
+              },
+              {
+                inputs: [],
+                phaseId: "deflect",
+                steps: [
+                  {
+                    amount: {
+                      expression: {
+                        dividend: { bindingId: "trigger.damage", kind: "binding" },
+                        divisor: { kind: "fixed", value: 2 },
+                        kind: "divide",
+                        rounding: "ceil",
+                      },
+                      kind: "integer",
+                    },
+                    kind: "incoming-damage-adjustment",
+                    selector: {
+                      damageTypes: [],
+                      deliveries: ["attack"],
+                      forbiddenTraits: [],
+                      requiredTraits: [],
+                    },
+                    sourceId: "reaction.rogue-uncanny-dodge.0",
+                    stepId: "halve",
+                    when: null,
+                  },
+                  { kind: "end-program", stepId: "spent", when: null },
+                ],
+                trigger: { kind: "damage-taken", target: "caster" },
+              },
+            ],
+            registers: [],
+            version: 1,
+          },
         },
       ],
     },
@@ -260,6 +374,16 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
     id: "rogue-evasion",
     class: "rogue",
     level: 7,
+    grants: [
+      {
+        type: "save-damage-rule",
+        ability: "DEX",
+        requiresDamageOnSuccess: "half",
+        onSuccess: "none",
+        onFailure: "half",
+        suppressedByConditions: ["incapacitated"],
+      },
+    ],
     source: "SRD",
   },
   {

@@ -37,8 +37,9 @@ import type {
   CustomWeapon,
   CustomFeature,
 } from "@/types/character";
-import { ALL_DAMAGE_TYPES, ALL_SPELL_SCHOOLS } from "@/data/types";
-import type { SpellSchool, DamageType } from "@/data/types";
+import { ALL_SPELL_SCHOOLS } from "@/data/types";
+import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
+import type { SpellSchool } from "@/data/types";
 
 /**
  * Keep a freshly created homebrew in the account library, and SAY SO when the
@@ -275,8 +276,6 @@ interface CustomEquipmentFormProps {
    *  kinds, so the seed is either shape and the saved draft carries the kind. */
   libraryEdit?: LibraryEditProps<CustomEquipment | CustomWeapon>;
 }
-
-const DAMAGE_TYPES: readonly DamageType[] = ALL_DAMAGE_TYPES;
 
 export function CustomEquipmentForm({
   onCreated,
@@ -640,10 +639,21 @@ export function CustomFeatureForm({
   const [trackerRecovery, setTrackerRecovery] = useState<string>(
     initTracker?.recovery ?? "long-rest"
   );
+  const [recordsRolls, setRecordsRolls] = useState(initTracker?.recordedRolls != null);
+  const [rollMinimum, setRollMinimum] = useState(
+    String(initTracker?.recordedRolls?.min ?? 1)
+  );
+  const [rollMaximum, setRollMaximum] = useState(
+    String(initTracker?.recordedRolls?.max ?? 20)
+  );
 
   function handleSubmit() {
     if (!title.trim()) return;
     const store = useCharacterStore.getState();
+    const parsedMinimum = Number.parseInt(rollMinimum, 10);
+    const parsedMaximum = Number.parseInt(rollMaximum, 10);
+    const firstBound = Number.isFinite(parsedMinimum) ? parsedMinimum : 1;
+    const secondBound = Number.isFinite(parsedMaximum) ? parsedMaximum : 20;
 
     const built: CustomFeature = {
       // Preserve any fields the form doesn't edit (e.g. custom actions) on edit.
@@ -664,6 +674,12 @@ export function CustomFeatureForm({
               label: title.trim(),
               total: trackerTotal,
               recovery: trackerRecovery as "long-rest" | "short-rest" | "manual",
+              recordedRolls: recordsRolls
+                ? {
+                    min: Math.min(firstBound, secondBound),
+                    max: Math.max(firstBound, secondBound),
+                  }
+                : undefined,
             },
           ]
         : [],
@@ -750,26 +766,58 @@ export function CustomFeatureForm({
           </div>
 
           {hasTracker && (
-            <div className="grid grid-cols-2 gap-3">
-              <FormField label={t("custom.totalUses")}>
-                <Input
-                  type="text"
-                  value={trackerTotal}
-                  onChange={(e) => setTrackerTotal(e.target.value)}
-                  placeholder={t("custom.totalUsesPlaceholder")}
-                  className="w-full"
-                />
-              </FormField>
-              <FormField label={t("custom.recovery")}>
-                <Select
-                  value={trackerRecovery}
-                  onChange={(e) => setTrackerRecovery(e.target.value)}
-                >
-                  <option value="long-rest">{t("custom.recoveryLong")}</option>
-                  <option value="short-rest">{t("custom.recoveryShort")}</option>
-                  <option value="manual">{t("custom.recoveryManual")}</option>
-                </Select>
-              </FormField>
+            <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label={t("custom.totalUses")}>
+                  <Input
+                    type="text"
+                    value={trackerTotal}
+                    onChange={(e) => setTrackerTotal(e.target.value)}
+                    placeholder={t("custom.totalUsesPlaceholder")}
+                    className="w-full"
+                  />
+                </FormField>
+                <FormField label={t("custom.recovery")}>
+                  <Select
+                    value={trackerRecovery}
+                    onChange={(e) => setTrackerRecovery(e.target.value)}
+                  >
+                    <option value="long-rest">{t("custom.recoveryLong")}</option>
+                    <option value="short-rest">{t("custom.recoveryShort")}</option>
+                    <option value="manual">{t("custom.recoveryManual")}</option>
+                  </Select>
+                </FormField>
+              </div>
+
+              <CheckboxField
+                checked={recordsRolls}
+                onCheckedChange={setRecordsRolls}
+                label={t("custom.recordRolledValues")}
+                className="text-[0.72rem] text-text-primary"
+              />
+
+              {recordsRolls && (
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField label={t("custom.minimumValue")}>
+                    <Input
+                      type="number"
+                      aria-label={t("custom.minimumValue")}
+                      value={rollMinimum}
+                      onChange={(e) => setRollMinimum(e.target.value)}
+                      className="w-full"
+                    />
+                  </FormField>
+                  <FormField label={t("custom.maximumValue")}>
+                    <Input
+                      type="number"
+                      aria-label={t("custom.maximumValue")}
+                      value={rollMaximum}
+                      onChange={(e) => setRollMaximum(e.target.value)}
+                      className="w-full"
+                    />
+                  </FormField>
+                </div>
+              )}
             </div>
           )}
         </div>

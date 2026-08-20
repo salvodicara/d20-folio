@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { timedConditionLifetime, timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
   {
@@ -30,7 +31,11 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     },
     concentration: false,
     saveAbility: "WIS",
-    conditionApplication: { options: ["charmed"], on: "failed-save" },
+    conditionApplication: {
+      options: ["charmed"],
+      on: "failed-save",
+      lifetime: timedConditionLifetime(24 * 60),
+    },
     source: "SRD",
   },
   {
@@ -48,6 +53,31 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: true,
     effectTag: "debuff",
     saveAbility: "CHA",
+    targeting: { affinity: "enemy", maxTargets: 3, maxTargetsPerUpcast: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-bane",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
+        grants: [
+          {
+            type: "roll-die-adjustment",
+            rollType: "attack",
+            operation: "subtract",
+            dice: "1d4",
+            consume: "each",
+          },
+          {
+            type: "roll-die-adjustment",
+            rollType: "save",
+            operation: "subtract",
+            dice: "1d4",
+            consume: "each",
+          },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -63,6 +93,31 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    targeting: { affinity: "ally", maxTargets: 3, maxTargetsPerUpcast: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-bless",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
+        grants: [
+          {
+            type: "roll-die-adjustment",
+            rollType: "attack",
+            operation: "add",
+            dice: "1d4",
+            consume: "each",
+          },
+          {
+            type: "roll-die-adjustment",
+            rollType: "save",
+            operation: "add",
+            dice: "1d4",
+            consume: "each",
+          },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -94,7 +149,12 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: false,
     effectTag: "control",
     saveAbility: "WIS",
-    conditionApplication: { options: ["charmed"], on: "failed-save" },
+    conditionApplication: {
+      options: ["charmed"],
+      on: "failed-save",
+      lifetime: timedConditionLifetime(60),
+    },
+    targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {
@@ -108,6 +168,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: false,
     instantaneous: true,
     saveAbility: "WIS",
+    targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {
@@ -208,6 +269,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-divine-favor",
+        duration: timedSpellDuration(1),
         grants: [
           {
             type: "damage-rider",
@@ -235,6 +297,12 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     // is generic over `damageDice`); the +1d8-vs-Fiend/Undead stays prose.
     damageDice: "2d8",
     damageDicePerUpcast: "1d8",
+    bonusDamageAgainst: {
+      creatureTypes: ["fiend", "undead"],
+      dice: "1d8",
+      damageType: "radiant",
+    },
+    targeting: { affinity: "enemy", maxTargets: 1 },
     source: "SRD",
   },
   {
@@ -248,7 +316,19 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: true,
     saveAbility: "STR",
     area: true,
-    conditionApplication: { options: ["restrained"], on: "failed-save" },
+    conditionApplication: {
+      options: ["restrained"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-entangle",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -273,6 +353,17 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: true,
     effectTag: "advantage",
     saveAbility: "DEX",
+    area: true,
+    targeting: { affinity: "enemy" },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-faerie-fire",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
+        grants: [{ type: "incoming-attack-advantage" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -312,6 +403,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    targeting: { affinity: "any", maxTargets: 5 },
     source: "SRD",
   },
   {
@@ -358,6 +450,9 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: false,
     healDice: "1",
     healingMode: "consumable",
+    // 2024 (spell:goodberry): ten berries; a Bonus Action eats one for 1 HP;
+    // uneaten berries lose their potency 24 hours after the casting.
+    consumableItem: { itemId: "goodberry-berry", count: 10, lifetimeHours: 24 },
     effectTag: "heal",
     source: "SRD",
   },
@@ -420,6 +515,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     // SRD 2024 — "A willing creature you touch is imbued with bravery. Until the
     // spell ends, the creature is immune to the Frightened condition and gains
     // Temporary Hit Points equal to your spellcasting ability modifier at the start
@@ -427,18 +523,19 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     // (lit on cast via S1, cleared on concentration drop):
     //   • Frightened-immunity → `condition-immunity`.
     //   • The recurring per-turn Temp HP → `regen-at-turn-start` with `asTempHp`.
-    //     Self-cast modeling: both classes that learn Heroism (Bard, Paladin) cast
-    //     with CHA, so the deterministic amount is the CHA modifier. The turn-start
-    //     banner one-taps it through the max-wins `gainTempHp` seam (undoable).
+    //     The turn-start banner one-taps it through the max-wins `gainTempHp` seam
+    //     (undoable).
     grants: [
       {
         type: "while-active",
         activeKey: "spell-heroism",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
         grants: [
           { type: "condition-immunity", condition: "frightened" },
           {
             type: "regen-at-turn-start",
-            amount: "CHA",
+            amount: { binding: "spellcastingModifier" },
             condition: "always",
             asTempHp: true,
           },
@@ -462,6 +559,8 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: true,
     damageType: "necrotic",
     damageDice: "1d6",
+    resolveOnCast: false,
+    targeting: { affinity: "enemy", maxTargets: 1 },
     grants: [
       // S10 MARKED-TARGET MODEL — the +1d6 Necrotic applies ONLY when you hit the
       // cursed target with an attack roll, not every attack. Modeled as a
@@ -478,6 +577,12 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-hex",
+        duration: timedSpellDuration(60, [
+          { minLevel: 2, minutes: 240 },
+          { minLevel: 3, minutes: 480 },
+          { minLevel: 5, minutes: 1_440 },
+        ]),
+        targetScope: "cursed",
         grants: [
           {
             type: "damage-rider",
@@ -505,6 +610,8 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     // The die is UPGRADED to d10 by Ranger Foe Slayer (PRIM-spell-die-augment) —
     // which augments THIS `damageDice` chip (the rider's own die stays 1d6).
     damageDice: "1d6",
+    resolveOnCast: false,
+    targeting: { affinity: "enemy", maxTargets: 1 },
     grants: [
       // S10 MARKED-TARGET MODEL — the +1d6 Force applies ONLY when you hit the
       // marked target with an attack roll, not every attack. Modeled as a
@@ -518,6 +625,11 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-hunters-mark",
+        duration: timedSpellDuration(60, [
+          { minLevel: 3, minutes: 480 },
+          { minLevel: 5, minutes: 1_440 },
+        ]),
+        targetScope: "marked",
         grants: [
           {
             type: "damage-rider",
@@ -605,11 +717,14 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — +10 ft Speed for the duration.
       {
         type: "while-active",
         activeKey: "spell-longstrider",
+        duration: timedSpellDuration(60),
+        recipient: "selected",
         grants: [{ type: "speed", amount: 10 }],
       },
     ],
@@ -628,12 +743,15 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — standing effect while the spell runs:
       // base AC 13 + DEX while unarmored.
       {
         type: "while-active",
         activeKey: "spell-mage-armor",
+        duration: timedSpellDuration(480),
+        recipient: "selected",
         grants: [
           { type: "ac-formula", base: 13, bonuses: ["DEX"], condition: "no-armor" },
         ],
@@ -696,6 +814,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     school: "abjuration",
     classes: ["sorcerer", "wizard"],
     castingTime: "reaction",
+    reactionTrigger: "hitOrMagicMissileTarget",
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
@@ -706,6 +825,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
         type: "while-active",
         activeKey: "spell-shield",
         grants: [{ type: "ac-bonus", amount: 5 }],
+        duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
       },
     ],
     source: "SRD",
@@ -723,11 +843,14 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — +2 AC for the duration.
       {
         type: "while-active",
         activeKey: "spell-shield-of-faith",
+        duration: timedSpellDuration(10),
+        recipient: "selected",
         grants: [{ type: "ac-bonus", amount: 2 }],
       },
     ],
@@ -749,7 +872,19 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     effectTag: "control",
     saveAbility: "WIS",
     area: true,
-    conditionApplication: { options: ["unconscious"], on: "failed-save" },
+    conditionApplication: {
+      options: ["unconscious"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-sleep",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -777,7 +912,19 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "WIS",
-    conditionApplication: { options: ["prone", "incapacitated"], on: "failed-save" },
+    conditionApplication: {
+      options: ["prone", "incapacitated"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-tashas-hideous-laughter",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -836,7 +983,11 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     instantaneous: true,
     saveAbility: "CON",
     area: true,
-    conditionApplication: { options: ["blinded"], on: "failed-save" },
+    conditionApplication: {
+      options: ["blinded"],
+      on: "failed-save",
+      lifetime: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
+    },
     source: "SRD",
   },
   {
@@ -883,6 +1034,330 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
   },
   {
     id: "ensnaring-strike",
+    // The canonical-runtime authored program: the
+    // cast arms the vines on the caster; the table declares the landed weapon
+    // attack as the "strike" pulse (STR save: failure restrains and roots the
+    // vines, success ends the spell), each restrained turn-start as a "pulse"
+    // (1d6 piercing, +1d6 per slot level above 1), and the escape action as an
+    // "escape" pulse (STR check vs the spell DC frees the target and ends the
+    // program). The Large-or-larger save advantage stays with the physical
+    // roller.
+    mechanicsProgram: {
+      id: "spell:ensnaring-strike",
+      phases: [
+        {
+          inputs: [
+            {
+              inputId: "slot",
+              kind: "resource",
+              term: {
+                amount: { kind: "fixed", value: 1 },
+                selector: {
+                  kind: "spell-slot",
+                  level: { kind: "minimum", value: 1 },
+                  owner: "caster",
+                  pool: "either",
+                },
+              },
+              when: null,
+            },
+          ],
+          phaseId: "resolve",
+          steps: [
+            {
+              kind: "register",
+              operation: {
+                kind: "set-integer",
+                value: { bindingId: "input.slot.level", kind: "binding" },
+              },
+              registerId: "cast-level",
+              stepId: "record-cast-level",
+              when: null,
+            },
+            {
+              fact: { key: "spell-ensnaring-strike", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "source-end" },
+              operation: "start",
+              stepId: "arm-vines",
+              target: { kind: "role", role: "caster" },
+              when: null,
+            },
+            {
+              kind: "concentration",
+              lifetime: { kind: "manual" },
+              operation: "start",
+              stepId: "hold-concentration",
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "strike-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 1 },
+              minimum: { kind: "fixed", value: 0 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              expansion: { bind: "actor", inputId: "strike-targets", kind: "entities" },
+              inputId: "strike-saves",
+              kind: "d20",
+              payments: [],
+              request: {
+                ability: "STR",
+                actor: "target",
+                difficultyClass: { bindingId: "spell-save-dc", kind: "binding" },
+                enteredModifiers: [],
+                kind: "saving-throw",
+                modifiers: [],
+                resolution: { kind: "rolled" },
+                rollRules: {
+                  advantageSourceIds: [],
+                  disadvantageSourceIds: [],
+                  extraD20SourceIds: [],
+                  faceFloors: [],
+                  replacements: [],
+                  substitutions: [],
+                  totalFloors: [],
+                },
+                target: "caster",
+                testId: "spell-save",
+              },
+              when: null,
+            },
+          ],
+          phaseId: "strike",
+          steps: [
+            {
+              conditionId: "restrained",
+              kind: "condition",
+              lifetime: { kind: "source-end" },
+              operation: "apply",
+              stepId: "strike-restrained",
+              target: {
+                cardinality: "per-request",
+                inputId: "strike-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              when: null,
+            },
+            {
+              fact: { key: "ensnaring-strike-vines", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "source-end" },
+              operation: "start",
+              stepId: "strike-vines",
+              target: {
+                cardinality: "per-request",
+                inputId: "strike-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              when: null,
+            },
+            {
+              kind: "end-program",
+              stepId: "strike-save-ends",
+              when: {
+                inputId: "strike-saves",
+                kind: "answer-d20",
+                outcomeId: "success",
+                quantifier: "any",
+              },
+            },
+          ],
+          trigger: { eventId: "strike", kind: "root-pulse" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "pulse-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 1 },
+              minimum: { kind: "fixed", value: 0 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              acceptancePolicy: [],
+              expansion: { binding: "caster", kind: "single" },
+              formula: {
+                terms: [
+                  {
+                    count: {
+                      kind: "add",
+                      terms: [
+                        { kind: "fixed", value: 1 },
+                        {
+                          factors: [
+                            { kind: "fixed", value: 1 },
+                            {
+                              kind: "max",
+                              values: [
+                                { kind: "fixed", value: 0 },
+                                {
+                                  kind: "add",
+                                  terms: [
+                                    { bindingId: "register.cast-level", kind: "binding" },
+                                    { kind: "fixed", value: -1 },
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                          kind: "multiply",
+                        },
+                      ],
+                    },
+                    kind: "dice",
+                    operation: "add",
+                    sides: 6,
+                    termId: "pulse-roll-die",
+                  },
+                ],
+              },
+              inputId: "pulse-roll",
+              kind: "dice",
+              payments: [],
+              replacementPolicy: [],
+              when: null,
+            },
+          ],
+          phaseId: "pulse",
+          steps: [
+            {
+              delivery: "automatic",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "pulse-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "piercing",
+                  partId: "pulse-piercing",
+                },
+              ],
+              stepId: "pulse-damage",
+              target: { inputId: "pulse-targets", kind: "input" },
+              traits: ["spell"],
+              when: {
+                fact: { key: "ensnaring-strike-vines", kind: "active-key" },
+                kind: "standing-present",
+                present: true,
+                quantifier: "any",
+                target: { inputId: "pulse-targets", kind: "input" },
+              },
+            },
+          ],
+          trigger: { eventId: "pulse", kind: "root-pulse" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "escape-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 1 },
+              minimum: { kind: "fixed", value: 0 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              expansion: { bind: "actor", inputId: "escape-targets", kind: "entities" },
+              inputId: "escape-check",
+              kind: "d20",
+              payments: [],
+              request: {
+                ability: "STR",
+                actor: "target",
+                difficultyClass: { bindingId: "spell-save-dc", kind: "binding" },
+                enteredModifiers: [],
+                kind: "ability-check",
+                modifiers: [],
+                resolution: { kind: "rolled" },
+                rollRules: {
+                  advantageSourceIds: [],
+                  disadvantageSourceIds: [],
+                  extraD20SourceIds: [],
+                  faceFloors: [],
+                  replacements: [],
+                  substitutions: [],
+                  totalFloors: [],
+                },
+                target: null,
+                testId: "escape-check",
+              },
+              when: null,
+            },
+          ],
+          phaseId: "escape",
+          steps: [
+            {
+              conditionId: "restrained",
+              kind: "condition",
+              lifetime: null,
+              operation: "remove",
+              stepId: "escape-freedom",
+              target: {
+                cardinality: "per-request",
+                inputId: "escape-check",
+                kind: "d20-outcome",
+                outcomeIds: ["success"],
+                quantifier: "any",
+              },
+              when: null,
+            },
+            {
+              fact: { key: "ensnaring-strike-vines", kind: "active-key" },
+              kind: "standing",
+              lifetime: null,
+              operation: "end",
+              stepId: "escape-severs",
+              target: {
+                cardinality: "per-request",
+                inputId: "escape-check",
+                kind: "d20-outcome",
+                outcomeIds: ["success"],
+                quantifier: "any",
+              },
+              when: null,
+            },
+            {
+              kind: "end-program",
+              stepId: "escape-ends",
+              when: {
+                inputId: "escape-check",
+                kind: "answer-d20",
+                outcomeId: "success",
+                quantifier: "any",
+              },
+            },
+          ],
+          trigger: { eventId: "escape", kind: "root-pulse" },
+        },
+        {
+          inputs: [],
+          phaseId: "release",
+          steps: [{ kind: "end-program", stepId: "release-spell", when: null }],
+          trigger: { kind: "source-end" },
+        },
+      ],
+      registers: [{ initial: 1, registerId: "cast-level" }],
+      version: 1,
+    },
     level: 1,
     school: "conjuration",
     classes: ["ranger"],
@@ -894,7 +1369,19 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageDice: "1d6",
     damageDicePerUpcast: "1d6",
     saveAbility: "STR",
-    conditionApplication: { options: ["restrained"], on: "failed-save" },
+    conditionApplication: {
+      options: ["restrained"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-ensnaring-strike",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -912,7 +1399,11 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: false,
     saveAbility: "DEX",
     area: true,
-    conditionApplication: { options: ["prone"], on: "failed-save" },
+    conditionApplication: {
+      options: ["prone"],
+      on: "failed-save",
+      lifetime: { kind: "manual" },
+    },
     source: "SRD",
   },
   {
@@ -976,11 +1467,284 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageDicePerUpcast: "1d8",
     attackType: "ranged",
     saveAbility: "CON",
-    conditionApplication: { options: ["poisoned"], on: "failed-save" },
+    conditionApplication: {
+      options: ["poisoned"],
+      on: "failed-save",
+      lifetime: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
+    },
     source: "SRD",
   },
   {
     id: "searing-smite",
+    // The canonical-runtime authored program: the
+    // cast arms the smite on the caster for one minute; the table declares the
+    // landed weapon attack as the "strike" pulse (1d6 fire, +1d6 per slot level
+    // above 1, and the target starts burning) and each burning turn-start as a
+    // "pulse" (CON save: failure takes the same roll again, success ends the
+    // program — the 2024 shape; the legacy program dealt the turn damage before
+    // adjudicating the save).
+    mechanicsProgram: {
+      id: "spell:searing-smite",
+      phases: [
+        {
+          inputs: [
+            {
+              inputId: "slot",
+              kind: "resource",
+              term: {
+                amount: { kind: "fixed", value: 1 },
+                selector: {
+                  kind: "spell-slot",
+                  level: { kind: "minimum", value: 1 },
+                  owner: "caster",
+                  pool: "either",
+                },
+              },
+              when: null,
+            },
+          ],
+          phaseId: "resolve",
+          steps: [
+            {
+              kind: "register",
+              operation: {
+                kind: "set-integer",
+                value: { bindingId: "input.slot.level", kind: "binding" },
+              },
+              registerId: "cast-level",
+              stepId: "record-cast-level",
+              when: null,
+            },
+            {
+              fact: { key: "spell-searing-smite", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "duration", seconds: { kind: "fixed", value: 60 } },
+              operation: "start",
+              stepId: "arm-smite",
+              target: { kind: "role", role: "caster" },
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "strike-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 1 },
+              minimum: { kind: "fixed", value: 0 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              acceptancePolicy: [],
+              expansion: { binding: "caster", kind: "single" },
+              formula: {
+                terms: [
+                  {
+                    count: {
+                      kind: "add",
+                      terms: [
+                        { kind: "fixed", value: 1 },
+                        {
+                          factors: [
+                            { kind: "fixed", value: 1 },
+                            {
+                              kind: "max",
+                              values: [
+                                { kind: "fixed", value: 0 },
+                                {
+                                  kind: "add",
+                                  terms: [
+                                    { bindingId: "register.cast-level", kind: "binding" },
+                                    { kind: "fixed", value: -1 },
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                          kind: "multiply",
+                        },
+                      ],
+                    },
+                    kind: "dice",
+                    operation: "add",
+                    sides: 6,
+                    termId: "strike-roll-die",
+                  },
+                ],
+              },
+              inputId: "strike-roll",
+              kind: "dice",
+              payments: [],
+              replacementPolicy: [],
+              when: null,
+            },
+          ],
+          phaseId: "strike",
+          steps: [
+            {
+              delivery: "automatic",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "strike-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "fire",
+                  partId: "strike-fire",
+                },
+              ],
+              stepId: "strike-damage",
+              target: { inputId: "strike-targets", kind: "input" },
+              traits: ["spell"],
+              when: null,
+            },
+            {
+              fact: { key: "searing-smite-burning", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "duration", seconds: { kind: "fixed", value: 60 } },
+              operation: "start",
+              stepId: "strike-burning",
+              target: { inputId: "strike-targets", kind: "input" },
+              when: null,
+            },
+          ],
+          trigger: { eventId: "strike", kind: "root-pulse" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "pulse-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 1 },
+              minimum: { kind: "fixed", value: 0 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              expansion: { bind: "actor", inputId: "pulse-targets", kind: "entities" },
+              inputId: "pulse-saves",
+              kind: "d20",
+              payments: [],
+              request: {
+                ability: "CON",
+                actor: "target",
+                difficultyClass: { bindingId: "spell-save-dc", kind: "binding" },
+                enteredModifiers: [],
+                kind: "saving-throw",
+                modifiers: [],
+                resolution: { kind: "rolled" },
+                rollRules: {
+                  advantageSourceIds: [],
+                  disadvantageSourceIds: [],
+                  extraD20SourceIds: [],
+                  faceFloors: [],
+                  replacements: [],
+                  substitutions: [],
+                  totalFloors: [],
+                },
+                target: "caster",
+                testId: "spell-save",
+              },
+              when: null,
+            },
+            {
+              acceptancePolicy: [],
+              expansion: { binding: "caster", kind: "single" },
+              formula: {
+                terms: [
+                  {
+                    count: {
+                      kind: "add",
+                      terms: [
+                        { kind: "fixed", value: 1 },
+                        {
+                          factors: [
+                            { kind: "fixed", value: 1 },
+                            {
+                              kind: "max",
+                              values: [
+                                { kind: "fixed", value: 0 },
+                                {
+                                  kind: "add",
+                                  terms: [
+                                    { bindingId: "register.cast-level", kind: "binding" },
+                                    { kind: "fixed", value: -1 },
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                          kind: "multiply",
+                        },
+                      ],
+                    },
+                    kind: "dice",
+                    operation: "add",
+                    sides: 6,
+                    termId: "pulse-roll-die",
+                  },
+                ],
+              },
+              inputId: "pulse-roll",
+              kind: "dice",
+              payments: [],
+              replacementPolicy: [],
+              when: null,
+            },
+          ],
+          phaseId: "pulse",
+          steps: [
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "pulse-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "fire",
+                  partId: "pulse-fire",
+                },
+              ],
+              stepId: "pulse-damage",
+              target: {
+                cardinality: "per-request",
+                inputId: "pulse-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: null,
+            },
+            {
+              kind: "end-program",
+              stepId: "pulse-ends-on-save",
+              when: {
+                inputId: "pulse-saves",
+                kind: "answer-d20",
+                outcomeId: "success",
+                quantifier: "any",
+              },
+            },
+          ],
+          trigger: { eventId: "pulse", kind: "root-pulse" },
+        },
+      ],
+      registers: [{ initial: 1, registerId: "cast-level" }],
+      version: 1,
+    },
     level: 1,
     school: "evocation",
     classes: ["paladin"],
@@ -991,8 +1755,36 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageType: "fire",
     damageDice: "1d6",
     damageDicePerUpcast: "1d6",
-    saveAbility: "CON",
     damageResolution: "automatic",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+    recurrence: "start-of-turn",
+    endsOnSuccessfulSave: true,
+    followUp: {
+      type: "free",
+      saveAbility: "CON",
+      attack: {
+        dice: "1d6",
+        dicePerUpcast: "1d6",
+        damageType: "fire",
+        resolution: "automatic",
+      },
+      targeting: { affinity: "enemy", maxTargets: 1 },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-searing-smite",
+        grants: [],
+        duration: timedSpellDuration(1),
+      },
+      {
+        type: "while-active",
+        activeKey: "spell-searing-smite",
+        recipient: "selected",
+        grants: [],
+        duration: timedSpellDuration(1),
+      },
+    ],
     source: "SRD",
   },
   {

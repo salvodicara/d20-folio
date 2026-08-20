@@ -103,6 +103,57 @@ beforeEach(() =>
   useCharacterStore.setState({ character: null, loading: false, error: null })
 );
 
+type RestBlockCause = {
+  hp?: number;
+  deathFail?: number;
+  exhaustion?: number;
+  status?: CharacterDoc["status"];
+};
+
+const REST_BLOCK_CASES: Array<["shortRest" | "longRest", string, RestBlockCause]> = [
+  ["shortRest", "0 HP", { hp: 0 }],
+  ["longRest", "0 HP", { hp: 0 }],
+  ["shortRest", "three failed saves", { deathFail: 3 }],
+  ["longRest", "three failed saves", { deathFail: 3 }],
+  ["shortRest", "Exhaustion 6", { exhaustion: 6 }],
+  ["longRest", "Exhaustion 6", { exhaustion: 6 }],
+  ["shortRest", "roster death", { status: "dead" }],
+  ["longRest", "roster death", { status: "dead" }],
+];
+
+describe("rest lifecycle gate", () => {
+  beforeEach(() => {
+    useUndoStore.setState({ characterId: null, past: [], future: [] });
+  });
+
+  it.each(REST_BLOCK_CASES)("%s is a complete no-op at %s", (restKind, _cause, cause) => {
+    const character = mk(
+      {},
+      {
+        hp: { current: cause.hp ?? 30, temp: 4 },
+        deathFail: cause.deathFail ?? 0,
+        exhaustion: cause.exhaustion ?? 0,
+        concentration: conc("bless"),
+      }
+    );
+    character.status = cause.status ?? "active";
+    store().setCharacter(character);
+    useUndoStore.getState().register({
+      label: { message: "pre-rest action" },
+      turnScoped: false,
+      undo: () => {},
+      redo: () => null,
+    });
+    const before = store().character;
+
+    store()[restKind]();
+
+    expect(store().character).toBe(before);
+    expect(store().character?.session.concentration).toEqual(conc("bless"));
+    expect(useUndoStore.getState().past).toHaveLength(1);
+  });
+});
+
 describe("rests FENCE the undo stack (§5.4 case 9)", () => {
   beforeEach(() => {
     useUndoStore.setState({ characterId: null, past: [], future: [] });
@@ -136,7 +187,82 @@ describe("rests FENCE the undo stack (§5.4 case 9)", () => {
   });
 });
 
+describe("long-rest tracker recovery", () => {
+  it("preserves manual recovery, resets generic rest trackers, and prunes legacy physical-item tracker state", () => {
+    store().setCharacter(
+      mk(
+        {
+          equipment: [
+            {
+              srdId: "wings-of-flying",
+              equipped: true,
+              attuned: true,
+              quantity: 1,
+            },
+            {
+              srdId: "winged-boots",
+              equipped: true,
+              attuned: true,
+              quantity: 1,
+            },
+            {
+              srdId: "wand-of-magic-missiles",
+              equipped: true,
+              quantity: 1,
+            },
+            { srdId: "eyes-of-charming", equipped: true, quantity: 1 },
+            { srdId: "spirit-board", equipped: true, quantity: 1 },
+          ],
+          features: [
+            { srdId: "fighter-second-wind" },
+            {
+              custom: true,
+              title: "Foretelling",
+              emoji: "",
+              source: "Homebrew",
+              tags: [],
+              contentBlocks: [],
+              trackers: [
+                {
+                  id: "foretelling",
+                  label: "Foretelling",
+                  total: "2",
+                  recovery: "long-rest",
+                  recordedRolls: { min: 1, max: 20 },
+                },
+              ],
+            },
+          ],
+        },
+        {
+          trackers: {
+            "wings-of-flying": { used: 1 },
+            "winged-boots": { used: 2 },
+            "wand-of-magic-missiles": { used: 3 },
+            "eyes-of-charming": { used: 2 },
+            "spirit-board": { used: 2 },
+            "fighter-second-wind": { used: 1 },
+            foretelling: { used: 0, rolls: [17, 4] },
+          },
+        }
+      )
+    );
+
+    store().longRest();
+
+    expect(store().character?.session.trackers).toEqual({
+      "wings-of-flying": { used: 1 },
+    } satisfies SessionState["trackers"]);
+  });
+});
+
 describe("shortRest — tracker recovery", () => {
+  it("clears a held Bardic Inspiration die after its one-hour duration", () => {
+    store().setCharacter(mk({}, { bardicInspirationDie: "d8" }));
+    store().shortRest();
+    expect(store().character?.session.bardicInspirationDie).toBe("");
+  });
+
   it("short rest: full-recovery resets, partial-recovery reduces by N, long-rest untouched", () => {
     store().setCharacter(
       mk(
@@ -163,20 +289,98 @@ describe("shortRest — tracker recovery", () => {
     expect(trk["fighter-indomitable"]).toEqual({ used: 1 }); // long-rest → untouched
   });
 
-  it("preserves concentration and HP through a short rest (RAW 2024)", () => {
-    // Regression: short rest used to auto-clear concentration, which
-    // silently dropped long-duration spells (Find Familiar, Hex, Tiny Hut,
-    // Fly at high levels). Per PHB 2024 p.235 the only triggers are casting
-    // another concentration spell, failing a CON save after damage, being
-    // incapacitated, or dying — none of which a 1-hour light-activity rest
-    // fires. The Long Rest path (sleep = incapacitated) still clears it.
+  it("preserves an indefinite homebrew concentration and HP through a short rest", () => {
+    // A rest only ends an effect whose structured lifetime proves it elapsed.
+    // Unknown/homebrew concentration remains override-first instead of being
+    // guessed from a display string. Long Rest still ends all Concentration.
     store().setCharacter(
-      mk({}, { concentration: conc("fly"), hp: { current: 20, temp: 0 } })
+      mk({}, { concentration: conc("custom:Table Aura"), hp: { current: 20, temp: 0 } })
     );
     store().shortRest();
-    expect(store().character?.session.concentration).toBe(conc("fly"));
+    expect(store().character?.session.concentration).toBe(conc("custom:Table Aura"));
     // HP management on a short rest is Hit-Die-driven (UI) — never auto-restored.
     expect(store().character?.session.hp.current).toBe(20);
+  });
+
+  it("ends a base-level Hex whose full hour elapses during the short rest", () => {
+    store().setCharacter(
+      mk(
+        {
+          class: "warlock",
+          level: 3,
+          spells: [{ srdId: "hex", prepared: true }],
+        },
+        {
+          concentration: conc("hex"),
+          concentrationCastLevel: 1,
+          activeFeatures: ["spell-hex"],
+          activeSpellCastLevels: { "spell-hex": 1 },
+          effectTimers: { "spell-hex": { roundsLeft: 412 } },
+        }
+      )
+    );
+
+    store().shortRest();
+
+    expect(store().character?.session).toMatchObject({
+      concentration: "",
+      activeFeatures: [],
+    });
+    expect(store().character?.session.activeSpellCastLevels).toBeUndefined();
+    expect(store().character?.session.effectTimers).toBeUndefined();
+  });
+
+  it("preserves an upcast Hex whose structured duration survives the short rest", () => {
+    store().setCharacter(
+      mk(
+        {
+          class: "warlock",
+          level: 3,
+          spells: [{ srdId: "hex", prepared: true }],
+        },
+        {
+          concentration: conc("hex"),
+          concentrationCastLevel: 2,
+          activeFeatures: ["spell-hex"],
+          activeSpellCastLevels: { "spell-hex": 2 },
+          effectTimers: { "spell-hex": { roundsLeft: 2_112 } },
+        }
+      )
+    );
+
+    store().shortRest();
+
+    expect(store().character?.session).toMatchObject({
+      concentration: "hex",
+      concentrationCastLevel: 2,
+      activeFeatures: ["spell-hex"],
+      activeSpellCastLevels: { "spell-hex": 2 },
+      effectTimers: { "spell-hex": { roundsLeft: 2_112 } },
+    });
+  });
+
+  it("ends Santaera's maintained Rage while recovering exactly one use", () => {
+    store().setCharacter(
+      mk(
+        {
+          class: "barbarian",
+          level: 3,
+          features: [{ srdId: "barbarian-rage" }],
+        },
+        {
+          trackers: { "barbarian-rage": { used: 3 } },
+          activeFeatures: ["barbarian-rage", "custom:table-aura"],
+          effectTimers: { "barbarian-rage": { roundsLeft: 72 } },
+        }
+      )
+    );
+
+    store().shortRest();
+
+    const session = store().character?.session;
+    expect(session?.trackers["barbarian-rage"]).toEqual({ used: 2 });
+    expect(session?.activeFeatures).toEqual(["custom:table-aura"]);
+    expect(session?.effectTimers?.["barbarian-rage"]).toBeUndefined();
   });
 
   it("Pact Magic slots reset on a short rest — and ONLY them (B3: pact keys `pact-N`, normal slots persist)", () => {
@@ -241,6 +445,40 @@ describe("shortRest — tracker recovery", () => {
 });
 
 describe("longRest", () => {
+  it("clears a held Bardic Inspiration die", () => {
+    store().setCharacter(mk({}, { bardicInspirationDie: "d8" }));
+    store().longRest();
+    expect(store().character?.session.bardicInspirationDie).toBe("");
+  });
+
+  it("ends declared temporary states but preserves an unknown homebrew toggle", () => {
+    store().setCharacter(
+      mk(
+        {
+          class: "sorcerer",
+          level: 1,
+          features: [{ srdId: "sorcerer-innate-sorcery" }],
+        },
+        {
+          activeFeatures: ["sorcerer-innate-sorcery", "custom:table-aura"],
+          activeSpellCastLevels: { "sorcerer-innate-sorcery": 1 },
+          effectTimers: { "sorcerer-innate-sorcery": { roundsLeft: 4 } },
+          effectBoundaries: {
+            "sorcerer-innate-sorcery": { round: 2, phase: "turn-end" },
+          },
+        }
+      )
+    );
+
+    store().longRest();
+
+    const session = store().character?.session;
+    expect(session?.activeFeatures).toEqual(["custom:table-aura"]);
+    expect(session?.activeSpellCastLevels).toBeUndefined();
+    expect(session?.effectTimers).toBeUndefined();
+    expect(session?.effectBoundaries).toBeUndefined();
+  });
+
   it("restores HP to max, clears slots/trackers/concentration/death saves (NOT conditions), reduces exhaustion by 1", () => {
     store().setCharacter(
       mk(

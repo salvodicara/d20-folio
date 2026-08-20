@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   useUndoStore,
   registerUndoable,
+  registerUndoableResult,
   registerUndoableToast,
   wireUndoToast,
   MAX_UNDO_DEPTH,
@@ -111,7 +112,7 @@ describe("undoStore — replay does not truncate remaining future (case 3)", () 
 });
 
 describe("undoStore — redo bail on a changed resource (case 4)", () => {
-  it("a null-returning re-execute drops the entry and mutates nothing", () => {
+  it("a null-returning re-execute keeps the entry retryable and mutates nothing", () => {
     const r = makeResource(1);
     // Execute bails (returns null) once the resource is exhausted.
     const execute = () => {
@@ -127,8 +128,44 @@ describe("undoStore — redo bail on a changed resource (case 4)", () => {
     const before = r.state.value;
     expect(u().redo()).toBe(false); // legal bail
     expect(r.state.value).toBe(before); // no mutation
-    expect(u().past).toHaveLength(0); // entry dropped
+    expect(u().past).toHaveLength(0);
+    expect(u().future).toHaveLength(1); // CAS/resource conflict remains retryable
+    // Once the resource is available again, the SAME future action replays.
+    r.state.value = 1;
+    expect(u().redo()).toBe(true);
+    expect(r.state.value).toBe(0);
+    expect(u().past).toHaveLength(1);
     expect(u().future).toHaveLength(0);
+  });
+
+  it("a result-labelled replay that registers nothing cannot borrow an older inverse", () => {
+    const older = makeResource(2);
+    registerUndoable(label("older"), () => older.spend(1), { turnScoped: false });
+
+    const state = { value: 1, replayAllowed: true };
+    const run = (): void => {
+      if (!state.replayAllowed) return;
+      state.value -= 1;
+      registerUndoableResult(
+        label("result"),
+        () => {
+          state.value += 1;
+        },
+        run
+      );
+    };
+    run();
+    expect(state.value).toBe(0);
+    expect(u().undo()).toBe(true);
+    expect(state.value).toBe(1);
+
+    state.replayAllowed = false;
+    expect(u().redo()).toBe(false);
+    expect(state.value).toBe(1);
+    expect(older.state.value).toBe(1);
+    expect(u().past).toHaveLength(1);
+    expect(u().past[0]?.label).toEqual(label("older"));
+    expect(u().future).toHaveLength(1);
   });
 });
 
@@ -268,5 +305,31 @@ describe("undoStore — registerUndoableToast / wireUndoToast seam", () => {
     toast?.onUndo?.();
     expect(r.state.value).toBe(2);
     expect(u().past).toHaveLength(0);
+  });
+
+  it("keeps a conflicted undo and its toast retryable until it applies", () => {
+    let conflicted = true;
+    const entryId = u().register({
+      label: label("CAS undo"),
+      turnScoped: false,
+      undo: () => {
+        if (conflicted) return false;
+        return undefined;
+      },
+      redo: () => null,
+    });
+    wireUndoToast(entryId, label("CAS undo"));
+    const toastId = u().past[0]?.toastId;
+
+    expect(u().undo(entryId)).toBe(false);
+    expect(u().past.map((entry) => entry.id)).toEqual([entryId]);
+    expect(u().future).toEqual([]);
+    expect(toasts().find((toast) => toast.id === toastId)?.leaving).toBe(false);
+
+    conflicted = false;
+    expect(u().undo(entryId)).toBe(true);
+    expect(u().past).toEqual([]);
+    expect(u().future.map((entry) => entry.id)).toEqual([entryId]);
+    expect(toasts().find((toast) => toast.id === toastId)?.leaving).toBe(true);
   });
 });

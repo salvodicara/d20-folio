@@ -27,6 +27,8 @@ import type {
   CharacterDoc,
   CharacterData,
   ClassEntry,
+  ItemResourceCounterState,
+  ItemResourceState,
   SessionState,
   SrdSpellRef,
   SrdFeatureRef,
@@ -39,6 +41,7 @@ import { deriveSpellSlots } from "@/lib/multiclass-slots";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { asRaceId } from "@/data/srd-names";
+import { getMagicItem } from "@/data/magic-items";
 import { mergePackRecord } from "@/lib/pack-merge";
 import { packScenarios } from "@pack";
 import {
@@ -369,10 +372,57 @@ export function buildScenario(spec: ScenarioSpec): CharacterDoc {
     id: "",
     portraitUrl: null,
     portraitCrop: null,
-    character,
+    character: typedItemState(character, session),
     session,
   };
   return spec.startingForm ? applyStartingForm(doc, spec.startingForm) : doc;
+}
+
+/**
+ * Materialize typed item-resource state for resource-backed catalogue items —
+ * the SAME shape the one-off live-document migration writes: each physical copy
+ * gets a deterministic `instanceId`, and any legacy `sessionTrackers` seed keyed
+ * by the item id converts into the typed counter (capacity − used), leaving no
+ * parallel tracker behind. Scenario specs stay concise (`sessionTrackers`
+ * seeding) while the built doc always carries the post-migration model.
+ */
+function typedItemState(character: CharacterData, session: SessionState): CharacterData {
+  const itemResources: Record<string, ItemResourceState> = {};
+  const copies = new Map<string, number>();
+  const equipment = character.equipment.map((ref) => {
+    if ("custom" in ref) return ref;
+    const specs = getMagicItem(ref.srdId)?.resources;
+    if (!specs?.length || ref.instanceId !== undefined) return ref;
+    const copy = (copies.get(ref.srdId) ?? 0) + 1;
+    copies.set(ref.srdId, copy);
+    const instanceId = `${ref.srdId}-${copy}`;
+    const { [ref.srdId]: legacySeed, ...remainingTrackers } = session.trackers;
+    const used = legacySeed?.used ?? 0;
+    const resources: Record<string, ItemResourceCounterState> = {};
+    for (const spec of specs) {
+      if (spec.capacity.kind !== "fixed") continue;
+      const capacity = spec.capacity.amount;
+      resources[spec.id] = {
+        capacity,
+        current: Math.max(0, capacity - (copy === 1 ? used : 0)),
+        disabled: false,
+      };
+    }
+    if (Object.keys(resources).length === 0) return ref;
+    itemResources[instanceId] = {
+      itemId: ref.srdId,
+      instanceId,
+      revision: 0,
+      resources,
+      disposition: "magical",
+      causalHead: null,
+    };
+    session.trackers = remainingTrackers;
+    return { ...ref, instanceId };
+  });
+  if (Object.keys(itemResources).length === 0) return character;
+  session.itemResources = { ...(session.itemResources ?? {}), ...itemResources };
+  return { ...character, equipment };
 }
 
 /**

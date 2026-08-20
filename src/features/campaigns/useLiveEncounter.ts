@@ -16,15 +16,12 @@
  * live campaign-membership READ grant already lets a co-member read peers' `combat/state` (the
  * same data the hub reads), so this adds no new privilege.
  *
- * Dev bypass: `subscribeToCampaign` would hit a real (absent) doc, so under bypass the
- * hook resolves the in-memory {@link makeDevCampaign} fixture once — keeping the e2e /
- * screenshot harness rendering the seeded encounter on the sheet with no Firestore.
+ * Dev bypass uses `subscribeToCampaign`'s local document replica, so this hook exercises
+ * the same live lifecycle without a special one-shot fixture path.
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { subscribeToCampaign } from "@/features/campaigns/campaign-io";
-import { resolveDevCampaign } from "@/features/campaigns/dev-fixture";
 import {
   useMemberCharacterDocs,
   type MemberCharacterRef,
@@ -73,15 +70,6 @@ export function useLiveEncounter(
         cancelled = true;
       };
     }
-    if (DEV_BYPASS_AUTH) {
-      // No real listener under bypass — resolve the seeded fixture once (the pip-scenario
-      // campaign when one is seeded, so the roller's live payload matches the pip).
-      const dev = resolveDevCampaign(campaignId);
-      void Promise.resolve().then(() => settle(dev));
-      return () => {
-        cancelled = true;
-      };
-    }
     const unsub = subscribeToCampaign(uid, campaignId, settle, () => settle(null));
     return () => {
       cancelled = true;
@@ -113,11 +101,12 @@ export function useLiveEncounter(
       if (st?.status === "ready") {
         // The roll comes off the campaign's `encounterInit` table (the initiative
         // SSOT) — the SAME live campaign doc this hook already subscribes to.
-        out[`pc-${ref.uid}`] = derivePcLive(
+        const live = derivePcLive(
           st.doc,
-          combatStates[ref.uid] ?? null,
+          combatStates[ref.uid],
           encounterRollFor(encounterInit, ref.uid)
         );
+        if (live) out[`pc-${ref.uid}`] = live;
       }
     }
     return out;

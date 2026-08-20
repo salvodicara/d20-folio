@@ -54,6 +54,7 @@ const PURE_MODULES = [
   "src/lib/strip-undefined.ts",
   "src/lib/sanitize-character.ts",
   "src/lib/cast-options.ts",
+  "src/lib/mechanics-command.ts",
   "src/lib/feat-spell-choices.ts",
   "src/lib/feat-skill-tool-choices.ts",
   "src/lib/feat-tool-choices.ts",
@@ -178,6 +179,9 @@ describe("pure modules don't transitively import Firebase", () => {
       for (const file of reached) {
         const source = read(file);
         for (const line of source.split("\n")) {
+          // Type-only imports are erased at compile time and can never pull
+          // the Firebase runtime into CI; only value imports crash it.
+          if (/^\s*(?:import|export)\s+type\b/.test(line)) continue;
           for (const pattern of FORBIDDEN_IMPORT_PATTERNS) {
             if (pattern.test(line)) {
               offenders.push({
@@ -328,6 +332,9 @@ describe("test files don't transitively import Firebase (CI-safety guard)", () =
       for (const file of reached) {
         const source = read(file);
         for (const line of source.split("\n")) {
+          // Type-only imports are erased at compile time and can never pull
+          // the Firebase runtime into CI; only value imports crash it.
+          if (/^\s*(?:import|export)\s+type\b/.test(line)) continue;
           for (const pattern of FORBIDDEN_IMPORT_PATTERNS) {
             if (pattern.test(line)) {
               offenders.push({

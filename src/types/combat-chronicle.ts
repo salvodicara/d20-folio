@@ -38,6 +38,14 @@ interface ChronicleEventBase {
   /** The combat round the event occurred in (read from state at append) — drives the
    *  round-grouped feed + the chapter's round markers. */
   round: number;
+  /**
+   * The engine journal action this beat mirrors (`encounter.world` — the
+   * adversary world seam), stamped by `mirrorAdversaryCommit`. The chronicle
+   * UNDO tap reverses THAT action through the journal (exact revert) instead
+   * of blind arithmetic; absent on legacy/manual beats (they undo through the
+   * legacy arithmetic — the documented degradation). An id, never prose.
+   */
+  engineActionId?: string;
 }
 
 /**
@@ -56,7 +64,9 @@ export type CombatChronicleEvent =
       kind: "hp-damage";
       /** The combatant that took the hit (`pc-<uid>` / `monster-<n>`). */
       targetId: string;
-      /** Incoming damage (may exceed HP lost when temp HP absorbed some). */
+      /** Current + Temporary HP actually removed. This landed amount is the exact
+       *  reversible delta; the pre-floor/overkill incoming amount belongs to the
+       *  actor's local combat log instead. */
       amount: number;
       /** Portion of `amount` absorbed by temporary HP, for exact one-tap reversal. */
       tempAbsorbed?: number;
@@ -79,6 +89,18 @@ export type CombatChronicleEvent =
       amount: number;
       current: number;
       max: number;
+      /** The creature that caused the healing, when it came from a resolved action. */
+      actorId?: string;
+      /** Exact resolved action (spell/feature/item), kept locale-independent. */
+      action?: LocText;
+    } & ChronicleEventBase)
+  /** A 0-HP player character was stabilized without regaining HP. */
+  | ({
+      kind: "stabilized";
+      targetId: string;
+      actorId: string;
+      /** Exact resolved action (feature/item), kept locale-independent. */
+      action?: LocText;
     } & ChronicleEventBase)
   /** A combatant dropped (crossed to 0 HP — a PC downed, a monster group defeated). */
   | ({ kind: "down"; targetId: string } & ChronicleEventBase)
@@ -160,6 +182,18 @@ export type CombatChronicleEvent =
       kind: "condition-loss";
       targetId: string;
       conditionId: string;
+      actorId?: string;
+      action?: LocText;
+    } & ChronicleEventBase)
+  /** A creature received a held combat resource from another creature. */
+  | ({
+      kind: "resource-grant";
+      targetId: string;
+      resource: "bardic-inspiration-die" | "heroic-inspiration";
+      /** Resource payload when the kind carries one (the Bardic die size). */
+      value?: string;
+      actorId: string;
+      action?: LocText;
     } & ChronicleEventBase);
 
 /** Every `CombatChronicleEvent.kind` discriminant (for the presenter's exhaustiveness). */

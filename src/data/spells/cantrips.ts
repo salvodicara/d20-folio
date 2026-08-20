@@ -14,6 +14,7 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     damageType: "acid",
     damageDice: "1d6",
     saveAbility: "DEX",
+    targeting: { affinity: "enemy", maxTargets: 2, sharedAmount: true },
     source: "SRD",
   },
   {
@@ -29,6 +30,16 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     damageType: "necrotic",
     damageDice: "1d10",
     attackType: "melee",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-chill-touch",
+        recipient: "selected",
+        grants: [{ type: "healing-blocked" }],
+        duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
+      },
+    ],
     source: "SRD",
   },
   {
@@ -68,6 +79,10 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     damageType: "force",
     damageDice: "1d10",
     attackType: "ranged",
+    // S12b-cantrip — one ranged beam per cantrip step (1/2/3/4 at character
+    // levels 5/11/17), each its own attack for 1d10 Force at any mix of targets.
+    instances: 1,
+    cantripInstances: true,
     source: "SRD",
   },
   {
@@ -218,6 +233,7 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     damageType: "fire",
     damageDice: "1d8",
     attackType: "ranged",
+    targeting: { affinity: "enemy", maxTargets: 1 },
     source: "SRD",
   },
   {
@@ -233,6 +249,16 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     damageType: "cold",
     damageDice: "1d8",
     attackType: "ranged",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-ray-of-frost",
+        recipient: "selected",
+        grants: [{ type: "speed", amount: -10 }],
+        duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
+      },
+    ],
     source: "SRD",
   },
   {
@@ -386,6 +412,24 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     damageType: "psychic",
     damageDice: "1d6",
     saveAbility: "WIS",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-vicious-mockery",
+        recipient: "selected",
+        grants: [
+          {
+            type: "disadvantage-on",
+            rollType: "attack",
+            scope: "all",
+            vs: "next-attack-roll",
+            consume: "next",
+          },
+        ],
+        duration: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
+      },
+    ],
     source: "SRD",
   },
 ];

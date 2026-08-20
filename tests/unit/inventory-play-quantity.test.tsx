@@ -15,6 +15,7 @@ import type { ItemRowVM, WeaponRowVM } from "@/lib/views/inventory-view";
 function itemVM(overrides?: Partial<ItemRowVM>): ItemRowVM {
   return {
     id: "arrows",
+    rowId: "equipment-legacy:0",
     idx: 0,
     isCustom: false,
     category: "gear",
@@ -32,6 +33,7 @@ function itemVM(overrides?: Partial<ItemRowVM>): ItemRowVM {
     potionFormula: undefined,
     isPool: false,
     unit: undefined,
+    resources: [],
     charges: null,
     requiresAttunement: false,
     attuned: false,
@@ -116,6 +118,7 @@ describe("PLAY-NO-EDIT — inventory quantity is editable in play mode", () => {
         onToggleEquip={noop}
         onToggleAttune={noop}
         onSpendCharge={noop}
+        onSpendResource={noop}
       />
     );
     setQuantity("40");
@@ -144,6 +147,7 @@ describe("PLAY-NO-EDIT — inventory quantity is editable in play mode", () => {
       onToggleEquip,
       onToggleAttune: noop,
       onSpendCharge: noop,
+      onSpendResource: noop,
     };
     const { rerender } = render(<GearCard vm={wearableVM} {...gearProps} />);
     fireEvent.click(screen.getByRole("button", { name: "Equip" }));
@@ -177,6 +181,7 @@ describe("PLAY-NO-EDIT — inventory quantity is editable in play mode", () => {
         onToggleEquip={noop}
         onToggleAttune={noop}
         onSpendCharge={noop}
+        onSpendResource={noop}
       />
     );
     setQuantity("2");

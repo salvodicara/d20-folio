@@ -17,20 +17,32 @@
 
 import type {
   AbilityCode,
+  ActionEconomyCategory,
   ActionType,
   BiText,
   ClassId,
   ConditionId,
+  CreatureType,
   CreatureSize,
   DamageSource,
-  DamageType,
   FeatCategory,
   SpellSchool,
   WeaponCategory,
   WeaponMastery,
   WeaponType,
 } from "@/data/types";
-import type { CostSpec } from "@/lib/cost-engine";
+import type { DamageType } from "@/types/damage";
+import {
+  arraySchema,
+  exactConformer,
+  refSchema,
+  type ExactSchemaContext,
+} from "@/lib/exact-schema";
+import {
+  GRANT_SCHEMA,
+  type Grant as SchemaGrant,
+  type GrantSchemaCustomTypes,
+} from "@/lib/grant-schema";
 import type { ProficiencyToken } from "@/types/ids";
 import { asProficiencyToken } from "@/lib/proficiency-tokens";
 import type { SrdKind } from "@/i18n/srd-en";
@@ -38,2671 +50,115 @@ import { srdEn } from "@/i18n/srd-en";
 import { srdKey, srdGrantSegment } from "@/i18n/srd-key";
 import type { LocText } from "@/lib/loc-text";
 import { srdText, litText } from "@/lib/loc-text";
+import type { CombatEffectBindings } from "@/types/combat-effect";
+import {
+  conformResourceSpec,
+  makeItemResourceIdentity,
+  type ItemResourceIdentity,
+} from "@/lib/resources";
+import type { ResourceSpec } from "@/types/resource";
 
 /**
- * How a {@link Grant} `scoped-extra-spell-slot`'s level scales with the
- * character. Declarative — `resolveScopedSlotLevel` turns it + the character's
- * total level into a concrete slot level.
- *
- * - `half-level-round-up`: ⌈totalLevel / 2⌉, capped at `cap`. Potent
- *   a heritage feat's "the slot's level is half your level (round up), max 5".
- * - `fixed`: always `level` (kept for future scoped slots at a flat level).
- */
-export type ScopedSlotLevelFormula =
-  | { kind: "half-level-round-up"; cap: number }
-  | { kind: "fixed"; level: number };
-
-/**
- * Which prepared spells a {@link Grant} `scoped-extra-spell-slot` may cast.
- *
- * - `heritage-feat-spells`: only spells the character has prepared because of
- *   a heritage-category feat (its always-prepared spells). The cast-option
- *   consumer resolves the eligible set from the character's heritage feats.
- *   Extend the union for future scoped-slot mechanics.
- */
-export type ScopedSlotSpellScope = "heritage-feat-spells";
-
-// ─── Grant union — the language of declarative SRD effects ──────────────────
-
-/**
- * A single discrete mechanical effect a feature can grant.
- *
- * Each kind documents its evaluator merge rule (the rule the aggregator uses
- * when multiple sources emit the same kind). The kinds are grouped by
- * domain — senses, defensive (resistance/immunity/vulnerability), movement,
- * derived stats, proficiencies/expertise/languages/tools, spell grants,
- * casting modifiers, and pending player choices.
- *
- * **Adding a new Grant kind:** see `docs/MECHANICS.md` for the canonical
- * taxonomy and the four-step recipe (declare → migrate data → evaluate →
- * consume). Every new kind ships with a unit test pinning its evaluator
- * branch.
- */
-/**
- * USE-APPLIES (2026-06-12) — duration/maintenance metadata for a `while-active`
- * state, so the combat turn loop can enforce its lifetime (Task 2). Pure data
- * carried on the grant; Rage/Innate Sorcery/Bladesong each get the CORRECT rule
- * from their own declaration — no feature is special-cased in the engine.
- */
-export type WhileActiveDuration =
-  | {
-      /**
-       * Ends at the end of YOUR turn unless a maintaining event happened this
-       * round (Barbarian Rage). `maintainedBy` lists the events the combat turn
-       * loop tracks; `maxMinutes` is the cap in MINUTES (Rage = 10); `maxRounds`
-       * is the SAME cap expressed in combat ROUNDS (Rage = 100 rounds = 10 min ×10),
-       * which the FRONTIER-S3 turn/round engine counts down at each End Turn and
-       * AUTO-DROPS the state at 0 (a hard expiry, distinct from the soft keep/end
-       * maintenance prompt); `endsEarlyOn` (informational ConditionId /
-       * `"heavy-armor"` tokens) names the immediate-drop conditions.
-       */
-      kind: "maintained";
-      maintainedBy: ReadonlyArray<"attack" | "bonus-extend" | "damage-taken">;
-      maxMinutes?: number;
-      maxRounds?: number;
-      endsEarlyOn?: ReadonlyArray<string>;
-    }
-  | {
-      /**
-       * A fixed-timer state with no per-turn maintenance (Innate Sorcery,
-       * Bladesong = 1 minute). `minutes` is informational; `maxRounds`, when set,
-       * is the combat-round cap the FRONTIER-S3 turn/round engine counts down and
-       * AUTO-DROPS at 0 (a 1-minute spell = 10 rounds). Omit `maxRounds` to keep
-       * the state purely informational (no auto-expiry — the player ends it).
-       */
-      kind: "timed";
-      minutes: number;
-      maxRounds?: number;
-    };
-
-/**
- * PS-J — the closed vocabulary of SCOPES an attack-side effect can be limited to.
- * The sheet models ONE character and never models enemies (`docs/MECHANICS.md` →
- * "Non-automatable residuals"), so an effect scoped to a specific creature — or
- * to a subset of the character's own attacks the action card cannot yet
- * distinguish — is NEVER netted into the card's Adv./Disadv. verdict: the card
- * STATES the scope instead ("Adv. vs marked target"), the same grammar the
- * marked-target damage riders already ship one line above (`ActionRiders`).
- *
- * `"all"` is the ONLY scope a verdict may fold in: the clause applies to every
- * attack roll the character can make right now.
- *
- * Each member is also the suffix of its localized phrase (`combat.attackScope_*`,
- * shared with the damage riders); the dynamic-key coverage guard derives the
- * required keys from THIS tuple, so a new scope without a phrase fails CI.
+ * PS-J — the closed vocabulary of scopes an attack-side effect can target.
+ * Only "all" can fold into the global attack verdict; narrower scopes remain
+ * explicit card facts.
  */
 export const ATTACK_CLAUSE_SCOPES = [
-  /** Every attack roll you can make right now — the netted verdict. */
   "all",
-  /** The creature marked by your Hunter's Mark (Precise Hunter, the HM rider). */
   "marked",
-  /** The creature cursed by your Hex (the Hex damage rider). */
   "cursed",
-  /** The creature you have vowed enmity against (Vow of Enmity). */
   "vowed",
-  /** The creature you missed on your last attack (Studied Attacks). */
   "missed",
-  /** A creature that has not taken a turn yet (Assassinate). */
   "untaken",
-  /** Your Strength-based attack rolls only (Reckless Attack). */
   "strength",
-  /** Your Strength- and Dexterity-based attack rolls only (the S13
-   *  unproficient-armor penalty — RAW it touches D20 Tests that use STR or DEX,
-   *  so it never reaches a spell attack, which uses the spellcasting ability). */
   "strDex",
-  /** Your Sorcerer spell attack rolls only (Innate Sorcery). */
   "sorcery",
 ] as const;
 
-/** One scope from {@link ATTACK_CLAUSE_SCOPES}. */
 export type AttackClauseScope = (typeof ATTACK_CLAUSE_SCOPES)[number];
-
-/**
- * The two PER-TARGET scopes a damage rider can be limited to (Hunter's Mark's
- * marked creature, Hex's cursed one). Derived from {@link ATTACK_CLAUSE_SCOPES}
- * rather than re-listed, so the rider and the advantage clauses provably share
- * ONE scope vocabulary — and one phrase family (`combat.attackScope_*`), whose
- * coverage guard enumerates that same tuple.
- */
 export type MarkedTargetScope = Extract<AttackClauseScope, "marked" | "cursed">;
 
 /**
- * The roll an adv/dis clause applies to. An ATTACK clause MUST declare its
- * {@link AttackClauseScope} — the required field is what makes PS-J's defect
- * class (a narrow clause silently glossed as a blanket verdict on every attack
- * card) unrepresentable rather than merely guarded. The other roll types render
- * their own localized `description` in the rail, which already carries the scope,
- * so they carry no `scope`.
+ * The declarative mechanics language, inferred from the exact runtime schema.
+ * Adding a kind or field happens in GRANT_SCHEMA once; the conformer and public
+ * type change together.
  */
-type AttackScopedRoll =
-  | { rollType: "save" | "check" | "initiative"; scope?: never }
-  | { rollType: "attack"; scope: AttackClauseScope };
+export type Grant = SchemaGrant;
 
-export type Grant =
-  // ── Senses (merge: max per kind) ─────────────────────────────────────────
-  | { type: "darkvision"; range: number /* feet */ }
-  /**
-   * ADDITIVE darkvision (Gloom Stalker Umbral Sight: "Darkvision 60 ft; if you
-   * already have Darkvision, its range increases by 60 ft"). Distinct from the
-   * `darkvision` kind (which MERGES by max): the bonus SUMS atop the max base
-   * range. RAW: with no prior darkvision the bonus still grants its own range
-   * (so the finalize is `max(baseDarkvision, 0) + sum(bonuses)`). D6.
-   */
-  | { type: "darkvision-bonus"; amount: number /* feet */ }
-  | { type: "blindsight"; range: number /* feet */ }
-  | { type: "tremorsense"; range: number /* feet */ }
-  | { type: "truesight"; range: number /* feet */ }
-  | {
-      /**
-       * "See Invisible" — you can see Invisible creatures within `range` feet
-       * that aren't behind Total Cover (Aberrant Sorcery's Revelation in Flesh
-       * → "See the Invisible", 60 ft). NOT Truesight: it only reveals Invisible
-       * creatures, not illusions / shapechangers / the Ethereal Plane, so it
-       * gets its own aggregate field rather than folding into `truesightFt`.
-       * Merge: MAX per kind (the largest range granted wins).
-       */
-      type: "see-invisible";
-      range: number /* feet */;
-    }
+type GrantSchemaRefs = { readonly grant: Grant };
 
-  // ── Defensive (merge: set-union per kind) ────────────────────────────────
-  | { type: "damage-resistance"; damageType: DamageType }
-  | { type: "damage-immunity"; damageType: DamageType }
-  | { type: "damage-vulnerability"; damageType: DamageType }
-  | { type: "condition-immunity"; condition: ConditionId }
-  | {
-      /**
-       * Resistance keyed to a damage SOURCE rather than a `DamageType` — the
-       * damage halves whenever it originates from `source`, regardless of the
-       * element it deals. Abjurer's Spell Resistance (L14, wizard:abjurer):
-       * "you have Resistance to the damage of spells" → `{ source: "spell" }`,
-       * so a Fireball, a Disintegrate, or any other spell's damage is halved.
-       *
-       * Distinct from `damage-resistance` (which keys on a `DamageType`): a
-       * spell can deal any element, so this can't be folded into the
-       * per-DamageType set without over- or under-reporting. Merge: set-union
-       * per source. Surfaced in its own aggregate field
-       * (`damageSourceResistances`) the defenses consumer renders alongside the
-       * element resistances, AND fed to the RA-05 damage-intake math
-       * (`lib/damage-intake.ts`): a typed entry tagged with the source halves.
-       * Override-first: applying it is the player's call — an untyped entry
-       * always passes verbatim.
-       */
-      type: "damage-resistance-source";
-      source: DamageSource;
-    }
-  | {
-      /**
-       * **Flat damage reduction** — subtract a fixed amount from incoming damage
-       * of the listed types, optionally gated on a wearing-state condition. The
-       * FLAT sibling of `damage-resistance` (which HALVES); this never multiplies.
-       * Heavy Armor Master 2024 (feat:heavy-armor-master Damage Reduction): "When
-       * you're hit while wearing Heavy armor, any Bludgeoning, Piercing, and
-       * Slashing damage is reduced by your Proficiency Bonus" →
-       * `{ damageTypes: ["bludgeoning","piercing","slashing"], amount: "PB",
-       * condition: "wearing-heavy-armor" }`.
-       *
-       * `amount` is a flat number OR the `"PB"` sentinel (resolved to the
-       * character's Proficiency Bonus at render). The app models no foe, so
-       * this is SELF-SIDE only: a defenses-rail reminder line AND an input to
-       * the RA-05 damage-intake math (`lib/damage-intake.ts` — subtracted
-       * BEFORE the resistance halving, RAW order) when the player types the
-       * incoming hit. REUSABLE: a future flat reducer (e.g. a
-       * Heavy-armor-independent one) drops `condition`.
-       *
-       * The evaluator records every entry; the consumer
-       * (`deriveFlatDamageReductions`) resolves `"PB"` + the wearing-state gate
-       * and the defenses view renders the surviving lines. Merge: `[list]`.
-       */
-      type: "flat-damage-reduction";
-      damageTypes: ReadonlyArray<DamageType>;
-      amount: number | "PB";
-      condition?: "wearing-heavy-armor";
-    }
-  | {
-      /**
-       * **Choice-resistance** — the character picks `amount` damage types from a
-       * constrained `options` list and gains Resistance to each, and the picks
-       * are **re-selectable** (Boon of Energy Resistance: "Resistance to two of
-       * the following damage types of your choice … whenever you finish a Long
-       * Rest, you can change your choices"). Unlike a fixed `damage-resistance`
-       * (which names ONE element up front), the element set is player-controlled
-       * play-time state, so it can't be a static grant.
-       *
-       * The picks live in the same re-selectable session store as the L12
-       * single-select chooser — `session.grantBundleChoices[choiceKey]` — but
-       * encoded as a COMMA-SEPARATED list of `DamageType` values (e.g.
-       * `"fire,cold"`) so the existing `bundleChoices: Map<string,string>`
-       * plumbing carries N picks without a new session field. The evaluator
-       * splits that value, keeps only types that are in `options`, dedupes, caps
-       * at `amount`, and adds each surviving type to `damageResistances` — so the
-       * existing defenses consumer (`compute.ts`) lights up with ZERO new code.
-       * It also records the slot in `choiceResistances` so a picker UI can
-       * surface the constrained list + current picks (parallel to `grantBundles`).
-       *
-       * Merge: set-union into `damageResistances` (a type resisted via this slot
-       * and via a fixed grant collapses to one entry). Override-first: the picks
-       * are user-controllable; with nothing selected the slot contributes no
-       * resistances.
-       */
-      type: "choice-resistance";
-      choiceKey: string;
-      options: ReadonlyArray<DamageType>;
-      amount: number;
-      label?: BiText;
-    }
+function conformProficiencyToken(value: unknown): ProficiencyToken | null {
+  return typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= 256 &&
+    value !== "__proto__" &&
+    value !== "constructor" &&
+    value !== "prototype"
+    ? asProficiencyToken(value)
+    : null;
+}
 
-  // ── Movement (walking: sum / non-walking: max per kind) ──────────────────
-  | {
-      /**
-       * Additive walking-Speed bonus in feet. By default it always applies
-       * (`speedBonusFt`). The optional `condition` gates it on a wearing-state —
-       * `"no-heavy-armor"` (Ranger Roving: +10 ft "while you aren't wearing Heavy
-       * Armor") routes the bonus into `conditionalSpeedBonusFt["no-heavy-armor"]`
-       * instead, and the consumer (`effectiveWalkingSpeedFt`) applies it only when
-       * no Heavy armor is equipped.
-       *
-       * `round1` (FRONTIER-S3) marks a ROUND-1-ONLY clause — the SPEED counterpart
-       * of the `advantage-on { round1 }` gate (Assassinate): it applies only on the
-       * character's FIRST turn of each combat (Gloom Stalker Dread Ambusher's
-       * Ambusher's Leap: "At the start of your first turn of each combat, your Speed
-       * increases by 10 feet until the end of that turn"). It routes into the
-       * dedicated `round1SpeedBonusFt` aggregate bucket; the consumer
-       * (`effectiveWalkingSpeedFt`) adds it ONLY when passed `round === 1`. Omitted =
-       * a permanent bonus (the default). Mutually exclusive with `condition`.
-       */
-      type: "speed";
-      amount: number /* feet, additive */;
-      condition?: "no-heavy-armor";
-      round1?: boolean;
-    }
-  | {
-      /**
-       * Non-walking speed. `amount` may be a string sentinel:
-       *  - `"equal-to-walking"` — "Swim/Fly Speed equal to your Speed" (Triton,
-       *    Aquatic species, Draconic Dragon Wings).
-       *  - `"twice-walking"` — twice your walking Speed (Aberrant Sorcery's
-       *    Revelation in Flesh → Aquatic Adaptation grants Swim = 2× Speed).
-       * Numeric values are absolute feet; the evaluator takes the max per kind
-       * so a magic item granting Fly 60 doesn't get stacked over a trait granting
-       * Fly 30. Sentinels resolve against walking speed at render time
-       * (`resolveNonWalkingSpeed`), so `"twice-walking"` always beats
-       * `"equal-to-walking"` in the merge.
-       */
-      type: "fly-speed";
-      amount: NonWalkingSpeed;
-    }
-  | { type: "swim-speed"; amount: NonWalkingSpeed }
-  | { type: "climb-speed"; amount: NonWalkingSpeed }
-  | {
-      /**
-       * A MULTIPLIER on the character's effective WALKING Speed — the factor
-       * counterpart of the flat-additive `speed` grant. Boots of Speed: "the
-       * boots double your Speed" → `{ factor: 2 }`. Distinct from `speed` (which
-       * adds a fixed number of feet): a multiplier expresses "× N of an arbitrary
-       * base", so a character whose Speed is 25 or 40 doubles correctly rather
-       * than gaining a hard-coded +30.
-       *
-       * Merge: MAX `factor` across grants (default 1 = no multiplier). Multipliers
-       * never STACK in 2024 RAW — two doublings don't quadruple your Speed; the
-       * most generous factor wins. The consumer (`effectiveWalkingSpeedFt` in
-       * `lib/smart-tracker.ts`) applies it to `(base + additive speedBonusFt)` and
-       * only then subtracts the flat reductions (exhaustion −5/level, heavy-armor
-       * Strength penalty) — the boots double your *Speed*, while exhaustion and
-       * armor are separate flat penalties, per RAW.
-       *
-       * Typically wrapped in a `while-active` block (Boots of Speed's heel-click
-       * is a Bonus-Action toggle that lasts 10 minutes), so the multiplier only
-       * applies while the player toggles it on. Override-first: the effective
-       * Speed remains fully overridable in the UI; the timer + Long-Rest recharge
-       * + Opportunity-Attack disadvantage stay descriptive (no engine field).
-       */
-      type: "speed-multiplier";
-      factor: number;
-    }
-  | {
-      /**
-       * A walking-Speed FLOOR in feet — the character's effective walking Speed
-       * is raised to at least `minFt` "unless it is already higher". Boots of
-       * Striding and Springing: "your Speed becomes 30 feet unless your Speed is
-       * higher" → `{ minFt: 30 }`. Distinct from the flat-additive `speed` grant
-       * (which would wrongly stack — a +30 on a 30-ft base yields 60): a floor is
-       * a MAX, so a 30-ft base stays 30 and a 40-ft base stays 40.
-       *
-       * Merge: MAX `minFt` across grants (default 0 = no floor). Floors don't
-       * stack — the most generous floor wins. The consumer (`effectiveWalkingSpeedFt`
-       * in `lib/smart-tracker.ts`) applies it LAST, after the additive bonuses,
-       * multiplier, and flat reductions, so an exhausted / armor-penalised Speed
-       * still floors back up to `minFt`. Reusable for any "Speed becomes N unless
-       * higher" effect (Longstrider-style floors).
-       */
-      type: "speed-floor";
-      minFt: number;
-    }
+const GRANT_SCHEMA_CONTEXT: ExactSchemaContext<GrantSchemaCustomTypes, GrantSchemaRefs> =
+  {
+    customs: {
+      "proficiency-token": conformProficiencyToken,
+      "resource-spec": conformResourceSpec,
+    },
+    refs: { grant: GRANT_SCHEMA },
+  };
 
-  // ── Derived stats (merge: sum) ───────────────────────────────────────────
-  | {
-      /**
-       * Additive AC bonus. `amount` is a flat bonus (Ring/Cloak of Protection,
-       * +N armor — items). `ability` instead adds that ability's modifier
-       * (Bladesong: +INT mod, `min` 1) — feature-only, kept separate from the
-       * flat item bonuses so it never double-counts with `computeAC`'s
-       * item-AC pass. The render-derived AC (`effectiveAC`) consumes it.
-       */
-      type: "ac-bonus";
-      amount?: number /* flat, additive while equipped */;
-      ability?: AbilityCode;
-      min?: number;
-    }
-  | { type: "hp-per-level"; amount: number }
-  | { type: "ability-score"; ability: AbilityCode; amount: number; cap?: number }
-  | {
-      /**
-       * Lowers the natural-d20 threshold at which a weapon attack is a critical
-       * hit (Champion Improved Critical → 19, Superior Critical → 18). Merge:
-       * MIN across grants (the most generous range wins). Default 20.
-       */
-      type: "crit-range";
-      threshold: number;
-    }
-  | {
-      /**
-       * Lowers the natural-d20 a DEATH SAVING THROW counts as a 20 (Champion
-       * Survivor "Defy Death": "when you roll 18-20 on a Death Saving Throw, you
-       * gain the benefit of rolling a 20"). DISTINCT from `crit-range` (weapon
-       * attacks) — it never touches weapon crits, only death saves. Merge: the
-       * most generous (lowest) threshold wins (mirrors `crit-range`). The
-       * consumer is `deathSaveOutcome(roll, deathSaveCritThreshold)`.
-       */
-      type: "death-save-crit-range";
-      threshold: number;
-    }
-  | {
-      /**
-       * Start-of-turn HP regain with a guard (Champion Survivor "Heroic Rally":
-       * regain 5 + CON modifier at the start of each turn while Bloodied with ≥ 1
-       * HP). `amount` is a temp-HP-grammar formula (`"5+CON"`, `"level"`, `"3"`).
-       * `condition` gates the regain: `"bloodied"` (current HP ≤ half max) or
-       * `"always"`. `requiresMinHp` (default true) blocks the heal at 0 HP — you
-       * never regenerate from unconscious. Collected per source into
-       * `startOfTurnRegen`; the consumer (`resolveStartOfTurnRegen`) resolves the
-       * amount + reports whether the guard is met. Override-first — the engine
-       * never auto-applies the heal.
-       *
-       * `asTempHp` (default false) redirects the start-of-turn amount to the
-       * TEMPORARY-HP pool instead of healing (Heroism, 2024 RAW: "gains Temporary
-       * Hit Points equal to your spellcasting ability modifier at the start of each
-       * of its turns"). Same cadence + amount grammar; the banner one-taps it
-       * through the max-wins `gainTempHp` seam (temp HP never stack), never
-       * `applyHealing`, and never gates on min HP (temp HP don't revive you). Wrap
-       * it in the spell's `while-active` block so it surfaces only while the buff
-       * is up.
-       */
-      type: "regen-at-turn-start";
-      amount: string;
-      condition: "bloodied" | "always";
-      requiresMinHp?: boolean;
-      asTempHp?: boolean;
-    }
-  | {
-      /**
-       * Critical-hit-triggered movement rider (Champion Remarkable Athlete:
-       * "immediately after you score a Critical Hit, you can move up to half your
-       * Speed without provoking Opportunity Attacks"). `fraction` is the portion
-       * of the character's Speed the move covers; `ignoresOpportunityAttacks`
-       * (default true) flags the no-OA clause. Collected per source into
-       * `onCritMovement`; the consumer (`resolveOnCritMovement`) resolves the
-       * concrete distance against the effective walking Speed (round down).
-       * Override-first — the engine never moves the token.
-       */
-      type: "on-crit-movement-rider";
-      fraction: "half" | "full";
-      ignoresOpportunityAttacks?: boolean;
-    }
-  | {
-      /**
-       * Combat-economy rider letting the character spend part of the SAME Attack
-       * action's attacks to cast a spell instead of swinging (Eldritch Knight War
-       * Magic L7 → replace 1 attack with a Wizard cantrip; Improved War Magic L18
-       * → replace 2 attacks with a level-1-or-2 Wizard spell). `attacks` = how
-       * many of the Attack action's attacks the cast replaces; the spell must
-       * come from `classSpellList`, fall within `[minSpellLevel (default 0),
-       * maxSpellLevel]` (`maxSpellLevel: 0` = cantrips only), and match
-       * `castTime`. Collected per source into `replaceAttackWithCast`; the
-       * consumer (`resolveReplaceAttackWithCast`) caps `attacks` at the
-       * character's actual `attacksPerAction`. Override-first — the engine never
-       * spends an attack or a slot; it only surfaces the option.
-       */
-      type: "replace-attack-with-cast";
-      attacks: number;
-      classSpellList: string;
-      minSpellLevel?: number;
-      maxSpellLevel: number;
-      castTime: "action";
-    }
-  | {
-      /**
-       * GENERAL Unarmed-Strike damage upgrade (Monk Martial Arts, College of
-       * Dance Bardic Damage) — replaces the per-class `classSpecific` workaround.
-       * `die` is a fixed die (`"d6"`) or the deferred `"classSpecific:<key>"`
-       * sentinel the consumer resolves from the class-table level row (Monk
-       * `martialArtsDie`, Bard `bardicInspirationDie`). `attackAbility` may be
-       * USED in place of STR for the attack roll (best-of wins); `damageAbility`
-       * (omit = die only) adds its modifier to the damage. Collected into
-       * `unarmedStrikeDice`; the consumer (`effectiveUnarmedStrike`) picks the
-       * highest-average die and resolves the profile.
-       */
-      type: "unarmed-strike-die";
-      die: string;
-      attackAbility?: AbilityCode;
-      damageAbility?: AbilityCode;
-      damageType: DamageType;
-    }
-  | {
-      /**
-       * Extends a melee weapon's reach (Barbarian World Tree "Battering Roots":
-       * +10 ft reach with Heavy or Versatile weapons + activate Push/Topple
-       * mastery). `bonusFt` is the added reach; `appliesTo` narrows the weapons it
-       * rides (`"heavy-or-versatile"` or `"all-melee"`); `extraMasteries` lists
-       * mastery properties the feature activates in addition. Collected into
-       * `weaponReachBonuses`; the attack-row consumer (`resolveActions`) widens
-       * the range + surfaces the extra masteries for matching weapons.
-       */
-      type: "weapon-reach-bonus";
-      bonusFt: number;
-      appliesTo: "heavy-or-versatile" | "all-melee";
-      extraMasteries?: ReadonlyArray<string>;
-    }
-  | {
-      /**
-       * Lets the character expend a spell slot to recover uses of a tracker
-       * (Bard Font of Inspiration: "expend a spell slot to regain one use of
-       * Bardic Inspiration"). `trackerId` is the target tracker; `usesPerSlot` is
-       * how many uses one slot restores. Collected into
-       * `spellSlotTrackerRecoveries`; the consumer (`getSpellSlotTrackerRecovery`)
-       * resolves the available slot levels + the post-recovery used count.
-       */
-      type: "spell-slot-tracker-recovery";
-      trackerId: string;
-      usesPerSlot?: number;
-    }
-  | {
-      /**
-       * Tops a tracker back UP to a floor when the character rolls Initiative
-       * (Bard Superior Inspiration: "regain expended uses of Bardic Inspiration
-       * until you have two"). `trackerId` is the target tracker; `upTo` is the
-       * floor it is restored to (only RAISES — never reduces an already-higher
-       * count). Collected into `initiativeTrackerTopUps`; the consumer
-       * (`getInitiativeTrackerTopUps`) resolves the per-tracker target.
-       */
-      type: "initiative-tracker-topup";
-      trackerId: string;
-      upTo: number;
-    }
-  | {
-      /**
-       * Declares that the character makes `count` ADDITIONAL weapon attacks with
-       * a single Attack action (the "Extra Attack" feature). `count` is the
-       * number of EXTRA attacks, NOT the total — Extra Attack ("attack twice")
-       * → `count: 1`; Fighter's L11 upgrade → `count: 2`; L20 → `count: 3`.
-       *
-       * Replaces the old `srdId.includes("extra-attack")` substring heuristic in
-       * `attacksPerAction`: every martial's Extra Attack feature (Barbarian /
-       * Paladin / Ranger / Monk / Valor & Sword Bard / Battle Smith & Armorer
-       * Artificer / Bladesinger) declares this grant, and Warlock's Thirsting
-       * Blade (1) / Devouring Blade (2) invocations declare it too.
-       *
-       * Merge: MAX across grants (the most attacks granted wins). Extra Attack
-       * features never STACK in 2024 RAW — multiclassing into a second class with
-       * Extra Attack does not give you more attacks, and Devouring Blade
-       * UPGRADES Thirsting Blade rather than adding to it. Fighter encodes its
-       * scaling count directly in the class table (`classSpecific.extraAttacks`),
-       * which the consumer maxes against this aggregate. `min` for the helper is
-       * therefore the larger of the table value and the grant aggregate.
-       */
-      type: "extra-attack";
-      count: number;
-    }
-  | {
-      /**
-       * B6 — grants `count` ADDITIONAL economy slot(s) of `slot` per turn while the
-       * source is active (Fighter Action Surge → an extra Action; the Haste spell →
-       * an extra LIMITED action, modeled as a Bonus slot). ALWAYS nested inside a
-       * `while-active` block so it counts ONLY while its toggle is lit — the budget
-       * is derived per-turn from the active features, never persisted (the player
-       * toggles the source on, override-first; the engine never auto-spends a slot).
-       * `count` is the number of EXTRA slots (Action Surge = 1). Read by
-       * `extraActionsThisTurn` (smart-tracker), NOT folded into the global aggregate
-       * (the budget is a combat-only concern, kept off every other surface — YAGNI).
-       * Merge for the same slot: SUM across active sources (Action Surge + Haste both
-       * lit grant two extra actions).
-       */
-      type: "extra-action";
-      slot: "action" | "bonus";
-      count: number;
-    }
-  | {
-      /**
-       * During combat, the character can give themself Heroic Inspiration at the
-       * start of each turn if they lack it (Champion's Heroic Warrior, L10).
-       * Pure marker — STATE stays on the existing `SessionState.inspiration`
-       * boolean; this only flips an aggregate flag so the (UI-owned) renderer can
-       * surface the "regain Inspiration at start of turn" affordance. Merge: OR.
-       */
-      type: "heroic-inspiration-at-turn-start";
-    }
-  | {
-      /**
-       * The character gains Heroic Inspiration whenever they finish a Long Rest
-       * (Human's Resourceful trait). Pure rest-trigger marker — STATE stays on
-       * the existing `SessionState.inspiration` boolean; this only flips an
-       * aggregate flag so the Long Rest consumer auto-grants Inspiration (and
-       * the UI can surface the affordance). Merge: OR. Distinct from
-       * `heroic-inspiration-at-turn-start` (Champion, combat-turn trigger).
-       */
-      type: "heroic-inspiration-on-rest";
-    }
-  | {
-      /**
-       * An at-0-HP interrupt: when the character would drop to 0 HP, they can
-       * instead drop to 1 (Orc Relentless Endurance, Paladin Undying Sentinel,
-       * Boon of Misty Escape — Gaseous Form). `trackerId` is the 1/rest resource
-       * the interrupt debits. Collected into `atZeroHpInterrupts`; the consumer
-       * (`resolveAtZeroHpInterrupts`) surfaces the one-tap "stay at 1" prompt in
-       * the DyingBanner ONLY when the tracker has an unspent use. The `recovery`
-       * is descriptive (the underlying tracker owns the real recovery cadence).
-       */
-      type: "at-zero-hp-interrupt";
-      trackerId: string;
-    }
-  | {
-      /**
-       * One-shot flat HP bonus, NOT per level (Boon of Fortitude / Bountiful
-       * Health, Draconic Sorcerer's Draconic Resilience). Merge: sum. Distinct
-       * from `hp-per-level` (which multiplies by level).
-       */
-      type: "hp-flat";
-      amount: number;
-    }
-  | {
-      /**
-       * Raises the attunement-slot cap above the default 3 (Artificer's Magic
-       * Item Adept → 4, Savant → 5, Master → 6). Merge: MAX (the highest cap
-       * granted wins). The Equipment page shows "Attuned: N / cap".
-       */
-      type: "attunement-slots";
-      amount: number;
-    }
-  | {
-      /**
-       * EXTRA Exhaustion levels removed on a rest. `recovery` selects the
-       * channel: `"long-rest"` (default) adds beyond the default 1 removed on a
-       * Long Rest (Monk Self-Restoration: −2 instead of −1 → amount 1);
-       * `"short-rest"` is a genuine EXTRA channel (Ranger Tireless removes 1 on a
-       * Short Rest, where RAW removes none). The two channels aggregate into
-       * separate fields and never mix. Merge: sum (per channel).
-       */
-      type: "exhaustion-recovery";
-      amount: number;
-      recovery?: "long-rest" | "short-rest";
-    }
-  | {
-      /**
-       * Sets an ability score to a FLOOR value while the source is active
-       * (Amulet of Health → CON 19, Gauntlets of Ogre Power → STR 19, Headband
-       * of Intellect → INT 19). "No effect if your score is already higher",
-       * so the merge is MAX(base, value) — see `effectiveAbilityScores`.
-       * Equip-gated via the L2 equipment grant seam.
-       */
-      type: "ability-score-set";
-      ability: AbilityCode;
-      value: number;
-    }
+const GRANTS_SCHEMA = arraySchema(refSchema<"grant", Grant>("grant"));
 
-  // ── AC formula override (highest-applicable wins at render time) ─────────
-  | {
-      /**
-       * Unarmored Defense + variants. The evaluator collects every formula
-       * grant; `computeAC` picks the highest applicable result at render
-       * time based on the character's current armor state.
-       *
-       * `condition` declares when the formula applies:
-       *  - "no-armor"            — Barbarian Unarmored Defense (10 + DEX + CON)
-       *  - "no-armor-no-shield"  — Monk Unarmored Defense (10 + DEX + WIS)
-       *  - "always"              — formula always available (rare)
-       *  - "while-active"        — only when its wrapping `while-active` toggle
-       *    is on (Circle of the Moon Circle Forms: AC = 13 + WIS while in a Wild
-       *    Shape form). The form replaces the body's stat block, so the formula
-       *    is a self-contained total (armor / shield / item bonuses don't apply)
-       *    and `computeAC` takes `max(form AC, normal AC)` — see
-       *    `computeAC`'s `activeAcFormulas` parameter.
-       *
-       * `base` is the floor value. `bonuses` lists the ability modifiers to
-       * add. `shieldBonus` is the optional +N if the formula tolerates a
-       * shield (default 0).
-       */
-      type: "ac-formula";
-      base: number;
-      bonuses: ReadonlyArray<AbilityCode>;
-      condition: "no-armor" | "no-armor-no-shield" | "always" | "while-active";
-      shieldBonus?: number;
-    }
-  | {
-      /**
-       * Raises the Medium-armor DEX-to-AC cap above the RAW default of 2
-       * (Medium Armor Master → 3 when DEX is 16+). The cap applies ONLY to the
-       * Medium-armor DEX contribution; Light armor (uncapped) and Heavy armor
-       * (no DEX) are unaffected. `cap` is the new ceiling (3 for Medium Armor
-       * Master). `minDex` gates the benefit on a minimum DEX SCORE (default 16,
-       * per the feat's "if you have a Dexterity of 16 or higher"); when the
-       * character's DEX score is below it, the cap reverts to the default 2.
-       * Merge: MAX cap wins (the most generous bonus); the lowest `minDex`
-       * among the winning caps gates it. `computeAC` consumes the aggregate's
-       * `mediumArmorDexCap` and applies it in place of the hard-coded 2.
-       */
-      type: "medium-armor-dex-cap";
-      cap: number;
-      minDex?: number;
-    }
+/** Strict, canonical authoring boundary for one declarative mechanic. */
+const conformGrantExact = exactConformer(GRANT_SCHEMA, GRANT_SCHEMA_CONTEXT);
 
-  // ── Choice grants (evaluator → pendingChoices, level-up surfaces picker) ─
-  | {
-      /**
-       * Phase 7 — Choice ASI grant. Declares which abilities the player
-       * may pick from (Heavy Armor Master: STR or CON; Athlete: STR/DEX/CON;
-       * Skilled "any of your choice": all six). The evaluator records the
-       * pending choice in `pendingChoices` if `chosen` is not set, and
-       * applies it as an `ability-score` grant once resolved.
-       */
-      type: "choice-ability-score";
-      abilities: ReadonlyArray<AbilityCode>;
-      amount: number;
-      cap?: number;
-    }
-  | {
-      /** Phase C — Choice skill proficiency from a constrained list. */
-      type: "choice-skill-proficiency";
-      options: ReadonlyArray<string>;
-      amount: number;
-    }
-  | {
-      /**
-       * L8 — Choose N skills the character is proficient in (but lacks
-       * Expertise in) to gain Expertise. The picker offers only the
-       * character's proficient skills; resolution upgrades them to
-       * "expertise" in `character.skills`. Skill Expert (1), Prodigy, etc.
-       */
-      type: "choice-expertise";
-      amount: number;
-    }
-  | {
-      /**
-       * Skilled-style "pick N skills OR tools" choice. The picker UI
-       * surfaces a unified pool. Resolution: skill picks go to
-       * `character.skills`; tool picks go to `character.toolProficiencies`
-       * (legacy string shape). See `lib/feat-skill-tool-choices.ts`.
-       */
-      type: "choice-skill-or-tool-proficiency";
-      amount: number;
-    }
-  | {
-      /** Phase C — Choice language. Empty `options` means any language. */
-      type: "choice-language";
-      options: ReadonlyArray<string>;
-      amount: number;
-    }
-  | {
-      /** Phase C — Choice tool proficiency from a constrained list. */
-      type: "choice-tool-proficiency";
-      options: ReadonlyArray<string>;
-      amount: number;
-    }
-  | {
-      /**
-       * Phase C — Choice cantrip. `classSpellList` constrains the pool to a
-       * single class's cantrip list ("wizard", "cleric", …); omit to allow
-       * any class's cantrips (rare, e.g. Sage's Boon). When `spellAbility`
-       * is set, every cantrip picked through this slot is pinned to that
-       * casting ability (Magic Initiate Cleric → "WIS", Wizard → "INT").
-       * `spellAbilityChoice` (2024 Magic Initiate) instead defers the ability to
-       * a player choice among the listed set — auto-defaulted to the character's
-       * BEST of that set at pick time (override-first), stamped as
-       * `spellAbilityOverride`. Use one or the other, not both.
-       */
-      type: "choice-cantrip";
-      classSpellList?: ClassId;
-      amount: number;
-      spellAbility?: AbilityCode;
-      spellAbilityChoice?: ReadonlyArray<AbilityCode>;
-    }
-  | {
-      /**
-       * Phase C — Choice spell. `classSpellList` constrains the pool;
-       * `maxLevel` caps the spell level (level-1 spells of choice from the
-       * Wizard list, e.g. Magic Initiate). `spellAbility`, when set, pins
-       * the casting ability for every spell picked through this slot —
-       * unblocks Magic-Initiate-style feats taken by characters whose base
-       * class uses a different ability (e.g. Fighter + Magic Initiate
-       * Cleric → Wisdom for those spells).
-       */
-      type: "choice-spell";
-      classSpellList?: ClassId;
-      /**
-       * choice-spell-multi-list: union of class lists the pick may draw from
-       * (Bard Magical Secrets → bard+cleric+druid+wizard; Lore's Magical
-       * Discoveries → cleric+druid+wizard). A spell qualifies if it is on ANY
-       * listed list. Combines with `classSpellList`; when both are absent the
-       * pool is unrestricted ("any spell list"). The picker reads the effective
-       * union via `allowedSpellListsForSlot`.
-       */
-      classSpellLists?: ReadonlyArray<ClassId>;
-      maxLevel: number;
-      amount: number;
-      spellAbility?: AbilityCode;
-      /**
-       * 2024 Magic Initiate: the casting ability is the player's choice among
-       * this set (Int/Wis/Cha) rather than pinned to the list. Auto-defaulted to
-       * the character's BEST of the set at pick time (override-first), stamped as
-       * `spellAbilityOverride`. Use one of `spellAbility` / `spellAbilityChoice`.
-       */
-      spellAbilityChoice?: ReadonlyArray<AbilityCode>;
-      /**
-       * When set, the picker restricts the pool to spells that have the Ritual
-       * tag (`spell.ritual === true`) across ALL class lists — Warlock Pact of
-       * the Tome's Book of Shadows ("choose two level 1 spells that have the
-       * Ritual tag … from any class's spell list"). Combines with `maxLevel`
-       * (the L1 cap) and any `classSpellList`/`classSpellLists` restriction; on
-       * Pact of the Tome there is no list restriction, so the pool is every
-       * Ritual-tagged spell at or below `maxLevel`. Omit (default `false`) for
-       * the usual non-ritual choice-spell slots.
-       */
-      ritualOnly?: boolean;
-      /**
-       * Restrict the pool to spells of a single school of magic
-       * (`spell.school === spellSchool`). The Wizard subclass Savant features are
-       * the canonical case — each School Savant (Abjuration / Divination /
-       * Evocation / Illusion) adds only that school's Wizard spells to the
-       * spellbook for free ("Choose two Abjuration spells of level 2 or lower…").
-       * Combines with `classSpellList`/`classSpellLists` (the Savant features set
-       * `classSpellList: "wizard"`), `maxLevel` (the L2 cap on the initial
-       * picks), and `ritualOnly`. The picker filters on `spell.school ===
-       * spellSchool`. Omit for the usual any-school choice-spell slots.
-       */
-      spellSchool?: SpellSchool;
-      /**
-       * Restrict the pool to ANY of several schools — the feat "choose one
-       * level 1 spell from the Divination or Enchantment school" pattern
-       * (Fey-Touched / Shadow-Touched / Vampire-Touched). The picker accepts a
-       * spell whose school is in this list. Use either this or the
-       * single-school `spellSchool`, not both.
-       */
-      spellSchools?: ReadonlyArray<SpellSchool>;
-      /**
-       * When the picks are added to the Wizard's SPELLBOOK rather than auto-
-       * prepared — the Savant features ("add them to your spellbook for free")
-       * grant spellbook entries that the Wizard still prepares like any other
-       * spellbook spell, NOT always-prepared subclass spells. When `true` the
-       * resolver lands each pick as a plain spellbook ref (`prepared: false`,
-       * `alwaysPrepared` unset) so it counts toward the Wizard's normal prepared
-       * budget when prepared; absent / `false` keeps the default
-       * `prepared:true + alwaysPrepared:true` (Magic Initiate-style feats).
-       */
-      toSpellbook?: boolean;
-      /**
-       * When set, every spell picked through this slot is also free-castable
-       * via the named feature's tracker (a free-cast heritage feat → 1/Long Rest
-       * slotless cast of the chosen spell). The choice resolver stamps it onto
-       * the spell ref's `freeCastSource`.
-       */
-      freeCastSource?: { sourceId: string; rest: "short" | "long"; usesPerRest: number };
-      /**
-       * RECURRING school-savant entitlement (Wizard subclass Savants). When set
-       * to a `ClassId`, the slot's pick COUNT and `maxLevel` are not the static
-       * `amount`/`maxLevel` (which describe only the INITIAL grant at the savant
-       * level) but are derived from that class's spell-slot progression at the
-       * character's level: 2024 School Savant grants "two [school] spells of level
-       * ≤2 at L3, then ONE more each time you gain a new spell-slot level." The
-       * entitlement is therefore `count = amount + max(0, maxSpellSlotLevel − 2)`
-       * and `maxLevel = maxSpellSlotLevel`, where `maxSpellSlotLevel` is the
-       * highest spell level the class can cast at the character's current level
-       * (`savantSpellEntitlement`). The picker/level-up consumer must supply the
-       * class's spell-slot row as context (`SpellChoiceCtx.spellSlotsByClass`); a
-       * level-agnostic caller falls back to the static `amount`/`maxLevel` (the
-       * initial picks only). Combines with `spellSchool` + `toSpellbook`. Omit for
-       * a one-shot choice-spell.
-       */
-      recurringPerSpellLevel?: ClassId;
-    }
-  | {
-      /**
-       * **Choice-feat (origin-feat grant)** — the source grants the character a
-       * WHOLE FEAT of their choice, drawn from a feat `category`. The canonical
-       * case is the Warlock invocation **Lessons of the First Ones** ("you gain
-       * one Origin feat of your choice"; Repeatable — a *different* Origin feat
-       * each time you take it) and the Human **Versatile** trait ("You gain an
-       * Origin feat of your choice").
-       *
-       * Unlike `choice-spell` (which lands loose spell refs) the pick is an
-       * entire feat with its own grants / tracker / actions, so resolution adds
-       * the chosen feat slug to `character.features` as an ordinary
-       * `SrdFeatureRef` and the existing feat pipeline
-       * (`resolveGrantSourcesForFeatures`, the tracker/action resolvers) takes
-       * it from there — exactly how the Background origin feat is modelled. This
-       * grant is therefore a PENDING-CHOICE seam, not an aggregate of effects:
-       * the evaluator records a `{ kind: "feat", category, amount }` pending
-       * choice the picker surfaces; the consumer (`feat-feat-choices.ts`)
-       * enumerates the eligible feats and applies the pick.
-       *
-       * `category` constrains the pool to one `FeatCategory` ("origin" for both
-       * current consumers). `amount` is how many feats this slot grants (1 for
-       * every current case). The picker filters out feats the character already
-       * has UNLESS the feat is `repeatable` — mirroring "choose a different
-       * Origin feat each time" for the Repeatable invocation.
-       *
-       * Override-first: with no pick made the slot contributes nothing (the
-       * feat the player would gain is absent until they choose); the player can
-       * later edit/remove the resulting feature like any other.
-       */
-      type: "choice-feat";
-      category: FeatCategory;
-      amount: number;
-    }
+export function conformGrant(value: unknown): Readonly<Grant> | null {
+  return conformGrantExact(value);
+}
 
-  // ── Weapon attack stat override ──────────────────────────────────────────
-  | {
-      /**
-       * Lets the character use a non-physical ability for weapon attack +
-       * damage rolls (Bladesinger's Bladesong: INT for all weapons while
-       * active; Artificer Battle Smith: INT for magic weapons). The attack-row
-       * resolver uses the BEST of this ability vs the weapon's default
-       * (STR/DEX), per RAW "you can use". `magicOnly` restricts it to magic
-       * weapons (not yet enforced — pending magic-weapon detection).
-       */
-      type: "weapon-attack-ability";
-      ability: AbilityCode;
-      magicOnly?: boolean;
-      /**
-       * Narrows the ability swap to a weapon CATEGORY. `"monk-melee"` — the 2024
-       * Monk's "Monk weapons": Simple Melee weapons and Martial Melee weapons with
-       * the Light property (Martial Arts lets a Monk use DEX for attack + damage
-       * with them). Omitted ⇒ applies to every weapon (Bladesong INT).
-       */
-      weaponScope?: "monk-melee";
-      /**
-       * Optional damage-DIE upgrade for the scoped weapons — the Monk Martial
-       * Arts die REPLACES the printed die when LARGER (Shortsword 1d6 → 1d8 at
-       * Monk L5; a Dagger 1d4 → 1d6 even at L1). A fixed die (`"d8"`) or the
-       * deferred `"classSpecific:<key>"` sentinel (`"classSpecific:martialArtsDie"`),
-       * resolved against the OWNING feature's class+level (multiclass-correct,
-       * like `unarmed-strike-die`). The weapon resolvers take `max(weaponDie,
-       * upgradeDie)`. Omitted ⇒ the ability swap carries no die change. The same
-       * `max`-of-die logic as `effectiveUnarmedStrike` (reused via
-       * `effectiveWeaponDie`).
-       */
-      dieUpgrade?: string;
-    }
-  | {
-      /**
-       * A to-hit bonus added to weapon attack rolls within a scope — the to-hit
-       * counterpart of `weapon-damage-bonus` (which rides the damage roll) and of
-       * `damage-rider` (which adds an extra die). Distinct from
-       * `weapon-attack-ability` (which swaps the attack ABILITY, not adds a flat
-       * term) and from `spell-attack-bonus` (which rides spell attacks only).
-       *
-       * `amount` is EITHER a flat number OR an ability-derived variant
-       * `{ ability, min? }` — add that ability's modifier (clamped UP to `min`,
-       * default 0), the SAME `{ ability, min }` shape proven on bonus-to-save
-       * (Aura of Protection) and mirroring how `weapon-damage-bonus` carries a
-       * polymorphic amount. Archery fighting style → `{ amount: 2, scope:
-       * "ranged" }` (flat). Paladin Devotion Sacred Weapon → `{ amount: { ability:
-       * "CHA", min: 1 }, scope: "melee" }` inside a `while-active` wrapper: +CHA
-       * modifier (minimum +1) to attacks with the imbued Melee weapon while lit.
-       * The evaluator can't resolve the ability variant (it has no character /
-       * ability scores); the consumer (`resolveWeaponAttackBonuses` in
-       * smart-tracker) resolves it against the effective scores per weapon.
-       *
-       * `scope` narrows which weapon attacks the bonus rides:
-       *   - "ranged" — only Ranged weapons (Archery);
-       *   - "melee"  — only Melee weapons (+ Unarmed, mirroring `damage-rider`'s
-       *     "melee-weapon");
-       *   - "any"    — every weapon attack.
-       * Thrown weapons used in melee count as melee; a Ranged weapon is keyed off
-       * `weaponType === "ranged"` exactly like the existing attack-row logic.
-       *
-       * Merge: SUM of the resolved `amount`s of every grant whose scope applies
-       * to the weapon (so two ranged-bonus sources stack additively into the
-       * to-hit). The consumer (`resolveActions` weapon rows) adds the matching
-       * total to the computed `attackBonus`. Override-first: skipped entirely
-       * when the player pins a per-weapon `attackBonusOverride` (the override
-       * replaces the whole to-hit, so the bonus never double-counts).
-       */
-      type: "weapon-attack-bonus";
-      amount: number | { ability: AbilityCode; min?: number };
-      scope: "any" | "ranged" | "melee";
-    }
-  | {
-      /**
-       * A FLAT bonus added to the DAMAGE roll of weapon attacks within a scope —
-       * the damage counterpart of `weapon-attack-bonus` (which rides the to-hit)
-       * and the flat sibling of `damage-rider` (which adds a self-contained extra
-       * DIE). Barbarian Rage Damage: "When you make an attack using Strength —
-       * with either a weapon or an Unarmed Strike — you gain a bonus to the
-       * damage" → `{ sourceKey: "rageDamage", scope: "strength" }` inside the
-       * Rage `while-active` wrapper, so it applies only while raging (issue #27).
-       *
-       * The bonus value is EITHER a flat `amount` OR a `sourceKey` into the
-       * owning class table's `classSpecific` map, resolved at the character's
-       * level IN that class — the SAME key the feature's tracker `rider` chip
-       * reads (Rage Damage 2/3/4), so the chip and the weapon formula can never
-       * drift (single source of truth). The evaluator can't resolve it (no
-       * character); the consumer (`resolveWeaponDamageBonuses` in smart-tracker)
-       * resolves it per weapon at render.
-       *
-       * `scope` narrows which weapon attacks the bonus rides:
-       *   - "ranged"   — only Ranged weapons (`weaponType === "ranged"`);
-       *   - "melee"    — only Melee weapons (incl. Thrown used in melee);
-       *   - "strength" — any attack whose resolved attack ability is STR
-       *     (Rage: a thrown Handaxe and an Unarmed Strike qualify; a
-       *     DEX-resolved Finesse weapon does not);
-       *   - "heavy"    — only weapons with the Heavy property (GWM 2024 Heavy
-       *     Weapon Mastery: "+your Proficiency Bonus damage on a hit with a
-       *     Heavy weapon"). The consumer matches on the weapon's `properties`.
-       *   - "any"      — every weapon attack.
-       *
-       * `amount` is EITHER a flat number, the `"PB"` sentinel (resolved to the
-       * character's Proficiency Bonus at render — GWM's +PB), OR a `sourceKey`
-       * into the owning class table.
-       *
-       * Merge: `[list]` — every applicable entry SUMS into the damage modifier.
-       * Folded into the weapon's damage FORMULA (`2d6+3` → `2d6+5`), not an
-       * extra-damage chip. Override-first: skipped when the player pins a
-       * per-weapon `damageOverride` (the override replaces the whole formula).
-       */
-      type: "weapon-damage-bonus";
-      amount?: number | "PB";
-      sourceKey?: string;
-      scope: "any" | "ranged" | "melee" | "strength" | "heavy";
-    }
+/** Strict, canonical authoring boundary for an ordered list of mechanics. */
+const conformGrantsExact = exactConformer(GRANTS_SCHEMA, GRANT_SCHEMA_CONTEXT);
 
-  // ── Proficiencies (merge: set-union) ─────────────────────────────────────
-  //
-  // Canonical id contract (enforced for `skill`/`expertise` by
-  // `tests/unit/skill-grant-id-guard.test.ts`):
-  //   • `skill` — a lowercase ALL_SKILLS id ("insight", "sleight-of-hand").
-  //     `mergeSkillProficiencies` merges it verbatim into `character.skills`
-  //     (no casing normalisation), so a capitalised id silently lands as a
-  //     separate, non-canonical key and the proficiency is dropped.
-  //   • `tool` — an EN display NAME (the stable FACT anchor; the presenter
-  //     resolves it to the catalogue tool id and localizes — `displayToolProficiencies`).
-  //   • `language` — an EN display NAME (the FACT anchor); the presenter resolves it
-  //     to the catalogue language id and localizes (`displayLanguages`).
-  | { type: "save-proficiency"; ability: AbilityCode }
-  | { type: "skill-proficiency"; skill: string }
-  | { type: "expertise"; skill: string }
-  | {
-      /**
-       * Jack-of-all-Trades-style half-proficiency in EVERY skill the character
-       * isn't otherwise proficient/expert in (Bard L2 `bard-jack-of-all-trades`).
-       * A pure marker — it carries no skill list, because the benefit is "add
-       * half your Proficiency Bonus to any ability check that doesn't already
-       * use your Proficiency Bonus". The evaluator ORs it into a boolean aggregate
-       * (`halfProficiencyAllSkills`); the skill consumer
-       * (`mergeSkillProficiencies`) fills `halfProficiency` for every unproficient
-       * skill at the BOTTOM of the proficiency lattice — so a real proficiency
-       * always wins (#66) and the half is fully DERIVED, never baked into stored
-       * `skills` (#57): it appears + disappears exactly with the feature. Merge: OR.
-       */
-      type: "half-proficiency-all-skills";
-    }
-  | { type: "language"; language: string }
-  | { type: "tool-proficiency"; tool: string }
-  | {
-      /**
-       * Weapon proficiency from a feature (Valor Bard's Martial Training,
-       * Bladesinger, etc.). `proficiency` is a stable {@link ProficiencyToken} —
-       * a category (`martial-weapons`) or a weapon-type group (`longswords`),
-       * the SAME id vocabulary the class table uses. The Equipment page + combat
-       * attack-row union these with the class list; the display resolves via
-       * `localizeSrd("proficiency", id, "name", locale)`.
-       */
-      type: "weapon-proficiency";
-      proficiency: ProficiencyToken;
-    }
-  | {
-      /** Armor/shield proficiency from a feature — a stable
-       *  {@link ProficiencyToken} (`medium-armor`, `shields`). */
-      type: "armor-proficiency";
-      proficiency: ProficiencyToken;
-    }
+export function conformGrants(value: unknown): readonly Readonly<Grant>[] | null {
+  return conformGrantsExact(value);
+}
 
-  // ── Spell grants ─────────────────────────────────────────────────────────
-  | {
-      type: "always-prepared-spell";
-      spellId: string;
-      /**
-       * Pin the casting ability for this spell — used by heritage feats
-       * ("Intelligence is your spellcasting ability for these spells"),
-       * Magic Initiate, etc. When set, the injected SrdSpellRef carries
-       * `spellAbilityOverride` so DC/attack computation uses this ability
-       * regardless of the character's class spellcasting ability.
-       */
-      spellAbility?: AbilityCode;
-      /**
-       * Defer the casting ability to the character's species "choose INT/WIS/
-       * CHA" pick (2024 Tiefling Fiendish Legacy + Otherworldly Presence) rather
-       * than pinning a concrete `spellAbility`. The injection stamps
-       * `speciesSpellAbility: true` on the SrdSpellRef; `resolveSpellAbility`
-       * then reads the live `character.speciesSpellAbility` (defaulting to
-       * `SPECIES_SPELL_ABILITY_DEFAULT`). Mutually exclusive with `spellAbility`
-       * — set one or the other.
-       */
-      spellAbilitySource?: "species";
-      /**
-       * Minimum character level before this spell is prepared. Used inside a
-       * `choice-grant-bundle` whose options list spells across several
-       * thresholds (Circle of the Land's terrain Circle Spells unlock at druid
-       * 3/5/7/9). The injection consumer (`getAlwaysPreparedFromGrants`) gates
-       * on it; the render aggregate ignores it (harmless — the field is unused
-       * for display). Omit for spells available as soon as the feature is.
-       */
-      minLevel?: number;
-    }
-  | {
-      /**
-       * Phase C — Free-cast: the character can cast a specific spell N times
-       * per Long Rest (or per Short Rest) without expending a spell slot.
-       * Magic Initiate (1× LR), Fey-Touched (Misty Step 1× LR), Vampire Touched
-       * (Spider Climb 1× LR), Reawakened spells (1× SR), etc.
-       *
-       * The tracker engine creates an implicit N/<rest> counter on the
-       * source feature when `chargesPerRest > 0`. `casterAbility` overrides
-       * the spellcasting ability for this specific free-cast (some feats
-       * let you pick INT/WIS/CHA).
-       */
-      type: "free-cast-spell";
-      spellId: string;
-      chargesPerRest: number;
-      /**
-       * Optional formula for a SCALED charge count (Forest Gnome: cast Speak with
-       * Animals "a number of times equal to your Proficiency Bonus per Long Rest";
-       * Circle-of-the-Stars Star Map: Guiding Bolt "a number of times equal to your
-       * Wisdom modifier"; Fey-Wanderer Misty Wanderer: Misty Step "Wisdom modifier"
-       * times; Cartographer Mapping Magic: Faerie Fire "Intelligence modifier"
-       * times). When set, the consumer resolves it through the SHARED
-       * `resolveChargesFormula` → `resolveTrackerTotal` vocabulary (`"PB"`, an
-       * ability code like `"WIS"`/`"INT"`, `"level"`, and the arithmetic forms) and
-       * it OVERRIDES the fixed `chargesPerRest`. Omitted for the common fixed-count
-       * case (1× LR).
-       */
-      chargesFormula?: string;
-      rest: "short" | "long";
-      // Full AbilityCode range — most feats use INT/WIS/CHA but a handful
-      // (Mark of Passage: DEX) pin a physical ability for casting.
-      casterAbility?: AbilityCode;
-      /**
-       * Character-level gate (mirrors `always-prepared-spell.minLevel`): the free
-       * cast is only offered once the character reaches this level. Used by the
-       * heritage feats whose SECOND spell unlocks at character level 3.
-       */
-      minLevel?: number;
-    }
-  | {
-      /**
-       * D4 — Free-cast FROM A LIST: the character can cast a spell from a bounded
-       * pool, N times per rest, WITHOUT a slot — a GUIDED PICKER, not a fixed
-       * spell. Two pool shapes (mutually exclusive):
-       *
-       *  - **class-list pool** (`spellList` + `maxSpellLevel`): ANY spell from a
-       *    class list up to a level cap. Cleric Divine Intervention (2024): "take
-       *    the Magic action to cast any Cleric spell of level 5 or lower without
-       *    expending a spell slot … once per Long Rest."
-       *  - **fixed-set pool** (`spellIds`): a NAMED handful — War God's Blessing
-       *    (2024 War Domain L6): "expend a use of your Channel Divinity to cast
-       *    Shield of Faith or Spiritual Weapon rather than expending a spell slot."
-       *    The cast doesn't require Concentration and lasts 1 minute.
-       *
-       * Distinct from `free-cast-spell` (one fixed spell on its OWN per-spell
-       * tracker): here the SPELL is the player's choice within the pool, and the
-       * per-rest cap debits a SHARED `trackerId` (an existing feature tracker —
-       * Divine Intervention's own `tracker`, War God's Blessing's
-       * `cleric-channel-divinity`). The owning feature defines that tracker; this
-       * grant carries only the pool. `trackerId` defaults to the source feature id.
-       */
-      type: "free-cast-from-list";
-      /** The class spell-list to draw from (omitted for a fixed-set pool). */
-      spellList?: string;
-      /** Highest spell level a class-list pick may choose (inclusive; class-list pool only). */
-      maxSpellLevel?: number;
-      /**
-       * A FIXED set of stable spell ids — the entire pool when set (War God's
-       * Blessing: `["shield-of-faith", "spiritual-weapon"]`). Mutually exclusive
-       * with `spellList`/`maxSpellLevel`.
-       */
-      spellIds?: readonly string[];
-      /**
-       * S9 — PER-SPELL charge cost sidecar (spellId → charges) for a VARIABLE-cost
-       * pool: a multi-spell charged magic item whose spells debit DIFFERENT charge
-       * counts (Wand of Binding → Hold Monster 5 / Hold Person 2; Wand of Fear →
-       * Command 1 / Fear 3). A spell absent from the map costs 1 charge (the
-       * default), so the two existing feature pools (Divine Intervention, War God's
-       * Blessing — a use IS a use) omit it entirely and stay unchanged. The
-       * consumer resolves it into `FreeCastFromListPool.costBySpell` (default 1 for
-       * every eligible spell — single source, golden rule 6). Never reshapes
-       * `spellIds`.
-       */
-      spellCosts?: Readonly<Record<string, number>>;
-      /**
-       * Per-rest charge cap. OMIT to INFER it from the debited tracker's resolved
-       * total (War God's Blessing rides the whole Channel Divinity pool — 2/3/4 by
-       * level — so it must not hardcode a number; golden rules 2/6). Set explicitly
-       * only when the pool's cap differs from the tracker total (Divine Intervention
-       * = its own dedicated 1/LR tracker, so `1` is redundant-but-explicit there).
-       */
-      chargesPerRest?: number;
-      /** Rest cadence the cap recovers on; defaults to the debited tracker's. */
-      rest?: "short" | "long";
-      /** The tracker id to debit per use; defaults to the source feature id. */
-      trackerId?: string;
-      /** Spellcasting ability override for this cast (defaults to the caster's). */
-      casterAbility?: AbilityCode;
-    }
-  | {
-      /**
-       * At-will free cast — an UNBOUNDED slotless self-cast (no tracker, no
-       * per-rest cap). Distinct from `free-cast-spell`, which models a bounded
-       * N/rest tracker; this one can be used any number of times. Warlock's
-       * at-will Eldritch Invocations are the canonical case (Armor of Shadows →
-       * Mage Armor, Mask of Many Faces → Disguise Self, Master of Myriad Forms →
-       * Alter Self, Misty Visions → Silent Image, Otherworldly Leap → Jump,
-       * One with Shadows → Invisibility, Ascendant Step → Levitate, Visions of
-       * Distant Realms → Arcane Eye, Whispers of the Grave → Speak with Dead,
-       * Fiendish Vigor → False Life).
-       *
-       * Like Wizard Spell Mastery, it surfaces as an at-will (`kind: "mastery"`)
-       * cast-option row at the spell's BASE level only — never an upcast, never
-       * a tracker decrement. Pair it with an `always-prepared-spell` grant for
-       * the same spell so the spell becomes visible/prepared on the Spells page
-       * (the at-will primitive only models the slotless cast option, not
-       * preparedness). `casterAbility` pins the spellcasting ability for this
-       * cast (Warlock invocations: CHA).
-       *
-       * `autoMaxTempHpFormula` (optional) declares that casting THIS way grants
-       * the **maximized** Temporary HP of the spell instead of a roll — Fiendish
-       * Vigor: "When you cast the spell with this feature, you don't roll the die
-       * for the Temporary Hit Points; you automatically get the highest number on
-       * the die." Carries the spell's own temp-HP formula verbatim from the SRD
-       * (False Life 2024 → `"2d4+4"`); the evaluator resolves it through the pure
-       * {@link maximizeDiceFormula} (each `NdX` → `N*X`, plus flat terms) into a
-       * concrete `autoMaxTempHp` on the {@link AtWillCastEntry} (2d4+4 → 12). The
-       * cast-options consumer surfaces it on the at-will row so the player applies
-       * the flat maximized total. NO RNG — the maximization is deterministic, and
-       * temp HP are still applied override-first (the engine never auto-sets HP).
-       * Omit for every other at-will invocation (a normal slotless cast).
-       *
-       * Merge: deduped by `spellId` (first source wins) — a spell granted
-       * at-will by two sources still yields one at-will row.
-       */
-      type: "at-will-cast-spell";
-      spellId: string;
-      casterAbility?: AbilityCode;
-      autoMaxTempHpFormula?: string;
-    }
-  | {
-      /**
-       * Phase C — Per-spell ritual access (Comprehend Languages as Ritual
-       * from Banneret, etc.). For Wizard's Ritual Adept "cast any spell in
-       * your spellbook as a ritual", use `ritual-casting-any` below.
-       */
-      type: "ritual-casting";
-      spellId: string;
-    }
-  | {
-      /**
-       * Phase C — "Any spell with the Ritual tag from <list>" — Wizard Ritual
-       * Adept's class-wide grant. The Spells page reads this to decorate
-       * every prepared/known ritual spell with a Ritual-cast button.
-       */
-      type: "ritual-casting-any";
-      classSpellList: ClassId;
-    }
-  | {
-      /**
-       * A bonus spell slot whose level scales with character level, restricted
-       * to a narrow pool of spells, and recovered on a Short OR Long Rest.
-       *
-       * A heritage feat's bonus spellcasting: one extra slot, its level
-       * = half your character level rounded up (max 5), usable ONLY to cast a
-       * spell you have prepared because of a heritage feat, regained on a
-       * Short/Long Rest. Distinct from {@link Grant} `free-cast-spell` (which is
-       * a slotless cast of one NAMED spell at its base level) — this is a real
-       * upcast-capable slot shared across a whole scoped pool, so it surfaces as
-       * a cast-option row at every prepared scoped spell at the resolved level.
-       *
-       * Declares only FACTS; the consumer resolves the live numbers:
-       *  - `levelFormula` → a {@link ScopedSlotLevelFormula}; `resolveScopedSlotLevel`
-       *    turns it + the character's total level into the slot level.
-       *  - `scope` → which prepared spells the slot can cast; the cast-option
-       *    consumer (`scopedSlotSourcesForSpell`) resolves the eligible spell set.
-       *  - `recovery` → `"short-or-long"` (regained on either rest) etc.; the
-       *    smart-tracker creates a 1-use tracker on the source feature with the
-       *    matching recovery cadence so expend/regain is tracked + override-able.
-       *
-       * Merge: collected as a list (one entry per granting source).
-       */
-      type: "scoped-extra-spell-slot";
-      levelFormula: ScopedSlotLevelFormula;
-      scope: ScopedSlotSpellScope;
-      recovery: "short-or-long" | "short" | "long";
-    }
+type GrantOf<Kind extends Grant["type"]> = Extract<Grant, { readonly type: Kind }>;
 
-  // ── Casting modifiers (sum per scope) ────────────────────────────────────
-  | {
-      /**
-       * Phase C — Bumps the spell save DC of the named class's spells (or
-       * "all" if granted globally). Used by Draconic Sorcerer's Elemental
-       * Affinity, Bladesinging's Song of Defense, etc.
-       */
-      type: "spell-save-dc-bonus";
-      amount: number;
-      scope: "all" | ClassId;
-    }
-  | {
-      type: "spell-attack-bonus";
-      amount: number;
-      scope: "all" | ClassId;
-    }
+/** Public helper types remain projections of the one Grant schema. */
+export type ScopedSlotLevelFormula = GrantOf<"scoped-extra-spell-slot">["levelFormula"];
+export type ScopedSlotSpellScope = GrantOf<"scoped-extra-spell-slot">["scope"];
+export type WhileActiveDuration = NonNullable<GrantOf<"while-active">["duration"]>;
+export type EffectBoundAmount = Exclude<GrantOf<"regen-at-turn-start">["amount"], string>;
+export type CastLevelScaling = NonNullable<
+  GrantOf<"damage-retaliation">["castLevelScaling"]
+>;
+export type WhileActiveAfterEffect = NonNullable<GrantOf<"while-active">["afterEffect"]>;
 
-  // ── Saving-throw bonus (applies to ALL saves) ────────────────────────────
-  | {
-      /**
-       * Adds a bonus to saving throws. Two value modes:
-       *   - ability-based: set `ability` → the consumer adds that ability's
-       *     modifier (clamped up to `min`, default 0). Paladin's Aura of
-       *     Protection: `{ ability: "CHA", min: 1 }` (+CHA mod, minimum +1).
-       *   - flat: set `amount` → a constant numeric bonus.
-       *
-       * SCOPE: by default the bonus rides EVERY saving throw. Set the optional
-       * `appliesToSave` to restrict it to ONE ability's saves only (Circle of
-       * the Moon "Increased Toughness" → +WIS modifier to CONSTITUTION saves
-       * only: `{ ability: "WIS", appliesToSave: "CON", min: 0 }`). Scoped grants
-       * route to a separate `saveBonusByAbility` aggregate so they never leak
-       * onto unrelated saves; unscoped grants keep their old all-saves routing
-       * (`saveBonusAbilities` / `saveBonusFlat`) for back-compat.
-       *
-       * The evaluator can't resolve an ability modifier (it has no ability
-       * scores), so it records the intent and the consumer (`resolveSaveBonus`
-       * in `lib/compute.ts`) resolves it against the character's scores at
-       * render, per the requested save.
-       */
-      type: "save-bonus";
-      ability?: AbilityCode;
-      appliesToSave?: AbilityCode;
-      min?: number;
-      amount?: number;
-    }
-
-  // ── Concentration-save bonus (CON saves to MAINTAIN Concentration only) ──
-  | {
-      /**
-       * Adds a bonus to the **Constitution saving throw made to maintain
-       * Concentration** — and ONLY that save, never every CON save. Bladesinger's
-       * Bladesong "Focus" benefit: "When you make a Constitution saving throw to
-       * maintain Concentration, you can add your Intelligence modifier to the
-       * total." Distinct from `save-bonus` (which rides EVERY save) so it can't
-       * leak into unrelated CON saves (poison, Disintegrate, …).
-       *
-       * Two value modes mirror `save-bonus`:
-       *   - ability-based: set `ability` → the consumer adds that ability's
-       *     modifier (clamped up to `min`, default 0). Bladesong Focus:
-       *     `{ ability: "INT", min: 0 }` (+INT mod to the Concentration save).
-       *   - flat: set `amount` → a constant numeric bonus (War Caster's
-       *     Advantage is a roll modifier, not this; reserved for any future
-       *     flat-bonus source).
-       * The evaluator can't resolve an ability modifier (it has no ability
-       * scores), so it records the intent; the consumer
-       * (`resolveConcentrationSaveBonus` in `lib/compute.ts`) resolves it against
-       * the character's scores at render. Typically wrapped in a `while-active`
-       * block (Bladesong) so the bonus only applies while the feature is toggled
-       * on. Merge: SUM (an ability entry contributes `max(mod, min)`; flat entries
-       * add their `amount`).
-       */
-      type: "concentration-save-bonus";
-      ability?: AbilityCode;
-      min?: number;
-      amount?: number;
-    }
-
-  // ── Ability-check bonus (scoped to a skill or an ability's checks) ────────
-  | {
-      /**
-       * Adds a bonus to ABILITY CHECKS within a scope. Two value modes mirror
-       * `save-bonus`:
-       *   - ability-modifier: `value: "modifier"` (the default) → the consumer
-       *     adds `ability`'s modifier, clamped up to `min` (default 0). Fey
-       *     Wanderer's Otherworldly Glamour: every Charisma check gains +WIS mod
-       *     (minimum +1) → `{ appliesTo: "CHA-checks", ability: "WIS",
-       *     value: "modifier", min: 1 }`.
-       *   - flat: `value: <number>` → a constant numeric bonus.
-       *
-       * `appliesTo` is the SCOPE the bonus rides:
-       *   - a skill id (e.g. "stealth", "persuasion") → only that one skill;
-       *   - "<ABILITY>-checks" (e.g. "CHA-checks") → every check using that
-       *     ability;
-       *   - "all-checks" → every ability check.
-       * The evaluator can't resolve an ability modifier (it has no ability
-       * scores), so it records the intent; the Skills consumer resolves it per
-       * skill against the character's scores at render — see
-       * `resolveAbilityCheckBonus` in `lib/compute.ts`. Additive with any other
-       * matching entry; skipped entirely when the player set a manual override
-       * on that skill (override-first).
-       */
-      type: "ability-check-bonus";
-      appliesTo: string;
-      ability?: AbilityCode;
-      value?: "modifier" | number;
-      min?: number;
-    }
-  | {
-      /**
-       * Adds a bonus to Initiative. `ability` → add that ability's modifier
-       * (Gloom Stalker's Dread Ambusher: WIS); `amount` → a flat bonus. The
-       * consumer resolves the ability modifier against the character's scores.
-       * (Alert's "+Proficiency Bonus to Initiative" stays its own special-case
-       * in `computeInitiative` for now — not wired here, so no double-count.)
-       */
-      type: "initiative-bonus";
-      ability?: AbilityCode;
-      amount?: number;
-    }
-  | {
-      /**
-       * A self-contained extra-damage rider on weapon attacks (Paladin
-       * Radiant Strikes: +1d8 Radiant on a Melee weapon hit; Cleric Blessed
-       * Strikes Divine Strike, etc.). The combat attack rows surface it as an
-       * extra damage chip. `appliesTo` narrows which weapons it rides:
-       * "melee-weapon" (Melee weapons + Unarmed) or "weapon" (any). Distinct
-       * from spell damage (`spell.damage`) and weapon base damage.
-       *
-       * Dynamic dice count: most riders are fixed (`dice: "1d8"`). When the
-       * extra-dice count scales with character level (Berserker Frenzy: a
-       * number of d6s equal to the Rage Damage bonus — 2 at L1, 3 at L9, 4 at
-       * L16), declare `diceByLevel` as a level-keyed map of dice strings. The
-       * evaluator carries it through unresolved (it has no level); the
-       * consumer (smart-tracker attack rows) resolves the highest threshold
-       * ≤ the character's level. `dice` remains required as the L1 / fallback
-       * value so fixed riders and any consumer that ignores `diceByLevel`
-       * keep working unchanged.
-       *
-       * `damageType` is a concrete `DamageType` for fixed-element riders
-       * (Radiant Strikes → "radiant"). The sentinel `"same-as-weapon"` marks a
-       * rider whose extra die takes the WEAPON's OWN damage type — 2024 Hunter
-       * Colossus Slayer ("the weapon deals an extra 1d8 damage", typeless = the
-       * weapon's type). The attack-row consumer resolves the sentinel to the
-       * concrete weapon damage type at render, so the UI always receives a real
-       * type; any non-weapon consumer treats it as the literal string.
-       *
-       * `addAbilityMod` (optional) folds an ability MODIFIER into the surfaced
-       * damage formula — Psi Warrior's Psionic Strike deals the die PLUS the INT
-       * modifier (`1d6` → `1d6+3`). The consumer (smart-tracker attack rows)
-       * appends the signed modifier to the resolved die (`+0` is omitted).
-       *
-       * `resourceCost` (optional) links each use to a tracker the player spends
-       * (Psionic Energy Dice → the Psionic Power tracker). Carried through to the
-       * attack row as `resourceTrackerId`; the engine never auto-spends it
-       * (override-first — the combat UI debits it on use).
-       *
-       * `amount: "PB"` (the existing PB sentinel) declares a FLAT Proficiency-Bonus
-       * extra-damage rider rather than a die — a species revelation's "extra
-       * damage equal to your Proficiency Bonus, once on each of your turns". When
-       * set, `dice` is omitted (the consumer surfaces a flat `+N` resolved from PB at
-       * render). `appliesTo: "attack-or-spell"` widens the scope beyond weapons: the
-       * 2024 wording is "when you deal damage to it with an attack OR a spell", so the
-       * rider is NOT folded into one weapon row — it surfaces as a once-per-turn
-       * self-side reminder (the player adds +PB to whichever attack/spell connects;
-       * the app rolls nothing — golden rule 21). A weapon-scoped rider keeps `dice`.
-       *
-       * `vsMarkedTarget` (optional) marks a "per-hit vs a SPECIFIC creature" rider —
-       * Hunter's Mark's +1d6 Force / Hex's +1d6 Necrotic apply only when you hit the
-       * MARKED / CURSED target, not every attack. Because the app models no enemies
-       * (identity: a companion sheet, not a battle grid), it CANNOT know which attack
-       * lands on that creature, so the rider surfaces as a DISPLAY-ONLY chip LABELED
-       * "vs marked target" / "vs cursed target" — the player applies it only on the
-       * right hit (never auto-summed into the base damage total, like every
-       * extra-damage rider). The token (`"marked"` / `"cursed"`, ids not display
-       * strings — golden rule 7) drives the localized label at the render edge and is
-       * the ONLY marked-target machinery — it reuses the existing `while-active`
-       * (auto-light on cast, retract on concentration drop) + `damage-rider` + chip
-       * machinery wholesale. The per-target tracking / move-the-mark / Hex's ability-
-       * check Disadvantage stay narrative (no modeled enemy). Absent → an
-       * always-applies rider (Radiant Strikes, Divine Favor).
-       */
-      type: "damage-rider";
-      dice?: string;
-      diceByLevel?: Readonly<Record<number, string>>;
-      amount?: "PB";
-      vsMarkedTarget?: MarkedTargetScope;
-      damageType: DamageType | "same-as-weapon";
-      /**
-       * Which attacks the rider rides:
-       *   - `"melee-weapon"` — any Melee weapon OR an Unarmed Strike (skips Ranged).
-       *   - `"weapon"` — any WEAPON attack (melee or ranged); not an Unarmed Strike.
-       *   - `"one-handed-melee"` — a Melee weapon held in ONE hand: skips Ranged AND
-       *     Two-Handed-property weapons, and never an Unarmed Strike (Dueling: "a
-       *     Melee weapon in one hand and no other weapons"). A Versatile weapon
-       *     qualifies via its one-handed grip — the rider rides the row's primary
-       *     (one-handed) damage, not its two-handed `versatileDamage` stance. The
-       *     "no other weapons" (dual-wield) clause is informational: the engine
-       *     can't know the live wielded set (a carried backup ≠ dual-wielding), so
-       *     it gates only the mechanically determinable grip — the rest is override-
-       *     first, matching how every holding-state condition is modeled.
-       *   - `"attack-or-spell"` — never a per-attack chip (surfaced separately).
-       */
-      appliesTo: "melee-weapon" | "weapon" | "one-handed-melee" | "attack-or-spell";
-      oncePerTurn?: boolean;
-      addAbilityMod?: AbilityCode;
-      resourceCost?: { trackerId: string };
-    }
-  | {
-      /**
-       * A static bonus added to ONE damage roll of a spell whose damage matches a
-       * set of types — the SPELL counterpart of `damage-rider` (which is
-       * weapon-only). Draconic Sorcery Elemental Affinity (L6): when you cast a
-       * spell that deals your chosen draconic damage type, add your Charisma
-       * modifier to one damage roll of that spell.
-       *
-       * `damageTypes` is the set of triggering damage types; a spell qualifies
-       * when its damage includes ANY of them. The empty array is a sentinel for
-       * "any spell that deals damage" (a blanket bonus). For a player-chosen type
-       * (Elemental Affinity), the chosen type is wired via a `choice-grant-bundle`
-       * option carrying a single-element `damageTypes` — so only the picked type
-       * lights up.
-       *
-       * The bonus value is either an ability modifier (`value: "modifier"` + the
-       * `ability` to read, floored at `min`) or a flat number (`value: <number>`).
-       * The evaluator can't resolve an ability modifier (no scores), so it records
-       * the intent; the consumer (`resolveSpellDamageBonus` in `lib/compute.ts`)
-       * resolves it against the character's scores per spell at render — exactly
-       * like `ability-check-bonus`. `scope` narrows which casting class's spells
-       * it rides ("all" or a `ClassId`), mirroring `CastingModifierEntry`.
-       * Additive with any other matching entry; override-first (the consumer is
-       * skipped entirely when the player set a manual per-spell damage override).
-       *
-       * `cantripOnly` restricts the bonus to CANTRIPS (spell level 0) — the SPELL
-       * counterpart of `cantrip-damage-bonus`, but keyed on "every cantrip of this
-       * class" rather than one named cantrip. Cleric Potent Spellcasting ("add your
-       * Wisdom modifier to the damage you deal with ANY Cleric cantrip") sets
-       * `{ damageTypes: [], cantripOnly: true, ability: "WIS", scope: "cleric" }`,
-       * so any damaging Cleric cantrip lights up while a levelled spell is untouched.
-       * Omit (default `false`) for the usual "any qualifying spell" bonuses
-       * (Elemental Affinity, Radiant Soul).
-       *
-       * `oncePerTurn` is informational — the SRD wording is "add … to ONE damage
-       * roll" (Elemental Affinity) / "once per turn" (Radiant Soul). The engine
-       * rolls no dice, so it surfaces the limiter for the UI but never enforces a
-       * per-turn counter. Omit (default `false`) when the bonus has no per-turn cap.
-       */
-      type: "spell-damage-bonus";
-      damageTypes: ReadonlyArray<DamageType>;
-      ability?: AbilityCode;
-      value?: "modifier" | number;
-      min?: number;
-      scope?: "all" | ClassId;
-      cantripOnly?: boolean;
-      oncePerTurn?: boolean;
-      /** Restrict to spells of these SCHOOLS (Evoker Empowered Evocation). */
-      schools?: ReadonlyArray<string>;
-    }
-  | {
-      /**
-       * Changes the damage consequence of a spell's declared attack/save outcome
-       * without changing its dice. Evoker Potent Cantrip makes a qualifying
-       * cantrip deal half damage after a missed attack or successful save. The
-       * table still declares the observable outcome; the shared resolver applies
-       * this deterministic consequence. No spell ids or localized prose are read.
-       */
-      type: "spell-damage-outcome";
-      scope?: "all" | ClassId;
-      cantripOnly?: boolean;
-      damageOnMiss?: "half";
-      damageOnSave?: "half";
-    }
-  | {
-      /**
-       * A bonus added to the HIT POINTS a HEALING SPELL restores — the healing
-       * counterpart of `spell-damage-bonus`. Cleric Disciple of Life: "Whenever
-       * you cast a spell of level 1 or higher that restores Hit Points to a
-       * creature, that creature regains additional Hit Points equal to 2 + the
-       * spell's level." The engine rolls no dice; the consumer (`resolveHealBonus`
-       * in `lib/compute.ts`) appends the resolved flat amount to the spell's heal
-       * verdict at render — exactly like `spell-damage-bonus` does for damage.
-       *
-       * `amount` is the flat base (Disciple of Life: 2). `perSpellLevel` adds the
-       * cast slot level on top (Disciple of Life: "+ the spell's level").
-       * `minSpellLevel` gates it (Disciple of Life: 1, so 0-level cantrips don't
-       * qualify; default 0 = all). `scope` restricts to one class's spell list
-       * (Disciple of Life: "cleric"); "all" = any healing spell. Additive with any
-       * other matching entry; override-first (spells carry no per-cast heal
-       * override today, so nothing to skip).
-       */
-      type: "heal-bonus";
-      amount: number;
-      perSpellLevel?: boolean;
-      minSpellLevel?: number;
-      scope?: "all" | ClassId;
-    }
-  | {
-      /** Heal the caster once when a qualifying spell restores HP to somebody
-       * else (Life Cleric Blessed Healer). The cast level is known before target
-       * resolution, so the resolver can apply this deterministic linked effect. */
-      type: "self-heal-on-other";
-      amount: number;
-      perSpellLevel?: boolean;
-      minSpellLevel?: number;
-      scope?: "all" | ClassId;
-    }
-  | {
-      /** Replace every healing die of a qualifying spell with its maximum face
-       * (Life Cleric Supreme Healing). This computes a ceiling; it never rolls. */
-      type: "maximize-spell-healing";
-      minSpellLevel?: number;
-      scope?: "all" | ClassId;
-    }
-  | {
-      /**
-       * An ALTERNATE damage type a damaging spell may deal — the player's choice
-       * each cast (the type-SWAP counterpart of `spell-damage-bonus`, which adds
-       * a number). Great Old One Warlock Psychic Spells: "When you cast a Warlock
-       * spell that deals damage, you can change its damage type to Psychic." The
-       * engine rolls no dice and never auto-swaps; the consumer
-       * (`resolveSpellDamageTypeOverrides` in `lib/compute.ts`) returns the
-       * in-scope alternate types and the smart-tracker folds them into the
-       * spell's damage-type CHOICE chip — reusing the existing multi/choice
-       * rendering, so the player picks the original type or the override per cast.
-       *
-       * `toType` is the offered type (Psychic). `scope` restricts it to one
-       * casting class's spell list (Psychic Spells: "warlock"); "all" = any
-       * damaging spell. Override-first; additive with any other override (the
-       * choice chip lists every offered alternate alongside the spell's own type).
-       */
-      type: "spell-damage-type-override";
-      toType: DamageType;
-      scope?: "all" | ClassId;
-    }
-  | {
-      /**
-       * An ALTERNATE damage type the character's UNARMED STRIKE may deal at the
-       * player's choice each hit — the unarmed-attack counterpart of
-       * `spell-damage-type-override`. Monk Empowered Strikes (L6): "Whenever you
-       * deal damage with your Unarmed Strike, it can deal Force damage or its
-       * normal damage type." The smart-tracker folds `toType` into the Unarmed
-       * Strike row's damage-type CHOICE chip (reusing the multi/choice rendering),
-       * so the row reads e.g. "d8+4 Bldg/Force". The engine never auto-swaps; an
-       * already-matching type dedupes. Override-first; no dice rolled.
-       */
-      type: "unarmed-strike-damage-type-option";
-      toType: DamageType;
-    }
-  | {
-      /**
-       * Lets the caster WAIVE spell components for a class of spells — Great Old
-       * One Warlock Psychic Spells: "When you cast a Warlock Enchantment or
-       * Illusion spell, you can do so without Verbal or Somatic components." The
-       * smart-tracker marks the waived components on the spell's verdict
-       * (`componentsWaived`) so the UI can strike them — the player CAN cast
-       * without them (e.g. while Silenced/restrained). Informational; engine
-       * never auto-casts.
-       *
-       * `schools` narrows which spell schools qualify (omit/[] = any); `waive`
-       * lists the components removed ("v"/"s"/"m"); `scope` restricts to one
-       * casting class's spells ("warlock") or "all".
-       */
-      type: "component-waiver";
-      schools?: ReadonlyArray<string>;
-      waive: ReadonlyArray<"v" | "s" | "m">;
-      scope?: "all" | ClassId;
-    }
-  | {
-      /**
-       * A static bonus added to the damage rolls of ONE specific **cantrip**,
-       * targeted by SRD spell id — the SPELL-ID counterpart of
-       * `spell-damage-bonus` (which is damage-type keyed). Warlock's Agonizing
-       * Blast invocation: "Choose one of your known Warlock cantrips that deals
-       * damage. You can add your Charisma modifier to that spell's damage rolls."
-       * The invocation is REPEATABLE — each copy targets a DIFFERENT eligible
-       * cantrip — so a character may carry several `cantrip-damage-bonus` grants,
-       * one per chosen cantrip.
-       *
-       * `spellId` is the chosen cantrip's SRD id. When the player has not yet
-       * pinned a choice (the picker writes it back to
-       * `session.grantBundleChoices[choiceKey]`), `choiceKey` lets the evaluator
-       * read the selection; `defaultSpellId` is the fact's fallback target (the
-       * canonical pick — Eldritch Blast for Agonizing Blast) so the bonus
-       * auto-computes out of the box and the choice merely RE-targets it.
-       *
-       * The bonus value is either an ability modifier (`value: "modifier"` + the
-       * `ability` to read, floored at `min`) or a flat number (`value: <number>`).
-       * The evaluator can't resolve an ability modifier (no scores), so it records
-       * the intent; the consumer (`resolveCantripDamageBonus` in `lib/compute.ts`)
-       * resolves it against the character's scores per cantrip at render — exactly
-       * like `spell-damage-bonus`. Additive with any other entry that targets the
-       * same cantrip; override-first (the consumer is skipped entirely when the
-       * player set a manual per-spell damage override).
-       */
-      type: "cantrip-damage-bonus";
-      /** Explicit chosen cantrip id; omit to resolve from `choiceKey`/`defaultSpellId`. */
-      spellId?: string;
-      /** `session.grantBundleChoices` key the picker writes the chosen cantrip id to. */
-      choiceKey?: string;
-      /** Fallback cantrip id when neither `spellId` nor a `choiceKey` selection is set. */
-      defaultSpellId?: string;
-      ability?: AbilityCode;
-      value?: "modifier" | number;
-      min?: number;
-    }
-  | {
-      /**
-       * A **cantrip-effect rider** that adds a non-damage on-hit/effect clause to
-       * ONE specific cantrip, targeted by SRD spell id — a sibling of
-       * `cantrip-damage-bonus` (which adds to the damage roll) for effects that
-       * aren't numeric damage. The first variant is FORCED MOVEMENT: Warlock's
-       * Repelling Blast invocation — "Choose one of your known Warlock cantrips
-       * that requires an attack roll. When you hit a Large or smaller creature
-       * with that cantrip, you can push the creature up to 10 feet straight away
-       * from you." The invocation is REPEATABLE — each copy targets a DIFFERENT
-       * eligible cantrip — so a character may carry several `cantrip-effect-rider`
-       * grants, one per chosen cantrip.
-       *
-       * `effect` discriminates the rider clause; `"forced-movement"` is the only
-       * variant today and carries `direction` (always `"push"` for Repelling
-       * Blast), `distanceFt` (10), and `maxTargetSize` (the largest size the
-       * rider can shove — `"Large"`, so Huge+ creatures are immune).
-       *
-       * `spellId` is the chosen cantrip's SRD id. When the player has not yet
-       * pinned a choice (the picker writes it back to
-       * `session.grantBundleChoices[choiceKey]`), `choiceKey` lets the evaluator
-       * read the selection; `defaultSpellId` is the fact's fallback target (the
-       * canonical pick — Eldritch Blast for Repelling Blast) so the rider
-       * auto-applies out of the box and the choice merely RE-targets it
-       * (override-first — the picker re-points the same rider). The evaluator
-       * collects each into `AggregatedGrants.cantripEffectRiders`; the consumer
-       * (`resolveCantripForcedMovement` in `lib/compute.ts`) reports the rider
-       * that targets the cantrip being rendered. Multiple sources targeting the
-       * same cantrip stack as separate riders (the consumer picks the farthest
-       * push — they don't sum; you choose one shove).
-       */
-      type: "cantrip-effect-rider";
-      effect: "forced-movement";
-      /** Explicit chosen cantrip id; omit to resolve from `choiceKey`/`defaultSpellId`. */
-      spellId?: string;
-      /** `session.grantBundleChoices` key the picker writes the chosen cantrip id to. */
-      choiceKey?: string;
-      /** Fallback cantrip id when neither `spellId` nor a `choiceKey` selection is set. */
-      defaultSpellId?: string;
-      /** Forced-movement direction relative to the caster. Repelling Blast pushes. */
-      direction: "push" | "pull";
-      /** Maximum push/pull distance in feet (Repelling Blast: 10). */
-      distanceFt: number;
-      /** Largest creature size the rider can move (Repelling Blast: "Large"). */
-      maxTargetSize: CreatureSize;
-    }
-  | {
-      /**
-       * A **range bonus** targeted at ONE specific cantrip by SRD id, scaling by
-       * the granting class's level — a numeric sibling of `cantrip-effect-rider`
-       * (an on-cast effect that isn't damage). Warlock's Eldritch Spear
-       * invocation: "Choose one of your known Warlock cantrips that deals damage
-       * and has a range of 10+ feet. When you cast that spell, its range
-       * increases by a number of feet equal to 30 times your Warlock level."
-       * The invocation is REPEATABLE — each copy targets a DIFFERENT eligible
-       * cantrip — so a character may carry several `cantrip-range-bonus` grants,
-       * one per chosen cantrip.
-       *
-       * `spellId` is the chosen cantrip's SRD id. When the player has not yet
-       * pinned a choice (the picker writes it back to
-       * `session.grantBundleChoices[choiceKey]`), `choiceKey` lets the evaluator
-       * read the selection; `defaultSpellId` is the fact's fallback target (the
-       * canonical pick — Eldritch Blast for Eldritch Spear) so the bonus
-       * auto-applies out of the box and the choice merely RE-targets it
-       * (override-first — the picker re-points the same bonus).
-       *
-       * The added feet = `bonusPerLevel × <granting class's level>`. The
-       * evaluator can't resolve the class level (no character context), so it
-       * records `bonusPerLevel` + the `scalesWith` class id; the consumer
-       * (`resolveCantripRangeBonus` in `lib/compute.ts`) multiplies by the
-       * supplied level per cantrip at render — exactly like Eldritch Smite's
-       * per-slot-level scaling reads the warlock's pact-slot level. Additive with
-       * any other entry that targets the same cantrip.
-       */
-      type: "cantrip-range-bonus";
-      /** Explicit chosen cantrip id; omit to resolve from `choiceKey`/`defaultSpellId`. */
-      spellId?: string;
-      /** `session.grantBundleChoices` key the picker writes the chosen cantrip id to. */
-      choiceKey?: string;
-      /** Fallback cantrip id when neither `spellId` nor a `choiceKey` selection is set. */
-      defaultSpellId?: string;
-      /** Feet of range added per level of `scalesWith` (Eldritch Spear: 30). */
-      bonusPerLevel: number;
-      /** Class whose level scales the bonus (Eldritch Spear: "warlock"). */
-      scalesWith: ClassId;
-    }
-  | {
-      /**
-       * A **weapon-attack-cantrip rider** — a cantrip the character KNOWS whose
-       * entire effect is "make ONE attack with a held weapon, using your
-       * spellcasting ability for the attack & damage rolls, with a Radiant /
-       * weapon damage-type choice + level-scaled extra Radiant" (2024 True
-       * Strike). Most casters get True Strike via their normal cantrip pool, but
-       * some features grant a known cantrip directly (Magic Initiate, subclass
-       * bonus cantrips, High Elf's Cantrip trait); when that cantrip is a
-       * weapon-attack cantrip, the granting source declares this rider so the
-       * combat-action consumer treats the attack as a spellcasting-ability
-       * weapon strike with the scaled rider — NOT a stale melee spell attack.
-       *
-       * `spellId` is the cantrip's SRD id ("true-strike"); the rider's mechanic
-       * facts mirror {@link import("@/data/types").WeaponAttackCantripData}. The
-       * evaluator collects each into `AggregatedGrants.weaponAttackCantrips`,
-       * deduped by `spellId` (first source wins). The consumer
-       * (`resolveWeaponAttackCantrip` in `lib/compute.ts`, surfaced by the
-       * smart-tracker action summary) resolves the scaled extra damage, attack
-       * ability, and damage-type options at render — override-first. No RNG.
-       */
-      type: "weapon-attack-cantrip";
-      spellId: string;
-      useSpellcastingAbility: boolean;
-      damageTypeChoice: DamageType;
-      extraDamageByLevel: Readonly<Record<number, string>>;
-      extraDamageType: DamageType;
-    }
-  | {
-      /**
-       * A **manipulation of how a weapon's own damage DICE are rolled or what
-       * its base damage is** — distinct from `damage-rider` (which adds a
-       * SEPARATE extra die/flat term on top). The four 2024 weapon-mastery /
-       * fighting-style / origin feats that have no other primitive all reduce to
-       * one of four `mode`s:
-       *
-       *  - `"floor"` — Great Weapon Fighting: "treat any 1 or 2 on a damage die
-       *    as a 3". `floorBelow` is the highest die face replaced (2) and
-       *    `floorTo` the value it becomes (3). Scoped via `appliesTo:
-       *    "two-handed-melee"` (the weapon must be Melee + held in two hands,
-       *    i.e. have the Two-Handed or Versatile property). NO dice are rolled —
-       *    the consumer only annotates the weapon row so the player applies the
-       *    floor when they roll externally (the engine shows formulas, never RNG).
-       *
-       *  - `"reroll-keep-higher"` — Savage Attacker: "roll the weapon's damage
-       *    dice twice and use either roll", once per turn. `oncePerTurn` is true.
-       *    Scoped `appliesTo: "weapon"` (any weapon attack). Annotation only.
-       *
-       *  - `"offhand-ability-mod"` — Two-Weapon Fighting: add the wielder's
-       *    ability modifier to the damage of the off-hand (Light-weapon extra)
-       *    attack, which RAW omits by default. Scoped `appliesTo: "light-melee"`.
-       *    The dual-wield consumer adds the modifier back to the off-hand row's
-       *    damage formula (replacing the hard-coded srdId check that previously
-       *    special-cased this one feat).
-       *
-       *  - `"unarmed-strike"` — Unarmed Fighting: the Unarmed Strike deals
-       *    Bludgeoning equal to `baseDie` (1d6) + `abilityMod` (STR), upgraded to
-       *    `unburdenedDie` (1d8) when not holding any weapon or shield; plus a
-       *    start-of-turn `grappleDie` (1d4) to one creature Grappled by you.
-       *    `damageType` is the Unarmed Strike's type (bludgeoning). The consumer
-       *    emits / upgrades an Unarmed Strike attack row from these facts.
-       *
-       * Merge: collected as a list (`damageDieModifiers`); the consumer reads it
-       * and applies the relevant `mode` to the matching weapon rows. Override-
-       * first: every value is informational — a player who pins a per-weapon
-       * `damageOverride` keeps full control, and the engine never rolls dice.
-       */
-      type: "damage-die-modifier";
-      mode: "floor" | "reroll-keep-higher" | "offhand-ability-mod" | "unarmed-strike";
-      /** Which attacks the modifier rides (mode determines the sensible scope). */
-      appliesTo: "weapon" | "two-handed-melee" | "light-melee" | "unarmed";
-      /** "floor": the highest die face replaced (2 for Great Weapon Fighting). */
-      floorBelow?: number;
-      /** "floor": the value a floored face becomes (3 for Great Weapon Fighting). */
-      floorTo?: number;
-      /** "reroll-keep-higher": once-per-turn limiter (Savage Attacker). */
-      oncePerTurn?: boolean;
-      /** "unarmed-strike": base damage die when holding a weapon/shield (1d6). */
-      baseDie?: string;
-      /** "unarmed-strike": upgraded die when unburdened — no weapon/shield (1d8). */
-      unburdenedDie?: string;
-      /** "unarmed-strike": die dealt to a Grappled creature each turn (1d4). */
-      grappleDie?: string;
-      /** "unarmed-strike" / "offhand-ability-mod": the ability modifier added. */
-      abilityMod?: AbilityCode;
-      /** "unarmed-strike": the Unarmed Strike's damage type (bludgeoning). */
-      damageType?: DamageType;
-    }
-
-  // ── Conditional advantage / disadvantage (set-union, soft-typed) ────────
-  | ({
-      /**
-       * Phase C — Permanent advantage on a typed roll. `rollType` narrows to
-       * save/check/attack/initiative; `vs` is a free-text descriptor (e.g.
-       * "saves vs poison", "checks to grapple", or "" for a blanket clause such
-       * as the Assassin's "Advantage on Initiative rolls"). Renderer surfaces
-       * these as chips on the Abilities/Combat page near the relevant block.
-       *
-       * `rollType: "initiative"` is a dedicated consumer hook: Initiative is a
-       * DEX check that the engine computes separately (`computeInitiative`), so
-       * the advantage half is read off the aggregate by `hasInitiativeAdvantage`
-       * rather than rendered only as a chip.
-       *
-       * `round1` (FRONTIER-S3) marks a ROUND-1-ONLY clause: it applies only during
-       * combat round 1 (before a creature has acted) — Assassin Assassinate's
-       * "Advantage on attack rolls against any creature that hasn't taken a turn".
-       * The turn/round engine surfaces it only when `combatStore.round === 1`, then
-       * auto-clears it after round 1. Omitted = a permanent clause (the default).
-       */
-      type: "advantage-on";
-      vs: string;
-      round1?: boolean;
-      description?: BiText;
-    } & AttackScopedRoll)
-  | ({
-      type: "disadvantage-on";
-      vs: string;
-      description?: BiText;
-    } & AttackScopedRoll)
-  | {
-      /**
-       * A ROUND-1-only, save-gated damage DOUBLER note (Assassin Death Strike, L17:
-       * "When you hit with your Sneak Attack on the first round of a combat, the
-       * target must succeed on a Constitution saving throw (DC 8 + Dex mod + PB) or
-       * the attack's damage is doubled"). DISPLAY-ONLY — the app models no enemy and
-       * never rolls, so it NEVER auto-doubles anything; it surfaces a round-1
-       * reminder with the resolved DC. `saveAbility` is the TARGET's save, `saveDcAbility`
-       * the character ability that governs the DC (routed through the ONE
-       * `featureSaveDc` formula). Collected into `round1DamageDoubles`; the consumer
-       * resolves the DC and the UI shows it only while `combatStore.round === 1`
-       * (the SAME round-1 gate Assassinate's `advantage-on { round1 }` uses).
-       */
-      type: "round1-damage-double";
-      saveAbility: AbilityCode;
-      saveDcAbility: AbilityCode;
-    }
-  | {
-      /**
-       * A roll FLOOR: treat a d20 roll below `floor` as `floor`, on rolls of
-       * `rollType`, gated by `appliesTo`. Rogue Reliable Talent (L7): "Whenever
-       * you make an ability check that lets you add your Proficiency Bonus, you
-       * can treat a d20 roll of 9 or lower as a 10" → `{ rollType: "check", floor:
-       * 10, appliesTo: "proficient" }`. The engine rolls no dice — the consumer
-       * surfaces it as a passive note; `description` is the bilingual blurb.
-       */
-      type: "roll-floor";
-      rollType: "check" | "save" | "attack";
-      floor: number;
-      appliesTo: "proficient" | "all";
-      description?: BiText;
-    }
-  | {
-      /**
-       * A SELF-side downside marker: while this grant is in effect, attack rolls
-       * AGAINST the character have Advantage. Barbarian Reckless Attack (L2): the
-       * second RAW half — "attack rolls against you have Advantage until your next
-       * turn" — the price of the offensive STR-attack Advantage. This is NOT enemy
-       * modeling (the engine has no attacked-against model and tracks no targets);
-       * it is purely a downside REMINDER the player sees on their own sheet. Wrap
-       * it in the SAME `while-active` toggle as the offensive half so declaring
-       * Reckless lights BOTH the buff and this downside. `description` is the
-       * bilingual blurb the rail renders (framed as a Disadv.); the engine rolls
-       * no dice and computes nothing from it.
-       */
-      type: "incoming-attack-advantage";
-      description?: BiText;
-    }
-  | {
-      /**
-       * The MIRROR of `incoming-attack-advantage`: while in effect, attack rolls
-       * AGAINST the character have DISADVANTAGE — a defensive BENEFIT (Blur: "any
-       * creature has Disadvantage on attack rolls against you"; Warding Bond's
-       * defensive posture family could ride it too). Like its mirror, this is NOT
-       * enemy modeling (the engine has no attacked-against model and rolls no
-       * dice) — it is a self-side REMINDER the player sees on their own sheet,
-       * framed as an ADVANTAGE (your defenses improve). Wrap it in a `while-active`
-       * toggle (Blur, a Concentration spell) so it lights/clears with the buff.
-       * `description` is the bilingual blurb the rail renders; collected into
-       * `incomingAttackDisadvantages`.
-       */
-      type: "incoming-attack-disadvantage";
-      description?: BiText;
-    }
-  | {
-      /**
-       * A SELF-side DEFENSIVE reminder LINE — a bilingual prose note rendered in
-       * the rail's Defenses section (Warding Bond: "Resistance to all damage; the
-       * bonded creature takes the same damage you take"). For defensive facts that
-       * carry no clean numeric/typed primitive (a resistance-to-ALL + a
-       * shared-damage clause), where the mechanically-valued legs are modeled
-       * separately (Warding Bond's +1 AC + +1 saves) and this captures the residual
-       * RAW as an informational line — the engine subtracts nothing (golden rule
-       * 21). Wrap it in a `while-active` toggle so it lights/clears with the buff;
-       * `description` is the bilingual blurb; collected into `defenseNotes`.
-       */
-      type: "defense-note";
-      description?: BiText;
-    }
-
-  // ── Activatable / conditional grants (L11) ───────────────────────────────
-  | {
-      /**
-       * L11 — Activatable grants. The inner `grants` apply ONLY while the named
-       * toggle is active in the session: Bladesinger's Bladesong, Sorcerer's
-       * Innate Sorcery, Barbarian Rage, druid Wild-Shape forms, etc. A single
-       * feature can mix always-on grants with a `while-active` block.
-       *
-       * `activeKey` is a stable toggle id (conventionally the source feature's
-       * own id, or a `${featureId}:variant` for multi-toggle features); `label`
-       * names the toggle for the UI. The evaluator recurses into `grants` only
-       * when `activeKey` ∈ the active set passed to `evaluateGrants`, so an
-       * inactive feature never over-reports its buff. When active, the inner
-       * grants merge into the SAME aggregate fields as any other grant — so
-       * resistances/senses/AC/advantages light up with zero new consumer code.
-       *
-       * Override-first: the toggle is always user-controllable; nothing forces
-       * it on or off. Nested `while-active` grants are ignored (one level only).
-       */
-      type: "while-active";
-      activeKey: string;
-      label?: BiText;
-      grants: ReadonlyArray<Grant>;
-      /**
-       * USE-APPLIES (2026-06-12) — optional duration/maintenance metadata for an
-       * active state, so the combat turn loop can ENFORCE its lifetime instead of
-       * leaving the player to remember it (owner doctrine: the app takes care of
-       * everything, always allowing override). Two kinds, sourced verbatim from
-       * `dnd2024.wikidot.com` per feature — Rage is just data carrying its rule,
-       * never a special case in the engine:
-       *
-       *  - `"maintained"` — the state ends at the END OF YOUR TURN unless a
-       *    maintaining event happened this round (Barbarian Rage: "lasts until the
-       *    end of your next turn"; extend by making an attack roll vs an enemy,
-       *    forcing a save, TAKING DAMAGE, or taking a Bonus Action to extend — up
-       *    to `maxMinutes`). `maintainedBy` lists the in-combat events the turn loop
-       *    already knows (`"attack"` = the Attack action / forcing a save consumed
-       *    the action slot; `"damage-taken"` = an HP reduction recorded this round,
-       *    auto-detected from the session HP setter; `"bonus-extend"` = the
-       *    dedicated extend bonus action — the prompt's own `Keep`). At End Turn,
-       *    a maintained state whose condition wasn't met surfaces a one-tap
-       *    keep/end prompt on the turn meter (never a silent kill — a player may
-       *    maintain off-app). `endsEarlyOn` (informational) names the conditions
-       *    that drop it immediately (Heavy armor, Incapacitated).
-       *
-       *  - `"timed"` — a FIXED-timer state that simply lasts `minutes` with no
-       *    per-turn maintenance (Sorcerer Innate Sorcery: "1 minute"; Bladesong:
-       *    "1 minute"). Informational — the turn loop never auto-prompts these
-       *    (the player ends them when the timer lapses); carried so the rail chip
-       *    can show the duration.
-       *
-       * Omitted on a while-active grant whose state has no defined combat
-       * lifetime (a permanent stance toggle).
-       */
-      duration?: WhileActiveDuration;
-      /**
-       * S1 opt-out for a TARGET-ONLY buff spell (Warding Bond: "You touch ANOTHER
-       * creature… it gains +1 AC and saves" — the CASTER never benefits). By
-       * default, casting a `while-active` buff spell auto-lights its chip (the S1
-       * cast→toggle link, correct for SELF buffs: Shield of Faith, Blur, Mage
-       * Armor). `autoActivateOnCast: false` suppresses that stamp — the action
-       * resolver never derives `activatesKey` from this grant, so the cast-commit
-       * seam lights nothing on the caster. The toggle stays MANUALLY light-able
-       * from the rail (override-first) — that is how a WARDED creature's own sheet
-       * turns the buff on. Omitted = `true` (auto-light, the self-buff default).
-       */
-      autoActivateOnCast?: boolean;
-    }
-
-  // ── Single-select variant chooser (L12 choice-grant-bundle) ──────────────
-  | {
-      /**
-       * L12 — pick EXACTLY ONE of N named bundles; the selected bundle's grants
-       * apply. Unlike `while-active` (independent multi-toggle), this is a
-       * single-select variant chooser. The selection is play-time state
-       * (`session.grantBundleChoices[bundleKey] = optionId`) and re-selectable
-       * — Circle of the Land re-chooses its terrain each Long Rest.
-       *
-       * The selected option's grants merge into the aggregate like any grant
-       * (a terrain's Nature's-Ward `damage-resistance` lights up immediately).
-       * Spell grants inside an option carry `minLevel` and are level-gated by
-       * the injection consumer, not the evaluator. Two features can share a
-       * `bundleKey` (Circle Spells at L3 + Nature's Ward at L10) — one chooser,
-       * both contribute per-option grants. Nested choosers are ignored.
-       *
-       * Override-first: the chooser is always user-controllable; default is
-       * unselected (no option's grants apply until the player picks).
-       */
-      type: "choice-grant-bundle";
-      bundleKey: string;
-      label?: BiText;
-      /**
-       * When to offer the chooser UI:
-       * - `"creation"` — chosen ONCE at character creation (Elven Lineage, Gnome
-       *   Lineage). The activatable-bar / GrantBundleSelector in the sheet header
-       *   NEVER shows creation bundles — only the Lore page + creation wizard do.
-       * - `"rest"` (default) — re-selectable during play (Circle of the Land
-       *   terrain, Elemental Affinity damage type). The header shows these.
-       */
-      choiceFrequency?: "creation" | "rest";
-      options: ReadonlyArray<{
-        id: string;
-        label?: BiText;
-        grants: ReadonlyArray<Grant>;
-      }>;
-    }
-
-  // ── Granted action (ARCHITECTURE.md combat model) ─────────────────────────────────
-  | {
-      /**
-       * An action a feat/feature/invocation grants that isn't a weapon or a
-       * prepared spell — Shield as a Reaction, an at-will Eldritch Invocation,
-       * Eldritch Cannon, etc. The Combat page surfaces it as a pure data row,
-       * so adding such an action is a data edit (this grant), never combat-code.
-       * `slot` is the economy slot it uses; `cost` (optional) is its CostSpec;
-       * `trigger` describes a Reaction's condition.
-       *
-       * `saveAbility` (optional) is the ability a TARGET rolls against when the
-       * action forces a saving throw (the maneuver "Trip Attack" → STR, etc.).
-       * The concrete DC is character-derived, so the consumer computes it from
-       * the originating feature (e.g. `maneuverSaveDc`); this grant only carries
-       * the ability so the seam stays pure data, never combat-code.
-       */
-      type: "granted-action";
-      /**
-       * Stable catalogue segment for the action's localizable strings (R6+R3
-       * SLICE 7c). When set, the grant's `name`/`description`/`trigger` are keyed
-       * under `<sourceKey>.grants.<id>`; the codemod wrote that path from this id
-       * (or, for the few legacy id-less actions, `slug(name.en)` — which equals
-       * the id we now declare). Lets the engine derive the ref without reading any
-       * display string (golden rule 7). Omitted only where the grant carries no
-       * localizable name (none today).
-       */
-      id?: string;
-      name?: BiText;
-      slot: ActionType;
-      description?: BiText;
-      cost?: CostSpec;
-      trigger?: BiText;
-      saveAbility?: AbilityCode;
-    }
-
-  // ── Manifested weapon (a feature CREATES a usable weapon) ─────────────────
-  | {
-      /**
-       * A weapon a feature *manifests* — a real attack option with its own
-       * stat profile, NOT a physical item in `character.weapons` and NOT a
-       * generic `granted-action`. Soulknife's **Psychic Blades** (Simple Melee,
-       * 1d6 Psychic + ability mod, Finesse, Thrown 60/120, free Vex mastery,
-       * plus a Bonus-Action second blade at a smaller die). Each grant becomes
-       * one (or two — see `bonusAction`) attack rows on the Combat page whose
-       * to-hit/damage the consumer (`resolveManifestedWeaponAttacks` →
-       * `resolveActions`) computes from the character's scores, exactly like a
-       * carried weapon.
-       *
-       * `category` / `weaponType` mirror the SRD weapon fields so the attack-row
-       * builder treats the manifested weapon identically to a `SrdEquipmentData`
-       * weapon (proficiency, finesse stat-pick, ranged/thrown range strings).
-       *
-       * `damageDie` is the on-hit die (`"1d6"`); the consumer appends the
-       * resolved ability modifier. `damageType` is the fixed element.
-       *
-       * `properties` is the same loose string list a weapon row consumes
-       * (`["Finesse", "Thrown (Range 60/120)"]`) — it drives the finesse
-       * stat-pick and the range string.
-       *
-       * `mastery` (optional) names the Weapon Mastery property the manifested
-       * weapon offers. `masteryIsFree`, when true, means the feature grants its
-       * use *without* it counting against the character's Weapon Mastery picks
-       * (Psychic Blades: "you can use this property, and it doesn't count against
-       * the number of properties you can use") — so it always lights up, even on
-       * a class with no Weapon Mastery feature or with its mastery slots full.
-       *
-       * `proficient` defaults to `true` — a manifested weapon is always wielded
-       * with proficiency (it's a feature of the class). Set `false` only for the
-       * rare manifested weapon a feature does NOT grant proficiency with.
-       *
-       * `bonusAction`, when set, declares the optional second attack the feature
-       * allows on the same turn at a (usually smaller) `damageDie` — Psychic
-       * Blades' second blade at 1d4. The consumer emits a second, Bonus-Action
-       * attack row from it.
-       *
-       * Override-first: the consumer honours a per-manifested-weapon override in
-       * `session.manifestedWeaponOverrides[id]` (attack bonus / damage string),
-       * keyed by the row's stable id — so a player can pin custom numbers exactly
-       * like a carried weapon's `attackBonusOverride` / `damageOverride`.
-       */
-      type: "manifested-weapon";
-      /**
-       * Stable slug for the manifested weapon's attack-row id
-       * (`manifested-weapon-${id}`). Lets overrides + pin state key off a value
-       * that survives a rename of the bilingual `name`.
-       */
-      id: string;
-      name?: BiText;
-      category: WeaponCategory;
-      weaponType: WeaponType;
-      damageDie: string;
-      damageType: DamageType;
-      properties: ReadonlyArray<string>;
-      mastery?: WeaponMastery;
-      masteryIsFree?: boolean;
-      proficient?: boolean;
-      bonusAction?: {
-        name?: BiText;
-        slot: ActionType;
-        damageDie: string;
-      };
-    }
-
-  // ── Form attack (a FORM-swapped natural weapon — Wild Shape / Arcane Armor) ─
-  | {
-      /**
-       * A natural-weapon attack row a TRANSFORMATION form grants while it is
-       * active (Druid Wild Shape beast bite/claw, Stars Druid Starry Form Archer
-       * attack, Artificer Armorer's Thunder Pulse / Lightning Launcher). A
-       * form ALREADY swaps AC via a `while-active` `ac-formula` grant (Circle of
-       * the Moon AC = 13 + WIS — modeled, untouched); the GAP this fills is the
-       * ATTACK row. Declare-the-least: it is the attack counterpart of the
-       * AC-formula form grant, NOT a re-model of the form.
-       *
-       * MUST be declared INSIDE a `while-active` block — the evaluator collects
-       * it into `formAttacks` ONLY when its wrapping toggle is active (it stamps
-       * the row with the `activeKey`), so the row exists on the combat board
-       * EXACTLY while the form is lit and retracts when toggled off. No new
-       * session field: the active form is the existing `session.activeFeatures`
-       * toggle (override-first — a player tap lights/clears it).
-       *
-       * The consumer (`resolveFormAttacks`) computes to-hit / damage from the
-       * character's scores exactly like a carried / manifested weapon: attack
-       * stat = `attackAbility` when set (Armorer's INT), else best-of STR/DEX
-       * for Finesse / ranged DEX / else STR; to-hit = mod + PB (when proficient)
-       * + exhaustion penalty; damage = `damageDie` + the attack mod.
-       *
-       * Override-first: the consumer honours a per-row override in
-       * `session.manifestedWeaponOverrides[id]` (REUSING the same session weapon-
-       * swap store the Soulknife manifested weapon uses — the precedent), keyed
-       * by the row's stable id `form-attack-${id}`.
-       */
-      type: "form-attack";
-      /**
-       * Stable slug for the form attack's row id (`form-attack-${id}`). Lets
-       * overrides + pin state key off a value that survives a `name` rename.
-       */
-      id: string;
-      name?: BiText;
-      category: WeaponCategory;
-      weaponType: WeaponType;
-      damageDie: string;
-      /**
-       * S12b — the form-attack die keyed by the threshold level at which it begins
-       * to apply (Circle-of-Stars **Archer** attack row: `{ 3: "1d8", 10: "2d8" }`
-       * — Twinkling Constellations bumps it at Druid 10). `resolveFormAttacks`
-       * resolves the highest threshold ≤ the character's level via the shared
-       * {@link import("@/lib/utils").pickDiceByLevel}; `damageDie` is the floor
-       * below the first threshold. Omit for a flat-die form attack.
-       */
-      damageDieByLevel?: Readonly<Record<number, string>>;
-      damageType: DamageType;
-      properties: ReadonlyArray<string>;
-      /**
-       * Fixed attack/damage ability the form mandates (Armorer's Arcane Armor
-       * uses INT for its weapons). Omitted → derive from STR/DEX like a weapon.
-       */
-      attackAbility?: AbilityCode;
-      /** Whether the form attack is wielded with proficiency (default true). */
-      proficient?: boolean;
-      /**
-       * A once-per-turn extra-damage rider the form's weapon deals on a hit
-       * (Armorer Infiltrator's Lightning Launcher: "once on each of your turns
-       * when you hit … +1d6 Lightning"). Surfaces as the SAME self-side
-       * extra-damage chip a weapon `damage-rider` does — `resolveFormAttacks`
-       * folds it into `summary.extraDamage` with `oncePerTurn: true`, sourced to
-       * the form attack's own name (no modeled enemy; the player adds it on a hit,
-       * golden rule 21). Omit for a form weapon with no rider.
-       */
-      oncePerTurnExtra?: { dice: string; damageType: DamageType };
-      /**
-       * Whether the form attack carries a localizable on-hit REMINDER (Guardian
-       * Thunder Pulse's "target has Disadvantage on attacks vs others"; Dreadnaught
-       * Force Demolisher's push/pull). The text itself lives in the SRD catalogue
-       * under this grant's `<ref>.note` key (GR7 — no inline BiText); the evaluator
-       * carries the ref iff `hasGrantField(ref, "note")`, mirroring how a
-       * `granted-action` emits its catalogue `description`. The consumer routes it
-       * to `summary.effect`. Self-side reminder only — no enemy is modeled.
-       */
-    }
-
-  // ── Pact weapon (a CONJURED weapon entity — Pact of the Blade) ────────────
-  | {
-      /**
-       * A **conjured pact weapon** (Warlock's *Pact of the Blade* invocation).
-       * As a Bonus Action the Warlock conjures a Simple/Martial Melee weapon of
-       * their choice (or bonds with a magic weapon they touch). Distinct from a
-       * `manifested-weapon` (Soulknife Psychic Blades — a FIXED die/type/profile):
-       * the pact weapon's actual form is a PLAYER CHOICE, so the grant declares
-       * only the *rules of the bond*, not a fixed weapon:
-       *
-       *  - **Proficiency.** The bond grants proficiency with whatever weapon is
-       *    conjured — so the consumer always treats it as proficient (and the
-       *    evaluator also unions a `"Pact weapon"` token into `weaponProficiencies`
-       *    for the Equipment page).
-       *  - **Spellcasting ability for attack & damage.** "You can use your
-       *    Charisma modifier for the attack and damage rolls" — `attackAbility`
-       *    (CHA). The consumer uses it instead of STR/DEX; it also folds into
-       *    `weaponAttackAbilities` so a CARRIED weapon the Warlock bonds with
-       *    benefits identically (best-of, per RAW "you can use").
-       *  - **Damage-type choice.** "You can cause the weapon to deal Necrotic,
-       *    Psychic, or Radiant damage or its normal damage type" —
-       *    `damageTypeChoices` lists the selectable elemental types; the player's
-       *    pick (or the weapon's normal type) is resolved override-first from the
-       *    session `pactWeaponConfig`.
-       *  - **Spellcasting Focus.** `isFocus` marks that the bonded weapon counts
-       *    as a Spellcasting Focus (a marker the focus consumer reads).
-       *
-       * The conjured-weapon attack row is emitted by `resolvePactWeaponAttacks`
-       * (consumer). It defaults to a generic conjured blade (`defaultDamageDie` /
-       * `defaultDamageType`) and is fully override-first via `pactWeaponConfig`
-       * (player picks the weapon name, damage die, base type, and elemental type).
-       *
-       * `conjureSlot` is the action economy of conjuring (Bonus Action). Merge:
-       * deduped by `sourceId` (a character has at most one pact-weapon bond).
-       */
-      type: "pact-weapon";
-      /** Stable slug for the conjured attack-row id (`pact-weapon-${id}`). */
-      id: string;
-      name?: BiText;
-      /** Ability used for attack + damage rolls (CHA for Pact of the Blade). */
-      attackAbility: AbilityCode;
-      /** Elemental damage types the player may switch the weapon to deal. */
-      damageTypeChoices: ReadonlyArray<DamageType>;
-      /** Whether the bonded weapon counts as a Spellcasting Focus. */
-      isFocus: boolean;
-      /** Action economy of conjuring the weapon (Bonus Action). */
-      conjureSlot: ActionType;
-      /** Default conjured-blade die when the player hasn't configured one. */
-      defaultDamageDie: string;
-      /** Default conjured-blade damage type (its "normal" type). */
-      defaultDamageType: DamageType;
-    }
-
-  // ── Pact-weapon rider (Pact-of-the-Blade invocation riders) ──────────────
-  | {
-      /**
-       * An extra-damage rider that fires ONLY on a hit with a Warlock's
-       * conjured pact weapon (the `pact-weapon` primitive) — distinct from the
-       * generic `damage-rider`, which rides EVERY weapon attack. Pact-of-the-
-       * Blade invocations layer these onto the pact-weapon attack row alone:
-       *
-       *  - **Eldritch Smite** (L5): once per turn, spend a Pact Magic spell
-       *    slot for an extra `1d8` Force, plus another `1d8` per level of the
-       *    spell slot, and the target falls Prone if Huge or smaller.
-       *  - **Lifedrinker** (L9): once per turn, an extra `1d6` Necrotic /
-       *    Psychic / Radiant (player's choice), and you may expend a Hit Die to
-       *    heal (roll + CON mod, minimum 1).
-       *
-       * Fields:
-       *  - `dice` — the BASE extra-damage die (Eldritch Smite `1d8` per slot
-       *    level; Lifedrinker `1d6` flat).
-       *  - `damageType` — a fixed `DamageType`, or `damageTypeChoices` (the
-       *    set the player picks from, e.g. Lifedrinker's three types). Exactly
-       *    one of the two is set.
-       *  - `costsPactSlot` — `true` for Eldritch Smite (the rider is paid for
-       *    by expending a Pact Magic slot).
-       *  - `scalesPerSlotLevel` — `true` when the base die is dealt PLUS one
-       *    die per slot level (Eldritch Smite: an extra `1d8` "plus another 1d8
-       *    per level of the spell slot" → `(slotLevel + 1)d8`). The consumer
-       *    resolves the warlock's current pact-slot level (Pact Magic slots are
-       *    all one level) and emits the scaled dice.
-       *  - `prone` — `"huge-or-smaller"` marks the secondary Prone effect; the
-       *    consumer surfaces it as a rider note (no creature-size engine).
-       *  - `healFromHitDie` — `true` when the rider lets you expend a Hit Die
-       *    to heal (Lifedrinker). Override-first: the engine NEVER auto-spends
-       *    a slot / Hit Die — the rider is a player-chosen on-hit option.
-       *
-       * Aggregated into `pactWeaponRiders`; the consumer
-       * (`resolvePactWeaponAttacks`) attaches it to the pact-weapon row's
-       * `extraDamage` after resolving slot-level scaling.
-       */
-      type: "pact-weapon-rider";
-      /** Stable id for dedupe/attribution (the invocation slug). */
-      id: string;
-      name?: BiText;
-      /** Extra-damage die — Eldritch Smite's base AND per-slot-level die (`1d8`), Lifedrinker `1d6`. */
-      dice: string;
-      /** Fixed damage type (omit when `damageTypeChoices` is set). */
-      damageType?: DamageType;
-      /** Player-selectable damage types (omit when `damageType` is fixed). */
-      damageTypeChoices?: ReadonlyArray<DamageType>;
-      /** Paid for by expending a Pact Magic spell slot (Eldritch Smite). */
-      costsPactSlot?: boolean;
-      /** Base die PLUS one die per slot level (Eldritch Smite `(slotLevel + 1)d8`). */
-      scalesPerSlotLevel?: boolean;
-      /** Secondary Prone effect on the target (Eldritch Smite, Huge or smaller). */
-      prone?: "huge-or-smaller";
-      /** Lets you expend a Hit Die to heal on the hit (Lifedrinker). */
-      healFromHitDie?: boolean;
-    }
-
-  // ── Familiar / companion enhancement (Investment of the Chain Master) ─────
-  | {
-      /**
-       * A bundle of buffs a feature confers on a **summoned familiar** — the
-       * creature conjured by the Find Familiar spell, NOT a feature-declared
-       * {@link CompanionStatBlock} (Steel Defender / Eldritch Cannon / Beast
-       * Master beast). The familiar's own stat block lives on the spell (the
-       * player's chosen Beast/special form), so the engine can't resolve it as a
-       * `companion`; instead this grant declares the DELTAS the feature layers on
-       * top of whatever form the player summoned, and the consumer
-       * (`resolveFamiliarEnhancements`) folds in the only character-derived value
-       * (the owner's spell save DC). Warlock **Investment of the Chain Master**
-       * (Pact of the Chain, L5+) is the sole 2024 case; the primitive is named
-       * generically so future "your familiar gains …" features reuse it.
-       *
-       * Every field is optional so a feature can confer any subset:
-       *  - `extraSpeedFt` + `extraSpeedModes` — a non-walking Speed of
-       *    `extraSpeedFt` feet the player picks ONE mode of from `extraSpeedModes`
-       *    ("Aerial or Aquatic": Fly OR Swim 40 ft → `40` + `["fly","swim"]`).
-       *  - `bonusActionAttack` — `true` when the owner can, as a Bonus Action,
-       *    command the familiar to take the Attack action ("Quick Attack").
-       *  - `damageTypeConversion` — element(s) the familiar's Bludgeoning /
-       *    Piercing / Slashing damage may be switched to ("Necrotic or Radiant
-       *    Damage" → `["necrotic","radiant"]`). The player picks per hit.
-       *  - `usesOwnerSaveDc` — `true` when a saving throw the familiar forces uses
-       *    the OWNER's spell save DC ("Your Save DC"). The evaluator can't resolve
-       *    the DC (no scores); the consumer stamps it from the owner at render.
-       *  - `reactionResistance` — `true` when the owner can take a Reaction to
-       *    grant the familiar Resistance to damage it takes ("Resistance").
-       *
-       * Override-first: the familiar is a play-time entity the engine never
-       * auto-commands; this only surfaces the available options (the player
-       * applies the Bonus-Action attack / damage-type swap / Reaction manually).
-       * Merge: collected as a list (one entry per granting source), deduped by
-       * the source id in the evaluator.
-       */
-      type: "familiar-enhancement";
-      /** Non-walking Speed (feet) the familiar gains, when the feature grants one. */
-      extraSpeedFt?: number;
-      /** Movement modes the player picks ONE of for `extraSpeedFt` (Fly / Swim). */
-      extraSpeedModes?: ReadonlyArray<"fly" | "swim" | "climb">;
-      /** Bonus Action to command the familiar to take the Attack action. */
-      bonusActionAttack?: boolean;
-      /** Elements the familiar's B/P/S damage can be switched to (player's choice). */
-      damageTypeConversion?: ReadonlyArray<DamageType>;
-      /** Saving throws the familiar forces use the owner's spell save DC. */
-      usesOwnerSaveDc?: boolean;
-      /** Owner can Reaction-grant the familiar Resistance to damage it takes. */
-      reactionResistance?: boolean;
-    }
-
-  // ── Familiar special forms (Pact of the Chain) ────────────────────────────
-  | {
-      /**
-       * Widens the Find Familiar eligible-form pool with SPECIAL forms — the
-       * creatures a feature lets the caster summon BEYOND the base CR-0 Beasts.
-       * `monsterIds` are {@link import("@/data/types").MonsterStatBlock} ids. The
-       * sole 2024 case is Warlock **Pact of the Chain** ("Imp, Pseudodragon,
-       * Quasit, Skeleton, Sphinx of Wonder, Sprite, or Venomous Snake", SRD
-       * 5.2.1). Evaluator = set-union across sources → `familiarFormIds`; consumer
-       * = `resolveFamiliarForms` (`lib/familiar.ts`), the LAZY corpus join. Only
-       * ids travel through the aggregate — the eager engine never imports the
-       * corpus (the sacred data↔UI seam, golden rules 5/6).
-       */
-      type: "familiar-forms";
-      monsterIds: ReadonlyArray<string>;
-    }
-
-  // ── Cunning Strike option (Rogue catalogue — not the action economy) ──────
-  | {
-      /**
-       * A Rogue **Cunning Strike** option (rogue:main L5 + Improved/Devious
-       * Strikes, and subclass adders like Thief Supreme Sneak L9, Scion Strike
-       * Fear L9). These are NOT action-economy actions (`granted-action`) — they
-       * ride on a Sneak Attack hit and are paid for by **forgoing Sneak Attack
-       * dice**, not by an action/bonus/reaction or a tracker. The whole catalogue
-       * an effective character knows aggregates into `cunningStrikeOptions`, so
-       * adding one (whether base, Devious Strikes, or a subclass grant) is a pure
-       * data edit — never combat-code or a regex over the feature prose.
-       *
-       * `optionId` is a stable, catalogue-unique key (`poison`, `trip`,
-       * `stealth-attack`, …) used to dedupe across sources. `cost` is the number
-       * of Sneak Attack dice forgone (the "Cost: Nd6" in the wiki). `save`, when
-       * set, is the ability the TARGET rolls against; the concrete DC is
-       * character-derived (8 + DEX mod + PB), so the consumer
-       * (`resolveCunningStrikeOptions`) computes it — this grant only carries the
-       * ability so the data↔logic seam stays pure data. `condition`, when set, is
-       * the condition the option can impose (for the condition-chip renderer).
-       */
-      type: "cunning-strike-option";
-      optionId: string;
-      name?: BiText;
-      cost: number;
-      description?: BiText;
-      save?: AbilityCode;
-      condition?: ConditionId;
-    }
-
-  // ── Temporary HP grant (override-first — NEVER auto-applied) ──────────────
-  | {
-      /**
-       * A feature/feat that grants the character Temporary Hit Points on a
-       * defined event (Warlock Fiend "Dark One's Blessing" → CHA + Warlock
-       * level on dropping an enemy; Orc "Adrenaline Rush" → PB on a Dash;
-       * Armorer "Defensive Field" → Artificer level; World Tree "Vitality
-       * Surge" → Barbarian level on Rage). `formula` is resolved by the
-       * tracker-formula language (`resolveTempHp`) into a concrete number —
-       * `"CHA+level"`, `"PB"`, `"level"`, `"2*WIS"`, etc. — so the UI can
-       * surface a "Gain N temporary HP" entry the player applies manually.
-       *
-       * Override-first: the engine NEVER auto-applies temp HP (D&D temp HP do
-       * not stack — the player chooses the higher pool). NO dice in the
-       * formula — die-based grants (1d8, 2× Martial Arts die) are out of
-       * scope here and stay as descriptive features.
-       *
-       * `trigger` (optional) is the bilingual event that grants the temp HP
-       * ("when you reduce an enemy to 0 HP"). `slot`, when set, marks the gain
-       * as a deliberate action the player spends (Orc Dash = bonus); omit for
-       * an automatic/triggered gain (Dark One's Blessing).
-       */
-      type: "temp-hp";
-      formula: string;
-      trigger?: BiText;
-      slot?: ActionType;
-    }
-  | {
-      /**
-       * Adds an ALTERNATE recovery cost to ANOTHER feature's tracker: when the
-       * target tracker is exhausted, a use can still be activated by spending
-       * `amount` units from the `fromTracker` pool, instead of waiting for the
-       * normal rest recovery. Sorcerer's Sorcery Incarnate (L7) declares this on
-       * the L1 Innate Sorcery tracker: "If you have no uses of Innate Sorcery
-       * left, you can use it if you spend 2 Sorcery Points when you take the
-       * Bonus Action to activate it" → `{ targetTracker: "sorcerer-innate-sorcery",
-       * amount: 2, fromTracker: "sorcerer-font-of-magic" }`.
-       *
-       * Distinct from a `TrackerSpec.altRecoveryCost` declared inline on a
-       * tracker (the 5 other Sorcerer features whose clause lives in the same
-       * feature as their tracker). This grant exists for the CROSS-feature case
-       * where the clause and the tracker belong to different features.
-       *
-       * Merge: collected as a list; the smart-tracker consumer overlays each
-       * entry onto its `targetTracker`. Override-first — purely informational
-       * (the engine never auto-deducts the pool).
-       */
-      type: "tracker-alt-recovery";
-      targetTracker: string;
-      amount: number;
-      fromTracker: string;
-    }
-
-  // ── PRIM batch (2026-06-10) — the six model-gap primitives ───────────────
-  | {
-      /**
-       * **PRIM-aura/emanation.** A persistent radius effect a feature projects
-       * around the character (Druid Wrath of the Sea / Starry Form constellations
-       * / Nature's Sanctuary, Paladin Smite of Protection half-cover, Rod of
-       * Alertness Protective Aura). The battlefield is not modelled (allies/enemies
-       * are not on this single-character sheet, and radius geometry is encounter
-       * state), so this grant is **informational by design**: the consumer
-       * (`auraVMs` in `lib/views/tracker-view.ts`) surfaces a readable rider note —
-       * radius, who it affects, and the structured effect — alongside the feature.
-       *
-       * `radius` is the emanation size in feet (or `"variable"` when a level table
-       * grows it — the `radiusByLevel` map then resolves it). `affects` names whose
-       * the effect touches. `effect` is the structured payload (its `kind`
-       * discriminates): a recurring save-or-damage emanation (Wrath of the Sea), an
-       * at-will ranged attack from the aura (Starry Archer), a heal trigger (Starry
-       * Chalice), a flat AC bonus to those inside (Rod of Alertness), temp HP to
-       * allies (Boon of the Bright Sun), or a half-cover grant (Smite of
-       * Protection). `description` (optional) is a bilingual override blurb; when
-       * omitted the presenter composes the note from the structured fields.
-       *
-       * Override-first: the engine rolls no dice and tracks no geometry — it shows
-       * the formula/rider; the player adjudicates the battlefield.
-       */
-      type: "aura";
-      auraId: string;
-      radius: number | "variable";
-      radiusByLevel?: Readonly<Record<number, number>>;
-      affects: AuraAffects;
-      effect:
-        | {
-            kind: "save-damage";
-            /** Dice formula, e.g. `"WISd6"` (a number of d6s = WIS mod, min 1). */
-            dice: string;
-            damageType: DamageType;
-            saveAbility: AbilityCode;
-            /** Optional forced movement on a failed save (push N ft). */
-            pushFt?: number;
-            maxTargetSize?: CreatureSize;
-          }
-        | {
-            kind: "ranged-attack";
-            dice: string;
-            damageType: DamageType;
-            rangeFt: number;
-            /**
-             * S12b — the aura die keyed by the threshold level at which it begins
-             * to apply (Circle-of-Stars **Archer**: `{ 3: "1d8", 10: "2d8" }` —
-             * Twinkling Constellations bumps the 1d8 to 2d8 at Druid 10). The aura
-             * presenter resolves the highest threshold ≤ the character's level via
-             * the shared {@link import("@/lib/utils").pickDiceByLevel} (the SAME
-             * "highest threshold ≤ level" rule `ActionAttack.diceByLevel` uses);
-             * `dice` is the floor below the first threshold. Omit for a flat die.
-             */
-            diceByLevel?: Readonly<Record<number, string>>;
-          }
-        | {
-            kind: "heal";
-            dice: string;
-            /** S12b — see `ranged-attack` `diceByLevel` (Circle-of-Stars
-             *  **Chalice**: `{ 3: "1d8", 10: "2d8" }`). Omit for a flat die. */
-            diceByLevel?: Readonly<Record<number, string>>;
-          }
-        | { kind: "ac-bonus"; amount: number }
-        | { kind: "temp-hp"; formula: string }
-        | { kind: "half-cover" }
-        | { kind: "roll-floor"; floor: number; appliesTo: "ability-and-concentration" };
-      description?: BiText;
-    }
-  | {
-      /**
-       * **PRIM-spell-die-augment.** Upgrades the damage DIE of ONE specific spell
-       * (Ranger Foe Slayer: "The damage die of your Hunter's Mark is a d10 rather
-       * than a d6"). Matched by SRD spell id; the consumer
-       * (`resolveSpellDieAugment` in `lib/compute.ts`) rewrites the spell's
-       * `damageDice` die size at render so the marked-target / cast verdict shows
-       * the upgraded die. `fromDie`/`toDie` are die sizes (6, 10) — the engine
-       * rolls no dice, it only re-sizes the printed formula. Largest `toDie` wins
-       * when two sources target the same spell. Override-first.
-       */
-      type: "spell-die-augment";
-      spellId: string;
-      fromDie: number;
-      toDie: number;
-    }
-  | {
-      /**
-       * **PRIM-copy-to-2nd-target.** A rider that lets an effect (another feature's
-       * free cast, a marked-target benefit, a teleport) extend to a SECOND
-       * creature (Greater Mark of Detection Shared Detection, Greater Mark of
-       * Passage Inspired Passage, Greater Mark of Scribing Inspired Scribing,
-       * Warlock Archfey Bewitching Magic's free Misty Step). Targeting a second
-       * creature is a per-cast choice the engine can't auto-apply, so this is an
-       * **informational rider**: `appliesToFeature` (optional) names the feature
-       * whose effect is duplicated, `effect` is the bilingual blurb of what the
-       * second target receives. The consumer (`copyTargetVMs`) surfaces it as a
-       * readable note on the owning feature. Override-first.
-       */
-      type: "copy-to-2nd-target";
-      copyId: string;
-      appliesToFeature?: string;
-      /**
-       * Bilingual blurb of what the second target receives. OPTIONAL inline:
-       * for a real SRD source (these greater-mark feats) the text is stripped to
-       * the i18n catalogue (`<featKey>.grants.<copyId>.effect`) and resolved via
-       * `grantField`; the inline BiText survives only on synthetic/test grants.
-       */
-      effect?: BiText;
-    }
-  | {
-      /**
-       * **PRIM-resource-conversion.** Spend resource A to PRODUCE resource B — the
-       * converter the alt-recovery seam can't express (alt-recovery only *restores*
-       * a use of an existing tracker). Variants by `produces`:
-       *  - `"spell-slot"` — Druid Archdruid Nature Magician (N Wild Shape uses →
-       *    one slot, each use = 2 spell levels), Sorcerer Font of Magic Creating
-       *    Spell Slots (Sorcery Points → a slot per the cost table). `costTable`
-       *    maps produced slot level → units of `fromTracker` spent (+ `minLevel`
-       *    gate); `perUnitSlotLevels` (Nature Magician) instead means each spent
-       *    unit contributes that many slot levels.
-       *  - `"pact-slot"` — Warlock Magical Cunning (L2) / Eldritch Master (L20):
-       *    spend the feature's ONE Long-Rest charge (`fromTracker`) to un-expend
-       *    Warlock Pact-Magic slots — ⌈max/2⌉ for Magical Cunning, ALL when
-       *    Eldritch Master upgrades it. Pact Magic is a single-level pool, so the
-       *    live amount + pact level are resolved at use-time from the doc.
-       *  - `"sorcery-points"` — Font of Magic Converting Spell Slots (a spell slot
-       *    → SP equal to the slot level).
-       *
-       * The cost-engine (`planResourceConversion`) plans the concrete
-       * spend/produce ops (immediate-commit-with-undo); the consumer surfaces the
-       * conversion as an action affordance. Override-first — never auto-converted.
-       */
-      type: "resource-conversion";
-      conversionId: string;
-      produces: "spell-slot" | "pact-slot" | "sorcery-points";
-      fromTracker?: string;
-      toTracker?: string;
-      /** Nature Magician: each spent unit = this many spell levels. */
-      perUnitSlotLevels?: number;
-      /** Font of Magic: produced-slot-level → { cost, minLevel }. */
-      costTable?: ReadonlyArray<{ slotLevel: number; cost: number; minLevel: number }>;
-      /** Max produced slot level (Font of Magic = 5). */
-      maxSlotLevel?: number;
-    }
-  | {
-      /**
-       * **PRIM-item-bound-bonus.** A +N magic bonus that rides ONLY the owning
-       * weapon's OWN attack & damage rolls — the ~30 "+N to attack and damage
-       * with this magic weapon" items (every +1/+2/+3 weapon, the staves'
-       * quarterstaff bonus, Wraps of Unarmed Power). This is the ONE item-bound
-       * case with no existing grant kind: a flat `ac-bonus` always lands on AC, a
-       * `save-bonus` on every save, and `spell-attack-bonus`/`spell-save-dc-bonus`
-       * on all spells — but a +N weapon bonus must touch ONLY that one weapon's
-       * row, never every attack. (Cloak/Ring of Protection's AC + saves, and Rod
-       * of the Pact Keeper's spell attack & DC, are already modeled by those
-       * existing kinds — single source of truth, no parallel target here.)
-       *
-       * The bonus does NOT aggregate (aggregating would smear it across all
-       * attacks); the weapon-layer consumer (`resolveItemBoundWeaponBonus`) reads
-       * the OWNING item's grants directly and adds `amount` to that weapon row's
-       * to-hit + damage, replacing the manual `attackBonusOverride` seam. Only
-       * present while the item is an active grant source (equipped+attuned).
-       * Override-first.
-       */
-      type: "item-bound-bonus";
-      target: "weapon-attack-and-damage";
-      amount: number;
-    };
+/** Resolve a timed state's effective lifetime from the slot that created it. */
+export function whileActiveDurationAtCastLevel(
+  duration: WhileActiveDuration | undefined,
+  castLevel: number | undefined
+): WhileActiveDuration | undefined {
+  if (duration?.kind !== "timed" || castLevel === undefined) return duration;
+  const tier = duration.byCastLevel?.reduce<
+    NonNullable<typeof duration.byCastLevel>[number] | undefined
+  >(
+    (best, candidate) =>
+      candidate.minLevel <= castLevel &&
+      (best === undefined || candidate.minLevel > best.minLevel)
+        ? candidate
+        : best,
+    undefined
+  );
+  return tier
+    ? {
+        ...duration,
+        minutes: tier.minutes,
+        maxRounds: tier.maxRounds,
+      }
+    : duration;
+}
 
 // ─── Source rows that may carry a `grants` field ────────────────────────────
 
@@ -2727,6 +183,23 @@ export interface GrantSource {
    * invocation/maneuver/background/magic-item sources set it.
    */
   ref?: { kind: SrdKind; key: string };
+  /** Physical magic-item attribution. `id` is the per-instance runtime source;
+   * `ref.key` remains the catalogue id used for localization. */
+  item?: { itemId: string; instanceId: string };
+  /** Immutable facts captured when a remote standing effect was created. Omitted
+   * for ordinary catalogue/build sources. */
+  runtime?: {
+    castLevel?: number;
+    bindings?: CombatEffectBindings;
+  };
+}
+
+/** Bind an authored toggle key to one physical item copy without decoding ids. */
+export function resolveGrantActiveKey(
+  source: Pick<GrantSource, "id" | "item">,
+  authoredKey: string
+): string {
+  return source.item ? `${source.id}:${authoredKey}` : authoredKey;
 }
 
 // ─── Aggregated effects after evaluation ────────────────────────────────────
@@ -2835,25 +308,53 @@ export type PendingChoice =
       amount: number;
     };
 
-/** A free-cast grant resolved against its source for tracker creation. */
-export interface FreeCastEntry {
-  /** The per-rest tracker id the cast debits. For a feat/feature/species free
-   *  cast this is PER-SPELL — `${featId}:${spellId}` — so two free-casts from one
-   *  source (Fey-Touched, a heritage feat's granted spells) are tracked
-   *  independently (RAW "cast EACH once"). For a MAGIC ITEM it is the bare item id
-   *  (the item's shared charge pool). Set in the `free-cast-spell` evaluator. */
+/**
+ * The exact payment owner a bounded slotless capability debits — a session
+ * TRACKER (feature/feat/species free casts, legacy item pools) or one physical
+ * item copy's typed RESOURCE (the per-instance identity the evaluator composes
+ * from the equipped source and the grant's declared `resourceCost`).
+ */
+export type ResourcePayment =
+  | ({ kind: "item-resource" } & ItemResourceIdentity)
+  | { kind: "tracker"; trackerId: string };
+
+/**
+ * One level-gated free-cast capacity step (`capacityByLevel`): at character
+ * level ≥ `minLevel` the step's formula/fixed count replaces the base
+ * `chargesFormula`/`chargesPerRest` pair. Highest eligible `minLevel` wins.
+ */
+export type FreeCastCapacityStep = NonNullable<
+  GrantOf<"free-cast-spell">["capacityByLevel"]
+>[number];
+
+interface FreeCastEntryBase {
+  /** Attribution/tracker key: the (possibly per-spell) capability id. */
   sourceId: string;
   spellId: string;
-  chargesPerRest: number;
-  /** Scaled charge formula (`"PB"`, an ability code like `"WIS"`/`"INT"`, etc.),
-   *  resolved by the consumer via `resolveChargesFormula`; overrides
-   *  `chargesPerRest` when set. See the `free-cast-spell` grant's `chargesFormula`. */
-  chargesFormula?: string;
-  rest: "short" | "long";
+  /** Allowed cast levels and their per-cast charge cost; omitted = base level. */
+  castLevels?: ReadonlyArray<{ level: number; cost: number }>;
   casterAbility?: AbilityCode;
-  /** Character-level gate — the free cast is only offered at/above this level. */
   minLevel?: number;
+  castOverrides?: CastSourceOverrides;
 }
+
+/**
+ * A free-cast grant resolved against its source, discriminated on the exact
+ * `payment` owner: the tracker arm carries the resolved per-rest cap fields
+ * the tracker consumers read; the item arm's capacity/recovery live on the
+ * physical resource itself (`resolveItemResourceAvailability`).
+ */
+export type FreeCastEntry =
+  | (FreeCastEntryBase & {
+      payment: Extract<ResourcePayment, { kind: "item-resource" }>;
+    })
+  | (FreeCastEntryBase & {
+      payment: Extract<ResourcePayment, { kind: "tracker" }>;
+      chargesPerRest: number;
+      rest: "short" | "long";
+      chargesFormula?: string;
+      capacityByLevel?: ReadonlyArray<FreeCastCapacityStep>;
+    });
 
 /**
  * D4 — a free-cast-FROM-LIST grant resolved against its source: a GUIDED pool the
@@ -2861,28 +362,49 @@ export interface FreeCastEntry {
  * spell ≤ 5th, 1/Long Rest, no slot). Unlike {@link FreeCastEntry} (one fixed
  * spell), the spell is the player's choice within the pool — a class list
  * (`spellList` ≤ `maxSpellLevel`) OR a fixed set (`spellIds`, War God's
- * Blessing) — and `trackerId` is the per-rest tracker the cast debits (the
- * owning feature's, e.g. `cleric-channel-divinity`).
+ * Blessing). `payment` is the exact owner the cast debits; the tracker arm's
+ * cap fields stay optional (omitted = inferred from the debited tracker).
  */
-export interface FreeCastFromListEntry {
+interface FreeCastFromListEntryBase {
   sourceId: string;
   spellList?: string;
   maxSpellLevel?: number;
   /** A fixed pool of stable spell ids (mutually exclusive with `spellList`). */
   spellIds?: readonly string[];
-  /**
-   * S9 — per-spell charge cost (spellId → charges) for a VARIABLE-cost item pool
-   * (Wand of Binding / Wand of Fear). A spell absent from the map costs 1. The
-   * consumer expands this into `FreeCastFromListPool.costBySpell` (default 1 for
-   * every eligible spell). Absent for the feature pools (uniform 1-use debit).
-   */
+  /** Per-spell charge costs (spellId → charges); absent spells cost 1. */
   spellCosts?: Readonly<Record<string, number>>;
-  /** Explicit per-rest cap; when undefined the consumer infers it from the tracker total. */
-  chargesPerRest?: number;
-  rest?: "short" | "long";
-  /** Tracker to debit per use (the source feature's own tracker). */
-  trackerId: string;
   casterAbility?: AbilityCode;
+  castOverrides?: CastSourceOverrides;
+  /** Per-rest cap; omitted = the debited payment owner's resolved total. */
+  chargesPerRest?: number;
+  /** Rest cadence the cap recovers on; omitted = the debited tracker's. */
+  rest?: "short" | "long";
+}
+
+export type FreeCastFromListEntry =
+  | (FreeCastFromListEntryBase & {
+      payment: Extract<ResourcePayment, { kind: "item-resource" }>;
+    })
+  | (FreeCastFromListEntryBase & {
+      payment: Extract<ResourcePayment, { kind: "tracker" }>;
+    });
+
+/** Typed facts a cast source changes without forking the underlying spell. */
+export interface CastSourceOverrides {
+  saveDC?: number;
+  attackBonus?: number;
+  concentration?: boolean;
+  maxRounds?: number;
+  /** Legal creature types for this physical casting source. The resolver gates
+   * selectable targets from this typed set; it never parses the spell prose. */
+  targetCreatureTypes?: ReadonlyArray<CreatureType>;
+  /** A source-only state established after this cast. `minLevel` is resolved
+   * before the option reaches the cast UI, so an ineligible source cannot arm it. */
+  activeEffect?: {
+    activeKey: string;
+    minLevel?: number;
+    duration: Extract<WhileActiveDuration, { kind: "turn-boundary" }>;
+  };
 }
 
 /**
@@ -2932,10 +454,9 @@ export function maximizeDiceFormula(formula: string): number {
 /**
  * An aggregated `scoped-extra-spell-slot` grant resolved against its source.
  * A bonus, upcast-capable spell slot whose level scales with character level,
- * restricted to a scoped pool of prepared spells, recovered on the declared
- * rest cadence. `sourceId` is the granting FEAT (a heritage feat) — both
- * the cast-option consumer (`scopedSlotSourcesForSpell`) and the smart-tracker
- * (which creates the 1-use expend/regain tracker) attribute the slot to it.
+ * restricted to a scoped pool of prepared spells. The smart-tracker creates a
+ * 1-use expend/regain counter on the source feature with the `recovery`
+ * cadence; the cast-option consumer resolves the live level + eligible pool.
  */
 export interface ScopedExtraSlotEntry {
   sourceId: string;
@@ -3173,6 +694,8 @@ export interface AcFormula {
  */
 export interface ActivatableGroup {
   key: string;
+  /** Catalogue-authored key retained when `key` is bound to an item instance. */
+  authoredKey?: string;
   sourceId: string;
   label: LocText;
   active: boolean;
@@ -3336,19 +859,15 @@ function optionGrantRef(parent: GrantRef, optionId: string): GrantRef {
 /** The id/name args `srdGrantSegment` needs, read off any Grant shape. */
 function grantSegmentArgs(g: Grant): { id?: string; optionId?: string; nameEn?: string } {
   // PRIM grants carry their stable id under a kind-specific field (`auraId`,
-  // `copyId`, `conversionId`); treat it as the catalogue `id` so localizable
+  // `copyId`); treat it as the catalogue `id` so localizable
   // strings key on a STABLE id (golden rule 7), never the array index.
   const primId =
-    g.type === "aura"
-      ? g.auraId
-      : g.type === "copy-to-2nd-target"
-        ? g.copyId
-        : g.type === "resource-conversion"
-          ? g.conversionId
-          : undefined;
+    g.type === "aura" ? g.auraId : g.type === "copy-to-2nd-target" ? g.copyId : undefined;
   return {
     ...("id" in g && g.id ? { id: g.id } : primId ? { id: primId } : {}),
-    ...("optionId" in g ? { optionId: g.optionId } : {}),
+    ...("optionId" in g && typeof g.optionId === "string"
+      ? { optionId: g.optionId }
+      : {}),
     ...("name" in g && g.name ? { nameEn: g.name.en } : {}),
   };
 }
@@ -3363,7 +882,7 @@ export interface GrantedAction {
   name: LocText;
   slot: ActionType;
   description?: LocText;
-  cost?: CostSpec;
+  cost?: GrantOf<"granted-action">["cost"];
   trigger?: LocText;
   /** Ability a TARGET saves against (when the action forces a save). */
   saveAbility?: AbilityCode;
@@ -3491,6 +1010,42 @@ export interface PactWeaponRider {
 }
 
 /**
+ * A Rogue Cunning Strike option in the character's known catalogue (base L5
+ * Poison/Trip/Withdraw, Devious Strikes Daze/Knock Out/Obscure, plus subclass
+ * adders). `cost` is the number of Sneak Attack dice forgone; `save` (when set)
+ * is the ability the TARGET rolls against — the consumer resolves the DC.
+ */
+export interface CunningStrikeOption {
+  sourceId: string;
+  optionId: string;
+  name: LocText;
+  cost: number;
+  description: LocText;
+  save?: AbilityCode;
+  condition?: ConditionId;
+}
+
+/**
+ * An aggregated `tracker-alt-recovery` grant: an alternate cost to restore a
+ * use of `targetTracker` by spending `amount` units from `fromTracker`.
+ */
+export interface TrackerAltRecoveryEntry {
+  targetTracker: string;
+  amount: number;
+  fromTracker: string;
+}
+
+/**
+ * A resolved resource-conversion (PRIM-resource-conversion) — the authored
+ * converter plus its source attribution. The cost-engine
+ * (`planResourceConversion`) plans the concrete spend/produce ops.
+ */
+export type ResourceConversionEntry = { sourceId: string } & Omit<
+  GrantOf<"resource-conversion">,
+  "type"
+>;
+
+/**
  * A familiar-enhancement bundle (`familiar-enhancement`) resolved against its
  * source — the buffs a feature layers on a summoned familiar (Warlock
  * Investment of the Chain Master). Carries the declared deltas verbatim; the
@@ -3506,23 +1061,6 @@ export interface FamiliarEnhancement {
   damageTypeConversion?: ReadonlyArray<DamageType>;
   usesOwnerSaveDc?: boolean;
   reactionResistance?: boolean;
-}
-
-/**
- * A Rogue Cunning Strike option in the character's known catalogue (base L5
- * Poison/Trip/Withdraw, Devious Strikes Daze/Knock Out/Obscure, plus subclass
- * adders like Thief Supreme Sneak "Stealth Attack" and Scion "Terrify").
- * `cost` is the number of Sneak Attack dice forgone; `save` (when set) is the
- * ability the TARGET rolls against — the consumer resolves the concrete DC.
- */
-export interface CunningStrikeOption {
-  sourceId: string;
-  optionId: string;
-  name: LocText;
-  cost: number;
-  description: LocText;
-  save?: AbilityCode;
-  condition?: ConditionId;
 }
 
 /** A conditional advantage/disadvantage clause. */
@@ -3555,6 +1093,8 @@ export interface AdvantageClause {
    * sentence instead.
    */
   scope?: AttackClauseScope;
+  /** Target-bound one-shot policy. Passive clauses omit it. */
+  consume?: "next" | "each";
 }
 
 /**
@@ -3575,6 +1115,16 @@ export interface RollFloorClause {
    * `weaponDamageBonuses.whileActiveKey` does. Absent = an unconditional floor.
    */
   whileActiveKey?: string;
+}
+
+/** A resolved physical die adjustment. Dice stay table-entered; the stable
+ * source id and consume policy make target-bound one-shot effects reversible. */
+export interface RollDieAdjustmentClause {
+  sourceId: string;
+  rollType: "check" | "save" | "attack";
+  operation: "add" | "subtract";
+  dice: string;
+  consume: "next" | "each";
 }
 
 /**
@@ -3656,19 +1206,11 @@ export interface CopyToTargetClause {
   effect: LocText;
 }
 
-/**
- * A resolved resource-conversion (PRIM-resource-conversion). The cost-engine
- * (`planResourceConversion`) plans the concrete spend/produce ops.
- */
-export interface ResourceConversionEntry {
+/** A condition immunity that applies only when one exact modeled source tries
+ * to apply the condition. Stable source ids keep this generic and data-driven. */
+export interface SourceConditionImmunity {
+  condition: ConditionId;
   sourceId: string;
-  conversionId: string;
-  produces: "spell-slot" | "pact-slot" | "sorcery-points";
-  fromTracker?: string;
-  toTracker?: string;
-  perUnitSlotLevels?: number;
-  costTable?: ReadonlyArray<{ slotLevel: number; cost: number; minLevel: number }>;
-  maxSlotLevel?: number;
 }
 
 /** The normalised view a renderer/consumer reads. */
@@ -3685,13 +1227,24 @@ export interface AggregatedGrants {
    * illusions / shapechangers / the Ethereal Plane).
    */
   seeInvisibleFt: number;
+  /** True when any source lets the character breathe both air and water. */
+  airAndWaterBreathing: boolean;
 
   // Defensive
   /** Set of canonical 2024 damage types the character resists permanently. */
   damageResistances: ReadonlySet<DamageType>;
+  /** True when one active source grants resistance to every damage type. */
+  allDamageResistance: boolean;
   damageImmunities: ReadonlySet<DamageType>;
   damageVulnerabilities: ReadonlySet<DamageType>;
   conditionImmunities: ReadonlySet<ConditionId>;
+  sourceConditionImmunities: readonly SourceConditionImmunity[];
+  /** True while any active grant forbids casting spells. */
+  spellcastingBlocked: boolean;
+  /** True while any active grant forbids maintaining Concentration. */
+  concentrationBlocked: boolean;
+  /** True while active effects forbid regaining Hit Points. */
+  healingBlocked: boolean;
   /**
    * Damage SOURCES the character resists (Abjurer Spell Resistance → `"spell"`).
    * Orthogonal to `damageResistances` (which keys on `DamageType`): a source
@@ -3709,7 +1262,16 @@ export interface AggregatedGrants {
   flatDamageReductions: ReadonlyArray<{
     damageTypes: ReadonlyArray<DamageType>;
     amount: number | "PB";
+    trigger: "attack";
     condition?: "wearing-heavy-armor";
+    sourceId: string;
+  }>;
+  /** Active Evasion-style save-damage rewrites, source-attributed. */
+  saveDamageRules: ReadonlyArray<{
+    ability: AbilityCode;
+    requiresDamageOnSuccess: "half";
+    onSuccess: "none";
+    onFailure: "half";
     sourceId: string;
   }>;
 
@@ -3761,6 +1323,8 @@ export interface AggregatedGrants {
    * walking Speed to at least this value ("Speed becomes N unless higher").
    */
   speedFloorFt: number;
+  /** Tightest active walking-Speed ceiling; `null` means no ceiling. */
+  speedCapFt: number | null;
 
   // Derived stats
   /** Sum of AC bonuses from items / class features. */
@@ -3896,6 +1460,15 @@ export interface AggregatedGrants {
    * which offers the prompt only when the tracker has an unspent use.
    */
   atZeroHpInterrupts: ReadonlyArray<{ trackerId: string; sourceId: string }>;
+  /** Resource declarations contributed by effective grant sources. */
+  resources: ReadonlyArray<{ sourceId: string; spec: ResourceSpec }>;
+  /** Persistent one-shot HP floors, carrying the active key so the owning effect can
+   * be consumed instead of spending a character tracker. */
+  zeroHpFloors: ReadonlyArray<{
+    sourceId: string;
+    activeKey: string;
+    hitPoints: number;
+  }>;
   /**
    * Number of EXTRA weapon attacks granted with a single Attack action (the
    * "Extra Attack" feature). 0 when no source grants it. MAX across `extra-attack`
@@ -3904,6 +1477,16 @@ export interface AggregatedGrants {
    * extraAttacks)`; the `attacksPerAction` consumer resolves that.
    */
   extraAttacks: number;
+  /** Additional turn-economy slots, including any data-declared restrictions. */
+  extraActions: ReadonlyArray<{
+    sourceId: string;
+    slot: "action" | "bonus";
+    count: number;
+    allowedActions?: ReadonlyArray<ActionEconomyCategory>;
+    maxAttacks?: number;
+  }>;
+  /** True when an active effect prevents actions for the current turn. */
+  turnEconomyBlocked: boolean;
   /**
    * `true` when a source lets the character give themself Heroic Inspiration at
    * the start of each combat turn if they lack it (Champion Heroic Warrior,
@@ -4009,6 +1592,11 @@ export interface AggregatedGrants {
     value: "modifier" | number;
     min: number;
   }>;
+  /** Optional alternate abilities for named skill checks. */
+  skillAbilityOptions: ReadonlyArray<{
+    skills: ReadonlyArray<string>;
+    ability: AbilityCode;
+  }>;
   /** Ability modifiers added to Initiative (consumer resolves each). */
   initiativeBonusAbilities: ReadonlyArray<AbilityCode>;
   /** Flat numeric bonus added to Initiative. */
@@ -4024,16 +1612,30 @@ export interface AggregatedGrants {
     diceByLevel?: Readonly<Record<number, string>>;
     /** Flat PB extra-damage sentinel (a species revelation form) — the consumer
      *  resolves it to a `+N` flat amount; mutually exclusive with `dice`. */
-    amount?: "PB";
+    amount?: "PB" | { kind: "class-level"; classId: ClassId };
+    round1?: true;
+    /** Gate: the rider is offered only while this tracker has an unspent use. */
+    requiresRiderTrackerId?: string;
     /** Marks a per-hit "vs a specific marked/cursed creature" rider (Hunter's
      *  Mark / Hex) — the consumer surfaces it as a DISPLAY-ONLY chip labeled "vs
      *  marked / cursed target" (never auto-summed); the token drives the localized
      *  label at the render edge. Absent → an always-applies rider. */
     vsMarkedTarget?: MarkedTargetScope;
+    /** Concrete fallback (the fixed type or the first declared choice). */
     damageType: DamageType | "same-as-weapon";
-    appliesTo: "melee-weapon" | "weapon" | "one-handed-melee" | "attack-or-spell";
+    /** Every type the player may choose for this rider when resolving the hit. */
+    damageTypeChoices?: ReadonlyArray<DamageType>;
+    appliesTo:
+      | "melee-weapon"
+      | "weapon"
+      | "weapon-or-unarmed"
+      | "unarmed"
+      | "finesse-or-ranged-weapon"
+      | "one-handed-melee"
+      | "attack-or-spell";
     oncePerTurn: boolean;
     addAbilityMod?: AbilityCode;
+    /** Each use spends one unit of this tracker (Psionic Energy Dice). */
     resourceCost?: { trackerId: string };
     /**
      * Source-feature id (provenance) — the consumer resolves a `diceByLevel`
@@ -4205,13 +1807,13 @@ export interface AggregatedGrants {
   ritualSpells: ReadonlySet<string>;
   /** Class lists from which any prepared/known ritual spell is castable. */
   ritualAnyClasses: ReadonlySet<ClassId>;
-  /** Per-rest free-casts of specific spells. */
+  /** Resource-backed slotless casts of specific spells. */
   freeCasts: ReadonlyArray<FreeCastEntry>;
   /**
-   * D4 — Per-rest free-casts FROM A LIST (a guided picker over a class spell list
+   * D4 — slotless casts FROM A LIST (a guided picker over a class spell list
    * ≤ a level cap): Cleric Divine Intervention. The spell is the player's choice
    * at cast time, gated by `spellList` ≤ `maxSpellLevel`; the cast debits the
-   * source feature's per-rest tracker.
+   * exact canonical cost declared by the capability.
    */
   freeCastFromList: ReadonlyArray<FreeCastFromListEntry>;
   /**
@@ -4223,11 +1825,8 @@ export interface AggregatedGrants {
   atWillCasts: ReadonlyArray<AtWillCastEntry>;
   /**
    * Bonus, upcast-capable spell slots restricted to a scoped spell pool and
-   * recovered on a Short/Long Rest (a heritage feat's bonus
-   * Spellcasting). Each entry carries the declarative level formula + scope +
-   * recovery; the cast-option consumer (`scopedSlotSourcesForSpell`) resolves
-   * the live slot level and eligible spells, and the smart-tracker creates the
-   * 1-use expend/regain tracker. Collected as a list (one per granting source).
+   * prepared spell set. Each entry carries its level formula, scope, and
+   * canonical resource selector. Collected as a list (one per source).
    */
   scopedExtraSlots: ReadonlyArray<ScopedExtraSlotEntry>;
 
@@ -4236,6 +1835,8 @@ export interface AggregatedGrants {
   disadvantages: ReadonlyArray<AdvantageClause>;
   /** Roll floors (Rogue Reliable Talent): treat a d20 below `floor` as `floor`. */
   rollFloors: ReadonlyArray<RollFloorClause>;
+  /** Physical add/subtract dice attached to a roll (Mind Sliver: next save −1d4). */
+  rollDieAdjustments: ReadonlyArray<RollDieAdjustmentClause>;
   /**
    * SELF-side downsides (Barbarian Reckless Attack): while in effect, attack
    * rolls AGAINST the character have Advantage. Rendered as a defensive Disadv.
@@ -4249,9 +1850,9 @@ export interface AggregatedGrants {
    */
   incomingAttackDisadvantages: ReadonlyArray<IncomingAttackClause>;
   /**
-   * SELF-side defensive reminder LINES (Warding Bond's shared-damage / resistance
-   * posture). Bilingual prose surfaced in the rail's Defenses section — a
-   * reminder, never damage math (golden rule 21).
+   * SELF-side defensive reminder LINES (Mirror Image's duplicates). Bilingual
+   * prose surfaced in the rail's Defenses section — a reminder, never damage math
+   * (golden rule 21). Mechanically representable defenses use typed grants instead.
    */
   defenseNotes: ReadonlyArray<IncomingAttackClause>;
 
@@ -4275,17 +1876,17 @@ export interface AggregatedGrants {
   copyToTargets: ReadonlyArray<CopyToTargetClause>;
   /**
    * PRIM-resource-conversion — converters that PRODUCE a resource from another
-   * (Nature Magician, Font of Magic). The cost-engine plans the ops; the
-   * action consumer surfaces the affordance.
-   *
-   * NOTE: PRIM-item-bound-bonus has NO aggregate field of its own — its `ac` /
+   * (Font of Magic Creating/Converting Spell Slots, Nature Magician, Magical
+   * Cunning). One entry per grant; the consumer (`conversionOptionVMs` +
+   * `planResourceConversion`) resolves the legal choices and plans the ops.
+   */
+  resourceConversions: ReadonlyArray<ResourceConversionEntry>;
+  /** PRIM-item-bound-bonus has NO aggregate field of its own — its `ac` /
    * `saves` / `spell-attack-and-save-dc` bonuses fold into the existing
    * `acBonus` / `saveBonusFlat` / `spellSaveDcBonus`+`spellAttackBonus`
    * accumulators (single source of truth), and its `weapon-attack-and-damage`
    * bonus is read at the weapon layer (`resolveItemBoundWeaponBonus`).
    */
-  resourceConversions: ReadonlyArray<ResourceConversionEntry>;
-
   /**
    * L11 — every `while-active` toggle seen, with its current active state.
    * The UI renders a toggle per group; when `active`, that group's inner
@@ -4348,11 +1949,10 @@ export interface AggregatedGrants {
   pactWeapons: ReadonlyArray<PactWeapon>;
 
   /**
-   * On-hit riders that fire ONLY with a conjured pact weapon (Pact-of-the-Blade
-   * invocations: Eldritch Smite, Lifedrinker). Distinct from `damageRiders`,
-   * which ride every weapon attack. The consumer (`resolvePactWeaponAttacks`)
-   * scales slot-cost riders by the warlock's pact-slot level and attaches them
-   * to the pact-weapon attack row. Deduped by `id` (first source wins).
+   * On-hit pact-weapon riders (Eldritch Smite, Lifedrinker) — extra-damage
+   * riders that fire only with the conjured pact weapon. Deduped by `id`
+   * (first source wins). The consumer (`resolvePactWeaponAttacks`) resolves
+   * slot-level scaling and attaches each to the pact-weapon attack row.
    */
   pactWeaponRiders: ReadonlyArray<PactWeaponRider>;
 
@@ -4375,20 +1975,20 @@ export interface AggregatedGrants {
   familiarFormIds: ReadonlySet<string>;
 
   /**
-   * Rogue Cunning Strike catalogue — every option an effective character knows
-   * (base L5, Devious Strikes L14, plus subclass adders). Deduped by `optionId`
-   * (first source wins). The consumer (`resolveCunningStrikeOptions`) resolves
-   * the save DC against the character.
-   */
-  cunningStrikeOptions: ReadonlyArray<CunningStrikeOption>;
-
-  /**
    * Temporary-HP grants (Dark One's Blessing, Adrenaline Rush, Defensive
    * Field, …). Each carries the unresolved `formula` + originating source; the
    * consumer resolves it and surfaces a manual "Gain N temporary HP" entry.
    * Override-first — the engine never auto-applies temp HP.
    */
   tempHpGrants: ReadonlyArray<TempHpEntry>;
+
+  /**
+   * Rogue Cunning Strike catalogue — every option an effective character knows
+   * (base L5, Devious Strikes L14, plus subclass adders). Deduped by `optionId`
+   * (first source wins). The consumer (`resolveCunningStrikeOptions`) resolves
+   * the save DC against the character.
+   */
+  cunningStrikeOptions: ReadonlyArray<CunningStrikeOption>;
 
   /**
    * Cross-feature alternate-recovery grants (`tracker-alt-recovery`). Each
@@ -4404,16 +2004,6 @@ export interface AggregatedGrants {
    * which pickers to surface (ability ASI sub-picker, skill picker, etc.).
    */
   pendingChoices: ReadonlyArray<PendingChoice>;
-}
-
-/**
- * An aggregated `tracker-alt-recovery` grant: an alternate cost to restore a
- * use of `targetTracker` by spending `amount` units from `fromTracker`.
- */
-export interface TrackerAltRecoveryEntry {
-  targetTracker: string;
-  amount: number;
-  fromTracker: string;
 }
 
 /**
@@ -4440,12 +2030,19 @@ export function emptyAggregate(): AggregatedGrants {
     tremorsenseFt: 0,
     truesightFt: 0,
     seeInvisibleFt: 0,
+    airAndWaterBreathing: false,
     damageResistances: new Set(),
+    allDamageResistance: false,
     damageImmunities: new Set(),
     damageVulnerabilities: new Set(),
     conditionImmunities: new Set(),
+    sourceConditionImmunities: [],
+    spellcastingBlocked: false,
+    concentrationBlocked: false,
+    healingBlocked: false,
     damageSourceResistances: new Set(),
     flatDamageReductions: [],
+    saveDamageRules: [],
     speedBonusFt: 0,
     conditionalSpeedBonusFt: {},
     round1SpeedBonusFt: 0,
@@ -4455,6 +2052,7 @@ export function emptyAggregate(): AggregatedGrants {
     climbSpeed: null,
     speedMultiplier: 1,
     speedFloorFt: 0,
+    speedCapFt: null,
     acBonus: 0,
     acBonusAbilities: [],
     acFormulas: [],
@@ -4472,7 +2070,11 @@ export function emptyAggregate(): AggregatedGrants {
     spellSlotTrackerRecoveries: [],
     initiativeTrackerTopUps: [],
     atZeroHpInterrupts: [],
+    resources: [],
+    zeroHpFloors: [],
     extraAttacks: 0,
+    extraActions: [],
+    turnEconomyBlocked: false,
     heroicInspirationAtTurnStart: false,
     heroicInspirationOnLongRest: false,
     attunementSlots: 3,
@@ -4489,6 +2091,7 @@ export function emptyAggregate(): AggregatedGrants {
     concentrationSaveBonusAbilities: [],
     concentrationSaveBonusFlat: 0,
     abilityCheckBonuses: [],
+    skillAbilityOptions: [],
     initiativeBonusAbilities: [],
     initiativeBonusFlat: 0,
     damageRiders: [],
@@ -4526,6 +2129,7 @@ export function emptyAggregate(): AggregatedGrants {
     advantages: [],
     disadvantages: [],
     rollFloors: [],
+    rollDieAdjustments: [],
     incomingAttackAdvantages: [],
     incomingAttackDisadvantages: [],
     defenseNotes: [],
@@ -4543,8 +2147,8 @@ export function emptyAggregate(): AggregatedGrants {
     pactWeaponRiders: [],
     familiarEnhancements: [],
     familiarFormIds: new Set(),
-    cunningStrikeOptions: [],
     tempHpGrants: [],
+    cunningStrikeOptions: [],
     trackerAltRecoveries: [],
     pendingChoices: [],
   };
@@ -4587,8 +2191,6 @@ function assertNever(x: never): never {
   throw new Error(`Unhandled grant kind: ${JSON.stringify(x)}`);
 }
 
-// ─── Evaluator ──────────────────────────────────────────────────────────────
-
 /**
  * Count the INDEPENDENTLY-trackable free-cast spells a source grants at its TOP
  * level: each fixed `free-cast-spell` plus each chosen `choice-spell` that carries
@@ -4621,6 +2223,8 @@ export function freeCastTrackerKey(
   return multi ? `${sourceId}:${spellId}` : sourceId;
 }
 
+// ─── Evaluator ──────────────────────────────────────────────────────────────
+
 /**
  * Walk every supplied source row and aggregate its grants into a single
  * `AggregatedGrants`. Sources can come from any of: race traits, feats,
@@ -4640,7 +2244,26 @@ export function freeCastTrackerKey(
 export function evaluateGrants(
   sources: ReadonlyArray<GrantSource>,
   activeKeys: ReadonlySet<string> = new Set(),
-  bundleChoices: ReadonlyMap<string, string> = new Map()
+  bundleChoices: ReadonlyMap<string, string> = new Map(),
+  context: {
+    conditions?: ReadonlySet<string>;
+    level?: number;
+    /**
+     * Exact resolved `max-hp-delta` amounts from the persisted engine world's
+     * live standings, keyed by the owning buff's active key
+     * (`worldStandingMaxHpDeltas`). When a while-active `hp-flat` grant's key
+     * is here, the WORLD amount is authoritative — it carries the cast level
+     * a key-only projection cannot — replacing the base-level default.
+     */
+    worldMaxHpDeltas?: ReadonlyMap<string, number>;
+    /**
+     * Live `zero-hp-floor` standings from the persisted engine world, keyed
+     * by the owning buff's active key (`worldStandingZeroHpFloors`). Merged
+     * into `zeroHpFloors` deduped by key, so a world floor whose key yields
+     * no derived `zero-hp-floor` row still reaches the manual damage path.
+     */
+    worldZeroHpFloors?: ReadonlyArray<{ key: string; hitPoints: number }>;
+  } = {}
 ): AggregatedGrants {
   // Senses
   let darkvisionFt = 0;
@@ -4652,14 +2275,21 @@ export function evaluateGrants(
   let tremorsenseFt = 0;
   let truesightFt = 0;
   let seeInvisibleFt = 0;
+  let airAndWaterBreathing = false;
 
   // Defensive
   const damageResistances = new Set<DamageType>();
+  let allDamageResistance = false;
   const damageImmunities = new Set<DamageType>();
   const damageVulnerabilities = new Set<DamageType>();
   const conditionImmunities = new Set<ConditionId>();
+  const sourceConditionImmunities = new Map<string, SourceConditionImmunity>();
+  let spellcastingBlocked = false;
+  let concentrationBlocked = false;
+  let healingBlocked = false;
   const damageSourceResistances = new Set<DamageSource>();
   const flatDamageReductions: AggregatedGrants["flatDamageReductions"][number][] = [];
+  const saveDamageRules: AggregatedGrants["saveDamageRules"][number][] = [];
 
   // Movement
   let speedBonusFt = 0;
@@ -4671,6 +2301,7 @@ export function evaluateGrants(
   let climbSpeed: NonWalkingSpeed | null = null;
   let speedMultiplier = 1;
   let speedFloorFt = 0;
+  let speedCapFt: number | null = null;
 
   // Derived stats
   let acBonus = 0;
@@ -4692,7 +2323,11 @@ export function evaluateGrants(
   const initiativeTrackerTopUps: AggregatedGrants["initiativeTrackerTopUps"][number][] =
     [];
   const atZeroHpInterrupts: AggregatedGrants["atZeroHpInterrupts"][number][] = [];
+  const resources: AggregatedGrants["resources"][number][] = [];
+  const zeroHpFloors: AggregatedGrants["zeroHpFloors"][number][] = [];
   let extraAttacks = 0;
+  const extraActions: AggregatedGrants["extraActions"][number][] = [];
+  let turnEconomyBlocked = false;
   let heroicInspirationAtTurnStart = false;
   let heroicInspirationOnLongRest = false;
   let attunementSlots = 3;
@@ -4729,6 +2364,7 @@ export function evaluateGrants(
     value: "modifier" | number;
     min: number;
   }[] = [];
+  const skillAbilityOptions: AggregatedGrants["skillAbilityOptions"][number][] = [];
   const initiativeBonusAbilities: AbilityCode[] = [];
   let initiativeBonusFlat = 0;
   const damageRiders: AggregatedGrants["damageRiders"][number][] = [];
@@ -4789,6 +2425,7 @@ export function evaluateGrants(
   const advantages: AdvantageClause[] = [];
   const disadvantages: AdvantageClause[] = [];
   const rollFloors: RollFloorClause[] = [];
+  const rollDieAdjustments: RollDieAdjustmentClause[] = [];
   const incomingAttackAdvantages: IncomingAttackClause[] = [];
   const incomingAttackDisadvantages: IncomingAttackClause[] = [];
   const defenseNotes: IncomingAttackClause[] = [];
@@ -4860,7 +2497,9 @@ export function evaluateGrants(
     sourceId: string,
     gref: GrantRef,
     sourceRef: { kind: SrdKind; key: string } | undefined,
-    activeKey?: string
+    activeKey?: string,
+    runtime?: GrantSource["runtime"],
+    item?: GrantSource["item"]
   ): void {
     switch (g.type) {
       // ── Senses ──────────────────────────────────────────────────────
@@ -4883,10 +2522,24 @@ export function evaluateGrants(
       case "see-invisible":
         if (g.range > seeInvisibleFt) seeInvisibleFt = g.range;
         break;
+      case "air-and-water-breathing":
+        airAndWaterBreathing = true;
+        break;
 
       // ── Defensive ───────────────────────────────────────────────────
       case "damage-resistance":
         damageResistances.add(g.damageType);
+        break;
+      case "all-damage-resistance":
+        allDamageResistance = true;
+        break;
+      case "damage-transfer":
+        // The persistent-damage reducer owns this because it needs the exact
+        // effect-source combatant, which a sheet-wide aggregate intentionally lacks.
+        break;
+      case "damage-retaliation":
+        // The persistent-hit reducer owns this because it needs the exact incoming
+        // attacker and this effect occurrence's snapshotted cast level.
         break;
       case "damage-immunity":
         damageImmunities.add(g.damageType);
@@ -4895,7 +2548,14 @@ export function evaluateGrants(
         damageVulnerabilities.add(g.damageType);
         break;
       case "condition-immunity":
-        conditionImmunities.add(g.condition);
+        if (g.sourceId) {
+          sourceConditionImmunities.set(`${g.condition}\u0000${g.sourceId}`, {
+            condition: g.condition,
+            sourceId: g.sourceId,
+          });
+        } else {
+          conditionImmunities.add(g.condition);
+        }
         break;
       case "damage-resistance-source":
         // Resistance keyed to a damage SOURCE (Abjurer Spell Resistance →
@@ -4910,7 +2570,18 @@ export function evaluateGrants(
         flatDamageReductions.push({
           damageTypes: g.damageTypes,
           amount: g.amount,
+          trigger: g.trigger,
           ...(g.condition ? { condition: g.condition } : {}),
+          sourceId,
+        });
+        break;
+      case "save-damage-rule":
+        if (g.suppressedByConditions?.some((id) => context.conditions?.has(id))) break;
+        saveDamageRules.push({
+          ability: g.ability,
+          requiresDamageOnSuccess: g.requiresDamageOnSuccess,
+          onSuccess: g.onSuccess,
+          onFailure: g.onFailure,
           sourceId,
         });
         break;
@@ -4947,6 +2618,9 @@ export function evaluateGrants(
         // MAX floor wins — floors never stack ("Speed becomes N unless higher").
         if (g.minFt > speedFloorFt) speedFloorFt = g.minFt;
         break;
+      case "speed-cap":
+        if (speedCapFt === null || g.maxFt < speedCapFt) speedCapFt = g.maxFt;
+        break;
 
       // ── Derived stats ───────────────────────────────────────────────
       case "ac-bonus":
@@ -4982,15 +2656,32 @@ export function evaluateGrants(
       case "hp-per-level":
         hpPerLevel += g.amount;
         break;
-      case "hp-flat":
-        hpFlat += g.amount;
+      case "hp-flat": {
+        // The engine world's `max-hp-delta` standing carries the EXACT resolved
+        // amount (cast level included), so it is authoritative for its key;
+        // legacy activations fall back to the runtime cast-level arithmetic.
+        const worldExact =
+          activeKey !== undefined ? context.worldMaxHpDeltas?.get(activeKey) : undefined;
+        const amount =
+          worldExact ??
+          (g.castLevelScaling
+            ? g.amount +
+              Math.max(
+                0,
+                (runtime?.castLevel ?? g.castLevelScaling.baseLevel) -
+                  g.castLevelScaling.baseLevel
+              ) *
+                g.castLevelScaling.perLevel
+            : g.amount);
+        hpFlat += amount;
         // Attribute at the source of truth: the breakdown tip MAPS these instead
         // of re-walking sources, so it inherits the exact while-active descent
         // `hpFlat` gets (Aid's `hp-flat:5` lands here only when its toggle is lit)
         // and `sum(amount) === hpFlat` holds by construction (golden rule 6).
         // `sourceRef` is the source NAME ref (the same the old top-level walk used).
-        if (sourceRef) hpFlatParts.push({ ref: sourceRef, amount: g.amount });
+        if (sourceRef) hpFlatParts.push({ ref: sourceRef, amount });
         break;
+      }
       case "attunement-slots":
         if (g.amount > attunementSlots) attunementSlots = g.amount;
         break;
@@ -5001,6 +2692,9 @@ export function evaluateGrants(
           exhaustionRecoveryBonus += g.amount;
         }
         break;
+      case "resource":
+        resources.push({ sourceId, spec: g.spec });
+        break;
       case "crit-range":
         // The most generous (lowest) threshold wins.
         if (g.threshold < critThreshold) critThreshold = g.threshold;
@@ -5009,15 +2703,19 @@ export function evaluateGrants(
         // The most generous (lowest) threshold wins (mirrors `crit-range`).
         if (g.threshold < deathSaveCritThreshold) deathSaveCritThreshold = g.threshold;
         break;
-      case "regen-at-turn-start":
+      case "regen-at-turn-start": {
+        const amount =
+          typeof g.amount === "string" ? g.amount : runtime?.bindings?.[g.amount.binding];
+        if (amount === undefined) break;
         startOfTurnRegen.push({
           sourceId,
-          amount: g.amount,
+          amount: String(amount),
           condition: g.condition,
           requiresMinHp: g.requiresMinHp ?? true,
           asTempHp: g.asTempHp ?? false,
         });
         break;
+      }
       case "on-crit-movement-rider":
         onCritMovement.push({
           sourceId,
@@ -5068,6 +2766,11 @@ export function evaluateGrants(
       case "at-zero-hp-interrupt":
         atZeroHpInterrupts.push({ trackerId: g.trackerId, sourceId });
         break;
+      case "zero-hp-floor":
+        if (activeKey) {
+          zeroHpFloors.push({ sourceId, activeKey, hitPoints: g.hitPoints });
+        }
+        break;
       case "extra-attack":
         // Extra Attack never stacks (multiclass) and Devouring Blade UPGRADES
         // Thirsting Blade — the most extra attacks granted wins.
@@ -5115,6 +2818,7 @@ export function evaluateGrants(
         spellAttackBonus.push({ amount: g.amount, scope: g.scope });
         break;
       case "save-bonus":
+        if (g.suppressedByConditions?.some((id) => context.conditions?.has(id))) break;
         if (g.appliesToSave) {
           // SCOPED — rides only the named ability's saves. An ability entry
           // resolves `max(mod, min)` at render (amount 0); a flat entry carries
@@ -5154,6 +2858,9 @@ export function evaluateGrants(
           min: g.min ?? 0,
         });
         break;
+      case "skill-ability-option":
+        skillAbilityOptions.push({ skills: g.skills, ability: g.ability });
+        break;
       case "initiative-bonus":
         if (g.ability) {
           initiativeBonusAbilities.push(g.ability);
@@ -5161,13 +2868,21 @@ export function evaluateGrants(
           initiativeBonusFlat += g.amount ?? 0;
         }
         break;
-      case "damage-rider":
+      case "damage-rider": {
+        const damageTypeChoices = g.damageTypeChoices;
+        const damageType = g.damageType ?? damageTypeChoices?.[0];
+        if (!damageType) break;
         damageRiders.push({
           ...(g.dice !== undefined ? { dice: g.dice } : {}),
           ...(g.diceByLevel ? { diceByLevel: g.diceByLevel } : {}),
           ...(g.amount ? { amount: g.amount } : {}),
+          ...(g.round1 ? { round1: true as const } : {}),
+          ...(g.requiresRiderTrackerId
+            ? { requiresRiderTrackerId: g.requiresRiderTrackerId }
+            : {}),
           ...(g.vsMarkedTarget ? { vsMarkedTarget: g.vsMarkedTarget } : {}),
-          damageType: g.damageType,
+          damageType,
+          ...(damageTypeChoices ? { damageTypeChoices } : {}),
           appliesTo: g.appliesTo,
           oncePerTurn: g.oncePerTurn ?? false,
           ...(g.addAbilityMod ? { addAbilityMod: g.addAbilityMod } : {}),
@@ -5179,6 +2894,7 @@ export function evaluateGrants(
           ...(activeKey ? { whileActiveKey: activeKey } : {}),
         });
         break;
+      }
       case "weapon-damage-bonus":
         // `activeKey` (the applyGrant param) is the wrapping `while-active`
         // toggle when this grant arrived through one — recorded so the damage
@@ -5410,48 +3126,100 @@ export function evaluateGrants(
       case "ritual-casting-any":
         ritualAnyClasses.add(g.classSpellList);
         break;
-      case "free-cast-spell":
+      case "free-cast-spell": {
+        // A typed item's grant (`resourceCost`) pays from the equipped physical
+        // copy's declared resource — the exact per-instance address is composed
+        // here so no consumer ever parses a source id. Fail-closed: without a
+        // bound physical copy there is no payment owner, so no cast surfaces.
+        if (g.resourceCost) {
+          if (!item) break;
+          freeCasts.push({
+            sourceId,
+            spellId: g.spellId,
+            payment: {
+              kind: "item-resource",
+              ...makeItemResourceIdentity(
+                item.itemId,
+                item.instanceId,
+                g.resourceCost.resourceId
+              ),
+            },
+            ...(g.castLevels ? { castLevels: g.castLevels } : {}),
+            ...(g.casterAbility ? { casterAbility: g.casterAbility } : {}),
+            ...(g.minLevel != null ? { minLevel: g.minLevel } : {}),
+            ...(g.castOverrides ? { castOverrides: g.castOverrides } : {}),
+          });
+          break;
+        }
         // When a source grants MULTIPLE free-cast spells, each is INDEPENDENTLY
         // tracked — RAW "cast EACH of these spells once per <rest>". So a
-        // multi-free-cast feat (Fey-Touched Misty Step + chosen, a heritage feat's
-        // two/three Spells of the Mark) keys its tracker PER-SPELL
-        // `${sourceId}:${spellId}` (the set `multiFreeCastSourceIds` flags those
-        // sources), so casting one no longer locks the others on a shared counter.
-        // A SINGLE-free-cast source keeps the bare `sourceId` (the existing,
-        // already-correct one-counter model — nothing to disambiguate). Bundle
-        // free-casts (species Legacy) arrive PRE-suffixed and aren't in the set, so
-        // they're untouched here. The id is composed once below by
-        // `freeCastTrackerKey`.
+        // multi-free-cast feat keys its tracker PER-SPELL `${sourceId}:${spellId}`
+        // (the set `multiFreeCastSourceIds` flags those sources); a single-free-
+        // cast source keeps the bare `sourceId`. An item source keys the shared
+        // catalogue-id charge pool. Composed once by `freeCastTrackerKey`.
+        const trackerId = freeCastTrackerKey(
+          item?.itemId ?? sourceId,
+          g.spellId,
+          multiFreeCastSourceIds.has(sourceId)
+        );
         freeCasts.push({
-          sourceId: freeCastTrackerKey(
-            sourceId,
-            g.spellId,
-            multiFreeCastSourceIds.has(sourceId)
-          ),
+          sourceId: trackerId,
           spellId: g.spellId,
-          chargesPerRest: g.chargesPerRest,
+          payment: { kind: "tracker", trackerId },
+          chargesPerRest: g.chargesPerRest ?? 1,
           ...(g.chargesFormula ? { chargesFormula: g.chargesFormula } : {}),
-          rest: g.rest,
-          casterAbility: g.casterAbility,
+          ...(g.capacityByLevel ? { capacityByLevel: g.capacityByLevel } : {}),
+          ...(g.castLevels ? { castLevels: g.castLevels } : {}),
+          rest: g.rest ?? "long",
+          ...(g.casterAbility ? { casterAbility: g.casterAbility } : {}),
           ...(g.minLevel != null ? { minLevel: g.minLevel } : {}),
+          ...(g.castOverrides ? { castOverrides: g.castOverrides } : {}),
         });
         break;
-      case "free-cast-from-list":
-        // D4 — the per-rest tracker defaults to the source feature's own tracker
-        // (Divine Intervention's `tracker`, War God's Blessing's
-        // `cleric-channel-divinity`), so the cast debits the SAME shared pool.
+      }
+      case "free-cast-from-list": {
+        // Same two payment dialects as `free-cast-spell`: a typed item resource
+        // (exact per-copy address) or a shared tracker — defaulting to the
+        // source feature's own tracker (Divine Intervention) / the item's
+        // catalogue-id charge pool, so the cast debits the SAME shared pool.
+        if (g.resourceCost) {
+          if (!item) break;
+          freeCastFromList.push({
+            sourceId,
+            payment: {
+              kind: "item-resource",
+              ...makeItemResourceIdentity(
+                item.itemId,
+                item.instanceId,
+                g.resourceCost.resourceId
+              ),
+            },
+            ...(g.spellList ? { spellList: g.spellList } : {}),
+            ...(g.maxSpellLevel != null ? { maxSpellLevel: g.maxSpellLevel } : {}),
+            ...(g.spellIds ? { spellIds: g.spellIds } : {}),
+            ...(g.spellCosts ? { spellCosts: g.spellCosts } : {}),
+            ...(g.casterAbility ? { casterAbility: g.casterAbility } : {}),
+            ...(g.castOverrides ? { castOverrides: g.castOverrides } : {}),
+          });
+          break;
+        }
         freeCastFromList.push({
           sourceId,
+          payment: {
+            kind: "tracker",
+            trackerId: g.trackerId ?? item?.itemId ?? sourceId,
+          },
           ...(g.spellList ? { spellList: g.spellList } : {}),
           ...(g.maxSpellLevel != null ? { maxSpellLevel: g.maxSpellLevel } : {}),
           ...(g.spellIds ? { spellIds: g.spellIds } : {}),
           ...(g.spellCosts ? { spellCosts: g.spellCosts } : {}),
           ...(g.chargesPerRest != null ? { chargesPerRest: g.chargesPerRest } : {}),
           ...(g.rest ? { rest: g.rest } : {}),
-          trackerId: g.trackerId ?? sourceId,
           ...(g.casterAbility ? { casterAbility: g.casterAbility } : {}),
+          ...(g.castOverrides ? { castOverrides: g.castOverrides } : {}),
         });
         break;
+      }
       case "at-will-cast-spell":
         // Deduped by spellId — two sources granting the same at-will cast
         // still yield a single at-will row (first source wins).
@@ -5480,6 +3248,7 @@ export function evaluateGrants(
 
       // ── Advantage / disadvantage clauses ────────────────────────────
       case "advantage-on":
+        if (g.suppressedByConditions?.some((id) => context.conditions?.has(id))) break;
         // `activeKey` (set when this clause arrived through a `while-active`
         // block) marks the chip as a conditional, currently-active source —
         // mirrors `weapon-damage-bonus` (Rage's STR advantage · active).
@@ -5500,6 +3269,7 @@ export function evaluateGrants(
           vs: g.vs,
           description: grantField(gref, "description", g.description),
           ...(activeKey ? { whileActiveKey: activeKey } : {}),
+          ...(g.consume ? { consume: g.consume } : {}),
           ...narrowedScope(g),
         });
         break;
@@ -5520,6 +3290,15 @@ export function evaluateGrants(
           appliesTo: g.appliesTo,
           description: grantField(gref, "description", g.description),
           ...(activeKey ? { whileActiveKey: activeKey } : {}),
+        });
+        break;
+      case "roll-die-adjustment":
+        rollDieAdjustments.push({
+          sourceId,
+          rollType: g.rollType,
+          operation: g.operation,
+          dice: g.dice,
+          consume: g.consume,
         });
         break;
       case "incoming-attack-advantage":
@@ -5703,9 +3482,12 @@ export function evaluateGrants(
 
       // ── Activatable / conditional grants (L11) ──────────────────────
       case "while-active": {
-        const active = activeKeys.has(g.activeKey);
+        if (g.minLevel !== undefined && (context.level ?? 0) < g.minLevel) break;
+        const key = resolveGrantActiveKey({ id: sourceId, item }, g.activeKey);
+        const active = activeKeys.has(key);
         activatableGroups.push({
-          key: g.activeKey,
+          key,
+          ...(item ? { authoredKey: g.activeKey } : {}),
           sourceId,
           label: grantField(gref, "label", g.label),
           active,
@@ -5722,7 +3504,9 @@ export function evaluateGrants(
               sourceId,
               childGrantRef(gref, inner, i),
               sourceRef,
-              g.activeKey
+              key,
+              runtime,
+              item
             );
           }
         }
@@ -5750,8 +3534,8 @@ export function evaluateGrants(
           for (let j = 0; j < innerGrants.length; j++) {
             const inner = innerGrants[j];
             if (!inner) continue;
-            // One level only — nested choosers/toggles are ignored.
-            if (inner.type === "choice-grant-bundle" || inner.type === "while-active") {
+            // One level only — nested choosers are ignored.
+            if (inner.type === "choice-grant-bundle") {
               continue;
             }
             // A `free-cast-spell` inside a multi-spell bundle option (2024 species
@@ -5777,7 +3561,9 @@ export function evaluateGrants(
               // Arcane Armor) carries `activeKey` so a `form-attack` in the chosen
               // option stays gated by BOTH the toggle AND the model choice. Plain
               // (un-nested) bundles pass `undefined`, unchanged.
-              activeKey
+              activeKey,
+              runtime,
+              item
             );
           }
         }
@@ -5993,8 +3779,8 @@ export function evaluateGrants(
             name: grantField(gref, "name", g.name),
             cost: g.cost,
             description: grantField(gref, "description", g.description),
-            save: g.save,
-            condition: g.condition,
+            ...(g.save ? { save: g.save } : {}),
+            ...(g.condition ? { condition: g.condition } : {}),
           });
         }
         break;
@@ -6022,11 +3808,25 @@ export function evaluateGrants(
 
       // ── Extra economy-slot grant (B6 — Action Surge / Haste) ──────────
       case "extra-action":
-        // No-op in the GLOBAL aggregate: the per-turn action/bonus budget is a
-        // combat-only concern, derived on demand by `extraActionsThisTurn`
-        // (smart-tracker) from the ACTIVE while-active sources — never folded
-        // into every surface's character aggregate (YAGNI; declare-the-least).
-        // Cased here only to satisfy the exhaustiveness guard.
+        extraActions.push({
+          sourceId,
+          slot: g.slot,
+          count: g.count,
+          ...(g.allowedActions ? { allowedActions: g.allowedActions } : {}),
+          ...(g.maxAttacks !== undefined ? { maxAttacks: g.maxAttacks } : {}),
+        });
+        break;
+      case "turn-economy-block":
+        turnEconomyBlocked = true;
+        break;
+      case "spellcasting-blocked":
+        spellcastingBlocked = true;
+        break;
+      case "concentration-blocked":
+        concentrationBlocked = true;
+        break;
+      case "healing-blocked":
+        healingBlocked = true;
         break;
 
       // ── Exhaustiveness guard — a future un-cased Grant kind is a compile
@@ -6047,8 +3847,21 @@ export function evaluateGrants(
             key: srdKey(src.ref.key, srdGrantSegment(grantSegmentArgs(g), i)),
           }
         : undefined;
-      applyGrant(g, src.id, gref, src.ref);
+      applyGrant(g, src.id, gref, src.ref, undefined, src.runtime, src.item);
     }
+  }
+
+  // Live engine-world `zero-hp-floor` standings merge in deduped by active
+  // key: a world floor whose buff also contributed a derived `zero-hp-floor`
+  // row (the SRD shape) collapses onto that row; a floor with no derived twin
+  // still reaches the manual damage path.
+  for (const floor of context.worldZeroHpFloors ?? []) {
+    if (zeroHpFloors.some((entry) => entry.activeKey === floor.key)) continue;
+    zeroHpFloors.push({
+      sourceId: `world-standing:${floor.key}`,
+      activeKey: floor.key,
+      hitPoints: floor.hitPoints,
+    });
   }
 
   return {
@@ -6061,12 +3874,19 @@ export function evaluateGrants(
     tremorsenseFt,
     truesightFt,
     seeInvisibleFt,
+    airAndWaterBreathing,
     damageResistances,
+    allDamageResistance,
     damageImmunities,
     damageVulnerabilities,
     conditionImmunities,
+    sourceConditionImmunities: [...sourceConditionImmunities.values()],
+    spellcastingBlocked,
+    concentrationBlocked,
+    healingBlocked,
     damageSourceResistances,
     flatDamageReductions,
+    saveDamageRules,
     speedBonusFt,
     conditionalSpeedBonusFt,
     round1SpeedBonusFt,
@@ -6076,6 +3896,7 @@ export function evaluateGrants(
     climbSpeed,
     speedMultiplier,
     speedFloorFt,
+    speedCapFt,
     acBonus,
     acBonusAbilities,
     acFormulas,
@@ -6093,7 +3914,11 @@ export function evaluateGrants(
     spellSlotTrackerRecoveries,
     initiativeTrackerTopUps,
     atZeroHpInterrupts,
+    resources,
+    zeroHpFloors,
     extraAttacks,
+    extraActions,
+    turnEconomyBlocked,
     heroicInspirationAtTurnStart,
     heroicInspirationOnLongRest,
     attunementSlots,
@@ -6110,6 +3935,7 @@ export function evaluateGrants(
     concentrationSaveBonusAbilities,
     concentrationSaveBonusFlat,
     abilityCheckBonuses,
+    skillAbilityOptions,
     initiativeBonusAbilities,
     initiativeBonusFlat,
     damageRiders,
@@ -6147,6 +3973,7 @@ export function evaluateGrants(
     advantages,
     disadvantages,
     rollFloors,
+    rollDieAdjustments,
     incomingAttackAdvantages,
     incomingAttackDisadvantages,
     defenseNotes,
@@ -6164,8 +3991,8 @@ export function evaluateGrants(
     pactWeaponRiders,
     familiarEnhancements,
     familiarFormIds,
-    cunningStrikeOptions,
     tempHpGrants,
+    cunningStrikeOptions,
     trackerAltRecoveries,
     pendingChoices,
   };

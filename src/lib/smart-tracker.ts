@@ -15,7 +15,12 @@
  * - Combat page action cards (weapons + spells + feature actions)
  */
 
-import type { CharacterDoc, TrackerData } from "@/types/character";
+import type {
+  ActionData,
+  CharacterData,
+  CharacterDoc,
+  TrackerData,
+} from "@/types/character";
 import type { ProficiencyToken } from "@/types/ids";
 import type {
   ActionType,
@@ -30,7 +35,7 @@ import type {
   SrdFeatData,
   AbilityCode,
   ConditionId,
-  DamageType,
+  CreatureType,
   SrdEquipmentData,
   SpellRecurrence,
   TrackerUnit,
@@ -38,7 +43,12 @@ import type {
   CombatConditionApplication,
   CombatTargeting,
   CombatResolutionGate,
+  ActionTargeting,
+  SrdActionDef,
+  ActionEconomyCategory,
+  ResourceRecoveryTrigger,
 } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 import { isPoolAltRecovery, isSlotAltRecovery } from "@/data/types";
 import { classFeatureIndex, getClassTable, pactSlotLevel } from "@/data/classes";
 import { getBeast } from "@/data/beasts";
@@ -51,8 +61,8 @@ import {
 } from "@/lib/classes";
 import {
   evaluateGrants,
-  countTopLevelFreeCasts,
   type Grant,
+  type GrantSource,
   type AggregatedGrants,
   type AdvantageClause,
   type DamageDieModifierEntry,
@@ -61,12 +71,23 @@ import {
   type PactWeapon,
   type PactWeaponRider,
   type MarkedTargetScope,
+  type CastSourceOverrides,
+  type FreeCastFromListEntry,
+  type ResourcePayment,
+  type FreeCastCapacityStep,
+  type FreeCastEntry,
+  whileActiveDurationAtCastLevel,
+  resolveGrantActiveKey,
+  grantField,
+  hasGrantField,
+  topGrantRef,
 } from "@/lib/grants";
 import {
   resolveGrantSourcesForFeatures,
   resolveGrantSourcesForRace,
   resolveGrantSourcesForInvocations,
   resolveGrantSourcesForSpells,
+  resolveGrantSourcesForSpellLifecycles,
   resolveGrantSourcesForEquipment,
   resolveAllGrantSources,
   raceTraitSessionId,
@@ -76,7 +97,19 @@ import {
   bloodiedFromHp,
   aggregateCharacterGrants,
 } from "@/lib/aggregate-character";
-import { slotUsageKey } from "@/lib/cast-options";
+import { sessionActiveKeys } from "@/lib/world-standing-grants";
+// Every resolved tracker row's `used` count reads through the ONE vitals
+// projection seam (session truth reconciled against the persisted engine
+// world), so the rail/rest/action surfaces built from these rows migrate off
+// the raw session mirror in one motion. `rolls` stays a session-only fact
+// (the world does not model recorded rolls).
+import { vitalTrackerUsed } from "@/lib/character-vitals";
+import {
+  classifySpellCastingTime,
+  slotUsageKey,
+  type CastRecoveryCadence,
+  type SpellCastTiming,
+} from "@/lib/cast-options";
 import { scaleCombatSummaryAtCastLevel } from "@/lib/cast-resolution";
 import { getRace, rawRaceTraitCatKey, type RaceFeatureEntry } from "@/data/races";
 import type { CreatureSize, SrdRaceTrait } from "@/data/types";
@@ -89,12 +122,15 @@ import {
 import { spellIndex, spells } from "@/data/spells";
 import { WEAPONS_BY_ID } from "@/data/weapons";
 import { getEquipment } from "@/data/equipment";
-import { getMagicItem } from "@/data/magic-items";
+import { getMagicItem, SRD_MAGIC_ITEMS } from "@/data/magic-items";
+import { resolveItemResources } from "@/lib/item-resources";
+import { makeItemResourceIdentity, type ItemResourceIdentity } from "@/lib/resources";
 import { resolveItemConsumable, consumableActionSlot } from "@/lib/srd-resolve";
 import {
   appendAbilityModToDice,
   scaleCantripDice,
   scaleUpcastDice,
+  pickByLevel,
   pickDiceByLevel,
   spellInstanceCount,
 } from "@/lib/utils";
@@ -144,7 +180,11 @@ import { resolveEffectiveSpells } from "@/lib/expanded-spells";
 import { resolveSpellAbility } from "@/lib/resolve-spell-ability";
 import { resolveSpellOwningClassId } from "@/lib/spell-owning-class";
 import { isSpellCombatCastable } from "@/lib/spell-combat-castable";
-import { resolveArmorEffects } from "@/lib/condition-effects";
+import {
+  conditionBreaksConcentration,
+  resolveArmorEffects,
+} from "@/lib/condition-effects";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { effectiveArmorProficiencies } from "@/lib/feat-prereq";
 import type { CostSpec } from "@/lib/cost-engine";
 
@@ -188,8 +228,16 @@ export interface ResolvedTracker {
   total: number;
   /** Recovery timing */
   recovery: Recovery;
+  /** Whether a matching rest may refill this tracker without table input. */
+  autoRecover?: false;
+  /** Fixed amount restored at Long Rest/dawn; omitted means full recovery. */
+  longRestRecovery?: number;
   /** Die type (optional) */
   die?: string;
+  /** Range for physical rolls the player records and later spends individually. */
+  recordedRolls?: { min: number; max: number };
+  /** Current entered results; `null` is an available slot not filled yet. */
+  rolls?: ReadonlyArray<number | null>;
   /** Whether this is a pool (HP-like) resource */
   isPool?: boolean;
   /** Stable unit token for pools (localized at the render boundary). */
@@ -200,6 +248,8 @@ export interface ResolvedTracker {
    * Only meaningful when recovery is "short-rest" or "short-or-long-rest".
    */
   shortRestRecovery?: number | string;
+  /** Active-state start that fully refreshes this tracker. */
+  refreshOnActivationOf?: string;
   /**
    * H10 — Generic scaling-rider chip. A small bilingual label + value
    * surfaced from the class table's `classSpecific` map (e.g. Barbarian
@@ -226,9 +276,25 @@ export interface ResolvedTracker {
 export interface ActionSummary {
   /** Attack bonus: +9 to hit */
   attackBonus?: number;
+  /** A deterministic held die delivered to the reviewed target. */
+  grantedDie?: { kind: "bardic-inspiration"; die: string };
+  /** A deterministic, non-stacking Heroic Inspiration grant. */
+  grantsHeroicInspiration?: true;
+  /** Set the selected 0-HP creature's death-save state to Stable. */
+  stabilize?: true;
   conditionApplication?: CombatConditionApplication;
   /** Damage formula: "8d6", "1d8+5", "3×(1d4+1)" */
   damage?: string;
+  /** One observed incoming damage instance reduced by a physical roll plus a
+   * deterministic bonus. The resolver applies the remainder through defenses. */
+  damageReduction?: {
+    dice: string;
+    bonus: number;
+    damageTypes: ReadonlyArray<DamageType>;
+  };
+  /** How a successful attack reaches its target. This is a deterministic trigger
+   * fact for reactive effects; geometry and a thrown-weapon override stay at the table. */
+  attackMode?: "melee" | "ranged";
   /** Flat bonus that applies to exactly one damage roll of this cast. Kept separate
    * for multi-instance spells so the resolver cannot multiply it across darts/rays. */
   oneRollDamageBonus?: number;
@@ -271,6 +337,7 @@ export interface ActionSummary {
   /** This row reuses an already-active spell. It never spends another slot or starts
    * concentration; its formulas are scaled to the original cast level. */
   recurringUse?: true;
+  endsOnSuccessfulSave?: true;
   /** Damage type: "fire", "piercing", "force" */
   damageType?: string;
   /**
@@ -311,14 +378,24 @@ export interface ActionSummary {
    */
   extraDamage?: Array<{
     dice: string;
+    fixedAmount?: number;
     damageType: string;
+    /** Player-selectable types for this rider; `damageType` is the fallback. */
+    damageTypeChoices?: ReadonlyArray<DamageType>;
     oncePerTurn: boolean;
+    /** Localized provenance used by the resolution review. */
+    sourceName?: string;
+    /** Stable provenance stored in the structured combat log. */
+    sourceLoc?: LocText;
     /**
      * The tracker this rider spends on each use (Psi Warrior Psionic Strike →
      * Psionic Energy Dice). Present only for riders with a `resourceCost`; the
      * combat UI debits it (the engine never auto-spends — override-first).
      */
     resourceTrackerId?: string;
+    round1?: true;
+    requiresRiderTrackerId?: string;
+    targetCreatureTypes?: ReadonlyArray<CreatureType>;
   }>;
   /**
    * How this weapon's OWN damage dice are manipulated when rolled (Great Weapon
@@ -370,6 +447,10 @@ export interface ActionSummary {
   trigger?: string;
   /** Healing formula: "1d10+9", "5×level" */
   healing?: string;
+  /** A tracked resource restored by this action's atomic commit. */
+  trackerTopUp?: { trackerId: string; upTo: number | "full" };
+  /** A variable pool whose selected spend becomes this action's healing result. */
+  poolSpendEffect?: "healing";
   /** Target-facing conditions this action can end. */
   conditionRemoval?: { options: ConditionId[]; max?: number };
   targeting?: CombatTargeting;
@@ -389,14 +470,13 @@ export interface ActionSummary {
    */
   healingBreakdown?: BreakdownLine[];
   /**
-   * S8 ROLL-ENTRY — the self-heal a feature ACTION grants, structured so the card
+   * S8 ROLL-ENTRY — the heal a feature ACTION grants, structured so the card
    * can offer a roll-entry-then-apply affordance (golden rule 21: the app NEVER
    * rolls the die). `dice` is the rolled portion the PLAYER supplies (e.g. "1d10"
    * — Second Wind); `bonus` is the DETERMINISTIC part the engine resolved (the
    * Fighter level), added to the entered roll on apply. Present ONLY when the
-   * action's heal targets the user (a `heal:` declaration, always self) AND carries
-   * a die — a dice-free deterministic heal would be a true one-tap, but no such
-   * self-heal exists in data yet. Mirrors `summary.heal`'s structure but survives
+   * action carries rolled healing. Targeting separately decides whether it affects
+   * self, an ally or any creature. Mirrors `summary.heal`'s structure but survives
    * localization (the raw `heal` does not pass to the display summary). The card
    * applies `enteredRoll + bonus` via the store `applyHealing` seam (clamped, undoable).
    */
@@ -504,7 +584,8 @@ export interface ActionSummary {
    * On Hands: 5 HP ends Poisoned; +Restoring Touch's six conditions at Paladin
    * 14). Locale-FREE: `condition` is a stable {@link ConditionId} the presenter
    * localizes via `conditionLabel`, `costHp` the HP drawn from the pool. The pool
-   * is never auto-debited (override-first). Already filtered to the conditions
+   * is charged by the shared resolver as part of the action's exact pool debit.
+   * Already filtered to the conditions
    * available at the character's level. Omitted when the action cures nothing.
    */
   cureOptions?: Array<{ condition: ConditionId; costHp: number }>;
@@ -515,11 +596,10 @@ export interface ActionSummary {
    * OWNING-class level and emits the concrete formula (`{ dice: "2d8" }` at Monk
    * L10, "2d10" at L11, …) — a ROLL-ENTRY the player supplies (golden rule 21 —
    * the app never rolls). Level-gated at emission (a Monk below L10 gets no field).
-   * Override-first: the presenter shows the formula; the temp HP is never
-   * auto-applied (temp HP don't stack). Omitted when the action grants no rolled
-   * temp HP.
+   * The presenter shows the formula and the universal resolver applies the reviewed
+   * result with max-wins semantics. Omitted when the action grants no rolled temp HP.
    */
-  tempHpRoll?: { dice: string };
+  tempHpRoll?: { dice: string; bonus?: number; multiplier?: number };
   /**
    * Per-spell Temporary-HP APPLY seam (False Life: 2d4 + 4, +5/slot level above
    * 1st) — the roll-entry-then-apply sibling of {@link healApply}, but for Temp HP.
@@ -569,11 +649,20 @@ export interface ResolvedAction {
   /** SRD spell id (set for SRD spell actions) — lets the Combat page build the
    *  spell's cast options (upcast / free-cast) for rich in-combat casting. */
   spellId?: string;
+  /** Exact stored index for a custom spell. Its action id is index-based too, so
+   * duplicate homebrew names remain independently castable. */
+  customSpellIndex?: number;
+  /** Canonical casting-time class. Present only on spell casts. */
+  castTiming?: SpellCastTiming;
   /** SRD weapon id (set for equipped SRD weapon actions, incl. their off-hand
    *  rows) — lets the combat card pick the per-weapon-type seal glyph
    *  (`weaponSealIcon`). Undefined for custom / manifested / pact weapons (→
    *  generic sword). */
   weaponId?: string;
+  /** Catalogue id of the magic item behind a bounded spell-pool opener. The
+   * runtime `castPoolSourceId` stays instance-bound; presentation uses this
+   * stable id without parsing or exposing the physical copy's UUID. */
+  castPoolItemId?: string;
   /** True for the dual-wield OFF-HAND bonus attack (Two-Weapon Fighting). The UI
    *  surfaces it ONLY once a Light-weapon Attack has been committed this turn —
    *  RAW 2024: the off-hand attack follows the Attack action with a Light weapon.
@@ -589,6 +678,16 @@ export interface ResolvedAction {
   formAttack?: boolean;
   /** Is concentration spell */
   concentration: boolean;
+  /** Turn-scoped deterministic effects produced by this use. */
+  grantsNextAttackAdvantage?: true;
+  locksMovement?: true;
+  requiresActionThisTurn?: string;
+  requiresOutcomeThisTurn?: SrdActionDef["requiresOutcomeThisTurn"];
+  requiresActionCategoryThisTurn?: ActionEconomyCategory;
+  maxUsesPerTurn?: number;
+  /** Active state this action explicitly maintains for the current round. */
+  maintainsActiveKey?: string;
+  economyCategory?: ActionEconomyCategory;
   /** Structured summary for at-a-glance display */
   summary: ActionSummary;
   /** Whether it costs a spell slot */
@@ -597,6 +696,14 @@ export interface ResolvedAction {
   slotLevel?: number;
   /** Tracker ID consumed (if feature with tracker) */
   costTracker?: string;
+  /** Exact item-resource payment address for an instance-bound item action. */
+  resourcePayment?: Extract<ResourcePayment, { kind: "item-resource" }>;
+  /** Units spent from `resourcePayment` when the action itself has a fixed cost. */
+  resourceCost?: number;
+  /** Stable source id of the bounded spell pool this action opens. Kept separate
+   * from `costTracker`: homebrew features may share one resource without sharing
+   * their eligible spell lists. */
+  castPoolSourceId?: string;
   /** Whether the associated tracker is a pool resource (Lay on Hands, etc.) */
   costTrackerIsPool?: boolean;
   /** Stable pool unit token (e.g. "hp", "points") — localized at the render boundary. */
@@ -640,6 +747,44 @@ export interface ResolvedAction {
    * state. Omitted for actions on features with no `while-active` grant.
    */
   activatesKey?: string;
+  /** Immediate-drop triggers declared by the activated state (Rage cannot be
+   * entered in Heavy armor and ends under the Incapacitated family). */
+  activationEndsEarlyOn?: ReadonlyArray<string>;
+  /** Source-specific duration for an activated cast state (for example War
+   * God's Blessing's concentration-free 1-minute spell). */
+  activeDurationRounds?: number;
+  /** Exact future owner-turn boundary for a short active state (Shield). */
+  activeTurnBoundary?: {
+    phase: "turn-start" | "turn-end";
+    turns: number;
+  };
+  /** A recurring save can end this already-active state without re-activating it. */
+  endsActiveKeyOnSuccessfulSave?: string;
+  /** The actor's live effect from this source owns the recurring action's exact
+   * target. The resolver defaults to that creature while retaining explicit
+   * table override through its existing "any creature" control. */
+  persistentTargetSourceId?: string;
+  /**
+   * A standing spell grant that belongs on the selected creature rather than on
+   * the caster. The action carries only the catalogue reference; the encounter
+   * resolver creates the target-bound lifetime record after target selection.
+   * Grants themselves stay owned by the spell data.
+   */
+  standingEffect?: {
+    sourceId: string;
+    sourceKind?: "spell" | "feature";
+    activeKey: string;
+    markScope?: "marked" | "cursed" | "vowed";
+    targetAffinity: CombatTargeting["affinity"];
+    excludeSelf?: boolean;
+    /** Deterministic combat cap declared by the while-active grant, when any. */
+    maxRounds?: number;
+    /** Exact source-turn boundary declared by the while-active grant, when any. */
+    turnBoundary?: { phase: "turn-start" | "turn-end"; turns: number };
+    /** The effect occurrence exists only when this cast's Temporary HP replace the
+     * target's current pool. */
+    requiresAppliedTempHp?: true;
+  };
   /**
    * USE-APPLIES (2026-06-12) — deterministic, dice-free effects this action
    * AUTO-APPLIES to session state on use (Task 1): a same-source slot-gated
@@ -712,9 +857,9 @@ export interface ResolvedActionHeal {
  * user-editable (temp HP is an editable rail field). Currently one kind — the
  * slot-gated temp-HP grant (Orc Adrenaline Rush, Shifter Shifting, Chef) — the
  * register the field is built to grow (self-heal, self-condition) without a new
- * commit path. Dice-bearing quantities are NEVER auto-applied (golden rule 21):
- * those stay on the manual path (e.g. Second Wind's `1d10`), so this register
- * carries only the resolved, deterministic amount.
+ * commit path. Dice-bearing quantities never enter this immediate-use register
+ * (golden rule 21): they use the universal roll-entry resolver instead, so this
+ * register carries only a resolved, deterministic amount.
  */
 export type ResolvedUseEffect = {
   /**
@@ -749,6 +894,34 @@ function resolveDiceCount(
   return `${n}${dieFace}`;
 }
 
+function resolveActionDie(
+  die: string | undefined,
+  sourceId: string,
+  character: CharacterDoc
+): string | undefined {
+  if (!die) return undefined;
+  const sentinelKey = /^classSpecific:(.+)$/.exec(die)?.[1];
+  if (!sentinelKey) return die;
+  const resolved = featureClassRow(sourceId, character)?.[sentinelKey];
+  return typeof resolved === "string" && resolved.length > 0 ? resolved : undefined;
+}
+
+function resolveHealTerm(
+  term: HealTerm | undefined,
+  charData: CharacterDoc["character"],
+  scores: Record<AbilityCode, number>
+): number {
+  if (!term) return 0;
+  switch (term.kind) {
+    case "class-level":
+      return classEntryLevel(charData, term.classId);
+    case "ability-mod":
+      return abilityModifier(scores[term.ability]);
+    case "flat":
+      return term.value;
+  }
+}
+
 /**
  * Evaluate a declared heal term against the character — the ONE place an
  * {@link ActionHeal} becomes numbers. The class-level term reads the OWNING
@@ -757,33 +930,27 @@ function resolveDiceCount(
  */
 function resolveActionHeal(
   heal: ActionHeal,
-  charData: CharacterDoc["character"],
+  sourceId: string,
+  character: CharacterDoc,
   // D2 — the EFFECTIVE ability scores (set-score item floors), so a heal-on-action
   // ability term (e.g. +WIS) reflects an equipped set-score item. Passed in from the
   // resolution ctx (the single source).
   scores: Record<AbilityCode, number>
 ): ResolvedActionHeal {
+  const charData = character.character;
   // A VARIABLE die count (PB, or an ability mod ≥1) is multiplied out to a
   // concrete dice string at emission via the shared resolver, so the chip reads
   // "3d4"/"3d8" — a number the player never has to compute (owner 2026-06-12).
-  const dice =
+  const resolvedDice =
     heal.diceCount && heal.dieFace
       ? resolveDiceCount(heal.diceCount, heal.dieFace, charData, scores)
-      : heal.dice;
+      : resolveActionDie(heal.dice, sourceId, character);
+  const dice = resolvedDice?.startsWith("d") ? `1${resolvedDice}` : resolvedDice;
   const term = heal.plus;
-  if (!term) return { dice, bonus: 0 };
-  switch (term.kind) {
-    case "class-level":
-      return { dice, bonus: classEntryLevel(charData, term.classId), term };
-    case "ability-mod":
-      return {
-        dice,
-        bonus: abilityModifier(scores[term.ability]),
-        term,
-      };
-    case "flat":
-      return { dice, bonus: term.value };
-  }
+  const bonus = resolveHealTerm(term, charData, scores);
+  return term?.kind === "class-level" || term?.kind === "ability-mod"
+    ? { dice, bonus, term }
+    : { dice, bonus };
 }
 
 /**
@@ -835,9 +1002,14 @@ function resolveActiveFormRiders(
               )
             )
           : (g.dice ?? "");
+      const damageType =
+        g.damageTypeChoices?.[0] ??
+        (g.damageType === "same-as-weapon" ? "radiant" : g.damageType);
+      if (!damageType) continue;
       out.push({
         dice,
-        damageType: g.damageType === "same-as-weapon" ? "radiant" : g.damageType,
+        damageType,
+        ...(g.damageTypeChoices ? { damageTypeChoices: [...g.damageTypeChoices] } : {}),
         oncePerTurn: g.oncePerTurn ?? false,
         scope: "attack-or-spell",
         source: traitName,
@@ -906,9 +1078,15 @@ export interface RawActionSummary extends Omit<
    */
   extraDamage?: Array<{
     dice: string;
+    fixedAmount?: number;
     damageType: string;
+    /** Player-selectable types for this rider; `damageType` is the fallback. */
+    damageTypeChoices?: ReadonlyArray<DamageType>;
     oncePerTurn: boolean;
     resourceTrackerId?: string;
+    round1?: true;
+    requiresRiderTrackerId?: string;
+    targetCreatureTypes?: ReadonlyArray<CreatureType>;
     /**
      * G14 — an `attack-or-spell` rider is NOT weapon-bound (a celestial-revelation
      * Revelation's +PB): it rides ONE attack OR spell per turn, surfaced as a
@@ -1329,14 +1507,25 @@ interface TrackerExprCtx {
  * arithmetic forms) — so a Star-Map / Misty-Wanderer / Mapping-Magic free cast
  * scaled by an ability modifier resolves through the one shared resolver rather
  * than a per-site literal match (single source of truth — golden rule 6). A
- * blank/absent formula falls back to the grant's fixed `chargesPerRest`.
+ * blank/absent formula falls back to the grant's fixed `chargesPerRest`. When
+ * `capacityByLevel` has an eligible step, its formula/fixed capacity replaces
+ * that base pair; the highest eligible `minLevel` wins.
  */
 export function resolveChargesFormula(
   formula: string | undefined,
   chargesPerRest: number,
-  character: CharacterDoc
+  character: CharacterDoc,
+  capacityByLevel: ReadonlyArray<FreeCastCapacityStep> = []
 ): number {
-  if (!formula) return chargesPerRest;
+  const level = totalLevel(character.character);
+  const step = capacityByLevel
+    .filter((candidate) => candidate.minLevel <= level)
+    .reduce<
+      FreeCastCapacityStep | undefined
+    >((best, candidate) => (!best || candidate.minLevel > best.minLevel ? candidate : best), undefined);
+  const resolvedFormula = step ? step.chargesFormula : formula;
+  const resolvedFixed = step ? step.chargesPerRest : chargesPerRest;
+  if (!resolvedFormula) return resolvedFixed;
   // LATENT (B2 lesson): this passes NO `scalingLevel`, so a `"level"` term resolves
   // on the TOTAL character level. That is correct for every shipped `chargesFormula`
   // (race/feat/subclass free casts, which scale on character level by RAW). If a
@@ -1344,7 +1533,7 @@ export function resolveChargesFormula(
   // on the OWNING-class level instead — thread `featureScalingLevel(...)` as the
   // 3rd arg here, exactly as `resolveTrackerTotal` already does for class trackers.
   // No shipped item triggers this today; see docs/AUTOMATION_BACKLOG.md (W11).
-  return resolveTrackerTotal(formula, character);
+  return resolveTrackerTotal(resolvedFormula, character);
 }
 
 /**
@@ -1565,6 +1754,9 @@ function resolveTrackerSpec(spec: TrackerSpec, level: number): TrackerSpec {
       ...(override.shortRestRecovery !== undefined && {
         shortRestRecovery: override.shortRestRecovery,
       }),
+      ...(override.refreshOnActivationOf !== undefined && {
+        refreshOnActivationOf: override.refreshOnActivationOf,
+      }),
     };
   }
   return result;
@@ -1583,8 +1775,8 @@ function nonZeroAltRecovery(cost: AltRecoveryCost): AltRecoveryCost | undefined 
 
 /**
  * Merge per-character `trackerOverrides` onto an already level-resolved spec.
- * Every defined override field (total / recovery / die / isPool / unit /
- * shortRestRecovery) wins over the base. Applied ON TOP of the level-resolved
+ * Every defined override field (total / recovery / die / recordedRolls / isPool /
+ * unit / shortRestRecovery) wins over the base. Applied ON TOP of the level-resolved
  * base — do NOT re-run `resolveTrackerSpec` after this, or the feature's
  * `levels[]` would clobber a user's die/total override on a scaling tracker.
  */
@@ -1598,10 +1790,16 @@ function applyTrackerOverrides(
     ...(overrides.total !== undefined && { total: overrides.total }),
     ...(overrides.recovery !== undefined && { recovery: overrides.recovery }),
     ...(overrides.die !== undefined && { die: overrides.die }),
+    ...(overrides.recordedRolls !== undefined && {
+      recordedRolls: overrides.recordedRolls,
+    }),
     ...(overrides.isPool !== undefined && { isPool: overrides.isPool }),
     ...(overrides.unit !== undefined && { unit: overrides.unit }),
     ...(overrides.shortRestRecovery !== undefined && {
       shortRestRecovery: overrides.shortRestRecovery,
+    }),
+    ...(overrides.refreshOnActivationOf !== undefined && {
+      refreshOnActivationOf: overrides.refreshOnActivationOf || undefined,
     }),
     // Override-first for the alternate-recovery cost: a defined override wins.
     // For a pool-funded override, `{ amount: 0 }` is the documented sentinel that
@@ -1794,6 +1992,7 @@ export function weaponDieWhy(
 function riderWhy(rider: {
   dice: string;
   damageType: string;
+  damageTypeChoices?: ReadonlyArray<DamageType>;
   oncePerTurn: boolean;
   /** The tracker each use spends — its id IS the owning feature's ("monk-focus"). */
   trackerId?: string;
@@ -1810,7 +2009,13 @@ function riderWhy(rider: {
     term,
     params: {
       dice: rider.dice,
-      type: { loc: uiText(`srd.damage_${rider.damageType}`) },
+      type: {
+        loc: uiText(
+          rider.damageTypeChoices?.length
+            ? "combat.chosenDamageType"
+            : `srd.damage_${rider.damageType}`
+        ),
+      },
       ...(rider.trackerId ? { tracker: { loc: featureNameLoc(rider.trackerId) } } : {}),
     },
     ...(rider.sourceId ? { rule: { loc: featureNameLoc(rider.sourceId) } } : {}),
@@ -2265,7 +2470,7 @@ export function resolveCunningStrikeOptions(character: CharacterDoc): {
   const { character: charData } = character;
   const agg = evaluateGrants(
     resolveGrantSourcesForFeatures(charData.features),
-    new Set(character.session.activeFeatures ?? []),
+    sessionActiveKeys(character.session),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   );
   if (agg.cunningStrikeOptions.length === 0) {
@@ -2309,19 +2514,26 @@ export function resolveCunningStrikeOptions(character: CharacterDoc): {
 /**
  * D4 — a resolved free-cast-FROM-LIST pool the Play board's guided picker renders.
  * The player picks ONE spell from `spellIds` (a class list ≤ a level cap) and casts
- * it without a slot, debiting the `trackerId` pool (Cleric Divine Intervention →
- * any Cleric spell ≤ 5th, 1/Long Rest). `remaining` is the per-rest charges left.
+ * it without a slot, debiting its exact `payment` owner (Cleric Divine
+ * Intervention's tracker or one physical item's resource). `remaining` is the
+ * available amount in that payment owner.
  */
 export interface FreeCastFromListPool {
+  /** Runtime grant attribution. Item pools use their per-instance source id. */
   sourceId: string;
+  /** Stable catalogue identity for item-pool presentation. */
+  itemId?: string;
+  /** Exact payment owner; `trackerId` remains only as a legacy routing field. */
+  payment?: ResourcePayment;
   trackerId: string;
   /** The eligible spell ids (class list ≤ maxSpellLevel, sorted by level then id). */
   spellIds: string[];
   maxSpellLevel: number;
-  rest: "short" | "long";
-  /** Per-rest charge cap (Divine Intervention = 1). */
+  /** Recovery owned by the exact payment source. */
+  recovery: CastRecoveryCadence;
+  /** Capacity of the bounded payment source (Divine Intervention = 1). */
   charges: number;
-  /** Charges remaining this rest (charges − tracker used). */
+  /** Currently available units in the payment source. */
   remaining: number;
   /**
    * S9 — per-spell charge cost, keyed by spell id, with a value for EVERY eligible
@@ -2332,6 +2544,77 @@ export interface FreeCastFromListPool {
    */
   costBySpell: Record<string, number>;
   casterAbility?: AbilityCode;
+  castOverrides?: CastSourceOverrides;
+}
+
+export interface ItemResourceAvailability {
+  identity: ItemResourceIdentity;
+  capacity: number;
+  current: number;
+  /** Exact boundaries declared by the typed resource. No boundary aliases. */
+  recoveryTriggers: ReadonlyArray<ResourceRecoveryTrigger>;
+}
+
+/** Resolve one exact physical resource without deriving identity from a source id. */
+export function resolveItemResourceAvailability(
+  character: CharacterDoc,
+  identity: ItemResourceIdentity
+): ItemResourceAvailability | null {
+  const resolved = resolveItemResources({
+    equipment: character.character.equipment,
+    catalogue: SRD_MAGIC_ITEMS,
+    itemResources: character.session.itemResources,
+  }).resources.find(
+    (resource) =>
+      resource.key === identity.key &&
+      resource.itemId === identity.itemId &&
+      resource.instanceId === identity.instanceId &&
+      resource.resourceId === identity.resourceId
+  );
+  if (
+    !resolved ||
+    resolved.capacity === undefined ||
+    resolved.current === undefined ||
+    resolved.state?.disabled === true ||
+    (resolved.itemState && resolved.itemState.disposition !== "magical")
+  ) {
+    return null;
+  }
+  return {
+    identity,
+    capacity: resolved.capacity,
+    current: resolved.current,
+    recoveryTriggers: (resolved.spec.recoveries ?? []).map(({ trigger }) => trigger),
+  };
+}
+
+export const CAST_SOURCE_ACTIVE_PREFIX = "cast-source:";
+
+/** Stable active/timer key for a source-specific persistent spell cast. */
+export function castSourceActiveKey(sourceId: string, spellId: string): string {
+  return `${CAST_SOURCE_ACTIVE_PREFIX}${sourceId}:${spellId}`;
+}
+
+function castSourceIdFromActiveKey(key: string): string | null {
+  if (!key.startsWith(CAST_SOURCE_ACTIVE_PREFIX)) return null;
+  const spellSeparator = key.lastIndexOf(":");
+  return spellSeparator > CAST_SOURCE_ACTIVE_PREFIX.length
+    ? key.slice(CAST_SOURCE_ACTIVE_PREFIX.length, spellSeparator)
+    : null;
+}
+
+/** Whether a source pool admits this spell, for both fixed and class-list pools. */
+function freeCastEntryIncludesSpell(
+  entry: FreeCastFromListEntry,
+  spell: (typeof spells)[number]
+): boolean {
+  return entry.spellIds
+    ? entry.spellIds.includes(spell.id)
+    : spell.level >= 1 &&
+        spell.level <= (entry.maxSpellLevel ?? 0) &&
+        spell.classes.some(
+          (classId) => classId.toLowerCase() === entry.spellList?.toLowerCase()
+        );
 }
 
 /**
@@ -2345,9 +2628,10 @@ export interface FreeCastFromListPool {
  */
 export function resolveFreeCastFromList(character: CharacterDoc): FreeCastFromListPool[] {
   const { character: charData, session } = character;
+  const grantSources = resolveAllGrantSources(charData, session.itemResources);
   const agg = evaluateGrants(
-    resolveAllGrantSources(charData),
-    new Set(session.activeFeatures ?? []),
+    grantSources,
+    sessionActiveKeys(session),
     new Map(Object.entries(session.grantBundleChoices ?? {}))
   );
   if (agg.freeCastFromList.length === 0) return [];
@@ -2361,20 +2645,19 @@ export function resolveFreeCastFromList(character: CharacterDoc): FreeCastFromLi
   // resolved total (War God's Blessing rides the whole Channel Divinity pool —
   // 2/3/4 by level — single source of truth; golden rules 2/6). Resolved once.
   const trackerById = new Map(resolveTrackers(character).map((tr) => [tr.id, tr]));
+  const itemIdBySourceId = new Map(
+    grantSources.flatMap((source) =>
+      source.ref?.kind === "magic-item" ? [[source.id, source.ref.key] as const] : []
+    )
+  );
 
-  return agg.freeCastFromList.map((entry) => {
+  const pools: FreeCastFromListPool[] = [];
+  for (const entry of agg.freeCastFromList) {
     // Two pool shapes: a FIXED set of named ids (War God's Blessing) or a class
     // list ≤ a level cap (Divine Intervention).
-    const eligible = entry.spellIds
-      ? entry.spellIds.filter((id) => spellIndex.has(id))
-      : spells
-          .filter(
-            (s) =>
-              s.level >= 1 &&
-              s.level <= (entry.maxSpellLevel ?? 0) &&
-              s.classes.some((c) => c.toLowerCase() === entry.spellList?.toLowerCase())
-          )
-          .map((s) => s.id);
+    const eligible = spells
+      .filter((spell) => freeCastEntryIncludesSpell(entry, spell))
+      .map((spell) => spell.id);
     // L20 — Greater Divine Intervention's Wish addition (a 9th-level spell off the
     // Cleric list, so it isn't picked up by the class-list filter above).
     if (
@@ -2396,13 +2679,33 @@ export function resolveFreeCastFromList(character: CharacterDoc): FreeCastFromLi
     const maxSpellLevel =
       entry.maxSpellLevel ??
       eligible.reduce((max, id) => Math.max(max, spellIndex.get(id)?.level ?? 0), 0);
-    // Charge cap + rest cadence: explicit on the pool, else inferred from the
-    // debited tracker (Channel Divinity = 2/3/4; recovers on short-or-long rest).
-    const tracker = trackerById.get(entry.trackerId);
-    const charges = entry.chargesPerRest ?? tracker?.total ?? 1;
-    const rest: "short" | "long" =
-      entry.rest ?? (tracker?.recovery === "long-rest" ? "long" : "short");
-    const used = session.trackers[entry.trackerId]?.used ?? 0;
+    // Capacity + recovery cadence come from the exact payment owner. Typed item
+    // resources keep their declared boundaries; trackers retain short/long rest.
+    const availability =
+      entry.payment.kind === "item-resource"
+        ? resolveItemResourceAvailability(character, entry.payment)
+        : null;
+    if (entry.payment.kind === "item-resource" && !availability) continue;
+    const tracker =
+      entry.payment.kind === "tracker"
+        ? trackerById.get(entry.payment.trackerId)
+        : undefined;
+    const charges = availability
+      ? availability.capacity
+      : entry.payment.kind === "tracker"
+        ? (entry.chargesPerRest ?? tracker?.total ?? 1)
+        : 0;
+    const recovery: CastRecoveryCadence = availability
+      ? { kind: "item-resource", triggers: availability.recoveryTriggers }
+      : {
+          kind: "tracker",
+          rest: entry.rest ?? (tracker?.recovery === "long-rest" ? "long" : "short"),
+        };
+    const remaining = availability
+      ? availability.current
+      : entry.payment.kind === "tracker"
+        ? Math.max(0, charges - (session.trackers[entry.payment.trackerId]?.used ?? 0))
+        : 0;
     // S9 — per-spell cost for EVERY eligible spell (default 1). Feature pools carry
     // no `spellCosts`, so every entry defaults to 1 and the two existing consumers
     // are unaffected; a variable-cost item pool overlays its real per-spell costs.
@@ -2410,18 +2713,24 @@ export function resolveFreeCastFromList(character: CharacterDoc): FreeCastFromLi
     for (const id of eligible) {
       costBySpell[id] = entry.spellCosts?.[id] ?? 1;
     }
-    return {
+    const itemId = itemIdBySourceId.get(entry.sourceId);
+    pools.push({
       sourceId: entry.sourceId,
-      trackerId: entry.trackerId,
+      ...(itemId ? { itemId } : {}),
+      payment: entry.payment,
+      trackerId:
+        entry.payment.kind === "tracker" ? entry.payment.trackerId : entry.sourceId,
       spellIds: eligible,
       maxSpellLevel,
-      rest,
+      recovery,
       charges,
-      remaining: Math.max(0, charges - used),
+      remaining,
       costBySpell,
       ...(entry.casterAbility ? { casterAbility: entry.casterAbility } : {}),
-    };
-  });
+      ...(entry.castOverrides ? { castOverrides: entry.castOverrides } : {}),
+    });
+  }
+  return pools;
 }
 
 /** Exhaustiveness guard local to this pure module (do NOT import the
@@ -2526,7 +2835,8 @@ export function resolveTrackers(character: CharacterDoc): RawResolvedTracker[] {
   for (const t of [
     ...resolveSrdTrackers(character),
     ...resolveRaceTrackers(character, level),
-    ...resolveFreeCastItemTrackers(character),
+    ...resolveEquipmentTrackers(character),
+    ...resolveMagicItemTrackers(character),
     ...resolveFreeCastFeatTrackers(character),
   ]) {
     if (seen.has(t.id)) continue;
@@ -2536,11 +2846,46 @@ export function resolveTrackers(character: CharacterDoc): RawResolvedTracker[] {
   return out;
 }
 
+/** Declarative use pools owned by ordinary equipment. The stable tracker key is
+ * namespaced from feature/item ids, while the label and rules remain catalogue data. */
+function resolveEquipmentTrackers(character: CharacterDoc): RawResolvedTracker[] {
+  const out: RawResolvedTracker[] = [];
+  for (const ref of character.character.equipment) {
+    if ("custom" in ref || (ref.quantity ?? 1) <= 0) continue;
+    const item = getEquipment(ref.srdId);
+    const spec = item?.mechanics?.tracker;
+    if (!item || !spec) continue;
+    const id = `equipment:${item.id}`;
+    const total = resolveTrackerTotal(spec.total, character);
+    if (total <= 0) continue;
+    out.push({
+      id,
+      label: srdText("equipment", item.id, "name"),
+      description: srdText("equipment", item.id, "description"),
+      total,
+      recovery: spec.recovery,
+      ...(spec.autoRecover === false ? { autoRecover: false } : {}),
+      ...(spec.longRestRecovery !== undefined
+        ? { longRestRecovery: spec.longRestRecovery }
+        : {}),
+      die: spec.die,
+      recordedRolls: spec.recordedRolls,
+      rolls: character.session.trackers[id]?.rolls,
+      isPool: spec.isPool,
+      unit: spec.unit,
+      shortRestRecovery: spec.shortRestRecovery,
+      refreshOnActivationOf: spec.refreshOnActivationOf,
+      used: vitalTrackerUsed(character.session, id),
+    });
+  }
+  return out;
+}
+
 /**
  * The largest `free-cast-spell` per-rest charge count on a grant list — a
  * charged magic item's charge-pool CAP (multiple grants on one item share the
  * one pool, first-charge-count wins). ONE derivation shared by the rail's
- * item tracker (`resolveFreeCastItemTrackers`) and the Inventory row's charge
+ * item tracker (`resolveMagicItemTrackers`) and the Inventory row's charge
  * display, so the two surfaces can never disagree (golden rule 6). Returns 0
  * when the grants carry no pool.
  */
@@ -2553,7 +2898,7 @@ export function freeCastItemChargeMax(grants: ReadonlyArray<Grant> | undefined):
     // charged multi-spell item surfaces its pool row the same way (S9).
     const perRest =
       g.type === "free-cast-spell"
-        ? g.chargesPerRest
+        ? (g.chargesPerRest ?? 0)
         : g.type === "free-cast-from-list"
           ? (g.chargesPerRest ?? 0)
           : 0;
@@ -2563,83 +2908,222 @@ export function freeCastItemChargeMax(grants: ReadonlyArray<Grant> | undefined):
 }
 
 /**
- * S9 — CHARGE trackers for equipped charged magic items (Wand of Magic
- * Missiles, Staff of Healing, …). A charged item carries a `free-cast-spell`
- * grant whose implicit per-rest counter (`chargesPerRest`) IS the item's
- * charge pool; that counter is already created+debited by the cast flow
- * (`freeCastSourcesForSpell` + the cost-engine `free-cast` op keyed by the
- * source id), but it never surfaced in the rail. This emits ONE resolved
- * tracker per such grant, keyed by the ITEM id (the same id the cast debits),
- * so the charge pool shows + is editable in Resources with zero new state.
+ * Legacy grant-owned item charge cap. Resource-backed items own their capacity in
+ * `resources`; older tracker-backed items retain this compatibility projection.
+ */
+export function magicItemChargeMax(grants: ReadonlyArray<Grant> | undefined): number {
+  let charges = freeCastItemChargeMax(grants);
+  for (const g of grants ?? []) {
+    if (g.type !== "while-active" || !g.activation?.tracker) continue;
+    const total = Number(g.activation.tracker.total);
+    if (Number.isFinite(total) && total > charges) charges = total;
+  }
+  return charges;
+}
+
+/**
+ * Compatibility trackers for equipped magic items whose older grant still owns
+ * its charge capacity/recovery. Resource-backed items do not enter this path:
+ * their exact per-instance state is resolved by `resolveItemResources`.
  *
  * Walks ONLY equipped, attunement-satisfied magic-item sources (the same gate
  * `resolveGrantSourcesForEquipment` applies for every other item effect), so
- * an unequipped wand contributes no phantom row. Recovery is `dawn` (charged
- * items regain at dawn) — informational; the engine never auto-refills.
- * Deduped by item id at the caller; multiple grants on one item (rare) share
- * the one pool, first-charge-count wins.
+ * an unequipped wand contributes no phantom row. Cast-only pools keep the
+ * established `dawn` default; an activated property may supply an exact tracker
+ * cadence and opt out of automatic refill when the amount needs table input.
+ * Legacy rows are deduped by catalogue item id; multiple grants on one item share
+ * the one compatibility pool, first charge declaration wins.
  */
-function resolveFreeCastItemTrackers(character: CharacterDoc): RawResolvedTracker[] {
+function resolveMagicItemTrackers(character: CharacterDoc): RawResolvedTracker[] {
   const out: RawResolvedTracker[] = [];
   const seen = new Set<string>();
-  for (const source of resolveGrantSourcesForEquipment(character.character.equipment)) {
+  for (const source of resolveGrantSourcesForEquipment(
+    character.character.equipment,
+    character.session.itemResources
+  )) {
     if (source.ref?.kind !== "magic-item") continue;
-    if (seen.has(source.id)) continue;
-    const charges = freeCastItemChargeMax(source.grants);
+    const itemId = source.ref.key;
+    if (seen.has(itemId)) continue;
+    const charges = magicItemChargeMax(source.grants);
     if (charges <= 0) continue;
-    seen.add(source.id);
+    const activationTracker = (source.grants ?? []).find(
+      (g) => g.type === "while-active" && g.activation?.tracker
+    );
+    const activationSpec =
+      activationTracker?.type === "while-active"
+        ? activationTracker.activation?.tracker
+        : undefined;
+    const castSpec = (source.grants ?? []).find(
+      (g): g is Extract<Grant, { type: "free-cast-spell" | "free-cast-from-list" }> =>
+        (g.type === "free-cast-spell" || g.type === "free-cast-from-list") &&
+        g.resourceCost === undefined &&
+        (g.chargesPerRest ?? 0) > 0
+    );
+    const autoRecover = activationSpec?.autoRecover ?? castSpec?.autoRecover;
+    const longRestRecovery =
+      activationSpec?.longRestRecovery ?? castSpec?.longRestRecovery;
+    seen.add(itemId);
     out.push({
-      id: source.id,
+      id: itemId,
       // The charge pool's label is the magic item's own name (single source —
       // the rail and the cast row attribute the same item, golden rule 6).
-      label: srdText("magic-item", source.id, "name"),
+      label: srdText("magic-item", itemId, "name"),
       total: charges,
-      recovery: "dawn",
+      recovery: activationSpec?.recovery ?? "dawn",
+      ...(autoRecover === false ? { autoRecover: false } : {}),
+      ...(longRestRecovery !== undefined ? { longRestRecovery } : {}),
       isPool: true,
       // No raw `unit`: the rail falls back to the localized "uses"/usesWord word
       // (a charge IS a use of the pool) — keeps the unit i18n-clean (no English
       // leak) and consistent with every other pool row.
-      used: character.session.trackers[source.id]?.used ?? 0,
+      used: vitalTrackerUsed(character.session, itemId),
     });
   }
   return out;
 }
 
 /**
- * S9 — the item→multi-spell-pool ACTION bridge. A charged magic item that casts ONE
- * OF several spells from a shared charge pool (Wand of Binding / Wand of Fear, Ring
- * of Animal Influence, Staff of Charming) carries a `free-cast-from-list` grant but
- * NO `mechanics.actions`, so — unlike a class feature — its pool never surfaces a
- * Play-board card. This emits ONE `RawResolvedAction` per such equipped, attunement-
- * satisfied item, keyed `item-cast-<itemId>` with `costTracker = <itemId>` (the SAME
- * item-charge tracker `resolveFreeCastItemTrackers` surfaces and the cast debits). The
- * card routes through the EXISTING `costTracker`→`free-cast-from-list` picker seam
- * (`TurnEconomyProvider.handleSelect` → `DivineInterventionModal`), so no new picker
- * is built (golden rule 3). Walks the SAME equipped/attuned gate as every other item
- * effect; an unattuned/unequipped item contributes no card.
+ * Equipped magic-item activated properties enter the same action → tracker →
+ * active-state → timer pipeline as Rage/Bladesong. The grant is the only source
+ * of the action economy, cost, state key, and duration; no item ids are branched
+ * on here.
+ */
+function resolveMagicItemActivationActions(character: CharacterDoc): RawResolvedAction[] {
+  const { session } = character;
+  const pinnedSet = new Set(session.pinnedActions);
+  const out: RawResolvedAction[] = [];
+  for (const source of resolveGrantSourcesForEquipment(
+    character.character.equipment,
+    session.itemResources
+  )) {
+    if (source.ref?.kind !== "magic-item") continue;
+    const itemId = source.ref.key;
+    for (const [grantIndex, grant] of (source.grants ?? []).entries()) {
+      if (grant.type !== "while-active" || !grant.activation) continue;
+      const resourcePayment =
+        grant.activation.resourceCost && source.item
+          ? ({
+              kind: "item-resource",
+              ...makeItemResourceIdentity(
+                source.item.itemId,
+                source.item.instanceId,
+                grant.activation.resourceCost.resourceId
+              ),
+            } as const)
+          : undefined;
+      if (grant.activation.resourceCost && !resourcePayment) continue;
+      const availability = resourcePayment
+        ? resolveItemResourceAvailability(character, resourcePayment)
+        : null;
+      if (resourcePayment && !availability) continue;
+      const tracker = grant.activation.tracker;
+      const total = availability
+        ? availability.capacity
+        : tracker
+          ? resolveTrackerTotal(tracker.total, character)
+          : 0;
+      const current = availability
+        ? availability.current
+        : tracker
+          ? Math.max(0, total - (session.trackers[itemId]?.used ?? 0))
+          : 0;
+      const duration = grant.duration;
+      const id = `item-activate-${source.id}-${grant.activeKey}`;
+      const grantRef = topGrantRef(source, grant, grantIndex);
+      out.push({
+        id,
+        name: hasGrantField(grantRef, "label", grant.label)
+          ? grantField(grantRef, "label", grant.label)
+          : srdText("magic-item", itemId, "name"),
+        description: srdText("magic-item", itemId, "description"),
+        type: grant.activation.action,
+        source: "feature",
+        spellLevel: null,
+        concentration: false,
+        costsSlot: false,
+        ...(tracker
+          ? {
+              costTracker: itemId,
+              costTrackerIsPool: tracker.isPool ?? true,
+              trackerCost: 1,
+            }
+          : {}),
+        ...(resourcePayment ? { resourcePayment, resourceCost: 1 } : {}),
+        pinned: pinnedSet.has(id),
+        defaultPinned: false,
+        activatesKey: resolveGrantActiveKey(source, grant.activeKey),
+        ...(duration?.kind === "maintained" || duration?.kind === "timed"
+          ? duration.endsEarlyOn?.length
+            ? { activationEndsEarlyOn: duration.endsEarlyOn }
+            : {}
+          : {}),
+        ...(duration?.kind === "turn-boundary"
+          ? {
+              activeTurnBoundary: {
+                phase: duration.phase,
+                turns: duration.turns,
+              },
+            }
+          : {}),
+        summary:
+          tracker || availability
+            ? {
+                uses: {
+                  current,
+                  total,
+                  isPool: tracker?.isPool ?? true,
+                  ...(tracker?.unit ? { unit: tracker.unit } : {}),
+                },
+              }
+            : {},
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * S9 — the item→multi-spell-pool ACTION bridge. A charged magic item that casts
+ * one of several spells carries a `free-cast-from-list` grant but no ordinary
+ * action, so this emits one picker opener per equipped, attunement-satisfied
+ * physical copy. Typed items expose an exact `resourcePayment`; legacy items keep
+ * their tracker payment. The picker supplies the selected spell's variable cost.
  */
 function resolveItemPoolCastActions(character: CharacterDoc): RawResolvedAction[] {
   const { session } = character;
   const pinnedSet = new Set(session.pinnedActions);
   const out: RawResolvedAction[] = [];
   const seen = new Set<string>();
-  for (const source of resolveGrantSourcesForEquipment(character.character.equipment)) {
+  for (const source of resolveGrantSourcesForEquipment(
+    character.character.equipment,
+    session.itemResources
+  )) {
     if (source.ref?.kind !== "magic-item") continue;
     if (seen.has(source.id)) continue;
-    const hasPool = (source.grants ?? []).some((g) => g.type === "free-cast-from-list");
-    if (!hasPool) continue;
-    const charges = freeCastItemChargeMax(source.grants);
+    const entry = evaluateGrants([source]).freeCastFromList[0];
+    if (!entry) continue;
+    const availability =
+      entry.payment.kind === "item-resource"
+        ? resolveItemResourceAvailability(character, entry.payment)
+        : null;
+    if (entry.payment.kind === "item-resource" && !availability) continue;
+    const charges = availability
+      ? availability.capacity
+      : freeCastItemChargeMax(source.grants);
     if (charges <= 0) continue;
     seen.add(source.id);
-    const used = session.trackers[source.id]?.used ?? 0;
-    const remaining = Math.max(0, charges - used);
+    const remaining = availability
+      ? availability.current
+      : entry.payment.kind === "tracker"
+        ? Math.max(0, charges - (session.trackers[entry.payment.trackerId]?.used ?? 0))
+        : 0;
     const id = `item-cast-${source.id}`;
     out.push({
       id,
       // The card title is the item's own name (single source — the rail row, the
       // cast action, and the picker rubric all attribute the same item, rule 6);
       // the description says WHAT the card does (a chrome hint, both locales).
-      name: srdText("magic-item", source.id, "name"),
+      name: srdText("magic-item", source.ref.key, "name"),
       description: uiText("combat.itemPoolCastActionHint"),
       type: "action",
       // Not a real spell/weapon row — a pool picker opener, like the Divine
@@ -2649,7 +3133,11 @@ function resolveItemPoolCastActions(character: CharacterDoc): RawResolvedAction[
       concentration: false,
       // The pool spends item CHARGES, never a spell slot.
       costsSlot: false,
-      costTracker: source.id,
+      ...(entry.payment.kind === "tracker"
+        ? { costTracker: entry.payment.trackerId }
+        : { resourcePayment: entry.payment }),
+      castPoolSourceId: source.id,
+      castPoolItemId: source.ref.key,
       costTrackerIsPool: true,
       pinned: pinnedSet.has(id),
       defaultPinned: false,
@@ -2670,10 +3158,9 @@ function resolveItemPoolCastActions(character: CharacterDoc): RawResolvedAction[
  * ${spellId}` key (the lifecycle desync risk).
  *
  * Two origins, both keyed `${featId}:${spellId}`:
- *  (a) FIXED `free-cast-spell` grants on a feat/feature/species source (Fey-Touched
- *      Misty Step, a heritage feat's granted spells, Magic Initiate's spell once
- *      its grant is modeled) — NOT magic items (their shared charge pool is
- *      `resolveFreeCastItemTrackers`).
+ *  (a) Selected tracker-backed `free-cast-spell` grants on a feat/feature/species
+ *      source (including grants nested in the selected lineage bundle) — NOT magic
+ *      items (their shared charge pool is `resolveMagicItemTrackers`).
  *  (b) CHOSEN free-cast spells (the player's div/ench pick) — stamped on the spell
  *      ref's `freeCastSource` (already `${featId}:${spellId}` at pick time), so
  *      resolved from `character.spells`, not from a grant.
@@ -2689,6 +3176,12 @@ interface FeatFreeCastSpec {
   rest: "short" | "long";
 }
 
+type TrackerBackedFreeCast = Extract<FreeCastEntry, { payment: { kind: "tracker" } }>;
+
+function isTrackerBackedFreeCast(entry: FreeCastEntry): entry is TrackerBackedFreeCast {
+  return entry.payment.kind === "tracker";
+}
+
 function forEachFeatFreeCast(
   character: CharacterDoc,
   cb: (spec: FeatFreeCastSpec) => void
@@ -2697,26 +3190,41 @@ function forEachFeatFreeCast(
   const level = totalLevel(charData);
   const seen = new Set<string>();
 
-  // (a) Fixed free-cast-spell grants on MULTI-free-cast sources only — feats,
-  //     class features, species traits whose tracker we replace with per-spell
-  //     rows. A SINGLE-free-cast source keeps its own `mechanics.tracker` (bare
-  //     key), so it is NOT re-emitted here (that would phantom-duplicate it).
-  for (const source of [
+  // (a) Every selected per-spell tracker-backed grant. Evaluating the sources is
+  // the same descent used by cast options, so a free cast inside a selected
+  // lineage bundle cannot be castable yet invisible from the resource rail.
+  const sources = [
     ...resolveGrantSourcesForFeatures(charData.features),
     ...resolveGrantSourcesForRace(charData.race),
-  ]) {
-    if (source.ref?.kind === "magic-item") continue;
-    if (countTopLevelFreeCasts(source.grants) < 2) continue;
-    for (const g of source.grants ?? []) {
-      if (g.type !== "free-cast-spell") continue;
-      if (g.minLevel != null && level < g.minLevel) continue;
-      const id = `${source.id}:${g.spellId}`;
-      if (seen.has(id)) continue;
-      const total = resolveChargesFormula(g.chargesFormula, g.chargesPerRest, character);
-      if (total <= 0) continue;
-      seen.add(id);
-      cb({ id, sourceId: source.id, spellId: g.spellId, total, rest: g.rest });
-    }
+  ];
+  const freeCasts = evaluateGrants(
+    sources,
+    sessionActiveKeys(character.session),
+    new Map(Object.entries(character.session.grantBundleChoices ?? {}))
+  ).freeCasts;
+  for (const entry of freeCasts) {
+    if (!isTrackerBackedFreeCast(entry)) continue;
+    if (entry.minLevel != null && level < entry.minLevel) continue;
+    const id = entry.payment.trackerId;
+    const suffix = `:${entry.spellId}`;
+    // Bare ids remain owned by their source's normal tracker. Only explicitly
+    // per-spell addresses get a derived spell-labelled row.
+    if (!id.endsWith(suffix) || seen.has(id)) continue;
+    const total = resolveChargesFormula(
+      entry.chargesFormula,
+      entry.chargesPerRest,
+      character,
+      entry.capacityByLevel
+    );
+    if (total <= 0) continue;
+    seen.add(id);
+    cb({
+      id,
+      sourceId: id.slice(0, -suffix.length),
+      spellId: entry.spellId,
+      total,
+      rest: entry.rest,
+    });
   }
 
   // (b) Chosen free-cast spells (the player's pick). Only the MULTI case is a
@@ -2744,7 +3252,7 @@ function forEachFeatFreeCast(
  * DERIVED from the grants/stamps (golden rules 2 + 6) rather than a hand-declared
  * `mechanics.tracker` that mirrored "how many free-casts" by hand (which collapsed
  * two spells onto one shared 0/2 pool where casting either locked both). The
- * generalization of `resolveFreeCastItemTrackers` to feats — same RawResolvedTracker
+ * generalization of the magic-item tracker bridge to feats — same RawResolvedTracker
  * shape, same debit key, no new tracker concept. Row label = the SPELL name; the
  * granting feat name rides along as the hover tooltip (`description`).
  */
@@ -2761,7 +3269,7 @@ export function resolveFreeCastFeatTrackers(
       total: fc.total,
       recovery: fc.rest === "short" ? "short-rest" : "long-rest",
       isPool: false,
-      used: character.session.trackers[fc.id]?.used ?? 0,
+      used: vitalTrackerUsed(character.session, fc.id),
     });
   });
   return out;
@@ -2798,7 +3306,7 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
   const altRecoveryByTarget = new Map<string, { amount: number; fromTracker: string }>();
   for (const entry of evaluateGrants(
     resolveGrantSourcesForFeatures(charData.features),
-    new Set(session.activeFeatures ?? []),
+    sessionActiveKeys(session),
     new Map(Object.entries(session.grantBundleChoices ?? {}))
   ).trackerAltRecoveries) {
     altRecoveryByTarget.set(entry.targetTracker, {
@@ -2819,13 +3327,16 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
             total: resolveTrackerTotal(t.total, character),
             recovery: t.recovery,
             die: t.die,
+            recordedRolls: t.recordedRolls,
+            rolls: session.trackers[t.id]?.rolls,
             isPool: t.isPool,
             unit: t.unit,
+            refreshOnActivationOf: t.refreshOnActivationOf,
             ...(t.altRecoveryCost &&
               nonZeroAltRecovery(t.altRecoveryCost) && {
                 altRecoveryCost: t.altRecoveryCost,
               }),
-            used: session.trackers[t.id]?.used ?? 0,
+            used: vitalTrackerUsed(session, t.id),
           });
         }
       }
@@ -2884,13 +3395,20 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
       description: featLoc(srdFeature, "description"),
       total: resolvedTotal,
       recovery: tracker.recovery,
+      ...(tracker.autoRecover === false ? { autoRecover: false } : {}),
+      ...(tracker.longRestRecovery !== undefined
+        ? { longRestRecovery: tracker.longRestRecovery }
+        : {}),
       die: tracker.die,
+      recordedRolls: tracker.recordedRolls,
+      rolls: session.trackers[srdFeature.id]?.rolls,
       isPool: tracker.isPool,
       unit: tracker.unit,
       shortRestRecovery: tracker.shortRestRecovery,
+      refreshOnActivationOf: tracker.refreshOnActivationOf,
       rider,
       ...(altRecoveryCost && { altRecoveryCost }),
-      used: session.trackers[srdFeature.id]?.used ?? 0,
+      used: vitalTrackerUsed(session, srdFeature.id),
     });
 
     // Multi-tracker features (Psi Warrior Psionic Power → Telekinetic Movement
@@ -2915,11 +3433,18 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
         ),
         total: extraTotal,
         recovery: extra.recovery,
+        ...(extra.autoRecover === false ? { autoRecover: false } : {}),
+        ...(extra.longRestRecovery !== undefined
+          ? { longRestRecovery: extra.longRestRecovery }
+          : {}),
         die: extra.die,
+        recordedRolls: extra.recordedRolls,
+        rolls: session.trackers[extraSpec.id]?.rolls,
         isPool: extra.isPool,
         unit: extra.unit,
         shortRestRecovery: extra.shortRestRecovery,
-        used: session.trackers[extraSpec.id]?.used ?? 0,
+        refreshOnActivationOf: extra.refreshOnActivationOf,
+        used: vitalTrackerUsed(session, extraSpec.id),
       });
     }
   }
@@ -2958,11 +3483,18 @@ function resolveRaceTrackers(
         description: raceTraitLoc(race.id, trait, "description"),
         total,
         recovery: spec.recovery,
+        ...(spec.autoRecover === false ? { autoRecover: false } : {}),
+        ...(spec.longRestRecovery !== undefined
+          ? { longRestRecovery: spec.longRestRecovery }
+          : {}),
         die: spec.die,
+        recordedRolls: spec.recordedRolls,
+        rolls: session.trackers[id]?.rolls,
         isPool: spec.isPool,
         unit: spec.unit,
         shortRestRecovery: spec.shortRestRecovery,
-        used: session.trackers[id]?.used ?? 0,
+        refreshOnActivationOf: spec.refreshOnActivationOf,
+        used: vitalTrackerUsed(session, id),
       });
     }
   }
@@ -3113,6 +3645,9 @@ export function resolveRiderDice(
  *     Unarmed Strike; skips a Ranged weapon.
  *   - `"weapon"` — any WEAPON attack (melee or ranged). Does NOT ride an Unarmed
  *     Strike (it isn't a weapon).
+ *   - `"weapon-or-unarmed"` — any weapon attack (melee or ranged) OR an Unarmed
+ *     Strike.
+ *   - `"unarmed"` — an Unarmed Strike only. Never rides a carried weapon.
  *   - `"one-handed-melee"` — a Melee weapon held in ONE hand (Dueling): rides a
  *     melee weapon that is NEITHER Ranged NOR a Two-Handed-property weapon, and
  *     NEVER an Unarmed Strike. A Versatile weapon qualifies via its one-handed
@@ -3130,7 +3665,13 @@ export function resolveRiderDice(
 export function resolveAttackDamageRiders(
   damageRiders: AggregatedGrants["damageRiders"],
   target:
-    | { kind: "weapon"; isRanged: boolean; isTwoHanded?: boolean; damageType: DamageType }
+    | {
+        kind: "weapon";
+        isRanged: boolean;
+        isFinesse?: boolean;
+        isTwoHanded?: boolean;
+        damageType: DamageType;
+      }
     | { kind: "unarmed"; damageType: DamageType },
   character: CharacterDoc,
   scores: Record<AbilityCode, number>
@@ -3138,21 +3679,39 @@ export function resolveAttackDamageRiders(
   return damageRiders
     .filter((r) => {
       if (r.appliesTo === "attack-or-spell") return false;
-      if (target.kind === "unarmed") return r.appliesTo === "melee-weapon";
+      if (target.kind === "unarmed")
+        return (
+          r.appliesTo === "melee-weapon" ||
+          r.appliesTo === "weapon-or-unarmed" ||
+          r.appliesTo === "unarmed"
+        );
+      if (r.appliesTo === "unarmed") return false;
+      if (r.appliesTo === "finesse-or-ranged-weapon")
+        return target.isFinesse === true || target.isRanged;
       // Carried weapon. "one-handed-melee" (Dueling): a melee weapon that isn't
       // Two-Handed (a Versatile weapon's one-handed grip qualifies). "melee-weapon"
       // skips ranged. "weapon" rides all.
       if (r.appliesTo === "one-handed-melee")
         return !target.isRanged && !target.isTwoHanded;
-      return r.appliesTo === "weapon" || !target.isRanged;
+      return (
+        r.appliesTo === "weapon" ||
+        r.appliesTo === "weapon-or-unarmed" ||
+        !target.isRanged
+      );
     })
     .map((r) => {
       // Fold an optional ability modifier into the surfaced die (Psi Warrior
       // Psionic Strike: `1d6` → `1d6+3`); a +0 modifier shows the bare die. A
       // `diceByLevel` rider scales by ITS source feature's OWNING class level
       // (Ranger Colossus Slayer → Ranger 11), not the total character level.
+      const fixedAmount =
+        typeof r.amount === "object"
+          ? classEntryLevel(character.character, r.amount.classId)
+          : undefined;
       const dice = appendAbilityModToDice(
-        resolveRiderDice(r, featureScalingLevel(r.sourceId, character)),
+        fixedAmount === undefined
+          ? resolveRiderDice(r, featureScalingLevel(r.sourceId, character))
+          : String(fixedAmount),
         r.addAbilityMod === undefined
           ? undefined
           : // D2 — effective score (set-score item floor) for the rider's ability mod.
@@ -3162,9 +3721,11 @@ export function resolveAttackDamageRiders(
         r.damageType === "same-as-weapon" ? target.damageType : r.damageType;
       return {
         dice,
+        ...(fixedAmount === undefined ? {} : { fixedAmount }),
         // "same-as-weapon" (Colossus Slayer) resolves to the attack's OWN damage
         // type so the UI receives a real type, never the sentinel.
         damageType,
+        ...(r.damageTypeChoices ? { damageTypeChoices: [...r.damageTypeChoices] } : {}),
         oncePerTurn: r.oncePerTurn,
         // The plain-language "what is this and when does it apply?" — COMPOSED
         // from this grant's own fields, so every rider (present and future)
@@ -3172,6 +3733,7 @@ export function resolveAttackDamageRiders(
         why: riderWhy({
           dice,
           damageType,
+          ...(r.damageTypeChoices ? { damageTypeChoices: r.damageTypeChoices } : {}),
           oncePerTurn: r.oncePerTurn,
           ...(r.resourceCost ? { trackerId: r.resourceCost.trackerId } : {}),
           sourceId: r.sourceId,
@@ -3183,6 +3745,10 @@ export function resolveAttackDamageRiders(
         // Each use spends a tracker (Psionic Energy Dice) — surfaced so the combat
         // UI can debit it; the engine never auto-spends (override-first).
         ...(r.resourceCost ? { resourceTrackerId: r.resourceCost.trackerId } : {}),
+        ...(r.round1 ? { round1: true as const } : {}),
+        ...(r.requiresRiderTrackerId
+          ? { requiresRiderTrackerId: r.requiresRiderTrackerId }
+          : {}),
         // Provenance NAME ref (the source feature/feat/invocation) — the view
         // resolves it into the rider token's "(Frenzy)" attribution. A rider with
         // no `sourceId` (defensive — every SRD rider carries one) falls back to a
@@ -3594,6 +4160,7 @@ export function resolveManifestedWeaponAttacks(
             {
               kind: "weapon",
               isRanged,
+              isFinesse: properties.some((p) => p.toLowerCase() === "finesse"),
               isTwoHanded: properties.some((p) => /\btwo-?handed\b/i.test(p)),
               damageType: mw.damageType,
             },
@@ -4092,7 +4659,12 @@ interface ActionResolveCtx {
   pinnedSet: Set<string>;
   /** Ids the player explicitly unpinned (default-pinned rows hidden when present). */
   unpinnedSet: Set<string>;
+  /** Combat omits non-turn casts and unprepared spellbook rows; the spellbook
+   * scope retains them so its Cast CTA resolves through this same action model. */
+  scope: ActionResolveScope;
 }
+
+export type ActionResolveScope = "combat" | "spellbook";
 
 /**
  * Extract all combat actions for a character.
@@ -4104,7 +4676,10 @@ interface ActionResolveCtx {
  * ORDER are preserved — consumers and the smart-tracker test suite must not
  * notice the internal decomposition (docs/ARCHITECTURE.md).
  */
-export function resolveActions(character: CharacterDoc): RawResolvedAction[] {
+export function resolveActions(
+  character: CharacterDoc,
+  scope: ActionResolveScope = "combat"
+): RawResolvedAction[] {
   const { character: charData, session } = character;
   const level = totalLevel(charData);
   const ctx: ActionResolveCtx = {
@@ -4118,6 +4693,7 @@ export function resolveActions(character: CharacterDoc): RawResolvedAction[] {
     exPenalty: exhaustionPenalty(session.exhaustion),
     pinnedSet: new Set(session.pinnedActions),
     unpinnedSet: new Set(session.unpinnedActions ?? []),
+    scope,
   };
   // Dedup by STABLE action id (golden rule 7 — never by display string). An
   // action id (`<featureId>-<type>` / `spell-<id>` / `weapon-<id>` …) uniquely
@@ -4130,12 +4706,14 @@ export function resolveActions(character: CharacterDoc): RawResolvedAction[] {
   const deduped: RawResolvedAction[] = [];
   for (const a of [
     ...resolveFeatureActions(character, ctx),
+    ...resolveEquipmentActions(character, ctx),
     ...resolveSpellActions(character, ctx),
     ...resolveWeaponActions(character, ctx),
     ...resolveTemporaryHpActions(character, ctx),
     // S9 — charged multi-spell items (Wand of Binding/Fear, Ring of Animal
     // Influence, Staff of Charming) surface a pool-picker cast card.
     ...resolveItemPoolCastActions(character),
+    ...resolveMagicItemActivationActions(character),
   ]) {
     if (seenIds.has(a.id)) continue;
     seenIds.add(a.id);
@@ -4190,7 +4768,7 @@ function applySaveAttackSummary(
     saveDcAbility?: AbilityCode;
     attack?: ActionAttack;
     conditionApplication?: CombatConditionApplication;
-    targeting?: CombatTargeting;
+    targeting?: ActionTargeting;
     area?: boolean;
   },
   character: CharacterDoc,
@@ -4211,7 +4789,7 @@ function applySaveAttackSummary(
   }
   if (action.conditionApplication)
     summary.conditionApplication = action.conditionApplication;
-  if (action.targeting) summary.targeting = action.targeting;
+  if (action.targeting) summary.targeting = resolveActionTargeting(action.targeting, ctx);
   if (action.area) summary.area = true;
   // Declarative damage half (S11) — dice scale from the class/feature table at
   // the action's scaling level (golden rule 5 — scale from data, never hardcode);
@@ -4241,15 +4819,20 @@ function applySaveAttackSummary(
     if (attack.resolution) summary.damageResolution = attack.resolution;
     if (attack.damageType) {
       summary.damageType = attack.damageType;
-    } else if (attack.damageTypeChoices && attack.damageTypeChoices.length > 0) {
-      // Player picks one each use — surface every option (the chip joins them
-      // "/"); the primary `damageType` keeps the damage chip + facts row lit.
-      summary.damageType = attack.damageTypeChoices[0];
-      summary.damageTypes = [...attack.damageTypeChoices];
-      summary.multiDamageTypeFlavor = "choice";
-    } else if (attack.damageTypeFromBundle) {
-      const derived = resolveBundleDamageType(attack.damageTypeFromBundle, character);
-      if (derived) summary.damageType = derived;
+    } else {
+      const damageTypeChoices =
+        pickByLevel(attack.damageTypeChoicesByLevel, scalingLevel) ??
+        attack.damageTypeChoices;
+      if (damageTypeChoices && damageTypeChoices.length > 0) {
+        // Player picks one each use — surface every option (the chip joins them
+        // "/"); the primary `damageType` keeps the damage chip + facts row lit.
+        summary.damageType = damageTypeChoices[0];
+        summary.damageTypes = [...damageTypeChoices];
+        summary.multiDamageTypeFlavor = "choice";
+      } else if (attack.damageTypeFromBundle) {
+        const derived = resolveBundleDamageType(attack.damageTypeFromBundle, character);
+        if (derived) summary.damageType = derived;
+      }
     }
     // S11b — heal-or-damage (Divine Spark): the SAME resolved total is ALSO a heal
     // the player may apply instead. Surface BOTH chips on the one card — the heal
@@ -4266,6 +4849,256 @@ function applySaveAttackSummary(
       };
     }
   }
+}
+
+/** Collapse authored ability-derived target limits before the action reaches UI. */
+function resolveActionTargeting(
+  authored: ActionTargeting,
+  ctx: ActionResolveCtx
+): CombatTargeting {
+  const { maxTargets, ...targeting } = authored;
+  return {
+    ...targeting,
+    ...(typeof maxTargets === "number"
+      ? { maxTargets }
+      : maxTargets === "PB"
+        ? { maxTargets: ctx.pb }
+        : maxTargets
+          ? {
+              maxTargets: Math.max(1, abilityModifier(ctx.abilityScores[maxTargets])),
+            }
+          : {}),
+  };
+}
+
+/** One canonical Unarmed Strike profile for both the ordinary attack row and
+ * feature-owned sequences such as Martial Arts and Flurry of Blows. */
+function resolveUnarmedAttackSummary(
+  character: CharacterDoc,
+  ctx: ActionResolveCtx,
+  aggregate: AggregatedGrants
+): RawActionSummary {
+  const deferredResolve = (sourceId: string | undefined, key: string) =>
+    sourceId ? featureClassRow(sourceId, character)?.[key] : undefined;
+  const profile = effectiveUnarmedStrike(
+    aggregate.unarmedStrikeDice,
+    ctx.abilityScores,
+    ctx.level,
+    deferredResolve,
+    ctx.charData.proficiencyBonusOverride
+  );
+  const altTypes = aggregate.unarmedStrikeDamageTypeOptions.filter(
+    (type) => type !== profile.damageType
+  );
+  const extraDamage = resolveAttackDamageRiders(
+    aggregate.damageRiders,
+    { kind: "unarmed", damageType: profile.damageType },
+    character,
+    ctx.abilityScores
+  );
+  const { reachBonusFt } = resolveMeleeReachBonus(aggregate.weaponReachBonuses, false);
+  const name = litText({ en: "Unarmed Strike", it: "Colpo Senz'armi" });
+  const damageBreakdown = buildUnarmedDamageBreakdown(
+    profile,
+    name,
+    ctx.abilityScores,
+    character
+  );
+  return {
+    attackBonus: profile.attackBonus + ctx.exPenalty,
+    damage: profile.damage,
+    ...(damageBreakdown.length > 0 ? { damageBreakdown } : {}),
+    damageType: profile.damageType,
+    weaponRange: { kind: "melee", reachFt: 5 + reachBonusFt },
+    ...(aggregate.critThreshold < 20 ? { critRange: aggregate.critThreshold } : {}),
+    ...(extraDamage.length > 0 ? { extraDamage } : {}),
+    ...(altTypes.length > 0
+      ? {
+          damageTypes: [profile.damageType, ...altTypes],
+          multiDamageTypeFlavor: "choice" as const,
+        }
+      : {}),
+  };
+}
+
+/** Apply every target-facing capability authored on a feature/homebrew action.
+ * All source kinds use this one projection before entering CombatResolver. */
+function applyActionEffectSummary(
+  summary: RawActionSummary,
+  action: SrdActionDef,
+  sourceId: string,
+  character: CharacterDoc,
+  ctx: ActionResolveCtx,
+  scalingLevel: number
+): void {
+  if (action.attackSequence?.attackId === "unarmed-strike") {
+    const aggregate = aggregateCharacterGrants(character.character, character.session);
+    Object.assign(summary, resolveUnarmedAttackSummary(character, ctx, aggregate));
+    const scaled = Object.entries(action.attackSequence.instancesByLevel ?? {})
+      .map(([level, instances]) => [Number(level), instances] as const)
+      .filter(([level]) => level <= scalingLevel)
+      .sort(([a], [b]) => b - a)[0]?.[1];
+    summary.instances = scaled ?? action.attackSequence.instances;
+    summary.targeting = { affinity: "enemy", maxTargets: summary.instances };
+    summary.attackMode = "melee";
+  }
+  if (action.heal) {
+    summary.heal = resolveActionHeal(action.heal, sourceId, character, ctx.abilityScores);
+  }
+  if (action.damageReduction) {
+    const die = resolveActionDie(action.damageReduction.dice, sourceId, character);
+    const damageTypes = pickByLevel(
+      action.damageReduction.damageTypesByLevel,
+      scalingLevel
+    );
+    if (die && damageTypes) {
+      summary.damageReduction = {
+        dice: die,
+        bonus:
+          (action.damageReduction.addAbility
+            ? abilityModifier(ctx.abilityScores[action.damageReduction.addAbility])
+            : 0) + (action.damageReduction.addLevel ? scalingLevel : 0),
+        damageTypes,
+      };
+    }
+  }
+  if (action.trackerTopUp) summary.trackerTopUp = action.trackerTopUp;
+  if (action.grantDie) {
+    const die = resolveActionDie(action.grantDie.die, sourceId, character);
+    if (die) summary.grantedDie = { kind: action.grantDie.kind, die };
+  }
+  if (action.grantHeroicInspiration) summary.grantsHeroicInspiration = true;
+  if (action.stabilize) summary.stabilize = true;
+  if (action.poolSpendEffect) summary.poolSpendEffect = action.poolSpendEffect;
+  if (action.skillCheck) summary.skillCheck = action.skillCheck;
+  if (
+    action.conditionRemoval &&
+    (action.conditionRemoval.fromLevel === undefined ||
+      scalingLevel >= action.conditionRemoval.fromLevel)
+  ) {
+    const { options, max } = action.conditionRemoval;
+    summary.conditionRemoval = { options, ...(max === undefined ? {} : { max }) };
+  }
+  if (action.cureConditions) {
+    const cures = action.cureConditions
+      .filter((c) => c.fromLevel === undefined || scalingLevel >= c.fromLevel)
+      .map((c) => ({ condition: c.condition, costHp: c.costHp }));
+    if (cures.length > 0) summary.cureOptions = cures;
+  }
+  if (
+    action.tempHpRoll &&
+    (action.tempHpRoll.fromLevel === undefined ||
+      scalingLevel >= action.tempHpRoll.fromLevel)
+  ) {
+    const die = resolveActionDie(action.tempHpRoll.die, sourceId, character);
+    if (die) {
+      const bonus = resolveHealTerm(
+        action.tempHpRoll.plus,
+        character.character,
+        ctx.abilityScores
+      );
+      summary.tempHpRoll = {
+        dice: `${action.tempHpRoll.rolls}${die}`,
+        ...(bonus === 0 ? {} : { bonus }),
+        ...(action.tempHpRoll.multiplier === undefined ||
+        action.tempHpRoll.multiplier === 1
+          ? {}
+          : { multiplier: action.tempHpRoll.multiplier }),
+      };
+    }
+  }
+  applySaveAttackSummary(summary, action, character, ctx, scalingLevel);
+}
+
+function actionTurnConstraints(
+  action: Pick<
+    SrdActionDef,
+    | "requiresActionThisTurn"
+    | "requiresOutcomeThisTurn"
+    | "requiresActionCategoryThisTurn"
+    | "maxUsesPerTurn"
+  >
+): Pick<
+  ResolvedAction,
+  | "requiresActionThisTurn"
+  | "requiresOutcomeThisTurn"
+  | "requiresActionCategoryThisTurn"
+  | "maxUsesPerTurn"
+> {
+  return {
+    ...(action.requiresActionThisTurn
+      ? { requiresActionThisTurn: action.requiresActionThisTurn }
+      : {}),
+    ...(action.requiresOutcomeThisTurn
+      ? { requiresOutcomeThisTurn: action.requiresOutcomeThisTurn }
+      : {}),
+    ...(action.requiresActionCategoryThisTurn
+      ? { requiresActionCategoryThisTurn: action.requiresActionCategoryThisTurn }
+      : {}),
+    ...(action.maxUsesPerTurn !== undefined
+      ? { maxUsesPerTurn: action.maxUsesPerTurn }
+      : {}),
+  };
+}
+
+/** Ordinary equipment actions use the same authored action projection and tracker
+ * transaction as features. The resolver has no item-id branch; the catalogue owns
+ * action economy, targeting, effect and use count. */
+function resolveEquipmentActions(
+  character: CharacterDoc,
+  ctx: ActionResolveCtx
+): RawResolvedAction[] {
+  const actions: RawResolvedAction[] = [];
+  for (const ref of character.character.equipment) {
+    if ("custom" in ref || (ref.quantity ?? 1) <= 0) continue;
+    const item = getEquipment(ref.srdId);
+    if (!item?.mechanics?.actions?.length) continue;
+    const tracker = item.mechanics.tracker;
+    const trackerId = tracker ? `equipment:${item.id}` : undefined;
+    const total = tracker ? resolveTrackerTotal(tracker.total, character) : 0;
+    const used = trackerId ? (character.session.trackers[trackerId]?.used ?? 0) : 0;
+    for (const [index, action] of item.mechanics.actions.entries()) {
+      const summary: RawActionSummary = {
+        effect: srdEffectText("equipment", item.id),
+        ...(tracker
+          ? {
+              uses: {
+                current: Math.max(0, total - used),
+                total,
+                isPool: tracker.isPool,
+                unit: tracker.unit,
+              },
+            }
+          : {}),
+      };
+      applyActionEffectSummary(summary, action, item.id, character, ctx, ctx.level);
+      const id = `equipment-action-${item.id}-${action.id ?? index}`;
+      actions.push({
+        id,
+        name: srdText("equipment", item.id, "name"),
+        description: srdText("equipment", item.id, "description"),
+        type: action.type,
+        ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
+        ...actionTurnConstraints(action),
+        source: "feature",
+        spellLevel: null,
+        concentration: false,
+        summary,
+        costsSlot: false,
+        ...(trackerId
+          ? {
+              costTracker: trackerId,
+              trackerCost: action.trackerCost ?? 1,
+              costTrackerIsPool: tracker?.isPool,
+              costTrackerUnit: tracker?.unit,
+            }
+          : {}),
+        pinned: ctx.pinnedSet.has(id),
+        defaultPinned: false,
+      });
+    }
+  }
+  return actions;
 }
 
 /** Invocation id → row, for the 1c invocation-action pass below (mirrors the
@@ -4291,7 +5124,7 @@ function resolveFeatureActions(
     if ("custom" in featureRef) {
       if (featureRef.actions) {
         for (const a of featureRef.actions) {
-          const id = `custom-${featureRef.title}-${a.type}`;
+          const id = `custom-${featureRef.title}-${a.id ?? a.type}`;
           // Build summary from custom feature data. Custom content carries a
           // single user string (no translation); surface it in both locales so
           // the BiText contract holds.
@@ -4301,27 +5134,35 @@ function resolveFeatureActions(
           // fit the collapsed card, and the full text stays in the accordion.
           summary.effect = customText(a.description);
           // Check for custom trackers
-          if (featureRef.trackers && featureRef.trackers.length > 0) {
-            const cTracker = featureRef.trackers[0];
-            if (cTracker) {
-              const total = resolveTrackerTotal(cTracker.total, character);
-              const used = session.trackers[cTracker.id]?.used ?? 0;
-              summary.uses = {
-                current: Math.max(0, total - used),
-                total,
-                isPool: cTracker.isPool,
-                unit: cTracker.unit,
-              };
-              if (cTracker.die) summary.die = cTracker.die;
-            }
+          const cTracker =
+            featureRef.trackers?.find((tracker) => tracker.id === a.costTracker) ??
+            featureRef.trackers?.[0];
+          if (cTracker) {
+            const total = resolveTrackerTotal(cTracker.total, character);
+            const used = session.trackers[cTracker.id]?.used ?? 0;
+            summary.uses = {
+              current: Math.max(0, total - used),
+              total,
+              isPool: cTracker.isPool,
+              unit: cTracker.unit,
+            };
+            if (cTracker.die) summary.die = cTracker.die;
           }
+          applyActionEffectSummary(
+            summary,
+            a,
+            `custom-${featureRef.title}`,
+            character,
+            ctx,
+            ctx.level
+          );
           // CQ8 — honor ActionData.costTracker / trackerCost (added in the
           // unification). If the custom action doesn't specify a costTracker
           // but the feature has trackers, fall back to the first one (mirrors
           // SRD-feature behavior).
           actions.push({
             id,
-            name: customText(featureRef.title),
+            name: customText(a.label || featureRef.title),
             type: a.type,
             source: "feature",
             spellLevel: null,
@@ -4330,9 +5171,12 @@ function resolveFeatureActions(
             costsSlot: false,
             costTracker: a.costTracker ?? featureRef.trackers?.[0]?.id,
             trackerCost: a.trackerCost,
+            costTrackerIsPool: cTracker?.isPool,
+            costTrackerUnit: cTracker?.unit,
             pinned: pinnedSet.has(id),
             defaultPinned: false,
             description: customText(a.description),
+            ...actionTurnConstraints(a),
           });
         }
       }
@@ -4352,10 +5196,20 @@ function resolveFeatureActions(
     // loop flips this key into `session.activeFeatures` (lighting the rail
     // chip + every while-active grant) and clears it on undo.
     let activatesKey: string | undefined;
+    let activationEndsEarlyOn: ReadonlyArray<string> | undefined;
+    let activeTurnBoundary: ResolvedAction["activeTurnBoundary"];
     if ("grants" in srdFeature) {
       for (const g of srdFeature.grants ?? []) {
         if (g.type === "while-active") {
           activatesKey = g.activeKey;
+          activationEndsEarlyOn =
+            g.duration?.kind === "maintained" || g.duration?.kind === "timed"
+              ? g.duration.endsEarlyOn
+              : undefined;
+          activeTurnBoundary =
+            g.duration?.kind === "turn-boundary"
+              ? { phase: g.duration.phase, turns: g.duration.turns }
+              : undefined;
           break;
         }
       }
@@ -4373,9 +5227,20 @@ function resolveFeatureActions(
       : undefined;
 
     let actionIndex = -1;
-    for (const action of srdFeature.mechanics.actions) {
+    for (const authoredAction of srdFeature.mechanics.actions) {
       actionIndex += 1;
-      const id = `${srdFeature.id}-${action.type}`;
+      const actionOverride =
+        featureRef.actionOverrides?.find(
+          (candidate) => candidate.id && candidate.id === authoredAction.id
+        ) ?? featureRef.actionOverrides?.[actionIndex];
+      const action = { ...authoredAction, ...actionOverride } as SrdActionDef &
+        Partial<Pick<ActionData, "label" | "description">>;
+      if (
+        action.maintainsActiveKey &&
+        !sessionActiveKeys(session).has(action.maintainsActiveKey)
+      )
+        continue;
+      const id = `${srdFeature.id}-${action.id ?? action.type}`;
       // Build structured summary for feature action
       const summary: RawActionSummary = {};
 
@@ -4388,7 +5253,9 @@ function resolveFeatureActions(
         "actions",
         String(actionIndex)
       );
-      summary.effect = srdEffectText(featRef.kind, actionDescKey);
+      summary.effect = actionOverride?.description
+        ? customText(actionOverride.description)
+        : srdEffectText(featRef.kind, actionDescKey);
 
       // Per-action NAME — a feature whose mechanics declare MULTIPLE distinct
       // actions (e.g. Polearm Master: a Bonus-Action "Pole Strike" + a Reaction
@@ -4398,9 +5265,11 @@ function resolveFeatureActions(
       // name is a FACT gate via `srdEn`: present ⇒ the per-action name; absent ⇒ the
       // feature name (single-action features keep one card titled by the feature).
       const actionNameEn = srdEn(featRef.kind, actionDescKey, "name");
-      const actionName: LocText = actionNameEn
-        ? srdText(featRef.kind, actionDescKey, "name")
-        : featLoc(srdFeature, "name");
+      const actionName: LocText = actionOverride?.label
+        ? customText(actionOverride.label)
+        : actionNameEn
+          ? srdText(featRef.kind, actionDescKey, "name")
+          : featLoc(srdFeature, "name");
 
       // `costTrackerOverride` binds THIS action to a specific tracker on its own
       // feature (Psi Warrior Telekinetic Movement → the recharge gate) instead
@@ -4417,7 +5286,7 @@ function resolveFeatureActions(
 
       // If a tracker exists, show uses remaining + die. The override extra wins
       // over the primary tracker for the uses/die summary.
-      if (overrideExtra) {
+      if (overrideExtra && !action.maintainsActiveKey) {
         const extra = resolveTrackerSpec(overrideExtra, scalingLevel);
         const total = resolveTrackerTotal(extra.total, character, scalingLevel);
         const used = session.trackers[overrideExtra.id]?.used ?? 0;
@@ -4428,7 +5297,7 @@ function resolveFeatureActions(
           unit: extra.unit,
         };
         if (extra.die) summary.die = extra.die;
-      } else if (resolvedTracker) {
+      } else if (resolvedTracker && !action.maintainsActiveKey) {
         const effectiveTracker = applyTrackerOverrides(
           resolvedTracker,
           featureRef.trackerOverrides
@@ -4462,16 +5331,6 @@ function resolveFeatureActions(
         summary.effect = undefined;
       }
 
-      // Heal chip is DECLARATIVE — and EVALUATED here: the data carries the
-      // i18n-free term (Second Wind: `1d10 + fighter class-level`) and the
-      // engine, which KNOWS the class entry's level / ability mod, resolves it
-      // to a number at emission (chip-compact, owner 2026-06-12: a value the
-      // player must compute is a defect). The provenance term rides along for
-      // the breakdown tip. No prose parsing remains (golden rules 5 + 10).
-      if (action.heal) {
-        summary.heal = resolveActionHeal(action.heal, charData, ctx.abilityScores);
-      }
-
       // G23 — Tactical Mind: spend a Second Wind use to add 1d10 to a FAILED
       // ability check (refunded if the check still fails). Carried verbatim onto
       // the summary; the die is roll-entry (golden rule 21) and the presenter
@@ -4485,52 +5344,14 @@ function resolveFeatureActions(
         };
       }
 
-      // G19 — Lay On Hands cure options: expend pool HP to neutralize a condition
-      // (those points don't also restore HP — RAW). Level-gated cures (Restoring
-      // Touch's extra conditions at Paladin 14) surface only at/above their
-      // `fromLevel`, resolved on the action's OWNING-class level (the SAME
-      // `scalingLevel` the tracker uses, so a low-level Paladin sees the base
-      // Poisoned cure alone). Condition ids stay stable (golden rule 7) — the
-      // label is localized at the render edge. The pool is never auto-debited.
-      if (action.cureConditions) {
-        const cures = action.cureConditions
-          .filter((c) => c.fromLevel === undefined || scalingLevel >= c.fromLevel)
-          .map((c) => ({ condition: c.condition, costHp: c.costHp }));
-        if (cures.length > 0) summary.cureOptions = cures;
-      }
-
-      // G22 — Monk Heightened Focus (L10): spending a Focus Point on Patient
-      // Defense ALSO grants Temporary HP equal to TWO rolls of the Martial Arts
-      // die (RAW, monk:main). The die is roll-entry (golden rule 21 — the app
-      // never rolls); it SCALES with the Monk's level, so the `classSpecific`
-      // sentinel resolves against the OWNING-class table at `scalingLevel` (d8 at
-      // L10 → "2d8", d10 at L11 → "2d10"). Gated by `fromLevel` on the SAME
-      // owning-class level the cures use, so a Monk below L10 gets no field.
-      // Override-first — a display-only formula, never auto-applied (temp HP don't
-      // stack; the player enters the higher pool).
-      if (
-        action.tempHpRoll &&
-        (action.tempHpRoll.fromLevel === undefined ||
-          scalingLevel >= action.tempHpRoll.fromLevel)
-      ) {
-        const sentinelKey = /^classSpecific:(.+)$/.exec(action.tempHpRoll.die)?.[1];
-        const die = sentinelKey
-          ? featureClassRow(featureRef.srdId, character)?.[sentinelKey]
-          : action.tempHpRoll.die;
-        if (typeof die === "string" && die.length > 0) {
-          summary.tempHpRoll = { dice: `${action.tempHpRoll.rolls}${die}` };
-        }
-      }
-
-      // Save-forcing SELF-SIDE affordance (Monk Stunning Strike → CON save vs the
-      // WIS-based DC) + S11 declarative save-based ATTACK (Cleric Divine Spark →
-      // 1d8 Necrotic/Radiant on a CON save; Radiance of the Dawn → 2d10 Radiant on
-      // a CON save). The shared resolver routes the DC through the ONE
-      // `featureSaveDc` formula and the dice through the class/feature table at the
-      // owning-class scaling level; the app never models the enemy (BG3 on-rails —
-      // golden rule 21). Dice scale on `scalingLevel` (owning-class for a class
-      // feature) — Divine Spark's d8 count is the CLERIC level, not the total.
-      applySaveAttackSummary(summary, action, character, ctx, scalingLevel);
+      applyActionEffectSummary(
+        summary,
+        action,
+        featureRef.srdId,
+        character,
+        ctx,
+        scalingLevel
+      );
 
       // Determine cost tracker: an own-feature override (Telekinetic Movement
       // gate), the feature's own primary tracker, or a cross-feature reference.
@@ -4538,17 +5359,17 @@ function resolveFeatureActions(
       let actionCostIsPool: boolean | undefined;
       let actionCostUnit: TrackerUnit | undefined;
 
-      if (overrideExtra) {
+      if (overrideExtra && !action.maintainsActiveKey) {
         // Bound to a specific extra tracker on this feature.
         actionCostTracker = overrideExtra.id;
         actionCostIsPool = overrideExtra.isPool;
         actionCostUnit = overrideExtra.unit;
-      } else if (resolvedTracker) {
+      } else if (resolvedTracker && !action.maintainsActiveKey) {
         // Feature has its own tracker — use it
         actionCostTracker = srdFeature.id;
         actionCostIsPool = resolvedTracker.isPool;
         actionCostUnit = resolvedTracker.unit;
-      } else if (action.costTracker) {
+      } else if (action.costTracker && !action.maintainsActiveKey) {
         // Action references another feature's tracker (e.g. monk-focus)
         actionCostTracker = action.costTracker;
         const crossFeature = getSrdFeatureSource(action.costTracker);
@@ -4574,6 +5395,11 @@ function resolveFeatureActions(
             isPool: crossFeature.mechanics.tracker.isPool,
             unit: crossFeature.mechanics.tracker.unit,
           };
+          const crossSpec = resolveTrackerSpec(
+            crossFeature.mechanics.tracker,
+            featureScalingLevel(action.costTracker, character)
+          );
+          if (crossSpec.die) summary.die = crossSpec.die;
         }
       }
 
@@ -4597,17 +5423,53 @@ function resolveFeatureActions(
         summary,
         costsSlot: false,
         costTracker: actionCostTracker,
+        ...("grants" in srdFeature &&
+        (srdFeature.grants ?? []).some(
+          (grant) =>
+            grant.type === "free-cast-from-list" &&
+            (grant.trackerId ?? srdFeature.id) === actionCostTracker
+        )
+          ? { castPoolSourceId: srdFeature.id }
+          : {}),
         costTrackerIsPool: actionCostIsPool,
         costTrackerUnit: actionCostUnit,
         trackerCost: action.trackerCost,
         pinned: pinnedSet.has(id),
         defaultPinned: false,
-        description: featLoc(srdFeature, "description"),
+        description: actionOverride?.description
+          ? customText(actionOverride.description)
+          : featLoc(srdFeature, "description"),
         // Alternate-cost primitive — carried verbatim so `getActionCostOptions`
         // can offer it as a second payment route (Wild Companion: slot OR Wild Shape).
         ...(action.alternateCost ? { alternateCost: action.alternateCost } : {}),
         // Using this action establishes its feature's while-active state (Rage).
-        ...(activatesKey ? { activatesKey } : {}),
+        ...(activatesKey && !action.maintainsActiveKey ? { activatesKey } : {}),
+        ...(activationEndsEarlyOn?.length ? { activationEndsEarlyOn } : {}),
+        ...(activeTurnBoundary ? { activeTurnBoundary } : {}),
+        ...(action.grantsNextAttackAdvantage
+          ? { grantsNextAttackAdvantage: true as const }
+          : {}),
+        ...(action.locksMovement ? { locksMovement: true as const } : {}),
+        ...actionTurnConstraints(action),
+        ...(action.maintainsActiveKey
+          ? { maintainsActiveKey: action.maintainsActiveKey }
+          : {}),
+        ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
+        ...(action.targetMark
+          ? {
+              standingEffect: {
+                sourceId: srdFeature.id,
+                sourceKind: "feature" as const,
+                activeKey: activatesKey ?? srdFeature.id,
+                markScope: action.targetMark.scope,
+                targetAffinity: action.targeting?.affinity ?? ("enemy" as const),
+                ...(action.targeting?.excludeSelf ? { excludeSelf: true } : {}),
+                ...(action.targetMark.maxRounds !== undefined
+                  ? { maxRounds: action.targetMark.maxRounds }
+                  : {}),
+              },
+            }
+          : {}),
         // USE-APPLIES — deterministic effects this action auto-applies on use
         // (a slot-gated same-source temp-hp grant: Chef's PB temp HP).
         ...(srdUseEffects.length ? { useEffects: srdUseEffects } : {}),
@@ -4643,7 +5505,7 @@ function resolveFeatureActions(
         ) {
           continue;
         }
-        const id = `${trackerId}-${action.type}`;
+        const id = `${trackerId}-${action.id ?? action.type}`;
         const summary: RawActionSummary = {
           // Effect = the trait action's summary-or-description ref (never sliced).
           effect: srdEffectText(
@@ -4661,19 +5523,7 @@ function resolveFeatureActions(
             unit: tspec.unit,
           };
         }
-        // G18 — a race-trait action's DECLARATIVE heal (a species healing trait:
-        // PB×d4), resolved to a number string at emission exactly like the
-        // SRD-feature loop (single source — `resolveActionHeal`), so the SAME heal
-        // chip renders "3d4". Without this the race loop dropped `action.heal`.
-        if (action.heal) {
-          summary.heal = resolveActionHeal(action.heal, charData, ctx.abilityScores);
-        }
-        // S11 — a race-trait action's save + declarative save-based ATTACK
-        // (Dragonborn Breath Weapon → 1d10→4d10 by CHARACTER level on a DEX save,
-        // damage type from the chosen Draconic Ancestry; Lupin Howl → WIS save vs
-        // the CON-based DC). Race traits scale on the TOTAL character level — the
-        // SAME `featureScalingLevel` fallback (no owning class), passed explicitly.
-        applySaveAttackSummary(summary, action, character, ctx, totalLevel(charData));
+        applyActionEffectSummary(summary, action, trait.id, character, ctx, ctx.level);
         // G14 — the TRANSFORM action (a species revelation's Bonus Action,
         // the activation that picks the form) surfaces the ACTIVE form's
         // once-per-turn +PB `attack-or-spell` rider as a self-side reminder chip:
@@ -4706,6 +5556,8 @@ function resolveFeatureActions(
           pinned: pinnedSet.has(id),
           defaultPinned: false,
           description: raceTraitLoc(raceForActions.id, trait, "description"),
+          ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
+          ...actionTurnConstraints(action),
           // USE-APPLIES — Orc Adrenaline Rush: the bonus-action Dash grants PB
           // temp HP (its same-trait `temp-hp` grant carries `slot: "bonus"`).
           ...(() => {
@@ -4740,7 +5592,7 @@ function resolveFeatureActions(
       let invActionIndex = -1;
       for (const action of inv.mechanics.actions) {
         invActionIndex += 1;
-        const id = `${inv.id}-${action.type}`;
+        const id = `${inv.id}-${action.id ?? action.type}`;
         const summary: RawActionSummary = {
           effect: srdEffectText(
             "invocation",
@@ -4753,10 +5605,7 @@ function resolveFeatureActions(
           }
           summary.effect = undefined;
         }
-        if (action.heal) {
-          summary.heal = resolveActionHeal(action.heal, charData, ctx.abilityScores);
-        }
-        applySaveAttackSummary(summary, action, character, ctx, warlockLevel);
+        applyActionEffectSummary(summary, action, inv.id, character, ctx, warlockLevel);
         actions.push({
           id,
           name: srdText("invocation", inv.id, "name"),
@@ -4771,6 +5620,8 @@ function resolveFeatureActions(
           pinned: pinnedSet.has(id),
           defaultPinned: false,
           description: srdText("invocation", inv.id, "description"),
+          ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
+          ...actionTurnConstraints(action),
           ...(() => {
             const eff = resolveActionUseEffects(
               inv.grants,
@@ -4817,9 +5668,10 @@ function resolveSpellActions(
   // assembler (features + equipped/attuned items + invocations + background +
   // standing spell buffs), so item-borne casting riders (Rod of the Pact Keeper)
   // reach the combat cards too — previously features+invocations only.
+  const activeFeatureKeys = sessionActiveKeys(session);
   const spellGrantAggregate = evaluateGrants(
-    resolveAllGrantSources(charData),
-    new Set(session.activeFeatures ?? []),
+    resolveAllGrantSources(charData, session.itemResources),
+    activeFeatureKeys,
     new Map(Object.entries(session.grantBundleChoices ?? {}))
   );
 
@@ -4883,7 +5735,11 @@ function resolveSpellActions(
   // expanded spells, species legacy spells like Tiefling Fire Bolt, etc.) — so a
   // granted/inferred spell is castable even when it was never written into
   // `spells[]` (minimal representation; imported docs). Deduped by srd id.
-  for (const spellRef of resolveEffectiveSpells(charData, character.session)) {
+  const customActionIds = new Set<string>();
+  for (const [spellIndexInBook, spellRef] of resolveEffectiveSpells(
+    charData,
+    character.session
+  ).entries()) {
     const srdId = "custom" in spellRef ? undefined : spellRef.srdId;
     const spell = srdId ? spellIndex.get(srdId) : undefined;
 
@@ -4892,6 +5748,7 @@ function resolveSpellActions(
       const customSpell = spellRef;
       // Unprepared homebrew spell on a prepared caster → not castable in combat.
       if (
+        ctx.scope === "combat" &&
         !isSpellCombatCastable({
           level: customSpell.level,
           preparedCaster,
@@ -4900,10 +5757,11 @@ function resolveSpellActions(
       ) {
         continue;
       }
+      const customCastTiming = classifySpellCastingTime(customSpell.castingTime);
+      if (ctx.scope === "combat" && customCastTiming === "extended") continue;
+      const customActionType: ActionType =
+        customCastTiming === "extended" ? "free" : customCastTiming;
       const ct = customSpell.castingTime.toLowerCase();
-      let customActionType: ActionType = "action";
-      if (ct.includes("bonus")) customActionType = "bonus";
-      else if (ct.includes("reaction")) customActionType = "reaction";
 
       // Custom (homebrew) spells carry single user strings (no translation).
       const customSummary: RawActionSummary = {};
@@ -4929,12 +5787,20 @@ function resolveSpellActions(
         }
       }
 
-      const customSpellId = `custom-spell-${customSpell.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+      const customBaseId = `custom-spell-${customSpell.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")}`;
+      const customSpellId = customActionIds.has(customBaseId)
+        ? `${customBaseId}--${spellIndexInBook}`
+        : customBaseId;
+      customActionIds.add(customSpellId);
       actions.push({
         id: customSpellId,
         name: customText(customSpell.name),
         type: customActionType,
         source: "spell",
+        customSpellIndex: spellIndexInBook,
+        castTiming: customCastTiming,
         spellLevel: customSpell.level,
         concentration: customSpell.concentration,
         summary: customSummary,
@@ -4953,6 +5819,7 @@ function resolveSpellActions(
     // Cantrips, always-prepared grants, Spell Mastery / Signature picks, and
     // free-cast spells all stay castable (see `isSpellCombatCastable`).
     if (
+      ctx.scope === "combat" &&
       !isSpellCombatCastable({
         level: spell.level,
         preparedCaster,
@@ -4965,6 +5832,9 @@ function resolveSpellActions(
     ) {
       continue;
     }
+
+    const castTiming = classifySpellCastingTime(spell.castingTime);
+    if (ctx.scope === "combat" && castTiming === "extended") continue;
 
     // Per-spell casting ability (MULTICLASS RAW + feat/species pins). A
     // Cleric / Wizard's Guiding Bolt uses WIS, their Fireball INT — derived from
@@ -4990,39 +5860,42 @@ function resolveSpellActions(
     // casting ability (multiclass / item-granted spell with its own ability).
     const spellCastScore = ctx.abilityScores[spellCastAbility];
     const sc = charData.spellcasting;
-    const spellDc =
-      spellDiverges && sc
-        ? effectiveSpellSaveDc(
-            level,
-            spellCastScore,
-            resolveCastingModifier(
-              spellGrantAggregate.spellSaveDcBonus,
-              spellOwningClassId
-            ),
-            sc.saveDCOverride,
-            charData.proficiencyBonusOverride
-          )
-        : dc;
-    const spellAtkBonus =
-      spellDiverges && sc
-        ? effectiveSpellAttackBonus(
-            level,
-            spellCastScore,
-            resolveCastingModifier(
-              spellGrantAggregate.spellAttackBonus,
-              spellOwningClassId
-            ),
-            sc.attackBonusOverride,
-            session.exhaustion,
-            charData.proficiencyBonusOverride
-          )
-        : atkBonus;
+    // A species/feat-granted spell is a complete casting source even when the
+    // character has no class Spellcasting block (Drow Rogue → Faerie Fire,
+    // Magic Initiate on a martial, etc.). Derive from the per-spell ability in
+    // that case instead of silently dropping the DC/attack bonus. The optional
+    // class block contributes only its global manual overrides.
+    const recomputeSpellNumbers = spellDiverges || sc == null;
+    const spellDc = recomputeSpellNumbers
+      ? effectiveSpellSaveDc(
+          level,
+          spellCastScore,
+          resolveCastingModifier(
+            spellGrantAggregate.spellSaveDcBonus,
+            spellOwningClassId
+          ),
+          sc?.saveDCOverride,
+          charData.proficiencyBonusOverride
+        )
+      : dc;
+    const spellAtkBonus = recomputeSpellNumbers
+      ? effectiveSpellAttackBonus(
+          level,
+          spellCastScore,
+          resolveCastingModifier(
+            spellGrantAggregate.spellAttackBonus,
+            spellOwningClassId
+          ),
+          sc?.attackBonusOverride,
+          session.exhaustion,
+          charData.proficiencyBonusOverride
+        )
+      : atkBonus;
 
-    // Determine action type from casting time
-    let actionType: ActionType = "action";
-    const castTime = spell.castingTime.toLowerCase();
-    if (castTime.includes("bonus")) actionType = "bonus";
-    else if (castTime.includes("reaction")) actionType = "reaction";
+    // Extended casts exist on the spellbook surface but claim no turn-economy
+    // slot. Combat scope omits them above; `free` is only the compatible action
+    // shape for the shared transaction API, not a claim that hours are instant.
+    const actionType: ActionType = castTiming === "extended" ? "free" : castTiming;
 
     // Build structured summary
     const summary: RawActionSummary = {};
@@ -5080,6 +5953,7 @@ function resolveSpellActions(
     // Attack bonus (for attack spells)
     if (spell.attackType && spellAtkBonus != null) {
       summary.attackBonus = spellAtkBonus;
+      summary.attackMode = spell.attackType;
     }
 
     // Damage + damage type. A spell exposes ONE of three facets (see
@@ -5146,10 +6020,9 @@ function resolveSpellActions(
       const instances = spellInstanceCount(spell);
       if (instances && instances > 1) summary.instances = instances;
 
-      // S13 — an AREA save-for-half spell (Fireball class) carries the `area` shape
-      // signal through so the in-encounter capture opens a MULTI-target SAVE
-      // declaration (damaged/resisted per target) rather than a single hit/miss.
-      if (spell.area) summary.area = true;
+      // Damage-only outcome facts stay inside the damage facet. The generic AREA
+      // shape is projected below because control spells such as Hypnotic Pattern
+      // and Faerie Fire have no damage facet but still need free multi-selection.
       if (spell.damageOnSave) summary.damageOnSave = spell.damageOnSave;
       if (spell.damageOnMiss) summary.damageOnMiss = spell.damageOnMiss;
       for (const outcome of spellGrantAggregate.spellDamageOutcomes) {
@@ -5159,7 +6032,6 @@ function resolveSpellActions(
         if (outcome.damageOnMiss) summary.damageOnMiss = outcome.damageOnMiss;
       }
       if (spell.damageResolution) summary.damageResolution = spell.damageResolution;
-      if (spell.primaryTargetOnly) summary.primaryTargetOnly = true;
 
       // Dual-damage-instance spells (Ice Storm 2d10 Bldg + 4d6 Cold, Ice Knife
       // 1d10 Prc + 2d6 Cold, Meteor Swarm 20d6 Fire + 20d6 Bldg) carry a SECOND
@@ -5222,6 +6094,26 @@ function resolveSpellActions(
         }
       }
     }
+
+    if (spell.bonusDamageAgainst) {
+      summary.extraDamage = [
+        ...(summary.extraDamage ?? []),
+        {
+          dice: spell.bonusDamageAgainst.dice,
+          damageType: spell.bonusDamageAgainst.damageType,
+          oncePerTurn: false,
+          targetCreatureTypes: spell.bonusDamageAgainst.creatureTypes,
+          source: srdText("spell", spell.id, "name"),
+        },
+      ];
+    }
+
+    // AREA is target geometry, not a damage capability. Carry it for every area
+    // spell — including condition-only/control spells — so a physical-table user
+    // freely declares every creature caught without the app pretending to know
+    // positions. A true single-target ranged spell remains capped at one.
+    if (spell.area) summary.area = true;
+    if (spell.primaryTargetOnly) summary.primaryTargetOnly = true;
 
     // Marked-target rider on a SPELL ATTACK row (Eldritch Blast + Hex, a spell
     // attack + Hunter's Mark). RAW: Hex / Hunter's Mark deal their extra die "each
@@ -5370,14 +6262,48 @@ function resolveSpellActions(
     // lights nothing. Read the grant's stable `activeKey`, NEVER the spell name
     // (golden rule 7). Mirrors the feature derivation at :3033-3041; a
     // spell's `grants` is a plain optional array (no `in` narrowing needed).
-    // A TARGET-ONLY buff (Warding Bond — the CASTER never benefits) opts out via
-    // `autoActivateOnCast: false`: no key is stamped, so casting never self-buffs;
-    // the warded creature's sheet lights the toggle manually from the rail.
+    // A selected-recipient buff (Warding Bond — the CASTER never benefits) declares
+    // that ownership on the grant itself. Targeting metadata describes legal targets;
+    // it never silently re-homes an otherwise caster-owned standing grant.
     let spellActivatesKey: string | undefined;
+    let spellActiveDurationRounds: number | undefined;
+    let spellActiveTurnBoundary: ResolvedAction["activeTurnBoundary"];
+    let standingEffect: ResolvedAction["standingEffect"];
     for (const g of spell.grants ?? []) {
-      if (g.type === "while-active" && g.autoActivateOnCast !== false) {
+      if (g.type !== "while-active") continue;
+      const targetsSelectedCreature = g.recipient === "selected";
+      const bindsSelectedTarget = targetsSelectedCreature || g.targetScope !== undefined;
+      const duration = whileActiveDurationAtCastLevel(g.duration, spell.level);
+      if (bindsSelectedTarget) {
+        standingEffect = {
+          sourceId: spell.id,
+          activeKey: g.activeKey,
+          ...(g.targetScope ? { markScope: g.targetScope } : {}),
+          targetAffinity: spell.targeting?.affinity ?? "ally",
+          ...(spell.targeting?.excludeSelf ? { excludeSelf: true } : {}),
+          ...(duration?.maxRounds !== undefined ? { maxRounds: duration.maxRounds } : {}),
+          ...(duration?.kind === "turn-boundary"
+            ? {
+                turnBoundary: {
+                  phase: duration.phase,
+                  turns: duration.turns,
+                },
+              }
+            : {}),
+          ...(g.grants.some((inner) => inner.type === "damage-retaliation")
+            ? { requiresAppliedTempHp: true }
+            : {}),
+        };
+      }
+      if (!targetsSelectedCreature) {
         spellActivatesKey = g.activeKey;
-        break;
+        spellActiveDurationRounds = duration?.maxRounds;
+        if (duration?.kind === "turn-boundary") {
+          spellActiveTurnBoundary = {
+            phase: duration.phase,
+            turns: duration.turns,
+          };
+        }
       }
     }
 
@@ -5386,6 +6312,7 @@ function resolveSpellActions(
       name: srdText("spell", spell.id, "name"),
       type: actionType,
       source: "spell",
+      castTiming,
       spellLevel: spell.level,
       spellId: spell.id,
       concentration: spell.concentration,
@@ -5397,6 +6324,11 @@ function resolveSpellActions(
       description: srdText("spell", spell.id, "description"),
       // Casting establishes the spell's while-active state (Shield of Faith's AC).
       ...(spellActivatesKey ? { activatesKey: spellActivatesKey } : {}),
+      ...(spellActiveTurnBoundary ? { activeTurnBoundary: spellActiveTurnBoundary } : {}),
+      ...(spellActiveDurationRounds !== undefined
+        ? { activeDurationRounds: spellActiveDurationRounds }
+        : {}),
+      ...(standingEffect ? { standingEffect } : {}),
     };
     actions.push(castAction);
 
@@ -5404,18 +6336,27 @@ function resolveSpellActions(
     // established effect without spending another slot or restarting concentration.
     // The stored cast level preserves upcast math across later turns. Geometry and
     // timing remain table declarations; every consequence still uses CombatResolver.
+    const sourceCast = spellGrantAggregate.freeCastFromList.find(
+      (entry) =>
+        entry.castOverrides?.maxRounds !== undefined &&
+        freeCastEntryIncludesSpell(entry, spell) &&
+        activeFeatureKeys.has(castSourceActiveKey(entry.sourceId, spell.id))
+    );
+    const sourceCastActiveKey = sourceCast
+      ? castSourceActiveKey(sourceCast.sourceId, spell.id)
+      : undefined;
+    const recurringActiveKey = [spellActivatesKey, sourceCastActiveKey].find(
+      (key) => key !== undefined && activeFeatureKeys.has(key)
+    );
     const persistentSpellActive =
-      session.concentration === spell.id ||
-      Boolean(
-        spellActivatesKey && (session.activeFeatures ?? []).includes(spellActivatesKey)
-      );
+      session.concentration === spell.id || recurringActiveKey !== undefined;
     if ((spell.recurrence || spell.followUp) && persistentSpellActive) {
       const castLevel = Math.max(
         spell.level,
         session.concentration === spell.id
           ? (session.concentrationCastLevel ?? spell.level)
-          : spellActivatesKey
-            ? (session.activeSpellCastLevels?.[spellActivatesKey] ?? spell.level)
+          : recurringActiveKey
+            ? (session.activeSpellCastLevels?.[recurringActiveKey] ?? spell.level)
             : spell.level
       );
       const type: ActionType = spell.followUp
@@ -5457,21 +6398,28 @@ function resolveSpellActions(
               ? { damageResolution: follow.attack.resolution }
               : {}),
             ...(follow.saveAbility && spellDc != null
-              ? { saveAbility: follow.saveAbility, saveDC: spellDc }
+              ? {
+                  saveAbility: follow.saveAbility,
+                  saveDC: sourceCast?.castOverrides?.saveDC ?? spellDc,
+                }
               : {}),
             ...(follow.conditionApplication
               ? { conditionApplication: follow.conditionApplication }
               : {}),
-            ...(follow.targeting ? { targeting: follow.targeting } : {}),
+            ...(follow.targeting
+              ? { targeting: resolveActionTargeting(follow.targeting, ctx) }
+              : {}),
             ...(follow.area ? { area: true } : {}),
             ...(follow.trigger
               ? { trigger: uiText(`combat.reactionTrigger_${follow.trigger}`) }
               : {}),
             recurringUse: true,
+            ...(spell.endsOnSuccessfulSave ? { endsOnSuccessfulSave: true } : {}),
           }
         : {
             ...scaleCombatSummaryAtCastLevel(summary, spell, castLevel),
             recurringUse: true,
+            ...(spell.endsOnSuccessfulSave ? { endsOnSuccessfulSave: true } : {}),
           };
       actions.push({
         ...castAction,
@@ -5484,6 +6432,13 @@ function resolveSpellActions(
         defaultPinned: true,
         summary: recurringSummary,
         activatesKey: undefined,
+        activeDurationRounds: undefined,
+        activeTurnBoundary: undefined,
+        standingEffect: undefined,
+        ...(standingEffect ? { persistentTargetSourceId: spell.id } : {}),
+        ...(spell.endsOnSuccessfulSave && recurringActiveKey
+          ? { endsActiveKeyOnSuccessfulSave: recurringActiveKey }
+          : {}),
       });
     }
   }
@@ -5584,7 +6539,7 @@ function resolveWeaponActions(
       // concentration drop). Cast-time damage stays on the spell's own card.
       ...resolveGrantSourcesForSpells(charData.spells),
     ],
-    new Set(character.session.activeFeatures ?? []),
+    sessionActiveKeys(character.session),
     // Bundle-gated weapon riders (Hunter Colossus Slayer) only apply once the
     // player has picked that option, so the chosen bundle option must flow into
     // the attack-row aggregate the same way `while-active` toggles do.
@@ -5839,6 +6794,7 @@ function resolveWeaponActions(
       {
         kind: "weapon",
         isRanged: isRangedWeapon,
+        isFinesse: properties.some((p) => p.toLowerCase() === "finesse"),
         isTwoHanded: isTwoHandedOnly,
         damageType,
       },
@@ -6093,17 +7049,27 @@ function resolveWeaponActions(
       // Self-contained damage riders ride the off-hand hit too, through the SAME
       // shared `resolveAttackDamageRiders` the main-hand row uses (golden rule
       // 6b). A light off-hand weapon is always MELEE (the dual-wield gate excludes
-      // ranged), so it sees "weapon" + "melee-weapon" riders alike. We then drop
-      // ONCE-PER-TURN riders (Zealot Divine Fury): they fire once per turn and are
-      // already surfaced on the main row — double-listing them on the off-hand
-      // would wrongly imply they apply on both hits in a turn. PER-HIT riders
-      // (Divine Favor / Hunter's Mark — "each time you hit") correctly ride here.
+      // ranged), so it sees "weapon" + "melee-weapon" riders alike. A TRACKED or
+      // dependency-gated once-per-turn rider must remain available here: a Rogue
+      // who misses with the main hand can still land Sneak Attack (and therefore
+      // Assassinate) with the off hand. Untracked once-per-turn riders stay on the
+      // main row until they gain a generic per-turn receipt; per-hit riders remain.
       const offHandExtraDamage = resolveAttackDamageRiders(
         grantAgg.damageRiders,
-        { kind: "weapon", isRanged: false, damageType: w.damageType },
+        {
+          kind: "weapon",
+          isRanged: false,
+          isFinesse: w.properties.some((p) => p.toLowerCase() === "finesse"),
+          damageType: w.damageType,
+        },
         character,
         ctx.abilityScores
-      ).filter((d) => !d.oncePerTurn);
+      ).filter(
+        (rider) =>
+          !rider.oncePerTurn ||
+          rider.resourceTrackerId !== undefined ||
+          rider.requiresRiderTrackerId !== undefined
+      );
       // RA-13 Nick — SRD "Mastery Properties — Nick": the Light property's extra
       // attack is made AS PART OF the Attack action instead of as a Bonus Action
       // (once per turn). The mastery belongs to the weapon making the attack, so
@@ -6177,81 +7143,15 @@ function resolveWeaponActions(
     if (row) actions.push(row);
   }
 
-  // 4c. Unarmed Strike from an `unarmed-strike-die` upgrade (Monk Martial Arts,
-  //     College of Dance Bardic Damage). A Monk's Unarmed Strike is their MAIN
-  //     attack, yet no carried "weapon" produces a row — so without this a Monk
-  //     had no attack row in Combat at all (the Martial Arts die only showed as a
-  //     Features-page chip). `effectiveUnarmedStrike` resolves the best die +
-  //     attack ability (DEX vs STR) + scaled `classSpecific:martialArtsDie`.
+  // 4c. Universal Unarmed Strike, optionally upgraded by an
+  //     `unarmed-strike-die` grant (Monk Martial Arts, College of Dance Bardic
+  //     Damage). Every creature can choose the damage option (1 + STR Bldg), so
+  //     the row must exist even with no upgrade; `effectiveUnarmedStrike` owns
+  //     that base formula and upgrades it to the best die/ability when present.
   //     Skipped when 4b already produced an Unarmed Strike row (Unarmed Fighting).
-  if (
-    grantAgg.unarmedStrikeDice.length > 0 &&
-    !actions.some((a) => a.id === "unarmed-strike")
-  ) {
-    // Resolve each upgrade's deferred `classSpecific:<key>` die against ITS OWN
-    // source feature's owning class at the character's level in that class (Monk
-    // Martial Arts → Monk level, College of Dance → Bard level) — never one
-    // shared primary-class row read at the total character level (multiclass-
-    // correct). `featureClassRow` already does the per-class own-level lookup.
-    const deferredResolve = (sourceId: string | undefined, key: string) =>
-      sourceId ? featureClassRow(sourceId, character)?.[key] : undefined;
-    const profile = effectiveUnarmedStrike(
-      grantAgg.unarmedStrikeDice,
-      ctx.abilityScores, // D2 — effective scores (set-score floors)
-      level,
-      deferredResolve,
-      charData.proficiencyBonusOverride
-    );
+  if (!actions.some((a) => a.id === "unarmed-strike")) {
     const id = "unarmed-strike";
-    // Empowered Strikes (Monk L6) etc. let the strike deal an ALTERNATE type at the
-    // player's choice — fold the options into a damage-type CHOICE chip (reusing the
-    // multi/choice rendering), so the row reads "d8+4 Bldg/Force". Dedup the base.
-    const altTypes = grantAgg.unarmedStrikeDamageTypeOptions.filter(
-      (t) => t !== profile.damageType
-    );
-    // G25 — self-contained damage riders that ride the Unarmed Strike too, via the
-    // SAME `resolveAttackDamageRiders` the carried-weapon row uses (golden rule 6):
-    // a "melee-weapon" rider ("a weapon OR an Unarmed Strike" — Zealot Divine Fury)
-    // DOES ride; a "weapon"-only rider does NOT (an Unarmed Strike isn't a weapon).
-    const extraDamage = resolveAttackDamageRiders(
-      grantAgg.damageRiders,
-      { kind: "unarmed", damageType: profile.damageType },
-      character,
-      ctx.abilityScores
-    );
-    // Elemental Attunement (+10 ft while active) — a `weapon-reach-bonus` rider
-    // rides the Unarmed Strike too (RAW: the reach buff names Unarmed Strikes).
-    // An Unarmed Strike is never Heavy/Versatile, so only `all-melee` riders apply.
-    const { reachBonusFt } = resolveMeleeReachBonus(grantAgg.weaponReachBonuses, false);
-    // The Monk's Unarmed Strike is their MAIN attack, and BOTH of its numbers are
-    // the product of a silent rule: the feature die REPLACES the plain strike's
-    // flat 1 damage, and its damage ability may be DEX where the base strike uses
-    // STR. So the row carries the SAME damage breakdown a carried weapon does —
-    // built by the ONE builder (golden rule 6) — with both substitutions
-    // explained. Only when an upgrade actually applied: a plain "1 + STR" strike
-    // has no composition worth a tip.
     const unarmedName = litText({ en: "Unarmed Strike", it: "Colpo Senz'armi" });
-    const damageBreakdown = buildUnarmedDamageBreakdown(
-      profile,
-      unarmedName,
-      ctx.abilityScores,
-      character
-    );
-    const summary: RawActionSummary = {
-      attackBonus: profile.attackBonus + exPenalty,
-      damage: profile.damage,
-      ...(damageBreakdown.length > 0 ? { damageBreakdown } : {}),
-      damageType: profile.damageType,
-      // Melee reach — 5 ft base + any active reach rider; the view formats it.
-      weaponRange: { kind: "melee", reachFt: 5 + reachBonusFt },
-      // 2024 Improved/Superior Critical covers Unarmed Strikes too.
-      ...(grantAgg.critThreshold < 20 ? { critRange: grantAgg.critThreshold } : {}),
-      ...(extraDamage.length > 0 ? { extraDamage } : {}),
-    };
-    if (altTypes.length > 0) {
-      summary.damageTypes = [profile.damageType, ...altTypes];
-      summary.multiDamageTypeFlavor = "choice";
-    }
     actions.push({
       id,
       name: unarmedName,
@@ -6259,7 +7159,7 @@ function resolveWeaponActions(
       source: "weapon",
       spellLevel: null,
       concentration: false,
-      summary,
+      summary: resolveUnarmedAttackSummary(character, ctx, grantAgg),
       costsSlot: false,
       pinned: !unpinnedSet.has(id),
       defaultPinned: true,
@@ -6456,7 +7356,7 @@ function resolveTemporaryHpActions(
       ...resolveGrantSourcesForRace(charData.race),
       ...resolveGrantSourcesForInvocations(allEntryPicks(charData, "invocationChoices")),
     ],
-    new Set(session.activeFeatures ?? []),
+    sessionActiveKeys(session),
     new Map(Object.entries(session.grantBundleChoices ?? {}))
   ).tempHpGrants;
   // A race trait's grant `sourceId` is the `race:<id>:<trait.id>` session id (NOT a
@@ -6540,7 +7440,33 @@ function resolveTemporaryHpActions(
   return actions;
 }
 
-// ─── Short Rest Recovery ────────────────────────────────────────────────────
+// ─── Rest Recovery ──────────────────────────────────────────────────────────
+
+/**
+ * The equipment charge map a Long Rest applies: magic-item `charges` with
+ * `recovery: "long-rest"` restore to max, and so do `recovery: "dawn"` charges
+ * (functionally identical for the player, dawn happens at the end of a Long
+ * Rest). Every other recovery (short-rest recharge wands, daily-cooldown rods)
+ * is left alone. ONE law shared by the legacy store rest (the fail-closed
+ * degradation) and the canonical rest boundary (rest-world-boundary.ts), so
+ * the two paths can never drift.
+ */
+export function equipmentAfterLongRest(
+  equipment: CharacterData["equipment"]
+): CharacterData["equipment"] {
+  return equipment.map((ref) => {
+    if (!ref.charges) return ref;
+    if (
+      ref.charges.recovery !== undefined &&
+      ref.charges.recovery !== "long-rest" &&
+      ref.charges.recovery !== "dawn"
+    ) {
+      return ref;
+    }
+    if (ref.charges.current === ref.charges.max) return ref;
+    return { ...ref, charges: { ...ref.charges, current: ref.charges.max } };
+  });
+}
 
 /**
  * Compute which trackers recover (and by how much) when a Short Rest is taken.
@@ -6564,6 +7490,7 @@ export function getShortRestRecoveries(
   // `shortRestRecovery` formula's `"level"` term scales correctly for a
   // multiclass character. Returns nothing — only sets the map when applicable.
   const addRecovery = (id: string, spec: TrackerSpec, scalingLevel: number): void => {
+    if (spec.autoRecover === false) return;
     if (
       spec.recovery === "short-rest" ||
       spec.recovery === "short-or-long-rest" ||
@@ -6654,8 +7581,8 @@ export function gainsHeroicInspirationOnLongRest(character: CharacterDoc): boole
   // consumer. `resolveAllGrantSources` is the same fan-in the other CharacterDoc
   // consumers (`resolveActiveMaintainedEffects`) already use.
   return evaluateGrants(
-    resolveAllGrantSources(character.character),
-    new Set(character.session.activeFeatures ?? []),
+    resolveAllGrantSources(character.character, character.session.itemResources),
+    sessionActiveKeys(character.session),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   ).heroicInspirationOnLongRest;
 }
@@ -6677,8 +7604,8 @@ export function gainsHeroicInspirationOnLongRest(character: CharacterDoc): boole
  */
 function combatAbilityScores(character: CharacterDoc): Record<AbilityCode, number> {
   const agg = evaluateGrants(
-    resolveAllGrantSources(character.character),
-    new Set(character.session.activeFeatures ?? []),
+    resolveAllGrantSources(character.character, character.session.itemResources),
+    sessionActiveKeys(character.session),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   );
   return effectiveAbilityScores(
@@ -6696,7 +7623,7 @@ function combatAbilityScores(character: CharacterDoc): Record<AbilityCode, numbe
 function aggregateForCharacter(character: CharacterDoc) {
   return evaluateGrants(
     resolveGrantSourcesForFeatures(character.character.features),
-    new Set(character.session.activeFeatures ?? []),
+    sessionActiveKeys(character.session),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   );
 }
@@ -6822,11 +7749,110 @@ export interface ActiveMaintainedEffect {
   /** Source feature id (provenance — the prompt label resolves off it). */
   sourceId: string;
   /** In-combat events that EXTEND the state for another round. */
-  maintainedBy: ReadonlyArray<"attack" | "bonus-extend" | "damage-taken">;
+  maintainedBy: ReadonlyArray<"attack" | "bonus-extend">;
   /** The cap past which the state auto-ends (Rage = 10 minutes). */
   maxMinutes?: number;
   /** FRONTIER-S3 — the same cap in ROUNDS the turn/round engine counts down. */
   maxRounds?: number;
+}
+
+/** Why an action cannot establish its declared active state right now. The
+ * vocabulary is data-owned (`WhileActiveDuration.endsEarlyOn`), not feature ids. */
+export type ActiveStateBlocker = "heavy-armor" | "incapacitated";
+
+/** Full mechanical sources plus hidden spell-lifecycle wrappers. The latter do
+ * not surface in the feature rail, but their active keys still own timers and
+ * deterministic expiry. Callers dedupe by active key. */
+function resolveLifecycleGrantSources(character: CharacterDoc): GrantSource[] {
+  return [
+    ...resolveAllGrantSources(character.character, character.session.itemResources),
+    ...resolveGrantSourcesForSpellLifecycles(character.character.spells),
+  ];
+}
+
+/** Resolve the first currently-known fact that prevents an action's active
+ * state. Unknown/homebrew trigger tokens stay override-first and never block. */
+export function resolveActiveStateBlocker(
+  character: CharacterDoc,
+  action: Pick<ResolvedAction, "activationEndsEarlyOn">
+): ActiveStateBlocker | null {
+  for (const trigger of action.activationEndsEarlyOn ?? []) {
+    if (
+      trigger === "heavy-armor" &&
+      isHeavyArmorEquipped(character.character.equipment, getEquipment)
+    ) {
+      return "heavy-armor";
+    }
+    if (
+      trigger === "incapacitated" &&
+      effectiveSessionConditions(character.session).some(conditionBreaksConcentration)
+    ) {
+      return "incapacitated";
+    }
+  }
+  return null;
+}
+
+/** Active states that must end immediately when a known trigger becomes true.
+ * Used by condition/equipment mutation seams; pure and generic. */
+export function resolveActiveStatesEndingOn(
+  character: CharacterDoc,
+  trigger: ActiveStateBlocker
+): string[] {
+  const active = new Set(character.session.activeFeatures ?? []);
+  const ended = new Set<string>();
+  for (const source of resolveLifecycleGrantSources(character)) {
+    for (const grant of source.grants ?? []) {
+      if (grant.type !== "while-active") continue;
+      const activeKey = resolveGrantActiveKey(source, grant.activeKey);
+      if (
+        active.has(activeKey) &&
+        grant.duration !== undefined &&
+        "endsEarlyOn" in grant.duration &&
+        grant.duration.endsEarlyOn?.includes(trigger)
+      ) {
+        ended.add(activeKey);
+      }
+    }
+  }
+  return [...ended];
+}
+
+/** Active states whose declared lifetime cannot survive a completed rest.
+ * Unknown/homebrew toggles and indefinite states are preserved: the engine only
+ * ends what the data proves has elapsed. */
+export function resolveActiveStatesEndingOnRest(
+  character: CharacterDoc,
+  rest: "short" | "long"
+): string[] {
+  const active = new Set(character.session.activeFeatures ?? []);
+  const restMinutes = rest === "short" ? 60 : 8 * 60;
+  const ended = new Set<string>();
+  for (const source of resolveLifecycleGrantSources(character)) {
+    for (const grant of source.grants ?? []) {
+      if (grant.type !== "while-active") continue;
+      const activeKey = resolveGrantActiveKey(source, grant.activeKey);
+      if (!active.has(activeKey)) continue;
+      const duration = whileActiveDurationAtCastLevel(
+        grant.duration,
+        character.session.activeSpellCastLevels?.[activeKey]
+      );
+      if (
+        duration?.kind === "maintained" ||
+        duration?.kind === "turn-boundary" ||
+        (duration?.kind === "timed" && duration.minutes <= restMinutes)
+      ) {
+        ended.add(activeKey);
+      }
+    }
+  }
+  return [...ended];
+}
+
+/** One cast-law query shared by the Play and Spells surfaces. */
+export function isSpellcastingBlocked(character: CharacterDoc): boolean {
+  return aggregateCharacterGrants(character.character, character.session)
+    .spellcastingBlocked;
 }
 
 /**
@@ -6846,13 +7872,14 @@ export function resolveActiveMaintainedEffects(
   if (active.size === 0) return [];
   const seen = new Set<string>();
   const out: ActiveMaintainedEffect[] = [];
-  for (const source of resolveAllGrantSources(character.character)) {
+  for (const source of resolveLifecycleGrantSources(character)) {
     for (const g of source.grants ?? []) {
       if (g.type !== "while-active" || g.duration?.kind !== "maintained") continue;
-      if (!active.has(g.activeKey) || seen.has(g.activeKey)) continue;
-      seen.add(g.activeKey);
+      const activeKey = resolveGrantActiveKey(source, g.activeKey);
+      if (!active.has(activeKey) || seen.has(activeKey)) continue;
+      seen.add(activeKey);
       out.push({
-        activeKey: g.activeKey,
+        activeKey,
         sourceId: source.id,
         maintainedBy: g.duration.maintainedBy,
         ...(g.duration.maxMinutes !== undefined
@@ -6905,6 +7932,43 @@ export interface ActiveTimedEffect {
   maxRounds: number;
 }
 
+export interface ActiveBoundaryEffect {
+  activeKey: string;
+  sourceId: string;
+  phase: "turn-start" | "turn-end";
+  turns: number;
+}
+
+/** Active states whose exact future owner-turn boundary is persisted at use time. */
+export function resolveActiveBoundaryEffects(
+  character: CharacterDoc
+): ActiveBoundaryEffect[] {
+  const active = new Set(character.session.activeFeatures ?? []);
+  if (active.size === 0) return [];
+  const seen = new Set<string>();
+  const out: ActiveBoundaryEffect[] = [];
+  for (const source of resolveLifecycleGrantSources(character)) {
+    for (const grant of source.grants ?? []) {
+      if (grant.type !== "while-active") continue;
+      const activeKey = resolveGrantActiveKey(source, grant.activeKey);
+      if (
+        grant.duration?.kind !== "turn-boundary" ||
+        !active.has(activeKey) ||
+        seen.has(activeKey)
+      )
+        continue;
+      seen.add(activeKey);
+      out.push({
+        activeKey,
+        sourceId: source.id,
+        phase: grant.duration.phase,
+        turns: grant.duration.turns,
+      });
+    }
+  }
+  return out;
+}
+
 /**
  * Resolve every CURRENTLY-ACTIVE `while-active` state that declares a `maxRounds`
  * round-duration cap (FRONTIER-S3). Walks the full grant sources for `while-active`
@@ -6919,15 +7983,21 @@ export function resolveActiveTimedEffects(character: CharacterDoc): ActiveTimedE
   if (active.size === 0) return [];
   const seen = new Set<string>();
   const out: ActiveTimedEffect[] = [];
-  for (const source of resolveAllGrantSources(character.character)) {
+  for (const source of resolveLifecycleGrantSources(character)) {
     for (const g of source.grants ?? []) {
-      if (g.type !== "while-active" || g.duration?.maxRounds === undefined) continue;
-      if (!active.has(g.activeKey) || seen.has(g.activeKey)) continue;
-      seen.add(g.activeKey);
+      if (g.type !== "while-active") continue;
+      const activeKey = resolveGrantActiveKey(source, g.activeKey);
+      if (!active.has(activeKey) || seen.has(activeKey)) continue;
+      const duration = whileActiveDurationAtCastLevel(
+        g.duration,
+        character.session.activeSpellCastLevels?.[activeKey]
+      );
+      if (duration?.maxRounds === undefined) continue;
+      seen.add(activeKey);
       out.push({
-        activeKey: g.activeKey,
+        activeKey,
         sourceId: source.id,
-        maxRounds: g.duration.maxRounds,
+        maxRounds: duration.maxRounds,
       });
     }
   }
@@ -6978,17 +8048,21 @@ export function advanceEffectTimers(character: CharacterDoc): {
       next[eff.activeKey] = { roundsLeft };
     }
   }
-  // S9 — SELF-SUSTAINING potion timers (`potion:<itemId>`): a consumed buff
-  // potion has no persistent `while-active` source, so its countdown lives
-  // PURELY in `effectTimers`. Carry every existing potion timer forward here,
-  // decrementing + expiring it exactly like a while-active state. The expiry's
-  // `sourceId` is the item id (parsed off the key) so the expiry log line
-  // attributes the potion. Already-counted keys (a future overlap) are skipped.
+  // Self-sustaining timers have no `while-active` grant from which to recover
+  // their duration: consumed potions live only in `effectTimers`; a source cast
+  // (War God's Blessing) additionally stays valid while its active key is lit.
   for (const [key, timer] of Object.entries(prev)) {
-    if (!key.startsWith(POTION_TIMER_PREFIX) || next[key] !== undefined) continue;
+    if (next[key] !== undefined || expired.some((effect) => effect.activeKey === key))
+      continue;
+    const sourceId = key.startsWith(POTION_TIMER_PREFIX)
+      ? key.slice(POTION_TIMER_PREFIX.length)
+      : (character.session.activeFeatures ?? []).includes(key)
+        ? castSourceIdFromActiveKey(key)
+        : null;
+    if (!sourceId) continue;
     const roundsLeft = timer.roundsLeft - 1;
     if (roundsLeft <= 0) {
-      expired.push({ activeKey: key, sourceId: key.slice(POTION_TIMER_PREFIX.length) });
+      expired.push({ activeKey: key, sourceId });
     } else {
       next[key] = { roundsLeft };
     }
@@ -7032,6 +8106,21 @@ export interface ExtraActionBudget {
   bonus: number;
 }
 
+/** One active extra-action grant with its data-declared legal-action limits. */
+export type ExtraActionRule = AggregatedGrants["extraActions"][number];
+
+/**
+ * Full extra-action rules active this turn. Unlike the compact meter budget, this
+ * preserves Haste's allowed action categories and one-attack ceiling for the
+ * commit gate. Campaign-projected effects and caster-owned toggles share the same
+ * aggregate, so a remote Haste is indistinguishable from any other active source.
+ */
+export function extraActionRulesThisTurn(
+  character: CharacterDoc
+): ReadonlyArray<ExtraActionRule> {
+  return aggregateCharacterGrants(character.character, character.session).extraActions;
+}
+
 /**
  * The EXTRA action/bonus economy slots the character has THIS turn, summed from
  * every CURRENTLY-ACTIVE source that declares an `extra-action` grant (Fighter
@@ -7048,23 +8137,22 @@ export interface ExtraActionBudget {
  * character without one keeps the default single-slot economy with zero new code.
  */
 export function extraActionsThisTurn(character: CharacterDoc): ExtraActionBudget {
-  const active = new Set(character.session.activeFeatures ?? []);
   let action = 0;
   let bonus = 0;
-  if (active.size === 0) return { action, bonus };
-  for (const source of resolveAllGrantSources(character.character)) {
-    for (const g of source.grants ?? []) {
-      // `extra-action` always rides a `while-active` toggle (the budget counts
-      // only while the source is lit) — match the nesting, gated by the key.
-      if (g.type !== "while-active" || !active.has(g.activeKey)) continue;
-      for (const inner of g.grants) {
-        if (inner.type !== "extra-action") continue;
-        if (inner.slot === "action") action += inner.count;
-        else bonus += inner.count;
-      }
-    }
+  for (const rule of extraActionRulesThisTurn(character)) {
+    if (rule.slot === "action") action += rule.count;
+    else bonus += rule.count;
   }
   return { action, bonus };
+}
+
+/** Whether an active projected effect blocks the character's ordinary action
+ * and bonus-action economy this turn (Haste's one-turn end-state). Kept
+ * condition-free: Haste does not impose Incapacitated and therefore must not
+ * acquire that condition's extra concentration or reaction semantics. */
+export function isTurnEconomyBlocked(character: CharacterDoc): boolean {
+  return aggregateCharacterGrants(character.character, character.session)
+    .turnEconomyBlocked;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -7110,11 +8198,7 @@ export function effectiveWalkingSpeedFt(
 
   // Whole-character aggregate (sees EQUIPPED items) so item-sourced speed bonuses
   // AND the Boots-of-Speed `speed-multiplier` are honoured, not just feature ones.
-  const agg = evaluateGrants(
-    resolveAllGrantSources(charData),
-    new Set(character.session.activeFeatures ?? []),
-    new Map(Object.entries(character.session.grantBundleChoices ?? {}))
-  );
+  const agg = aggregateCharacterGrants(charData, character.session);
   let bonus = agg.speedBonusFt;
 
   // Conditional `no-heavy-armor` bonus: apply unless we can confirm Heavy armor
@@ -7151,7 +8235,8 @@ export function effectiveWalkingSpeedFt(
   // N unless it is already higher" — a MAX applied LAST, after the additive
   // bonuses, multiplier, and flat reductions, so an exhausted / armor-penalised
   // Speed still floors back up to `speedFloorFt`. Default 0 = no floor.
-  return Math.max(0, resolved, agg.speedFloorFt);
+  const floored = Math.max(0, resolved, agg.speedFloorFt);
+  return agg.speedCapFt === null ? floored : Math.min(floored, agg.speedCapFt);
 }
 
 /**
@@ -7178,6 +8263,31 @@ export function armorDisadvantageClauses(
     combatAbilityScores(character).STR,
     effectiveArmorProficiencies(charData)
   ).disadvantages;
+}
+
+/** Every disadvantage imposed by armor currently worn. Keeps the narrower
+ * unproficient-armor resolver stable while composing its clauses with an armor
+ * row's intrinsic Stealth penalty for the shared check/save rail. */
+export function wornArmorDisadvantageClauses(
+  character: CharacterDoc
+): ReadonlyArray<AdvantageClause> {
+  const training = armorDisadvantageClauses(character);
+  const { character: charData } = character;
+  const stealth = charData.equipment.flatMap((ref) => {
+    if ("custom" in ref || ref.equipped !== true) return [];
+    const armor = getEquipment(ref.srdId);
+    return armor?.category === "armor" && armor.stealthDisadvantage
+      ? [
+          {
+            sourceId: `armor-stealth:${armor.id}`,
+            rollType: "check" as const,
+            vs: "stealth",
+            description: srdText("equipment", armor.id, "name"),
+          },
+        ]
+      : [];
+  });
+  return [...training, ...stealth];
 }
 
 /** A resolved on-crit movement option (Champion Remarkable Athlete). */
@@ -7384,8 +8494,8 @@ export function resolveAtZeroHpInterrupts(character: CharacterDoc): AtZeroHpInte
   // lives in `character.features` — so resolve over the FULL grant sources
   // (race + feats + features + …), mirroring `gainsHeroicInspirationOnLongRest`.
   const interrupts = evaluateGrants(
-    resolveAllGrantSources(character.character),
-    new Set(character.session.activeFeatures ?? []),
+    resolveAllGrantSources(character.character, character.session.itemResources),
+    sessionActiveKeys(character.session),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   ).atZeroHpInterrupts;
   if (interrupts.length === 0) return [];
@@ -7431,12 +8541,13 @@ export function applyShortRestExhaustion(character: CharacterDoc): number {
 /** A single way to pay for an action — the primary cost or a declared alternate. */
 export interface ActionCostOption {
   kind: "primary" | "alternate";
-  cost: CostSpec;
+  cost: CostSpec | ({ kind: "item-resource"; amount: number } & ItemResourceIdentity);
 }
 
 /**
  * Enumerate every way the player may pay for a resolved action — the primary
- * cost (a spell slot, a tracker spend, or an equipment charge, in that priority)
+ * cost (a spell slot, an exact physical-item resource, a tracker spend, or an
+ * equipment charge, in that priority)
  * plus any declared `alternateCost` (Wild Companion: slot OR Wild Shape). Each
  * is a cost-engine `CostSpec` ready for `planCommit`. An at-will action with no
  * cost yields no options (combat auto-commits). Override-first — the alternate
@@ -7449,11 +8560,23 @@ export function getActionCostOptions(
 ): ActionCostOption[] {
   const options: ActionCostOption[] = [];
 
-  // Primary cost: slot ▸ tracker ▸ equipment (the first that applies).
+  // Primary cost: slot ▸ exact item resource ▸ tracker ▸ equipment.
   if (action.costsSlot) {
     options.push({
       kind: "primary",
       cost: { kind: "spell-slot", minLevel: action.slotLevel ?? 1 },
+    });
+  } else if (action.resourcePayment) {
+    options.push({
+      kind: "primary",
+      cost: {
+        kind: "item-resource",
+        itemId: action.resourcePayment.itemId,
+        instanceId: action.resourcePayment.instanceId,
+        resourceId: action.resourcePayment.resourceId,
+        key: action.resourcePayment.key,
+        amount: action.resourceCost ?? 1,
+      },
     });
   } else if (action.costTracker) {
     options.push({

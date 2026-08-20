@@ -30,6 +30,7 @@ import { spells } from "@/data/spells";
 import {
   resolveGrantSourcesForManeuvers,
   resolveGrantSourcesForRace,
+  spellGrantSurfacesActiveControl,
 } from "@/lib/resolve-grant-sources";
 import { SRD_MANEUVERS } from "@/data/maneuvers";
 import type { LocText } from "@/lib/loc-text";
@@ -168,7 +169,7 @@ describe("R6+R3 7c — every grant LocText `srd` ref resolves in the catalogue",
     }
   });
 
-  // Spells carry grants too — every `while-active` buff spell (Hex, Hunter's
+  // Spells carry grants too — every caster-side active spell (Hex, Hunter's
   // Mark, Mage Armor, Blur, …) exposes an activatable toggle whose `label`
   // resolves under `spell:<id>.grants.<seg>.label`. This sweep was the detector
   // hole that let `hex.grants.0.label` ship missing: the guard covered every
@@ -176,12 +177,15 @@ describe("R6+R3 7c — every grant LocText `srd` ref resolves in the catalogue",
   // toggle crashed the throwing resolver at render time (uncaught here).
   it("spells: each spell's grants resolve in EN + IT", () => {
     for (const spell of spells) {
-      if (!spell.grants?.length) continue;
+      const activeStateGrants = spell.grants?.filter((grant) =>
+        spellGrantSurfacesActiveControl(spell, grant)
+      );
+      if (!activeStateGrants?.length) continue;
       checkAggregate([
         {
           id: spell.id,
 
-          grants: spell.grants,
+          grants: activeStateGrants,
           ref: { kind: "spell", key: spell.id },
         },
       ]);

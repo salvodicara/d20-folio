@@ -21,7 +21,12 @@ import { spellLevelVar } from "@/components/shared/folio-colors";
 // The discriminated union (slot / free-cast / mastery) is owned by the engine —
 // the resolver produces it, this modal only renders it. Importing it from the
 // engine keeps the dependency direction one-way (UI → engine, never reverse).
-import { toggleMetamagicSelection, type CastLevelOption } from "@/lib/cast-options";
+import {
+  toggleMetamagicSelection,
+  type CastLevelOption,
+  type CastRecoveryCadence,
+} from "@/lib/cast-options";
+import { itemResourceRecoveryTranslationKey } from "@/lib/views/item-resource-view";
 import { scaleUpcastDice, spellInstanceCount } from "@/lib/utils";
 
 export type { CastLevelOption };
@@ -115,6 +120,15 @@ export interface CastLevelModalProps {
 
 export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalProps) {
   const { t } = useTranslation();
+  const recoveryLabel = (recovery: CastRecoveryCadence): string => {
+    if (recovery.kind === "tracker") {
+      return t(recovery.rest === "long" ? "combat.perLongRest" : "combat.perShortRest");
+    }
+    if (recovery.triggers.length === 0) return t("combat.resourceRecoveryNone");
+    return recovery.triggers
+      .map((trigger) => t(itemResourceRecoveryTranslationKey(trigger)))
+      .join(" · ");
+  };
   // Per-cast Metamagic multi-select. Reset whenever a fresh request opens so a
   // previous cast's selection never bleeds into the next one — using React's
   // "adjust state during render on a prop change" pattern (NOT a setState effect,
@@ -233,20 +247,37 @@ export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalP
                 // Free-cast (feat-granted) row — gold tint; the parent pattern-
                 // matches `kind === "free-cast"` for the tracker pathway.
                 if (opt.kind === "free-cast") {
+                  const dmg = damageAtLevel(opt.level);
+                  const heal = healAtLevel(opt.level);
                   return (
                     <button
                       key={`fc-${opt.sourceId}-${idx}`}
                       type="button"
-                      className="cl-opt cl-free"
+                      className="cl-opt cl-slot cl-free"
+                      style={{ ["--sl" as string]: spellLevelVar(opt.level) }}
                       onClick={() => onConfirm(opt.level, opt, selectedMetamagic)}
                     >
-                      <span className="cl-tag">{t("combat.freeCastBadge")}</span>
-                      <span className="cl-name">{opt.sourceName}</span>
-                      <span className="cl-rest">
-                        {opt.rest === "long"
-                          ? t("combat.perLongRest")
-                          : t("combat.perShortRest")}
+                      <span className="cl-seal" aria-hidden>
+                        {opt.level}
                       </span>
+                      <span className="cl-tag">{t("combat.freeCastBadge")}</span>
+                      <span className="cl-name">
+                        {opt.sourceName}
+                        <span className="sr-only">
+                          {" · "}
+                          {opt.level === request.baseLevel
+                            ? t("combat.castLevelBase", { level: opt.level })
+                            : t("combat.castLevelUp", { level: opt.level })}
+                        </span>
+                      </span>
+                      {dmg && <span className="cl-dmg">{dmg}</span>}
+                      {heal && <span className="cl-heal">{heal}</span>}
+                      {opt.explicitCost && (
+                        <span className="cl-cost">
+                          {t("combat.itemPoolChargeCost", { n: opt.cost })}
+                        </span>
+                      )}
+                      <span className="cl-rest">{recoveryLabel(opt.recovery)}</span>
                       <span className="cl-count">
                         {opt.remaining}/{opt.total}
                       </span>

@@ -9,10 +9,10 @@
  *  - **Warding Bond** (spell:warding-bond): "You touch ANOTHER creature… it gains
  *    a +1 bonus to AC and saving throws" — TARGET-ONLY, the caster never benefits.
  *    Modeled as a `while-active` +1 AC (`ac-bonus`) + +1 all saves (`save-bonus`)
- *    with `autoActivateOnCast: false`, so CASTING never self-buffs (no
- *    `activatesKey` on the cast action); the WARDED creature's sheet lights the
- *    toggle manually from the rail. The shared-damage / resistance posture is a
- *    neutrally-worded defenses reminder line.
+ *    with `recipient: "selected"`, so CASTING never self-buffs (no `activatesKey`
+ *    on the cast action); the resolver projects the catalogue grant onto the
+ *    selected creature. Universal resistance and post-mitigation transfer use
+ *    typed persistent-effect primitives.
  *  - **Death Ward** (spell:death-ward): "The first time the target would drop to 0
  *    Hit Points before the spell ends, the target instead drops to 1 Hit Point,
  *    and the spell ends." A deterministic 0-HP interrupt in the damage seam.
@@ -27,6 +27,7 @@ import { concentrationValue } from "@/lib/concentration";
 import { getSpellById } from "@/data/spells";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { CharacterDoc } from "@/types/character";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 /** MOCK caster with `spellId` prepared; `activeKeys` lights the buff toggle. */
 function buffed(spellId: string, activeKeys: string[]): CharacterDoc {
@@ -79,39 +80,68 @@ describe("Blur — attackers have Disadvantage against you (display-only)", () =
   });
 });
 
-// ── Warding Bond — TARGET-ONLY +1 AC, +1 saves, shared-damage reminder ──────
+// ── Warding Bond — TARGET-ONLY typed defenses + damage transfer ─────────────
 
-describe("Warding Bond — target-only +1 AC + +1 saves (manual toggle, no self-buff)", () => {
-  // The toggle is lit MANUALLY (the warded creature's sheet, via the rail) — never
-  // auto-lit on cast (the caster never benefits; `autoActivateOnCast: false`).
-  const sessionOn = { ...MOCK_CHARACTER.session, activeFeatures: ["spell-warding-bond"] };
+describe("Warding Bond — target-only +1 AC + +1 saves", () => {
+  const effect: ActiveCombatEffect = {
+    id: "warding-bond-target",
+    actor: { kind: "monster", combatantId: "caster" },
+    target: { kind: "monster", combatantId: "target" },
+    source: {
+      kind: "spell",
+      id: "warding-bond",
+      actionId: "spell-warding-bond",
+      castLevel: 2,
+    },
+    payload: { kind: "grant-group", activeKey: "spell-warding-bond" },
+    duration: { kind: "encounter" },
+  };
+  const sessionOn = {
+    ...MOCK_CHARACTER.session,
+    activeFeatures: [],
+    encounterEffects: [effect],
+  };
   const sessionOff = { ...MOCK_CHARACTER.session, activeFeatures: [] };
   const char = buffed("warding-bond", ["spell-warding-bond"]).character;
 
-  it("FAIL-BEFORE (target-only): the CAST action carries NO activatesKey — casting never self-buffs", () => {
-    // Warding Bond opts out of the S1 cast→toggle auto-light; a SELF buff (Shield
-    // of Faith) keeps it. Pin both sides of the seam on the resolved cast actions.
+  it("the cast targets its standing grant without self-activating it", () => {
+    // Warding Bond opts out of the S1 cast→toggle auto-light. Hex is a real spell
+    // that selects a target, but its marked-target rider belongs to the caster and
+    // therefore remains self-lit. Pin both sides without mutating catalogue data.
     const doc: CharacterDoc = {
       ...MOCK_CHARACTER,
       character: {
         ...MOCK_CHARACTER.character,
         spells: [
           { srdId: "warding-bond", prepared: true },
-          { srdId: "shield-of-faith", prepared: true },
+          { srdId: "hex", prepared: true },
         ],
       },
       session: { ...MOCK_CHARACTER.session, activeFeatures: [] },
     };
     const actions = resolveActions(doc);
     const wardingBond = actions.find((a) => a.spellId === "warding-bond");
-    const shieldOfFaith = actions.find((a) => a.spellId === "shield-of-faith");
+    const hex = actions.find((a) => a.spellId === "hex");
     expect(wardingBond).toBeDefined();
     expect(wardingBond?.activatesKey).toBeUndefined();
-    // The self-buff control: the auto-light stamp still works where RAW self-buffs.
-    expect(shieldOfFaith?.activatesKey).toBe("spell-shield-of-faith");
+    expect(wardingBond?.standingEffect).toEqual({
+      sourceId: "warding-bond",
+      activeKey: "spell-warding-bond",
+      targetAffinity: "ally",
+      excludeSelf: true,
+      maxRounds: 600,
+    });
+    expect(hex?.activatesKey).toBe("spell-hex");
+    expect(hex?.standingEffect).toEqual({
+      sourceId: "hex",
+      activeKey: "spell-hex",
+      markScope: "cursed",
+      targetAffinity: "enemy",
+      maxRounds: 600,
+    });
   });
 
-  it("manual toggle ON → +1 to the AC bonus (ac-bonus channel)", () => {
+  it("projected effect → +1 to the AC bonus (ac-bonus channel)", () => {
     // Assert the aggregate `acBonus` (the ac-bonus channel Shield of Faith uses);
     // the displayed AC folds this via computeAC unless a manual acOverride wins
     // (override-first, rule 8 — the MOCK pins its AC, so effectiveAC is override-led).
@@ -120,30 +150,20 @@ describe("Warding Bond — target-only +1 AC + +1 saves (manual toggle, no self-
     expect(on.acBonus - off.acBonus).toBe(1);
   });
 
-  it("manual toggle ON → +1 to the flat save bonus (save-bonus channel)", () => {
+  it("projected effect → +1 to the flat save bonus (save-bonus channel)", () => {
     const off = aggregateCharacterGrants(char, sessionOff);
     const on = aggregateCharacterGrants(char, sessionOn);
     expect(on.saveBonusFlat - off.saveBonusFlat).toBe(1);
   });
 
-  it("surfaces the shared-damage / resistance reminder as a NEUTRALLY-worded defense note (en+it)", () => {
+  it("projects typed all-damage resistance for the damage engine", () => {
     const on = aggregateCharacterGrants(char, sessionOn);
-    expect(on.defenseNotes).toHaveLength(1);
-    expect(on.defenseNotes[0]?.whileActiveKey).toBe("spell-warding-bond");
-    const [vmEn] = incomingAttackAdvantageVMs(on.defenseNotes, "en");
-    expect(vmEn?.description).toMatch(/resistance to all damage/i);
-    // Neutral third-person wording — reads correctly on whichever sheet has it
-    // lit (never "you"/"your", which would be wrong on one of the two sheets).
-    expect(vmEn?.description).toMatch(/warded creature/i);
-    expect(vmEn?.description).not.toMatch(/\byou\b|\byour\b/i);
-    const [vmIt] = incomingAttackAdvantageVMs(on.defenseNotes, "it");
-    expect(vmIt?.description).toMatch(/resistenza a tutti i danni/i);
-    expect(vmIt?.description).not.toMatch(/resistance to all/i); // no EN leak
+    expect(on.allDamageResistance).toBe(true);
   });
 
-  it("FAIL-BEFORE: OFF, no AC/save bump and no defense note", () => {
+  it("FAIL-BEFORE: OFF, no AC/save bump or universal resistance", () => {
     const off = aggregateCharacterGrants(char, sessionOff);
-    expect(off.defenseNotes).toHaveLength(0);
+    expect(off.allDamageResistance).toBe(false);
     expect(off.saveBonusFlat).toBe(0);
   });
 });

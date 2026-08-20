@@ -10,6 +10,11 @@ import type { CharacterDoc } from "@/types/character";
 import type { CombatPersistence, CombatState } from "@/types/combat-state";
 import { makeCharacterDoc } from "./_helpers";
 import { conc } from "./__helpers__/concentration";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
+import { nonCombatSessionChanged } from "@/lib/combat-state";
+import { serializeCharacter } from "@/lib/character-codec";
+import { castSourceActiveKey } from "@/lib/smart-tracker";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 
 /**
  * Creates a minimal mock character for testing store operations.
@@ -92,6 +97,178 @@ function mockCharacter(overrides?: Partial<CharacterDoc>): CharacterDoc {
     ...overrides,
   };
 }
+
+function armDeathWard(character: CharacterDoc): void {
+  character.character.spells = [
+    ...character.character.spells.filter(
+      (spell) => !("srdId" in spell) || spell.srdId !== "death-ward"
+    ),
+    { srdId: "death-ward", prepared: true },
+  ];
+  character.session.activeFeatures = [
+    ...(character.session.activeFeatures ?? []).filter(
+      (key) => key !== "spell-death-ward"
+    ),
+    "spell-death-ward",
+  ];
+}
+
+function projectedEffect(targetId = "pc-u1"): ActiveCombatEffect {
+  return {
+    id: "effect-heroism",
+    actor: { kind: "monster", combatantId: "caster" },
+    target: {
+      kind: "pc",
+      combatantId: targetId,
+      memberUid: "u1",
+      characterId: "test-char-1",
+    },
+    source: { kind: "spell", id: "heroism", actionId: "spell-heroism" },
+    payload: { kind: "grant-group", activeKey: "spell-heroism" },
+    duration: { kind: "encounter" },
+  };
+}
+
+describe("characterStore — campaign effect projection", () => {
+  beforeEach(() => {
+    useCharacterStore.setState({ encounterEffectProjection: null });
+    useCharacterStore.getState().setCombatPersistence(null);
+    useCharacterStore.getState().setCharacter(null);
+  });
+
+  it("survives same-character hydration and ordinary session mutations", () => {
+    const effect = projectedEffect();
+    useCharacterStore.getState().setCharacter(mockCharacter());
+    useCharacterStore.getState().setEncounterEffects("test-char-1", [effect]);
+    useCharacterStore.getState().updateSession({ inspiration: true });
+    useCharacterStore.getState().setCharacter(mockCharacter());
+
+    expect(useCharacterStore.getState().character?.session.encounterEffects).toEqual([
+      effect,
+    ]);
+  });
+
+  it("never projects onto another character and clears when the encounter clears", () => {
+    const effect = projectedEffect();
+    useCharacterStore.getState().setEncounterEffects("test-char-1", [effect]);
+    useCharacterStore.getState().setCharacter(mockCharacter({ id: "other-char" }));
+    expect(
+      useCharacterStore.getState().character?.session.encounterEffects
+    ).toBeUndefined();
+
+    useCharacterStore.getState().setCharacter(mockCharacter());
+    expect(useCharacterStore.getState().character?.session.encounterEffects).toEqual([
+      effect,
+    ]);
+    useCharacterStore.getState().setEncounterEffects(null);
+    expect(
+      useCharacterStore.getState().character?.session.encounterEffects
+    ).toBeUndefined();
+  });
+
+  it("does not trigger a parent-save diff and is absent from portable JSON", () => {
+    useCharacterStore.getState().setCharacter(mockCharacter());
+    let parentDiffs = 0;
+    const unsubscribe = useCharacterStore.subscribe((state, previous) => {
+      if (
+        state.character &&
+        previous.character &&
+        nonCombatSessionChanged(previous.character.session, state.character.session)
+      ) {
+        parentDiffs += 1;
+      }
+    });
+
+    useCharacterStore.getState().setEncounterEffects("test-char-1", [projectedEffect()]);
+    unsubscribe();
+
+    expect(parentDiffs).toBe(0);
+    const character = useCharacterStore.getState().character;
+    if (!character) throw new Error("expected projected character");
+    expect(Object.keys(character.session)).not.toContain("encounterEffects");
+    expect(serializeCharacter(character)).not.toContain("encounterEffects");
+  });
+
+  it("persists and undo-restores character-owned effects through combat state", () => {
+    const write = vi.fn();
+    useCharacterStore.getState().setCharacter(mockCharacter());
+    useCharacterStore.getState().setCombatPersistence({
+      write,
+      writeTurnEconomy: vi.fn(),
+    });
+    const effect = projectedEffect();
+    const undo = useCharacterStore.getState().applySoloCombatEffects([effect]);
+
+    expect(useCharacterStore.getState().combatActiveEffects).toEqual([effect]);
+    expect(useCharacterStore.getState().character?.session.encounterEffects).toEqual([
+      effect,
+    ]);
+    expect(write).toHaveBeenLastCalledWith(
+      expect.objectContaining({ activeEffects: [effect] })
+    );
+
+    undo?.();
+    expect(useCharacterStore.getState().combatActiveEffects).toEqual([]);
+    expect(
+      useCharacterStore.getState().character?.session.encounterEffects
+    ).toBeUndefined();
+    const lastWrite = (write.mock.calls as Array<[CombatState]>).at(-1)?.[0];
+    expect(lastWrite?.activeEffects).toBeUndefined();
+  });
+
+  it("hydrates local and campaign occurrences into one runtime projection", () => {
+    const local = projectedEffect();
+    const campaign = { ...projectedEffect(), id: "campaign-effect" };
+    useCharacterStore.getState().setCharacter(mockCharacter());
+    useCharacterStore.getState().setEncounterEffects("test-char-1", [campaign]);
+    useCharacterStore.getState().hydrateCombatState({
+      hp: { current: 20, temp: 0 },
+      conditions: [],
+      initiativeRoll: null,
+      deathSaves: { successes: 0, failures: 0 },
+      round: 2,
+      recentActions: [],
+      activeEffects: [local],
+    });
+
+    expect(useCharacterStore.getState().character?.session.encounterEffects).toEqual([
+      local,
+      campaign,
+    ]);
+  });
+
+  it("hydrates legacy occurrences and persists them without a ledger field", () => {
+    const write = vi.fn<CombatPersistence["write"]>();
+    const legacy = projectedEffect();
+    useCharacterStore.getState().setCharacter(mockCharacter());
+    useCharacterStore.getState().setCombatPersistence({
+      write,
+      writeTurnEconomy: vi.fn(),
+    });
+    useCharacterStore.getState().hydrateCombatState({
+      hp: { current: 20, temp: 0 },
+      conditions: [],
+      initiativeRoll: null,
+      deathSaves: { successes: 0, failures: 0 },
+      round: 2,
+      recentActions: [],
+      activeEffects: [legacy],
+    });
+
+    const state = useCharacterStore.getState();
+    expect(state.combatLegacyActiveEffects).toEqual([legacy]);
+    expect(state.combatActiveEffects).toEqual([legacy]);
+    expect(state.character?.session.encounterEffects).toEqual([legacy]);
+
+    const undoDamage = useCharacterStore.getState().applyDamage(1);
+    const written = write.mock.calls.at(-1)?.[0];
+    expect(written?.activeEffects).toEqual([legacy]);
+    // The branch-era authored mirror ledger is gone: the persisted combat state
+    // carries occurrences only (a stored `effectOps` field is codec-ignored).
+    expect(written && "effectOps" in written).toBe(false);
+    expect(undoDamage?.()).toBe(true);
+  });
+});
 
 describe("characterStore — death saves & session state", () => {
   beforeEach(() => {
@@ -231,6 +408,45 @@ describe("characterStore — death saves & session state", () => {
       expect(sess()?.conditions).toEqual(["prone"]);
     });
 
+    const ordinaryHealingDeathCases: Array<
+      [
+        string,
+        {
+          fail?: number;
+          exhaustion?: number;
+          status?: CharacterDoc["status"];
+        },
+      ]
+    > = [
+      ["three failed saves", { fail: 3 }],
+      ["Exhaustion 6", { exhaustion: 6 }],
+      ["the roster death status", { status: "dead" }],
+    ];
+
+    it.each(ordinaryHealingDeathCases)(
+      "ordinary healing cannot revive a character dead from %s",
+      (_cause, cause) => {
+        seed({ current: 0, conditions: ["unconscious"] });
+        const live = store().character;
+        if (!live) throw new Error("character missing");
+        store().setCharacter({
+          ...live,
+          status: cause.status ?? live.status,
+          session: {
+            ...live.session,
+            deathFail: cause.fail ?? live.session.deathFail,
+            exhaustion: cause.exhaustion ?? live.session.exhaustion,
+          },
+        });
+
+        store().applyHealing(5);
+
+        expect(sess()?.hp.current).toBe(0);
+        expect(sess()?.conditions).toEqual(["unconscious"]);
+        expect(sess()?.deathFail).toBe(cause.fail ?? 0);
+      }
+    );
+
     it("restoreHpSnapshot restores HP, temp, the dying track, and conditions exactly", () => {
       seed({ current: 0, temp: 0, fail: 2, conditions: ["unconscious"] });
       store().restoreHpSnapshot({
@@ -259,6 +475,89 @@ describe("characterStore — death saves & session state", () => {
       undo?.();
       expect(sess()?.hp).toEqual({ current: 20, temp: 3 });
       expect(sess()?.conditions).toEqual(["frightened"]);
+    });
+
+    it("applies reviewed hit packets sequentially at 0 HP", () => {
+      seed({ current: 0, fail: 0, conditions: ["unconscious"] });
+      const undo = store().applyResolvedCombatEffects({
+        damagePackets: [{ amount: 2 }, { amount: 3 }],
+      });
+
+      expect(sess()?.deathFail).toBe(2);
+      expect(sess()?.conditions).toEqual(["unconscious"]);
+      expect(
+        sess()?.logEntries.filter((entry) => entry.event.kind === "hp-damage")
+      ).toHaveLength(2);
+
+      undo?.();
+      expect(sess()?.deathFail).toBe(0);
+      expect(sess()?.conditions).toEqual(["unconscious"]);
+    });
+
+    it("stabilizes at 0 HP without healing and reverses the death track exactly", () => {
+      seed({ current: 0, fail: 2, conditions: ["unconscious"] });
+      const undo = store().applyResolvedCombatEffects({ stabilize: true });
+      expect(sess()?.hp.current).toBe(0);
+      expect(sess()?.deathSucc).toBe(3);
+      expect(sess()?.deathFail).toBe(0);
+      expect(sess()?.conditions).toEqual(["unconscious"]);
+      undo?.();
+      expect(sess()?.deathSucc).toBe(0);
+      expect(sess()?.deathFail).toBe(2);
+      expect(sess()?.conditions).toEqual(["unconscious"]);
+    });
+
+    it("does not stabilize a character who already has three failed saves", () => {
+      seed({ current: 0, fail: 3, conditions: ["unconscious"] });
+      const undo = store().applyResolvedCombatEffects({ stabilize: true });
+      expect(sess()?.deathSucc).toBe(0);
+      expect(sess()?.deathFail).toBe(3);
+      expect(undo).toBeTypeOf("function");
+    });
+
+    it("keeps a solo concentration condition source-owned and makes it inert on drop", () => {
+      seed({ current: 20, conditions: ["prone"] });
+      store().setConcentration(conc("invisibility"), { silent: true });
+      const undo = store().applyResolvedCombatEffects({
+        addConcentrationConditions: ["invisible"],
+      });
+
+      expect(sess()?.conditions).toEqual(["prone"]);
+      expect(
+        effectiveSessionConditions(store().character?.session ?? mockCharacter().session)
+      ).toEqual(["prone", "invisible"]);
+      store().setConcentration("", { silent: true });
+      expect(
+        effectiveSessionConditions(store().character?.session ?? mockCharacter().session)
+      ).toEqual(["prone"]);
+      undo?.();
+      expect(sess()?.concentrationConditions).toBeUndefined();
+    });
+
+    it("blocks solo healing while a projected Chill Touch effect is active", () => {
+      const char = mockCharacter();
+      char.session.hp.current = 20;
+      const effect: ActiveCombatEffect = {
+        id: "chill-touch-1",
+        actor: { kind: "monster", combatantId: "enemy" },
+        target: {
+          kind: "pc",
+          combatantId: "pc-test",
+          memberUid: "u-test",
+          characterId: char.id,
+        },
+        source: {
+          kind: "spell",
+          id: "chill-touch",
+          actionId: "spell-chill-touch",
+        },
+        payload: { kind: "grant-group", activeKey: "spell-chill-touch" },
+        duration: { kind: "encounter" },
+      };
+      useCharacterStore.getState().setCharacter(char);
+      useCharacterStore.getState().setEncounterEffects(char.id, [effect]);
+      useCharacterStore.getState().applyResolvedCombatEffects({ healing: 12 });
+      expect(useCharacterStore.getState().character?.session.hp.current).toBe(20);
     });
   });
 
@@ -307,7 +606,7 @@ describe("characterStore — death saves & session state", () => {
       const char = mockCharacter();
       char.session.hp.current = 8;
       char.session.hp.temp = 0;
-      char.session.activeFeatures = ["spell-death-ward"];
+      armDeathWard(char);
       useCharacterStore.getState().setCharacter(char);
       // 20 damage would drop 8 → 0; the ward clamps to 1 and ends.
       useCharacterStore.getState().applyDamage(20);
@@ -330,7 +629,7 @@ describe("characterStore — death saves & session state", () => {
       const char = mockCharacter();
       char.session.hp.current = 30;
       char.session.hp.temp = 0;
-      char.session.activeFeatures = ["spell-death-ward"];
+      armDeathWard(char);
       useCharacterStore.getState().setCharacter(char);
       useCharacterStore.getState().applyDamage(5);
       const after = useCharacterStore.getState().character;
@@ -344,7 +643,7 @@ describe("characterStore — death saves & session state", () => {
       const char = mockCharacter();
       char.session.hp.current = 8;
       char.session.hp.temp = 10;
-      char.session.activeFeatures = ["spell-death-ward"];
+      armDeathWard(char);
       useCharacterStore.getState().setCharacter(char);
       useCharacterStore.getState().applyDamage(12);
       const after = useCharacterStore.getState().character;
@@ -358,7 +657,7 @@ describe("characterStore — death saves & session state", () => {
       const char = mockCharacter();
       char.session.hp.current = 8;
       char.session.hp.temp = 0;
-      char.session.activeFeatures = ["spell-death-ward"];
+      armDeathWard(char);
       useCharacterStore.getState().setCharacter(char);
       useCharacterStore.getState().applyDamage(100);
       const after = useCharacterStore.getState().character;
@@ -671,6 +970,21 @@ describe("characterStore — death saves & session state", () => {
       expect(state?.deathFail).toBe(0);
     });
 
+    it("setHP remains the explicit manual override for a dead death-save track", () => {
+      const char = mockCharacter();
+      char.session.hp.current = 0;
+      char.session.deathSucc = 0;
+      char.session.deathFail = 3;
+      useCharacterStore.getState().setCharacter(char);
+
+      useCharacterStore.getState().setHP(5);
+
+      const state = useCharacterStore.getState().character?.session;
+      expect(state?.hp.current).toBe(5);
+      expect(state?.deathSucc).toBe(0);
+      expect(state?.deathFail).toBe(0);
+    });
+
     it("setHP does NOT touch death saves when not transitioning from 0", () => {
       // Healing from 5 → 10 shouldn't touch death saves (they should
       // already be 0 in normal play, but if they're non-zero from some
@@ -784,6 +1098,19 @@ describe("characterStore — death saves & session state", () => {
   });
 
   describe("spell slots", () => {
+    it("coalesces play-resource changes into one immediate parent save flush", async () => {
+      const flush = vi.fn();
+      useCharacterStore.getState().setCharacter(mockCharacter());
+      useCharacterStore.getState().setParentPersistenceFlush(flush);
+
+      useCharacterStore.getState().useSpellSlot(1);
+      useCharacterStore.getState().useTracker("test-resource", 1);
+
+      expect(flush).not.toHaveBeenCalled();
+      await Promise.resolve();
+      expect(flush).toHaveBeenCalledTimes(1);
+    });
+
     it("uses a spell slot", () => {
       const char = mockCharacter();
       useCharacterStore.getState().setCharacter(char);
@@ -904,6 +1231,19 @@ describe("characterStore — death saves & session state", () => {
           `${cond} should drop concentration`
         ).toBe("");
       }
+    });
+
+    it("an Incapacitated-family condition ends every active state declaring that trigger", () => {
+      const char = mockCharacter();
+      char.character.features.push({ srdId: "barbarian-rage" });
+      char.session.activeFeatures = ["barbarian-rage"];
+      useCharacterStore.getState().setCharacter(char);
+
+      useCharacterStore.getState().addCondition("stunned");
+
+      expect(
+        useCharacterStore.getState().character?.session.activeFeatures
+      ).not.toContain("barbarian-rage");
     });
 
     it("RA-06 — a NON-incapacitating condition (poisoned) leaves Concentration intact", () => {
@@ -1114,6 +1454,30 @@ describe("characterStore — death saves & session state", () => {
   });
 
   describe("trackers", () => {
+    function recordedRollCharacter(): CharacterDoc {
+      const char = mockCharacter();
+      char.character.features = [
+        {
+          custom: true,
+          title: "Foretelling",
+          emoji: "",
+          source: "Homebrew",
+          tags: [],
+          contentBlocks: [],
+          trackers: [
+            {
+              id: "foretelling",
+              label: "Foretelling",
+              total: "2",
+              recovery: "long-rest",
+              recordedRolls: { min: 1, max: 20 },
+            },
+          ],
+        },
+      ];
+      return char;
+    }
+
     it("uses a tracker", () => {
       const char = mockCharacter();
       useCharacterStore.getState().setCharacter(char);
@@ -1143,6 +1507,77 @@ describe("characterStore — death saves & session state", () => {
       expect(useCharacterStore.getState().character?.session.trackers["rage"]?.used).toBe(
         0
       );
+    });
+
+    it("tops up another pool exactly and a stale undo never clobbers a later spend", () => {
+      const char = mockCharacter();
+      char.character.classes = [{ classId: "monk", level: 3 }];
+      char.character.features = [{ srdId: "monk-focus" }];
+      char.session.trackers = { "monk-focus": { used: 3 } };
+      useCharacterStore.getState().setCharacter(char);
+
+      const undo = useCharacterStore.getState().topUpTracker("monk-focus", "full");
+      expect(
+        useCharacterStore.getState().character?.session.trackers["monk-focus"]
+      ).toBeUndefined();
+
+      useCharacterStore.getState().useTracker("monk-focus");
+      undo?.();
+      expect(
+        useCharacterStore.getState().character?.session.trackers["monk-focus"]
+      ).toEqual({ used: 1 });
+    });
+
+    it("records, spends, and exactly restores a physical tracker roll", () => {
+      useCharacterStore.getState().setCharacter(recordedRollCharacter());
+      useCharacterStore.getState().setTrackerRoll("foretelling", 0, 17);
+      expect(
+        useCharacterStore.getState().character?.session.trackers.foretelling
+      ).toEqual({ used: 0, rolls: [17, null] });
+
+      const undo = useCharacterStore.getState().spendTrackerRoll("foretelling", 0);
+      expect(
+        useCharacterStore.getState().character?.session.trackers.foretelling
+      ).toEqual({ used: 1, rolls: [null] });
+
+      undo?.();
+      expect(
+        useCharacterStore.getState().character?.session.trackers.foretelling
+      ).toEqual({ used: 0, rolls: [17, null] });
+    });
+
+    it("drops placeholder-only roll state after the last entered value is cleared", () => {
+      useCharacterStore.getState().setCharacter(recordedRollCharacter());
+      useCharacterStore.getState().setTrackerRoll("foretelling", 0, 17);
+      useCharacterStore.getState().setTrackerRoll("foretelling", 0, null);
+
+      expect(
+        useCharacterStore.getState().character?.session.trackers.foretelling
+      ).toBeUndefined();
+    });
+
+    it("does not let a stale recorded-roll undo overwrite a later correction", () => {
+      useCharacterStore.getState().setCharacter(recordedRollCharacter());
+      useCharacterStore.getState().setTrackerRoll("foretelling", 0, 17);
+      useCharacterStore.getState().setTrackerRoll("foretelling", 1, 4);
+      const undo = useCharacterStore.getState().spendTrackerRoll("foretelling", 0);
+
+      useCharacterStore.getState().setTrackerRoll("foretelling", 0, 9);
+      undo?.();
+
+      expect(
+        useCharacterStore.getState().character?.session.trackers.foretelling
+      ).toEqual({ used: 1, rolls: [9] });
+    });
+
+    it("clamps entered rolls and ordinary corrections preserve them", () => {
+      useCharacterStore.getState().setCharacter(recordedRollCharacter());
+      useCharacterStore.getState().setTrackerRoll("foretelling", 0, 99);
+      useCharacterStore.getState().useTracker("foretelling");
+      useCharacterStore.getState().restoreTracker("foretelling");
+      expect(
+        useCharacterStore.getState().character?.session.trackers.foretelling
+      ).toEqual({ used: 0, rolls: [20, null] });
     });
   });
 
@@ -1643,6 +2078,7 @@ describe("characterStore — read-only mode (T4: DM views a member's sheet)", ()
     useCharacterStore.getState().useSpellSlot(1);
     useCharacterStore.getState().useTracker("rage", 1);
     useCharacterStore.getState().restoreTracker("rage", 1);
+    useCharacterStore.getState().topUpTracker("rage", "full");
     useCharacterStore.getState().addCondition("poisoned");
     useCharacterStore.getState().setConcentration(conc("bless"));
     useCharacterStore.getState().updateSession({ inspiration: true });
@@ -1775,28 +2211,132 @@ describe("characterStore — FRONTIER-S3 cadence appliers", () => {
     });
   });
 
-  describe("armEffectTimers", () => {
-    it("arms an active maxRounds state (Rage → 100) and is idempotent", () => {
-      useCharacterStore
-        .getState()
-        .setCharacter(barbarianDoc({ activeFeatures: ["barbarian-rage"] }));
-      useCharacterStore.getState().armEffectTimers();
+  describe("active effect timers", () => {
+    it("manual toggles atomically arm, clear, and restart the state's timer", () => {
+      useCharacterStore.getState().setCharacter(barbarianDoc());
+      useCharacterStore.getState().setActiveFeature("barbarian-rage", true);
       expect(
         useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"]
       ).toEqual({ roundsLeft: 100 });
-      // Re-arming leaves the existing countdown untouched.
-      useCharacterStore.getState().armEffectTimers();
+
+      useCharacterStore.getState().advanceEffectTimers();
+      expect(
+        useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"]
+      ).toEqual({ roundsLeft: 99 });
+
+      useCharacterStore.getState().setActiveFeature("barbarian-rage", false);
+      expect(
+        useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"]
+      ).toBeUndefined();
+
+      useCharacterStore.getState().setActiveFeature("barbarian-rage", true);
       expect(
         useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"]
       ).toEqual({ roundsLeft: 100 });
     });
+  });
 
-    it("no-ops when no maxRounds state is active", () => {
-      useCharacterStore.getState().setCharacter(barbarianDoc());
-      useCharacterStore.getState().armEffectTimers();
+  describe("exact active effect boundaries", () => {
+    it("expires Shield at the stored next-turn start and restores it atomically", () => {
+      const wizard = mockCharacter();
+      wizard.character.spells = [
+        ...wizard.character.spells,
+        { srdId: "shield", prepared: true },
+      ];
+      wizard.session.activeFeatures = ["spell-shield"];
+      wizard.session.effectBoundaries = {
+        "spell-shield": { round: 2, phase: "turn-start" },
+      };
+      useCharacterStore.getState().setCharacter(wizard);
+
       expect(
-        useCharacterStore.getState().character?.session.effectTimers
+        useCharacterStore
+          .getState()
+          .expireEffectBoundaries({ round: 1, phase: "turn-end" }).expired
+      ).toEqual([]);
+      const beforeLogs = wizard.session.logEntries.length;
+      const { expired, restore } = useCharacterStore
+        .getState()
+        .expireEffectBoundaries({ round: 2, phase: "turn-start" });
+      expect(expired).toEqual([{ activeKey: "spell-shield", sourceId: "shield" }]);
+      expect(
+        useCharacterStore.getState().character?.session.activeFeatures
+      ).not.toContain("spell-shield");
+      expect(
+        useCharacterStore.getState().character?.session.effectBoundaries
       ).toBeUndefined();
+      expect(useCharacterStore.getState().character?.session.logEntries.length).toBe(
+        beforeLogs + 1
+      );
+
+      restore();
+      expect(useCharacterStore.getState().character?.session.activeFeatures).toContain(
+        "spell-shield"
+      );
+      expect(useCharacterStore.getState().character?.session.effectBoundaries).toEqual({
+        "spell-shield": { round: 2, phase: "turn-start" },
+      });
+      expect(useCharacterStore.getState().character?.session.logEntries).toHaveLength(
+        beforeLogs
+      );
+    });
+
+    it("arming one boundary has a surgical inverse", () => {
+      useCharacterStore.getState().setCharacter(mockCharacter());
+      const restore = useCharacterStore
+        .getState()
+        .armEffectBoundary("spell-shield", { round: 2, phase: "turn-start" });
+      useCharacterStore
+        .getState()
+        .armEffectBoundary("later", { round: 3, phase: "turn-end" });
+      restore?.();
+      expect(useCharacterStore.getState().character?.session.effectBoundaries).toEqual({
+        later: { round: 3, phase: "turn-end" },
+      });
+    });
+
+    it("expires and undo-restores a source-owned solo condition occurrence", () => {
+      useCharacterStore.getState().setEncounterEffects(null);
+      useCharacterStore.getState().setCharacter(mockCharacter());
+      const effect = {
+        ...projectedEffect(),
+        payload: { kind: "condition" as const, conditionId: "charmed" },
+        duration: {
+          kind: "turn-boundary" as const,
+          combatantId: "self",
+          round: 2,
+          phase: "turn-start" as const,
+        },
+      };
+      useCharacterStore.getState().applySoloCombatEffects([effect]);
+
+      expect(useCharacterStore.getState().character?.session.encounterEffects).toEqual([
+        effect,
+      ]);
+      const { expired, restore } = useCharacterStore
+        .getState()
+        .expireEffectBoundaries({ round: 2, phase: "turn-start" });
+      expect(expired).toEqual([
+        { activeKey: "condition:charmed", sourceId: effect.source.id },
+      ]);
+      expect(useCharacterStore.getState().combatActiveEffects).toEqual([]);
+
+      restore();
+      expect(useCharacterStore.getState().combatActiveEffects).toEqual([effect]);
+    });
+
+    it("manual condition removal revokes only local source occurrences and is undoable", () => {
+      useCharacterStore.getState().setCharacter(mockCharacter());
+      const effect = {
+        ...projectedEffect(),
+        payload: { kind: "condition" as const, conditionId: "charmed" },
+      };
+      useCharacterStore.getState().applySoloCombatEffects([effect]);
+
+      const restore = useCharacterStore.getState().removeConditionSilent("charmed");
+      expect(useCharacterStore.getState().combatActiveEffects).toEqual([]);
+      restore?.();
+      expect(useCharacterStore.getState().combatActiveEffects).toEqual([effect]);
     });
   });
 
@@ -1850,6 +2390,91 @@ describe("characterStore — FRONTIER-S3 cadence appliers", () => {
       });
       expect(restored?.session.logEntries.length).toBe(logBefore);
     });
+
+    it("ends a hidden duration-only spell lifecycle and undo restores concentration", () => {
+      const key = "spell-sleep";
+      const character = mockCharacter();
+      character.character.spells = [{ srdId: "sleep", prepared: true }];
+      character.session = {
+        ...character.session,
+        concentration: conc("sleep"),
+        concentrationCastLevel: 1,
+        concentrationConditions: ["invisible"],
+        activeFeatures: [key],
+        activeSpellCastLevels: { [key]: 1 },
+        effectTimers: { [key]: { roundsLeft: 1 } },
+      };
+      useCharacterStore.getState().setCharacter(character);
+      const logBefore = character.session.logEntries.length;
+
+      const { restore } = useCharacterStore.getState().advanceEffectTimers();
+      const expired = useCharacterStore.getState().character;
+      expect(expired?.session.concentration).toBe("");
+      expect(expired?.session.concentrationCastLevel).toBeUndefined();
+      expect(expired?.session.concentrationConditions).toBeUndefined();
+      expect(expired?.session.activeFeatures).not.toContain(key);
+      expect(
+        expired?.session.logEntries.slice(-2).map((entry) => entry.event.kind)
+      ).toEqual(["concentration-end", "effect-expired"]);
+
+      restore();
+      const restored = useCharacterStore.getState().character;
+      expect(restored?.session.concentration).toBe(conc("sleep"));
+      expect(restored?.session.concentrationCastLevel).toBe(1);
+      expect(restored?.session.concentrationConditions).toEqual(["invisible"]);
+      expect(restored?.session.activeFeatures).toContain(key);
+      expect(restored?.session.activeSpellCastLevels?.[key]).toBe(1);
+      expect(restored?.session.effectTimers?.[key]).toEqual({ roundsLeft: 1 });
+      expect(restored?.session.logEntries).toHaveLength(logBefore);
+    });
+
+    it("expires and restores a source-specific concentration-free spell state", () => {
+      const key = castSourceActiveKey("cleric-war-war-gods-blessing", "spiritual-weapon");
+      useCharacterStore.getState().setCharacter(
+        mockCharacter({
+          session: {
+            ...mockCharacter().session,
+            activeFeatures: [key],
+            activeSpellCastLevels: { [key]: 2 },
+            effectTimers: { [key]: { roundsLeft: 1 } },
+          },
+        })
+      );
+
+      const { expired, restore } = useCharacterStore.getState().advanceEffectTimers();
+      expect(expired).toEqual([
+        {
+          activeKey: key,
+          sourceId: "cleric-war-war-gods-blessing",
+        },
+      ]);
+      expect(useCharacterStore.getState().character?.session.activeFeatures).toEqual([]);
+      expect(
+        useCharacterStore.getState().character?.session.activeSpellCastLevels
+      ).toBeUndefined();
+
+      restore();
+      expect(useCharacterStore.getState().character?.session.activeFeatures).toEqual([
+        key,
+      ]);
+      expect(
+        useCharacterStore.getState().character?.session.activeSpellCastLevels?.[key]
+      ).toBe(2);
+      expect(useCharacterStore.getState().character?.session.effectTimers?.[key]).toEqual(
+        { roundsLeft: 1 }
+      );
+    });
+
+    it("arming one timer returns an inverse that preserves later timers", () => {
+      useCharacterStore.getState().setCharacter(mockCharacter());
+      const restore = useCharacterStore.getState().armEffectTimer("first", 10);
+      useCharacterStore.getState().armEffectTimer("later", 3);
+
+      restore?.();
+      expect(useCharacterStore.getState().character?.session.effectTimers).toEqual({
+        later: { roundsLeft: 3 },
+      });
+    });
   });
 
   describe("consumePotionBuff (S9)", () => {
@@ -1881,21 +2506,19 @@ describe("characterStore — FRONTIER-S3 cadence appliers", () => {
   });
 });
 
-// S9 — an equipped charged magic item surfaces its charge pool as a rail
-// tracker keyed by the item id (the same id the cast flow debits).
-describe("resolveTrackers — charged item charge pool (S9)", () => {
-  it("an equipped Wand of Magic Missiles surfaces a 7-charge pool tracker", async () => {
+// Physical item counters have instance identity and therefore never re-enter the
+// legacy source-id tracker map (two same-named wands must not share one pool).
+describe("resolveTrackers — physical item counters", () => {
+  it("does not duplicate an equipped Wand of Magic Missiles as a generic tracker", async () => {
     const { resolveTrackers } = await import("@/lib/smart-tracker");
     const doc = makeCharacterDoc({
       classId: "fighter",
       level: 5,
       equipment: [{ srdId: "wand-of-magic-missiles", equipped: true, quantity: 1 }],
     });
-    const wand = resolveTrackers(doc).find((t) => t.id === "wand-of-magic-missiles");
-    expect(wand).toBeDefined();
-    expect(wand?.total).toBe(7);
-    expect(wand?.isPool).toBe(true);
-    expect(wand?.recovery).toBe("dawn");
+    expect(resolveTrackers(doc).some((t) => t.id === "wand-of-magic-missiles")).toBe(
+      false
+    );
   });
 
   it("an UNEQUIPPED charged item surfaces no charge tracker", async () => {
@@ -1948,6 +2571,12 @@ describe("characterStore — S1 concentration drop/swap clears the buff chip", (
     const character = concentratingOnShieldOfFaith();
     character.session.concentrationCastLevel = 3;
     character.session.activeSpellCastLevels = { "spell-shield-of-faith": 3 };
+    character.session.effectTimers = {
+      "spell-shield-of-faith": { roundsLeft: 80 },
+    };
+    character.session.effectBoundaries = {
+      "spell-shield-of-faith": { round: 9, phase: "turn-end" },
+    };
     useCharacterStore.getState().setCharacter(character);
 
     useCharacterStore.getState().setConcentration("");
@@ -1959,6 +2588,10 @@ describe("characterStore — S1 concentration drop/swap clears the buff chip", (
     ).toBeUndefined();
     expect(
       useCharacterStore.getState().character?.session.activeSpellCastLevels
+    ).toBeUndefined();
+    expect(useCharacterStore.getState().character?.session.effectTimers).toBeUndefined();
+    expect(
+      useCharacterStore.getState().character?.session.effectBoundaries
     ).toBeUndefined();
 
     // The stopped-concentrating UNDO toast restores BOTH atomically.
@@ -1979,6 +2612,51 @@ describe("characterStore — S1 concentration drop/swap clears the buff chip", (
         "spell-shield-of-faith": 3,
       }
     );
+    expect(useCharacterStore.getState().character?.session.effectTimers).toEqual({
+      "spell-shield-of-faith": { roundsLeft: 80 },
+    });
+    expect(useCharacterStore.getState().character?.session.effectBoundaries).toEqual({
+      "spell-shield-of-faith": { round: 9, phase: "turn-end" },
+    });
+  });
+
+  it("ends and undo-restores the dropped spell's local occurrences", async () => {
+    const { useToastStore } = await import("@/stores/toastStore");
+    const character = concentratingOnShieldOfFaith();
+    useCharacterStore.getState().setCharacter(character);
+    const effect: ActiveCombatEffect = {
+      id: "solo-shield-of-faith",
+      actor: {
+        kind: "pc",
+        combatantId: "self",
+        memberUid: "self",
+        characterId: character.id,
+      },
+      target: {
+        kind: "pc",
+        combatantId: "self",
+        memberUid: "self",
+        characterId: character.id,
+      },
+      source: {
+        kind: "spell",
+        id: "shield-of-faith",
+        actionId: "spell-shield-of-faith",
+      },
+      payload: { kind: "grant-group", activeKey: "spell-shield-of-faith" },
+      duration: {
+        kind: "concentration",
+        actorId: "self",
+        sourceId: "shield-of-faith",
+      },
+    };
+    useCharacterStore.getState().applySoloCombatEffects([effect]);
+
+    useCharacterStore.getState().setConcentration("");
+    expect(useCharacterStore.getState().combatActiveEffects).toEqual([]);
+
+    useToastStore.getState().toasts.at(-1)?.onUndo?.();
+    expect(useCharacterStore.getState().combatActiveEffects).toEqual([effect]);
   });
 
   it("on swap, strips ONLY the OLD spell's chip — the new spell's chip stays the player's manual act", () => {
@@ -2057,7 +2735,10 @@ describe("characterStore — S1 concentration drop/swap clears the buff chip", (
 // damage / heal / condition / death-save durably queued instead of silently lost.
 describe("characterStore — combat-state persistence (C7 offline-safe write seam)", () => {
   function spyPersistence() {
-    return { write: vi.fn<CombatPersistence["write"]>() };
+    return {
+      write: vi.fn<CombatPersistence["write"]>(),
+      writeTurnEconomy: vi.fn<CombatPersistence["writeTurnEconomy"]>(),
+    };
   }
   let persistence: ReturnType<typeof spyPersistence>;
   /** The most recent CombatState handed to `write`. */
@@ -2096,6 +2777,24 @@ describe("characterStore — combat-state persistence (C7 offline-safe write sea
     useCharacterStore.getState().gainTempHp(9);
     expect(persistence.write).toHaveBeenCalledTimes(1);
     expect(lastWrite().hp.temp).toBe(9);
+  });
+
+  it("setBardicInspirationDie persists grant and clear in the combat-state SSOT", () => {
+    useCharacterStore.getState().setBardicInspirationDie("d8");
+    expect(lastWrite().bardicInspirationDie).toBe("d8");
+    expect(useCharacterStore.getState().character?.session.bardicInspirationDie).toBe(
+      "d8"
+    );
+    useCharacterStore.getState().setBardicInspirationDie("");
+    expect(lastWrite().bardicInspirationDie).toBe("");
+  });
+
+  it("setHeroicInspiration persists receive and spend in the combat-state SSOT", () => {
+    useCharacterStore.getState().setHeroicInspiration(true);
+    expect(lastWrite().heroicInspiration).toBe(true);
+    expect(useCharacterStore.getState().character?.session.inspiration).toBe(true);
+    useCharacterStore.getState().setHeroicInspiration(false);
+    expect(lastWrite().heroicInspiration).toBe(false);
   });
 
   it("addCondition / removeCondition persist the whole conditions list (undo restores it)", () => {

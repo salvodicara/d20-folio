@@ -283,9 +283,10 @@ export function applySpellChoicePicks(
   slots?: ReadonlyArray<SpellChoiceSlot>,
   abilityScores?: Readonly<Record<AbilityCode, number>>
 ): (SrdSpellRef | CustomSpell)[] {
-  const haveIds = new Set<string>();
-  for (const s of existing) {
-    if (!("custom" in s)) haveIds.add(s.srdId);
+  const result = existing.map((spell) => ({ ...spell }));
+  const indexById = new Map<string, number>();
+  for (const [index, spell] of result.entries()) {
+    if (!("custom" in spell)) indexById.set(spell.srdId, index);
   }
   const abilityBySlot = new Map<string, AbilityCode | undefined>();
   const freeCastBySlot = new Map<string, SpellChoiceSlot["freeCastSource"]>();
@@ -305,41 +306,56 @@ export function applySpellChoicePicks(
     freeCastMultiBySlot.set(slot.slotId, slot.freeCastMulti);
     toSpellbookBySlot.set(slot.slotId, slot.toSpellbook);
   }
-  const added: SrdSpellRef[] = [];
   for (const [slotId, ids] of Object.entries(picks)) {
     const ability = abilityBySlot.get(slotId);
     const freeCastSource = freeCastBySlot.get(slotId);
     const freeCastMulti = freeCastMultiBySlot.get(slotId) ?? false;
     const toSpellbook = toSpellbookBySlot.get(slotId);
     for (const id of ids) {
-      if (!haveIds.has(id)) {
-        // Wizard School Savant: spellbook additions are NOT always-prepared —
-        // they enter the spellbook (`prepared:false`) and the Wizard prepares
-        // them like any other spellbook spell, counting against the prepared
-        // budget when prepared. Magic-Initiate-style feat picks stay
-        // always-prepared (the historic default).
-        const ref: SrdSpellRef = toSpellbook
-          ? { srdId: id, prepared: false }
-          : { srdId: id, prepared: true, alwaysPrepared: true };
-        if (ability) ref.spellAbilityOverride = ability;
-        // Stamp the chosen spell's free-cast tracker key. When the feat hands out
-        // ≥ 2 free-casts (Fey/Shadow/Vampire-Touched: a fixed spell + this chosen
-        // one) the chosen pick gets its OWN per-spell key `${featId}:${spellId}`
-        // (matching the grant evaluator) so it never shares — and deadlocks — one
-        // counter with the fixed spell. A single-free-cast feat (Genie Magic,
-        // free-cast heritage feats) keeps the bare feat-id key.
-        if (freeCastSource) {
-          ref.freeCastSource = {
-            ...freeCastSource,
-            sourceId: freeCastTrackerKey(freeCastSource.sourceId, id, freeCastMulti),
-          };
+      const existingIndex = indexById.get(id);
+      // Wizard School Savant additions are NOT always-prepared. Other feat picks
+      // are. A repair flow may deliberately select a spell the character already
+      // knows; enrich that ONE ref in place instead of adding a duplicate or
+      // discarding the feat's casting/free-cast provenance.
+      const current = existingIndex === undefined ? undefined : result[existingIndex];
+      const ref: SrdSpellRef =
+        current && !("custom" in current)
+          ? { ...current }
+          : toSpellbook
+            ? { srdId: id, prepared: false }
+            : { srdId: id, prepared: true, alwaysPrepared: true };
+      if (!toSpellbook) {
+        ref.prepared = true;
+        ref.alwaysPrepared = true;
+      }
+      if (ability) ref.spellAbilityOverride = ability;
+      // Stamp the chosen spell's free-cast tracker key. When the feat hands out
+      // ≥ 2 free-casts (Fey/Shadow/Vampire-Touched: a fixed spell + this chosen
+      // one) the chosen pick gets its OWN per-spell key `${featId}:${spellId}`.
+      if (freeCastSource) {
+        const nextFreeCast = {
+          ...freeCastSource,
+          sourceId: freeCastTrackerKey(freeCastSource.sourceId, id, freeCastMulti),
+        };
+        // The portable schema has one free-cast provenance per spell. Repair may
+        // enrich an ordinary known spell, but must never overwrite a different
+        // feature's already-recorded benefit.
+        if (
+          !ref.freeCastSource ||
+          ref.freeCastSource.sourceId === nextFreeCast.sourceId
+        ) {
+          ref.freeCastSource = nextFreeCast;
         }
-        added.push(ref);
-        haveIds.add(id);
+      }
+      if (existingIndex === undefined) {
+        indexById.set(id, result.length);
+        result.push(ref);
+      } else {
+        result[existingIndex] = ref;
       }
     }
   }
-  return [...existing, ...added];
+  return result;
 }
 
 /**

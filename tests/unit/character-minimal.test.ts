@@ -291,6 +291,24 @@ describe("character-minimal — overrides survive the round-trip", () => {
   });
 });
 
+describe("character-minimal — explicit Fighting Style choices survive", () => {
+  it("keeps a stored Paladin Defense choice without also rendering its placeholder", () => {
+    const paladin: CharacterData = {
+      ...mock,
+      classes: [{ classId: "paladin", level: 2 }],
+      features: [{ srdId: "paladin-fighting-style-defense" }],
+    };
+
+    const round = rehydrateCharacter(minimizeCharacter(paladin));
+    const ids = round.features.flatMap((feature) =>
+      "custom" in feature ? [] : [feature.srdId]
+    );
+
+    expect(ids).toContain("paladin-fighting-style-defense");
+    expect(ids).not.toContain("paladin-fighting-style");
+  });
+});
+
 describe("character-minimal — hp.max is the average (drops) but a rolled value is kept", () => {
   const monk = (max: number): CharacterData => ({
     ...mock,

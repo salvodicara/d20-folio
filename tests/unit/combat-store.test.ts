@@ -1,12 +1,22 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { useCombatStore, type SelectedAction } from "@/stores/combatStore";
 import { useCharacterStore } from "@/stores/characterStore";
+import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 
 const s = () => useCombatStore.getState();
 const act = (id: string, slot: SelectedAction["slot"]): SelectedAction => ({
   id,
   name: id,
   slot,
+});
+const receipt = (occurrenceId: string, actionId: string): CombatOutcomeReceipt => ({
+  id: `${occurrenceId}:0`,
+  occurrenceId,
+  actionId,
+  instance: 0,
+  count: 1,
+  target: { combatantId: "monster-1" },
+  fact: { kind: "attack", result: "hit" },
 });
 
 beforeEach(() =>
@@ -17,12 +27,18 @@ beforeEach(() =>
     budget: { action: 1, bonus: 1 },
     attackBudget: 1,
     attacksUsed: 0,
-    attackSwingIds: [],
+    attackSwings: [],
+    outcomeReceipts: [],
+    outcomeOrdinal: 0,
     reactionUsed: false,
     reactionUsedId: null,
+    reactionOutcomeOccurrenceId: null,
     movementUsedFt: 0,
     dashesThisTurn: 0,
     spellSlotCastsThisTurn: 0,
+    spellSlotCastTurnKey: null,
+    nextAttackAdvantage: false,
+    movementLocked: false,
   })
 );
 
@@ -77,18 +93,60 @@ describe("combatStore", () => {
     });
   });
 
-  // RA-08 — the one-spell-slot-per-turn advisory counter.
-  describe("RA-08 spell-slot-cast advisory counter", () => {
-    it("commitSpellSlotCast increments; its restore decrements (never below 0)", () => {
+  describe("turn-scoped next-attack and movement effects", () => {
+    it("arms, consumes, and exactly reverses next-attack Advantage", () => {
+      const undoGrant = s().grantNextAttackAdvantage();
+      expect(s().nextAttackAdvantage).toBe(true);
+      const undoConsume = s().consumeNextAttackAdvantage();
+      expect(s().nextAttackAdvantage).toBe(false);
+      undoConsume?.();
+      expect(s().nextAttackAdvantage).toBe(true);
+      undoGrant();
+      expect(s().nextAttackAdvantage).toBe(false);
+    });
+
+    it("locks movement until the turn boundary and restores the prior state on undo", () => {
+      const undo = s().lockMovement();
+      expect(s().movementLocked).toBe(true);
+      undo();
+      expect(s().movementLocked).toBe(false);
+      s().lockMovement();
+      s().endTurn();
+      expect(s().movementLocked).toBe(false);
+    });
+  });
+
+  // RA-08 — hard one-slot-expenditure gate keyed to the GLOBAL turn pointer.
+  describe("RA-08 spell-slot expenditure gate", () => {
+    it("blocks a second claim on one global turn and allows the next turn", () => {
       expect(s().spellSlotCastsThisTurn).toBe(0);
-      const restore = s().commitSpellSlotCast();
-      s().commitSpellSlotCast();
-      expect(s().spellSlotCastsThisTurn).toBe(2);
-      restore();
+      const restoreA = s().commitSpellSlotCast("turn-a");
+      expect(restoreA).not.toBeNull();
       expect(s().spellSlotCastsThisTurn).toBe(1);
-      restore();
-      restore();
+      expect(s().spellSlotCastTurnKey).toBe("turn-a");
+      expect(s().commitSpellSlotCast("turn-a")).toBeNull();
+
+      const restoreB = s().commitSpellSlotCast("turn-b");
+      expect(restoreB).not.toBeNull();
+      expect(s()).toMatchObject({
+        spellSlotCastsThisTurn: 1,
+        spellSlotCastTurnKey: "turn-b",
+      });
+    });
+
+    it("uses an exact retryable inverse across later global-turn claims", () => {
+      const restoreA = s().commitSpellSlotCast("turn-a");
+      const restoreB = s().commitSpellSlotCast("turn-b");
+      expect(restoreA?.()).toBe(false);
+      expect(s().spellSlotCastTurnKey).toBe("turn-b");
+      expect(restoreB?.()).toBe(true);
+      expect(s()).toMatchObject({
+        spellSlotCastsThisTurn: 1,
+        spellSlotCastTurnKey: "turn-a",
+      });
+      expect(restoreA?.()).toBe(true);
       expect(s().spellSlotCastsThisTurn).toBe(0);
+      expect(s().spellSlotCastTurnKey).toBeNull();
     });
 
     it.each([
@@ -96,11 +154,11 @@ describe("combatStore", () => {
       ["resetTurn", () => s().resetTurn()],
       ["endCombat", () => s().endCombat()],
     ])("%s resets the slot-cast count to 0 (turn-scoped)", (_label, boundary) => {
-      s().commitSpellSlotCast();
-      s().commitSpellSlotCast();
-      expect(s().spellSlotCastsThisTurn).toBe(2);
+      s().commitSpellSlotCast("turn-a");
+      expect(s().spellSlotCastsThisTurn).toBe(1);
       boundary();
       expect(s().spellSlotCastsThisTurn).toBe(0);
+      expect(s().spellSlotCastTurnKey).toBeNull();
     });
   });
 
@@ -174,13 +232,76 @@ describe("combatStore", () => {
   });
 
   it("useReaction / resetReaction toggle reactionUsed AND record the occupant id", () => {
-    s().useReaction("shield");
+    s().useReaction("shield", "shield-1", [receipt("shield-1", "shield")]);
     expect(s().reactionUsed).toBe(true);
     // CTA grammar — the spending reaction's id is the group's ring occupant.
     expect(s().reactionUsedId).toBe("shield");
+    expect(s().reactionOutcomeOccurrenceId).toBe("shield-1");
     s().resetReaction();
     expect(s().reactionUsed).toBe(false);
     expect(s().reactionUsedId).toBeNull();
+    expect(s().reactionOutcomeOccurrenceId).toBeNull();
+    expect(s().outcomeReceipts).toEqual([]);
+  });
+
+  it("commits and removes an ordinary action with its owned outcomes in one mutation", () => {
+    const frames: Array<{ occupied: boolean; receipts: number }> = [];
+    const unsubscribe = useCombatStore.subscribe((state) => {
+      frames.push({
+        occupied: state.selected.action.some(({ id }) => id === "attack"),
+        receipts: state.outcomeReceipts.filter(
+          ({ occurrenceId }) => occurrenceId === "attack-1"
+        ).length,
+      });
+    });
+    const action = { ...act("attack", "action"), outcomeOccurrenceId: "attack-1" };
+
+    expect(s().selectAction(action, [receipt("attack-1", "attack")])).toBe(true);
+    s().deselectAction("attack");
+    unsubscribe();
+
+    expect(frames).toEqual([
+      { occupied: true, receipts: 1 },
+      { occupied: false, receipts: 0 },
+    ]);
+  });
+
+  it("accepts only unique outcomes owned by the committed occurrence", () => {
+    const owned = receipt("attack-1", "attack");
+    expect(
+      s().selectAction({ ...act("attack", "action"), outcomeOccurrenceId: "attack-1" }, [
+        owned,
+        owned,
+        receipt("foreign-occurrence", "attack"),
+        receipt("attack-1", "foreign-action"),
+      ])
+    ).toBe(true);
+    expect(s().outcomeReceipts).toEqual([owned]);
+    expect(
+      s().selectAction({ ...act("attack", "action"), outcomeOccurrenceId: "attack-1" }, [
+        owned,
+      ])
+    ).toBe(false);
+    expect(s().outcomeReceipts).toEqual([owned]);
+
+    s().resetTurn();
+    expect(s().selectAction(act("dash", "action"), [receipt("dangling", "dash")])).toBe(
+      true
+    );
+    expect(s().outcomeReceipts).toEqual([]);
+  });
+
+  it("allocates monotonic, collision-checked occurrence ids from persisted turn state", () => {
+    expect(s().allocateOutcomeOccurrenceId("turn-7", "long sword")).toBe(
+      "turn-7:outcome:1:long%20sword"
+    );
+    expect(s().allocateOutcomeOccurrenceId("turn-7", "long sword")).toBe(
+      "turn-7:outcome:2:long%20sword"
+    );
+    useCombatStore.setState({ outcomeOrdinal: 7 });
+    expect(s().allocateOutcomeOccurrenceId("turn-7", "long sword")).toBe(
+      "turn-7:outcome:8:long%20sword"
+    );
   });
 
   it("resetTurn clears selections + budget + reaction but keeps the round", () => {
@@ -387,33 +508,68 @@ describe("combatStore", () => {
     // CTA grammar (owner 2026-07-11) — the Attack group's OCCUPANT ledger: which
     // attack card(s) rode a swing keep the gold ring once the action is fully
     // spent. Every committed swing pushes its card id; every undo pops the last.
-    it("attackSwingIds records the swung card ids and pops them on undo", () => {
+    it("attackSwings records each swung card occurrence and pops it on undo", () => {
       s().setAttackBudget(2);
-      s().commitAttackSwing(attackGroup(), "longsword"); // swing 1
-      s().commitAttackSwing(attackGroup(), "dagger"); //    swing 2 (multi-weapon)
+      s().commitAttackSwing(attackGroup(), "longsword", "swing-1", [
+        receipt("swing-1", "longsword"),
+      ]);
+      s().commitAttackSwing(attackGroup(), "dagger", "swing-2", [
+        receipt("swing-2", "dagger"),
+      ]);
       // Both weapons that consumed a swing are occupants of the spent Attack action.
-      expect(s().attackSwingIds).toEqual(["longsword", "dagger"]);
+      expect(s().attackSwings).toEqual([
+        { actionId: "longsword", outcomeOccurrenceId: "swing-1" },
+        { actionId: "dagger", outcomeOccurrenceId: "swing-2" },
+      ]);
       s().undoAttackSwing();
-      expect(s().attackSwingIds).toEqual(["longsword"]);
+      expect(s().attackSwings).toEqual([
+        { actionId: "longsword", outcomeOccurrenceId: "swing-1" },
+      ]);
+      expect(s().outcomeReceipts.map(({ occurrenceId }) => occurrenceId)).toEqual([
+        "swing-1",
+      ]);
       s().undoAttackSwing();
-      expect(s().attackSwingIds).toEqual([]);
+      expect(s().attackSwings).toEqual([]);
+      expect(s().outcomeReceipts).toEqual([]);
+    });
+
+    it("publishes and undoes each swing with its outcomes in one mutation", () => {
+      s().setAttackBudget(2);
+      const frames: Array<{ swings: number; receipts: number }> = [];
+      const unsubscribe = useCombatStore.subscribe((state) => {
+        frames.push({
+          swings: state.attackSwings.length,
+          receipts: state.outcomeReceipts.length,
+        });
+      });
+
+      s().commitAttackSwing(attackGroup(), "longsword", "swing-1", [
+        receipt("swing-1", "longsword"),
+      ]);
+      s().undoAttackSwing();
+      unsubscribe();
+
+      expect(frames).toEqual([
+        { swings: 1, receipts: 1 },
+        { swings: 0, receipts: 0 },
+      ]);
     });
 
     it("re-arming the Action coin clears the swing occupant ledger", () => {
       s().setAttackBudget(2);
       s().commitAttackSwing(attackGroup(), "longsword");
-      expect(s().attackSwingIds).toEqual(["longsword"]);
+      expect(s().attackSwings).toEqual([{ actionId: "longsword" }]);
       s().deselectSlot("action");
-      expect(s().attackSwingIds).toEqual([]);
+      expect(s().attackSwings).toEqual([]);
     });
 
     it("resetTurn / endTurn / endCombat clear the swing occupant ledger", () => {
       for (const clear of ["resetTurn", "endTurn", "endCombat"] as const) {
         s().setAttackBudget(2);
         s().commitAttackSwing(attackGroup(), "longsword");
-        expect(s().attackSwingIds).toEqual(["longsword"]);
+        expect(s().attackSwings).toEqual([{ actionId: "longsword" }]);
         s()[clear]();
-        expect(s().attackSwingIds).toEqual([]);
+        expect(s().attackSwings).toEqual([]);
       }
     });
   });
@@ -428,6 +584,38 @@ describe("combatStore", () => {
       expect(s().reactionUsed).toBe(false);
       expect(s().reactionUsedId).toBeNull();
     }
+  });
+
+  it("publishes and resets a reaction with its outcomes in one mutation", () => {
+    const frames: Array<{ occupied: boolean; receipts: number }> = [];
+    const unsubscribe = useCombatStore.subscribe((state) => {
+      frames.push({
+        occupied: state.reactionUsed,
+        receipts: state.outcomeReceipts.filter(
+          ({ occurrenceId }) => occurrenceId === "reaction-1"
+        ).length,
+      });
+    });
+
+    expect(
+      s().useReaction("shield", "reaction-1", [receipt("reaction-1", "shield")])
+    ).toBe(true);
+    expect(
+      s().useReaction("shield", "reaction-1", [receipt("reaction-1", "shield")])
+    ).toBe(false);
+    expect(
+      s().useReaction("counterspell", "reaction-2", [
+        receipt("reaction-2", "counterspell"),
+      ])
+    ).toBe(false);
+    s().resetReaction();
+    unsubscribe();
+
+    expect(frames).toEqual([
+      { occupied: true, receipts: 1 },
+      { occupied: false, receipts: 0 },
+    ]);
+    expect(s().outcomeReceipts).toEqual([]);
   });
 
   // P10 GLASS CASE — on a read-only sheet (member/DM/admin viewer) every

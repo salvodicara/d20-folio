@@ -160,6 +160,9 @@
   "bane.components": {
     "material": "A drop of blood"
   },
+  "bane.grants.0": {
+    "label": "Bane active"
+  },
   "banishment": {
     "description": "You attempt to send one creature that you can see within range to another plane of existence. The target must succeed on a Charisma saving throw or be banished. If the target is native to the plane you're on, it is banished to a harmless demiplane and is Incapacitated there. If the target is native to a different plane, it is banished to its home plane. If the spell ends before 1 minute has passed, the target reappears in the space it left.",
     "duration": "Concentration, up to 1 minute",
@@ -304,6 +307,9 @@
     "higherLevels": "The spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).",
     "name": "Chill Touch",
     "range": "Touch"
+  },
+  "chill-touch.grants.0": {
+    "label": "Chill Touch effect"
   },
   "chromatic-orb": {
     "description": "You hurl an orb of energy at a creature you can see within range. You choose Acid, Cold, Fire, Lightning, Poison, or Thunder for the type of orb you create, and then make a ranged spell attack against the target. On a hit, the target takes 3d8 damage of the type you chose.",
@@ -864,6 +870,12 @@
     "duration": "Concentration, up to 1 minute",
     "name": "Faerie Fire",
     "range": "60 feet"
+  },
+  "faerie-fire.grants.0": {
+    "label": "Faerie Fire active"
+  },
+  "faerie-fire.grants.0.grants.0": {
+    "description": "Attacks against the affected creature have Advantage"
   },
   "false-life": {
     "description": "Bolstering yourself with a necromantic facsimile of life, you gain 2d4 + 4 temporary hit points for the duration.",
@@ -2037,6 +2049,9 @@
     "name": "Ray of Frost",
     "range": "60 feet"
   },
+  "ray-of-frost.grants.0": {
+    "label": "Ray of Frost effect"
+  },
   "ray-of-sickness": {
     "description": "A ray of sickening greenish energy lashes out toward a creature within range. Make a ranged spell attack against the target. On a hit, the target takes 2d8 poison damage and must make a Constitution saving throw. On a failed save, it also has the Poisoned condition until the end of your next turn.",
     "duration": "Instantaneous",
@@ -2593,6 +2608,12 @@
     "name": "Vicious Mockery",
     "range": "60 feet"
   },
+  "vicious-mockery.grants.0.grants.0": {
+    "description": "Next attack roll"
+  },
+  "vicious-mockery.grants.0": {
+    "label": "Vicious Mockery"
+  },
   "vitriolic-sphere": {
     "description": "You point at a location within range, and a glowing 1-foot-diameter ball of emerald acid streaks there and explodes in a 20-foot-radius Sphere. Each creature in that area must make a Dexterity saving throw. On a failed save, a creature takes 10d4 Acid damage and 5d4 Acid damage at the end of its next turn. On a successful save, a creature takes half the initial damage and no damage at the end of its next turn.",
     "duration": "Instantaneous",
@@ -2734,6 +2755,15 @@
   },
   "shield.grants.0": {
     "label": "Shield (until your next turn)"
+  },
+  "bless.grants.0": {
+    "label": "Bless active"
+  },
+  "searing-smite.grants.0": {
+    "label": "Searing Smite active"
+  },
+  "searing-smite.grants.1": {
+    "label": "Burning from Searing Smite"
   },
   "shield-of-faith.grants.0": {
     "label": "Shield of Faith active"

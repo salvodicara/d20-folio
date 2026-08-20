@@ -400,13 +400,22 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     // `speed-multiplier` (factor 2), which the `effectiveWalkingSpeedFt` consumer
     // applies to the character's REAL base+bonus Speed. This correctly doubles a
     // 25-, 30-, or 40-ft Speed (the old `{type:"speed",amount:30}` hack only
-    // doubled the default 30-ft case). The 10-minute timer + Long-Rest recharge +
-    // the Opportunity-Attack disadvantage stay descriptive (no engine field).
+    // doubled the default 30-ft case). Activation, Long-Rest use, timer, and the
+    // against-you Opportunity-Attack reminder are all declarative below.
     grants: [
       {
         type: "while-active",
         activeKey: "boots-of-speed",
-        grants: [{ type: "speed-multiplier", factor: 2 }],
+        // The 10 minutes are a cumulative reservoir usable in increments, not
+        // one activation. Surface the Bonus Action but do not invent a 1/LR use.
+        activation: { action: "bonus" },
+        duration: { kind: "timed", minutes: 10, maxRounds: 100 },
+        grants: [
+          { type: "speed-multiplier", factor: 2 },
+          {
+            type: "incoming-attack-disadvantage",
+          },
+        ],
       },
     ],
     source: "SRD",
@@ -591,14 +600,38 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: true,
     price: "2000 GP",
     properties: ["fly speed: 30 ft", "charges: 4", "recharge: 1d4 / dawn"],
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 4 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: {
+              kind: "entered-roll",
+              roll: { dice: 1, sides: 4 },
+            },
+          },
+        ],
+      },
+    ],
     // ALL-IN: the activated Fly Speed is modeled behind a while-active toggle.
     // 2024 value = Fly 30 ft (DMG scrape; supersedes the legacy "equal to your
-    // walking speed" text). Charges (4, regain 1d4/dawn) + the 1-hour duration
-    // stay manual — the engine doesn't tick charges or durations.
+    // walking speed" text). The activation action, 4-charge pool, and fixed timer
+    // share the generic item-activation seam. The variable 1d4 dawn refill stays
+    // editable because the app never rolls dice.
     grants: [
       {
         type: "while-active",
         activeKey: "winged-boots",
+        activation: {
+          action: "action",
+          resourceCost: { resourceId: "charges" },
+        },
+        duration: { kind: "timed", minutes: 60, maxRounds: 600 },
         grants: [{ type: "fly-speed", amount: 30 }],
       },
     ],
@@ -611,6 +644,24 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: false,
     price: "3000 GP",
     properties: ["Dimension Door 1/dawn"],
+    resources: [
+      {
+        kind: "counter",
+        id: "uses",
+        unit: "uses",
+        capacity: { kind: "fixed", amount: 1 },
+        initial: { kind: "full" },
+        recoveries: [{ trigger: { kind: "dawn" }, amount: { kind: "full" } }],
+      },
+    ],
+    grants: [
+      { type: "always-prepared-spell", spellId: "dimension-door" },
+      {
+        type: "free-cast-spell",
+        spellId: "dimension-door",
+        resourceCost: { resourceId: "uses" },
+      },
+    ],
     source: "SRD",
   },
   {
@@ -859,6 +910,25 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: false,
+    resources: [
+      {
+        kind: "counter",
+        id: "uses",
+        unit: "uses",
+        capacity: { kind: "fixed", amount: 1 },
+        initial: { kind: "full" },
+        recoveries: [{ trigger: { kind: "dawn" }, amount: { kind: "full" } }],
+      },
+    ],
+    grants: [
+      { type: "always-prepared-spell", spellId: "scorching-ray" },
+      {
+        type: "free-cast-spell",
+        spellId: "scorching-ray",
+        resourceCost: { resourceId: "uses" },
+        castOverrides: { attackBonus: 5 },
+      },
+    ],
     source: "SRD",
   },
   {
@@ -945,21 +1015,30 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-25 — the charge counter was hidden in prose.
     properties: ["charges: 3"],
-    // S9 — single-fixed-spell caster (NON-wand wondrous; IDENTICAL mechanic to the
-    // wand family). RAW: "expend 1 or more charges to cast Charm Person (save DC 13)
-    // … the lenses regain all expended charges daily at dawn" (3-charge pool). Same
-    // pair as Wand of Magic Missiles (which is likewise upcastable): the
-    // `always-prepared-spell` surfaces the cast; the `free-cast-spell` debits the
-    // `eyes-of-charming` charge tracker. The per-charge UPCAST ("increase the level
-    // by one per extra charge") stays the player's manual spend, exactly as for the
-    // upcastable wands — only the base CAST affordance + the charge pool are modeled.
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 3 },
+        initial: { kind: "full" },
+        recoveries: [{ trigger: { kind: "dawn" }, amount: { kind: "full" } }],
+      },
+    ],
+    // Charm Person can be cast at levels 1–3 for the same number of charges.
+    // `castLevels` drives the shared cast picker and exact charge debit.
     grants: [
       { type: "always-prepared-spell", spellId: "charm-person" },
       {
         type: "free-cast-spell",
         spellId: "charm-person",
-        chargesPerRest: 3,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
+        castOverrides: { saveDC: 13 },
+        castLevels: [
+          { level: 1, cost: 1 },
+          { level: 2, cost: 2 },
+          { level: 3, cost: 3 },
+        ],
       },
     ],
     source: "SRD",
@@ -1062,6 +1141,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: true,
+    grants: [{ type: "at-will-cast-spell", spellId: "disguise-self" }],
     source: "SRD",
   },
   {
@@ -1071,6 +1151,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: false,
+    grants: [{ type: "at-will-cast-spell", spellId: "comprehend-languages" }],
     source: "SRD",
   },
   {
@@ -1109,19 +1190,28 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 5"],
-    // S9 — single-fixed-spell caster (NON-wand wondrous; IDENTICAL mechanic to the
-    // wand family). RAW: "expend 1 charge to cast Detect Thoughts (save DC 13) from
-    // it; the medallion regains 1d4 expended charges daily at dawn" (5-charge pool).
-    // Same pair as the wands: `always-prepared-spell` surfaces the cast on the Play
-    // board; `free-cast-spell` debits the `medallion-of-thoughts` charge tracker;
-    // `rest: "long"` models the dawn cadence (the 1d4 recharge die is prose).
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 5 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: { kind: "entered-roll", roll: { dice: 1, sides: 4 } },
+          },
+        ],
+      },
+    ],
     grants: [
       { type: "always-prepared-spell", spellId: "detect-thoughts" },
       {
         type: "free-cast-spell",
         spellId: "detect-thoughts",
-        chargesPerRest: 5,
-        rest: "long",
+        resourceCost: { resourceId: "charges" },
+        castOverrides: { saveDC: 13 },
       },
     ],
     source: "SRD",

@@ -11,40 +11,202 @@
  */
 import { describe, expect, it } from "vitest";
 import { getSpellById, spells } from "@/data/spells";
+import type { CombatTargeting } from "@/data/types";
 import { evaluateGrants, type Grant } from "@/lib/grants";
-import { resolveGrantSourcesForSpells } from "@/lib/resolve-grant-sources";
+import {
+  resolveGrantSourcesForSpells,
+  spellGrantSurfacesActiveControl,
+} from "@/lib/resolve-grant-sources";
 
-const BUFF_SPELLS = [
-  "mage-armor",
-  "shield",
-  "shield-of-faith",
-  "longstrider",
-  "divine-favor",
-  "hex",
-  "hunters-mark",
-  "barkskin",
-  "spider-climb",
-  "darkvision",
-  "aid",
-  "fly",
-  "haste",
-  "protection-from-energy",
-  "stoneskin",
-  "fire-shield",
-  "freedom-of-movement",
-  "true-seeing",
-  "mind-blank",
-  "foresight",
-] as const;
+interface StandingSpellExpectation {
+  id: string;
+  recipient: "caster" | "selected";
+  targeting?: CombatTargeting;
+  lifecycleOnly?: true;
+}
+
+/**
+ * Complete public-SRD census of top-level spell `while-active` grants.
+ *
+ * Blind spot: this pins ownership and target-count metadata, not whether each inner
+ * grant models every clause of the spell or whether the resolver persists it.
+ */
+const STANDING_SPELLS = [
+  {
+    id: "bane",
+    recipient: "selected",
+    targeting: { affinity: "enemy", maxTargets: 3, maxTargetsPerUpcast: 1 },
+  },
+  {
+    id: "bless",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 3, maxTargetsPerUpcast: 1 },
+  },
+  {
+    id: "chill-touch",
+    recipient: "selected",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+  },
+  { id: "divine-favor", recipient: "caster" },
+  {
+    id: "heroism",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
+  },
+  { id: "hex", recipient: "caster", targeting: { affinity: "enemy", maxTargets: 1 } },
+  {
+    id: "hunters-mark",
+    recipient: "caster",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+  },
+  {
+    id: "faerie-fire",
+    recipient: "selected",
+    targeting: { affinity: "enemy" },
+  },
+  {
+    id: "longstrider",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
+  },
+  {
+    id: "mage-armor",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  { id: "shield", recipient: "caster" },
+  {
+    id: "vicious-mockery",
+    recipient: "selected",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+  },
+  {
+    id: "searing-smite",
+    recipient: "caster",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+    lifecycleOnly: true,
+  },
+  {
+    id: "shield-of-faith",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  { id: "aid", recipient: "selected", targeting: { affinity: "ally", maxTargets: 3 } },
+  {
+    id: "barkskin",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  { id: "blur", recipient: "caster" },
+  {
+    id: "darkvision",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  { id: "mirror-image", recipient: "caster" },
+  {
+    id: "spider-climb",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  {
+    id: "warding-bond",
+    recipient: "selected",
+    targeting: { affinity: "ally", excludeSelf: true, maxTargets: 1 },
+  },
+  {
+    id: "fly",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
+  },
+  { id: "haste", recipient: "selected", targeting: { affinity: "ally", maxTargets: 1 } },
+  {
+    id: "protection-from-energy",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  {
+    id: "ray-of-frost",
+    recipient: "selected",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+  },
+  {
+    id: "death-ward",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  { id: "fire-shield", recipient: "caster" },
+  {
+    id: "freedom-of-movement",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  {
+    id: "stoneskin",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  {
+    id: "true-seeing",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  {
+    id: "mind-blank",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  {
+    id: "foresight",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+] as const satisfies ReadonlyArray<StandingSpellExpectation>;
 
 describe("PROSE sweep — standing buff spells carry while-active grants", () => {
-  it.each(BUFF_SPELLS)("%s wraps its standing effect behind spell-%s", (id) => {
-    const wa = (getSpellById(id)?.grants ?? []).find(
-      (g): g is Extract<Grant, { type: "while-active" }> => g.type === "while-active"
-    );
-    expect(wa?.activeKey).toBe(`spell-${id}`);
-    expect(wa?.grants.length).toBeGreaterThan(0);
+  it.each(STANDING_SPELLS)(
+    "$id wraps its standing effect behind spell-$id",
+    (expectation) => {
+      const { id } = expectation;
+      const lifecycleOnly = "lifecycleOnly" in expectation;
+      const wa = (getSpellById(id)?.grants ?? []).find(
+        (g): g is Extract<Grant, { type: "while-active" }> => g.type === "while-active"
+      );
+      expect(wa?.activeKey).toBe(`spell-${id}`);
+      if (lifecycleOnly) expect(wa?.grants).toEqual([]);
+      else expect(wa?.grants.length).toBeGreaterThan(0);
+    }
+  );
+
+  it("covers every public-SRD spell that owns a caster-side active state", () => {
+    const actual = spells
+      .filter(
+        (spell) =>
+          spell.source === "SRD" &&
+          spell.grants?.some((grant) => spellGrantSurfacesActiveControl(spell, grant))
+      )
+      .map((spell) => spell.id)
+      .sort();
+    expect(actual).toEqual(STANDING_SPELLS.map(({ id }) => id).sort());
   });
+
+  it.each(STANDING_SPELLS)(
+    "$id routes its standing grants to $recipient with the exact target shape",
+    (expectation) => {
+      const { id, recipient } = expectation;
+      const targeting = "targeting" in expectation ? expectation.targeting : undefined;
+      const spell = getSpellById(id);
+      const whileActive = spell?.grants?.find(
+        (grant): grant is Extract<Grant, { type: "while-active" }> =>
+          grant.type === "while-active"
+      );
+      expect(whileActive).toBeDefined();
+      expect({
+        recipient: whileActive?.recipient ?? "caster",
+        targeting: spell?.targeting,
+      }).toEqual({ recipient, targeting });
+    }
+  );
 
   it("every spell grant is a while-active wrapper (cast-time effects stay structured)", () => {
     for (const s of spells) {
@@ -66,6 +228,16 @@ describe("PROSE sweep — prepared spells become grant sources", () => {
     ]);
     expect(sources.map((s) => s.id).sort()).toEqual(["haste", "mage-armor"]);
     expect(sources.every((s) => s.ref?.kind === "spell")).toBe(true);
+  });
+
+  it("duration-only condition wrappers never become feature-rail controls", () => {
+    const sources = resolveGrantSourcesForSpells([
+      { srdId: "sleep", prepared: true },
+      { srdId: "eyebite", prepared: true },
+      { srdId: "searing-smite", prepared: true },
+    ]);
+    expect(sources.map((source) => source.id)).toEqual(["searing-smite"]);
+    expect(sources[0]?.grants).toHaveLength(1);
   });
 
   it("Haste active: +2 AC, Speed ×2, DEX-save advantage flow into the aggregate", () => {

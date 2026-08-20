@@ -25,17 +25,21 @@ just wt-new <slug> [kind]          # kind defaults to "feat" → branch <kind>/<
 #   e.g.  just wt-new ui-polish            → ../d20-folio-ui-polish on feat/ui-polish
 #         just wt-new wave2-data chore     → ../d20-folio-wave2-data on chore/wave2-data
 
-# 2. Work in the new directory; commit per coherent step (hooks gate every commit/push).
+# 2. Work in the new directory; commit per coherent step.
 cd ../d20-folio-<slug>
 git add -A && git commit -m "feat(scope): …"        # never --no-verify; owner = sole author,
                                                     # NO co-author/trailer lines
 
-# 3. Converge: gate green, then an INDEPENDENT agent runs ponytail-review on the diff;
+# Optional recoverable checkpoint (explicit destination; branch pushes run NO full gate):
+git push origin HEAD:<kind>/<slug>                  # never a bare `git push`
+
+# 3. Converge: an INDEPENDENT agent runs ponytail-review on the diff;
 #    apply or rebut every finding until a zero-finding pass (max 3 rounds — golden rule 12).
 
-# 4. Merge to main FROM the worktree (never touch the shared checkout):
+# 4. Merge to main FROM the worktree (never touch the shared checkout). This push runs the ONE
+#    complete typecheck/lint/coverage/build/rules gate for the finished task:
 git fetch origin main
-git rebase origin/main                              # re-run the gate if the rebase changed anything
+git rebase origin/main
 git push origin HEAD:main                           # the ff-merge; non-ff rejection ⇒ re-rebase, retry
 
 # 5. Confirm the SHA landed, THEN tear down (removing early orphans an in-flight push):
@@ -73,8 +77,8 @@ just wt-list
   modes"). `wt-new` echoes which mode it set up. Caveat: every worktree's `content-pack` points at the
   **one** sibling pack working tree, so concurrent **edits** to pack files across worktrees can race
   (rare — only when a public API change needs a pack-test update); gating (which only **reads** the
-  pack) is always safe. The belt-and-suspenders check in `.githooks/pre-push` warns loudly if a
-  worktree gates SRD-only while the pack actually exists.
+  pack) is always safe. The belt-and-suspenders check in `.githooks/pre-push` warns loudly if the
+  final main gate would run SRD-only while the pack actually exists.
 - **Committed tooling comes with every worktree.** Tracked files include the committed skills
   (`.claude/skills/` — e.g. the official
   [pbakaus/impeccable](https://github.com/pbakaus/impeccable) design skill, which reads root

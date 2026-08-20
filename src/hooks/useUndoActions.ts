@@ -27,7 +27,7 @@ export function useUndoActions() {
     const top = store.past[store.past.length - 1];
     if (!top) return false;
     const action = toastMessage(top.label);
-    store.undo();
+    if (!store.undo()) return false;
     showToast({ message: t("combat.undoneToast", { action }), duration: 4000 });
     return true;
   }, [t, toastMessage, showToast]);

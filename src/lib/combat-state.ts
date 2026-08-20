@@ -4,17 +4,17 @@
  * `src/types/combat-state.ts`).
  *
  * This module owns the seam between the in-memory {@link SessionState} (which keeps
- * the combat trio for every existing reader — compute / use-hp-controls / level-up /
+ * the combat slice for every existing reader — compute / use-hp-controls / level-up /
  * rest) and the canonical {@link CombatState} written to the subdoc:
  *
  *  - the initiative-ROLL STRING ↔ NUMBER conversion (cockpit keeps `""`/`"15"` as the
  *    raw d20 roll; the subdoc carries the canonical `null`/`15` on `initiativeRoll`);
  *  - the projection `session → CombatState` (what gets written);
  *  - the cheap change detectors the auto-save subscribers use to route a store
- *    transition to the RIGHT doc (combat trio → subdoc; everything else → parent).
+ *    transition to the RIGHT doc (combat slice → subdoc; everything else → parent).
  *
  * The `combat/state` subdoc is the SOLE persisted home of the combat-mutable state:
- * the Firestore parent character doc carries NO combat trio (the serialization boundary
+ * the Firestore parent character doc carries NO combat slice (the serialization boundary
  * `toStoredPayload` omits {@link COMBAT_SESSION_KEYS} from `state`), and readers hydrate
  * the subdoc, falling to {@link defaultCombatState} (full HP) only when it is absent.
  *
@@ -26,6 +26,11 @@ import type { SessionState } from "@/types/character";
 import type { CombatState, RecentAttack } from "@/types/combat-state";
 import type { MemberCombatEffect } from "@/types/campaign";
 import { applyDamage, applyHealing, clampHp, clampTemp } from "@/lib/combat-hp";
+import { diedInPlay } from "@/lib/character-status";
+import {
+  parsePersistedPlayStateV1,
+  sessionToPlayStateV1,
+} from "@/lib/session-state-codec";
 
 /** The `recentActions` ring cap — the last few declared attacks are all the correlation
  *  window ever needs; older ones fall off (a fight rarely correlates beyond the round). */
@@ -63,6 +68,8 @@ export function combatTrioDiffers(
     deathSucc: number;
     deathFail: number;
     conditions: string[];
+    bardicInspirationDie?: string;
+    inspiration?: boolean;
   },
   combat: CombatState
 ): boolean {
@@ -71,7 +78,10 @@ export function combatTrioDiffers(
     session.hp.temp !== combat.hp.temp ||
     session.deathSucc !== combat.deathSaves.successes ||
     session.deathFail !== combat.deathSaves.failures ||
-    session.conditions.join(",") !== combat.conditions.join(",")
+    session.conditions.join(",") !== combat.conditions.join(",") ||
+    (session.bardicInspirationDie ?? "") !== (combat.bardicInspirationDie ?? "") ||
+    (combat.heroicInspiration !== undefined &&
+      (session.inspiration ?? false) !== combat.heroicInspiration)
   );
 }
 
@@ -88,12 +98,14 @@ export const COMBAT_SESSION_KEYS = [
   "initiative",
   "deathSucc",
   "deathFail",
+  "bardicInspirationDie",
+  "inspiration",
 ] as const satisfies ReadonlyArray<keyof SessionState>;
 
 const COMBAT_KEY_SET: ReadonlySet<string> = new Set(COMBAT_SESSION_KEYS);
 
 /**
- * Drop the combat trio from a SERIALIZED `state` map (the codec's `sessionToState`
+ * Drop the combat slice from a SERIALIZED `state` map (the codec's `sessionToState`
  * output) — the Firestore parent-doc write omits it because the combat-mutable state
  * lives in the `combat/state` subdoc as its SOLE persisted home (golden rule 10). Pure;
  * reuses {@link COMBAT_SESSION_KEYS} (the serialized keys share the session names) so it
@@ -129,18 +141,36 @@ export function sessionToCombatState(
   session: SessionState,
   round = 1,
   recentActions: RecentAttack[] = [],
-  appliedEncounterEffects?: CombatState["appliedEncounterEffects"]
+  appliedEncounterEffects?: CombatState["appliedEncounterEffects"],
+  turnEconomy?: CombatState["turnEconomy"],
+  activeEffects?: CombatState["activeEffects"],
+  pendingConcentrationSaves?: CombatState["pendingConcentrationSaves"]
 ): CombatState {
   return {
     hp: { current: session.hp.current, temp: session.hp.temp },
     conditions: session.conditions,
     initiativeRoll: initiativeToNumber(session.initiative),
     deathSaves: { successes: session.deathSucc, failures: session.deathFail },
+    bardicInspirationDie: session.bardicInspirationDie ?? "",
+    heroicInspiration: session.inspiration,
     round,
     recentActions,
+    playState: sessionToPlayStateV1(session),
+    ...(activeEffects?.length ? { activeEffects } : {}),
     ...(appliedEncounterEffects ? { appliedEncounterEffects } : {}),
+    ...(turnEconomy ? { turnEconomy } : {}),
+    ...(pendingConcentrationSaves?.length ? { pendingConcentrationSaves } : {}),
   };
 }
+
+export type PlayStateOwnership = "legacy" | 1;
+
+export type CombatSessionHydrationResult =
+  | { ok: true; session: SessionState }
+  | {
+      ok: false;
+      reason: "missing-v1-combat-state" | "invalid-v1-play-state";
+    };
 
 /**
  * Merge a {@link CombatState} subdoc (or its ABSENCE) onto an in-memory session — the
@@ -158,8 +188,26 @@ export function sessionToCombatState(
 export function applyCombatToSession(
   session: SessionState,
   combat: CombatState | null,
-  effectiveMax: number
-): SessionState {
+  effectiveMax: number,
+  ownership: PlayStateOwnership
+): CombatSessionHydrationResult {
+  if (ownership === 1 && !combat) {
+    return { ok: false, reason: "missing-v1-combat-state" };
+  }
+  const parsedPlayState =
+    ownership === 1 && combat ? parsePersistedPlayStateV1(combat.playState) : null;
+  if (ownership === 1 && (!parsedPlayState || !parsedPlayState.ok)) {
+    return { ok: false, reason: "invalid-v1-play-state" };
+  }
+  const baseSession =
+    parsedPlayState?.ok === true
+      ? {
+          ...parsedPlayState.session,
+          ...(session.encounterEffects
+            ? { encounterEffects: session.encounterEffects }
+            : {}),
+        }
+      : session;
   const clampDeath = (n: number): number => Math.max(0, Math.min(3, Math.round(n)));
   const trio = combat
     ? {
@@ -171,6 +219,9 @@ export function applyCombatToSession(
         initiative: initiativeToString(combat.initiativeRoll),
         deathSucc: clampDeath(combat.deathSaves.successes),
         deathFail: clampDeath(combat.deathSaves.failures),
+        bardicInspirationDie:
+          combat.bardicInspirationDie ?? baseSession.bardicInspirationDie ?? "",
+        inspiration: combat.heroicInspiration ?? baseSession.inspiration,
       }
     : {
         // Absent subdoc (a genuinely fresh/undamaged char): full HP, never 0.
@@ -179,21 +230,23 @@ export function applyCombatToSession(
         initiative: "",
         deathSucc: 0,
         deathFail: 0,
+        bardicInspirationDie: baseSession.bardicInspirationDie ?? "",
+        inspiration: baseSession.inspiration,
       };
-  const merged: SessionState = { ...session, ...trio };
+  const merged: SessionState = { ...baseSession, ...trio };
   // RA-12 — the Hide action's find-DC (`hiddenDc`) rides the PARENT doc, but its
   // owning `invisible` condition lives in the combat/state subdoc (D9). This is
   // the ONE seam where both the hydrated trio-conditions and the session's
   // `hiddenDc` are known, so it is the ONLY correct place to normalize the
   // cross-doc pair: if `invisible` was cleared via a subdoc-only path (a DM's
-  // `setCombatCondition`/`reduceCondition`, which never touches the parent doc)
+  // `writeCampaignCombatEffect`/`reduceCondition`, which never touches the parent doc)
   // the find-DC is orphaned — drop it so no phantom " · DC N" resurfaces when
   // Invisible is later re-added by a non-Hide path. NEVER normalize at
   // parse/sanitize time: there the trio is stripped from the parent doc
   // (conditions is `[]`, `invisible` is hydrated from the subdoc afterwards), so
   // a legitimately-hidden character would wrongly lose its DC.
   if (!merged.conditions.includes("invisible")) merged.hiddenDc = undefined;
-  return merged;
+  return { ok: true, session: merged };
 }
 
 /** The full-HP default for an ABSENT subdoc (a genuinely fresh/undamaged character):
@@ -278,6 +331,10 @@ export function reduceHpDelta(
     const after = applyDamage(s.hp.current, s.hp.temp, op.amount);
     return { ...s, hp: { current: after.current, temp: after.temp } };
   }
+  // Ordinary healing is not resurrection. Three failed Death Saves are a
+  // canonical death verdict; only the explicit absolute-HP/death-track override
+  // may clear it until a typed revival mechanic owns that transition.
+  if (diedInPlay({ deathFail: s.deathSaves.failures })) return s;
   const healed = applyHealing(s.hp.current, op.amount, max);
   return {
     ...s,
@@ -343,13 +400,17 @@ export function setInitiativeAbsolute(s: CombatState, roll: number | null): Comb
 
 /**
  * Did any NON-combat session field change between two snapshots? Reference/value
- * compare over every key EXCEPT the trio. When true (or `character.character`
+ * compare over every key EXCEPT the combat slice. When true (or `character.character`
  * changed), the parent-doc writer persists the session (the serialization boundary
- * omits the combat trio) — so a trio-ONLY change (an HP tap, a condition toggle) never
+ * omits the combat slice) — so a combat-only change (an HP tap, a condition toggle) never
  * triggers a redundant parent write.
  */
 export function nonCombatSessionChanged(a: SessionState, b: SessionState): boolean {
-  for (const key of Object.keys(a) as Array<keyof SessionState>) {
+  const keys = new Set([
+    ...(Object.keys(a) as Array<keyof SessionState>),
+    ...(Object.keys(b) as Array<keyof SessionState>),
+  ]);
+  for (const key of keys) {
     if (COMBAT_KEY_SET.has(key)) continue;
     if (a[key] !== b[key]) return true;
   }

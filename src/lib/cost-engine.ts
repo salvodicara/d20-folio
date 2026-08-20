@@ -177,9 +177,10 @@ export interface ResourceConversionChoice {
 }
 
 /**
- * Plan a resource conversion into concrete, serializable, REVERSIBLE ops. Pure —
- * no store access, replayable, and feeds the same `applyCommitOps` undo seam as
- * every other action. Returns `[]` (no-op) when the choice is incoherent (e.g.
+ * Compile a resource conversion into concrete, serializable ops. The atomic
+ * MechanicsCommand boundary consumes this compatibility primitive, validates
+ * every owner as one CAS, and records receipt-based undo; older action callers
+ * may still use `applyCommitOps`. Returns `[]` when the choice is incoherent (e.g.
  * a slot level with no cost-table row), so an invalid conversion never mutates.
  */
 export function planResourceConversion(

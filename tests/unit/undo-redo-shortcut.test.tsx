@@ -105,6 +105,23 @@ describe("useUndoRedoShortcut — guards + actions", () => {
     expect(handled).toBe(true);
   });
 
+  it("keeps a failed CAS undo retryable and never announces a false Undone", () => {
+    registerUndoable({ message: "Conversion" }, () => () => false, {
+      turnScoped: false,
+    });
+    const { getByTestId } = render(<Harness />);
+    const handled = fireEvent.keyDown(getByTestId("plain"), {
+      key: "z",
+      metaKey: true,
+    });
+    expect(handled).toBe(true);
+    expect(u().past).toHaveLength(1);
+    expect(u().future).toHaveLength(0);
+    expect(
+      useToastStore.getState().toasts.some((toast) => /Undone/.test(toast.message ?? ""))
+    ).toBe(false);
+  });
+
   it("shows the can't-redo notice when the redo legally bails", () => {
     const r = makeResource(1);
     const execute = () => (r.state.value <= 0 ? null : r.spend(1));

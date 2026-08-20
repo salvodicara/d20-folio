@@ -99,4 +99,32 @@ describe("CustomFeatureForm — edit mode (U6)", () => {
     const last = features[features.length - 1];
     expect(last && "custom" in last && last.title).toBe("Brand New Trick");
   });
+
+  it("exposes recorded physical results as an optional homebrew tracker capability", () => {
+    const base = structuredClone(MOCK_CHARACTER);
+    useCharacterStore.setState({ character: base, loading: false, error: null });
+    render(<CustomFeatureForm onCreated={vi.fn()} />);
+
+    fireEvent.change(screen.getByPlaceholderText(/feature name/i), {
+      target: { value: "Foretold Numbers" },
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: /usage tracker/i }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /record rolled values/i }));
+    fireEvent.change(screen.getByRole("spinbutton", { name: /minimum value/i }), {
+      target: { value: "20" },
+    });
+    fireEvent.change(screen.getByRole("spinbutton", { name: /maximum value/i }), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /create feature/i }));
+
+    const features = useCharacterStore.getState().character?.character.features ?? [];
+    const created = features.at(-1);
+    expect(
+      created && "custom" in created && created.trackers?.[0]?.recordedRolls
+    ).toEqual({
+      min: 1,
+      max: 20,
+    });
+  });
 });

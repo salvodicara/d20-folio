@@ -1724,7 +1724,7 @@ describe("isArmorProficient (M3 gate)", () => {
 // and grants-resistance-parity for the data-quality guards.
 
 describe("concentrationSaveDc (H6)", () => {
-  it("DC = max(10, ⌊damage/2⌋)", () => {
+  it("DC = min(30, max(10, ⌊damage/2⌋))", () => {
     expect(concentrationSaveDc(0)).toBe(0);
     expect(concentrationSaveDc(1)).toBe(10);
     expect(concentrationSaveDc(12)).toBe(10);
@@ -1732,11 +1732,16 @@ describe("concentrationSaveDc (H6)", () => {
     expect(concentrationSaveDc(21)).toBe(10);
     expect(concentrationSaveDc(22)).toBe(11);
     expect(concentrationSaveDc(50)).toBe(25);
+    expect(concentrationSaveDc(59)).toBe(29);
+    expect(concentrationSaveDc(60)).toBe(30);
+    expect(concentrationSaveDc(61)).toBe(30);
+    expect(concentrationSaveDc(Number.MAX_SAFE_INTEGER)).toBe(30);
   });
 
-  it("returns 0 for non-positive damage", () => {
+  it("returns 0 for non-positive or invalid damage", () => {
     expect(concentrationSaveDc(-5)).toBe(0);
     expect(concentrationSaveDc(NaN)).toBe(0);
+    expect(concentrationSaveDc(Infinity)).toBe(0);
   });
 });
 
