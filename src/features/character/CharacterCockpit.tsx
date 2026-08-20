@@ -41,6 +41,7 @@ import { FolioLoader } from "@/components/shared/FolioLoader";
 import { cn } from "@/lib/utils";
 import { DyingBanner } from "./DyingBanner";
 import { ConcentrationSaveBanner } from "./ConcentrationSaveBanner";
+import { DamageReactionBanner } from "./DamageReactionBanner";
 import { BinderFob } from "./BinderFob";
 import { MobileSignet } from "./MobileSignet";
 import { CombatHeader } from "./center/CombatHeader";
@@ -220,6 +221,11 @@ export function CockpitView() {
           It stays above the tab grid so the required physical-roll entry remains
           reachable on every cockpit surface and survives route/hydration churn. */}
         <ConcentrationSaveBanner />
+
+        {/* One PARKED entered hit awaiting the incoming-damage-reaction pick
+          (Uncanny Dodge) or skip. Same action-prompt register + mount as the
+          concentration prompt, so the decision is reachable on every tab. */}
+        <DamageReactionBanner />
 
         {/* #10 — below the rail threshold the two rail toggles are CO-LOCATED at
           the top via `order` (Stats, Resources, then the center), so both HUDs

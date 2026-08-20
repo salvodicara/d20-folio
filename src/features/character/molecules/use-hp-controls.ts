@@ -24,9 +24,13 @@
 
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableResult, registerUndoableToast } from "@/stores/undoStore";
+import { characterDamageReactionOptions } from "@/lib/damage-reaction";
+import { useSheetCombat } from "@/features/character/center/turn-state";
 import {
   aggregateCharacterGrants,
   effectiveMaxHp,
@@ -94,10 +98,16 @@ export interface HpControls {
    * defenses resolve each typed part (RA-05), then the 0-HP rules apply
    * (RA-03/RA-10). `opts.crit` marks a Critical Hit (two failures at 0 HP).
    * Empty / all-zero parts are a no-op.
+   *
+   * When an eligible incoming-damage REACTION exists (Uncanny Dodge — solo,
+   * Reaction unspent, above 0 HP), the hit is PARKED as a reaction prompt
+   * instead of applying: the player picks a reaction (one kernel causal
+   * action commits the hit with the reduction) or skips (the prompt
+   * re-dispatches here with `bypassReactionPrompt`, the exact plain path).
    */
   handleApplyDamage: (
     parts: ReadonlyArray<DamageInstance>,
-    opts?: { crit?: boolean }
+    opts?: { crit?: boolean; bypassReactionPrompt?: boolean }
   ) => void;
   /** Heal by `amount` (clamped to max); ≤ 0 is a no-op. */
   applyHeal: (amount: number) => void;
@@ -123,6 +133,7 @@ export interface HpControls {
 export function useHpControls(): HpControls {
   const { t } = useTranslation();
   const character = useCharacterStore((s) => s.character);
+  const sheetCombat = useSheetCombat();
   const applyDamage = useCharacterStore((s) => s.applyDamage);
   const applyHealing = useCharacterStore((s) => s.applyHealing);
   const gainTempHp = useCharacterStore((s) => s.gainTempHp);
@@ -194,9 +205,54 @@ export function useHpControls(): HpControls {
     };
   }
 
+  /**
+   * Park the hit as an incoming-damage REACTION prompt when eligible: solo
+   * play only (a shared encounter owns its own flow), above 0 HP (damage at 0
+   * marks death-save failures — no amount to reduce), the round's Reaction
+   * unspent, and at least one answer-free damage reaction transcribed off the
+   * character's own features. Returns true when parked (nothing applied yet —
+   * the banner's pick/skip finishes the entry).
+   */
+  function maybeQueueReactionPrompt(
+    parts: ReadonlyArray<DamageInstance>,
+    intake: ReturnType<typeof resolveDamageIntake>,
+    crit: boolean
+  ): boolean {
+    if (!character || sheetCombat || atZero || dead) return false;
+    // One parked decision at a time: a second hit entered while the banner is
+    // up applies plainly — replacing the parked hit would silently LOSE it.
+    if (useCharacterStore.getState().combatPendingDamageReaction !== null) return false;
+    const uid = useAuthStore.getState().user?.uid;
+    if (uid === undefined) return false;
+    if (useCombatStore.getState().reactionUsed) return false;
+    const options = characterDamageReactionOptions(character);
+    if (options.length === 0) return false;
+    // Untyped table damage enters the kernel typed as bludgeoning — the
+    // generic weapon-hit default (the kernel damage schema is a closed type
+    // set); the offered adjustments never read the type, only the delivery.
+    const netParts = intake.parts
+      .filter((part) => part.net > 0)
+      .map((part) => ({
+        amount: part.net,
+        damageType: part.type ?? ("bludgeoning" as const),
+      }));
+    if (netParts.length === 0) return false;
+    useCharacterStore.getState().queueDamageReactionPrompt({
+      characterId: character.id,
+      crit,
+      id: crypto.randomUUID(),
+      netParts,
+      netTotal: intake.netTotal,
+      optionRowIds: options.map((option) => option.rowId),
+      parts: [...parts],
+      rawTotal: intake.rawTotal,
+    });
+    return useCharacterStore.getState().combatPendingDamageReaction !== null;
+  }
+
   function handleApplyDamage(
     parts: ReadonlyArray<DamageInstance>,
-    opts?: { crit?: boolean }
+    opts?: { crit?: boolean; bypassReactionPrompt?: boolean }
   ) {
     if (!character || dead) return;
     // RA-05 — resolve the ENTERED roll against the character's own defenses
@@ -210,6 +266,12 @@ export function useHpControls(): HpControls {
         message: t("combat.noDamageTakenToast", { raw: intake.rawTotal }),
         duration: 4000,
       });
+      return;
+    }
+    if (
+      opts?.bypassReactionPrompt !== true &&
+      maybeQueueReactionPrompt(parts, intake, opts?.crit === true)
+    ) {
       return;
     }
     const prev = snapshotHp();
@@ -262,7 +324,11 @@ export function useHpControls(): HpControls {
                 prev: prev.current,
                 next: newHP,
               });
-    registerUndoableResult({ message }, undoDamage, () => handleApplyDamage(parts, opts));
+    // Redo replays the PLAIN application — the reaction decision (if any) was
+    // already made on the original entry; a redo never re-opens the prompt.
+    registerUndoableResult({ message }, undoDamage, () =>
+      handleApplyDamage(parts, { ...opts, bypassReactionPrompt: true })
+    );
   }
 
   function applyHeal(amount: number) {

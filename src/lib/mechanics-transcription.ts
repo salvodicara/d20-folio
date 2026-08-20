@@ -424,6 +424,13 @@ function clausesFromAuthoredProgram(
         clause(`${phase.phaseId}-occupancy`, "spatial", "table-signals-pulse")
       );
     }
+    if (phase.trigger.kind === "damage-taken") {
+      // The reactive phase fires only inside a kernel damaging action; the
+      // table (the player's pick at damage entry) affirms the trigger fact.
+      derived.push(
+        clause(`${phase.phaseId}-trigger`, "table", "table-affirms-damage-trigger")
+      );
+    }
   }
   return derived;
 }
@@ -1852,6 +1859,153 @@ export interface FeatureActionContext {
   }>[];
 }
 
+/**
+ * The ONE claim/requirement identity of a feature-granted reaction's kernel
+ * Reaction claim — used by the transcribed program's `claim-reaction` step,
+ * by an authored `mechanicsProgram`'s hand-written claim, and by the turn
+ * economy projection's requirement roster (`characterTurnEconomyProjection`),
+ * so the claim and its authorization can never drift. Pure id math.
+ */
+export function damageReactionClaimId(
+  featureId: string,
+  action: Readonly<Pick<SrdActionDef, "id">>,
+  ordinal: number
+): string {
+  return `reaction.${featureId}.${action.id ?? String(ordinal)}`;
+}
+
+/**
+ * The damage-reaction FAMILY (S-reaction): a `type: "reaction"` action whose
+ * whole effect is reducing one observed incoming damage instance (Deflect
+ * Attacks' 1d10 + DEX + Monk level). Compiles to the canonical reactive
+ * shape: an invocation phase that CLAIMS the round's Reaction, plus a
+ * `damage-taken` phase carrying the `incoming-damage-adjustment` — so the
+ * reduction executes INSIDE the damaging causal action itself (the kernel's
+ * compensating-reduction model, bounded by the triggering resolution's
+ * effective damage) and the spent program ends. The damage-entry runtime
+ * (`lib/damage-reaction.ts`) composes the table-entered hit around this
+ * program; the trigger's attack-delivered fact is affirmed by the player's
+ * pick, exactly like the legacy card's click.
+ */
+function transcribeDamageReactionAction(
+  featureId: string,
+  action: Readonly<SrdActionDef>,
+  ordinal: number,
+  feature: Readonly<FeatureActionContext>,
+  actionId: string
+): FeatureActionTranscription {
+  const clauses: TranscriptionClause[] = [];
+  const unsupported = (clauseId: string, detail: string): void => {
+    clauses.push(clause(clauseId, "unsupported", detail));
+  };
+  const reduction = action.damageReduction;
+  if (!reduction) throw new Error("damage-reaction transcription without reduction");
+  if (action.type !== "reaction") {
+    unsupported("damage-reaction", "non-reaction-carrier");
+  }
+  const dice = parseDice(reduction.dice);
+  if (dice === null) {
+    unsupported("reduction-roll", `dice:${reduction.dice}`);
+  }
+  // The eligible damage types are a level tier (Deflect Attacks widens from
+  // B/P/S to everything at Monk 13) — resolvable only at the session level.
+  const tier =
+    feature.scalingLevel !== undefined
+      ? pickLevelTier(reduction.damageTypesByLevel, feature.scalingLevel)
+      : null;
+  if (tier === null) {
+    unsupported("reduction-damage-types", "level-scaled-types-need-session-level");
+  }
+  if (action.trigger !== undefined) {
+    clauses.push(clause("reaction-trigger", "table", `table-affirms-${action.trigger}`));
+  }
+  if (clauses.some((entry) => entry.status === "unsupported")) {
+    return { actionId, clauses, program: null };
+  }
+  const hasBonus = reduction.addAbility !== undefined || reduction.addLevel === true;
+  const claimKey = damageReactionClaimId(featureId, action, ordinal);
+  const program = conformMechanicsProgram({
+    id: actionId,
+    phases: [
+      {
+        inputs: [],
+        phaseId: "resolve",
+        steps: [
+          {
+            claim: {
+              claimId: claimKey,
+              kind: "claim-reaction",
+              reaction: { kind: "program", requirementId: claimKey },
+            },
+            combatant: "caster",
+            kind: "turn-claim",
+            stepId: "claim-reaction",
+            when: null,
+          },
+        ],
+        trigger: { kind: "invocation" },
+      },
+      {
+        inputs:
+          dice === null ? [] : [diceInput("reduction-roll", dice, fixed(dice.count))],
+        phaseId: "deflect",
+        steps: [
+          {
+            amount: sharedDiceAmount(
+              "reduction-roll",
+              hasBonus
+                ? {
+                    kind: "add",
+                    terms: [
+                      INPUT_TOTAL,
+                      { bindingId: TRANSCRIPTION_BINDINGS.featureBonus, kind: "binding" },
+                    ],
+                  }
+                : INPUT_TOTAL
+            ),
+            kind: "incoming-damage-adjustment",
+            selector: {
+              // The full 13-type tier means "any damage" — the empty selector.
+              damageTypes: (tier ?? []).length >= 13 ? [] : [...(tier ?? [])].sort(),
+              deliveries: ["attack"],
+              forbiddenTraits: [],
+              requiredTraits: [],
+            },
+            sourceId: claimKey,
+            stepId: "reduce",
+            when: null,
+          },
+          // A reaction is single-use: the spent program ends inside the same
+          // causal action, so it can never re-fire on a later hit.
+          { kind: "end-program", stepId: "spent", when: null },
+        ],
+        trigger: { kind: "damage-taken", target: "caster" },
+      },
+    ],
+    registers: [],
+    version: 1,
+  });
+  if (!program) {
+    return {
+      actionId,
+      clauses: [
+        ...clauses,
+        clause("damage-reaction", "unsupported", "program-conformance"),
+      ],
+      program: null,
+    };
+  }
+  clauses.push(clause("economy", "automated", "kernel-claims-reaction"));
+  clauses.push(clause("reduction-roll", "physical-input"));
+  if (hasBonus) {
+    clauses.push(clause("reduction-bonus", "automated", "caller-resolved-term"));
+  }
+  clauses.push(
+    clause("damage-reaction", "automated", "incoming-adjustment-in-triggering-action")
+  );
+  return { actionId, clauses, program };
+}
+
 export function transcribeFeatureAction(
   featureId: string,
   action: Readonly<SrdActionDef>,
@@ -1866,21 +2020,42 @@ export function transcribeFeatureAction(
     clauses.push(clause(clauseId, "unsupported", detail));
   };
 
-  // The two structural boundaries left: a legacy authored program awaiting its
-  // canonical rewrite, an attack SEQUENCE whose unarmed-strike profile is
-  // session-resolved (the weapon-attack seam's future work), and a reaction
-  // whose damage-taken trigger only the encounter runtime can fire.
+  // The hand-authored canonical channel — the action-side twin of the spell
+  // `mechanicsProgram` field: served VERBATIM as the executable truth, with
+  // the clause classification derived from the program's own structure
+  // (Uncanny Dodge's halving reaction). Supersedes the action's legacy
+  // `effectProgram`, which is deleted with the legacy executor at cutover.
+  if (action.mechanicsProgram !== undefined) {
+    const authored = conformMechanicsProgram(action.mechanicsProgram);
+    if (!authored) {
+      return {
+        actionId,
+        clauses: [clause("authored-program", "unsupported", "program-conformance")],
+        program: null,
+      };
+    }
+    return {
+      actionId,
+      clauses: clausesFromAuthoredProgram(authored),
+      program: authored,
+    };
+  }
+
+  // The damage-reaction family owns its whole program shape (claim phase +
+  // damage-taken adjustment phase) — never the generic accumulation below.
+  if (action.damageReduction !== undefined) {
+    return transcribeDamageReactionAction(featureId, action, ordinal, feature, actionId);
+  }
+
+  // The structural boundaries left: a legacy authored program awaiting its
+  // canonical rewrite, and an attack SEQUENCE whose unarmed-strike profile is
+  // session-resolved (the weapon-attack seam's future work).
   const blockers: readonly (readonly [boolean, string, string])[] = [
     [action.effectProgram !== undefined, "effect-program", "legacy-program-migration"],
     [
       action.attackSequence !== undefined,
       "attack-sequence",
       "session-attack-profile-pending",
-    ],
-    [
-      action.damageReduction !== undefined,
-      "damage-reduction",
-      "reaction-runtime-pending",
     ],
   ];
   for (const [present, clauseId, detail] of blockers) {

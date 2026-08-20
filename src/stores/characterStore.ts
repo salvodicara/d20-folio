@@ -116,6 +116,11 @@ import {
   undoCharacterAction,
 } from "@/lib/mechanics-world-store";
 import {
+  characterDamageReactionOptions,
+  runDamageReactionEntry,
+  type PendingDamageReactionPrompt,
+} from "@/lib/damage-reaction";
+import {
   canCharacterRest,
   DEATH_FAIL_LIMIT,
   DEATH_SUCCESS_LIMIT,
@@ -264,6 +269,9 @@ interface CharacterState {
   combatTurnEconomy: CombatState["turnEconomy"];
   /** Durable FIFO of one unresolved save per landed damage packet. */
   combatPendingConcentrationSaves: PendingConcentrationSave[];
+  /** EPHEMERAL (never persisted): one entered hit parked at damage entry
+   * while the player picks a damage reaction (Uncanny Dodge) or skips. */
+  combatPendingDamageReaction: PendingDamageReactionPrompt | null;
   /** Campaign-owned effects currently projected onto one character id. */
   encounterEffectProjection: {
     characterId: string;
@@ -541,6 +549,34 @@ interface CharacterState {
    * authoritative teardown. No-op when nothing is being concentrated on.
    */
   queueConcentrationSaveForDamage: (damage: number) => void;
+  /**
+   * Park one entered hit while the player decides on a damage reaction
+   * (the entry surface queues it when an eligible reaction exists). The
+   * parked hit has NOT been applied — the pick commits it WITH the reaction
+   * through the kernel; the skip path re-dispatches the plain entry.
+   */
+  queueDamageReactionPrompt: (prompt: PendingDamageReactionPrompt) => void;
+  /** Drop the parked prompt WITHOUT applying anything (skip / dismissal —
+   * the caller applies the plain damage through the ordinary entry path). */
+  clearDamageReactionPrompt: () => void;
+  /**
+   * Commit the parked hit WITH the picked reaction as ONE kernel causal
+   * action: the entered damage lands inside the reaction's own program, the
+   * `damage-taken` adjustment compensates exactly, and the round's Reaction
+   * is claimed on the solo encounter's economy ledger (started lazily like
+   * the solo turn loop — a one-way boundary). Mirrors the legacy reaction
+   * flag and the Concentration prompt seam; returns the toast facts + the
+   * exact snapshot undo, or null on any rejection (the caller degrades to
+   * the plain damage path — never a dead end).
+   */
+  commitDamageReactionEntry: (
+    uid: string,
+    optionRowId: string
+  ) => {
+    fullDamage: number;
+    takenDamage: number;
+    undo: () => boolean;
+  } | null;
   /**
    * PLAY-NO-EDIT — add a SESSION defense (a resistance/immunity/vulnerability/
    * condition-immunity gained in play: a potion, a spell, a curse). Layers over
@@ -1048,6 +1084,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   combatAppliedEncounterEffects: undefined,
   combatTurnEconomy: undefined,
   combatPendingConcentrationSaves: [],
+  combatPendingDamageReaction: null,
   encounterEffectProjection: null,
 
   // The normal owner-edit load path — always clears read-only (so re-entering a
@@ -1065,6 +1102,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       combatActionHead: null,
       combatActionLifecycles: {},
       combatPendingConcentrationSaves: [],
+      combatPendingDamageReaction: null,
     }),
   setEncounterEffects: (characterId, effects = []) => {
     const projection = characterId ? { characterId, effects } : null;
@@ -1130,6 +1168,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       combatActionHead: null,
       combatActionLifecycles: {},
       combatPendingConcentrationSaves: [],
+      combatPendingDamageReaction: null,
     }),
   loadCharacterWithCombat: (doc, combat, readonly) => {
     const projection = projectCombatHydration(
@@ -2649,6 +2688,92 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       duration: 5000,
     });
     persistCombat(get);
+  },
+
+  queueDamageReactionPrompt: (prompt) => {
+    if (get().readonly) return;
+    const { character } = get();
+    if (!character || character.id !== prompt.characterId) return;
+    set({ combatPendingDamageReaction: prompt });
+  },
+
+  clearDamageReactionPrompt: () => {
+    if (get().combatPendingDamageReaction === null) return;
+    set({ combatPendingDamageReaction: null });
+  },
+
+  commitDamageReactionEntry: (uid, optionRowId) => {
+    if (get().readonly) return null;
+    const prompt = get().combatPendingDamageReaction;
+    const doc = get().character;
+    if (!prompt || !doc || doc.id !== prompt.characterId) return null;
+    // Recompute the option from the LIVE doc by row id — never a stale object.
+    const option = characterDamageReactionOptions(doc).find(
+      (candidate) => candidate.rowId === optionRowId
+    );
+    if (!option) return null;
+    const run = runDamageReactionEntry(
+      doc,
+      uid,
+      option,
+      prompt.netParts,
+      useCombatStore.getState().round
+    );
+    if (!run) return null;
+    // The lazy solo-encounter start is a ONE-WAY boundary (the solo-loop
+    // doctrine): applied before the undo snapshot, never rewound by it.
+    if (run.encounterStart) {
+      const current = get().character;
+      if (!current) return null;
+      set({ character: { ...current, session: run.encounterStart.session } });
+    }
+    const before = captureD20Command(get());
+    if (!before) return null;
+    const reactionWasUsed = useCombatStore.getState().reactionUsed;
+
+    const current = get().character;
+    if (!current) return null;
+    set({
+      character: { ...current, session: run.reaction.session },
+      combatPendingDamageReaction: null,
+    });
+    // Legacy mirrors: taking damage maintains Rage-style states this round,
+    // the ReactionCards read the round's spent Reaction off the combat store,
+    // and the event log records the NET landed hit (events-as-data).
+    useCombatStore.getState().noteDamageTaken();
+    useCombatStore.getState().useReaction(optionRowId);
+    if (run.takenDamage > 0) {
+      const after = get().character;
+      if (after) {
+        get().logEvent({
+          kind: "hp-damage",
+          amount: run.takenDamage,
+          current: after.session.hp.current,
+          max: effectiveMaxHp(after.character, after.session),
+        });
+      }
+      // The SAME entered-d20 Concentration prompt seam every damage path owns.
+      get().queueConcentrationSaveForDamage(run.takenDamage);
+    }
+    persistCombat(get);
+    flushParentPersistence(get);
+    const afterSnapshot = captureD20Command(get());
+    if (!afterSnapshot) return null;
+    const undoCore = causalD20CommandUndo(before, afterSnapshot, get);
+    return {
+      fullDamage: run.fullDamage,
+      takenDamage: run.takenDamage,
+      undo: () => {
+        if (!undoCore()) return false;
+        if (
+          !reactionWasUsed &&
+          useCombatStore.getState().reactionUsedId === optionRowId
+        ) {
+          useCombatStore.getState().resetReaction();
+        }
+        return true;
+      },
+    };
   },
 
   persistInitiative: () => {

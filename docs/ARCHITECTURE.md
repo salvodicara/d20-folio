@@ -1819,7 +1819,17 @@ Extra-Attack weapon swing — the attack-pips ledger claim/ride instead of a who
 Engine damage landing on the character itself surfaces the SAME entered-d20 Concentration
 prompt seam the legacy damage path owns (`queueConcentrationSaveForDamage`; an engine commit
 that leaves the character at 0 HP breaks concentration outright through the one authoritative
-teardown). With the world-standing read in place (see the read-migration section above),
+teardown). **The damage-entry reaction runtime** rides the same seams in the other direction:
+table-entered damage with an eligible ANSWER-FREE damage reaction (Uncanny Dodge; the pack's
+Interpose Shield) parks as the cockpit's `DamageReactionBanner` prompt instead of applying —
+the pick composes the entered hit into the reaction's own program
+(`src/lib/damage-reaction.ts`) and runs it as ONE causal action (the `damage-taken` phase's
+`incoming-damage-adjustment` compensates inside the same action; the Reaction claims against
+the solo encounter's economy ledger, started lazily exactly like the solo turn loop), the
+store's `commitDamageReactionEntry` mirrors the legacy reaction flag/event log/Concentration
+prompt and registers the exact snapshot undo, and a skip (or any kernel rejection) applies the
+plain damage path unchanged — never a dead end. With the world-standing read in place (see the
+read-migration section above),
 REACTION casts and SELF-owned mechanics-carrying while-active casts dispatch engine in and out
 of combat: an engine Shield's standing lifts the sheet's AC through the projection, and the
 commit marks the round's Reaction through the SAME `useReaction` CAS the legacy reaction commit

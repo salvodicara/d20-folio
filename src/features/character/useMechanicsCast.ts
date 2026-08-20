@@ -24,6 +24,7 @@ import {
   characterTurnEconomy,
   characterWorldState,
   commitCharacterAction,
+  engineSelfDamage,
   mechanicsAuthorityDefinition,
   type CharacterCastCapability,
   type CharacterCastDerived,
@@ -63,17 +64,6 @@ export interface EngineActionSource {
   readonly extraFacts?: readonly ActionFactGuard[];
   /** Stable id stem for the run's action/occurrence identities. */
   readonly key: string;
-}
-
-/** Total damage a committed engine action landed on the character ITSELF
- * (current + temporary hit points, the RAW "you take damage" trigger). */
-export function engineSelfDamage(
-  before: Readonly<CharacterMaterialState>,
-  after: Readonly<CharacterMaterialState>
-): number {
-  const total = (state: Readonly<CharacterMaterialState>) =>
-    state.vitals.hitPoints.current + state.vitals.hitPoints.temporary.current;
-  return Math.max(0, total(before) - total(after));
 }
 
 /**

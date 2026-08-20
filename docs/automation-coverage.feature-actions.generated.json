@@ -862,24 +862,14 @@
     {
       "clauses": [
         {
-          "clauseId": "damage-reduction",
-          "detail": "reaction-runtime-pending",
+          "clauseId": "reduction-damage-types",
+          "detail": "level-scaled-types-need-session-level",
           "status": "unsupported"
         },
         {
-          "clauseId": "economy",
-          "detail": "table-spends-reaction",
-          "status": "table"
-        },
-        {
           "clauseId": "reaction-trigger",
-          "detail": "table-signals-hitByAttack",
+          "detail": "table-affirms-hitByAttack",
           "status": "table"
-        },
-        {
-          "clauseId": "targeting",
-          "detail": null,
-          "status": "automated"
         }
       ],
       "executable": false,
@@ -1456,27 +1446,32 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "legacy-program-migration",
-          "status": "unsupported"
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
         },
         {
-          "clauseId": "economy",
-          "detail": "table-spends-reaction",
-          "status": "table"
-        },
-        {
-          "clauseId": "reaction-trigger",
-          "detail": "table-signals-hitByAttack",
-          "status": "table"
-        },
-        {
-          "clauseId": "targeting",
+          "clauseId": "resolve-claim-reaction",
           "detail": null,
           "status": "automated"
+        },
+        {
+          "clauseId": "deflect-halve",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "deflect-spent",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "deflect-trigger",
+          "detail": "table-affirms-damage-trigger",
+          "status": "table"
         }
       ],
-      "executable": false,
+      "executable": true,
       "id": "action:rogue-uncanny-dodge:0"
     },
     {
@@ -1801,15 +1796,15 @@
       "id": "action:dragonborn-draconic-flight:0"
     }
   ],
-  "executablePrograms": 45,
+  "executablePrograms": 47,
   "family": "feature-actions",
   "totalEntities": 231,
   "totals": {
-    "table": 312,
-    "automated": 475,
+    "table": 309,
+    "automated": 480,
     "narrative": 179,
     "physical-input": 17,
-    "unsupported": 17,
+    "unsupported": 15,
     "spatial": 3
   }
 }

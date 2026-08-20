@@ -12580,15 +12580,15 @@
       "id": "wish"
     }
   ],
-  "executablePrograms": 286,
+  "executablePrograms": 289,
   "family": "spells",
   "totalEntities": 422,
   "totals": {
-    "automated": 1838,
-    "physical-input": 375,
-    "table": 214,
-    "spatial": 179,
+    "automated": 1864,
+    "physical-input": 382,
+    "table": 215,
+    "spatial": 182,
     "narrative": 128,
-    "unsupported": 9
+    "unsupported": 6
   }
 }

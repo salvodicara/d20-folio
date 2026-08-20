@@ -295,7 +295,30 @@ Flare's level-6 rider no longer leaks below 6), and non-uniform `diceByLevel` fa
 compiles the canonical `turn-claim` — the slot claim for a typed action (one bonus action per
 turn IS Martial Arts' cap), the once-per-turn manual boundary for a free action (Redirect) —
 enforced by the solo turn-economy projection every dispatch now feeds; only multi-use caps stay
-table clauses. **Weapon-attack transcription** (`transcribeWeaponAttack`)
+table clauses. The **damage-reaction family** compiles a `type: "reaction"` action whose whole
+effect is reducing one observed incoming damage instance (`damageReduction` — Deflect Attacks'
+1d10 + DEX + Monk level, the level tier widening the eligible types at 13) into the canonical
+reactive shape: an invocation phase whose `turn-claim` claims the round's Reaction (the claim and
+its authorization share ONE id — `damageReactionClaimId` — with the projection's reaction
+REQUIREMENT roster, `characterReactionRequirements`, so they can never drift) plus a
+`damage-taken` phase carrying the `incoming-damage-adjustment` (the kernel's compensating
+reduction, bounded by the triggering resolution's effective damage) and the single-use
+`end-program`. Feature/feat actions also carry the **authored canonical channel** — an
+action-side `mechanicsProgram` served VERBATIM exactly like a spell's (Uncanny Dodge's
+⌈half⌉-reduction via the `trigger.damage` binding; the pack's Interpose Shield full negation) —
+with clauses derived from the program's own structure. **The damage-entry reaction runtime**
+(`src/lib/damage-reaction.ts` + the cockpit's `DamageReactionBanner`) fires these in solo play:
+an entered hit with an eligible ANSWER-FREE reaction parks as a prompt; the pick COMPOSES the
+entered damage into the reaction's own invocation phase (`composeDamageEntryProgram` — the
+reactive audience dispatches before the invocation's remaining steps compile, so the reduction
+lands inside the ONE causal action; the single-use end moves to the invocation tail because a
+root end requested from a dispatched subscriber frame rejects the causal end wave,
+kernel-proven), claims the Reaction on the solo encounter's economy ledger (started lazily like
+the solo turn loop), mirrors the legacy reaction flag + the Concentration prompt seam, and
+commits one journal action with exact undo; skip applies the plain entry unchanged. A damage
+reaction whose program needs any input (Deflect Attacks' rolled die) transcribes but stays with
+its legacy card until the prompt collects entered rolls — an honest leftover, never a silent gap.
+**Weapon-attack transcription** (`transcribeWeaponAttack`)
 compiles the resolved profile of one weapon row — the SAME `resolveActions` summary the sheet
 renders (breakdown-derived to-hit, folded damage formula, expanded crit threshold, `masteryNumbers`)
 — into the canonical attack program: attack d20 vs the table-entered armor-class binding, hit/crit

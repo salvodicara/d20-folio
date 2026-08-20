@@ -265,6 +265,76 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
           // excludes saves, hazards, and automatic damage at the data boundary.
           trigger: "hitByAttack",
           targeting: { affinity: "self", maxTargets: 1 },
+          // The canonical-runtime authored program (supersedes `effectProgram`):
+          // declaring the reaction claims the round's Reaction slot; the
+          // damage-taken phase compiles the exact compensating reduction —
+          // reduce the triggering attack's damage by ⌈half⌉, so the rogue TAKES
+          // ⌊half⌋ (2024 RAW halving rounds down) — bounded by the triggering
+          // resolution's effective damage, then the spent reaction ends. Fired
+          // by the damage-entry runtime (`lib/damage-reaction.ts`), which
+          // composes the table-entered hit around this program so the whole
+          // exchange commits as ONE causal action; the attack-delivered fact is
+          // affirmed by the player's pick, exactly like the legacy card's click.
+          mechanicsProgram: {
+            id: "action:rogue-uncanny-dodge:0",
+            phases: [
+              {
+                inputs: [],
+                phaseId: "resolve",
+                steps: [
+                  {
+                    claim: {
+                      claimId: "reaction.rogue-uncanny-dodge.0",
+                      kind: "claim-reaction",
+                      reaction: {
+                        kind: "program",
+                        // Must equal `damageReactionClaimId("rogue-uncanny-dodge",
+                        // action, 0)` — the projection's requirement roster and
+                        // this claim share that one identity (guard-tested).
+                        requirementId: "reaction.rogue-uncanny-dodge.0",
+                      },
+                    },
+                    combatant: "caster",
+                    kind: "turn-claim",
+                    stepId: "claim-reaction",
+                    when: null,
+                  },
+                ],
+                trigger: { kind: "invocation" },
+              },
+              {
+                inputs: [],
+                phaseId: "deflect",
+                steps: [
+                  {
+                    amount: {
+                      expression: {
+                        dividend: { bindingId: "trigger.damage", kind: "binding" },
+                        divisor: { kind: "fixed", value: 2 },
+                        kind: "divide",
+                        rounding: "ceil",
+                      },
+                      kind: "integer",
+                    },
+                    kind: "incoming-damage-adjustment",
+                    selector: {
+                      damageTypes: [],
+                      deliveries: ["attack"],
+                      forbiddenTraits: [],
+                      requiredTraits: [],
+                    },
+                    sourceId: "reaction.rogue-uncanny-dodge.0",
+                    stepId: "halve",
+                    when: null,
+                  },
+                  { kind: "end-program", stepId: "spent", when: null },
+                ],
+                trigger: { kind: "damage-taken", target: "caster" },
+              },
+            ],
+            registers: [],
+            version: 1,
+          },
           effectProgram: {
             version: 1,
             id: "feature.rogue-uncanny-dodge",

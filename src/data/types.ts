@@ -1723,6 +1723,19 @@ export interface SrdActionDef {
   id?: string;
   /** Ordered deterministic resolution; legacy scalar fields remain compatible. */
   effectProgram?: CombatEffectProgram;
+  /**
+   * A hand-authored deterministic-runtime program in the CANONICAL
+   * MechanicsProgram format — the action-side twin of the spell channel — for
+   * the few feature/feat actions whose semantics exceed the declarative
+   * fields (Uncanny Dodge's halving reaction, Interpose Shield's negation).
+   * The transcriber conforms and serves it VERBATIM (the executable truth)
+   * and derives the honest clause classification from the program's own
+   * inputs and steps. Supersedes the legacy `effectProgram`, which is deleted
+   * with the legacy executor at cutover. Validated by
+   * `conformMechanicsProgram` at transcription time; an unconformable program
+   * is a corpus-guard failure.
+   */
+  mechanicsProgram?: Readonly<Record<string, unknown>>;
   /** Action economy cost */
   type: ActionType;
   /** Rules identity independent of the card id (Cunning Action Dash, Haste, etc.). */

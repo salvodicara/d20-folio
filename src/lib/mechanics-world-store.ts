@@ -30,6 +30,7 @@ import { mechanicsCapabilitySnapshotFingerprint } from "@/lib/mechanics-capabili
 import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
 import { conformMechanicsProgramAuthorityReceipt } from "@/lib/mechanics-program-receipt";
 import {
+  damageReactionClaimId,
   transcribeFeatureAction,
   transcribeSpell,
   transcribeWeaponAttack,
@@ -37,6 +38,7 @@ import {
   type SpellTranscription,
   type WeaponAttackProfile,
 } from "@/lib/mechanics-transcription";
+import { getSrdFeatureSource } from "@/lib/srd-feature-lookup";
 import {
   advanceMechanicsBoundary,
   beginMechanicsBoundary,
@@ -306,6 +308,33 @@ export function characterWorldState(
 export const SOLO_PARTICIPANT_ID = "self";
 
 /**
+ * The Reaction REQUIREMENT roster of the projection below: one entry per
+ * feature/feat-granted `type: "reaction"` action the character actually
+ * holds, keyed by the SAME id math the transcribed programs' `claim-reaction`
+ * steps use ({@link damageReactionClaimId}) — a program reaction claim is
+ * authorized exactly when its requirement is on this roster, so the claim and
+ * its authorization can never drift. The round budget (one Reaction) is
+ * enforced separately by the economy ledger.
+ */
+function characterReactionRequirements(
+  doc: Readonly<CharacterDoc>
+): readonly Readonly<{ requirementId: string }>[] {
+  const ids = new Set<string>();
+  for (const ref of doc.character.features) {
+    if ("custom" in ref) continue;
+    const source = getSrdFeatureSource(ref.srdId);
+    const actions = source?.mechanics?.actions;
+    if (!source || !actions) continue;
+    const featureId = "id" in source ? source.id : ref.srdId;
+    for (const [ordinal, action] of actions.entries()) {
+      if (action.type !== "reaction") continue;
+      ids.add(damageReactionClaimId(featureId, action, ordinal));
+    }
+  }
+  return [...ids].sort().map((requirementId) => ({ requirementId }));
+}
+
+/**
  * The character's CURRENT turn-economy capability projection, derived from the
  * same build/session seams every legacy combat surface reads (attacks per
  * Attack action, effective walking Speed, condition-gated incapacitation), so
@@ -346,7 +375,10 @@ export function characterTurnEconomyProjection(
       modes: [{ mode: "walk", speedFt: { base: speedFt, override: null } }],
       requirements: [],
     },
-    reactions: { limit: { base: 1, override: null }, requirements: [] },
+    reactions: {
+      limit: { base: 1, override: null },
+      requirements: characterReactionRequirements(doc),
+    },
   });
 }
 
@@ -1149,6 +1181,17 @@ export function characterSlotDefinitionFacts(
 export interface CharacterActionCommit {
   readonly session: Readonly<SessionState>;
   readonly world: Readonly<CharacterMaterialState>;
+}
+
+/** Total damage a committed engine action landed on the character ITSELF
+ * (current + temporary hit points, the RAW "you take damage" trigger). */
+export function engineSelfDamage(
+  before: Readonly<CharacterMaterialState>,
+  after: Readonly<CharacterMaterialState>
+): number {
+  const total = (state: Readonly<CharacterMaterialState>) =>
+    state.vitals.hitPoints.current + state.vitals.hitPoints.temporary.current;
+  return Math.max(0, total(before) - total(after));
 }
 
 /**

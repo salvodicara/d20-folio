@@ -18,16 +18,16 @@ import {
   characterTurnEconomy,
   characterWorldState,
   commitCharacterAction,
+  engineSelfDamage,
   type EnginePulseRef,
 } from "@/lib/mechanics-world-store";
 export { activeEnginePulses, type EnginePulseRef } from "@/lib/mechanics-world-store";
 import { beginMechanicsCausalState } from "@/lib/mechanics-world";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
-import {
-  engineSelfDamage,
-  type MechanicsCastPhase,
-  type MechanicsCastState,
+import type {
+  MechanicsCastPhase,
+  MechanicsCastState,
 } from "@/features/character/useMechanicsCast";
 import type { MechanicsAnswer } from "@/types/mechanics-program";
 import type { MechanicsCompilerResponse } from "@/types/mechanics-compiler";

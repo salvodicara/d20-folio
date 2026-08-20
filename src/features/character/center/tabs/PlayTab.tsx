@@ -461,7 +461,16 @@ export function PlayTab() {
   const engineDispatchFor = useCallback(
     (action: ResolvedAction): EngineActionDispatch | null => {
       if (sheetCombat || !character) return null;
-      // The two documented model boundaries (kept legacy by DESIGN, not gap):
+      // The documented model boundaries (kept legacy by DESIGN, not gap):
+      // - `type: "reaction"` — a reaction NEVER dispatches from a board tap:
+      //   its trigger is an event, not a decision. DAMAGE reactions (Uncanny
+      //   Dodge, Interpose Shield) now run ENGINE through the damage-entry
+      //   prompt instead (`lib/damage-reaction.ts` + `DamageReactionBanner` —
+      //   the entered hit and the reduction commit as ONE causal action), so
+      //   this exclusion is a routing fact for them, not a gap. Every OTHER
+      //   reaction family (opportunity attacks, Cutting Words, reaction
+      //   spells cast from the card) stays legacy here until its own trigger
+      //   runtime exists — the reaction card's legacy commit owns it.
       // - `maintainsActiveKey` — a maintainer row re-runs an already
       //   established recurring state without paying again. A new engine cast
       //   would double-establish it; the engine twin is the armed root-pulse
