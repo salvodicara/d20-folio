@@ -286,6 +286,44 @@ rollout bridge now mirrors engine-held concentration (engine transitions only). 
 `effectProgram` migrations (authored-program agent in flight), consumable/pool-split healing,
 two-target-set combos, and singletons. Focused verification only; no global gate ran.
 
+**The cutover convergence waves CLOSED on branch (2026-08-14 fourth block through 2026-08-19; ten
+checkpoint commits, public 549d9da..7112cd3 + pack bcc90a17/62a36ae7):** the S9 typed item-resource
+wave consolidated (per-instance counters, atomic table-entered spend/recovery, the universal
+entered-d20 kernel for death and concentration saves, the MechanicsCommand CAS path; PDF ledger and
+dev-scenario builder aligned to the post-migration model; full census 18,943/18,943 green at the
+consolidation point). Then, in one continuous multi-agent push: (1) the ADVERSARY ENCOUNTER WORLD —
+the campaign encounter document carries an additive engine-owned layer re-proved fail-closed and
+overlaid with doc-owned facts, DM damage/heal/condition taps and the universal resolver dispatch
+through booked boundary programs, turn stepping fires the kernel's `complete-turn` (expiries
+mirrored onto chips + chronicle in the same write), and chronicle undo reverts exactly through the
+shared-root journal; (2) the TRANSCRIPTION FIXPOINT — zero blocked SRD spells (286/422 executable;
+actions 45/231), the eight blockers automated with coordinator proofs (Divine Smite, Goodberry via
+closed conjured-item blueprints, Ice Knife, Vampiric Touch over the new landed-damage ledger, Wall
+of Fire, Geas, Greater Restoration, Mass Heal via expanded per-target integer inputs), turn-claim
+emission from declared per-turn caps, and the feature-attack/pool-spend/weapon families (Graze and
+Topple automated; census generated beside the spells file); (3) SOLO COMBAT ON THE CANONICAL TURN
+WORLD — a local single-participant encounter on the character material, End Turn firing the kernel
+boundary so booked lifetimes expire exactly, Extra Attack and per-turn caps enforced by the kernel,
+economy mirrors exact; (4) the FIRST UI-READ MIGRATIONS — the sheet reads world standing
+occurrences through one projection seam (engine Shield lifts AC with no legacy chip; a pre-existing
+concentration-mirror resurrect bug fixed; every authoritative concentration drop ends the engine
+occurrence canonically), and RESTS commit one journal action chaining end-encounter, RAW
+advance-time and complete-rest with recoveries as world transitions; (5) PC PARTICIPANTS join the
+shared encounter by identity-carried lease (members commit their own kernel start-encounter
+boundary, pass-off boundaries fire per observed round, cross-material actions correlate as two
+commits sharing one deterministic seed — the offline-first split-owner topology cannot carry the
+kernel's atomic multi-document finalize, documented at the seam); (6) DISPATCH CLOSURE — runtime
+context enrichment (monk class-die actions run end-to-end), Goodberry conjures and consumes in-app,
+Mass Heal splits in the modal, one shared spell-gate truth serving SpellsTab, PlayTab and reaction
+cards, and the two-action concentration swap (a coordinator replacement-livelock defect found and
+documented; fix in flight). The Warlock pact-slot seed bug (wrapped cell rejected by the parser,
+silently degrading every pact caster) was found and regression-pinned. Remaining active: the last
+dispatch gaps (pact casts through the gate, target-bound standings, maintainers/use-applies), the
+legacy deletion map L0-L3 (effectProgram fields + the branch-born combat-effect generation + the
+main-era executor + bridge mirrors with the one-off live-document migration), convergence, and the
+Italian architecture explainer. Focused verification only per wave; the one full dual-build gate
+remains reserved for convergence.\*\*
+
 **The fourteen authored programs CLOSED on branch (2026-08-14, third block):** every spell that
 still carried only a legacy `effectProgram` now holds a hand-authored canonical-runtime program —
 Ensnaring Strike, Searing Smite, Dragon's Breath, Acid Arrow, Spike Growth, Phantasmal
