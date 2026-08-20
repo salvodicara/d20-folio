@@ -153,8 +153,10 @@ describe("FeaturesTab — derived Origin feat", () => {
     doc.character.bgFeat = "magic-initiate-wizard";
     doc.character.humanOriginFeat = "";
     doc.character.features = [{ srdId: "magic-initiate-wizard" }];
+    // SRD-only entities (fire-bolt / ray-of-frost / shield): a public-suite
+    // fixture must resolve in BOTH build modes (the licensing partition).
     doc.character.spells = [
-      { srdId: "mind-sliver", prepared: true },
+      { srdId: "fire-bolt", prepared: true },
       { srdId: "ray-of-frost", prepared: true },
       { srdId: "shield", prepared: false },
     ];
@@ -175,7 +177,7 @@ describe("FeaturesTab — derived Origin feat", () => {
       if (!row) throw new Error(`missing spell choice row: ${name}`);
       fireEvent.click(row);
     };
-    pick("Mind Sliver");
+    pick("Fire Bolt");
     pick("Ray of Frost");
     pick("Shield");
     fireEvent.click(within(dialog).getByRole("button", { name: /^save$/i }));

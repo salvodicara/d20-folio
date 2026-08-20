@@ -39,6 +39,18 @@ function used(trackerId: string): number {
   return useCharacterStore.getState().character?.session.trackers[trackerId]?.used ?? 0;
 }
 
+/** Whether THIS build's catalogue resolves the named tracker for the loaded
+ *  character. The team plays with pack content (the Musician/Lucky feats, the
+ *  Diviner subclass) the public SRD 5.2.1 catalogue does not ship: composed,
+ *  the tracker resolves and recovers on its real cadence; SRD-only it is
+ *  unknown and every op on it must fail CLOSED (no fabricated recharge, no
+ *  fabricated rolls) — the contract this suite pins for BOTH build modes. */
+function resolvesTracker(trackerId: string): boolean {
+  const character = useCharacterStore.getState().character;
+  if (!character) throw new Error("no character loaded");
+  return resolveTrackers(character).some((tracker) => tracker.id === trackerId);
+}
+
 describe("live-team resource lifecycle contract", () => {
   beforeEach(() => useCharacterStore.setState({ character: null }));
 
@@ -72,7 +84,10 @@ describe("live-team resource lifecycle contract", () => {
 
     useCharacterStore.getState().shortRest();
     expect(used("bard-bardic-inspiration")).toBe(1);
-    expect(used("musician")).toBe(0);
+    // Musician (a pack feat) recharges on a Short Rest when the build ships
+    // it; an SRD-only build does not resolve the tracker and must never
+    // fabricate a recovery for the unknown spend (fail-closed).
+    expect(used("musician")).toBe(resolvesTracker("musician") ? 0 : 1);
     expect(used("lucky")).toBe(1);
 
     useCharacterStore.getState().longRest();
@@ -97,6 +112,17 @@ describe("live-team resource lifecycle contract", () => {
   it("records, spends, undoes, and rerolls Briox's Portent dice", () => {
     useCharacterStore.getState().setCharacter(liveFixture("briox-wizard.json"));
     const store = useCharacterStore.getState();
+    if (!resolvesTracker("wizard-diviner-portent")) {
+      // The Diviner subclass is pack content: an SRD-only build does not
+      // resolve the Portent tracker, so every roll op is a strict no-op —
+      // nothing recorded, nothing spent, nothing fabricated (fail-closed).
+      store.setTrackerRoll("wizard-diviner-portent", 0, 17);
+      expect(store.spendTrackerRoll("wizard-diviner-portent", 0)).toBeNull();
+      expect(
+        useCharacterStore.getState().character?.session.trackers["wizard-diviner-portent"]
+      ).toBeUndefined();
+      return;
+    }
     store.setTrackerRoll("wizard-diviner-portent", 0, 17);
     store.setTrackerRoll("wizard-diviner-portent", 1, 4);
     const undo = useCharacterStore
