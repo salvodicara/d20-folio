@@ -667,6 +667,18 @@ export function PlayTab() {
     [attackBudget, character, outcomeReceipts, selected, sheetCombat]
   );
 
+  // Extra Attack / War Magic pip inputs, hoisted above the spell gate that
+  // reads them (ONE derivation, golden rule 6 — the CTA blocks below reuse
+  // these same values).
+  const warMagicMax = useMemo(
+    () =>
+      character
+        ? maxReplaceAttackSpellLevel(resolveReplaceAttackWithCast(character))
+        : -1,
+    [character]
+  );
+  const attacksLeft = attacksRemainingInAction(attacksUsed, attackBudget);
+
   /**
    * The Play board's SPELL-row engine gate (Shield's reaction card included):
    * the SAME shared `engineSpellCastRequest` the Spells tab runs (rule 6 — one
@@ -683,6 +695,16 @@ export function PlayTab() {
       summary: CastSummaryVM | null;
     } | null => {
       if (!character || action.source !== "spell" || action.spellId === undefined) {
+        return null;
+      }
+      // A pip-live cast (War Magic: replace an attack with a cantrip while
+      // swings remain in the OPEN Attack action) rides the attack-pips ledger,
+      // an economy the engine does not model yet, so the legacy loop keeps it.
+      if (
+        attackBudget > 1 &&
+        attacksLeft != null &&
+        isPipAttackAction(action, warMagicMax)
+      ) {
         return null;
       }
       const spell = spellIndex.get(action.spellId);
@@ -709,7 +731,7 @@ export function PlayTab() {
       );
       return { request, slots: view.slots, summary: view.castSummary };
     },
-    [character, locale, sheetCombat, t]
+    [attackBudget, attacksLeft, character, locale, sheetCombat, t, warMagicMax]
   );
 
   /** One commit grammar for every card: engine when executable (feature,
@@ -801,14 +823,6 @@ export function PlayTab() {
   // count. `warMagicMax` gates which spell cards are attack-capable (the SAME pure
   // predicate the economy provider commits through). The guard case
   // (`attackBudget <= 1`) makes every read inert.
-  const warMagicMax = useMemo(
-    () =>
-      character
-        ? maxReplaceAttackSpellLevel(resolveReplaceAttackWithCast(character))
-        : -1,
-    [character]
-  );
-  const attacksLeft = attacksRemainingInAction(attacksUsed, attackBudget);
   const actionSlotFull = selected.action.length >= budget.action;
   const bonusSlotFull = selected.bonus.length >= budget.bonus;
 

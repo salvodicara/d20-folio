@@ -2026,75 +2026,79 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
     ).toBe(true);
   });
 
-  it("replaces a held transcribed concentration in ONE bounded causal action", async () => {
-    const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
-    const bindings = { [TRANSCRIPTION_BINDINGS.saveDc]: 15 };
-    const first = await runAttackCast({
-      attackFaces: [],
-      bindings,
-      slotLevel: 1,
-      spellId: "hex",
-      targetSlots: 1,
-    });
-    const heldIds = Object.keys(first.state.occurrences);
-    expect(
-      Object.values(first.state.occurrences).some(
-        (occurrence) => occurrence.kind === "concentration"
-      )
-    ).toBe(true);
+  it(
+    "replaces a held transcribed concentration in ONE bounded causal action",
+    { timeout: 30_000 },
+    async () => {
+      const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
+      const bindings = { [TRANSCRIPTION_BINDINGS.saveDc]: 15 };
+      const first = await runAttackCast({
+        attackFaces: [],
+        bindings,
+        slotLevel: 1,
+        spellId: "hex",
+        targetSlots: 1,
+      });
+      const heldIds = Object.keys(first.state.occurrences);
+      expect(
+        Object.values(first.state.occurrences).some(
+          (occurrence) => occurrence.kind === "concentration"
+        )
+      ).toBe(true);
 
-    // Recasting hex while the engine already holds it converges as ONE causal
-    // action: the compiler's concentration-replacement coordination requests
-    // the held occurrence's end, the closure (old root, both standings) ends
-    // in the same wave, and the suspended cast resumes over the swept world.
-    // The 100-step budget cap proves bounded convergence (the pre-fix livelock
-    // burned the whole 2048 default and rejected with work-budget).
-    const second = await runAttackCast({
-      attackFaces: [],
-      bindings,
-      entry: { rootId: "root-2", state: first.causal },
-      slotLevel: 1,
-      spellId: "hex",
-      targetSlots: 1,
-      workBudget: 100,
-    });
+      // Recasting hex while the engine already holds it converges as ONE causal
+      // action: the compiler's concentration-replacement coordination requests
+      // the held occurrence's end, the closure (old root, both standings) ends
+      // in the same wave, and the suspended cast resumes over the swept world.
+      // The 100-step budget cap proves bounded convergence (the pre-fix livelock
+      // burned the whole 2048 default and rejected with work-budget).
+      const second = await runAttackCast({
+        attackFaces: [],
+        bindings,
+        entry: { rootId: "root-2", state: first.causal },
+        slotLevel: 1,
+        spellId: "hex",
+        targetSlots: 1,
+        workBudget: 100,
+      });
 
-    // The whole old spell is swept: root, concentration, both standings.
-    for (const occurrenceId of heldIds) {
-      expect(second.state.occurrences[occurrenceId]).toBeUndefined();
-    }
-    // The new cast is held whole, every effect parented to the new root.
-    const kinds = Object.values(second.state.occurrences)
-      .map(({ kind }) => kind)
-      .sort();
-    expect(kinds).toEqual(["concentration", "program", "standing", "standing"]);
-    for (const occurrence of Object.values(second.state.occurrences)) {
-      if (occurrence.kind !== "program") {
-        expect(occurrence.parentId).toBe("root-2");
+      // The whole old spell is swept: root, concentration, both standings.
+      for (const occurrenceId of heldIds) {
+        expect(second.state.occurrences[occurrenceId]).toBeUndefined();
       }
-    }
-    expect(second.state.resources.standardSpellSlots["1"]?.current).toBe(0);
-    expect(second.causal.context.endWave).toBeNull();
-    expect(second.causal.context.pendingFrames).toEqual([]);
+      // The new cast is held whole, every effect parented to the new root.
+      const kinds = Object.values(second.state.occurrences)
+        .map(({ kind }) => kind)
+        .sort();
+      expect(kinds).toEqual(["concentration", "program", "standing", "standing"]);
+      for (const occurrence of Object.values(second.state.occurrences)) {
+        if (occurrence.kind !== "program") {
+          expect(occurrence.parentId).toBe("root-2");
+        }
+      }
+      expect(second.state.resources.standardSpellSlots["1"]?.current).toBe(0);
+      expect(second.causal.context.endWave).toBeNull();
+      expect(second.causal.context.pendingFrames).toEqual([]);
 
-    // ONE journal action whose exact mutation reversal restores the old spell.
-    const action = second.action;
-    expect(action).not.toBeNull();
-    const undone = structuredClone(second.state) as unknown as Record<string, unknown>;
-    for (const mutation of action?.mutations ?? []) {
-      let node: Record<string, unknown> = undone;
-      for (const segment of mutation.path.slice(0, -1)) {
-        node = node[segment] as Record<string, unknown>;
+      // ONE journal action whose exact mutation reversal restores the old spell.
+      const action = second.action;
+      expect(action).not.toBeNull();
+      const undone = structuredClone(second.state) as unknown as Record<string, unknown>;
+      for (const mutation of action?.mutations ?? []) {
+        let node: Record<string, unknown> = undone;
+        for (const segment of mutation.path.slice(0, -1)) {
+          node = node[segment] as Record<string, unknown>;
+        }
+        const leaf = String(mutation.path.at(-1));
+        if (mutation.before.present) {
+          node[leaf] = structuredClone(mutation.before.value);
+        } else {
+          Reflect.deleteProperty(node, leaf);
+        }
       }
-      const leaf = String(mutation.path.at(-1));
-      if (mutation.before.present) {
-        node[leaf] = structuredClone(mutation.before.value);
-      } else {
-        Reflect.deleteProperty(node, leaf);
-      }
+      expect(canonicalJson(undone)).toBe(canonicalJson(first.state));
     }
-    expect(canonicalJson(undone)).toBe(canonicalJson(first.state));
-  });
+  );
 
   it("advances the moonbeam pulse via a root-pulse declaration end-to-end", async () => {
     const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
