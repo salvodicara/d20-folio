@@ -9,7 +9,7 @@
  * else still rides the legacy commit loop until its own cutover wave.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { MechanicsCastModal } from "@/components/sheet/MechanicsCastModal";
@@ -21,7 +21,10 @@ import {
 import {
   characterFeatureActionCapability,
   characterMaterialRef,
+  characterPoolSpendRemaining,
+  characterTrackerSeeds,
   characterWeaponAttackCapability,
+  characterWorldState,
 } from "@/lib/mechanics-world-store";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -131,6 +134,26 @@ export function EngineActionFlow({ dispatch, onClose }: EngineActionFlowProps) {
   );
 
   const engineAction = useMechanicsEngineAction(sourceFor);
+  // The LIVE payable pool behind a chosen-amount debit (Lay on Hands), so the
+  // amount prompt shows the real bound instead of the transcription's domain
+  // cap — the kernel still enforces affordability at review.
+  const poolRemaining = useMemo(() => {
+    if (!doc || uid === null || dispatch.kind !== "feature") return null;
+    const world = characterWorldState(
+      doc,
+      uid,
+      doc.character.hp.max,
+      {},
+      characterTrackerSeeds(doc)
+    );
+    return characterPoolSpendRemaining(
+      doc,
+      dispatch.featureId,
+      dispatch.action,
+      dispatch.context,
+      world ?? undefined
+    );
+  }, [dispatch, doc, uid]);
   // The rollout bridge mirrors a successful engine commit onto the legacy turn
   // economy (the occupied slot) and clears the legacy chips of any cures the
   // player opted into — the engine world's condition mirror covers only
@@ -248,6 +271,7 @@ export function EngineActionFlow({ dispatch, onClose }: EngineActionFlowProps) {
       material={characterMaterialRef(doc, uid)}
       onArmorClass={setTargetArmorClass}
       onClose={onClose}
+      {...(poolRemaining !== null ? { poolRemaining } : {})}
       requiresArmorClass={needsArmorClass && targetArmorClass === null}
       slotRemaining={{}}
       spellName={dispatch.actionName}

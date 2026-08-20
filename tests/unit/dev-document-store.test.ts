@@ -39,6 +39,24 @@ describe("dev document store", () => {
     expect(listener).toHaveBeenCalledTimes(2);
   });
 
+  it("suppresses byte-identical rewrites like Firestore's data-change-only snapshots", () => {
+    const listener = vi.fn();
+    const unsubscribe = subscribeDevDocument("combat", "u1/c1", listener);
+    writeDevDocument("combat", "u1/c1", { hp: 9, log: ["swing"] });
+    expect(listener).toHaveBeenCalledTimes(2);
+
+    // A byte-identical rewrite raises NO snapshot — this is what keeps a
+    // write→echo→hydrate→write cycle from becoming a synchronous render storm.
+    writeDevDocument("combat", "u1/c1", { hp: 9, log: ["swing"] });
+    expect(listener).toHaveBeenCalledTimes(2);
+
+    // A real data change still notifies.
+    writeDevDocument("combat", "u1/c1", { hp: 8, log: ["swing"] });
+    expect(listener).toHaveBeenCalledTimes(3);
+    expect(listener).toHaveBeenLastCalledWith({ hp: 8, log: ["swing"] });
+    unsubscribe();
+  });
+
   it("functional updates start from the latest document", () => {
     writeDevDocument("campaigns", "c1", { round: 2, name: "Keep" });
     updateDevDocument("campaigns", "c1", { round: 1, name: "Seed" }, (current) => ({

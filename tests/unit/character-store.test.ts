@@ -11,7 +11,7 @@ import type { CombatPersistence, CombatState } from "@/types/combat-state";
 import { makeCharacterDoc } from "./_helpers";
 import { conc } from "./__helpers__/concentration";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
-import { nonCombatSessionChanged } from "@/lib/combat-state";
+import { nonCombatSessionChanged, sessionToCombatState } from "@/lib/combat-state";
 import { serializeCharacter } from "@/lib/character-codec";
 import { castSourceActiveKey } from "@/lib/smart-tracker";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
@@ -3101,5 +3101,39 @@ describe("characterStore — companion variant + Find Familiar summon", () => {
     const char = mockCharacter();
     useCharacterStore.getState().setCharacter(char);
     expect(useCharacterStore.getState().dismissFamiliar()).toBeNull();
+  });
+});
+
+describe("characterStore — engine world across subscription echoes", () => {
+  beforeEach(() => {
+    useCharacterStore.getState().setCharacter(null);
+  });
+
+  it("keeps session.world when a v1 subscription echo rehydrates from the play owner", () => {
+    // An engine commit mirrors the world into session.world and persists the
+    // play state; the subscription echo then rebuilds the session from the v1
+    // play owner (a marked parent carries NO mutable session). The engine's
+    // source of truth must survive that round byte-identical.
+    const world = {
+      clockBinding: { timeline: { material: { kind: "character-play", uid: "u1" } } },
+      inventory: { instances: [] as unknown[] },
+    };
+    const doc: CharacterDoc = {
+      ...makeCharacterDoc({}, { world }),
+      playStateVersion: 1,
+    };
+    useCharacterStore.getState().setCharacter(doc);
+
+    // The simulated echo pair: an empty-session marked parent + the combat
+    // child the store itself would have written for this session.
+    const combat = sessionToCombatState(doc.session);
+    const parent: CharacterDoc = { ...doc, session: makeCharacterDoc().session };
+    const loaded = useCharacterStore
+      .getState()
+      .loadCharacterWithCombat(parent, combat, false);
+    expect(loaded).toBe(true);
+    expect(JSON.stringify(useCharacterStore.getState().character?.session.world)).toBe(
+      JSON.stringify(world)
+    );
   });
 });

@@ -1113,6 +1113,12 @@ export function CombatResolver({
   const renderDamageEntry = (key: string, part: CombatDamagePartSpec, instance = 0) => {
     const valueKey = damageValueKey(key, part, instance);
     const damageType = damageTypeFor(key, part);
+    // Per-instance labels whenever THIS part renders more than one entry for
+    // this target — attack parts with several hitting swings AND non-attack
+    // multi-instance parts alike (Magic Missile's darts resolve "automatic",
+    // yet two darts on one goblin must never carry two IDENTICAL accessible
+    // names — the pre-gate `damagePartCount` contract).
+    const perInstance = damagePartInstances(key, part).length > 1;
     const critical =
       part.fixedAmount === undefined &&
       part.resolution === "attack" &&
@@ -1123,7 +1129,7 @@ export function CombatResolver({
         <span>
           {part.sourceName ? <small>{part.sourceName} · </small> : null}
           <strong>{part.formula}</strong>
-          {attackInstanceCount(key) > 1 && part.resolution === "attack"
+          {perInstance
             ? ` · ${t("combat.resolveInstanceNumber", { n: instance + 1 })}`
             : null}
           {part.typeMode === "fixed" && damageType
@@ -1165,7 +1171,7 @@ export function CombatResolver({
             ariaLabel={
               part.sharedAmount
                 ? t("combat.declareDamageAria")
-                : attackInstanceCount(key) > 1 && part.resolution === "attack"
+                : perInstance
                   ? t("combat.resolveDamageInstanceForAria", {
                       name: byKey.get(key)?.label ?? action.name,
                       n: instance + 1,

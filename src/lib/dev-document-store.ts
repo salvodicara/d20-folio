@@ -96,6 +96,13 @@ export function readDevDocument<T>(
 export function writeDevDocument(collection: string, id: string, value: unknown): void {
   const key = storageKey(collection, id);
   const raw = encode(value);
+  // Firestore's default listeners fire only when document DATA changes — a
+  // byte-identical rewrite raises no snapshot. Mirror that contract (this
+  // replica exists ONLY under dev auth-bypass): without it, a rewrite cycle
+  // Firestore would absorb becomes a SYNCHRONOUS write→echo→hydrate→write
+  // render storm here, because this emit is same-tick (seen under the
+  // `d20-dev-combat-chronicle` / `d20-dev-pip` seams).
+  if (readRaw(key) === raw) return;
   const storage = browserStorage();
   if (storage) storage.setItem(key, raw);
   else memoryFallback.set(key, raw);

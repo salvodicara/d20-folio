@@ -57,6 +57,13 @@ export interface MechanicsCastModalProps {
    */
   readonly pactSlot?: Readonly<{ level: number; remaining: number }>;
   /**
+   * The LIVE remaining of the pool the chosen amount debits (Lay on Hands).
+   * The transcribed integer requirement carries only the domain cap (1000);
+   * the kernel enforces affordability at review, but the PROMPT must show the
+   * payable bound — a level-1 Paladin with 5 pool points reads "(0 to 5)".
+   */
+  readonly poolRemaining?: number;
+  /**
    * How the entity step reads: "self" offers the caster ("Yourself");
    * "table" labels the same physical answer as the creature chosen at the
    * table — an enemy-affinity mark (Hex's curse) binds a creature the solo
@@ -84,6 +91,7 @@ export function MechanicsCastModal({
   onClose,
   onArmorClass,
   pactSlot,
+  poolRemaining,
   requiresArmorClass = false,
   slotRemaining,
   sourceItem,
@@ -343,45 +351,56 @@ export function MechanicsCastModal({
           )}
           {phase.kind === "collecting" &&
             phase.requirement.kind === "integer" &&
-            phase.requirement.requests === undefined && (
-              <div>
-                <p>
-                  {t("mechanics.cast.amountPrompt", {
-                    maximum: phase.requirement.maximum,
-                    minimum: phase.requirement.minimum,
-                  })}
-                </p>
-                <label>
-                  {t("mechanics.cast.amountLabel")}
-                  <input
-                    inputMode="numeric"
-                    max={phase.requirement.maximum}
-                    min={phase.requirement.minimum}
-                    onChange={(event) => setAmountDraft(event.target.value)}
-                    type="number"
-                    value={amountDraft}
-                  />
-                </label>
-                <Button
-                  disabled={
-                    !Number.isSafeInteger(Number(amountDraft)) ||
-                    Number(amountDraft) < phase.requirement.minimum ||
-                    Number(amountDraft) > phase.requirement.maximum
-                  }
-                  onClick={() => {
-                    if (phase.requirement.kind !== "integer") return;
-                    cast.answer({
-                      inputId: phase.requirement.inputId,
-                      kind: "integer",
-                      value: Number(amountDraft),
-                    });
-                    setAmountDraft("");
-                  }}
-                >
-                  {t("combat.apply")}
-                </Button>
-              </div>
-            )}
+            phase.requirement.requests === undefined &&
+            (() => {
+              // The requirement's maximum is the transcription's DOMAIN cap
+              // (1000 — above every legal pool); the real upper bound is the
+              // live payable pool, so the prompt never invites an amount the
+              // resource review would reject.
+              const maximum = Math.min(
+                phase.requirement.maximum,
+                poolRemaining ?? phase.requirement.maximum
+              );
+              const requirement = phase.requirement;
+              return (
+                <div>
+                  <p>
+                    {t("mechanics.cast.amountPrompt", {
+                      maximum,
+                      minimum: requirement.minimum,
+                    })}
+                  </p>
+                  <label>
+                    {t("mechanics.cast.amountLabel")}
+                    <input
+                      inputMode="numeric"
+                      max={maximum}
+                      min={requirement.minimum}
+                      onChange={(event) => setAmountDraft(event.target.value)}
+                      type="number"
+                      value={amountDraft}
+                    />
+                  </label>
+                  <Button
+                    disabled={
+                      !Number.isSafeInteger(Number(amountDraft)) ||
+                      Number(amountDraft) < requirement.minimum ||
+                      Number(amountDraft) > maximum
+                    }
+                    onClick={() => {
+                      cast.answer({
+                        inputId: requirement.inputId,
+                        kind: "integer",
+                        value: Number(amountDraft),
+                      });
+                      setAmountDraft("");
+                    }}
+                  >
+                    {t("combat.apply")}
+                  </Button>
+                </div>
+              );
+            })()}
           {phase.kind === "collecting" &&
             phase.requirement.kind === "integer" &&
             phase.requirement.requests !== undefined &&

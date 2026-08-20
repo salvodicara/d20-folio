@@ -48,6 +48,13 @@ export interface CompactSessionState extends Record<string, unknown> {
   pactWeaponConfig?: NonNullable<SessionState["pactWeaponConfig"]>;
   pactWeaponRiderTypes?: NonNullable<SessionState["pactWeaponRiderTypes"]>;
   polymorphForm?: NonNullable<SessionState["polymorphForm"]>;
+  /**
+   * The character's persisted mechanics world (`session.world`) — OPAQUE to
+   * this codec. Carried verbatim, never shape-validated here: the world has
+   * its own fail-closed parser at read (`characterWorldState`), which is the
+   * architecture's one re-proving seam for engine state.
+   */
+  world?: unknown;
 }
 
 const COMBAT_STATE_KEYS = [
@@ -255,6 +262,19 @@ export function sessionToState(session: SessionState): CompactSessionState {
   if (session.polymorphForm) state.polymorphForm = session.polymorphForm;
   if (isNonEmptyString(session.bardicInspirationDie)) {
     state.bardicInspirationDie = session.bardicInspirationDie;
+  }
+  // The persisted engine world rides the play state OPAQUELY. Serialized via a
+  // JSON round-trip so the emitted member is plain JSON by construction (one
+  // stray non-JSON residue in a reducer output must never fail-close every
+  // combat write); NOT validated here — `characterWorldState` re-proves the
+  // world fail-closed at read.
+  if (session.world !== undefined) {
+    // `JSON.stringify` really returns undefined for a non-serializable root
+    // (its lib type lies — hence the honestly-typed alias); such a world is
+    // simply not carried.
+    const stringify: (value: unknown) => string | undefined = JSON.stringify;
+    const raw = stringify(session.world);
+    if (raw !== undefined) state.world = JSON.parse(raw) as unknown;
   }
 
   return state;
@@ -503,6 +523,9 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   if (isNonEmptyString(state.bardicInspirationDie)) {
     session.bardicInspirationDie = state.bardicInspirationDie;
   }
+  // The engine world is carried VERBATIM (opaque member): its own fail-closed
+  // parser re-proves it at read, so this codec never interprets it.
+  if (state.world !== undefined) session.world = state.world;
   return session;
 }
 
@@ -537,9 +560,16 @@ function isPlainJson(value: unknown, stack = new Set<object>()): boolean {
     return false;
   }
   const keys = Object.keys(descriptors);
+  // Every own property must be a plain enumerable data property, with ONE
+  // legitimate exception: an array's own `length` is non-enumerable by
+  // construction (its shape is pinned by the array checks below). A plain
+  // OBJECT gets no such pass — an accessor or non-enumerable member anywhere
+  // else still fails closed.
   if (
-    Object.values(descriptors).some(
-      (descriptor) => !descriptor.enumerable || !("value" in descriptor)
+    Object.entries(descriptors).some(
+      ([key, descriptor]) =>
+        !(Array.isArray(value) && key === "length") &&
+        (!descriptor.enumerable || !("value" in descriptor))
     )
   ) {
     stack.delete(value);
@@ -561,7 +591,7 @@ function isPlainJson(value: unknown, stack = new Set<object>()): boolean {
     }
   }
   const valid = Object.entries(descriptors).every(([key, descriptor]) =>
-    key === "length" ? true : isPlainJson(descriptor.value, stack)
+    Array.isArray(value) && key === "length" ? true : isPlainJson(descriptor.value, stack)
   );
   stack.delete(value);
   return valid;

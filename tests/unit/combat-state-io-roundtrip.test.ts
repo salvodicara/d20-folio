@@ -25,6 +25,8 @@ import {
   parsePersistedPlayStateV1,
   sessionToPlayStateV1,
 } from "@/lib/session-state-codec";
+import { sanitizeSession } from "@/lib/sanitize-session";
+import { applyCombatToSession } from "@/lib/combat-state";
 
 function parseState(value: unknown): CombatState {
   const result = parseCombatState(value);
@@ -677,5 +679,97 @@ describe("combat-state IO — full persistence contract", () => {
       spellSlotCastsThisTurn: 1,
       spellSlotCastTurnKey: turn.key,
     });
+  });
+});
+
+describe("v1 play-state — arrays and the persisted engine world", () => {
+  const LOG_ENTRY = {
+    event: { kind: "legacy", text: "Ilyra hits the ogre" },
+    ts: 1722470400000,
+    id: "log-entry-1",
+  } as const;
+
+  it("parses a v1 play state whose log carries entries (arrays are plain JSON)", () => {
+    const parsed = parsePersistedPlayStateV1({
+      version: 1,
+      state: { log: [LOG_ENTRY] },
+    });
+    expect(parsed).toMatchObject({ ok: true });
+    if (parsed.ok) expect(parsed.session.logEntries).toEqual([LOG_ENTRY]);
+  });
+
+  it("round-trips array-bearing play facts through the v1 codec", () => {
+    const session = sanitizeSession({
+      logEntries: [LOG_ENTRY],
+      pinnedActions: ["second-wind"],
+      unpinnedActions: ["dash"],
+      activeFeatures: ["rage"],
+    });
+    const v1 = sessionToPlayStateV1(session);
+    const parsed = parsePersistedPlayStateV1(v1);
+    expect(parsed).toMatchObject({ ok: true });
+    if (!parsed.ok) return;
+    expect(parsed.session.logEntries).toEqual([LOG_ENTRY]);
+    expect(parsed.session.pinnedActions).toEqual(["second-wind"]);
+    expect(parsed.session.unpinnedActions).toEqual(["dash"]);
+    expect(parsed.session.activeFeatures).toEqual(["rage"]);
+  });
+
+  it("writes and re-reads a log-bearing v1 combat state instead of throwing", () => {
+    const doc = makeCharacterDoc({}, { logEntries: [LOG_ENTRY] });
+    const written = combatStateWriteData(sessionToCombatState(doc.session));
+    const parsed = parseCombatState(written);
+    expect(parsed).toMatchObject({ ok: true, ownership: "v1" });
+  });
+
+  it("still rejects accessor/non-enumerable properties on plain objects", () => {
+    const hostile: Record<string, unknown> = { version: 1, state: {} };
+    Object.defineProperty(hostile.state as object, "notes", {
+      enumerable: true,
+      get: () => "boom",
+    });
+    expect(parsePersistedPlayStateV1(hostile)).toEqual({
+      ok: false,
+      reason: "invalid-play-state",
+    });
+
+    const nonEnumerable: Record<string, unknown> = { version: 1, state: {} };
+    Object.defineProperty(nonEnumerable.state as object, "hidden", {
+      enumerable: false,
+      value: 1,
+    });
+    expect(parsePersistedPlayStateV1(nonEnumerable)).toEqual({
+      ok: false,
+      reason: "invalid-play-state",
+    });
+  });
+
+  it("carries the persisted engine world byte-identical through write → parse → hydrate", () => {
+    const world = {
+      clockBinding: { timeline: { material: { kind: "character-play", uid: "uid-1" } } },
+      inventory: { instances: [{ instanceId: "berry-1", quantity: 3 }] },
+      vitals: { hitPoints: { current: 21 } },
+    };
+    const doc = makeCharacterDoc({}, { world });
+    const written = combatStateWriteData(sessionToCombatState(doc.session));
+    const parsed = parseCombatState(written);
+    expect(parsed).toMatchObject({ ok: true, ownership: "v1" });
+    if (!parsed.ok) return;
+
+    const fresh = makeCharacterDoc().session;
+    const hydrated = applyCombatToSession(fresh, parsed.state, 44, 1);
+    expect(hydrated.ok).toBe(true);
+    if (!hydrated.ok) return;
+    expect(JSON.stringify(hydrated.session.world)).toBe(JSON.stringify(world));
+  });
+
+  it("keeps the world opaque: a world the engine would reject still round-trips", () => {
+    // The play-state codec must never shape-validate the world — its own
+    // fail-closed parser re-proves it at read (`characterWorldState`).
+    const opaque = { schema: 99, anything: [1, { nested: true }] };
+    const session = sanitizeSession({ world: opaque });
+    const parsed = parsePersistedPlayStateV1(sessionToPlayStateV1(session));
+    expect(parsed).toMatchObject({ ok: true });
+    if (parsed.ok) expect(parsed.session.world).toEqual(opaque);
   });
 });

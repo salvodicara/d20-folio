@@ -251,7 +251,10 @@ uses it (so the envelope stays byte-identical): `activeFeatures`, `effectTimers`
 (Beast Master's chosen `variantId`, keyed by feature id), `familiar`
 (`{ monsterId, creatureType: celestial|fey|fiend, dismissed? }` — the Find Familiar summon; its
 current HP rides `companionHp["find-familiar"]`), `manifestedWeaponOverrides`, `pactWeaponConfig`,
-`pactWeaponRiderTypes`, `polymorphForm`, `bardicInspirationDie`, `sessionDefenses`, `hiddenDc`. A
+`pactWeaponRiderTypes`, `polymorphForm`, `bardicInspirationDie`, `sessionDefenses`, `hiddenDc`, and
+`world` (the character's persisted mechanics world, `CharacterMaterialState` — carried through the
+codec as an OPAQUE verbatim member, never shape-validated there; `characterWorldState` re-proves it
+fail-closed at read, the architecture's one re-proving seam for engine state). A
 malformed `familiar` (non-string `monsterId`, `creatureType` outside the closed set) is dropped at
 the parse boundary (the `polymorphForm` precedent); a stale/unknown `monsterId` is KEPT and degrades
 quietly at render (the encounter stale-`srdId` precedent).

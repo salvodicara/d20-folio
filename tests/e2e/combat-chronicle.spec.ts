@@ -106,6 +106,13 @@ async function bootEvokerSheet(page: Page, theme: Theme): Promise<void> {
   );
   await page.goto("/characters/scn-evoker-wizard?tab=play");
   await expect(page.getByText(/pyra/i).first()).toBeVisible({ timeout: 20_000 });
+  // The engine-vs-resolver dispatch reads the SHARED encounter (useSheetCombat),
+  // published by the lazily-mounted GlobalCombatMount. Wait for the seeded
+  // encounter's own-turn chrome before acting, so a fast CTA click can never
+  // race that mount and open the solo engine cast flow instead of the banner.
+  await expect(page.locator('.turn[data-phase="my-turn"]')).toBeVisible({
+    timeout: 20_000,
+  });
 }
 
 const banner = (page: Page) => page.getByTestId("combat-resolver");
@@ -149,8 +156,16 @@ test.describe("Combat Chronicle — the sheet CombatResolver banner", () => {
     test(`weapon swing → single-target damage entry (${theme})`, async ({ page }) => {
       await bootEvokerSheet(page, theme);
       await commitAction(page, /^(Attack|Used): Quarterstaff/);
-      // Single-select: one concrete creature, one rolled-damage field, one review.
+      // Single-select: one concrete creature, the recorded physical d20 (the
+      // attack gate adjudicates it against the Chief's AC 17 — 18 + 3 hits,
+      // no crit), then the rolled-damage field, one review.
       await resolverTarget(page, "Goblin Chief").click();
+      await banner(page)
+        .getByRole("spinbutton", {
+          name: "Physical d20 for attack 1 against Goblin Chief",
+          exact: true,
+        })
+        .fill("18");
       await enterBannerDamage(page, "Damage to Goblin Chief", "8");
       await shot(page, `A1-banner-weapon-${theme}`);
       // Confirm for real: the PC's declaration write + the auto-apply to the monster HP.
