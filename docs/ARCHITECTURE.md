@@ -1782,7 +1782,50 @@ means flipping the arbitration world-first inside this one module (after the rem
 WRITE paths move onto engine commits), never re-touching the surfaces. Like the standings
 projection, the seam walks the raw persisted `session.world` with fail-closed structural guards
 (no full material-state parse on hot paths); tracker ROLLS stay a session-only fact (the world
-does not model recorded rolls), and WRITE paths everywhere are untouched by this migration.
+does not model recorded rolls).
+
+**The third movement — the vitals WRITE paths ride the world.** Every store vitals mutation in
+`src/stores/characterStore.ts` now plans against the persisted world FIRST and commits world +
+legacy session fields in ONE store update, so the world is written by every mutation and the
+mirror-flip gate above can close. The seam is `commitWorldVitals` (store-internal): derive the
+persisted world (`characterWorldState` with `characterTrackerSeeds` — a pool the world has never
+seen seeds exactly once with the first paid spend), move the fact fields on a clone (the rest
+boundary's rebase-on-session-truth discipline), compile the diff as ONE table-authority journal
+action (`planCharacterVitalsTransition` in `mechanics-world-store.ts` →
+`planMechanicsWorldAction`), and commit through `commitCharacterAction`, whose `mirroredCommit`
+writes the legacy fields — hp/temp absolutely, slots/pools by exact delta, exhaustion absolutely,
+the death track on TRANSITIONS ONLY (living → both counters reset; `dying` → its counts verbatim;
+`stable` → the legacy stabilize write 3/0; `dead` → the third failure asserted, successes
+standing). Converted families: hp/death (`setHP`, `setTempHP`, `applyDamage`, `applyHealing` /
+`gainTempHp` via the setters, `restoreHpSnapshot`, `setDeathSaves`, `applyAtZeroHpInterrupt`, the
+S7 wild-shape temp-HP writes), slots (`useSpellSlot`/`restoreSpellSlot` — every rail pip and
+TurnEconomyProvider cast/upcast/metamagic write rides these), trackers
+(`useTracker`/`restoreTracker`), the slot/pool composites (`recoverTrackerFromSpellSlot`,
+`recoverTrackerByAltCost`, `recoverTrackerByMinSlot`, `applyArcaneRecovery` — each ONE atomic
+journal action whose undo is the exact journal reverse via `undoWorldAction`), exhaustion (the
+new `setExhaustion` action — the rail's ONE pip seam), the MechanicsCommand CAS path
+(`applyMechanicsPlan` moves the same owner operations on the world cells alongside the legacy CAS
+write, `planMechanicsRevert` reverts riding the same leg), and MANUAL CONDITIONS: `addCondition`
+commits the chip as a real world condition occurrence through the manual-condition seam program
+(`planSelfConditionApply` — root and condition both carry the `manual` lifetime), and
+`removeCondition`/`removeConditionSilent` end every matching live occurrence through the kernel's
+end machinery (`planSelfConditionEnd` — a manual booking ends through its root; an engine-applied
+condition ends as the occurrence alone, its owning program untouched); EngineActionFlow's cure
+mirror routes through `removeConditionSilent` instead of a bare session write. FAIL-CLOSED
+DEGRADATION everywhere (the encounter seam's discipline): no persisted world, an unparseable
+world, an inexpressible transition (an empty slot cell, a full pool, a living exhaustion-6, a
+death-track write on a standing character, an uncatalogued condition id), or a rejected
+plan/commit keeps the legacy direct write alone and never moves the world. Undo integrity:
+snapshot undos (`causalD20CommandUndo`, whole-doc restores) carry the world BY VALUE inside the
+restored session; journal-committed families reverse through `undoWorldAction`
+(`undoCharacterAction` — the mirror restores every legacy field in the same motion). Deliberately
+session-only (the world does not model them): the recorded-roll ledger and its floor-restore
+writers (`setTrackerRoll`, `spendTrackerRoll`, `topUpTracker`, `applyInitiativeTrackerTopUps`,
+`recoverPerTurnTrackers` — entry-shape semantics the rest boundary reconciles), a legacy-held
+concentration SET (the transitions-only mirror's documented direction), `session.hitDice` outside
+the rest boundary, and the condition arrays a transition consumes as overlays (the knockout's
+Unconscious chip, `restoreHpSnapshot`'s conditions revert) — session wins on their drift by the
+projection's arbitration.
 
 The executable authority for a cast is closed at build level: `characterSpellCapability` seals the
 transcribed program (see `src/lib/mechanics-transcription.ts`) into a capability snapshot anchored

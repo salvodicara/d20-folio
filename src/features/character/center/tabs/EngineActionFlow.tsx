@@ -166,19 +166,19 @@ export function EngineActionFlow({ dispatch, onClose }: EngineActionFlowProps) {
           ? curedConditions.filter((id) => current.session.conditions.includes(id))
           : [];
         if (current && removed.length > 0) {
-          store.updateSession({
-            conditions: current.session.conditions.filter((id) => !removed.includes(id)),
-          });
-          reverts.push(() => {
-            const live = useCharacterStore.getState().character;
-            if (!live) return;
-            const missing = removed.filter((id) => !live.session.conditions.includes(id));
-            if (missing.length > 0) {
-              useCharacterStore.getState().updateSession({
-                conditions: [...live.session.conditions, ...missing],
-              });
-            }
-          });
+          // Route each cure through the ONE condition-removal seam: the store
+          // action ends a world-owned occurrence through the canonical kernel
+          // machinery (its mirror strips the chip) and degrades to the legacy
+          // chip write for a chip the world never owned — never a bare session
+          // write that would leave a world-side condition standing.
+          const cureReverts = removed
+            .map((id) => store.removeConditionSilent(id))
+            .filter((revert): revert is () => void => revert != null);
+          if (cureReverts.length > 0) {
+            reverts.push(() => {
+              for (const revert of [...cureReverts].reverse()) revert();
+            });
+          }
         }
         // The economy mirror stays EXACT to the legacy entry the commit loop
         // would have written: slot occupant, rules category, and the "attack"

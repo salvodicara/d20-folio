@@ -1968,13 +1968,15 @@ function RailTracker({ tracker }: { tracker: ResolvedTracker }) {
 /** Exhaustion 6-pip stepper (amber → crimson). Only shown when > 0. */
 function ExhaustionTrack({ value }: { value: number }) {
   const { t } = useTranslation();
-  const updateSession = useCharacterStore((s) => s.updateSession);
+  const setExhaustion = useCharacterStore((s) => s.setExhaustion);
 
   // D34 — clicking a pip sets exhaustion to EXACTLY that level (raise or lower);
   // clearing/decrementing is the explicit × button below, not the old
-  // unintuitive "re-click the last filled pip to step down" gesture.
+  // unintuitive "re-click the last filled pip to step down" gesture. The store
+  // action is the ONE exhaustion mutation seam: it writes the persisted engine
+  // world first and degrades to the legacy session write fail-closed.
   function setLevel(target: number) {
-    updateSession({ exhaustion: Math.max(0, Math.min(6, target)) });
+    setExhaustion(target);
   }
 
   // #16 — ungate from 0: a fresh character has 0 exhaustion, but the early

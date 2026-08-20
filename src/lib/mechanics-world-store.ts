@@ -27,6 +27,7 @@ import {
   mechanicsInstallationFactAddress,
 } from "@/lib/mechanics-authority-ref";
 import { mechanicsCapabilitySnapshotFingerprint } from "@/lib/mechanics-capability";
+import { runMechanicsCausalAction } from "@/lib/mechanics-coordinator";
 import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
 import { conformMechanicsProgramAuthorityReceipt } from "@/lib/mechanics-program-receipt";
 import {
@@ -1366,6 +1367,243 @@ export function planEngineConcentrationEnd(
   return planned.status === "planned" ? planned.action : null;
 }
 
+// ─── Table-authority vitals transitions (the legacy write-path cutover) ─────
+
+/**
+ * Plan one TABLE-AUTHORITY state transition over the character's persisted
+ * world as a committable journal action. The caller supplies the candidate
+ * next state (a structuredClone with the fact fields moved — the same
+ * rebase-on-session-truth discipline the rest boundary uses), and the diff
+ * compiler proves it kept every journal/protected field unchanged. Null when
+ * the candidate fails its fail-closed parse or nothing changed — the caller
+ * degrades to the legacy session write (the encounter seam's discipline).
+ */
+export function planCharacterVitalsTransition(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  next: Readonly<CharacterMaterialState>,
+  actionId: string
+): Readonly<JournalActionDraft> | null {
+  const material = characterMaterialRef(doc, uid);
+  const planned = planMechanicsWorldAction(
+    characterWorldValue(material, world),
+    characterWorldValue(material, next),
+    {
+      actor: { authority: "table", kind: "material-authority", material },
+      facts: [],
+      id: actionId,
+    }
+  );
+  return planned.status === "planned" ? planned.action : null;
+}
+
+/**
+ * The id stem of the MANUAL-CONDITION seam program (the character-material
+ * twin of the encounter seam's booked-condition program): a manually-chipped
+ * condition on the sheet commits as a real world condition occurrence with a
+ * `manual` lifetime (until explicitly removed), so the world stays
+ * authoritative-capable over the manual ledger too.
+ */
+const MANUAL_CONDITION_PROGRAM_PREFIX = "manual-condition-";
+
+/**
+ * The closed system program for one manually-chipped condition on the
+ * character itself. Both the root and the condition carry the `manual`
+ * lifetime, so neither outlives the other and the explicit chip removal ends
+ * both through one end request on the root.
+ */
+function manualConditionProgramValue(conditionId: string): unknown {
+  const lifetime = { kind: "manual" } as const;
+  return {
+    id: `${MANUAL_CONDITION_PROGRAM_PREFIX}${conditionId}`,
+    lifetime: [lifetime],
+    phases: [
+      {
+        inputs: [],
+        phaseId: "resolve",
+        steps: [
+          {
+            conditionId,
+            kind: "condition",
+            lifetime,
+            operation: "apply",
+            stepId: "book-condition",
+            target: { kind: "role", role: "target" },
+            when: null,
+          },
+        ],
+        trigger: { kind: "invocation" },
+      },
+    ],
+    registers: [],
+    version: 1,
+  };
+}
+
+/**
+ * Plan one MANUAL condition chip as a real world condition occurrence: the
+ * manual-condition seam program closed on the character itself, driven
+ * through the canonical coordinator to its planned journal action. Null when
+ * the condition id is not a canonical (non-exhaustion) condition, the program
+ * fails conformance, or the coordinator rejects — the caller degrades to the
+ * legacy chip write.
+ */
+export function planSelfConditionApply(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  conditionId: string,
+  actionId: string
+): Readonly<JournalActionDraft> | null {
+  const program = conformMechanicsProgram(manualConditionProgramValue(conditionId));
+  if (!program) return null;
+  const self = characterSelfRef(doc, uid);
+  const material = characterMaterialRef(doc, uid);
+  const capability = {
+    capabilityId: program.id,
+    definition: {
+      catalogueKind: "class-feature" as const,
+      entityId: program.id,
+      kind: "catalogue" as const,
+      mechanicsRevision: canonicalFingerprint({ program }),
+    },
+    kind: "program" as const,
+  };
+  const authority = conformMechanicsProgramAuthorityReceipt({
+    anchors: { activator: self, caster: self, owner: self, source: self, target: self },
+    installation: {
+      capability,
+      generation: 1,
+      installationId: program.id,
+      owner: self,
+    },
+    schema: 1,
+    snapshot: {
+      grantGroups: {},
+      program,
+      ref: capability,
+      resources: {},
+      schema: 1,
+    },
+    source: { capability, kind: "capability", owner: self },
+    staticBindings: {},
+  });
+  if (!authority) return null;
+  const state = beginMechanicsCausalState(characterWorldValue(material, world));
+  if (!state.ok) return null;
+  const outcome = runMechanicsCausalAction({
+    answers: [],
+    authoritySnapshot: { definitions: [mechanicsAuthorityDefinition(authority)] },
+    facts: [],
+    frameAnswers: [],
+    intent: {
+      actionId,
+      factGuards: [],
+      frame: {
+        authority,
+        invocation: {
+          installation: authority.installation,
+          kind: "installed-capability",
+        },
+        rootReceipt: {
+          kind: "create",
+          materialEpoch: world.epoch,
+          next: { execution: 1, phaseId: "resolve", triggerEventId: null },
+          root: {
+            occurrence: {
+              material,
+              occurrenceId: `${program.id}-${world.nextOccurrenceOrdinal}`,
+            },
+            ordinal: world.nextOccurrenceOrdinal,
+          },
+        },
+        trigger: { kind: "invocation" },
+      },
+    },
+    responses: [],
+    state: state.value,
+    turnEconomy: [],
+  });
+  return outcome.status === "complete" && outcome.action ? outcome.action : null;
+}
+
+/**
+ * Plan the CANONICAL end of every live world condition occurrence of
+ * `conditionId` held on the character itself — the world twin of a manual
+ * chip removal. A manually-booked condition ends through its OWN root (both
+ * carry the `manual` lifetime, so nothing lingers); an engine-applied
+ * condition ends as the condition occurrence alone — its owning program (a
+ * spell, a mastery rider) keeps running, exactly like an engine cure. Null
+ * when the world holds no matching live condition or the kernel rejects — the
+ * caller degrades to the legacy chip write.
+ */
+export function planSelfConditionEnd(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  conditionId: string,
+  actionId: string
+): Readonly<JournalActionDraft> | null {
+  const material = characterMaterialRef(doc, uid);
+  const targets: OccurrenceGenerationRef[] = [];
+  const seen = new Set<string>();
+  for (const [occurrenceId, occurrence] of Object.entries(world.occurrences)) {
+    if (occurrence.kind !== "condition" || occurrence.ending !== null) continue;
+    if (occurrence.conditionId !== conditionId) continue;
+    const target = occurrence.target;
+    if (
+      target.entityId !== "self" ||
+      target.material.kind !== "character-play" ||
+      target.material.characterId !== doc.id
+    ) {
+      continue;
+    }
+    const rootRef = occurrence.origin.root;
+    const root = world.occurrences[rootRef.occurrence.occurrenceId];
+    const manualRoot =
+      root?.kind === "program" &&
+      root.ending === null &&
+      root.ordinal === rootRef.ordinal &&
+      root.authority.snapshot.ref.definition.kind === "catalogue" &&
+      root.authority.snapshot.ref.definition.entityId ===
+        `${MANUAL_CONDITION_PROGRAM_PREFIX}${conditionId}`;
+    const request: OccurrenceGenerationRef = manualRoot
+      ? structuredClone(rootRef)
+      : { occurrence: { material, occurrenceId }, ordinal: occurrence.ordinal };
+    const key = `${request.occurrence.occurrenceId}\u0000${request.ordinal}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    targets.push(request);
+  }
+  if (targets.length === 0) return null;
+  const value = characterWorldValue(material, world);
+  const begun = beginMechanicsCausalState(value);
+  if (!begun.ok) return null;
+  const requested = rebaseMechanicsCausalState(
+    begun.value.world,
+    begun.value,
+    [],
+    targets
+  );
+  if (!requested.ok) return null;
+  let state = requested.value;
+  let remaining = 16;
+  while (state.context.endWave !== null && remaining > 0) {
+    const finalized = finalizeMechanicsCausalEndWave(state);
+    if (!finalized.ok) return null;
+    state = finalized.value;
+    remaining -= 1;
+  }
+  if (state.context.endWave !== null) return null;
+  const planned = planMechanicsWorldAction(value, state.world, {
+    actor: { authority: "table", kind: "material-authority", material },
+    facts: [],
+    id: actionId,
+  });
+  return planned.status === "planned" ? planned.action : null;
+}
+
 /** The LIVE condition ids the world holds on this character itself. */
 function selfConditionIds(
   state: Readonly<CharacterMaterialState>,
@@ -1473,6 +1711,33 @@ function mirroredCommit(
           ...conditionsAdded,
         ]
       : doc.session.conditions;
+  // Death-track mirror: only a TRACK TRANSITION moves the legacy counters, so
+  // an unrelated commit can never clobber a legacy-only death-save tap. The
+  // world's countless states map to the exact legacy vocabulary: a living
+  // track resets both counters, `dying` carries its counts verbatim, `stable`
+  // is the legacy stabilize write (3 successes, failures cleared), and `dead`
+  // asserts the third failure while the successes stand.
+  const zeroBefore = world.vitals.zeroHitPoints;
+  const zeroAfter = next.vitals.zeroHitPoints;
+  const sameDeathTrack =
+    zeroBefore === zeroAfter ||
+    (zeroBefore !== null &&
+      zeroAfter !== null &&
+      zeroBefore.kind === zeroAfter.kind &&
+      (zeroBefore.kind !== "dying" ||
+        zeroAfter.kind !== "dying" ||
+        (zeroBefore.failures === zeroAfter.failures &&
+          zeroBefore.successes === zeroAfter.successes)));
+  const deathTrack: Partial<Pick<SessionState, "deathSucc" | "deathFail">> =
+    sameDeathTrack
+      ? {}
+      : zeroAfter === null
+        ? { deathFail: 0, deathSucc: 0 }
+        : zeroAfter.kind === "dying"
+          ? { deathFail: zeroAfter.failures, deathSucc: zeroAfter.successes }
+          : zeroAfter.kind === "stable"
+            ? { deathFail: 0, deathSucc: 3 }
+            : { deathFail: 3 };
   const session: SessionState = {
     ...doc.session,
     concentration,
@@ -1483,6 +1748,7 @@ function mirroredCommit(
       current: next.vitals.hitPoints.current,
       temp: next.vitals.hitPoints.temporary.current,
     },
+    ...deathTrack,
     exhaustion: next.exhaustion,
     spellSlots: usedSlots,
     world: next,

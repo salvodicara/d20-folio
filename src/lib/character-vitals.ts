@@ -28,10 +28,11 @@
  * remains.
  *
  * Per-family notes:
- *   - DEATH TRACK: `mirroredCommit` does not mirror the death-save counts
- *     today (the legacy store owns the 0-HP track), so the world's `dying`
- *     counts authenticate only when they agree; `stable`/`dead` carry no
- *     counts at all — session is the sole expresser there.
+ *   - DEATH TRACK: `mirroredCommit` mirrors the track on TRANSITIONS ONLY
+ *     (living resets both counters, `dying` carries its counts, `stable` is
+ *     the legacy stabilize write, `dead` asserts the third failure), so the
+ *     world's `dying` counts authenticate when they agree; `stable`/`dead`
+ *     carry no counts at all — session is the sole expresser there.
  *   - CONDITIONS: the projected fact is the MANUAL/BASE `session.conditions`
  *     ledger (the engine's self-condition transitions mirror into it); the
  *     concentration-owned and encounter layers stay with
