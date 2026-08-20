@@ -180,5 +180,10 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     // RA-12 — the Hide action's find-DC (the successful Stealth check total).
     // Enumerated so a hidden character's find-DC survives a reload.
     hiddenDc: session.hiddenDc,
+    // The persisted mechanics world (`CharacterMaterialState`) — enumerated
+    // passthrough so a save/echo can never drop the engine's source of truth
+    // (the #81 class of bug). OPAQUE here: `characterWorldState` re-proves it
+    // fail-closed at read, so this rebuild never interprets it.
+    world: session.world,
   };
 }

@@ -757,6 +757,50 @@ function poolCapacityFor(
     : null;
 }
 
+/**
+ * The LIVE payable remaining of the pool a feature action's chosen amount
+ * debits (Lay on Hands): the world cell's own current count when the pool is
+ * seeded, else the legacy tracker counters (total − used) from the ONE
+ * tracker resolver. Null when the action spends no pool or no source knows
+ * the pool — the prompt then keeps the transcription's domain cap. The kernel
+ * still enforces affordability at review; this is the PROMPT's honest bound.
+ */
+export function characterPoolSpendRemaining(
+  doc: Readonly<CharacterDoc>,
+  featureId: string,
+  authoredAction: Readonly<import("@/data/types").SrdActionDef>,
+  featureContext: Readonly<
+    import("@/lib/mechanics-transcription").FeatureActionContext
+  > = {},
+  world?: Readonly<CharacterMaterialState>
+): number | null {
+  const { action, context: feature } = resolveFeatureActionRuntime(
+    doc,
+    featureId,
+    authoredAction,
+    featureContext
+  );
+  if (action.poolSpendEffect === undefined) return null;
+  // The SAME payment-tracker resolution the capability closure uses.
+  const paymentTracker =
+    action.costTracker ??
+    action.costTrackerOverride ??
+    (action.maintainsActiveKey === undefined ? feature.trackerId : undefined);
+  if (paymentTracker === undefined) return null;
+  const cell = world?.resources.pools[paymentTracker];
+  if (cell?.kind === "count") {
+    return Number.isSafeInteger(cell.current) && cell.current >= 0 ? cell.current : null;
+  }
+  const row = resolveActionsTrackerRows(doc).find(
+    (tracker) => tracker.id === paymentTracker
+  );
+  return row !== undefined &&
+    Number.isSafeInteger(row.total) &&
+    Number.isSafeInteger(row.used)
+    ? Math.max(0, row.total - row.used)
+    : null;
+}
+
 /** One pool resource-definition fact: a bounded count spec mirroring the
  *  world cell's derived capacity, plus any full-recovery boundaries. */
 function poolDefinitionFact(

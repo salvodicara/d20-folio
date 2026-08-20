@@ -298,6 +298,47 @@ describe("MechanicsCastModal", () => {
     });
   });
 
+  it("bounds the plain amount prompt by the live payable pool", () => {
+    const answer = vi.fn();
+    render(
+      <MechanicsCastModal
+        cast={castState(
+          {
+            kind: "collecting",
+            requirement: {
+              activation: "required",
+              activeWhen: null,
+              inputId: "amount",
+              kind: "integer",
+              // The transcription's domain cap — never the number to show: a
+              // level-1 Paladin's Lay on Hands pool holds 5 points, so the
+              // prompt must read "(0 to 5)".
+              maximum: 1000,
+              minimum: 0,
+              phaseId: "resolve",
+            },
+          },
+          answer
+        )}
+        material={MATERIAL}
+        onClose={vi.fn()}
+        poolRemaining={5}
+        slotRemaining={{}}
+        spellName="Lay on Hands"
+      />
+    );
+    expect(screen.getByText(/\(0 to 5\)/)).toBeTruthy();
+    const input = screen.getByRole("spinbutton");
+    expect((input as HTMLInputElement).max).toBe("5");
+    const confirm = screen.getByText("Apply");
+    fireEvent.change(input, { target: { value: "6" } });
+    expect(confirm.closest("button")?.disabled).toBe(true);
+    fireEvent.change(input, { target: { value: "5" } });
+    expect(confirm.closest("button")?.disabled).toBe(false);
+    fireEvent.click(confirm);
+    expect(answer).toHaveBeenCalledWith({ inputId: "amount", kind: "integer", value: 5 });
+  });
+
   it("collects each die face before allowing the roll confirm", () => {
     const answer = vi.fn();
     render(
