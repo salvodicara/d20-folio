@@ -15,8 +15,25 @@
  * are dropped.
  */
 
-import type { ScopedSlotLevelFormula } from "@/lib/grants";
+import type { ResourceRecoveryTrigger } from "@/data/types";
+import type {
+  CastSourceOverrides,
+  ResourcePayment,
+  ScopedSlotLevelFormula,
+} from "@/lib/grants";
 import { METAMAGIC_BY_ID } from "@/data/metamagic";
+
+/**
+ * Recovery shown beside a bounded cast source. Tracker-backed sources retain
+ * their established short/long cadence; typed item resources carry the exact
+ * declared boundaries instead of being projected onto a rest they do not use.
+ */
+export type CastRecoveryCadence =
+  | { kind: "tracker"; rest: "short" | "long" }
+  | {
+      kind: "item-resource";
+      triggers: ReadonlyArray<ResourceRecoveryTrigger>;
+    };
 
 /**
  * A single row in the Cast Level picker — a discriminated union of slot-based
@@ -46,16 +63,30 @@ export type CastLevelOption =
       kind: "free-cast";
       /** Feature id that owns the free-cast tracker. */
       sourceId: string;
+      /** Runtime grant attribution, distinct from the payment address. */
+      attributionSourceId?: string;
+      /** Exact payment address emitted by the engine resolver. */
+      payment?: ResourcePayment;
       /** Localised source name (e.g. "Fey-Touched"). */
       sourceName: string;
       /** Casting level — for a slot-equivalent comparison the modal shows it. */
       level: number;
-      /** Remaining free casts (charges still available). */
+      /** Remaining free casts (resource units still available). */
       remaining: number;
-      /** Total free casts per rest period (typically 1). */
+      /** Capacity of the bounded cast source (typically 1). */
       total: number;
-      /** Rest cadence — "long" or "short". */
-      rest: "short" | "long";
+      /** Exact recovery cadence of the payment owner. */
+      recovery: CastRecoveryCadence;
+      /** Tracker units spent by this cast option. */
+      cost: number;
+      /** The source explicitly declares a level→cost schedule (charged item). */
+      explicitCost?: true;
+      /** Spell facts replaced only when this source pays for the cast. */
+      castOverrides?: CastSourceOverrides;
+      /** This tracker represents a real extra spell slot rather than a cast that
+       * avoids expending one. It therefore participates in the 2024 per-turn
+       * slot-expenditure limit. */
+      expendsSpellSlot?: true;
     }
   | {
       /**
@@ -161,6 +192,22 @@ export interface MetamagicSpellFacts {
   makesAttack: boolean;
 }
 
+/** The four mechanically distinct spell-casting time classes. */
+export type SpellCastTiming = "action" | "bonus" | "reaction" | "extended";
+
+/**
+ * Classify the catalogue/custom casting-time token once for every cast surface.
+ * A time with an explicit Action alternative ("1 action or 8 hours") is an
+ * Action cast; minute/hour casts are extended and therefore claim no turn slot.
+ */
+export function classifySpellCastingTime(castingTime: string): SpellCastTiming {
+  const normalized = castingTime.trim().toLowerCase();
+  if (/^(?:1\s+)?reaction\b/.test(normalized)) return "reaction";
+  if (/^(?:1\s+)?bonus(?:\s+action)?\b/.test(normalized)) return "bonus";
+  if (/^(?:1\s+)?action\b/.test(normalized)) return "action";
+  return "extended";
+}
+
 /**
  * Whether a spell's casting time is an Action (the only time Quickened can
  * shorten). Reads the structured casting-time string by token — the engine's
@@ -169,7 +216,7 @@ export interface MetamagicSpellFacts {
  * Action verdict. Never a localized/display match (golden rule 7).
  */
 function isActionCastingTime(castingTime: string): boolean {
-  return castingTime.trim().toLowerCase().startsWith("action");
+  return classifySpellCastingTime(castingTime) === "action";
 }
 
 /**
@@ -280,15 +327,26 @@ export interface ScopedSlotSource {
 
 /**
  * One free-cast source available for the spell being cast.
- * `usesPerRest` is the source's `chargesPerRest`; `usedNow` is the current
- * tracker `used` value. The row is dropped when usedNow >= usesPerRest.
+ * `usesPerRest` is the established capacity field; for tracker sources it is
+ * `chargesPerRest`, while typed items project their exact resource capacity.
+ * `usedNow` is capacity minus available units. The row is dropped when spent.
  */
 export interface FreeCastSource {
+  /** Legacy routing key; item sources use their per-instance runtime source id. */
   sourceId: string;
+  /** Runtime grant attribution, distinct from the payment address. */
+  attributionSourceId?: string;
+  /** Exact payment address. Optional only for direct legacy helper callers. */
+  payment?: ResourcePayment;
   sourceName: string;
   usesPerRest: number;
   usedNow: number;
-  rest: "short" | "long";
+  /** Exact for typed item resources; short/long for tracker-backed sources. */
+  recovery: CastRecoveryCadence;
+  /** Allowed cast levels and their tracker cost; omitted means base level for 1. */
+  castLevels?: ReadonlyArray<{ level: number; cost: number }>;
+  /** Spell facts replaced only when this source pays for the cast. */
+  castOverrides?: CastSourceOverrides;
 }
 
 /**
@@ -344,15 +402,26 @@ export function buildCastOptions(
   for (const src of freeCastSources) {
     const remaining = src.usesPerRest - src.usedNow;
     if (remaining <= 0) continue;
-    freeCasts.push({
-      kind: "free-cast",
-      sourceId: src.sourceId,
-      sourceName: src.sourceName,
-      level: baseLevel,
-      remaining,
-      total: src.usesPerRest,
-      rest: src.rest,
-    });
+    const levels = src.castLevels ?? [{ level: baseLevel, cost: 1 }];
+    for (const { level, cost } of levels) {
+      if (level < baseLevel || cost < 1 || remaining < cost) continue;
+      freeCasts.push({
+        kind: "free-cast",
+        sourceId: src.sourceId,
+        ...(src.attributionSourceId
+          ? { attributionSourceId: src.attributionSourceId }
+          : {}),
+        ...(src.payment ? { payment: src.payment } : {}),
+        sourceName: src.sourceName,
+        level,
+        remaining,
+        total: src.usesPerRest,
+        recovery: src.recovery,
+        cost,
+        ...(src.castLevels ? { explicitCost: true as const } : {}),
+        ...(src.castOverrides ? { castOverrides: src.castOverrides } : {}),
+      });
+    }
   }
   // Scoped extra slots (heritage-feat spellcasting): a single tracker-backed,
   // upcast-capable slot at its resolved level. Surfaced as a `free-cast` row
@@ -369,7 +438,9 @@ export function buildCastOptions(
       level: src.level,
       remaining: 1,
       total: 1,
-      rest: src.rest,
+      recovery: { kind: "tracker", rest: src.rest },
+      cost: 1,
+      expendsSpellSlot: true,
     });
   }
   const masteries: CastLevelOption[] = masterySources.map((src) => ({

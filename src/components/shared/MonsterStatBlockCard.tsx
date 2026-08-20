@@ -36,12 +36,8 @@ import {
   monsterXp,
   pbForCr,
 } from "@/lib/monster";
-import type {
-  AbilityCode,
-  DamageType,
-  MonsterEntry,
-  MonsterStatBlock,
-} from "@/data/types";
+import type { AbilityCode, MonsterEntry, MonsterStatBlock } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 import type { Locale } from "@/lib/locale";
 import { monsterIdentity } from "@/components/shared/monster-identity";
 

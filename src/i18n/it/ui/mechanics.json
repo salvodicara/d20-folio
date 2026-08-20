@@ -1,0 +1,48 @@
+{
+  "mechanics": {
+    "cast": {
+      "title": "Risolvi lancio",
+      "slotPrompt": "Scegli lo slot incantesimo da spendere",
+      "slotOption": "Slot di livello {{level}} ({{remaining}} rimasti)",
+      "slotOptionPact": "Slot di patto di livello {{level}} ({{remaining}} rimasti)",
+      "targetsPrompt": "Scegli il bersaglio",
+      "targetSelf": "Te stesso",
+      "targetAbstract": "La creatura che hai scelto al tavolo",
+      "dicePrompt": "Tira {{dice}} e inserisci ogni dado",
+      "d20Prompt": "Tira il d20 e inserisci la faccia",
+      "dieFace": "Dado {{index}}",
+      "ready": "Tutto risolto. Applicare il risultato?",
+      "rejected": "Il motore ha rifiutato questo lancio: {{reason}}",
+      "unavailable": "Questo incantesimo non è ancora eseguibile dal motore",
+      "armorClassPrompt": "Qual è la Classe Armatura del bersaglio? Chiedi al tavolo.",
+      "attackVs": "Attacco {{index}}: d20 contro CA {{value}} (si applica {{modifier}})",
+      "saveVs": "TS {{index}}: d20 contro CD {{value}} (si applica {{modifier}})",
+      "amountPrompt": "Quanti punti attingi dalla riserva? (da {{minimum}} a {{maximum}})",
+      "amountLabel": "Punti",
+      "portionPrompt": "Scegli la parte di ogni bersaglio (da {{minimum}} a {{maximum}} ciascuno)",
+      "portionLabel": "Bersaglio {{index}}",
+      "portionRemaining": "{{remaining}} punti rimasti su {{total}}",
+      "poolPayPrompt": "Questo uso spende {{amount}} dalla riserva del privilegio.",
+      "poolPayConfirm": "Spendi {{amount}}",
+      "itemPayPrompt": "Questo consuma {{amount}} dalla quantità rimanente dell'oggetto.",
+      "itemPayConfirm": "Consuma {{amount}}",
+      "choicePrompt": "Fai la tua scelta",
+      "booleanPrompt": "Vuoi usare questa opzione?",
+      "booleanCure": "Spendi punti della riserva per terminare la condizione {{condition}}?",
+      "booleanTopple": "Usi Rovesciamento? Il bersaglio effettua un TS o cade Prono.",
+      "targetNone": "Nessun bersaglio nella scheda (risolvi al tavolo)",
+      "optionDamage": "Danni",
+      "optionOneHanded": "A una mano",
+      "optionTwoHanded": "A due mani",
+      "attackTitle": "Risolvi attacco"
+    },
+    "pulse": {
+      "strip": "Effetti attivi del motore",
+      "declare": "Impulso: {{name}}"
+    },
+    "consumables": {
+      "strip": "Oggetti evocati",
+      "consume": "Consuma: {{name}} ({{count}} rimasti)"
+    }
+  }
+}

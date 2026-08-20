@@ -22,6 +22,18 @@ await ensureLocale("it");
 // behind FocusScope's, so the leaked timer is always flushed — never suppressed.
 afterEach(async () => {
   cleanup();
+  // Turn economy is now intentionally process-global so it survives a route unmount.
+  // Reset its persisted mirror between render tests: a partial Zustand fixture reset
+  // must not make the next test look like a remount of the same live character turn.
+  // Import lazily so per-file `vi.mock()` calls can still replace the toast/undo seams
+  // before characterStore's module graph is evaluated.
+  const { useCharacterStore } = await import("@/stores/characterStore");
+  if (typeof useCharacterStore.setState === "function") {
+    useCharacterStore.setState({
+      combatTurnEconomy: undefined,
+      parentPersistenceFlush: null,
+    });
+  }
   await new Promise((resolve) => setTimeout(resolve, 0));
 });
 

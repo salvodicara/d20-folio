@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { act, render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 // The shared InitVital (TB4) routes through `combat-state-io` → Firebase; mock the
 // firebase module so this unit stays CI-pure (the env keys are unset in CI). The combat
@@ -67,6 +67,8 @@ describe("ThisTurnTracker — condition projection (B1)", () => {
       reactionUsed: false,
       initiative: "",
       movementUsedFt: 0,
+      movementLocked: false,
+      dashesThisTurn: 0,
     });
     useCharacterStore.setState({ character: null, loading: false, error: null });
   });
@@ -154,6 +156,8 @@ describe("ThisTurnTracker — the status ledge's limiter badges (B3)", () => {
       reactionUsed: false,
       initiative: "",
       movementUsedFt: 0,
+      movementLocked: false,
+      dashesThisTurn: 0,
     });
     useCharacterStore.setState({ character: null, loading: false, error: null });
   });
@@ -321,6 +325,85 @@ describe("ThisTurnTracker — the status ledge's limiter badges (B3)", () => {
     useToastStore.getState().toasts.at(-1)?.onUndo?.();
     // Delta refund: 25 − 15 = 10 (the post-stand movement is preserved).
     expect(useCombatStore.getState().movementUsedFt).toBe(10);
+  });
+
+  it.each(["grappled", "restrained", "paralyzed"])(
+    "RA-19 — %s makes Speed 0, so Prone cannot be cleared by Stand",
+    (condition) => {
+      load((d) => {
+        d.session.conditions = ["prone", condition];
+      });
+      mountView();
+
+      expect(screen.queryByRole("button", { name: /Stand up/i })).toBeNull();
+      expect(useCharacterStore.getState().character?.session.conditions).toContain(
+        "prone"
+      );
+      expect(useCombatStore.getState().movementUsedFt).toBe(0);
+    }
+  );
+
+  it("RA-19 — a 0-ft walking Speed cannot pay the Stand cost", () => {
+    load((d) => {
+      d.character.speedOverride = 0;
+      d.session.conditions = ["prone"];
+    });
+    mountView();
+
+    expect(screen.queryByRole("button", { name: /Stand up/i })).toBeNull();
+    expect(useCharacterStore.getState().character?.session.conditions).toContain("prone");
+  });
+
+  it("RA-19 — insufficient remaining movement keeps Stand unavailable", () => {
+    load((d) => {
+      d.session.conditions = ["prone"];
+    });
+    mountView();
+    act(() => {
+      useCombatStore.setState({
+        movementUsedFt: 20,
+        dashesThisTurn: 0,
+        movementLocked: false,
+      });
+    });
+
+    expect(screen.queryByRole("button", { name: /Stand up/i })).toBeNull();
+    expect(useCharacterStore.getState().character?.session.conditions).toContain("prone");
+    expect(useCombatStore.getState().movementUsedFt).toBe(20);
+  });
+
+  it("RA-19 — stale Stand commit revalidates before clearing Prone", () => {
+    useToastStore.setState({ toasts: [], timers: {} });
+    useCombatStore.setState({ dashesThisTurn: 0, movementLocked: false });
+    load((d) => {
+      d.session.conditions = ["prone"];
+    });
+    mountView();
+    const stand = screen.getByRole("button", { name: /Stand up.*15 ft/i });
+
+    act(() => {
+      // Batch the fresh budget change and stale click so the old CTA's handler
+      // runs against the new store value before React removes the button.
+      useCombatStore.setState({ movementUsedFt: 20 });
+      fireEvent.click(stand);
+    });
+
+    expect(useCharacterStore.getState().character?.session.conditions).toContain("prone");
+    expect(useCombatStore.getState().movementUsedFt).toBe(20);
+    expect(useToastStore.getState().toasts).toHaveLength(0);
+  });
+
+  it("dead characters cannot mutate movement through the slider", () => {
+    load((d) => {
+      d.session.deathFail = 3;
+    });
+    mountView();
+
+    fireEvent.keyDown(screen.getByRole("slider", { name: /spend movement/i }), {
+      key: "ArrowLeft",
+    });
+
+    expect(useCombatStore.getState().movementUsedFt).toBe(0);
   });
 });
 

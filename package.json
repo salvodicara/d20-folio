@@ -13,7 +13,8 @@
   "packageManager": "pnpm@11.2.2",
   "scripts": {
     "dev": "vite",
-    "dev:emulators": "VITE_USE_EMULATORS=true vite",
+    "dev:emulator-client": "VITE_USE_EMULATORS=true VITE_FIREBASE_API_KEY=demo-api-key VITE_FIREBASE_AUTH_DOMAIN=demo-d20folio.firebaseapp.com VITE_FIREBASE_PROJECT_ID=demo-d20folio VITE_FIREBASE_STORAGE_BUCKET=demo-d20folio.appspot.com VITE_FIREBASE_MESSAGING_SENDER_ID=000000000000 VITE_FIREBASE_APP_ID=demo-app vite --host 127.0.0.1",
+    "dev:emulators": "npm --prefix functions ci --prefer-offline --no-audit && npm --prefix functions run build && firebase emulators:exec --only auth,firestore,storage,functions --project demo-d20folio 'node scripts/dev-seed-sandbox.ts && pnpm dev:emulator-client --open'",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint . 'content-pack/**/*.{ts,tsx}' --no-error-on-unmatched-pattern --cache",

@@ -50,7 +50,7 @@
 import { Fragment, type ReactNode } from "react";
 import type { Locale } from "@/lib/locale";
 import { useLocale } from "@/hooks/useLocale";
-import { ALL_DAMAGE_TYPES, type DamageType } from "@/data/types";
+import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 import { getAllConditionIds } from "@/data/conditions";
 import { localizeSrd } from "@/i18n/resolver";
 import { rulesProseVocab } from "@/i18n/rules-prose";
@@ -72,7 +72,7 @@ function build(locale: Locale): Highlighter {
   // Fire damage" is one damage token, never a bare-dice value + plain words; a
   // multi-type list ("Acid, Cold, or Fire damage") matches whole and is
   // sub-inked per type at render (renderDamage).
-  const typesAlt = ALL_DAMAGE_TYPES.map((t) => vocab.damageTypes[t]).join("|");
+  const typesAlt = DAMAGE_TYPES.map((t) => vocab.damageTypes[t]).join("|");
   const typesList = `(?:${typesAlt})(?:${vocab.damageListSep}(?:${typesAlt}))*`;
   const dmgArm = `\\b(?:${DICE}\\s+)?${vocab.damagePhrase.replace(
     "%TYPES%",
@@ -152,7 +152,7 @@ function build(locale: Locale): Highlighter {
   // Per-type probe sources — re-run globally to locate EVERY type word inside a
   // matched damage phrase (a list carries several). A fresh RegExp per use keeps
   // `lastIndex` private.
-  const typeProbeSrc = ALL_DAMAGE_TYPES.map(
+  const typeProbeSrc = DAMAGE_TYPES.map(
     (t) => [t, `\\b(?:${vocab.damageTypes[t]})\\b`] as const
   );
 

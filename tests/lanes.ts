@@ -30,6 +30,7 @@ export const JSDOM_TS_TESTS: readonly string[] = [
   "tests/unit/shortcuts.test.ts",
   "tests/unit/ui-store.test.ts",
   "tests/unit/use-character-subscription.test.ts",
+  "tests/unit/use-member-character-subscription.test.ts",
   "tests/unit/use-roster-selection.test.ts",
 ];
 

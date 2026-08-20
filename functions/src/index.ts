@@ -29,9 +29,10 @@ import { onMessagePublished } from "firebase-functions/v2/pubsub";
 import { defineSecret } from "firebase-functions/params";
 import { setGlobalOptions, logger } from "firebase-functions/v2";
 import { initializeApp } from "firebase-admin/app";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 import { getStorage } from "firebase-admin/storage";
+import { isDeepStrictEqual } from "node:util";
 import { CloudBillingClient } from "@google-cloud/billing";
 import { Octokit } from "@octokit/rest";
 import nodemailer from "nodemailer";
@@ -496,6 +497,235 @@ export const onBudgetAlert = onMessagePublished(
 // stale value is a name, never access.
 const OG_CACHE_CONTROL = "public, max-age=300, s-maxage=3600";
 
+type PublicCharacterStatus = "active" | "retired" | "dead" | "archived";
+
+interface PublicPortraitCrop {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface PublicCharacterProjection {
+  publicSchema: 1;
+  schema: 3;
+  build: Record<string, unknown>;
+  cache: Record<string, unknown>;
+  status: PublicCharacterStatus;
+  hasPortrait: boolean;
+  portraitCrop: PublicPortraitCrop | null;
+  sourceUpdatedAt: Timestamp;
+}
+
+const PUBLIC_PROJECTION_KEYS = [
+  "publicSchema",
+  "schema",
+  "build",
+  "cache",
+  "status",
+  "hasPortrait",
+  "portraitCrop",
+  "sourceUpdatedAt",
+] as const;
+const PUBLIC_CACHE_KEYS = ["name", "ac", "hpMax", "speed", "raceId", "classes"] as const;
+const PUBLIC_CLASS_KEYS = [
+  "classId",
+  "level",
+  "subclassId",
+  "weaponMasteries",
+  "metamagicChoices",
+  "invocationChoices",
+  "maneuverChoices",
+  "fightingStyles",
+] as const;
+const PUBLIC_CLASS_OPTIONAL_LIST_KEYS = [
+  "weaponMasteries",
+  "metamagicChoices",
+  "invocationChoices",
+  "maneuverChoices",
+  "fightingStyles",
+] as const;
+const PUBLIC_STATUSES = new Set<PublicCharacterStatus>([
+  "active",
+  "retired",
+  "dead",
+  "archived",
+]);
+
+function plainRecord(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function hasExactKeys(
+  value: Record<string, unknown>,
+  expected: readonly string[]
+): boolean {
+  const keys = Object.keys(value);
+  return keys.length === expected.length && keys.every((key) => expected.includes(key));
+}
+
+function nonEmptyString(value: unknown, maxLength?: number): value is string {
+  return (
+    typeof value === "string" &&
+    value.trim().length > 0 &&
+    (maxLength === undefined || value.length <= maxLength)
+  );
+}
+
+function finiteNonNegative(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function validStringList(value: unknown): boolean {
+  return Array.isArray(value) && value.every((entry) => nonEmptyString(entry));
+}
+
+function validPublicClass(value: unknown): boolean {
+  if (!plainRecord(value)) return false;
+  const keys = Object.keys(value);
+  if (
+    !keys.includes("classId") ||
+    !keys.includes("level") ||
+    keys.some(
+      (key) => !PUBLIC_CLASS_KEYS.includes(key as (typeof PUBLIC_CLASS_KEYS)[number])
+    )
+  ) {
+    return false;
+  }
+  if (
+    !nonEmptyString(value.classId) ||
+    !Number.isInteger(value.level) ||
+    !(typeof value.level === "number" && value.level > 0)
+  ) {
+    return false;
+  }
+  if (Object.hasOwn(value, "subclassId") && !nonEmptyString(value.subclassId))
+    return false;
+  return PUBLIC_CLASS_OPTIONAL_LIST_KEYS.every(
+    (key) => !Object.hasOwn(value, key) || validStringList(value[key])
+  );
+}
+
+function validPublicCache(value: unknown): value is Record<string, unknown> {
+  if (!plainRecord(value) || !hasExactKeys(value, PUBLIC_CACHE_KEYS)) return false;
+  return (
+    nonEmptyString(value.name, 200) &&
+    finiteNonNegative(value.ac) &&
+    finiteNonNegative(value.hpMax) &&
+    typeof value.speed === "string" &&
+    typeof value.raceId === "string" &&
+    Array.isArray(value.classes) &&
+    value.classes.every(validPublicClass)
+  );
+}
+
+function validPublicCrop(value: unknown): value is PublicPortraitCrop | null {
+  if (value === null) return true;
+  if (!plainRecord(value) || !hasExactKeys(value, ["x", "y", "width", "height"])) {
+    return false;
+  }
+  const { x, y, width, height } = value;
+  return (
+    typeof x === "number" &&
+    Number.isFinite(x) &&
+    x >= 0 &&
+    x < 100 &&
+    typeof y === "number" &&
+    Number.isFinite(y) &&
+    y >= 0 &&
+    y < 100 &&
+    typeof width === "number" &&
+    Number.isFinite(width) &&
+    width > 0 &&
+    x + width <= 100 &&
+    typeof height === "number" &&
+    Number.isFinite(height) &&
+    height > 0 &&
+    y + height <= 100
+  );
+}
+
+/**
+ * Validate the public projection against the current private parent. The Admin SDK
+ * bypasses Firestore Rules, so every anonymous server read crosses this exact gate:
+ * current share grant, current ownership generation, exact closed projection schema,
+ * and byte-equivalent exposed facts stamped by the same parent revision.
+ */
+export function validatePublicCharacterProjection(
+  parentValue: unknown,
+  projectionValue: unknown
+): PublicCharacterProjection | null {
+  if (!plainRecord(parentValue) || !plainRecord(projectionValue)) return null;
+  if (
+    parentValue.shared !== true ||
+    parentValue.playStateVersion !== 1 ||
+    !plainRecord(parentValue.state) ||
+    Object.keys(parentValue.state).length !== 0 ||
+    parentValue.schema !== 3 ||
+    !plainRecord(parentValue.build) ||
+    !(parentValue.updatedAt instanceof Timestamp) ||
+    !hasExactKeys(projectionValue, PUBLIC_PROJECTION_KEYS) ||
+    projectionValue.publicSchema !== 1 ||
+    projectionValue.schema !== 3 ||
+    !plainRecord(projectionValue.build) ||
+    !validPublicCache(projectionValue.cache) ||
+    typeof projectionValue.status !== "string" ||
+    !PUBLIC_STATUSES.has(projectionValue.status as PublicCharacterStatus) ||
+    typeof projectionValue.hasPortrait !== "boolean" ||
+    !validPublicCrop(projectionValue.portraitCrop) ||
+    !(projectionValue.sourceUpdatedAt instanceof Timestamp)
+  ) {
+    return null;
+  }
+
+  const hasPortrait =
+    typeof parentValue.portraitUrl === "string" && parentValue.portraitUrl.length > 0;
+  const expectedPortraitCrop = hasPortrait ? (parentValue.portraitCrop ?? null) : null;
+  if (
+    projectionValue.hasPortrait !== hasPortrait ||
+    !projectionValue.sourceUpdatedAt.isEqual(parentValue.updatedAt) ||
+    !isDeepStrictEqual(projectionValue.build, parentValue.build) ||
+    !isDeepStrictEqual(projectionValue.cache, parentValue.cache) ||
+    projectionValue.status !== parentValue.status ||
+    !isDeepStrictEqual(projectionValue.portraitCrop, expectedPortraitCrop)
+  ) {
+    return null;
+  }
+  return projectionValue as unknown as PublicCharacterProjection;
+}
+
+const PUBLIC_PARENT_FIELD_MASK = [
+  "shared",
+  "playStateVersion",
+  "state",
+  "schema",
+  "build",
+  "cache",
+  "status",
+  "portraitUrl",
+  "portraitCrop",
+  "updatedAt",
+];
+
+/** One Admin-side loader shared by the HTML card, rendered card, and portrait route. */
+async function loadPublicCharacterProjection(
+  uid: string,
+  charId: string
+): Promise<PublicCharacterProjection | null> {
+  const db = getFirestore();
+  const parentRef = db.collection("users").doc(uid).collection("characters").doc(charId);
+  const projectionRef = parentRef.collection("public").doc("sheet");
+  const [parentSnaps, projectionSnap] = await Promise.all([
+    db.getAll(parentRef, { fieldMask: PUBLIC_PARENT_FIELD_MASK }),
+    projectionRef.get(),
+  ]);
+  const parentSnap = parentSnaps[0];
+  if (!parentSnap?.exists || !projectionSnap.exists) return null;
+  return validatePublicCharacterProjection(parentSnap.data(), projectionSnap.data());
+}
+
 /** The built shell, fetched once per warm instance from Hosting's own origin. */
 let shellCache: { origin: string; html: string } | null = null;
 async function loadShell(origin: string): Promise<string> {
@@ -534,21 +764,12 @@ async function resolveCard(pathname: string, url: string): Promise<OgCard | null
   if (!target) return null;
   const db = getFirestore();
   if (target.kind === "character") {
-    const snap = await db
-      .collection("users")
-      .doc(target.uid)
-      .collection("characters")
-      .doc(target.charId)
-      .get();
-    // The Admin SDK bypasses firestore.rules, so the share grant is re-checked HERE.
-    if (!snap.exists || snap.get("shared") !== true) return null;
+    const projection = await loadPublicCharacterProjection(target.uid, target.charId);
+    if (!projection) return null;
     return characterCard(
-      (snap.get("cache") ?? {}) as Record<string, unknown>,
+      projection.cache,
       url,
-      // The tag points at the DYNAMIC image route — same id, same gate; that route
-      // serves the static character card on any miss/error (indistinguishability holds).
       characterImageUrl(target.uid, target.charId),
-      // Localise to the character OWNER's locale — the path uid IS the owner.
       await ownerLocale(target.uid)
     );
   }
@@ -609,13 +830,11 @@ export const ogShell = onRequest(async (req, res) => {
 // link (`og-image.ts`): the folio card art with the entity's own name / level / class
 // / AC · HP / portrait painted over the static placeholder.
 //
-// SAME GATE, RE-ASSERTED: a character renders ONLY when its doc carries `shared:true`
-// (the grant the sheet itself rides — so its portrait is fair game); a campaign ONLY
-// when its joins are unlocked. Anything unshared / locked / unknown, and ANY render or
-// lookup failure, REDIRECTS to the static per-type card — so a broken render degrades
-// to the designed fallback, never a 500, and an unshared link is byte-identical to the
-// static card every other route already unfurls. The portrait fetch fires ONLY for a
-// confirmed-shared doc that HAS a portrait.
+// SAME GATE, RE-ASSERTED: a character renders only from its current validated
+// `public/sheet` projection; a campaign only while joins are unlocked. Anything
+// unshared / stale / locked / unknown, and any render or lookup failure, redirects to
+// the static per-type card. Portrait bytes are fetched only when that projection says
+// they exist; the private parent's cache and Storage URL never enter a public render.
 //
 // CACHE: content now varies per link, so this is tuned SHORTER than the shell — a
 // revoked link's rendered card can linger at the CDN for ≤ `s-maxage` (~15 min), but
@@ -638,16 +857,32 @@ const OG_IMAGE_CACHE = "public, max-age=300, s-maxage=900";
 // TTL tracks `s-maxage` (900s); the cap bounds memory (~64 cards ≈ a few MB of PNG).
 const ogImageMemo = makeImageMemo(64, 900_000);
 
-/** A shared character's portrait as a data URI, or null — fetched from Storage ONLY
- *  for a confirmed-shared doc that records a portrait. A missing/failed read is not an
- *  error: the card falls back to the per-seed tinted initial. */
-async function fetchPortrait(uid: string, charId: string): Promise<string | null> {
+/** Reproduce the app's percentage crop inside a square SVG portrait source. */
+function framePortrait(dataUri: string, crop: PublicPortraitCrop | null): string {
+  if (!crop) return dataUri;
+  const size = 100;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"` +
+    ` viewBox="0 0 ${size} ${size}">` +
+    `<image href="${dataUri}" x="${(-crop.x / crop.width) * size}"` +
+    ` y="${(-crop.y / crop.height) * size}"` +
+    ` width="${(100 / crop.width) * size}" height="${(100 / crop.height) * size}"` +
+    ` preserveAspectRatio="xMidYMid slice"/></svg>`;
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+}
+
+/** A projection-gated portrait as a data URI, or null on a missing Storage object. */
+async function fetchPortrait(
+  uid: string,
+  charId: string,
+  crop: PublicPortraitCrop | null
+): Promise<string | null> {
   try {
     const [buf] = await getStorage()
       .bucket()
       .file(`users/${uid}/portraits/${charId}.jpeg`)
       .download();
-    return `data:image/jpeg;base64,${buf.toString("base64")}`;
+    return framePortrait(`data:image/jpeg;base64,${buf.toString("base64")}`, crop);
   } catch (e) {
     logger.warn("ogImage: portrait read failed; rendering the initial instead", {
       error: e instanceof Error ? e.message : String(e),
@@ -667,23 +902,12 @@ async function resolveImage(pathname: string): Promise<Buffer | null> {
   if (!target) return null;
   const db = getFirestore();
   if (target.kind === "character") {
-    const snap = await db
-      .collection("users")
-      .doc(target.uid)
-      .collection("characters")
-      .doc(target.charId)
-      .get();
-    // The Admin SDK bypasses firestore.rules, so the share grant is re-checked HERE —
-    // the SAME check `resolveCard` makes for the tag.
-    if (!snap.exists || snap.get("shared") !== true) return null;
-    // Portrait ONLY when the doc records one (avoids a Storage round-trip per husk).
-    const portrait = snap.get("portraitUrl")
-      ? await fetchPortrait(target.uid, target.charId)
+    const projection = await loadPublicCharacterProjection(target.uid, target.charId);
+    if (!projection) return null;
+    const portrait = projection.hasPortrait
+      ? await fetchPortrait(target.uid, target.charId, projection.portraitCrop)
       : null;
-    const data = characterImageData(
-      (snap.get("cache") ?? {}) as Record<string, unknown>,
-      portrait
-    );
+    const data = characterImageData(projection.cache, portrait);
     // Owner locale = the path uid. Deterministic per identity, so the memo key stays
     // locale-free (the same link always renders the same locale ⇒ the same bytes).
     return data ? tryRender(characterSvg(data, await ownerLocale(target.uid))) : null;
@@ -706,11 +930,103 @@ function fallbackCard(pathname: string): string {
   return CARD_GENERIC;
 }
 
+interface PublicPortraitTarget {
+  uid: string;
+  charId: string;
+}
+
+/** Exact parser for `/og/portrait/{uid}/{charId}.jpeg`; malformed encoding fails shut. */
+export function parsePublicPortraitPath(pathname: string): PublicPortraitTarget | null {
+  const parts = pathname.split("/").filter(Boolean);
+  if (
+    parts.length !== 4 ||
+    parts[0] !== "og" ||
+    parts[1] !== "portrait" ||
+    !parts[2] ||
+    !parts[3]?.endsWith(".jpeg")
+  ) {
+    return null;
+  }
+  const encodedCharId = parts[3].slice(0, -".jpeg".length);
+  if (!encodedCharId) return null;
+  try {
+    const uid = decodeURIComponent(parts[2]);
+    const charId = decodeURIComponent(encodedCharId);
+    if (!uid || !charId || uid.includes("/") || charId.includes("/")) return null;
+    return { uid, charId };
+  } catch {
+    return null;
+  }
+}
+
+const PORTRAIT_CACHE_CONTROL = "private, no-store, max-age=0";
+
+interface PortraitResponse extends NodeJS.WritableStream {
+  headersSent: boolean;
+  writableEnded: boolean;
+  status(code: number): PortraitResponse;
+  set(name: string, value: string): PortraitResponse;
+}
+
+function portraitNotFound(res: PortraitResponse): void {
+  res.status(404).set("Cache-Control", PORTRAIT_CACHE_CONTROL).end();
+}
+
+async function servePublicPortrait(
+  target: PublicPortraitTarget,
+  res: PortraitResponse
+): Promise<void> {
+  const projection = await loadPublicCharacterProjection(target.uid, target.charId);
+  if (!projection?.hasPortrait) {
+    portraitNotFound(res);
+    return;
+  }
+
+  const stream = getStorage()
+    .bucket()
+    .file(`users/${target.uid}/portraits/${target.charId}.jpeg`)
+    .createReadStream();
+  await new Promise<void>((resolve) => {
+    let connected = false;
+    stream.once("response", () => {
+      connected = true;
+      res
+        .status(200)
+        .set("Cache-Control", PORTRAIT_CACHE_CONTROL)
+        .set("Content-Type", "image/jpeg")
+        .set("X-Content-Type-Options", "nosniff");
+      stream.pipe(res).once("finish", resolve);
+    });
+    stream.once("error", () => {
+      if (!connected && !res.headersSent) portraitNotFound(res);
+      else if (!res.writableEnded) res.end();
+      resolve();
+    });
+  });
+}
+
 // `maxInstances: 3` OVERRIDES the package default (gen-2's up-to-100) for THIS route
 // only — the other functions keep the global. It is the hard ceiling on concurrent
 // renders: a flood queues against 3 instances rather than fanning out and running up
 // CPU-seconds. See the memo note above for why the CDN can't be relied on to dedupe.
 export const ogImage = onRequest({ maxInstances: 3 }, async (req, res) => {
+  if (req.path === "/og/portrait" || req.path.startsWith("/og/portrait/")) {
+    const target = parsePublicPortraitPath(req.path);
+    if (!target) {
+      portraitNotFound(res);
+      return;
+    }
+    try {
+      await servePublicPortrait(target, res);
+    } catch (e) {
+      logger.warn("ogImage: portrait lookup failed", {
+        error: e instanceof Error ? e.message : String(e),
+      });
+      if (!res.headersSent) portraitNotFound(res);
+    }
+    return;
+  }
+
   let entry: ImageMemoEntry | null = null;
   try {
     // Memoised per PARSED IDENTITY (query-agnostic AND path-spelling-agnostic) — a burst

@@ -38,6 +38,19 @@ describe("addEquipmentRef — stacking on add", () => {
     expect(addEquipmentRef([attuned], { ...attuned })).toHaveLength(2);
   });
 
+  it("never stacks refs with physical instance identity", () => {
+    const first: SrdEquipmentRef = {
+      srdId: "wand-of-magic-missiles",
+      instanceId: "wand-a",
+      quantity: 1,
+    };
+    const second: SrdEquipmentRef = {
+      ...first,
+      instanceId: "wand-b",
+    };
+    expect(addEquipmentRef([first], second)).toEqual([first, second]);
+  });
+
   it("does NOT stack a personalised entry (has notes) or a different item", () => {
     const noted: SrdEquipmentRef = { srdId: "torch", quantity: 1, notes: "Cael's" };
     expect(addEquipmentRef([noted], { srdId: "torch", quantity: 1 })).toHaveLength(2);

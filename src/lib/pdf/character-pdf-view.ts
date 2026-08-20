@@ -21,7 +21,7 @@
  */
 
 import type { CharacterDoc } from "@/types/character";
-import type { AbilityCode, Recovery } from "@/data/types";
+import type { AbilityCode, Recovery, ResourceRecoveryTrigger } from "@/data/types";
 import { totalLevel, primaryClassId, getClasses } from "@/lib/classes";
 import {
   ALL_ABILITIES,
@@ -33,6 +33,7 @@ import {
   passiveScore,
   passiveAdvantageStep,
   effectiveAbilityScores,
+  effectiveSkillAbility,
   resolveAbilityCheckBonus,
   computeInitiative,
   characterHasFeat,
@@ -66,6 +67,7 @@ import {
 } from "@/lib/views/tracker-view";
 import { buildSpellsViewModel, type SpellsViewModel } from "@/lib/views/spells-view";
 import { buildInventoryViewModel } from "@/lib/views/inventory-view";
+import { buildItemResourceViewModels } from "@/lib/views/item-resource-view";
 import { buildGrantedFeatures, deriveOriginFeats } from "@/lib/character-build";
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import { classFeatureIndex, getClassTable } from "@/data/classes";
@@ -413,6 +415,7 @@ export function buildCharacterPdfViewModel(
   const fullAggregate = aggregateCharacterGrants(charData, {
     activeFeatures,
     grantBundleChoices,
+    itemResources: session.itemResources,
   });
 
   const effectiveScores = effectiveAbilityScores(
@@ -473,22 +476,28 @@ export function buildCharacterPdfViewModel(
 
   // ── skills (override-first; auto unless a manual override) ──
   const skills: PdfSkillVM[] = ALL_SKILLS.map((skill): PdfSkillVM => {
+    const ability = effectiveSkillAbility(
+      skill.id,
+      skill.ability,
+      fullAggregate.skillAbilityOptions,
+      effectiveScores
+    );
     const proficiency: SkillProficiency | null = displayedSkills[skill.id] ?? null;
     const override = charData.skillBonusOverrides?.[skill.id] ?? null;
     const auto = skillBonus(
-      effectiveScores[skill.ability],
+      effectiveScores[ability],
       level,
       proficiency,
       null,
       exhaustion,
       pb,
-      checkBonusFor(skill.id, skill.ability)
+      checkBonusFor(skill.id, ability)
     );
     return {
       id: skill.id,
       name: t(`skills.${skill.id}`),
-      ability: skill.ability,
-      abilityShort: t(`abilities.${skill.ability}_short`),
+      ability,
+      abilityShort: t(`abilities.${ability}_short`),
       bonus: fmtMod(override ?? auto),
       state: proficiency ? DOT_STATE[proficiency] : "none",
     };
@@ -633,15 +642,21 @@ export function buildCharacterPdfViewModel(
       .join(" · "),
   }));
 
-  const trackers: PdfTrackerVM[] = localizeTrackers(doc, locale).map((tr) => ({
-    label: tr.label,
-    total: tr.total,
-    used: tr.used,
-    recovery: recoveryLabel(tr.recovery, t),
-    die: tr.die ?? "",
-    unit: tr.unit ? localizeTrackerUnit(tr.unit, t) : "",
-    isPool: tr.isPool ?? false,
-  }));
+  // Legacy feature/race trackers first, then the typed per-instance item pools
+  // (wand charges…) — the SAME one-source rows the rail draws, so the printed
+  // ledger can never disagree with the play surface (golden rule 6).
+  const trackers: PdfTrackerVM[] = [
+    ...localizeTrackers(doc, locale).map((tr) => ({
+      label: tr.label,
+      total: tr.total,
+      used: tr.used,
+      recovery: recoveryLabel(tr.recovery, t),
+      die: tr.die ?? "",
+      unit: tr.unit ? localizeTrackerUnit(tr.unit, t) : "",
+      isPool: tr.isPool ?? false,
+    })),
+    ...itemResourceTrackerRows(doc, locale, t),
+  ];
 
   // ── features (class / subclass / race / feats) ──
   const features = buildFeatureVMs(doc, locale, t);
@@ -879,6 +894,59 @@ export function buildCharacterPdfViewModel(
  * item-charge pool), and `per-turn` returns an HONEST BLANK (it auto-resets each
  * turn, so no rest word applies); everything else folds to Short/Long/Manual.
  */
+/**
+ * Project the typed per-instance item pools (S9 resource-backed magic items)
+ * into printable ledger rows. Same source the rail's item rows read
+ * (`buildItemResourceViewModels`); a nonmagical/destroyed copy contributes no
+ * row, and a not-yet-rolled counter prints as unspent (nothing recorded).
+ */
+function itemResourceTrackerRows(
+  doc: CharacterDoc,
+  locale: Locale,
+  t: Translate
+): PdfTrackerVM[] {
+  const out: PdfTrackerVM[] = [];
+  for (const vm of buildItemResourceViewModels(doc).resources) {
+    if (!vm.available || vm.capacity === null) continue;
+    const itemName = localizeSrd("magic-item", vm.identity.itemId, "name", locale);
+    out.push({
+      label: vm.copyNumber === null ? itemName : `${itemName} ${vm.copyNumber}`,
+      total: vm.capacity,
+      used: vm.current === null ? 0 : Math.max(0, vm.capacity - vm.current),
+      recovery: resourceCadenceLabel(vm.recoveryTriggers, t),
+      die: "",
+      unit: t(vm.unitKey),
+      isPool: true,
+    });
+  }
+  return out;
+}
+
+/**
+ * Localize a typed resource-recovery cadence for the print sheet. Dawn keeps its
+ * own word (print fidelity — a daily charge pool); turn boundaries are an honest
+ * blank (they auto-reset, no rest word applies); event/dusk cadences fold to
+ * Manual until a catalogue item actually carries one.
+ */
+function resourceCadenceLabel(
+  triggers: ReadonlyArray<ResourceRecoveryTrigger>,
+  t: Translate
+): string {
+  switch (triggers[0]?.kind) {
+    case "long-rest":
+      return t("custom.recoveryLong");
+    case "short-rest":
+      return t("custom.recoveryShort");
+    case "dawn":
+      return t("pdf.recoveryDawn");
+    case "turn-start":
+    case "turn-end":
+      return "";
+    default:
+      return t("custom.recoveryManual");
+  }
+}
+
 function recoveryLabel(recovery: Recovery, t: Translate): string {
   switch (recovery) {
     case "long-rest":

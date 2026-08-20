@@ -250,11 +250,15 @@ export function allBundleSpellIds(
  */
 export function resolveEffectiveSpells(
   character: CharacterData,
-  session: Pick<SessionState, "grantBundleChoices">
+  session: Pick<SessionState, "grantBundleChoices" | "itemResources">
 ): (SrdSpellRef | CustomSpell)[] {
   return injectExpandedSpells(
     character.spells,
-    effectiveAlwaysPreparedEntries(character, session.grantBundleChoices)
+    effectiveAlwaysPreparedEntries(
+      character,
+      session.grantBundleChoices,
+      session.itemResources
+    )
   );
 }
 
@@ -278,12 +282,16 @@ export function resolveEffectiveSpells(
  */
 export function effectiveAlwaysPreparedEntries(
   character: CharacterData,
-  bundleChoices?: Record<string, string>
+  bundleChoices?: Record<string, string>,
+  itemResources?: SessionState["itemResources"]
 ): AlwaysPreparedEntry[] {
-  const entries = getAlwaysPreparedFromGrants(resolveAllGrantSources(character), {
-    level: totalLevel(character),
-    bundleChoices: bundleChoices ? new Map(Object.entries(bundleChoices)) : undefined,
-  });
+  const entries = getAlwaysPreparedFromGrants(
+    resolveAllGrantSources(character, itemResources),
+    {
+      level: totalLevel(character),
+      bundleChoices: bundleChoices ? new Map(Object.entries(bundleChoices)) : undefined,
+    }
+  );
   // R4 — expanded spells resolve PER class entry at that entry's class level (a
   // multiclass Cleric/Druid gets each subclass's expanded list at the right level).
   const seen = new Set(entries.map((e) => (typeof e === "string" ? e : e.spellId)));

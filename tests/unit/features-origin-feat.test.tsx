@@ -17,7 +17,7 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { FeaturesTab } from "@/features/character/center/tabs/FeaturesTab";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -145,6 +145,59 @@ describe("FeaturesTab — derived Origin feat", () => {
     load(doc);
     renderPage();
     expect(screen.queryByText("Alert")).not.toBeInTheDocument();
+  });
+
+  it("repairs an incomplete Magic Initiate through the normal spell picker", () => {
+    const doc = structuredClone(MOCK_CHARACTER);
+    doc.character.background = "";
+    doc.character.bgFeat = "magic-initiate-wizard";
+    doc.character.humanOriginFeat = "";
+    doc.character.features = [{ srdId: "magic-initiate-wizard" }];
+    // SRD-only entities (fire-bolt / ray-of-frost / shield): a public-suite
+    // fixture must resolve in BOTH build modes (the licensing partition).
+    doc.character.spells = [
+      { srdId: "fire-bolt", prepared: true },
+      { srdId: "ray-of-frost", prepared: true },
+      { srdId: "shield", prepared: false },
+    ];
+
+    load(doc);
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /complete choices/i }));
+    const dialog = screen.getByRole("dialog", {
+      name: /complete magic initiate \(wizard\)/i,
+    });
+    const pick = (name: string) => {
+      const row = within(dialog)
+        .getAllByRole("button")
+        .find(
+          (button) =>
+            button.classList.contains("wiz-row") && button.textContent.includes(name)
+        );
+      if (!row) throw new Error(`missing spell choice row: ${name}`);
+      fireEvent.click(row);
+    };
+    pick("Fire Bolt");
+    pick("Ray of Frost");
+    pick("Shield");
+    fireEvent.click(within(dialog).getByRole("button", { name: /^save$/i }));
+
+    const spells = useCharacterStore.getState().character?.character.spells ?? [];
+    expect(spells).toHaveLength(3);
+    expect(
+      spells.find((spell) => !("custom" in spell) && spell.srdId === "shield")
+    ).toMatchObject({
+      prepared: true,
+      alwaysPrepared: true,
+      freeCastSource: {
+        sourceId: "magic-initiate-wizard",
+        rest: "long",
+        usesPerRest: 1,
+      },
+    });
+    expect(
+      screen.queryByRole("button", { name: /complete choices/i })
+    ).not.toBeInTheDocument();
   });
 });
 

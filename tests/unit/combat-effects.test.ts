@@ -1,0 +1,629 @@
+import { describe, expect, it } from "vitest";
+import {
+  activeRollModeAdjustments,
+  conformCombatEffectOps,
+  concentrationEffectIdsOwnedBy,
+  currentHpDeltaForEffect,
+  damageDefensesByEffects,
+  endedEffectSuccessor,
+  effectsForTarget,
+  foldCombatEffectOps,
+  healingBlockedByEffects,
+  effectsByActorSource,
+  expiredCombatEffects,
+  maxHpDeltaForEffect,
+  mergeDamageDefenseGrants,
+  resolvePersistentDamage,
+  revokeConditionEffectOps,
+  speedAdjustmentByEffects,
+  turnBoundaryAfter,
+} from "@/lib/combat-effects";
+import { isActiveCombatEffect } from "@/lib/combat-effect-io";
+import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
+import { evaluateGrants } from "@/lib/grants";
+import { resolveCombatEffectGrantSources } from "@/lib/resolve-grant-sources";
+import { NO_DEFENSES } from "@/lib/damage-intake";
+
+function effect(
+  id: string,
+  overrides: Partial<ActiveCombatEffect> = {}
+): ActiveCombatEffect {
+  return {
+    id,
+    actor: { kind: "monster", combatantId: "caster" },
+    target: { kind: "monster", combatantId: "target" },
+    source: { kind: "spell", id: "heroism", actionId: "spell-heroism" },
+    payload: { kind: "grant-group", activeKey: "spell-heroism" },
+    duration: {
+      kind: "concentration",
+      actorId: "caster",
+      sourceId: "heroism",
+    },
+    ...overrides,
+  };
+}
+
+function apply(
+  id: string,
+  value = effect(id)
+): Extract<CombatEffectOp, { kind: "apply" }> {
+  return { id: `apply-${id}`, kind: "apply", effect: value };
+}
+
+describe("persistent combat effects", () => {
+  it("folds every context-free active defense grant without evaluating gated reductions", () => {
+    const defenses = mergeDamageDefenseGrants(NO_DEFENSES, [
+      { type: "all-damage-resistance" },
+      { type: "damage-resistance", damageType: "cold" },
+      { type: "damage-immunity", damageType: "poison" },
+      { type: "damage-vulnerability", damageType: "radiant" },
+      { type: "damage-resistance-source", source: "spell" },
+      {
+        type: "flat-damage-reduction",
+        damageTypes: ["bludgeoning"],
+        amount: 2,
+        trigger: "attack",
+      },
+      {
+        type: "flat-damage-reduction",
+        damageTypes: ["slashing"],
+        amount: "PB",
+        trigger: "attack",
+      },
+      {
+        type: "flat-damage-reduction",
+        damageTypes: ["piercing"],
+        amount: 3,
+        trigger: "attack",
+        condition: "wearing-heavy-armor",
+      },
+    ]);
+
+    expect(defenses.allDamageResistance).toBe(true);
+    expect(defenses.resistances).toEqual(new Set(["cold"]));
+    expect(defenses.immunities).toEqual(new Set(["poison"]));
+    expect(defenses.vulnerabilities).toEqual(new Set(["radiant"]));
+    expect(defenses.sourceResistances).toEqual(new Set(["spell"]));
+    expect(defenses.flatReductions).toEqual([
+      {
+        id: "effect-flat-0",
+        damageTypes: ["bludgeoning"],
+        amount: 2,
+        trigger: "attack",
+      },
+    ]);
+  });
+
+  it("projects Warding Bond's catalogue defense through its live occurrence", () => {
+    const bond = effect("bond-defense", {
+      source: {
+        kind: "spell",
+        id: "warding-bond",
+        actionId: "spell-warding-bond",
+      },
+      payload: { kind: "grant-group", activeKey: "spell-warding-bond" },
+      duration: { kind: "encounter" },
+    });
+
+    expect(damageDefensesByEffects(NO_DEFENSES, [bond]).allDamageResistance).toBe(true);
+  });
+
+  it("folds idempotently and revokes an exact instance", () => {
+    const first = apply("one");
+    const operations: CombatEffectOp[] = [
+      first,
+      first,
+      {
+        id: "revoke-one",
+        kind: "revoke",
+        effectId: "one",
+        actorId: "caster",
+        targetId: "target",
+      },
+    ];
+    expect(foldCombatEffectOps(operations)).toEqual([]);
+  });
+
+  it("keeps a revoke terminal and drops mismatched or branch-era CAS entries", () => {
+    const revokeOne: CombatEffectOp = {
+      id: "revoke-one",
+      kind: "revoke",
+      effectId: "one",
+      actorId: "caster",
+      targetId: "target",
+    };
+    const wrongActor: CombatEffectOp = {
+      id: "wrong-actor",
+      kind: "revoke",
+      effectId: "one",
+      actorId: "other-caster",
+      targetId: "target",
+    };
+    const wrongTarget: CombatEffectOp = {
+      id: "wrong-target",
+      kind: "revoke",
+      effectId: "one",
+      actorId: "caster",
+      targetId: "other-target",
+    };
+    // A stored `set-active` entry from the deleted branch-era CAS machinery is
+    // structurally unknown now and must be dropped fail-safe at the boundary.
+    const staleSetActive = {
+      id: "stale-set-active",
+      kind: "set-active",
+      effectId: "one",
+      actorId: "caster",
+      targetId: "target",
+      expectedHeadOpId: "apply-one",
+      active: false,
+    } as unknown as CombatEffectOp;
+
+    expect(
+      conformCombatEffectOps([apply("one"), wrongActor, wrongTarget, staleSetActive])
+    ).toEqual([apply("one")]);
+    expect(
+      conformCombatEffectOps([apply("one"), revokeOne, { ...revokeOne, id: "again" }])
+    ).toEqual([apply("one"), revokeOne]);
+    expect(foldCombatEffectOps([apply("one"), revokeOne])).toEqual([]);
+  });
+
+  it("deduplicates apply retries by operation id and immutable occurrence id", () => {
+    const original = apply("one");
+    const conflictingRetry: CombatEffectOp = {
+      id: "apply-one-retry",
+      kind: "apply",
+      effect: effect("one", {
+        target: { kind: "monster", combatantId: "other-target" },
+      }),
+    };
+
+    expect(conformCombatEffectOps([original, original, conflictingRetry])).toEqual([
+      original,
+    ]);
+    expect(foldCombatEffectOps([original, original, conflictingRetry])).toEqual([
+      original.effect,
+    ]);
+  });
+
+  it("does not stack equal sources or resurrect the superseded instance", () => {
+    const operations: CombatEffectOp[] = [apply("older"), apply("newer")];
+    expect(foldCombatEffectOps(operations).map((entry) => entry.id)).toEqual(["newer"]);
+
+    operations.push({
+      id: "revoke-newer",
+      kind: "revoke",
+      effectId: "newer",
+      actorId: "caster",
+      targetId: "target",
+    });
+    expect(foldCombatEffectOps(operations)).toEqual([]);
+  });
+
+  it("keeps different targets and sources independent", () => {
+    const operations = [
+      apply("one"),
+      apply(
+        "two",
+        effect("two", {
+          target: { kind: "monster", combatantId: "other" },
+        })
+      ),
+      apply(
+        "three",
+        effect("three", {
+          source: { kind: "spell", id: "haste", actionId: "spell-haste" },
+          payload: { kind: "grant-group", activeKey: "spell-haste" },
+        })
+      ),
+    ];
+    expect(effectsForTarget(operations, "target")).toHaveLength(2);
+    expect(effectsForTarget(operations, "other")).toHaveLength(1);
+    expect(effectsByActorSource(operations, "caster", "heroism")).toHaveLength(2);
+  });
+
+  it("finds every concentration occurrence owned by an incapacitated actor", () => {
+    const second = effect("two", {
+      target: { kind: "monster", combatantId: "second-target" },
+      source: { kind: "spell", id: "bless", actionId: "spell-bless" },
+      payload: { kind: "grant-group", activeKey: "spell-bless" },
+      duration: { kind: "concentration", actorId: "caster", sourceId: "bless" },
+    });
+    const otherActor = effect("other-actor", {
+      actor: { kind: "monster", combatantId: "other" },
+      target: { kind: "monster", combatantId: "third-target" },
+    });
+    const encounterEffect = effect("encounter", {
+      source: { kind: "spell", id: "aid", actionId: "spell-aid" },
+      payload: { kind: "grant-group", activeKey: "spell-aid" },
+      duration: { kind: "encounter" },
+    });
+    expect(
+      concentrationEffectIdsOwnedBy(
+        [
+          apply("one"),
+          apply("two", second),
+          apply("other-actor", otherActor),
+          apply("encounter", encounterEffect),
+        ],
+        "caster"
+      )
+    ).toEqual(["one", "two"]);
+  });
+
+  it("keeps identical conditions from different casters independently source-owned", () => {
+    const first = effect("first", {
+      payload: { kind: "condition", conditionId: "paralyzed" },
+      source: { kind: "spell", id: "hold-person", actionId: "first-cast" },
+    });
+    const second = effect("second", {
+      actor: { kind: "monster", combatantId: "other-caster" },
+      payload: { kind: "condition", conditionId: "paralyzed" },
+      source: { kind: "spell", id: "hold-person", actionId: "second-cast" },
+    });
+    const operations: CombatEffectOp[] = [apply("first", first), apply("second", second)];
+
+    expect(foldCombatEffectOps(operations)).toEqual([first, second]);
+    operations.push({
+      id: "revoke-first",
+      kind: "revoke",
+      effectId: "first",
+      actorId: "caster",
+      targetId: "target",
+    });
+    expect(foldCombatEffectOps(operations)).toEqual([second]);
+  });
+
+  it("strips legacy program-owned remnants at the read boundary", () => {
+    const standing = effect("standing", {
+      payload: { kind: "grant-group", activeKey: "spell-standing" },
+    });
+
+    expect(isActiveCombatEffect(standing)).toBe(true);
+    // Stored occurrences written by the deleted effect-program runtime carried a
+    // `programOwner` identity (and `program-standing` payloads); both are dropped
+    // at the read boundary instead of projecting a rule no runtime owns.
+    expect(
+      isActiveCombatEffect({
+        ...standing,
+        programOwner: {
+          occurrenceId: "cast:one",
+          programId: "spell:test",
+          phaseId: "resolve",
+          stepId: "world-effect",
+          operationId: "command-one#0",
+          instance: 0,
+          iteration: 0,
+        },
+      })
+    ).toBe(false);
+    expect(
+      isActiveCombatEffect({
+        ...standing,
+        payload: { kind: "program-standing", effectId: "burning-zone" },
+      })
+    ).toBe(false);
+  });
+
+  it("builds exact inverse ops for every matching condition occurrence", () => {
+    const first = effect("first", {
+      payload: { kind: "condition", conditionId: "paralyzed" },
+    });
+    const second = effect("second", {
+      actor: { kind: "monster", combatantId: "other-caster" },
+      payload: { kind: "condition", conditionId: "paralyzed" },
+    });
+    const operations = [apply("first", first), apply("second", second)];
+    const next = revokeConditionEffectOps(operations, "target", "paralyzed");
+
+    expect(foldCombatEffectOps(next)).toEqual([]);
+    expect(next.slice(2)).toEqual([
+      {
+        id: "revoke:first",
+        kind: "revoke",
+        effectId: "first",
+        actorId: "caster",
+        targetId: "target",
+      },
+      {
+        id: "revoke:second",
+        kind: "revoke",
+        effectId: "second",
+        actorId: "other-caster",
+        targetId: "target",
+      },
+    ]);
+  });
+
+  it("projects Chill Touch healing prevention and Ray of Frost speed loss generically", () => {
+    const chill = effect("chill", {
+      source: { kind: "spell", id: "chill-touch", actionId: "spell-chill-touch" },
+      payload: { kind: "grant-group", activeKey: "spell-chill-touch" },
+    });
+    const frost = effect("frost", {
+      source: { kind: "spell", id: "ray-of-frost", actionId: "spell-ray-of-frost" },
+      payload: { kind: "grant-group", activeKey: "spell-ray-of-frost" },
+    });
+    expect(healingBlockedByEffects([chill, frost])).toBe(true);
+    expect(speedAdjustmentByEffects([chill, frost])).toBe(-10);
+  });
+
+  it("expires at the declared turn boundary", () => {
+    const timed = effect("timed", {
+      duration: {
+        kind: "turn-boundary",
+        combatantId: "target",
+        round: 2,
+        phase: "turn-end",
+      },
+    });
+    const operations = [apply("timed", timed)];
+    const base = {
+      order: ["caster", "target", "other"],
+      round: 2,
+    } as const;
+
+    expect(
+      foldCombatEffectOps(operations, {
+        ...base,
+        currentCombatantId: "target",
+        phase: "turn-start",
+      })
+    ).toHaveLength(1);
+    expect(
+      foldCombatEffectOps(operations, {
+        ...base,
+        currentCombatantId: "target",
+        phase: "turn-end",
+      })
+    ).toEqual([]);
+  });
+
+  it("resolves relative boundaries against exact turn order and phase", () => {
+    const position = {
+      order: ["ally", "caster", "enemy"],
+      round: 4,
+      currentCombatantId: "ally",
+      phase: "turn-start" as const,
+    };
+    expect(turnBoundaryAfter("caster", 1, "turn-start", position)).toEqual({
+      kind: "turn-boundary",
+      combatantId: "caster",
+      round: 4,
+      phase: "turn-start",
+    });
+    expect(
+      turnBoundaryAfter("caster", 1, "turn-end", {
+        ...position,
+        currentCombatantId: "caster",
+        phase: "turn-end",
+      })
+    ).toEqual({
+      kind: "turn-boundary",
+      combatantId: "caster",
+      round: 5,
+      phase: "turn-end",
+    });
+  });
+
+  it("binds source values and cast-level scaling without reading recipient stats", () => {
+    const heroism = effect("heroism-bound", {
+      bindings: { spellcastingModifier: 4 },
+    });
+    const heroismAggregate = evaluateGrants(resolveCombatEffectGrantSources([heroism]));
+    expect(heroismAggregate.startOfTurnRegen[0]?.amount).toBe("4");
+
+    const aid = effect("aid-upcast", {
+      source: {
+        kind: "spell",
+        id: "aid",
+        actionId: "spell-aid",
+        castLevel: 5,
+      },
+      payload: { kind: "grant-group", activeKey: "spell-aid" },
+      duration: { kind: "encounter" },
+    });
+    expect(currentHpDeltaForEffect(aid)).toBe(20);
+    expect(maxHpDeltaForEffect(aid)).toBe(20);
+    const aidAggregate = evaluateGrants(resolveCombatEffectGrantSources([aid]));
+    expect(aidAggregate.hpFlat).toBe(20);
+  });
+
+  it("resolves resistance, transfer, and a consumed zero-HP floor in one pass", () => {
+    const bond = effect("bond", {
+      actor: { kind: "monster", combatantId: "bond-source" },
+      source: {
+        kind: "spell",
+        id: "warding-bond",
+        actionId: "spell-warding-bond",
+      },
+      payload: { kind: "grant-group", activeKey: "spell-warding-bond" },
+      duration: { kind: "encounter" },
+    });
+    const ward = effect("ward", {
+      source: {
+        kind: "spell",
+        id: "death-ward",
+        actionId: "spell-death-ward",
+      },
+      payload: { kind: "grant-group", activeKey: "spell-death-ward" },
+      duration: { kind: "encounter" },
+    });
+    expect(
+      resolvePersistentDamage([bond, ward], {
+        intake: "raw",
+        currentHp: 8,
+        tempHp: 3,
+        incomingDamage: 30,
+      })
+    ).toEqual({
+      resolvedDamage: 15,
+      targetDamage: 10,
+      transfers: [
+        {
+          target: { kind: "monster", combatantId: "bond-source" },
+          amount: 15,
+          effectId: "bond",
+        },
+      ],
+      consumedEffectIds: ["ward"],
+      consumedStateKeys: [],
+    });
+
+    expect(
+      resolvePersistentDamage([bond], {
+        intake: "raw",
+        currentHp: 20,
+        tempHp: 0,
+        incomingDamage: 9,
+        damageType: "cold",
+        damageSource: "spell",
+        defenses: {
+          ...NO_DEFENSES,
+          resistances: new Set(["cold"]),
+        },
+      })
+    ).toEqual({
+      resolvedDamage: 4,
+      targetDamage: 4,
+      transfers: [
+        {
+          target: { kind: "monster", combatantId: "bond-source" },
+          amount: 4,
+          effectId: "bond",
+        },
+      ],
+      consumedEffectIds: [],
+      consumedStateKeys: [],
+    });
+  });
+
+  it("consumes a zero-HP floor when its recipient starts at the floor", () => {
+    const ward = effect("ward-at-one", {
+      source: {
+        kind: "spell",
+        id: "death-ward",
+        actionId: "spell-death-ward",
+      },
+      payload: { kind: "grant-group", activeKey: "spell-death-ward" },
+      duration: { kind: "encounter" },
+    });
+    expect(
+      resolvePersistentDamage([ward], {
+        intake: "raw",
+        currentHp: 1,
+        tempHp: 0,
+        incomingDamage: 20,
+      })
+    ).toEqual({
+      resolvedDamage: 20,
+      targetDamage: 0,
+      transfers: [],
+      consumedEffectIds: ["ward-at-one"],
+      consumedStateKeys: [],
+    });
+  });
+
+  it("retargets marks by actor/source/scope and never resurrects the old target", () => {
+    const mark = (id: string, targetId: string): ActiveCombatEffect =>
+      effect(id, {
+        actor: { kind: "monster", combatantId: "ranger" },
+        target: { kind: "monster", combatantId: targetId },
+        source: {
+          kind: "spell",
+          id: "hunters-mark",
+          actionId: "spell-hunters-mark",
+        },
+        payload: {
+          kind: "target-mark",
+          activeKey: "spell-hunters-mark",
+          scope: "marked",
+        },
+      });
+    const operations: CombatEffectOp[] = [
+      apply("old", mark("old", "goblin-1")),
+      apply("new", mark("new", "goblin-2")),
+      {
+        id: "revoke-new",
+        kind: "revoke",
+        effectId: "new",
+        actorId: "ranger",
+        targetId: "goblin-2",
+      },
+    ];
+    const markedTarget = (
+      ops: ReadonlyArray<CombatEffectOp>
+    ): ActiveCombatEffect["target"] | null =>
+      foldCombatEffectOps(ops).find(
+        (candidate) =>
+          candidate.actor.combatantId === "ranger" &&
+          candidate.payload.kind === "target-mark" &&
+          candidate.payload.scope === "marked"
+      )?.target ?? null;
+    expect(markedTarget(operations.slice(0, 2))).toEqual({
+      kind: "monster",
+      combatantId: "goblin-2",
+    });
+    expect(markedTarget(operations)).toBeNull();
+  });
+
+  it("creates and expires a data-declared target-turn aftereffect", () => {
+    const active = effect("haste", {
+      source: { kind: "spell", id: "haste", actionId: "spell-haste" },
+      payload: { kind: "grant-group", activeKey: "spell-haste" },
+    });
+    const position = {
+      round: 3,
+      currentCombatantId: "caster",
+      phase: "turn-end" as const,
+      order: ["caster", "target"],
+    };
+    const after = endedEffectSuccessor(active, position);
+    expect(after?.duration).toEqual({
+      kind: "turn-boundary",
+      combatantId: "target",
+      round: 3,
+      phase: "turn-end",
+    });
+    if (!after) throw new Error("missing aftereffect");
+    const aggregate = evaluateGrants(resolveCombatEffectGrantSources([after]));
+    expect(aggregate.speedCapFt).toBe(0);
+    expect(aggregate.turnEconomyBlocked).toBe(true);
+    expect(
+      expiredCombatEffects([apply("haste-after", after)], {
+        ...position,
+        currentCombatantId: "target",
+      })
+    ).toEqual([after]);
+  });
+
+  it("projects Vicious Mockery as one consumable attack Disadvantage", () => {
+    const mockery = effect("mockery", {
+      source: {
+        kind: "spell",
+        id: "vicious-mockery",
+        actionId: "spell-vicious-mockery",
+      },
+      payload: { kind: "grant-group", activeKey: "spell-vicious-mockery" },
+    });
+    expect(activeRollModeAdjustments([mockery], "attack")).toEqual([
+      {
+        effect: mockery,
+        sourceId: "vicious-mockery",
+        rollType: "attack",
+        mode: "disadvantage",
+        consume: "next",
+      },
+    ]);
+    expect(
+      evaluateGrants(resolveCombatEffectGrantSources([mockery])).disadvantages
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sourceId: "combat-effect:mockery",
+          rollType: "attack",
+          consume: "next",
+        }),
+      ])
+    );
+  });
+});

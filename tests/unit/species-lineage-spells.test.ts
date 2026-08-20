@@ -17,7 +17,8 @@ import { raceFeatureIndex } from "@/data/races";
 import { spellIndex } from "@/data/spells";
 import { getAlwaysPreparedFromGrants, injectExpandedSpells } from "@/lib/expanded-spells";
 import { evaluateGrants, type Grant, type GrantSource } from "@/lib/grants";
-import type { DamageType } from "@/data/types";
+import type { DamageType } from "@/types/damage";
+import { packGrantExtensions } from "@pack";
 
 /** Pull the grants array off a race-trait feature id. */
 function traitGrants(id: string): ReadonlyArray<Grant> {
@@ -61,10 +62,29 @@ function srcFor(id: string): GrantSource {
 
 describe("Elf — Elven Lineage bundle (Drow / High Elf / Wood Elf)", () => {
   const b = bundle("elf-elven-lineage");
+  const coreOptions = b.options.filter((option) =>
+    ["drow", "high-elf", "wood-elf"].includes(option.id)
+  );
 
-  it("offers exactly the three 2024-PHB core lineages", () => {
+  it("always carries the three 2024-PHB core lineages", () => {
     expect(b.bundleKey).toBe("elf-lineage");
-    expect(b.options.map((o) => o.id)).toEqual(["drow", "high-elf", "wood-elf"]);
+    const packOptions = (packGrantExtensions["race:elf:elven-lineage"] ?? []).flatMap(
+      (grant) =>
+        grant.type === "choice-grant-bundle" && grant.bundleKey === "elf-lineage"
+          ? grant.options.map((option) => option.id)
+          : []
+    );
+    expect(b.options.map((option) => option.id)).toEqual([
+      "drow",
+      "high-elf",
+      "wood-elf",
+      ...packOptions,
+    ]);
+    expect(coreOptions.map((option) => option.id)).toEqual([
+      "drow",
+      "high-elf",
+      "wood-elf",
+    ]);
   });
 
   it("Drow → Dancing Lights (L1) / Faerie Fire (L3) / Darkness (L5)", () => {
@@ -92,7 +112,7 @@ describe("Elf — Elven Lineage bundle (Drow / High Elf / Wood Elf)", () => {
   });
 
   it("every lineage spell defers casting ability to the species pick", () => {
-    for (const opt of b.options) {
+    for (const opt of coreOptions) {
       for (const g of opt.grants) {
         if (g.type !== "always-prepared-spell") continue;
         expect(g.spellAbilitySource).toBe("species");
@@ -102,7 +122,7 @@ describe("Elf — Elven Lineage bundle (Drow / High Elf / Wood Elf)", () => {
   });
 
   it("L3/L5 spells are minLevel-gated; the cantrip is not", () => {
-    for (const opt of b.options) {
+    for (const opt of coreOptions) {
       const spells = opt.grants.filter(
         (g): g is Extract<Grant, { type: "always-prepared-spell" }> =>
           g.type === "always-prepared-spell"

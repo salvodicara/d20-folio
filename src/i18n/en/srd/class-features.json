@@ -86,6 +86,9 @@
     "description": "You gain proficiency in one skill of your choice from the list available to Barbarians at level 1. In addition, while your Rage is active, you can channel primal power: whenever you make an ability check using Acrobatics, Intimidation, Perception, Stealth, or Survival, you can make it as a Strength check even if it normally uses a different ability.",
     "name": "Primal Knowledge"
   },
+  "barbarian-primal-knowledge.grants.1": {
+    "label": "Primal Knowledge"
+  },
   "barbarian-rage": {
     "description": "On your turn, you can enter a Rage as a Bonus Action. While raging, you gain the following benefits: you have Advantage on Strength checks and saves, when you make a Strength-based attack you deal bonus damage equal to your Rage Damage, and you have Resistance to Bludgeoning, Piercing, and Slashing damage. Your Rage lasts until the end of your next turn, and you can extend it round by round (up to a maximum of 10 minutes) by making an attack roll against an enemy, forcing an enemy to make a saving throw, or using a Bonus Action to maintain it. You regain one expended use of Rage on a Short Rest and all of them on a Long Rest.",
     "name": "Rage"
@@ -104,12 +107,22 @@
     "label": "Rage",
     "summary": "Enter a Rage (extendable up to 10 minutes)"
   },
+  "barbarian-rage.mechanics.actions.1": {
+    "description": "Spend a Bonus Action to extend your active Rage through your next turn.",
+    "name": "Extend Rage",
+    "summary": "Extend the active Rage"
+  },
   "barbarian-rage.mechanics.rider": {
     "label": "Rage Damage"
   },
   "barbarian-reckless-attack": {
     "description": "You can throw aside all concern for defense to attack with increased ferocity. When you make your first attack roll on your turn, you can decide to attack recklessly, giving you Advantage on attack rolls using Strength until the start of your next turn, but attack rolls against you have Advantage during that time.",
     "name": "Reckless Attack"
+  },
+  "barbarian-reckless-attack.mechanics.actions.0": {
+    "description": "Declare Reckless Attack for your Strength attacks until the start of your next turn.",
+    "label": "Reckless Attack",
+    "summary": "Declare Reckless Attack"
   },
   "barbarian-reckless-attack.grants.0": {
     "label": "Reckless Attack"
@@ -143,7 +156,7 @@
     "name": "Ability Score Improvement"
   },
   "bard-bardic-inspiration": {
-    "description": "You can inspire others through stirring words or music. As a bonus action, you give one creature within 60 feet a Bardic Inspiration die. The creature can add the die to one ability check, attack roll, or saving throw within 10 minutes. You can use this a number of times equal to your Charisma modifier (minimum 1), regaining all uses on a long rest.",
+    "description": "As a Bonus Action, you inspire another creature within 60 feet that can see or hear you. It holds one Bardic Inspiration die for up to 1 hour. After it fails a D20 Test, it can roll the die and add it to the d20, potentially turning the failure into a success. A creature can hold only one die at a time. You can use this feature a number of times equal to your Charisma modifier (minimum 1).",
     "name": "Bardic Inspiration"
   },
   "bard-bardic-inspiration.mechanics.actions.0": {
@@ -568,6 +581,11 @@
   "monk-deflect-attacks.mechanics.actions.0": {
     "description": "Reduce damage from an attack by 1d10 + DEX mod + Monk level."
   },
+  "monk-deflect-attacks.mechanics.actions.1": {
+    "description": "After reducing the damage to 0, spend 1 Focus Point. The target makes a Dexterity save or takes 2 Martial Arts dice + DEX modifier damage of the triggering type.",
+    "name": "Redirect Attack",
+    "summary": "At 0 damage: 1 Focus · DEX save · 2 Martial Arts dice + DEX"
+  },
   "monk-deflect-energy": {
     "description": "You can now use your Deflect Attacks feature against any damage type, not just the damage from weapon attacks.",
     "name": "Deflect Energy"
@@ -656,9 +674,14 @@
     "name": "Patient Defense"
   },
   "monk-patient-defense.mechanics.actions.0": {
-    "description": "Disengage as a Bonus Action (free). Spend 1 Focus: also Dodge.",
+    "description": "Disengage as a Bonus Action without spending Focus.",
     "label": "Patient Defense",
-    "summary": "Disengage as a Bonus Action; spend 1 Focus: also Dodge"
+    "summary": "Disengage as a Bonus Action"
+  },
+  "monk-patient-defense.mechanics.actions.1": {
+    "name": "Focused Patient Defense",
+    "description": "Spend 1 Focus Point to Disengage and Dodge as a Bonus Action. From level 10, also gain Temporary Hit Points equal to two rolls of your Martial Arts die.",
+    "summary": "Disengage + Dodge · 1 Focus"
   },
   "monk-perfect-focus": {
     "description": "When you have fewer than 4 Focus Points at the start of your turn, you regain Focus Points until you have 4.",
@@ -677,9 +700,14 @@
     "name": "Step of the Wind"
   },
   "monk-step-of-the-wind.mechanics.actions.0": {
-    "description": "Dash as a Bonus Action (free). Spend 1 Focus: also Disengage + double jump.",
+    "description": "Dash as a Bonus Action without spending Focus.",
     "label": "Step of the Wind",
-    "summary": "Dash as a Bonus Action; 1 Focus: also Disengage + jump"
+    "summary": "Dash as a Bonus Action"
+  },
+  "monk-step-of-the-wind.mechanics.actions.1": {
+    "name": "Focused Step of the Wind",
+    "description": "Spend 1 Focus Point to Dash and Disengage as a Bonus Action; your jump distance is doubled for the turn.",
+    "summary": "Dash + Disengage + double jump · 1 Focus"
   },
   "monk-stunning-strike": {
     "description": "Once per turn when you hit a creature with a Monk weapon or an Unarmed Strike, you can expend 1 Focus Point to attempt a stunning strike. The target must make a Constitution saving throw. On a failed save, it has the Stunned condition until the start of your next turn. On a successful save, its Speed is halved until the start of your next turn, and the next attack roll made against it before then has Advantage.",
@@ -716,6 +744,11 @@
     "description": "When you roll Initiative, you can regain all expended Focus Points. When you do so, roll your Martial Arts die and regain a number of Hit Points equal to your Monk level + the number rolled. Once you use this feature, you can't do so again until you finish a Long Rest.",
     "name": "Uncanny Metabolism"
   },
+  "monk-uncanny-metabolism.mechanics.actions.0": {
+    "description": "After rolling Initiative, restore all Focus Points and regain Martial Arts die + Monk level Hit Points.",
+    "label": "Uncanny Metabolism",
+    "summary": "Full Focus + Martial Arts die + Monk level HP"
+  },
   "paladin-abjure-foes": {
     "description": "As a Magic action, you can expend one use of Channel Divinity to present your holy symbol. Each enemy within 60 feet must make a Wisdom save or be Frightened for 1 minute (save ends).",
     "name": "Abjure Foes"
@@ -733,7 +766,7 @@
     "name": "Aura of Courage"
   },
   "paladin-aura-of-protection": {
-    "description": "Whenever you or a friendly creature within 10 feet of you must make a saving throw, the creature gains a bonus equal to your Charisma modifier (minimum +1). At 18th level, the range increases to 30 feet.",
+    "description": "You emit a 10-foot aura that is inactive while you have the Incapacitated condition. You and allies in it gain a saving-throw bonus equal to your Charisma modifier (minimum +1). At level 18, its range becomes 30 feet.",
     "name": "Aura of Protection"
   },
   "paladin-channel-divinity": {
@@ -954,8 +987,16 @@
     "name": "Cunning Action"
   },
   "rogue-cunning-action.mechanics.actions.0": {
-    "description": "Dash, Disengage, or Hide as a bonus action.",
-    "label": "Cunning Action"
+    "description": "Double your movement for this turn.",
+    "name": "Cunning Action: Dash"
+  },
+  "rogue-cunning-action.mechanics.actions.1": {
+    "description": "Move without provoking Opportunity Attacks for this turn.",
+    "name": "Cunning Action: Disengage"
+  },
+  "rogue-cunning-action.mechanics.actions.2": {
+    "description": "Make a DC 15 Dexterity (Stealth) check to become Invisible.",
+    "name": "Cunning Action: Hide"
   },
   "rogue-cunning-strike": {
     "description": "When you deal Sneak Attack damage, you can forgo some dice to apply a special effect: Poison (forgo 1d6, CON save or Poisoned), Trip (forgo 1d6, DEX save or knocked Prone), Withdraw (forgo 1d6, Disengage after hit).",

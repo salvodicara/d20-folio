@@ -375,6 +375,14 @@ describe("L6 — deriveSensesAndSpeeds", () => {
     const view = deriveSensesAndSpeeds(emptyAggregate(), 30);
     expect(view.senses).toEqual([]);
     expect(view.speeds).toEqual([]);
+    expect(view.airAndWaterBreathing).toBe(false);
+  });
+
+  it("carries amphibious breathing as a surfaced capability", () => {
+    expect(
+      deriveSensesAndSpeeds(aggregateWith({ airAndWaterBreathing: true }), 30)
+        .airAndWaterBreathing
+    ).toBe(true);
   });
 });
 
@@ -537,6 +545,7 @@ describe("G9 — deriveFlatDamageReductions (Heavy Armor Master, self-side line)
       {
         damageTypes: ["bludgeoning", "piercing", "slashing"],
         amount: "PB",
+        trigger: "attack",
         condition: "wearing-heavy-armor",
         sourceId: "heavy-armor-master",
       },
@@ -549,6 +558,7 @@ describe("G9 — deriveFlatDamageReductions (Heavy Armor Master, self-side line)
     expect(line).toMatchObject({
       damageTypes: ["bludgeoning", "piercing", "slashing"],
       amount: 3, // "PB" resolved to the passed Proficiency Bonus
+      trigger: "attack",
       requiresHeavyArmor: true,
       sourceId: "heavy-armor-master",
     });

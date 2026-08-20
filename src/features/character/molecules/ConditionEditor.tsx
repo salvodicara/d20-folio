@@ -10,7 +10,8 @@
  *
  *   • COCKPIT   — `ConditionStrip` toggles the active character's `addCondition` /
  *     `removeCondition` store actions.
- *   • ENCOUNTER — `PcCombatEditor` toggles `setCombatCondition` against `(uid, charId)`.
+ *   • ENCOUNTER — `PcCombatEditor` writes a typed condition effect via
+ *     `writeCampaignCombatEffect` against `(uid, charId)`.
  *   • MONSTER   — `MonsterCard` toggles the encounter reducer's `toggleCondition`.
  *
  * IDs only (golden rule 7): condition ids resolve to localized chips/options

@@ -1,0 +1,5 @@
+---
+"d20-folio": minor
+---
+
+Close the dispatch-context and modal-input gaps so everything the transcriber expresses runs in the app: feature-action capabilities derive the class-scaled die and top-up recovery from the sheet's own seams (monk Uncanny Metabolism heals and refills Focus, Patient Defense's Heightened Focus rolls temp HP, Redirect Attack transcribes with its kernel turn claim), tracker pools seed with their derived capacity so full recoveries are lawful, Goodberry's cast conjures its berry batch through the snapshot blueprint channel and each berry consumes through an item-sourced program with a Spells-tab strip, the cast modal answers pool and source-item payments and splits per-target integer amounts under the live total cap (Mass Heal), dynamic PB/ability-derived max target counts thread through the capability, the Play board's spell rows (Shield's reaction card included) dispatch through the same shared engine gate as the Spells tab, and a confirmed concentration swap ends the held spell through the canonical kernel end then casts clean, with the replacement toast and story beats.

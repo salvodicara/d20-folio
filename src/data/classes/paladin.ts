@@ -172,12 +172,15 @@ export const PALADIN_FEATURES: SrdClassFeatureData[] = [
       actions: [
         {
           type: "bonus",
+          poolSpendEffect: "healing",
+          targeting: { affinity: "ally", maxTargets: 1 },
           // G19 — as part of Lay On Hands you can expend HP from the pool to
           // NEUTRALIZE conditions (those points don't also restore HP — RAW).
           // Base (L1): 5 HP ends the Poisoned condition. L14 Restoring Touch
           // also ends Blinded/Charmed/Deafened/Frightened/Paralyzed/Stunned
           // (5 HP each) — gated on the Paladin level so a low-level Paladin sees
-          // the Poisoned cure alone. The pool is never auto-debited (override-first).
+          // the Poisoned cure alone. The resolver debits healing + selected cures
+          // together only after the player confirms the target and exact outcome.
           cureConditions: [
             { condition: "poisoned", costHp: 5 },
             { condition: "blinded", costHp: 5, fromLevel: 14 },
@@ -266,9 +269,17 @@ export const PALADIN_FEATURES: SrdClassFeatureData[] = [
     id: "paladin-aura-of-protection",
     class: "paladin",
     level: 6,
-    // The aura is always active, so the paladin always adds max(CHA mod, 1) to
-    // every save (the allies-in-aura half is a Phase-2 party feature).
-    grants: [{ type: "save-bonus", ability: "CHA", min: 1 }],
+    // The allies-in-aura half is a party-position fact. The self bonus is
+    // deterministic, except that the aura is inactive while Incapacitated;
+    // Unconscious is listed too because nested conditions remain separate ids.
+    grants: [
+      {
+        type: "save-bonus",
+        ability: "CHA",
+        min: 1,
+        suppressedByConditions: ["incapacitated", "unconscious"],
+      },
+    ],
     source: "SRD",
   },
   {

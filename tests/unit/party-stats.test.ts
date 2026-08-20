@@ -68,14 +68,18 @@ describe("hydrateMemberDoc — combat/state subdoc is the sole source", () => {
       round: 1,
       recentActions: [],
     };
-    const stats = derivePartyMemberStats(hydrateMemberDoc(MOCK_CHARACTER, wounded));
+    const hydrated = hydrateMemberDoc(MOCK_CHARACTER, wounded);
+    if (!hydrated) throw new Error("expected hydrated member");
+    const stats = derivePartyMemberStats(hydrated);
     expect(stats.currentHp).toBe(5);
     expect(stats.maxHp).toBeGreaterThan(5);
     expect(stats.conditions).toEqual(["prone"]);
   });
 
   it("defaults to full HP when the subdoc is absent (a fresh/undamaged member)", () => {
-    const stats = derivePartyMemberStats(hydrateMemberDoc(MOCK_CHARACTER, null));
+    const hydrated = hydrateMemberDoc(MOCK_CHARACTER, null);
+    if (!hydrated) throw new Error("expected legacy absent-state hydration");
+    const stats = derivePartyMemberStats(hydrated);
     expect(stats.currentHp).toBe(stats.maxHp);
   });
 });
@@ -94,6 +98,7 @@ describe("derivePcLive — initiative TOTAL = roll + bonus (the encounterInit ta
 
   it("derives the total (raw roll + engine bonus) from the passed encounterInit roll", () => {
     const live = derivePcLive(MOCK_CHARACTER, combat({}), 15);
+    if (!live) throw new Error("expected live PC facts");
     expect(live.initiative).toBe(15 + bonus); // never the stored value alone
     // The pip surfaces the bonus + the RAW roll separately.
     expect(live.initiativeBonus).toBe(bonus);
@@ -105,13 +110,20 @@ describe("derivePcLive — initiative TOTAL = roll + bonus (the encounterInit ta
     // the table says un-rolled, so the PC reads un-rolled (the old cross-fight-stale
     // -roll disease is structurally impossible).
     const live = derivePcLive(MOCK_CHARACTER, combat({ initiativeRoll: 15 }), null);
+    if (!live) throw new Error("expected live PC facts");
     expect(live.initiativeRoll).toBeNull();
     expect(live.initiative).toBeNull();
     expect(live.initiativeBonus).toBe(bonus); // the bonus is always live
   });
 
   it("is null when there is no roll at all", () => {
-    expect(derivePcLive(MOCK_CHARACTER, combat({}), null).initiative).toBeNull();
-    expect(derivePcLive(MOCK_CHARACTER, null, null).initiative).toBeNull();
+    expect(derivePcLive(MOCK_CHARACTER, combat({}), null)?.initiative).toBeNull();
+    expect(derivePcLive(MOCK_CHARACTER, null, null)?.initiative).toBeNull();
+  });
+
+  it("does not fabricate v1 facts while play state is loading or absent", () => {
+    const marked = { ...MOCK_CHARACTER, playStateVersion: 1 as const };
+    expect(derivePcLive(marked, undefined, null)).toBeNull();
+    expect(derivePcLive(marked, null, null)).toBeNull();
   });
 });

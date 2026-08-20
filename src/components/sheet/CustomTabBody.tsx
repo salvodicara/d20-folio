@@ -301,7 +301,11 @@ export function CustomTabBody({
         if (tracker) {
           grid.push({ label: t("custom.totalUses"), value: tracker.total });
           // The ONE place a Recovery token becomes a word (golden rule 6).
-          const recovery = localizeTrackerRecovery(tracker.recovery, t);
+          const recovery = localizeTrackerRecovery(
+            tracker.recovery,
+            t,
+            tracker.refreshOnActivationOf
+          );
           if (recovery) grid.push({ label: t("custom.recovery"), value: recovery });
         }
         // A feature's content IS its blocks: the text ones read as the description.

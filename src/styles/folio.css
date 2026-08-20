@@ -4962,19 +4962,11 @@ button.sc-pip:active {
 button.sc-pip:disabled {
   cursor: default;
 }
-.sc-pip.pending {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--semantic-warning) 70%, white),
-    var(--semantic-warning)
-  );
-  border-color: var(--semantic-warning);
-}
 /* LIGHT ember — each lit slot gem casts its own COLORED ember on the card below it
    (heat, in the gem's own level hue mixed toward burnt umber), so the jewel reads
    as a hot stone on ivory instead of a flat tinted diamond (grammar "Ember
    Penumbra"). The level hue stays the gem's voice; only the pooled heat is added. */
-[data-theme="light"] .sc-pip:not(.used):not(.pending) {
+[data-theme="light"] .sc-pip:not(.used) {
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.6),
     0 2px 5px
@@ -5163,14 +5155,6 @@ button.trk-pip:active {
 }
 /* The light lit-pip ember lives with the other light gold-glow parity recipes in
    the OWN-15 block below (one source of truth for the struck tracker jewel). */
-.trk-pip.pending {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--semantic-warning) 70%, white),
-    var(--semantic-warning)
-  );
-  border-color: var(--semantic-warning);
-}
 .trk-pool {
   margin-left: auto;
   display: inline-flex;
@@ -5184,6 +5168,73 @@ button.trk-pip:active {
 }
 .trk-pool b {
   color: var(--accent-text);
+}
+
+/* Table-entered tracker rolls (Portent and homebrew twins). Each available use
+   owns one compact numeric socket plus an explicit consume control: edit and
+   spend never share a click target, so corrections stay obvious and reversible. */
+.trk-rolls {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.trk-roll {
+  display: inline-flex;
+  align-items: stretch;
+  min-height: 30px;
+  border: 1px solid var(--border-medium);
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--bg-recessed);
+  box-shadow: var(--elev-recessed);
+}
+.trk-roll input {
+  width: 42px;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: 700 13px/1 var(--font-numeric);
+  text-align: center;
+  appearance: textfield;
+}
+.trk-roll input::-webkit-inner-spin-button,
+.trk-roll input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+.trk-roll input:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: -2px;
+}
+.trk-roll button {
+  position: relative;
+  display: grid;
+  width: 30px;
+  border: 0;
+  border-left: 1px solid var(--border-medium);
+  place-items: center;
+  background: var(--bg-surface-2);
+  color: var(--accent-text);
+  cursor: pointer;
+}
+.trk-roll button::before {
+  content: "";
+  position: absolute;
+  inset: calc((var(--touch-min) - 30px) / -2);
+}
+.trk-roll button:disabled {
+  color: var(--text-muted);
+  cursor: default;
+  opacity: 0.45;
+}
+.trk-roll button:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: -2px;
 }
 
 /* ─────────────────────────── CONDITIONS (rail) ─────────────────────────── */
@@ -21304,7 +21355,8 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
 [data-sheet-readonly] .uc-detail-foot .btn, /* card-foot action buttons (Cast · Use · Pin) */
 [data-sheet-readonly] .dying-banner .btn, /* the dying strip's heal / interrupt CTAs */
 [data-sheet-readonly] .dying-banner .input, /* …and its quick-heal amount field */
-[data-sheet-readonly] .ds-roll /* …and the death-save d20 roll entry (RA-11) */ {
+[data-sheet-readonly] .ds-roll, /* …and the death-save d20 roll entry (RA-11) */
+[data-sheet-readonly] .concentration-save-roll /* durable Concentration d20 entry */ {
   display: none;
 }
 /* An UNHELD inspiration die is all affordance (the d6–d12 receive picker),

@@ -89,7 +89,7 @@ export function LegalPage() {
         }
       />
 
-      <article className="tome-leaf-surface colophon">
+      <article className="tome-leaf-surface cmp-tome colophon">
         {/* ── The engraved plaques — the two required verbatim CC-BY attributions
                (SRD 5.2.1 + SRD 5.1), the spread's ceremonial centrepiece ── */}
         <section id="attribution" className="colophon-hero">

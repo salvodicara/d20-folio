@@ -125,10 +125,9 @@ describe("buildGrantedFeatures (the C2/H2 fix — species + feats reach the char
     for (const id of speciesIds) expect(ids.has(id)).toBe(true);
   });
 
-  it("collapses the Fighting Style placeholder when its concrete style is granted (#38)", () => {
-    // A Paladin's Fighting Style resolves to the concrete `paladin-fighting-style-defense`
-    // class feature (auto-Defense); the generic `paladin-fighting-style` placeholder
-    // must NOT ALSO appear (it read as a duplicate/ghost card — devotion-paladin scenario).
+  it("does not auto-grant a concrete Fighting Style choice", () => {
+    // The class table grants the choice placeholder. A concrete style is added only
+    // after the player picks it; an orphan option row must never become a default.
     const ids = idSet(
       buildGrantedFeatures({
         classId: "paladin",
@@ -137,8 +136,8 @@ describe("buildGrantedFeatures (the C2/H2 fix — species + feats reach the char
         raceId: "human",
       })
     );
-    expect(ids.has("paladin-fighting-style-defense")).toBe(true); // the chosen style stays
-    expect(ids.has("paladin-fighting-style")).toBe(false); // the placeholder collapses
+    expect(ids.has("paladin-fighting-style-defense")).toBe(false);
+    expect(ids.has("paladin-fighting-style")).toBe(true);
   });
 
   it("keeps a Fighting Style placeholder with no concrete sibling (Fighter picks a feat)", () => {

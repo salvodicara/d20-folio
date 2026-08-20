@@ -8,12 +8,21 @@
 
 import type {
   AbilityCode,
+  ActionConditionRemoval,
+  ActionEconomyCategory,
   ActionType,
-  DamageType,
+  ActionCureCondition,
+  ActionDamageReduction,
+  ActionHeal,
+  ActionTargeting,
+  ActionTempHpRoll,
   Recovery,
+  ResourceRecoveryTrigger,
   SpellSchool,
+  SrdActionDef,
   TrackerUnit,
 } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 import type { CombatEvent } from "@/types/combat-log";
 import type {
   StoredConcentration,
@@ -23,6 +32,7 @@ import type {
 } from "@/types/ids";
 import type { NonEmptyString } from "@/lib/non-empty-string";
 import type { FamiliarCreatureType } from "@/lib/familiar-ids";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 // ============================================================
 // SRD Reference Types (stored on character, resolved at render)
@@ -151,6 +161,8 @@ export interface CustomFeature {
 export interface SrdEquipmentRef {
   /** SRD equipment ID: "longsword", "potion-of-healing" */
   srdId: string;
+  /** Stable identity for one physical magic-item copy or independently mutable stack. */
+  instanceId?: string;
   /** Player's personal notes */
   notes?: string;
   /** Whether this armor/shield is currently worn/equipped */
@@ -300,6 +312,8 @@ export interface TrackerData {
   recovery: Recovery;
   /** Die type if applicable: "d6", "d8" */
   die?: string;
+  /** Numeric results rolled at the table and held until this tracker spends them. */
+  recordedRolls?: { min: number; max: number };
   /** Whether this is a pool resource */
   isPool?: boolean;
   /** Stable unit token for pool resources (localized at the render boundary). */
@@ -312,6 +326,8 @@ export interface TrackerData {
    * recovery (Psi Warrior / Soulknife / Wild Shape).
    */
   shortRestRecovery?: number | string;
+  /** Stable active-state key whose fresh activation fully refreshes this pool. */
+  refreshOnActivationOf?: string;
   /**
    * Alternate activation/recovery cost — an exhausted use can be restored by
    * spending `amount` units from the `fromTracker` pool instead of resting
@@ -324,6 +340,8 @@ export interface TrackerData {
 
 /** Feature action data */
 export interface ActionData {
+  /** Stable suffix when a homebrew feature has multiple actions of one type. */
+  id?: string;
   /** Action type */
   type: ActionType;
   /** Short label */
@@ -342,6 +360,31 @@ export interface ActionData {
    * → Monk Focus) survives both custom features and `actionOverrides`.
    */
   costTracker?: string;
+  /** Stable prerequisite receipt and per-turn cap, matching SrdActionDef. */
+  requiresActionThisTurn?: string;
+  requiresOutcomeThisTurn?: SrdActionDef["requiresOutcomeThisTurn"];
+  requiresActionCategoryThisTurn?: ActionEconomyCategory;
+  maxUsesPerTurn?: number;
+  attackSequence?: SrdActionDef["attackSequence"];
+  /** A variable pool whose selected spend is applied as healing. */
+  poolSpendEffect?: "healing";
+  /** Restore another tracked resource as part of this action's atomic commit. */
+  trackerTopUp?: { trackerId: string; upTo: number | "full" };
+  /** Grant a held die to the selected creature. */
+  grantDie?: { kind: "bardic-inspiration"; die: string };
+  /** Give Heroic Inspiration to each reviewed target. It never stacks. */
+  grantHeroicInspiration?: true;
+  /** Rolled healing applied by the shared target resolver. */
+  heal?: ActionHeal;
+  damageReduction?: ActionDamageReduction;
+  /** Rolled Temporary HP applied by the shared target resolver. */
+  tempHpRoll?: Omit<ActionTempHpRoll, "fromLevel">;
+  /** Structured target defaults; the table can still override them at resolution. */
+  targeting?: ActionTargeting;
+  /** Conditions this action can end on the selected target. */
+  conditionRemoval?: Omit<ActionConditionRemoval, "fromLevel">;
+  /** Conditions this homebrew action can cure by paying from its HP pool. */
+  cureConditions?: ReadonlyArray<Omit<ActionCureCondition, "fromLevel">>;
 }
 
 /** Content block within a feature */
@@ -471,15 +514,19 @@ export interface CharacterDoc {
    */
   portraitCrop: PortraitCrop | null;
   /**
-   * PUBLIC SHARE LINK — `true` while the owner has this character shared. The
-   * unguessable document path IS the link (`/view/{uid}/{charId}`), the flag is the
-   * whole grant, and revoking is flipping it off (`firestore.rules` → `allow get`).
-   * Firestore-doc metadata, NOT part of the portable v3 codec envelope: an
-   * export/import never carries it, so importing someone's shared JSON can never
-   * silently publish the copy. DERIVED at the read boundary (`readDocMeta`) — a doc
-   * written before the feature has no field and reads as `false`.
+   * PUBLICATION DECISION — `true` while the owner publishes the sanitized
+   * `public/sheet` projection addressed by `/view/{uid}/{charId}`. The private parent
+   * is never anonymously readable. Revocation atomically deletes the projection.
+   * Firestore metadata, not part of the portable v3 codec: export/import can never
+   * publish a copy. Derived at `readDocMeta`; absence means `false`.
    */
   shared: boolean;
+  /**
+   * Firestore ownership marker: when present, all mutable play-session facts are
+   * owned by the versioned `combat/state` subdoc. Metadata only — the portable
+   * v3 character codec never serializes it.
+   */
+  playStateVersion?: 1;
   /** Character lifecycle status */
   status: "active" | "retired" | "dead" | "archived";
 
@@ -781,16 +828,125 @@ export type SessionDefenseKind =
   | "vulnerability"
   | "conditionImmunity";
 
+export interface TrackerState {
+  used: number;
+  /** Physical results waiting to be spent; `null` is an unfilled available slot. */
+  rolls?: ReadonlyArray<number | null>;
+}
+
+export interface ItemResourceCounterState {
+  capacity: number;
+  current: number;
+  disabled: boolean;
+}
+
+export interface ItemResourceLogicalState {
+  resources: Record<string, ItemResourceCounterState>;
+  disposition: "magical" | "nonmagical" | "destroyed";
+  /** Compact causal stack head; semantic reverts restore the prior head. */
+  causalHead: string | null;
+}
+
+/** Full canonical intent retained for retry, collision, and undo semantics. */
+export type ItemResourceTransitionIntent =
+  | {
+      kind: "spend";
+      occurrenceId: string;
+      expectedRevision: number;
+      itemId: string;
+      instanceId: string;
+      resourceId: string;
+      amount: number;
+      inputs: {
+        capacityRoll?: number;
+        initialRoll?: number;
+        depletionD20?: number;
+      };
+    }
+  | {
+      kind: "gain";
+      occurrenceId: string;
+      expectedRevision: number;
+      itemId: string;
+      instanceId: string;
+      resourceId: string;
+      amount: number;
+      inputs: {
+        capacityRoll?: number;
+        initialRoll?: number;
+      };
+    }
+  | {
+      kind: "recover";
+      occurrenceId: string;
+      expectedRevision: number;
+      itemId: string;
+      instanceId: string;
+      resourceId: string;
+      trigger: ResourceRecoveryTrigger;
+      inputs: {
+        capacityRoll?: number;
+        initialRoll?: number;
+        recoveryRoll?: number;
+      };
+    };
+
+export interface ItemResourceTransitionFingerprint {
+  intent: ItemResourceTransitionIntent;
+  before: ItemResourceLogicalState;
+  after: ItemResourceLogicalState;
+}
+
+export type ItemResourceLastTransition =
+  | {
+      status: "applied";
+      expectedRevision: number;
+      intent: ItemResourceTransitionIntent;
+    }
+  | {
+      status: "reverted";
+      occurrenceId: string;
+      expectedRevision: number;
+      original: ItemResourceTransitionFingerprint;
+    };
+
+/** The eventual sole mutable owner for every resource on one physical item. */
+export interface ItemResourceState {
+  itemId: string;
+  instanceId: string;
+  revision: number;
+  resources: Record<string, ItemResourceCounterState>;
+  disposition: "magical" | "nonmagical" | "destroyed";
+  causalHead: string | null;
+  lastTransition?: ItemResourceLastTransition;
+}
+
 export interface SessionState {
+  /**
+   * The character's persisted mechanics world (`CharacterMaterialState`,
+   * schema 4) — the sole owner of every fact the deterministic engine models.
+   * Legacy session fields it supersedes are write-through mirrors during the
+   * cutover rollout and are deleted with the final document migration.
+   */
+  world?: unknown;
   hp: {
     current: number;
     temp: number;
   };
+  /** Active source occurrences projected onto this open sheet at runtime. Campaign
+   * occurrences stay in the encounter ledger; solo occurrences stay in `combat/state`.
+   * The character codec deliberately never serializes this composed read field. */
+  encounterEffects?: ReadonlyArray<ActiveCombatEffect>;
+  /** Conditions owned by the current solo concentration. `conditions` remains
+   * the manual/base layer; consumers read their union through the shared projection. */
+  concentrationConditions?: ReadonlyArray<string>;
   hitDice: {
     used: number;
   };
-  /** Tracker usage state, keyed by tracker ID */
-  trackers: Record<string, { used: number }>;
+  /** Tracker usage and optional table-entered rolls, keyed by tracker ID. */
+  trackers: Record<string, TrackerState>;
+  /** Instance-owned item resources, keyed by strict `SrdEquipmentRef.instanceId`. */
+  itemResources?: Record<string, ItemResourceState>;
   /** Spell slot usage state, keyed by slot level */
   spellSlots: Record<string, { used: number }>;
   currency: {
@@ -868,6 +1024,9 @@ export interface SessionState {
    * no cap) — it lives until the player ends it. Optional for back-compat.
    */
   effectTimers?: Record<string, { roundsLeft: number }>;
+  /** Exact owner-turn expiry for short active states (Shield). Stored separately
+   * from round countdowns so turn-start and turn-end cannot drift. */
+  effectBoundaries?: Record<string, { round: number; phase: "turn-start" | "turn-end" }>;
   /**
    * L12 — single-select variant choices, `bundleKey → selected optionId`
    * (Circle of the Land terrain, re-chosen each Long Rest). Drives the

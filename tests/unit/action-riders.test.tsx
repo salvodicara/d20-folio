@@ -119,6 +119,23 @@ describe("ActionRiders", () => {
     render(<ActionRiders riders={[cursed]} />);
     expect(screen.getByText(/\+1d6 Necrotic vs cursed target/)).toBeInTheDocument();
   });
+
+  it("shows every selectable damage type on a choice rider", () => {
+    render(
+      <ActionRiders
+        riders={[
+          {
+            ...display,
+            source: "Divine Fury",
+            dice: "1d6+1",
+            damageTypeId: "radiant",
+            damageTypeChoiceIds: ["radiant", "necrotic"],
+          },
+        ]}
+      />
+    );
+    expect(screen.getByText(/\+1d6\+1 Radiant \/ Necrotic/)).toBeInTheDocument();
+  });
 });
 
 describe("ActionRiders — the composed WHY sentence (2026-08-03)", () => {

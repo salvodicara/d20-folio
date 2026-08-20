@@ -32,6 +32,7 @@ import { useToastStore } from "@/stores/toastStore";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { useUIStore } from "@/stores/uiStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
+import { isTurnEconomyBlocked } from "@/lib/smart-tracker";
 import { conc } from "./__helpers__/concentration";
 import i18n from "@/i18n";
 
@@ -65,6 +66,7 @@ beforeEach(() => {
   useUIStore.setState({ sheetMode: "play" });
   useCharacterStore.setState({
     character: { ...MOCK_CHARACTER },
+    encounterEffectProjection: null,
     loading: false,
     error: null,
   });
@@ -103,11 +105,14 @@ describe("economy in the Play tab", () => {
         session: {
           ...MOCK_CHARACTER.session,
           pinnedActions: [],
+          // The engine now resolves a universal Unarmed Strike (default-pinned),
+          // so an intentionally-empty hotbar unpins it too.
           unpinnedActions: [
             "weapon-dagger",
             "weapon-quarterstaff",
             "weapon-rapier",
             "weapon-shortbow",
+            "unarmed-strike",
           ],
         },
       },
@@ -227,6 +232,63 @@ describe("economy in the Play tab", () => {
       "a2",
     ]);
     expect(panel.querySelector(".econ-count")?.textContent).toBe("2/2");
+  });
+
+  it("Haste lethargy blocks action, bonus-action, and attack budgets", () => {
+    const aftereffect = {
+      id: "haste-aftereffect",
+      actor: { kind: "monster" as const, combatantId: "caster" },
+      target: {
+        kind: "pc" as const,
+        combatantId: "target",
+        memberUid: "member",
+        characterId: MOCK_CHARACTER.id,
+      },
+      source: {
+        kind: "spell" as const,
+        id: "haste",
+        actionId: "spell-haste",
+        castLevel: 3,
+      },
+      payload: {
+        kind: "grant-group" as const,
+        activeKey: "spell-haste",
+        phase: "aftereffect" as const,
+      },
+      duration: {
+        kind: "turn-boundary" as const,
+        combatantId: "target",
+        round: 2,
+        phase: "turn-end" as const,
+      },
+    };
+    useCharacterStore.setState({
+      character: {
+        ...MOCK_CHARACTER,
+        session: { ...MOCK_CHARACTER.session },
+      },
+      loading: false,
+      error: null,
+    });
+    useCharacterStore.getState().setEncounterEffects(MOCK_CHARACTER.id, [aftereffect]);
+
+    const projected = useCharacterStore.getState().character;
+    expect(projected?.session.encounterEffects).toHaveLength(1);
+    expect(projected && isTurnEconomyBlocked(projected)).toBe(true);
+    renderCockpit();
+
+    expect(useCombatStore.getState().budget).toEqual({ action: 0, bonus: 0 });
+    expect(useCombatStore.getState().attackBudget).toBe(0);
+    expect(
+      useCombatStore
+        .getState()
+        .selectAction({ id: "blocked-action", name: "Attack", slot: "action" })
+    ).toBe(false);
+    expect(
+      useCombatStore
+        .getState()
+        .selectAction({ id: "blocked-bonus", name: "Dash", slot: "bonus" })
+    ).toBe(false);
   });
 
   it("#66 — dropping concentration fires exactly one toast (with undo)", () => {
@@ -432,7 +494,9 @@ describe("economy in the Play tab", () => {
     ) as HTMLElement;
 
     // Spend the reaction (as the board's Mark-used row does) → the coin tarnishes.
-    act(() => useCombatStore.getState().useReaction("test-reaction"));
+    act(() => {
+      useCombatStore.getState().useReaction("test-reaction");
+    });
     const reactionTok = panel.querySelector(
       'button.econ-tok[data-kind="reaction"]'
     ) as HTMLElement;

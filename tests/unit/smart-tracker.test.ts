@@ -4,7 +4,11 @@ import { asAlignmentId } from "@/lib/lore-utils";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { foldLegacyClass } from "./_helpers";
 import { localizeActions } from "@/lib/views/combat-action-view";
-import { resolveActions, equipmentQuantityOf } from "@/lib/smart-tracker";
+import {
+  resolveActions,
+  equipmentQuantityOf,
+  resolveAttackDamageRiders,
+} from "@/lib/smart-tracker";
 import { SRD_WEAPONS } from "@/data/weapons";
 import { getEquipment } from "@/data/equipment";
 import { buildDevScenario, buildScenario } from "@/lib/dev-scenarios";
@@ -13,6 +17,7 @@ import { combatVerdict } from "@/features/character/center/tabs/combat-card-help
 import { spellInstanceCount } from "@/lib/utils";
 import { concentrationValue } from "@/lib/concentration";
 import type { CharacterDoc } from "@/types/character";
+import type { AggregatedGrants } from "@/lib/grants";
 
 // ─── Minimal character fixture ────────────────────────────────────────────────
 
@@ -103,6 +108,29 @@ function makeChar(
     },
   };
 }
+
+describe("resolveAttackDamageRiders — weapon-or-unarmed scope", () => {
+  const rider: AggregatedGrants["damageRiders"][number] = {
+    dice: "1d6",
+    damageType: "radiant",
+    appliesTo: "weapon-or-unarmed",
+    oncePerTurn: false,
+    sourceId: "test-any-weapon-or-unarmed",
+  };
+  const scores = { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 } as const;
+
+  for (const [label, target] of [
+    ["melee weapon", { kind: "weapon", isRanged: false, damageType: "slashing" }],
+    ["ranged weapon", { kind: "weapon", isRanged: true, damageType: "piercing" }],
+    ["Unarmed Strike", { kind: "unarmed", damageType: "bludgeoning" }],
+  ] as const) {
+    it(`rides ${label}`, () => {
+      expect(resolveAttackDamageRiders([rider], target, makeChar(), scores)).toHaveLength(
+        1
+      );
+    });
+  }
+});
 
 // ─── Dual-Wield Detection ─────────────────────────────────────────────────────
 
@@ -564,6 +592,20 @@ describe("resolveActions — base actions", () => {
     expect(ids).toContain("base-shove");
   });
 
+  it("always includes the Unarmed Strike damage option", () => {
+    const unarmed = localizeActions(makeChar(), "en").find(
+      (action) => action.id === "unarmed-strike"
+    );
+    expect(unarmed).toMatchObject({
+      source: "weapon",
+      summary: {
+        attackBonus: 6,
+        damage: "4",
+        damageType: "bludgeoning",
+      },
+    });
+  });
+
   // RA-04 — Grapple/Shove are 2024 Unarmed Strike OPTIONS resolved by a target's
   // save vs DC 8 + STR mod + PB (wiring the previously-dead `unarmedStrikeSaveDc`),
   // NOT the 2014 "STR contest". The concrete DC rides the card as a save chip.
@@ -971,6 +1013,27 @@ describe("resolveActions — S8 dice self-heal carries a roll-entry apply field"
     expect(sw?.summary.healApply).toEqual({ dice: "1d10", bonus: 3 });
   });
 
+  it("Open Hand Wholeness of Body applies the Martial Arts die + Wisdom to self", () => {
+    const char = makeChar({
+      classes: [{ classId: "monk", subclassId: "open-hand", level: 6 }],
+      abilityScores: { STR: 10, DEX: 16, CON: 14, INT: 10, WIS: 16, CHA: 8 },
+      features: [{ srdId: "monk-open-hand-wholeness-of-body" }],
+    });
+    const wholeness = localizeActions(char, "en").find(
+      (action) => action.id === "monk-open-hand-wholeness-of-body-bonus"
+    );
+
+    expect(wholeness).toMatchObject({
+      type: "bonus",
+      costTracker: "monk-open-hand-wholeness-of-body",
+      trackerCost: 1,
+      summary: {
+        healApply: { dice: "1d8", bonus: 3 },
+        targeting: { affinity: "self", maxTargets: 1 },
+      },
+    });
+  });
+
   it("a FLAT/string heal (potion) carries NO healApply — only dice-action heals do", () => {
     // A potion sets `summary.healing` (a string), never the structured `heal` —
     // so it gets no roll-entry apply field (it isn't a self-targeting feature heal).
@@ -1257,9 +1320,63 @@ describe("resolveActions — custom spells", () => {
     expect(fireball).toBeDefined();
     expect(custom).toBeDefined();
   });
+
+  it("keeps extended casts in spellbook scope but not the turn-action board", () => {
+    const char = makeSpellcaster();
+    char.character.spells = [
+      {
+        custom: true,
+        name: "Patient Ward",
+        level: 1,
+        school: "abjuration",
+        castingTime: "1 minute",
+        range: "Touch",
+        components: { v: true, s: true, m: false },
+        duration: "1 hour",
+        concentration: false,
+        description: "A deliberately slow ward.",
+      },
+    ];
+
+    expect(localizeActions(char, "en")).not.toContainEqual(
+      expect.objectContaining({ id: "custom-spell-patient-ward" })
+    );
+    expect(localizeActions(char, "en", "spellbook")).toContainEqual(
+      expect.objectContaining({
+        id: "custom-spell-patient-ward",
+        type: "free",
+        castTiming: "extended",
+        customSpellIndex: 0,
+      })
+    );
+  });
+
+  it("keeps duplicate custom names independently addressable by exact index", () => {
+    const char = makeSpellcaster();
+    const spell = {
+      custom: true as const,
+      name: "Twin Spark",
+      level: 0,
+      school: "evocation" as const,
+      castingTime: "1 action",
+      range: "60 feet",
+      components: { v: true, s: true, m: false },
+      duration: "Instantaneous",
+      concentration: false,
+      description: "One of two same-named homebrew cantrips.",
+    };
+    char.character.spells = [spell, { ...spell }];
+
+    const twins = localizeActions(char, "en", "spellbook").filter(
+      (action) => action.name === "Twin Spark"
+    );
+    expect(twins.map((action) => action.customSpellIndex)).toEqual([0, 1]);
+    expect(new Set(twins.map((action) => action.id)).size).toBe(2);
+    expect(twins.every((action) => !action.costsSlot)).toBe(true);
+  });
 });
 
-describe("resolveActions — S1 while-active buff spell auto-light (activatesKey)", () => {
+describe("resolveActions — S1 while-active spell ownership", () => {
   function makeSpellcaster(): CharacterDoc {
     return makeChar({
       classes: [{ classId: "bard", level: 5 }],
@@ -1278,30 +1395,61 @@ describe("resolveActions — S1 while-active buff spell auto-light (activatesKey
     });
   }
 
-  // A while-active BUFF spell carries its standing effect as a `while-active`
-  // grant on `spell.grants` whose stable `activeKey` is `spell-<id>`; a normal
-  // damage/utility spell carries no such grant. The cast action must mirror the
-  // FEATURE path (Rage/Bladesong) and stamp `activatesKey` so the combat commit
-  // auto-lights the rail chip — only for the buffs.
-  const cases: ReadonlyArray<{ srdId: string; activeKey: string | undefined }> = [
-    // +2 AC for the duration → its chip lights on cast.
-    { srdId: "shield-of-faith", activeKey: "spell-shield-of-faith" },
+  // A while-active spell carries its standing effect on `spell.grants` under a
+  // stable `spell-<id>` key. Caster-owned grants mirror Rage/Bladesong and stamp
+  // `activatesKey`; selected-recipient grants expose `standingEffect` instead.
+  // Ordinary damage/utility spells expose neither.
+  const cases: ReadonlyArray<{
+    srdId: string;
+    activatesKey?: string;
+    standingEffectKey?: string;
+    durationRounds?: number;
+  }> = [
+    // +2 AC belongs to the chosen ally, not automatically to the caster.
+    {
+      srdId: "shield-of-faith",
+      standingEffectKey: "spell-shield-of-faith",
+      durationRounds: 100,
+    },
     // +1d4 radiant weapon rider for the duration → lights on cast.
-    { srdId: "divine-favor", activeKey: "spell-divine-favor" },
-    // AC formula for the duration → lights on cast.
-    { srdId: "mage-armor", activeKey: "spell-mage-armor" },
+    {
+      srdId: "divine-favor",
+      activatesKey: "spell-divine-favor",
+      durationRounds: 10,
+    },
+    // Hex selects a cursed target, but its attack rider remains caster-owned.
+    {
+      srdId: "hex",
+      activatesKey: "spell-hex",
+      standingEffectKey: "spell-hex",
+      durationRounds: 600,
+    },
+    // AC formula belongs to the chosen ally.
+    {
+      srdId: "mage-armor",
+      standingEffectKey: "spell-mage-armor",
+      durationRounds: 4_800,
+    },
     // Plain damage spell — no standing effect → lights NOTHING.
-    { srdId: "fireball", activeKey: undefined },
+    { srdId: "fireball" },
   ];
 
-  it.each(cases)("$srdId → activatesKey = $activeKey", ({ srdId, activeKey }) => {
-    const char = makeSpellcaster();
-    char.character.spells = [{ srdId }];
-    const actions = localizeActions(char, "en");
-    const spell = actions.find((a) => a.id === `spell-${srdId}`);
-    expect(spell).toBeDefined();
-    expect(spell?.activatesKey).toBe(activeKey);
-  });
+  it.each(cases)(
+    "$srdId keeps its standing grant on the declared recipient",
+    ({ srdId, activatesKey, standingEffectKey, durationRounds }) => {
+      const char = makeSpellcaster();
+      char.character.spells = [{ srdId }];
+      const actions = localizeActions(char, "en");
+      const spell = actions.find((a) => a.id === `spell-${srdId}`);
+      expect(spell).toBeDefined();
+      expect(spell?.activatesKey).toBe(activatesKey);
+      expect(spell?.standingEffect?.activeKey).toBe(standingEffectKey);
+      expect(spell?.activeDurationRounds).toBe(activatesKey ? durationRounds : undefined);
+      expect(spell?.standingEffect?.maxRounds).toBe(
+        standingEffectKey ? durationRounds : undefined
+      );
+    }
+  );
 });
 
 describe("resolveActions — multiclass per-spell DC/attack (2024 RAW)", () => {
@@ -1718,6 +1866,15 @@ describe("resolveActions — S12b multi-instance spell damage (Magic Missile / S
       (a) => a.spellId === "magic-missile"
     );
     expect(mm?.summary.area).toBeUndefined();
+  });
+
+  it("projects area targeting for non-damaging control spells too", () => {
+    for (const id of ["hypnotic-pattern", "faerie-fire"]) {
+      const action = localizeActions(makeWizard(id), "en").find(
+        (candidate) => candidate.spellId === id
+      );
+      expect(action?.summary.area, id).toBe(true);
+    }
   });
 
   it("Scorching Ray carries instances=3 (2d6 each); upcast +1 ray per slot above 2nd (4 at L3)", () => {

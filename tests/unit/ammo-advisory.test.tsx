@@ -119,7 +119,7 @@ describe("RA-14 — PlayTab ammunition row + advisory", () => {
     act(() => {
       useCombatStore.setState({
         attacksUsed: 1,
-        attackSwingIds: ["weapon-light-crossbow"],
+        attackSwings: [{ actionId: "weapon-light-crossbow" }],
       });
     });
     expect(screen.getByText("Loading: one shot per action")).toBeInTheDocument();

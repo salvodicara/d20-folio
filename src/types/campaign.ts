@@ -8,15 +8,16 @@
 import type {
   CreatureType,
   CurrencyUnit,
-  DamageType,
   MonsterConditionImmunity,
   QualifiedDefense,
   QualifiedDefenseNote,
 } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 import type { PortraitCrop, ClassEntry } from "@/types/character";
 import type { NonEmptyString } from "@/lib/non-empty-string";
 import type { RaceId } from "@/types/ids";
 import type { CombatChronicleEvent } from "@/types/combat-chronicle";
+import type { CombatEffectOp } from "@/types/combat-effect";
 
 // ============================================================
 // Campaign Document
@@ -100,8 +101,7 @@ interface EncounterCombatantBase {
   id: string;
   /**
    * DM-only "hidden combatant" flag — an ambush the DM stages before revealing it.
-   * Filtered out of every non-DM view; absent/`false` = visible to all. Optional +
-   * additive so a pre-feature encounter doc stays valid.
+   * Filtered out of every non-DM view; absent/`false` = visible to all.
    */
   hidden?: boolean;
 }
@@ -122,29 +122,25 @@ export interface EncounterPc extends EncounterCombatantBase {
 }
 
 /**
- * A monster/NPC the DM adds. UNLIKE a PC, this IS genuine encounter-owned state — it
- * carries its own name / AC / initiative / conditions / maxHp. Every current combatant
- * is one targetable creature and therefore owns exactly one HP value in `tokens`.
- *
- * `tokens` remains an array for backward compatibility with encounters created before
- * the instance model. The campaign read boundary splits a legacy `tokens.length > 1`
- * group into individual combatants before any feature consumes it; current writers only
- * emit one-element arrays. Keeping the field avoids an unsafe live-data flag day while
- * removing the group abstraction from the product model.
+ * A monster/NPC the DM adds. UNLIKE a PC, this IS genuine encounter-owned state: one
+ * combatant is one independently targetable creature with one scalar HP record.
  */
 export interface EncounterMonster extends EncounterCombatantBase {
   kind: "monster";
+  /** Table allegiance, independent of creature kind. NPC allies use the exact same
+   * combatant model and automation as enemies; omission denotes enemy. */
+  side?: "ally" | "enemy";
   /** User content — the monster/NPC name the DM types (never an SRD label). */
   name: string;
   /**
-   * OPTIONAL reference to the bestiary statblock this group was seeded from
+   * OPTIONAL reference to the bestiary statblock this creature was seeded from
    * (`MonsterStatBlock.id`, e.g. "goblin-warrior") — set by the encounter picker,
    * absent on hand-typed monsters and every pre-picker doc (additive-only; live
    * fixtures load unchanged). DISPLAY-ONLY: it powers the DM statblock disclosure,
    * resolved at render via `getMonster(srdId)` behind the lazy `monster` catalogue
    * gate; a stale/unknown id degrades to a quiet empty state (the getBeast-undefined
    * precedent), NEVER an error. It is never a mechanics source and never overrides
-   * the stored ac/maxHp/name (which remain the encounter-owned truth the DM may
+   * the stored AC/HP/name (which remain the encounter-owned truth the DM may
    * edit). `name` stays genuine user content — pre-filled from the localized
    * monster name at add time, renameable after (golden rule 7).
    */
@@ -155,17 +151,13 @@ export interface EncounterMonster extends EncounterCombatantBase {
   initiative: number | null;
   /** Active conditions as stable condition IDS (never localized names). */
   conditions: string[];
-  /** Maximum hit points (the clamp ceiling for every token's HP edit). */
-  maxHp: number;
-  /** Per-token current HP; each clamped to `[0, maxHp]`. A token at 0 is dead. */
-  tokens: number[];
-  /** Temporary HP for this creature instance. Optional keeps live encounters additive;
-   * absent is exactly zero. Temporary HP never stack (the greater value wins). */
-  tempHp?: number;
+  /** The sole HP home for this creature. Every value is a non-negative integer;
+   * `current` is clamped to `max`, and Temporary HP never stack. */
+  hp: { current: number; temp: number; max: number };
   /** Stable identity of the batch this creature was added with. Creatures in the same
    * batch share the DM-entered initiative by default but remain independently targetable,
    * damageable, conditionable, renameable, and removable. Absent for a lone creature and
-   * old one-creature records. */
+   * a creature added alone. */
   groupId?: string;
   /** One-based label within `groupId` (Goblin 1, Goblin 2, …). */
   groupIndex?: number;
@@ -175,26 +167,24 @@ export interface EncounterMonster extends EncounterCombatantBase {
    * DM-only "reveal exact HP" flag (CARD-5). By default players see only a qualitative
    * HP BAND (Healthy / Bloodied / Near Death) derived from current/max — never the
    * number. With `revealed` set, players read the EXACT current/max for this monster.
-   * The DM/admin always sees the exact number regardless. Optional + additive so a
-   * pre-feature encounter doc stays valid (absent/`false` = band-only for players).
+   * The DM/admin always sees the exact number regardless; omission means band-only.
    */
   revealed?: boolean;
   /**
    * DM-only free-text notes — tactics, legendary-resistance tally, spell list,
    * motivations, whatever the DM wants to jot. Plain text (no structure imposed).
-   * Optional + additive so a pre-feature encounter doc stays valid (absent = no notes);
-   * only ever written/read inside the DM disclosure, so no rules change is needed.
+   * Omission means no notes; only ever written/read inside the DM disclosure.
    */
   notes?: string;
   /**
-   * XP value of ONE token of this group (SRD Step 3 — "every creature has an XP value
+   * XP value of this creature (SRD Step 3 — "every creature has an XP value
    * in its stat block"), seeded at ADD time: picker path = `monsterXp(statblock)`; custom
-   * path = `xpForCr(chosen CR)`; ABSENT when unknown (a custom monster with no CR, any
-   * pre-feature doc) — the DM budget readout then reports the group as un-costed, never
+   * path = `xpForCr(chosen CR)`; ABSENT when unknown (for example, a custom monster with
+   * no CR) — the DM budget readout then reports the creature as un-costed, never
    * guesses. A genuine harmless `xp: 0` (a CR-0 statblock) is a valid COSTED value, not
    * "unknown" (existence, never truthiness, decides).
    *
-   * ENCOUNTER-OWNED like `ac`/`maxHp`: the statblock is a SEED, not a live source — a
+   * ENCOUNTER-OWNED like `ac`/`hp`: the statblock is a SEED, not a live source — a
    * later corpus CR correction does NOT retro-update existing encounter docs (accepted,
    * identical to the stale-`ac` hazard; there is no reconciliation because no reader
    * treats the statblock as live). The lair toggle (§D.5) rewrites it between the base
@@ -212,20 +202,23 @@ export interface EncounterMonster extends EncounterCombatantBase {
    * A custom combatant's uploaded portrait, copied from its library template so every
    * viewer reads the same art. Database monsters leave these fields absent and resolve
    * canonical art live from `srdId`. `portraitUrl` is the Firebase Storage download URL
-   * (`users/{uid}/portraits/monster-*.jpeg`); `portraitCrop` frames it. Additive: a
-   * pre-feature encounter document stays valid.
+   * (`users/{uid}/portraits/monster-*.jpeg`); `portraitCrop` frames it.
    */
   portraitUrl?: string;
   portraitCrop?: PortraitCrop;
   /** Defenses seeded from the statblock/custom template for deterministic damage math. */
   defenses?: CombatDefenseSnapshot;
+  /** Held Bardic Inspiration die granted during this encounter. */
+  bardicInspirationDie?: string;
+  /** Held Heroic Inspiration for non-PC combatants. PCs read combat/state. */
+  heroicInspiration?: boolean;
 }
 
 /**
  * A REUSABLE custom monster the DM authors once and re-adds to any encounter — the
  * 5th account-level {@link import("@/lib/library").LibraryEntry} kind ("custom IS the
- * library"). It is a TEMPLATE: the identity facts of a monster group MINUS every
- * per-encounter play value (current HP `tokens`, `initiative`, `conditions`, the
+ * library"). It is a TEMPLATE: the identity facts of one creature MINUS every
+ * per-encounter play value (`hp`, `initiative`, `conditions`, the
  * `count`, the turn/reveal/hidden flags), which the encounter re-seeds at add time
  * (`customMonsterToInput`). Stored in the library doc, capped by
  * `FREE_TIER_LIMITS.libraryEntries`.
@@ -239,7 +232,7 @@ export interface CustomMonster {
   name: string;
   /** Armor Class (informational; the DM may edit per encounter after adding). */
   ac: number;
-  /** Maximum hit points (the per-token clamp ceiling once added). */
+  /** Maximum hit points used to seed a creature's encounter HP record. */
   maxHp: number;
   /** The creature type id (2024 identity noun) — the monster's identity type;
    *  absent for a stat-less improv NPC. */
@@ -264,8 +257,11 @@ export interface CustomMonster {
  * date normalization.
  */
 export interface EncounterState {
-  /** Every combatant at the table (PC refs + monster groups), insertion order. */
+  /** Every combatant at the table (PC refs + individual creatures), insertion order. */
   combatants: EncounterCombatant[];
+  /** First unallocated monster ordinal. This high-water mark only moves forward, so
+   * removing a creature can never make a later creature reuse its identity. */
+  nextMonsterOrdinal: number;
   /** Combat round, starts at 1; increments when the turn order wraps. */
   round: number;
   /**
@@ -291,13 +287,18 @@ export interface EncounterState {
    * DM owns every reorder). Includes HIDDEN combatants — hidden is a DISPLAY filter,
    * never a turn-order filter, so a staged ambush still takes its turn.
    *
-   * OPTIONAL + additive: absent or empty means "turns not begun yet" (the gathering
-   * phase), so a fresh {@link "@/features/campaigns/encounter".startEncounter} (which
-   * leaves it unset) and any pre-feature encounter doc stay valid. A member advancing
+   * Absent or empty means "turns not begun yet" (the gathering phase), so a fresh
+   * {@link "@/features/campaigns/encounter".startEncounter} leaves it unset. A member advancing
    * the turn writes ONLY `{currentCombatantId, round}` (never `order`), so the frozen
    * order stays DM-only by construction (firestore.rules `turnFieldsOnlyChanged`).
    */
   order?: string[];
+  /** Alert's Initiative Swap choices made while initiative is gathering. Each source
+   *  is an Alert-bearing PC and each target is a willing ally; the view applies the
+   *  swaps over the current live initiative order, then `beginEncounterTurns` freezes
+   *  the resulting ids. Explicit encounter state keeps raw d20 rolls untouched and
+   *  lets the DM correct or remove a table decision before turns begin. */
+  initiativeSwaps?: Array<{ sourceId: string; targetId: string }>;
   /**
    * The per-encounter identity STAMP, set once at {@link startEncounter} (a monotonic
    * `Date.now()`). Identifies ONE fight across surfaces — the pip's "most recently
@@ -315,15 +316,30 @@ export interface EncounterState {
    * a localized string — golden rule 7). EPHEMERAL: it rides the SAME debounced
    * encounter writer (no new write cadence), survives a reload, and is DROPPED when the
    * encounter clears at "End encounter", where the DM renders it to ONE Chronicle
-   * chapter (the single persisted Chronicle write per fight). OPTIONAL + additive —
-   * absent/empty means no events logged yet, so every pre-feature encounter doc and the
-   * live fixtures keep loading unchanged. DM-authored only (the emit seams are DM-gated;
+   * chapter (the single persisted Chronicle write per fight). Absent/empty means no
+   * events logged yet. DM-authored only (the emit seams are DM-gated;
    * firestore.rules keep the whole `encounter` structure DM-write-only).
    */
   events?: CombatChronicleEvent[];
   /** Reviewed effects aimed at a PC. The campaign carries delivery; the owning
    * character client applies each id once to its authorized combat/state doc. */
   memberEffects?: MemberCombatEffect[];
+  /** Append-only source of truth for standing, target-bound combat effects. */
+  effectOps?: CombatEffectOp[];
+  /**
+   * The canonical shared-combat engine layer for THIS fight (a schema-4
+   * `SharedMaterialState`): the action journal, mechanic occurrences
+   * (condition facts with end rules), ordinal allocators, turn economies and
+   * the material timeline — everything ONLY the engine owns. Written by the
+   * engine command boundary (`encounter-world-command.ts`) in the same motion
+   * as the mirrored legacy fields; re-proved FAIL-CLOSED at every read by
+   * `encounterWorldState` (`src/lib/encounter-world-store.ts`), which overlays
+   * the encounter-owned facts (membership, hp, AC, round/turn) on top. Typed
+   * `unknown` deliberately: the ONLY reader is that fail-closed parser, and
+   * no surface may reach into it unproven. Absent until the first engine
+   * action of a fight; dropped with the whole field at "End encounter".
+   */
+  world?: unknown;
 }
 
 export type MemberCombatEffect =
@@ -430,6 +446,10 @@ export interface CampaignDoc {
    * structure).
    */
   encounterInit?: Record<string, number>;
+  /** Per-encounter participation opt-out (`uid → true`). A player may change only their
+   * own entry; the DM may also omit unrolled PCs when beginning turns. Reset with every
+   * start/end, so an old skip never leaks into the next encounter. */
+  encounterSkipped?: Record<string, boolean>;
   /**
    * DM-only kill switch for the invite link. OPTIONAL + additive — absent/`false`
    * means joins are OPEN; `true` INVALIDATES the invite: the `firestore.rules`

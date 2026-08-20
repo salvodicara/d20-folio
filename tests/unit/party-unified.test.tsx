@@ -29,21 +29,25 @@ import { MemoryRouter } from "react-router";
 const {
   authUid,
   isAdminState,
-  applyHpDeltaMock,
+  writeCombatEffectMock,
   setEncounterInitiativeMock,
   rosterRef,
   listSharedCampaignsMock,
   setMemberCharacterMock,
   attachMemberCharacterMock,
   advanceEncounterTurnMock,
+  alertFixtureEnabled,
 } = vi.hoisted(() => ({
   authUid: { value: "mock-uid" },
   isAdminState: { value: false },
-  // The PC combat editor's HP-delta write — controllable per test (resolve / reject
-  // permission-denied) to exercise the DM self-heal recovery path.
-  applyHpDeltaMock: vi.fn<typeof import("@/lib/combat-state-io").applyHpDelta>(() =>
-    Promise.resolve()
-  ),
+  // The PC combat editor's write — the ONE fresh-read campaign transaction every HP /
+  // temp / condition / death-save edit routes through (`writeCampaignCombatEffect`,
+  // the effect-only patch/revision fence; it REPLACED the value-based
+  // `applyHpDelta`-family overwrites). Controllable per test (resolve / reject
+  // permission-denied) to exercise the honest-failure toast.
+  writeCombatEffectMock: vi.fn<
+    typeof import("@/features/campaigns/campaign-io").writeCampaignCombatEffect
+  >(() => Promise.resolve()),
   // The INIT write — a campaign-doc `encounterInit` row (the initiative SSOT);
   // asserted to store the RAW d20 roll (never the total).
   setEncounterInitiativeMock: vi.fn<
@@ -71,6 +75,7 @@ const {
   advanceEncounterTurnMock: vi.fn<
     typeof import("@/features/campaigns/campaign-io").advanceEncounterTurn
   >(() => Promise.resolve()),
+  alertFixtureEnabled: { value: false },
 }));
 
 vi.mock("@/lib/firebase", () => ({ db: {} }));
@@ -89,8 +94,10 @@ vi.mock("@/hooks/useIsAdmin", () => ({ useIsAdmin: () => isAdminState.value }));
 vi.mock("@/hooks/useCharacters", () => ({
   useCharacters: () => ({ characters: rosterRef.value, loading: false, error: null }),
 }));
-// Spy the two campaign-io seams the attach guard uses (membership read + the write);
-// the rest of campaign-io stays real.
+// Spy the campaign-io seams the wiring exercises — the attach guard's membership read +
+// write, the turn/initiative transactions, and the PC combat editor's
+// `writeCampaignCombatEffect` (a real Firestore transaction, so it MUST be mocked in
+// this CI-pure harness); the rest of campaign-io stays real.
 vi.mock("@/features/campaigns/campaign-io", async (orig) => {
   const actual = await orig<typeof import("@/features/campaigns/campaign-io")>();
   return {
@@ -100,6 +107,7 @@ vi.mock("@/features/campaigns/campaign-io", async (orig) => {
     attachMemberCharacter: attachMemberCharacterMock,
     advanceEncounterTurn: advanceEncounterTurnMock,
     setEncounterInitiative: setEncounterInitiativeMock,
+    writeCampaignCombatEffect: writeCombatEffectMock,
     persistStartEncounter: vi.fn(() => Promise.resolve()),
     persistEndEncounter: vi.fn(() => Promise.resolve()),
   };
@@ -112,7 +120,16 @@ vi.mock("@/lib/firestore", async (orig) => {
   return {
     ...actual,
     getFullCharacter: (_uid: string, id: string) =>
-      Promise.resolve({ ...MOCK_CHARACTER, id }),
+      Promise.resolve({
+        ...MOCK_CHARACTER,
+        id,
+        character: alertFixtureEnabled.value
+          ? {
+              ...MOCK_CHARACTER.character,
+              features: [...MOCK_CHARACTER.character.features, { srdId: "alert" }],
+            }
+          : MOCK_CHARACTER.character,
+      }),
   };
 });
 // The live `combat/state` listener is mocked ABSENT (cb(null) → full HP) so the live
@@ -128,12 +145,6 @@ vi.mock("@/lib/combat-state-io", () => ({
     return () => {};
   },
   writeCombatState: () => {},
-  // The PC editor's write primitives — applyHpDelta is the controllable spy; the
-  // others resolve (they are not exercised by these wiring tests).
-  applyHpDelta: applyHpDeltaMock,
-  setCombatCondition: () => Promise.resolve(),
-  setCombatTempHp: () => Promise.resolve(),
-  tickDeathSave: () => Promise.resolve(),
 }));
 // Keep `charsAffectedByAttach` real (the attach picker uses it); spy the eager DM-grant
 // End-encounter goes through a confirm dialog; auto-confirm it.
@@ -183,6 +194,7 @@ function monstersOnlyGathering(allRolled: boolean): CampaignDoc {
   return {
     ...c,
     encounter: {
+      nextMonsterOrdinal: 3,
       round: 1,
       currentCombatantId: null,
       epoch: 1,
@@ -195,8 +207,7 @@ function monstersOnlyGathering(allRolled: boolean): CampaignDoc {
           ac: 13,
           initiative: 14,
           conditions: [],
-          maxHp: 7,
-          tokens: [7],
+          hp: { current: 7, temp: 0, max: 7 },
         },
         {
           kind: "monster",
@@ -205,8 +216,7 @@ function monstersOnlyGathering(allRolled: boolean): CampaignDoc {
           ac: 13,
           initiative: allRolled ? 9 : null,
           conditions: [],
-          maxHp: 15,
-          tokens: [15],
+          hp: { current: 15, temp: 0, max: 15 },
         },
       ],
     },
@@ -227,9 +237,10 @@ function renderParty() {
 
 beforeEach(() => {
   authUid.value = "mock-uid"; // the fixture DM
+  alertFixtureEnabled.value = false;
   isAdminState.value = false;
-  applyHpDeltaMock.mockReset();
-  applyHpDeltaMock.mockResolvedValue(undefined);
+  writeCombatEffectMock.mockReset();
+  writeCombatEffectMock.mockResolvedValue(undefined);
   setEncounterInitiativeMock.mockReset();
   setEncounterInitiativeMock.mockResolvedValue(undefined);
   rosterRef.value = [];
@@ -570,17 +581,17 @@ describe("Party combat — DM (editable layer)", () => {
   it("a monster reuses the shared HP popover with TEMP and clamps HP to [0, maxHp]", async () => {
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
-    // Expand the Goblin Chief row (single token [21], maxHp 21). A lone token reuses the
-    // PC card's `.vital-hp` chip + shared HpEditPopover and labels with the monster NAME
-    // (B9a) — the chip is the one carrying `.vital-hp` (the other "Goblin Chief" control
-    // is the row's disclosure toggle).
+    // Expand the Goblin Chief row (21/21 HP). A monster reuses the PC card's
+    // `.vital-hp` chip + shared HpEditPopover and labels with the monster NAME
+    // (B9a) — the chip is the one carrying `.vital-hp` (the other "Goblin Chief"
+    // control is the row's disclosure toggle).
     fireEvent.click(
       screen.getByRole("button", { name: /goblin chief/i, expanded: false })
     );
     const boss = () => currentEncounter().combatants.find((c) => c.id === "monster-2");
     const bossHp = (): number => {
       const b = boss();
-      return b && b.kind === "monster" ? (b.tokens[0] ?? -1) : -1;
+      return b && b.kind === "monster" ? b.hp.current : -1;
     };
     const openHp = (): void => {
       fireEvent.click(
@@ -716,17 +727,47 @@ describe("Party combat — C3 freeze / lock / reorder (DM)", () => {
     return enc;
   }
 
-  it("Begin-turns is DISABLED until every combatant has an initiative (the gate)", async () => {
+  it("lets the DM apply and remove Alert's willing-ally initiative swap before turns", async () => {
+    alertFixtureEnabled.value = true;
+    const campaign = gatheringEncounterCampaign();
+    setCampaign({
+      ...campaign,
+      encounterInit: { "member-mara": 18, "member-bren": 5 },
+    });
+    renderParty();
+    await screen.findAllByLabelText(/^Armor Class:/);
+
+    fireEvent.click(screen.getByRole("button", { name: /alert swap/i }));
+    const target = await screen.findByRole("combobox", { name: /willing ally/i });
+    fireEvent.change(target, { target: { value: "pc-member-bren" } });
+    fireEvent.click(screen.getByRole("button", { name: /^swap initiative$/i }));
+
+    await waitFor(() =>
+      expect(currentEncounter().initiativeSwaps).toEqual([
+        { sourceId: "pc-member-mara", targetId: "pc-member-bren" },
+      ])
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /alert swap/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /remove swap/i }));
+    await waitFor(() => expect(currentEncounter().initiativeSwaps).toBeUndefined());
+  });
+
+  it("lets the DM begin with the rolled combatants and skips the unrolled ones", async () => {
     setCampaign(monstersOnlyGathering(false)); // the Orc is un-rolled → partial set
     renderParty();
-    const begin = await screen.findByRole("button", { name: /begin turns/i });
-    expect(begin).toBeDisabled();
-    // The BLANK monster chip wears the same urgent cue an un-rolled PC does (B8), so
-    // the DM can find which entry blocks the gate at a glance; the rolled one is quiet.
+    const begin = await screen.findByRole("button", { name: /begin with 1\/2/i });
+    expect(begin).not.toBeDisabled();
+    // Blank initiative remains visually obvious, but no longer traps the table.
     const orcChip = screen.getByRole("button", { name: /initiative for orc/i });
     expect(orcChip).toHaveAttribute("data-urgent");
     const goblinChip = screen.getByRole("button", { name: /initiative for goblin/i });
     expect(goblinChip).not.toHaveAttribute("data-urgent");
+    fireEvent.click(begin);
+    await waitFor(() => {
+      expect(currentEncounter().order).toEqual(["monster-1"]);
+      expect(currentEncounter().currentCombatantId).toBe("monster-1");
+    });
   });
 
   it("Begin-turns enables once all have initiative and FREEZES the order onto the doc", async () => {
@@ -1047,7 +1088,7 @@ describe("PC combat editor — the multi-writer edit gate", () => {
     expect(screen.getAllByRole("button", { name: /hit points/i })).toHaveLength(2);
   });
 
-  it("a DM HP edit routes through applyHpDelta against the MEMBER's (uid, charId)", async () => {
+  it("a DM HP edit routes through the fresh-read campaign transaction against the MEMBER's (uid, charId)", async () => {
     setCampaign(overviewCampaign());
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
@@ -1058,23 +1099,23 @@ describe("PC combat editor — the multi-writer edit gate", () => {
       target: { value: "6" },
     });
     fireEvent.click(screen.getByRole("button", { name: /^Damage$/ }));
-    await waitFor(() => expect(applyHpDeltaMock).toHaveBeenCalledTimes(1));
-    // applyHpDelta(uid, charId, base, op, effectiveMaxHp) — the op moved to arg index 3.
-    const [uid, , , op] = applyHpDeltaMock.mock.calls[0] as unknown as [
-      string,
-      string,
-      unknown,
-      { kind: string; amount: number },
-    ];
+    await waitFor(() => expect(writeCombatEffectMock).toHaveBeenCalledTimes(1));
+    // writeCampaignCombatEffect(uid, charId, preview, maxHp, mutation) — the DM's edit
+    // is keyed to the MEMBER's identity (never the viewer's) and books a TYPED HP
+    // mutation the transaction reduces over a fresh read (no stale-base overwrite).
+    const call = writeCombatEffectMock.mock.calls[0];
+    if (!call) throw new Error("no combat-effect write recorded");
+    const [uid, charId, , , mutation] = call;
     expect(uid).toBe("member-mara");
-    expect(op).toMatchObject({ kind: "damage", amount: 6 });
+    expect(charId).toBe("team-catalion-bard");
+    expect(mutation).toEqual({ kind: "hp", operation: { kind: "damage", amount: 6 } });
   });
 
   it("a rejected DM write SURFACES an honest toast — no silent swallow, no retry theater", async () => {
     // There is no stale-grant machinery to "self-heal" anymore: the DM's authority
     // derives LIVE from the campaign doc in firestore.rules, so a denial is a real,
     // terminal authorization fact. The write must surface once and NOT auto-retry.
-    applyHpDeltaMock.mockRejectedValueOnce({ code: "permission-denied" });
+    writeCombatEffectMock.mockRejectedValueOnce({ code: "permission-denied" });
     setCampaign(overviewCampaign());
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
@@ -1092,6 +1133,6 @@ describe("PC combat editor — the multi-writer edit gate", () => {
           .toasts.some((t) => /couldn't be saved/i.test(t.message ?? ""))
       ).toBe(true)
     );
-    expect(applyHpDeltaMock).toHaveBeenCalledTimes(1); // one write, no retry
+    expect(writeCombatEffectMock).toHaveBeenCalledTimes(1); // one write, no retry
   });
 });

@@ -15,12 +15,13 @@
  * bespoke browser, no picker-core fork (golden rule 3).
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { ModalTabSwitcher } from "@/components/shared/ModalTabSwitcher";
 import { MonsterStatBlockCard } from "@/components/shared/MonsterStatBlockCard";
 import { ModalScrollColumn, ModalStage } from "@/components/ui/modal-head";
+import { Segmented } from "@/components/ui/segmented";
 import { Switch } from "@/components/ui/selection";
 import { CompendiumPicker } from "@/features/compendium/picker";
 import { getMonster } from "@/data/monsters";
@@ -60,7 +61,12 @@ export function EncounterAddMonsterBody({
 }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"srd" | "custom">("srd");
-  const spec = useMemo(() => makeEncounterMonsterSpec(onAdd, t), [onAdd, t]);
+  const [side, setSide] = useState<"enemy" | "ally">("enemy");
+  const add = useCallback(
+    (input: MonsterInput): void => onAdd({ ...input, side }),
+    [onAdd, side]
+  );
+  const spec = useMemo(() => makeEncounterMonsterSpec(add, t), [add, t]);
 
   return (
     <>
@@ -75,13 +81,27 @@ export function EncounterAddMonsterBody({
           { id: "custom", label: t("campaignHub.encounterCustomTab") },
         ]}
       />
+      <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
+        <span className="text-sm font-semibold text-text-muted">
+          {t("campaignHub.encounterSide")}
+        </span>
+        <Segmented
+          aria-label={t("campaignHub.encounterSide")}
+          value={side}
+          onChange={setSide}
+          options={[
+            { value: "enemy", label: t("campaignHub.encounterEnemy") },
+            { value: "ally", label: t("campaignHub.encounterAlly") },
+          ]}
+        />
+      </div>
       {/* SRD Step 3 at a glance while picking (§D.1) — the same readout the round bar
           shows, both tabs. */}
       <div className="flex flex-wrap items-center gap-2 px-4 py-2">
         <EncounterBudgetReadout budget={budget} />
       </div>
       {activeTab === "custom" ? (
-        <EncounterCustomMonsters onAdd={onAdd} />
+        <EncounterCustomMonsters onAdd={add} />
       ) : (
         <CompendiumPicker
           spec={spec}

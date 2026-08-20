@@ -66,6 +66,16 @@ function session(overrides: Partial<SessionState> = {}): SessionState {
   };
 }
 
+function hydrateLegacy(
+  base: SessionState,
+  combat: CombatState | null,
+  maxHp: number
+): SessionState {
+  const result = applyCombatToSession(base, combat, maxHp, "legacy");
+  if (!result.ok) throw new Error(result.reason);
+  return result.session;
+}
+
 /**
  * Build a realistic IN-COMBAT encounter through the REAL reducers (never hand-rolled):
  * a fight with three individual goblins, turns begun (order frozen), advanced past round
@@ -77,6 +87,7 @@ function inCombatEncounter(): EncounterState {
     ["mara", "bren"],
     1_717_000_000_000 // the per-encounter epoch (a fixed monotonic stamp)
   );
+  // One combatant per creature: the ×3 goblin batch is monster-1..monster-3 (one group).
   enc = addMonster(enc, {
     name: "Goblin",
     ac: 13,
@@ -86,28 +97,28 @@ function inCombatEncounter(): EncounterState {
     notes: "flanks the casters",
   });
   enc = addMonster(enc, { name: "Shadow", ac: 12, maxHp: 16, count: 1, initiative: 18 });
-  enc = setHidden(enc, "monster-2", true); // a staged ambush
+  enc = setHidden(enc, "monster-4", true); // a staged ambush (the Shadow)
   // Begin turns — freeze the order (hidden combatant included; hidden is display-only).
   enc = beginEncounterTurns(enc, [
-    "monster-2",
+    "monster-4",
     "pc-mara",
     "monster-1",
-    "monster-1~2",
-    "monster-1~3",
+    "monster-2",
+    "monster-3",
     "pc-bren",
   ]);
-  enc = advanceTurn(enc); // monster-2 → pc-mara
+  enc = advanceTurn(enc); // monster-4 → pc-mara
   enc = advanceTurn(enc); // pc-mara → monster-1
-  // Wound the goblins: instance 2 killed, instance 1 at 4 HP and Prone.
-  enc = setHp(enc, "monster-1~2", 0, 0);
-  enc = setHp(enc, "monster-1", 0, 4);
+  // Wound the goblins: goblin 2 killed, goblin 1 at 4 HP and Prone.
+  enc = setHp(enc, "monster-2", 0);
+  enc = setHp(enc, "monster-1", 4);
   enc = toggleCondition(enc, "monster-1", "prone");
-  // A reinforcement wolf arrives mid-fight (auto-slots onto the frozen order as monster-3).
+  // A reinforcement wolf arrives mid-fight (auto-joins the frozen order as monster-5).
   enc = addMonster(enc, { name: "Wolf", ac: 13, maxHp: 11, count: 1, initiative: 7 });
-  enc = advanceTurn(enc); // monster-1 → monster-1~3 (down instance 2 is skipped)
-  enc = advanceTurn(enc); // monster-1~3 → pc-bren
-  enc = advanceTurn(enc); // pc-bren → monster-3
-  enc = advanceTurn(enc); // monster-3 → wrap → round 2, back to monster-2
+  enc = advanceTurn(enc); // monster-1 → monster-3 (the down goblin 2 is skipped)
+  enc = advanceTurn(enc); // monster-3 → pc-bren
+  enc = advanceTurn(enc); // pc-bren → monster-5
+  enc = advanceTurn(enc); // monster-5 → wrap → round 2, back to monster-4
   return enc;
 }
 
@@ -116,15 +127,15 @@ describe("reload-mid-combat resilience — the encounter survives a serialize �
     const before = inCombatEncounter();
     // Sanity: we are genuinely mid-combat (advanced past round 1, a frozen order, a live pointer).
     expect(before.round).toBe(2);
-    expect(before.currentCombatantId).toBe("monster-2");
+    expect(before.currentCombatantId).toBe("monster-4");
     expect(before.order).toEqual([
-      "monster-2",
+      "monster-4",
       "pc-mara",
       "monster-1",
-      "monster-1~2",
-      "monster-1~3",
+      "monster-2",
+      "monster-3",
       "pc-bren",
-      "monster-3", // the reinforcement auto-slotted onto the frozen order
+      "monster-5", // the reinforcement auto-joined onto the frozen order
     ]);
 
     const after = reload(before);
@@ -138,11 +149,14 @@ describe("reload-mid-combat resilience — the encounter survives a serialize �
     expect(after.epoch).toBe(before.epoch);
     // Each goblin keeps independent HP/conditions and the ambush keeps its hidden flag.
     const goblin = after.combatants.find((c) => c.id === "monster-1");
-    expect(goblin).toMatchObject({ tokens: [4], conditions: ["prone"] });
-    expect(after.combatants.find((c) => c.id === "monster-1~2")).toMatchObject({
-      tokens: [0],
+    expect(goblin).toMatchObject({
+      hp: { current: 4, temp: 0, max: 7 },
+      conditions: ["prone"],
     });
-    const ambush = after.combatants.find((c) => c.id === "monster-2");
+    expect(after.combatants.find((c) => c.id === "monster-2")).toMatchObject({
+      hp: { current: 0, temp: 0, max: 7 },
+    });
+    const ambush = after.combatants.find((c) => c.id === "monster-4");
     expect(ambush).toMatchObject({ hidden: true });
   });
 });
@@ -188,14 +202,14 @@ describe("reload-mid-combat resilience — every PC's combat/state survives byte
     // `applyCombatToSession` — the same call the cockpit's `hydrateCombatState` makes — so
     // the player sees the identical HP / temp / conditions / initiative / death saves.
     const maxHp = 24;
-    const mara = applyCombatToSession(session(), reload(maraState), maxHp);
+    const mara = hydrateLegacy(session(), reload(maraState), maxHp);
     expect(mara.hp).toEqual({ current: 6, temp: 3 });
     expect(mara.conditions).toEqual(["poisoned", "frightened"]);
     expect(mara.initiative).toBe("17"); // canonical number → cockpit string
     expect(mara.deathSucc).toBe(0);
     expect(mara.deathFail).toBe(0);
 
-    const bren = applyCombatToSession(session(), reload(brenState), maxHp);
+    const bren = hydrateLegacy(session(), reload(brenState), maxHp);
     expect(bren.hp).toEqual({ current: 0, temp: 0 });
     expect(bren.deathSucc).toBe(1);
     expect(bren.deathFail).toBe(2); // a downed PC resumes mid-death-saves, never reset
@@ -213,11 +227,7 @@ describe("reload-mid-combat resilience — every PC's combat/state survives byte
       deathSucc: 2,
       deathFail: 1,
     });
-    const resumed = applyCombatToSession(
-      session(),
-      reload(sessionToCombatState(live)),
-      maxHp
-    );
+    const resumed = hydrateLegacy(session(), reload(sessionToCombatState(live)), maxHp);
     expect(resumed.hp).toEqual({ current: 11, temp: 5 });
     expect(resumed.conditions).toEqual(["prone", "grappled"]);
     expect(resumed.initiative).toBe("13");

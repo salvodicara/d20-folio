@@ -6,7 +6,8 @@ import type {
   SrdActionDef,
 } from "./types";
 import { mergePack } from "@/lib/pack-merge";
-import { packRaces } from "@pack";
+import { withPackGrantExtensions } from "@/lib/pack-grant-extensions";
+import { packGrantExtensions, packRaces } from "@pack";
 
 const PUBLIC_RACES: SrdRaceData[] = [
   // ─── Human ───────────────────────────────────────────────────
@@ -63,14 +64,19 @@ const PUBLIC_RACES: SrdRaceData[] = [
       {
         id: "fey-ancestry",
         // Permanent condition-save Advantage → `advantage-on` (rollType "save"),
-        // surfaced as a save chip near the Abilities block — the same pattern
-        // Sorcerer Aberrant Sorcery / Barbarian Rage already use. The
-        // "can't be put to sleep" half stays descriptive (no condition for it).
+        // surfaced as a save chip near the Abilities block. Magical Sleep is a
+        // source-qualified Unconscious immunity, not blanket immunity to being
+        // knocked Unconscious by damage or another effect.
         grants: [
           {
             type: "advantage-on",
             rollType: "save",
             vs: "charmed",
+          },
+          {
+            type: "condition-immunity",
+            condition: "unconscious",
+            sourceId: "sleep",
           },
         ],
       },
@@ -326,6 +332,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
           actions: [
             {
               type: "bonus",
+              economyCategory: "dash",
             },
           ],
         },
@@ -898,8 +905,25 @@ const PUBLIC_RACES: SrdRaceData[] = [
   },
 ];
 
-/** All species — public SRD + content pack. */
-export const SRD_RACES: SrdRaceData[] = mergePack("race", PUBLIC_RACES, packRaces);
+const PUBLIC_RACES_WITH_PACK_GRANTS = PUBLIC_RACES.map((race) => ({
+  ...race,
+  traits: race.traits.map((trait) => {
+    const sourceKey = `race:${race.id}:${trait.id}`;
+    return packGrantExtensions[sourceKey]?.length
+      ? {
+          ...trait,
+          grants: withPackGrantExtensions(sourceKey, trait.grants, packGrantExtensions),
+        }
+      : trait;
+  }),
+}));
+
+/** All species — public SRD (including typed pack extensions) + pack species. */
+export const SRD_RACES: SrdRaceData[] = mergePack(
+  "race",
+  PUBLIC_RACES_WITH_PACK_GRANTS,
+  packRaces
+);
 
 // ─── Lookup Map ───────────────────────────────────────────────
 

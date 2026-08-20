@@ -86,6 +86,9 @@
     "description": "Ottieni competenza in un'abilità a tua scelta tra quelle disponibili ai Barbari al 1° livello. Inoltre, mentre la tua Ira è attiva, puoi incanalare il potere primordiale: ogni volta che effettui una prova di abilità con Acrobazia, Intimidire, Percezione, Furtività o Sopravvivenza, puoi effettuarla come prova di Forza anche se normalmente usa una caratteristica diversa.",
     "name": "Conoscenza Primordiale"
   },
+  "barbarian-primal-knowledge.grants.1": {
+    "label": "Conoscenza Primordiale"
+  },
   "barbarian-rage": {
     "description": "Nel tuo turno, puoi entrare in Ira come Azione Bonus. Mentre sei in preda all'Ira, ottieni i seguenti benefici: hai Vantaggio alle prove e ai tiri salvezza di Forza, quando effettui un attacco basato sulla Forza infliggi danni bonus pari al tuo danno dell'Ira, e hai Resistenza ai danni Contundenti, Perforanti e Taglienti. La tua Ira dura fino alla fine del tuo turno successivo e puoi estenderla round dopo round (fino a un massimo di 10 minuti) effettuando un tiro per colpire contro un nemico, costringendo un nemico a effettuare un tiro salvezza o usando un'Azione Bonus per mantenerla. Recuperi un uso speso di Ira con un Riposo Breve e tutti con un Riposo Lungo.",
     "name": "Ira"
@@ -104,12 +107,22 @@
     "label": "Ira",
     "summary": "Entra in Ira (estendibile fino a 10 minuti)"
   },
+  "barbarian-rage.mechanics.actions.1": {
+    "description": "Spendi un'Azione Bonus per estendere l'Ira attiva fino al tuo prossimo turno.",
+    "name": "Estendi Ira",
+    "summary": "Estendi l'Ira attiva"
+  },
   "barbarian-rage.mechanics.rider": {
     "label": "Danno da Ira"
   },
   "barbarian-reckless-attack": {
     "description": "Puoi abbandonare ogni cautela difensiva per attaccare con maggiore ferocia. Quando effettui il tuo primo tiro per colpire nel turno, puoi decidere di attaccare spericolatamente, ottenendo Vantaggio ai tiri per colpire con Forza fino all'inizio del tuo prossimo turno, ma i tiri per colpire contro di te hanno Vantaggio per la stessa durata.",
     "name": "Attacco Irruento"
+  },
+  "barbarian-reckless-attack.mechanics.actions.0": {
+    "description": "Dichiara Attacco Irruento per i tuoi attacchi con Forza fino all'inizio del tuo prossimo turno.",
+    "label": "Attacco Irruento",
+    "summary": "Dichiara Attacco Irruento"
   },
   "barbarian-reckless-attack.grants.0": {
     "label": "Attacco Irruento"
@@ -143,7 +156,7 @@
     "name": "Aumento dei Punteggi di Caratteristica"
   },
   "bard-bardic-inspiration": {
-    "description": "Puoi ispirare gli altri con parole o musica. Come azione bonus, dai a una creatura entro 18 metri un dado di Ispirazione Bardica. La creatura può aggiungere il dado a una prova di caratteristica, tiro per colpire o tiro salvezza entro 10 minuti. Puoi usarlo un numero di volte pari al tuo modificatore di Carisma (minimo 1), recuperando tutti gli usi con un riposo lungo.",
+    "description": "Come Azione Bonus, ispiri un'altra creatura entro 18 metri che possa vederti o sentirti. La creatura conserva un dado di Ispirazione Bardica per un massimo di 1 ora. Dopo aver fallito un Test del d20, può tirare il dado e sommarlo al d20, trasformando potenzialmente il fallimento in successo. Una creatura può conservare un solo dado alla volta. Puoi usare questo privilegio un numero di volte pari al tuo modificatore di Carisma (minimo 1).",
     "name": "Ispirazione Bardica"
   },
   "bard-bardic-inspiration.mechanics.actions.0": {
@@ -568,6 +581,11 @@
   "monk-deflect-attacks.mechanics.actions.0": {
     "description": "Riduci il danno di un attacco di 1d10 + mod DES + livello Monaco."
   },
+  "monk-deflect-attacks.mechanics.actions.1": {
+    "description": "Dopo aver ridotto il danno a 0, spendi 1 Punto Concentrazione. Il bersaglio effettua un TS su Destrezza o subisce 2 dadi Arti Marziali + mod DES danni del tipo innescante.",
+    "name": "Devia Attacco",
+    "summary": "A 0 danni: 1 Concentrazione · TS DES · 2 dadi marziali + DES"
+  },
   "monk-deflect-energy": {
     "description": "Ora puoi usare la tua capacità Deviare Attacchi contro qualsiasi tipo di danno, non solo i danni dagli attacchi con arma.",
     "name": "Deviare Energia"
@@ -656,9 +674,14 @@
     "name": "Difesa Paziente"
   },
   "monk-patient-defense.mechanics.actions.0": {
-    "description": "Disimpegno come Azione Bonus (gratis). Spendi 1 Focus: anche Schivata.",
+    "description": "Disimpegno come Azione Bonus senza spendere Concentrazione.",
     "label": "Difesa Paziente",
-    "summary": "Disimpegno come Azione Bonus; 1 Punto: anche Schivata"
+    "summary": "Disimpegno come Azione Bonus"
+  },
+  "monk-patient-defense.mechanics.actions.1": {
+    "name": "Difesa Paziente Focalizzata",
+    "description": "Spendi 1 Punto Concentrazione per Disimpegnarti e Schivare come Azione Bonus. Dal livello 10 ottieni anche Punti Ferita Temporanei pari a due tiri del dado delle Arti Marziali.",
+    "summary": "Disimpegno + Schivata · 1 Concentrazione"
   },
   "monk-perfect-focus": {
     "description": "Quando hai meno di 4 Punti Concentrazione all'inizio del tuo turno, recuperi Punti Concentrazione fino ad averne 4.",
@@ -677,9 +700,14 @@
     "name": "Passo del Vento"
   },
   "monk-step-of-the-wind.mechanics.actions.0": {
-    "description": "Scatto come Azione Bonus (gratis). Spendi 1 Focus: anche Disimpegno + salto raddoppiato.",
+    "description": "Scatto come Azione Bonus senza spendere Concentrazione.",
     "label": "Passo del Vento",
-    "summary": "Scatto come Azione Bonus; 1 Punto: anche Disimpegno"
+    "summary": "Scatto come Azione Bonus"
+  },
+  "monk-step-of-the-wind.mechanics.actions.1": {
+    "name": "Passo del Vento Focalizzato",
+    "description": "Spendi 1 Punto Concentrazione per Scattare e Disimpegnarti come Azione Bonus; la distanza di salto è raddoppiata per il turno.",
+    "summary": "Scatto + Disimpegno + salto doppio · 1 Punto"
   },
   "monk-stunning-strike": {
     "description": "Una volta per turno quando colpisci una creatura con un'arma da monaco o un Colpo Senz'armi, puoi spendere 1 Punto Concentrazione per tentare un colpo stordente. Il bersaglio deve effettuare un tiro salvezza su Costituzione. Con un fallimento, ha la condizione Stordito fino all'inizio del tuo turno successivo. Con un successo, la sua Velocità è dimezzata fino all'inizio del tuo turno successivo e il prossimo tiro per colpire effettuato contro di esso prima di allora ha Vantaggio.",
@@ -716,6 +744,11 @@
     "description": "Quando tiri Iniziativa, puoi recuperare tutti i Punti Concentrazione spesi. Quando lo fai, tira il tuo dado di Arti Marziali e recuperi un numero di Punti Ferita pari al tuo livello da Monaco + il risultato del tiro. Una volta usata questa capacità, non puoi farlo di nuovo fino a un Riposo Lungo.",
     "name": "Metabolismo Straordinario"
   },
+  "monk-uncanny-metabolism.mechanics.actions.0": {
+    "description": "Dopo aver tirato Iniziativa, recupera tutti i Punti Concentrazione e dado Arti Marziali + livello da Monaco Punti Ferita.",
+    "label": "Metabolismo Straordinario",
+    "summary": "Concentrazione piena + dado Arti Marziali + livello PF"
+  },
   "paladin-abjure-foes": {
     "description": "Come azione Magica, puoi spendere un uso di Incanalare Divinità per presentare il tuo simbolo sacro. Ogni nemico entro 18 m deve effettuare un TS di Saggezza o essere Spaventato per 1 minuto (TS pone fine).",
     "name": "Abiurare i Nemici"
@@ -733,7 +766,7 @@
     "name": "Aura di Coraggio"
   },
   "paladin-aura-of-protection": {
-    "description": "Ogni volta che tu o una creatura amica entro 3 metri dovete effettuare un tiro salvezza, la creatura ottiene un bonus pari al tuo modificatore di Carisma (minimo +1). Al 18° livello, il raggio aumenta a 9 metri.",
+    "description": "Emetti un'aura di 3 metri, inattiva mentre hai la condizione Incapacitato. Tu e gli alleati al suo interno ottenete ai tiri salvezza un bonus pari al tuo modificatore di Carisma (minimo +1). Al livello 18, la portata diventa 9 metri.",
     "name": "Aura di Protezione"
   },
   "paladin-channel-divinity": {
@@ -954,8 +987,16 @@
     "name": "Azione Scaltra"
   },
   "rogue-cunning-action.mechanics.actions.0": {
-    "description": "Scatto, Disimpegno o Nascondersi come azione bonus.",
-    "label": "Azione Scaltra"
+    "description": "Raddoppia il movimento per questo turno.",
+    "name": "Azione Scaltra: Scatto"
+  },
+  "rogue-cunning-action.mechanics.actions.1": {
+    "description": "Muoviti senza provocare Attacchi di Opportunità.",
+    "name": "Azione Scaltra: Disimpegno"
+  },
+  "rogue-cunning-action.mechanics.actions.2": {
+    "description": "Furtività CD 15: diventi Invisibile se riesci.",
+    "name": "Azione Scaltra: Nascondersi"
   },
   "rogue-cunning-strike": {
     "description": "Quando infliggi danni da Attacco Furtivo, puoi rinunciare ad alcuni dadi per applicare un effetto speciale: Veleno (rinunci a 1d6, TS COS o Avvelenato), Sgambetto (rinunci a 1d6, TS DES o Prono), Ritirata (rinunci a 1d6, Disimpegno dopo il colpo).",

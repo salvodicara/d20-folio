@@ -296,7 +296,12 @@ function riderName(rider: RiderVM, t: TranslateFn): string {
 function riderToken(rider: RiderVM, t: TranslateFn): { text: string; outcome: string } {
   switch (rider.kind) {
     case "damage": {
-      const typeWord = rider.damageTypeId ? t(`srd.damage_${rider.damageTypeId}`) : "";
+      const typeIds = rider.damageTypeChoiceIds?.length
+        ? rider.damageTypeChoiceIds
+        : rider.damageTypeId
+          ? [rider.damageTypeId]
+          : [];
+      const typeWord = typeIds.map((type) => t(`srd.damage_${type}`)).join(" / ");
       // A per-hit "vs marked/cursed target" rider (Hunter's Mark, Hex) labels the
       // chip so the +die reads as conditional on hitting THAT creature, never every
       // attack (the app models no enemy — the player applies it on the right hit).

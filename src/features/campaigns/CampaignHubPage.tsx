@@ -30,7 +30,6 @@ import { FolioLoader } from "@/components/shared/FolioLoader";
 import { InlineEditable } from "@/components/shared/InlineEditable";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { ErrorBoundary, SectionErrorFallback } from "@/components/shared/ErrorBoundary";
-import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { transitionBackdrop } from "@/lib/backdrop-transition";
 import { cropToBackgroundPosition, cropZoomFactor } from "@/lib/portrait-crop";
 import type { PortraitCrop } from "@/types/character";
@@ -45,8 +44,6 @@ import {
 import { useCampaignSubscription } from "@/features/campaigns/useCampaignSubscription";
 import { useChronicleSubscription } from "@/features/campaigns/useChronicleSubscription";
 import { useChronicleStore } from "@/features/campaigns/chronicleStore";
-import { conformCampaignMembers } from "@/features/campaigns/campaign-io";
-import { makeDevCampaign } from "@/features/campaigns/dev-fixture";
 import { CampaignArtControl } from "@/features/campaigns/CampaignArtControl";
 import { Party } from "@/features/campaigns/Party";
 import { CampaignInvite } from "@/features/campaigns/CampaignInvite";
@@ -357,24 +354,6 @@ function CampaignWorkspace({
   );
 }
 
-/** Dev-bypass only: seed a fixture campaign so the hub renders without Firestore. */
-function useDevCampaignSeed(campaignId: string): void {
-  useEffect(() => {
-    if (!DEV_BYPASS_AUTH) return;
-    const store = useCampaignStore.getState();
-    if (store.campaign?.id !== campaignId) {
-      // Route the in-memory fixture through the SAME member-snapshot read boundary
-      // the real Firestore read uses, so a corrupt (nameless) member snapshot is
-      // rejected (its `character` → null) identically in dev (non-nullability).
-      const fixture = makeDevCampaign(campaignId);
-      store.setCampaign({
-        ...fixture,
-        memberDetails: conformCampaignMembers(fixture.memberDetails),
-      });
-    }
-  }, [campaignId]);
-}
-
 function CampaignHub({ campaignId }: { campaignId: string }) {
   const { t } = useTranslation();
   useCampaignSubscription(campaignId);
@@ -385,7 +364,6 @@ function CampaignHub({ campaignId }: { campaignId: string }) {
   // itself" jump). The loading gate below holds the FolioLoader until BOTH
   // initial snapshots have landed, so the hub always paints fully formed.
   useChronicleSubscription(campaignId);
-  useDevCampaignSeed(campaignId);
   const campaign = useCampaignStore((s) => s.campaign);
   const error = useCampaignStore((s) => s.error);
   const chronicleLoading = useChronicleStore((s) => s.loading);

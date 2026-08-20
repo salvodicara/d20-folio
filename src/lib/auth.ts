@@ -1,6 +1,7 @@
 import {
   GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signOut as firebaseSignOut,
   type User,
@@ -10,10 +11,14 @@ import { auth, db } from "./firebase";
 import { useAuthStore, type UserProfile } from "@/stores/authStore";
 import { DEV_BYPASS_AUTH, DEV_BYPASS_PHOTO_URL } from "@/lib/dev-bypass";
 // DEV-ONLY (remove before release): act-as-member impersonation (the `?devActAs=<uid>`
-// emulator sandbox; see `dev-impersonate.ts` + `content-pack/scripts/dev-seed-sandbox.ts`).
+// emulator sandbox; see `dev-impersonate.ts` + `scripts/dev-seed-sandbox.ts`).
 import { devActAsUid } from "@/lib/dev-impersonate";
 
 const googleProvider = new GoogleAuthProvider();
+const EMULATOR_SANDBOX =
+  import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === "true";
+const SANDBOX_EMAIL = "owner@sandbox.dev";
+const SANDBOX_PASSWORD = "d20-folio-local-only";
 
 /**
  * Sign in with Google popup.
@@ -199,6 +204,23 @@ export function initAuthListener(): () => void {
     return () => {};
   }
 
+  // The emulator sandbox owns an Auth-emulator account with these deterministic
+  // credentials. Sign into that REAL local account automatically: manual dogfood then
+  // exercises Firebase tokens, Firestore rules and listeners without a Google popup
+  // (which cannot complete reliably in embedded browsers). Production cannot enter
+  // this branch because both flags are compile-time false there.
+  if (EMULATOR_SANDBOX && !auth.currentUser) {
+    void signInWithEmailAndPassword(auth, SANDBOX_EMAIL, SANDBOX_PASSWORD).catch(
+      (error: unknown) => {
+        const store = useAuthStore.getState();
+        const message = error instanceof Error ? error.message : "Sandbox sign-in failed";
+        console.error("Failed to sign into the local Firebase sandbox:", error);
+        store.setError(message);
+        store.setInitialized(true);
+      }
+    );
+  }
+
   const unsubscribe = onAuthStateChanged(auth, (user) => {
     const store = useAuthStore.getState();
 
@@ -246,7 +268,7 @@ export function initAuthListener(): () => void {
           store.setError("Failed to load user profile");
           store.setInitialized(true);
         });
-    } else {
+    } else if (!EMULATOR_SANDBOX) {
       store.reset();
       store.setInitialized(true);
     }

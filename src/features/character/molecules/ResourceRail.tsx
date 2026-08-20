@@ -1,16 +1,17 @@
 /**
  * ResourceRail — the always-on Right HUD content, re-homed from the legacy
  * `GameRail` rail body and composed by `RightHud`. Four sections matching the
- * cockpit mock: **Resources** (spell slots + class trackers), **Status**
+ * cockpit mock: **Resources** (spell slots + class trackers + exact physical-item
+ * counters), **Status**
  * (concentration + conditions + exhaustion), **Defenses** (resist / immune /
  * vulnerable), and **Proficiencies** (armor / weapons / tools / languages).
  *
  * The engine seam is READ-ONLY-derive + state-binding only: `resolveTrackers` +
  * the aggregated spell-slot / conditions / exhaustion / concentration views; it
  * calls only the existing store actions (useTracker / restoreTracker,
- * add/removeCondition, setConcentration, updateSession). HP / hit dice / death
- * saves live in the center HEALTH panel, never here. The action-economy "This
- * Turn" loop and HP mutation are Phase 4 — not in this rail.
+ * add/removeCondition, setConcentration, updateSession) plus the shared typed
+ * item-resource command provider. HP / hit dice / death saves live in the center
+ * HEALTH panel, never here.
  */
 
 import { useMemo, useState, useRef, lazy, Suspense } from "react";
@@ -18,7 +19,7 @@ import { primaryClassId, totalLevel } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
 import { Plus, Minus, X, Skull, Sparkles } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
-import { useCombatStore } from "@/stores/combatStore";
+import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useLocale } from "@/hooks/useLocale";
@@ -30,11 +31,22 @@ import {
   resolveAltRecovery,
   resolveSlotAltRecovery,
   resolveTrackers,
-  armorDisadvantageClauses,
+  wornArmorDisadvantageClauses,
 } from "@/lib/smart-tracker";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
+import { effectsForTarget } from "@/lib/combat-effects";
+import { useGlobalCombat } from "@/features/campaigns/global-combat-context";
 import { ConditionEditor } from "./ConditionEditor";
-import { slotUsageKey, bareSlotIsPact } from "@/lib/cast-options";
+import { slotUsageKey } from "@/lib/cast-options";
+// The rail's core vital reads (concentration, exhaustion, slot pips) go
+// through the ONE vitals projection seam (session truth reconciled against
+// the persisted engine world) — the second UI-read migration off the bridge.
+import {
+  vitalConcentration,
+  vitalExhaustion,
+  vitalSlotUsed,
+} from "@/lib/character-vitals";
 import type { AggregatedGrants } from "@/lib/grants";
 import { localizeText } from "@/lib/views/srd-i18n";
 import {
@@ -89,6 +101,8 @@ import { CompanionHpStepper } from "@/components/shared/CompanionHpStepper";
 import { buildCompanionCardViews } from "@/lib/views/companion-row-view";
 import { RailNotes } from "./RailNotes";
 import { ResourceConversions } from "./ResourceConversions";
+import { TableClockControl } from "./TableClockControl";
+import { ItemResourceRailRow } from "./ItemResourceRailRow";
 import { GrantBundleSelector } from "@/components/sheet/GrantBundleSelector";
 import { ActivatableFeaturesBar } from "./ActivatableFeaturesBar";
 import {
@@ -98,27 +112,13 @@ import {
 } from "@/lib/proficiency-tokens";
 import { localizeSrd } from "@/i18n/resolver";
 import { ensureSrdKind } from "@/i18n";
-import type { AbilityCode, DamageType, ConditionId } from "@/data/types";
+import type { AbilityCode, ConditionId } from "@/data/types";
+import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 import type { SessionDefenseKind } from "@/types/character";
 import type { TFunction } from "i18next";
 import { localeDistance } from "@/lib/utils";
+import { buildItemResourceViewModels } from "@/lib/views/item-resource-view";
 
-/** The full DamageType enum, in the canonical order, for the #68 override pickers. */
-const ALL_DAMAGE_TYPES: DamageType[] = [
-  "acid",
-  "bludgeoning",
-  "cold",
-  "fire",
-  "force",
-  "lightning",
-  "necrotic",
-  "piercing",
-  "poison",
-  "radiant",
-  "psychic",
-  "slashing",
-  "thunder",
-];
 /** The six set-valued override maps on CharacterData (#68). */
 type SetOverrideField =
   | "damageResistanceOverrides"
@@ -154,14 +154,33 @@ export function ResourceRail() {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const character = useCharacterStore((s) => s.character);
-  const combatSelected = useCombatStore((s) => s.selected);
+  const globalCombat = useGlobalCombat();
+  const showToast = useToastStore((s) => s.showToast);
   const sheetMode = useUIStore((s) => s.sheetMode);
   const isEdit = sheetMode === "edit";
+  const isPlay = sheetMode === "play";
+  const readonly = useCharacterStore((s) => s.readonly);
   const setCompanionHp = useCharacterStore((s) => s.setCompanionHp);
 
+  const itemResources = useMemo(
+    () => (character ? buildItemResourceViewModels(character).resources : []),
+    [character]
+  );
+  const typedItemTrackerIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const resource of itemResources) {
+      ids.add(resource.identity.itemId);
+    }
+    return ids;
+  }, [itemResources]);
   const trackers = useMemo<ResolvedTracker[]>(
-    () => (character ? localizeTrackers(character, locale) : []),
-    [character, locale]
+    () =>
+      character
+        ? localizeTrackers(character, locale).filter(
+            (tracker) => !typedItemTrackerIds.has(tracker.id)
+          )
+        : [],
+    [character, locale, typedItemTrackerIds]
   );
 
   // BARDTRK1 — the Bard's OWN Bardic Inspiration give-out tracker lives with the
@@ -188,7 +207,7 @@ export function ResourceRail() {
               // S13 — the unproficient-armor Disadvantage (STR/DEX checks + saves;
               // the attack one surfaces inline on action cards) joins this section,
               // derived from the SAME predicate the Inventory "Untrained" gloss uses.
-              disadvantages: armorDisadvantageClauses(character),
+              disadvantages: wornArmorDisadvantageClauses(character),
             }).filter((c) => c.rollType !== "attack"),
             locale
           )
@@ -259,35 +278,8 @@ export function ResourceRail() {
     [aggregate]
   );
 
-  // Pending spend preview from the active combat selection (read-only; empty
-  // until Phase 4 wires the action economy).
-  const slotTable = character?.character.spellSlots;
-  const { pendingSlots, pendingTrackers } = useMemo(() => {
-    // B3 — key the preview by the canonical `slotUsageKey` (the SAME key the real
-    // spend writes), resolving the pool the bare-level cost will draw from via
-    // `bareSlotIsPact`. Otherwise a Sorlock queuing a normal L1 cast over-previews a
-    // pending dot on BOTH same-level rows (normal AND pact); now it lands only on the
-    // row that will actually be spent.
-    const table = slotTable ?? [];
-    const slots: Record<string, number> = {};
-    const tkrs: Record<string, number> = {};
-    // B6 — each slot holds a LIST of committed actions this turn (Action Surge /
-    // Haste); sum the pending cost across every one.
-    for (const slot of ["action", "bonus", "free"] as const) {
-      for (const action of combatSelected[slot]) {
-        if (!action.cost) continue;
-        if (action.cost.type === "spell-slot" && action.cost.key != null) {
-          const level = action.cost.key as number;
-          const key = slotUsageKey({ level, pactMagic: bareSlotIsPact(table, level) });
-          slots[key] = (slots[key] ?? 0) + 1;
-        } else if (action.cost.type === "tracker" && action.cost.key != null) {
-          const id = action.cost.key as string;
-          tkrs[id] = (tkrs[id] ?? 0) + 1;
-        }
-      }
-    }
-    return { pendingSlots: slots, pendingTrackers: tkrs };
-  }, [combatSelected, slotTable]);
+  const sheetCombat =
+    character && globalCombat?.characterId === character.id ? globalCombat : null;
 
   if (!character || !aggregate) return null;
 
@@ -303,15 +295,45 @@ export function ResourceRail() {
     aggregate.itemAbilityScoreCap
   );
   const spellSlots = charData.spellSlots;
-  const concentration = session.concentration;
-  const conditions = session.conditions;
-  const exhaustion = session.exhaustion;
+  const concentration = vitalConcentration(session);
+  const conditions = effectiveSessionConditions(session);
+  const exhaustion = vitalExhaustion(session);
   const inspiration = session.inspiration;
   // D37 — the Bardic Inspiration die the character is HOLDING (granted by an ally
   // Bard); "" when none. Distinct from the Bard's own give-out tracker.
   const heldDie = session.bardicInspirationDie ?? "";
   const INSPIRATION_DICE = ["d6", "d8", "d10", "d12"] as const;
-  const hasResources = spellSlots.length > 0 || trackers.length > 0;
+  const hasResources =
+    spellSlots.length > 0 || trackers.length > 0 || itemResources.length > 0;
+
+  const toggleCondition = (id: string): void => {
+    const store = useCharacterStore.getState();
+    if (!conditions.includes(id)) {
+      store.addCondition(id);
+      return;
+    }
+    store.removeCondition(id);
+    if (!sheetCombat) return;
+    const effectIds = effectsForTarget(
+      sheetCombat.encounter.effectOps,
+      sheetCombat.myId
+    ).flatMap((effect) =>
+      effect.payload.kind === "condition" && effect.payload.conditionId === id
+        ? [effect.id]
+        : []
+    );
+    if (effectIds.length === 0) return;
+    void import("@/features/campaigns/campaign-io")
+      .then(async ({ revokePersistentCombatEffect }) => {
+        for (const effectId of effectIds) {
+          await revokePersistentCombatEffect(sheetCombat.campaignId, effectId);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error("Combat condition override failed", error);
+        showToast({ message: t("campaignHub.combatWriteFailed"), duration: 6000 });
+      });
+  };
 
   // Defenses (#68 override-first + PLAY-NO-EDIT session overlay): each kind's
   // PERMANENT set = (grant-computed ∪ added) \ removed via the build override
@@ -521,8 +543,8 @@ export function ResourceRail() {
 
   return (
     <div className="folio-panel flex flex-col gap-6 p-4">
-      {/* ── Resources — spell slots + class trackers ─────────────────────── */}
-      <RailSection rubric={t("character.hud.resources")}>
+      {/* ── Resources — slots + class trackers + exact item counters ─────── */}
+      <RailSection rubric={t("character.hud.resources")} action={<TableClockControl />}>
         {hasResources ? (
           <div className="flex flex-col gap-3">
             {spellSlots.length > 0 && (
@@ -534,33 +556,38 @@ export function ResourceRail() {
                 <span className="trk-name">{t("character.spellSlots")}</span>
                 <div className="slot-grid">
                   {spellSlots.map((slot) => {
-                    const used = session.spellSlots[slotUsageKey(slot)]?.used ?? 0;
-                    const available = Math.max(0, slot.total - used);
-                    return (
-                      <RailSlot
-                        key={slotUsageKey(slot)}
-                        slot={slot}
-                        used={used}
-                        pending={Math.min(
-                          pendingSlots[slotUsageKey(slot)] ?? 0,
-                          available
-                        )}
-                      />
-                    );
+                    const used = vitalSlotUsed(session, slot);
+                    return <RailSlot key={slotUsageKey(slot)} slot={slot} used={used} />;
                   })}
                 </div>
               </div>
             )}
             {trackers.map((tracker) => (
-              <RailTracker
-                key={tracker.id}
-                tracker={tracker}
-                pendingSpend={Math.min(
-                  pendingTrackers[tracker.id] ?? 0,
-                  Math.max(0, tracker.total - tracker.used)
-                )}
-              />
+              <RailTracker key={tracker.id} tracker={tracker} />
             ))}
+            {itemResources.map((resource) => {
+              const itemName = localizeSrd(
+                "magic-item",
+                resource.identity.itemId,
+                "name",
+                locale
+              );
+              const itemLabel =
+                resource.copyNumber == null
+                  ? itemName
+                  : t("magicItems.resourceCopy", {
+                      name: itemName,
+                      number: resource.copyNumber,
+                    });
+              return (
+                <ItemResourceRailRow
+                  key={resource.identity.key}
+                  resource={resource}
+                  itemLabel={itemLabel}
+                  interactive={isPlay && !readonly}
+                />
+              );
+            })}
             {/* PRIM-resource-conversion (closes needs-UI:resource-conversion-
                 action) — Font of Magic SP ⇄ slots, Nature Magician Wild Shape →
                 slot. Inline picker of the LEGAL trades only; click = immediate
@@ -796,7 +823,7 @@ export function ResourceRail() {
               onClick={() => {
                 if (!inspiration) {
                   // Receiving the boon — a plain toggle (not an undoable spend).
-                  useCharacterStore.getState().updateSession({ inspiration: true });
+                  useCharacterStore.getState().setHeroicInspiration(true);
                   return;
                 }
                 // Spending it — immediate-commit with undo (onto the stack).
@@ -804,9 +831,8 @@ export function ResourceRail() {
                 registerUndoableToast(
                   { message },
                   () => {
-                    useCharacterStore.getState().updateSession({ inspiration: false });
-                    return () =>
-                      useCharacterStore.getState().updateSession({ inspiration: true });
+                    useCharacterStore.getState().setHeroicInspiration(false);
+                    return () => useCharacterStore.getState().setHeroicInspiration(true);
                   },
                   { turnScoped: false }
                 );
@@ -856,13 +882,9 @@ export function ResourceRail() {
                   registerUndoableToast(
                     { message },
                     () => {
-                      useCharacterStore
-                        .getState()
-                        .updateSession({ bardicInspirationDie: "" });
+                      useCharacterStore.getState().setBardicInspirationDie("");
                       return () =>
-                        useCharacterStore
-                          .getState()
-                          .updateSession({ bardicInspirationDie: heldDie });
+                        useCharacterStore.getState().setBardicInspirationDie(heldDie);
                     },
                     { turnScoped: false }
                   );
@@ -885,9 +907,7 @@ export function ResourceRail() {
                         die,
                       })}
                       onClick={() =>
-                        useCharacterStore
-                          .getState()
-                          .updateSession({ bardicInspirationDie: die })
+                        useCharacterStore.getState().setBardicInspirationDie(die)
                       }
                     >
                       {die}
@@ -905,6 +925,9 @@ export function ResourceRail() {
 
       {/* ── Status — concentration + conditions + exhaustion ─────────────── */}
       <RailSection rubric={t("character.hud.status")}>
+        {aggregate.healingBlocked && (
+          <p className="mb-2 text-sm text-danger">{t("combat.resolveHealingBlocked")}</p>
+        )}
         {concentration && (
           <div className="conc-pill" style={{ marginBottom: "var(--sp-2)" }}>
             <FocusMark label={t("combat.concentration")} />
@@ -919,7 +942,11 @@ export function ResourceRail() {
             </button>
           </div>
         )}
-        <ConditionStrip conditions={conditions} hiddenDc={session.hiddenDc} />
+        <ConditionStrip
+          conditions={conditions}
+          hiddenDc={session.hiddenDc}
+          onToggle={toggleCondition}
+        />
         <ExhaustionTrack value={exhaustion} />
       </RailSection>
 
@@ -1064,6 +1091,7 @@ export function ResourceRail() {
           attack-roll ones live inline on the action cards, so they're filtered out
           above. Hidden entirely when the character has none. ── */}
       {(advChips.length > 0 ||
+        aggregate.rollDieAdjustments.length > 0 ||
         incomingAttackNotes.length > 0 ||
         incomingDefenseNotes.length > 0) && (
         <RailSection rubric={t("abilities.advantages")}>
@@ -1080,6 +1108,17 @@ export function ResourceRail() {
                     ? `${c.description} · ${t("combat.whileActiveNote")}`
                     : c.description
                 }
+              />
+            ))}
+            {aggregate.rollDieAdjustments.map((adjustment, index) => (
+              <DefenseRow
+                key={`${adjustment.sourceId}-roll-adjustment-${index}`}
+                label={t(`combat.resolveRoll_${adjustment.rollType}`)}
+                value={t("combat.resolveNextRollAdjustment", {
+                  roll: t(`combat.resolveRoll_${adjustment.rollType}`),
+                  sign: adjustment.operation === "add" ? "+" : "−",
+                  dice: adjustment.dice,
+                })}
               />
             ))}
             {/* SELF-side combat downsides (Reckless Attack): framed as a Disadv.
@@ -1411,7 +1450,7 @@ function AddDefensePicker({
   const options =
     kind === "conditionImmunity"
       ? conditionOptions(locale)
-      : ALL_DAMAGE_TYPES.map((d) => ({ id: d, label: t(`srd.damage_${d}`) })) //
+      : DAMAGE_TYPES.map((d) => ({ id: d, label: t(`srd.damage_${d}`) })) //
           .sort((a, b) => a.label.localeCompare(b.label, locale));
 
   function commit(id: string) {
@@ -1488,10 +1527,12 @@ function AddDefensePicker({
 function ConditionStrip({
   conditions,
   hiddenDc,
+  onToggle,
 }: {
   conditions: string[];
   /** RA-12 — the Hide action's find-DC, suffixed onto the Invisible chip. */
   hiddenDc?: number;
+  onToggle: (conditionId: string) => void;
 }) {
   const { t } = useTranslation();
   return (
@@ -1499,11 +1540,7 @@ function ConditionStrip({
       conditions={conditions}
       hiddenDc={hiddenDc}
       emptyLabel={t("character.noConditions")}
-      onToggle={(id) => {
-        const store = useCharacterStore.getState();
-        if (conditions.includes(id)) store.removeCondition(id);
-        else store.addCondition(id);
-      }}
+      onToggle={onToggle}
     />
   );
 }
@@ -1521,11 +1558,9 @@ function ConditionStrip({
 function RailSlot({
   slot,
   used,
-  pending,
 }: {
   slot: { level: number; total: number; pactMagic?: boolean };
   used: number;
-  pending: number;
 }) {
   const { t } = useTranslation();
   const spendSlot = useCharacterStore((s) => s.useSpellSlot);
@@ -1569,17 +1604,12 @@ function RailSlot({
         })}
       >
         {Array.from({ length: total }).map((_, i) => {
-          const isOn = i < available - pending;
-          const isPending = i >= available - pending && i < available;
+          const isOn = i < available;
           return (
             <button
               key={i}
               type="button"
-              className={cn(
-                "sc-pip",
-                isPending && "pending",
-                !isOn && !isPending && "used"
-              )}
+              className={cn("sc-pip", !isOn && "used")}
               aria-label={
                 isOn
                   ? t("character.slotSpendAria", { level: slot.level })
@@ -1603,7 +1633,6 @@ function RailSlot({
 function TrackerPips({
   total,
   available,
-  pendingSpend = 0,
   label,
   spendAria,
   restoreAria,
@@ -1613,7 +1642,6 @@ function TrackerPips({
 }: {
   total: number;
   available: number;
-  pendingSpend?: number;
   label: string;
   spendAria: string;
   /** Aria for tapping an EMPTY pip; omit when the empty state is unreachable. */
@@ -1626,13 +1654,12 @@ function TrackerPips({
   return (
     <span className="trk-pips" role="group" aria-label={label}>
       {Array.from({ length: total }).map((_, i) => {
-        const isOn = i < available - pendingSpend;
-        const isPending = i >= available - pendingSpend && i < available;
+        const isOn = i < available;
         return (
           <button
             key={i}
             type="button"
-            className={cn("trk-pip", isOn && "on", isPending && "pending")}
+            className={cn("trk-pip", isOn && "on")}
             aria-label={isOn ? spendAria : (restoreAria ?? spendAria)}
             onClick={isOn ? onSpend : onRestore}
             disabled={isOn ? false : restoreDisabled || !onRestore}
@@ -1648,16 +1675,12 @@ function TrackerPips({
  * ARE the spend/restore affordance (tap filled = spend, empty = restore, with an
  * undo toast); pools (>5) use a +/- stepper.
  */
-function RailTracker({
-  tracker,
-  pendingSpend,
-}: {
-  tracker: ResolvedTracker;
-  pendingSpend: number;
-}) {
+function RailTracker({ tracker }: { tracker: ResolvedTracker }) {
   const { t } = useTranslation();
   const spendTracker = useCharacterStore((s) => s.useTracker);
   const restoreTracker = useCharacterStore((s) => s.restoreTracker);
+  const setTrackerRoll = useCharacterStore((s) => s.setTrackerRoll);
+  const spendTrackerRoll = useCharacterStore((s) => s.spendTrackerRoll);
   const recoverTrackerFromSpellSlot = useCharacterStore(
     (s) => s.recoverTrackerFromSpellSlot
   );
@@ -1698,7 +1721,7 @@ function RailTracker({
     if (!cost || !("fromSpellSlot" in cost) || !character) return null;
     const availableSlotLevels = character.character.spellSlots
       .filter((s) => {
-        const used = character.session.spellSlots[slotUsageKey(s)]?.used ?? 0;
+        const used = vitalSlotUsed(character.session, s);
         return s.total - used > 0;
       })
       .map((s) => s.level);
@@ -1765,6 +1788,16 @@ function RailTracker({
     restoreTracker(tracker.id, 1);
   }
 
+  function spendRoll(index: number) {
+    const roll = tracker.rolls?.[index];
+    if (typeof roll !== "number") return;
+    registerUndoableToast(
+      { message: t("combat.trackerRollSpend", { name: tracker.label, roll }) },
+      () => spendTrackerRoll(tracker.id, index) ?? (() => {}),
+      { turnScoped: false }
+    );
+  }
+
   return (
     <div className="trk">
       {/* D37 — the hover tooltip reminds what the resource does (e.g. Bardic /
@@ -1782,11 +1815,55 @@ function RailTracker({
           {recoveryLabel}
         </span>
       )}
-      {usePips ? (
+      {tracker.recordedRolls ? (
+        <span
+          className="trk-rolls"
+          role="group"
+          aria-label={t("combat.recordedRolls", { name: tracker.label })}
+        >
+          {Array.from({ length: available }).map((_, index) => {
+            const roll = tracker.rolls?.[index];
+            return (
+              <span className="trk-roll" key={index}>
+                <input
+                  type="number"
+                  min={tracker.recordedRolls?.min}
+                  max={tracker.recordedRolls?.max}
+                  inputMode="numeric"
+                  value={roll ?? ""}
+                  placeholder="—"
+                  aria-label={t("combat.recordedRollSlot", {
+                    name: tracker.label,
+                    slot: index + 1,
+                  })}
+                  onChange={(event) => {
+                    const raw = event.currentTarget.value;
+                    setTrackerRoll(tracker.id, index, raw === "" ? null : Number(raw));
+                  }}
+                />
+                <button
+                  type="button"
+                  disabled={typeof roll !== "number"}
+                  aria-label={t("combat.spendRecordedRoll", {
+                    name: tracker.label,
+                    roll: roll ?? "",
+                  })}
+                  title={t("combat.spendRecordedRoll", {
+                    name: tracker.label,
+                    roll: roll ?? "",
+                  })}
+                  onClick={() => spendRoll(index)}
+                >
+                  <Icon as={Minus} size="xs" decorative />
+                </button>
+              </span>
+            );
+          })}
+        </span>
+      ) : usePips ? (
         <TrackerPips
           total={tracker.total}
           available={available}
-          pendingSpend={pendingSpend}
           label={tracker.label}
           spendAria={`${t("combat.spend")} ${tracker.label}`}
           restoreAria={`${t("combat.restore")} ${tracker.label}`}
@@ -1892,13 +1969,15 @@ function RailTracker({
 /** Exhaustion 6-pip stepper (amber → crimson). Only shown when > 0. */
 function ExhaustionTrack({ value }: { value: number }) {
   const { t } = useTranslation();
-  const updateSession = useCharacterStore((s) => s.updateSession);
+  const setExhaustion = useCharacterStore((s) => s.setExhaustion);
 
   // D34 — clicking a pip sets exhaustion to EXACTLY that level (raise or lower);
   // clearing/decrementing is the explicit × button below, not the old
-  // unintuitive "re-click the last filled pip to step down" gesture.
+  // unintuitive "re-click the last filled pip to step down" gesture. The store
+  // action is the ONE exhaustion mutation seam: it writes the persisted engine
+  // world first and degrades to the legacy session write fail-closed.
   function setLevel(target: number) {
-    updateSession({ exhaustion: Math.max(0, Math.min(6, target)) });
+    setExhaustion(target);
   }
 
   // #16 — ungate from 0: a fresh character has 0 exhaustion, but the early

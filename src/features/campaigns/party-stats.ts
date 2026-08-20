@@ -53,6 +53,8 @@ import type { CharacterDoc } from "@/types/character";
 import type { AbilityCode } from "@/data/types";
 import type { ConditionId } from "@/data/types";
 import type { DamageDefenses } from "@/lib/damage-intake";
+import type { SourceConditionImmunity } from "@/lib/grants";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 
 /** One saving throw, ready for the dashboard's expanded detail. */
 export interface PartyMemberSave {
@@ -98,6 +100,7 @@ export interface PartyMemberStats {
   conditions: string[];
   defenses: DamageDefenses;
   conditionImmunities: ReadonlySet<ConditionId>;
+  sourceConditionImmunities: readonly SourceConditionImmunity[];
 }
 
 /**
@@ -111,6 +114,7 @@ export function derivePartyMemberStats(doc: CharacterDoc): PartyMemberStats {
   const aggSession = {
     activeFeatures: session.activeFeatures,
     grantBundleChoices: session.grantBundleChoices,
+    itemResources: session.itemResources,
   };
   const aggregate = aggregateCharacterGrants(charData, aggSession);
 
@@ -231,9 +235,10 @@ export function derivePartyMemberStats(doc: CharacterDoc): PartyMemberStats {
     speeds,
     walkingSpeedFt,
     initiativeBonus,
-    conditions: session.conditions,
+    conditions: effectiveSessionConditions(session),
     defenses,
     conditionImmunities,
+    sourceConditionImmunities: aggregate.sourceConditionImmunities,
   };
 }
 
@@ -247,13 +252,20 @@ export function derivePartyMemberStats(doc: CharacterDoc): PartyMemberStats {
  */
 export function hydrateMemberDoc(
   doc: CharacterDoc,
-  combat: CombatState | null
-): CharacterDoc {
+  combat: CombatState | null | undefined
+): CharacterDoc | null {
+  if (combat === undefined) return null;
   const max = effectiveMaxHp(doc.character, {
     activeFeatures: doc.session.activeFeatures,
     grantBundleChoices: doc.session.grantBundleChoices,
   });
-  return { ...doc, session: applyCombatToSession(doc.session, combat, max) };
+  const hydrated = applyCombatToSession(
+    doc.session,
+    combat,
+    max,
+    doc.playStateVersion === 1 ? 1 : "legacy"
+  );
+  return hydrated.ok ? { ...doc, session: hydrated.session } : null;
 }
 
 /**
@@ -271,10 +283,11 @@ export function hydrateMemberDoc(
  */
 export function derivePcLive(
   doc: CharacterDoc,
-  combat: CombatState | null,
+  combat: CombatState | null | undefined,
   roll: number | null
-): PcLive {
+): PcLive | null {
   const hydrated = hydrateMemberDoc(doc, combat);
+  if (!hydrated) return null;
   const stats = derivePartyMemberStats(hydrated);
   return {
     name: doc.character.name,
@@ -283,6 +296,12 @@ export function derivePcLive(
     currentHp: stats.currentHp,
     tempHp: stats.tempHp,
     conditions: stats.conditions,
+    bardicInspirationDie: hydrated.session.bardicInspirationDie,
+    heroicInspiration: hydrated.session.inspiration,
+    deathSaves: {
+      successes: hydrated.session.deathSucc,
+      failures: hydrated.session.deathFail,
+    },
     initiative: roll === null ? null : roll + stats.initiativeBonus,
     // The roll widget needs the bonus + the RAW roll separately from the total.
     initiativeBonus: stats.initiativeBonus,
@@ -293,6 +312,7 @@ export function derivePcLive(
     portraitCrop: doc.portraitCrop,
     defenses: stats.defenses,
     conditionImmunities: stats.conditionImmunities,
+    sourceConditionImmunities: stats.sourceConditionImmunities,
   };
 }
 

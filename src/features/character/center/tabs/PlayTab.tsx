@@ -25,7 +25,7 @@
  * - Reactions commit immediately too (their own section, same grammar).
  */
 
-import { lazy, Suspense, useState, useMemo, useCallback, type ReactNode } from "react";
+import { lazy, Suspense, useCallback, useState, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { Layers } from "lucide-react";
@@ -38,11 +38,7 @@ import { NumberStepper } from "@/components/ui/input";
 import { weaponSealIcon, magicItemSealIcon } from "@/components/shared/item-icons";
 import { getMagicItem } from "@/data/magic-items";
 import { ThisTurnTracker } from "../ThisTurnTracker";
-import {
-  shouldResolveCombatAction,
-  shouldResolveSoloAction,
-} from "@/lib/combat-resolution";
-import { useSheetCombat } from "../turn-state";
+import { tempHpRollFormula } from "@/lib/combat-resolution";
 import { CombatAlgorithm } from "./CombatAlgorithm";
 import { SituationalRules } from "./SituationalRules";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -53,8 +49,13 @@ import { formatModifier, localeDistance } from "@/lib/utils";
 import { matchesSearch } from "@/lib/search";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { slotUsageKey } from "@/lib/cast-options";
-import { resolveSpellCastOptions } from "@/lib/views/spell-cast-sources";
+import {
+  canCastSpellWithSlots,
+  resolveSpellCastOptions,
+} from "@/lib/views/spell-cast-sources";
+import { economyActionCategory } from "@/lib/combat-economy";
 import { resolveConditionEffects } from "@/lib/condition-effects";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import {
   attackScopeReachesCard,
   deriveAdvantageChips,
@@ -81,14 +82,11 @@ import {
   resolveCunningStrikeOptions,
   resolveReplaceAttackWithCast,
   armorDisadvantageClauses,
+  isSpellcastingBlocked,
+  resolveActiveStateBlocker,
   type ResolvedAction,
 } from "@/lib/smart-tracker";
 
-const CombatResolver = lazy(() =>
-  import("../CombatResolver").then(({ CombatResolver: resolver }) => ({
-    default: resolver,
-  }))
-);
 import { uiText } from "@/lib/loc-text";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { CunningStrikeOptions } from "@/components/shared/CunningStrikeOptions";
@@ -119,6 +117,30 @@ import {
   localizeTrackerUnit,
 } from "@/lib/views/tracker-view";
 import { useTurnEconomy, getEconomySlot } from "../useTurnEconomy";
+import { combatOutcomePrerequisiteMet } from "@/lib/combat-outcomes";
+// Engine dual-dispatch (rollout bridge): the deterministic-runtime side of the
+// actions surface. The gate closes the capability on tap; the flow mounts lazily.
+import { useSheetCombat } from "../turn-state";
+import { useAuthStore } from "@/stores/authStore";
+import { totalLevel, primaryClassId } from "@/lib/classes";
+import { getSrdFeatureSource } from "@/lib/srd-feature-lookup";
+import { spellIndex } from "@/data/spells";
+import {
+  characterFeatureActionCapability,
+  characterTrackerSeeds,
+  characterWeaponAttackCapability,
+  characterWorldState,
+} from "@/lib/mechanics-world-store";
+import { buildSpellsViewModel } from "@/lib/views/spells-view";
+import { confirmConcentrationSwap } from "@/features/character/confirm-concentration";
+import {
+  engineSpellCastRequest,
+  type EngineSpellCastRequest,
+} from "./spells/engine-spell-gate";
+import type { CastSummaryVM, SlotSummaryVM } from "@/lib/views/spells-view";
+import type { FeatureActionContext } from "@/lib/mechanics-transcription";
+import type { SrdActionDef } from "@/data/types";
+import type { EngineActionDispatch } from "./EngineActionFlow";
 // The verdict composers live in the sibling helpers module (the same pattern as
 // spell-card-helpers) so the chip-budget guard walks the REAL composer.
 import {
@@ -128,6 +150,16 @@ import {
   combatCtaState,
   committedOffHandId,
 } from "./combat-card-helpers";
+
+// The engine action flow joins the deterministic runtime, so it rides a lazy
+// leaf mounted only when an engine-executable action is used (the exact
+// pattern SpellsTab uses for EngineCastFlow).
+const EngineActionFlow = lazy(() =>
+  import("./EngineActionFlow").then((m) => ({ default: m.EngineActionFlow }))
+);
+const EngineCastFlow = lazy(() =>
+  import("./spells/EngineCastFlow").then((m) => ({ default: m.EngineCastFlow }))
+);
 
 type FilterType = "pinned" | "all" | "action" | "bonus" | "reaction" | "free";
 
@@ -286,14 +318,10 @@ function combatGloss(
   // / to-hit / save / trigger) already describes the action, so we don't double
   // up — e.g. a damage spell keeps its "60 ft · CON save" gloss.
   if (summary.effect && parts.length === 0) parts.push(summary.effect);
-  // G22 — Monk Heightened Focus (L10): spending a Focus Point on Patient Defense
-  // also grants "two rolls of the Martial Arts die" as Temporary HP — a roll-entry
-  // formula the player rolls + enters (golden rule 21). Level-gated at the engine,
-  // so the field is present only at Monk L10+. ADDITIVE — pushed AFTER the base
-  // effect fallback so the Disengage/Dodge description is never dropped at L10+;
-  // the temp-HP note rides alongside the base action gloss, it never replaces it.
+  // Rolled action Temporary HP is additive to the action gloss; the resolver asks
+  // for the roll and applies every deterministic bonus/multiplier after review.
   if (summary.tempHpRoll) {
-    parts.push(t("combat.tempHpRoll", { dice: summary.tempHpRoll.dice }));
+    parts.push(t("combat.tempHpRoll", { dice: tempHpRollFormula(summary.tempHpRoll) }));
   }
   if (concentrating) parts.push(t("combat.concentration"));
   if (summary.uses) {
@@ -317,42 +345,25 @@ export function PlayTab() {
   // group's token is spent): the Attack group's swung-card ids, and the id of
   // the reaction that spent the round's Reaction. Consistent with the Action /
   // Bonus slots' `selected` occupancy so all three groups mark identically.
-  const attackSwingIds = useCombatStore((s) => s.attackSwingIds);
+  const attackSwings = useCombatStore((s) => s.attackSwings);
+  const attackSwingIds = useMemo(
+    () => attackSwings.map(({ actionId }) => actionId),
+    [attackSwings]
+  );
   const reactionUsed = useCombatStore((s) => s.reactionUsed);
   const reactionUsedId = useCombatStore((s) => s.reactionUsedId);
+  const outcomeReceipts = useCombatStore((s) => s.outcomeReceipts);
   const round = useCombatStore((s) => s.round);
+  const nextAttackAdvantage = useCombatStore((s) => s.nextAttackAdvantage);
+  const movementUsedFt = useCombatStore((s) => s.movementUsedFt);
   const togglePinnedAction = useCharacterStore((s) => s.togglePinnedAction);
   // The shared turn-economy owner: commit / undo (one source of the per-slot
   // undo refs), used by BOTH these cards and the center ThisTurnTracker.
   const {
-    prepareResolution,
-    handleSelect,
-    handleUseReaction,
+    executeAction: commitAction,
     spendRider,
     applyCunningStrike,
   } = useTurnEconomy();
-
-  // Encounter actions resolve BEFORE they spend anything. The capability model decides
-  // whether the shared resolver is needed; names and source type never do.
-  const sheetCombat = useSheetCombat();
-  const [declaring, setDeclaring] = useState<{
-    action: ResolvedAction;
-    commit: (afterCommit: () => (() => void) | undefined) => void;
-  } | null>(null);
-  const commitAction = useCallback(
-    (action: ResolvedAction) => {
-      if (
-        (sheetCombat && shouldResolveCombatAction(action)) ||
-        (!sheetCombat && shouldResolveSoloAction(action))
-      )
-        prepareResolution(action, (prepared, commit) =>
-          setDeclaring({ action: prepared, commit })
-        );
-      else if (action.type === "reaction") handleUseReaction(action);
-      else handleSelect(action);
-    },
-    [handleSelect, handleUseReaction, prepareResolution, sheetCombat]
-  );
 
   // Mobile opens on the player's curated hotbar, not a seven-screen catalogue.
   // Desktop keeps the overview. The choice is made only on mount: rotating or
@@ -366,6 +377,20 @@ export function PlayTab() {
   // collapses the previously-open one. Keyed by the unique action id (pinned,
   // board, base and reaction lists never share an id).
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Engine dual-dispatch (rollout bridge): outside an encounter, an
+  // engine-executable feature action or single-attack weapon row resolves
+  // through the deterministic runtime; everything else keeps the legacy commit
+  // loop until its own cutover wave deletes it (the SpellsTab pattern).
+  const sheetCombat = useSheetCombat();
+  const [engineDispatch, setEngineDispatch] = useState<EngineActionDispatch | null>(null);
+  /** The Play board's open engine-driven SPELL cast (the SpellsTab twin),
+   *  carrying the cast-summary and slot views the flow's derivation reads. */
+  const [engineSpellCast, setEngineSpellCast] = useState<{
+    request: EngineSpellCastRequest;
+    slots: readonly SlotSummaryVM[];
+    summary: CastSummaryVM | null;
+  } | null>(null);
 
   // Resolve all combat actions from SRD data (engine is locale-free; the view
   // localizes each row at the edge).
@@ -419,7 +444,7 @@ export function PlayTab() {
         ? deriveSavesAndChecks(character.character, {
             exhaustion: character.session.exhaustion,
             activeFeatures: character.session.activeFeatures,
-            conditions: character.session.conditions,
+            conditions: effectiveSessionConditions(character.session),
             grantBundleChoices: character.session.grantBundleChoices,
           }).skills
         : [],
@@ -428,6 +453,329 @@ export function PlayTab() {
   const skillCheckBonusFor = useCallback(
     (skillId: string) => skillRows.find((r) => r.id === skillId)?.bonus ?? 0,
     [skillRows]
+  );
+
+  /**
+   * The engine gate: decide on TAP whether this row is engine-executable. A
+   * conservative allowlist — rows whose legacy commit carries semantics the
+   * engine does not model yet (activation toggles, turn prerequisites, per-turn
+   * caps, alternate costs, equipment costs, use-applies, riders, ammo) stay
+   * legacy so the two runtimes never split a truth. Solo combat itself never
+   * forces legacy: an Extra-Attack weapon swing rides the engine too, mirrored
+   * onto the attack-pips ledger, while a swing that could not open (every
+   * Attack action already spent) keeps the legacy path and its feedback.
+   */
+  const engineDispatchFor = useCallback(
+    (action: ResolvedAction): EngineActionDispatch | null => {
+      if (sheetCombat || !character) return null;
+      // The documented model boundaries (kept legacy by DESIGN, not gap):
+      // - `type: "reaction"` — a reaction NEVER dispatches from a board tap:
+      //   its trigger is an event, not a decision. DAMAGE reactions (Uncanny
+      //   Dodge, Interpose Shield) now run ENGINE through the damage-entry
+      //   prompt instead (`lib/damage-reaction.ts` + `DamageReactionBanner` —
+      //   the entered hit and the reduction commit as ONE causal action), so
+      //   this exclusion is a routing fact for them, not a gap. Every OTHER
+      //   reaction family (opportunity attacks, Cutting Words, reaction
+      //   spells cast from the card) stays legacy here until its own trigger
+      //   runtime exists — the reaction card's legacy commit owns it.
+      // - `maintainsActiveKey` — a maintainer row re-runs an already
+      //   established recurring state without paying again. A new engine cast
+      //   would double-establish it; the engine twin is the armed root-pulse
+      //   phase on the world's own occurrence (`useMechanicsPulse`), which
+      //   only exists for an engine-established root. A legacy-established
+      //   state keeps its legacy maintainer.
+      // - `useEffects` — a use-apply's deterministic side effect (Adrenaline
+      //   Rush's PB temp HP) is a GRANT that lives beside the action, not on
+      //   the `SrdActionDef` the transcriber reads, so the transcription
+      //   cannot see it yet; the legacy commit loop owns the apply + undo
+      //   until the transcriber models sibling-grant use-applies.
+      if (
+        action.type === "reaction" ||
+        action.activatesKey !== undefined ||
+        action.maintainsActiveKey !== undefined ||
+        action.alternateCost !== undefined ||
+        action.requiresActionThisTurn !== undefined ||
+        action.requiresActionCategoryThisTurn !== undefined ||
+        (action.useEffects?.length ?? 0) > 0 ||
+        action.costEquipment !== undefined ||
+        action.standingEffect !== undefined
+      ) {
+        return null;
+      }
+      // A condition-blocked economy slot keeps the legacy path: its commit
+      // loop owns the block and the "slot blocked" feedback (rule 6 — one
+      // truth), so the engine can never spend through Incapacitated.
+      const blockedSlots = resolveConditionEffects(
+        effectiveSessionConditions(character.session)
+      ).blockedSlots;
+      const slot = getEconomySlot(action);
+      if (slot !== "free" && blockedSlots.has(slot)) return null;
+      const uid = useAuthStore.getState().user?.uid;
+      if (uid === undefined) return null;
+      // An UNMET turn-outcome prerequisite (Redirect Attack needs this turn's
+      // negated Deflect) keeps the legacy path, which owns the blocked-reason
+      // line and its feedback; a MET one dispatches engine — the prerequisite
+      // is a table-verified clause by the transcriber's own classification.
+      if (
+        action.requiresOutcomeThisTurn !== undefined &&
+        !combatOutcomePrerequisiteMet(action.requiresOutcomeThisTurn, outcomeReceipts)
+      ) {
+        return null;
+      }
+      // A once-per-turn cap compiles the kernel's own turn claim, which needs
+      // a RUNNING solo world encounter to claim against; already used this
+      // turn (or a multi-use cap, or no encounter) keeps the legacy story.
+      if (action.maxUsesPerTurn !== undefined) {
+        if (action.maxUsesPerTurn !== 1) return null;
+        const committed = Object.values(selected).flat();
+        if (committed.some((entry) => entry.id === action.id)) return null;
+        const world = characterWorldState(
+          character,
+          uid,
+          character.character.hp.max,
+          {},
+          characterTrackerSeeds(character)
+        );
+        if (world?.encounter?.phase !== "turns") return null;
+      }
+      if (action.source === "weapon") {
+        if (
+          action.offhand === true ||
+          action.formAttack === true ||
+          action.summary.ammo !== undefined ||
+          (action.summary.extraDamage?.length ?? 0) > 0 ||
+          (action.summary.dieModifiers?.length ?? 0) > 0 ||
+          action.summary.onHitHeal !== undefined
+        ) {
+          return null;
+        }
+        // Extra Attack (attack-pips): the swing must be able to claim or ride
+        // an Attack action right now; otherwise legacy owns the "spent" story.
+        const swing = attackBudget > 1;
+        if (swing) {
+          const combat = useCombatStore.getState();
+          const midAction = combat.attacksUsed % combat.attackBudget !== 0;
+          if (!midAction && combat.selected.action.length >= combat.budget.action) {
+            return null;
+          }
+        }
+        const capability = characterWeaponAttackCapability(character, uid, action.id, {
+          maxHp: character.character.hp.max,
+        });
+        if (!capability) return null;
+        return {
+          actionName: action.name,
+          economyCategory: economyActionCategory(action),
+          kind: "weapon",
+          legacyActionId: action.id,
+          nameLoc: action.nameLoc,
+          swing,
+        };
+      }
+      if (action.source !== "feature" || action.id.startsWith("custom-")) return null;
+      // Recover the owning SRD feature + authored action from the stable row id
+      // (`<featureId>-<actionId|type>` — the resolver's own construction).
+      for (const ref of character.character.features) {
+        if ("custom" in ref) continue;
+        const srdFeature = getSrdFeatureSource(ref.srdId);
+        const authoredActions = srdFeature?.mechanics?.actions;
+        if (!srdFeature || !authoredActions) continue;
+        for (const [ordinal, authored] of authoredActions.entries()) {
+          const override =
+            ref.actionOverrides?.find(
+              (candidate) => candidate.id !== undefined && candidate.id === authored.id
+            ) ?? ref.actionOverrides?.[ordinal];
+          const merged = { ...authored, ...override } as SrdActionDef;
+          if (`${srdFeature.id}-${merged.id ?? merged.type}` !== action.id) continue;
+          // The OWNING class's level for a class feature (the B2 lesson), the
+          // total level otherwise — the same scaling the resolver's dice use.
+          const owningClass =
+            "class" in srdFeature
+              ? character.character.classes.find(
+                  (entry) => entry.classId === srdFeature.class
+                )
+              : undefined;
+          const scalingLevel = owningClass?.level ?? totalLevel(character.character);
+          // The resolved attack dice/flat come from the ROW's own summary (the
+          // one resolver seam), never re-derived: "2d8+3" carries the resolved
+          // count and the folded additive term.
+          const damageFormula = action.summary.damage ?? "";
+          const parsedCount = /^(\d+)d\d+/.exec(damageFormula);
+          const parsedFlat = /\+(\d+)$/.exec(damageFormula);
+          const scaledDice =
+            merged.attack !== undefined &&
+            (merged.attack.diceCount !== undefined ||
+              merged.attack.diceByLevel !== undefined);
+          if (scaledDice && parsedCount === null) return null;
+          const featureBonus =
+            merged.attack !== undefined
+              ? Number(parsedFlat?.[1] ?? 0)
+              : (action.summary.healApply?.bonus ?? 0);
+          const context: FeatureActionContext = {
+            ...(srdFeature.mechanics?.tracker ? { trackerId: srdFeature.id } : {}),
+            ...(action.costTrackerIsPool === true && action.summary.die !== undefined
+              ? { poolDie: action.summary.die }
+              : {}),
+            scalingLevel,
+            ...(merged.attack?.damageTypeFromBundle !== undefined &&
+            action.summary.damageType !== undefined
+              ? { attackDamageType: action.summary.damageType }
+              : {}),
+          };
+          const derived = {
+            featureBonus,
+            saveDc: action.summary.saveDC ?? 8,
+            ...(scaledDice && parsedCount !== null
+              ? { attackDiceCount: Number(parsedCount[1]) }
+              : {}),
+            ...(merged.attackType !== undefined
+              ? { attackBonus: action.summary.attackBonus ?? 0 }
+              : {}),
+            // A dynamic PB/ability-derived target cap arrives as the ROW's
+            // already-resolved concrete count (the one resolver seam).
+            ...(typeof merged.targeting?.maxTargets === "string" &&
+            typeof action.summary.targeting?.maxTargets === "number"
+              ? { maxTargets: action.summary.targeting.maxTargets }
+              : {}),
+          };
+          // The ONE gate truth is the capability itself (classDie/topUpRecovery
+          // and pool-definition facts resolve inside it): a row whose closed
+          // capability fails stays legacy, so the flow can never dead-end.
+          const capability = characterFeatureActionCapability(
+            character,
+            uid,
+            srdFeature.id,
+            merged,
+            ordinal,
+            { ...derived, maxHp: character.character.hp.max },
+            context
+          );
+          if (!capability) return null;
+          return {
+            action: merged,
+            actionName: action.name,
+            context,
+            derived,
+            economyCategory: economyActionCategory(action),
+            economySlot: getEconomySlot(action),
+            featureId: srdFeature.id,
+            hasAttackRoll: merged.attackType !== undefined,
+            kind: "feature",
+            legacyActionId: action.id,
+            nameLoc: action.nameLoc,
+            ordinal,
+            triggersAttack:
+              action.summary.attackBonus != null || action.summary.saveAbility != null,
+          };
+        }
+      }
+      return null;
+    },
+    [attackBudget, character, outcomeReceipts, selected, sheetCombat]
+  );
+
+  // Extra Attack / War Magic pip inputs, hoisted above the spell gate that
+  // reads them (ONE derivation, golden rule 6 — the CTA blocks below reuse
+  // these same values).
+  const warMagicMax = useMemo(
+    () =>
+      character
+        ? maxReplaceAttackSpellLevel(resolveReplaceAttackWithCast(character))
+        : -1,
+    [character]
+  );
+  const attacksLeft = attacksRemainingInAction(attacksUsed, attackBudget);
+
+  /**
+   * The Play board's SPELL-row engine gate (Shield's reaction card included):
+   * the SAME shared `engineSpellCastRequest` the Spells tab runs (rule 6 — one
+   * dispatch truth), closed over this row's spell. Returns the mounted flow's
+   * whole payload: the request plus the cast-summary/slot views the flow's
+   * derivation reads (built on tap from the one spells presenter).
+   */
+  const engineSpellDispatchFor = useCallback(
+    (
+      action: ResolvedAction
+    ): {
+      request: EngineSpellCastRequest;
+      slots: readonly SlotSummaryVM[];
+      summary: CastSummaryVM | null;
+    } | null => {
+      if (!character || action.source !== "spell" || action.spellId === undefined) {
+        return null;
+      }
+      // A pip-live cast (War Magic: replace an attack with a cantrip while
+      // swings remain in the OPEN Attack action) rides the attack-pips ledger,
+      // an economy the engine does not model yet, so the legacy loop keeps it.
+      if (
+        attackBudget > 1 &&
+        attacksLeft != null &&
+        isPipAttackAction(action, warMagicMax)
+      ) {
+        return null;
+      }
+      const spell = spellIndex.get(action.spellId);
+      if (!spell) return null;
+      const request = engineSpellCastRequest({
+        action,
+        badges: {
+          mastery: t("spellPrep.spellMasteryBadge"),
+          signature: t("spellPrep.signatureSpellBadge"),
+        },
+        character,
+        locale,
+        sheetCombat: sheetCombat !== null,
+        spell,
+        spellName: action.name,
+        uid: useAuthStore.getState().user?.uid ?? null,
+      });
+      if (request === null) return null;
+      const view = buildSpellsViewModel(
+        character,
+        primaryClassId(character.character),
+        locale,
+        false
+      );
+      return { request, slots: view.slots, summary: view.castSummary };
+    },
+    [attackBudget, attacksLeft, character, locale, sheetCombat, t, warMagicMax]
+  );
+
+  /** One commit grammar for every card: engine when executable (feature,
+   *  weapon, or spell row), the legacy loop otherwise. Replacing a held
+   *  concentration ASKS first through the one shared gate; a declined swap
+   *  cancels the cast entirely. */
+  const dispatchAction = useCallback(
+    (action: ResolvedAction) => {
+      const spellCast = engineSpellDispatchFor(action);
+      if (spellCast) {
+        // A confirmed swap ends NOTHING yet: the engine flow replays against
+        // the world still holding the old spell, and the kernel's
+        // concentration-replacement coordination commits the whole swap as
+        // ONE causal action at Apply (backing out of the modal keeps the old
+        // spell held); a declined one cancels the cast entirely.
+        if (spellCast.request.concentrationSwap !== null) {
+          void confirmConcentrationSwap(
+            {
+              concentration: true,
+              name: spellCast.request.spellName,
+              spellId: spellCast.request.spellId,
+            },
+            t,
+            locale
+          ).then((confirmed) => {
+            if (confirmed) setEngineSpellCast(spellCast);
+          });
+          return;
+        }
+        setEngineSpellCast(spellCast);
+        return;
+      }
+      const dispatch = engineDispatchFor(action);
+      if (dispatch) setEngineDispatch(dispatch);
+      else commitAction(action);
+    },
+    [commitAction, engineDispatchFor, engineSpellDispatchFor, locale, t]
   );
 
   // Inline-modifier state — the engine-derived advantage / disadvantage on the
@@ -439,7 +787,7 @@ export function PlayTab() {
   const attackRoll = useMemo<AttackRollView>(() => {
     if (!character) return NO_ATTACK_ROLL;
     const aggregate = aggregateCharacterGrants(character.character, character.session);
-    const cond = resolveConditionEffects(character.session.conditions);
+    const cond = resolveConditionEffects(effectiveSessionConditions(character.session));
     // S13 — wearing armor the class lacks proficiency with imposes Disadvantage on
     // STR/DEX attacks (+ checks/saves); merged like the condition clauses so it
     // nets into the attack-roll state alongside Frightened/Poisoned/etc.
@@ -453,12 +801,21 @@ export function PlayTab() {
       // advantage) applies ONLY in combat round 1, then auto-clears from round 2+.
       // A permanent clause has no `round1` flag and always applies.
       .filter((c) => !c.round1 || round === 1);
+    if (nextAttackAdvantage) {
+      attackChips.push({
+        sourceId: "turn-next-attack-advantage",
+        mode: "advantage",
+        rollType: "attack",
+        vs: "next-attack",
+        description: { lit: { en: "Next attack", it: "Prossimo attacco" } },
+      });
+    }
     // PS-J — ONLY a blanket clause (no `scope`) may become the card's verdict; a
     // scoped one is netted against that verdict and stated with its scope instead
     // (`combatGloss`), because the sheet models no enemies and cannot know whether
     // it applies to this swing.
     return deriveAttackRollView(attackChips);
-  }, [character, round]);
+  }, [character, round, nextAttackAdvantage]);
 
   // BG3 grammar (owner ruling 2026-07-10) — Extra Attack's "attacks remaining"
   // carries NO standing text ANYWHERE: while swings remain, every attack-capable
@@ -472,14 +829,6 @@ export function PlayTab() {
   // count. `warMagicMax` gates which spell cards are attack-capable (the SAME pure
   // predicate the economy provider commits through). The guard case
   // (`attackBudget <= 1`) makes every read inert.
-  const warMagicMax = useMemo(
-    () =>
-      character
-        ? maxReplaceAttackSpellLevel(resolveReplaceAttackWithCast(character))
-        : -1,
-    [character]
-  );
-  const attacksLeft = attacksRemainingInAction(attacksUsed, attackBudget);
   const actionSlotFull = selected.action.length >= budget.action;
   const bonusSlotFull = selected.bonus.length >= budget.bonus;
 
@@ -754,7 +1103,9 @@ export function PlayTab() {
   // B2 — the single self-side condition resolver read ONCE at the board root, so
   // every card knows its condition-blocked state BEFORE a tap (today the toast
   // only fires AFTER a wasted tap). Memoized on the session's conditions.
-  const conditions = character?.session.conditions ?? EMPTY_CONDITIONS;
+  const conditions = character
+    ? effectiveSessionConditions(character.session)
+    : EMPTY_CONDITIONS;
   const conditionEffects: ResolvedConditionEffects = useMemo(
     () => resolveConditionEffects(conditions),
     [conditions]
@@ -796,6 +1147,48 @@ export function PlayTab() {
 
   const blockedReasonFor_ = useCallback(
     (action: ResolvedAction, depleted: boolean): string | null => {
+      const committed = Object.values(selected).flat();
+      if (
+        action.requiresActionThisTurn &&
+        !committed.some((entry) => entry.id === action.requiresActionThisTurn)
+      ) {
+        return t("combat.blockedReasonPrerequisiteAction");
+      }
+      if (
+        action.requiresOutcomeThisTurn &&
+        !combatOutcomePrerequisiteMet(action.requiresOutcomeThisTurn, outcomeReceipts)
+      ) {
+        return t("combat.blockedReasonSuccessfulPrerequisiteAction");
+      }
+      if (
+        action.requiresActionCategoryThisTurn &&
+        !committed.some(
+          (entry) => entry.economyCategory === action.requiresActionCategoryThisTurn
+        )
+      ) {
+        return t("combat.blockedReasonPrerequisiteCategory");
+      }
+      if (
+        action.maxUsesPerTurn !== undefined &&
+        committed.filter((entry) => entry.id === action.id).length >=
+          action.maxUsesPerTurn
+      ) {
+        return t("combat.blockedReasonPerTurnLimit");
+      }
+      if (action.locksMovement && movementUsedFt > 0) {
+        return t("combat.blockedReasonAlreadyMoved");
+      }
+      if (character) {
+        if (action.source === "spell" && isSpellcastingBlocked(character)) {
+          return t("combat.blockedReasonSpellcasting");
+        }
+        switch (resolveActiveStateBlocker(character, action)) {
+          case "heavy-armor":
+            return t("combat.blockedReasonHeavyArmor");
+          case "incapacitated":
+            return t("combat.blockedReasonIncapacitated");
+        }
+      }
       // The card's TRUE economy kind is `action.type` (action/bonus/reaction/free)
       // — `getEconomySlot` folds reactions into "free", so it can't be used for
       // the condition gate. A "free" action is never condition-blocked or spent.
@@ -823,7 +1216,17 @@ export function PlayTab() {
         }
       }
     },
-    [conditionEffects, conditions, t, locale, weaponAdvisoryFor]
+    [
+      character,
+      conditionEffects,
+      conditions,
+      t,
+      locale,
+      weaponAdvisoryFor,
+      movementUsedFt,
+      selected,
+      outcomeReceipts,
+    ]
   );
 
   // Chromatic slot pips beside the CTA for a slot-costing spell: { level, total,
@@ -833,7 +1236,14 @@ export function PlayTab() {
     (
       action: ResolvedAction
     ): { level: number; total: number; used: number } | undefined => {
-      if (!character || !action.costsSlot || action.slotLevel == null) return undefined;
+      if (
+        !character ||
+        !action.costsSlot ||
+        action.slotLevel == null ||
+        !action.spellId ||
+        !canCastSpellWithSlots(character, action.spellId)
+      )
+        return undefined;
       const slotData = character.character.spellSlots.find(
         (s) => s.level === action.slotLevel
       );
@@ -994,20 +1404,6 @@ export function PlayTab() {
         />
       </div>
 
-      {/* One capability-driven resolver. Encounters expose the live roster; SOLO
-          mounts it only for consequences the current sheet can own (healing,
-          temporary HP, and condition cures). Cast-level choices happen first. */}
-      {declaring !== null && (
-        <Suspense fallback={null}>
-          <CombatResolver
-            action={declaring.action}
-            sheetCombat={sheetCombat}
-            onCommit={declaring.commit}
-            onDone={() => setDeclaring(null)}
-          />
-        </Suspense>
-      )}
-
       {/* ── Pinned ──────────────────────────────────────────────────
           Promoted across types; honors the active filter + search (D13) — hidden
           when nothing pinned matches the chosen type, and narrowed to that type
@@ -1036,7 +1432,7 @@ export function PlayTab() {
                 skillCheckBonusFor={skillCheckBonusFor}
                 open={expandedId === action.id}
                 onOpenChange={(o) => setExpandedId(o ? action.id : null)}
-                onCommit={() => commitAction(action)}
+                onCommit={() => dispatchAction(action)}
                 onPin={() => togglePinnedAction(action.id, action.defaultPinned)}
               />
             ))}
@@ -1073,7 +1469,7 @@ export function PlayTab() {
               cunningStrike={cunningStrike}
               expandedId={expandedId}
               onExpand={setExpandedId}
-              onCommit={commitAction}
+              onCommit={dispatchAction}
               onPin={(action) => togglePinnedAction(action.id, action.defaultPinned)}
             />
           ))
@@ -1098,7 +1494,7 @@ export function PlayTab() {
               cunningStrike={cunningStrike}
               expandedId={expandedId}
               onExpand={setExpandedId}
-              onCommit={commitAction}
+              onCommit={dispatchAction}
               onPin={(action) => togglePinnedAction(action.id, action.defaultPinned)}
             />
           )}
@@ -1132,7 +1528,7 @@ export function PlayTab() {
                   higherLevelsFor={higherLevelsFor}
                   open={expandedId === action.id}
                   onOpenChange={(o) => setExpandedId(o ? action.id : null)}
-                  onUse={() => commitAction(action)}
+                  onUse={() => dispatchAction(action)}
                 />
               ))}
               {/* Off-list reaction bookkeeping — ONE clear "Mark used" row for a
@@ -1144,7 +1540,7 @@ export function PlayTab() {
                 <OffListReactionRow
                   disabled={reactionUsed}
                   committed={reactionUsedId === offListReaction.id}
-                  onUse={() => handleUseReaction(offListReaction)}
+                  onUse={() => commitAction(offListReaction)}
                 />
               )}
             </div>
@@ -1177,13 +1573,41 @@ export function PlayTab() {
                   skillCheckBonusFor={skillCheckBonusFor}
                   open={expandedId === action.id}
                   onOpenChange={(o) => setExpandedId(o ? action.id : null)}
-                  onCommit={() => commitAction(action)}
+                  onCommit={() => dispatchAction(action)}
                   onPin={() => togglePinnedAction(action.id, action.defaultPinned)}
                 />
               ))}
             </div>
           </>
         )}
+
+      {/* Engine dual-dispatch (rollout bridge): the lazy engine flow for an
+          engine-executable feature action or weapon attack. */}
+      {engineDispatch !== null && (
+        <Suspense fallback={null}>
+          <EngineActionFlow
+            dispatch={engineDispatch}
+            onClose={() => setEngineDispatch(null)}
+          />
+        </Suspense>
+      )}
+
+      {/* The Play board's engine SPELL flow (the SpellsTab twin): the same
+          EngineCastFlow, mounted for an engine-executable spell row commit. */}
+      {engineSpellCast !== null && (
+        <Suspense fallback={null}>
+          <EngineCastFlow
+            concentrationSwap={engineSpellCast.request.concentrationSwap}
+            economy={engineSpellCast.request.economy}
+            hasAttack={engineSpellCast.request.hasAttack}
+            onClose={() => setEngineSpellCast(null)}
+            slots={engineSpellCast.slots}
+            spellId={engineSpellCast.request.spellId}
+            spellName={engineSpellCast.request.spellName}
+            summary={engineSpellCast.summary}
+          />
+        </Suspense>
+      )}
 
       {/* ── Empty state — one honest message when the filter surfaces nothing ── */}
       {viewEmpty && (
@@ -1302,12 +1726,13 @@ function combatFacts(
           }),
         }
       : null,
-    // G22 — Heightened Focus's "2 × Martial Arts die" temporary HP as a labeled
-    // accordion fact (roll-entry; the gloss carries the same line).
+    // Rolled Temporary HP as a labeled accordion fact (the gloss carries it too).
     summary.tempHpRoll
       ? {
           label: t("combat.tempHpRollLabel"),
-          value: t("combat.tempHpRoll", { dice: summary.tempHpRoll.dice }),
+          value: t("combat.tempHpRoll", {
+            dice: tempHpRollFormula(summary.tempHpRoll),
+          }),
         }
       : null,
   ].filter((f): f is { label: string; value: string } => f != null);
@@ -1467,18 +1892,18 @@ function CombatActionCard({
   const { language: locale } = useLocale();
   const kind = combatKind(action);
 
-  // S9 — the item→multi-spell-pool cast card (`item-cast-<itemId>`): it CASTS a
+  // S9 — the item→multi-spell-pool cast card: it CASTS a
   // spell from the item's shared charge pool, so it reads with the spell "Cast"
   // vocabulary (verb + descriptive aria) and its OWN magic-item-type seal glyph
   // (Wand of Binding → wand, Ring of Animal Influence → ring, Staff of Charming →
   // staff) instead of the generic class-feature Gem — the "cast a spell FROM this
-  // item" intent made legible without a new card type (golden rule 3).
-  const isItemPoolCast = action.id.startsWith("item-cast-");
-  const itemPoolSeal = isItemPoolCast
-    ? magicItemSealIcon(
-        getMagicItem(action.id.slice("item-cast-".length))?.type ?? "wondrous"
-      )
+  // item" intent made legible without a new card type (golden rule 3). Catalogue
+  // identity is explicit; the runtime action id may contain an instance UUID.
+  const itemPoolItem = action.castPoolItemId
+    ? getMagicItem(action.castPoolItemId)
     : undefined;
+  const isItemPoolCast = action.castPoolItemId !== undefined;
+  const itemPoolSeal = itemPoolItem ? magicItemSealIcon(itemPoolItem.type) : undefined;
 
   // Item g — two-hand wield stance for a Versatile weapon. The engine surfaces
   // `versatileDamage` (the two-handed formula, same versatile die the inventory

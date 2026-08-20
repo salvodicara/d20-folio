@@ -54,6 +54,7 @@ function gatheringStatus(): GlobalCombat {
   return {
     campaignId: "camp-1",
     encounter: {
+      nextMonsterOrdinal: 1,
       round: 1,
       currentCombatantId: null,
       epoch: 5,

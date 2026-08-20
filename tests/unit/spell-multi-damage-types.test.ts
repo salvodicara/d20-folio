@@ -22,7 +22,7 @@ import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { resolveActions, resolveSpellDamageTypes } from "@/lib/smart-tracker";
 import { spellIndex } from "@/data/spells";
 import type { CharacterDoc } from "@/types/character";
-import type { DamageType } from "@/data/types";
+import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 
 // ─── Pure helper: resolveSpellDamageTypes ────────────────────────────────────
 
@@ -146,21 +146,7 @@ describe("SRD data declares multi / choice damage types", () => {
   });
 
   it("every declared multi/choice type is a canonical DamageType", () => {
-    const VALID: ReadonlySet<DamageType> = new Set<DamageType>([
-      "acid",
-      "bludgeoning",
-      "cold",
-      "fire",
-      "force",
-      "lightning",
-      "necrotic",
-      "piercing",
-      "poison",
-      "psychic",
-      "radiant",
-      "slashing",
-      "thunder",
-    ]);
+    const VALID: ReadonlySet<DamageType> = new Set<DamageType>(DAMAGE_TYPES);
     for (const id of [
       "prismatic-spray",
       "prismatic-wall",

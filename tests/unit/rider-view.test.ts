@@ -64,6 +64,27 @@ describe("buildRiders — rider archetypes across built scenarios", () => {
     expect(frenzy?.spend).toBeNull();
   });
 
+  it("preserves a rider's damage-type choices for the shared chip and resolver", () => {
+    const [rider] = buildRiders(
+      {
+        extraDamage: [
+          {
+            dice: "1d6+1",
+            damageType: "radiant",
+            damageTypeChoices: ["radiant", "necrotic"],
+            oncePerTurn: true,
+            source: litText({ en: "Divine Fury", it: "Furia Divina" }),
+          },
+        ],
+      },
+      "en"
+    );
+    expect(rider).toMatchObject({
+      damageTypeId: "radiant",
+      damageTypeChoiceIds: ["radiant", "necrotic"],
+    });
+  });
+
   it("DISPLAY-ONLY: Great Weapon Fighting + Savage Attacker → die modifiers, never spendable", () => {
     const riders = ridersFor({
       name: "Borr",

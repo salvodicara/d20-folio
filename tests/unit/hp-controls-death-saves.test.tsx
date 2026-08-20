@@ -17,6 +17,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act, type RenderHookResult } from "@testing-library/react";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useUndoStore } from "@/stores/undoStore";
 import {
   useHpControls,
   type HpControls,
@@ -24,7 +25,10 @@ import {
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { SessionState } from "@/types/character";
 
-const { showToastMock } = vi.hoisted(() => ({ showToastMock: vi.fn() }));
+const { showToastMock, dismissToastMock } = vi.hoisted(() => ({
+  showToastMock: vi.fn(),
+  dismissToastMock: vi.fn(),
+}));
 
 // The hook reads `showToast` via the selector-hook form; the store reads it via
 // `getState()` (concentration toast). Support BOTH shapes with one mock.
@@ -32,7 +36,12 @@ vi.mock("@/stores/toastStore", () => {
   const useToastStore = Object.assign(
     (selector: (s: { showToast: typeof showToastMock }) => unknown) =>
       selector({ showToast: showToastMock }),
-    { getState: () => ({ showToast: showToastMock }) }
+    {
+      getState: () => ({
+        showToast: showToastMock,
+        dismissToast: dismissToastMock,
+      }),
+    }
   );
   return { useToastStore };
 });
@@ -47,8 +56,20 @@ function seed(opts: {
   conditions?: string[];
   sessionDefenses?: SessionState["sessionDefenses"];
 }) {
+  const hasDeathWard = opts.activeFeatures?.includes("spell-death-ward") ?? false;
   useCharacterStore.getState().setCharacter({
     ...MOCK_CHARACTER,
+    character: {
+      ...MOCK_CHARACTER.character,
+      spells: hasDeathWard
+        ? [
+            ...MOCK_CHARACTER.character.spells.filter(
+              (spell) => !("srdId" in spell) || spell.srdId !== "death-ward"
+            ),
+            { srdId: "death-ward", prepared: true },
+          ]
+        : MOCK_CHARACTER.character.spells,
+    },
     session: {
       ...MOCK_CHARACTER.session,
       hp: { ...MOCK_CHARACTER.session.hp, current: opts.current, temp: opts.temp ?? 0 },
@@ -79,6 +100,7 @@ function applyDamage(
 
 beforeEach(() => {
   showToastMock.mockReset();
+  useUndoStore.getState().clear("mock-char");
 });
 
 describe("useHpControls — death-save reset on knockout", () => {
@@ -319,5 +341,20 @@ describe("useHpControls — RA-11 applyDeathSave (the entered d20)", () => {
     expect(sess()?.deathSucc).toBe(1);
     expect(sess()?.deathFail).toBe(2);
     expect(sess()?.conditions).toContain("unconscious");
+  });
+
+  it("redo re-resolves the same physical face against live modifiers", () => {
+    seed({ current: 0, succ: 0, fail: 0 });
+    const { result } = renderHook(() => useHpControls());
+    act(() => result.current.applyDeathSave(10));
+    expect(sess()?.deathSucc).toBe(1);
+    act(() => {
+      expect(useUndoStore.getState().undo()).toBe(true);
+      useCharacterStore.getState().updateSession({ exhaustion: 1 });
+      expect(useUndoStore.getState().redo()).toBe(true);
+    });
+    // The same entered 10 is now 8 after live Exhaustion, so redo fails.
+    expect(sess()?.deathSucc).toBe(0);
+    expect(sess()?.deathFail).toBe(1);
   });
 });

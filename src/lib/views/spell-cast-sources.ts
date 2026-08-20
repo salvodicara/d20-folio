@@ -22,22 +22,60 @@ import {
   type MetamagicCastOption,
   type ScopedSlotSource,
 } from "@/lib/cast-options";
-import { evaluateGrants, type ScopedSlotSpellScope, type Grant } from "@/lib/grants";
+import {
+  evaluateGrants,
+  type FreeCastEntry,
+  type ScopedSlotSpellScope,
+  type Grant,
+} from "@/lib/grants";
 import { resolveAllGrantSources, flattenEntryPicks } from "@/lib/resolve-grant-sources";
 import { grantSourceName, localizeText } from "@/lib/views/srd-i18n";
 import { srdText } from "@/lib/loc-text";
 import { totalLevel as characterLevel } from "@/lib/classes";
-import { resolveTrackers, resolveChargesFormula } from "@/lib/smart-tracker";
+import {
+  isSpellcastingBlocked,
+  resolveItemResourceAvailability,
+  resolveTrackers,
+  resolveChargesFormula,
+  resolveFreeCastFromList,
+} from "@/lib/smart-tracker";
 import { spellIndex } from "@/data/spells";
 import { FEATS_BY_ID } from "@/data/feats";
+import { resolveEffectiveSpells } from "@/lib/expanded-spells";
+import { resolveCastSourceOverridesForLevel } from "@/lib/cast-source-profile";
 
 /** The Sorcery-Point pool tracker every Sorcerer Metamagic use debits. */
 const SORCERY_POINT_TRACKER_ID = "sorcerer-font-of-magic";
+
+type ItemResourceFreeCastEntry = Extract<
+  FreeCastEntry,
+  { payment: { kind: "item-resource" } }
+>;
+
+function isItemResourceFreeCastEntry(
+  entry: FreeCastEntry
+): entry is ItemResourceFreeCastEntry {
+  return entry.payment.kind === "item-resource";
+}
 
 /** Bilingual badge labels for the mastery / signature free-cast rows. */
 export interface CastBadgeLabels {
   mastery: string;
   signature: string;
+}
+
+/**
+ * Whether `spellId` remains available when equipped items are removed from the
+ * character. Magic-item `always-prepared-spell` grants are a visibility bridge
+ * for their own charge-backed cast route; they never grant permission to spend
+ * the bearer's class slots. A genuinely known/prepared copy still survives this
+ * projection and therefore keeps both routes.
+ */
+export function canCastSpellWithSlots(character: CharacterDoc, spellId: string): boolean {
+  return resolveEffectiveSpells(
+    { ...character.character, equipment: [] },
+    character.session
+  ).some((spell) => !("custom" in spell) && spell.srdId === spellId);
 }
 
 /**
@@ -51,21 +89,29 @@ export function freeCastSourcesForSpell(
   locale: keyof BiText,
   signatureLabel: string
 ): FreeCastSource[] {
-  const grantSources = resolveAllGrantSources(character.character);
+  const grantSources = resolveAllGrantSources(
+    character.character,
+    character.session.itemResources
+  );
   const nameById = new Map(
     grantSources.map((s) => [s.id, grantSourceName(s, locale)] as const)
   );
-  // The displayed source NAME of a free cast is the localized FEAT name — resolved
-  // by the feat-id PREFIX of the per-spell tracker key `${featId}:${spellId}` (a
-  // bare key — a magic item, a single-free-cast feat — resolves directly). NEVER
-  // the raw tracker id (that leaked `fey-touched:misty-step` into the cast modal);
-  // a feat name that fails to resolve (a real bug) falls back to the localized
-  // SPELL name, never an id — so no language/key leak can reach the UI by design.
-  const sourceNameFor = (trackerKey: string, fallbackSpellId: string): string =>
-    nameById.get(trackerKey.split(":")[0] ?? trackerKey) ??
-    nameById.get(trackerKey) ??
-    localizeText(srdText("spell", fallbackSpellId, "name"), locale);
+  // Display attribution comes from the resolved grant source, never by parsing a
+  // payment address. An old per-spell tracker key may still be matched through its
+  // explicitly-known source + spell composition. A source that fails to resolve
+  // falls back to the localized spell name, so no raw id reaches the UI.
+  const sourceNameFor = (sourceId: string, fallbackSpellId: string): string => {
+    const exact = nameById.get(sourceId);
+    if (exact) return exact;
+    const composedSource = grantSources.find(
+      (source) => `${source.id}:${fallbackSpellId}` === sourceId
+    );
+    return composedSource
+      ? grantSourceName(composedSource, locale)
+      : localizeText(srdText("spell", fallbackSpellId, "name"), locale);
+  };
   const session = character.session;
+  const level = characterLevel(character.character);
   const out: FreeCastSource[] = [];
 
   for (const entry of evaluateGrants(
@@ -75,27 +121,67 @@ export function freeCastSourcesForSpell(
   ).freeCasts) {
     if (entry.spellId !== spellId) continue;
     // Character-level gate (a heritage feat's second spell at character level 3).
-    if (entry.minLevel != null && characterLevel(character.character) < entry.minLevel)
+    if (entry.minLevel != null && level < entry.minLevel) continue;
+    const castOverrides = resolveCastSourceOverridesForLevel(entry.castOverrides, level);
+    if (isItemResourceFreeCastEntry(entry)) {
+      const availability = resolveItemResourceAvailability(character, entry.payment);
+      if (!availability || availability.current <= 0) continue;
+      out.push({
+        sourceId: entry.sourceId,
+        attributionSourceId: entry.sourceId,
+        payment: entry.payment,
+        sourceName: sourceNameFor(entry.sourceId, entry.spellId),
+        usesPerRest: availability.capacity,
+        usedNow: availability.capacity - availability.current,
+        recovery: {
+          kind: "item-resource",
+          triggers: availability.recoveryTriggers,
+        },
+        ...(entry.castLevels ? { castLevels: entry.castLevels } : {}),
+        ...(castOverrides ? { castOverrides } : {}),
+      });
       continue;
-    // Level/ability-scaled charges resolve here, where the character is in scope
-    // (Forest Gnome: Speak with Animals "PB times per Long Rest"; Star Map /
-    // Misty Wanderer / Mapping Magic: an ability-modifier count). The shared
-    // `resolveChargesFormula` understands the same vocabulary as tracker totals
-    // (PB, an ability code, level, arithmetic); a blank formula falls back to the
-    // fixed `chargesPerRest`.
+    }
     const charges = resolveChargesFormula(
       entry.chargesFormula,
       entry.chargesPerRest,
-      character
+      character,
+      entry.capacityByLevel
     );
-    const usedNow = session.trackers[entry.sourceId]?.used ?? 0;
+    const usedNow = session.trackers[entry.payment.trackerId]?.used ?? 0;
     if (usedNow >= charges) continue;
     out.push({
-      sourceId: entry.sourceId,
+      sourceId: entry.payment.trackerId,
+      attributionSourceId: entry.sourceId,
+      payment: entry.payment,
       sourceName: sourceNameFor(entry.sourceId, entry.spellId),
       usesPerRest: charges,
       usedNow,
-      rest: entry.rest,
+      recovery: { kind: "tracker", rest: entry.rest },
+      ...(entry.castLevels ? { castLevels: entry.castLevels } : {}),
+      ...(castOverrides ? { castOverrides } : {}),
+    });
+  }
+
+  // A multi-spell ITEM pool is also payable from each of its individual spell
+  // cards. Feature-wide guided pools stay on their one picker affordance.
+  for (const pool of resolveFreeCastFromList(character)) {
+    if (pool.payment?.kind !== "item-resource" || !pool.spellIds.includes(spellId)) {
+      continue;
+    }
+    const spell = spellIndex.get(spellId);
+    const cost = pool.costBySpell[spellId];
+    if (!spell || cost === undefined || cost > pool.remaining) continue;
+    out.push({
+      sourceId: pool.sourceId,
+      attributionSourceId: pool.sourceId,
+      payment: pool.payment,
+      sourceName: sourceNameFor(pool.sourceId, spellId),
+      usesPerRest: pool.charges,
+      usedNow: pool.charges - pool.remaining,
+      recovery: pool.recovery,
+      castLevels: [{ level: spell.level, cost }],
+      ...(pool.castOverrides ? { castOverrides: pool.castOverrides } : {}),
     });
   }
 
@@ -108,10 +194,11 @@ export function freeCastSourcesForSpell(
     if (usedNow < fc.usesPerRest && !out.some((o) => o.sourceId === fc.sourceId)) {
       out.push({
         sourceId: fc.sourceId,
+        payment: { kind: "tracker", trackerId: fc.sourceId },
         sourceName: sourceNameFor(fc.sourceId, spellId),
         usesPerRest: fc.usesPerRest,
         usedNow,
-        rest: fc.rest,
+        recovery: { kind: "tracker", rest: fc.rest },
       });
     }
   }
@@ -123,10 +210,11 @@ export function freeCastSourcesForSpell(
     if (usedNow < 2) {
       out.push({
         sourceId: "wizard-signature-spells",
+        payment: { kind: "tracker", trackerId: "wizard-signature-spells" },
         sourceName: signatureLabel,
         usesPerRest: 2,
         usedNow,
-        rest: "short",
+        recovery: { kind: "tracker", rest: "short" },
       });
     }
   }
@@ -145,7 +233,10 @@ export function atWillCastSourcesForSpell(
   spellId: string,
   locale: keyof BiText
 ): MasterySource[] {
-  const grantSources = resolveAllGrantSources(character.character);
+  const grantSources = resolveAllGrantSources(
+    character.character,
+    character.session.itemResources
+  );
   const nameById = new Map(
     grantSources.map((s) => [s.id, grantSourceName(s, locale)] as const)
   );
@@ -211,7 +302,10 @@ export function scopedSlotSourcesForSpell(
   spellId: string,
   locale: keyof BiText
 ): ScopedSlotSource[] {
-  const grantSources = resolveAllGrantSources(character.character);
+  const grantSources = resolveAllGrantSources(
+    character.character,
+    character.session.itemResources
+  );
   const nameById = new Map(
     grantSources.map((s) => [s.id, grantSourceName(s, locale)] as const)
   );
@@ -251,6 +345,7 @@ export function resolveSpellCastOptions(
   locale: keyof BiText,
   labels: CastBadgeLabels
 ): CastLevelOption[] {
+  if (isSpellcastingBlocked(character)) return [];
   if (baseLevel <= 0) return [];
   const ref = character.character.spells.find(
     (s) => !("custom" in s) && s.srdId === spellId
@@ -277,7 +372,7 @@ export function resolveSpellCastOptions(
   // reach — `buildCastOptions` drops it when the slot level < base level.
   const scopedSlots = scopedSlotSourcesForSpell(character, spellId, locale);
   return buildCastOptions(
-    character.character.spellSlots,
+    canCastSpellWithSlots(character, spellId) ? character.character.spellSlots : [],
     character.session.spellSlots,
     baseLevel,
     freeCasts,

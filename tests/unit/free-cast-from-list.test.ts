@@ -43,7 +43,10 @@ describe("D4 — free-cast-from-list evaluator", () => {
       maxSpellLevel: 5,
       chargesPerRest: 1,
       rest: "long",
-      trackerId: "cleric-divine-intervention",
+      payment: {
+        kind: "tracker",
+        trackerId: "cleric-divine-intervention",
+      },
     });
   });
 
@@ -63,7 +66,10 @@ describe("D4 — free-cast-from-list evaluator", () => {
         ],
       },
     ]);
-    expect(agg.freeCastFromList[0]?.trackerId).toBe("src-feature");
+    expect(agg.freeCastFromList[0]?.payment).toEqual({
+      kind: "tracker",
+      trackerId: "src-feature",
+    });
   });
 
   it("the empty default has no free-cast-from-list pools", () => {
@@ -139,7 +145,10 @@ describe("D4 — resolveFreeCastFromList builds the guided picker pool", () => {
     // Fresh: 1 charge, 1 remaining.
     expect(resolveFreeCastFromList(doc)[0]?.charges).toBe(1);
     expect(resolveFreeCastFromList(doc)[0]?.remaining).toBe(1);
-    expect(resolveFreeCastFromList(doc)[0]?.rest).toBe("long");
+    expect(resolveFreeCastFromList(doc)[0]?.recovery).toEqual({
+      kind: "tracker",
+      rest: "long",
+    });
     // Used once → 0 remaining.
     doc.session.trackers["cleric-divine-intervention"] = { used: 1 };
     expect(resolveFreeCastFromList(doc)[0]?.remaining).toBe(0);
@@ -167,6 +176,7 @@ describe("D4 — fixed-set free-cast-from-list (evaluator)", () => {
             type: "free-cast-from-list",
             spellIds: ["shield-of-faith", "spiritual-weapon"],
             trackerId: "cleric-channel-divinity",
+            castOverrides: { concentration: false, maxRounds: 10 },
           },
         ],
       },
@@ -174,7 +184,11 @@ describe("D4 — fixed-set free-cast-from-list (evaluator)", () => {
     expect(agg.freeCastFromList).toHaveLength(1);
     const entry = agg.freeCastFromList[0];
     expect(entry?.spellIds).toEqual(["shield-of-faith", "spiritual-weapon"]);
-    expect(entry?.trackerId).toBe("cleric-channel-divinity");
+    expect(entry?.payment).toEqual({
+      kind: "tracker",
+      trackerId: "cleric-channel-divinity",
+    });
+    expect(entry?.castOverrides).toEqual({ concentration: false, maxRounds: 10 });
     expect(entry?.spellList).toBeUndefined();
     expect(entry?.chargesPerRest).toBeUndefined();
     expect(entry?.rest).toBeUndefined();

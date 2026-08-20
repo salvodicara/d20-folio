@@ -61,7 +61,6 @@ const ROWS: EncounterCombatantView[] = [
     tempHp: 0,
     down: false,
     hidden: false,
-    tokens: [4],
   },
 ];
 
@@ -85,6 +84,7 @@ const reco = (
 function stateWith(events: CombatChronicleEvent[]): EncounterState {
   return {
     combatants: [],
+    nextMonsterOrdinal: 1,
     round: 1,
     currentCombatantId: "pc-mara",
     epoch: 1,
@@ -98,6 +98,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     const apply = vi.fn();
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[reco(damageEvent)]}
         rows={ROWS}
         memberDetails={{}}
@@ -119,6 +120,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     });
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[reco(damageEvent)]}
         rows={ROWS}
         memberDetails={{}}
@@ -144,6 +146,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     });
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[reco(damageEvent)]}
         rows={ROWS}
         memberDetails={{}}
@@ -161,6 +164,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
   it("no attacker picker once the hit is attributed", () => {
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[reco({ ...damageEvent, attackerId: "pc-mara" })]}
         rows={ROWS}
         memberDetails={{}}
@@ -180,6 +184,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     });
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[reco({ ...damageEvent, attackerId: "pc-mara" }, { auto: true })]}
         rows={ROWS}
         memberDetails={{}}
@@ -190,7 +195,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     // A CERTAIN auto-applied player hit still carries the DM's undo affordance.
     fireEvent.click(screen.getByRole("button", { name: "Undo this line" }));
     expect(apply).toHaveBeenCalledTimes(1);
-    // The reducer IS undoHpEvent — it clears the line and heals the token back to full.
+    // The reducer IS undoHpEvent — it clears the line and heals the monster back to full.
     const seed: EncounterState = {
       combatants: [
         {
@@ -200,10 +205,10 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
           ac: 13,
           initiative: 12,
           conditions: [],
-          maxHp: 12,
-          tokens: [4],
+          hp: { current: 4, temp: 0, max: 12 },
         },
       ],
+      nextMonsterOrdinal: 2,
       round: 1,
       currentCombatantId: "pc-mara",
       epoch: 1,
@@ -213,12 +218,15 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     const next = captured(seed);
     expect(next).toEqual(undoHpEvent(seed, "0"));
     expect(next.events).toEqual([]);
-    expect(next.combatants[0]).toMatchObject({ tokens: [12] }); // 4 + 8 healed back
+    expect(next.combatants[0]).toMatchObject({
+      hp: { current: 12, temp: 0, max: 12 }, // 4 + 8 healed back
+    });
   });
 
   it("shows NO undo on a PC-target HP line (a PC's HP is not on the encounter)", () => {
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[
           reco({
             id: "0",
@@ -253,6 +261,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     };
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[reco(event)]}
         rows={ROWS}
         memberDetails={{}}
@@ -270,10 +279,10 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
           ac: 13,
           initiative: 12,
           conditions: ["prone"],
-          maxHp: 12,
-          tokens: [12],
+          hp: { current: 12, temp: 0, max: 12 },
         },
       ],
+      nextMonsterOrdinal: 2,
       round: 1,
       currentCombatantId: "monster-1",
       epoch: 1,
@@ -287,6 +296,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
   it("a CERTAIN auto-attributed hit reads as a confirmed line with no picker", () => {
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[reco({ ...damageEvent, attackerId: "pc-mara" }, { auto: true })]}
         rows={ROWS}
         memberDetails={{}}
@@ -301,6 +311,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
   it("an UNCERTAIN auto-attribution wears the marker AND offers the override picker", () => {
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[
           reco(
             { ...damageEvent, attackerId: "pc-mara" },
@@ -322,6 +333,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
   it("renders a synthesized player-declared MISS line (certain, no picker)", () => {
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[
           reco({
             id: "miss-mara:1:monster-1",
@@ -344,6 +356,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
   it("records ONLY what landed — the feed has no miss/pass logging affordance", () => {
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[]}
         rows={ROWS}
         memberDetails={{}}
@@ -379,6 +392,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     );
     render(
       <ChronicleFeed
+        campaignId="camp-test"
         events={[fused]}
         rows={rows3}
         memberDetails={{}}
@@ -402,7 +416,7 @@ describe("EndEncounterDialog — the editable end entry", () => {
       damageEvent,
       { id: "1", round: 1, kind: "down", targetId: "monster-1" },
     ]),
-    // A defeated monster group in the roster → inferOutcome === "victory".
+    // A defeated monster in the roster → inferOutcome === "victory".
     combatants: [
       {
         kind: "monster",
@@ -411,8 +425,7 @@ describe("EndEncounterDialog — the editable end entry", () => {
         ac: 13,
         initiative: 12,
         conditions: [],
-        maxHp: 12,
-        tokens: [0],
+        hp: { current: 0, temp: 0, max: 12 },
       },
     ],
   };

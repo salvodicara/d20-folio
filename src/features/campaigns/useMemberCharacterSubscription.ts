@@ -26,12 +26,11 @@
 import { useEffect } from "react";
 import { useCharacterStore } from "@/stores/characterStore";
 import { subscribeToCharacter } from "@/lib/firestore";
-import { subscribeCombatState } from "@/lib/combat-state-io";
+import { subscribeCombatState, writeCombatState } from "@/lib/combat-state-io";
+import { sessionToCombatState } from "@/lib/combat-state";
 import type { CombatState } from "@/types/combat-state";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
-import { MOCK_CHARACTER } from "@/lib/mock";
-import { isDevFixtureId, loadDevFixture } from "@/lib/dev-fixtures";
-import { isDevScenarioRouteId } from "@/lib/dev-scenario-id";
+import { resolveDevDoc } from "@/features/campaigns/useMemberCharacterDocs";
 
 /**
  * Subscribe (read-only) to a party member's character document.
@@ -52,41 +51,74 @@ export function useMemberCharacterSubscription(
   const setError = useCharacterStore((s) => s.setError);
 
   useEffect(() => {
-    // Dev-bypass: no Firestore. Resolve the member's character through the same
-    // fixture/scenario seam the owner-edit subscription uses, loaded READ-ONLY so
-    // the viewer's affordances are hidden + writes are inert. `characterId` (from
-    // the dev campaign fixture) is the fixture/scenario id; falls back to the mock.
+    // Dev-bypass: resolve the same persisted parent + combat/state replica the owner
+    // uses. The fixture is only the seed; read-only peer views now survive reloads and
+    // observe another tab's combat updates like production.
     if (DEV_BYPASS_AUTH) {
       const id = characterId ?? "mock-1";
-      if (isDevFixtureId(id)) {
-        setLoading(true);
-        let cancelled = false;
-        void loadDevFixture(id).then((doc) => {
-          if (cancelled) return;
-          loadReadonly(doc ?? { ...MOCK_CHARACTER, id });
-          setLoading(false);
+      const uid = memberUid ?? "mock-uid";
+      let cancelled = false;
+      let quarantined = false;
+      let unsubscribeCombat = () => {};
+      const quarantine = (message: string): void => {
+        if (quarantined) return;
+        quarantined = true;
+        loadReadonly(null);
+        setError(message);
+        setLoading(false);
+      };
+      setLoading(true);
+      void resolveDevDoc(id, uid)
+        .then((doc) => {
+          if (cancelled || quarantined) return;
+          let lastCombat: CombatState | null | undefined;
+          const publish = (): void => {
+            if (quarantined) return;
+            if (lastCombat === undefined) {
+              if (doc.playStateVersion !== 1) {
+                loadReadonly(doc);
+                setLoading(false);
+              }
+              return;
+            }
+            const loaded = useCharacterStore
+              .getState()
+              .loadCharacterWithCombat(doc, lastCombat, true);
+            if (!loaded) {
+              quarantine("Invalid play state");
+              return;
+            }
+            setLoading(false);
+          };
+          let seeded = false;
+          unsubscribeCombat = subscribeCombatState(
+            uid,
+            id,
+            (combat) => {
+              if (cancelled || quarantined) return;
+              if (!combat && !seeded && doc.playStateVersion !== 1) {
+                seeded = true;
+                void writeCombatState(uid, id, sessionToCombatState(doc.session));
+                return;
+              }
+              lastCombat = combat;
+              publish();
+            },
+            (err) => {
+              if (cancelled || quarantined) return;
+              quarantine(err.message);
+            }
+          );
+          publish();
+        })
+        .catch((error: unknown) => {
+          if (cancelled || quarantined) return;
+          quarantine(error instanceof Error ? error.message : String(error));
         });
-        return () => {
-          cancelled = true;
-        };
-      }
-      if (isDevScenarioRouteId(id)) {
-        // Lazy-load the dev-only scenario builder so it never weighs on the eager
-        // bundle (mirrors the fixture path above).
-        setLoading(true);
-        let cancelled = false;
-        void import("@/lib/dev-scenarios").then(({ buildDevScenario }) => {
-          if (cancelled) return;
-          loadReadonly(buildDevScenario(id) ?? { ...MOCK_CHARACTER, id });
-          setLoading(false);
-        });
-        return () => {
-          cancelled = true;
-        };
-      }
-      loadReadonly({ ...MOCK_CHARACTER, id });
-      setLoading(false);
-      return;
+      return () => {
+        cancelled = true;
+        unsubscribeCombat();
+      };
     }
 
     if (!memberUid || !characterId) {
@@ -103,34 +135,54 @@ export function useMemberCharacterSubscription(
     // whichever arrives second reconciles via `applyCombatHydration` (mirrors the
     // owner-edit `useCharacterSubscription` so the read-only peer sheet shows LIVE
     // HP/conditions, not the C3-stripped parent-doc default).
-    let lastCombat: CombatState | null | undefined = undefined;
-    const applyCombatHydration = (): void => {
-      if (lastCombat === undefined) return; // no combat snapshot yet — wait
-      const store = useCharacterStore.getState();
-      if (!store.character || store.character.id !== characterId) return;
-      // Absent subdoc → the full-HP default (a genuinely fresh/undamaged character); a
-      // present subdoc is the sole source of the peer's live HP/conditions/death saves.
-      store.hydrateCombatState(lastCombat ?? null);
+    let lastParent: import("@/types/character").CharacterDoc | null | undefined;
+    let lastCombat: CombatState | null | undefined;
+    let quarantined = false;
+    const quarantine = (message: string): void => {
+      if (quarantined) return;
+      quarantined = true;
+      loadReadonly(null);
+      setError(message);
+      setLoading(false);
+    };
+    const publishResolvedPair = (): void => {
+      if (quarantined) return;
+      if (lastParent === undefined) return;
+      if (lastParent === null) {
+        quarantine("Member character not found");
+        return;
+      }
+      if (lastParent.playStateVersion === 1 && lastCombat === undefined) return;
+      if (lastParent.playStateVersion === 1 && lastCombat === null) {
+        quarantine("Invalid play state: missing-v1-combat-state");
+        return;
+      }
+      const loaded =
+        lastCombat === undefined
+          ? (loadReadonly(lastParent), true)
+          : useCharacterStore
+              .getState()
+              .loadCharacterWithCombat(lastParent, lastCombat, true);
+      if (!loaded) {
+        quarantine("Invalid play state");
+        return;
+      }
+      setLoading(false);
     };
 
     const unsubscribe = subscribeToCharacter(
       memberUid,
       characterId,
       (doc) => {
-        if (doc) {
-          loadReadonly(doc);
-          applyCombatHydration();
-        } else {
-          // Absent / denied — a clean not-found, never a stuck spinner.
-          setError("Member character not found");
-          loadReadonly(null);
-        }
-        setLoading(false);
+        if (quarantined) return;
+        lastParent = doc;
+        publishResolvedPair();
       },
       (err) => {
+        if (quarantined) return;
         console.error("Member-character subscription error", err);
-        setError(err.message);
-        setLoading(false);
+        lastParent = undefined;
+        quarantine(err.message);
       }
     );
 
@@ -141,11 +193,15 @@ export function useMemberCharacterSubscription(
       memberUid,
       characterId,
       (combat) => {
+        if (quarantined) return;
         lastCombat = combat;
-        applyCombatHydration();
+        publishResolvedPair();
       },
       (err) => {
+        if (quarantined) return;
         console.error("Member combat-state subscription error", err);
+        lastCombat = undefined;
+        quarantine(err.message);
       }
     );
 

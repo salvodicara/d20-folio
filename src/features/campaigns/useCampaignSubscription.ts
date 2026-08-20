@@ -21,6 +21,7 @@ import { useDocumentSubscription } from "@/app/_data/firestore-subscriptions";
 import { useCampaignStore, type CampaignState } from "@/features/campaigns/campaignStore";
 import {
   createCampaignSave,
+  createDevCampaignSave,
   subscribeToCampaign,
   type CampaignWritable,
 } from "@/features/campaigns/campaign-io";
@@ -126,5 +127,7 @@ export function useCampaignSubscription(campaignId: string | undefined): void {
     onError,
     storeSubscribe: campaignStoreSubscribe,
     selectSave: selectCampaignSave,
+    subscribeDevBypass: subscribeToCampaign,
+    createDevBypassSave: createDevCampaignSave,
   });
 }

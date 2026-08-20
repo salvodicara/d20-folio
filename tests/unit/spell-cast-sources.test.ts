@@ -5,14 +5,16 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  canCastSpellWithSlots,
   resolveSpellCastOptions,
   resolveMetamagicForCast,
   remainingSorceryPoints,
   freeCastSourcesForSpell,
 } from "@/lib/views/spell-cast-sources";
+import { getMagicItem } from "@/data/magic-items";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { makeCharacterDoc } from "./_helpers";
-import type { CharacterDoc } from "@/types/character";
+import type { CharacterDoc, ItemResourceState } from "@/types/character";
 
 const LABELS = { mastery: "MASTERY", signature: "SIGNATURE" };
 
@@ -40,6 +42,15 @@ describe("resolveSpellCastOptions", () => {
     expect(resolveSpellCastOptions(c, "fire-bolt", 0, true, "en", LABELS)).toEqual([]);
   });
 
+  it("offers no slot/free/mastery route while an active state blocks spellcasting", () => {
+    const c = withSlots({
+      spells: [{ srdId: "bless", prepared: true }],
+      features: [{ srdId: "barbarian-rage" }],
+    });
+    c.session.activeFeatures = ["barbarian-rage"];
+    expect(resolveSpellCastOptions(c, "bless", 1, true, "en", LABELS)).toEqual([]);
+  });
+
   it("surfaces a ref-level free cast (Aberrant freeCastSource) at base level", () => {
     const c = withSlots({
       spells: [
@@ -62,51 +73,165 @@ describe("resolveSpellCastOptions", () => {
 });
 
 // S9 — a charged magic item (Wand of Magic Missiles, Staff of Healing) emits its
-// cast row through the SAME free-cast-spell seam feats use, keyed by an
-// item-charge tracker (= the item id). Table over the wired charged items.
+// cast row through the SAME free-cast-spell seam feats use. Migrated items pay
+// one exact physical resource with their authored recovery cadence.
 describe("S9 — charged-item cast rows via the spell-cast-sources seam", () => {
+  const WMM_INSTANCE_ID = "wand-of-magic-missiles-copy";
+
+  function instanceIdFor(itemId: string): string {
+    return `${itemId}-copy`;
+  }
+
+  function itemResourceSpec(itemId: string): { id: string; capacity: number } {
+    const resource = getMagicItem(itemId)?.resources?.[0];
+    const capacity = resource?.capacity;
+    if (!resource || capacity?.kind !== "fixed") {
+      throw new Error(`${itemId} needs a scalar item resource fixture`);
+    }
+    return { id: resource.id, capacity: capacity.amount };
+  }
+
+  function fullItemState(itemId: string, instanceId: string): ItemResourceState {
+    const resource = itemResourceSpec(itemId);
+    return {
+      itemId,
+      instanceId,
+      revision: 0,
+      resources: {
+        [resource.id]: {
+          capacity: resource.capacity,
+          current: resource.capacity,
+          disabled: false,
+        },
+      },
+      disposition: "magical",
+      causalHead: null,
+    };
+  }
+
   function withItem(srdId: string): CharacterDoc {
     const c = structuredClone(MOCK_CHARACTER);
+    const instanceId = instanceIdFor(srdId);
     c.character.spells = [];
     // Attuned: several charged items (staves, some wands) require attunement and
     // are inert until attuned (issue #37); attuning is harmless for the rest.
-    c.character.equipment = [{ srdId, equipped: true, quantity: 1, attuned: true }];
+    c.character.equipment = [
+      {
+        srdId,
+        instanceId,
+        equipped: true,
+        quantity: 1,
+        attuned: true,
+      },
+    ];
     c.session.spellSlots = {};
     c.session.trackers = {};
+    c.session.itemResources = {
+      [instanceId]: fullItemState(srdId, instanceId),
+    };
     return c;
   }
 
   it.each([
     { itemId: "wand-of-magic-missiles", spellId: "magic-missile", charges: 7 },
     { itemId: "staff-of-healing", spellId: "cure-wounds", charges: 10 },
+    {
+      itemId: "circlet-of-blasting",
+      spellId: "scorching-ray",
+      charges: 1,
+      castOverrides: { attackBonus: 5 },
+    },
+    {
+      itemId: "cloak-of-arachnida",
+      spellId: "web",
+      charges: 1,
+      castOverrides: { saveDC: 13 },
+    },
     // Single-fixed-spell wands wired to the SAME free-cast + charge-tracker seam
     // (RAW: each has 7 charges, regains 1d6+1 at dawn). Polymorph's stat-swap
     // stays the user override — only the CAST affordance + charges are modeled.
-    { itemId: "wand-of-web", spellId: "web", charges: 7 },
-    { itemId: "wand-of-fireballs", spellId: "fireball", charges: 7 },
-    { itemId: "wand-of-lightning-bolts", spellId: "lightning-bolt", charges: 7 },
-    { itemId: "wand-of-polymorph", spellId: "polymorph", charges: 7 },
+    {
+      itemId: "wand-of-web",
+      spellId: "web",
+      charges: 7,
+      castOverrides: { saveDC: 13 },
+    },
+    {
+      itemId: "wand-of-fireballs",
+      spellId: "fireball",
+      charges: 7,
+      castOverrides: { saveDC: 15 },
+    },
+    {
+      itemId: "wand-of-lightning-bolts",
+      spellId: "lightning-bolt",
+      charges: 7,
+      castOverrides: { saveDC: 15 },
+    },
+    {
+      itemId: "wand-of-polymorph",
+      spellId: "polymorph",
+      charges: 7,
+      castOverrides: { saveDC: 15 },
+    },
     // RAW: 3 charges, casts Detect Magic, regains 1d3 at dawn (uncommon).
     { itemId: "wand-of-magic-detection", spellId: "detect-magic", charges: 3 },
     // NON-wand items with the IDENTICAL single-fixed-spell mechanic — the family
     // spans every item type, not just wands (the closure fix). RAW dawn-renewing
     // pools confirmed via curl: helm/medallion/eyes (wondrous), trident/mace (weapon).
     { itemId: "helm-of-teleportation", spellId: "teleport", charges: 3 },
-    { itemId: "medallion-of-thoughts", spellId: "detect-thoughts", charges: 5 },
-    { itemId: "eyes-of-charming", spellId: "charm-person", charges: 3 },
-    { itemId: "trident-of-fish-command", spellId: "dominate-beast", charges: 3 },
+    {
+      itemId: "medallion-of-thoughts",
+      spellId: "detect-thoughts",
+      charges: 5,
+      castOverrides: { saveDC: 13 },
+    },
+    {
+      itemId: "eyes-of-charming",
+      spellId: "charm-person",
+      charges: 3,
+      castOverrides: { saveDC: 13 },
+    },
+    {
+      itemId: "trident-of-fish-command",
+      spellId: "dominate-beast",
+      charges: 3,
+      castOverrides: { saveDC: 15 },
+    },
     // The PACK charged items (Niko's Mace, Wave — the cast-alongside-standing-grant
     // closure) are pinned in content-pack/tests/unit/spell-cast-sources.pack.test.ts.
   ])(
-    "$itemId emits a free-cast row for $spellId keyed by the item charge tracker",
-    ({ itemId, spellId, charges }) => {
+    "$itemId emits a free-cast row for $spellId paid by its physical resource",
+    ({ itemId, spellId, charges, castOverrides }) => {
       const c = withItem(itemId);
       const sources = freeCastSourcesForSpell(c, spellId, "en", "SIG");
-      const row = sources.find((s) => s.sourceId === itemId);
+      const instanceId = instanceIdFor(itemId);
+      const row = sources.find(
+        (source) =>
+          source.payment?.kind === "item-resource" &&
+          source.payment.instanceId === instanceId
+      );
       expect(row).toBeDefined();
-      // The charge pool size IS the item's charge count; tracker key = item id.
+      const resource = itemResourceSpec(itemId);
+      expect(row?.payment).toEqual({
+        kind: "item-resource",
+        itemId,
+        instanceId,
+        resourceId: resource.id,
+        key: `item:${instanceId}:${resource.id}`,
+      });
+      const recovery = row?.recovery;
+      expect(recovery).toEqual({
+        kind: "item-resource",
+        triggers: [{ kind: "dawn" }],
+      });
+      if (recovery?.kind !== "item-resource") {
+        throw new Error(`${itemId} needs item-resource recovery`);
+      }
+      expect(recovery.triggers).not.toContainEqual({ kind: "long-rest" });
       expect(row?.usesPerRest).toBe(charges);
       expect(row?.usedNow).toBe(0);
+      expect(row?.castOverrides).toEqual(castOverrides);
     }
   );
 
@@ -120,8 +245,210 @@ describe("S9 — charged-item cast rows via the spell-cast-sources seam", () => 
 
   it("a spent charge tracker drops the cast row (no charges left)", () => {
     const c = withItem("wand-of-magic-missiles");
-    c.session.trackers = { "wand-of-magic-missiles": { used: 7 } };
+    c.session.itemResources = {
+      [WMM_INSTANCE_ID]: {
+        itemId: "wand-of-magic-missiles",
+        instanceId: WMM_INSTANCE_ID,
+        revision: 0,
+        resources: {
+          charges: { capacity: 7, current: 0, disabled: false },
+        },
+        disposition: "magical",
+        causalHead: null,
+      },
+    };
     expect(freeCastSourcesForSpell(c, "magic-missile", "en", "SIG")).toEqual([]);
+  });
+
+  it("an item-only spell can spend item charges but never the bearer's slots", () => {
+    const c = withItem("wand-of-magic-missiles");
+    c.character.spellSlots = [{ level: 1, total: 4 }];
+
+    expect(canCastSpellWithSlots(c, "magic-missile")).toBe(false);
+    const options = resolveSpellCastOptions(c, "magic-missile", 1, true, "en", LABELS);
+    expect(options.filter((option) => option.kind === "slot")).toEqual([]);
+    expect(options.filter((option) => option.kind === "free-cast")).toHaveLength(3);
+  });
+
+  it("keeps slot and item routes when the character also knows the spell", () => {
+    const c = withItem("wand-of-magic-missiles");
+    c.character.spellSlots = [{ level: 1, total: 4 }];
+    c.character.spells = [{ srdId: "magic-missile", prepared: true }];
+
+    expect(canCastSpellWithSlots(c, "magic-missile")).toBe(true);
+    const options = resolveSpellCastOptions(c, "magic-missile", 1, true, "en", LABELS);
+    expect(options.some((option) => option.kind === "slot")).toBe(true);
+    expect(options.some((option) => option.kind === "free-cast")).toBe(true);
+  });
+
+  it("emits independent exact payments for two Wand of Magic Missiles copies", () => {
+    const c = withItem("wand-of-magic-missiles");
+    c.character.equipment = [
+      {
+        srdId: "wand-of-magic-missiles",
+        instanceId: "wand-copy-a",
+        equipped: true,
+      },
+      {
+        srdId: "wand-of-magic-missiles",
+        instanceId: "wand-copy-b",
+        equipped: true,
+      },
+    ];
+    c.session.itemResources = {
+      "wand-copy-a": fullItemState("wand-of-magic-missiles", "wand-copy-a"),
+      "wand-copy-b": fullItemState("wand-of-magic-missiles", "wand-copy-b"),
+    };
+
+    const options = resolveSpellCastOptions(
+      c,
+      "magic-missile",
+      1,
+      true,
+      "en",
+      LABELS
+    ).filter((option) => option.kind === "free-cast");
+
+    expect(options).toHaveLength(6);
+    expect(options.map((option) => option.recovery)).toEqual(
+      Array.from({ length: 6 }, () => ({
+        kind: "item-resource",
+        triggers: [{ kind: "dawn" }],
+      }))
+    );
+    expect(
+      options.map((option) => ({
+        instanceId:
+          option.payment?.kind === "item-resource"
+            ? option.payment.instanceId
+            : undefined,
+        key: option.payment?.kind === "item-resource" ? option.payment.key : undefined,
+        level: option.level,
+        cost: option.cost,
+      }))
+    ).toEqual([
+      { instanceId: "wand-copy-a", key: "item:wand-copy-a:charges", level: 1, cost: 1 },
+      { instanceId: "wand-copy-a", key: "item:wand-copy-a:charges", level: 2, cost: 2 },
+      { instanceId: "wand-copy-a", key: "item:wand-copy-a:charges", level: 3, cost: 3 },
+      { instanceId: "wand-copy-b", key: "item:wand-copy-b:charges", level: 1, cost: 1 },
+      { instanceId: "wand-copy-b", key: "item:wand-copy-b:charges", level: 2, cost: 2 },
+      { instanceId: "wand-copy-b", key: "item:wand-copy-b:charges", level: 3, cost: 3 },
+    ]);
+  });
+
+  it("offers no cast from a destroyed Wand of Magic Missiles copy", () => {
+    const c = withItem("wand-of-magic-missiles");
+    c.session.itemResources = {
+      [WMM_INSTANCE_ID]: {
+        itemId: "wand-of-magic-missiles",
+        instanceId: WMM_INSTANCE_ID,
+        revision: 1,
+        resources: {
+          charges: { capacity: 7, current: 0, disabled: false },
+        },
+        disposition: "destroyed",
+        causalHead: "destroy-wand",
+      },
+    };
+
+    expect(freeCastSourcesForSpell(c, "magic-missile", "en", "SIG")).toEqual([]);
+  });
+
+  it("projects an item list-pool spell with its exact payment, cost, and profile", () => {
+    const c = withItem("cube-of-force");
+    const instanceId = instanceIdFor("cube-of-force");
+    const source = freeCastSourcesForSpell(c, "wall-of-force", "en", "SIG")[0];
+
+    expect(source).toMatchObject({
+      sourceId: `magic-item:${instanceId}`,
+      attributionSourceId: `magic-item:${instanceId}`,
+      payment: {
+        kind: "item-resource",
+        itemId: "cube-of-force",
+        instanceId,
+        resourceId: "charges",
+        key: `item:${instanceId}:charges`,
+      },
+      castLevels: [{ level: 5, cost: 5 }],
+      castOverrides: { saveDC: 17 },
+    });
+  });
+
+  it("keeps a character slot profile isolated from the same spell's item source", () => {
+    const c = withItem("cube-of-force");
+    c.character.spells = [{ srdId: "shield", prepared: true }];
+    c.character.spellSlots = [{ level: 1, total: 1 }];
+    const options = resolveSpellCastOptions(c, "shield", 1, true, "en", LABELS);
+
+    expect(options).toHaveLength(2);
+    expect(options[0]).toMatchObject({ kind: "slot", level: 1 });
+    expect(options[0]).not.toHaveProperty("castOverrides");
+    expect(options[1]).toMatchObject({
+      kind: "free-cast",
+      castOverrides: { saveDC: 17 },
+      payment: { kind: "item-resource", instanceId: "cube-of-force-copy" },
+    });
+  });
+
+  it.each([
+    {
+      itemId: "wand-of-magic-missiles",
+      spellId: "magic-missile",
+      castLevels: [
+        { level: 1, cost: 1 },
+        { level: 2, cost: 2 },
+        { level: 3, cost: 3 },
+      ],
+    },
+    {
+      itemId: "wand-of-fireballs",
+      spellId: "fireball",
+      castLevels: [
+        { level: 3, cost: 1 },
+        { level: 4, cost: 2 },
+        { level: 5, cost: 3 },
+      ],
+    },
+    {
+      itemId: "wand-of-lightning-bolts",
+      spellId: "lightning-bolt",
+      castLevels: [
+        { level: 3, cost: 1 },
+        { level: 4, cost: 2 },
+        { level: 5, cost: 3 },
+      ],
+    },
+    {
+      itemId: "eyes-of-charming",
+      spellId: "charm-person",
+      castLevels: [
+        { level: 1, cost: 1 },
+        { level: 2, cost: 2 },
+        { level: 3, cost: 3 },
+      ],
+    },
+    {
+      itemId: "staff-of-healing",
+      spellId: "cure-wounds",
+      castLevels: [
+        { level: 1, cost: 1 },
+        { level: 2, cost: 2 },
+        { level: 3, cost: 3 },
+        { level: 4, cost: 4 },
+      ],
+    },
+  ])("$itemId carries its complete cast-level charge schedule", (spec) => {
+    const instanceId = instanceIdFor(spec.itemId);
+    const source = freeCastSourcesForSpell(
+      withItem(spec.itemId),
+      spec.spellId,
+      "en",
+      "SIG"
+    ).find(
+      (entry) =>
+        entry.payment?.kind === "item-resource" && entry.payment.instanceId === instanceId
+    );
+    expect(source?.castLevels).toEqual(spec.castLevels);
   });
 });
 

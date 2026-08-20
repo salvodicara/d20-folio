@@ -28,10 +28,13 @@ import { formatWeight } from "@/lib/utils";
 import { chipText } from "@/lib/views/combat-action-view";
 import type { Locale } from "@/lib/locale";
 import type { ItemRowVM } from "@/lib/views/inventory-view";
+import type { ItemResourceVM } from "@/lib/views/item-resource-view";
 import { QuantityEditor } from "./QuantityEditor";
 import { ChargeUse } from "./ChargeUse";
 import { itemSeal } from "./item-seal";
 import type { ItemFieldValue } from "./WeaponCard";
+import { inventoryItemDisplayName } from "./inventory-card-helpers";
+import { itemResourceCardFragment } from "./item-resource-card-fragment";
 
 export interface GearCardCallbacks {
   onToggle: (id: string, open: boolean) => void;
@@ -41,6 +44,7 @@ export interface GearCardCallbacks {
   onToggleEquip: (idx: number) => void;
   onToggleAttune: (idx: number) => void;
   onSpendCharge: (vm: ItemRowVM) => void;
+  onSpendResource: (vm: ItemRowVM, resource: ItemResourceVM) => void;
 }
 
 export interface GearCardProps extends GearCardCallbacks {
@@ -64,8 +68,21 @@ export const GearCard = memo(function GearCard({
   onToggleEquip,
   onToggleAttune,
   onSpendCharge,
+  onSpendResource,
 }: GearCardProps) {
   const { t } = useTranslation();
+  const displayName = inventoryItemDisplayName(vm, t);
+  const {
+    unavailable: resourceUnavailable,
+    facts: resourceFacts,
+    controls: resourceControls,
+    hasControls: hasResourceControls,
+  } = itemResourceCardFragment({
+    resources: vm.resources,
+    isPlay,
+    onSpend: (resource) => onSpendResource(vm, resource),
+    t,
+  });
 
   // ONE quantity affordance: the `×N` name badge. Only a POOL resource keeps a
   // verdict-chip count.
@@ -97,6 +114,7 @@ export const GearCard = memo(function GearCard({
           icon: Zap,
         }
       : { label: "", value: undefined },
+    ...resourceFacts,
     vm.tracked || vm.isConsumable
       ? {
           label: t("equipment.quantity"),
@@ -124,7 +142,12 @@ export const GearCard = memo(function GearCard({
   // Only genuine CONSUMABLES get the play-mode "Use" (decrement) button.
   const showUse = vm.isConsumable && isPlay;
   const hasControls =
-    Boolean(vm.charges) || showUse || vm.wearable || vm.requiresAttunement || isEdit;
+    Boolean(vm.charges) ||
+    hasResourceControls ||
+    showUse ||
+    vm.wearable ||
+    vm.requiresAttunement ||
+    isEdit;
 
   return (
     <UniversalCard
@@ -134,12 +157,13 @@ export const GearCard = memo(function GearCard({
         isPotion: vm.isPotion,
         isConsumable: vm.isConsumable,
       })}
-      name={vm.name}
+      name={displayName}
       quantity={showQty}
+      gloss={resourceUnavailable ? t("magicItems.resourceUnavailable") : undefined}
       verdict={verdict}
       verdictOutcome={verdictOutcome}
-      magical={vm.magicItemType != null}
-      active={vm.wearable && vm.equipped}
+      magical={vm.magicItemType != null && !resourceUnavailable}
+      active={vm.wearable && vm.equipped && !resourceUnavailable}
       isEdit={isEdit}
       open={expanded}
       onOpenChange={(o) => onToggle(vm.id, o)}
@@ -157,6 +181,7 @@ export const GearCard = memo(function GearCard({
                 useTitle={t("equipment.useCharge")}
               />
             )}
+            {resourceControls}
             {showUse && (
               <Button
                 size="sm"

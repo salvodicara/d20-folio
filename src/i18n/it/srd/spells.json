@@ -160,6 +160,9 @@
   "bane.components": {
     "material": "Una goccia di sangue"
   },
+  "bane.grants.0": {
+    "label": "Flagello attivo"
+  },
   "banishment": {
     "description": "Tenti di inviare una creatura che puoi vedere entro gittata in un altro piano di esistenza. Il bersaglio deve superare un tiro salvezza su Carisma o essere bandito. Se il bersaglio è nativo del piano in cui ti trovi, viene bandito in un semipiano innocuo ed è Incapacitato lì. Se il bersaglio è nativo di un piano diverso, viene bandito nel suo piano natale. Se l'incantesimo termina prima che sia passato 1 minuto, il bersaglio riappare nello spazio che ha lasciato.",
     "duration": "Concentrazione, fino a 1 minuto",
@@ -304,6 +307,9 @@
     "higherLevels": "I danni dell'incantesimo aumentano di 1d10 quando raggiungi il 5° livello (2d10), l'11° livello (3d10) e il 17° livello (4d10).",
     "name": "Tocco Gelido",
     "range": "Contatto"
+  },
+  "chill-touch.grants.0": {
+    "label": "Effetto di Tocco Gelido"
   },
   "chromatic-orb": {
     "description": "Scagli un globo di energia contro una creatura che puoi vedere entro gittata. Scegli Acido, Freddo, Fuoco, Fulmine, Veleno o Tuono per il tipo di globo che crei, e poi effettui un attacco incantesimo a distanza contro il bersaglio. In caso di colpo, il bersaglio subisce 3d8 danni del tipo scelto.",
@@ -864,6 +870,12 @@
     "duration": "Concentrazione, fino a 1 minuto",
     "name": "Luminescenza",
     "range": "18 metri"
+  },
+  "faerie-fire.grants.0": {
+    "label": "Luminescenza attiva"
+  },
+  "faerie-fire.grants.0.grants.0": {
+    "description": "Gli attacchi contro la creatura influenzata hanno Vantaggio"
   },
   "false-life": {
     "description": "Rafforzandoti con un facsimile necromantico di vita, ottieni 2d4 + 4 punti ferita temporanei.",
@@ -2037,6 +2049,9 @@
     "name": "Raggio di Gelo",
     "range": "18 metri"
   },
+  "ray-of-frost.grants.0": {
+    "label": "Effetto di Raggio di Gelo"
+  },
   "ray-of-sickness": {
     "description": "Un raggio di energia verdastra nauseante si scaglia verso una creatura entro gittata. Effettua un attacco incantesimo a distanza contro il bersaglio. In caso di colpo, il bersaglio subisce 2d8 danni da Veleno e deve effettuare un tiro salvezza su Costituzione. Se fallisce, ha anche la condizione Avvelenato fino alla fine del tuo prossimo turno.",
     "duration": "Istantaneo",
@@ -2593,6 +2608,12 @@
     "name": "Beffa Crudele",
     "range": "18 metri"
   },
+  "vicious-mockery.grants.0.grants.0": {
+    "description": "Prossimo tiro per colpire"
+  },
+  "vicious-mockery.grants.0": {
+    "label": "Beffa Crudele"
+  },
   "vitriolic-sphere": {
     "description": "Indichi un punto entro gittata, e una sfera luminosa di acido smeraldo di 30 cm di diametro sfreccia lì ed esplode in una Sfera di 6 metri di raggio. Ogni creatura in quell'area deve effettuare un tiro salvezza su Destrezza. Con un tiro fallito, una creatura subisce 10d4 danni da Acido e 5d4 danni da Acido alla fine del suo prossimo turno. Con un tiro riuscito, una creatura subisce metà dei danni iniziali e nessun danno alla fine del suo prossimo turno.",
     "duration": "Istantanea",
@@ -2734,6 +2755,15 @@
   },
   "shield.grants.0": {
     "label": "Scudo (fino al tuo prossimo turno)"
+  },
+  "bless.grants.0": {
+    "label": "Benedizione attiva"
+  },
+  "searing-smite.grants.0": {
+    "label": "Punizione Incandescente attiva"
+  },
+  "searing-smite.grants.1": {
+    "label": "In fiamme per Punizione Incandescente"
   },
   "shield-of-faith.grants.0": {
     "label": "Scudo della Fede attivo"

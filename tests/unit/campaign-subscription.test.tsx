@@ -34,6 +34,7 @@ vi.mock("@/stores/authStore", () => ({
 vi.mock("@/features/campaigns/campaign-io", () => ({
   subscribeToCampaign: subscribeMock,
   createCampaignSave: () => ({ save: saveSpy, flush: flushSpy }),
+  createDevCampaignSave: () => ({ save: saveSpy, flush: flushSpy }),
 }));
 
 import { useCampaignStore } from "@/features/campaigns/campaignStore";

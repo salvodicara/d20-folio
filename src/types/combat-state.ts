@@ -1,7 +1,7 @@
 /**
  * CombatState — the per-character COMBAT-MUTABLE state that gets ONE model home.
  *
- * HP (current/temp), conditions, initiative, and death saves are the facts that
+ * HP (current/temp), conditions, held dice, initiative, and death saves are the facts that
  * change moment-to-moment in play and must stay aligned across every surface that
  * shows them (the cockpit sheet today; the in-hub encounter row in a later chunk).
  * They live in a dedicated per-character Firestore SUBDOC at
@@ -34,6 +34,11 @@
  */
 import type { SessionState } from "@/types/character";
 import type { LocText } from "@/lib/loc-text";
+import type { EconomyActionCategory } from "@/lib/combat-economy";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
+import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
+import type { ConcentrationRef } from "@/types/ids";
+import type { PersistedPlayStateV1 } from "@/lib/session-state-codec";
 
 /**
  * A player-DECLARED attack in a live campaign encounter — the target(s) the player
@@ -92,9 +97,85 @@ export interface RecentAttack {
   riders?: string[];
 }
 
+/** Durable identity of one action-economy occupant for the current turn. */
+export interface PersistedTurnAction {
+  id: string;
+  name: LocText;
+  slot: "action" | "bonus" | "free";
+  isAttackGroup?: boolean;
+  economyCategory?: EconomyActionCategory;
+  triggerEvents?: ReadonlyArray<"attack" | "bonus-extend">;
+  /** Exact reviewed occurrence owned by this economy occupant. */
+  outcomeOccurrenceId?: string;
+}
+
+export interface PersistedAttackSwing {
+  actionId: string;
+  /** Exact reviewed occurrence owned by this one swing. */
+  outcomeOccurrenceId?: string;
+}
+
+/**
+ * The transient-looking turn facts that must nevertheless survive route changes and
+ * reloads. `key` binds the snapshot to one exact encounter pointer (or solo round), so
+ * a stale spent Action can never leak into a later turn while the sheet was unmounted.
+ * Budgets stay derived from grants and are intentionally absent.
+ */
+export interface PersistedTurnEconomy {
+  key: string;
+  selected: {
+    action: PersistedTurnAction[];
+    bonus: PersistedTurnAction[];
+    free: PersistedTurnAction[];
+  };
+  attacksUsed: number;
+  attackSwings: PersistedAttackSwing[];
+  /** Monotonic allocator cursor for reviewed occurrences in this exact turn. */
+  outcomeOrdinal: number;
+  /** Reviewed per-instance/per-target facts produced this turn. Occurrence ids
+   * keep repeated uses of the same action distinct across hydration and undo. */
+  outcomeReceipts: CombatOutcomeReceipt[];
+  reactionUsed: boolean;
+  reactionUsedId: string | null;
+  reactionOutcomeOccurrenceId: string | null;
+  movementUsedFt: number;
+  dashesThisTurn: number;
+  spellSlotCastsThisTurn: number;
+  /** Additive global-turn identity for the hard one-slot-expenditure gate. A
+   * legacy snapshot without it binds a non-zero count to this snapshot's `key`. */
+  spellSlotCastTurnKey?: string | null;
+  damageTakenThisRound: boolean;
+  /** Optional for additive compatibility with turn snapshots written before this field. */
+  nextAttackAdvantage?: boolean;
+  movementLocked?: boolean;
+}
+
+/**
+ * One unresolved Constitution save caused by one distinct damage instance while
+ * concentrating. It deliberately stores only the trigger facts: the character's
+ * modifier, Exhaustion, and Advantage/Disadvantage are re-resolved from the live
+ * character at commit time through the universal entered-D20 kernel.
+ */
+export interface PendingConcentrationSave {
+  /** Unique command identity. Separate hits always receive separate ids. */
+  id: string;
+  /** Exact stable spell ref held when this damage instance landed. */
+  spell: ConcentrationRef;
+  /** Total damage taken by this instance, including Temporary Hit Points. */
+  damage: number;
+  /** Capped Concentration DC derived from {@link damage}. */
+  difficultyClass: number;
+}
+
 export interface CombatState {
   hp: { current: number; temp: number };
   conditions: string[];
+  /** Held Bardic Inspiration die. Optional distinguishes a legacy subdoc from an
+   * explicit empty-string clear during the additive state migration. */
+  bardicInspirationDie?: string;
+  /** Held Heroic Inspiration. Optional preserves a legacy parent-doc value until
+   * the first combat-state write crosses the additive migration boundary. */
+  heroicInspiration?: boolean;
   /** The SOLO-play raw d20 initiative ROLL the player typed (`null` = not yet rolled).
    *  NEVER the total — consumers add the engine initiative bonus at the edge. A campaign
    *  encounter's roll lives in `CampaignDoc.encounterInit` instead (the initiative SSOT). */
@@ -113,23 +194,44 @@ export interface CombatState {
    * `[]` outside an encounter (SOLO never declares).
    */
   recentActions: RecentAttack[];
+  /** Source-owned effects applied to this character outside a campaign encounter.
+   * They use the same occurrence model and lifetime algebra as shared encounters.
+   * (A branch-era `effectOps` mirror ledger existed here briefly; it never had a
+   * production writer, so the codec now ignores the stored field fail-safe.) */
+  activeEffects?: ActiveCombatEffect[];
   /** Idempotency receipt for PC-targeted effects delivered through the current
    * campaign encounter. A new encounter epoch replaces the receipt. */
   appliedEncounterEffects?: { epoch: number; ids: string[] };
+  /** Current-turn economy, fenced by an exact encounter/solo turn key. */
+  turnEconomy?: PersistedTurnEconomy;
+  /** FIFO of unresolved, per-authored-packet Concentration saves. Optional keeps combat docs
+   * written before this additive field backward-safe; absence means an empty queue. */
+  pendingConcentrationSaves?: PendingConcentrationSave[];
+  /**
+   * Versioned owner for every remaining mutable session fact. Optional only for
+   * combat documents written before the play-state ownership migration.
+   */
+  playState?: PersistedPlayStateV1;
 }
 
 /**
  * The session shape actually PERSISTED to the parent character doc: a full
- * {@link SessionState} MINUS the combat-mutable trio (HP / conditions / initiative /
- * death saves), which now lives only in the `combat/state` subdoc. Used by the
+ * {@link SessionState} MINUS the combat-mutable slice (HP / conditions / held dice /
+ * initiative / death saves), which now lives only in the `combat/state` subdoc. Used by the
  * char-doc auto-save so the parent doc never carries the moved fields.
  *
  * Physically omitting them keeps the two homes from drifting: the parent doc can no
- * longer encode an HP/conditions/initiative/death-save value at all.
+ * longer encode an HP/conditions/held-die/initiative/death-save value at all.
  */
 export type PersistedSession = Omit<
   SessionState,
-  "hp" | "conditions" | "initiative" | "deathSucc" | "deathFail"
+  | "hp"
+  | "conditions"
+  | "initiative"
+  | "deathSucc"
+  | "deathFail"
+  | "bardicInspirationDie"
+  | "inspiration"
 >;
 
 /**
@@ -140,15 +242,14 @@ export type PersistedSession = Omit<
  * it on subscribe; `null` (the default, and dev/bypass) means optimistic-store-only — no
  * persistence — so dev + e2e never touch the network and the 6 fixtures stay byte-identical.
  *
- * ONE method: the store already computes the optimistic NEXT {@link CombatState} for every
- * op (HP damage/heal · temp · condition · death save · initiative · Long Rest · at-0-HP
- * interrupt), so it persists THAT whole object — a single computation feeds both the UI and
- * the durable write, and `writeCombatState` (`setDoc(merge)`) queues it offline. Concurrency
- * is whole-object last-write-wins (see `combat-state-io.ts`); no per-op split is needed
- * because a fresh subscription-hydrated base makes different-field / different-time edits
- * compose anyway.
+ * The store computes the optimistic NEXT {@link CombatState} for combat mutations and routes
+ * it through `write`. Turn economy is the deliberate exception: it changes frequently while
+ * another campaign member may atomically damage/heal this PC, so `writeTurnEconomy` patches only
+ * `round + turnEconomy` and cannot overwrite fresh HP/conditions from that peer transaction.
  */
 export interface CombatPersistence {
   /** Persist the whole optimistically-computed next combat state (offline-safe). */
   write(state: CombatState): void;
+  /** Persist only the navigation-stable per-turn budget (offline-safe merge). */
+  writeTurnEconomy(round: number, turnEconomy: PersistedTurnEconomy): void;
 }

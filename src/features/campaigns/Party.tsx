@@ -32,11 +32,11 @@
 
 import { lazy, Suspense, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Crown, Lock, Plus, Swords, UserRound } from "lucide-react";
+import { ArrowLeftRight, Crown, Plus, Swords, UserRound } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/shared/ModalShell";
-import { ModalStage } from "@/components/ui/modal-head";
+import { ModalBody, ModalFoot, ModalStage } from "@/components/ui/modal-head";
 import { FolioLoader } from "@/components/shared/FolioLoader";
 import { ensureSrdKind } from "@/i18n";
 import { Portrait } from "@/components/shared/Portrait";
@@ -57,6 +57,7 @@ import {
   persistBeginTurns,
   persistStartEncounter,
   persistEndEncounter,
+  setEncounterParticipation,
   appendChronicleChapter,
 } from "@/features/campaigns/campaign-io";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
@@ -75,14 +76,15 @@ import {
 } from "@/features/campaigns/useMemberCharacterDocs";
 import { usePartyCombatStates } from "@/features/campaigns/usePartyCombatStates";
 import {
-  advanceTurn,
   beginEncounterTurns,
+  clearInitiativeSwap,
   encounterRollFor,
-  prevTurn,
   reorderCombatant,
+  setInitiativeSwap,
   startEncounter,
   type EncounterPcSeed,
 } from "@/features/campaigns/encounter";
+import { stepEncounterTurn } from "@/features/campaigns/encounter-world-command";
 import {
   addReinforcement,
   buildBudgetView,
@@ -91,6 +93,7 @@ import {
 } from "@/features/campaigns/encounter-view";
 import { useLiftReorder } from "@/features/campaigns/use-lift-reorder";
 import { derivePcLive } from "@/features/campaigns/party-stats";
+import { characterHasFeat } from "@/lib/compute";
 import {
   DmControlBanner,
   EncounterRoundBar,
@@ -188,11 +191,12 @@ export function Party() {
     for (const ref of liveRefs) {
       const st = docs[ref.uid];
       if (st?.status === "ready") {
-        out[`pc-${ref.uid}`] = derivePcLive(
+        const live = derivePcLive(
           st.doc,
-          combatStates[ref.uid] ?? null,
+          combatStates[ref.uid],
           encounterRollFor(encounterInit, ref.uid)
         );
+        if (live) out[`pc-${ref.uid}`] = live;
       }
     }
     return out;
@@ -339,7 +343,12 @@ export function Party() {
     // Optimistic: encounter + table reset land together locally too (dev-bypass's only
     // update). The immediate write is the durable one; the debounced writer the store
     // update arms re-lands the same encounter content (harmless).
-    setCampaign({ ...campaign, encounter: fresh, encounterInit: {} });
+    setCampaign({
+      ...campaign,
+      encounter: fresh,
+      encounterInit: {},
+      encounterSkipped: {},
+    });
     void persistStartEncounter(campaign.id, fresh).catch((e: unknown) => {
       console.error("Start-encounter write failed", e);
     });
@@ -351,7 +360,12 @@ export function Party() {
   // so no separate confirm prompt.
   function endEncounter(): void {
     if (!campaign) return;
-    setCampaign({ ...campaign, encounter: null, encounterInit: {} });
+    setCampaign({
+      ...campaign,
+      encounter: null,
+      encounterInit: {},
+      encounterSkipped: {},
+    });
     void persistEndEncounter(campaign.id).catch((e: unknown) => {
       console.error("End-encounter write failed", e);
     });
@@ -460,6 +474,24 @@ export function Party() {
           pcLiveById={pcLiveById}
           dmName={dmName}
           memberDetails={campaign.memberDetails}
+          skipped={campaign.encounterSkipped ?? {}}
+          onParticipationChange={(participating) => {
+            if (!currentUid) return;
+            const encounterSkipped = participating
+              ? Object.fromEntries(
+                  Object.entries(campaign.encounterSkipped ?? {}).filter(
+                    ([uid]) => uid !== currentUid
+                  )
+                )
+              : { ...(campaign.encounterSkipped ?? {}), [currentUid]: true };
+            setCampaign({ ...campaign, encounterSkipped });
+            void setEncounterParticipation(campaign.id, currentUid, participating).catch(
+              (error: unknown) => {
+                console.error("Encounter participation write failed", error);
+                setCampaign(campaign);
+              }
+            );
+          }}
           onEnd={endEncounter}
         />
       ) : (
@@ -531,6 +563,8 @@ function CombatLayer({
   pcLiveById,
   dmName,
   memberDetails,
+  skipped,
+  onParticipationChange,
   onEnd,
 }: {
   encounter: EncounterState;
@@ -547,6 +581,8 @@ function CombatLayer({
   pcLiveById: Record<string, PcLive>;
   dmName: string;
   memberDetails: CampaignDocMemberDetails;
+  skipped: Record<string, boolean>;
+  onParticipationChange: (participating: boolean) => void;
   onEnd: () => void;
 }) {
   const { t } = useTranslation();
@@ -565,23 +601,101 @@ function CombatLayer({
   // The Combat-Chronicle end entry — the DM's editable "save this fight" step, opened by
   // the round bar's End action (replaces the old confirm prompt).
   const [endOpen, setEndOpen] = useState(false);
+  const [alertSwapOpen, setAlertSwapOpen] = useState(false);
+  const [alertSourceId, setAlertSourceId] = useState("");
+  const [alertTargetId, setAlertTargetId] = useState("");
   // The FULL live turn order INCLUDING hidden (hidden is a display filter, not a turn
   // filter), so the DM and a player step the identical order and a staged ambush still
   // takes its turn.
-  const orderedIds = view.turnOrderIds;
+  const participatingIds = view.turnOrderIds.filter((id) => {
+    const combatant = encounter.combatants.find((candidate) => candidate.id === id);
+    return combatant?.kind !== "pc" || !skipped[combatant.memberUid];
+  });
   const empty = encounter.combatants.length === 0;
   // The "gathering initiative" phase — players roll, then the DM begins the turn order. A
   // NULLISH pointer (null OR a legacy doc's missing field) is gathering (see `initLocked`).
   const gathering = encounter.currentCombatantId == null;
-  // FIX 2 (owner 2026-06-29, REVERSES the prior tolerant hybrid) — begin-turns now
-  // HARD-DISABLES until EVERY combatant has rolled. Count how many have an initiative
-  // (PC roll-to-total OR monster entry); a partial set shows a disabled secondary
-  // button with the `rolled/total` readout + a locked tooltip. The reducer still sorts
-  // blank-initiative rows last (kept), but the button no longer lets the DM start early.
+  // Every participant may opt out explicitly; the DM may also begin with only the rows
+  // that have rolled. Unrolled PCs are marked skipped (still targetable/correctable),
+  // while the frozen order contains exactly the participating rows shown by the CTA.
   const initByRowId = new Map(view.rows.map((r) => [r.id, r.initiative]));
-  const total = orderedIds.length;
-  const rolled = orderedIds.filter((id) => initByRowId.get(id) != null).length;
+  const total = participatingIds.length;
+  const rolledIds = participatingIds.filter((id) => initByRowId.get(id) != null);
+  const rolled = rolledIds.length;
   const allRolled = rolled === total;
+  const viewerSkipped = !!(ctx.currentUid && skipped[ctx.currentUid]);
+  const alertSources = view.rows.filter((row) => {
+    if (
+      row.kind !== "pc" ||
+      row.initiative == null ||
+      row.conditions.includes("incapacitated") ||
+      !row.memberUid ||
+      skipped[row.memberUid]
+    ) {
+      return false;
+    }
+    const state = ctx.docs[row.memberUid];
+    if (state?.status !== "ready") return false;
+    const character = state.doc.character;
+    return characterHasFeat("alert", {
+      humanOriginFeat: character.humanOriginFeat,
+      bgFeat: character.bgFeat,
+      features: character.features,
+    });
+  });
+  const alertTargetsFor = (sourceId: string) =>
+    view.rows.filter(
+      (row) =>
+        row.id !== sourceId &&
+        row.side === "ally" &&
+        row.initiative != null &&
+        !row.conditions.includes("incapacitated") &&
+        !(row.kind === "pc" && row.memberUid && skipped[row.memberUid])
+    );
+  const selectedAlertTargets = alertTargetsFor(alertSourceId);
+  const selectedAlertSwap = encounter.initiativeSwaps?.find(
+    (swap) => swap.sourceId === alertSourceId
+  );
+  const alertSelectionValid =
+    alertSources.some((source) => source.id === alertSourceId) &&
+    selectedAlertTargets.some((target) => target.id === alertTargetId);
+  const canSwapAlert = alertSources.some(
+    (source) => alertTargetsFor(source.id).length > 0
+  );
+  const openAlertSwap = (): void => {
+    const existingSourceId = encounter.initiativeSwaps?.find((swap) =>
+      alertSources.some((source) => source.id === swap.sourceId)
+    )?.sourceId;
+    const source =
+      alertSources.find(
+        (candidate) =>
+          candidate.id === existingSourceId && alertTargetsFor(candidate.id).length > 0
+      ) ?? alertSources.find((candidate) => alertTargetsFor(candidate.id).length > 0);
+    if (!source) return;
+    const targets = alertTargetsFor(source.id);
+    const previous = encounter.initiativeSwaps?.find(
+      (swap) => swap.sourceId === source.id
+    )?.targetId;
+    setAlertSourceId(source.id);
+    setAlertTargetId(
+      targets.some((target) => target.id === previous)
+        ? (previous ?? "")
+        : (targets[0]?.id ?? "")
+    );
+    setAlertSwapOpen(true);
+  };
+  const chooseAlertSource = (sourceId: string): void => {
+    const targets = alertTargetsFor(sourceId);
+    const previous = encounter.initiativeSwaps?.find(
+      (swap) => swap.sourceId === sourceId
+    )?.targetId;
+    setAlertSourceId(sourceId);
+    setAlertTargetId(
+      targets.some((target) => target.id === previous)
+        ? (previous ?? "")
+        : (targets[0]?.id ?? "")
+    );
+  };
   // Resolve a monster's full editable state by id (the view row carries the aggregate;
   // editing needs the per-token array off the encounter doc).
   const monsterById = new Map<string, EncounterMonster>(
@@ -617,11 +731,11 @@ function CombatLayer({
     setAdvancing(true);
     // DEV ONLY — under bypass `advanceEncounterTurn` is a no-op (no Firestore + no listener
     // echo), so the shared pointer would never move. Advance it optimistically through the
-    // SAME pure reducer the transaction uses, so the dev/e2e turn order + round genuinely
-    // step through the real Next/Prev controls (and the combat-chronicle demo can reach
-    // round 3). Only the DM (`apply`) can, mirroring the live authority.
+    // SAME engine-first stepper the transaction uses (boundary fire + expiry mirror
+    // included), so the dev/e2e turn order + round genuinely step through the real
+    // Next/Prev controls. Only the DM (`apply`) can, mirroring the live authority.
     if (DEV_BYPASS_AUTH && apply) {
-      apply((e) => (dir === "next" ? advanceTurn(e) : prevTurn(e)));
+      apply((e) => stepEncounterTurn(e, ctx.campaignId, dir));
       setAdvancing(false);
       return;
     }
@@ -651,8 +765,23 @@ function CombatLayer({
   // DM-only structural action (the DM owns the encounter), routed through the optimistic
   // store path; tolerant of missing rolls (un-rolled PCs simply sort last).
   const beginTurns = (): void => {
-    if (!apply) return;
-    apply((e) => beginEncounterTurns(e, orderedIds));
+    if (!apply || rolledIds.length === 0) return;
+    // Starting with a partial table is the DM's explicit skip: unrolled PCs remain in
+    // the encounter for targeting/late correction but do not enter the frozen order.
+    const skippedAtStart = { ...skipped };
+    for (const combatant of encounter.combatants) {
+      if (combatant.kind === "pc" && !rolledIds.includes(combatant.id)) {
+        skippedAtStart[combatant.memberUid] = true;
+      }
+    }
+    apply((e) => beginEncounterTurns(e, rolledIds));
+    const campaignStore = useCampaignStore.getState();
+    if (campaignStore.campaign) {
+      campaignStore.setCampaign({
+        ...campaignStore.campaign,
+        encounterSkipped: skippedAtStart,
+      });
+    }
     // B15 — persist the turn START immediately (NOT via the 2s debounced writer): a Next
     // pressed within that window would otherwise read the still-null server pointer and
     // silently no-op (offline it rejected). Read the begun encounter back off the store
@@ -665,6 +794,7 @@ function CombatLayer({
         order: enc.order ?? [],
         currentCombatantId: enc.currentCombatantId,
         round: enc.round,
+        skipped: skippedAtStart,
       }).catch((e: unknown) => {
         console.error("Begin-turns write failed", e);
         useToastStore.getState().showToast({
@@ -800,38 +930,49 @@ function CombatLayer({
         dmName={dmName}
         isDmViewer={isDm}
         controls={
-          apply ? (
+          apply || (gathering && ctx.currentUid) ? (
             <>
-              <Button
-                variant="secondary"
-                onClick={() => setPickerOpen(true)}
-                // Warm the lazy chunk + monster catalogue the moment the DM aims at the
-                // trigger, so open is instant and the Suspense fallback never paints.
-                onPointerEnter={preloadBestiary}
-                onFocus={preloadBestiary}
-                onPointerDown={preloadBestiary}
-                aria-haspopup="dialog"
-              >
-                <Icon as={Plus} size="sm" decorative />
-                {t("campaignHub.encounterAddMonster")}
-              </Button>
-              {gathering ? (
+              {apply && (
                 <Button
-                  variant={allRolled ? "primary" : "secondary"}
-                  onClick={beginTurns}
-                  disabled={!allRolled || empty}
-                  title={
-                    !allRolled
-                      ? t("campaignHub.encounterBeginTurnsLockedHint")
-                      : undefined
-                  }
+                  variant="secondary"
+                  onClick={() => setPickerOpen(true)}
+                  onPointerEnter={preloadBestiary}
+                  onFocus={preloadBestiary}
+                  onPointerDown={preloadBestiary}
+                  aria-haspopup="dialog"
                 >
-                  {/* FIX 2 — a Lock glyph (not the crossed swords) while disabled so the
-                      locked state reads at a glance; swords return once all have rolled. */}
-                  <Icon as={allRolled ? Swords : Lock} size="sm" decorative />
-                  {allRolled
-                    ? t("campaignHub.encounterBeginTurns")
-                    : t("campaignHub.encounterBeginTurnsPartial", { rolled, total })}
+                  <Icon as={Plus} size="sm" decorative />
+                  {t("campaignHub.encounterAddMonster")}
+                </Button>
+              )}
+              {apply && gathering ? (
+                <>
+                  {canSwapAlert && (
+                    <Button variant="ghost" onClick={openAlertSwap}>
+                      <Icon as={ArrowLeftRight} size="sm" decorative />
+                      {t("campaignHub.encounterAlertSwap")}
+                    </Button>
+                  )}
+                  <Button
+                    variant={allRolled ? "primary" : "secondary"}
+                    onClick={beginTurns}
+                    disabled={rolled === 0 || empty}
+                  >
+                    <Icon as={Swords} size="sm" decorative />
+                    {allRolled
+                      ? t("campaignHub.encounterBeginTurns")
+                      : t("campaignHub.encounterBeginTurnsWith", { rolled, total })}
+                  </Button>
+                </>
+              ) : null}
+              {!isDm && gathering && ctx.currentUid ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => onParticipationChange(viewerSkipped)}
+                >
+                  {viewerSkipped
+                    ? t("campaignHub.encounterJoin")
+                    : t("campaignHub.encounterSkip")}
                 </Button>
               ) : null}
             </>
@@ -863,6 +1004,70 @@ function CombatLayer({
         </ModalShell>
       )}
 
+      {alertSwapOpen && gathering && apply && (
+        <ModalShell
+          open
+          onClose={() => setAlertSwapOpen(false)}
+          title={t("campaignHub.encounterAlertSwapTitle")}
+        >
+          <ModalBody className="flex flex-col gap-5">
+            <label className="flex flex-col gap-2 text-sm font-semibold text-text-primary">
+              {t("campaignHub.encounterAlertSource")}
+              <Select
+                value={alertSourceId}
+                onChange={(event) => chooseAlertSource(event.target.value)}
+              >
+                {alertSources.map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {row.name} · {row.initiative}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-semibold text-text-primary">
+              {t("campaignHub.encounterAlertTarget")}
+              <Select
+                value={alertTargetId}
+                onChange={(event) => setAlertTargetId(event.target.value)}
+              >
+                {selectedAlertTargets.map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {row.name} · {row.initiative}
+                  </option>
+                ))}
+              </Select>
+            </label>
+          </ModalBody>
+          <ModalFoot>
+            {selectedAlertSwap && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  apply((state) => clearInitiativeSwap(state, alertSourceId));
+                  setAlertSwapOpen(false);
+                }}
+              >
+                {t("campaignHub.encounterAlertClear")}
+              </Button>
+            )}
+            <Button variant="secondary" onClick={() => setAlertSwapOpen(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              variant="primary"
+              disabled={!alertSelectionValid}
+              onClick={() => {
+                apply((state) => setInitiativeSwap(state, alertSourceId, alertTargetId));
+                setAlertSwapOpen(false);
+              }}
+            >
+              <Icon as={ArrowLeftRight} size="sm" decorative />
+              {t("campaignHub.encounterAlertSwapTitle")}
+            </Button>
+          </ModalFoot>
+        </ModalShell>
+      )}
+
       {/* One folio summary surface: status rail + its attached combat record. */}
       <section
         data-testid="encounter-summary"
@@ -879,6 +1084,7 @@ function CombatLayer({
             which only the DM writes; exact monster HP must not leak to a player). */}
         {isDm && apply && (
           <ChronicleFeed
+            campaignId={ctx.campaignId}
             events={reconciled}
             rows={view.rows}
             memberDetails={memberDetails}
@@ -918,6 +1124,7 @@ function CombatLayer({
                 uid={uid}
                 m={m}
                 ctx={ctx}
+                encounterConditions={row.conditions}
                 isCurrent={row.id === view.currentId}
                 reorder={reorderFor(row.id)}
               />
@@ -928,7 +1135,8 @@ function CombatLayer({
           return (
             <MonsterCard
               key={row.id}
-              monster={monster}
+              monster={{ ...monster, conditions: row.conditions }}
+              campaignId={ctx.campaignId}
               isCurrent={row.id === view.currentId}
               initLocked={!gathering}
               apply={apply}
@@ -997,12 +1205,15 @@ function MemberCard({
   uid,
   m,
   ctx,
+  encounterConditions,
   isCurrent,
   reorder,
 }: {
   uid: string;
   m: CampaignMember;
   ctx: MemberCardCtx;
+  /** Effective conditions from the encounter presenter, including source-owned effects. */
+  encounterConditions?: string[];
   isCurrent?: boolean;
   /** C3 — DM drag-to-reorder controls for this combat row (combat layer only). */
   reorder?: ReorderRow;
@@ -1108,6 +1319,7 @@ function MemberCard({
         isMe={isMe}
         isDm={ctx.isDm}
         combat={ctx.combatStates[uid]}
+        encounterConditions={encounterConditions}
         inCombat={inCombat}
         initLocked={ctx.initLocked}
         initRoll={encounterRollFor(ctx.encounterInit, uid)}

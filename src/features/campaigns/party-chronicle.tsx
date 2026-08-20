@@ -46,10 +46,9 @@ import {
 import {
   setEventAttacker,
   skipEventAttacker,
-  undoHpEvent,
-  undoConditionEvent,
   inferOutcome,
 } from "@/features/campaigns/combat-chronicle";
+import { undoAdversaryChronicleEvent } from "@/features/campaigns/encounter-world-command";
 import type { ReconciledEvent } from "@/features/campaigns/chronicle-reconcile";
 import type { ApplyFn } from "@/features/campaigns/party-encounter";
 import type { EncounterCombatantView } from "@/features/campaigns/encounter-view";
@@ -137,6 +136,7 @@ function CombatantChip({
  * debounced encounter writer (no per-action write).
  */
 export function ChronicleFeed({
+  campaignId,
   events,
   rows,
   memberDetails,
@@ -144,6 +144,8 @@ export function ChronicleFeed({
   apply,
   embedded = false,
 }: {
+  /** The campaign id — the undo tap derives the engine world under this root. */
+  campaignId: string;
   /** The RECONCILED feed — stored beats fused with the players' declared attacks
    *  (auto-attributed hits + synthesized miss lines + uncertain markers). */
   events: ReadonlyArray<ReconciledEvent>;
@@ -212,6 +214,7 @@ export function ChronicleFeed({
                       </p>
                     )}
                     <FeedLine
+                      campaignId={campaignId}
                       reconciled={re}
                       rows={rows}
                       currentId={currentId}
@@ -246,6 +249,7 @@ function FeedLine({
   resolveCondition,
   resolveAction,
   apply,
+  campaignId,
 }: {
   reconciled: ReconciledEvent;
   rows: ReadonlyArray<EncounterCombatantView>;
@@ -254,6 +258,7 @@ function FeedLine({
   resolveCondition: ResolveConditionName;
   resolveAction: ResolveActionName;
   apply: ApplyFn;
+  campaignId: string;
 }) {
   const { t } = useTranslation();
   const { event, uncertain } = reconciled;
@@ -273,10 +278,11 @@ function FeedLine({
   const preselect =
     event.kind === "hp-damage" && event.attackerId ? event.attackerId : currentId;
 
-  // UNDO affordance (remediability) — a stored MONSTER HP line can be reversed in one tap:
-  // {@link undoHpEvent} removes the line AND restores the monster's HP by the same amount,
-  // the airtight correction for a player's auto-applied number. Only for a real stored
-  // hp event on a monster target (a PC HP event / synthesized multi-save line has none).
+  // UNDO affordance (remediability) — a stored MONSTER line can be reversed in one tap:
+  // {@link undoAdversaryChronicleEvent} reverses an engine-mirrored beat through its
+  // exact journal action (hp trio + booked lifetimes restore precisely; legacy beats
+  // degrade to the blind arithmetic inside the boundary) and removes the line. Only for
+  // a real stored event on a monster target (a PC event / synthesized line has none).
   const hpTargetRow =
     event.kind === "hp-damage" || event.kind === "hp-heal"
       ? rows.find((r) => r.id === event.targetId)
@@ -307,9 +313,7 @@ function FeedLine({
             type="button"
             onClick={() =>
               apply((encounter) =>
-                canUndoCondition
-                  ? undoConditionEvent(encounter, event.id)
-                  : undoHpEvent(encounter, event.id)
+                undoAdversaryChronicleEvent(encounter, campaignId, event.id)
               )
             }
             aria-label={t("combatChronicle.undoLine")}

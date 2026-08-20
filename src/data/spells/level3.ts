@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
   {
@@ -182,7 +183,19 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     effectTag: "control",
     saveAbility: "WIS",
     area: true,
-    conditionApplication: { options: ["frightened"], on: "failed-save" },
+    conditionApplication: {
+      options: ["frightened"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-fear",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -220,11 +233,14 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Fly Speed 60 for the duration.
       {
         type: "while-active",
         activeKey: "spell-fly",
+        duration: timedSpellDuration(10),
+        recipient: "selected",
         grants: [{ type: "fly-speed", amount: 60 }],
       },
     ],
@@ -243,17 +259,31 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
-      // PROSE-SWEPT 2026-06-10 — standing package: Speed ×2, +2 AC, Advantage
-      // on DEX saves (the extra limited action stays descriptive).
+      // Standing package: Speed ×2, +2 AC, Advantage on DEX saves, and one
+      // limited extra action. Ending the effect projects its one-turn lethargy.
       {
         type: "while-active",
         activeKey: "spell-haste",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
         grants: [
           { type: "speed-multiplier", factor: 2 },
           { type: "ac-bonus", amount: 2 },
           { type: "advantage-on", rollType: "save", vs: "dex-save" },
+          {
+            type: "extra-action",
+            slot: "action",
+            count: 1,
+            allowedActions: ["attack", "dash", "disengage", "hide", "utilize"],
+            maxAttacks: 1,
+          },
         ],
+        afterEffect: {
+          duration: { kind: "target-turn-boundary", turns: 1, phase: "turn-end" },
+          grants: [{ type: "turn-economy-block" }, { type: "speed-cap", maxFt: 0 }],
+        },
       },
     ],
     source: "SRD",
@@ -274,7 +304,19 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     effectTag: "control",
     saveAbility: "WIS",
     area: true,
-    conditionApplication: { options: ["charmed", "incapacitated"], on: "failed-save" },
+    conditionApplication: {
+      options: ["charmed", "incapacitated"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-hypnotic-pattern",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -371,12 +413,15 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Resistance to ONE of five energy types,
       // chosen at cast time (re-pickable choice-resistance).
       {
         type: "while-active",
         activeKey: "spell-protection-from-energy",
+        duration: timedSpellDuration(60),
+        recipient: "selected",
         grants: [
           {
             type: "choice-resistance",
@@ -449,6 +494,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "WIS",
+    targeting: { affinity: "enemy", maxTargets: 6 },
     source: "SRD",
   },
   {
@@ -491,9 +537,26 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     concentration: true,
     saveAbility: "CON",
     area: true,
-    conditionApplication: { options: ["incapacitated"], on: "failed-save" },
+    conditionApplication: {
+      options: ["incapacitated"],
+      on: "failed-save",
+      lifetime: {
+        kind: "turn-boundary",
+        phase: "turn-start",
+        turns: 1,
+        anchor: "target",
+      },
+    },
     recurrence: "start-of-turn",
     resolveOnCast: false,
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-stinking-cloud",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -649,9 +712,21 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     concentration: true,
     saveAbility: "DEX",
     area: true,
-    conditionApplication: { options: ["prone"], on: "failed-save" },
+    conditionApplication: {
+      options: ["prone"],
+      on: "failed-save",
+      lifetime: { kind: "manual" },
+    },
     recurrence: "on-enter-or-start-turn",
     resolveOnCast: false,
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-sleet-storm",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {

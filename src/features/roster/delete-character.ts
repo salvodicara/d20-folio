@@ -30,10 +30,10 @@
  */
 
 import { deleteCharacter } from "@/lib/firestore";
-import {
-  listSharedCampaigns,
-  setMemberCharacter,
-} from "@/features/campaigns/campaign-io";
+import type { CampaignDoc } from "@/types/campaign";
+
+type SetMemberCharacter =
+  (typeof import("@/features/campaigns/campaign-io"))["setMemberCharacter"];
 
 /**
  * Detach `charId` from every shared campaign the user has it assigned to, then
@@ -46,6 +46,8 @@ export async function deleteCharacterAndDetach(
   uid: string,
   charId: string
 ): Promise<void> {
+  const { listSharedCampaigns, setMemberCharacter } =
+    await import("@/features/campaigns/campaign-io");
   // 1. Cross-aggregate detach — scan the user's shared campaigns and clear the
   //    back-ref + snapshot + DM-readable sheet on every one that points at THIS
   //    character. The assignment lives ONLY on the campaign doc
@@ -53,7 +55,7 @@ export async function deleteCharacterAndDetach(
   //    the campaign is the only source of truth to scan. The user owns their own
   //    `memberDetails` entry + sheet copy (rules permit the self-detach + delete).
   const campaigns = await listSharedCampaigns(uid);
-  await detachFrom(campaigns, uid, charId);
+  await detachFrom(campaigns, uid, charId, setMemberCharacter);
   // 2. Own-aggregate cascade — the engine primitive wipes portrait, snapshots,
   //    and the doc itself.
   await deleteCharacter(uid, charId);
@@ -85,12 +87,15 @@ export async function deleteCharactersAndDetach(
   const ids = [...new Set(charIds)];
   if (ids.length === 0) return { deleted: 0, failed: 0 };
 
+  const { listSharedCampaigns, setMemberCharacter } =
+    await import("@/features/campaigns/campaign-io");
+
   // ONE campaign-list read for the whole batch (the single orchestrator pays it
   // per id; bulk amortizes it across the selection — #7 free-tier read budget).
   const campaigns = await listSharedCampaigns(uid);
   const results = await Promise.allSettled(
     ids.map(async (charId) => {
-      await detachFrom(campaigns, uid, charId);
+      await detachFrom(campaigns, uid, charId, setMemberCharacter);
       await deleteCharacter(uid, charId);
     })
   );
@@ -105,9 +110,10 @@ export async function deleteCharactersAndDetach(
  * taking the ACL with it.
  */
 async function detachFrom(
-  campaigns: Awaited<ReturnType<typeof listSharedCampaigns>>,
+  campaigns: ReadonlyArray<CampaignDoc>,
   uid: string,
-  charId: string
+  charId: string,
+  setMemberCharacter: SetMemberCharacter
 ): Promise<void> {
   await Promise.all(
     campaigns

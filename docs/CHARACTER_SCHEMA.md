@@ -109,30 +109,31 @@ read-shim (the migration converted every live main doc + snapshot; golden rule 1
 
 ## `build` — the character definition
 
-| Key                       | Type                                            | Notes                                                                                                         |
-| ------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `name`                    | string                                          | the character's name (a choice)                                                                               |
-| `player`                  | string?                                         | player name; omit when empty                                                                                  |
-| `race`                    | id                                              | e.g. `"human"` (not `"Human"`)                                                                                |
-| `classes`                 | `ClassEntry[]`                                  | **R4** — one entry per class (single-class = length 1); see below                                             |
-| `background`              | id                                              | e.g. `"wayfarer"`                                                                                             |
-| `alignment`               | id?                                             | e.g. `"true-neutral"`; omit when unset                                                                        |
-| `abilities`               | `{STR,DEX,CON,INT,WIS,CHA}`                     | the chosen base scores                                                                                        |
-| `asi`                     | `{ background?: {AB:n} }`                       | the 2024 background ability increases                                                                         |
-| `originFeats`             | `{ background?: id, species?: id }`             | only the CHOSEN ones (a fixed-background feat is inferred)                                                    |
-| `skills`                  | `{ id: "proficient"\|"expertise" }`             | chosen proficiencies; JoaT half-profs are NEVER stored                                                        |
-| `toolChoices`             | `{ "<src>::tool-slot-N": id[] }`?               | tool-CHOICE picks as STABLE TOOL IDS (see below); omit when none                                              |
-| `languageIds`             | `id[]`?                                         | MANUAL language picks as STABLE SRD ids (see below); omit empty                                               |
-| `customLanguages`         | `string[]`?                                     | homebrew languages, VERBATIM label; omit empty                                                                |
-| `toolProficiencyIds`      | `id[]`?                                         | MANUAL tool picks as STABLE tool ids (see below); omit empty                                                  |
-| `customToolProficiencies` | `string[]`?                                     | homebrew tool profs, VERBATIM label; omit empty                                                               |
-| `spells`                  | `[ id \| custom ]`                              | only player-chosen / non-inferred spells                                                                      |
-| `weapons`                 | `[ {id, qty, …} \| custom ]`                    | owned weapons (Talon is the one custom)                                                                       |
-| `equipment`               | `[ {id, …} \| custom ]`                         | owned gear / armor / magic items                                                                              |
-| `customs`                 | `{ features?: [...], conditions?: [...] }`      | genuine homebrew only                                                                                         |
-| `overrides`               | `{ ac?, speed?, proficiencyBonus?, saves?, … }` | manual deltas; only when set (`speed` = the effective-walking-Speed override; NO `languages`/`tools` strings) |
-| `lore`                    | `{ traits?, ideals?, … }`                       | flavor; only non-empty fields                                                                                 |
-| `quote`                   | string?                                         | omit when empty                                                                                               |
+| Key                       | Type                                            | Notes                                                                                                                              |
+| ------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                    | string                                          | the character's name (a choice)                                                                                                    |
+| `player`                  | string?                                         | player name; omit when empty                                                                                                       |
+| `race`                    | id                                              | e.g. `"human"` (not `"Human"`)                                                                                                     |
+| `classes`                 | `ClassEntry[]`                                  | **R4** — one entry per class (single-class = length 1); see below                                                                  |
+| `background`              | id                                              | e.g. `"wayfarer"`                                                                                                                  |
+| `alignment`               | id?                                             | e.g. `"true-neutral"`; omit when unset                                                                                             |
+| `abilities`               | `{STR,DEX,CON,INT,WIS,CHA}`                     | the chosen base scores                                                                                                             |
+| `asi`                     | `{ background?: {AB:n} }`                       | the 2024 background ability increases                                                                                              |
+| `originFeats`             | `{ background?: id, species?: id }`             | only the CHOSEN ones (a fixed-background feat is inferred)                                                                         |
+| `skills`                  | `{ id: "proficient"\|"expertise" }`             | chosen proficiencies; JoaT half-profs are NEVER stored                                                                             |
+| `toolChoices`             | `{ "<src>::tool-slot-N": id[] }`?               | tool-CHOICE picks as STABLE TOOL IDS (see below); omit when none                                                                   |
+| `languageIds`             | `id[]`?                                         | MANUAL language picks as STABLE SRD ids (see below); omit empty                                                                    |
+| `customLanguages`         | `string[]`?                                     | homebrew languages, VERBATIM label; omit empty                                                                                     |
+| `toolProficiencyIds`      | `id[]`?                                         | MANUAL tool picks as STABLE tool ids (see below); omit empty                                                                       |
+| `customToolProficiencies` | `string[]`?                                     | homebrew tool profs, VERBATIM label; omit empty                                                                                    |
+| `spells`                  | `[ id \| custom ]`                              | only player-chosen / non-inferred spells                                                                                           |
+| `weapons`                 | `[ {id, qty, …} \| custom ]`                    | owned weapons (Talon is the one custom)                                                                                            |
+| `equipment`               | `[ {id, instanceId?, …} \| custom ]`            | owned gear / armor / magic items; every independently mutable physical magic-item copy carries a stable opaque `instanceId`        |
+| `features`                | `[ { srdId, notes?, actionOverrides?, … } ]`?   | chosen SRD refs and inferred-feature overrides; a bare inferred ref is omitted, but user data is preserved and merged on rehydrate |
+| `customs`                 | `{ features?: [...], conditions?: [...] }`      | genuine homebrew only; custom actions may carry stable ids, dynamic targeting, healing, Temporary HP and condition removal         |
+| `overrides`               | `{ ac?, speed?, proficiencyBonus?, saves?, … }` | manual deltas; only when set (`speed` = the effective-walking-Speed override; NO `languages`/`tools` strings)                      |
+| `lore`                    | `{ traits?, ideals?, … }`                       | flavor; only non-empty fields                                                                                                      |
+| `quote`                   | string?                                         | omit when empty                                                                                                                    |
 
 ### `ClassEntry` (R4 — the multiclass breakdown)
 
@@ -219,20 +220,33 @@ a spent migration is removed COMPLETELY; git history preserves `scripts/migrate-
 
 ## `state` — the exported play-moment (only non-default)
 
-| Key             | Type                  | Notes                                                                                          |
-| --------------- | --------------------- | ---------------------------------------------------------------------------------------------- |
-| `hp`            | `{ current, temp? }`  | `max` is derived; omit `temp` when 0                                                           |
-| `currency`      | `{ gp?, sp?, … }`     | only non-zero coins                                                                            |
-| `conditions`    | `[ … ]`               | active conditions; omit when none                                                              |
-| `exhaustion`    | int?                  | omit when 0                                                                                    |
-| `usedSlots`     | `{ "1": n, … }`       | spell slots SPENT; omit empties                                                                |
-| `trackers`      | `{ id: spent }`       | resource uses; omit zero                                                                       |
-| `concentration` | string?               | the concentrated spell; omit when none                                                         |
-| `inspiration`   | bool?                 | omit when false                                                                                |
-| `log`           | `[ {event, ts, id} ]` | the session log — a structured `CombatEvent` (ids/tokens, localized at render), never raw text |
+| Key                       | Type                                | Notes                                                                                                                                                  |
+| ------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `hp`                      | `{ current, temp? }`                | `max` is derived; omit `temp` when 0                                                                                                                   |
+| `currency`                | `{ gp?, sp?, … }`                   | only non-zero coins                                                                                                                                    |
+| `conditions`              | `[ … ]`                             | active conditions; omit when none                                                                                                                      |
+| `concentrationConditions` | `[ conditionId, … ]`                | conditions owned by the current solo concentration; omit when none                                                                                     |
+| `exhaustion`              | int?                                | omit when 0                                                                                                                                            |
+| `usedSlots`               | `{ "1": n, … }`                     | spell slots SPENT; omit empties                                                                                                                        |
+| `trackers`                | `{ id: spent\|{used?,rolls} }`      | resource uses; ordinary counters stay numeric, while recorded physical results use the additive object; omit zero/empty                                |
+| `itemResources`           | `{ instanceId: ItemResourceState }` | exact per-copy magic-item counters, disposition, revision and causal transition fingerprint; omit when no copy has diverged from its catalogue default |
+| `concentration`           | string?                             | the concentrated spell; omit when none                                                                                                                 |
+| `inspiration`             | bool?                               | omit when false                                                                                                                                        |
+| `log`                     | `[ {event, ts, id} ]`               | the session log — a structured `CombatEvent` (ids/tokens, localized at render), never raw text                                                         |
+
+Every mutable magic-item copy must have exactly one stable `build.equipment[].instanceId`, and its
+`itemResources` entry must agree with that copy's `itemId`; duplicate owners, orphaned state, malformed
+revisions and malformed transition fingerprints are rejected by the portable codec. The prepared one-off
+`scripts/migrate-item-resources.ts` applies this invariant to both current Firestore documents and every
+saved snapshot under a deterministic-id, backup, compare-and-swap and post-verification safety net. It has
+not yet run against production, so the runtime still accepts legacy migration inputs without treating them
+as a second typed owner; once the owner-gated apply/check closes, those inputs and the spent script are
+deleted rather than retained as a read shim.
 
 Play-state also carries several **additive-only optional** keys, each absent on a doc that never
-uses it (so the envelope stays byte-identical): `activeFeatures`, `effectTimers`, `grantBundleChoices`,
+uses it (so the envelope stays byte-identical): `activeFeatures`, `effectTimers`, `effectBoundaries`
+(`{ activeKey: { round, phase: "turn-start"|"turn-end" } }` for exact self-effect expiry), `grantBundleChoices`,
+`concentrationConditions` (conditions owned by the current solo concentration),
 `companionHp` (summoned-companion current HP, keyed by granting source id), `companionVariant`
 (Beast Master's chosen `variantId`, keyed by feature id), `familiar`
 (`{ monsterId, creatureType: celestial|fey|fiend, dismissed? }` — the Find Familiar summon; its
@@ -338,6 +352,14 @@ The combat-mutable trio (HP `{ current, temp }` · `conditions` · `initiative` 
 export carries the trio inline; the fixtures, carrying no trio, stay byte-identical). The FIRESTORE PARENT
 write additionally omits the trio at the serialization boundary (`toStoredPayload` → `omitCombatTrio`), so a
 stored parent doc — and the 6 team fixtures — carry NO trio key in `state` at all.
+
+That combat subdoc also carries the optional `pendingConcentrationSaves` FIFO. Each JSON-plain row is
+`{ id, spell, damage, difficultyClass }`; absence is the backward-safe empty queue and the read boundary
+drops malformed, duplicate-id or stale damage/DC rows. Hydration also drops rows that do not match the
+currently held Concentration spell or a living character above 0 HP, closing out-of-order parent/subdoc
+writes without leaving an unresolvable prompt. It is ephemeral live-combat state like the solo round, so
+it is deliberately not part of the portable character envelope: importing a copy starts with no unresolved
+table prompts, while an ordinary reload restores them from the subdoc.
 
 The one-off `scripts/migrate-combat-state.ts` ran autonomously under the snapshot-verify net
 (dry-run/`--check` by default): it backfilled the subdoc from each un-migrated parent and

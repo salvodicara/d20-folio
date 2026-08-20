@@ -64,7 +64,24 @@ describe("Barbarian Danger Sense declares the DEX-save advantage", () => {
       type: "advantage-on",
       rollType: "save",
       vs: "dex-save",
+      suppressedByConditions: ["incapacitated"],
     });
+  });
+
+  it("suspends and restores the benefit from the live condition set", () => {
+    const doc = buildScenario(BARBARIAN_7);
+    expect(
+      aggregateCharacterGrants(doc.character, {
+        ...doc.session,
+        conditions: ["incapacitated"],
+      }).advantages.some((clause) => clause.sourceId === "barbarian-danger-sense")
+    ).toBe(false);
+    expect(
+      aggregateCharacterGrants(doc.character, {
+        ...doc.session,
+        conditions: [],
+      }).advantages.some((clause) => clause.sourceId === "barbarian-danger-sense")
+    ).toBe(true);
   });
 });
 

@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
   {
@@ -38,6 +39,12 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     saveAbility: "DEX",
     area: true,
     damageOnSave: "half",
+    targeting: {
+      affinity: "enemy",
+      maxTargets: 4,
+      maxTargetsPerUpcast: 1,
+      sharedAmount: true,
+    },
     source: "SRD",
   },
   {
@@ -123,10 +130,20 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     concentration: true,
     saveAbility: "WIS",
     conditionApplication: {
-      options: ["unconscious", "frightened"],
+      options: ["unconscious", "frightened", "poisoned"],
       max: 1,
       on: "failed-save",
+      lifetime: { kind: "source" },
     },
+    recurrence: "action-retrigger",
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-eyebite",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -281,9 +298,22 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     damageType: "radiant",
     damageDice: "6d8",
     saveAbility: "CON",
-    conditionApplication: { options: ["blinded"], on: "failed-save" },
+    conditionApplication: {
+      options: ["blinded"],
+      on: "failed-save",
+      lifetime: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
+    },
     area: true,
     damageOnSave: "half",
+    recurrence: "action-retrigger",
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-sunbeam",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -301,11 +331,14 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       consumed: true,
     },
     concentration: false,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Truesight 120 ft for the duration.
       {
         type: "while-active",
         activeKey: "spell-true-seeing",
+        duration: timedSpellDuration(60),
+        recipient: "selected",
         grants: [{ type: "truesight", range: 120 }],
       },
     ],
@@ -378,7 +411,19 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "CON",
-    conditionApplication: { options: ["restrained"], on: "failed-save" },
+    conditionApplication: {
+      options: ["restrained"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-flesh-to-stone",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {

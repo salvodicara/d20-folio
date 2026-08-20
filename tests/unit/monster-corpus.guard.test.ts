@@ -28,11 +28,11 @@ import { mergedUi } from "./__helpers__/ui-merged";
 import {
   ALL_ALIGNMENTS,
   ALL_CREATURE_TYPES,
-  ALL_DAMAGE_TYPES,
   CREATURE_SIZE_ORDER,
   type MonsterEntry,
   type MonsterStatBlock,
 } from "@/data/types";
+import { DAMAGE_TYPES } from "@/types/damage";
 
 await ensureSrdKind("monster");
 
@@ -44,7 +44,7 @@ const VALID_CR = new Set([
   ...Array.from({ length: 30 }, (_, i) => i + 1),
 ]);
 const SKILL_IDS = new Set(ALL_SKILLS.map((s) => s.id));
-const DAMAGE = new Set<string>(ALL_DAMAGE_TYPES);
+const DAMAGE = new Set<string>(DAMAGE_TYPES);
 const SECTIONS = [
   "traits",
   "actions",

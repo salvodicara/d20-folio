@@ -74,4 +74,67 @@ describe("actionAtCastLevel", () => {
       actionAtCastLevel(base, getSpellById("invisibility"), 4).summary.targeting
     ).toMatchObject({ maxTargets: 3, maxTargetsPerUpcast: 1 });
   });
+
+  it("resolves cast-level duration tiers before a persistent target is chosen", () => {
+    const base = action("hex", {});
+    base.activatesKey = "spell-hex";
+    base.activeDurationRounds = 600;
+    base.standingEffect = {
+      sourceId: "hex",
+      activeKey: "spell-hex",
+      markScope: "cursed",
+      targetAffinity: "enemy",
+      maxRounds: 600,
+    };
+
+    expect(actionAtCastLevel(base, getSpellById("hex"), 2)).toMatchObject({
+      slotLevel: 2,
+      activeDurationRounds: 2_400,
+      standingEffect: { maxRounds: 2_400 },
+    });
+    expect(actionAtCastLevel(base, getSpellById("hex"), 5)).toMatchObject({
+      slotLevel: 5,
+      activeDurationRounds: 14_400,
+      standingEffect: { maxRounds: 14_400 },
+    });
+  });
+
+  it("uses Hunter's Mark's distinct level thresholds", () => {
+    const base = action("hunters-mark", {});
+    base.activatesKey = "spell-hunters-mark";
+    base.activeDurationRounds = 600;
+    expect(
+      actionAtCastLevel(base, getSpellById("hunters-mark"), 3).activeDurationRounds
+    ).toBe(4_800);
+    expect(
+      actionAtCastLevel(base, getSpellById("hunters-mark"), 5).activeDurationRounds
+    ).toBe(14_400);
+  });
+
+  it("resolves Dominate Person's maximum from the slot before target selection", () => {
+    const spell = getSpellById("dominate-person");
+    const base = action("dominate-person", {
+      conditionApplication: spell?.conditionApplication,
+    });
+    base.activatesKey = "spell-dominate-person";
+    base.activeDurationRounds = 10;
+
+    expect(actionAtCastLevel(base, spell, 6).activeDurationRounds).toBe(100);
+    expect(actionAtCastLevel(base, spell, 7).activeDurationRounds).toBe(600);
+    expect(actionAtCastLevel(base, spell, 8).activeDurationRounds).toBe(4_800);
+  });
+
+  it("resolves Geas from thirty days through its indefinite ninth-level form", () => {
+    const spell = getSpellById("geas");
+    const base = action("geas", {
+      conditionApplication: spell?.conditionApplication,
+    });
+
+    expect(
+      actionAtCastLevel(base, spell, 7).summary.conditionApplication?.lifetime
+    ).toMatchObject({ kind: "timed", minutes: 365 * 24 * 60 });
+    expect(
+      actionAtCastLevel(base, spell, 9).summary.conditionApplication?.lifetime
+    ).toEqual({ kind: "manual" });
+  });
 });

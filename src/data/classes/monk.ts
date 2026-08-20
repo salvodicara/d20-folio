@@ -2,6 +2,7 @@ import type { SrdClassTable, SrdClassFeatureData, SrdClassLevel } from "../types
 import { asProficiencyToken } from "@/lib/proficiency-tokens";
 import { ARTISAN_TOOL_IDS, MUSICAL_INSTRUMENT_IDS } from "@/lib/tools";
 import { proficiencyBonus } from "@/lib/proficiency";
+import { DAMAGE_TYPES } from "@/types/damage";
 
 export const MONK_TABLE: SrdClassTable = {
   id: "monk",
@@ -138,6 +139,9 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
       actions: [
         {
           type: "bonus",
+          requiresActionCategoryThisTurn: "attack",
+          maxUsesPerTurn: 1,
+          attackSequence: { attackId: "unarmed-strike", instances: 1 },
         },
       ],
       rider: {
@@ -207,15 +211,21 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
     id: "monk-uncanny-metabolism",
     class: "monk",
     level: 2,
-    // 2024 RAW (monk:main, Level 2): "When you roll Initiative, you can regain
-    // all expended Focus Points" (once per Long Rest). Wired via the shared
-    // `initiative-tracker-topup` primitive (Bard/Barbarian/Druid) targeting the
-    // `monk-focus` pool — `upTo: 20` caps to the tracker total (= Monk level),
-    // so it restores ALL expended points. The companion Martial-Arts-die + level
-    // HP heal is a dice roll (golden rule 21) and stays override-first/narrative.
-    grants: [{ type: "initiative-tracker-topup", trackerId: "monk-focus", upTo: 20 }],
     mechanics: {
       tracker: { total: "1", recovery: "long-rest" },
+      actions: [
+        {
+          type: "free",
+          costTracker: "monk-uncanny-metabolism",
+          trackerCost: 1,
+          trackerTopUp: { trackerId: "monk-focus", upTo: "full" },
+          heal: {
+            dice: "classSpecific:martialArtsDie",
+            plus: { kind: "class-level", classId: "monk" },
+          },
+          targeting: { affinity: "self", maxTargets: 1 },
+        },
+      ],
     },
     source: "SRD",
   },
@@ -229,6 +239,11 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
           type: "bonus",
           costTracker: "monk-focus",
           trackerCost: 1,
+          attackSequence: {
+            attackId: "unarmed-strike",
+            instances: 2,
+            instancesByLevel: { 10: 3 },
+          },
         },
       ],
     },
@@ -239,12 +254,8 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
     // Action. Alternatively, you can expend 1 Focus Point to take both the
     // Disengage and the Dodge actions as a Bonus Action." The BASE tier (a
     // free Bonus-Action Disengage) costs NO Focus — only the enhanced
-    // (+Dodge) tier does. The one-action-per-(feature,type) resolver seam has
-    // no way to surface a second, differently-costed Bonus-Action row for the
-    // SAME feature (M19), so the action is modeled cost-free (the always-
-    // available base tier) and the optional Focus spend for the extra Dodge
-    // stays narrative — same "no engine-tracked cost" treatment other
-    // optional, non-computation-affecting enhancements get elsewhere.
+    // (+Dodge) tier does. Both variants are authored explicitly: stable action
+    // ids let the shared resolver keep their costs/effects independent.
     id: "monk-patient-defense",
     class: "monk",
     level: 2,
@@ -252,15 +263,24 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
       actions: [
         {
           type: "bonus",
+        },
+        {
+          id: "focused",
+          type: "bonus",
+          costTracker: "monk-focus",
+          trackerCost: 1,
+          targeting: { affinity: "self", maxTargets: 1 },
           // 2024 RAW (monk:main, Level 10 — Heightened Focus): "When you expend a
           // Focus Point to use Patient Defense, you gain a number of Temporary Hit
           // Points equal to TWO rolls of your Martial Arts die." A DIE roll →
           // roll-entry (golden rule 21: the app never rolls). The rider rides this
-          // bonus action, gated by `fromLevel: 10` on the Monk OWNING-class level
-          // (so a low-level Monk never sees it); the die is the scaling
-          // classSpecific Martial Arts die (d8 at L10 → "2d8"). Override-first — a
-          // display-only formula the player rolls + enters (temp HP don't stack).
-          tempHpRoll: { rolls: 2, die: "classSpecific:martialArtsDie", fromLevel: 10 },
+          // The paid Dodge variant exists from L2. Heightened Focus adds the
+          // temp-HP rider at Monk 10 without changing its stable action id.
+          tempHpRoll: {
+            rolls: 2,
+            die: "classSpecific:martialArtsDie",
+            fromLevel: 10,
+          },
         },
       ],
     },
@@ -279,6 +299,12 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
       actions: [
         {
           type: "bonus",
+        },
+        {
+          id: "focused",
+          type: "bonus",
+          costTracker: "monk-focus",
+          trackerCost: 1,
         },
       ],
     },
@@ -309,7 +335,40 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
       actions: [
         {
           type: "reaction",
-          trigger: "takeDamage",
+          trigger: "hitByAttack",
+          damageReduction: {
+            dice: "1d10",
+            addAbility: "DEX",
+            addLevel: true,
+            damageTypesByLevel: {
+              1: ["bludgeoning", "piercing", "slashing"],
+              13: [...DAMAGE_TYPES],
+            },
+          },
+          targeting: { affinity: "self", maxTargets: 1 },
+        },
+        {
+          id: "redirect",
+          type: "free",
+          costTracker: "monk-focus",
+          trackerCost: 1,
+          requiresOutcomeThisTurn: {
+            actionId: "monk-deflect-attacks-reaction",
+            kind: "damage-reduction",
+            result: "negated",
+          },
+          maxUsesPerTurn: 1,
+          saveAbility: "DEX",
+          saveDcAbility: "WIS",
+          attack: {
+            diceByLevel: { 1: "2d6", 5: "2d8", 11: "2d10", 17: "2d12" },
+            addMod: "DEX",
+            damageTypeChoicesByLevel: {
+              1: ["bludgeoning", "piercing", "slashing"],
+              13: [...DAMAGE_TYPES],
+            },
+          },
+          targeting: { affinity: "any", maxTargets: 1 },
         },
       ],
     },
@@ -353,6 +412,16 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
     id: "monk-evasion",
     class: "monk",
     level: 7,
+    grants: [
+      {
+        type: "save-damage-rule",
+        ability: "DEX",
+        requiresDamageOnSuccess: "half",
+        onSuccess: "none",
+        onFailure: "half",
+        suppressedByConditions: ["incapacitated"],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -521,6 +590,11 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
         {
           type: "bonus",
           trackerCost: 1,
+          heal: {
+            dice: "classSpecific:martialArtsDie",
+            plus: { kind: "ability-mod", ability: "WIS" },
+          },
+          targeting: { affinity: "self", maxTargets: 1 },
         },
       ],
     },

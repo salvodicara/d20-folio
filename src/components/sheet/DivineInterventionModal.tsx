@@ -6,9 +6,10 @@
  * Binding/Fear, Ring of Animal Influence, Staff of Charming — cast one of several
  * spells from a shared item-charge pool, with per-spell charge costs). One picker,
  * copy keyed off the pool's `sourceId` (golden rule 3 — never a second bespoke
- * picker; golden rule 7 — a stable id, never a display string): a `sourceId` that
- * resolves to a magic item drives the item rubric/hint + the per-row charge-cost
- * chip and disables a row the pool can't afford.
+ * picker; golden rule 7 — a stable id, never a display string): feature copy keys
+ * off `sourceId`, while an item pool carries its catalogue `itemId` separately
+ * from the per-instance runtime source. That item identity drives the rubric/hint
+ * + per-row charge-cost chip and disables a row the pool can't afford.
  *
  * The eligible pool (`pool.spellIds`) is resolved by the engine
  * (`resolveFreeCastFromList`); this modal only RENDERS it (a searchable, level-grouped
@@ -27,7 +28,6 @@ import { SearchField } from "@/components/shared/SearchField";
 import { spellLevelVar } from "@/components/shared/folio-colors";
 import { matchesSearch } from "@/lib/search";
 import { spellIndex } from "@/data/spells";
-import { getMagicItem } from "@/data/magic-items";
 import { localizeSrd } from "@/i18n/resolver";
 import { srdEn } from "@/i18n/srd-en";
 import type { Locale } from "@/lib/locale";
@@ -85,17 +85,16 @@ export function DivineInterventionModal({
 
   if (!pool) return null;
 
-  // S9 — a pool whose `sourceId` is a MAGIC ITEM id is the item→pool bridge (Wand
-  // of Binding/Fear, Ring of Animal Influence, Staff of Charming): its rubric is the
-  // item's name, its hint says "spend the item's charges", and each row shows a
-  // per-spell charge-cost chip + disables when the pool can't afford it. Feature
-  // pools (Divine Intervention / War God's Blessing) render exactly as before.
-  const item = getMagicItem(pool.sourceId);
+  // S9 — item pools retain a per-instance runtime `sourceId` for exact payment,
+  // while `itemId` carries the stable catalogue identity used for presentation.
+  // Never parse or display the physical copy's UUID.
+  const itemId = pool.itemId;
+  const isItemPool = itemId !== undefined;
   const { rubricKey, hintKey } = poolCopy(pool.sourceId);
-  const rubric = item
-    ? localizeSrd("magic-item", pool.sourceId, "name", locale)
+  const rubric = itemId
+    ? localizeSrd("magic-item", itemId, "name", locale)
     : t(rubricKey);
-  const subtitle = item
+  const subtitle = isItemPool
     ? t("combat.itemPoolCastHint")
     : t(hintKey, { level: pool.maxSpellLevel });
 
@@ -113,7 +112,7 @@ export function DivineInterventionModal({
             the picker leads with the live remaining/total charges the rows draw
             from; each per-row cost pill then reads against this visible budget.
             Feature pools (Divine Intervention) don't render it. */}
-        {item != null && (
+        {isItemPool && (
           <div
             className="cl-pool-status"
             aria-label={t("combat.itemPoolChargesRemaining", {
@@ -137,7 +136,7 @@ export function DivineInterventionModal({
             // The item pool isn't a Cleric list, so it reuses the generic
             // "Search spells…" placeholder (one runtime `common` ns) rather than
             // the Cleric-specific Divine Intervention one.
-            item != null
+            isItemPool
               ? t("levelUp.spells.searchSpells")
               : t("combat.divineInterventionSearch")
           }
@@ -157,7 +156,7 @@ export function DivineInterventionModal({
               // the pool can't afford this spell (Wand of Binding at 4 charges →
               // Hold Monster costs 5 → disabled; Hold Person costs 2 → enabled).
               const cost = pool.costBySpell[r.id] ?? 1;
-              const disabled = item != null && pool.remaining < cost;
+              const disabled = isItemPool && pool.remaining < cost;
               return (
                 <button
                   key={r.id}
@@ -173,7 +172,7 @@ export function DivineInterventionModal({
                     {r.level}
                   </span>
                   <span className="cl-name">{r.name}</span>
-                  {item != null && (
+                  {isItemPool && (
                     <span className="cl-cost" data-charge-cost={cost}>
                       {t("combat.itemPoolChargeCost", { n: cost })}
                     </span>

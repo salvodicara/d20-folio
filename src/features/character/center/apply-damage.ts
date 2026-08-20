@@ -17,17 +17,52 @@
  * subscription reconciles the truth. NEVER throws.
  */
 
-import type { DeclaredCombatEffect } from "@/features/campaigns/campaign-io";
+import type {
+  DeclaredCombatContext,
+  DeclaredCombatEffect,
+} from "@/features/campaigns/campaign-io";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 /** Apply the reviewed damage/healing/condition batch through one dynamic campaign boundary. */
 export async function applyDeclaredCombatEffects(
   campaignId: string,
-  effects: ReadonlyArray<DeclaredCombatEffect>
+  effects: ReadonlyArray<DeclaredCombatEffect>,
+  context?: DeclaredCombatContext
 ): Promise<void> {
   const { applyDeclaredCombatEffects: apply } =
     await import("@/features/campaigns/campaign-io");
-  await apply(campaignId, effects).catch((e: unknown) => {
+  await apply(campaignId, effects, context).catch((e: unknown) => {
     console.error("Declared combat-effect apply failed", e);
     throw e;
   });
+}
+
+/** Append one standing effect through the same lazy campaign boundary. */
+export async function appendPersistentCombatEffect(
+  campaignId: string,
+  effect: ActiveCombatEffect
+): Promise<void> {
+  const { appendPersistentCombatEffect: append } =
+    await import("@/features/campaigns/campaign-io");
+  await append(campaignId, effect);
+}
+
+/** Revoke the exact standing-effect instance created by a prior commit. */
+export async function revokePersistentCombatEffect(
+  campaignId: string,
+  effectId: string
+): Promise<void> {
+  const { revokePersistentCombatEffect: revoke } =
+    await import("@/features/campaigns/campaign-io");
+  await revoke(campaignId, effectId);
+}
+
+/** Revoke every standing occurrence owned by one actor/source pair. */
+export async function revokePersistentCombatEffectsBySource(
+  campaignId: string,
+  owner: { actorId: string; sourceId: string }
+): Promise<void> {
+  const { revokePersistentCombatEffectsBySource: revoke } =
+    await import("@/features/campaigns/campaign-io");
+  await revoke(campaignId, owner);
 }

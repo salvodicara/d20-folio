@@ -1,0 +1,1810 @@
+{
+  "entities": [
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-barbarian-rage",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-barbarian-rage-duration",
+          "detail": "maintained-by-table",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:barbarian-rage:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "maintain",
+          "detail": "maintained-duration-table-owned",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:barbarian-rage:extend"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "per-turn-cap",
+          "detail": "manual-boundary-claim",
+          "status": "automated"
+        },
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-free",
+          "status": "table"
+        },
+        {
+          "clauseId": "standing-barbarian-reckless-attack",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-barbarian-reckless-attack-duration",
+          "detail": "table-owned-end",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:barbarian-reckless-attack:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:barbarian-berserker-intimidating-presence:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-reaction",
+          "status": "table"
+        },
+        {
+          "clauseId": "reaction-trigger",
+          "detail": "table-signals-takeDamage",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:barbarian-berserker-retaliation:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "grant-die",
+          "detail": "standing-die-fact-one-hour",
+          "status": "automated"
+        },
+        {
+          "clauseId": "grant-die-use",
+          "detail": "player-applies-die-by-design",
+          "status": "table"
+        }
+      ],
+      "executable": true,
+      "id": "action:bard-bardic-inspiration:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-reaction",
+          "status": "table"
+        },
+        {
+          "clauseId": "reaction-trigger",
+          "detail": "table-signals-allyFailsSave",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:bard-countercharm:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-reaction",
+          "status": "table"
+        },
+        {
+          "clauseId": "reaction-trigger",
+          "detail": "table-signals-creatureSucceedsRollOrDealsDamage",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:bard-lore-cutting-words:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-reaction",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:bard-lore-peerless-skill:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-action",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:cleric-channel-divinity:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-action",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-mode-choice",
+          "detail": "player-picks-each-use",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-damage-type-choice",
+          "detail": "player-picks-type",
+          "status": "automated"
+        },
+        {
+          "clauseId": "saving-throw",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-dice-scaling",
+          "detail": "caller-resolved-level-count",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-bonus-term",
+          "detail": "caller-resolved-term",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-damage-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-damage-on-save",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-damage-application",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-heal",
+          "detail": "same-rolled-total",
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:cleric-divine-spark:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-action",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:cleric-turn-undead:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-action",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-dice-count",
+          "detail": "caller-resolved-count",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-damage-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-damage-application",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:cleric-sear-undead:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-action",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:cleric-divine-intervention:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-action",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:cleric-life-preserve-life:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:druid-wild-shape:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-action",
+          "status": "table"
+        },
+        {
+          "clauseId": "cost-choice",
+          "detail": "player-picks-payment",
+          "status": "automated"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": "chosen-of-two-costs",
+          "status": "automated"
+        },
+        {
+          "clauseId": "alternate-cost",
+          "detail": "chosen-of-two-costs",
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:druid-wild-companion:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-action",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:druid-land-lands-aid:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-action",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:druid-land-natures-sanctuary:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "healing-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "healing-bonus",
+          "detail": "caller-resolved-term",
+          "status": "automated"
+        },
+        {
+          "clauseId": "healing-application",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:fighter-second-wind:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-free",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-fighter-action-surge",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-fighter-action-surge-duration",
+          "detail": "table-owned-end",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:fighter-action-surge:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-free",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "check-bonus-roll",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "check-bonus",
+          "detail": "die-added-to-failed-check",
+          "status": "automated"
+        },
+        {
+          "clauseId": "check-outcome",
+          "detail": "table-adjudicates-final-check",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": "debited-only-on-turned-success",
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:fighter-tactical-mind:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "attack-sequence",
+          "detail": "session-attack-profile-pending",
+          "status": "unsupported"
+        },
+        {
+          "clauseId": "per-turn-cap",
+          "detail": "turn-slot-claim",
+          "status": "automated"
+        },
+        {
+          "clauseId": "economy",
+          "detail": "kernel-claims-bonus",
+          "status": "automated"
+        },
+        {
+          "clauseId": "turn-prerequisite",
+          "detail": "table-verifies-prerequisite",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": false,
+      "id": "action:monk-martial-arts:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-free",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "tracker-topup",
+          "detail": "full-recovery-now",
+          "status": "automated"
+        },
+        {
+          "clauseId": "healing",
+          "detail": "session-class-die-unresolved",
+          "status": "unsupported"
+        }
+      ],
+      "executable": false,
+      "id": "action:monk-uncanny-metabolism:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "attack-sequence",
+          "detail": "session-attack-profile-pending",
+          "status": "unsupported"
+        },
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": false,
+      "id": "action:monk-flurry-of-blows:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:monk-patient-defense:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "temporary-hit-points-locked",
+          "detail": "below-unlock-level",
+          "status": "narrative"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:monk-patient-defense:focused"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:monk-step-of-the-wind:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:monk-step-of-the-wind:focused"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "reduction-damage-types",
+          "detail": "level-scaled-types-need-session-level",
+          "status": "unsupported"
+        },
+        {
+          "clauseId": "reaction-trigger",
+          "detail": "table-affirms-hitByAttack",
+          "status": "table"
+        }
+      ],
+      "executable": false,
+      "id": "action:monk-deflect-attacks:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "per-turn-cap",
+          "detail": "manual-boundary-claim",
+          "status": "automated"
+        },
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-free",
+          "status": "table"
+        },
+        {
+          "clauseId": "turn-prerequisite",
+          "detail": "table-verifies-prerequisite",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "saving-throw",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-damage-type",
+          "detail": "level-scaled-type-choices-need-session-level",
+          "status": "unsupported"
+        },
+        {
+          "clauseId": "attack-dice",
+          "detail": "level-scaled-die-face-needs-session-level",
+          "status": "unsupported"
+        },
+        {
+          "clauseId": "attack-bonus-term",
+          "detail": "caller-resolved-term",
+          "status": "automated"
+        }
+      ],
+      "executable": false,
+      "id": "action:monk-deflect-attacks:redirect"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-free",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "saving-throw",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "condition-stunned-lifetime",
+          "detail": "table-owned-end",
+          "status": "table"
+        },
+        {
+          "clauseId": "condition-stunned",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:monk-stunning-strike:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-reaction",
+          "status": "table"
+        },
+        {
+          "clauseId": "reaction-trigger",
+          "detail": "table-signals-takeDamage",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:monk-slow-fall:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-monk-superior-defense",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-monk-superior-defense-duration",
+          "detail": "table-owned-end",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:monk-superior-defense:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "healing",
+          "detail": "session-class-die-unresolved",
+          "status": "unsupported"
+        }
+      ],
+      "executable": false,
+      "id": "action:monk-open-hand-wholeness-of-body:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:monk-open-hand-fleet-step:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-free",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:monk-open-hand-quivering-palm:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "cure-blinded-locked",
+          "detail": "below-unlock-level",
+          "status": "narrative"
+        },
+        {
+          "clauseId": "cure-charmed-locked",
+          "detail": "below-unlock-level",
+          "status": "narrative"
+        },
+        {
+          "clauseId": "cure-deafened-locked",
+          "detail": "below-unlock-level",
+          "status": "narrative"
+        },
+        {
+          "clauseId": "cure-frightened-locked",
+          "detail": "below-unlock-level",
+          "status": "narrative"
+        },
+        {
+          "clauseId": "cure-paralyzed-locked",
+          "detail": "below-unlock-level",
+          "status": "narrative"
+        },
+        {
+          "clauseId": "cure-stunned-locked",
+          "detail": "below-unlock-level",
+          "status": "narrative"
+        },
+        {
+          "clauseId": "pool-spend-amount",
+          "detail": "player-chosen-pool-points",
+          "status": "automated"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": "chosen-amount-debit",
+          "status": "automated"
+        },
+        {
+          "clauseId": "cure-poisoned-cost",
+          "detail": "pool-priced",
+          "status": "automated"
+        },
+        {
+          "clauseId": "cure-poisoned",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "pool-spend-healing",
+          "detail": "heals-chosen-amount",
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:paladin-lay-on-hands:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-action",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:paladin-abjure-foes:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-free",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-paladin-devotion-sacred-weapon",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-paladin-devotion-sacred-weapon-duration",
+          "detail": "table-owned-end",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:paladin-devotion-sacred-weapon:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-paladin-devotion-holy-nimbus",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-paladin-devotion-holy-nimbus-duration",
+          "detail": "table-owned-end",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:paladin-devotion-holy-nimbus:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-action",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:ranger-tireless:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:ranger-natures-veil:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-reaction",
+          "status": "table"
+        },
+        {
+          "clauseId": "reaction-trigger",
+          "detail": "table-signals-takeDamage",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:ranger-hunter-superior-hunters-defense:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:rogue-cunning-action:dash"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:rogue-cunning-action:disengage"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "skill-check",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "skill-check-adjudication",
+          "detail": "vs-authored-dc",
+          "status": "automated"
+        },
+        {
+          "clauseId": "condition-gate",
+          "detail": "on-passed-check",
+          "status": "automated"
+        },
+        {
+          "clauseId": "condition-invisible-lifetime",
+          "detail": "table-owned-end",
+          "status": "table"
+        },
+        {
+          "clauseId": "condition-invisible",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:rogue-cunning-action:hide"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "locks-movement",
+          "detail": "speed-zero-table-owned",
+          "status": "table"
+        },
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "next-attack-advantage",
+          "detail": "standing-until-turn-end",
+          "status": "automated"
+        },
+        {
+          "clauseId": "next-attack-advantage-use",
+          "detail": "player-applies-advantage-by-design",
+          "status": "table"
+        }
+      ],
+      "executable": true,
+      "id": "action:rogue-steady-aim:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "authored-program",
+          "detail": "hand-authored-canonical-format",
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolve-claim-reaction",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "deflect-halve",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "deflect-spent",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "deflect-trigger",
+          "detail": "table-affirms-damage-trigger",
+          "status": "table"
+        }
+      ],
+      "executable": true,
+      "id": "action:rogue-uncanny-dodge:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:rogue-thief-fast-hands:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-sorcerer-innate-sorcery",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-sorcerer-innate-sorcery-duration",
+          "detail": "table-owned-end",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:sorcerer-innate-sorcery:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-action",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:sorcerer-sorcerous-restoration:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-sorcerer-draconic-sorcery-dragon-wings",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-sorcerer-draconic-sorcery-dragon-wings-duration",
+          "detail": "table-owned-end",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:sorcerer-draconic-sorcery-dragon-wings:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-action",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:wizard-arcane-recovery:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-free",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:boon-of-fate:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-dwarf-stonecunning",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-dwarf-stonecunning-duration",
+          "detail": "table-owned-end",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:dwarf-stonecunning:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "resolution",
+          "detail": "no-mechanical-steps",
+          "status": "narrative"
+        }
+      ],
+      "executable": false,
+      "id": "action:orc-adrenaline-rush:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-goliath-large-form",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-goliath-large-form-duration",
+          "detail": "table-owned-end",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:goliath-large-form:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-action",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "area-selection",
+          "detail": "table-selects-occupants",
+          "status": "spatial"
+        },
+        {
+          "clauseId": "saving-throw",
+          "detail": null,
+          "status": "physical-input"
+        },
+        {
+          "clauseId": "attack-dice-scaling",
+          "detail": "caller-resolved-level-count",
+          "status": "automated"
+        },
+        {
+          "clauseId": "attack-damage-type",
+          "detail": "ancestry-damage-type-unresolved",
+          "status": "unsupported"
+        }
+      ],
+      "executable": false,
+      "id": "action:dragonborn-breath-weapon:0"
+    },
+    {
+      "clauses": [
+        {
+          "clauseId": "economy",
+          "detail": "table-spends-bonus",
+          "status": "table"
+        },
+        {
+          "clauseId": "tracker-payment",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-dragonborn-draconic-flight",
+          "detail": null,
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-dragonborn-draconic-flight-duration",
+          "detail": "table-owned-end",
+          "status": "table"
+        },
+        {
+          "clauseId": "targeting",
+          "detail": null,
+          "status": "automated"
+        }
+      ],
+      "executable": true,
+      "id": "action:dragonborn-draconic-flight:0"
+    }
+  ],
+  "executablePrograms": 47,
+  "family": "feature-actions",
+  "totalEntities": 231,
+  "totals": {
+    "table": 309,
+    "automated": 480,
+    "narrative": 179,
+    "physical-input": 17,
+    "unsupported": 15,
+    "spatial": 3
+  }
+}

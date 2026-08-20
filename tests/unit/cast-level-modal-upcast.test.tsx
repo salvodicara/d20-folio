@@ -9,10 +9,11 @@
  * on each slot row — the engine math itself is unit-tested in
  * `spell-data-integrity` + `utils` (golden rule 13: cheapest test per fact).
  */
-import { describe, it, expect } from "vitest";
+import { afterEach, beforeEach, describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { CastLevelModal } from "@/components/sheet/CastLevelModal";
 import { getSpellById } from "@/data/spells";
+import i18n from "@/i18n";
 
 function upcastFacts(id: string) {
   const s = getSpellById(id);
@@ -29,6 +30,14 @@ function upcastFacts(id: string) {
 }
 
 describe("CastLevelModal — upcast damage preview (S12c)", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  afterEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
   it("shows the SCALED dice on each slot row when a higher slot is offered", () => {
     // Fireball cast with 3rd/4th/5th slots available — the rows must read
     // 8d6 / 9d6 / 10d6, NOT the base 8d6 everywhere (the fail-before state).
@@ -120,6 +129,83 @@ describe("CastLevelModal — upcast damage preview (S12c)", () => {
     // No "NdM" damage chip anywhere in the rendered rows.
     expect(screen.queryByText(/^\d+d\d+$/)).toBeNull();
   });
+
+  it("shows an item's cast level and exact charge cost before committing", () => {
+    render(
+      <CastLevelModal
+        request={{
+          spellName: "Fireball",
+          baseLevel: 3,
+          options: [
+            {
+              kind: "free-cast",
+              sourceId: "wand-of-fireballs",
+              sourceName: "Wand of Fireballs",
+              level: 3,
+              remaining: 7,
+              total: 7,
+              recovery: { kind: "item-resource", triggers: [{ kind: "dawn" }] },
+              cost: 1,
+              explicitCost: true,
+            },
+            {
+              kind: "free-cast",
+              sourceId: "wand-of-fireballs",
+              sourceName: "Wand of Fireballs",
+              level: 5,
+              remaining: 7,
+              total: 7,
+              recovery: { kind: "item-resource", triggers: [{ kind: "dawn" }] },
+              cost: 3,
+              explicitCost: true,
+            },
+          ],
+          upcast: upcastFacts("fireball"),
+        }}
+        onConfirm={() => {}}
+        onCancel={() => {}}
+      />
+    );
+    expect(screen.getByText("1 ch.")).toBeInTheDocument();
+    expect(screen.getByText("3 ch.")).toBeInTheDocument();
+    expect(screen.getByText("3", { selector: ".cl-seal" })).toBeInTheDocument();
+    expect(screen.getByText("5", { selector: ".cl-seal" })).toBeInTheDocument();
+    expect(screen.getByText("10d6")).toBeInTheDocument();
+    expect(screen.getAllByText("at dawn")).toHaveLength(2);
+    expect(screen.queryByText("/LR")).not.toBeInTheDocument();
+  });
+
+  it("localizes every exact typed-resource boundary without rest aliases", async () => {
+    await i18n.changeLanguage("it");
+    render(
+      <CastLevelModal
+        request={{
+          spellName: "Incantesimo",
+          baseLevel: 1,
+          options: [
+            {
+              kind: "free-cast",
+              sourceId: "typed-item",
+              sourceName: "Oggetto",
+              level: 1,
+              remaining: 1,
+              total: 1,
+              recovery: {
+                kind: "item-resource",
+                triggers: [{ kind: "dawn" }, { kind: "dusk" }, { kind: "manual" }],
+              },
+              cost: 1,
+            },
+          ],
+        }}
+        onConfirm={() => {}}
+        onCancel={() => {}}
+      />
+    );
+
+    expect(screen.getByText("all'alba · al tramonto · manuale")).toBeInTheDocument();
+    expect(screen.queryByText("/RL")).not.toBeInTheDocument();
+  });
 });
 
 describe("RA-07 — the SRD heal family carries its 2024 upcast increment", () => {
@@ -130,7 +216,7 @@ describe("RA-07 — the SRD heal family carries its 2024 upcast increment", () =
   it.each([
     ["cure-wounds", "2d8"],
     ["healing-word", "2d4"],
-    ["prayer-of-healing", "2d8"],
+    ["prayer-of-healing", "1d8"],
     ["mass-healing-word", "1d4"],
     ["mass-cure-wounds", "1d8"],
   ])("%s scales by %s per slot above its own level", (id, inc) => {

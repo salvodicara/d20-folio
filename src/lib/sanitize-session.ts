@@ -18,6 +18,7 @@
  */
 import type { LogEntry, SessionState } from "@/types/character";
 import type { CombatEvent, LogSlot } from "@/types/combat-log";
+import { normalizeItemResources } from "@/lib/item-resources";
 
 /** The four economy slots a log row's colour can follow. */
 function asSlot(raw: unknown): LogSlot | undefined {
@@ -99,6 +100,7 @@ export function normalizeLogEntry(raw: unknown): LogEntry | null {
 }
 
 export function sanitizeSession(session: Partial<SessionState>): SessionState {
+  const itemResources = normalizeItemResources(session.itemResources);
   return {
     hp: {
       current: session.hp?.current ?? 0,
@@ -108,6 +110,7 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     },
     hitDice: { used: session.hitDice?.used ?? 0 },
     trackers: session.trackers ?? {},
+    ...(Object.keys(itemResources).length > 0 ? { itemResources } : {}),
     spellSlots: session.spellSlots ?? {},
     currency: {
       pp: session.currency?.pp ?? 0,
@@ -126,6 +129,7 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
         : undefined,
     initiative: session.initiative ?? "",
     conditions: session.conditions ?? [],
+    concentrationConditions: session.concentrationConditions,
     deathSucc: session.deathSucc ?? 0,
     deathFail: session.deathFail ?? 0,
     inspiration: session.inspiration ?? false,
@@ -149,6 +153,7 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     // states (Rage = 100 rounds). Enumerated so it round-trips a reload mid-Rage;
     // absent on every pre-existing doc (back-compat).
     effectTimers: session.effectTimers,
+    effectBoundaries: session.effectBoundaries,
     grantBundleChoices: session.grantBundleChoices,
     companionHp: session.companionHp,
     // Companion variant pick (Beast Master) + the Find Familiar summon. Enumerated

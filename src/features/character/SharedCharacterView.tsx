@@ -4,9 +4,8 @@
  * Route: `/view/:uid/:charId` — mounted OUTSIDE `AuthGuard` (the only such sheet
  * route), because the whole point of a share link is a viewer with no account: a
  * friend off the app opens the URL and reads the sheet. The document path IS the
- * link, and the server-side grant is one rules arm
- * (`allow get: if resource.data.shared == true`) — see `docs/ARCHITECTURE.md` →
- * "Public share links".
+ * link; anonymous readers can fetch only the sanitized `public/sheet` projection,
+ * never the private character parent or play-state child.
  *
  * It reuses the established read-only seam WHOLESALE (golden rule 3): load the doc,
  * push it into the character store through `loadReadonly` (which sets the `readonly`
@@ -15,14 +14,13 @@
  * only thing this file owns is the fetch, the three states, and the noindex.
  *
  * Differences from `AdminSheetView` / `MemberSheetView`, all forced by anonymity:
- *   - ONE-SHOT `getFullCharacter`, not a live subscription. A public viewer has no
+ *   - ONE-SHOT projection read, not a live subscription. A public viewer has no
  *     use for a listener, and it keeps anonymous reads at exactly one billed read
  *     per view (the zero-budget discipline, golden rule 24).
  *   - No combat subdoc. `combat/state` stays owner/campaign-gated, so the public
  *     sheet shows the BUILT character with full HP, never live play state.
- *   - The flag is re-checked CLIENT-SIDE too, so the OWNER opening their own
- *     revoked link sees the same honest "no longer shared" page a stranger gets
- *     (the owner's own read arm would otherwise hand them the sheet).
+ *   - Revocation atomically deletes the projection, so every viewer resolves to
+ *     the same honest unavailable state without reading private metadata.
  */
 
 import { useEffect, useState } from "react";
@@ -32,7 +30,11 @@ import { Link2Off } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FolioLoader } from "@/components/shared/FolioLoader";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
-import { getFullCharacter } from "@/lib/firestore";
+import { getPublicCharacter } from "@/lib/firestore";
+import {
+  buildPublicCharacterProjection,
+  parsePublicCharacterProjection,
+} from "@/lib/public-character-projection";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { resolveDevDoc } from "@/features/campaigns/useMemberCharacterDocs";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -43,15 +45,18 @@ import type { CharacterDoc } from "@/types/character";
  * The dev-bypass id that stands for a REVOKED / deleted link, so the unavailable
  * page is a drivable surface (rule 15: if a state is hard to reach, build the seam).
  * Every other id resolves through the SAME `resolveDevDoc` fixture/scenario seam the
- * party + member views use, stamped shared — bypass has no Firestore to read a flag
- * from.
+ * party + member views use, then crosses the exact projection builder/parser boundary.
  */
 const DEV_REVOKED_ID = "revoked";
 
 function loadSharedCharacter(uid: string, charId: string): Promise<CharacterDoc | null> {
-  if (!DEV_BYPASS_AUTH) return getFullCharacter(uid, charId);
+  if (!DEV_BYPASS_AUTH) return getPublicCharacter(uid, charId);
   if (charId === DEV_REVOKED_ID) return Promise.resolve(null);
-  return resolveDevDoc(charId).then((doc) => ({ ...doc, shared: true }));
+  return resolveDevDoc(charId).then(async (doc) => {
+    const source = { ...doc, playStateVersion: 1 as const, shared: true };
+    const projection = await buildPublicCharacterProjection(source, source.updatedAt);
+    return parsePublicCharacterProjection(uid, charId, projection);
+  });
 }
 
 /**
@@ -100,7 +105,7 @@ export function SharedCharacterView() {
     // too: ONE page for "you cannot see this right now", whatever the reason.
     loadSharedCharacter(uid, charId)
       .then((doc) => {
-        if (cancelled || !doc?.shared) {
+        if (cancelled || !doc) {
           settle(false);
           return;
         }

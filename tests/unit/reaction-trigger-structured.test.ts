@@ -117,16 +117,20 @@ function collectReactionRows(): ReactionRow[] {
 
 const ROWS = collectReactionRows();
 
-// Three features whose RETIRED-parser output was WRONG — the mechanics audit
-// (M06 World Tree, M09 Chilling Retribution, M21 Beguiling Twist) found the prose
+// Features whose RETIRED-parser output was WRONG — the mechanics audit
+// audit found the prose
 // parser mis-derived the trigger (each matched the generic "saving throw" pattern
 // and emitted "ally fails save"). Their structured token now intentionally
 // CORRECTS the parser rather than reproducing it, so the equivalence check asserts
-// the corrected EN for these three, not the (buggy) oracle output.
+// the corrected EN instead of the (buggy) oracle output.
 const CORRECTED_TRIGGERS: Record<string, string> = {
+  "bard-lore-cutting-words": "creature succeeds on a check or attack, or rolls damage",
   "barbarian-world-tree-branches-of-the-tree": "creature starts its turn near you",
   "ranger-fey-wanderer-beguiling-twist": "creature resists charm or fear",
   "ranger-winter-walker-chilling-retribution": "take damage",
+  "monk-deflect-attacks": "an attack hits you",
+  "rogue-uncanny-dodge": "an attack hits you",
+  "shield-master": "you succeed on a Dexterity save for half damage",
 };
 
 describe("structured reaction trigger — equivalence with the retired parser", () => {
@@ -143,7 +147,7 @@ describe("structured reaction trigger — equivalence with the retired parser", 
       const structuredEn = row.token
         ? localizeText(uiText(`combat.reactionTrigger_${row.token}`), "en")
         : undefined;
-      // For the three audit-corrected features the structured token deliberately
+      // For audit-corrected features the structured token deliberately
       // diverges from the (wrong) parser output — assert the corrected EN instead.
       const expectedEn = CORRECTED_TRIGGERS[row.featureId] ?? row.expectedEn;
       expect(
@@ -214,6 +218,13 @@ interface SpellReactionRow {
   token: string | undefined; // the backfilled structured token
 }
 
+// Accuracy corrections discovered after parser retirement. The old Shield row
+// had no trigger because its casting-time field is intentionally normalized to
+// "reaction"; structured data now carries the actual 2024 trigger instead.
+const CORRECTED_SPELL_TRIGGERS: Readonly<Record<string, string>> = {
+  shield: "an attack hits you or Magic Missile targets you",
+};
+
 // Every reaction spell — the smart-tracker derives a `"reaction"` action TYPE from
 // a `castingTime` that includes "reaction", which is exactly when it consulted the
 // retired parser. Mirror that gate here so the oracle runs on the same set.
@@ -221,7 +232,7 @@ const SPELL_ROWS: SpellReactionRow[] = spells
   .filter((s) => s.castingTime.toLowerCase().includes("reaction"))
   .map((s) => ({
     spellId: s.id,
-    expectedEn: oracleSpellTrigger(s.castingTime),
+    expectedEn: CORRECTED_SPELL_TRIGGERS[s.id] ?? oracleSpellTrigger(s.castingTime),
     token: s.reactionTrigger,
   }));
 

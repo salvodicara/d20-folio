@@ -10,6 +10,8 @@
 // dependency on the (pure) cost-engine module. `CostSpec` is the canonical,
 // serializable cost shape shared with the immediate-commit combat path.
 import type { CostSpec } from "@/lib/cost-engine";
+import type { CombatAbilityCode, CombatOutcomePredicate } from "@/types/combat-outcome";
+import type { DamageType } from "@/types/damage";
 // Type-only — the stable weapon/armor proficiency token brand (golden rule 7 +
 // 22): a class table references a proficiency KIND by id, never a display string.
 import type { ProficiencyToken } from "@/types/ids";
@@ -33,7 +35,7 @@ export interface BiText {
 }
 
 /** D&D ability score codes */
-export type AbilityCode = "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA";
+export type AbilityCode = CombatAbilityCode;
 
 /**
  * Compile-time exhaustiveness for a runtime tuple over a closed string union:
@@ -136,13 +138,17 @@ export type ReactionTrigger =
   | "creatureCastsSpell"
   | "creatureEntersReach"
   | "creatureHitsOther"
+  | "creatureSucceedsRollOrDealsDamage"
   // Barbarian World Tree "Branches of the Tree": a creature you can see starts
   // its turn within 30 ft of you while your Rage is active.
   | "creatureStartsTurnNear"
   | "enemyEndsTurnNear"
+  | "hitByAttack"
+  | "hitOrMagicMissileTarget"
   // Ranger Fey Wanderer "Beguiling Twist": you or a creature within 120 ft
   // SUCCEEDS on a save to avoid or end the Charmed or Frightened condition.
   | "savedVsCharmOrFear"
+  | "succeedDexSaveForHalf"
   | "targetAttacks"
   | "takeDamage";
 
@@ -152,9 +158,13 @@ export const ALL_REACTION_TRIGGERS = [
   "creatureCastsSpell",
   "creatureEntersReach",
   "creatureHitsOther",
+  "creatureSucceedsRollOrDealsDamage",
   "creatureStartsTurnNear",
   "enemyEndsTurnNear",
+  "hitByAttack",
+  "hitOrMagicMissileTarget",
   "savedVsCharmOrFear",
+  "succeedDexSaveForHalf",
   "targetAttacks",
   "takeDamage",
 ] as const satisfies ExhaustiveTuple<
@@ -164,9 +174,13 @@ export const ALL_REACTION_TRIGGERS = [
     "creatureCastsSpell",
     "creatureEntersReach",
     "creatureHitsOther",
+    "creatureSucceedsRollOrDealsDamage",
     "creatureStartsTurnNear",
     "enemyEndsTurnNear",
+    "hitByAttack",
+    "hitOrMagicMissileTarget",
     "savedVsCharmOrFear",
+    "succeedDexSaveForHalf",
     "targetAttacks",
     "takeDamage",
   ]
@@ -191,6 +205,78 @@ export type Recovery =
   | "per-turn"
   | "manual";
 
+/**
+ * The authored item-resource language — the typed catalogue dialect every
+ * `SrdMagicItemData.resources` entry is written in. Table-entered rolls are
+ * physical dice the player rolls (`entered-roll` / `entered-d20`); the app
+ * never fabricates a result. Recovery boundaries reuse the engine's exact
+ * trigger vocabulary so dawn/dusk never alias to a rest.
+ */
+export type { ResourceRecoveryTrigger } from "@/types/resource";
+import type { ResourceRecoveryTrigger } from "@/types/resource";
+
+/** One physical dice instruction the table resolves (e.g. `1d6 + 1`). */
+export interface ResourceEnteredRoll {
+  dice: number;
+  sides: number;
+  modifier?: number;
+}
+
+/** Display unit of one typed item resource; keys the i18n label pair. */
+export type ResourceUnit = "charges" | "uses" | "beads" | "rounds";
+
+export type ResourceCapacitySpec =
+  | { kind: "fixed"; amount: number }
+  | { kind: "entered-roll"; roll: ResourceEnteredRoll };
+
+export type ResourceInitialSpec =
+  | { kind: "full" }
+  | { kind: "empty" }
+  | { kind: "fixed"; amount: number }
+  | { kind: "entered-roll"; roll: ResourceEnteredRoll };
+
+export type ResourceRecoveryAmount =
+  | { kind: "full" }
+  | { kind: "fixed"; amount: number }
+  | { kind: "entered-roll"; roll: ResourceEnteredRoll };
+
+export interface ResourceRecoverySpec {
+  trigger: ResourceRecoveryTrigger;
+  amount: ResourceRecoveryAmount;
+}
+
+/** Structured consequence of a depletion band; never free-text prose. */
+export interface ResourceDepletionOutcome {
+  kind: "set-item-disposition";
+  disposition: "destroyed" | "nonmagical";
+}
+
+/** One inclusive d20 band; a valid rule's bands cover 1–20 without overlap. */
+export interface ResourceDepletionBand {
+  min: number;
+  max: number;
+  outcomes: ReadonlyArray<ResourceDepletionOutcome>;
+}
+
+/**
+ * Consequence of spending the last unit: either an entered-d20 table the
+ * player resolves physically, or a deterministic outcome that always fires.
+ */
+export type ResourceDepletionRule =
+  | { kind: "entered-d20"; bands: ReadonlyArray<ResourceDepletionBand> }
+  | { kind: "deterministic"; outcomes: ReadonlyArray<ResourceDepletionOutcome> };
+
+/** Typed, instance-owned mutable pool declared by one catalogue item. */
+export interface ResourceSpec {
+  kind: "counter";
+  id: string;
+  unit: ResourceUnit;
+  capacity: ResourceCapacitySpec;
+  initial: ResourceInitialSpec;
+  recoveries?: ReadonlyArray<ResourceRecoverySpec>;
+  onEmpty?: ResourceDepletionRule;
+}
+
 /** Level-gated override for a tracker — applied when character level ≥ `from` */
 export interface TrackerLevelOverride {
   /** Minimum character level for this override to apply */
@@ -203,6 +289,8 @@ export interface TrackerLevelOverride {
   die?: string;
   /** Override for short-rest partial recovery */
   shortRestRecovery?: number | string;
+  /** Override the active state whose fresh activation fully refreshes this tracker. */
+  refreshOnActivationOf?: string;
 }
 
 /**
@@ -221,8 +309,21 @@ export interface TrackerSpec {
   total: string;
   /** Primary recovery timing */
   recovery: Recovery;
+  /** False when the cadence is known but the recovered amount depends on a die,
+   * table clock, or another external ruling. Rest UI keeps the cadence label,
+   * while automatic recovery preserves the editable spent value. */
+  autoRecover?: false;
+  /** Fixed partial amount restored at the Long-Rest/dawn boundary. Omit for full
+   * recovery; combine with `autoRecover:false` when the amount is table-rolled. */
+  longRestRecovery?: number;
   /** Die type if applicable: "d6", "d8", "d10", "d12" */
   die?: string;
+  /**
+   * The table rolls and records one numeric result for each available use.
+   * The app stores and spends those entered results but never rolls them.
+   * Portent is the canonical consumer; the range keeps homebrew trackers valid.
+   */
+  recordedRolls?: { min: number; max: number };
   /** Whether this is a spendable pool resource (ki points, sorcery points, HP) */
   isPool?: boolean;
   /** Stable unit token, e.g. 'hp' | 'points' | 'uses' — localized at the render boundary. */
@@ -234,6 +335,13 @@ export interface TrackerSpec {
    * - number — recover exactly N uses (e.g. 1 for Psionic Energy dice)
    */
   shortRestRecovery?: number | string;
+  /**
+   * Fully refresh this tracker when the named active state starts through its
+   * ordinary action. The active-state key is locale-free and stable (for
+   * example `barbarian-rage`). This models resources scoped to one activation,
+   * such as Fanatical Focus's once-per-Rage use, without feature-specific code.
+   */
+  refreshOnActivationOf?: string;
   /**
    * Level-gated overrides applied in ascending `from` order.
    * The highest matching entry wins and is merged with the base tracker.
@@ -384,61 +492,6 @@ export interface OnCastRegainLowerSlotSpec extends OnCastTriggerBase {
 export interface OnCastWildMagicSurgeSpec extends OnCastTriggerBase {
   effect: "wild-magic-surge";
 }
-
-/** Damage types */
-export type DamageType =
-  | "acid"
-  | "bludgeoning"
-  | "cold"
-  | "fire"
-  | "force"
-  | "lightning"
-  | "necrotic"
-  | "piercing"
-  | "poison"
-  | "psychic"
-  | "radiant"
-  | "slashing"
-  | "thunder";
-
-/**
- * Canonical runtime list of the 13 damage types (the `DamageType` union made
- * enumerable) — the source of truth, exhaustive by construction. Feeds the
- * `srd.damage_<type>` and `srd.damageShort_<type>` i18n keys. Iterate this
- * instead of re-spelling the list (golden rule 6).
- */
-export const ALL_DAMAGE_TYPES = [
-  "acid",
-  "bludgeoning",
-  "cold",
-  "fire",
-  "force",
-  "lightning",
-  "necrotic",
-  "piercing",
-  "poison",
-  "psychic",
-  "radiant",
-  "slashing",
-  "thunder",
-] as const satisfies ExhaustiveTuple<
-  DamageType,
-  [
-    "acid",
-    "bludgeoning",
-    "cold",
-    "fire",
-    "force",
-    "lightning",
-    "necrotic",
-    "piercing",
-    "poison",
-    "psychic",
-    "radiant",
-    "slashing",
-    "thunder",
-  ]
->;
 
 /**
  * A damage SOURCE a creature can be resistant to — keyed to the *origin* of the
@@ -700,17 +753,69 @@ export type SpellRecurrence =
  * source-specific branches. */
 export type CombatResolutionGate = "attack" | "save" | "automatic";
 
+/** How an inflicted condition is owned after the initial resolution. Omit for
+ * consequences the table ends directly (Prone from Grease, Stunned until a
+ * successful repeat save, or geometry-bound area effects). */
+export type CombatConditionLifetime =
+  | { kind: "source" }
+  | { kind: "manual" }
+  | {
+      kind: "timed";
+      minutes: number;
+      maxRounds: number;
+      byCastLevel?: ReadonlyArray<{
+        minLevel: number;
+        minutes?: number;
+        maxRounds?: number;
+        indefinite?: true;
+      }>;
+    }
+  | {
+      kind: "turn-boundary";
+      phase: "turn-start" | "turn-end";
+      turns: number;
+      /** Whose future turn owns the boundary. Defaults to the effect's actor. */
+      anchor?: "actor" | "target";
+    };
+
 export interface CombatConditionApplication {
   options: ConditionId[];
   max?: number;
-  on: "hit" | "failed-save" | "automatic";
+  /** `passed-check` gates on the SAME action's {@link SrdActionDef.skillCheck}
+   *  succeeding (Hide: a passed DC 15 Stealth check grants Invisible). */
+  on: "hit" | "failed-save" | "automatic" | "passed-check";
+  /** Typed maximum lifetime for this exact condition occurrence. Early exits
+   * (repeat saves, damage, assistance, leaving an area) remain explicit table
+   * corrections because this companion cannot observe them. */
+  lifetime?: CombatConditionLifetime;
+  /** Per-condition overrides for spells such as Symbol whose mutually exclusive
+   * outcomes have different maximum lifetimes. */
+  lifetimes?: Partial<Record<ConditionId, CombatConditionLifetime>>;
 }
 
 export interface CombatTargeting {
-  affinity: "ally" | "enemy" | "any";
+  affinity: "ally" | "enemy" | "self" | "any";
+  /** The caster is not a legal target even when they match the affinity. */
+  excludeSelf?: boolean;
+  /** Only creatures of these authored types are legal targets. */
+  creatureTypes?: ReadonlyArray<CreatureType>;
   maxTargets?: number;
   maxTargetsPerUpcast?: number;
   sharedAmount?: boolean;
+}
+
+/** Authored target count for feature/homebrew actions. The runtime resolves the
+ * ability form to a concrete {@link CombatTargeting.maxTargets} before rendering. */
+export interface ActionTargeting extends Omit<CombatTargeting, "maxTargets"> {
+  maxTargets?: number | AbilityCode | "PB";
+}
+
+/** Conditions a feature/homebrew action can end, optionally unlocked by its
+ * owning-class level. */
+export interface ActionConditionRemoval {
+  options: ConditionId[];
+  max?: number;
+  fromLevel?: number;
 }
 
 /**
@@ -785,6 +890,19 @@ export interface SrdSpellData {
   targeting?: CombatTargeting;
   /** Healing semantics that are not an ordinary rolled amount. */
   healingMode?: "full" | "consumable";
+  /**
+   * The conjured consumable batch a `healingMode: "consumable"` spell creates
+   * (Goodberry: 10 berries, each healing {@link healDice} when eaten, potent
+   * for 24 hours). `itemId` names the closed conjured-item blueprint the
+   * mechanics compiler instantiates (`src/data/conjured-items.ts`); the batch
+   * expires after `lifetimeHours`. Set exactly when `healingMode` is
+   * `"consumable"`.
+   */
+  consumableItem?: {
+    itemId: string;
+    count: number;
+    lifetimeHours: number;
+  };
   /** One rolled/flat amount divided among the selected targets (Mass Heal). */
   healingPool?: number;
   /** One temporary-HP pool divided among selected targets (Power Word Fortify). */
@@ -793,6 +911,16 @@ export interface SrdSpellData {
    * The resolver applies `floor(net damage × fraction)` to the caster in the same
    * undoable commit. Vampiric Touch uses `0.5`. */
   selfHealingFromDamage?: { fraction: number };
+  /**
+   * A hand-authored deterministic-runtime program in the CANONICAL
+   * MechanicsProgram format, for the few spells whose semantics exceed the
+   * declarative fields (Fire Shield's retaliation, Contagion's stages). The
+   * transcriber conforms and serves it VERBATIM — the executable truth — and
+   * derives the honest clause classification from the program's own inputs
+   * and steps. Validated by `conformMechanicsProgram` at transcription time;
+   * an unconformable program is a corpus-guard failure.
+   */
+  mechanicsProgram?: Readonly<Record<string, unknown>>;
   /** School of magic */
   school: SpellSchool;
   /** Class IDs that have access to this spell */
@@ -868,6 +996,14 @@ export interface SrdSpellData {
    * count cantrip (which scales by character level via {@link damageDice}).
    */
   damageDicePerUpcast?: string;
+  /** Extra damage that is deterministic from the selected target's creature type
+   * (Divine Smite against Fiends/Undead). It is a separate typed component so
+   * resistance math and roll entry stay exact. */
+  bonusDamageAgainst?: {
+    creatureTypes: ReadonlyArray<CreatureType>;
+    dice: string;
+    damageType: DamageType;
+  };
   /**
    * A SECOND simultaneous damage instance with its OWN dice + type, for the few
    * spells whose two components have DIFFERENT dice the single
@@ -892,6 +1028,12 @@ export interface SrdSpellData {
   /** S12b — extra {@link instances} per spell-slot level above the spell's own
    *  (Magic Missile / Scorching Ray: 1). Ignored unless `instances` is set. */
   instancesPerUpcast?: number;
+  /** The instance count follows the 5/11/17 cantrip progression instead of
+   *  upcast (Eldritch Blast beams: 1 → 2 → 3 → 4 by CHARACTER level). The
+   *  per-instance dice stay fixed — the count is what scales. Only meaningful
+   *  with {@link instances} on a cantrip; never combine with
+   *  {@link instancesPerUpcast}. */
+  cantripInstances?: true;
   /** The spell can affect multiple creatures in one resolution. This is target
    * shape only; never infer its save consequence from this flag. Persistent
    * zones use {@link recurrence} instead. */
@@ -924,6 +1066,9 @@ export interface SrdSpellData {
    * source-neutral action vocabulary as class/species features and never spends the
    * spell slot again. */
   followUp?: SrdActionDef;
+  /** A successful save made by a recurring target ends the spell's target-bound
+   * occurrence and caster-side recurrence state. */
+  endsOnSuccessfulSave?: boolean;
   /**
    * Base healing dice (or flat amount) at the spell's own level, e.g. "2d8" /
    * "2d4" / "70". Drives a verdigris "NdM Heal" verdict on the spell card and the
@@ -1140,6 +1285,8 @@ export type DiceCount = "PB" | AbilityCode;
  *    word. The class-level term is the multiclass-correct owning-class level.
  */
 export interface ActionHeal {
+  /** Fixed dice formula or a class-table sentinel such as
+   * `classSpecific:martialArtsDie`. */
   dice?: string;
   /** Variable die COUNT — PB or an ability mod (Healing Hands: "PB d4s"). The
    *  resolver multiplies it out to a concrete `dice` string. Pairs with `dieFace`. */
@@ -1149,9 +1296,69 @@ export interface ActionHeal {
   plus?: HealTerm;
 }
 
+/** A reaction that reduces one observed incoming damage instance. The table
+ * supplies the rolled die and incoming amount; the engine owns every fixed
+ * term, eligible damage type and the resulting HP mutation. */
+export interface ActionDamageReduction {
+  dice: string;
+  addAbility?: AbilityCode;
+  /** Add the owning class's level (Deflect Attacks). */
+  addLevel?: boolean;
+  damageTypesByLevel: Readonly<Record<number, ReadonlyArray<DamageType>>>;
+}
+
+/** Stable semantic category used by restricted/alternate combat-economy actions. */
+export type ActionEconomyCategory = "attack" | "dash" | "disengage" | "hide" | "utilize";
+
 export interface SrdActionDef {
+  /** Optional stable suffix when one feature declares several actions of the same type. */
+  id?: string;
+  /**
+   * A hand-authored deterministic-runtime program in the CANONICAL
+   * MechanicsProgram format — the action-side twin of the spell channel — for
+   * the few feature/feat actions whose semantics exceed the declarative
+   * fields (Uncanny Dodge's halving reaction, Interpose Shield's negation).
+   * The transcriber conforms and serves it VERBATIM (the executable truth)
+   * and derives the honest clause classification from the program's own
+   * inputs and steps. Validated by `conformMechanicsProgram` at transcription
+   * time; an unconformable program is a corpus-guard failure.
+   */
+  mechanicsProgram?: Readonly<Record<string, unknown>>;
   /** Action economy cost */
   type: ActionType;
+  /** Rules identity independent of the card id (Cunning Action Dash, Haste, etc.). */
+  economyCategory?: ActionEconomyCategory;
+  /** Flat skill check resolved by this action (Hide: DC 15 Dexterity [Stealth]). */
+  skillCheck?: { dc: number; skill: string };
+  /** This use grants Advantage on the actor's next attack roll this turn. */
+  grantsNextAttackAdvantage?: true;
+  /** This use sets the actor's Speed to 0 for the rest of the current turn. */
+  locksMovement?: true;
+  /** Another stable action id that must already have been committed this turn.
+   * Used for follow-ups/replacements such as Hand of Healing inside Flurry of
+   * Blows; the turn receipt survives route changes. */
+  requiresActionThisTurn?: string;
+  /** A reviewed, turn-scoped outcome fact that must already exist. The predicate
+   * matches structured per-instance/per-target receipts, never a coarse success bit. */
+  requiresOutcomeThisTurn?: CombatOutcomePredicate;
+  /** A previously committed action in this rules category must exist this turn.
+   * Unlike an id prerequisite, this accepts any weapon/unarmed/cantrip Attack. */
+  requiresActionCategoryThisTurn?: ActionEconomyCategory;
+  /** Hard per-turn cap for an otherwise-unbounded Free Action. */
+  maxUsesPerTurn?: number;
+  /** This action maintains an already-active state for the current round. It is
+   * emitted only while that state is active and never spends the source's use
+   * tracker. A Bonus Action records the generic `bonus-extend` event consumed by
+   * maintained durations such as Rage. */
+  maintainsActiveKey?: string;
+  /** Resolve this feature use through the same attack profile as a normal attack
+   * row. The resolver owns target allocation and entered hit/damage facts; the
+   * feature only declares which canonical attack is repeated and how often. */
+  attackSequence?: {
+    attackId: "unarmed-strike";
+    instances: number;
+    instancesByLevel?: Readonly<Record<number, number>>;
+  };
   /** Use the caster's spell attack modifier for this granted action. */
   attackType?: "melee" | "ranged";
   /**
@@ -1164,6 +1371,7 @@ export interface SrdActionDef {
    * non-reaction actions.
    */
   trigger?: ReactionTrigger;
+  damageReduction?: ActionDamageReduction;
   /**
    * Declarative heal amount surfaced as the action's heal chip (Second Wind:
    * `{ dice: "1d10", plus: { kind: "class-level", classId: "fighter" } }`). When
@@ -1172,6 +1380,22 @@ export interface SrdActionDef {
    * Guerriero" chip. Omitted for non-healing actions.
    */
   heal?: ActionHeal;
+  /**
+   * Restore another tracked resource as part of this action's atomic commit.
+   * `upTo` is the minimum remaining amount; `"full"` restores the pool.
+   */
+  trackerTopUp?: { trackerId: string; upTo: number | "full" };
+  /** Grant a held die to the selected creature. The die may use a class-table
+   * sentinel such as `classSpecific:bardicInspirationDie`. */
+  grantDie?: { kind: "bardic-inspiration"; die: string };
+  /** Give Heroic Inspiration to each reviewed target. It never stacks. */
+  grantHeroicInspiration?: true;
+  /** Set a selected creature at 0 HP to Stable without restoring HP. The target
+   * remains Unconscious; only the death-save state changes. */
+  stabilize?: true;
+  /** A variable pool whose spend produces healing.
+   * Its tracker owns cost, unit, die, and remaining amount. */
+  poolSpendEffect?: "healing";
   /**
    * Number of tracker uses consumed when this action fires.
    * 1 is the implicit default. Set > 1 for abilities that cost multiple
@@ -1233,8 +1457,16 @@ export interface SrdActionDef {
   saveDcAbility?: AbilityCode;
   /** Structured target/rider facts consumed by the same resolver as spells. */
   conditionApplication?: CombatConditionApplication;
-  targeting?: CombatTargeting;
+  conditionRemoval?: ActionConditionRemoval;
+  targeting?: ActionTargeting;
   area?: boolean;
+  /** Bind one selected creature to a caster-owned target identity for the effect's
+   * lifetime (Hunter's Mark, Hex, Vow of Enmity). The table still chooses the
+   * creature; the encounter ledger makes that identity exact and undoable. */
+  targetMark?: {
+    scope: "marked" | "cursed" | "vowed";
+    maxRounds?: number;
+  };
   /**
    * S11 — the DECLARATIVE save-based ATTACK an action deals (Dragonborn Breath
    * Weapon 2d10 Fire on a DEX save, Cleric Divine Spark 1d8 Necrotic/Radiant on a
@@ -1283,8 +1515,9 @@ export interface SrdActionDef {
    * `fromLevel` entry surfaces only once the action's OWNING-class level reaches it
    * (the SAME `scalingLevel` the tracker uses), so a low-level Paladin sees the
    * base Poisoned cure alone. The engine resolves it onto
-   * {@link ActionSummary.cureOptions}; the pool is never auto-debited
-   * (override-first). Omitted for actions with no cure clause.
+   * {@link ActionSummary.cureOptions}; the shared combat resolver combines chosen
+   * cures and healing into one exact, live-validated pool debit. Omitted for
+   * actions with no cure clause.
    */
   cureConditions?: ReadonlyArray<ActionCureCondition>;
   /**
@@ -1297,10 +1530,10 @@ export interface SrdActionDef {
    * shape {@link ActionCheckBonus} uses for a rolled check bonus. The die is
    * ROLL-ENTRY (the app never rolls); the engine resolves the `die` sentinel at the
    * action's OWNING-class level (Monk d8 at L10 → "2d8") onto
-   * {@link ActionSummary.tempHpRoll} as a display-only formula, gated behind
-   * `fromLevel` on that same level so a low-level Monk never sees it. Override-first
-   * — never auto-applied (D&D temp HP don't stack; the player enters the higher
-   * pool). Omitted for actions with no rolled temp-HP rider.
+   * {@link ActionSummary.tempHpRoll}, gated behind `fromLevel` on that same level
+   * so a low-level Monk never sees it. The shared resolver applies the entered
+   * result with max-wins Temporary-HP semantics. Omitted for actions with no
+   * rolled temp-HP rider.
    */
   tempHpRoll?: ActionTempHpRoll;
 }
@@ -1310,7 +1543,7 @@ export interface SrdActionDef {
  * (Monk Heightened Focus → Patient Defense: two rolls of the Martial Arts die).
  * Pure data; the engine resolves `die` at the owning-class level and emits the
  * concrete formula onto {@link ActionSummary.tempHpRoll}. Roll-entry (golden rule
- * 21 — the app never rolls); the temp HP is never auto-applied (override-first).
+ * 21 — the app never rolls); the shared resolver applies the reviewed result.
  */
 export interface ActionTempHpRoll {
   /** Number of die rolls added as Temporary HP (Heightened Focus: 2). */
@@ -1321,6 +1554,10 @@ export interface ActionTempHpRoll {
    * (Heightened Focus: `"classSpecific:martialArtsDie"` → the scaling Monk die).
    */
   die: string;
+  /** Deterministic additive term after the entered roll. */
+  plus?: HealTerm;
+  /** Multiply the entered roll before adding `plus` (Mantle of Inspiration: 2). */
+  multiplier?: number;
   /**
    * Owning-class level at which this rider unlocks (Heightened Focus: 10). Omit
    * for an always-available rider.
@@ -1401,6 +1638,9 @@ export interface ActionAttack {
    * `multiDamageTypeFlavor: "choice"`. Mutually exclusive with `damageType`.
    */
   damageTypeChoices?: ReadonlyArray<DamageType>;
+  /** Level-scaled variant of `damageTypeChoices` for a rule whose eligible
+   * triggering types expand later (Deflect Energy). Highest threshold wins. */
+  damageTypeChoicesByLevel?: Readonly<Record<number, ReadonlyArray<DamageType>>>;
   /**
    * Derive the damage type from the chosen option of a `choice-grant-bundle` on
    * the SAME source — the `bundleKey` (Breath Weapon: `"dragonborn-ancestry"`).
@@ -1791,7 +2031,7 @@ export type CreatureType =
   | "undead";
 
 /** Runtime list — source of truth for the `srd.creatureType_<id>` i18n keys,
- *  exhaustive by construction (like {@link ALL_DAMAGE_TYPES}). */
+ *  exhaustive by construction. */
 export const ALL_CREATURE_TYPES = [
   "aberration",
   "beast",
@@ -2623,6 +2863,13 @@ export interface SrdEquipmentData {
   strengthReq?: number;
   /** Whether this item is consumed on use (potion, acid, etc.) */
   isConsumable?: boolean;
+  /** Optional deterministic actions and use pool owned by the item itself.
+   * Equipment uses the same tracker/action grammar as features, so an item can
+   * spend charges and affect a target without an id-specific runtime branch. */
+  mechanics?: {
+    tracker?: TrackerSpec;
+    actions?: ReadonlyArray<SrdActionDef>;
+  };
   /**
    * Healing potion roll (e.g. "2d4+2"). Structured here so EVERY reference to the
    * item renders the same heal verdict — display is derived from SRD data, never
@@ -2722,6 +2969,9 @@ export interface SrdMagicItemData {
   properties?: string[];
   /** A4 — Declarative effects this item grants when equipped (AC bonus, etc.). */
   grants?: ReadonlyArray<import("@/lib/grants").Grant>;
+  /** Typed, instance-owned mutable pools. Prose and grants may consume a
+   * resource by id, but never redeclare its capacity or recovery. */
+  resources?: ReadonlyArray<ResourceSpec>;
   /**
    * S9 — a CONSUMED buff potion's timed duration, in COMBAT ROUNDS (1 round =
    * 6 seconds, so 1 minute = 10, 1 hour = 600). When set, drinking the potion

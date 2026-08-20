@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/stores/characterStore";
 import { parseMagicItemAcBonus, parseMagicItemCharges } from "@/lib/magic-item-utils";
 import { addEquipmentRef } from "@/lib/equipment-add";
+import { createMagicItemEquipmentRefs } from "@/lib/magic-item-equipment";
 import { magicItemSealIcon } from "@/components/shared/item-icons";
 import { ItemArtPlate } from "@/components/shared/ItemArtPlate";
 import { localizeSrd } from "@/i18n/resolver";
@@ -22,7 +23,6 @@ import { Icon } from "@/components/ui/icon";
 import { FilterChip } from "@/components/sheet/picker-parts";
 import { ALL_MAGIC_ITEM_RARITIES, ALL_MAGIC_ITEM_TYPES } from "@/data/types";
 import type { SrdMagicItemData, MagicItemRarity, MagicItemType } from "@/data/types";
-import type { SrdEquipmentRef } from "@/types/character";
 import { defineFilter, type CompendiumPickerSpec } from "../types";
 import { CmpSeal } from "../CmpSeal";
 import { descriptionSearch, nameCorpus } from "./shared";
@@ -199,13 +199,22 @@ export const magicItemSpec: CompendiumPickerSpec<SrdMagicItemData> = {
   detail: (item, { t, locale }) => {
     const artUrl = itemArtUrl("magic", item.id);
     // P9 — the typed-document facts a reader wants pinned above the prose (the
-    // P2/P7 anatomy): the parsed engine facts (charges pool, AC bonus) as meta
+    // P2/P7 anatomy): structured engine facts (typed resource pool, AC bonus) as meta
     // rows. Rarity/type/attunement already read at a glance in the eyebrow.
-    const charges = parseMagicItemCharges(item);
     const acBonus = parseMagicItemAcBonus(item);
     const meta: { label: string; value: string }[] = [];
-    if (charges !== undefined)
-      meta.push({ label: t("equipment.charges"), value: String(charges) });
+    const charges = item.resources?.find((resource) => resource.unit === "charges");
+    if (charges?.capacity.kind === "fixed") {
+      meta.push({
+        label: t("equipment.charges"),
+        value: String(charges.capacity.amount),
+      });
+    } else if (!item.resources?.length) {
+      const legacyCharges = parseMagicItemCharges(item);
+      if (legacyCharges !== undefined) {
+        meta.push({ label: t("equipment.charges"), value: String(legacyCharges) });
+      }
+    }
     if (acBonus !== undefined)
       meta.push({
         label: t("character.armorClassShort"),
@@ -241,7 +250,7 @@ export const magicItemSpec: CompendiumPickerSpec<SrdMagicItemData> = {
       // D3 — the raw `properties` tags ("+1 AC", "charges: 7", "duration: 1 hour", …)
       // are free-form ENGLISH (105 distinct tokens, no IT) and leaked untranslated into
       // the IT detail; they're also redundant with the fully-bilingual description that
-      // already carries the same mechanical facts. Only the PARSED engine facts above
+      // already carries the same mechanical facts. Only structured engine facts above
       // surface as meta rows; re-add the rest only as a bilingual `BiText[]` if needed.
     };
   },
@@ -250,14 +259,6 @@ export const magicItemSpec: CompendiumPickerSpec<SrdMagicItemData> = {
 
   onAdd: (item, { character }, quantity) => {
     if (!character) return;
-    const acBonus = parseMagicItemAcBonus(item);
-    // A `free-cast-spell` charge item (Wand of Web) keeps its ONE charge pool
-    // in the session tracker keyed by the item id — the counter the cast flow
-    // debits and the Inventory row reads (golden rule 6). Seeding `ref.charges`
-    // too would create a second copy that drifts, so it stays for NON-cast
-    // charged items only.
-    const hasTrackerPool = item.grants?.some((g) => g.type === "free-cast-spell");
-    const maxCharges = hasTrackerPool ? undefined : parseMagicItemCharges(item);
     // D6/D8/D9 + i18n — store magic items as an SRD REFERENCE (srdId), NOT a frozen
     // CustomEquipment copy. The whole point of references: the item resolves against
     // the bundled SRD at render, so its name + description are bilingual (translate
@@ -265,30 +266,16 @@ export const magicItemSpec: CompendiumPickerSpec<SrdMagicItemData> = {
     // item (not "custom"), AND — critically — its declarative grants (resistances,
     // senses, free-casts, AC) flow through `resolveGrantSourcesForEquipment`, which
     // SKIPS `custom` items. Only items the player explicitly homebrews stay custom.
-    const newItem: SrdEquipmentRef = {
-      srdId: item.id,
-      quantity: quantity ?? 1,
-      equipped: item.type === "armor" || item.type === "ring",
-      ...(acBonus !== undefined ? { acBonus } : {}),
-      ...(maxCharges !== undefined
-        ? {
-            charges: {
-              current: maxCharges,
-              max: maxCharges,
-              recovery: "long-rest" as const,
-            },
-          }
-        : {}),
-      ...(item.attunement ? { attuned: false } : {}),
-      ...(item.type === "potion" ? { isConsumable: true, isPotion: true } : {}),
-    };
+    const newItems = createMagicItemEquipmentRefs(item, quantity);
     useCharacterStore.getState().setCharacter({
       ...character,
       character: {
         ...character.character,
-        // Stack onto an identical entry (a charged/attuned item is a distinct
-        // instance and won't merge; a plain potion stacks by quantity).
-        equipment: addEquipmentRef(character.character.equipment, newItem),
+        // Resource owners are distinct physical refs; ordinary items still stack.
+        equipment: newItems.reduce(
+          (equipment, newItem) => addEquipmentRef(equipment, newItem),
+          character.character.equipment
+        ),
       },
     });
   },

@@ -25,6 +25,7 @@ import {
   actionRiderConditions,
   combatDamageParts,
   resolveCombatDamage,
+  resolveCombatDamagePackets,
   shouldResolveSoloAction,
 } from "@/lib/combat-resolution";
 import type { DamageDefenses } from "@/lib/damage-intake";
@@ -107,6 +108,31 @@ describe("combatResolutionSpec — target shape and outcome", () => {
     });
   });
 
+  it("preserves a damage rider's per-hit type choice as a resolvable component", () => {
+    const parts = combatDamageParts(
+      makeAction("weapon", {
+        damage: "1d12+3",
+        damageType: "slashing",
+        extraDamage: [
+          {
+            dice: "1d6+1",
+            damageType: "radiant",
+            damageTypeChoices: ["radiant", "necrotic"],
+            oncePerTurn: true,
+            sourceName: "Divine Fury",
+          },
+        ],
+      })
+    );
+    expect(parts[1]).toMatchObject({
+      id: "extra-0",
+      formula: "1d6+1",
+      damageTypes: ["radiant", "necrotic"],
+      typeMode: "choice",
+      sourceName: "Divine Fury",
+    });
+  });
+
   it("instances of 1 (or 0) is treated as single-target (never < 1)", () => {
     expect(combatResolutionSpec(makeAction("spell", { instances: 1 })).targetCap).toBe(1);
   });
@@ -131,6 +157,136 @@ describe("combatResolutionSpec — target shape and outcome", () => {
       hasHealing: true,
       sharedAmount: true,
     });
+  });
+
+  it("preserves an explicit any-creature target affinity", () => {
+    expect(
+      combatResolutionSpec(
+        makeAction("spell", {
+          targeting: { affinity: "any", maxTargets: 1 },
+          conditionApplication: { options: ["invisible"], on: "automatic" },
+        })
+      ).targetAffinity
+    ).toBe("any");
+  });
+
+  it("preserves authored legal creature types in the resolver plan", () => {
+    expect(
+      combatResolutionSpec(
+        makeAction("spell", {
+          targeting: {
+            affinity: "ally",
+            excludeSelf: true,
+            maxTargets: 1,
+            creatureTypes: ["beast"],
+          },
+          conditionApplication: { options: ["charmed"], on: "automatic" },
+        })
+      )
+    ).toMatchObject({
+      targetAffinity: "ally",
+      excludeSelf: true,
+      targetCreatureTypes: ["beast"],
+    });
+  });
+
+  it("resolves a held-die grant in encounters but keeps another-creature grants manual in solo", () => {
+    const inspiration = makeAction("feature", {
+      grantedDie: { kind: "bardic-inspiration", die: "d6" },
+      targeting: { affinity: "ally", maxTargets: 1, excludeSelf: true },
+    });
+    expect(combatResolutionSpec(inspiration)).toMatchObject({
+      hasGrantedDie: true,
+      targetAffinity: "ally",
+      excludeSelf: true,
+      targetCap: 1,
+    });
+    expect(shouldResolveCombatAction(inspiration)).toBe(true);
+    expect(shouldResolveSoloAction(inspiration)).toBe(false);
+  });
+
+  it("resolves a non-stacking Heroic Inspiration grant through the same ally target seam", () => {
+    const inspiration = makeAction("feature", {
+      grantsHeroicInspiration: true,
+      targeting: { affinity: "ally", maxTargets: 2, excludeSelf: true },
+    });
+    expect(combatResolutionSpec(inspiration)).toMatchObject({
+      hasHeroicInspiration: true,
+      targetAffinity: "ally",
+      excludeSelf: true,
+      targetCap: 2,
+    });
+    expect(shouldResolveCombatAction(inspiration)).toBe(true);
+    expect(shouldResolveSoloAction(inspiration)).toBe(false);
+  });
+
+  it("routes stabilization through the shared ally resolver in solo and encounters", () => {
+    const stabilize = makeAction("feature", {
+      stabilize: true,
+      targeting: { affinity: "ally", maxTargets: 1 },
+    });
+    expect(combatResolutionSpec(stabilize)).toMatchObject({
+      stabilizes: true,
+      targetAffinity: "ally",
+      targetCap: 1,
+    });
+    expect(shouldResolveCombatAction(stabilize)).toBe(true);
+    expect(shouldResolveSoloAction(stabilize)).toBe(true);
+  });
+
+  it("routes observed incoming damage through the self resolver", () => {
+    const deflect = makeAction("feature", {
+      damageReduction: {
+        dice: "1d10",
+        bonus: 6,
+        damageTypes: ["bludgeoning", "piercing", "slashing"],
+      },
+      targeting: { affinity: "self", maxTargets: 1 },
+    });
+    expect(combatResolutionSpec(deflect)).toMatchObject({
+      kind: "automatic",
+      targetAffinity: "self",
+      targetCap: 1,
+      hasDamage: true,
+      damageReduction: { dice: "1d10", bonus: 6 },
+    });
+    expect(shouldResolveCombatAction(deflect)).toBe(true);
+    expect(shouldResolveSoloAction(deflect)).toBe(true);
+  });
+
+  it("plans a target-bound standing grant by catalogue reference", () => {
+    const action: ResolvedAction = {
+      ...makeAction("spell", {}),
+      id: "spell-warding-bond",
+      spellId: "warding-bond",
+      slotLevel: 3,
+      concentration: true,
+      standingEffect: {
+        sourceId: "warding-bond",
+        activeKey: "spell-warding-bond",
+        targetAffinity: "ally",
+        excludeSelf: true,
+        maxRounds: 10,
+      },
+    };
+
+    expect(combatResolutionSpec(action)).toMatchObject({
+      targetAffinity: "ally",
+      excludeSelf: true,
+      targetCap: 1,
+      standingEffect: {
+        source: {
+          kind: "spell",
+          id: "warding-bond",
+          actionId: "spell-warding-bond",
+          castLevel: 3,
+        },
+        payload: { kind: "grant-group", activeKey: "spell-warding-bond" },
+        lifetime: { concentration: true, maxRounds: 10 },
+      },
+    });
+    expect(shouldResolveCombatAction(action)).toBe(true);
+    expect(shouldResolveSoloAction(action)).toBe(false);
   });
 
   it("models a distributed healing pool independently from target count", () => {
@@ -299,6 +455,12 @@ describe("shouldResolveCombatAction — which commits open the resolver", () => 
         makeAction("feature", { healApply: { dice: "1d10", bonus: 5 } })
       )
     ).toBe(true);
+    const selfHeal = makeAction("feature", {
+      healApply: { dice: "1d6", bonus: 3 },
+      targeting: { affinity: "self", maxTargets: 1 },
+    });
+    expect(combatResolutionSpec(selfHeal).targetAffinity).toBe("self");
+    expect(shouldResolveSoloAction(selfHeal)).toBe(true);
     expect(
       shouldResolveSoloAction(
         makeAction("spell", { tempHpApply: { dice: "2d4", bonus: 4 } })
@@ -320,11 +482,13 @@ describe("shouldResolveCombatAction — which commits open the resolver", () => 
 
 describe("resolveCombatDamage — typed deterministic consequences", () => {
   const defenses: DamageDefenses = {
+    allDamageResistance: false,
     resistances: new Set(["fire"]),
     immunities: new Set(["cold"]),
     vulnerabilities: new Set(["radiant"]),
     sourceResistances: new Set(),
     flatReductions: [],
+    saveDamageRules: [],
   };
 
   it("keeps simultaneous damage components separate for their own defenses", () => {
@@ -362,6 +526,46 @@ describe("resolveCombatDamage — typed deterministic consequences", () => {
       defenses
     );
     expect(resolved).toMatchObject({ rawTotal: 12, netTotal: 6 });
+  });
+
+  it("applies an active Evasion rule only to DEX save-for-half damage", () => {
+    const action = makeAction("spell", {
+      damage: "8d6",
+      damageType: "fire",
+      saveAbility: "DEX",
+      damageOnSave: "half",
+    });
+    const [part] = combatDamageParts(action);
+    if (!part) throw new Error("missing damage fixture part");
+    const evasionDefenses: DamageDefenses = {
+      ...defenses,
+      resistances: new Set(),
+      saveDamageRules: [
+        {
+          id: "rogue-evasion",
+          ability: "DEX",
+          requiresDamageOnSuccess: "half",
+          onSuccess: "none",
+          onFailure: "half",
+        },
+      ],
+    };
+    expect(
+      resolveCombatDamage(
+        [{ spec: part, amount: 25, damageType: "fire" }],
+        { attack: "hit", save: "saved" },
+        "half",
+        evasionDefenses
+      ).netTotal
+    ).toBe(0);
+    expect(
+      resolveCombatDamage(
+        [{ spec: part, amount: 25, damageType: "fire" }],
+        { attack: "hit", save: "failed-save" },
+        "half",
+        evasionDefenses
+      ).netTotal
+    ).toBe(12);
   });
 
   it("applies Graze only on a miss and never asks the table for a die result", () => {
@@ -424,5 +628,32 @@ describe("resolveCombatDamage — typed deterministic consequences", () => {
       defenses
     );
     expect(resolved).toMatchObject({ rawTotal: 6, netTotal: 2 });
+  });
+
+  it("preserves ordered hit packets and binds a once-per-use rider to the first", () => {
+    const action = makeAction("spell", {
+      attackBonus: 7,
+      damage: "1d6",
+      damageType: "fire",
+      secondaryDamage: { dice: "1d8", damageType: "radiant" },
+    });
+    const [primary, rider] = combatDamageParts(action);
+    if (!primary || !rider) throw new Error("missing packet fixture parts");
+
+    const packets = resolveCombatDamagePackets(
+      [
+        { spec: primary, amount: 3, damageType: "fire", instance: 0 },
+        { spec: primary, amount: 5, damageType: "fire", instance: 1 },
+        { spec: rider, amount: 4, damageType: "radiant" },
+      ],
+      { attack: "hit", save: "failed-save" },
+      "none",
+      defenses
+    );
+
+    expect(packets.map(({ rawTotal, netTotal }) => ({ rawTotal, netTotal }))).toEqual([
+      { rawTotal: 7, netTotal: 9 },
+      { rawTotal: 5, netTotal: 2 },
+    ]);
   });
 });

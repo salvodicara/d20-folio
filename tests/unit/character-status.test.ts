@@ -7,6 +7,8 @@ import {
   diedOfExhaustion,
   stabilisedInPlay,
   isCharacterDead,
+  isCharacterAlive,
+  canCharacterRest,
 } from "@/lib/character-status";
 
 describe("character-status — the single source of truth for 'is this hero fallen?'", () => {
@@ -56,5 +58,37 @@ describe("character-status — the single source of truth for 'is this hero fall
     expect(isCharacterDead("active", { deathFail: 0, exhaustion: 0 })).toBe(false);
     expect(isCharacterDead("retired", { deathFail: 1, exhaustion: 0 })).toBe(false);
     expect(isCharacterDead("archived", { deathFail: 2, exhaustion: 0 })).toBe(false);
+  });
+
+  it.each([
+    ["roster death", "dead" as const, 0, 0],
+    ["three failed saves", "active" as const, 3, 0],
+    ["Exhaustion 6", "active" as const, 0, 6],
+  ])("isCharacterAlive rejects %s", (_cause, status, deathFail, exhaustion) => {
+    expect(isCharacterAlive(status, { deathFail, exhaustion })).toBe(false);
+  });
+
+  it("canCharacterRest requires both a living character and at least 1 HP", () => {
+    expect(
+      canCharacterRest("active", {
+        hp: { current: 1, temp: 0 },
+        deathFail: 0,
+        exhaustion: 0,
+      })
+    ).toBe(true);
+    expect(
+      canCharacterRest("active", {
+        hp: { current: 0, temp: 0 },
+        deathFail: 0,
+        exhaustion: 0,
+      })
+    ).toBe(false);
+    expect(
+      canCharacterRest("active", {
+        hp: { current: 10, temp: 0 },
+        deathFail: 3,
+        exhaustion: 0,
+      })
+    ).toBe(false);
   });
 });

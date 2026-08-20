@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { timedConditionLifetime, timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
   {
@@ -42,6 +43,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "CHA",
+    targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {
@@ -127,19 +129,20 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    targeting: { affinity: "ally", maxTargets: 1 },
     // 2024 (spell:death-ward): "The first time the target would drop to 0 Hit
     // Points before the spell ends, the target instead drops to 1 Hit Point, and
     // the spell ends." Modeled as a `while-active` toggle (auto-lit on cast via S1)
-    // whose stable key `spell-death-ward` the store's `applyDamage` reads: when the
-    // ward is lit and damage would cross to 0, it clamps HP to 1 and ends the ward
-    // (deterministic RAW, not a roll — golden rule 21; undoable at the HP control).
-    // The inner `defense-note` both registers the toggle chip and surfaces the RAW
-    // as a reminder line. The instant-death-effect negation clause stays narrative.
+    // whose stable key `spell-death-ward` projects a one-shot remote-safe HP floor.
+    // The damage transaction consumes the exact effect when it clamps HP to 1.
+    // The instant-death-effect negation clause stays narrative.
     grants: [
       {
         type: "while-active",
         activeKey: "spell-death-ward",
-        grants: [{ type: "defense-note" }],
+        duration: timedSpellDuration(480),
+        recipient: "selected",
+        grants: [{ type: "zero-hp-floor", hitPoints: 1 }],
       },
     ],
     source: "SRD",
@@ -184,7 +187,19 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     saveAbility: "WIS",
-    conditionApplication: { options: ["charmed"], on: "failed-save" },
+    conditionApplication: {
+      options: ["charmed"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-dominate-beast",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -201,6 +216,153 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
   },
   {
     id: "fire-shield",
+    // The canonical-runtime authored program:
+    // the cast picks warm or chill and lights the matching 10-minute shield;
+    // each melee hit within 5 ft is a possessor-declared retaliation pulse
+    // dealing 2d8 of the lit shield's type to the attacker. The half-damage
+    // resistance rider stays with the derived grant layer.
+    mechanicsProgram: {
+      id: "spell:fire-shield",
+      phases: [
+        {
+          inputs: [
+            {
+              inputId: "slot",
+              kind: "resource",
+              term: {
+                amount: { kind: "fixed", value: 1 },
+                selector: {
+                  kind: "spell-slot",
+                  level: { kind: "minimum", value: 4 },
+                  owner: "caster",
+                  pool: "either",
+                },
+              },
+              when: null,
+            },
+            {
+              inputId: "shield-form",
+              kind: "choice",
+              options: ["warm", "chill"],
+              when: null,
+            },
+          ],
+          phaseId: "resolve",
+          steps: [
+            {
+              fact: { key: "fire-shield-warm", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "duration", seconds: { kind: "fixed", value: 600 } },
+              operation: "start",
+              stepId: "warm-shield",
+              target: { kind: "role", role: "caster" },
+              when: { choiceId: "warm", inputId: "shield-form", kind: "answer-choice" },
+            },
+            {
+              fact: { key: "fire-shield-chill", kind: "active-key" },
+              kind: "standing",
+              lifetime: { kind: "duration", seconds: { kind: "fixed", value: 600 } },
+              operation: "start",
+              stepId: "chill-shield",
+              target: { kind: "role", role: "caster" },
+              when: { choiceId: "chill", inputId: "shield-form", kind: "answer-choice" },
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "pulse-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 1 },
+              minimum: { kind: "fixed", value: 1 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              acceptancePolicy: [],
+              expansion: { binding: "caster", kind: "single" },
+              formula: {
+                terms: [
+                  {
+                    count: { kind: "fixed", value: 2 },
+                    kind: "dice",
+                    operation: "add",
+                    sides: 8,
+                    termId: "retaliation-die",
+                  },
+                ],
+              },
+              inputId: "retaliation-roll",
+              kind: "dice",
+              payments: [],
+              replacementPolicy: [],
+              when: null,
+            },
+          ],
+          phaseId: "retaliate",
+          steps: [
+            {
+              delivery: "automatic",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "retaliation-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "fire",
+                  partId: "warm-retaliation",
+                },
+              ],
+              stepId: "warm-retaliation",
+              target: { inputId: "pulse-targets", kind: "input" },
+              traits: ["spell"],
+              when: {
+                fact: { key: "fire-shield-warm", kind: "active-key" },
+                kind: "standing-present",
+                present: true,
+                quantifier: "any",
+                target: { kind: "role", role: "caster" },
+              },
+            },
+            {
+              delivery: "automatic",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "retaliation-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "cold",
+                  partId: "chill-retaliation",
+                },
+              ],
+              stepId: "chill-retaliation",
+              target: { inputId: "pulse-targets", kind: "input" },
+              traits: ["spell"],
+              when: {
+                fact: { key: "fire-shield-chill", kind: "active-key" },
+                kind: "standing-present",
+                present: true,
+                quantifier: "any",
+                target: { kind: "role", role: "caster" },
+              },
+            },
+          ],
+          trigger: { eventId: "retaliation", kind: "root-pulse" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    },
     level: 4,
     school: "evocation",
     classes: ["druid", "sorcerer", "wizard"],
@@ -214,12 +376,14 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     concentration: false,
     damageType: "fire",
     damageDice: "2d8",
+    resolveOnCast: false,
     grants: [
       // PROSE-SWEPT 2026-06-10 — warm shield (resist Cold) or chill shield
-      // (resist Fire), chosen at cast; the 2d8 retaliation stays descriptive.
+      // (resist Fire), chosen at cast.
       {
         type: "while-active",
         activeKey: "spell-fire-shield",
+        duration: timedSpellDuration(10),
         grants: [
           {
             type: "choice-grant-bundle",
@@ -250,6 +414,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — magic can't Paralyze/Restrain the target and
       // it gains a Swim Speed equal to its Speed (the from-magic-only caveat
@@ -257,6 +422,8 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-freedom-of-movement",
+        duration: timedSpellDuration(60),
+        recipient: "selected",
         grants: [
           { type: "condition-immunity", condition: "paralyzed" },
           { type: "condition-immunity", condition: "restrained" },
@@ -275,8 +442,20 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
-    conditionApplication: { options: ["invisible"], on: "automatic" },
+    conditionApplication: {
+      options: ["invisible"],
+      on: "automatic",
+      lifetime: { kind: "source" },
+    },
     targeting: { affinity: "ally", maxTargets: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-greater-invisibility",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -367,6 +546,359 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
   },
   {
     id: "phantasmal-killer",
+    // The canonical-runtime authored program: the
+    // cast forces one WIS save against 4d10 psychic (+1d10 per slot level
+    // above 4, half on a success that also ends the spell); a failure leaves
+    // the target frightened for the duration, and each of its turn-ends the
+    // table declares a "pulse" — repeat WIS save, the same roll on a failure,
+    // and a success ends the program.
+    mechanicsProgram: {
+      id: "spell:phantasmal-killer",
+      phases: [
+        {
+          inputs: [
+            {
+              inputId: "slot",
+              kind: "resource",
+              term: {
+                amount: { kind: "fixed", value: 1 },
+                selector: {
+                  kind: "spell-slot",
+                  level: { kind: "minimum", value: 4 },
+                  owner: "caster",
+                  pool: "either",
+                },
+              },
+              when: null,
+            },
+            {
+              eligibility: "creature",
+              inputId: "nightmare-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 1 },
+              minimum: { kind: "fixed", value: 1 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              expansion: {
+                bind: "actor",
+                inputId: "nightmare-targets",
+                kind: "entities",
+              },
+              inputId: "nightmare-saves",
+              kind: "d20",
+              payments: [],
+              request: {
+                ability: "WIS",
+                actor: "target",
+                difficultyClass: { bindingId: "spell-save-dc", kind: "binding" },
+                enteredModifiers: [],
+                kind: "saving-throw",
+                modifiers: [],
+                resolution: { kind: "rolled" },
+                rollRules: {
+                  advantageSourceIds: [],
+                  disadvantageSourceIds: [],
+                  extraD20SourceIds: [],
+                  faceFloors: [],
+                  replacements: [],
+                  substitutions: [],
+                  totalFloors: [],
+                },
+                target: "caster",
+                testId: "spell-save",
+              },
+              when: null,
+            },
+            {
+              acceptancePolicy: [],
+              expansion: { binding: "caster", kind: "single" },
+              formula: {
+                terms: [
+                  {
+                    count: {
+                      kind: "add",
+                      terms: [
+                        { kind: "fixed", value: 4 },
+                        {
+                          factors: [
+                            { kind: "fixed", value: 1 },
+                            {
+                              kind: "max",
+                              values: [
+                                { kind: "fixed", value: 0 },
+                                {
+                                  kind: "add",
+                                  terms: [
+                                    { bindingId: "input.slot.level", kind: "binding" },
+                                    { kind: "fixed", value: -4 },
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                          kind: "multiply",
+                        },
+                      ],
+                    },
+                    kind: "dice",
+                    operation: "add",
+                    sides: 10,
+                    termId: "nightmare-roll-die",
+                  },
+                ],
+              },
+              inputId: "nightmare-roll",
+              kind: "dice",
+              payments: [],
+              replacementPolicy: [],
+              when: null,
+            },
+          ],
+          phaseId: "resolve",
+          steps: [
+            {
+              kind: "register",
+              operation: {
+                kind: "set-integer",
+                value: { bindingId: "input.slot.level", kind: "binding" },
+              },
+              registerId: "cast-level",
+              stepId: "record-cast-level",
+              when: null,
+            },
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "nightmare-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "psychic",
+                  partId: "nightmare-psychic",
+                },
+              ],
+              stepId: "nightmare-damage",
+              target: {
+                cardinality: "per-request",
+                inputId: "nightmare-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: null,
+            },
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "nightmare-roll",
+                    kind: "dice-input",
+                    transform: {
+                      dividend: { bindingId: "input-total", kind: "binding" },
+                      divisor: { kind: "fixed", value: 2 },
+                      kind: "divide",
+                      rounding: "floor",
+                    },
+                  },
+                  damageType: "psychic",
+                  partId: "nightmare-psychic-half",
+                },
+              ],
+              stepId: "nightmare-damage-half",
+              target: {
+                cardinality: "per-request",
+                inputId: "nightmare-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["success"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: null,
+            },
+            {
+              conditionId: "frightened",
+              kind: "condition",
+              lifetime: { kind: "source-end" },
+              operation: "apply",
+              stepId: "nightmare-frightened",
+              target: {
+                cardinality: "per-request",
+                inputId: "nightmare-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              when: null,
+            },
+            {
+              kind: "concentration",
+              lifetime: { kind: "manual" },
+              operation: "start",
+              stepId: "hold-concentration",
+              when: null,
+            },
+            {
+              kind: "end-program",
+              stepId: "initial-save-ends",
+              when: {
+                inputId: "nightmare-saves",
+                kind: "answer-d20",
+                outcomeId: "success",
+                quantifier: "any",
+              },
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "pulse-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 1 },
+              minimum: { kind: "fixed", value: 0 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              expansion: { bind: "actor", inputId: "pulse-targets", kind: "entities" },
+              inputId: "pulse-saves",
+              kind: "d20",
+              payments: [],
+              request: {
+                ability: "WIS",
+                actor: "target",
+                difficultyClass: { bindingId: "spell-save-dc", kind: "binding" },
+                enteredModifiers: [],
+                kind: "saving-throw",
+                modifiers: [],
+                resolution: { kind: "rolled" },
+                rollRules: {
+                  advantageSourceIds: [],
+                  disadvantageSourceIds: [],
+                  extraD20SourceIds: [],
+                  faceFloors: [],
+                  replacements: [],
+                  substitutions: [],
+                  totalFloors: [],
+                },
+                target: "caster",
+                testId: "spell-save",
+              },
+              when: null,
+            },
+            {
+              acceptancePolicy: [],
+              expansion: { binding: "caster", kind: "single" },
+              formula: {
+                terms: [
+                  {
+                    count: {
+                      kind: "add",
+                      terms: [
+                        { kind: "fixed", value: 4 },
+                        {
+                          factors: [
+                            { kind: "fixed", value: 1 },
+                            {
+                              kind: "max",
+                              values: [
+                                { kind: "fixed", value: 0 },
+                                {
+                                  kind: "add",
+                                  terms: [
+                                    { bindingId: "register.cast-level", kind: "binding" },
+                                    { kind: "fixed", value: -4 },
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                          kind: "multiply",
+                        },
+                      ],
+                    },
+                    kind: "dice",
+                    operation: "add",
+                    sides: 10,
+                    termId: "pulse-roll-die",
+                  },
+                ],
+              },
+              inputId: "pulse-roll",
+              kind: "dice",
+              payments: [],
+              replacementPolicy: [],
+              when: {
+                inputId: "pulse-saves",
+                kind: "answer-d20",
+                outcomeId: "failure",
+                quantifier: "any",
+              },
+            },
+          ],
+          phaseId: "pulse",
+          steps: [
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "pulse-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "psychic",
+                  partId: "pulse-psychic",
+                },
+              ],
+              stepId: "pulse-damage",
+              target: {
+                cardinality: "per-request",
+                inputId: "pulse-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: null,
+            },
+            {
+              kind: "end-program",
+              stepId: "pulse-ends-on-save",
+              when: {
+                inputId: "pulse-saves",
+                kind: "answer-d20",
+                outcomeId: "success",
+                quantifier: "any",
+              },
+            },
+          ],
+          trigger: { eventId: "pulse", kind: "root-pulse" },
+        },
+        {
+          inputs: [],
+          phaseId: "release",
+          steps: [{ kind: "end-program", stepId: "release-spell", when: null }],
+          trigger: { kind: "source-end" },
+        },
+      ],
+      registers: [{ initial: 4, registerId: "cast-level" }],
+      version: 1,
+    },
     level: 4,
     school: "illusion",
     classes: ["bard", "wizard"],
@@ -378,7 +910,15 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     damageDice: "4d10",
     damageDicePerUpcast: "1d10",
     saveAbility: "WIS",
-    conditionApplication: { options: ["frightened"], on: "failed-save" },
+    damageOnSave: "half",
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-phantasmal-killer",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -413,12 +953,15 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
       consumed: true,
     },
     concentration: true,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Resistance to Bludgeoning, Piercing, and
       // Slashing for the duration (2024 dropped the nonmagical caveat).
       {
         type: "while-active",
         activeKey: "spell-stoneskin",
+        duration: timedSpellDuration(60),
+        recipient: "selected",
         grants: [
           { type: "damage-resistance", damageType: "bludgeoning" },
           { type: "damage-resistance", damageType: "piercing" },
@@ -470,7 +1013,12 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: false,
     saveAbility: "WIS",
-    conditionApplication: { options: ["charmed"], on: "failed-save" },
+    conditionApplication: {
+      options: ["charmed"],
+      on: "failed-save",
+      lifetime: timedConditionLifetime(60),
+    },
+    targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {
@@ -508,9 +1056,21 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     damageDice: "3d6",
     saveAbility: "DEX",
     area: true,
-    conditionApplication: { options: ["restrained"], on: "failed-save" },
+    conditionApplication: {
+      options: ["restrained"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
     recurrence: "on-enter-or-end-turn",
     resolveOnCast: false,
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-evards-black-tentacles",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -590,6 +1150,236 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
   },
   {
     id: "vitriolic-sphere",
+    // The canonical-runtime authored program: the
+    // burst forces a DEX save against 10d4 acid (+2d4 per slot level above 4,
+    // half on a success); the table batches every creature that failed into
+    // one one-shot "afterburn" pulse at the right turn-ends — each rolls its
+    // own flat 5d4 acid (the sourced legacy number) — and the pulse ends the
+    // program.
+    mechanicsProgram: {
+      id: "spell:vitriolic-sphere",
+      phases: [
+        {
+          inputs: [
+            {
+              inputId: "slot",
+              kind: "resource",
+              term: {
+                amount: { kind: "fixed", value: 1 },
+                selector: {
+                  kind: "spell-slot",
+                  level: { kind: "minimum", value: 4 },
+                  owner: "caster",
+                  pool: "either",
+                },
+              },
+              when: null,
+            },
+            {
+              eligibility: "creature",
+              inputId: "sphere-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 20 },
+              minimum: { kind: "fixed", value: 0 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              expansion: { bind: "actor", inputId: "sphere-targets", kind: "entities" },
+              inputId: "sphere-saves",
+              kind: "d20",
+              payments: [],
+              request: {
+                ability: "DEX",
+                actor: "target",
+                difficultyClass: { bindingId: "spell-save-dc", kind: "binding" },
+                enteredModifiers: [],
+                kind: "saving-throw",
+                modifiers: [],
+                resolution: { kind: "rolled" },
+                rollRules: {
+                  advantageSourceIds: [],
+                  disadvantageSourceIds: [],
+                  extraD20SourceIds: [],
+                  faceFloors: [],
+                  replacements: [],
+                  substitutions: [],
+                  totalFloors: [],
+                },
+                target: "caster",
+                testId: "spell-save",
+              },
+              when: null,
+            },
+            {
+              acceptancePolicy: [],
+              expansion: { binding: "caster", kind: "single" },
+              formula: {
+                terms: [
+                  {
+                    count: {
+                      kind: "add",
+                      terms: [
+                        { kind: "fixed", value: 10 },
+                        {
+                          factors: [
+                            { kind: "fixed", value: 2 },
+                            {
+                              kind: "max",
+                              values: [
+                                { kind: "fixed", value: 0 },
+                                {
+                                  kind: "add",
+                                  terms: [
+                                    { bindingId: "input.slot.level", kind: "binding" },
+                                    { kind: "fixed", value: -4 },
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                          kind: "multiply",
+                        },
+                      ],
+                    },
+                    kind: "dice",
+                    operation: "add",
+                    sides: 4,
+                    termId: "sphere-roll-die",
+                  },
+                ],
+              },
+              inputId: "sphere-roll",
+              kind: "dice",
+              payments: [],
+              replacementPolicy: [],
+              when: null,
+            },
+          ],
+          phaseId: "resolve",
+          steps: [
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "sphere-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "acid",
+                  partId: "sphere-acid",
+                },
+              ],
+              stepId: "sphere-damage",
+              target: {
+                cardinality: "per-request",
+                inputId: "sphere-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["failure"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: null,
+            },
+            {
+              delivery: "saving-throw",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "shared",
+                    inputId: "sphere-roll",
+                    kind: "dice-input",
+                    transform: {
+                      dividend: { bindingId: "input-total", kind: "binding" },
+                      divisor: { kind: "fixed", value: 2 },
+                      kind: "divide",
+                      rounding: "floor",
+                    },
+                  },
+                  damageType: "acid",
+                  partId: "sphere-acid-half",
+                },
+              ],
+              stepId: "sphere-damage-half",
+              target: {
+                cardinality: "per-request",
+                inputId: "sphere-saves",
+                kind: "d20-outcome",
+                outcomeIds: ["success"],
+                quantifier: "any",
+              },
+              traits: ["spell"],
+              when: null,
+            },
+          ],
+          trigger: { kind: "invocation" },
+        },
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "afterburn-targets",
+              kind: "entities",
+              maximum: { kind: "fixed", value: 20 },
+              minimum: { kind: "fixed", value: 0 },
+              multiplicity: "slots",
+              when: null,
+            },
+            {
+              acceptancePolicy: [],
+              expansion: { inputId: "afterburn-targets", kind: "entities" },
+              formula: {
+                terms: [
+                  {
+                    count: { kind: "fixed", value: 5 },
+                    kind: "dice",
+                    operation: "add",
+                    sides: 4,
+                    termId: "afterburn-roll-die",
+                  },
+                ],
+              },
+              inputId: "afterburn-roll",
+              kind: "dice",
+              payments: [],
+              replacementPolicy: [],
+              when: null,
+            },
+          ],
+          phaseId: "afterburn",
+          steps: [
+            {
+              delivery: "automatic",
+              kind: "damage",
+              parts: [
+                {
+                  amount: {
+                    cardinality: "per-target-request",
+                    inputId: "afterburn-roll",
+                    kind: "dice-input",
+                    transform: { bindingId: "input-total", kind: "binding" },
+                  },
+                  damageType: "acid",
+                  partId: "afterburn-acid",
+                },
+              ],
+              stepId: "afterburn-damage",
+              target: { inputId: "afterburn-targets", kind: "input" },
+              traits: ["spell"],
+              when: null,
+            },
+            { kind: "end-program", stepId: "afterburn-ends", when: null },
+          ],
+          trigger: { eventId: "afterburn", kind: "root-pulse" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    },
     level: 4,
     school: "evocation",
     classes: ["sorcerer", "wizard"],

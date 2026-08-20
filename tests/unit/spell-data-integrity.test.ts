@@ -23,8 +23,102 @@ import { SRD_SPELLS_LEVEL6 } from "@/data/spells/level6";
 import { SRD_SPELLS_LEVEL7 } from "@/data/spells/level7";
 import { SRD_SPELLS_LEVEL8 } from "@/data/spells/level8";
 import { SRD_SPELLS_LEVEL9 } from "@/data/spells/level9";
+import type { SrdSpellData } from "@/data/types";
+
+function conditionLifetimeGaps(entries: readonly SrdSpellData[]): string[] {
+  return entries.flatMap((spell) => {
+    const applications = [
+      spell.conditionApplication,
+      spell.followUp?.conditionApplication,
+    ];
+    return applications.flatMap((application) => {
+      if (!application) return [];
+      const allClassified = application.lifetime
+        ? true
+        : application.options.every((condition) => application.lifetimes?.[condition]);
+      return allClassified ? [] : [spell.id];
+    });
+  });
+}
 
 describe("spell-data integrity", () => {
+  it("every persistent spell grant declares one enforceable structured lifetime", () => {
+    // Derived from the whole composed catalogue. This guard proves that a
+    // persistent spell can be expired by the shared engine; it cannot prove the
+    // printed rule's duration or special early-ending clauses, which remain a
+    // source-audit responsibility.
+    for (const spell of spells) {
+      for (const grant of spell.grants ?? []) {
+        if (grant.type !== "while-active") continue;
+        expect(grant.duration, `${spell.id}:${grant.activeKey}`).toBeDefined();
+        if (grant.duration?.kind !== "timed") continue;
+        expect(grant.duration.minutes, `${spell.id} minutes`).toBeGreaterThan(0);
+        expect(grant.duration.maxRounds, `${spell.id} maxRounds`).toBe(
+          grant.duration.minutes * 10
+        );
+        let previousMinLevel = spell.level;
+        for (const tier of grant.duration.byCastLevel ?? []) {
+          expect(tier.minLevel, `${spell.id} cast tier order`).toBeGreaterThan(
+            previousMinLevel
+          );
+          expect(tier.maxRounds, `${spell.id} L${tier.minLevel} maxRounds`).toBe(
+            tier.minutes * 10
+          );
+          previousMinLevel = tier.minLevel;
+        }
+      }
+    }
+  });
+
+  it("classifies every SRD spell condition lifetime and every source-owned maximum", () => {
+    const publicSpells = spells.filter((spell) => spell.source === "SRD");
+    expect(conditionLifetimeGaps(publicSpells)).toEqual([]);
+
+    for (const spell of publicSpells) {
+      for (const application of [
+        spell.conditionApplication,
+        spell.followUp?.conditionApplication,
+      ]) {
+        if (!application) continue;
+        const lifetimes = application.lifetime
+          ? [application.lifetime]
+          : Object.values(application.lifetimes ?? {});
+        for (const lifetime of lifetimes) {
+          if (lifetime.kind === "timed") {
+            expect(lifetime.maxRounds, spell.id).toBe(lifetime.minutes * 10);
+            for (const tier of lifetime.byCastLevel ?? []) {
+              if (tier.indefinite) continue;
+              expect(tier.maxRounds, `${spell.id} L${tier.minLevel}`).toBe(
+                (tier.minutes ?? 0) * 10
+              );
+            }
+          }
+          if (lifetime.kind !== "source") continue;
+          expect(spell.concentration, `${spell.id} source lifetime`).toBe(true);
+          expect(
+            spell.grants?.some(
+              (grant) => grant.type === "while-active" && grant.duration
+            ),
+            `${spell.id} concentration maximum`
+          ).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("fails the condition-lifetime guard when one classified spell regresses", () => {
+    const animalFriendship = getSpellById("animal-friendship");
+    if (!animalFriendship?.conditionApplication) throw new Error("missing fixture");
+    const regressed: SrdSpellData = {
+      ...animalFriendship,
+      conditionApplication: {
+        ...animalFriendship.conditionApplication,
+        lifetime: undefined,
+      },
+    };
+    expect(conditionLifetimeGaps([regressed])).toEqual(["animal-friendship"]);
+  });
+
   it("models Vampiric Touch's linked healing as a deterministic combat effect", () => {
     expect(getSpellById("vampiric-touch")?.selfHealingFromDamage).toEqual({
       fraction: 0.5,
@@ -150,6 +244,7 @@ describe("spell-data integrity", () => {
     expect(ray?.conditionApplication).toEqual({
       options: ["poisoned"],
       on: "failed-save",
+      lifetime: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
     });
   });
 
@@ -507,7 +602,7 @@ describe("spell-data integrity", () => {
       ["cure-wounds", 1, "2d8"], // base
       ["cure-wounds", 3, "6d8"], // +2×2d8
       ["healing-word", 4, "8d4"], // L1 base 2d4, +3×2d4
-      ["prayer-of-healing", 4, "6d8"], // L2 base 2d8, +2×2d8
+      ["prayer-of-healing", 4, "4d8"], // L2 base 2d8, +2×1d8
       ["mass-healing-word", 5, "4d4"], // L3 base 2d4, +2×1d4
       ["mass-cure-wounds", 7, "7d8"], // L5 base 5d8, +2×1d8
     ];
@@ -600,7 +695,6 @@ describe("spell-data integrity", () => {
       "healing-word",
       "mass-healing-word",
       "mass-cure-wounds",
-      "prayer-of-healing",
     ];
     for (const id of addsMod) {
       expect(getSpellById(id)?.healAddsCastMod, id).toBe(true);
@@ -613,8 +707,74 @@ describe("spell-data integrity", () => {
       "heal",
       "mass-heal",
       "goodberry",
+      "prayer-of-healing",
     ]) {
       expect(getSpellById(id)?.healAddsCastMod ?? false, id).toBe(false);
+    }
+  });
+
+  it("derives every +1-target-per-upcast spell's target shape from its EN rules", () => {
+    const NUMBER_WORDS: Readonly<Record<string, number>> = {
+      one: 1,
+      two: 2,
+      three: 3,
+      four: 4,
+      five: 5,
+      six: 6,
+    };
+    const candidates = spells.filter(
+      (spell) =>
+        spell.source === "SRD" &&
+        /(?:target|affect) one additional creature/i.test(
+          srd("spell", spell.id, "higherLevels", "en")
+        )
+    );
+    expect(candidates.length).toBeGreaterThan(0);
+    for (const spell of candidates) {
+      const description = srd("spell", spell.id, "description", "en");
+      const explicitCount = /up to (one|two|three|four|five|six) creatures?/i.exec(
+        description
+      )?.[1];
+      expect(spell.targeting, spell.id).toEqual({
+        affinity: spell.saveAbility ? "enemy" : "ally",
+        maxTargets: explicitCount ? NUMBER_WORDS[explicitCount.toLowerCase()] : 1,
+        maxTargetsPerUpcast: 1,
+      });
+    }
+  });
+
+  it("derives the exceptional fixed multi-target spell shapes from their EN rules", () => {
+    const splitCantrips = spells.filter(
+      (spell) =>
+        spell.source === "SRD" &&
+        /choose one creature[^.]+or choose two creatures/i.test(
+          srd("spell", spell.id, "description", "en")
+        )
+    );
+    expect(splitCantrips.length).toBeGreaterThan(0);
+    for (const spell of splitCantrips) {
+      expect(spell.targeting, spell.id).toEqual({
+        affinity: "enemy",
+        maxTargets: 2,
+        sharedAmount: true,
+      });
+    }
+
+    const boltSpells = spells.filter(
+      (spell) =>
+        spell.source === "SRD" &&
+        /one additional bolt leaps from the first target/i.test(
+          srd("spell", spell.id, "higherLevels", "en")
+        )
+    );
+    expect(boltSpells.length).toBeGreaterThan(0);
+    for (const spell of boltSpells) {
+      expect(spell.targeting, spell.id).toEqual({
+        affinity: "enemy",
+        maxTargets: 4,
+        maxTargetsPerUpcast: 1,
+        sharedAmount: true,
+      });
     }
   });
 
