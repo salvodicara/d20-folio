@@ -19,7 +19,7 @@ vi.mock("@/lib/firebase", () => ({
   storage: {},
 }));
 
-const commitSpy = vi.fn(() => true);
+const commitSpy = vi.fn((): string | null => "engine-action-1");
 vi.mock("@/features/character/useMechanicsCast", async (importOriginal) => {
   const original =
     await importOriginal<typeof import("@/features/character/useMechanicsCast")>();

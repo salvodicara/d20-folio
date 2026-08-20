@@ -125,11 +125,11 @@ describe("useMechanicsCast", () => {
     });
     expect(phase().kind).toBe("ready");
 
-    let committed = false;
+    let committed: string | null = null;
     act(() => {
       committed = result.current.commit();
     });
-    expect(committed).toBe(true);
+    expect(committed).not.toBeNull();
     const session = useCharacterStore.getState().character?.session;
     expect(session?.world).toBeDefined();
     const hpBefore = MOCK_CHARACTER.session.hp.current;
@@ -242,11 +242,11 @@ describe("useMechanicsCast", () => {
 
     const { result } = renderHook(() => useMechanicsEngineAction(sourceFor));
     expect(result.current.phase.kind).toBe("ready");
-    let committed = false;
+    let committed: string | null = null;
     act(() => {
       committed = result.current.commit();
     });
-    expect(committed).toBe(true);
+    expect(committed).not.toBeNull();
     const state = useCharacterStore.getState();
     expect(state.character?.session.hp.current).toBe(31);
     const queue = state.combatPendingConcentrationSaves;

@@ -1536,6 +1536,64 @@ export function undoCharacterAction(
   return mirroredCommit(doc, world, reparsed.value);
 }
 
+/**
+ * Exactly re-apply one UNDONE action (generation 2 → 3) through the canonical
+ * reducer's native `redo` transition — the redo pairing of
+ * {@link undoCharacterAction}, mirroring the world-owned facts forward again.
+ * The reducer's own CAS is the safety: every mutated path must still hold its
+ * pre-commit value (`mutation.before`), and the action must be the branch
+ * head, so a world that moved since the undo rejects the replay (null — the
+ * caller treats it as a legal bail). The `commit-redo` fact guards are passed
+ * back at their recorded expected values, exactly as the commit sites resolve
+ * them — the mutation CAS, not the fact echo, carries the live check.
+ */
+export function redoCharacterAction(
+  doc: Readonly<CharacterDoc>,
+  uid: string,
+  world: Readonly<CharacterMaterialState>,
+  actionId: string
+): CharacterActionCommit | null {
+  const material = characterMaterialRef(doc, uid);
+  const undone = world.actions.find(
+    (action) => action.id === actionId && action.generation % 2 === 0
+  );
+  if (!undone) return null;
+  const { generation, ...body } = undone;
+  const journalWorld = journalWorldFor(material, world);
+  const result = reduceActionJournal(
+    journalWorld,
+    {
+      action: body,
+      documents: [{ epoch: world.epoch, material, revision: world.revision }],
+      expectedGeneration: generation,
+      kind: "redo",
+    },
+    undone.guards.facts
+      .filter((guard) => guard.lifecycle === "commit-redo")
+      .map((guard) => ({
+        actual: guard.expected,
+        address: guard.address,
+        owner: guard.owner,
+      }))
+  );
+  if (result.status !== "applied" && result.status !== "already-applied") {
+    return null;
+  }
+  const nextDocument = result.world.documents[0];
+  if (!nextDocument) return null;
+  const reparsed = parseCharacterMaterialState(
+    {
+      ...nextDocument.data,
+      actions: nextDocument.journal.actions,
+      epoch: nextDocument.journal.epoch,
+      revision: nextDocument.journal.revision,
+    },
+    material
+  );
+  if (!reparsed.ok) return null;
+  return mirroredCommit(doc, world, reparsed.value);
+}
+
 /** One armed pulse phase of one active engine program root. */
 export interface EnginePulseRef {
   readonly eventId: string;

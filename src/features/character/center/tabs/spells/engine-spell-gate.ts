@@ -16,10 +16,11 @@
  * Casting a concentration spell while one is
  * HELD dispatches engine ONLY when the held spell is engine-owned (the world
  * holds its occurrence and agrees with the session field): the dispatcher then
- * runs the shared swap confirm and, on yes, ends the held spell through the
- * canonical `setConcentration("")` motion before the clean cast — two exact
- * journal actions. A legacy-held concentration keeps the legacy swap path,
- * which owns its teardown.
+ * runs the shared swap confirm and, on yes, mounts the engine flow over the
+ * world STILL holding the old spell — the kernel's concentration-replacement
+ * coordination ends it inside the SAME causal action the new cast commits
+ * (one journal entry, exactly undoable back to the old spell). A legacy-held
+ * concentration keeps the legacy swap path, which owns its teardown.
  */
 
 import { turnEconomyKey } from "@/features/character/center/combat-hydration";
@@ -45,7 +46,8 @@ import type { CharacterDoc } from "@/types/character";
 /** One approved engine cast: the flow inputs plus the legacy economy mirror. */
 export interface EngineSpellCastRequest {
   /** Non-null when this cast REPLACES a held concentration spell: the caller
-   *  runs the shared swap confirm BEFORE mounting the engine flow. */
+   *  runs the shared swap confirm BEFORE mounting the engine flow; the flow
+   *  commits the replacement as ONE causal action (nothing ends at confirm). */
   readonly concentrationSwap: { readonly heldSpellId: string } | null;
   readonly economy: {
     readonly actionId: string;

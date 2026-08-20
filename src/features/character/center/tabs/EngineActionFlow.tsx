@@ -13,6 +13,7 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { MechanicsCastModal } from "@/components/sheet/MechanicsCastModal";
+import { registerEngineCommitUndo } from "@/features/character/engine-undo";
 import {
   useMechanicsEngineAction,
   type EngineActionSource,
@@ -133,64 +134,109 @@ export function EngineActionFlow({ dispatch, onClose }: EngineActionFlowProps) {
   // The rollout bridge mirrors a successful engine commit onto the legacy turn
   // economy (the occupied slot) and clears the legacy chips of any cures the
   // player opted into — the engine world's condition mirror covers only
-  // world-owned conditions, never a manually-chipped one.
+  // world-owned conditions, never a manually-chipped one. The mirror is a
+  // re-runnable closure returning its exact revert, so the registered undo
+  // affordance (`registerEngineCommitUndo` — the "X used + Undo" grammar)
+  // rolls the same legs back alongside the journal reverse.
   const cast = {
     ...engineAction,
-    commit: (): boolean => {
+    commit: (): string | null => {
       const curedConditions = engineAction.answers.flatMap((answer) => {
         if (answer.kind !== "boolean" || !answer.value) return [];
         const match = /^cure-(.+)-opt$/.exec(answer.inputId);
         return match?.[1] !== undefined ? [match[1]] : [];
       });
-      const committed = engineAction.commit();
-      if (!committed) return false;
-      const store = useCharacterStore.getState();
-      const current = store.character;
-      if (
-        current &&
-        curedConditions.some((id) => current.session.conditions.includes(id))
-      ) {
-        store.updateSession({
-          ...current.session,
-          conditions: current.session.conditions.filter(
-            (id) => !curedConditions.includes(id)
-          ),
-        });
-      }
-      // The economy mirror stays EXACT to the legacy entry the commit loop
-      // would have written: slot occupant, rules category, and the "attack"
-      // turn event the maintenance check reads. An Extra-Attack weapon swing
-      // mirrors onto the attack-pips ledger (claim or ride an Attack action)
-      // instead of occupying a whole Action slot.
-      const combat = useCombatStore.getState();
-      const triggersAttack = dispatch.kind === "weapon" || dispatch.triggersAttack;
-      const entry: SelectedAction = {
-        id: dispatch.legacyActionId,
-        name: dispatch.actionName,
-        ...(dispatch.nameLoc ? { nameLoc: dispatch.nameLoc } : {}),
-        slot: dispatch.kind === "weapon" ? "action" : dispatch.economySlot,
-        ...(dispatch.economyCategory
-          ? { economyCategory: dispatch.economyCategory }
-          : {}),
-        ...(triggersAttack ? { triggerEvents: ["attack"] as const } : {}),
+      // The counted swing position, read BEFORE the mirror claims the swing so
+      // the undo label carries the legacy "attack n of total" grammar.
+      const pipState =
+        dispatch.kind === "weapon" && dispatch.swing ? useCombatStore.getState() : null;
+      const attackOf = pipState
+        ? {
+            n: (pipState.attacksUsed % Math.max(1, pipState.attackBudget)) + 1,
+            total: pipState.attackBudget,
+          }
+        : null;
+      const committedId = engineAction.commit();
+      if (committedId === null) return null;
+      const applyMirror = (): (() => void) => {
+        const reverts: (() => void)[] = [];
+        const store = useCharacterStore.getState();
+        const current = store.character;
+        const removed = current
+          ? curedConditions.filter((id) => current.session.conditions.includes(id))
+          : [];
+        if (current && removed.length > 0) {
+          store.updateSession({
+            conditions: current.session.conditions.filter((id) => !removed.includes(id)),
+          });
+          reverts.push(() => {
+            const live = useCharacterStore.getState().character;
+            if (!live) return;
+            const missing = removed.filter((id) => !live.session.conditions.includes(id));
+            if (missing.length > 0) {
+              useCharacterStore.getState().updateSession({
+                conditions: [...live.session.conditions, ...missing],
+              });
+            }
+          });
+        }
+        // The economy mirror stays EXACT to the legacy entry the commit loop
+        // would have written: slot occupant, rules category, and the "attack"
+        // turn event the maintenance check reads. An Extra-Attack weapon swing
+        // mirrors onto the attack-pips ledger (claim or ride an Attack action)
+        // instead of occupying a whole Action slot.
+        const combat = useCombatStore.getState();
+        const triggersAttack = dispatch.kind === "weapon" || dispatch.triggersAttack;
+        const entry: SelectedAction = {
+          id: dispatch.legacyActionId,
+          name: dispatch.actionName,
+          ...(dispatch.nameLoc ? { nameLoc: dispatch.nameLoc } : {}),
+          slot: dispatch.kind === "weapon" ? "action" : dispatch.economySlot,
+          ...(dispatch.economyCategory
+            ? { economyCategory: dispatch.economyCategory }
+            : {}),
+          ...(triggersAttack ? { triggerEvents: ["attack"] as const } : {}),
+        };
+        if (dispatch.kind === "weapon" && dispatch.swing) {
+          const swing = combat.commitAttackSwing(
+            {
+              id: "attack-group",
+              name: t("combat.attackAction"),
+              nameLoc: { ui: "combat.attackAction" },
+              slot: "action",
+              isAttackGroup: true,
+              economyCategory: "attack",
+              triggerEvents: ["attack"],
+            },
+            dispatch.legacyActionId
+          );
+          if (swing !== null) {
+            reverts.push(() => useCombatStore.getState().undoAttackSwing());
+          }
+        } else {
+          combat.selectAction(entry);
+          reverts.push(() =>
+            useCombatStore.getState().deselectAction(dispatch.legacyActionId)
+          );
+        }
+        // Occupant-checked legs unwind in reverse commit order.
+        return () => [...reverts].reverse().forEach((revert) => revert());
       };
-      if (dispatch.kind === "weapon" && dispatch.swing) {
-        combat.commitAttackSwing(
-          {
-            id: "attack-group",
-            name: t("combat.attackAction"),
-            nameLoc: { ui: "combat.attackAction" },
-            slot: "action",
-            isAttackGroup: true,
-            economyCategory: "attack",
-            triggerEvents: ["attack"],
-          },
-          dispatch.legacyActionId
-        );
-      } else {
-        combat.selectAction(entry);
-      }
-      return true;
+      const revert = applyMirror();
+      registerEngineCommitUndo(
+        committedId,
+        {
+          message: attackOf
+            ? t("combat.attackSwingToast", {
+                name: dispatch.actionName,
+                n: attackOf.n,
+                total: attackOf.total,
+              })
+            : t("combat.actionUsedToast", { name: dispatch.actionName }),
+        },
+        { mirror: { apply: applyMirror, revert }, turnScoped: true }
+      );
+      return committedId;
     },
   };
 

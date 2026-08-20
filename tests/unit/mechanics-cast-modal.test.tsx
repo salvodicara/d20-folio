@@ -25,7 +25,7 @@ function castState(
   return {
     answer,
     answers: [],
-    commit: vi.fn(() => true),
+    commit: vi.fn((): string | null => "action-1"),
     phase,
     reset: vi.fn(),
     respond: vi.fn(),

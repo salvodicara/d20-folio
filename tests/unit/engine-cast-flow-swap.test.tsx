@@ -1,11 +1,11 @@
 /**
  * EngineCastFlow — the concentration-swap LEGACY MIRROR: when a committed
- * engine cast replaced the engine-held concentration (the kernel ends the old
- * occurrence inside the same journal action), the flow must strip the dropped
- * spell's manually-lit while-active chips, clear its stored cast level, fire
- * the replacement toast, and log the end/start story beats. The kernel-side
- * replacement itself is proven by the world-store e2e; the replay hook is
- * stubbed here so the mirror closure is the unit under test.
+ * engine cast replaced the engine-held concentration (the kernel's ONE-action
+ * replacement ends the old occurrence inside the same journal action), the
+ * flow must surface the replacement as the undo toast's own label and log the
+ * end/start story beats. The kernel-side replacement itself is proven by the
+ * world-store e2e and the spells-page flow test; the replay hook is stubbed
+ * here so the mirror closure is the unit under test.
  */
 
 import { render, screen, fireEvent } from "@testing-library/react";
@@ -19,7 +19,7 @@ vi.mock("@/lib/firebase", () => ({
   storage: {},
 }));
 
-const commitSpy = vi.fn(() => true);
+const commitSpy = vi.fn((): string | null => "cast-action-1");
 vi.mock("@/features/character/useMechanicsCast", async (importOriginal) => {
   const original =
     await importOriginal<typeof import("@/features/character/useMechanicsCast")>();
@@ -57,10 +57,10 @@ describe("EngineCastFlow concentration-swap mirror", () => {
         ...structuredClone(MOCK_CHARACTER),
         session: {
           ...structuredClone(MOCK_CHARACTER.session),
-          // The dispatcher's `setConcentration("")` pre-end and the engine
-          // commit's own mirror have already run by the time the flow's
-          // wrapper fires; the player-facing toast and the start beat are
-          // what remain.
+          // The engine commit's own transition mirror has already stamped
+          // the new spell by the time the flow's wrapper fires; the
+          // player-facing replacement toast (now the undo affordance) and
+          // the story beats are what remain.
           concentration: concentrationValue("moonbeam"),
           logEntries: [],
         },
@@ -94,7 +94,10 @@ describe("EngineCastFlow concentration-swap mirror", () => {
     );
     const events = (session?.logEntries ?? []).map((entry) => entry.event);
     expect(events).toEqual(
-      expect.arrayContaining([{ kind: "concentration-start", spell: "moonbeam" }])
+      expect.arrayContaining([
+        { kind: "concentration-end", spell: "bless" },
+        { kind: "concentration-start", spell: "moonbeam" },
+      ])
     );
     toastSpy.mockRestore();
   });

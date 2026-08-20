@@ -742,10 +742,11 @@ export function PlayTab() {
     (action: ResolvedAction) => {
       const spellCast = engineSpellDispatchFor(action);
       if (spellCast) {
-        // A confirmed swap ENDS the held spell right away through the
-        // canonical `setConcentration` seam (RAW: concentration ends the
-        // moment you START casting the next spell); a declined one cancels
-        // the cast entirely. The flow then replays against the clean world.
+        // A confirmed swap ends NOTHING yet: the engine flow replays against
+        // the world still holding the old spell, and the kernel's
+        // concentration-replacement coordination commits the whole swap as
+        // ONE causal action at Apply (backing out of the modal keeps the old
+        // spell held); a declined one cancels the cast entirely.
         if (spellCast.request.concentrationSwap !== null) {
           void confirmConcentrationSwap(
             {
@@ -756,9 +757,7 @@ export function PlayTab() {
             t,
             locale
           ).then((confirmed) => {
-            if (!confirmed) return;
-            useCharacterStore.getState().setConcentration("", { undoable: false });
-            setEngineSpellCast(spellCast);
+            if (confirmed) setEngineSpellCast(spellCast);
           });
           return;
         }

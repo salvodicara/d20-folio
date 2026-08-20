@@ -88,6 +88,9 @@ function DamageReactionPrompt({
       return;
     }
     const name = localizeText(featureNameLoc(option.featureId), locale);
+    // Turn-scoped: the pick claims the round's Reaction (an economy commit),
+    // so the entry compacts into End Turn / purges at encounter boundaries
+    // exactly like every other reaction commit.
     registerUndoableResult(
       {
         message: t("combat.damageReactionToast", {
@@ -97,7 +100,8 @@ function DamageReactionPrompt({
         }),
       },
       commit.undo,
-      () => pick(option, true)
+      () => pick(option, true),
+      { turnScoped: true }
     );
   }
 

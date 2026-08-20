@@ -51,7 +51,10 @@ export type MechanicsCastPhase =
 export interface MechanicsCastState {
   readonly answers: readonly MechanicsAnswer[];
   readonly answer: (value: MechanicsAnswer) => void;
-  readonly commit: () => boolean;
+  /** Commit the planned action; returns its journal action id (the undo
+   *  pairing — `registerEngineCommitUndo` reverses exactly it), null on any
+   *  rejection. Truthy exactly when committed. */
+  readonly commit: () => string | null;
   readonly phase: MechanicsCastPhase;
   readonly reset: () => void;
   readonly respond: (value: MechanicsCompilerResponse) => void;
@@ -174,10 +177,10 @@ export function useMechanicsEngineAction(
     setAnswers([]);
     setResponses([]);
   }, []);
-  const commit = useCallback((): boolean => {
-    if (!doc || uid === null || replay.phase.kind !== "ready") return false;
+  const commit = useCallback((): string | null => {
+    if (!doc || uid === null || replay.phase.kind !== "ready") return null;
     const outcome = replay.phase.outcome;
-    if (!outcome.action || !("world" in replay) || !replay.world) return false;
+    if (!outcome.action || !("world" in replay) || !replay.world) return null;
     const committed = commitCharacterAction(
       doc,
       uid,
@@ -189,7 +192,7 @@ export function useMechanicsEngineAction(
         owner: fact.owner,
       }))
     );
-    if (!committed) return false;
+    if (!committed) return null;
     updateSession(committed.session);
     // Damage the engine landed on the character itself surfaces the SAME
     // entered-d20 Concentration prompt seam the legacy damage path owns
@@ -199,7 +202,7 @@ export function useMechanicsEngineAction(
       useCharacterStore.getState().queueConcentrationSaveForDamage(selfDamage);
     }
     reset();
-    return true;
+    return outcome.action.id;
   }, [doc, replay, reset, uid, updateSession]);
 
   return { answer, answers, commit, phase: replay.phase, reset, respond };

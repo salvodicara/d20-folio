@@ -136,10 +136,10 @@ export function useMechanicsPulse(
     setAnswers([]);
     setResponses([]);
   }, []);
-  const commit = useCallback((): boolean => {
-    if (!doc || uid === null || replay.phase.kind !== "ready") return false;
+  const commit = useCallback((): string | null => {
+    if (!doc || uid === null || replay.phase.kind !== "ready") return null;
     const outcome = replay.phase.outcome;
-    if (!outcome.action || !("world" in replay) || !replay.world) return false;
+    if (!outcome.action || !("world" in replay) || !replay.world) return null;
     const committed = commitCharacterAction(
       doc,
       uid,
@@ -151,7 +151,7 @@ export function useMechanicsPulse(
         owner: fact.owner,
       }))
     );
-    if (!committed) return false;
+    if (!committed) return null;
     updateSession(committed.session);
     // A pulse that damages the possessor surfaces the same entered-d20
     // Concentration prompt seam the legacy damage path owns.
@@ -160,7 +160,7 @@ export function useMechanicsPulse(
       useCharacterStore.getState().queueConcentrationSaveForDamage(selfDamage);
     }
     reset();
-    return true;
+    return outcome.action.id;
   }, [doc, replay, reset, uid, updateSession]);
 
   const phase: MechanicsCastPhase = replay.phase;

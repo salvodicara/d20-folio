@@ -23,6 +23,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
+import { useUndoStore } from "@/stores/undoStore";
 import type { User } from "firebase/auth";
 
 function load(): void {
@@ -52,6 +53,7 @@ function park(): PendingDamageReactionPrompt {
 
 afterEach(() => {
   useToastStore.getState().clearAll();
+  useUndoStore.getState().clear(null);
   useCharacterStore.setState({
     character: null,
     combatPendingDamageReaction: null,
@@ -89,6 +91,33 @@ describe("DamageReactionBanner", () => {
     // The legacy reaction economy mirror (the ReactionCards' "Used" truth).
     expect(useCombatStore.getState().reactionUsed).toBe(true);
     expect(useCombatStore.getState().reactionUsedId).toBe("rogue-uncanny-dodge-reaction");
+  });
+
+  it("a pick registers the turn-scoped undo whose reverse restores HP and the Reaction", () => {
+    load();
+    park();
+    render(<DamageReactionBanner />);
+    fireEvent.click(screen.getByRole("button", { name: /uncanny dodge/i }));
+    expect(useCharacterStore.getState().character?.session.hp.current).toBe(33);
+
+    // The same stack grammar as every economy commit: a turn-scoped entry
+    // advertised by the standard undo toast.
+    const entry = useUndoStore.getState().past.at(-1);
+    expect(entry?.turnScoped).toBe(true);
+    const toast = useToastStore
+      .getState()
+      .toasts.find((candidate) => candidate.id === entry?.toastId);
+    expect(toast?.message).toMatch(/uncanny dodge/i);
+    expect(typeof toast?.onUndo).toBe("function");
+
+    // Undo: the exact reverse restores the pre-hit HP and releases the
+    // round's Reaction claim in the same motion.
+    act(() => {
+      expect(useUndoStore.getState().undo()).toBe(true);
+    });
+    expect(useCharacterStore.getState().character?.session.hp.current).toBe(38);
+    expect(useCombatStore.getState().reactionUsed).toBe(false);
+    expect(useCombatStore.getState().reactionUsedId).toBeNull();
   });
 
   it("skip applies the exact plain damage and clears the prompt", () => {

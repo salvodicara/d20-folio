@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { MechanicsCastModal } from "@/components/sheet/MechanicsCastModal";
+import { registerEngineCommitUndo } from "@/features/character/engine-undo";
 import { spells } from "@/data/spells";
 import { localizeSrd } from "@/i18n/resolver";
 import { useLocale } from "@/hooks/useLocale";
@@ -50,6 +51,7 @@ function ConsumeFlow({
   readonly row: EngineConsumableRow;
   readonly itemName: string;
 }) {
+  const { t } = useTranslation();
   const doc = useCharacterStore((state) => state.character);
   const uid = useAuthStore((state) => state.user?.uid ?? null);
   const sourceFor = useCallback(
@@ -69,7 +71,26 @@ function ConsumeFlow({
     },
     [row.instanceId]
   );
-  const cast = useMechanicsEngineAction(sourceFor);
+  const engineConsume = useMechanicsEngineAction(sourceFor);
+  // A committed consume registers the same "X used + Undo" affordance as any
+  // engine commit (no legacy economy mirror to roll back; not turn-scoped —
+  // eating a berry is character state, like an out-of-combat tracker spend).
+  const cast = useMemo(
+    () => ({
+      ...engineConsume,
+      commit: (): string | null => {
+        const committedId = engineConsume.commit();
+        if (committedId === null) return null;
+        registerEngineCommitUndo(
+          committedId,
+          { message: t("combat.actionUsedToast", { name: itemName }) },
+          { turnScoped: false }
+        );
+        return committedId;
+      },
+    }),
+    [engineConsume, itemName, t]
+  );
   if (!doc || uid === null || maxHp <= 0) return null;
   return (
     <MechanicsCastModal

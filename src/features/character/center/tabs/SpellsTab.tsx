@@ -370,20 +370,18 @@ export function SpellsTab() {
       if (request !== null) {
         // Replacing a held concentration always ASKS first through the ONE
         // shared gate; a declined swap cancels the cast entirely (never a
-        // silent fallback to the legacy transaction). A confirmed swap ENDS
-        // the held spell right away through the canonical `setConcentration`
-        // seam (RAW: concentration ends the moment you START casting the next
-        // spell) — legacy teardown plus the engine occurrence's kernel end in
-        // one motion — and the flow then replays against the clean world.
+        // silent fallback to the legacy transaction). On yes, NOTHING ends
+        // yet: the engine flow replays against the world still holding the
+        // old spell, and the kernel's concentration-replacement coordination
+        // commits the whole swap as ONE causal action at Apply (backing out
+        // of the modal keeps the old spell held).
         if (request.concentrationSwap !== null) {
           void confirmConcentrationSwap(
             { concentration: true, name: request.spellName, spellId: request.spellId },
             t,
             locale
           ).then((confirmed) => {
-            if (!confirmed) return;
-            useCharacterStore.getState().setConcentration("", { undoable: false });
-            setEngineCast(request);
+            if (confirmed) setEngineCast(request);
           });
           return;
         }
