@@ -50,6 +50,7 @@ import { patchCharacter } from "../patch-character";
 import type { AbilityCode } from "@/data/types";
 import type { CharacterData } from "@/types/character";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
+import { vitalExhaustion } from "@/lib/character-vitals";
 
 type SkillProficiency = "proficient" | "expertise" | "halfProficiency";
 
@@ -76,7 +77,11 @@ export function LeftHud() {
   // slices, NOT the whole doc, so a center HP/round change can't re-render it.
   const characterDoc = useCharacterStore((s) => s.character);
   const charData = useCharacterStore((s) => s.character?.character);
-  const exhaustion = useCharacterStore((s) => s.character?.session.exhaustion ?? 0);
+  // Exhaustion reads through the ONE vitals projection seam (session truth
+  // reconciled against the persisted engine world).
+  const exhaustion = useCharacterStore((s) =>
+    s.character ? vitalExhaustion(s.character.session) : 0
+  );
   const activeFeatures = useCharacterStore((s) => s.character?.session.activeFeatures);
   // B1 — active conditions feed the single self-side resolver. The save medallions
   // are the one LeftHud consumer (auto-fail mark); the slider + concentration

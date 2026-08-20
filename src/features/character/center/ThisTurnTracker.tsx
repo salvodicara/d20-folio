@@ -48,6 +48,7 @@ import {
 import { getEquipment } from "@/data/equipment";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
+import { vitalConcentration, vitalExhaustion } from "@/lib/character-vitals";
 import { localeDistance } from "@/lib/utils";
 import { composeTurnLimiters } from "@/lib/views/combat-action-view";
 import {
@@ -133,7 +134,11 @@ export function ThisTurnTracker({
   const dashesThisTurn = useCombatStore((s) => s.dashesThisTurn);
   // RA-08 — slot-paid casts tracked by the hard one-slot-per-global-turn gate.
   const spellSlotCastsThisTurn = useCombatStore((s) => s.spellSlotCastsThisTurn);
-  const exhaustion = useCharacterStore((s) => s.character?.session.exhaustion ?? 0);
+  // Exhaustion reads through the ONE vitals projection seam (session truth
+  // reconciled against the persisted engine world).
+  const exhaustion = useCharacterStore((s) =>
+    s.character ? vitalExhaustion(s.character.session) : 0
+  );
   // Session inputs to the canonical full-grant aggregate (while-active toggles +
   // grant-bundle/lineage choices) — the SAME pair CombatHeader + LeftHud thread, so
   // the initiative DEX read folds set-score floors AND magic-item ability bonuses
@@ -566,7 +571,9 @@ export function ThisTurnTracker({
     exhaustion,
     spellSlotCasts: spellSlotCastsThisTurn,
   });
-  const hasStatuses = !!character.session.concentration || limiters.length > 0;
+  // Concentration reads through the same vitals projection seam.
+  const concentration = vitalConcentration(character.session);
+  const hasStatuses = !!concentration || limiters.length > 0;
 
   // SR-only economy-token status: "Action: available" / "Action: spent on X".
   // `spentName === undefined` → available; "" → spent (no named action, e.g.
@@ -758,7 +765,7 @@ export function ThisTurnTracker({
         {hasStatuses && (
           <StatusLedge
             limiters={limiters}
-            concentration={character.session.concentration || null}
+            concentration={concentration || null}
             concBlockedConditionId={concBlockedReason}
             readonly={readonly}
           />

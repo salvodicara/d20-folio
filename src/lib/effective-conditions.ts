@@ -1,3 +1,4 @@
+import { vitalConditions } from "@/lib/character-vitals";
 import type { SessionState } from "@/types/character";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 
@@ -17,11 +18,13 @@ export function effectiveSessionConditions(
   session: Pick<
     SessionState,
     "conditions" | "concentrationConditions" | "encounterEffects" | "concentration"
-  >
+  > & { readonly world?: unknown }
 ): string[] {
   return [
     ...new Set([
-      ...session.conditions,
+      // The manual/base ledger reads through the ONE vitals projection seam
+      // (session-truth reconciled against the persisted world).
+      ...vitalConditions(session),
       ...(session.concentration ? (session.concentrationConditions ?? []) : []),
       ...projectedEncounterConditions(session.encounterEffects),
     ]),

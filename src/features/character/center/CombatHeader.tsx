@@ -31,6 +31,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { totalLevel } from "@/lib/classes";
+import { vitalExhaustion } from "@/lib/character-vitals";
 import { useDismissOnOutside } from "@/hooks/useDismissOnOutside";
 import { useTranslation } from "react-i18next";
 import {
@@ -97,7 +98,11 @@ export function CombatHeader() {
   // (equipped armor, active toggles, exhaustion) to resolve the S13 walking Speed.
   const characterDoc = useCharacterStore((s) => s.character);
   const charData = useCharacterStore((s) => s.character?.character);
-  const exhaustion = useCharacterStore((s) => s.character?.session.exhaustion ?? 0);
+  // Exhaustion reads through the ONE vitals projection seam (session truth
+  // reconciled against the persisted engine world).
+  const exhaustion = useCharacterStore((s) =>
+    s.character ? vitalExhaustion(s.character.session) : 0
+  );
   // Narrow session slices the aggregate needs — kept separate from the sheet so a
   // mid-combat HP/round change can't re-run the grant aggregation, and so a chosen
   // lineage's grants (darkvision, granted spells, resistances) actually flow into

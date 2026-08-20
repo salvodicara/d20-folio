@@ -15,6 +15,7 @@ import type { TFunction } from "i18next";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { concentrationValue, customConcentrationValue } from "@/lib/concentration";
+import { vitalConcentration } from "@/lib/character-vitals";
 import { concentrationLabel } from "@/lib/views/tracker-view";
 import type { Locale } from "@/lib/locale";
 
@@ -31,7 +32,10 @@ export async function confirmConcentrationSwap(
   locale: Locale
 ): Promise<boolean> {
   if (!incoming.concentration) return true;
-  const currentConc = useCharacterStore.getState().character?.session.concentration ?? "";
+  // The held-concentration read goes through the ONE vitals projection seam
+  // (session truth reconciled against the persisted engine world).
+  const liveCharacter = useCharacterStore.getState().character;
+  const currentConc = liveCharacter ? vitalConcentration(liveCharacter.session) : "";
   if (!currentConc) return true;
   // The stored value is the spell's stable id (custom spells carry their name
   // behind the marker). Same spell → no conflict (re-applying is harmless);

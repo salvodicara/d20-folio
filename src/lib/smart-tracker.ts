@@ -98,6 +98,12 @@ import {
   aggregateCharacterGrants,
 } from "@/lib/aggregate-character";
 import { sessionActiveKeys } from "@/lib/world-standing-grants";
+// Every resolved tracker row's `used` count reads through the ONE vitals
+// projection seam (session truth reconciled against the persisted engine
+// world), so the rail/rest/action surfaces built from these rows migrate off
+// the raw session mirror in one motion. `rolls` stays a session-only fact
+// (the world does not model recorded rolls).
+import { vitalTrackerUsed } from "@/lib/character-vitals";
 import {
   classifySpellCastingTime,
   slotUsageKey,
@@ -2869,7 +2875,7 @@ function resolveEquipmentTrackers(character: CharacterDoc): RawResolvedTracker[]
       unit: spec.unit,
       shortRestRecovery: spec.shortRestRecovery,
       refreshOnActivationOf: spec.refreshOnActivationOf,
-      used: character.session.trackers[id]?.used ?? 0,
+      used: vitalTrackerUsed(character.session, id),
     });
   }
   return out;
@@ -2970,7 +2976,7 @@ function resolveMagicItemTrackers(character: CharacterDoc): RawResolvedTracker[]
       // No raw `unit`: the rail falls back to the localized "uses"/usesWord word
       // (a charge IS a use of the pool) — keeps the unit i18n-clean (no English
       // leak) and consistent with every other pool row.
-      used: character.session.trackers[itemId]?.used ?? 0,
+      used: vitalTrackerUsed(character.session, itemId),
     });
   }
   return out;
@@ -3263,7 +3269,7 @@ export function resolveFreeCastFeatTrackers(
       total: fc.total,
       recovery: fc.rest === "short" ? "short-rest" : "long-rest",
       isPool: false,
-      used: character.session.trackers[fc.id]?.used ?? 0,
+      used: vitalTrackerUsed(character.session, fc.id),
     });
   });
   return out;
@@ -3330,7 +3336,7 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
               nonZeroAltRecovery(t.altRecoveryCost) && {
                 altRecoveryCost: t.altRecoveryCost,
               }),
-            used: session.trackers[t.id]?.used ?? 0,
+            used: vitalTrackerUsed(session, t.id),
           });
         }
       }
@@ -3402,7 +3408,7 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
       refreshOnActivationOf: tracker.refreshOnActivationOf,
       rider,
       ...(altRecoveryCost && { altRecoveryCost }),
-      used: session.trackers[srdFeature.id]?.used ?? 0,
+      used: vitalTrackerUsed(session, srdFeature.id),
     });
 
     // Multi-tracker features (Psi Warrior Psionic Power → Telekinetic Movement
@@ -3438,7 +3444,7 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
         unit: extra.unit,
         shortRestRecovery: extra.shortRestRecovery,
         refreshOnActivationOf: extra.refreshOnActivationOf,
-        used: session.trackers[extraSpec.id]?.used ?? 0,
+        used: vitalTrackerUsed(session, extraSpec.id),
       });
     }
   }
@@ -3488,7 +3494,7 @@ function resolveRaceTrackers(
         unit: spec.unit,
         shortRestRecovery: spec.shortRestRecovery,
         refreshOnActivationOf: spec.refreshOnActivationOf,
-        used: session.trackers[id]?.used ?? 0,
+        used: vitalTrackerUsed(session, id),
       });
     }
   }

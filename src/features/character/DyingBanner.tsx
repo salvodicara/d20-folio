@@ -43,6 +43,7 @@ import { resolveAtZeroHpInterrupts } from "@/lib/smart-tracker";
 import { isCharacterDead, diedOfExhaustion } from "@/lib/character-status";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
 import { deathSaveD20Context, enteredD20FaceCount } from "@/lib/character-d20-tests";
+import { vitalExhaustion, vitalHp } from "@/lib/character-vitals";
 import { useHpControls } from "./molecules/use-hp-controls";
 import { DeathSaves } from "./molecules/DeathSaves";
 import { EnteredD20Faces } from "./molecules/EnteredD20Faces";
@@ -54,7 +55,11 @@ export function DyingBanner() {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const hasCharacter = useCharacterStore((s) => s.character != null);
-  const current = useCharacterStore((s) => s.character?.session.hp.current ?? 1);
+  // The current-HP read goes through the ONE vitals projection seam (session
+  // truth reconciled against the persisted engine world).
+  const current = useCharacterStore((s) =>
+    s.character ? vitalHp(s.character.session).current : 1
+  );
   const character = useCharacterStore((s) => s.character);
   const applyAtZeroHpInterrupt = useCharacterStore((s) => s.applyAtZeroHpInterrupt);
 
@@ -126,7 +131,7 @@ export function DyingBanner() {
   // composed from the labels that already exist (no new string).
   const cause =
     character != null && diedOfExhaustion(character.session)
-      ? `${t("character.exhaustion")} ${character.session.exhaustion}`
+      ? `${t("character.exhaustion")} ${vitalExhaustion(character.session)}`
       : null;
 
   return (

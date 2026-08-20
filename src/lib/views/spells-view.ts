@@ -59,6 +59,7 @@ import { resolveEffectiveSpells } from "@/lib/expanded-spells";
 import { canRitualCast } from "@/lib/ritual";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import { slotUsageKey } from "@/lib/cast-options";
+import { vitalSlotUsed } from "@/lib/character-vitals";
 import { evaluateGrants, type SpellDieAugmentEntry } from "@/lib/grants";
 import { grantSourceName } from "@/lib/views/srd-i18n";
 import { customConcentrationValue } from "@/lib/concentration";
@@ -587,7 +588,9 @@ export function buildSpellsViewModel(
   const slots: SlotSummaryVM[] = character.spellSlots.map((slot) => {
     // Each pool reads its OWN counter (normal `String(level)` / pact `pact-N`),
     // so a Sorlock's normal + pact L1 rows never share a remaining count (B3).
-    const used = session.spellSlots[slotUsageKey(slot)]?.used ?? 0;
+    // The used count reads through the ONE vitals projection seam (session
+    // truth reconciled against the persisted engine world).
+    const used = vitalSlotUsed(session, slot);
     return {
       level: slot.level,
       total: slot.total,

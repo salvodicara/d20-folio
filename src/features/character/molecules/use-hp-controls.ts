@@ -45,6 +45,7 @@ import {
   type DamageDefenses,
   type DamageInstance,
 } from "@/lib/damage-intake";
+import { vitalDeathSaves, vitalHp } from "@/lib/character-vitals";
 import { deriveDamageDefenses } from "@/lib/views/sheet-view";
 import { effectiveProficiencyBonus, isHeavyArmorEquipped } from "@/lib/compute";
 import { totalLevel } from "@/lib/classes";
@@ -140,12 +141,16 @@ export function useHpControls(): HpControls {
   const setTempHP = useCharacterStore((s) => s.setTempHP);
   const restoreHpSnapshot = useCharacterStore((s) => s.restoreHpSnapshot);
 
-  const current = character?.session.hp.current ?? 0;
+  // The current/temp readout reads through the ONE vitals projection seam
+  // (session truth reconciled against the persisted engine world) — the
+  // WRITES below stay on the legacy store seams unchanged.
+  const hp = character ? vitalHp(character.session) : { current: 0, temp: 0 };
+  const current = hp.current;
   // D1 — display + clamp against the EFFECTIVE max (stored base + hp-flat boons +
   // Aid), matching the store's heal/clamp, so the readout, bar %, and local
   // damage/heal math never understate a Draconic / Boon-of-Fortitude / Aided char.
   const max = character ? effectiveMaxHp(character.character, character.session) : 0;
-  const temp = character?.session.hp.temp ?? 0;
+  const temp = hp.temp;
   const state = hpState(current, max);
   const pct = max > 0 ? Math.max(0, Math.min(100, Math.round((current / max) * 100))) : 0;
   // S5 — Bloodied is its OWN raw HP-band (≤ half EFFECTIVE max, but > 0), distinct
@@ -187,8 +192,11 @@ export function useHpControls(): HpControls {
     [defenses]
   );
 
-  const deathSucc = character?.session.deathSucc ?? 0;
-  const deathFail = character?.session.deathFail ?? 0;
+  const death = character
+    ? vitalDeathSaves(character.session)
+    : { successes: 0, failures: 0 };
+  const deathSucc = death.successes;
+  const deathFail = death.failures;
   const atZero = character !== null && current === 0;
   const dead =
     character !== null && !isCharacterAlive(character.status, character.session);

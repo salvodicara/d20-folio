@@ -39,6 +39,14 @@ import { effectsForTarget } from "@/lib/combat-effects";
 import { useGlobalCombat } from "@/features/campaigns/global-combat-context";
 import { ConditionEditor } from "./ConditionEditor";
 import { slotUsageKey } from "@/lib/cast-options";
+// The rail's core vital reads (concentration, exhaustion, slot pips) go
+// through the ONE vitals projection seam (session truth reconciled against
+// the persisted engine world) — the second UI-read migration off the bridge.
+import {
+  vitalConcentration,
+  vitalExhaustion,
+  vitalSlotUsed,
+} from "@/lib/character-vitals";
 import type { AggregatedGrants } from "@/lib/grants";
 import { localizeText } from "@/lib/views/srd-i18n";
 import {
@@ -287,9 +295,9 @@ export function ResourceRail() {
     aggregate.itemAbilityScoreCap
   );
   const spellSlots = charData.spellSlots;
-  const concentration = session.concentration;
+  const concentration = vitalConcentration(session);
   const conditions = effectiveSessionConditions(session);
-  const exhaustion = session.exhaustion;
+  const exhaustion = vitalExhaustion(session);
   const inspiration = session.inspiration;
   // D37 — the Bardic Inspiration die the character is HOLDING (granted by an ally
   // Bard); "" when none. Distinct from the Bard's own give-out tracker.
@@ -548,7 +556,7 @@ export function ResourceRail() {
                 <span className="trk-name">{t("character.spellSlots")}</span>
                 <div className="slot-grid">
                   {spellSlots.map((slot) => {
-                    const used = session.spellSlots[slotUsageKey(slot)]?.used ?? 0;
+                    const used = vitalSlotUsed(session, slot);
                     return <RailSlot key={slotUsageKey(slot)} slot={slot} used={used} />;
                   })}
                 </div>
@@ -1712,7 +1720,7 @@ function RailTracker({ tracker }: { tracker: ResolvedTracker }) {
     if (!cost || !("fromSpellSlot" in cost) || !character) return null;
     const availableSlotLevels = character.character.spellSlots
       .filter((s) => {
-        const used = character.session.spellSlots[slotUsageKey(s)]?.used ?? 0;
+        const used = vitalSlotUsed(character.session, s);
         return s.total - used > 0;
       })
       .map((s) => s.level);

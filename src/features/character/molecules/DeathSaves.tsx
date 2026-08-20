@@ -24,6 +24,7 @@ import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { diedInPlay, stabilisedInPlay } from "@/lib/character-status";
+import { vitalDeathSaves, vitalHp } from "@/lib/character-vitals";
 
 const SLOTS = [0, 1, 2] as const;
 
@@ -59,7 +60,13 @@ export function DeathSaves() {
 
   if (!character) return null;
 
-  const { deathSucc, deathFail, hp } = character.session;
+  // The pip display reads through the ONE vitals projection seam (session
+  // truth reconciled against the persisted engine world); the pip taps below
+  // still write the legacy store seam unchanged.
+  const { successes: deathSucc, failures: deathFail } = vitalDeathSaves(
+    character.session
+  );
+  const hp = vitalHp(character.session);
 
   // Only meaningful while down.
   if (hp.current > 0) return null;
