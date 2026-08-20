@@ -129,7 +129,6 @@ import { normalizeStoredConcentration } from "@/lib/concentration";
 import { concentrationSaveDc } from "@/lib/compute";
 import { conditionBreaksConcentration } from "@/lib/condition-effects";
 import { resolveCombatEffectGrants } from "@/lib/resolve-grant-sources";
-import { conformCombatEffectLifecycleCollection } from "@/lib/combat-effect-lifecycle-collection";
 
 // Preserve the mockable live binding in dev/tests, while giving the production
 // optimizer a literal `false` so the local-replica branches and fixtures disappear.
@@ -238,35 +237,29 @@ function toCampaignDoc(id: string, data: Record<string, unknown>): CampaignDoc {
   const memberDetails = conformCampaignMembers(doc.memberDetails);
   if (!doc.encounter) return { ...doc, memberDetails };
   const currentEncounter = parseEncounterState(doc.encounter);
-  const { effectLifecycles: storedEffectLifecycles, ...encounter } = currentEncounter;
-  const effectLifecycles =
-    conformCombatEffectLifecycleCollection(storedEffectLifecycles) ?? [];
+  // A stored encounter written by the deleted effect-program runtime may still
+  // carry `effectLifecycles`; drop the remnant at this read boundary.
+  const { effectLifecycles: _legacyEffectLifecycles, ...encounter } =
+    currentEncounter as EncounterState & { effectLifecycles?: unknown };
+  void _legacyEffectLifecycles;
   return {
     ...doc,
     memberDetails,
     encounter: {
       ...encounter,
-      ...(currentEncounter.effectOps
-        ? { effectOps: conformCombatEffectOps(currentEncounter.effectOps) }
+      ...(encounter.effectOps
+        ? { effectOps: conformCombatEffectOps(encounter.effectOps) }
         : {}),
-      ...(effectLifecycles.length ? { effectLifecycles } : {}),
     },
   };
 }
 
 function encounterForWrite(encounter: EncounterState): EncounterState {
   const currentEncounter = parseEncounterState(encounter);
-  const { effectLifecycles: storedEffectLifecycles, ...rest } = currentEncounter;
-  const effectLifecycles = conformCombatEffectLifecycleCollection(
-    storedEffectLifecycles ?? []
-  );
-  if (!effectLifecycles) {
-    throw new TypeError("Invalid combat-effect lifecycle collection");
-  }
-  return {
-    ...rest,
-    ...(effectLifecycles.length ? { effectLifecycles } : {}),
-  };
+  const { effectLifecycles: _legacyEffectLifecycles, ...rest } =
+    currentEncounter as EncounterState & { effectLifecycles?: unknown };
+  void _legacyEffectLifecycles;
+  return rest;
 }
 
 function storedEncounter(value: unknown): EncounterState | null {
@@ -936,13 +929,11 @@ function writePeerCombatEffect(
 ): boolean {
   const effect = peerCombatEffectPatch(before, after);
   if (Object.keys(effect).length === 0) return false;
-  const actionRevision = (stored?.actionRevision ?? 0) + 1;
   if (stored) {
     txn.set(
       ref,
       {
         ...effect,
-        actionRevision,
         updatedAt: serverTimestamp(),
       },
       { merge: true }
@@ -950,7 +941,6 @@ function writePeerCombatEffect(
     return true;
   }
   txn.set(ref, {
-    actionRevision,
     hp: after.hp,
     conditions: after.conditions,
     ...(after.bardicInspirationDie !== undefined

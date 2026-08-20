@@ -265,7 +265,7 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
           // excludes saves, hazards, and automatic damage at the data boundary.
           trigger: "hitByAttack",
           targeting: { affinity: "self", maxTargets: 1 },
-          // The canonical-runtime authored program (supersedes `effectProgram`):
+          // The canonical-runtime authored program:
           // declaring the reaction claims the round's Reaction slot; the
           // damage-taken phase compiles the exact compensating reduction —
           // reduce the triggering attack's damage by ⌈half⌉, so the rogue TAKES
@@ -334,30 +334,6 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
             ],
             registers: [],
             version: 1,
-          },
-          effectProgram: {
-            version: 1,
-            id: "feature.rogue-uncanny-dodge",
-            phases: [
-              {
-                id: "resolve",
-                trigger: { kind: "resolve" },
-                steps: [
-                  {
-                    id: "halve-attack-damage",
-                    kind: "damage-reduction",
-                    scope: "program",
-                    subject: "source",
-                    amount: {
-                      kind: "binding",
-                      binding: "triggering-damage",
-                      multiplier: 0.5,
-                      rounding: "ceil",
-                    },
-                  },
-                ],
-              },
-            ],
           },
         },
       ],

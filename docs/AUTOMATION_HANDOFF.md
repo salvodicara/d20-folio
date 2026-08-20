@@ -221,7 +221,10 @@ Do not mistake this checkpoint for an executor. The deleted parallel program pla
 supported path: typed world operations flow only through the physical transaction kernel, and the final
 coordinator will call `planMechanicsWorldAction` exactly once after every frame, event and end wave drains.
 The next work is that causal coordinator, followed by corpus/application cutover and deletion of every
-old effect-program or handwritten executor path.
+old effect-program or handwritten executor path. (DONE for the effect-program half: the legacy
+effect-program generation — data fields, interpreter, planning/command/atomic/lifecycle stack, the
+outer `action-command` kernel, and the unmounted review UI — is deleted; see the deletion-map note
+below.)
 
 ### 2026-08-12 causal-kernel hardening — checkpoint closed
 
@@ -783,12 +786,16 @@ pulse surface declares armed phases, and the bridge mirrors hp/slots/exhaustion/
 
 **The deletion map (executes when the canonical runtime covers each flow):**
 
-1. **Branch-born intermediate combat generation** (`combat-economy`, `combat-effect-atomic`,
-   `combat-effect-command`, `combat-effect-io`, `combat-effect-lifecycle*`,
-   `combat-effect-planning-state`, `combat-effect-program`, `combat-effects`, `combat-outcomes`,
-   `combat-transition`, `automation-compiler` — none exist on `main`): the migration's own
-   half-way runtime. Deleted per-flow as feature/weapon/item transcription plus the encounter
-   world land. (`combat-effect-state-reducer` was stillborn — already removed.)
+1. **Branch-born intermediate combat generation** — PARTIALLY EXECUTED. Deleted (the
+   effect-program cutover wave): `combat-effect-atomic`, `combat-effect-command`,
+   `combat-effect-lifecycle`, `combat-effect-lifecycle-collection`, `combat-effect-planning-state`,
+   `combat-effect-program`, `action-command`, `CombatEffectProgramReview`, and every
+   `effectProgram` data field/corpus/transcriber/routing path. Kept as the LIVE persistent
+   standing-effect seam (fed by the declared-effects resolver + campaign persistent ops, not by
+   programs): `combat-effects`, `combat-effect-io`, `types/combat-effect` — its own future seam
+   onto the encounter world. `combat-economy`, `combat-outcomes`, `combat-transition`,
+   `automation-compiler` remain live for the not-yet-cut-over flows.
+   (`combat-effect-state-reducer` was stillborn — already removed.)
 2. **Main-era legacy** (`cost-engine`, `smart-tracker` consequence paths, `combat-hp`,
    `combat-resolution`, `combat-state`, `combat-state-io`, `spell-combat-castable`): survives the
    longest — it serves the live UI for everything not yet transcribed. Falls with the final
@@ -797,8 +804,9 @@ pulse surface declares armed phases, and the bridge mirrors hp/slots/exhaustion/
    `item-resource-boundaries` + `src/lib/resources.ts` item-command block): completed on the
    branch to restore boot; deleted when items resolve through the engine's material
    inventory/payment model.
-4. **Legacy `effectProgram` fields** on the 15 authored spells + `SUPERSEDED_LEGACY_PROGRAMS`:
-   dropped with generation 1's executor once the authored `mechanicsProgram` twins are live.
+4. **Legacy `effectProgram` fields** + `SUPERSEDED_LEGACY_PROGRAMS`: DONE — deleted with
+   generation 1's executor (the effect-program cutover wave; the authored `mechanicsProgram`
+   twins are the executable truth).
 5. **Bridge mirrors + `characterWorldState` legacy derivation**: dropped with the one-off live
    document migration (schema-4 world becomes the only source; pre-world docs derive once,
    fixtures re-validated).

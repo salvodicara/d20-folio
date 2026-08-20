@@ -135,8 +135,6 @@ import {
   joinCampaign,
   listSharedCampaigns,
   persistBeginTurns,
-  persistEndEncounter,
-  persistStartEncounter,
   subscribeToCampaign,
   subscribeToCampaignNotes,
   undoTreasuryEntry,
@@ -167,161 +165,6 @@ import type {
   TreasuryLogEntry,
 } from "@/types/campaign";
 import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
-import {
-  reduceCombatEffectLifecycle,
-  type CombatEffectLifecycleRuntime,
-} from "@/lib/combat-effect-lifecycle";
-import type {
-  CombatEffectCommandBatch,
-  CombatEffectCommandLifecycleReceipt,
-} from "@/lib/combat-effect-command";
-import {
-  atomicAddressKey,
-  conformCombatEffectAtomicReadSet,
-  type AtomicOwner,
-  type AtomicRead,
-  type CombatEffectAtomicReadSet,
-} from "@/lib/combat-effect-atomic";
-import { startEncounter } from "@/features/campaigns/encounter";
-
-function lifecycleReadSet(
-  occurrenceId: string,
-  programId: string,
-  sourceId: string
-): CombatEffectAtomicReadSet {
-  const owner: AtomicOwner = {
-    kind: "pc",
-    surface: "shared",
-    campaignId: "campaign:fixture",
-    encounterEpoch: 1,
-    combatantId: sourceId,
-    memberUid: "member:fixture",
-    characterId: "character:fixture",
-  };
-  const reads: AtomicRead[] = [
-    {
-      owner,
-      address: {
-        kind: "document-revision",
-        document: {
-          kind: "character-play",
-          uid: "member:fixture",
-          characterId: "character:fixture",
-        },
-      },
-      expected: 0,
-    },
-    {
-      owner,
-      address: {
-        kind: "document-revision",
-        document: {
-          kind: "shared-encounter",
-          campaignId: "campaign:fixture",
-          encounterEpoch: 1,
-        },
-      },
-      expected: 0,
-    },
-    {
-      owner,
-      address: { kind: "base-state" },
-      expected: {
-        hp: 10,
-        tempHp: 0,
-        stable: false,
-        deathSaves: { successes: 0, failures: 0 },
-        conditions: [],
-        conditionLifetimes: {},
-        standing: [],
-        standingLifetimes: {},
-        resources: {},
-        stateFlags: {},
-      },
-    },
-    { owner, address: { kind: "max-hp" }, expected: 10 },
-    {
-      owner,
-      address: { kind: "damage-defenses" },
-      expected: {
-        allDamageResistance: false,
-        resistances: [],
-        immunities: [],
-        vulnerabilities: [],
-        sourceResistances: [],
-        flatReductions: [],
-        saveDamageRules: [],
-      },
-    },
-    { owner, address: { kind: "zero-hp-floors" }, expected: [] },
-    { owner, address: { kind: "occurrence-heads" }, expected: [] },
-    {
-      owner,
-      address: { kind: "lifecycle-head", occurrenceId, programId, sourceId },
-      expected: { present: false },
-    },
-  ];
-  reads.sort((left, right) =>
-    atomicAddressKey(left.owner, left.address).localeCompare(
-      atomicAddressKey(right.owner, right.address)
-    )
-  );
-  const conformed = conformCombatEffectAtomicReadSet(
-    {
-      schema: 1,
-      bindings: [{ ref: { kind: "source", id: sourceId }, owner }],
-      reads,
-    },
-    { occurrenceId, programId, sourceId }
-  );
-  if (!conformed) throw new TypeError("Invalid lifecycle read-set fixture");
-  return conformed;
-}
-
-function lifecycleRuntime(
-  occurrenceId: string,
-  programId: string,
-  sourceId: string
-): Readonly<CombatEffectLifecycleRuntime> {
-  const lifecycle: CombatEffectCommandLifecycleReceipt = {
-    occurrenceId,
-    programId,
-    phaseId: "resolve",
-    sourceId,
-    occurrence: 0,
-    attempt: 0,
-    auxiliaryConsequences: [],
-    initialTallies: {},
-    finalTallies: {},
-    ended: false,
-  };
-  const commandId = [occurrenceId, programId, "resolve", sourceId, "0", "0"]
-    .map((part) => `${part.length}:${part}`)
-    .join("|");
-  const batch: CombatEffectCommandBatch = {
-    schema: 1,
-    commandId,
-    payloadIdentity: JSON.stringify(lifecycle),
-    adapterId: "coordinator",
-    surface: "shared",
-    direction: "forward",
-    expectedCausalState: "available",
-    nextCausalState: "committed",
-    readSet: lifecycleReadSet(occurrenceId, programId, sourceId),
-    readSetPolicy: "initial",
-    coordinatesLifecycle: true,
-    lifecycle,
-    operations: [],
-  };
-  const result = reduceCombatEffectLifecycle(null, batch);
-  if (result.status !== "applied") {
-    throw new TypeError(`Unable to build lifecycle fixture: ${result.reason}`);
-  }
-  return result.runtime;
-}
-
-const LIFECYCLE_A = lifecycleRuntime("cast:a", "spell:alpha", "caster:a");
-const LIFECYCLE_B = lifecycleRuntime("cast:b", "spell:beta", "caster:b");
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -404,7 +247,6 @@ describe("campaign-io — reviewed combat effects", () => {
     expect(set).toHaveBeenCalledWith(
       expect.anything(),
       {
-        actionRevision: 5,
         hp: { current: 7, temp: 0 },
         updatedAt: { __serverTimestamp: true },
       },
@@ -1603,7 +1445,6 @@ describe("campaign-io — reviewed combat effects", () => {
 
     const patch = set.mock.calls[0]?.[1] as Record<string, unknown>;
     expect(patch).toMatchObject({
-      actionRevision: 13,
       hp: { current: 16, temp: 0 },
       pendingConcentrationSaves: [expect.objectContaining({ spell: "bless", damage: 4 })],
     });
@@ -2017,7 +1858,7 @@ describe("campaign-io — reviewed combat effects", () => {
 
     expect(set).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ actionRevision: 1, conditions: [] }),
+      expect.objectContaining({ conditions: [] }),
       { merge: true }
     );
     const patch = set.mock.calls[0]?.[1] as Record<string, unknown>;
@@ -2454,7 +2295,7 @@ describe("campaign-io — persistent combat-effect operation log", () => {
     });
     expect(set).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ actionRevision: 1, hp: { current: 25, temp: 0 } }),
+      expect.objectContaining({ hp: { current: 25, temp: 0 } }),
       { merge: true }
     );
 
@@ -2494,7 +2335,7 @@ describe("campaign-io — persistent combat-effect operation log", () => {
     await revokePersistentCombatEffect("camp1", aid.id);
     expect(set).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ actionRevision: 1, hp: { current: 10, temp: 0 } }),
+      expect.objectContaining({ hp: { current: 10, temp: 0 } }),
       { merge: true }
     );
     expect(update.mock.calls[0]?.[1]).toMatchObject({
@@ -3810,134 +3651,6 @@ describe("campaign-io — snapshot normalization", () => {
   });
 });
 
-describe("campaign-io — shared effect lifecycle persistence", () => {
-  const rawEncounter = (effectLifecycles: unknown): Record<string, unknown> => ({
-    combatants: [],
-    nextMonsterOrdinal: 1,
-    round: 1,
-    currentCombatantId: null,
-    epoch: 7,
-    status: "active",
-    effectLifecycles,
-  });
-
-  function readEncounter(effectLifecycles: unknown): EncounterState {
-    const seen: Array<CampaignDoc | null> = [];
-    subscribeToCampaign("u1", "c1", (campaign) => seen.push(campaign));
-    const call = onSnapshotMock.mock.calls.at(-1) as unknown as [
-      unknown,
-      (snapshot: {
-        exists: () => boolean;
-        id: string;
-        data: () => Record<string, unknown>;
-      }) => void,
-    ];
-    call[1]({
-      exists: () => true,
-      id: "c1",
-      data: () => ({ memberDetails: {}, encounter: rawEncounter(effectLifecycles) }),
-    });
-    const encounter = seen[0]?.encounter;
-    if (!encounter) throw new TypeError("Campaign fixture has no encounter");
-    return encounter;
-  }
-
-  const emptyEncounter = (): EncounterState => ({
-    combatants: [],
-    nextMonsterOrdinal: 1,
-    round: 1,
-    currentCombatantId: null,
-    epoch: 7,
-    status: "active",
-  });
-
-  it("round-trips a canonical sorted and deeply frozen collection", async () => {
-    const encounter = readEncounter([LIFECYCLE_B, LIFECYCLE_A]);
-    const lifecycles = encounter.effectLifecycles;
-    if (!lifecycles) throw new TypeError("Lifecycle fixture was not conformed");
-    expect(lifecycles.map(({ occurrenceId }) => occurrenceId)).toEqual([
-      "cast:a",
-      "cast:b",
-    ]);
-    expect(Object.isFrozen(lifecycles)).toBe(true);
-    expect(Object.isFrozen(lifecycles[0])).toBe(true);
-    expect(Object.isFrozen(lifecycles[0]?.cursor)).toBe(true);
-
-    await updateCampaign("c1", { encounter });
-    const written = updateDocMock.mock.calls[0]?.[1] as { encounter: EncounterState };
-    expect(JSON.stringify(written.encounter.effectLifecycles)).toBe(
-      JSON.stringify(lifecycles)
-    );
-  });
-
-  it("tolerates a malformed persisted collection as omitted", () => {
-    for (const malformed of [null, {}, [LIFECYCLE_A, { broken: true }]]) {
-      expect(readEncounter(malformed)).not.toHaveProperty("effectLifecycles");
-    }
-  });
-
-  it("tolerates duplicate persisted identities as omitted and rejects them on write", async () => {
-    const duplicate = JSON.parse(
-      JSON.stringify(LIFECYCLE_A)
-    ) as CombatEffectLifecycleRuntime;
-    expect(readEncounter([LIFECYCLE_A, duplicate])).not.toHaveProperty(
-      "effectLifecycles"
-    );
-
-    await expect(
-      updateCampaign("c1", {
-        encounter: { ...emptyEncounter(), effectLifecycles: [LIFECYCLE_A, duplicate] },
-      })
-    ).rejects.toThrow(TypeError);
-    expect(updateDocMock).not.toHaveBeenCalled();
-  });
-
-  it("omits an empty collection on writes", async () => {
-    await updateCampaign("c1", {
-      encounter: { ...emptyEncounter(), effectLifecycles: [] },
-    });
-    const written = updateDocMock.mock.calls[0]?.[1] as { encounter: EncounterState };
-    expect(written.encounter).not.toHaveProperty("effectLifecycles");
-  });
-
-  it("preserves the collection through encounter reducers", () => {
-    const encounter: EncounterState = {
-      ...emptyEncounter(),
-      nextMonsterOrdinal: 2,
-      effectLifecycles: [LIFECYCLE_A],
-      combatants: [
-        {
-          kind: "monster",
-          id: "monster-1",
-          name: "Goblin",
-          ac: 13,
-          initiative: 8,
-          conditions: [],
-          hp: { current: 5, temp: 0, max: 7 },
-        },
-      ],
-    };
-    const next = reduceDeclaredEffects(encounter, "camp-test", [
-      { kind: "temp-hp", targetId: "monster-1", amount: 3 },
-    ]);
-    expect(next).not.toBe(encounter);
-    expect(next.effectLifecycles).toBe(encounter.effectLifecycles);
-  });
-
-  it("starts without a collection and clears it with the encounter", async () => {
-    const fresh = startEncounter({}, [], 8);
-    expect(fresh).not.toHaveProperty("effectLifecycles");
-
-    await persistStartEncounter("c1", fresh);
-    const started = updateDocMock.mock.calls[0]?.[1] as { encounter: EncounterState };
-    expect(started.encounter).not.toHaveProperty("effectLifecycles");
-
-    await persistEndEncounter("c1");
-    const ended = updateDocMock.mock.calls[1]?.[1] as Record<string, unknown>;
-    expect(ended.encounter).toBeNull();
-  });
-});
-
 describe("campaign-io — treasury atomic writes (B06)", () => {
   const entry: TreasuryLogEntry = {
     amount: 5,
@@ -4039,7 +3752,6 @@ describe("campaign-io — debounced encounter write reconciles the turn pointer 
     order: ["pc-a", "monster-1"],
     epoch: 42,
     status: "active",
-    effectLifecycles: [LIFECYCLE_A],
   };
 
   function campaignWith(enc: EncounterState): CampaignDoc {
@@ -4097,7 +3809,6 @@ describe("campaign-io — debounced encounter write reconciles the turn pointer 
       temp: 0,
       max: 7,
     });
-    expect(data.encounter.effectLifecycles).toEqual([LIFECYCLE_A]);
   });
 
   it("leaves the payload untouched across a DIFFERENT fight (epoch mismatch)", async () => {

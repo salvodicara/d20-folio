@@ -1034,7 +1034,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
   },
   {
     id: "ensnaring-strike",
-    // The canonical-runtime authored program (supersedes `effectProgram`): the
+    // The canonical-runtime authored program: the
     // cast arms the vines on the caster; the table declares the landed weapon
     // attack as the "strike" pulse (STR save: failure restrains and roots the
     // vines, success ends the spell), each restrained turn-start as a "pulse"
@@ -1358,158 +1358,6 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       registers: [{ initial: 1, registerId: "cast-level" }],
       version: 1,
     },
-    effectProgram: {
-      version: 1,
-      id: "spell.ensnaring-strike",
-      gates: [
-        {
-          id: "vine-save",
-          kind: "save",
-          scope: "target",
-          ability: "STR",
-          dc: { kind: "binding", binding: "caster-spell-save-dc" },
-          when: { kind: "trigger-fact", fact: "attack-result", equals: "hit" },
-          sizeAdvantage: {
-            subject: "target",
-            comparison: "gte",
-            size: "Large",
-            sourceId: "ensnaring-strike-large-save-advantage",
-          },
-        },
-        {
-          id: "escape-check",
-          kind: "check",
-          scope: "target",
-          ability: "STR",
-          skill: "athletics",
-          dc: { kind: "binding", binding: "caster-spell-save-dc" },
-        },
-      ],
-      inputs: [
-        {
-          id: "vine-damage-roll",
-          kind: "roll",
-          scope: "target",
-          roll: {
-            count: { base: 1, perSlot: { above: 1, amount: 1 } },
-            sides: 6,
-          },
-        },
-      ],
-      phases: [
-        {
-          id: "ensnare",
-          trigger: { kind: "resolve" },
-          targeting: { affinity: "enemy", maxTargets: 1 },
-          steps: [
-            {
-              id: "apply-restrained",
-              kind: "condition",
-              scope: "target",
-              subject: "target",
-              operation: "apply",
-              condition: "restrained",
-              lifetime: { kind: "source-end" },
-              when: {
-                kind: "all",
-                predicates: [
-                  { kind: "trigger-fact", fact: "attack-result", equals: "hit" },
-                  { kind: "gate", gateId: "vine-save", result: "failure" },
-                ],
-              },
-            },
-            {
-              id: "start-vines",
-              kind: "standing",
-              scope: "target",
-              subject: "target",
-              operation: "start",
-              effectId: "ensnaring-strike-vines",
-              lifetime: { kind: "source-end" },
-              when: {
-                kind: "all",
-                predicates: [
-                  { kind: "trigger-fact", fact: "attack-result", equals: "hit" },
-                  { kind: "gate", gateId: "vine-save", result: "failure" },
-                ],
-              },
-            },
-            {
-              id: "miss-ends",
-              kind: "end-program",
-              scope: "target",
-              when: { kind: "trigger-fact", fact: "attack-result", equals: "miss" },
-            },
-            {
-              id: "initial-save-ends",
-              kind: "end-program",
-              scope: "target",
-              when: {
-                kind: "all",
-                predicates: [
-                  { kind: "trigger-fact", fact: "attack-result", equals: "hit" },
-                  { kind: "gate", gateId: "vine-save", result: "success" },
-                ],
-              },
-            },
-          ],
-        },
-        {
-          id: "restrained-turn",
-          trigger: { kind: "turn-start", subject: "target", everyTurns: 1 },
-          targeting: { affinity: "enemy", maxTargets: 1 },
-          steps: [
-            {
-              id: "vine-damage",
-              kind: "damage",
-              scope: "target",
-              subject: "target",
-              amount: { kind: "input", inputId: "vine-damage-roll" },
-              damageType: { kind: "fixed", damageType: "piercing" },
-              damageSource: "spell",
-              when: {
-                kind: "standing",
-                subject: "target",
-                effectId: "ensnaring-strike-vines",
-                present: true,
-              },
-            },
-          ],
-          repeat: { id: "ensnaring-strike-duration", maxOccurrences: 10 },
-        },
-        {
-          id: "escape-vines",
-          trigger: { kind: "manual", eventId: "action-to-break-ensnaring-vines" },
-          targeting: { affinity: "any", maxTargets: 1 },
-          steps: [
-            {
-              id: "remove-restrained",
-              kind: "condition",
-              scope: "target",
-              subject: "target",
-              operation: "remove",
-              condition: "restrained",
-              when: { kind: "gate", gateId: "escape-check", result: "success" },
-            },
-            {
-              id: "end-vines",
-              kind: "standing",
-              scope: "target",
-              subject: "target",
-              operation: "end",
-              effectId: "ensnaring-strike-vines",
-              when: { kind: "gate", gateId: "escape-check", result: "success" },
-            },
-            {
-              id: "escape-ends-program",
-              kind: "end-program",
-              scope: "target",
-              when: { kind: "gate", gateId: "escape-check", result: "success" },
-            },
-          ],
-        },
-      ],
-    },
     level: 1,
     school: "conjuration",
     classes: ["ranger"],
@@ -1628,7 +1476,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
   },
   {
     id: "searing-smite",
-    // The canonical-runtime authored program (supersedes `effectProgram`): the
+    // The canonical-runtime authored program: the
     // cast arms the smite on the caster for one minute; the table declares the
     // landed weapon attack as the "strike" pulse (1d6 fire, +1d6 per slot level
     // above 1, and the target starts burning) and each burning turn-start as a
@@ -1896,113 +1744,6 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       ],
       registers: [{ initial: 1, registerId: "cast-level" }],
       version: 1,
-    },
-    effectProgram: {
-      version: 1,
-      id: "spell.searing-smite",
-      gates: [
-        {
-          id: "flame-save",
-          kind: "save",
-          scope: "target",
-          ability: "CON",
-          dc: { kind: "binding", binding: "caster-spell-save-dc" },
-        },
-      ],
-      inputs: [
-        {
-          id: "impact-roll",
-          kind: "roll",
-          scope: "target",
-          roll: {
-            count: { base: 1, perSlot: { above: 1, amount: 1 } },
-            sides: 6,
-          },
-          when: { kind: "trigger-fact", fact: "attack-result", equals: "hit" },
-        },
-        {
-          id: "ongoing-roll",
-          kind: "roll",
-          scope: "target",
-          roll: {
-            count: { base: 1, perSlot: { above: 1, amount: 1 } },
-            sides: 6,
-          },
-        },
-      ],
-      phases: [
-        {
-          id: "ignite",
-          trigger: { kind: "resolve" },
-          targeting: { affinity: "enemy", maxTargets: 1 },
-          steps: [
-            {
-              id: "impact-fire",
-              kind: "damage",
-              scope: "target",
-              subject: "target",
-              amount: { kind: "input", inputId: "impact-roll" },
-              damageType: { kind: "fixed", damageType: "fire" },
-              damageSource: "spell",
-              when: { kind: "trigger-fact", fact: "attack-result", equals: "hit" },
-            },
-            {
-              id: "start-burning",
-              kind: "standing",
-              scope: "target",
-              subject: "target",
-              operation: "start",
-              effectId: "searing-smite-burning",
-              lifetime: { kind: "elapsed", amount: 1, unit: "minute" },
-              when: { kind: "trigger-fact", fact: "attack-result", equals: "hit" },
-            },
-            {
-              id: "miss-ends",
-              kind: "end-program",
-              scope: "target",
-              when: { kind: "trigger-fact", fact: "attack-result", equals: "miss" },
-            },
-          ],
-        },
-        {
-          id: "burning-turn",
-          trigger: { kind: "turn-start", subject: "target", everyTurns: 1 },
-          targeting: { affinity: "enemy", maxTargets: 1 },
-          steps: [
-            {
-              id: "ongoing-fire",
-              kind: "damage",
-              scope: "target",
-              subject: "target",
-              amount: { kind: "input", inputId: "ongoing-roll" },
-              damageType: { kind: "fixed", damageType: "fire" },
-              damageSource: "spell",
-              when: {
-                kind: "standing",
-                subject: "target",
-                effectId: "searing-smite-burning",
-                present: true,
-              },
-            },
-            {
-              id: "successful-save-ends-burning",
-              kind: "standing",
-              scope: "target",
-              subject: "target",
-              operation: "end",
-              effectId: "searing-smite-burning",
-              when: { kind: "gate", gateId: "flame-save", result: "success" },
-            },
-            {
-              id: "successful-save-ends-program",
-              kind: "end-program",
-              scope: "target",
-              when: { kind: "gate", gateId: "flame-save", result: "success" },
-            },
-          ],
-          repeat: { id: "searing-smite-duration", maxOccurrences: 10 },
-        },
-      ],
     },
     level: 1,
     school: "evocation",

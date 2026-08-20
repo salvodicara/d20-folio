@@ -33,27 +33,6 @@ const SEED = {
   abilityScores: { STR: 8, DEX: 16, CON: 14, INT: 12, WIS: 10, CHA: 18 },
 } as const;
 
-const DAMAGE_PROGRAM = {
-  version: 1,
-  id: "lantern-flare",
-  phases: [
-    {
-      id: "resolve",
-      trigger: { kind: "resolve" },
-      steps: [
-        {
-          id: "flare",
-          kind: "damage",
-          scope: "target",
-          subject: "target",
-          amount: { kind: "fixed", value: 1 },
-          damageType: { kind: "fixed", damageType: "radiant" },
-        },
-      ],
-    },
-  ],
-} as const;
-
 function minimal(): CharacterBuild {
   return createCharacterBuild(SEED);
 }
@@ -133,7 +112,6 @@ function richBuild(): unknown {
           concentration: false,
           description: "Step through a nearby flame.",
           higherLevels: null,
-          program: DAMAGE_PROGRAM,
         },
         notes: "Homebrew.",
         tags: [],
@@ -196,7 +174,6 @@ function richBuild(): unknown {
                 },
                 amount: { kind: "fixed", value: 1 },
               },
-              program: DAMAGE_PROGRAM,
             },
           ],
         },
@@ -257,13 +234,11 @@ function richBuild(): unknown {
         label: "Moonlit",
         description: "Silver light exposes hidden paths.",
         grants: [{ type: "darkvision-bonus", amount: 30 }],
-        program: null,
       },
       "ash-marked": {
         label: "Ash-marked",
         description: "A narrative scar with no deterministic mechanics.",
         grants: [],
-        program: null,
       },
     },
   };
@@ -308,7 +283,7 @@ describe("canonical CharacterBuild IO", () => {
     expect(Object.isFrozen(build.overrides.spellcastingByClass)).toBe(true);
   });
 
-  it("round-trips canonical programs, grants, and resource definitions", () => {
+  it("round-trips canonical grants and resource definitions", () => {
     const input = richBuild();
     const parsed = parseCharacterBuild(input);
     expect(parsed.ok).toBe(true);
@@ -338,19 +313,12 @@ describe("canonical CharacterBuild IO", () => {
         selector: { kind: "pool", owner: "owner", resourceId: "lantern-ward" },
         amount: { kind: "fixed", value: 1 },
       },
-      program: { id: "lantern-flare", version: 1 },
     });
     expect(custom.resources["lantern-ward"]?.spec).toMatchObject({
       kind: "count",
       capacity: { kind: "bounded", amount: { kind: "fixed", value: 1 } },
       initial: { kind: "full" },
     });
-    expect(Object.isFrozen(custom.actions[0]?.program)).toBe(true);
-    const inputFeatures = record(record(input).features);
-    const inputDefinition = record(record(inputFeatures["feature:a"]).definition);
-    const inputActions = inputDefinition.actions as unknown[];
-    expect(custom.actions[0]?.program).not.toBe(record(inputActions[0]).program);
-
     const bytes = serializeCharacterBuild(parsed.value);
     const reparsed = parseCharacterBuild(JSON.parse(bytes));
     expect(reparsed.ok).toBe(true);
@@ -486,11 +454,13 @@ describe("canonical CharacterBuild IO", () => {
     }
   });
 
-  it("rejects malformed programs, grants, resource identities, and action links", () => {
+  it("rejects legacy program keys, malformed grants, resource identities, and action links", () => {
+    // The deleted effect-program runtime's authored `program` field is no longer
+    // part of the schema; a build still carrying one fails closed.
     const badProgram = structuredClone(richBuild());
     const programSpells = record(record(badProgram).spells);
     const programDefinition = record(record(programSpells["spell:a"]).definition);
-    record(programDefinition.program).randomDamage = true;
+    programDefinition.program = null;
 
     const badGrant = structuredClone(richBuild());
     const grantFeatures = record(record(badGrant).features);

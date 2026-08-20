@@ -15,25 +15,6 @@ import { nonCombatSessionChanged } from "@/lib/combat-state";
 import { serializeCharacter } from "@/lib/character-codec";
 import { castSourceActiveKey } from "@/lib/smart-tracker";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
-import type { CombatEffectLifecycleRuntime } from "@/lib/combat-effect-lifecycle";
-
-const LOCAL_EFFECT_LIFECYCLE: CombatEffectLifecycleRuntime = {
-  schema: 1,
-  occurrenceId: "cast:local",
-  programId: "spell:test",
-  sourceId: "test-char-1",
-  cursor: {
-    tallies: [],
-    layerStates: [],
-    areaStates: [],
-    ended: false,
-    phases: [],
-  },
-  headCommandId: null,
-  commands: [],
-  events: [],
-  auxiliaryConsequences: [],
-};
 
 /**
  * Creates a minimal mock character for testing store operations.
@@ -148,25 +129,16 @@ function projectedEffect(targetId = "pc-u1"): ActiveCombatEffect {
   };
 }
 
-function programEffect(): ActiveCombatEffect {
+function ledgerEffect(): ActiveCombatEffect {
   return {
     ...projectedEffect(),
-    id: "program-effect",
-    source: { kind: "spell", id: "program-spell", actionId: "program-cast" },
-    payload: { kind: "program-standing", effectId: "burning-zone" },
-    programOwner: {
-      occurrenceId: "cast:program",
-      programId: "spell:test",
-      phaseId: "resolve",
-      stepId: "standing",
-      operationId: "command:program#0",
-      instance: null,
-      iteration: 0,
-    },
+    id: "ledger-effect",
+    source: { kind: "spell", id: "ledger-spell", actionId: "ledger-cast" },
+    payload: { kind: "grant-group", activeKey: "spell-ledger" },
   };
 }
 
-function programApply(effect = programEffect()): CombatEffectOp {
+function ledgerApply(effect = ledgerEffect()): CombatEffectOp {
   return { id: `apply:${effect.id}`, kind: "apply", effect };
 }
 
@@ -278,10 +250,10 @@ describe("characterStore — campaign effect projection", () => {
     ]);
   });
 
-  it("hydrates authored ops into the effective projection without retaining a legacy duplicate", () => {
+  it("hydrates authored ops into the effective projection beside legacy occurrences", () => {
     const legacy = projectedEffect();
-    const program = programEffect();
-    const operation = programApply(program);
+    const folded = ledgerEffect();
+    const operation = ledgerApply(folded);
     useCharacterStore.getState().setCharacter(mockCharacter());
     useCharacterStore.getState().hydrateCombatState({
       hp: { current: 20, temp: 0 },
@@ -290,51 +262,22 @@ describe("characterStore — campaign effect projection", () => {
       deathSaves: { successes: 0, failures: 0 },
       round: 2,
       recentActions: [],
-      // A stale composed snapshot may contain the program projection too. Hydration
-      // partitions it back to its authored owner instead of perpetuating two homes.
-      activeEffects: [legacy, program],
+      activeEffects: [legacy],
       effectOps: [operation],
     });
 
     const state = useCharacterStore.getState();
     expect(state.combatLegacyActiveEffects).toEqual([legacy]);
     expect(state.combatEffectOps).toEqual([operation]);
-    expect(state.combatActiveEffects).toEqual([legacy, program]);
-    expect(state.character?.session.encounterEffects).toEqual([legacy, program]);
-  });
-
-  it("preserves hydrated program lifecycles through later whole combat writes", () => {
-    const write = vi.fn<CombatPersistence["write"]>();
-    useCharacterStore.getState().setCharacter(mockCharacter());
-    useCharacterStore.getState().setCombatPersistence({
-      write,
-      writeTurnEconomy: vi.fn(),
-    });
-    useCharacterStore.getState().hydrateCombatState({
-      hp: { current: 20, temp: 0 },
-      conditions: [],
-      initiativeRoll: null,
-      deathSaves: { successes: 0, failures: 0 },
-      round: 2,
-      recentActions: [],
-      effectLifecycles: [LOCAL_EFFECT_LIFECYCLE],
-    });
-
-    useCharacterStore.getState().applySoloCombatEffects([projectedEffect()]);
-
-    expect(useCharacterStore.getState().combatEffectLifecycles).toEqual([
-      LOCAL_EFFECT_LIFECYCLE,
-    ]);
-    expect(write).toHaveBeenLastCalledWith(
-      expect.objectContaining({ effectLifecycles: [LOCAL_EFFECT_LIFECYCLE] })
-    );
+    expect(state.combatActiveEffects).toEqual([legacy, folded]);
+    expect(state.character?.session.encounterEffects).toEqual([legacy, folded]);
   });
 
   it("atomically replaces authored ops, persists their ledger, and preserves legacy ownership", () => {
     const write = vi.fn<CombatPersistence["write"]>();
     const legacy = projectedEffect();
-    const program = programEffect();
-    const apply = programApply(program);
+    const folded = ledgerEffect();
+    const apply = ledgerApply(folded);
     useCharacterStore.getState().setCharacter(mockCharacter());
     useCharacterStore.getState().setCombatPersistence({
       write,
@@ -344,7 +287,7 @@ describe("characterStore — campaign effect projection", () => {
     write.mockClear();
 
     expect(useCharacterStore.getState().replaceCombatEffectOps([apply])).toBe(true);
-    expect(useCharacterStore.getState().combatActiveEffects).toEqual([legacy, program]);
+    expect(useCharacterStore.getState().combatActiveEffects).toEqual([legacy, folded]);
     const appliedWrite = write.mock.calls.at(-1)?.[0];
     expect(appliedWrite?.activeEffects).toEqual([legacy]);
     expect(appliedWrite?.effectOps).toEqual([apply]);
@@ -360,11 +303,11 @@ describe("characterStore — campaign effect projection", () => {
     expect(useCharacterStore.getState().combatEffectOps).toEqual([apply]);
 
     const revoke: CombatEffectOp = {
-      id: "revoke:program-effect",
+      id: "revoke:ledger-effect",
       kind: "revoke",
-      effectId: program.id,
-      actorId: program.actor.combatantId,
-      targetId: program.target.combatantId,
+      effectId: folded.id,
+      actorId: folded.actor.combatantId,
+      targetId: folded.target.combatantId,
     };
     expect(useCharacterStore.getState().replaceCombatEffectOps([apply, revoke])).toBe(
       true

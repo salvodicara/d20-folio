@@ -350,8 +350,7 @@ function localizeSummary(
  * data becomes display strings (docs/ARCHITECTURE.md).
  */
 export function localizeAction(action: RawResolvedAction, locale: Locale): CombatAction {
-  const { name, description, summary, effectProgram, effectResolutionOwner, ...rest } =
-    action;
+  const { name, description, summary, ...rest } = action;
   // The render-ready on-hit rider strip (extra damage / die manipulation / on-hit
   // heal) — ONE seam both weapon surfaces feed, built from the engine's locale-free
   // rider data. Empty array when the action has no rider (the surface shows none).
@@ -410,10 +409,6 @@ export function localizeAction(action: RawResolvedAction, locale: Locale): Comba
       : undefined;
   return {
     ...rest,
-    // Rules data never crosses the presenter seam as text. Preserve the exact
-    // program reference and its exclusive owner while localizing only display data.
-    ...(effectProgram ? { effectProgram } : {}),
-    ...(effectResolutionOwner ? { effectResolutionOwner } : {}),
     name: localizedName,
     nameEn: localizeText(name, "en") + enSuffix,
     // The action's NAME as the engine's localizable LocText reference — carried

@@ -256,15 +256,8 @@ interface CharacterState {
   combatActiveEffects: ActiveCombatEffect[];
   /** Legacy source-owned occurrences persisted in `CombatState.activeEffects`. */
   combatLegacyActiveEffects: ActiveCombatEffect[];
-  /** Authored program occurrence ledger persisted in `CombatState.effectOps`. */
+  /** Append-only authored occurrence ledger persisted in `CombatState.effectOps`. */
   combatEffectOps: CombatEffectOp[];
-  /** Exact authored program cursors persisted beside the local occurrence ledger. */
-  combatEffectLifecycles: NonNullable<CombatState["effectLifecycles"]>;
-  /** Outer action CAS facts. These are physical-document metadata, not SessionState,
-   * and every ordinary whole play-state write must preserve them byte-for-byte. */
-  combatActionRevision: number;
-  combatActionHead: string | null;
-  combatActionLifecycles: NonNullable<CombatState["actionLifecycles"]>;
   combatAppliedEncounterEffects: CombatState["appliedEncounterEffects"];
   combatTurnEconomy: CombatState["turnEconomy"];
   /** Durable FIFO of one unresolved save per landed damage packet. */
@@ -790,12 +783,6 @@ interface CharacterState {
  */
 const UNCONSCIOUS_CONDITION_ID = "unconscious";
 
-function legacyCombatEffects(
-  effects: ReadonlyArray<ActiveCombatEffect>
-): ActiveCombatEffect[] {
-  return effects.filter((effect) => effect.programOwner === undefined);
-}
-
 function effectiveCombatEffects(
   legacy: ReadonlyArray<ActiveCombatEffect>,
   effectOps: ReadonlyArray<CombatEffectOp>
@@ -815,13 +802,7 @@ function persistCombat(get: () => CharacterState): void {
       get().combatTurnEconomy,
       get().combatLegacyActiveEffects,
       get().combatPendingConcentrationSaves,
-      get().combatEffectLifecycles,
-      get().combatEffectOps,
-      {
-        actionRevision: get().combatActionRevision,
-        actionHead: get().combatActionHead,
-        actionLifecycles: get().combatActionLifecycles,
-      }
+      get().combatEffectOps
     )
   );
 }
@@ -864,10 +845,6 @@ type CombatHydrationPatch = Pick<
   | "combatActiveEffects"
   | "combatLegacyActiveEffects"
   | "combatEffectOps"
-  | "combatEffectLifecycles"
-  | "combatActionRevision"
-  | "combatActionHead"
-  | "combatActionLifecycles"
   | "combatAppliedEncounterEffects"
   | "combatTurnEconomy"
   | "combatPendingConcentrationSaves"
@@ -880,7 +857,7 @@ function projectCombatHydration(
   combat: CombatState | null,
   encounterEffectProjection: CharacterState["encounterEffectProjection"]
 ): CombatHydrationPatch | null {
-  const legacyActiveEffects = legacyCombatEffects(combat?.activeEffects ?? []);
+  const legacyActiveEffects = combat?.activeEffects ?? [];
   const effectOps = combat?.effectOps ?? [];
   const activeEffects = effectiveCombatEffects(legacyActiveEffects, effectOps);
   const projected = { ...character, session: { ...character.session } };
@@ -932,10 +909,6 @@ function projectCombatHydration(
     combatActiveEffects: activeEffects,
     combatLegacyActiveEffects: legacyActiveEffects,
     combatEffectOps: effectOps,
-    combatEffectLifecycles: combat?.effectLifecycles ?? [],
-    combatActionRevision: combat?.actionRevision ?? 0,
-    combatActionHead: combat?.actionHead ?? null,
-    combatActionLifecycles: combat?.actionLifecycles ?? {},
     combatAppliedEncounterEffects: combat?.appliedEncounterEffects,
     combatTurnEconomy: combat?.turnEconomy,
     combatPendingConcentrationSaves: pendingConcentrationSaves,
@@ -1077,10 +1050,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   combatActiveEffects: [],
   combatLegacyActiveEffects: [],
   combatEffectOps: [],
-  combatEffectLifecycles: [],
-  combatActionRevision: 0,
-  combatActionHead: null,
-  combatActionLifecycles: {},
   combatAppliedEncounterEffects: undefined,
   combatTurnEconomy: undefined,
   combatPendingConcentrationSaves: [],
@@ -1097,10 +1066,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       combatActiveEffects: [],
       combatLegacyActiveEffects: [],
       combatEffectOps: [],
-      combatEffectLifecycles: [],
-      combatActionRevision: 0,
-      combatActionHead: null,
-      combatActionLifecycles: {},
       combatPendingConcentrationSaves: [],
       combatPendingDamageReaction: null,
     }),
@@ -1116,7 +1081,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly || effects.length === 0) return null;
     const character = get().character;
     if (!character) return null;
-    const additions = legacyCombatEffects(effects);
+    const additions = effects;
     if (additions.length === 0) return null;
     const previous = get().combatLegacyActiveEffects;
     const nextLegacy = mergeActiveCombatEffects(previous, additions);
@@ -1163,10 +1128,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       combatActiveEffects: [],
       combatLegacyActiveEffects: [],
       combatEffectOps: [],
-      combatEffectLifecycles: [],
-      combatActionRevision: 0,
-      combatActionHead: null,
-      combatActionLifecycles: {},
       combatPendingConcentrationSaves: [],
       combatPendingDamageReaction: null,
     }),
@@ -2820,13 +2781,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       get().combatTurnEconomy,
       get().combatLegacyActiveEffects,
       get().combatPendingConcentrationSaves,
-      undefined,
-      get().combatEffectOps,
-      {
-        actionRevision: get().combatActionRevision,
-        actionHead: get().combatActionHead,
-        actionLifecycles: get().combatActionLifecycles,
-      }
+      get().combatEffectOps
     );
     set({ combatRecentActions: pushRecentAttack(base, entry).recentActions });
     persistCombat(get);
@@ -3448,9 +3403,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           activeKey:
             effect.payload.kind === "condition"
               ? `condition:${effect.payload.conditionId}`
-              : effect.payload.kind === "program-standing"
-                ? `standing:${effect.payload.effectId}`
-                : effect.payload.activeKey,
+              : effect.payload.activeKey,
           sourceId: effect.source.id,
         })),
       ],

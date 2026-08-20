@@ -319,10 +319,18 @@ cards, and the two-action concentration swap (a coordinator replacement-livelock
 documented; fix in flight). The Warlock pact-slot seed bug (wrapped cell rejected by the parser,
 silently degrading every pact caster) was found and regression-pinned. Remaining active: the last
 dispatch gaps (pact casts through the gate, target-bound standings, maintainers/use-applies), the
-legacy deletion map L0-L3 (effectProgram fields + the branch-born combat-effect generation + the
-main-era executor + bridge mirrors with the one-off live-document migration), convergence, and the
-Italian architecture explainer. Focused verification only per wave; the one full dual-build gate
-remains reserved for convergence.\*\*
+legacy deletion map L2-L3 (the main-era executor + bridge mirrors with the one-off live-document
+migration), convergence, and the Italian architecture explainer. Focused verification only per
+wave; the one full dual-build gate remains reserved for convergence. **Deletion map L0+L1
+EXECUTED (2026-08-20):** the legacy effect-program generation is DELETED — every `effectProgram`
+data field (public 16 spells + Uncanny Dodge; pack 4 spells + Shield Master, rule 28 same motion),
+the corpus/transcriber/routing plumbing, the interpreter + planning/command/atomic/lifecycle
+execution stack, the dead outer `action-command` kernel and the unmounted review UI (~19k LOC).
+The persistent standing-effect seam (`combat-effects`/`combat-effect-io`/`types/combat-effect` —
+fed by the declared-effects resolver and campaign persistent ops, never by programs) stays live
+with its program-owned payloads pruned; every read boundary strips stored program remnants
+fail-safe. The dispatch guard pins the 16-spell roster literally as the regression contract; both
+coverage censuses regenerated with zero effect-program clauses.\*\*
 
 **The fourteen authored programs CLOSED on branch (2026-08-14, third block):** every spell that
 still carried only a legacy `effectProgram` now holds a hand-authored canonical-runtime program —

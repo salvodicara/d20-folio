@@ -491,8 +491,7 @@ export function PlayTab() {
         action.requiresActionCategoryThisTurn !== undefined ||
         (action.useEffects?.length ?? 0) > 0 ||
         action.costEquipment !== undefined ||
-        action.standingEffect !== undefined ||
-        action.effectProgram !== undefined
+        action.standingEffect !== undefined
       ) {
         return null;
       }

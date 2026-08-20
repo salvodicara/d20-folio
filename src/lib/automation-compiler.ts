@@ -9,11 +9,9 @@
 
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
-import { validateCombatEffectProgram } from "@/lib/combat-effect-program";
 
 export const AUTOMATION_HANDLERS = [
   "mechanics-program",
-  "effect-program",
   "grant",
   "resource",
   "cast-profile",
@@ -50,7 +48,7 @@ export interface CompiledAutomationClause {
   consumedPaths: ReadonlyArray<string>;
   /** Exact authored outcome branches proved by this handler. */
   branches: ReadonlyArray<string>;
-  /** Required only for `effect-program`; canonical JSON is fingerprinted. */
+  /** Required only for `mechanics-program`; canonical JSON is fingerprinted. */
   program?: unknown;
 }
 
@@ -127,57 +125,6 @@ function canonical(value: unknown): unknown {
   return value;
 }
 
-function isJsonPlain(value: unknown, seen = new Set<object>()): boolean {
-  if (
-    value === null ||
-    typeof value === "string" ||
-    typeof value === "boolean" ||
-    (typeof value === "number" && Number.isFinite(value))
-  ) {
-    return true;
-  }
-  if (typeof value !== "object") return false;
-  if (seen.has(value)) return false;
-  seen.add(value);
-  if (Object.getOwnPropertySymbols(value).length > 0) {
-    seen.delete(value);
-    return false;
-  }
-  const descriptors = Object.getOwnPropertyDescriptors(value);
-  const valid = Array.isArray(value)
-    ? Object.getPrototypeOf(value) === Array.prototype &&
-      Object.keys(descriptors).length === value.length + 1 &&
-      Object.hasOwn(descriptors, "length") &&
-      Array.from(
-        { length: value.length },
-        (_, index) => descriptors[String(index)]
-      ).every(
-        (descriptor) =>
-          descriptor !== undefined &&
-          descriptor.enumerable &&
-          "value" in descriptor &&
-          isJsonPlain(descriptor.value, seen)
-      )
-    : (Object.getPrototypeOf(value) === Object.prototype ||
-        Object.getPrototypeOf(value) === null) &&
-      Object.entries(descriptors).every(
-        ([key, descriptor]) =>
-          key.length > 0 &&
-          descriptor.enumerable &&
-          "value" in descriptor &&
-          isJsonPlain(descriptor.value, seen)
-      );
-  seen.delete(value);
-  return valid;
-}
-
-/** Exact canonical program identity. Keeping the canonical JSON is intentionally
- * larger than a digest: two distinct JSON programs cannot silently collide. */
-function programFingerprint(program: unknown): string | null {
-  if (!isJsonPlain(program)) return null;
-  return `ace1:${JSON.stringify(canonical(program))}`;
-}
-
 function frozenReceipt(receipt: AutomationCoverageReceipt): AutomationCoverageReceipt {
   for (const clause of receipt.clauses) {
     Object.freeze(clause.consumedPaths);
@@ -247,14 +194,8 @@ export function compileAutomationCoverage(
         errors.push(`clause ${clause.key} repeats branch: ${branch}`);
       }
       let fingerprint: string | undefined;
-      if (clause.handler === "effect-program") {
-        const value = programFingerprint(clause.program);
-        const validation = validateCombatEffectProgram(clause.program);
-        if (!value || !validation.valid) {
-          errors.push(`effect-program clause ${clause.key} has no valid plain program`);
-        } else fingerprint = value;
-      } else if (clause.handler === "mechanics-program") {
-        // The canonical deterministic-runtime format (supersedes effect-program).
+      if (clause.handler === "mechanics-program") {
+        // The canonical deterministic-runtime program format.
         const conformed = conformMechanicsProgram(clause.program);
         if (!conformed) {
           errors.push(

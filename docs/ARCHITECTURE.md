@@ -1870,12 +1870,16 @@ not model); MAINTAINER rows (they re-run an established recurring effect without
 engine cast would double-cast; the engine twin is the armed root-pulse phase on the world's own
 occurrence, `EnginePulseStrip`/`useMechanicsPulse`, which exists exactly when the cast itself went
 engine); and USE-APPLIES (the deterministic side effect is a sibling GRANT the transcriber's
-`SrdActionDef` input cannot see yet). The deletion prerequisite for the legacy effect-program
-runtime is pinned by `tests/unit/effect-program-dispatch.guard.test.ts`: every public spell still
-carrying `effectProgram` also carries an authored `mechanicsProgram` and gates ENGINE; the
-remaining carriers without authored programs (Uncanny Dodge's reaction public-side, plus the
-pack's own short list in its suites) are the boundary that wave must keep legacy or migrate
-first.
+`SrdActionDef` input cannot see yet). The legacy effect-program runtime is DELETED (the
+combat-automation-gaps cutover): the authored `effectProgram` data field, its interpreter
+(`combat-effect-program`), the planning/command/atomic/lifecycle execution stack, and the outer
+`action-command` kernel are gone — the canonical MechanicsProgram runtime is the ONE executable
+truth. `tests/unit/effect-program-dispatch.guard.test.ts` pins the regression contract: every
+public spell the legacy runtime used to own (16, pinned literally) still transcribes and gates
+ENGINE, and Uncanny Dodge's reaction fires through the damage-entry reaction runtime. Stored
+remnants of the deleted runtime (`effectOps` entries with `programOwner`/`program-standing`
+payloads, `effectLifecycles`, `actionRevision`/`actionHead`/`actionLifecycles`) are ignored at
+every read boundary and shed by the next full write.
 
 **RESTS ride the same runtime** (`src/features/character/rest-world-boundary.ts`, driven by the
 RestModal's confirm). A confirmed Short/Long Rest plans ONE journal action over the character's

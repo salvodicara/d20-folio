@@ -66,24 +66,7 @@ export type CombatEffectPayload =
        * remain in the combat-state list and are never removed with this effect. */
       kind: "condition";
       conditionId: string;
-    }
-  | {
-      /** Stable standing fact authored by an effect-program mutation. Its exact
-       * owner is `programOwner`, never inferred from this catalogue id. */
-      kind: "program-standing";
-      effectId: string;
     };
-
-/** Exact authored mutation that owns one projected world-effect occurrence. */
-export interface ProgramEffectOwner {
-  occurrenceId: string;
-  programId: string;
-  phaseId: string;
-  stepId: string;
-  operationId: string;
-  instance: number | null;
-  iteration: number;
-}
 
 export interface ActiveCombatEffect {
   /** Opaque instance identity. Undo/revoke always addresses this exact instance. */
@@ -98,8 +81,6 @@ export interface ActiveCombatEffect {
   };
   /** Stable catalogue reference; grants themselves remain owned by the source data. */
   payload: CombatEffectPayload;
-  /** Present only when an authored program mutation owns this occurrence. */
-  programOwner?: ProgramEffectOwner;
   /** The authored lifetime fact before an adapter resolves any concrete clock boundary. */
   authoredLifetime?: CombatEffectLifetime;
   bindings?: CombatEffectBindings;

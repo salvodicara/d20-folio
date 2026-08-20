@@ -145,16 +145,9 @@ export function sessionToCombatState(
   turnEconomy?: CombatState["turnEconomy"],
   activeEffects?: CombatState["activeEffects"],
   pendingConcentrationSaves?: CombatState["pendingConcentrationSaves"],
-  effectLifecycles?: CombatState["effectLifecycles"],
-  effectOps?: CombatState["effectOps"],
-  actionMetadata?: Pick<CombatState, "actionRevision" | "actionHead" | "actionLifecycles">
+  effectOps?: CombatState["effectOps"]
 ): CombatState {
   return {
-    actionRevision: actionMetadata?.actionRevision ?? 0,
-    actionHead: actionMetadata?.actionHead ?? null,
-    ...(actionMetadata?.actionLifecycles
-      ? { actionLifecycles: actionMetadata.actionLifecycles }
-      : {}),
     hp: { current: session.hp.current, temp: session.hp.temp },
     conditions: session.conditions,
     initiativeRoll: initiativeToNumber(session.initiative),
@@ -168,7 +161,6 @@ export function sessionToCombatState(
     ...(appliedEncounterEffects ? { appliedEncounterEffects } : {}),
     ...(turnEconomy ? { turnEconomy } : {}),
     ...(pendingConcentrationSaves?.length ? { pendingConcentrationSaves } : {}),
-    ...(effectLifecycles?.length ? { effectLifecycles } : {}),
     ...(effectOps?.length ? { effectOps } : {}),
   };
 }
@@ -265,8 +257,6 @@ export function applyCombatToSession(
  *  offline write lands a complete shape — see `combat-state-io.ts`. */
 export function defaultCombatState(max: number): CombatState {
   return {
-    actionRevision: 0,
-    actionHead: null,
     hp: { current: max, temp: 0 },
     conditions: [],
     initiativeRoll: null,

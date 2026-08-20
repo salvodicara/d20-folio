@@ -63,21 +63,13 @@ import type {
 } from "@/types/combat-state";
 import { normalizeConcentrationRef } from "@/lib/concentration";
 import { conformActiveCombatEffects } from "@/lib/combat-effect-io";
-import { conformCombatEffectLifecycleCollection } from "@/lib/combat-effect-lifecycle-collection";
 import { conformCombatEffectOps } from "@/lib/combat-effects";
 import { parseCombatOutcomeReceipt } from "@/lib/combat-outcomes";
 import { parsePersistedPlayStateV1 } from "@/lib/session-state-codec";
-import type { ActionLifecycleRecord } from "@/lib/action-command";
-import {
-  atomicOwnerKey,
-  isAtomicOccurrenceRuleIdentity,
-} from "@/lib/combat-effect-atomic";
 
 const DEV_COMBAT_COLLECTION = "combat-state";
-const ACTION_LIFECYCLE_LIMIT = 128;
 const STRICT_V1_FIELDS = [
   "activeEffects",
-  "effectLifecycles",
   "effectOps",
   "pendingConcentrationSaves",
   "turnEconomy",
@@ -185,16 +177,6 @@ export function combatStateRef(uid: string, charId: string) {
   return doc(db, "users", uid, "characters", charId, "combat", "state");
 }
 
-function effectLifecyclesForWrite(
-  value: CombatState["effectLifecycles"]
-): NonNullable<CombatState["effectLifecycles"]> {
-  const collection = conformCombatEffectLifecycleCollection(value ?? []);
-  if (!collection) {
-    throw new TypeError("Invalid combat-effect lifecycle collection");
-  }
-  return collection;
-}
-
 function effectOpsForWrite(
   value: CombatState["effectOps"]
 ): NonNullable<CombatState["effectOps"]> {
@@ -204,86 +186,6 @@ function effectOpsForWrite(
     throw new TypeError("Invalid combat-effect operation ledger");
   }
   return effectOps;
-}
-
-function parseActionLifecycleRecord(value: unknown): ActionLifecycleRecord | null {
-  if (
-    !isRecord(value) ||
-    !isRecord(value.actor) ||
-    Object.keys(value).length !== 5 ||
-    !["payloadIdentity", "actor", "state", "generation", "predecessor"].every((key) =>
-      Object.hasOwn(value, key)
-    )
-  ) {
-    return null;
-  }
-  try {
-    atomicOwnerKey(value.actor as ActionLifecycleRecord["actor"]);
-  } catch {
-    return null;
-  }
-  if (
-    typeof value.payloadIdentity !== "string" ||
-    value.payloadIdentity.length === 0 ||
-    (value.state !== "committed" && value.state !== "undone") ||
-    !Number.isSafeInteger(value.generation) ||
-    (value.generation as number) < 1 ||
-    (value.state === "committed"
-      ? (value.generation as number) % 2 !== 1
-      : (value.generation as number) % 2 !== 0) ||
-    !(
-      value.predecessor === null ||
-      (typeof value.predecessor === "string" && value.predecessor.length > 0)
-    )
-  ) {
-    return null;
-  }
-  return {
-    payloadIdentity: value.payloadIdentity,
-    actor: value.actor as ActionLifecycleRecord["actor"],
-    state: value.state,
-    generation: value.generation as number,
-    predecessor: value.predecessor,
-  };
-}
-
-function parseActionLifecycles(
-  value: unknown
-): Readonly<Record<string, ActionLifecycleRecord>> | null {
-  if (value === undefined) return {};
-  if (!isRecord(value)) return null;
-  const entries = Object.entries(value);
-  if (entries.length > ACTION_LIFECYCLE_LIMIT) return null;
-  const lifecycles: Record<string, ActionLifecycleRecord> = {};
-  for (const [commandId, candidate] of entries.sort(([left], [right]) =>
-    left < right ? -1 : left > right ? 1 : 0
-  )) {
-    if (commandId.length === 0) return null;
-    const lifecycle = parseActionLifecycleRecord(candidate);
-    if (!lifecycle) return null;
-    lifecycles[commandId] = lifecycle;
-  }
-  return lifecycles;
-}
-
-function validActionLifecycleGraph(
-  lifecycles: Readonly<Record<string, ActionLifecycleRecord>>,
-  head: string | null
-): boolean {
-  if (head !== null && lifecycles[head]?.state !== "committed") return false;
-  for (const [commandId, lifecycle] of Object.entries(lifecycles)) {
-    const actorKey = atomicOwnerKey(lifecycle.actor);
-    const seen = new Set([commandId]);
-    let predecessor = lifecycle.predecessor;
-    while (predecessor !== null) {
-      if (seen.has(predecessor)) return false;
-      seen.add(predecessor);
-      const prior = lifecycles[predecessor];
-      if (!prior || atomicOwnerKey(prior.actor) !== actorKey) return false;
-      predecessor = prior.predecessor;
-    }
-  }
-  return true;
 }
 
 /** The dev replica stores the same canonical optional collection, without a
@@ -297,23 +199,13 @@ function combatStateForDevWrite(state: CombatState): CombatState {
 /** The COMPLETE persisted shape, stamped server-side. One source so the two write
  *  paths can't drift. */
 export function combatStateWriteData(state: CombatState): Record<string, unknown> {
-  const effectLifecycles = effectLifecyclesForWrite(state.effectLifecycles);
   const effectOps = effectOpsForWrite(state.effectOps);
   const playState =
     state.playState === undefined ? null : parsePersistedPlayStateV1(state.playState);
   if (playState && !playState.ok) {
     throw new TypeError(`Invalid combat play state: ${playState.reason}`);
   }
-  const actionLifecycles = parseActionLifecycles(state.actionLifecycles);
-  if (!actionLifecycles) throw new TypeError("Invalid action lifecycle collection");
-  const actionHead = state.actionHead ?? null;
-  if (!validActionLifecycleGraph(actionLifecycles, actionHead)) {
-    throw new TypeError("Invalid action lifecycle graph");
-  }
   return {
-    actionRevision: state.actionRevision ?? 0,
-    actionHead,
-    ...(Object.keys(actionLifecycles).length > 0 ? { actionLifecycles } : {}),
     hp: { current: state.hp.current, temp: state.hp.temp },
     conditions: state.conditions,
     bardicInspirationDie: state.bardicInspirationDie ?? "",
@@ -328,7 +220,6 @@ export function combatStateWriteData(state: CombatState): Record<string, unknown
     round: state.round,
     recentActions: state.recentActions,
     ...(state.activeEffects?.length ? { activeEffects: state.activeEffects } : {}),
-    ...(effectLifecycles.length ? { effectLifecycles } : {}),
     ...(effectOps.length ? { effectOps } : {}),
     ...(state.appliedEncounterEffects
       ? { appliedEncounterEffects: state.appliedEncounterEffects }
@@ -396,27 +287,12 @@ export function parseCombatState(data: unknown): CombatStateParseResult {
   ) {
     return { ok: false, reason: "invalid-combat-state" };
   }
-  if (
-    (data.actionRevision !== undefined &&
-      (!Number.isSafeInteger(data.actionRevision) ||
-        (data.actionRevision as number) < 0)) ||
-    (data.actionHead !== undefined &&
-      data.actionHead !== null &&
-      (typeof data.actionHead !== "string" || data.actionHead.length === 0))
-  ) {
-    return { ok: false, reason: "invalid-combat-state" };
-  }
-  const actionLifecycles = parseActionLifecycles(data.actionLifecycles);
-  if (!actionLifecycles) return { ok: false, reason: "invalid-combat-state" };
-  const actionHead = typeof data.actionHead === "string" ? data.actionHead : null;
-  if (!validActionLifecycleGraph(actionLifecycles, actionHead)) {
-    return { ok: false, reason: "invalid-combat-state" };
-  }
+  // Stored subdocs written by the deleted effect-program runtime may still carry
+  // `actionRevision` / `actionHead` / `actionLifecycles` / `effectLifecycles`.
+  // They are ignored here and shed by the next full-overwrite write.
   const applied = parseAppliedEncounterEffects(data.appliedEncounterEffects);
   const turnEconomy = parseTurnEconomy(data.turnEconomy);
   const activeEffects = conformActiveCombatEffects(data.activeEffects);
-  const effectLifecycles =
-    conformCombatEffectLifecycleCollection(data.effectLifecycles) ?? [];
   const effectOps = conformCombatEffectOps(data.effectOps);
   const pendingConcentrationSaves = parsePendingConcentrationSaves(
     data.pendingConcentrationSaves
@@ -425,14 +301,8 @@ export function parseCombatState(data: unknown): CombatStateParseResult {
   if (
     playState?.ok &&
     (!presentFieldIsCanonical(data, "activeEffects", activeEffects) ||
-      activeEffects.some((effect) => !isAtomicOccurrenceRuleIdentity(effect)) ||
       new Set(activeEffects.map(({ id }) => id)).size !== activeEffects.length ||
-      !presentFieldIsCanonical(data, "effectLifecycles", effectLifecycles) ||
       !presentFieldIsCanonical(data, "effectOps", effectOps) ||
-      effectOps.some(
-        (operation) =>
-          operation.kind === "apply" && !isAtomicOccurrenceRuleIdentity(operation.effect)
-      ) ||
       !presentFieldIsCanonical(
         data,
         "pendingConcentrationSaves",
@@ -445,12 +315,6 @@ export function parseCombatState(data: unknown): CombatStateParseResult {
     return { ok: false, reason: "invalid-combat-state" };
   }
   const state: CombatState = {
-    actionRevision:
-      Number.isSafeInteger(data.actionRevision) && (data.actionRevision as number) >= 0
-        ? (data.actionRevision as number)
-        : 0,
-    actionHead,
-    ...(Object.keys(actionLifecycles).length > 0 ? { actionLifecycles } : {}),
     hp: { current: hp.current, temp: hp.temp },
     conditions: data.conditions,
     ...(typeof data.bardicInspirationDie === "string"
@@ -466,7 +330,6 @@ export function parseCombatState(data: unknown): CombatStateParseResult {
     round: num(data.round, 1),
     recentActions,
     ...(activeEffects.length ? { activeEffects } : {}),
-    ...(effectLifecycles.length ? { effectLifecycles } : {}),
     ...(effectOps.length ? { effectOps } : {}),
     ...(applied ? { appliedEncounterEffects: applied } : {}),
     ...(turnEconomy ? { turnEconomy } : {}),

@@ -619,11 +619,8 @@ async function hydrateCompleteCharacter(
     combat = parsed.state;
   }
   const { effectiveAC, effectiveMaxHp } = await import("@/lib/aggregate-character");
-  const legacyEffects = (combat?.activeEffects ?? []).filter(
-    (effect) => effect.programOwner === undefined
-  );
   const activeEffects = mergeActiveCombatEffects(
-    legacyEffects,
+    combat?.activeEffects ?? [],
     foldCombatEffectOps(combat?.effectOps ?? [])
   );
   const hydrationBase = { ...parent.session };

@@ -810,281 +810,8 @@ export interface ActionTargeting extends Omit<CombatTargeting, "maxTargets"> {
   maxTargets?: number | AbilityCode | "PB";
 }
 
-/**
- * Ordered, locale-free combat effect program. The authored data declares facts;
- * a reviewed artifact supplies every physical roll and table choice before the
- * pure interpreter may mutate only a disposable planning draft.
- */
-export type CombatEffectScope = "program" | "target" | "instance";
-
-/** A role bound by the reviewed occurrence, never inferred from prose. */
-export type CombatEffectParticipantRole =
-  | "owner"
-  | "caster"
-  | "activator"
-  | "triggering-attacker"
-  | "victim";
-
-export type CombatEffectSubject = "source" | "target" | CombatEffectParticipantRole;
-
-export type CombatEffectBinding =
-  | "caster-spell-save-dc"
-  | "caster-spellcasting-modifier"
-  | "triggering-damage";
-
-export type CombatEffectBoundValue =
-  | number
-  | { kind: "binding"; binding: CombatEffectBinding };
-
-export type CombatEffectTrigger =
-  | { kind: "resolve" }
-  | {
-      kind: "turn-start" | "turn-end";
-      subject: "source" | "target";
-      offsetTurns?: number;
-      everyTurns?: number;
-    }
-  | { kind: "enter-area" | "leave-area" }
-  | { kind: "activate"; action: ActionType }
-  | { kind: "source-end"; phaseId: string }
-  | { kind: "layer-destroyed"; layerId: string }
-  | { kind: "manual"; eventId: string };
-
-/** Integer authored formula resolved from explicit execution context, never RNG. */
-export interface CombatEffectScaledValue {
-  base: number;
-  perSlot?: { above: number; amount: number };
-  byCharacterLevel?: ReadonlyArray<{ minLevel: number; value: number }>;
-  perCounter?: { counterId: string; amount: number };
-}
-
-export interface CombatEffectRollSpec {
-  count: number | CombatEffectScaledValue;
-  sides: number;
-  bonus?: number;
-  /** Multiply authored dice count when this exact attack gate resolves critical. */
-  critical?: { gateId: string; multiplier: number };
-}
-
-export type CombatEffectGate =
-  | {
-      id: string;
-      kind: "attack";
-      scope: CombatEffectScope;
-      attackType?: "melee" | "ranged";
-      when?: CombatEffectPredicate;
-    }
-  | {
-      id: string;
-      kind: "save";
-      scope: CombatEffectScope;
-      /** One fixed ability, or the target's reviewed choice from this allowed set. */
-      ability: AbilityCode | ReadonlyArray<AbilityCode>;
-      dc?: CombatEffectBoundValue;
-      when?: CombatEffectPredicate;
-      sizeAdvantage?: CombatEffectSizeAdvantage;
-    }
-  | {
-      id: string;
-      kind: "check";
-      scope: CombatEffectScope;
-      /** One fixed ability, or the actor's reviewed choice from this allowed set. */
-      ability: AbilityCode | ReadonlyArray<AbilityCode>;
-      dc: CombatEffectBoundValue;
-      /** One fixed skill, or the actor's reviewed choice from this allowed set. */
-      skill?: string | ReadonlyArray<string>;
-      when?: CombatEffectPredicate;
-      sizeAdvantage?: CombatEffectSizeAdvantage;
-    };
-
-export interface CombatEffectSizeAdvantage {
-  subject: CombatEffectSubject;
-  comparison: "lte" | "gte";
-  size: CreatureSize;
-  sourceId: string;
-}
-
-export type CombatEffectInput =
-  | {
-      id: string;
-      kind: "roll" | "table-roll";
-      scope: CombatEffectScope;
-      roll: CombatEffectRollSpec;
-      when?: CombatEffectPredicate;
-      /** Every listed face must be replaced until the final accepted face is outside the set. */
-      rerollValues?: ReadonlyArray<number>;
-    }
-  | {
-      id: string;
-      kind: "choice";
-      scope: CombatEffectScope;
-      options: ReadonlyArray<string>;
-      when?: CombatEffectPredicate;
-    };
-
-export interface CombatEffectCounter {
-  id: string;
-  initial: number;
-  /** Defaults to program for compatibility with existing authored counters. */
-  scope?: CombatEffectScope;
-}
-
-export interface CombatEffectLayer {
-  id: string;
-  scope: CombatEffectScope;
-  initial: "active" | "destroyed";
-}
-
-export type CombatEffectAreaFact =
-  | "difficult-terrain"
-  | "obscured"
-  | "ranged-weapon-impossible"
-  | "strong-wind";
-
-export type CombatEffectAmountTerm =
-  | {
-      kind: "fixed";
-      value: number;
-      multiplier?: number;
-      add?: number;
-      rounding?: "floor" | "ceil";
-    }
-  | {
-      kind: "input";
-      inputId: string;
-      multiplier?: number;
-      add?: number;
-      rounding?: "floor" | "ceil";
-    }
-  | {
-      kind: "counter";
-      counterId: string;
-      multiplier?: number;
-      add?: number;
-      rounding?: "floor" | "ceil";
-    }
-  | {
-      kind: "scaled";
-      value: CombatEffectScaledValue;
-      multiplier?: number;
-      add?: number;
-      rounding?: "floor" | "ceil";
-    }
-  | {
-      kind: "binding";
-      binding: CombatEffectBinding;
-      multiplier?: number;
-      add?: number;
-      rounding?: "floor" | "ceil";
-    };
-
-export type CombatEffectAmountSpec =
-  | CombatEffectAmountTerm
-  | {
-      /** Adds independently resolved reviewed facts before applying this transform. */
-      kind: "sum";
-      terms: ReadonlyArray<CombatEffectAmountTerm>;
-      multiplier?: number;
-      add?: number;
-      rounding?: "floor" | "ceil";
-    };
-
-export type CombatEffectDamageTypeSpec =
-  | { kind: "fixed"; damageType: DamageType }
-  | { kind: "choice"; inputId: string }
-  | {
-      kind: "table";
-      inputId: string;
-      rows: ReadonlyArray<{ min: number; max: number; damageType: DamageType }>;
-    };
-
-export type CombatEffectComparison = "eq" | "ne" | "lt" | "lte" | "gt" | "gte";
-
-export type CombatEffectGateResult =
-  | "hit"
-  | "miss"
-  | "critical-hit"
-  | "success"
-  | "failure";
-
-export type CombatEffectPredicate =
-  | { kind: "gate"; gateId: string; result: CombatEffectGateResult }
-  | { kind: "choice"; inputId: string; equals: string }
-  | { kind: "table-roll"; inputId: string; min: number; max: number }
-  | {
-      kind: "counter";
-      counterId: string;
-      comparison: CombatEffectComparison;
-      value: number;
-    }
-  | {
-      kind: "layer";
-      layerId: string;
-      state: "active" | "destroyed";
-    }
-  | {
-      kind: "trigger-fact";
-      fact: "attack-result";
-      equals: "hit" | "miss";
-    }
-  | {
-      kind: "trigger-fact";
-      fact: "attack-critical";
-      equals: boolean;
-    }
-  | {
-      kind: "trigger-fact";
-      fact: "triggering-damage" | "triggering-range";
-      comparison: CombatEffectComparison;
-      value: number;
-    }
-  | {
-      kind: "trigger-fact";
-      fact: "triggering-damage-source" | "triggering-damage-type";
-      equals: string;
-    }
-  | {
-      kind: "state";
-      subject: CombatEffectSubject;
-      field: "hp" | "max-hp" | "temp-hp";
-      comparison: CombatEffectComparison;
-      value: number;
-    }
-  | {
-      kind: "resource";
-      subject: CombatEffectSubject;
-      resourceId: string;
-      comparison: CombatEffectComparison;
-      value: number;
-    }
-  | {
-      kind: "condition";
-      subject: CombatEffectSubject;
-      condition: ConditionId;
-      present: boolean;
-    }
-  | {
-      kind: "standing";
-      subject: CombatEffectSubject;
-      effectId: string;
-      present: boolean;
-    }
-  | { kind: "stable"; subject: CombatEffectSubject; value: boolean }
-  | {
-      kind: "landed-damage";
-      stepId: string;
-      comparison: CombatEffectComparison;
-      value: number;
-    }
-  | { kind: "not"; predicate: CombatEffectPredicate }
-  | { kind: "all" | "any"; predicates: ReadonlyArray<CombatEffectPredicate> };
-
-export interface CombatEffectGateUse {
-  gateId: string;
-  pass: "hit" | "miss" | "success" | "failure";
-  otherwise: "skip" | "half";
-}
-
+/** The authored lifetime fact of a standing combat-effect occurrence; expiration
+ * remains owned by an external clock or an explicit revoke. */
 export type CombatEffectLifetime =
   | { kind: "source-end" }
   | { kind: "manual" }
@@ -1101,119 +828,6 @@ export type CombatEffectLifetime =
       amount: number;
       unit: "round" | "minute" | "hour" | "day";
     };
-
-interface CombatEffectStepBase {
-  id: string;
-  scope: CombatEffectScope;
-  when?: CombatEffectPredicate;
-}
-
-export type CombatEffectStep =
-  | (CombatEffectStepBase & {
-      kind: "damage";
-      subject: CombatEffectSubject;
-      amount: CombatEffectAmountSpec;
-      damageType: CombatEffectDamageTypeSpec;
-      /** Typed origin for source-based defenses; never inferred from an id. */
-      damageSource?: DamageSource;
-      gate?: CombatEffectGateUse;
-      /** Contiguous same-id components land as one lifecycle/concentration packet. */
-      packetId?: string;
-    })
-  | (CombatEffectStepBase & {
-      kind: "heal" | "temp-hp";
-      subject: CombatEffectSubject;
-      amount: CombatEffectAmountSpec;
-    })
-  | (CombatEffectStepBase & {
-      kind: "condition";
-      subject: CombatEffectSubject;
-      operation: "apply" | "remove";
-      condition: ConditionId;
-      lifetime?: CombatEffectLifetime;
-    })
-  | (CombatEffectStepBase & {
-      kind: "standing";
-      subject: CombatEffectSubject;
-      operation: "start" | "end";
-      effectId: string;
-      lifetime?: CombatEffectLifetime;
-    })
-  | (CombatEffectStepBase & {
-      kind: "resource";
-      subject: CombatEffectSubject;
-      operation: "spend" | "gain";
-      resourceId: string;
-      amount: CombatEffectAmountSpec;
-    })
-  | (CombatEffectStepBase & {
-      kind: "stabilize";
-      subject: CombatEffectSubject;
-    })
-  | (CombatEffectStepBase & {
-      kind: "counter";
-      counterId: string;
-      operation: "add" | "set";
-      amount: CombatEffectAmountSpec;
-    })
-  | (CombatEffectStepBase & {
-      kind: "layer";
-      layerId: string;
-      operation: "destroy" | "restore";
-    })
-  | (CombatEffectStepBase & {
-      kind: "damage-reduction";
-      subject: CombatEffectSubject;
-      amount: CombatEffectAmountSpec;
-      damageTypes?: ReadonlyArray<DamageType>;
-    })
-  | (CombatEffectStepBase & {
-      kind: "area-state";
-      operation: "apply" | "remove";
-      fact: CombatEffectAreaFact;
-      lifetime?: CombatEffectLifetime;
-    })
-  | (CombatEffectStepBase & {
-      kind: "relocation-event";
-      subject: CombatEffectSubject;
-      mode: "teleport" | "plane-transfer";
-      destination: { kind: "manual" } | { kind: "table"; inputId: string };
-    })
-  | (CombatEffectStepBase & {
-      kind: "end-program";
-    })
-  | (CombatEffectStepBase & {
-      kind: "heal-from-landed-damage";
-      subject: CombatEffectSubject;
-      damageStepIds: ReadonlyArray<string>;
-      fraction: number;
-    });
-
-export interface CombatEffectPhase {
-  id: string;
-  trigger: CombatEffectTrigger;
-  /** Overrides the parent spell/action target shape for this phase. */
-  targeting?: CombatTargeting;
-  /** Exact independent packet/attack count. Defaults to one. */
-  instances?: number | CombatEffectScaledValue;
-  steps: ReadonlyArray<CombatEffectStep>;
-  /** One execution per external cadence occurrence; never a synchronous loop. */
-  repeat?: {
-    id: string;
-    maxOccurrences: number;
-    endWhen?: CombatEffectPredicate;
-  };
-}
-
-export interface CombatEffectProgram {
-  version: 1;
-  id: string;
-  gates?: ReadonlyArray<CombatEffectGate>;
-  inputs?: ReadonlyArray<CombatEffectInput>;
-  counters?: ReadonlyArray<CombatEffectCounter>;
-  layers?: ReadonlyArray<CombatEffectLayer>;
-  phases: ReadonlyArray<CombatEffectPhase>;
-}
 
 /** Conditions a feature/homebrew action can end, optionally unlocked by its
  * owning-class level. */
@@ -1281,8 +895,6 @@ export interface SpellTempHpRoll {
 export interface SrdSpellData {
   /** Unique slug ID: "fireball", "cure-wounds" */
   id: string;
-  /** Ordered deterministic resolution; legacy scalar fields remain compatible. */
-  effectProgram?: CombatEffectProgram;
   /** 0 = cantrip, 1-9 for leveled spells */
   level: number;
   /** Conditions this spell can end on its target. `max` omitted means every matching
@@ -1324,9 +936,8 @@ export interface SrdSpellData {
    * declarative fields (Fire Shield's retaliation, Contagion's stages). The
    * transcriber conforms and serves it VERBATIM — the executable truth — and
    * derives the honest clause classification from the program's own inputs
-   * and steps. Supersedes the legacy `effectProgram`, which is deleted with
-   * the legacy executor at cutover. Validated by `conformMechanicsProgram`
-   * at transcription time; an unconformable program is a corpus-guard failure.
+   * and steps. Validated by `conformMechanicsProgram` at transcription time;
+   * an unconformable program is a corpus-guard failure.
    */
   mechanicsProgram?: Readonly<Record<string, unknown>>;
   /** School of magic */
@@ -1721,8 +1332,6 @@ export type ActionEconomyCategory = "attack" | "dash" | "disengage" | "hide" | "
 export interface SrdActionDef {
   /** Optional stable suffix when one feature declares several actions of the same type. */
   id?: string;
-  /** Ordered deterministic resolution; legacy scalar fields remain compatible. */
-  effectProgram?: CombatEffectProgram;
   /**
    * A hand-authored deterministic-runtime program in the CANONICAL
    * MechanicsProgram format — the action-side twin of the spell channel — for
@@ -1730,10 +1339,8 @@ export interface SrdActionDef {
    * fields (Uncanny Dodge's halving reaction, Interpose Shield's negation).
    * The transcriber conforms and serves it VERBATIM (the executable truth)
    * and derives the honest clause classification from the program's own
-   * inputs and steps. Supersedes the legacy `effectProgram`, which is deleted
-   * with the legacy executor at cutover. Validated by
-   * `conformMechanicsProgram` at transcription time; an unconformable program
-   * is a corpus-guard failure.
+   * inputs and steps. Validated by `conformMechanicsProgram` at transcription
+   * time; an unconformable program is a corpus-guard failure.
    */
   mechanicsProgram?: Readonly<Record<string, unknown>>;
   /** Action economy cost */

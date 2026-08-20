@@ -111,13 +111,6 @@ function fixed(value: number): IntegerExpression {
 const CAST_LEVEL_REGISTER = "cast-level";
 
 /**
- * Legacy authored effect-programs whose ENTIRE semantics the declarative
- * transcription now reproduces — their `effectProgram` field is dead weight
- * kept only for the not-yet-cut-over legacy executor and is deleted with it.
- */
-const SUPERSEDED_LEGACY_PROGRAMS: ReadonlySet<string> = new Set(["eldritch-blast"]);
-
-/**
  * base + perUpcast × max(0, chosen slot level − spell level). The cast phase
  * reads the slot answer directly; a recurring pulse phase reads the cast level
  * recorded into the {@link CAST_LEVEL_REGISTER} at resolution.
@@ -465,16 +458,6 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
       program: authored,
     };
   }
-  if (spell.effectProgram && !SUPERSEDED_LEGACY_PROGRAMS.has(spell.id)) {
-    clauses.push(
-      clause("effect-program", "unsupported", "legacy-authored-program-migration")
-    );
-    return { clauses, entityId: spell.id, program: null };
-  }
-  if (spell.effectProgram) {
-    clauses.push(clause("effect-program", "automated", "superseded-by-declarative"));
-  }
-
   // Slot payment.
   if (spell.level > 0) {
     inputs.push({
@@ -2023,8 +2006,7 @@ export function transcribeFeatureAction(
   // The hand-authored canonical channel — the action-side twin of the spell
   // `mechanicsProgram` field: served VERBATIM as the executable truth, with
   // the clause classification derived from the program's own structure
-  // (Uncanny Dodge's halving reaction). Supersedes the action's legacy
-  // `effectProgram`, which is deleted with the legacy executor at cutover.
+  // (Uncanny Dodge's halving reaction).
   if (action.mechanicsProgram !== undefined) {
     const authored = conformMechanicsProgram(action.mechanicsProgram);
     if (!authored) {
@@ -2047,11 +2029,9 @@ export function transcribeFeatureAction(
     return transcribeDamageReactionAction(featureId, action, ordinal, feature, actionId);
   }
 
-  // The structural boundaries left: a legacy authored program awaiting its
-  // canonical rewrite, and an attack SEQUENCE whose unarmed-strike profile is
-  // session-resolved (the weapon-attack seam's future work).
+  // The structural boundary left: an attack SEQUENCE whose unarmed-strike
+  // profile is session-resolved (the weapon-attack seam's future work).
   const blockers: readonly (readonly [boolean, string, string])[] = [
-    [action.effectProgram !== undefined, "effect-program", "legacy-program-migration"],
     [
       action.attackSequence !== undefined,
       "attack-sequence",

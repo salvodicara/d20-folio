@@ -28,7 +28,6 @@ import type { LocText } from "@/lib/loc-text";
 export type CombatResolutionKind = "attack" | "save" | "attack-save" | "automatic";
 export type CombatTargetAffinity = "enemy" | "ally" | "self" | "any";
 export type SaveDamageOutcome = "half" | "none";
-export type CombatResolutionOwner = "legacy" | "effect-program";
 
 export interface CombatStandingEffectSpec {
   source: ActiveCombatEffect["source"];
@@ -43,8 +42,6 @@ export interface CombatStandingEffectSpec {
 }
 
 export interface CombatResolutionSpec {
-  /** Exclusive mutation route. Effect-program ownership forbids legacy commits. */
-  resolutionOwner: CombatResolutionOwner;
   kind: CombatResolutionKind;
   attackMode?: "melee" | "ranged";
   targetCap: number;
@@ -84,20 +81,6 @@ export interface CombatResolutionSpec {
   standingEffect?: CombatStandingEffectSpec;
   /** What a successful save does to the entered damage. Default is no damage. */
   damageOnSave: SaveDamageOutcome;
-}
-
-/**
- * Resolve the exclusive target/effect mutation owner. Either half of the authored
- * route is enough to retain program ownership: a malformed transform therefore
- * fails in the program path instead of silently falling back to legacy mutations.
- */
-export function combatResolutionOwner(
-  action: Pick<ResolvedAction, "effectProgram" | "effectResolutionOwner">
-): CombatResolutionOwner {
-  return action.effectProgram !== undefined ||
-    action.effectResolutionOwner === "effect-program"
-    ? "effect-program"
-    : "legacy";
 }
 
 export interface CombatDamagePartSpec {
@@ -292,7 +275,6 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
             : "enemy");
 
   return {
-    resolutionOwner: combatResolutionOwner(action),
     kind,
     ...(s.attackMode ? { attackMode: s.attackMode } : {}),
     targetCap:
@@ -334,9 +316,6 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
 
 /** Open a resolver whenever an action has a target-facing or self-applied consequence. */
 export function shouldResolveCombatAction(action: ResolvedAction): boolean {
-  // Program ownership is sufficient even when the legacy summary has no scalar
-  // consequence. The interpreter, not this compatibility planner, owns its phases.
-  if (combatResolutionOwner(action) === "effect-program") return true;
   if (
     action.summary.resolveOnCast === false &&
     !action.summary.recurringUse &&
@@ -361,9 +340,6 @@ export function shouldResolveCombatAction(action: ResolvedAction): boolean {
 /** SOLO has no modeled opponents. Resolve only consequences the app can apply to the
  * current hero; enemy damage/save declarations remain at the physical table. */
 export function shouldResolveSoloAction(action: ResolvedAction): boolean {
-  // A program-owned action must never fall through to the one-tap legacy commit.
-  // The program resolver may still reject an unavailable external target safely.
-  if (combatResolutionOwner(action) === "effect-program") return true;
   if (action.summary.resolveOnCast === false && !action.summary.recurringUse)
     return false;
   const spec = combatResolutionSpec(action);

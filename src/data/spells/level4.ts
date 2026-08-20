@@ -216,7 +216,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
   },
   {
     id: "fire-shield",
-    // The canonical-runtime authored program (supersedes `effectProgram`):
+    // The canonical-runtime authored program:
     // the cast picks warm or chill and lights the matching 10-minute shield;
     // each melee hit within 5 ft is a possessor-declared retaliation pulse
     // dealing 2d8 of the lit shield's type to the attacker. The half-damage
@@ -362,95 +362,6 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
       ],
       registers: [],
       version: 1,
-    },
-    effectProgram: {
-      version: 1,
-      id: "spell.fire-shield",
-      inputs: [
-        {
-          id: "shield-form",
-          kind: "choice",
-          scope: "program",
-          options: ["warm", "chill"],
-        },
-        {
-          id: "retaliation-roll",
-          kind: "roll",
-          scope: "target",
-          roll: { count: 2, sides: 8 },
-        },
-      ],
-      phases: [
-        {
-          id: "ward",
-          trigger: { kind: "resolve" },
-          targeting: { affinity: "self", maxTargets: 1 },
-          steps: [
-            {
-              id: "warm-shield",
-              kind: "standing",
-              scope: "program",
-              subject: "source",
-              operation: "start",
-              effectId: "fire-shield-warm",
-              lifetime: { kind: "manual" },
-              when: { kind: "choice", inputId: "shield-form", equals: "warm" },
-            },
-            {
-              id: "chill-shield",
-              kind: "standing",
-              scope: "program",
-              subject: "source",
-              operation: "start",
-              effectId: "fire-shield-chill",
-              lifetime: { kind: "manual" },
-              when: { kind: "choice", inputId: "shield-form", equals: "chill" },
-            },
-          ],
-        },
-        {
-          id: "retaliate",
-          trigger: {
-            kind: "manual",
-            eventId: "melee-hit-within-five-feet",
-          },
-          targeting: { affinity: "enemy", maxTargets: 1 },
-          steps: [
-            {
-              id: "warm-retaliation",
-              kind: "damage",
-              scope: "target",
-              subject: "target",
-              amount: { kind: "input", inputId: "retaliation-roll" },
-              damageType: { kind: "fixed", damageType: "fire" },
-              damageSource: "spell",
-              when: {
-                kind: "standing",
-                subject: "source",
-                effectId: "fire-shield-warm",
-                present: true,
-              },
-              packetId: "retaliation",
-            },
-            {
-              id: "chill-retaliation",
-              kind: "damage",
-              scope: "target",
-              subject: "target",
-              amount: { kind: "input", inputId: "retaliation-roll" },
-              damageType: { kind: "fixed", damageType: "cold" },
-              damageSource: "spell",
-              when: {
-                kind: "standing",
-                subject: "source",
-                effectId: "fire-shield-chill",
-                present: true,
-              },
-              packetId: "retaliation",
-            },
-          ],
-        },
-      ],
     },
     level: 4,
     school: "evocation",
@@ -635,7 +546,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
   },
   {
     id: "phantasmal-killer",
-    // The canonical-runtime authored program (supersedes `effectProgram`): the
+    // The canonical-runtime authored program: the
     // cast forces one WIS save against 4d10 psychic (+1d10 per slot level
     // above 4, half on a success that also ends the spell); a failure leaves
     // the target frightened for the duration, and each of its turn-ends the
@@ -988,129 +899,6 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
       registers: [{ initial: 4, registerId: "cast-level" }],
       version: 1,
     },
-    effectProgram: {
-      version: 1,
-      id: "spell.phantasmal-killer",
-      gates: [
-        {
-          id: "initial-save",
-          kind: "save",
-          scope: "target",
-          ability: "WIS",
-        },
-        {
-          id: "repeat-save",
-          kind: "save",
-          scope: "target",
-          ability: "WIS",
-        },
-      ],
-      inputs: [
-        {
-          id: "nightmare-roll",
-          kind: "roll",
-          scope: "target",
-          roll: {
-            count: { base: 4, perSlot: { above: 4, amount: 1 } },
-            sides: 10,
-          },
-        },
-      ],
-      phases: [
-        {
-          id: "impact",
-          trigger: { kind: "resolve" },
-          targeting: { affinity: "enemy", maxTargets: 1 },
-          steps: [
-            {
-              id: "initial-damage",
-              kind: "damage",
-              scope: "target",
-              subject: "target",
-              amount: { kind: "input", inputId: "nightmare-roll" },
-              damageType: { kind: "fixed", damageType: "psychic" },
-              damageSource: "spell",
-              gate: {
-                gateId: "initial-save",
-                pass: "failure",
-                otherwise: "half",
-              },
-              packetId: "nightmare",
-            },
-            {
-              id: "start-nightmare",
-              kind: "standing",
-              scope: "target",
-              subject: "target",
-              operation: "start",
-              effectId: "phantasmal-killer-nightmare",
-              lifetime: { kind: "source-end" },
-              when: {
-                kind: "gate",
-                gateId: "initial-save",
-                result: "failure",
-              },
-            },
-            {
-              id: "initial-success-ends",
-              kind: "end-program",
-              scope: "target",
-              when: {
-                kind: "gate",
-                gateId: "initial-save",
-                result: "success",
-              },
-            },
-          ],
-        },
-        {
-          id: "nightmare-turn",
-          trigger: { kind: "turn-end", subject: "target" },
-          targeting: { affinity: "enemy", maxTargets: 1 },
-          steps: [
-            {
-              id: "repeat-damage",
-              kind: "damage",
-              scope: "target",
-              subject: "target",
-              amount: { kind: "input", inputId: "nightmare-roll" },
-              damageType: { kind: "fixed", damageType: "psychic" },
-              damageSource: "spell",
-              gate: {
-                gateId: "repeat-save",
-                pass: "failure",
-                otherwise: "skip",
-              },
-              packetId: "nightmare",
-            },
-            {
-              id: "repeat-success-clears",
-              kind: "standing",
-              scope: "target",
-              subject: "target",
-              operation: "end",
-              effectId: "phantasmal-killer-nightmare",
-              when: {
-                kind: "gate",
-                gateId: "repeat-save",
-                result: "success",
-              },
-            },
-            {
-              id: "repeat-success-ends",
-              kind: "end-program",
-              scope: "target",
-              when: {
-                kind: "gate",
-                gateId: "repeat-save",
-                result: "success",
-              },
-            },
-          ],
-          repeat: { id: "nightmare-duration", maxOccurrences: 10 },
-        },
-      ],
-    },
     level: 4,
     school: "illusion",
     classes: ["bard", "wizard"],
@@ -1362,7 +1150,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
   },
   {
     id: "vitriolic-sphere",
-    // The canonical-runtime authored program (supersedes `effectProgram`): the
+    // The canonical-runtime authored program: the
     // burst forces a DEX save against 10d4 acid (+2d4 per slot level above 4,
     // half on a success); the table batches every creature that failed into
     // one one-shot "afterburn" pulse at the right turn-ends — each rolls its
@@ -1591,109 +1379,6 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
       ],
       registers: [],
       version: 1,
-    },
-    effectProgram: {
-      version: 1,
-      id: "spell.vitriolic-sphere",
-      gates: [
-        {
-          id: "initial-save",
-          kind: "save",
-          scope: "target",
-          ability: "DEX",
-        },
-      ],
-      inputs: [
-        {
-          id: "initial-roll",
-          kind: "roll",
-          scope: "program",
-          roll: {
-            count: { base: 10, perSlot: { above: 4, amount: 2 } },
-            sides: 4,
-          },
-        },
-        {
-          id: "afterburn-roll",
-          kind: "roll",
-          scope: "target",
-          roll: { count: 5, sides: 4 },
-        },
-      ],
-      phases: [
-        {
-          id: "impact",
-          trigger: { kind: "resolve" },
-          targeting: { affinity: "enemy" },
-          steps: [
-            {
-              id: "initial-damage",
-              kind: "damage",
-              scope: "target",
-              subject: "target",
-              amount: { kind: "input", inputId: "initial-roll" },
-              damageType: { kind: "fixed", damageType: "acid" },
-              damageSource: "spell",
-              gate: {
-                gateId: "initial-save",
-                pass: "failure",
-                otherwise: "half",
-              },
-              packetId: "impact",
-            },
-            {
-              id: "arm-afterburn",
-              kind: "standing",
-              scope: "target",
-              subject: "target",
-              operation: "start",
-              effectId: "vitriolic-afterburn",
-              lifetime: {
-                kind: "turn-boundary",
-                subject: "target",
-                phase: "turn-end",
-                offsetTurns: 1,
-              },
-              when: { kind: "gate", gateId: "initial-save", result: "failure" },
-            },
-          ],
-        },
-        {
-          id: "afterburn",
-          trigger: {
-            kind: "turn-end",
-            subject: "target",
-            offsetTurns: 1,
-          },
-          targeting: { affinity: "enemy", maxTargets: 1 },
-          steps: [
-            {
-              id: "afterburn-damage",
-              kind: "damage",
-              scope: "target",
-              subject: "target",
-              amount: { kind: "input", inputId: "afterburn-roll" },
-              damageType: { kind: "fixed", damageType: "acid" },
-              damageSource: "spell",
-              packetId: "afterburn",
-              when: {
-                kind: "standing",
-                subject: "target",
-                effectId: "vitriolic-afterburn",
-                present: true,
-              },
-            },
-            {
-              id: "end-afterburn",
-              kind: "standing",
-              scope: "target",
-              subject: "target",
-              operation: "end",
-              effectId: "vitriolic-afterburn",
-            },
-          ],
-        },
-      ],
     },
     level: 4,
     school: "evocation",

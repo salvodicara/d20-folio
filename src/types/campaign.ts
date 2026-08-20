@@ -18,7 +18,6 @@ import type { NonEmptyString } from "@/lib/non-empty-string";
 import type { RaceId } from "@/types/ids";
 import type { CombatChronicleEvent } from "@/types/combat-chronicle";
 import type { CombatEffectOp } from "@/types/combat-effect";
-import type { CombatEffectLifecycleRuntime } from "@/lib/combat-effect-lifecycle";
 
 // ============================================================
 // Campaign Document
@@ -327,8 +326,6 @@ export interface EncounterState {
   memberEffects?: MemberCombatEffect[];
   /** Append-only source of truth for standing, target-bound combat effects. */
   effectOps?: CombatEffectOp[];
-  /** Durable exact-occurrence program cursors for this shared encounter. */
-  effectLifecycles?: ReadonlyArray<CombatEffectLifecycleRuntime>;
   /**
    * The canonical shared-combat engine layer for THIS fight (a schema-4
    * `SharedMaterialState`): the action journal, mechanic occurrences

@@ -443,17 +443,14 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     // restores). Compared against the current store so an identical server confirm of
     // our OWN edit is a no-op. The comparison is the pure exported `combatTrioDiffers`.
     const combatMateriallyDiffers = (combat: CombatState | null): boolean => {
-      const state = useCharacterStore.getState();
-      const cur = state.character;
+      const cur = useCharacterStore.getState().character;
       if (!cur || cur.id !== characterId || !combat) return false;
       if (combatTrioDiffers(cur.session, combat)) return true;
       if (cur.playStateVersion !== 1) return false;
       if (!combat.playState) return true;
       return (
         JSON.stringify(canonicalJson(sessionToPlayStateV1(cur.session))) !==
-          JSON.stringify(canonicalJson(combat.playState)) ||
-        (combat.actionRevision ?? 0) !== state.combatActionRevision ||
-        (combat.actionHead ?? null) !== state.combatActionHead
+        JSON.stringify(canonicalJson(combat.playState))
       );
     };
 

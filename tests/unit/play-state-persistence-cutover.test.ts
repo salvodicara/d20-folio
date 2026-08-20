@@ -245,7 +245,6 @@ describe("play-state v1 persistence cutover", () => {
     expect(harness.operations[1]).toMatchObject({
       kind: "set",
       path: "users/u1/characters/c1/combat/state",
-      data: { actionRevision: 0, actionHead: null },
     });
     expect(harness.operations[1]?.data).not.toHaveProperty("actionLifecycles");
   });

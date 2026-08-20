@@ -27,7 +27,6 @@ import {
   resolveCombatDamage,
   resolveCombatDamagePackets,
   shouldResolveSoloAction,
-  combatResolutionOwner,
 } from "@/lib/combat-resolution";
 import type { DamageDefenses } from "@/lib/damage-intake";
 import type { ActionSummary, ResolvedAction } from "@/lib/smart-tracker";
@@ -405,41 +404,6 @@ describe("actionRiderConditions — modelled applied-condition riders (Phase 3)"
 });
 
 describe("shouldResolveCombatAction — which commits open the resolver", () => {
-  it("routes a program-only action to its exclusive resolver owner", () => {
-    const effectProgram: NonNullable<ResolvedAction["effectProgram"]> = {
-      version: 1,
-      id: "test.program-only",
-      phases: [
-        {
-          id: "resolve",
-          trigger: { kind: "resolve" },
-          steps: [{ id: "finish", kind: "end-program", scope: "program" }],
-        },
-      ],
-    };
-    const action: ResolvedAction = {
-      ...makeAction("spell", {}),
-      effectProgram,
-      effectResolutionOwner: "effect-program",
-    };
-
-    expect(combatResolutionOwner(action)).toBe("effect-program");
-    expect(combatResolutionSpec(action).resolutionOwner).toBe("effect-program");
-    expect(shouldResolveCombatAction(action)).toBe(true);
-    expect(shouldResolveSoloAction(action)).toBe(true);
-  });
-
-  it("retains exclusive ownership when a malformed transform drops the payload", () => {
-    const action: ResolvedAction = {
-      ...makeAction("feature", { healing: "1d8" }),
-      effectResolutionOwner: "effect-program",
-    };
-
-    expect(combatResolutionOwner(action)).toBe("effect-program");
-    expect(shouldResolveCombatAction(action)).toBe(true);
-    expect(shouldResolveSoloAction(action)).toBe(true);
-  });
-
   it("a weapon swing opens it (Phase 1)", () => {
     expect(shouldResolveCombatAction(makeAction("weapon", { damage: "1d8" }))).toBe(true);
   });

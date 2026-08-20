@@ -33,14 +33,12 @@
  *    in-memory reader, so the parent-doc mirror was pure duplication (rule 6/10).
  */
 import type { SessionState } from "@/types/character";
-import type { CombatEffectLifecycleRuntime } from "@/lib/combat-effect-lifecycle";
 import type { LocText } from "@/lib/loc-text";
 import type { EconomyActionCategory } from "@/lib/combat-economy";
 import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 import type { ConcentrationRef } from "@/types/ids";
 import type { PersistedPlayStateV1 } from "@/lib/session-state-codec";
-import type { ActionLifecycleRecord } from "@/lib/action-command";
 
 /**
  * A player-DECLARED attack in a live campaign encounter — the target(s) the player
@@ -170,12 +168,6 @@ export interface PendingConcentrationSave {
 }
 
 export interface CombatState {
-  /** Whole-document CAS revision for the outer ActionCommand adapter. */
-  actionRevision?: number;
-  /** Exact last committed command for this physical owner. */
-  actionHead?: string | null;
-  /** Bounded causal records for outer action undo/redo. */
-  actionLifecycles?: Readonly<Record<string, ActionLifecycleRecord>>;
   hp: { current: number; temp: number };
   conditions: string[];
   /** Held Bardic Inspiration die. Optional distinguishes a legacy subdoc from an
@@ -206,11 +198,8 @@ export interface CombatState {
    * They use the same occurrence model and lifetime algebra as shared encounters. */
   activeEffects?: ActiveCombatEffect[];
   /** Append-only authored occurrence ledger for local combat, parallel to an
-   * encounter's `effectOps`. Program-owned effects are derived from this field. */
+   * encounter's `effectOps`. */
   effectOps?: CombatEffectOp[];
-  /** Durable exact-occurrence program cursors for local combat. The collection is
-   * canonical, immutable, and lives only in this combat subdoc—not SessionState. */
-  effectLifecycles?: ReadonlyArray<CombatEffectLifecycleRuntime>;
   /** Idempotency receipt for PC-targeted effects delivered through the current
    * campaign encounter. A new encounter epoch replaces the receipt. */
   appliedEncounterEffects?: { epoch: number; ids: string[] };

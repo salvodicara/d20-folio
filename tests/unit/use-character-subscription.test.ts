@@ -638,9 +638,9 @@ describe("useCharacterSubscription — v1 play ownership gate", () => {
     expect(debouncedCancel).toHaveBeenCalledTimes(1);
   });
 
-  it("routes a noncombat session edit to the child and preserves action metadata", async () => {
+  it("routes a noncombat session edit to the child write", async () => {
     renderHook(() => useCharacterSubscription("char1"));
-    act(() => combatCb()(v1Combat({ actionRevision: 7, actionHead: null })));
+    act(() => combatCb()(v1Combat()));
     act(() => snapshotCb()(v1Doc()));
     writeCombatStateMock.mockClear();
     debouncedSave.mockClear();
@@ -653,8 +653,6 @@ describe("useCharacterSubscription — v1 play ownership gate", () => {
     const state = writeCombatStateMock.mock.calls[0]?.[2];
     if (!state) throw new Error("play-state write not captured");
     expect(state.playState?.state.notes).toBe("child only");
-    expect(state.actionRevision).toBe(7);
-    expect(state.actionHead).toBeNull();
   });
 
   it("coalesces a combat + log composite action into one complete child write", async () => {

@@ -5,7 +5,6 @@ import type {
   CombatantRef,
   CombatEffectOp,
   EncounterPosition,
-  ProgramEffectOwner,
 } from "@/types/combat-effect";
 import {
   resolveCombatEffectGrantGroup,
@@ -33,18 +32,6 @@ function combatantStackingKey(ref: CombatantRef): string {
     : [ref.kind, ref.combatantId, ref.memberUid, ref.characterId].join("\u0000");
 }
 
-function programOwnerStackingKey(owner: ProgramEffectOwner): string {
-  return [
-    owner.occurrenceId,
-    owner.programId,
-    owner.phaseId,
-    owner.stepId,
-    owner.operationId,
-    owner.instance ?? "",
-    owner.iteration,
-  ].join("\u0000");
-}
-
 function stackingKey(effect: ActiveCombatEffect): string {
   if (effect.payload.kind === "target-mark") {
     return [
@@ -55,14 +42,6 @@ function stackingKey(effect: ActiveCombatEffect): string {
     ].join("\u0000");
   }
   if (effect.payload.kind === "condition") {
-    if (effect.programOwner) {
-      return [
-        combatantStackingKey(effect.target),
-        effect.payload.kind,
-        effect.payload.conditionId,
-        programOwnerStackingKey(effect.programOwner),
-      ].join("\u0000");
-    }
     return [
       combatantStackingKey(effect.target),
       combatantStackingKey(effect.actor),
@@ -70,16 +49,6 @@ function stackingKey(effect: ActiveCombatEffect): string {
       effect.source.id,
       effect.payload.kind,
       effect.payload.conditionId,
-    ].join("\u0000");
-  }
-  if (effect.payload.kind === "program-standing") {
-    return [
-      combatantStackingKey(effect.target),
-      effect.payload.kind,
-      effect.payload.effectId,
-      effect.programOwner
-        ? programOwnerStackingKey(effect.programOwner)
-        : `occurrence:${effect.id}`,
     ].join("\u0000");
   }
   return [

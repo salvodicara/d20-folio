@@ -3,7 +3,6 @@ import type {
   ActiveCombatEffect,
   CombatantRef,
   CombatEffectOp,
-  ProgramEffectOwner,
 } from "@/types/combat-effect";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -12,10 +11,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
-}
-
-function isNonNegativeInteger(value: unknown): value is number {
-  return Number.isSafeInteger(value) && (value as number) >= 0;
 }
 
 function isCombatantRef(value: unknown): value is CombatantRef {
@@ -52,19 +47,6 @@ function isCombatEffectDuration(value: unknown): boolean {
   );
 }
 
-function isProgramEffectOwner(value: unknown): value is ProgramEffectOwner {
-  return (
-    isRecord(value) &&
-    isString(value.occurrenceId) &&
-    isString(value.programId) &&
-    isString(value.phaseId) &&
-    isString(value.stepId) &&
-    isString(value.operationId) &&
-    (value.instance === null || isNonNegativeInteger(value.instance)) &&
-    isNonNegativeInteger(value.iteration)
-  );
-}
-
 function isCombatEffectLifetime(value: unknown): value is CombatEffectLifetime {
   if (!isRecord(value)) return false;
   if (value.kind === "source-end" || value.kind === "manual") return true;
@@ -73,7 +55,8 @@ function isCombatEffectLifetime(value: unknown): value is CombatEffectLifetime {
     return (
       (value.subject === "source" || value.subject === "target") &&
       (value.phase === "turn-start" || value.phase === "turn-end") &&
-      isNonNegativeInteger(value.offsetTurns)
+      Number.isSafeInteger(value.offsetTurns) &&
+      (value.offsetTurns as number) >= 0
     );
   }
   return (
@@ -96,7 +79,6 @@ export function isActiveCombatEffect(value: unknown): value is ActiveCombatEffec
   const validPayload =
     isRecord(payload) &&
     ((payload.kind === "condition" && isString(payload.conditionId)) ||
-      (payload.kind === "program-standing" && isString(payload.effectId)) ||
       (isString(payload.activeKey) &&
         ((payload.kind === "grant-group" &&
           (payload.phase === undefined ||
@@ -106,12 +88,11 @@ export function isActiveCombatEffect(value: unknown): value is ActiveCombatEffec
             (payload.scope === "marked" ||
               payload.scope === "cursed" ||
               payload.scope === "vowed")))));
-  const validProgramOwner =
-    value.programOwner === undefined || isProgramEffectOwner(value.programOwner);
-  const validProgramStandingOwner =
-    !isRecord(payload) ||
-    payload.kind !== "program-standing" ||
-    value.programOwner !== undefined;
+  // Stored occurrences written by the deleted effect-program runtime carried a
+  // `programOwner` mutation identity (and `program-standing` payloads). Nothing
+  // produces or executes them anymore, so a remnant is dropped at this read
+  // boundary instead of projecting a rule no runtime owns.
+  const notLegacyProgramOwned = value.programOwner === undefined;
   const validAuthoredLifetime =
     value.authoredLifetime === undefined ||
     isCombatEffectLifetime(value.authoredLifetime);
@@ -140,8 +121,7 @@ export function isActiveCombatEffect(value: unknown): value is ActiveCombatEffec
         Number.isFinite(source.castLevel) &&
         source.castLevel > 0)) &&
     validPayload &&
-    validProgramOwner &&
-    validProgramStandingOwner &&
+    notLegacyProgramOwned &&
     validAuthoredLifetime &&
     validBindings &&
     validApplied &&

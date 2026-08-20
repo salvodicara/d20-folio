@@ -147,8 +147,6 @@ describe("combat-state — initiative conversion (cockpit string ↔ canonical n
 describe("combat-state — session → CombatState projection", () => {
   it("projects the trio onto the canonical subdoc shape", () => {
     expect(sessionToCombatState(session())).toEqual<CombatState>({
-      actionRevision: 0,
-      actionHead: null,
       hp: { current: 20, temp: 4 },
       conditions: ["poisoned"],
       initiativeRoll: 15,
@@ -554,8 +552,6 @@ describe("combat-state — absolute setters (one field, clamped)", () => {
 describe("combat-state — defaultCombatState (the absent-subdoc full-HP seed)", () => {
   it("seeds full current HP at max, no temp / conditions / roll / death saves", () => {
     expect(defaultCombatState(30)).toEqual<CombatState>({
-      actionRevision: 0,
-      actionHead: null,
       hp: { current: 30, temp: 0 },
       conditions: [],
       initiativeRoll: null,
@@ -813,8 +809,6 @@ describe("combat-state-io — subscribe", () => {
     };
     subscribeCombatState("u1", "c1", (s) => received.push(s));
     expect(received[0]).toEqual<CombatState>({
-      actionRevision: 0,
-      actionHead: null,
       hp: { current: 5, temp: 1 },
       conditions: ["stunned"],
       initiativeRoll: 11,

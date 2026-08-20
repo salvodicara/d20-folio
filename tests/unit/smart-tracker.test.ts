@@ -16,9 +16,6 @@ import { consumableActionSlot } from "@/lib/srd-resolve";
 import { combatVerdict } from "@/features/character/center/tabs/combat-card-helpers";
 import { spellInstanceCount } from "@/lib/utils";
 import { concentrationValue } from "@/lib/concentration";
-import { actionAtCastLevel } from "@/lib/cast-resolution";
-import { spellIndex } from "@/data/spells";
-import { FIGHTER_FEATURES } from "@/data/classes/fighter";
 import type { CharacterDoc } from "@/types/character";
 import type { AggregatedGrants } from "@/lib/grants";
 
@@ -1924,83 +1921,6 @@ describe("resolveActions — S12b multi-instance spell damage (Magic Missile / S
     const fb = acts.find((a) => a.spellId === "fireball");
     expect(fb?.summary.instances).toBeUndefined();
     expect(fb?.summary.damage).toBe("8d6");
-  });
-});
-
-describe("resolveActions — authored effect-program routing", () => {
-  function makeWizard(spellSrdId: string) {
-    const char = makeChar({
-      classes: [{ classId: "wizard", level: 5 }],
-      abilityScores: { STR: 8, DEX: 14, CON: 12, INT: 18, WIS: 10, CHA: 10 },
-      spellcasting: {
-        ability: "INT",
-        preparedCaster: true,
-        preparedMax: 6,
-        saveDCOverride: null,
-        attackBonusOverride: null,
-      },
-      spellSlots: [
-        { level: 2, total: 3 },
-        { level: 3, total: 2 },
-        { level: 4, total: 1 },
-      ],
-    });
-    char.character.spells = [{ srdId: spellSrdId, prepared: true }];
-    return char;
-  }
-
-  it("carries a spell program unchanged through localization and cast-level scaling", () => {
-    const spell = spellIndex.get("melfs-acid-arrow");
-    if (!spell?.effectProgram) throw new Error("missing authored Acid Arrow program");
-    const raw = resolveActions(makeWizard(spell.id)).find(
-      (action) => action.spellId === spell.id
-    );
-    const localized = localizeActions(makeWizard(spell.id), "it").find(
-      (action) => action.spellId === spell.id
-    );
-    if (!raw || !localized) throw new Error("missing resolved Acid Arrow action");
-
-    expect(raw.effectProgram).toBe(spell.effectProgram);
-    expect(raw.effectResolutionOwner).toBe("effect-program");
-    expect(localized.effectProgram).toBe(spell.effectProgram);
-    expect(localized.effectResolutionOwner).toBe("effect-program");
-
-    const upcast = actionAtCastLevel(localized, spell, 4);
-    expect(upcast.slotLevel).toBe(4);
-    expect(upcast.effectProgram).toBe(spell.effectProgram);
-    expect(upcast.effectResolutionOwner).toBe("effect-program");
-  });
-
-  it("projects the same exclusive route from an authored SrdActionDef", () => {
-    const spell = spellIndex.get("melfs-acid-arrow");
-    const feature = FIGHTER_FEATURES.find(({ id }) => id === "fighter-second-wind");
-    const authoredAction = feature?.mechanics?.actions?.[0];
-    if (!spell?.effectProgram || !authoredAction) {
-      throw new Error("missing effect-program action-routing fixture");
-    }
-    const original = Object.getOwnPropertyDescriptor(authoredAction, "effectProgram");
-    authoredAction.effectProgram = spell.effectProgram;
-
-    try {
-      const char = makeChar({
-        classes: [{ classId: "fighter", level: 5 }],
-        features: [{ srdId: "fighter-second-wind" }],
-      });
-      const raw = resolveActions(char).find(
-        (action) => action.id === "fighter-second-wind-bonus"
-      );
-      const localized = localizeActions(char, "it").find(
-        (action) => action.id === "fighter-second-wind-bonus"
-      );
-
-      expect(raw?.effectProgram).toBe(spell.effectProgram);
-      expect(raw?.effectResolutionOwner).toBe("effect-program");
-      expect(localized?.effectProgram).toBe(spell.effectProgram);
-      expect(localized?.effectResolutionOwner).toBe("effect-program");
-    } finally {
-      Reflect.deleteProperty(authoredAction, "effectProgram");
-      if (original) Object.defineProperty(authoredAction, "effectProgram", original);
-    }
   });
 });
 

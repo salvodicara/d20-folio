@@ -7,7 +7,6 @@
  * IO boundary; every field and public structural type comes from this schema.
  */
 
-import type { CombatEffectProgram } from "@/data/types";
 import type { ResourceSpec, ResourceTerm } from "@/types/resource";
 import {
   arraySchema,
@@ -161,10 +160,6 @@ const SPELL_DEFINITION_SCHEMA = discriminatedUnionSchema("kind", {
     kind: literalSchema("custom"),
     level: SPELL_LEVEL_SCHEMA,
     name: NAME_SCHEMA,
-    program: unionSchema([
-      customSchema<"combat-effect-program", CombatEffectProgram>("combat-effect-program"),
-      NULL_SCHEMA,
-    ]),
     range: TEXT_SCHEMA,
     school: SPELL_SCHOOL_SCHEMA,
   }),
@@ -234,10 +229,6 @@ const FEATURE_ACTION_SCHEMA = objectSchema({
   description: TEXT_SCHEMA,
   id: ID_SCHEMA,
   label: NAME_SCHEMA,
-  program: unionSchema([
-    customSchema<"combat-effect-program", CombatEffectProgram>("combat-effect-program"),
-    NULL_SCHEMA,
-  ]),
   cost: FEATURE_ACTION_COST_SCHEMA,
   slot: ACTION_TYPE_SCHEMA,
 });
@@ -359,17 +350,13 @@ const COMBAT_ALGORITHM_SCHEMA = arraySchema(
 
 /**
  * Account-authored condition facts keyed by stable condition id. `grants` are
- * lifted only while an occurrence is active; an empty list plus a null program
- * is the explicit narrative-only definition.
+ * lifted only while an occurrence is active; an empty list is the explicit
+ * narrative-only definition.
  */
 const CUSTOM_CONDITION_SCHEMA = objectSchema({
   description: TEXT_SCHEMA,
   grants: arraySchema(customSchema<"grant", Readonly<Grant>>("grant")),
   label: NAME_SCHEMA,
-  program: unionSchema([
-    customSchema<"combat-effect-program", CombatEffectProgram>("combat-effect-program"),
-    NULL_SCHEMA,
-  ]),
 });
 
 export const CHARACTER_BUILD_SCHEMA = objectSchema({
@@ -391,7 +378,6 @@ export const CHARACTER_BUILD_SCHEMA = objectSchema({
 export type CharacterBuildSchemaCustomTypes = {
   readonly "ability-score": number;
   readonly "class-level": number;
-  readonly "combat-effect-program": CombatEffectProgram;
   readonly grant: Readonly<Grant>;
   readonly id: string;
   readonly integer: number;

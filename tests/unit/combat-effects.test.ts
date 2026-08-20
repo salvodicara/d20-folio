@@ -23,11 +23,7 @@ import {
   turnBoundaryAfter,
 } from "@/lib/combat-effects";
 import { isActiveCombatEffect } from "@/lib/combat-effect-io";
-import type {
-  ActiveCombatEffect,
-  CombatEffectOp,
-  ProgramEffectOwner,
-} from "@/types/combat-effect";
+import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
 import { evaluateGrants } from "@/lib/grants";
 import { resolveCombatEffectGrantSources } from "@/lib/resolve-grant-sources";
 import { NO_DEFENSES } from "@/lib/damage-intake";
@@ -56,18 +52,6 @@ function apply(
   value = effect(id)
 ): Extract<CombatEffectOp, { kind: "apply" }> {
   return { id: `apply-${id}`, kind: "apply", effect: value };
-}
-
-function programOwner(occurrenceId: string, operationId: string): ProgramEffectOwner {
-  return {
-    occurrenceId,
-    programId: "spell:test",
-    phaseId: "resolve",
-    stepId: "world-effect",
-    operationId,
-    instance: 0,
-    iteration: 0,
-  };
 }
 
 function setActive(
@@ -389,40 +373,9 @@ describe("persistent combat effects", () => {
     expect(foldCombatEffectOps(operations)).toEqual([second]);
   });
 
-  it("keeps identical program conditions and standing facts owned by each occurrence", () => {
-    const firstCondition = effect("condition-one", {
-      payload: { kind: "condition", conditionId: "paralyzed" },
-      programOwner: programOwner("cast:one", "command-one#0"),
-    });
-    const secondCondition = effect("condition-two", {
-      payload: { kind: "condition", conditionId: "paralyzed" },
-      programOwner: programOwner("cast:two", "command-two#0"),
-    });
-    const firstStanding = effect("standing-one", {
-      payload: { kind: "program-standing", effectId: "burning-zone" },
-      programOwner: programOwner("cast:one", "command-one#1"),
-      authoredLifetime: { kind: "phase-end", phaseId: "resolve" },
-    });
-    const secondStanding = effect("standing-two", {
-      payload: { kind: "program-standing", effectId: "burning-zone" },
-      programOwner: programOwner("cast:two", "command-two#1"),
-      authoredLifetime: { kind: "manual" },
-    });
-
-    expect(
-      foldCombatEffectOps([
-        apply("condition-one", firstCondition),
-        apply("condition-two", secondCondition),
-        apply("standing-one", firstStanding),
-        apply("standing-two", secondStanding),
-      ])
-    ).toEqual([firstCondition, secondCondition, firstStanding, secondStanding]);
-  });
-
-  it("conforms exact program ownership and authored lifetime facts", () => {
+  it("conforms authored lifetime facts and strips legacy program-owned remnants", () => {
     const standing = effect("standing", {
-      payload: { kind: "program-standing", effectId: "burning-zone" },
-      programOwner: programOwner("cast:one", "command-one#0"),
+      payload: { kind: "grant-group", activeKey: "spell-standing" },
       authoredLifetime: {
         kind: "turn-boundary",
         subject: "target",
@@ -432,13 +385,29 @@ describe("persistent combat effects", () => {
     });
 
     expect(isActiveCombatEffect(standing)).toBe(true);
+    // Stored occurrences written by the deleted effect-program runtime carried a
+    // `programOwner` identity (and `program-standing` payloads); both are dropped
+    // at the read boundary instead of projecting a rule no runtime owns.
     expect(
       isActiveCombatEffect({
         ...standing,
-        programOwner: { ...standing.programOwner, operationId: "" },
+        programOwner: {
+          occurrenceId: "cast:one",
+          programId: "spell:test",
+          phaseId: "resolve",
+          stepId: "world-effect",
+          operationId: "command-one#0",
+          instance: 0,
+          iteration: 0,
+        },
       })
     ).toBe(false);
-    expect(isActiveCombatEffect({ ...standing, programOwner: undefined })).toBe(false);
+    expect(
+      isActiveCombatEffect({
+        ...standing,
+        payload: { kind: "program-standing", effectId: "burning-zone" },
+      })
+    ).toBe(false);
     expect(
       isActiveCombatEffect({
         ...standing,

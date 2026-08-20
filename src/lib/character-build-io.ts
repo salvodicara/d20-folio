@@ -1,9 +1,7 @@
-import type { CombatEffectProgram } from "@/data/types";
 import {
   CHARACTER_BUILD_SCHEMA,
   type CharacterBuildSchemaCustomTypes,
 } from "@/lib/character-build-schema";
-import { validateCombatEffectProgram } from "@/lib/combat-effect-program";
 import { exactConformer, type ExactSchemaContext } from "@/lib/exact-schema";
 import { conformGrant } from "@/lib/grants";
 import { conformResourceSpec, conformResourceTerm } from "@/lib/resources";
@@ -63,10 +61,6 @@ function conformIntegerRange(
   return integer !== null && integer >= minimum && integer <= maximum ? integer : null;
 }
 
-function conformProgram(value: unknown): CombatEffectProgram | null {
-  return validateCombatEffectProgram(value).valid ? (value as CombatEffectProgram) : null;
-}
-
 const CHARACTER_BUILD_CONTEXT: ExactSchemaContext<
   CharacterBuildSchemaCustomTypes,
   Record<never, never>
@@ -74,7 +68,6 @@ const CHARACTER_BUILD_CONTEXT: ExactSchemaContext<
   customs: {
     "ability-score": (value) => conformIntegerRange(value, 1, 30),
     "class-level": (value) => conformIntegerRange(value, 1, 20),
-    "combat-effect-program": conformProgram,
     grant: conformGrant,
     id: conformId,
     integer: conformInteger,

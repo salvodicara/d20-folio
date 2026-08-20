@@ -672,7 +672,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
   },
   {
     id: "spike-growth",
-    // The canonical-runtime authored program (supersedes `effectProgram`): the
+    // The canonical-runtime authored program: the
     // cast raises the spiked zone (an active key on the caster, held by
     // concentration); each 5 feet a creature moves through it the table
     // declares one "movement" pulse — 2d4 piercing to that creature, no save.
@@ -789,61 +789,6 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       ],
       registers: [],
       version: 1,
-    },
-    effectProgram: {
-      version: 1,
-      id: "spell.spike-growth",
-      inputs: [
-        {
-          id: "five-foot-roll",
-          kind: "roll",
-          scope: "target",
-          roll: { count: 2, sides: 4 },
-        },
-      ],
-      phases: [
-        {
-          id: "grow-spikes",
-          trigger: { kind: "resolve" },
-          steps: [
-            {
-              id: "start-spiked-area",
-              kind: "standing",
-              scope: "program",
-              subject: "source",
-              operation: "start",
-              effectId: "spike-growth-area",
-              lifetime: { kind: "source-end" },
-            },
-          ],
-        },
-        {
-          id: "travel-five-feet",
-          trigger: {
-            kind: "manual",
-            eventId: "travel-five-feet-in-spiked-area",
-          },
-          targeting: { affinity: "any", maxTargets: 1 },
-          steps: [
-            {
-              id: "spike-damage",
-              kind: "damage",
-              scope: "target",
-              subject: "target",
-              amount: { kind: "input", inputId: "five-foot-roll" },
-              damageType: { kind: "fixed", damageType: "piercing" },
-              damageSource: "spell",
-              when: {
-                kind: "standing",
-                subject: "source",
-                effectId: "spike-growth-area",
-                present: true,
-              },
-              packetId: "five-foot-travel",
-            },
-          ],
-        },
-      ],
     },
     level: 2,
     school: "transmutation",
@@ -1002,7 +947,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
   },
   {
     id: "dragons-breath",
-    // The canonical-runtime authored program (supersedes `effectProgram`): the
+    // The canonical-runtime authored program: the
     // cast picks one element and lights the matching breath key on the imbued
     // creature (fire-shield's branch pattern); each exhalation is a
     // table-declared "exhale" pulse — the imbued creature is the activator —
@@ -1557,105 +1502,6 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       registers: [{ initial: 2, registerId: "cast-level" }],
       version: 1,
     },
-    effectProgram: {
-      version: 1,
-      id: "spell.dragons-breath",
-      gates: [
-        {
-          id: "breath-save",
-          kind: "save",
-          scope: "target",
-          ability: "DEX",
-          dc: { kind: "binding", binding: "caster-spell-save-dc" },
-        },
-      ],
-      inputs: [
-        {
-          id: "breath-type",
-          kind: "choice",
-          scope: "program",
-          options: ["acid", "cold", "fire", "lightning", "poison"],
-        },
-        {
-          id: "breath-damage-roll",
-          kind: "roll",
-          scope: "program",
-          roll: {
-            count: { base: 3, perSlot: { above: 2, amount: 1 } },
-            sides: 6,
-          },
-        },
-      ],
-      phases: [
-        {
-          id: "imbue",
-          trigger: { kind: "resolve" },
-          targeting: { affinity: "ally", maxTargets: 1 },
-          steps: [
-            ...(["acid", "cold", "fire", "lightning", "poison"] as const).map(
-              (damageType) => ({
-                id: `start-${damageType}-breath`,
-                kind: "standing" as const,
-                scope: "target" as const,
-                subject: "target" as const,
-                operation: "start" as const,
-                effectId: `dragons-breath-${damageType}`,
-                lifetime: { kind: "source-end" as const },
-                when: {
-                  kind: "choice" as const,
-                  inputId: "breath-type",
-                  equals: damageType,
-                },
-              })
-            ),
-          ],
-        },
-        {
-          id: "exhale",
-          trigger: { kind: "activate", action: "action" },
-          targeting: { affinity: "any" },
-          steps: [
-            {
-              id: "breath-damage",
-              kind: "damage",
-              scope: "target",
-              subject: "target",
-              amount: { kind: "input", inputId: "breath-damage-roll" },
-              damageType: { kind: "choice", inputId: "breath-type" },
-              damageSource: "spell",
-              gate: {
-                gateId: "breath-save",
-                pass: "failure",
-                otherwise: "half",
-              },
-              when: {
-                kind: "any",
-                predicates: (
-                  ["acid", "cold", "fire", "lightning", "poison"] as const
-                ).map((damageType) => ({
-                  kind: "all" as const,
-                  predicates: [
-                    {
-                      kind: "choice" as const,
-                      inputId: "breath-type",
-                      equals: damageType,
-                    },
-                    {
-                      kind: "standing" as const,
-                      subject: "activator" as const,
-                      effectId: `dragons-breath-${damageType}`,
-                      present: true,
-                    },
-                  ],
-                })),
-              },
-              packetId: "breath",
-            },
-          ],
-          repeat: { id: "dragons-breath-duration", maxOccurrences: 10 },
-        },
-      ],
-    },
     level: 2,
     school: "transmutation",
     classes: ["artificer", "sorcerer", "wizard"],
@@ -1750,7 +1596,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
   },
   {
     id: "melfs-acid-arrow",
-    // The canonical-runtime authored program (supersedes `effectProgram`): one
+    // The canonical-runtime authored program: one
     // ranged spell attack at cast — a hit lands 4d4 acid (+1d4 per slot level
     // above 2, doubled dice on a critical), a miss still splashes half that
     // roll; the target's next-turn-end afterburn is a one-shot table-declared
@@ -2121,110 +1967,6 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       registers: [],
       version: 1,
     },
-    effectProgram: {
-      version: 1,
-      id: "spell.melfs-acid-arrow",
-      gates: [
-        {
-          id: "arrow-attack",
-          kind: "attack",
-          scope: "target",
-          attackType: "ranged",
-        },
-      ],
-      inputs: [
-        {
-          id: "impact-roll",
-          kind: "roll",
-          scope: "target",
-          roll: {
-            count: { base: 4, perSlot: { above: 2, amount: 1 } },
-            sides: 4,
-            critical: { gateId: "arrow-attack", multiplier: 2 },
-          },
-        },
-        {
-          id: "afterburn-roll",
-          kind: "roll",
-          scope: "target",
-          roll: { count: 2, sides: 4 },
-        },
-      ],
-      phases: [
-        {
-          id: "impact",
-          trigger: { kind: "resolve" },
-          targeting: { affinity: "enemy", maxTargets: 1 },
-          steps: [
-            {
-              id: "impact-damage",
-              kind: "damage",
-              scope: "target",
-              subject: "target",
-              amount: { kind: "input", inputId: "impact-roll" },
-              damageType: { kind: "fixed", damageType: "acid" },
-              damageSource: "spell",
-              gate: {
-                gateId: "arrow-attack",
-                pass: "hit",
-                otherwise: "half",
-              },
-              packetId: "impact",
-            },
-            {
-              id: "arm-afterburn",
-              kind: "standing",
-              scope: "target",
-              subject: "target",
-              operation: "start",
-              effectId: "acid-arrow-afterburn",
-              lifetime: {
-                kind: "turn-boundary",
-                subject: "target",
-                phase: "turn-end",
-                offsetTurns: 1,
-              },
-              when: { kind: "gate", gateId: "arrow-attack", result: "hit" },
-            },
-          ],
-        },
-        {
-          id: "afterburn",
-          trigger: {
-            kind: "turn-end",
-            subject: "target",
-            offsetTurns: 1,
-          },
-          targeting: { affinity: "enemy", maxTargets: 1 },
-          steps: [
-            {
-              id: "afterburn-damage",
-              kind: "damage",
-              scope: "target",
-              subject: "target",
-              amount: { kind: "input", inputId: "afterburn-roll" },
-              damageType: { kind: "fixed", damageType: "acid" },
-              damageSource: "spell",
-              packetId: "afterburn",
-              when: {
-                kind: "standing",
-                subject: "target",
-                effectId: "acid-arrow-afterburn",
-                present: true,
-              },
-            },
-            {
-              id: "end-afterburn",
-              kind: "standing",
-              scope: "target",
-              subject: "target",
-              operation: "end",
-              effectId: "acid-arrow-afterburn",
-            },
-          ],
-        },
-      ],
-    },
     level: 2,
     school: "evocation",
     classes: ["wizard"],
@@ -2277,7 +2019,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
   },
   {
     id: "phantasmal-force",
-    // The canonical-runtime authored program (supersedes `effectProgram`): the
+    // The canonical-runtime authored program: the
     // cast forces one INT save — failure roots the illusion in the target's
     // mind (success ends the spell, no damage at cast); whenever the phantasm
     // harms the target on the caster's turn, the table declares a "phantasm"
@@ -2448,85 +2190,6 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       ],
       registers: [],
       version: 1,
-    },
-    effectProgram: {
-      version: 1,
-      id: "spell.phantasmal-force",
-      gates: [
-        {
-          id: "initial-save",
-          kind: "save",
-          scope: "target",
-          ability: "INT",
-        },
-      ],
-      inputs: [
-        {
-          id: "illusion-damage-roll",
-          kind: "roll",
-          scope: "target",
-          roll: { count: 2, sides: 8 },
-        },
-      ],
-      phases: [
-        {
-          id: "create-phantasm",
-          trigger: { kind: "resolve" },
-          targeting: { affinity: "enemy", maxTargets: 1 },
-          steps: [
-            {
-              id: "start-phantasm",
-              kind: "standing",
-              scope: "target",
-              subject: "target",
-              operation: "start",
-              effectId: "phantasmal-force-illusion",
-              lifetime: { kind: "source-end" },
-              when: {
-                kind: "gate",
-                gateId: "initial-save",
-                result: "failure",
-              },
-            },
-            {
-              id: "successful-save-ends",
-              kind: "end-program",
-              scope: "target",
-              when: {
-                kind: "gate",
-                gateId: "initial-save",
-                result: "success",
-              },
-            },
-          ],
-        },
-        {
-          id: "dangerous-phantasm",
-          trigger: {
-            kind: "manual",
-            eventId: "dangerous-phantasm-in-range-on-source-turn",
-          },
-          targeting: { affinity: "enemy", maxTargets: 1 },
-          steps: [
-            {
-              id: "illusion-damage",
-              kind: "damage",
-              scope: "target",
-              subject: "target",
-              amount: { kind: "input", inputId: "illusion-damage-roll" },
-              damageType: { kind: "fixed", damageType: "psychic" },
-              damageSource: "spell",
-              when: {
-                kind: "standing",
-                subject: "target",
-                effectId: "phantasmal-force-illusion",
-                present: true,
-              },
-              packetId: "illusion",
-            },
-          ],
-        },
-      ],
     },
     level: 2,
     school: "illusion",

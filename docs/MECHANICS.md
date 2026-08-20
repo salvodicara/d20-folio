@@ -213,8 +213,8 @@ dice, flat bonuses never doubled), and a miss resolving its empty roll requireme
 via an `answer-d20` predicate, which gates the condition); **per-instance rolls** (Magic Missile:
 one automatic-delivery roll per dart slot); cantrip damage scaling by character level
 (5/11/17 as `base × (1 + ⌊(L+1)/6⌋)`), or `cantripInstances` scaling the SLOT count instead with
-fixed dice (Eldritch Blast beams — the first legacy `effectProgram` fully superseded, tracked in
-`SUPERSEDED_LEGACY_PROGRAMS`); flat and full-restore healing (Heal, Power Word Heal — the kernel's
+fixed dice (Eldritch Blast beams — the first legacy `effectProgram` the canonical transcription
+fully superseded; the legacy field and executor are deleted); flat and full-restore healing (Heal, Power Word Heal — the kernel's
 healing clamp makes the 1000 domain bound exact); and **recurrence** — a `pulse` phase triggered by
 the table-signaled `manual-table-event` re-runs the whole resolution suite with phase-prefixed
 identities, the chosen cast level rides the `cast-level` program register into every later pulse,

@@ -137,11 +137,6 @@
     {
       "clauses": [
         {
-          "clauseId": "effect-program",
-          "detail": "superseded-by-declarative",
-          "status": "automated"
-        },
-        {
           "clauseId": "targeting",
           "detail": null,
           "status": "automated"
@@ -12584,7 +12579,7 @@
   "family": "spells",
   "totalEntities": 422,
   "totals": {
-    "automated": 1864,
+    "automated": 1863,
     "physical-input": 382,
     "table": 215,
     "spatial": 182,

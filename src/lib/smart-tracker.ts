@@ -47,7 +47,6 @@ import type {
   SrdActionDef,
   ActionEconomyCategory,
   ResourceRecoveryTrigger,
-  CombatEffectProgram,
 } from "@/data/types";
 import type { DamageType } from "@/types/damage";
 import { isPoolAltRecovery, isSlotAltRecovery } from "@/data/types";
@@ -644,19 +643,6 @@ export interface ResolvedAction {
   /** SRD spell id (set for SRD spell actions) — lets the Combat page build the
    *  spell's cast options (upcast / free-cast) for rich in-combat casting. */
   spellId?: string;
-  /**
-   * Ordered, locale-free deterministic effect authored by the spell/action.
-   * This payload is carried verbatim through localization and cast transforms;
-   * only the effect-program interpreter may execute it.
-   */
-  effectProgram?: CombatEffectProgram;
-  /**
-   * Explicit exclusive mutation owner for an authored effect program. When this
-   * marker is present, consumers must not also execute legacy summary mutations.
-   * It is intentionally retained even if a malformed transform loses the payload,
-   * so routing can fail closed instead of silently falling back to legacy logic.
-   */
-  effectResolutionOwner?: "effect-program";
   /** Exact stored index for a custom spell. Its action id is index-based too, so
    * duplicate homebrew names remain independently castable. */
   customSpellIndex?: number;
@@ -1238,13 +1224,6 @@ export interface RawResolvedAction extends Omit<
   description?: LocText;
   /** Locale-free structured summary. */
   summary: RawActionSummary;
-}
-
-/** Stamp an authored program and its exclusive owner as one inseparable route. */
-function effectProgramRoute(
-  effectProgram: CombatEffectProgram | undefined
-): Pick<ResolvedAction, "effectProgram" | "effectResolutionOwner"> {
-  return effectProgram ? { effectProgram, effectResolutionOwner: "effect-program" } : {};
 }
 
 /**
@@ -5093,7 +5072,6 @@ function resolveEquipmentActions(
         name: srdText("equipment", item.id, "name"),
         description: srdText("equipment", item.id, "description"),
         type: action.type,
-        ...effectProgramRoute(action.effectProgram),
         ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
         ...actionTurnConstraints(action),
         source: "feature",
@@ -5433,7 +5411,6 @@ function resolveFeatureActions(
         id,
         name: actionName,
         type: action.type,
-        ...effectProgramRoute(action.effectProgram),
         source: "feature",
         spellLevel: null,
         concentration: false,
@@ -5561,7 +5538,6 @@ function resolveFeatureActions(
           id,
           name: raceTraitLoc(raceForActions.id, trait, "name"),
           type: action.type,
-          ...effectProgramRoute(action.effectProgram),
           source: "feature",
           spellLevel: null,
           concentration: false,
@@ -5628,7 +5604,6 @@ function resolveFeatureActions(
           id,
           name: srdText("invocation", inv.id, "name"),
           type: action.type,
-          ...effectProgramRoute(action.effectProgram),
           source: "feature",
           spellLevel: null,
           concentration: false,
@@ -6330,7 +6305,6 @@ function resolveSpellActions(
       id: `spell-${spell.id}`,
       name: srdText("spell", spell.id, "name"),
       type: actionType,
-      ...effectProgramRoute(spell.effectProgram),
       source: "spell",
       castTiming,
       spellLevel: spell.level,

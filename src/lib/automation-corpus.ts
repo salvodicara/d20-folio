@@ -135,9 +135,8 @@ const FEATURE_MECHANICS = object({
 const SPELL_FIELDS: Readonly<Record<string, FieldRule>> = {
   id: IGNORE,
   source: IGNORE,
-  effectProgram: { kind: "compiled", handler: "effect-program", program: true },
-  // The canonical-runtime authored program (supersedes effectProgram at the
-  // legacy-executor deletion) and the beam-count cantrip scaling flag.
+  // The canonical-runtime authored program and the beam-count cantrip
+  // scaling flag.
   mechanicsProgram: { kind: "compiled", handler: "mechanics-program", program: true },
   cantripInstances: compiled("action"),
   level: compiled("spell-choice"),
