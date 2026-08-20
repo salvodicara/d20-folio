@@ -330,7 +330,22 @@ The persistent standing-effect seam (`combat-effects`/`combat-effect-io`/`types/
 fed by the declared-effects resolver and campaign persistent ops, never by programs) stays live
 with its program-owned payloads pruned; every read boundary strips stored program remnants
 fail-safe. The dispatch guard pins the 16-spell roster literally as the regression contract; both
-coverage censuses regenerated with zero effect-program clauses.\*\*
+coverage censuses regenerated with zero effect-program clauses.\*\* **Deletion map L2 first half
+EXECUTED (2026-08-20, the standing-effect census wave):** the persistent standing-effect family
+was censused producer-by-producer and reader-by-reader against the canonical seams; the verdict
+(charter on `src/types/combat-effect.ts`, residue in `docs/AUTOMATION_HANDOFF.md`) is that the
+campaign `effectOps` ledger stays as the SMALLEST live cross-document seam (its behavior, Warding
+Bond transfer, Death Ward ally floor, Bless dice, marks, projected conditions, Aid HP arithmetic,
+lands on OTHER combatants, which single-document kernel worlds and owner-scoped
+writes cannot carry yet) while the seam's dead limbs are DELETED: the `set-active` CAS op kind
+and algebra (never had a shipped producer), the local `CombatState.effectOps` mirror ledger with
+`replaceCombatEffectOps` and its codec gates (never had a production writer; stored fields now
+codec-ignored fail-safe), `authoredLifetime`/`CombatEffectLifetime`, and `markedTargetForActor`.
+Character-side SELF standings already ride the world (active-key/target-mark standings through
+`world-standing-grants.ts`); the mission-premised monster damage-over-time tick turned out not
+to exist in the legacy system (nothing to migrate). The second half lands with the kernel
+residue: transfer/floor/max-HP standing facts + consumers, recipient-aware standing targets,
+and a cross-document carrier.
 
 **The fourteen authored programs CLOSED on branch (2026-08-14, third block):** every spell that
 still carried only a legacy `effectProgram` now holds a hand-authored canonical-runtime program —

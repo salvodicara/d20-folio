@@ -1,22 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
   activeRollModeAdjustments,
-  appendCombatEffectStatusOp,
-  combatEffectOccurrenceState,
   conformCombatEffectOps,
   concentrationEffectIdsOwnedBy,
   currentHpDeltaForEffect,
   damageDefensesByEffects,
   endedEffectSuccessor,
   effectsForTarget,
-  foldCombatEffectOccurrences,
   foldCombatEffectOps,
   healingBlockedByEffects,
   effectsByActorSource,
   expiredCombatEffects,
   maxHpDeltaForEffect,
   mergeDamageDefenseGrants,
-  markedTargetForActor,
   resolvePersistentDamage,
   revokeConditionEffectOps,
   speedAdjustmentByEffects,
@@ -52,25 +48,6 @@ function apply(
   value = effect(id)
 ): Extract<CombatEffectOp, { kind: "apply" }> {
   return { id: `apply-${id}`, kind: "apply", effect: value };
-}
-
-function setActive(
-  id: string,
-  effectId: string,
-  expectedHeadOpId: string,
-  active: boolean,
-  actorId = "caster",
-  targetId = "target"
-): Extract<CombatEffectOp, { kind: "set-active" }> {
-  return {
-    id,
-    kind: "set-active",
-    effectId,
-    actorId,
-    targetId,
-    expectedHeadOpId,
-    active,
-  };
 }
 
 describe("persistent combat effects", () => {
@@ -147,110 +124,47 @@ describe("persistent combat effects", () => {
     expect(foldCombatEffectOps(operations)).toEqual([]);
   });
 
-  it("keeps legacy revoke read-compatible as a terminal deactivate", () => {
-    const legacyRevoke: CombatEffectOp = {
+  it("keeps a revoke terminal and drops mismatched or branch-era CAS entries", () => {
+    const revokeOne: CombatEffectOp = {
       id: "revoke-one",
       kind: "revoke",
       effectId: "one",
       actorId: "caster",
       targetId: "target",
     };
-    const operations: CombatEffectOp[] = [
-      apply("one"),
-      legacyRevoke,
-      setActive("reactivate-one", "one", legacyRevoke.id, true),
-    ];
-
-    expect(conformCombatEffectOps(operations)).toEqual(operations.slice(0, 2));
-    expect(foldCombatEffectOps(operations)).toEqual([]);
-    expect(combatEffectOccurrenceState(operations, "one")).toMatchObject({
-      headOpId: legacyRevoke.id,
+    const wrongActor: CombatEffectOp = {
+      id: "wrong-actor",
+      kind: "revoke",
+      effectId: "one",
+      actorId: "other-caster",
+      targetId: "target",
+    };
+    const wrongTarget: CombatEffectOp = {
+      id: "wrong-target",
+      kind: "revoke",
+      effectId: "one",
+      actorId: "caster",
+      targetId: "other-target",
+    };
+    // A stored `set-active` entry from the deleted branch-era CAS machinery is
+    // structurally unknown now and must be dropped fail-safe at the boundary.
+    const staleSetActive = {
+      id: "stale-set-active",
+      kind: "set-active",
+      effectId: "one",
+      actorId: "caster",
+      targetId: "target",
+      expectedHeadOpId: "apply-one",
       active: false,
-      terminal: true,
-    });
+    } as unknown as CombatEffectOp;
+
     expect(
-      appendCombatEffectStatusOp(
-        operations.slice(0, 2),
-        setActive("strict-reactivate-one", "one", legacyRevoke.id, true)
-      )
-    ).toBeNull();
-  });
-
-  it("strictly appends causal status changes and reactivates the same occurrence", () => {
-    const original = effect("one");
-    const initial = [apply("one", original)];
-    const deactivate = setActive("deactivate-one", "one", "apply-one", false);
-    const inactive = appendCombatEffectStatusOp(initial, deactivate);
-    if (!inactive) throw new Error("expected a causal deactivate append");
-
-    expect(foldCombatEffectOps(inactive)).toEqual([]);
-    expect(combatEffectOccurrenceState(inactive, "one")).toMatchObject({
-      effect: original,
-      headOpId: deactivate.id,
-      active: false,
-      terminal: false,
-    });
+      conformCombatEffectOps([apply("one"), wrongActor, wrongTarget, staleSetActive])
+    ).toEqual([apply("one")]);
     expect(
-      appendCombatEffectStatusOp(
-        inactive,
-        setActive("stale-reactivate", "one", "apply-one", true)
-      )
-    ).toBeNull();
-
-    const reactivate = setActive("reactivate-one", "one", deactivate.id, true);
-    const active = appendCombatEffectStatusOp(inactive, reactivate);
-    if (!active) throw new Error("expected a causal reactivate append");
-
-    expect(conformCombatEffectOps(active)).toEqual(active);
-    expect(foldCombatEffectOps(active)).toEqual([original]);
-    expect(combatEffectOccurrenceState(active, "one")).toMatchObject({
-      effect: original,
-      headOpId: reactivate.id,
-      active: true,
-      terminal: false,
-    });
-  });
-
-  it("ignores stale or mismatched status operations while strict append rejects them", () => {
-    const initial = [apply("one")];
-    const stale = setActive("stale-one", "one", "missing-head", false);
-    const wrongActor = setActive(
-      "wrong-actor",
-      "one",
-      "apply-one",
-      false,
-      "other-caster"
-    );
-    const wrongTarget = setActive(
-      "wrong-target",
-      "one",
-      "apply-one",
-      false,
-      "caster",
-      "other-target"
-    );
-
-    expect(appendCombatEffectStatusOp(initial, stale)).toBeNull();
-    expect(appendCombatEffectStatusOp(initial, wrongActor)).toBeNull();
-    expect(appendCombatEffectStatusOp(initial, wrongTarget)).toBeNull();
-    expect(
-      foldCombatEffectOccurrences([...initial, stale, wrongActor, wrongTarget])
-    ).toMatchObject([
-      {
-        headOpId: "apply-one",
-        active: true,
-        terminal: false,
-      },
-    ]);
-    expect(
-      conformCombatEffectOps([
-        ...initial,
-        stale,
-        wrongActor,
-        wrongTarget,
-        { ...setActive("invalid-active", "one", "apply-one", false), active: "no" },
-      ])
-    ).toEqual(initial);
+      conformCombatEffectOps([apply("one"), revokeOne, { ...revokeOne, id: "again" }])
+    ).toEqual([apply("one"), revokeOne]);
+    expect(foldCombatEffectOps([apply("one"), revokeOne])).toEqual([]);
   });
 
   it("deduplicates apply retries by operation id and immutable occurrence id", () => {
@@ -263,13 +177,11 @@ describe("persistent combat effects", () => {
       }),
     };
 
-    expect(foldCombatEffectOccurrences([original, original, conflictingRetry])).toEqual([
-      {
-        effect: original.effect,
-        headOpId: original.id,
-        active: true,
-        terminal: false,
-      },
+    expect(conformCombatEffectOps([original, original, conflictingRetry])).toEqual([
+      original,
+    ]);
+    expect(foldCombatEffectOps([original, original, conflictingRetry])).toEqual([
+      original.effect,
     ]);
   });
 
@@ -285,18 +197,6 @@ describe("persistent combat effects", () => {
       targetId: "target",
     });
     expect(foldCombatEffectOps(operations)).toEqual([]);
-  });
-
-  it("keeps an inactive replacement as the permanent stacking head", () => {
-    const operations: CombatEffectOp[] = [
-      apply("older"),
-      apply("newer"),
-      setActive("deactivate-newer", "newer", "apply-newer", false),
-    ];
-    expect(foldCombatEffectOps(operations)).toEqual([]);
-
-    operations.push(setActive("reactivate-newer", "newer", "deactivate-newer", true));
-    expect(foldCombatEffectOps(operations).map(({ id }) => id)).toEqual(["newer"]);
   });
 
   it("keeps different targets and sources independent", () => {
@@ -373,15 +273,9 @@ describe("persistent combat effects", () => {
     expect(foldCombatEffectOps(operations)).toEqual([second]);
   });
 
-  it("conforms authored lifetime facts and strips legacy program-owned remnants", () => {
+  it("strips legacy program-owned remnants at the read boundary", () => {
     const standing = effect("standing", {
       payload: { kind: "grant-group", activeKey: "spell-standing" },
-      authoredLifetime: {
-        kind: "turn-boundary",
-        subject: "target",
-        phase: "turn-end",
-        offsetTurns: 1,
-      },
     });
 
     expect(isActiveCombatEffect(standing)).toBe(true);
@@ -406,12 +300,6 @@ describe("persistent combat effects", () => {
       isActiveCombatEffect({
         ...standing,
         payload: { kind: "program-standing", effectId: "burning-zone" },
-      })
-    ).toBe(false);
-    expect(
-      isActiveCombatEffect({
-        ...standing,
-        authoredLifetime: { ...standing.authoredLifetime, offsetTurns: 0.5 },
       })
     ).toBe(false);
   });
@@ -662,11 +550,20 @@ describe("persistent combat effects", () => {
         targetId: "goblin-2",
       },
     ];
-    expect(markedTargetForActor(operations.slice(0, 2), "ranger", "marked")).toEqual({
+    const markedTarget = (
+      ops: ReadonlyArray<CombatEffectOp>
+    ): ActiveCombatEffect["target"] | null =>
+      foldCombatEffectOps(ops).find(
+        (candidate) =>
+          candidate.actor.combatantId === "ranger" &&
+          candidate.payload.kind === "target-mark" &&
+          candidate.payload.scope === "marked"
+      )?.target ?? null;
+    expect(markedTarget(operations.slice(0, 2))).toEqual({
       kind: "monster",
       combatantId: "goblin-2",
     });
-    expect(markedTargetForActor(operations, "ranger", "marked")).toBeNull();
+    expect(markedTarget(operations)).toBeNull();
   });
 
   it("creates and expires a data-declared target-turn aftereffect", () => {

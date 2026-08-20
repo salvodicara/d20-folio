@@ -59,7 +59,7 @@ import {
   parseCombatState,
 } from "@/lib/combat-state-io";
 import { parsePersistedPlayStateV1 } from "@/lib/session-state-codec";
-import { foldCombatEffectOps, mergeActiveCombatEffects } from "@/lib/combat-effects";
+import { mergeActiveCombatEffects } from "@/lib/combat-effects";
 import {
   buildPublicCharacterProjection,
   buildPublicCharacterProjectionFromStoredParent,
@@ -619,10 +619,7 @@ async function hydrateCompleteCharacter(
     combat = parsed.state;
   }
   const { effectiveAC, effectiveMaxHp } = await import("@/lib/aggregate-character");
-  const activeEffects = mergeActiveCombatEffects(
-    combat?.activeEffects ?? [],
-    foldCombatEffectOps(combat?.effectOps ?? [])
-  );
+  const activeEffects = mergeActiveCombatEffects(combat?.activeEffects ?? [], []);
   const hydrationBase = { ...parent.session };
   const attachEffects = (session: SessionState): void => {
     if (activeEffects.length === 0) return;

@@ -1,13 +1,30 @@
 /**
- * Campaign-scoped persistent combat effects.
+ * Campaign-scoped persistent combat effects: the KEPT cross-document seam.
  *
- * Hit points and conditions use the fresh-read direct combat-state transaction. Standing
- * effects are different: they remain declarative for their lifetime and are
- * projected onto their target. The append-only operation log gives every action
- * an exact inverse without restoring a stale shared snapshot.
+ * Deletion-map L2 (first half) verdict: this family survives as the SMALLEST
+ * live seam for exactly the behavior the canonical mechanics world cannot
+ * express under this app's split-owner write topology. Every kernel world is
+ * single-document, the shared encounter material composes ADVERSARY
+ * participants only, and a member client may write only its own character
+ * documents, so a player-cast effect that mechanically lands on ANOTHER
+ * combatant (Warding Bond's transfer to the caster, Death Ward's floor on an
+ * ally, Bless dice on table-mates, source-projected conditions, Aid's HP
+ * arithmetic) has no canonical carrier yet (`encounter-world-store.ts`, "The
+ * PC party lease", documents why a multi-document commit cannot ride this
+ * topology). Character-side SELF standings already ride the engine world:
+ * `active-key`/`target-mark` standing occurrences project through
+ * `world-standing-grants.ts` into the one grants union.
+ *
+ * The dead machinery this wave deleted from the seam: the `set-active`
+ * compare-and-swap op kind (no producer ever shipped), the local
+ * `CombatState.effectOps` mirror ledger and its store/codec plumbing (no
+ * production writer), and the never-produced `authoredLifetime` field.
+ *
+ * Hit points and conditions use the fresh-read direct combat-state transaction.
+ * Standing effects are different: they remain declarative for their lifetime
+ * and are projected onto their target. The append-only operation log gives
+ * every action an exact inverse without restoring a stale shared snapshot.
  */
-
-import type { CombatEffectLifetime } from "@/data/types";
 
 export type CombatantRef =
   | {
@@ -37,7 +54,10 @@ export type CombatEffectDuration =
 
 /** Values frozen when an effect is created because they belong to the source, not the
  * recipient. They are deliberately numeric snapshots: later source-sheet changes must
- * not rewrite a spell that is already running. */
+ * not rewrite a spell that is already running. NOTE: the field's producer was deleted
+ * with the effect-program runtime (deletion-map L0/L1); the carrier stays because the
+ * catalogue still declares binding-priced grants (Heroism's per-turn Temp HP) and the
+ * grants evaluator still resolves it; re-supplying the snapshot is recorded residue. */
 export interface CombatEffectBindings {
   spellcastingModifier?: number;
 }
@@ -81,8 +101,6 @@ export interface ActiveCombatEffect {
   };
   /** Stable catalogue reference; grants themselves remain owned by the source data. */
   payload: CombatEffectPayload;
-  /** The authored lifetime fact before an adapter resolves any concrete clock boundary. */
-  authoredLifetime?: CombatEffectLifetime;
   bindings?: CombatEffectBindings;
   applied?: CombatEffectAppliedState;
   duration: CombatEffectDuration;
@@ -90,16 +108,6 @@ export interface ActiveCombatEffect {
 
 export type CombatEffectOp =
   | { id: string; kind: "apply"; effect: ActiveCombatEffect }
-  | {
-      id: string;
-      kind: "set-active";
-      effectId: string;
-      actorId: string;
-      targetId: string;
-      /** Compare-and-swap fence for the occurrence's current accepted head. */
-      expectedHeadOpId: string;
-      active: boolean;
-    }
   | {
       id: string;
       kind: "revoke";

@@ -1,4 +1,3 @@
-import type { CombatEffectLifetime } from "@/data/types";
 import type {
   ActiveCombatEffect,
   CombatantRef,
@@ -47,29 +46,6 @@ function isCombatEffectDuration(value: unknown): boolean {
   );
 }
 
-function isCombatEffectLifetime(value: unknown): value is CombatEffectLifetime {
-  if (!isRecord(value)) return false;
-  if (value.kind === "source-end" || value.kind === "manual") return true;
-  if (value.kind === "phase-end") return isString(value.phaseId);
-  if (value.kind === "turn-boundary") {
-    return (
-      (value.subject === "source" || value.subject === "target") &&
-      (value.phase === "turn-start" || value.phase === "turn-end") &&
-      Number.isSafeInteger(value.offsetTurns) &&
-      (value.offsetTurns as number) >= 0
-    );
-  }
-  return (
-    value.kind === "elapsed" &&
-    Number.isSafeInteger(value.amount) &&
-    (value.amount as number) > 0 &&
-    (value.unit === "round" ||
-      value.unit === "minute" ||
-      value.unit === "hour" ||
-      value.unit === "day")
-  );
-}
-
 /** The one defensive parser for an effect occurrence, shared by campaign and
  * per-character combat-state IO. */
 export function isActiveCombatEffect(value: unknown): value is ActiveCombatEffect {
@@ -93,9 +69,6 @@ export function isActiveCombatEffect(value: unknown): value is ActiveCombatEffec
   // produces or executes them anymore, so a remnant is dropped at this read
   // boundary instead of projecting a rule no runtime owns.
   const notLegacyProgramOwned = value.programOwner === undefined;
-  const validAuthoredLifetime =
-    value.authoredLifetime === undefined ||
-    isCombatEffectLifetime(value.authoredLifetime);
   const validBindings =
     value.bindings === undefined ||
     (isRecord(value.bindings) &&
@@ -122,7 +95,6 @@ export function isActiveCombatEffect(value: unknown): value is ActiveCombatEffec
         source.castLevel > 0)) &&
     validPayload &&
     notLegacyProgramOwned &&
-    validAuthoredLifetime &&
     validBindings &&
     validApplied &&
     isCombatEffectDuration(value.duration)
@@ -149,29 +121,14 @@ export function conformCombatEffectOp(value: unknown): CombatEffectOp | null {
   ) {
     return null;
   }
-  if (value.kind === "revoke") {
-    return {
-      id: value.id,
-      kind: "revoke",
-      effectId: value.effectId,
-      actorId: value.actorId,
-      targetId: value.targetId,
-    };
-  }
-  if (
-    value.kind !== "set-active" ||
-    !isString(value.expectedHeadOpId) ||
-    typeof value.active !== "boolean"
-  ) {
-    return null;
-  }
+  // The former `set-active` compare-and-swap kind is gone: no producer ever
+  // shipped, so a stored entry is dropped at this tolerant read boundary.
+  if (value.kind !== "revoke") return null;
   return {
     id: value.id,
-    kind: "set-active",
+    kind: "revoke",
     effectId: value.effectId,
     actorId: value.actorId,
     targetId: value.targetId,
-    expectedHeadOpId: value.expectedHeadOpId,
-    active: value.active,
   };
 }

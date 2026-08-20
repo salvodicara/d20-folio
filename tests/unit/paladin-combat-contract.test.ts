@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { getSpellById } from "@/data/spells";
 import { buildGrantedFeatures } from "@/lib/character-build";
 import { combatDamageParts } from "@/lib/combat-resolution";
-import { activeRollDieAdjustments, markedTargetForActor } from "@/lib/combat-effects";
+import { activeRollDieAdjustments, foldCombatEffectOps } from "@/lib/combat-effects";
 import { localizeActions } from "@/lib/views/combat-action-view";
 import { makeCharacterDoc } from "./_helpers";
 import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
@@ -66,7 +66,15 @@ describe("Paladin combat contract", () => {
       { id: "apply-vow", kind: "apply", effect: vow },
     ];
 
-    expect(markedTargetForActor(operations, "paladin", "vowed")).toEqual({
+    // The production read (CombatResolver's target rows): fold the ledger and
+    // match the actor-owned mark payload by scope.
+    const marked = foldCombatEffectOps(operations).find(
+      (candidate) =>
+        candidate.actor.combatantId === "paladin" &&
+        candidate.payload.kind === "target-mark" &&
+        candidate.payload.scope === "vowed"
+    );
+    expect(marked?.target).toEqual({
       kind: "monster",
       combatantId: "fiend",
     });

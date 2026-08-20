@@ -810,25 +810,6 @@ export interface ActionTargeting extends Omit<CombatTargeting, "maxTargets"> {
   maxTargets?: number | AbilityCode | "PB";
 }
 
-/** The authored lifetime fact of a standing combat-effect occurrence; expiration
- * remains owned by an external clock or an explicit revoke. */
-export type CombatEffectLifetime =
-  | { kind: "source-end" }
-  | { kind: "manual" }
-  | { kind: "phase-end"; phaseId: string }
-  | {
-      kind: "turn-boundary";
-      subject: "source" | "target";
-      phase: "turn-start" | "turn-end";
-      offsetTurns: number;
-    }
-  | {
-      /** Exact authored duration fact; expiration remains owned by an external clock. */
-      kind: "elapsed";
-      amount: number;
-      unit: "round" | "minute" | "hour" | "day";
-    };
-
 /** Conditions a feature/homebrew action can end, optionally unlocked by its
  * owning-class level. */
 export interface ActionConditionRemoval {

@@ -1,4 +1,10 @@
-/** Pure lifecycle algebra for campaign-scoped persistent combat effects. */
+/** Pure lifecycle algebra for campaign-scoped persistent combat effects.
+ *
+ * This module is the KEPT half of deletion-map L2: the seam charter (why the
+ * cross-document campaign ledger cannot ride the canonical mechanics world
+ * yet) lives on `@/types/combat-effect`. The ledger algebra is deliberately
+ * two-op (apply/revoke): the former `set-active` compare-and-swap kind was
+ * deleted with its never-shipped producer. */
 
 import type {
   ActiveCombatEffect,
@@ -535,18 +541,15 @@ export function isEffectActiveAtEncounterPosition(
   return phaseIndex < boundaryPhaseIndex;
 }
 
-export interface CombatEffectOccurrenceState {
+interface CombatEffectOccurrenceState {
   /** Immutable occurrence payload established by its first accepted apply. */
   readonly effect: ActiveCombatEffect;
-  /** Current compare-and-swap head, including a terminal legacy revoke. */
-  readonly headOpId: string;
+  /** A revoke is intentionally one-way; no operation can follow it. */
   readonly active: boolean;
-  /** Legacy revoke is intentionally one-way; authored set-active cannot follow it. */
-  readonly terminal: boolean;
 }
 
 function operationOwnsOccurrence(
-  operation: Exclude<CombatEffectOp, { kind: "apply" }>,
+  operation: Extract<CombatEffectOp, { kind: "revoke" }>,
   occurrence: CombatEffectOccurrenceState
 ): boolean {
   return (
@@ -558,10 +561,10 @@ function operationOwnsOccurrence(
 
 /**
  * Fold every accepted occurrence without applying stacking or clock projection.
- * Duplicate apply retries, stale heads, mismatched ownership, and operations after
- * a terminal legacy revoke are ignored at this tolerant read boundary.
+ * Duplicate apply retries, mismatched ownership, and operations after a revoke
+ * are ignored at this tolerant read boundary.
  */
-export function foldCombatEffectOccurrences(
+function foldCombatEffectOccurrences(
   operations: ReadonlyArray<CombatEffectOp> | undefined
 ): CombatEffectOccurrenceState[] {
   const seenOps = new Set<string>();
@@ -572,48 +575,23 @@ export function foldCombatEffectOccurrences(
     if (operation.kind === "apply") {
       if (occurrences.has(operation.effect.id)) continue;
       seenOps.add(operation.id);
-      occurrences.set(operation.effect.id, {
-        effect: operation.effect,
-        headOpId: operation.id,
-        active: true,
-        terminal: false,
-      });
+      occurrences.set(operation.effect.id, { effect: operation.effect, active: true });
       continue;
     }
 
     const current = occurrences.get(operation.effectId);
-    if (!current || current.terminal || !operationOwnsOccurrence(operation, current)) {
-      continue;
-    }
-    if (operation.kind === "revoke") {
-      seenOps.add(operation.id);
-      occurrences.set(operation.effectId, {
-        ...current,
-        headOpId: operation.id,
-        active: false,
-        terminal: true,
-      });
-      continue;
-    }
-    if (
-      operation.expectedHeadOpId !== current.headOpId ||
-      operation.active === current.active
-    ) {
+    if (!current || !current.active || !operationOwnsOccurrence(operation, current)) {
       continue;
     }
     seenOps.add(operation.id);
-    occurrences.set(operation.effectId, {
-      ...current,
-      headOpId: operation.id,
-      active: operation.active,
-    });
+    occurrences.set(operation.effectId, { ...current, active: false });
   }
 
   return [...occurrences.values()];
 }
 
 /** Current causal state for one exact occurrence, independent of stacking/expiry. */
-export function combatEffectOccurrenceState(
+function combatEffectOccurrenceState(
   operations: ReadonlyArray<CombatEffectOp> | undefined,
   effectId: string
 ): CombatEffectOccurrenceState | null {
@@ -624,43 +602,12 @@ export function combatEffectOccurrenceState(
   );
 }
 
-/**
- * Strict authored compare-and-swap append. Unlike tolerant reads, a duplicate,
- * stale, mismatched, terminal, or no-op status request is rejected as `null`.
- */
-export function appendCombatEffectStatusOp(
-  operations: ReadonlyArray<CombatEffectOp> | undefined,
-  operation: Extract<CombatEffectOp, { kind: "set-active" }>
-): CombatEffectOp[] | null {
-  const current = operations ?? [];
-  if (
-    !operation.id ||
-    !operation.effectId ||
-    !operation.actorId ||
-    !operation.targetId ||
-    !operation.expectedHeadOpId ||
-    current.some((candidate) => candidate.id === operation.id)
-  ) {
-    return null;
-  }
-  const occurrence = combatEffectOccurrenceState(current, operation.effectId);
-  if (
-    !occurrence ||
-    occurrence.terminal ||
-    occurrence.headOpId !== operation.expectedHeadOpId ||
-    occurrence.active === operation.active ||
-    !operationOwnsOccurrence(operation, occurrence)
-  ) {
-    return null;
-  }
-  return [...current, operation];
-}
-
-/** Tolerant untrusted ledger boundary. Structurally invalid, duplicate, stale,
- * mismatched, or no-op entries are omitted instead of entering engine consumers. */
+/** Tolerant untrusted ledger boundary. Structurally invalid, duplicate,
+ * mismatched, or post-revoke entries are omitted instead of entering engine
+ * consumers. */
 export function conformCombatEffectOps(value: unknown): CombatEffectOp[] {
   if (!Array.isArray(value)) return [];
-  let valid: CombatEffectOp[] = [];
+  const valid: CombatEffectOp[] = [];
   for (const candidate of value) {
     let operation: CombatEffectOp | null;
     try {
@@ -669,26 +616,16 @@ export function conformCombatEffectOps(value: unknown): CombatEffectOp[] {
       continue;
     }
     if (!operation) continue;
+    if (valid.some(({ id }) => id === operation.id)) continue;
     if (operation.kind === "apply") {
-      if (
-        valid.some(({ id }) => id === operation.id) ||
-        combatEffectOccurrenceState(valid, operation.effect.id)
-      ) {
-        continue;
-      }
+      if (combatEffectOccurrenceState(valid, operation.effect.id)) continue;
       valid.push(operation);
       continue;
     }
-    if (operation.kind === "set-active") {
-      const appended = appendCombatEffectStatusOp(valid, operation);
-      if (appended) valid = appended;
-      continue;
-    }
-    if (valid.some(({ id }) => id === operation.id)) continue;
     const occurrence = combatEffectOccurrenceState(valid, operation.effectId);
     if (
       !occurrence ||
-      occurrence.terminal ||
+      !occurrence.active ||
       !operationOwnsOccurrence(operation, occurrence)
     ) {
       continue;
@@ -790,22 +727,6 @@ export function expiredCombatEffects(
   return foldCombatEffectOps(operations).filter(
     (effect) => !isEffectActiveAtEncounterPosition(effect, position)
   );
-}
-
-/** Exact selected creature for an actor's live marked/cursed rider. */
-export function markedTargetForActor(
-  operations: ReadonlyArray<CombatEffectOp> | undefined,
-  actorId: string,
-  scope: "marked" | "cursed" | "vowed",
-  position?: EncounterPosition
-): CombatantRef | null {
-  const effect = foldCombatEffectOps(operations, position).find(
-    (candidate) =>
-      candidate.actor.combatantId === actorId &&
-      candidate.payload.kind === "target-mark" &&
-      candidate.payload.scope === scope
-  );
-  return effect?.target ?? null;
 }
 
 export function turnBoundaryAfter(

@@ -882,6 +882,18 @@ controls share `useUndoActions`.
   re-validates every execute-side guard — "never trust the history", and never re-rolls/re-picks:
   golden rule 21). Labels mirror the toast contract exactly — UI callers pass a pre-localized `message`,
   store callers pass a structured `{ intent }` localized at render by the same `toastMessage` path.
+- **Engine commits ride the same grammar** (`src/features/character/engine-undo.ts` —
+  `registerEngineCommitUndo`, the one home): every successful engine dispatch (cast, feature action,
+  weapon attack, conjured consume; the damage-reaction pick registers its own snapshot pair through
+  `registerUndoableResult`) registers an entry whose `undo` is the EXACT journal reverse
+  (`undoCharacterAction` over the live persisted world — the mirror restores slots/pools/HP/
+  concentration/engine conditions in one motion) composed with the flow's legacy-chrome mirror revert
+  (the combat-store economy claims: occupied slot, one-slot-per-turn, Reaction marker, attack-pips
+  swing), and whose `redo` is the reducer's native redo transition (`redoCharacterAction`, generation
+  2 → 3 — the mutation CAS re-validates the world) plus the mirror re-applied. A journal reverse the
+  reducer rejects (the branch moved — e.g. a crossed one-way solo boundary sits atop) returns `false`
+  and touches NOTHING: fail-closed, the entry stays put, and the boundary itself already dismissed
+  the toast (`purgeTurnScoped`).
 - **`turnScoped`:** TRUE for per-turn economy commits (action/cast/swing/reaction/End Turn), FALSE for
   character-state (HP, conditions, out-of-combat tracker spends, concentration, defenses).
 - **Fences (§ boundaries):** character switch / unload → `clear(charId)` (rebind); **solo End Turn →
@@ -1086,6 +1098,24 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   advance expires deterministic boundaries and emits typed successors (Haste's one-turn lethargy). The
   ledger is capped at 512 operations and conform-read at the campaign boundary; no rule payload or
   localized prose is copied into Firestore.
+
+  **The ledger is the KEPT cross-document seam (deletion-map L2, first half).** The census verdict,
+  recorded on `src/types/combat-effect.ts`: every canonical kernel world is single-document, the
+  shared encounter material composes adversary participants only, and a member client may write only
+  its own documents, so a player-cast effect that mechanically lands on ANOTHER combatant (Warding
+  Bond's transfer, Death Ward's floor on an ally, Bless dice on table-mates, source-projected
+  conditions, Aid's HP arithmetic) has no canonical carrier yet; the campaign `effectOps` ledger
+  stays as the smallest live seam for exactly that cross-document behavior. Character-side SELF
+  standings already ride the engine world (`active-key`/`target-mark` standings project through
+  `world-standing-grants.ts` into the one grants union, so solo Death Ward's floor reaches
+  `aggregate.zeroHpFloors` with no ledger involved). The wave deleted the seam's dead limbs: the
+  `set-active` compare-and-swap op kind (the algebra is two-op apply/revoke now; a stored CAS entry
+  is dropped fail-safe), the never-written local `CombatState.effectOps` mirror ledger with its
+  store/codec plumbing (`replaceCombatEffectOps`, the write/parse gates; a stored field is
+  codec-ignored), and the never-produced `authoredLifetime` field. Closing the seam entirely needs
+  kernel vocabulary that does not exist yet (transfer/floor/max-HP standing facts with kernel
+  consumers, recipient-aware standing targets in transcription, and a cross-document carrier); the
+  residue is itemized in `docs/AUTOMATION_HANDOFF.md`'s deletion map.
 
   A one-shot floor may be visible briefly as both a sheet `activeFeatures` key and its exact campaign
   occurrence. The damage kernel treats a shared `activeKey` as duplicate authority for one rule and returns
@@ -1815,7 +1845,10 @@ and own its feedback. Being in solo combat never forces the legacy path:
 engine-executable casts/actions dispatch through `EngineCastFlow`/`EngineActionFlow` mid-combat,
 and each commit mirrors the EXACT legacy turn-economy entry (slot occupant with its rules
 category and "attack" turn event, the one-slot-per-turn claim on the solo turn key, and — for an
-Extra-Attack weapon swing — the attack-pips ledger claim/ride instead of a whole Action slot).
+Extra-Attack weapon swing — the attack-pips ledger claim/ride instead of a whole Action slot)
+AND registers the product's native reversal affordance (`registerEngineCommitUndo` — see "The
+session undo stack"): the same "X used + Undo" toast grammar the legacy loop owns, whose undo
+drives the exact journal reverse and rolls the economy mirror back in the same motion.
 Engine damage landing on the character itself surfaces the SAME entered-d20 Concentration
 prompt seam the legacy damage path owns (`queueConcentrationSaveForDamage`; an engine commit
 that leaves the character at 0 HP breaks concentration outright through the one authoritative
@@ -1839,21 +1872,24 @@ concentration through the canonical kernel end machinery in the same motion
 (`planEngineConcentrationEnd`: one end request over the owning program root; the concentration
 effect and every sourced standing end in the same wave; `setConcentration` commits it as one
 journal action, exactly reversed by the undo pairing), so neither the world nor the session can
-hold a dropped spell. The CONCENTRATION SWAP rides the same seam: casting a concentration spell
-while the ENGINE holds one runs the shared `confirmConcentrationSwap` gate first, and a
-confirmed swap commits as TWO exact journal actions — the canonical end of the held occurrence
-(the `setConcentration("")` motion above, fired at confirm; RAW, concentration ends the moment
-you start casting the next spell) and then the clean cast, whose commit fires the replacement
-toast and the concentration-start story beat. (The compiler's `concentration-replacement`
-coordination ALSO converges kernel-side as ONE causal action: the coordinator keys each end
-wave's exactly-once delivery by its CANDIDATE SET — the identity that survives audience-driven
-rebasing, since every subscriber dispatch is a phase advance that moves the world basis — and
-`finalizeMechanicsCausalEndWave` grants the live frame stack's one-ahead provenance permits
-through the finalization's closed-boundary check, so the held occurrence, its root and its
-standings end mid-cast and the suspended frame resumes over the swept world; proven by the
-coordinator suite's transcribed hex-over-hex replacement, exact-undo included. The UI still
-ships the two-action swap flow — collapsing it onto the one-action kernel path is an open
-follow-up; a LEGACY-held concentration keeps the legacy swap flow, which owns that teardown.)
+hold a dropped spell. The CONCENTRATION SWAP is the kernel's ONE-ACTION replacement: casting a
+concentration spell while the ENGINE holds one runs the shared `confirmConcentrationSwap` gate
+first (the product decision — always ask), and on yes NOTHING ends at confirm: the engine flow
+replays over the world STILL holding the old spell, and the compiler's
+`concentration-replacement` coordination converges the whole swap as ONE bounded causal action
+— the coordinator keys each end wave's exactly-once delivery by its CANDIDATE SET (the identity
+that survives audience-driven rebasing, since every subscriber dispatch is a phase advance that
+moves the world basis) and `finalizeMechanicsCausalEndWave` grants the live frame stack's
+one-ahead provenance permits through the finalization's closed-boundary check, so the held
+occurrence, its root and its standings end mid-cast and the suspended frame resumes over the
+swept world (proven by the coordinator suite's transcribed hex-over-hex replacement and the
+spells-page flow test). ONE journal entry commits old-end + new-cast; the commit's transition
+mirror restamps `session.concentration`, the flow logs the end/start story beats and clears the
+dropped spell's now-moot pending-save queue, and the replacement toast IS the undo affordance —
+its undo is the exact journal reverse that restores the OLD spell whole (occurrence, standings,
+slot, session field). Backing out of the cast modal after confirming commits nothing — the old
+spell stays held. A LEGACY-held concentration keeps the legacy swap flow, which owns that
+teardown.
 The SPELL rows of the Play board dispatch through the SAME
 shared gate as the Spells tab (`engine-spell-gate.ts` → `engineSpellCastRequest` — one dispatch
 truth for both surfaces, Shield's reaction card included). PACT-SLOT casts dispatch engine: the

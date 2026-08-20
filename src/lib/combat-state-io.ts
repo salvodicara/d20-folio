@@ -63,14 +63,12 @@ import type {
 } from "@/types/combat-state";
 import { normalizeConcentrationRef } from "@/lib/concentration";
 import { conformActiveCombatEffects } from "@/lib/combat-effect-io";
-import { conformCombatEffectOps } from "@/lib/combat-effects";
 import { parseCombatOutcomeReceipt } from "@/lib/combat-outcomes";
 import { parsePersistedPlayStateV1 } from "@/lib/session-state-codec";
 
 const DEV_COMBAT_COLLECTION = "combat-state";
 const STRICT_V1_FIELDS = [
   "activeEffects",
-  "effectOps",
   "pendingConcentrationSaves",
   "turnEconomy",
   "appliedEncounterEffects",
@@ -177,17 +175,6 @@ export function combatStateRef(uid: string, charId: string) {
   return doc(db, "users", uid, "characters", charId, "combat", "state");
 }
 
-function effectOpsForWrite(
-  value: CombatState["effectOps"]
-): NonNullable<CombatState["effectOps"]> {
-  const input = value ?? [];
-  const effectOps = conformCombatEffectOps(input);
-  if (effectOps.length !== input.length) {
-    throw new TypeError("Invalid combat-effect operation ledger");
-  }
-  return effectOps;
-}
-
 /** The dev replica stores the same canonical optional collection, without a
  * Firestore timestamp sentinel. */
 function combatStateForDevWrite(state: CombatState): CombatState {
@@ -199,7 +186,6 @@ function combatStateForDevWrite(state: CombatState): CombatState {
 /** The COMPLETE persisted shape, stamped server-side. One source so the two write
  *  paths can't drift. */
 export function combatStateWriteData(state: CombatState): Record<string, unknown> {
-  const effectOps = effectOpsForWrite(state.effectOps);
   const playState =
     state.playState === undefined ? null : parsePersistedPlayStateV1(state.playState);
   if (playState && !playState.ok) {
@@ -220,7 +206,6 @@ export function combatStateWriteData(state: CombatState): Record<string, unknown
     round: state.round,
     recentActions: state.recentActions,
     ...(state.activeEffects?.length ? { activeEffects: state.activeEffects } : {}),
-    ...(effectOps.length ? { effectOps } : {}),
     ...(state.appliedEncounterEffects
       ? { appliedEncounterEffects: state.appliedEncounterEffects }
       : {}),
@@ -288,12 +273,13 @@ export function parseCombatState(data: unknown): CombatStateParseResult {
     return { ok: false, reason: "invalid-combat-state" };
   }
   // Stored subdocs written by the deleted effect-program runtime may still carry
-  // `actionRevision` / `actionHead` / `actionLifecycles` / `effectLifecycles`.
-  // They are ignored here and shed by the next full-overwrite write.
+  // `actionRevision` / `actionHead` / `actionLifecycles` / `effectLifecycles`,
+  // and a branch-era `effectOps` mirror ledger existed briefly with no
+  // production writer. All are ignored here fail-safe and shed by the next
+  // full-overwrite write.
   const applied = parseAppliedEncounterEffects(data.appliedEncounterEffects);
   const turnEconomy = parseTurnEconomy(data.turnEconomy);
   const activeEffects = conformActiveCombatEffects(data.activeEffects);
-  const effectOps = conformCombatEffectOps(data.effectOps);
   const pendingConcentrationSaves = parsePendingConcentrationSaves(
     data.pendingConcentrationSaves
   );
@@ -302,7 +288,6 @@ export function parseCombatState(data: unknown): CombatStateParseResult {
     playState?.ok &&
     (!presentFieldIsCanonical(data, "activeEffects", activeEffects) ||
       new Set(activeEffects.map(({ id }) => id)).size !== activeEffects.length ||
-      !presentFieldIsCanonical(data, "effectOps", effectOps) ||
       !presentFieldIsCanonical(
         data,
         "pendingConcentrationSaves",
@@ -330,7 +315,6 @@ export function parseCombatState(data: unknown): CombatStateParseResult {
     round: num(data.round, 1),
     recentActions,
     ...(activeEffects.length ? { activeEffects } : {}),
-    ...(effectOps.length ? { effectOps } : {}),
     ...(applied ? { appliedEncounterEffects: applied } : {}),
     ...(turnEconomy ? { turnEconomy } : {}),
     ...(pendingConcentrationSaves.length ? { pendingConcentrationSaves } : {}),

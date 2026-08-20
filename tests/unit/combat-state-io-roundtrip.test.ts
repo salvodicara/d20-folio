@@ -154,7 +154,6 @@ const APPLY_LEDGER_EFFECT_OP: CombatEffectOp = {
   kind: "apply",
   effect: LEDGER_EFFECT,
 };
-const EFFECT_OPS: CombatEffectOp[] = [APPLY_LEDGER_EFFECT_OP];
 
 function completeState(): CombatState {
   return {
@@ -178,7 +177,6 @@ function completeState(): CombatState {
       },
     ],
     activeEffects: EFFECTS,
-    effectOps: EFFECT_OPS,
     appliedEncounterEffects: { epoch: 12, ids: ["effect-a", "effect-b"] },
     pendingConcentrationSaves: [
       {
@@ -297,13 +295,6 @@ describe("combat-state IO — full persistence contract", () => {
       patch: { activeEffects: [EFFECTS[0], { id: "broken" }] },
       assertLegacy: (state: CombatState) =>
         expect(state.activeEffects).toEqual([EFFECTS[0]]),
-    },
-    {
-      name: "effectOps",
-      patch: {
-        effectOps: [APPLY_LEDGER_EFFECT_OP, { broken: true }, APPLY_LEDGER_EFFECT_OP],
-      },
-      assertLegacy: (state: CombatState) => expect(state.effectOps).toEqual(EFFECT_OPS),
     },
     {
       name: "pendingConcentrationSaves",
@@ -467,50 +458,28 @@ describe("combat-state IO — full persistence contract", () => {
     });
   });
 
-  it("tolerantly conforms persisted effect ops but strictly canonicalizes writes", () => {
+  it("ignores a stored branch-era effectOps ledger fail-safe and never writes one", () => {
+    // The local authored mirror ledger never had a production writer; a stored
+    // field is dropped on read (legacy AND v1 ownership) and the write shape
+    // cannot re-emit it.
     const base = combatStateWriteData(completeState());
     expect(
       parseState({
         ...base,
-        effectOps: [APPLY_LEDGER_EFFECT_OP, { broken: true }, APPLY_LEDGER_EFFECT_OP],
-      }).effectOps
-    ).toEqual(EFFECT_OPS);
-    expect(parseState({ ...base, effectOps: { not: "an array" } })).not.toHaveProperty(
+        effectOps: [APPLY_LEDGER_EFFECT_OP, { broken: true }],
+      })
+    ).not.toHaveProperty("effectOps");
+    expect(
+      parseCombatState({
+        ...base,
+        playState: sessionToPlayStateV1(makeCharacterDoc().session),
+        effectOps: [APPLY_LEDGER_EFFECT_OP],
+      })
+    ).toMatchObject({ ok: true, ownership: "v1" });
+    expect(combatStateWriteData(completeState())).not.toHaveProperty("effectOps");
+    expect(sessionToCombatState(makeCharacterDoc().session)).not.toHaveProperty(
       "effectOps"
     );
-
-    const withExtra = {
-      ...APPLY_LEDGER_EFFECT_OP,
-      ignoredLegacyField: true,
-    } as unknown as CombatEffectOp;
-    const written = combatStateWriteData({
-      ...completeState(),
-      effectOps: [withExtra],
-    });
-    expect(written.effectOps).toEqual(EFFECT_OPS);
-    expect(
-      combatStateWriteData({ ...completeState(), effectOps: [] })
-    ).not.toHaveProperty("effectOps");
-    expect(() =>
-      combatStateWriteData({
-        ...completeState(),
-        effectOps: [APPLY_LEDGER_EFFECT_OP, APPLY_LEDGER_EFFECT_OP],
-      })
-    ).toThrow(TypeError);
-  });
-
-  it("preserves the durable ledger through the pure session projection only", () => {
-    const projected = sessionToCombatState(
-      makeCharacterDoc().session,
-      1,
-      [],
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      EFFECT_OPS
-    );
-    expect(projected.effectOps).toEqual(EFFECT_OPS);
     expect(defaultCombatState(20)).not.toHaveProperty("effectOps");
   });
 

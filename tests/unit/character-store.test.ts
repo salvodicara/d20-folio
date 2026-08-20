@@ -10,7 +10,7 @@ import type { CharacterDoc } from "@/types/character";
 import type { CombatPersistence, CombatState } from "@/types/combat-state";
 import { makeCharacterDoc } from "./_helpers";
 import { conc } from "./__helpers__/concentration";
-import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 import { nonCombatSessionChanged } from "@/lib/combat-state";
 import { serializeCharacter } from "@/lib/character-codec";
 import { castSourceActiveKey } from "@/lib/smart-tracker";
@@ -129,19 +129,6 @@ function projectedEffect(targetId = "pc-u1"): ActiveCombatEffect {
   };
 }
 
-function ledgerEffect(): ActiveCombatEffect {
-  return {
-    ...projectedEffect(),
-    id: "ledger-effect",
-    source: { kind: "spell", id: "ledger-spell", actionId: "ledger-cast" },
-    payload: { kind: "grant-group", activeKey: "spell-ledger" },
-  };
-}
-
-function ledgerApply(effect = ledgerEffect()): CombatEffectOp {
-  return { id: `apply:${effect.id}`, kind: "apply", effect };
-}
-
 describe("characterStore — campaign effect projection", () => {
   beforeEach(() => {
     useCharacterStore.setState({ encounterEffectProjection: null });
@@ -250,11 +237,14 @@ describe("characterStore — campaign effect projection", () => {
     ]);
   });
 
-  it("hydrates authored ops into the effective projection beside legacy occurrences", () => {
+  it("hydrates legacy occurrences and persists them without a ledger field", () => {
+    const write = vi.fn<CombatPersistence["write"]>();
     const legacy = projectedEffect();
-    const folded = ledgerEffect();
-    const operation = ledgerApply(folded);
     useCharacterStore.getState().setCharacter(mockCharacter());
+    useCharacterStore.getState().setCombatPersistence({
+      write,
+      writeTurnEconomy: vi.fn(),
+    });
     useCharacterStore.getState().hydrateCombatState({
       hp: { current: 20, temp: 0 },
       conditions: [],
@@ -263,60 +253,20 @@ describe("characterStore — campaign effect projection", () => {
       round: 2,
       recentActions: [],
       activeEffects: [legacy],
-      effectOps: [operation],
     });
 
     const state = useCharacterStore.getState();
     expect(state.combatLegacyActiveEffects).toEqual([legacy]);
-    expect(state.combatEffectOps).toEqual([operation]);
-    expect(state.combatActiveEffects).toEqual([legacy, folded]);
-    expect(state.character?.session.encounterEffects).toEqual([legacy, folded]);
-  });
-
-  it("atomically replaces authored ops, persists their ledger, and preserves legacy ownership", () => {
-    const write = vi.fn<CombatPersistence["write"]>();
-    const legacy = projectedEffect();
-    const folded = ledgerEffect();
-    const apply = ledgerApply(folded);
-    useCharacterStore.getState().setCharacter(mockCharacter());
-    useCharacterStore.getState().setCombatPersistence({
-      write,
-      writeTurnEconomy: vi.fn(),
-    });
-    useCharacterStore.getState().applySoloCombatEffects([legacy]);
-    write.mockClear();
-
-    expect(useCharacterStore.getState().replaceCombatEffectOps([apply])).toBe(true);
-    expect(useCharacterStore.getState().combatActiveEffects).toEqual([legacy, folded]);
-    const appliedWrite = write.mock.calls.at(-1)?.[0];
-    expect(appliedWrite?.activeEffects).toEqual([legacy]);
-    expect(appliedWrite?.effectOps).toEqual([apply]);
+    expect(state.combatActiveEffects).toEqual([legacy]);
+    expect(state.character?.session.encounterEffects).toEqual([legacy]);
 
     const undoDamage = useCharacterStore.getState().applyDamage(1);
-    expect(write.mock.calls.at(-1)?.[0].effectOps).toEqual([apply]);
+    const written = write.mock.calls.at(-1)?.[0];
+    expect(written?.activeEffects).toEqual([legacy]);
+    // The branch-era authored mirror ledger is gone: the persisted combat state
+    // carries occurrences only (a stored `effectOps` field is codec-ignored).
+    expect(written && "effectOps" in written).toBe(false);
     expect(undoDamage?.()).toBe(true);
-    expect(useCharacterStore.getState().combatEffectOps).toEqual([apply]);
-
-    expect(useCharacterStore.getState().replaceCombatEffectOps([apply, apply])).toBe(
-      false
-    );
-    expect(useCharacterStore.getState().combatEffectOps).toEqual([apply]);
-
-    const revoke: CombatEffectOp = {
-      id: "revoke:ledger-effect",
-      kind: "revoke",
-      effectId: folded.id,
-      actorId: folded.actor.combatantId,
-      targetId: folded.target.combatantId,
-    };
-    expect(useCharacterStore.getState().replaceCombatEffectOps([apply, revoke])).toBe(
-      true
-    );
-    expect(useCharacterStore.getState().combatActiveEffects).toEqual([legacy]);
-    expect(write.mock.calls.at(-1)?.[0]).toMatchObject({
-      activeEffects: [legacy],
-      effectOps: [apply, revoke],
-    });
   });
 });
 

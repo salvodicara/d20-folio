@@ -35,7 +35,7 @@
 import type { SessionState } from "@/types/character";
 import type { LocText } from "@/lib/loc-text";
 import type { EconomyActionCategory } from "@/lib/combat-economy";
-import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 import type { ConcentrationRef } from "@/types/ids";
 import type { PersistedPlayStateV1 } from "@/lib/session-state-codec";
@@ -195,11 +195,10 @@ export interface CombatState {
    */
   recentActions: RecentAttack[];
   /** Source-owned effects applied to this character outside a campaign encounter.
-   * They use the same occurrence model and lifetime algebra as shared encounters. */
+   * They use the same occurrence model and lifetime algebra as shared encounters.
+   * (A branch-era `effectOps` mirror ledger existed here briefly; it never had a
+   * production writer, so the codec now ignores the stored field fail-safe.) */
   activeEffects?: ActiveCombatEffect[];
-  /** Append-only authored occurrence ledger for local combat, parallel to an
-   * encounter's `effectOps`. */
-  effectOps?: CombatEffectOp[];
   /** Idempotency receipt for PC-targeted effects delivered through the current
    * campaign encounter. A new encounter epoch replaces the receipt. */
   appliedEncounterEffects?: { epoch: number; ids: string[] };

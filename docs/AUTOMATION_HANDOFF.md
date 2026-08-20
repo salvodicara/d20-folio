@@ -786,15 +786,38 @@ pulse surface declares armed phases, and the bridge mirrors hp/slots/exhaustion/
 
 **The deletion map (executes when the canonical runtime covers each flow):**
 
-1. **Branch-born intermediate combat generation** — PARTIALLY EXECUTED. Deleted (the
-   effect-program cutover wave): `combat-effect-atomic`, `combat-effect-command`,
-   `combat-effect-lifecycle`, `combat-effect-lifecycle-collection`, `combat-effect-planning-state`,
-   `combat-effect-program`, `action-command`, `CombatEffectProgramReview`, and every
-   `effectProgram` data field/corpus/transcriber/routing path. Kept as the LIVE persistent
-   standing-effect seam (fed by the declared-effects resolver + campaign persistent ops, not by
-   programs): `combat-effects`, `combat-effect-io`, `types/combat-effect` — its own future seam
-   onto the encounter world. `combat-economy`, `combat-outcomes`, `combat-transition`,
-   `automation-compiler` remain live for the not-yet-cut-over flows.
+1. **Branch-born intermediate combat generation**: L0/L1 EXECUTED; **L2 first half EXECUTED
+   (the standing-effect census wave)**. Deleted (the effect-program cutover wave):
+   `combat-effect-atomic`, `combat-effect-command`, `combat-effect-lifecycle`,
+   `combat-effect-lifecycle-collection`, `combat-effect-planning-state`, `combat-effect-program`,
+   `action-command`, `CombatEffectProgramReview`, and every `effectProgram` data
+   field/corpus/transcriber/routing path. Deleted (the L2 census wave): the `set-active`
+   compare-and-swap op kind + its strict/tolerant CAS algebra (no producer ever shipped; the
+   ledger is two-op apply/revoke, a stored CAS entry conform-drops), the local
+   `CombatState.effectOps` mirror ledger end to end (`replaceCombatEffectOps`, the store state,
+   the codec write/parse gates; no production writer ever existed, and a stored field is
+   codec-ignored fail-safe), the never-produced `authoredLifetime` field +
+   `CombatEffectLifetime` authored type, and `markedTargetForActor` (production reads the fold
+   inline). KEPT as the smallest live cross-document seam (charter on
+   `src/types/combat-effect.ts`): `combat-effects`, `combat-effect-io`, `types/combat-effect`
+   and the campaign `encounter.effectOps` transactions: the multiplayer behavior they carry
+   (Warding Bond partner transfer, Death Ward ally floor, Bless/Bane dice, marks, projected
+   conditions, Aid HP arithmetic, expiry sweeps, retaliation) targets OTHER combatants, which
+   the canonical runtime cannot express: kernel worlds are single-document, the shared material
+   composes adversaries only, member writes are owner-scoped (the party-lease two-commit
+   correlation is the precedent). **Residue blocking the second half**: (a) no
+   transfer/zero-HP-floor/max-HP standing FACT kinds and no kernel consumer for them (the
+   `remain-at-one` zero-HP policy exists in the kernel but nothing selects it; the compiler
+   hardcodes dying/dead), (b) the transcriber's spell standing block targets `role:"caster"`
+   only, `recipient: "selected"` (Warding Bond, Death Ward, Aid, Heroism) is invisible, so a
+   canonical emission on the wrong entity would be worse than none, (c) no cross-document
+   carrier for ally-targeted mechanics, (d) `CombatEffectBindings` lost its producer with the
+   L0/L1 deletion (Heroism's binding-priced per-turn Temp HP has no live snapshot writer; the
+   carrier + grants consumer stay), (e) no turn-boundary event bus, so booked encounter programs
+   cannot tick on turn stepping (note: the legacy system has NO damage-over-time either;
+   `applyPersistentMonsterHpDelta` is Aid-style apply/revoke/expiry HP arithmetic, so nothing
+   was lost). `combat-economy`, `combat-outcomes`, `combat-transition`, `automation-compiler`
+   remain live for the not-yet-cut-over flows.
    (`combat-effect-state-reducer` was stillborn — already removed.)
 2. **Main-era legacy** (`cost-engine`, `smart-tracker` consequence paths, `combat-hp`,
    `combat-resolution`, `combat-state`, `combat-state-io`, `spell-combat-castable`): survives the

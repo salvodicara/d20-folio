@@ -76,15 +76,9 @@ import {
 import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast, useUndoStore } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
-import type {
-  ActiveCombatEffect,
-  CombatantRef,
-  CombatEffectOp,
-} from "@/types/combat-effect";
+import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
 import {
-  conformCombatEffectOps,
   endedEffectSuccessor,
-  foldCombatEffectOps,
   isEffectActiveAtEncounterPosition,
   mergeActiveCombatEffects,
 } from "@/lib/combat-effects";
@@ -256,8 +250,6 @@ interface CharacterState {
   combatActiveEffects: ActiveCombatEffect[];
   /** Legacy source-owned occurrences persisted in `CombatState.activeEffects`. */
   combatLegacyActiveEffects: ActiveCombatEffect[];
-  /** Append-only authored occurrence ledger persisted in `CombatState.effectOps`. */
-  combatEffectOps: CombatEffectOp[];
   combatAppliedEncounterEffects: CombatState["appliedEncounterEffects"];
   combatTurnEconomy: CombatState["turnEconomy"];
   /** Durable FIFO of one unresolved save per landed damage packet. */
@@ -282,9 +274,6 @@ interface CharacterState {
   applySoloCombatEffects: (
     effects: ReadonlyArray<ActiveCombatEffect>
   ) => (() => void) | null;
-  /** Atomically replace the authored ledger and its derived effective projection.
-   * Returns false when read-only, unloaded, or causally malformed. */
-  replaceCombatEffectOps: (effectOps: ReadonlyArray<CombatEffectOp>) => boolean;
   /** Inject (or clear) the combat-state persistence seam — the subscription lifecycle. */
   setCombatPersistence: (persistence: CombatPersistence | null) => void;
   /** Persist the current complete play owner through the injected seam. */
@@ -783,11 +772,11 @@ interface CharacterState {
  */
 const UNCONSCIOUS_CONDITION_ID = "unconscious";
 
+/** Stacking-normalized view of the persisted solo occurrence list. */
 function effectiveCombatEffects(
-  legacy: ReadonlyArray<ActiveCombatEffect>,
-  effectOps: ReadonlyArray<CombatEffectOp>
+  legacy: ReadonlyArray<ActiveCombatEffect>
 ): ActiveCombatEffect[] {
-  return mergeActiveCombatEffects(legacy, foldCombatEffectOps(effectOps));
+  return mergeActiveCombatEffects(legacy, []);
 }
 
 function persistCombat(get: () => CharacterState): void {
@@ -801,8 +790,7 @@ function persistCombat(get: () => CharacterState): void {
       get().combatAppliedEncounterEffects,
       get().combatTurnEconomy,
       get().combatLegacyActiveEffects,
-      get().combatPendingConcentrationSaves,
-      get().combatEffectOps
+      get().combatPendingConcentrationSaves
     )
   );
 }
@@ -844,7 +832,6 @@ type CombatHydrationPatch = Pick<
   | "combatRecentActions"
   | "combatActiveEffects"
   | "combatLegacyActiveEffects"
-  | "combatEffectOps"
   | "combatAppliedEncounterEffects"
   | "combatTurnEconomy"
   | "combatPendingConcentrationSaves"
@@ -858,8 +845,7 @@ function projectCombatHydration(
   encounterEffectProjection: CharacterState["encounterEffectProjection"]
 ): CombatHydrationPatch | null {
   const legacyActiveEffects = combat?.activeEffects ?? [];
-  const effectOps = combat?.effectOps ?? [];
-  const activeEffects = effectiveCombatEffects(legacyActiveEffects, effectOps);
+  const activeEffects = effectiveCombatEffects(legacyActiveEffects);
   const projected = { ...character, session: { ...character.session } };
   attachEncounterEffects(projected, encounterEffectProjection, activeEffects);
   let maxSession = projected.session;
@@ -908,7 +894,6 @@ function projectCombatHydration(
     combatRecentActions: combat?.recentActions ?? [],
     combatActiveEffects: activeEffects,
     combatLegacyActiveEffects: legacyActiveEffects,
-    combatEffectOps: effectOps,
     combatAppliedEncounterEffects: combat?.appliedEncounterEffects,
     combatTurnEconomy: combat?.turnEconomy,
     combatPendingConcentrationSaves: pendingConcentrationSaves,
@@ -918,7 +903,6 @@ function projectCombatHydration(
 interface D20CommandSnapshot {
   character: CharacterDoc;
   legacyActiveEffects: ActiveCombatEffect[];
-  effectOps: CombatEffectOp[];
   pendingConcentrationSaves: PendingConcentrationSave[];
   encounterEffectProjection: CharacterState["encounterEffectProjection"];
   damageTakenThisRound: boolean;
@@ -929,7 +913,6 @@ function captureD20Command(state: CharacterState): D20CommandSnapshot | null {
   return {
     character: structuredClone(state.character),
     legacyActiveEffects: structuredClone(state.combatLegacyActiveEffects),
-    effectOps: structuredClone(state.combatEffectOps),
     pendingConcentrationSaves: structuredClone(state.combatPendingConcentrationSaves),
     encounterEffectProjection: structuredClone(state.encounterEffectProjection),
     damageTakenThisRound: useCombatStore.getState().damageTakenThisRound,
@@ -953,18 +936,13 @@ function causalD20CommandUndo(
     if (!sameD20CommandSnapshot(captureD20Command(get()), after)) return false;
     const restoredCharacter = structuredClone(before.character);
     const restoredLegacyEffects = structuredClone(before.legacyActiveEffects);
-    const restoredEffectOps = structuredClone(before.effectOps);
-    const restoredEffects = effectiveCombatEffects(
-      restoredLegacyEffects,
-      restoredEffectOps
-    );
+    const restoredEffects = effectiveCombatEffects(restoredLegacyEffects);
     const restoredProjection = structuredClone(before.encounterEffectProjection);
     attachEncounterEffects(restoredCharacter, restoredProjection, restoredEffects);
     useCharacterStore.setState({
       character: restoredCharacter,
       combatActiveEffects: restoredEffects,
       combatLegacyActiveEffects: restoredLegacyEffects,
-      combatEffectOps: restoredEffectOps,
       combatPendingConcentrationSaves: structuredClone(before.pendingConcentrationSaves),
       encounterEffectProjection: restoredProjection,
     });
@@ -1049,7 +1027,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   combatRecentActions: [],
   combatActiveEffects: [],
   combatLegacyActiveEffects: [],
-  combatEffectOps: [],
   combatAppliedEncounterEffects: undefined,
   combatTurnEconomy: undefined,
   combatPendingConcentrationSaves: [],
@@ -1065,7 +1042,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       readonly: false,
       combatActiveEffects: [],
       combatLegacyActiveEffects: [],
-      combatEffectOps: [],
       combatPendingConcentrationSaves: [],
       combatPendingDamageReaction: null,
     }),
@@ -1085,7 +1061,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (additions.length === 0) return null;
     const previous = get().combatLegacyActiveEffects;
     const nextLegacy = mergeActiveCombatEffects(previous, additions);
-    const next = effectiveCombatEffects(nextLegacy, get().combatEffectOps);
+    const next = effectiveCombatEffects(nextLegacy);
     set({
       combatActiveEffects: next,
       combatLegacyActiveEffects: nextLegacy,
@@ -1096,29 +1072,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       const current = get().character;
       if (!current) return;
       set({
-        combatActiveEffects: effectiveCombatEffects(previous, get().combatEffectOps),
+        combatActiveEffects: effectiveCombatEffects(previous),
         combatLegacyActiveEffects: previous,
         character: { ...current },
       });
       persistCombat(get);
     };
-  },
-  replaceCombatEffectOps: (effectOps) => {
-    if (get().readonly || !get().character) return false;
-    const canonical = conformCombatEffectOps(effectOps);
-    if (canonical.length !== effectOps.length) return false;
-    const character = get().character;
-    if (!character) return false;
-    set({
-      combatEffectOps: canonical,
-      combatActiveEffects: effectiveCombatEffects(
-        get().combatLegacyActiveEffects,
-        canonical
-      ),
-      character: { ...character },
-    });
-    persistCombat(get);
-    return true;
   },
   loadReadonly: (doc) =>
     set({
@@ -1127,7 +1086,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       readonly: true,
       combatActiveEffects: [],
       combatLegacyActiveEffects: [],
-      combatEffectOps: [],
       combatPendingConcentrationSaves: [],
       combatPendingDamageReaction: null,
     }),
@@ -1342,10 +1300,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const nextLegacyEffects = get().combatLegacyActiveEffects.filter(
       (effect) => !consumedEffectIds.has(effect.id)
     );
-    const nextLocalEffects = effectiveCombatEffects(
-      nextLegacyEffects,
-      get().combatEffectOps
-    );
+    const nextLocalEffects = effectiveCombatEffects(nextLegacyEffects);
     const nextEncounterEffects = persistentEffects.filter(
       (effect) => !consumedEffectIds.has(effect.id)
     );
@@ -1570,7 +1525,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const before = get().character;
     if (!before) return null;
     const legacyActiveEffectsBefore = get().combatLegacyActiveEffects;
-    const effectOpsBefore = get().combatEffectOps;
     const pendingConcentrationSavesBefore = get().combatPendingConcentrationSaves;
     const healingBlocked = aggregateCharacterGrants(
       before.character,
@@ -1625,12 +1579,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     return () => {
       set({
         character: before,
-        combatActiveEffects: effectiveCombatEffects(
-          legacyActiveEffectsBefore,
-          effectOpsBefore
-        ),
+        combatActiveEffects: effectiveCombatEffects(legacyActiveEffectsBefore),
         combatLegacyActiveEffects: legacyActiveEffectsBefore,
-        combatEffectOps: effectOpsBefore,
         combatPendingConcentrationSaves: pendingConcentrationSavesBefore,
       });
       useCombatStore.setState({ damageTakenThisRound: damageTakenBefore });
@@ -2141,10 +2091,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         return successor ? [successor] : [];
       })
     );
-    const nextLocalEffects = effectiveCombatEffects(
-      nextLegacyEffects,
-      get().combatEffectOps
-    );
+    const nextLocalEffects = effectiveCombatEffects(nextLegacyEffects);
     // RAW 2024 (PHB p.235): when you start casting another spell that
     // requires Concentration, your existing concentration ends. We
     // perform the swap silently in the store (the caller already knows
@@ -2246,10 +2193,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
             if (retractForm) {
               set({
                 character: before,
-                combatActiveEffects: effectiveCombatEffects(
-                  priorLocalEffects,
-                  get().combatEffectOps
-                ),
+                combatActiveEffects: effectiveCombatEffects(priorLocalEffects),
                 combatLegacyActiveEffects: priorLocalEffects,
                 combatPendingConcentrationSaves: priorPendingConcentrationSaves,
               });
@@ -2258,10 +2202,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
               return;
             }
             set({
-              combatActiveEffects: effectiveCombatEffects(
-                priorLocalEffects,
-                get().combatEffectOps
-              ),
+              combatActiveEffects: effectiveCombatEffects(priorLocalEffects),
               combatLegacyActiveEffects: priorLocalEffects,
               combatPendingConcentrationSaves: priorPendingConcentrationSaves,
               character: {
@@ -2397,10 +2338,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       (effect) =>
         effect.payload.kind !== "condition" || effect.payload.conditionId !== condition
     );
-    const nextLocalEffects = effectiveCombatEffects(
-      nextLegacyEffects,
-      get().combatEffectOps
-    );
+    const nextLocalEffects = effectiveCombatEffects(nextLegacyEffects);
     // RA-12 — dropping Invisible ends the hidden state: the remembered find-DC
     // goes with it (and comes back on undo).
     const prevHiddenDc = character.session.hiddenDc;
@@ -2434,10 +2372,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       const cur = get().character;
       if (!cur) return;
       set({
-        combatActiveEffects: effectiveCombatEffects(
-          prevLocalEffects,
-          get().combatEffectOps
-        ),
+        combatActiveEffects: effectiveCombatEffects(prevLocalEffects),
         combatLegacyActiveEffects: prevLocalEffects,
         character: {
           ...cur,
@@ -2780,8 +2715,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       get().combatAppliedEncounterEffects,
       get().combatTurnEconomy,
       get().combatLegacyActiveEffects,
-      get().combatPendingConcentrationSaves,
-      get().combatEffectOps
+      get().combatPendingConcentrationSaves
     );
     set({ combatRecentActions: pushRecentAttack(base, entry).recentActions });
     persistCombat(get);
@@ -3329,10 +3263,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         return successor ? [successor] : [];
       })
     );
-    const nextLocalEffects = effectiveCombatEffects(
-      nextLegacyEffects,
-      get().combatEffectOps
-    );
+    const nextLocalEffects = effectiveCombatEffects(nextLegacyEffects);
     const sources = new Map(
       resolveActiveBoundaryEffects(character).map((effect) => [
         effect.activeKey,
@@ -3414,10 +3345,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         const current = get().character;
         if (!current) return;
         set({
-          combatActiveEffects: effectiveCombatEffects(
-            priorLocalEffects,
-            get().combatEffectOps
-          ),
+          combatActiveEffects: effectiveCombatEffects(priorLocalEffects),
           combatLegacyActiveEffects: priorLocalEffects,
           character: {
             ...current,

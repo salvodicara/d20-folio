@@ -144,8 +144,7 @@ export function sessionToCombatState(
   appliedEncounterEffects?: CombatState["appliedEncounterEffects"],
   turnEconomy?: CombatState["turnEconomy"],
   activeEffects?: CombatState["activeEffects"],
-  pendingConcentrationSaves?: CombatState["pendingConcentrationSaves"],
-  effectOps?: CombatState["effectOps"]
+  pendingConcentrationSaves?: CombatState["pendingConcentrationSaves"]
 ): CombatState {
   return {
     hp: { current: session.hp.current, temp: session.hp.temp },
@@ -161,7 +160,6 @@ export function sessionToCombatState(
     ...(appliedEncounterEffects ? { appliedEncounterEffects } : {}),
     ...(turnEconomy ? { turnEconomy } : {}),
     ...(pendingConcentrationSaves?.length ? { pendingConcentrationSaves } : {}),
-    ...(effectOps?.length ? { effectOps } : {}),
   };
 }
 
