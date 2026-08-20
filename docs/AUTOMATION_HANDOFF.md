@@ -805,19 +805,35 @@ pulse surface declares armed phases, and the bridge mirrors hp/slots/exhaustion/
    conditions, Aid HP arithmetic, expiry sweeps, retaliation) targets OTHER combatants, which
    the canonical runtime cannot express: kernel worlds are single-document, the shared material
    composes adversaries only, member writes are owner-scoped (the party-lease two-commit
-   correlation is the precedent). **Residue blocking the second half**: (a) no
-   transfer/zero-HP-floor/max-HP standing FACT kinds and no kernel consumer for them (the
-   `remain-at-one` zero-HP policy exists in the kernel but nothing selects it; the compiler
-   hardcodes dying/dead), (b) the transcriber's spell standing block targets `role:"caster"`
-   only, `recipient: "selected"` (Warding Bond, Death Ward, Aid, Heroism) is invisible, so a
-   canonical emission on the wrong entity would be worse than none, (c) no cross-document
-   carrier for ally-targeted mechanics, (d) `CombatEffectBindings` lost its producer with the
-   L0/L1 deletion (Heroism's binding-priced per-turn Temp HP has no live snapshot writer; the
-   carrier + grants consumer stay), (e) no turn-boundary event bus, so booked encounter programs
-   cannot tick on turn stepping (note: the legacy system has NO damage-over-time either;
-   `applyPersistentMonsterHpDelta` is Aid-style apply/revoke/expiry HP arithmetic, so nothing
-   was lost). `combat-economy`, `combat-outcomes`, `combat-transition`, `automation-compiler`
-   remain live for the not-yet-cut-over flows.
+   correlation is the precedent). **Residue after the recipient-standing wave (L2 second half,
+   kernel side — items a/b/d RESOLVED)**: (a) DONE — the standing-fact vocabulary carries
+   `zero-hp-floor` / `max-hp-delta` / `damage-transfer` (conformance-locked in
+   `mechanic-occurrence-schema` + the authored templates), with kernel consumers: the damage
+   compiler selects the kernel's `remain-at-one` policy from a live floor standing and the fired
+   floor's SOURCE ends atomically in the same transaction (an occurrence-end consequence on the
+   `creature-damage` operation — Death Ward's "drops to 1 instead, and the spell ends"; a
+   step-local consumed set keeps the single-use law exact across multi-hit slots); the heal path
+   carries same-cast `max-hp-delta` headroom explicitly on the operation (Aid's raise-then-heal
+   under the caller's pre-action maximum fact); `damage-transfer` is a RECORDED payer fact — the
+   cross-creature mirror at damage time stays a table boundary. Sheet side,
+   `world-standing-grants.ts` projects self-owned deltas (exact cast-level amount, replacing the
+   key-only default in `evaluateGrants`) and floors (merged into `aggregate.zeroHpFloors` deduped
+   by key). (b) DONE — `transcribeSpell` binds `recipient: "selected"` standings to the SELECTED
+   target entities, gated like the condition suite (attack → on-hit, save → on-failed-save), so
+   Warding Bond / Death Ward / Aid / Heroism (and every recipient-selected family member)
+   transcribe onto the right entity; Heroism's per-turn Temp HP is a `root-pulse` phase
+   (`turn-thp`) granting the casting-modifier pool — the turn-start SIGNAL stays table-declared
+   until (e) lands. (d) RESOLVED for solo — the engine path replaces the binding snapshot: the
+   THP amount rides the authority's frozen `spellcasting-modifier` static binding; the
+   cross-document `CombatEffectBindings` carrier + grants consumer stay for the campaign ledger.
+   STILL OPEN: (c) no cross-document carrier for ally-targeted mechanics (a buff landing on
+   ANOTHER member's document — the ledger's remaining charter), (e) no turn-boundary event bus,
+   so booked encounter programs cannot tick on turn stepping (note: the legacy system has NO
+   damage-over-time either; `applyPersistentMonsterHpDelta` is Aid-style apply/revoke/expiry HP
+   arithmetic, so nothing was lost) — and Aid-expiry current-HP clamping is a boundary-sweep
+   concern (the sheet max drops with the standing; a `creature-maximum-sync` on expiry is the
+   world-store boundary's to emit). `combat-economy`, `combat-outcomes`, `combat-transition`,
+   `automation-compiler` remain live for the not-yet-cut-over flows.
    (`combat-effect-state-reducer` was stillborn — already removed.)
 2. **Main-era legacy** (`cost-engine`, `smart-tracker` consequence paths, `combat-hp`,
    `combat-resolution`, `combat-state`, `combat-state-io`, `spell-combat-castable`): survives the

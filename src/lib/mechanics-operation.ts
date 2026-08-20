@@ -884,6 +884,15 @@ function executeOperation(
       if (operation.damage.effective.amount === 0) {
         return { reason: "zero-effective-damage", status: "no-change" };
       }
+      // The floor law: a `remain-at-one` policy exists only as the reading of
+      // a live `zero-hp-floor` standing, and a carried floor source exists
+      // only to be consumed by that policy — the two travel together.
+      if (
+        (operation.zeroHitPointsPolicy === "remain-at-one") !==
+        (operation.zeroHitPointsFloorSource !== undefined)
+      ) {
+        return { reason: "invalid-transition", status: "rejected" };
+      }
       return execution(
         applyCreatureDamage(target.vitals, {
           amount: operation.damage.effective.amount,
@@ -922,7 +931,14 @@ function executeOperation(
           targetRef,
           target
         ),
-        () => healCreature(target.vitals, operation.input),
+        // Same-action `max-hp-delta` headroom rides the operation explicitly:
+        // the clamp uses base + delta while the emitted maximum fact keeps
+        // the caller's pre-action base (Aid's raise-then-heal in one cast).
+        (maximumHitPoints) =>
+          healCreature(target.vitals, {
+            ...operation.input,
+            maximumHitPoints: maximumHitPoints + (operation.maximumHitPointsDelta ?? 0),
+          }),
         "hit-points-full"
       );
     case "object-repair":
@@ -2884,8 +2900,31 @@ function simulateOperation(
   if (!parsed) {
     return { reason: "invalid-after", status: "rejected" };
   }
+  // A fired zero-HP floor is single-use: the carried floor SOURCE ends inside
+  // the same transaction (an occurrence-end consequence), so Death Ward's
+  // "drops to 1 instead, and the spell ends" is one atomic step.
+  const firedFloorSource =
+    operation.kind === "creature-damage" &&
+    operation.zeroHitPointsFloorSource !== undefined &&
+    typeof transition.facts === "object" &&
+    transition.facts !== null &&
+    (transition.facts as { readonly remainedAtOne?: unknown }).remainedAtOne === true
+      ? operation.zeroHitPointsFloorSource
+      : null;
+  const consequences =
+    firedFloorSource !== null
+      ? [
+          {
+            causeId: operation.causeId,
+            kind: "occurrence-end" as const,
+            occurrence: firedFloorSource,
+            operationId: operation.operationId,
+          },
+        ]
+      : [];
   return {
     actionFacts: executed.actionFacts,
+    ...(consequences.length > 0 ? { consequences } : {}),
     execution: {
       facts: visibleFacts(operation, transition.facts),
       kind: operation.kind,

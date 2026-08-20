@@ -469,6 +469,10 @@ function selectorReferencesOfStep(step: MechanicsStep): readonly StepInputRefere
     const reference = selectorInputReference(step.fact.marked);
     if (reference) references.push(reference);
   }
+  if (step.kind === "standing" && step.fact.kind === "damage-transfer") {
+    const reference = selectorInputReference(step.fact.to);
+    if (reference) references.push(reference);
+  }
   if (step.kind === "inventory-end" || step.kind === "inventory-change") {
     if (step.item.kind === "input") {
       references.push({ inputId: step.item.inputId, kind: "item" });
@@ -493,6 +497,9 @@ function entitySelectorsOfStep(step: MechanicsStep): readonly MechanicsEntitySel
   if (withEntity.target) selectors.push(withEntity.target);
   if (step.kind === "standing" && step.fact.kind === "target-mark") {
     selectors.push(step.fact.marked);
+  }
+  if (step.kind === "standing" && step.fact.kind === "damage-transfer") {
+    selectors.push(step.fact.to);
   }
   return selectors;
 }

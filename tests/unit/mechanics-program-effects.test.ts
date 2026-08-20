@@ -588,7 +588,7 @@ describe("standing fact materialization", () => {
           marked: { kind: "role", role: "target" },
         },
         [SELF, ENEMY],
-        [SHARED_ENEMY]
+        { marked: [SHARED_ENEMY] }
       )
     ).toEqual([
       {
@@ -608,7 +608,7 @@ describe("standing fact materialization", () => {
           marked: { kind: "role", role: "target" },
         },
         [SELF, ENEMY],
-        [ENEMY, SHARED_ENEMY]
+        { marked: [ENEMY, SHARED_ENEMY] }
       )
     ).toEqual([
       {
@@ -628,7 +628,7 @@ describe("standing fact materialization", () => {
           marked: { kind: "role", role: "target" },
         },
         [SELF, ENEMY],
-        [SELF, ENEMY, SHARED_ENEMY]
+        { marked: [SELF, ENEMY, SHARED_ENEMY] }
       )
     ).toBeNull();
     expect(
@@ -641,12 +641,103 @@ describe("standing fact materialization", () => {
       { fact: { key: "ward", kind: "active-key" }, target: ENEMY },
     ]);
     expect(
+      materializeMechanicsStandingFacts({ key: "ward", kind: "active-key" }, [SELF], {
+        marked: [ENEMY],
+      })
+    ).toBeNull();
+  });
+
+  it("resolves a max-hp-delta template's amount against the cast bindings", () => {
+    // Aid's 5 + 5 per slot level above 2, cast at slot 4 → 15.
+    const amount = {
+      kind: "add",
+      terms: [
+        { kind: "fixed", value: 5 },
+        {
+          factors: [
+            { kind: "fixed", value: 5 },
+            {
+              kind: "max",
+              values: [
+                { kind: "fixed", value: 0 },
+                {
+                  kind: "add",
+                  terms: [
+                    { bindingId: "input.slot.level", kind: "binding" },
+                    { kind: "fixed", value: -2 },
+                  ],
+                },
+              ],
+            },
+          ],
+          kind: "multiply",
+        },
+      ],
+    } as const;
+    expect(
       materializeMechanicsStandingFacts(
-        { key: "ward", kind: "active-key" },
+        { amount, key: "spell-aid", kind: "max-hp-delta" },
         [SELF],
-        [ENEMY]
+        { bindings: { "input.slot.level": 4 } }
+      )
+    ).toEqual([
+      { fact: { amount: 15, key: "spell-aid", kind: "max-hp-delta" }, target: SELF },
+    ]);
+    // An unresolved binding or a non-positive result fails closed.
+    expect(
+      materializeMechanicsStandingFacts(
+        { amount, key: "spell-aid", kind: "max-hp-delta" },
+        [SELF],
+        {}
       )
     ).toBeNull();
+    expect(
+      materializeMechanicsStandingFacts(
+        {
+          amount: { kind: "fixed", value: 0 },
+          key: "spell-aid",
+          kind: "max-hp-delta",
+        },
+        [SELF],
+        {}
+      )
+    ).toBeNull();
+  });
+
+  it("zips damage-transfer payers exactly like target marks", () => {
+    const template = {
+      key: "spell-warding-bond",
+      kind: "damage-transfer",
+      to: { kind: "role", role: "caster" },
+    } as const;
+    expect(
+      materializeMechanicsStandingFacts(template, [ENEMY], { transferTo: [SELF] })
+    ).toEqual([
+      {
+        fact: { key: "spell-warding-bond", kind: "damage-transfer", to: SELF },
+        target: ENEMY,
+      },
+    ]);
+    // Missing or ambiguous payer cardinality fails closed.
+    expect(materializeMechanicsStandingFacts(template, [ENEMY], {})).toBeNull();
+    expect(
+      materializeMechanicsStandingFacts(template, [ENEMY], {
+        transferTo: [SELF, ENEMY, SHARED_ENEMY],
+      })
+    ).toBeNull();
+  });
+
+  it("passes zero-hp-floor templates through per target", () => {
+    expect(
+      materializeMechanicsStandingFacts(
+        { key: "spell-death-ward", kind: "zero-hp-floor" },
+        [SELF, ENEMY],
+        {}
+      )
+    ).toEqual([
+      { fact: { key: "spell-death-ward", kind: "zero-hp-floor" }, target: SELF },
+      { fact: { key: "spell-death-ward", kind: "zero-hp-floor" }, target: ENEMY },
+    ]);
   });
 });
 

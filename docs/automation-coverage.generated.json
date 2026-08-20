@@ -85,7 +85,7 @@
         },
         {
           "clauseId": "standing-spell-chill-touch",
-          "detail": null,
+          "detail": "recipient-on-hit",
           "status": "automated"
         },
         {
@@ -500,7 +500,7 @@
         },
         {
           "clauseId": "standing-spell-ray-of-frost",
-          "detail": null,
+          "detail": "recipient-on-hit",
           "status": "automated"
         },
         {
@@ -795,7 +795,7 @@
         },
         {
           "clauseId": "standing-spell-vicious-mockery",
-          "detail": null,
+          "detail": "recipient-on-failed-save",
           "status": "automated"
         },
         {
@@ -883,7 +883,7 @@
         },
         {
           "clauseId": "standing-spell-bane",
-          "detail": null,
+          "detail": "recipient-on-failed-save",
           "status": "automated"
         },
         {
@@ -924,7 +924,7 @@
         },
         {
           "clauseId": "standing-spell-bless",
-          "detail": null,
+          "detail": "recipient-selected",
           "status": "automated"
         },
         {
@@ -1633,7 +1633,7 @@
         },
         {
           "clauseId": "standing-spell-faerie-fire",
-          "detail": null,
+          "detail": "recipient-on-failed-save",
           "status": "automated"
         },
         {
@@ -1948,18 +1948,23 @@
         },
         {
           "clauseId": "standing-spell-heroism",
+          "detail": "recipient-selected",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-heroism-immune-frightened",
           "detail": null,
           "status": "automated"
         },
         {
-          "clauseId": "standing-grant-condition-immunity",
-          "detail": "derived-grant-layer",
+          "clauseId": "per-turn-temp-hp",
+          "detail": "pulse-on-recipient-turn-start",
           "status": "automated"
         },
         {
-          "clauseId": "standing-grant-regen-at-turn-start",
-          "detail": "derived-grant-layer",
-          "status": "automated"
+          "clauseId": "per-turn-temp-hp-signal",
+          "detail": "table-signals-turn-start",
+          "status": "table"
         },
         {
           "clauseId": "concentration",
@@ -2271,7 +2276,7 @@
         },
         {
           "clauseId": "standing-spell-longstrider",
-          "detail": null,
+          "detail": "recipient-selected",
           "status": "automated"
         },
         {
@@ -2302,7 +2307,7 @@
         },
         {
           "clauseId": "standing-spell-mage-armor",
-          "detail": null,
+          "detail": "recipient-selected",
           "status": "automated"
         },
         {
@@ -2610,7 +2615,7 @@
         },
         {
           "clauseId": "standing-spell-shield-of-faith",
-          "detail": null,
+          "detail": "recipient-selected",
           "status": "automated"
         },
         {
@@ -2888,12 +2893,17 @@
         },
         {
           "clauseId": "standing-spell-aid",
+          "detail": "recipient-selected",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-aid-max-hp",
           "detail": null,
           "status": "automated"
         },
         {
-          "clauseId": "standing-grant-hp-flat",
-          "detail": "derived-grant-layer",
+          "clauseId": "standing-spell-aid-current-hp",
+          "detail": "raise-then-heal",
           "status": "automated"
         }
       ],
@@ -3013,7 +3023,7 @@
         },
         {
           "clauseId": "standing-spell-barkskin",
-          "detail": null,
+          "detail": "recipient-selected",
           "status": "automated"
         },
         {
@@ -3209,7 +3219,7 @@
         },
         {
           "clauseId": "standing-spell-darkvision",
-          "detail": null,
+          "detail": "recipient-selected",
           "status": "automated"
         },
         {
@@ -4718,7 +4728,7 @@
         },
         {
           "clauseId": "standing-spell-spider-climb",
-          "detail": null,
+          "detail": "recipient-selected",
           "status": "automated"
         },
         {
@@ -4907,7 +4917,7 @@
         },
         {
           "clauseId": "standing-spell-warding-bond",
-          "detail": null,
+          "detail": "recipient-selected",
           "status": "automated"
         },
         {
@@ -4921,14 +4931,19 @@
           "status": "automated"
         },
         {
-          "clauseId": "standing-grant-all-damage-resistance",
-          "detail": "derived-grant-layer",
+          "clauseId": "standing-spell-warding-bond-resistance",
+          "detail": "resistance-to-all",
           "status": "automated"
         },
         {
-          "clauseId": "standing-grant-damage-transfer",
-          "detail": "derived-grant-layer",
+          "clauseId": "standing-spell-warding-bond-transfer",
+          "detail": "recorded-fact",
           "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-warding-bond-transfer-application",
+          "detail": "table-mirrors-damage-to-caster",
+          "status": "table"
         }
       ],
       "executable": true,
@@ -5468,7 +5483,7 @@
         },
         {
           "clauseId": "standing-spell-fly",
-          "detail": null,
+          "detail": "recipient-selected",
           "status": "automated"
         },
         {
@@ -5556,7 +5571,7 @@
         },
         {
           "clauseId": "standing-spell-haste",
-          "detail": null,
+          "detail": "recipient-selected",
           "status": "automated"
         },
         {
@@ -5902,7 +5917,7 @@
         },
         {
           "clauseId": "standing-spell-protection-from-energy",
-          "detail": null,
+          "detail": "recipient-selected",
           "status": "automated"
         },
         {
@@ -6807,12 +6822,12 @@
         },
         {
           "clauseId": "standing-spell-death-ward",
-          "detail": null,
+          "detail": "recipient-selected",
           "status": "automated"
         },
         {
-          "clauseId": "standing-grant-zero-hp-floor",
-          "detail": "derived-grant-layer",
+          "clauseId": "standing-spell-death-ward-floor",
+          "detail": "single-use-floor",
           "status": "automated"
         }
       ],
@@ -7084,17 +7099,17 @@
         },
         {
           "clauseId": "standing-spell-freedom-of-movement",
+          "detail": "recipient-selected",
+          "status": "automated"
+        },
+        {
+          "clauseId": "standing-spell-freedom-of-movement-immune-paralyzed",
           "detail": null,
           "status": "automated"
         },
         {
-          "clauseId": "standing-grant-condition-immunity",
-          "detail": "derived-grant-layer",
-          "status": "automated"
-        },
-        {
-          "clauseId": "standing-grant-condition-immunity",
-          "detail": "derived-grant-layer",
+          "clauseId": "standing-spell-freedom-of-movement-immune-restrained",
+          "detail": null,
           "status": "automated"
         },
         {
@@ -7573,7 +7588,7 @@
         },
         {
           "clauseId": "standing-spell-stoneskin",
-          "detail": null,
+          "detail": "recipient-selected",
           "status": "automated"
         },
         {
@@ -10080,7 +10095,7 @@
         },
         {
           "clauseId": "standing-spell-true-seeing",
-          "detail": null,
+          "detail": "recipient-selected",
           "status": "automated"
         },
         {
@@ -11488,7 +11503,7 @@
         },
         {
           "clauseId": "standing-spell-mind-blank",
-          "detail": null,
+          "detail": "recipient-selected",
           "status": "automated"
         },
         {
@@ -11497,8 +11512,8 @@
           "status": "automated"
         },
         {
-          "clauseId": "standing-grant-condition-immunity",
-          "detail": "derived-grant-layer",
+          "clauseId": "standing-spell-mind-blank-immune-charmed",
+          "detail": null,
           "status": "automated"
         }
       ],
@@ -11673,7 +11688,7 @@
         },
         {
           "clauseId": "standing-spell-foresight",
-          "detail": null,
+          "detail": "recipient-selected",
           "status": "automated"
         },
         {
@@ -12579,9 +12594,9 @@
   "family": "spells",
   "totalEntities": 422,
   "totals": {
-    "automated": 1863,
+    "automated": 1864,
     "physical-input": 382,
-    "table": 215,
+    "table": 217,
     "spatial": 182,
     "narrative": 128,
     "unsupported": 6

@@ -26,14 +26,17 @@
  * Fail-closed narrow read: `session.world` is persisted as `unknown`, and this
  * is a hot path (every sheet-wide aggregation), so the projection walks the
  * raw value with structural guards instead of running the full material-state
- * parse — anything malformed contributes nothing. Only `active-key` and
- * `target-mark` standings are projected today: transcribed character programs
- * emit exactly those fact kinds (inner mechanics ride the derived grant layer,
- * keyed by the active key); `damage-defense` / `condition-immunity` /
- * `grant-group` standings have no character-side emitter yet, so they gain a
- * projection when an emitter lands, not before. Conditions and concentration
- * already reach the session through the commit mirror
- * (`mechanics-world-store.ts`).
+ * parse — anything malformed contributes nothing. Projected fact kinds:
+ * `active-key` / `target-mark` (the original pair), plus the recipient-standing
+ * vocabulary this module reads for SELF-owned standings — `max-hp-delta` (the
+ * exact resolved Aid amount, preferred over the key-only base default) and
+ * `zero-hp-floor` (Death Ward's single-use floor, merged into the same
+ * `zeroHpFloors` aggregate the manual damage path reads). `damage-defense` /
+ * `condition-immunity` standings are kernel-consumed where they land (the
+ * damage compiler and occurrence-create immunity check); `damage-transfer` is
+ * a recorded table fact; `grant-group` still has no character-side emitter.
+ * Conditions and concentration already reach the session through the commit
+ * mirror (`mechanics-world-store.ts`).
  */
 
 const EMPTY_KEYS: ReadonlySet<string> = new Set();
@@ -110,6 +113,65 @@ export function worldStandingTargetMarks(world: unknown): ReadonlySet<string> {
     }
   }
   return marks.size > 0 ? marks : EMPTY_KEYS;
+}
+
+/**
+ * The exact resolved `max-hp-delta` standings the persisted world holds on the
+ * character itself, keyed by the owning buff's active key (Aid's `spell-aid`
+ * with the cast-level-scaled amount). The grants evaluator prefers this exact
+ * amount over the key-only base-level default; the effective-max-HP seam
+ * therefore rises and falls with the standing's own lifetime. Multiple live
+ * deltas under one key (unrepresentable for SRD data) keep the LARGEST — max
+ * HP raises with the same name never stack.
+ */
+export function worldStandingMaxHpDeltas(world: unknown): ReadonlyMap<string, number> {
+  const deltas = new Map<string, number>();
+  for (const occurrence of liveSelfStandings(world)) {
+    const fact = occurrence.fact;
+    if (
+      !isRecord(fact) ||
+      fact.kind !== "max-hp-delta" ||
+      typeof fact.key !== "string" ||
+      fact.key.length === 0 ||
+      typeof fact.amount !== "number" ||
+      !Number.isSafeInteger(fact.amount) ||
+      fact.amount < 1
+    ) {
+      continue;
+    }
+    const prior = deltas.get(fact.key);
+    if (prior === undefined || fact.amount > prior) deltas.set(fact.key, fact.amount);
+  }
+  return deltas;
+}
+
+/**
+ * The live `zero-hp-floor` standings the persisted world holds on the
+ * character itself (Death Ward on self), keyed by the owning buff's active
+ * key. Feeds the same `zeroHpFloors` aggregate the manual damage path reads
+ * (deduped by key against the derived rows); the ENGINE damage path reads the
+ * standing directly through the compiler's `remain-at-one` selector, which
+ * also consumes it.
+ */
+export function worldStandingZeroHpFloors(
+  world: unknown
+): ReadonlyArray<{ key: string; hitPoints: number }> {
+  const floors: { key: string; hitPoints: number }[] = [];
+  const seen = new Set<string>();
+  for (const occurrence of liveSelfStandings(world)) {
+    const fact = occurrence.fact;
+    if (
+      isRecord(fact) &&
+      fact.kind === "zero-hp-floor" &&
+      typeof fact.key === "string" &&
+      fact.key.length > 0 &&
+      !seen.has(fact.key)
+    ) {
+      seen.add(fact.key);
+      floors.push({ key: fact.key, hitPoints: 1 });
+    }
+  }
+  return floors;
 }
 
 /** The session slices the one active-key union reads. */

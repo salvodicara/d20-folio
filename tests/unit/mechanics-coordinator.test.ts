@@ -2314,6 +2314,288 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
     expect(heroState(outcome.state).vitals.hitPoints.current).toBe(10);
   });
 
+  it("death ward on self: the floor holds at 1, consumes the spell, and the next drop dies", async () => {
+    // Cast Death Ward selecting SELF as the recipient: the active-key standing
+    // AND the zero-hp-floor fact standing both land on the selected entity.
+    const cast = await runAttackCast({
+      attackFaces: [],
+      bindings: {},
+      slotLevel: 4,
+      spellId: "death-ward",
+      targetSlots: 1,
+    });
+    const wardIds = Object.entries(cast.state.occurrences)
+      .filter(([, occurrence]) => occurrence.kind !== "program")
+      .map(([id]) => id);
+    const standings = Object.values(cast.state.occurrences).flatMap((occurrence) =>
+      occurrence.kind === "standing" ? [occurrence] : []
+    );
+    expect(standings.map(({ fact }) => fact.kind).sort()).toEqual([
+      "active-key",
+      "zero-hp-floor",
+    ]);
+    for (const standing of standings) {
+      expect(standing.target).toEqual(SELF);
+    }
+    const floor = standings.find(({ fact }) => fact.kind === "zero-hp-floor");
+    expect(floor?.fact).toEqual({ key: "spell-death-ward", kind: "zero-hp-floor" });
+
+    // Five magic-missile darts of 4 against 20 HP: darts one to four land
+    // normally (20 → 4), dart five would drop to 0 — the compiler selects the
+    // kernel's remain-at-one policy from the floor standing and the fired
+    // floor consumes its SOURCE (root and both standings) in the same action.
+    const drop = await runAttackCast({
+      attackFaces: [],
+      bindings: {},
+      entry: { rootId: "root-2", state: cast.causal },
+      slotLevel: 4,
+      spellId: "magic-missile",
+      targetSlots: 5,
+    });
+    expect(drop.state.vitals.hitPoints.current).toBe(1);
+    expect(drop.state.vitals.zeroHitPoints).toBeNull();
+    for (const wardId of wardIds) {
+      expect(drop.state.occurrences[wardId]).toBeUndefined();
+    }
+    expect(
+      Object.values(drop.state.occurrences).some(
+        (occurrence) => occurrence.kind === "standing"
+      )
+    ).toBe(false);
+
+    // The consuming action's exact mutation reversal restores the ward whole.
+    const undone = structuredClone(drop.state) as unknown as Record<string, unknown>;
+    for (const mutation of drop.action?.mutations ?? []) {
+      let node: Record<string, unknown> = undone;
+      for (const segment of mutation.path.slice(0, -1)) {
+        node = node[segment] as Record<string, unknown>;
+      }
+      const leaf = String(mutation.path.at(-1));
+      if (mutation.before.present) {
+        node[leaf] = structuredClone(mutation.before.value);
+      } else {
+        Reflect.deleteProperty(node, leaf);
+      }
+    }
+    expect(canonicalJson(undone)).toBe(canonicalJson(cast.state));
+
+    // The floor is spent: the next engine damage drops to 0 and starts dying.
+    const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
+    const kill = await runAttackCast({
+      attackFaces: [[12]],
+      bindings: {
+        [TRANSCRIPTION_BINDINGS.attackBonus]: 7,
+        [TRANSCRIPTION_BINDINGS.characterLevel]: 1,
+        [TRANSCRIPTION_BINDINGS.targetArmorClass]: 15,
+      },
+      entry: { rootId: "root-3", state: drop.causal },
+      slotLevel: null,
+      spellId: "fire-bolt",
+      targetSlots: 1,
+    });
+    expect(kill.state.vitals.hitPoints.current).toBe(0);
+    expect(kill.state.vitals.zeroHitPoints).toMatchObject({ kind: "dying" });
+  });
+
+  it("consumes only one dart's worth of floor: dart six drops the warded hero", async () => {
+    // Six darts of 4 against 20 HP in ONE action: dart five fires the floor
+    // (4 → 1, ward consumed step-locally), dart six finds no floor left in the
+    // same step and drops 1 → 0 into dying — the single-use law holds even
+    // though the projected world never applies the consequence mid-step.
+    const cast = await runAttackCast({
+      attackFaces: [],
+      bindings: {},
+      slotLevel: 4,
+      spellId: "death-ward",
+      targetSlots: 1,
+    });
+    const drop = await runAttackCast({
+      attackFaces: [],
+      bindings: {},
+      entry: { rootId: "root-2", state: cast.causal },
+      slotLevel: 4,
+      spellId: "magic-missile",
+      targetSlots: 6,
+    });
+    expect(drop.state.vitals.hitPoints.current).toBe(0);
+    expect(drop.state.vitals.zeroHitPoints).toMatchObject({
+      failures: 0,
+      kind: "dying",
+    });
+    expect(
+      Object.values(drop.state.occurrences).some(
+        (occurrence) => occurrence.kind === "standing"
+      )
+    ).toBe(false);
+  });
+
+  it("aid on self raises maximum AND current by the cast-level amount in one cast", async () => {
+    // Slot 3 on the level-2 spell: 5 + 5 = 10. The max-hp-delta standing
+    // materializes the resolved amount, and the paired heal lands into the
+    // raised headroom (20 → 30) even though the caller's pre-action maximum
+    // fact still says 20 — the same-cast delta rides the heal operation.
+    const cast = await runAttackCast({
+      attackFaces: [],
+      bindings: {},
+      slotLevel: 3,
+      spellId: "aid",
+      targetSlots: 1,
+    });
+    expect(cast.state.vitals.hitPoints.current).toBe(30);
+    const standings = Object.values(cast.state.occurrences).flatMap((occurrence) =>
+      occurrence.kind === "standing" ? [occurrence] : []
+    );
+    expect(standings.map(({ fact }) => fact.kind).sort()).toEqual([
+      "active-key",
+      "max-hp-delta",
+    ]);
+    const delta = standings.find(({ fact }) => fact.kind === "max-hp-delta");
+    expect(delta?.fact).toEqual({ amount: 10, key: "spell-aid", kind: "max-hp-delta" });
+    expect(delta?.target).toEqual(SELF);
+    // The duration lifetime froze into exact end rules, so expiry restores the
+    // projection (the sheet reads only LIVE standings).
+    expect(delta?.endRules.some((rule) => rule.kind === "time-reached")).toBe(true);
+  });
+
+  it("warding bond records the ward: resistance halves engine damage, transfer names the payer", async () => {
+    // The engine proof uses SELF as the one modeled creature (RAW's exclude-
+    // self is table metadata): the ward's expressible half is the recipient's
+    // resistance-to-all standing; the transfer half is a RECORDED fact naming
+    // the caster, never an auto-applied debit.
+    const cast = await runAttackCast({
+      attackFaces: [],
+      bindings: {},
+      slotLevel: 2,
+      spellId: "warding-bond",
+      targetSlots: 1,
+    });
+    const standings = Object.values(cast.state.occurrences).flatMap((occurrence) =>
+      occurrence.kind === "standing" ? [occurrence] : []
+    );
+    expect(standings.map(({ fact }) => fact.kind).sort()).toEqual([
+      "active-key",
+      "damage-defense",
+      "damage-transfer",
+    ]);
+    const transfer = standings.find(({ fact }) => fact.kind === "damage-transfer");
+    expect(transfer?.fact).toEqual({
+      key: "spell-warding-bond",
+      kind: "damage-transfer",
+      to: SELF,
+    });
+    const defense = standings.find(({ fact }) => fact.kind === "damage-defense");
+    expect(defense?.fact).toMatchObject({
+      kind: "damage-defense",
+      rule: { kind: "resistance", sourceId: "spell-warding-bond" },
+    });
+
+    // Engine damage against the warded creature halves: fire-bolt 3 → 1.
+    const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
+    const hit = await runAttackCast({
+      attackFaces: [[12]],
+      bindings: {
+        [TRANSCRIPTION_BINDINGS.attackBonus]: 7,
+        [TRANSCRIPTION_BINDINGS.characterLevel]: 1,
+        [TRANSCRIPTION_BINDINGS.targetArmorClass]: 15,
+      },
+      entry: { rootId: "root-2", state: cast.causal },
+      slotLevel: null,
+      spellId: "fire-bolt",
+      targetSlots: 1,
+    });
+    expect(hit.state.vitals.hitPoints.current).toBe(19);
+  });
+
+  it("heroism arms a per-turn THP pulse that grants the casting-modifier pool", async () => {
+    const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
+    const cast = await runAttackCast({
+      attackFaces: [],
+      bindings: { [TRANSCRIPTION_BINDINGS.castingModifier]: 3 },
+      slotLevel: 1,
+      spellId: "heroism",
+      targetSlots: 1,
+    });
+    const standings = Object.values(cast.state.occurrences).flatMap((occurrence) =>
+      occurrence.kind === "standing" ? [occurrence] : []
+    );
+    expect(standings.map(({ fact }) => fact.kind).sort()).toEqual([
+      "active-key",
+      "condition-immunity",
+    ]);
+    expect(
+      standings.find(({ fact }) => fact.kind === "condition-immunity")?.fact
+    ).toEqual({ conditionId: "frightened", kind: "condition-immunity" });
+    const root = Object.values(cast.state.occurrences).find(
+      (occurrence) => occurrence.kind === "program"
+    );
+    if (root?.kind !== "program") throw new Error("missing heroism root");
+    expect(root.phaseState["turn-thp"]).toMatchObject({ execution: 0 });
+
+    // The possessor declares the recipient's turn start (solo collapses that
+    // boundary onto the caster's own turn); the pulse grants THP = modifier.
+    const answers: MechanicsAnswer[] = [];
+    const run = () =>
+      runMechanicsCausalAction({
+        answers,
+        authoritySnapshot: authoritySnapshot(cast.authority),
+        facts: cast.facts,
+        frameAnswers: [],
+        intent: {
+          actionId: "heroism-turn-thp-1",
+          factGuards: [],
+          frame: {
+            authority: cast.authority,
+            invocation: { kind: "program-root", occurrence: ROOT },
+            rootReceipt: {
+              expected: { execution: 0, phaseId: "turn-thp", triggerEventId: null },
+              kind: "advance",
+              next: { execution: 1, phaseId: "turn-thp", triggerEventId: "turn-thp.1" },
+              root: ROOT,
+            },
+            trigger: {
+              eventId: "turn-thp",
+              kind: "root-pulse",
+              triggerEventId: "turn-thp.1",
+            },
+          },
+        },
+        responses: [],
+        state: cast.causal,
+        turnEconomy: [],
+      });
+    let outcome = run();
+    for (
+      let remaining = 4;
+      outcome.status === "needs-answer" && remaining > 0;
+      remaining -= 1
+    ) {
+      const requirement = outcome.requirement;
+      if (!requirement) throw new Error("missing pulse requirement");
+      if (requirement.kind !== "entities") {
+        throw new Error(`unexpected pulse requirement: ${requirement.kind}`);
+      }
+      answers.push({
+        inputId: requirement.inputId,
+        kind: "entities",
+        targets: [SELF],
+      });
+      outcome = run();
+    }
+    if (outcome.status === "rejected") throw new Error(JSON.stringify(outcome));
+    expect(outcome.status).toBe("complete");
+    if (outcome.status !== "complete") return;
+    const state = heroState(outcome.state);
+    expect(state.vitals.hitPoints.temporary.current).toBe(3);
+    const advanced = Object.values(state.occurrences).find(
+      (occurrence) => occurrence.kind === "program"
+    );
+    if (advanced?.kind !== "program") throw new Error("missing advanced root");
+    expect(advanced.phaseState["turn-thp"]).toMatchObject({
+      execution: 1,
+      lastTriggerEventId: "turn-thp.1",
+    });
+  });
+
   it("omits the ray-of-sickness save entirely when the attack misses", async () => {
     const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
     const { demandedDamageTrails, state } = await runAttackCast({

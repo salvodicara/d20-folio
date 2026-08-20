@@ -1112,10 +1112,16 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   `set-active` compare-and-swap op kind (the algebra is two-op apply/revoke now; a stored CAS entry
   is dropped fail-safe), the never-written local `CombatState.effectOps` mirror ledger with its
   store/codec plumbing (`replaceCombatEffectOps`, the write/parse gates; a stored field is
-  codec-ignored), and the never-produced `authoredLifetime` field. Closing the seam entirely needs
-  kernel vocabulary that does not exist yet (transfer/floor/max-HP standing facts with kernel
-  consumers, recipient-aware standing targets in transcription, and a cross-document carrier); the
-  residue is itemized in `docs/AUTOMATION_HANDOFF.md`'s deletion map.
+  codec-ignored), and the never-produced `authoredLifetime` field. The kernel vocabulary the closure
+  needed on the CHARACTER side now exists (the recipient-standing wave): `zero-hp-floor` /
+  `max-hp-delta` / `damage-transfer` standing facts with their kernel consumers (the damage
+  compiler's `remain-at-one` selector consumes a fired floor's whole source atomically; the heal
+  path carries same-cast max headroom; the transfer fact records the payer for the table), and
+  `transcribeSpell`'s standing block binds `recipient: "selected"` buffs to the SELECTED target
+  entities — gated like the condition suite on attack/save spells — so a self-selected Death
+  Ward / Aid / Heroism rides the caster's world end to end. What still keeps the ledger alive is
+  exactly the CROSS-DOCUMENT carrier: a buff landing on ANOTHER member's document has no canonical
+  channel; the remaining residue is itemized in `docs/AUTOMATION_HANDOFF.md`'s deletion map.
 
   A one-shot floor may be visible briefly as both a sheet `activeFeatures` key and its exact campaign
   occurrence. The damage kernel treats a shared `activeKey` as duplicate authority for one rule and returns
@@ -1730,6 +1736,53 @@ while solo attack/damage flows read the KEY, exactly like legacy (the marked cre
 table-abstract by product design — the player applies the die on the right hit). This is a READ
 migration, not a mirror: the world stays the sole owner of the standing's lifetime, and no
 session field is written for it.
+
+**Recipient standings (the L2 second-half kernel vocabulary).** A `recipient: "selected"`
+while-active spell buff (Warding Bond, Death Ward, Aid, Heroism, the debuff cantrips) binds its
+standings to the SELECTED target entities — the same entities the targeting input resolves, gated
+exactly like the condition suite (an attack spell applies its standing on the landed hit, a save
+spell on the failed save) — never to `role:"caster"`. In solo play the caster selects SELF for a
+self-ward and a table-abstract ally stays with the table; a modeled entity (companion, summon,
+adversary) receives the standing directly. Three conformance-locked standing FACT kinds carry the
+mechanics the active key alone cannot: `zero-hp-floor` (Death Ward — the damage compiler selects
+the kernel's `remain-at-one` policy from a live floor on the target, and the fired floor's SOURCE
+ends atomically inside the same transaction via an occurrence-end consequence on the
+`creature-damage` operation: "drops to 1 instead, and the spell ends"; a step-local consumed set
+keeps single-use exact across multi-hit slots), `max-hp-delta` (Aid — the RESOLVED cast-level
+amount materializes into the fact; the paired heal carries the same-cast headroom explicitly on
+the `creature-healing` operation so raise-then-heal works under the caller's pre-action maximum
+fact), and `damage-transfer` (Warding Bond — the ward's expressible half is a resistance-to-all
+`damage-defense` standing the damage kernel already consumes; the transfer half RECORDS the payer
+entity, and mirroring damage across creatures at damage time stays an honest table boundary).
+Heroism's per-turn Temp HP rides a `root-pulse` phase (`turn-thp`) granting the frozen
+`spellcasting-modifier` binding as a replace-decision pool — the recipient's turn-start SIGNAL is
+table-declared until the turn-boundary event bus exists. Sheet side,
+`worldStandingMaxHpDeltas` / `worldStandingZeroHpFloors` project SELF-owned facts into the one
+grants union: the exact world delta REPLACES the key-only base default in `evaluateGrants` (never
+double-counts), and world floors merge into `aggregate.zeroHpFloors` deduped by key.
+
+**The second UI-read migration — the core vitals.** `src/lib/character-vitals.ts` is the ONE
+projection seam every core vital read goes through: hit points + temp (`vitalHp`), the death-save
+track (`vitalDeathSaves`), exhaustion (`vitalExhaustion`), concentration (`vitalConcentration`),
+the manual condition ledger (`vitalConditions`, consumed by `effectiveSessionConditions` as its
+base term), spell-slot usage (`vitalSlotUsed` — the Spells-tab slot summary in
+`lib/views/spells-view.ts` and the rail's slot pips) and tracker-pool usage (`vitalTrackerUsed` —
+every resolved tracker row's `used` in `smart-tracker`'s row builders, which the rail's remaining
+counts render). The consuming surfaces are the shared HP engine (`useHpControls`, behind the
+header pill / edit popover / DyingBanner), the death-save pips, and the exhaustion/concentration
+chips (CombatHeader, LeftHud, ThisTurnTracker → StatusLedge, ResourceRail, the
+concentration-replace confirm). The projection's DRIFT LAW is rollout-bridge semantics, per fact:
+the commit mirror writes both representations on every engine commit, so agreement is the norm and
+the projection surfaces the (identical) value; disagreement means a LEGACY-ONLY write happened (a
+manual HP edit, a slot pip tap, a condition chip toggle, a tracker spend outside the engine) — the
+SESSION value wins, so a legacy-only spend can never be resurrected from a stale world (the same
+fail-closed direction the rest boundary reconciles in). Both arms therefore surface session truth
+today — the migration is an observable no-op by design; deleting the write-through mirrors later
+means flipping the arbitration world-first inside this one module (after the remaining legacy-only
+WRITE paths move onto engine commits), never re-touching the surfaces. Like the standings
+projection, the seam walks the raw persisted `session.world` with fail-closed structural guards
+(no full material-state parse on hot paths); tracker ROLLS stay a session-only fact (the world
+does not model recorded rolls), and WRITE paths everywhere are untouched by this migration.
 
 The executable authority for a cast is closed at build level: `characterSpellCapability` seals the
 transcribed program (see `src/lib/mechanics-transcription.ts`) into a capability snapshot anchored

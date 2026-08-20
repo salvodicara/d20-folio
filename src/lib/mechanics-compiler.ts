@@ -4,7 +4,10 @@ import { materialRefKey } from "@/lib/action-journal";
 import { canonicalFingerprint, canonicalJson } from "@/lib/canonical-fingerprint";
 import { conformDamageDefenseProfile, resolveDamage } from "@/lib/damage";
 import { evaluateIntegerExpression } from "@/lib/integer-expression";
-import { selectEffectiveDamageDefenseProfile } from "@/lib/mechanic-occurrences";
+import {
+  selectEffectiveDamageDefenseProfile,
+  selectStandingFacts,
+} from "@/lib/mechanic-occurrences";
 import {
   locateResolvedMaterialResource,
   resourceDefinitionFactGuard,
@@ -295,7 +298,17 @@ function effectSlots(
             ({ binding }) => binding
           ) ?? null)
         : null;
-    const materialized = materializeMechanicsStandingFacts(step.fact, targets, marked);
+    const transferTo =
+      step.fact.kind === "damage-transfer"
+        ? (resolveMechanicsProgramTargets(step.fact.to, context)?.map(
+            ({ binding }) => binding
+          ) ?? null)
+        : null;
+    const materialized = materializeMechanicsStandingFacts(step.fact, targets, {
+      bindings: context.bindings,
+      marked,
+      transferTo,
+    });
     if (!materialized) return null;
     facts = materialized.map(({ fact }) => fact);
   }
@@ -706,6 +719,90 @@ function effectiveVitalityDefenseProfile(
     damageThreshold: template?.damageThreshold ?? null,
     rules,
   });
+}
+
+/**
+ * The FIRST live `zero-hp-floor` standing held by the target (allocation
+ * order), as the generation ref of its SOURCE root program. The damage branch
+ * selects the kernel's `remain-at-one` policy from it and, when the floor
+ * fires, consumes the whole source (RAW Death Ward: "the spell ends").
+ */
+function liveZeroHpFloorSource(
+  world: Readonly<MechanicsProgramCompilationContext["world"]>,
+  target: Readonly<EntityRef>,
+  consumedSourceKeys: ReadonlySet<string>
+): Readonly<OccurrenceGenerationRef> | null {
+  const document = world.documents.find(
+    (candidate) => materialRefKey(candidate.material) === materialRefKey(target.material)
+  );
+  if (!document) return null;
+  for (const { occurrence } of selectStandingFacts(document.state, target)) {
+    if (occurrence.fact.kind !== "zero-hp-floor") continue;
+    // The projected world never applies occurrence-end CONSEQUENCES, so a
+    // floor this step already consumed on an earlier slot (dart five of a
+    // multi-dart action) still reads live here; the step-local consumed set
+    // keeps the single-use law exact within one damage step.
+    if (consumedSourceKeys.has(occurrenceGenerationRefKey(occurrence.origin.root))) {
+      continue;
+    }
+    return occurrence.origin.root;
+  }
+  return null;
+}
+
+/** The target's live creature hit points, or null for objects/missing targets. */
+function creatureCurrentHitPoints(
+  world: Readonly<MechanicsProgramCompilationContext["world"]>,
+  target: Readonly<EntityRef>,
+  located: Readonly<LocatedVitalityTarget>
+): { readonly current: number; readonly temporary: number } | null {
+  if (located.kind === "character") {
+    const document = world.documents.find(
+      (candidate) =>
+        materialRefKey(candidate.material) === materialRefKey(target.material)
+    );
+    if (document?.kind !== "character") return null;
+    const vitals = document.state.vitals;
+    return {
+      current: vitals.hitPoints.current,
+      temporary: vitals.hitPoints.temporary.current,
+    };
+  }
+  if (located.entity.kind !== "creature") return null;
+  const vitals = located.entity.vitals;
+  return {
+    current: vitals.hitPoints.current,
+    temporary: vitals.hitPoints.temporary.current,
+  };
+}
+
+/**
+ * The summed live `max-hp-delta` standings the CURRENT root already placed on
+ * the target. The caller's hit-point-maximum fact was captured before this
+ * action began, so deltas created by this very cast (Aid's +5 before its own
+ * heal) are exactly the not-yet-counted remainder; older roots' deltas already
+ * ride the sheet-derived fact and must not be added twice.
+ */
+function currentRootMaxHpDelta(
+  world: Readonly<MechanicsProgramCompilationContext["world"]>,
+  target: Readonly<EntityRef>,
+  root: Readonly<OccurrenceGenerationRef>
+): number {
+  const document = world.documents.find(
+    (candidate) => materialRefKey(candidate.material) === materialRefKey(target.material)
+  );
+  if (!document) return 0;
+  const rootKey = occurrenceGenerationRefKey(root);
+  let delta = 0;
+  for (const { occurrence } of selectStandingFacts(document.state, target)) {
+    if (
+      occurrence.fact.kind === "max-hp-delta" &&
+      occurrenceGenerationRefKey(occurrence.origin.root) === rootKey
+    ) {
+      delta += occurrence.fact.amount;
+    }
+  }
+  return delta;
 }
 
 /** The caller-guarded effective maximum, or null when no guard names the target. */
@@ -2139,6 +2236,8 @@ export function compileMechanicsFrame(
       const guardSources = [...input.reviewed.intent.factGuards, ...input.facts];
       const vitalityId = (slot: number, kind: string): string =>
         operationId(input, step.stepId, slot, kind);
+      /** Floor SOURCES already consumed by an earlier slot of this step. */
+      const consumedFloorSourceKeys = new Set<string>();
       for (const { identity, slot, target } of slots) {
         const located = locateVitalityTarget(context.world, target);
         if (!located) {
@@ -2255,13 +2354,44 @@ export function compileMechanicsFrame(
             damage: resolution.resolution,
             maximumHitPoints,
           } as const;
+          // The `remain-at-one` selector: a live zero-hp-floor standing on the
+          // target turns the drop-to-zero policy into the kernel's floor, and
+          // the operation carries the floor's SOURCE so the kernel consumes it
+          // (an occurrence-end consequence) exactly when the floor fires.
+          const floorSource = creature
+            ? liveZeroHpFloorSource(context.world, target, consumedFloorSourceKeys)
+            : null;
+          const vitals = creature
+            ? creatureCurrentHitPoints(context.world, target, located)
+            : null;
+          const net = resolution.resolution.effective.amount;
+          const firedFloorSource =
+            floorSource !== null &&
+            vitals !== null &&
+            vitals.current > 0 &&
+            net - Math.min(vitals.temporary, net) >= vitals.current
+              ? floorSource
+              : null;
+          if (firedFloorSource !== null) {
+            consumedFloorSourceKeys.add(occurrenceGenerationRefKey(firedFloorSource));
+          }
           const problem = project(
             creature
               ? {
                   ...common,
                   kind: "creature-damage",
                   operationId: vitalityId(slot, "creature-damage"),
-                  zeroHitPointsPolicy: located.kind === "character" ? "dying" : "dead",
+                  ...(firedFloorSource !== null
+                    ? {
+                        zeroHitPointsFloorSource: firedFloorSource,
+                        zeroHitPointsPolicy: "remain-at-one" as const,
+                      }
+                    : {
+                        zeroHitPointsPolicy:
+                          located.kind === "character"
+                            ? ("dying" as const)
+                            : ("dead" as const),
+                      }),
                 }
               : {
                   ...common,
@@ -2294,12 +2424,21 @@ export function compileMechanicsFrame(
             guarded !== null
               ? ({ kind: "fact" } as const)
               : ({ kind: "material" } as const);
+          // `max-hp-delta` standings THIS root already placed on the target
+          // are headroom the caller's pre-action maximum fact cannot carry
+          // (Aid raises the maximum, then heals into it in the same cast).
+          // The delta rides the operation explicitly so the emitted maximum
+          // fact stays the caller's base and replay stays exact.
+          const sameCastDelta = creature
+            ? currentRootMaxHpDelta(context.world, target, receipt.root)
+            : 0;
           const problem = project(
             creature
               ? {
                   causeId: rootCause.causeId,
                   input: { amount, maximumHitPoints },
                   kind: "creature-healing",
+                  ...(sameCastDelta > 0 ? { maximumHitPointsDelta: sameCastDelta } : {}),
                   maximumHitPointsSource: source,
                   operationId: vitalityId(slot, "creature-healing"),
                   target,

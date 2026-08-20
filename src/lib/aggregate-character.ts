@@ -47,7 +47,11 @@ import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
 import type { CharacterDoc } from "@/types/character";
 import type { StoredConcentration } from "@/types/ids";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
-import { sessionActiveKeys } from "@/lib/world-standing-grants";
+import {
+  sessionActiveKeys,
+  worldStandingMaxHpDeltas,
+  worldStandingZeroHpFloors,
+} from "@/lib/world-standing-grants";
 
 /**
  * Project the equipment that still exists as an active magic object. Catalogue
@@ -127,6 +131,11 @@ export function aggregateCharacterGrants(
           encounterEffects: session.encounterEffects,
         })
       ),
+      // The engine world's standing-fact projections: the exact Aid amount
+      // (cast level included) and Death Ward's single-use floor, both scoped
+      // to SELF-owned live standings (`world-standing-grants.ts`).
+      worldMaxHpDeltas: worldStandingMaxHpDeltas(session.world),
+      worldZeroHpFloors: worldStandingZeroHpFloors(session.world),
     }
   );
 }

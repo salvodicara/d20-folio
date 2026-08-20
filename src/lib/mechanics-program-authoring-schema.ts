@@ -591,9 +591,23 @@ const STANDING_FACT_TEMPLATE_SCHEMA = discriminatedUnionSchema("kind", {
     kind: literalSchema("damage-defense"),
     rule: DAMAGE_DEFENSE_RULE_VALUE_SCHEMA,
   }),
+  /** Records that damage the holder takes is mirrored onto the resolved `to`
+   *  entity (Warding Bond's transfer half — table-applied, kernel-recorded). */
+  "damage-transfer": objectSchema({
+    key: ID_SCHEMA,
+    kind: literalSchema("damage-transfer"),
+    to: ENTITY_SELECTOR_SCHEMA,
+  }),
   "grant-group": objectSchema({
     groupId: ID_SCHEMA,
     kind: literalSchema("grant-group"),
+  }),
+  /** The authored max-HP raise; `amount` resolves against the cast's bindings
+   *  when the standing materializes (Aid's +5 per slot level above 2). */
+  "max-hp-delta": objectSchema({
+    amount: INTEGER_EXPRESSION_SCHEMA,
+    key: ID_SCHEMA,
+    kind: literalSchema("max-hp-delta"),
   }),
   "program-fact": objectSchema({
     factId: ID_SCHEMA,
@@ -604,6 +618,11 @@ const STANDING_FACT_TEMPLATE_SCHEMA = discriminatedUnionSchema("kind", {
     kind: literalSchema("target-mark"),
     markId: ID_SCHEMA,
     marked: ENTITY_SELECTOR_SCHEMA,
+  }),
+  /** The holder's first drop to 0 HP becomes 1 (Death Ward — single-use). */
+  "zero-hp-floor": objectSchema({
+    key: ID_SCHEMA,
+    kind: literalSchema("zero-hp-floor"),
   }),
 });
 

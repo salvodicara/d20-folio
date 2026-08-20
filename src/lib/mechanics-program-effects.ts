@@ -360,34 +360,76 @@ export function resolveMechanicsLifetime(
     : null;
 }
 
-/** Materialize one standing template per target; marks broadcast or zip exactly. */
-export function materializeMechanicsStandingFacts(
-  template: Readonly<StandingFactTemplate>,
+export interface MechanicsStandingFactMaterialization {
+  /** Bindings resolving a `max-hp-delta` template's authored amount. */
+  readonly bindings?: Readonly<Record<string, number>>;
+  /** Resolved `target-mark.marked` entities; broadcast (1) or zip (per target). */
+  readonly marked?: readonly Readonly<EntityRef>[] | null;
+  /** Resolved `damage-transfer.to` entities; broadcast (1) or zip (per target). */
+  readonly transferTo?: readonly Readonly<EntityRef>[] | null;
+}
+
+function zipEntityField(
   targets: readonly Readonly<EntityRef>[],
-  markedTargets: readonly Readonly<EntityRef>[] | null = null
-): readonly Readonly<MaterializedMechanicsStandingFact>[] | null {
-  if (targets.length === 0) return [];
-  if (template.kind !== "target-mark") {
-    return markedTargets === null
-      ? targets.map((target) => ({ fact: template, target }))
-      : null;
-  }
+  resolved: readonly Readonly<EntityRef>[] | null | undefined
+): readonly Readonly<EntityRef>[] | null {
   if (
-    markedTargets === null ||
-    (markedTargets.length !== 1 && markedTargets.length !== targets.length)
+    resolved === null ||
+    resolved === undefined ||
+    (resolved.length !== 1 && resolved.length !== targets.length)
   ) {
     return null;
   }
-  const materialized: MaterializedMechanicsStandingFact[] = [];
-  for (const [index, target] of targets.entries()) {
-    const marked = markedTargets.length === 1 ? markedTargets[0] : markedTargets[index];
-    if (!marked) return null;
-    materialized.push({
-      fact: { kind: "target-mark", markId: template.markId, marked },
-      target,
-    });
+  return resolved.length === 1
+    ? targets.map(() => resolved[0] as Readonly<EntityRef>)
+    : resolved;
+}
+
+/** Materialize one standing template per target; entity fields broadcast or zip exactly. */
+export function materializeMechanicsStandingFacts(
+  template: Readonly<StandingFactTemplate>,
+  targets: readonly Readonly<EntityRef>[],
+  context: Readonly<MechanicsStandingFactMaterialization> = {}
+): readonly Readonly<MaterializedMechanicsStandingFact>[] | null {
+  if (targets.length === 0) return [];
+  if (template.kind === "target-mark") {
+    const marked = zipEntityField(targets, context.marked);
+    if (!marked || context.transferTo != null) return null;
+    const materialized: MaterializedMechanicsStandingFact[] = [];
+    for (const [index, target] of targets.entries()) {
+      const entry = marked[index];
+      if (!entry) return null;
+      materialized.push({
+        fact: { kind: "target-mark", markId: template.markId, marked: entry },
+        target,
+      });
+    }
+    return materialized;
   }
-  return materialized;
+  if (template.kind === "damage-transfer") {
+    const to = zipEntityField(targets, context.transferTo);
+    if (!to || context.marked != null) return null;
+    const materialized: MaterializedMechanicsStandingFact[] = [];
+    for (const [index, target] of targets.entries()) {
+      const entry = to[index];
+      if (!entry) return null;
+      materialized.push({
+        fact: { key: template.key, kind: "damage-transfer", to: entry },
+        target,
+      });
+    }
+    return materialized;
+  }
+  if (context.marked != null || context.transferTo != null) return null;
+  if (template.kind === "max-hp-delta") {
+    const amount = evaluateIntegerExpression(template.amount, context.bindings ?? {});
+    if (amount === null || !Number.isSafeInteger(amount) || amount < 1) return null;
+    return targets.map((target) => ({
+      fact: { amount, key: template.key, kind: "max-hp-delta" },
+      target,
+    }));
+  }
+  return targets.map((target) => ({ fact: template, target }));
 }
 
 function activeEffectEntries(world: Readonly<MechanicsWorld>): ActiveEffectEntry[] {

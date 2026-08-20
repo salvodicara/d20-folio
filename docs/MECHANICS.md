@@ -672,6 +672,20 @@ Temp HP, all-damage resistance, damage transfer, zero-HP floor, extra-action res
 the campaign reducer owns lifecycle and atomic cross-document writes. Aid, Heroism, Warding Bond, Death
 Ward and Haste are examples, not branches. The table can still revoke or correct any instance.
 
+**Engine-side recipient standings.** A `while-active` grant may declare `recipient: "caster" |
+"selected"` (default caster). The engine transcription (`transcribeSpell`) binds a
+`recipient: "selected"` buff's standings to the SELECTED target entities — gated like the condition
+suite on attack/save spells — and the inner mechanics with canonical kernel fact kinds emit as
+standing FACTS the kernel consumes directly: `zero-hp-floor` (a `zero-hp-floor: {hitPoints: 1}`
+inner grant — the damage compiler's `remain-at-one` selector, single-use, consuming the whole
+source when it fires), `max-hp-delta` (an `hp-flat` inner grant, cast-level resolved; with
+`adjustsCurrentHp` the transcription pairs a heal into the raised headroom), a resistance-to-all
+`damage-defense` fact (`all-damage-resistance`), `condition-immunity` facts, a RECORDED
+`damage-transfer` payer fact (the cross-creature mirror stays a table boundary), and a
+`root-pulse` per-turn Temp-HP phase for a binding-priced `regen-at-turn-start { asTempHp }`
+(Heroism). Everything else keeps riding the derived grant layer, keyed by the active key. Full
+detail: `docs/ARCHITECTURE.md` → "Recipient standings".
+
 Short effects use exact turn-phase boundaries in both homes. A self effect persists its computed
 `{round, phase}` under `session.effectBoundaries`; a selected-recipient effect stores the equivalent
 `turn-boundary` occurrence in the campaign ledger. `roll-die-adjustment` declares a physical roll die

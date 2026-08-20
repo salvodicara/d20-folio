@@ -1436,15 +1436,22 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     }
   }
 
-  // Standing buffs (`while-active` grants): the cast lights the buff's active
-  // key on the caster — and marks the chosen creature when the buff is
-  // target-scoped (Hex). The rider the buff carries stays with the DERIVED
-  // grant layer: by product design the app models no enemy in solo play, so
-  // the extra die is player-applied on a hit, never auto-summed.
+  // Standing buffs (`while-active` grants). A CASTER-recipient buff lights the
+  // buff's active key on the caster; a `recipient: "selected"` buff binds its
+  // standings to the SELECTED target entities (self or a modeled table entity —
+  // the same entities the targeting input resolves), gated exactly like the
+  // condition suite when the spell carries an attack or saving-throw gate. A
+  // target-SCOPED caster buff (Hex) additionally marks the chosen creature.
+  // Inner mechanics with canonical kernel fact kinds (zero-hp-floor,
+  // max-hp-delta, damage-defense, condition-immunity, damage-transfer) emit as
+  // fact standings the kernel consumes; the rest stays with the DERIVED grant
+  // layer: by product design the app models no enemy in solo play, so a
+  // damage rider's extra die is player-applied on a hit, never auto-summed.
   const whileActiveGrants = (spell.grants ?? []).flatMap((grant) =>
     grant.type === "while-active" ? [grant] : []
   );
   let standingNeedsTargets = false;
+  let regenPhase: Record<string, unknown> | null = null;
   for (const grant of whileActiveGrants) {
     const timed =
       grant.duration !== undefined && grant.duration.kind === "timed"
@@ -1482,16 +1489,46 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     } else if (!spell.concentration && grant.duration !== undefined) {
       clauses.push(clause(`standing-${grant.activeKey}-duration`, "automated"));
     }
+    const selected = grant.recipient === "selected";
+    if (selected) standingNeedsTargets = true;
+    // The recipient selector mirrors the condition suite's gating: an attack
+    // spell applies its standing on a landed hit, a save spell on a failed
+    // save, a gateless one on the selected creatures directly.
+    const standingTarget: Readonly<Record<string, unknown>> = !selected
+      ? { kind: "role", role: "caster" }
+      : !deferred && gatedByAttack
+        ? attackOutcomeSelector(["hit", "critical-hit"], (id) => id)
+        : !deferred && hasSave
+          ? {
+              cardinality: "per-request",
+              inputId: "saves",
+              kind: "d20-outcome",
+              outcomeIds: ["failure"],
+              quantifier: "any",
+            }
+          : { inputId: "targets", kind: "input" };
     steps.push({
       fact: { key: grant.activeKey, kind: "active-key" },
       kind: "standing",
       lifetime: standingLifetime,
       operation: "start",
       stepId: `standing-${grant.activeKey}`,
-      target: { kind: "role", role: "caster" },
+      target: standingTarget,
       when: null,
     });
-    clauses.push(clause(`standing-${grant.activeKey}`, "automated"));
+    clauses.push(
+      clause(
+        `standing-${grant.activeKey}`,
+        "automated",
+        !selected
+          ? null
+          : !deferred && gatedByAttack
+            ? "recipient-on-hit"
+            : !deferred && hasSave
+              ? "recipient-on-failed-save"
+              : "recipient-selected"
+      )
+    );
     if (grant.targetScope !== undefined) {
       standingNeedsTargets = true;
       steps.push({
@@ -1510,6 +1547,188 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
       clauses.push(clause(`mark-${grant.targetScope}`, "automated"));
     }
     for (const inner of grant.grants) {
+      if (inner.type === "zero-hp-floor" && inner.hitPoints === 1) {
+        // Death Ward: the kernel's `remain-at-one` policy reads this fact and
+        // consumes its source on the first drop to 0.
+        steps.push({
+          fact: { key: grant.activeKey, kind: "zero-hp-floor" },
+          kind: "standing",
+          lifetime: standingLifetime,
+          operation: "start",
+          stepId: `standing-${grant.activeKey}-floor`,
+          target: standingTarget,
+          when: null,
+        });
+        clauses.push(
+          clause(`standing-${grant.activeKey}-floor`, "automated", "single-use-floor")
+        );
+        continue;
+      }
+      if (inner.type === "hp-flat") {
+        // Aid: the max raise is a resolved `max-hp-delta` fact; the paired
+        // current-HP raise is an ordinary heal into the raised headroom.
+        const scaling = inner.castLevelScaling;
+        const amount: Readonly<IntegerExpression> =
+          scaling !== undefined && spell.level > 0
+            ? upcastCount(inner.amount, scaling.perLevel, scaling.baseLevel)
+            : fixed(inner.amount);
+        steps.push({
+          fact: { amount, key: grant.activeKey, kind: "max-hp-delta" },
+          kind: "standing",
+          lifetime: standingLifetime,
+          operation: "start",
+          stepId: `standing-${grant.activeKey}-max-hp`,
+          target: standingTarget,
+          when: null,
+        });
+        clauses.push(clause(`standing-${grant.activeKey}-max-hp`, "automated"));
+        if (inner.adjustsCurrentHp === true) {
+          steps.push({
+            amount: { expression: amount, kind: "integer" },
+            kind: "heal",
+            stepId: `standing-${grant.activeKey}-current-hp`,
+            target: standingTarget,
+            when: null,
+          });
+          clauses.push(
+            clause(
+              `standing-${grant.activeKey}-current-hp`,
+              "automated",
+              "raise-then-heal"
+            )
+          );
+        }
+        continue;
+      }
+      if (inner.type === "all-damage-resistance") {
+        // Warding Bond's ward half: resistance-like halving the damage kernel
+        // applies whenever engine damage lands on the recipient.
+        steps.push({
+          fact: {
+            kind: "damage-defense",
+            rule: {
+              kind: "resistance",
+              selector: {
+                damageTypes: [],
+                deliveries: [],
+                forbiddenTraits: [],
+                requiredTraits: [],
+              },
+              sourceId: grant.activeKey,
+            },
+          },
+          kind: "standing",
+          lifetime: standingLifetime,
+          operation: "start",
+          stepId: `standing-${grant.activeKey}-resistance`,
+          target: standingTarget,
+          when: null,
+        });
+        clauses.push(
+          clause(
+            `standing-${grant.activeKey}-resistance`,
+            "automated",
+            "resistance-to-all"
+          )
+        );
+        continue;
+      }
+      if (inner.type === "damage-transfer") {
+        // Warding Bond's transfer half: the kernel RECORDS the payer identity;
+        // mirroring damage across creatures at damage time stays with the
+        // table (the recipient's hits are table events in solo play).
+        steps.push({
+          fact: {
+            key: grant.activeKey,
+            kind: "damage-transfer",
+            to: { kind: "role", role: "caster" },
+          },
+          kind: "standing",
+          lifetime: standingLifetime,
+          operation: "start",
+          stepId: `standing-${grant.activeKey}-transfer`,
+          target: standingTarget,
+          when: null,
+        });
+        clauses.push(
+          clause(`standing-${grant.activeKey}-transfer`, "automated", "recorded-fact")
+        );
+        clauses.push(
+          clause(
+            `standing-${grant.activeKey}-transfer-application`,
+            "table",
+            "table-mirrors-damage-to-caster"
+          )
+        );
+        continue;
+      }
+      if (inner.type === "condition-immunity" && inner.condition !== "exhaustion") {
+        steps.push({
+          fact: { conditionId: inner.condition, kind: "condition-immunity" },
+          kind: "standing",
+          lifetime: standingLifetime,
+          operation: "start",
+          stepId: `standing-${grant.activeKey}-immune-${inner.condition}`,
+          target: standingTarget,
+          when: null,
+        });
+        clauses.push(
+          clause(`standing-${grant.activeKey}-immune-${inner.condition}`, "automated")
+        );
+        continue;
+      }
+      if (
+        inner.type === "regen-at-turn-start" &&
+        inner.asTempHp === true &&
+        inner.condition === "always" &&
+        typeof inner.amount === "object" &&
+        regenPhase === null
+      ) {
+        // Heroism: the recurring Temp HP is a root-pulse phase — the possessor
+        // declares the recipient's turn start (in solo the single-participant
+        // encounter collapses that boundary onto the caster's own turn), the
+        // engine grants the binding-priced pool. The dedicated turn-boundary
+        // event bus is a later seam; the pulse is the honest carrier today.
+        regenPhase = {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "turn-thp-target",
+              kind: "entities",
+              maximum: fixed(1),
+              minimum: fixed(0),
+              multiplicity: "slots",
+              when: null,
+            },
+          ],
+          phaseId: "turn-thp",
+          steps: [
+            {
+              amount: {
+                expression: {
+                  bindingId: TRANSCRIPTION_BINDINGS.castingModifier,
+                  kind: "binding",
+                },
+                kind: "integer",
+              },
+              decision: "replace",
+              kind: "temporary-hit-points",
+              lifetime: { kind: "manual" },
+              stepId: "turn-thp-grant",
+              target: { inputId: "turn-thp-target", kind: "input" },
+              when: null,
+            },
+          ],
+          trigger: { eventId: "turn-thp", kind: "root-pulse" },
+        };
+        clauses.push(
+          clause("per-turn-temp-hp", "automated", "pulse-on-recipient-turn-start")
+        );
+        clauses.push(
+          clause("per-turn-temp-hp-signal", "table", "table-signals-turn-start")
+        );
+        continue;
+      }
       clauses.push(
         inner.type === "damage-rider"
           ? clause(
@@ -1522,7 +1741,7 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     }
   }
   if (standingNeedsTargets && deferred && !pulse && !dynamicTargets) {
-    // A deferred standing cast still chooses whom to mark.
+    // A deferred standing cast still chooses whom to mark or buff.
     inputs.push({
       eligibility: "creature",
       inputId: "targets",
@@ -1746,6 +1965,7 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     { inputs, phaseId: "resolve", steps, trigger: { kind: "invocation" } },
     ...(pulsePhase ? [pulsePhase] : []),
     ...(followUpPhase ? [followUpPhase] : []),
+    ...(regenPhase ? [regenPhase] : []),
   ];
   if (spell.concentration) {
     phases.push({
@@ -1757,7 +1977,11 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
   }
 
   const blocked = clauses.some((entry) => entry.status === "unsupported");
-  const stepless = steps.length === 0 && pulsePhase === null && followUpPhase === null;
+  const stepless =
+    steps.length === 0 &&
+    pulsePhase === null &&
+    followUpPhase === null &&
+    regenPhase === null;
   if (blocked || stepless) {
     return {
       clauses:

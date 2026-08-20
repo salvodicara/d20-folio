@@ -249,15 +249,25 @@ const CONDITION_IMMUNITY_OVERRIDE_SCHEMA = unionSchema([
 
 /** DamageResolution owns the sole target identity for both damage variants. */
 export const MECHANICS_OPERATION_SCHEMA = discriminatedUnionSchema("kind", {
-  "creature-damage": objectSchema({
-    ...OPERATION_COMMON_SCHEMA,
-    attacker: NULLABLE_ENTITY_REF_SCHEMA,
-    criticalHit: booleanSchema,
-    damage: DAMAGE_RESOLUTION_VALUE_SCHEMA,
-    kind: literalSchema("creature-damage"),
-    maximumHitPoints: HIT_POINT_MAXIMUM_EVIDENCE_SCHEMA,
-    zeroHitPointsPolicy: ZERO_HIT_POINTS_POLICY_SCHEMA,
-  }),
+  "creature-damage": objectSchema(
+    {
+      ...OPERATION_COMMON_SCHEMA,
+      attacker: NULLABLE_ENTITY_REF_SCHEMA,
+      criticalHit: booleanSchema,
+      damage: DAMAGE_RESOLUTION_VALUE_SCHEMA,
+      kind: literalSchema("creature-damage"),
+      maximumHitPoints: HIT_POINT_MAXIMUM_EVIDENCE_SCHEMA,
+      zeroHitPointsPolicy: ZERO_HIT_POINTS_POLICY_SCHEMA,
+    },
+    {
+      /** The SOURCE root of the `zero-hp-floor` standing that selected a
+       *  `remain-at-one` policy. When the floor actually fires (the kernel's
+       *  `remainedAtOne` fact), the simulation emits an occurrence-end
+       *  consequence for it — the floor is single-use and, per Death Ward,
+       *  consuming it ends the whole granting source. */
+      zeroHitPointsFloorSource: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
+    }
+  ),
   "object-damage": objectSchema({
     ...OPERATION_COMMON_SCHEMA,
     attacker: NULLABLE_ENTITY_REF_SCHEMA,
@@ -266,11 +276,20 @@ export const MECHANICS_OPERATION_SCHEMA = discriminatedUnionSchema("kind", {
     kind: literalSchema("object-damage"),
     maximumHitPoints: HIT_POINT_MAXIMUM_EVIDENCE_SCHEMA,
   }),
-  "creature-healing": objectSchema({
-    ...MAXIMUM_BOUND_OPERATION_SCHEMA,
-    input: CREATURE_HEALING_INPUT_SCHEMA,
-    kind: literalSchema("creature-healing"),
-  }),
+  "creature-healing": objectSchema(
+    {
+      ...MAXIMUM_BOUND_OPERATION_SCHEMA,
+      input: CREATURE_HEALING_INPUT_SCHEMA,
+      kind: literalSchema("creature-healing"),
+    },
+    {
+      /** Same-action `max-hp-delta` headroom: the summed live deltas the
+       *  CURRENT root placed on the target before this heal (Aid's raise-then-
+       *  heal). Added on top of the resolved maximum when the heal clamps; the
+       *  emitted maximum fact keeps the caller's pre-action base. */
+      maximumHitPointsDelta: POSITIVE_INTEGER_SCHEMA,
+    }
+  ),
   "object-repair": objectSchema({
     ...MAXIMUM_BOUND_OPERATION_SCHEMA,
     input: OBJECT_HIT_POINT_INPUT_SCHEMA,

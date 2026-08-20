@@ -19,7 +19,11 @@ vi.mock("@/lib/firebase", () => ({
  */
 import { describe, expect, it, vi } from "vitest";
 
-import { effectiveAC } from "@/lib/aggregate-character";
+import {
+  aggregateCharacterGrants,
+  effectiveAC,
+  effectiveMaxHp,
+} from "@/lib/aggregate-character";
 import { runMechanicsCausalAction } from "@/lib/mechanics-coordinator";
 import { beginMechanicsCausalState } from "@/lib/mechanics-world";
 import {
@@ -38,7 +42,9 @@ import {
 import {
   sessionActiveKeys,
   worldStandingActiveKeys,
+  worldStandingMaxHpDeltas,
   worldStandingTargetMarks,
+  worldStandingZeroHpFloors,
 } from "@/lib/world-standing-grants";
 import { resolveActions } from "@/lib/smart-tracker";
 import type { CharacterDoc } from "@/types/character";
@@ -374,6 +380,126 @@ describe("hex rider parity (legacy chip vs engine standing)", () => {
     };
     expect(worldStandingTargetMarks(ended).size).toBe(0);
     expect(worldStandingTargetMarks(undefined).size).toBe(0);
+  });
+
+  it("projects exact max-hp deltas and zero-hp floors for SELF-owned standings", () => {
+    const world = {
+      occurrences: {
+        aid: standing("spell-aid", {
+          fact: { amount: 15, key: "spell-aid", kind: "max-hp-delta" },
+        }),
+        ward: standing("spell-death-ward", {
+          fact: { key: "spell-death-ward", kind: "zero-hp-floor" },
+        }),
+        endedAid: standing("spell-aid-old", {
+          ending: { causes: [{ kind: "requested" }] },
+          fact: { amount: 40, key: "spell-aid", kind: "max-hp-delta" },
+        }),
+        foreignWard: standing("their-ward", {
+          fact: { key: "spell-death-ward", kind: "zero-hp-floor" },
+          target: {
+            entityId: "goblin-1",
+            material: { characterId: "test-char", kind: "character-play", uid: UID },
+            ordinal: 2,
+          },
+        }),
+        malformed: standing("junk", {
+          fact: { amount: "big", key: "spell-aid", kind: "max-hp-delta" },
+        }),
+      },
+    };
+    expect([...worldStandingMaxHpDeltas(world)]).toEqual([["spell-aid", 15]]);
+    expect(worldStandingZeroHpFloors(world)).toEqual([
+      { key: "spell-death-ward", hitPoints: 1 },
+    ]);
+    expect(worldStandingMaxHpDeltas(undefined).size).toBe(0);
+    expect(worldStandingZeroHpFloors(null)).toEqual([]);
+  });
+
+  it("keeps the LARGEST live delta when one key somehow carries two", () => {
+    const world = {
+      occurrences: {
+        low: standing("spell-aid", {
+          fact: { amount: 5, key: "spell-aid", kind: "max-hp-delta" },
+        }),
+        high: standing("spell-aid-2", {
+          fact: { amount: 10, key: "spell-aid", kind: "max-hp-delta" },
+        }),
+      },
+    };
+    expect(worldStandingMaxHpDeltas(world).get("spell-aid")).toBe(10);
+  });
+
+  it("feeds the effective-max-HP seam with the EXACT world amount, never doubled", () => {
+    const doc = makeCharacterDoc({ classId: "cleric", level: 5 });
+    doc.character.spells = [{ srdId: "aid", prepared: true }];
+    const base = effectiveMaxHp(doc.character, doc.session);
+
+    // Key-only (a legacy-style activation with no world delta): the derived
+    // hp-flat row contributes its base-level default (+5).
+    const keyOnly = {
+      ...doc.session,
+      world: { occurrences: { key: standing("spell-aid") } },
+    };
+    expect(effectiveMaxHp(doc.character, keyOnly)).toBe(base + 5);
+
+    // The engine cast: active-key + the resolved max-hp-delta standing. The
+    // world amount (slot 4 → 15) REPLACES the base default — never adds to it.
+    const engine = {
+      ...doc.session,
+      world: {
+        occurrences: {
+          key: standing("spell-aid"),
+          delta: standing("spell-aid-delta", {
+            fact: { amount: 15, key: "spell-aid", kind: "max-hp-delta" },
+          }),
+        },
+      },
+    };
+    expect(effectiveMaxHp(doc.character, engine)).toBe(base + 15);
+  });
+
+  it("merges world zero-hp floors into the aggregate deduped by key", () => {
+    const doc = makeCharacterDoc({ classId: "cleric", level: 7 });
+    doc.character.spells = [{ srdId: "death-ward", prepared: true }];
+
+    // The engine cast lands BOTH the active-key and the floor fact on self:
+    // the lit key already yields the derived floor row, so the world floor
+    // collapses onto it — exactly one floor, keyed by the buff.
+    const engine = {
+      ...doc.session,
+      world: {
+        occurrences: {
+          key: standing("spell-death-ward"),
+          floor: standing("spell-death-ward-floor", {
+            fact: { key: "spell-death-ward", kind: "zero-hp-floor" },
+          }),
+        },
+      },
+    };
+    const both = aggregateCharacterGrants(doc.character, engine);
+    expect(
+      both.zeroHpFloors.filter((entry) => entry.activeKey === "spell-death-ward")
+    ).toHaveLength(1);
+
+    // A floor fact whose key lights no derived row still reaches the manual
+    // damage path through the world merge.
+    const factOnly = {
+      ...doc.session,
+      world: {
+        occurrences: {
+          floor: standing("pack-ward-floor", {
+            fact: { key: "pack-ward", kind: "zero-hp-floor" },
+          }),
+        },
+      },
+    };
+    const merged = aggregateCharacterGrants(doc.character, factOnly);
+    expect(merged.zeroHpFloors).toContainEqual({
+      sourceId: "world-standing:pack-ward",
+      activeKey: "pack-ward",
+      hitPoints: 1,
+    });
   });
 
   it("unions chips and standings into one active-key set", () => {

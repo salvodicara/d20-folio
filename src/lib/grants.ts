@@ -2245,7 +2245,25 @@ export function evaluateGrants(
   sources: ReadonlyArray<GrantSource>,
   activeKeys: ReadonlySet<string> = new Set(),
   bundleChoices: ReadonlyMap<string, string> = new Map(),
-  context: { conditions?: ReadonlySet<string>; level?: number } = {}
+  context: {
+    conditions?: ReadonlySet<string>;
+    level?: number;
+    /**
+     * Exact resolved `max-hp-delta` amounts from the persisted engine world's
+     * live standings, keyed by the owning buff's active key
+     * (`worldStandingMaxHpDeltas`). When a while-active `hp-flat` grant's key
+     * is here, the WORLD amount is authoritative — it carries the cast level
+     * a key-only projection cannot — replacing the base-level default.
+     */
+    worldMaxHpDeltas?: ReadonlyMap<string, number>;
+    /**
+     * Live `zero-hp-floor` standings from the persisted engine world, keyed
+     * by the owning buff's active key (`worldStandingZeroHpFloors`). Merged
+     * into `zeroHpFloors` deduped by key, so a world floor whose key yields
+     * no derived `zero-hp-floor` row still reaches the manual damage path.
+     */
+    worldZeroHpFloors?: ReadonlyArray<{ key: string; hitPoints: number }>;
+  } = {}
 ): AggregatedGrants {
   // Senses
   let darkvisionFt = 0;
@@ -2639,15 +2657,22 @@ export function evaluateGrants(
         hpPerLevel += g.amount;
         break;
       case "hp-flat": {
-        const amount = g.castLevelScaling
-          ? g.amount +
-            Math.max(
-              0,
-              (runtime?.castLevel ?? g.castLevelScaling.baseLevel) -
-                g.castLevelScaling.baseLevel
-            ) *
-              g.castLevelScaling.perLevel
-          : g.amount;
+        // The engine world's `max-hp-delta` standing carries the EXACT resolved
+        // amount (cast level included), so it is authoritative for its key;
+        // legacy activations fall back to the runtime cast-level arithmetic.
+        const worldExact =
+          activeKey !== undefined ? context.worldMaxHpDeltas?.get(activeKey) : undefined;
+        const amount =
+          worldExact ??
+          (g.castLevelScaling
+            ? g.amount +
+              Math.max(
+                0,
+                (runtime?.castLevel ?? g.castLevelScaling.baseLevel) -
+                  g.castLevelScaling.baseLevel
+              ) *
+                g.castLevelScaling.perLevel
+            : g.amount);
         hpFlat += amount;
         // Attribute at the source of truth: the breakdown tip MAPS these instead
         // of re-walking sources, so it inherits the exact while-active descent
@@ -3824,6 +3849,19 @@ export function evaluateGrants(
         : undefined;
       applyGrant(g, src.id, gref, src.ref, undefined, src.runtime, src.item);
     }
+  }
+
+  // Live engine-world `zero-hp-floor` standings merge in deduped by active
+  // key: a world floor whose buff also contributed a derived `zero-hp-floor`
+  // row (the SRD shape) collapses onto that row; a floor with no derived twin
+  // still reaches the manual damage path.
+  for (const floor of context.worldZeroHpFloors ?? []) {
+    if (zeroHpFloors.some((entry) => entry.activeKey === floor.key)) continue;
+    zeroHpFloors.push({
+      sourceId: `world-standing:${floor.key}`,
+      activeKey: floor.key,
+      hitPoints: floor.hitPoints,
+    });
   }
 
   return {

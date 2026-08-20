@@ -221,9 +221,26 @@ export const STANDING_FACT_SCHEMA = discriminatedUnionSchema("kind", {
     kind: literalSchema("damage-defense"),
     rule: DAMAGE_DEFENSE_RULE,
   }),
+  /** While live, damage the holder takes is mirrored onto `to` (Warding Bond's
+   *  transfer half). The kernel RECORDS the trigger — cross-entity mirroring at
+   *  damage time stays table-applied, so this fact carries the payer identity
+   *  for the surfaces that narrate it, never an auto-applied debit. */
+  "damage-transfer": objectSchema({
+    key: ID_SCHEMA,
+    kind: literalSchema("damage-transfer"),
+    to: ENTITY_REF,
+  }),
   "grant-group": objectSchema({
     groupId: ID_SCHEMA,
     kind: literalSchema("grant-group"),
+  }),
+  /** The holder's hit-point maximum is raised by the RESOLVED `amount` while
+   *  live (Aid). `key` is the owning buff's active key, the identity the sheet
+   *  aggregate dedupes against its derived `hp-flat` row. */
+  "max-hp-delta": objectSchema({
+    amount: POSITIVE_INTEGER_SCHEMA,
+    key: ID_SCHEMA,
+    kind: literalSchema("max-hp-delta"),
   }),
   "program-fact": objectSchema({
     factId: ID_SCHEMA,
@@ -234,6 +251,14 @@ export const STANDING_FACT_SCHEMA = discriminatedUnionSchema("kind", {
     kind: literalSchema("target-mark"),
     markId: ID_SCHEMA,
     marked: ENTITY_REF,
+  }),
+  /** The holder's FIRST drop to 0 HP becomes 1 instead (Death Ward — the
+   *  kernel's `remain-at-one` policy). Single-use: the damage compiler that
+   *  selects the policy also ends the fact's source. `key` is the owning
+   *  buff's active key for sheet-aggregate dedupe. */
+  "zero-hp-floor": objectSchema({
+    key: ID_SCHEMA,
+    kind: literalSchema("zero-hp-floor"),
   }),
 });
 
