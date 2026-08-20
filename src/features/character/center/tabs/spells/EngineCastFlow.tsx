@@ -11,6 +11,7 @@
 import { useMemo, useState } from "react";
 
 import { MechanicsCastModal } from "@/components/sheet/MechanicsCastModal";
+import { spellIndex } from "@/data/spells";
 import { turnEconomyKey } from "@/features/character/center/combat-hydration";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { useCombatStore } from "@/stores/combatStore";
@@ -161,6 +162,13 @@ export function EngineCastFlow({
       ),
     [slots]
   );
+  // The pact pool, when the character has one with casts left — the modal
+  // offers it beside the standard levels (the kernel's `spell-slot` selector
+  // admits both pools) with its level shown, and enforces the level floor.
+  const pactSlot = useMemo(() => {
+    const pact = slots.find((slot) => slot.pactMagic && slot.remaining > 0);
+    return pact ? { level: pact.level, remaining: pact.remaining } : undefined;
+  }, [slots]);
 
   if (!doc || uid === null) return null;
   return (
@@ -169,9 +177,16 @@ export function EngineCastFlow({
       material={characterMaterialRef(doc, uid)}
       onArmorClass={setTargetArmorClass}
       onClose={onClose}
+      {...(pactSlot ? { pactSlot } : {})}
       requiresArmorClass={hasAttack && targetArmorClass === null}
       slotRemaining={slotRemaining}
       spellName={spellName}
+      // An enemy-affinity target (Hex's mark) is a creature the solo world
+      // does not model: the entity step's self answer is the table-abstract
+      // stand-in, so the button must say "the creature at the table".
+      targetFlavor={
+        spellIndex.get(spellId)?.targeting?.affinity === "enemy" ? "table" : "self"
+      }
     />
   );
 }

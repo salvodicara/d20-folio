@@ -93,4 +93,36 @@ describe("engineSpellCastRequest", () => {
     if (spellId === undefined) return;
     expect(requestFor(concentrating, spellId)).toBeNull();
   });
+
+  it("approves a warlock pact cast of Hex (pact payment + caster-owned mark)", () => {
+    const warlock: CharacterDoc = structuredClone(MOCK_CHARACTER);
+    warlock.character.classes = [{ classId: "warlock", level: 3 }];
+    warlock.character.spells = [{ srdId: "hex", prepared: true }];
+    warlock.character.spellSlots = [{ level: 2, total: 2, pactMagic: true }];
+    warlock.session.spellSlots = {};
+    warlock.session.concentration = "";
+    const request = requestFor(warlock, "hex");
+    expect(request).not.toBeNull();
+    expect(request).toMatchObject({
+      concentrationSwap: null,
+      economy: { slot: "bonus", spellLevel: 1 },
+      hasAttack: false,
+      spellId: "hex",
+    });
+  });
+
+  it("keeps an excludeSelf standing (Warding Bond) on the legacy path", () => {
+    const cleric: CharacterDoc = structuredClone(MOCK_CHARACTER);
+    cleric.character.classes = [{ classId: "cleric", level: 5 }];
+    cleric.character.spells = [{ srdId: "warding-bond", prepared: true }];
+    cleric.character.spellSlots = [
+      { level: 1, total: 4 },
+      { level: 2, total: 3 },
+    ];
+    cleric.session.spellSlots = {};
+    // The buff's mechanics belong to a SELECTED creature that is never the
+    // caster: the solo world models no such creature, so legacy owns the
+    // target prompt and the cast.
+    expect(requestFor(cleric, "warding-bond")).toBeNull();
+  });
 });

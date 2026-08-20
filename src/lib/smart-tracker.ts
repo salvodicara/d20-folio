@@ -98,6 +98,7 @@ import {
   bloodiedFromHp,
   aggregateCharacterGrants,
 } from "@/lib/aggregate-character";
+import { sessionActiveKeys } from "@/lib/world-standing-grants";
 import {
   classifySpellCastingTime,
   slotUsageKey,
@@ -2484,7 +2485,7 @@ export function resolveCunningStrikeOptions(character: CharacterDoc): {
   const { character: charData } = character;
   const agg = evaluateGrants(
     resolveGrantSourcesForFeatures(charData.features),
-    new Set(character.session.activeFeatures ?? []),
+    sessionActiveKeys(character.session),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   );
   if (agg.cunningStrikeOptions.length === 0) {
@@ -2645,7 +2646,7 @@ export function resolveFreeCastFromList(character: CharacterDoc): FreeCastFromLi
   const grantSources = resolveAllGrantSources(charData, session.itemResources);
   const agg = evaluateGrants(
     grantSources,
-    new Set(session.activeFeatures ?? []),
+    sessionActiveKeys(session),
     new Map(Object.entries(session.grantBundleChoices ?? {}))
   );
   if (agg.freeCastFromList.length === 0) return [];
@@ -3213,7 +3214,7 @@ function forEachFeatFreeCast(
   ];
   const freeCasts = evaluateGrants(
     sources,
-    new Set(character.session.activeFeatures ?? []),
+    sessionActiveKeys(character.session),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   ).freeCasts;
   for (const entry of freeCasts) {
@@ -3320,7 +3321,7 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
   const altRecoveryByTarget = new Map<string, { amount: number; fromTracker: string }>();
   for (const entry of evaluateGrants(
     resolveGrantSourcesForFeatures(charData.features),
-    new Set(session.activeFeatures ?? []),
+    sessionActiveKeys(session),
     new Map(Object.entries(session.grantBundleChoices ?? {}))
   ).trackerAltRecoveries) {
     altRecoveryByTarget.set(entry.targetTracker, {
@@ -5252,7 +5253,7 @@ function resolveFeatureActions(
         Partial<Pick<ActionData, "label" | "description">>;
       if (
         action.maintainsActiveKey &&
-        !(session.activeFeatures ?? []).includes(action.maintainsActiveKey)
+        !sessionActiveKeys(session).has(action.maintainsActiveKey)
       )
         continue;
       const id = `${srdFeature.id}-${action.id ?? action.type}`;
@@ -5686,7 +5687,7 @@ function resolveSpellActions(
   // assembler (features + equipped/attuned items + invocations + background +
   // standing spell buffs), so item-borne casting riders (Rod of the Pact Keeper)
   // reach the combat cards too — previously features+invocations only.
-  const activeFeatureKeys = new Set(session.activeFeatures ?? []);
+  const activeFeatureKeys = sessionActiveKeys(session);
   const spellGrantAggregate = evaluateGrants(
     resolveAllGrantSources(charData, session.itemResources),
     activeFeatureKeys,
@@ -6558,7 +6559,7 @@ function resolveWeaponActions(
       // concentration drop). Cast-time damage stays on the spell's own card.
       ...resolveGrantSourcesForSpells(charData.spells),
     ],
-    new Set(character.session.activeFeatures ?? []),
+    sessionActiveKeys(character.session),
     // Bundle-gated weapon riders (Hunter Colossus Slayer) only apply once the
     // player has picked that option, so the chosen bundle option must flow into
     // the attack-row aggregate the same way `while-active` toggles do.
@@ -7375,7 +7376,7 @@ function resolveTemporaryHpActions(
       ...resolveGrantSourcesForRace(charData.race),
       ...resolveGrantSourcesForInvocations(allEntryPicks(charData, "invocationChoices")),
     ],
-    new Set(session.activeFeatures ?? []),
+    sessionActiveKeys(session),
     new Map(Object.entries(session.grantBundleChoices ?? {}))
   ).tempHpGrants;
   // A race trait's grant `sourceId` is the `race:<id>:<trait.id>` session id (NOT a
@@ -7601,7 +7602,7 @@ export function gainsHeroicInspirationOnLongRest(character: CharacterDoc): boole
   // consumers (`resolveActiveMaintainedEffects`) already use.
   return evaluateGrants(
     resolveAllGrantSources(character.character, character.session.itemResources),
-    new Set(character.session.activeFeatures ?? []),
+    sessionActiveKeys(character.session),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   ).heroicInspirationOnLongRest;
 }
@@ -7624,7 +7625,7 @@ export function gainsHeroicInspirationOnLongRest(character: CharacterDoc): boole
 function combatAbilityScores(character: CharacterDoc): Record<AbilityCode, number> {
   const agg = evaluateGrants(
     resolveAllGrantSources(character.character, character.session.itemResources),
-    new Set(character.session.activeFeatures ?? []),
+    sessionActiveKeys(character.session),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   );
   return effectiveAbilityScores(
@@ -7642,7 +7643,7 @@ function combatAbilityScores(character: CharacterDoc): Record<AbilityCode, numbe
 function aggregateForCharacter(character: CharacterDoc) {
   return evaluateGrants(
     resolveGrantSourcesForFeatures(character.character.features),
-    new Set(character.session.activeFeatures ?? []),
+    sessionActiveKeys(character.session),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   );
 }
@@ -8514,7 +8515,7 @@ export function resolveAtZeroHpInterrupts(character: CharacterDoc): AtZeroHpInte
   // (race + feats + features + …), mirroring `gainsHeroicInspirationOnLongRest`.
   const interrupts = evaluateGrants(
     resolveAllGrantSources(character.character, character.session.itemResources),
-    new Set(character.session.activeFeatures ?? []),
+    sessionActiveKeys(character.session),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   ).atZeroHpInterrupts;
   if (interrupts.length === 0) return [];

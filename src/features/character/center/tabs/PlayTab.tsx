@@ -461,6 +461,18 @@ export function PlayTab() {
   const engineDispatchFor = useCallback(
     (action: ResolvedAction): EngineActionDispatch | null => {
       if (sheetCombat || !character) return null;
+      // The two documented model boundaries (kept legacy by DESIGN, not gap):
+      // - `maintainsActiveKey` — a maintainer row re-runs an already
+      //   established recurring state without paying again. A new engine cast
+      //   would double-establish it; the engine twin is the armed root-pulse
+      //   phase on the world's own occurrence (`useMechanicsPulse`), which
+      //   only exists for an engine-established root. A legacy-established
+      //   state keeps its legacy maintainer.
+      // - `useEffects` — a use-apply's deterministic side effect (Adrenaline
+      //   Rush's PB temp HP) is a GRANT that lives beside the action, not on
+      //   the `SrdActionDef` the transcriber reads, so the transcription
+      //   cannot see it yet; the legacy commit loop owns the apply + undo
+      //   until the transcriber models sibling-grant use-applies.
       if (
         action.type === "reaction" ||
         action.activatesKey !== undefined ||

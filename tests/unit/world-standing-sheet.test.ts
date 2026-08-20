@@ -35,7 +35,12 @@ import {
   planSoloTurnBoundary,
   type CharacterCastCapability,
 } from "@/lib/mechanics-world-store";
-import { worldStandingActiveKeys } from "@/lib/world-standing-grants";
+import {
+  sessionActiveKeys,
+  worldStandingActiveKeys,
+  worldStandingTargetMarks,
+} from "@/lib/world-standing-grants";
+import { resolveActions } from "@/lib/smart-tracker";
 import type { CharacterDoc } from "@/types/character";
 import type { CharacterMaterialState } from "@/types/material-state";
 import type { MechanicsAnswer } from "@/types/mechanics-program";
@@ -283,5 +288,107 @@ describe("engine Shield standing on the sheet (the whole pipeline)", () => {
       "spell-shield"
     );
     expect(effectiveAC(doc4.character, doc4.session)).toBe(baseAc);
+  });
+});
+
+describe("hex rider parity (legacy chip vs engine standing)", () => {
+  const hexWarlock = (session: Partial<CharacterDoc["session"]> = {}): CharacterDoc => {
+    const doc = makeCharacterDoc({ classId: "warlock", level: 3 });
+    doc.character.spells = [
+      { srdId: "hex", prepared: true },
+      { srdId: "eldritch-blast", prepared: true },
+    ];
+    doc.character.spellSlots = [{ level: 2, total: 2, pactMagic: true }];
+    doc.character.weapons = [{ srdId: "dagger", quantity: 1 }];
+    doc.session = { ...doc.session, spellSlots: {}, ...session };
+    return doc;
+  };
+
+  /** The "vs cursed target" rider chips of one action row. */
+  const cursedRiders = (doc: CharacterDoc, rowMatch: (row: { id: string }) => boolean) =>
+    resolveActions(doc)
+      .filter(rowMatch)
+      .flatMap((row) =>
+        (row.summary.extraDamage ?? []).filter(
+          (entry) => entry.vsMarkedTarget === "cursed"
+        )
+      );
+
+  it("weapon and spell-attack rows offer the same +1d6 chip either way", () => {
+    const legacy = hexWarlock({ activeFeatures: ["spell-hex"] });
+    const engine = hexWarlock({
+      activeFeatures: [],
+      world: { occurrences: { live: standing("spell-hex") } },
+    });
+    const inert = hexWarlock();
+
+    for (const rowMatch of [
+      (row: { id: string }) => row.id.startsWith("weapon-"),
+      (row: { id: string }) => row.id === "spell-eldritch-blast",
+    ]) {
+      const legacyRiders = cursedRiders(legacy, rowMatch);
+      const engineRiders = cursedRiders(engine, rowMatch);
+      // Hex inactive: no chip. Active either way: the IDENTICAL chip.
+      expect(cursedRiders(inert, rowMatch)).toHaveLength(0);
+      expect(legacyRiders.length).toBeGreaterThan(0);
+      expect(engineRiders).toEqual(legacyRiders);
+      expect(engineRiders[0]).toMatchObject({
+        damageType: "necrotic",
+        dice: "1d6",
+        vsMarkedTarget: "cursed",
+      });
+    }
+  });
+
+  it("projects the live mark and drops it when the standing ends", () => {
+    const live = {
+      occurrences: {
+        key: standing("spell-hex"),
+        mark: standing("spell-hex-mark", {
+          fact: {
+            kind: "target-mark",
+            markId: "cursed",
+            marked: {
+              entityId: "self",
+              material: { characterId: "test-char", kind: "character-play", uid: UID },
+            },
+          },
+        }),
+      },
+    };
+    expect([...worldStandingTargetMarks(live)]).toEqual(["cursed"]);
+    const ended = {
+      occurrences: {
+        mark: standing("spell-hex-mark", {
+          ending: { causes: [{ kind: "requested" }] },
+          fact: {
+            kind: "target-mark",
+            markId: "cursed",
+            marked: {
+              entityId: "self",
+              material: { characterId: "test-char", kind: "character-play", uid: UID },
+            },
+          },
+        }),
+      },
+    };
+    expect(worldStandingTargetMarks(ended).size).toBe(0);
+    expect(worldStandingTargetMarks(undefined).size).toBe(0);
+  });
+
+  it("unions chips and standings into one active-key set", () => {
+    expect([
+      ...sessionActiveKeys({
+        activeFeatures: ["rage"],
+        world: { occurrences: { live: standing("spell-hex") } },
+      }),
+    ]).toEqual(["rage", "spell-hex"]);
+    // Dedupe by identity: both ways active is still ONE key.
+    expect(
+      sessionActiveKeys({
+        activeFeatures: ["spell-hex"],
+        world: { occurrences: { live: standing("spell-hex") } },
+      }).size
+    ).toBe(1);
   });
 });

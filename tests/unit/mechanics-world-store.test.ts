@@ -23,6 +23,11 @@ import {
 } from "@/lib/mechanics-world-store";
 
 import { runMechanicsCausalAction } from "@/lib/mechanics-coordinator";
+import { concentrationValue } from "@/lib/concentration";
+import {
+  worldStandingActiveKeys,
+  worldStandingTargetMarks,
+} from "@/lib/world-standing-grants";
 import { mechanicsAuthorityDefinitionFingerprint } from "@/lib/mechanics-authority";
 import {
   mechanicsDefinitionFactAddress,
@@ -2347,5 +2352,90 @@ describe("dispatch context enrichment e2e", () => {
     expect(committed.world.vitals.hitPoints.current).toBe(
       Math.min(60, MOCK_CHARACTER.session.hp.current + 3)
     );
+  });
+});
+
+describe("warlock pact-slot e2e", () => {
+  const warlockDoc = (): CharacterDoc => {
+    const doc = structuredClone(MOCK_CHARACTER);
+    doc.character.classes = [{ classId: "warlock", level: 3 }];
+    doc.character.spellSlots = [{ level: 2, total: 2, pactMagic: true }];
+    doc.session.spellSlots = { "pact-2": { used: 1 } };
+    doc.session.concentration = "";
+    return doc;
+  };
+
+  it("hex pays the pact slot: debit mirrored both sides, key + mark stand, undo restores", () => {
+    const doc = warlockDoc();
+    const world = characterWorldState(doc, "test-uid", 24);
+    if (!world) throw new Error("world fixture");
+    expect(world.resources.pactSpellSlot?.current).toBe(1);
+    const capability = characterSpellCapability(doc, "test-uid", "hex", {
+      attackBonus: 5,
+      castingModifier: 3,
+      characterLevel: 3,
+      maxHp: 24,
+      saveDc: 13,
+    });
+    if (!capability) throw new Error("hex capability");
+    const material = characterMaterialRef(doc, "test-uid");
+    const self = characterSelfRef(doc, "test-uid");
+    const outcome = driveCapability({
+      actionId: "cast-hex",
+      answerFor: (requirement) => {
+        if (requirement.kind === "resource") {
+          // The pact pool answers the transcriber's pool-"either" selector.
+          return {
+            inputId: requirement.inputId,
+            kind: "resource",
+            resource: { character: material, kind: "pact-spell-slot" },
+          };
+        }
+        if (requirement.kind === "entities") {
+          // Solo play: the marked creature is table-abstract; the caster's
+          // own entity is the world's physical stand-in.
+          return { inputId: requirement.inputId, kind: "entities", targets: [self] };
+        }
+        throw new Error(`unexpected requirement: ${requirement.kind}`);
+      },
+      capability: {
+        ...capability,
+        facts: [
+          ...capability.facts,
+          ...characterSlotDefinitionFacts(doc, "test-uid", world),
+        ],
+      },
+      doc,
+      occurrenceId: "cast-hex-1",
+      uid: "test-uid",
+      world,
+    });
+    const committed = commitDriven(doc, "test-uid", world, outcome);
+
+    // World side: the pact cell debits exactly one cast.
+    expect(committed.world.resources.pactSpellSlot?.current).toBe(0);
+    // Legacy side: the SAME debit lands on the `pact-2` usage counter.
+    expect(committed.session.spellSlots["pact-2"]?.used).toBe(2);
+    // The while-active buff stands as the world's `active-key` occurrence and
+    // the mark stands beside it with the same source-end lifetime.
+    expect([...worldStandingActiveKeys(committed.session.world)]).toContain("spell-hex");
+    expect([...worldStandingTargetMarks(committed.session.world)]).toContain("cursed");
+    // Concentration mirrors onto the legacy session field.
+    expect(committed.session.concentration).toBe(concentrationValue("hex"));
+
+    // Undo restores BOTH sides exactly.
+    if (!outcome.action) throw new Error("no action");
+    const undone = undoCharacterAction(
+      { ...doc, session: committed.session },
+      "test-uid",
+      committed.world,
+      outcome.action.id
+    );
+    expect(undone).not.toBeNull();
+    if (!undone) return;
+    expect(undone.world.resources.pactSpellSlot?.current).toBe(1);
+    expect(undone.session.spellSlots["pact-2"]?.used).toBe(1);
+    expect(worldStandingActiveKeys(undone.session.world).has("spell-hex")).toBe(false);
+    expect(undone.session.concentration).toBe("");
   });
 });

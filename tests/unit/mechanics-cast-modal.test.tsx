@@ -76,6 +76,85 @@ describe("MechanicsCastModal", () => {
     });
   });
 
+  it("offers the pact slot beside the standard levels and answers its exact ref", () => {
+    const answer = vi.fn();
+    render(
+      <MechanicsCastModal
+        cast={castState(
+          {
+            kind: "collecting",
+            requirement: {
+              activation: "required",
+              activeWhen: null,
+              amount: 1,
+              inputId: "slot",
+              kind: "resource",
+              phaseId: "resolve",
+              term: {
+                amount: { kind: "fixed", value: 1 },
+                selector: {
+                  kind: "spell-slot",
+                  level: { kind: "minimum", value: 1 },
+                  owner: "caster",
+                  pool: "either",
+                },
+              },
+            },
+          },
+          answer
+        )}
+        material={MATERIAL}
+        onClose={vi.fn()}
+        pactSlot={{ level: 2, remaining: 1 }}
+        slotRemaining={{ 1: 2 }}
+        spellName="Hex"
+      />
+    );
+    expect(screen.getByText(/Level 1 slot/)).toBeTruthy();
+    fireEvent.click(screen.getByText(/Pact slot, level 2/));
+    expect(answer).toHaveBeenCalledWith({
+      inputId: "slot",
+      kind: "resource",
+      resource: { character: MATERIAL, kind: "pact-spell-slot" },
+    });
+  });
+
+  it("enforces the selector's level floor on both pools", () => {
+    render(
+      <MechanicsCastModal
+        cast={castState({
+          kind: "collecting",
+          requirement: {
+            activation: "required",
+            activeWhen: null,
+            amount: 1,
+            inputId: "slot",
+            kind: "resource",
+            phaseId: "resolve",
+            term: {
+              amount: { kind: "fixed", value: 1 },
+              selector: {
+                kind: "spell-slot",
+                level: { kind: "minimum", value: 2 },
+                owner: "caster",
+                pool: "either",
+              },
+            },
+          },
+        })}
+        material={MATERIAL}
+        onClose={vi.fn()}
+        pactSlot={{ level: 1, remaining: 2 }}
+        slotRemaining={{ 1: 2, 2: 1 }}
+        spellName="Hold Person"
+      />
+    );
+    // A level-1 slot (standard or pact) cannot pay a level-2 spell.
+    expect(screen.queryByText(/Level 1 slot/)).toBeNull();
+    expect(screen.queryByText(/Pact slot/)).toBeNull();
+    expect(screen.getByText(/Level 2 slot/)).toBeTruthy();
+  });
+
   it("answers a pool payment with one spend confirm", () => {
     const answer = vi.fn();
     render(

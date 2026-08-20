@@ -1101,29 +1101,49 @@ export function characterConjuredItemCapability(
   return { authority, facts, transcription: { clauses: [], entityId: itemId, program } };
 }
 
-/** One resource-definition guard for every standard slot level the world holds. */
+/** One resource-definition guard for every spell-slot cell the world holds:
+ *  each standard level, plus the pact pool when the character has one — so a
+ *  pact-slot payment carries the same caller-guarded definition evidence a
+ *  standard-slot payment does. */
 export function characterSlotDefinitionFacts(
   doc: Readonly<CharacterDoc>,
   uid: string,
   world: Readonly<CharacterMaterialState>
 ): readonly Readonly<ActionFactGuard>[] {
   const self = characterSelfRef(doc, uid);
-  const spec = (level: string) => ({
+  const spec = (id: string) => ({
     bindings: {},
     spec: {
       capacity: { kind: "unbounded" as const },
-      id: `standard-spell-slot-${level}`,
+      id,
       initial: { kind: "empty" as const },
       kind: "count" as const,
       recoveries: [],
     },
   });
-  return Object.keys(world.resources.standardSpellSlots).map((level) => ({
-    address: ["resource-definition", "resources", "standardSpellSlots", level],
-    expected: { present: true, value: structuredClone(spec(level)) },
-    lifecycle: "commit",
-    owner: self,
-  }));
+  return [
+    ...Object.keys(world.resources.standardSpellSlots).map(
+      (level): ActionFactGuard => ({
+        address: ["resource-definition", "resources", "standardSpellSlots", level],
+        expected: {
+          present: true,
+          value: structuredClone(spec(`standard-spell-slot-${level}`)),
+        },
+        lifecycle: "commit",
+        owner: self,
+      })
+    ),
+    ...(world.resources.pactSpellSlot !== null
+      ? [
+          {
+            address: ["resource-definition", "resources", "pactSpellSlot"],
+            expected: { present: true, value: structuredClone(spec("pact-spell-slot")) },
+            lifecycle: "commit",
+            owner: self,
+          } satisfies ActionFactGuard,
+        ]
+      : []),
+  ];
 }
 
 export interface CharacterActionCommit {
@@ -1336,6 +1356,27 @@ function mirroredCommit(
     const key = slotUsageKey({ level: Number(level), pactMagic: false });
     const used = doc.session.spellSlots[key]?.used ?? 0;
     usedSlots[key] = { used: Math.max(0, used + (before.current - cell.current)) };
+  }
+  // Pact mirror: a pact-cell debit/restore moves the legacy `pact-<level>`
+  // usage counter exactly. The cell itself is level-free (a bare count); the
+  // LEVEL is the same class-table derivation every legacy surface keys by.
+  const pactBefore = world.resources.pactSpellSlot;
+  const pactAfter = next.resources.pactSpellSlot;
+  if (
+    pactBefore !== null &&
+    pactAfter !== null &&
+    pactBefore.current !== pactAfter.current
+  ) {
+    const pactLevel = deriveSpellSlots(doc.character.classes).find(
+      (slot) => slot.pactMagic
+    )?.level;
+    if (pactLevel !== undefined) {
+      const key = slotUsageKey({ level: pactLevel, pactMagic: true });
+      const used = doc.session.spellSlots[key]?.used ?? 0;
+      usedSlots[key] = {
+        used: Math.max(0, used + (pactBefore.current - pactAfter.current)),
+      };
+    }
   }
   const trackers: SessionState["trackers"] = { ...doc.session.trackers };
   for (const [poolId, cell] of Object.entries(next.resources.pools)) {

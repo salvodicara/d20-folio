@@ -5,10 +5,15 @@
  * can never split the dispatch truth.
  *
  * Conservative by design — a cast whose legacy commit carries semantics the
- * engine mirror does not own yet stays legacy: item-pool/free-cast/pact
- * payments, metamagic-capable casters, target-bound standing effects,
- * use-applies, a condition-blocked economy slot, a spent Reaction, and the
- * once-per-turn leveled-slot rule. Casting a concentration spell while one is
+ * engine mirror does not own yet stays legacy: item-pool/free-cast payments,
+ * metamagic-capable casters, maintainer rows, use-applies, a
+ * condition-blocked economy slot, a spent Reaction, and the once-per-turn
+ * leveled-slot rule. Pact-slot casts dispatch engine (the kernel's
+ * `spell-slot` selector admits the pact pool and the commit mirrors the
+ * legacy `pact-<level>` counter), and so do standing-effect casts whose
+ * active key lands on the caster (Hex's mark included — the marked creature
+ * is table-abstract in solo play, exactly like the legacy collapse).
+ * Casting a concentration spell while one is
  * HELD dispatches engine ONLY when the held spell is engine-owned (the world
  * holds its occurrence and agrees with the session field): the dispatcher then
  * runs the shared swap confirm and, on yes, ends the held spell through the
@@ -91,22 +96,38 @@ export function engineSpellCastRequest(
       ? action.type
       : null;
   const reactionSpent = action.type === "reaction" && combatState.reactionUsed;
-  // Every cast option must be an ordinary (non-pact) slot — free-cast, pool
-  // and pact sources still resolve through the legacy option flow.
+  // Every cast option must be a real spell slot (standard OR pact — the
+  // kernel's `spell-slot` selector admits both pools and the commit mirrors
+  // each pool's own legacy counter); free-cast and item-pool sources still
+  // resolve through the legacy option flow, which owns those payments.
   const plainOptionsOnly =
     spell.level === 0 ||
     resolveSpellCastOptions(character, spell.id, spell.level, true, locale, {
       mastery: input.badges.mastery,
       signature: input.badges.signature,
-    }).every(
-      (option) =>
-        (option.kind === undefined || option.kind === "slot") && option.pactMagic !== true
-    );
+    }).every((option) => option.kind === undefined || option.kind === "slot");
   const plainCast =
     action.castPoolSourceId === undefined &&
     !reactionSpent &&
+    // A MAINTAINER row re-runs an already-established recurring effect
+    // without paying again (Call Lightning's re-fire). Dispatching it as a
+    // NEW engine cast would double-cast; the engine twin is the armed
+    // root-pulse phase on the world's own occurrence (EnginePulseStrip /
+    // `useMechanicsPulse`), which only exists when the CAST itself went
+    // through the engine. A legacy-established effect keeps its legacy
+    // maintainer — by construction, never by gap.
     action.maintainsActiveKey === undefined &&
-    action.standingEffect === undefined &&
+    // A standing whose mechanics belong to a SELECTED creature that is not
+    // the caster (`excludeSelf` — Warding Bond) stays legacy: the solo world
+    // models no other creature to carry the grant, and the legacy path owns
+    // the target prompt. A caster-owned standing (Hex's active key + mark,
+    // recipient-selected buffs the solo collapse lights on the caster)
+    // dispatches engine — the transcription is the final arbiter.
+    action.standingEffect?.excludeSelf !== true &&
+    // Defensive: SPELL rows never carry use-applies today (those are
+    // race-trait/invocation/feature rows); if one ever does, its
+    // deterministic side effect is applied by the legacy commit loop the
+    // engine does not mirror, so it must stay legacy until transcribed.
     (action.useEffects?.length ?? 0) === 0 &&
     !(gatedSlot !== null && blockedSlots.has(gatedSlot)) &&
     plainOptionsOnly &&

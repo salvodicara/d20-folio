@@ -49,6 +49,21 @@ export interface MechanicsCastModalProps {
    * does not know it yet, the modal asks the table for it first.
    */
   readonly onArmorClass?: (value: number) => void;
+  /**
+   * The caster's Pact Magic pool (level + remaining), when one has casts
+   * left. Offered beside the standard levels for a `spell-slot` payment whose
+   * selector admits the pact pool; the modal enforces the selector's level
+   * floor (a pact slot below the spell's level cannot pay for it).
+   */
+  readonly pactSlot?: Readonly<{ level: number; remaining: number }>;
+  /**
+   * How the entity step reads: "self" offers the caster ("Yourself");
+   * "table" labels the same physical answer as the creature chosen at the
+   * table — an enemy-affinity mark (Hex's curse) binds a creature the solo
+   * world does not model, so the caster's own entity is the abstract
+   * stand-in and the label must say so.
+   */
+  readonly targetFlavor?: "self" | "table";
   readonly requiresArmorClass?: boolean;
   /** Remaining count per standard slot level, for the payment prompt. */
   readonly slotRemaining: Readonly<Record<number, number>>;
@@ -68,10 +83,12 @@ export function MechanicsCastModal({
   material,
   onClose,
   onArmorClass,
+  pactSlot,
   requiresArmorClass = false,
   slotRemaining,
   sourceItem,
   spellName,
+  targetFlavor = "self",
 }: MechanicsCastModalProps) {
   const { t, i18n } = useTranslation();
   const { language: locale } = useLocale();
@@ -161,35 +178,71 @@ export function MechanicsCastModal({
           )}
           {phase.kind === "collecting" &&
             phase.requirement.kind === "resource" &&
-            phase.requirement.term.selector.kind === "spell-slot" && (
-              <div>
-                <p>{t("mechanics.cast.slotPrompt")}</p>
-                <div role="group">
-                  {Object.entries(slotRemaining)
-                    .map(([level, remaining]) => [Number(level), remaining] as const)
-                    .filter(([, remaining]) => remaining > 0)
-                    .sort(([a], [b]) => a - b)
-                    .map(([level, remaining]) => (
+            phase.requirement.term.selector.kind === "spell-slot" &&
+            (() => {
+              // The selector is the kernel's own truth for which pools and
+              // levels may pay: standard levels at or above the floor, and
+              // the pact pool when its (single) level clears the same floor.
+              const selector = phase.requirement.term.selector;
+              const inputId = phase.requirement.inputId;
+              const admitsLevel = (level: number) =>
+                selector.level.kind === "minimum"
+                  ? level >= selector.level.value
+                  : level === selector.level.value;
+              const pactPayable =
+                selector.pool !== "standard" &&
+                pactSlot !== undefined &&
+                pactSlot.remaining > 0 &&
+                admitsLevel(pactSlot.level);
+              return (
+                <div>
+                  <p>{t("mechanics.cast.slotPrompt")}</p>
+                  <div role="group">
+                    {selector.pool !== "pact" &&
+                      Object.entries(slotRemaining)
+                        .map(([level, remaining]) => [Number(level), remaining] as const)
+                        .filter(
+                          ([level, remaining]) => remaining > 0 && admitsLevel(level)
+                        )
+                        .sort(([a], [b]) => a - b)
+                        .map(([level, remaining]) => (
+                          <Button
+                            key={level}
+                            onClick={() =>
+                              cast.answer({
+                                inputId,
+                                kind: "resource",
+                                resource: {
+                                  character: material,
+                                  kind: "standard-spell-slot",
+                                  level,
+                                },
+                              })
+                            }
+                          >
+                            {t("mechanics.cast.slotOption", { level, remaining })}
+                          </Button>
+                        ))}
+                    {pactPayable && (
                       <Button
-                        key={level}
                         onClick={() =>
                           cast.answer({
-                            inputId: phase.requirement.inputId,
+                            inputId,
                             kind: "resource",
-                            resource: {
-                              character: material,
-                              kind: "standard-spell-slot",
-                              level,
-                            },
+                            resource: { character: material, kind: "pact-spell-slot" },
                           })
                         }
                       >
-                        {t("mechanics.cast.slotOption", { level, remaining })}
+                        {t("mechanics.cast.slotOptionPact", {
+                          level: pactSlot.level,
+                          remaining: pactSlot.remaining,
+                        })}
                       </Button>
-                    ))}
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           {phase.kind === "collecting" &&
             phase.requirement.kind === "resource" &&
             phase.requirement.term.selector.kind === "pool" && (
@@ -266,7 +319,11 @@ export function MechanicsCastModal({
                   })
                 }
               >
-                {t("mechanics.cast.targetSelf")}
+                {t(
+                  targetFlavor === "table"
+                    ? "mechanics.cast.targetAbstract"
+                    : "mechanics.cast.targetSelf"
+                )}
               </Button>
               {phase.requirement.minimum === 0 && (
                 <Button

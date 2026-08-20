@@ -47,7 +47,7 @@ import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
 import type { CharacterDoc } from "@/types/character";
 import type { StoredConcentration } from "@/types/ids";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
-import { worldStandingActiveKeys } from "@/lib/world-standing-grants";
+import { sessionActiveKeys } from "@/lib/world-standing-grants";
 
 /**
  * Project the equipment that still exists as an active magic object. Catalogue
@@ -91,17 +91,14 @@ export type AggregationSession = Pick<
   >;
 
 /**
- * The ONE active-key set every `while-active` grant gates on: the legacy
- * `session.activeFeatures` chips UNIONED with the LIVE `active-key` standing
- * occurrences of the character's persisted engine world (the first sheet read
- * of the world — an engine-cast Shield's standing lights its +5 AC here with
- * no legacy activation row). The union dedupes by key identity, so a buff
- * active BOTH ways during the rollout still evaluates its grants exactly once.
+ * The ONE active-key set every `while-active` grant gates on: the shared
+ * legacy-chips-plus-world-standings union (`sessionActiveKeys`), so an
+ * engine-cast Shield's standing lights its +5 AC here with no legacy
+ * activation row, and a buff active BOTH ways during the rollout still
+ * evaluates its grants exactly once (key-identity dedupe).
  */
 function aggregationActiveKeys(session: AggregationSession): Set<string> {
-  const keys = new Set(session.activeFeatures ?? []);
-  for (const key of worldStandingActiveKeys(session.world)) keys.add(key);
-  return keys;
+  return sessionActiveKeys(session);
 }
 
 /**

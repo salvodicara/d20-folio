@@ -1682,13 +1682,24 @@ can never be resurrected by an unrelated later commit.
 **The first UI-read migration off the bridge — world standings.** Standing occurrences carry
 `active-key` facts in the exact key vocabulary the legacy `session.activeFeatures` chips use.
 `src/lib/world-standing-grants.ts` projects the LIVE self-targeted keys out of the raw persisted
-`session.world` (a fail-closed narrow walk — no full parse on the aggregation hot path), and
-`aggregateCharacterGrants` unions them with the legacy chips into the ONE active-key set the
-grants evaluator gates `while-active` grants on. An engine-cast buff (Shield's +5 AC, Blur's
-incoming-attack disadvantage) therefore reaches `effectiveAC` and every derived stat with NO
-legacy activation row — and a buff active both ways during the rollout dedupes by key identity
-(a set union cannot double-count). This is a READ migration, not a mirror: the world stays the
-sole owner of the standing's lifetime, and no session field is written for it.
+`session.world` (a fail-closed narrow walk — no full parse on the aggregation hot path), and the
+shared `sessionActiveKeys` union (legacy chips + world standings, key-identity deduped) is the ONE
+active-key set EVERY gating read consumes — `aggregateCharacterGrants` for the sheet-wide
+derivations AND `smart-tracker`'s action-row aggregations (weapon-row damage riders, spell-attack
+marked riders, free-cast lists, maintainer-row visibility, temp-HP grants, at-zero-HP
+interrupts). An engine-cast buff (Shield's +5 AC, Hex's "+1d6 vs cursed target" chip on weapon
+AND spell-attack rows) therefore reaches every derived stat and every combat card with NO legacy
+activation row, and a buff active both ways during the rollout evaluates once by construction.
+The legacy chip LIFECYCLE machinery (timers, rest/trigger expiry sweeps, maintenance prompts)
+deliberately keeps reading the bare `session.activeFeatures` ledger it mutates: engine standings
+own their lifetimes in the kernel, and a legacy expiry sweep must never try to end one. A
+target-scoped buff (Hex) lands as TWO standings with one shared lifetime — the active key plus a
+`target-mark` fact recording whom the caster marked; `worldStandingTargetMarks` projects the live
+mark identities for the surfaces that will one day model per-target identity (the party board),
+while solo attack/damage flows read the KEY, exactly like legacy (the marked creature is
+table-abstract by product design — the player applies the die on the right hit). This is a READ
+migration, not a mirror: the world stays the sole owner of the standing's lifetime, and no
+session field is written for it.
 
 The executable authority for a cast is closed at build level: `characterSpellCapability` seals the
 transcribed program (see `src/lib/mechanics-transcription.ts`) into a capability snapshot anchored
@@ -1835,9 +1846,26 @@ ships the two-action swap flow — collapsing it onto the one-action kernel path
 follow-up; a LEGACY-held concentration keeps the legacy swap flow, which owns that teardown.)
 The SPELL rows of the Play board dispatch through the SAME
 shared gate as the Spells tab (`engine-spell-gate.ts` → `engineSpellCastRequest` — one dispatch
-truth for both surfaces, Shield's reaction card included). Honest boundaries that stay legacy:
-TARGET-BOUND standings (a selected recipient or a Hex-style mark scope — the legacy
-target-binding flow still owns whom the buff rides), maintainers, and use-applies.
+truth for both surfaces, Shield's reaction card included). PACT-SLOT casts dispatch engine: the
+transcriber's slot payment is a pool-"either" `spell-slot` selector, the world seeds the pact
+pool as its own cell, `characterSlotDefinitionFacts` guards its definition beside the standard
+levels, the cast modal offers the pact slot with its level shown (enforcing the selector's level
+floor on both pools), and the commit mirrors the debit onto the legacy `pact-<level>` usage
+counter exactly. CASTER-OWNED standing casts dispatch engine too — Hex included: the cast lands
+the active key + the target mark as world standings (see the read-migration section above), which
+is observably the legacy solo collapse (light the key on the caster; the mark is table-abstract).
+Honest boundaries that stay legacy, each documented at its exclusion site: an `excludeSelf`
+standing (Warding Bond — the buff's mechanics belong to a selected creature the solo world does
+not model); MAINTAINER rows (they re-run an established recurring effect without paying — a new
+engine cast would double-cast; the engine twin is the armed root-pulse phase on the world's own
+occurrence, `EnginePulseStrip`/`useMechanicsPulse`, which exists exactly when the cast itself went
+engine); and USE-APPLIES (the deterministic side effect is a sibling GRANT the transcriber's
+`SrdActionDef` input cannot see yet). The deletion prerequisite for the legacy effect-program
+runtime is pinned by `tests/unit/effect-program-dispatch.guard.test.ts`: every public spell still
+carrying `effectProgram` also carries an authored `mechanicsProgram` and gates ENGINE; the
+remaining carriers without authored programs (Uncanny Dodge's reaction public-side, plus the
+pack's own short list in its suites) are the boundary that wave must keep legacy or migrate
+first.
 
 **RESTS ride the same runtime** (`src/features/character/rest-world-boundary.ts`, driven by the
 RestModal's confirm). A confirmed Short/Long Rest plans ONE journal action over the character's
