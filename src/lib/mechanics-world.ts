@@ -3669,7 +3669,8 @@ function finalizeVerifiedMechanicsEndWave(
     wave: Readonly<MechanicsEndWaveReceipt>
   ) => boolean,
   historicalBasis: Readonly<MechanicsWorld> | null,
-  currentRemoval: Readonly<CurrentCombatantRemovalAuthorization> | null
+  currentRemoval: Readonly<CurrentCombatantRemovalAuthorization> | null,
+  pendingFrames: readonly Readonly<MechanicsPendingFrame>[] = []
 ): MechanicsWorldSimulationResult {
   const parsed = parseMechanicsWorldStructure(value);
   if (!parsed.ok) return rejected(value, "invalid-world");
@@ -3710,7 +3711,7 @@ function finalizeVerifiedMechanicsEndWave(
     }
     return rejected(parsed.value, "invalid-end-wave");
   }
-  return finalize(parsed.value, candidate, closure.inventorySourceLeases);
+  return finalize(parsed.value, candidate, closure.inventorySourceLeases, pendingFrames);
 }
 
 /**
@@ -3746,7 +3747,18 @@ export function finalizeMechanicsCausalEndWave(
   if (state.context.pendingFrames.some(({ selectedEvent }) => selectedEvent)) {
     return { ok: false, reason: "invalid-end-wave" };
   }
-  const finalized = finalizeMechanicsEndWave(state.world, state.context.endWave.wave);
+  // The live frame stack's one-ahead provenance permits stay granted through
+  // the finalization's closed-boundary check, exactly as the material-cleanup
+  // twin below grants them — a mid-action frame (a suspended cast awaiting a
+  // concentration replacement) must not invalidate its own wave's finalize.
+  const finalized = finalizeVerifiedMechanicsEndWave(
+    state.world,
+    state.context.endWave.wave,
+    (world, receipt) => isMechanicsEndWaveReceiptForWorld(world, receipt),
+    null,
+    null,
+    state.context.pendingFrames
+  );
   if (finalized.status === "rejected") {
     return { ok: false, reason: finalized.reason };
   }

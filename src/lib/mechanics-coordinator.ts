@@ -446,16 +446,21 @@ export function runMechanicsCausalAction(
   };
 
   /**
-   * Deliver one readable wave's source endings exactly once per wave basis; a
-   * delivered wave finalizes in action mode and stays latched in checkpoint
-   * mode. Returns "delivered" only for a checkpoint-mode delivered wave.
+   * Deliver one readable wave's source endings exactly once per wave — keyed
+   * by the wave's candidate set, the identity that survives audience-driven
+   * rebasing (each subscriber dispatch is a phase advance that moves the world
+   * and therefore the basis, while candidate generation refs never recur), so
+   * a wave re-delivers only when its closure genuinely grows. A delivered wave
+   * finalizes in action mode and stays latched in checkpoint mode. Returns
+   * "delivered" only for a checkpoint-mode delivered wave.
    */
   const deliverOrFinalizeWave = (
     target: DriveContext
   ): Readonly<MechanicsCoordinationResult> | "delivered" | "progress" | null => {
     const endWave = target.state.context.endWave;
     if (endWave === null) return null;
-    if (target.deliveredWaves.has(endWave.wave.basis)) {
+    const waveKey = canonicalFingerprint(endWave.wave.candidates);
+    if (target.deliveredWaves.has(waveKey)) {
       if (!target.finalizeWaves) return "delivered";
       const finalized = finalizeMechanicsCausalEndWave(target.state);
       if (!finalized.ok) {
@@ -464,7 +469,7 @@ export function runMechanicsCausalAction(
       target.state = finalized.value;
       return "progress";
     }
-    target.deliveredWaves.add(endWave.wave.basis);
+    target.deliveredWaves.add(waveKey);
     const derived = deriveMechanicsSourceEndingEvents(
       target.state.world,
       endWave.wave,

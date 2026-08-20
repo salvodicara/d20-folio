@@ -1823,10 +1823,17 @@ while the ENGINE holds one runs the shared `confirmConcentrationSwap` gate first
 confirmed swap commits as TWO exact journal actions — the canonical end of the held occurrence
 (the `setConcentration("")` motion above, fired at confirm; RAW, concentration ends the moment
 you start casting the next spell) and then the clean cast, whose commit fires the replacement
-toast and the concentration-start story beat. (The compiler's own `concentration-replacement`
-coordination exists, but its end wave does not converge through the coordinator's drive today,
-so the one-action replacement stays out of reach; a LEGACY-held concentration keeps the legacy
-swap flow, which owns that teardown.) The SPELL rows of the Play board dispatch through the SAME
+toast and the concentration-start story beat. (The compiler's `concentration-replacement`
+coordination ALSO converges kernel-side as ONE causal action: the coordinator keys each end
+wave's exactly-once delivery by its CANDIDATE SET — the identity that survives audience-driven
+rebasing, since every subscriber dispatch is a phase advance that moves the world basis — and
+`finalizeMechanicsCausalEndWave` grants the live frame stack's one-ahead provenance permits
+through the finalization's closed-boundary check, so the held occurrence, its root and its
+standings end mid-cast and the suspended frame resumes over the swept world; proven by the
+coordinator suite's transcribed hex-over-hex replacement, exact-undo included. The UI still
+ships the two-action swap flow — collapsing it onto the one-action kernel path is an open
+follow-up; a LEGACY-held concentration keeps the legacy swap flow, which owns that teardown.)
+The SPELL rows of the Play board dispatch through the SAME
 shared gate as the Spells tab (`engine-spell-gate.ts` → `engineSpellCastRequest` — one dispatch
 truth for both surfaces, Shield's reaction card included). Honest boundaries that stay legacy:
 TARGET-BOUND standings (a selected recipient or a Hex-style mark scope — the legacy
