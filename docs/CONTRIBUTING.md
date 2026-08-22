@@ -37,7 +37,7 @@ runs MANDATORILY before code reaches a USER, each in exactly ONE lane, never twi
 | Lane                          | What it runs                                                                                                                           | Cost                           | Where                          |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------------------ |
 | **pre-commit**                | doc-guard + `lint-staged` + fast unit lane                                                                                             | ~5 s                           | `.githooks/pre-commit`         |
-| **pre-push → topic branch**   | no gate — topic branches are recoverable remote checkpoints                                                                           | instant                        | `.githooks/pre-push`           |
+| **pre-push → topic branch**   | no gate — topic branches are recoverable remote checkpoints                                                                            | instant                        | `.githooks/pre-push`           |
 | **pre-push → `main`**         | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e**       | ~3 min (max of three, not sum) | `.githooks/pre-push`           |
 | **per merge — CI** (`ci.yml`) | the SRD-only gate: typecheck + lint ∥ unit ∥ build + budget as **parallel jobs**, every push to `main` + every PR                      | ~4 min wall, free              | `.github/workflows/ci.yml`     |
 | **per merge — Verify**        | the COMPOSED verdict: pack unit suite + the **full Playwright e2e matrix sharded 8×** across parallel runners, every push to `main`    | ~10 min wall, free             | `.github/workflows/verify.yml` |
@@ -109,18 +109,17 @@ lands; the remote lanes are the standing verdict every SHA carries after.
 > per-merge remote lane (`ci.yml` / `verify.yml`), not on every push. Keep `--cache` everywhere it
 > helps (eslint `.eslintcache`, tsc incremental) so a no-op re-run is seconds.
 
-### The convergence step (before every merge — golden rule 12)
+### The review step (before every merge — golden rule 12)
 
-Every task converges through an adversarial review BEFORE its merge to `main`: the author builds
-in ponytail mode; an INDEPENDENT agent runs `ponytail-review`. Pass 1 reviews the FULL diff;
-findings must be actionable (location + what to cut + what replaces it — taste opinions without a
-concrete replacement don't count); the author applies each finding or rebuts it with a stated
-reason; subsequent passes are DELTA-SCOPED (only the fixes + rebuttals — the input shrinks every
-round, guaranteeing convergence). Converged = a pass with zero actionable findings (most tasks: 1
-pass); hard cap 3 passes, then a still-open dispute surfaces to the owner. Only then does the task
-rebase onto the latest `origin/main` and merge (`git push origin HEAD:main` from its worktree —
-the full flow in `docs/WORKTREES.md`). The gate (typecheck/lint/tests/build) still runs after
-convergence via the hooks; convergence replaces PR review, not the gate.
+Superpowers owns the generic review lifecycle: request a correctness/requirements review, process
+the findings with technical rigor, and re-run verification on the final diff. Add
+`ponytail-review` when the change carries meaningful abstraction or dependency risk; that pass asks
+only what can be deleted, reused, or replaced with a simpler native seam. Review findings are
+evidence, not commands: apply each actionable finding or record the concrete reason it does not fit.
+
+After review, run the relevant gate on the final tree, rebase onto current `origin/main`, and
+integrate from the worktree with `git push origin HEAD:main`. The exact repository adapter remains
+in `docs/WORKTREES.md`; review replaces PR review, never tests or owner visual approval.
 
 ### The i18n build-time leak-lock (lock 6)
 
@@ -246,14 +245,14 @@ dev server allows the pack's real directory (`fsAllowRoots()`,
 
 ## Reading order (especially for AI agents)
 
-1. **`CLAUDE.md` / `AGENTS.md`** — one shared project briefing exposed under the native filename
-   expected by Claude Code and Codex (TypeScript strict, Italian source cascade, override-first,
-   no `Math.random`, …).
-2. **`docs/ARCHITECTURE.md`** — system overview, where to put new code.
-3. **`docs/MECHANICS.md`** — Grant taxonomy + how to add new mechanics.
-4. **`PROGRESS.md`** — living roadmap; which phase the current work belongs to.
-5. **`docs/AUTOMATION_BACKLOG.md`** — the open mechanics-automation backlog (12 levers +
-   data-wiring, from the 161-finding coverage audit).
+1. **`CLAUDE.md` / `AGENTS.md`** — the short shared router, authority model, invariants, and tool
+   routing.
+2. Read the **one document that owns the task's fact**: Architecture/Mechanics/Schema for engine or
+   data, Product Constitution/Design for UI, or the relevant operations runbook.
+3. **`PROGRESS.md`** only when roadmap or current status matters; verify claims against code,
+   config, git, and runtime evidence before acting.
+4. **`docs/AUTOMATION_COVERAGE.md`** for per-entity automation coverage.
+   `docs/AUTOMATION_BACKLOG.md` is the closed audit record, not a default reading assignment.
 
 ### Claude Code and Codex parity
 
@@ -261,6 +260,25 @@ The two agent harnesses intentionally read the same project contract and the sam
 `AGENTS.md` is a tracked symlink to `CLAUDE.md`; `.agents/skills/impeccable` is a tracked symlink to
 the canonical `.claude/skills/impeccable` directory. Update only the canonical targets. This keeps
 instructions and UI craft behavior identical without vendoring a second skill copy that can drift.
+
+### AI agent tool stack and conflict policy
+
+One tool owns each layer; overlap is resolved by evidence and the weaker workflow is removed rather
+than stacked:
+
+| Layer                 | Canonical tool           | Repository use                                                                                                                                                                                                                                   |
+| --------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Development lifecycle | **Superpowers**          | Brainstorm/spec → plan → worktree → TDD → systematic debugging → review → verification. `just wt-new`, the no-PR integration flow, changesets, and owner gates are repository adapters.                                                          |
+| Specialist operations | **Selective ECC skills** | Living-doc governance, workspace/context audits, product/competition analysis, automation audits, browser QA, security reviews, and eval harnesses. The monolithic plugin stays disabled because its always-on context cost is disproportionate. |
+| Capability discovery  | **Find Skills**          | Search the public ecosystem, then verify installs/adoption, publisher reputation, freshness, security, and overlap before recommending or installing.                                                                                            |
+| Session recall        | **claude-mem**           | Retrieve context and possible prior decisions, then verify them against the current request and operational evidence. Memory never overrides the fact owner; cloud sync is opt-in and secrets are forbidden.                                     |
+| Process improvement   | **Task Observer**        | Log skill/process observations outside worktrees at `~/.agents/state/d20-folio/skill-observations/log.md`; review them in batches so delivery is not interrupted.                                                                                |
+
+Project specialists remain on demand: `impeccable` for UI/UX, `graphify` for structural navigation,
+`ponytail`/`ponytail-review` for simplicity, and `grill-me` for genuinely ambiguous product intent.
+No tool wins because of branding or popularity alone; documented behavior, behavioral evaluations,
+security, maintenance, context cost, and fit to this repository decide. Technical conflicts are agent
+work. Escalate only the decision boundary in `docs/GOLDEN_RULES.md`.
 
 ---
 
@@ -516,11 +534,11 @@ is a root-cause engine gap** — fix it at the seam (Grant kind + evaluator + co
 test + a `docs/MECHANICS.md` row), never a patch. Then screenshot the fixed sheet via the live
 fixture route `/characters/team-<name>` (`src/lib/dev-fixtures.ts`).
 
-- **v2 round-trip (the "is the stored data minimal?" check):** `tests/unit/team-fixtures-new-export.test.ts`
-  exports each fixture through the REAL user-facing path (`serializeCharacter`, the v2 portable format
+- **v3 round-trip (the "is the stored data minimal?" check):** `tests/unit/team-fixtures-new-export.test.ts`
+  exports each fixture through the REAL user-facing path (`serializeCharacter`, the v3 portable format
   behind the roster-kebab "Export JSON") and asserts both `serialize(parse(file)) === file` (the
-  on-disk fixtures are the canonical v2 form) and an identical `dumpSheet` on re-import. Run with
-  `D20_EMIT_NEW=1` to also (re)write the v2 files to `~/Documents/d20-team/new/`. A field that survives
+  on-disk fixtures are the canonical v3 form) and an identical `dumpSheet` on re-import. Run with
+  `D20_EMIT_NEW=1` to also (re)write the v3 files to `~/Documents/d20-team/new/`. A field that survives
   minimization but is inferable is a shrink target — chase the export size down while the sheet stays fixed.
 
 This is the JSON-grounded verification loop defined in `docs/AUTOMATION_BACKLOG.md → "⭑ CURRENT CAMPAIGN"`.
@@ -580,8 +598,9 @@ hint rather than letting an unverified rules change through — no Homebrew JDK 
 
 - **TypeScript strict.** No `any`. No `!` (non-null assertion). No `eslint-disable`.
 - **Zero lint warnings.** `pnpm lint --max-warnings 0` must pass.
-- **Tests are mandatory.** Every new function/hook/utility/feature ships with unit tests in
-  the same commit. The test count grows monotonically.
+- **Tests are mandatory for behavior.** Use Superpowers TDD and the cheapest lane that observes the
+  fact. Delete obsolete or duplicate tests with the behavior they no longer protect; test count is
+  not a quality metric.
 - **Bilingual.** Every user-visible string is EN + IT. Italian never empty (golden rule 9).
 - **No `--no-verify`.** Ever. If a hook fails, fix the issue in the same commit.
 - **No dice rolling.** `Math.random()` is banned. Show formulas; the player rolls externally.
@@ -624,14 +643,12 @@ no release workflow in CI) and deployed separately, only on explicit owner go:
 
 ## Asking the owner questions
 
-Stop and ask ONLY at the four forks (`docs/GOLDEN_RULES.md` → "The four forks"). Everything else:
-decide and keep moving. The owner has said: "I
-accept suggestions … I'm super happy and open to re-discuss even the previous choices I had taken
-and had locked in, totally."
-
-Format: batches of ≤ 4 questions at a time, multiple-choice options where possible (use
-`AskUserQuestion`). When the answer is in the docs above — don't ask; save the owner's attention
-for the genuinely undecidable.
+Resolve implementation details, tool conflicts, and discoverable facts autonomously. Ask only at the
+decision boundary in `docs/GOLDEN_RULES.md`: genuine product/taste, cost/privacy, new external
+authority, irreversible/destructive action, or a durable decision conflict that evidence cannot
+resolve. Explain the recommendation in plain language and avoid technical questionnaires. When a
+product interview is genuinely useful, use Superpowers brainstorming or `grill-me` and keep each
+round focused.
 
 ---
 

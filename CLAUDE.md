@@ -1,283 +1,128 @@
-# d20 Folio — AI Agent Briefing
+# d20 Folio — agent briefing
 
-> Single source of truth for agents working on this project. Kept **lean** — deep detail lives in
-> the linked docs.
+This file is the short, cross-harness router. `AGENTS.md` is a symlink to it, so every instruction
+here must work in both Claude Code and Codex. Read only the documents relevant to the task; do not
+load the whole documentation set by default.
 
-## What it is
+## Product
 
-A free, bilingual (EN + IT) PWA for **D&D 2024** players to create, manage, and play characters
-digitally — backed by Firebase, offline-first. It replaces the old single-file HTML app
-(`dnd-sheets`, read-only reference at `/Users/salvatoredicara/Workspace/dnd-sheets/`). Core value:
-a complete pre-loaded 2024 SRD database, cloud sync, and party/campaign features (Party · Chronicle ·
-Treasury · SharedNotes · Sessions · DM Tools · encounter/initiative tracking — built and live). The
-deterministic rules engine is the product's intelligence — there is no AI/LLM assistant surface.
+d20 Folio is a free, bilingual EN+IT, offline-first PWA for D&D 2024 players. It combines a
+deterministic rules engine, character management, and live party/campaign play. It complements the
+physical table and external dice; it is not a VTT and has no AI/LLM product surface.
 
-**Current state:** **released on `main` at v0.22.0** — the same version **deployed to production**
-(owner-confirmed live 2026-07-23; 6 real users), so `main` and live are currently in step; deploys
-stay owner-gated (golden rule 22), so `main` may run ahead of live at any time. The repo is
-**open-source + split-repo since 2026-07-17** (public SRD-only `salvodicara/d20-folio` + the private
-`content-pack`); the **full-BG3
-identity pivot is COMPLETE** — asset integration closed 2026-07-24 (PROMPT_12–25 all resolved,
-the ASSET-INTEGRATION ledger in `PROGRESS.md`; the tome-leaf remasters closed 2026-08-01). The 100%-automation
-push, the encounter/combat single-source re-architecture, the campaign-hub redesign, admin
-god-mode, the initiative single-source re-architecture, the sheet's management-chrome system (the
-Binder's Fob / Signet), and the combat-CTA/reversal grammar are shipped and deployed; the
-mechanical-automation long-tail (seams S1–S13) and the 2024 core-rules SYSTEM-audit (RA-01…RA-35 —
-`docs/AUTOMATION_BACKLOG.md`, now a CLOSED audit record) are DONE, and the tracking-doc reconciliation
-audit (the rule-16 on-ramp) closed with this wave. The forward frontier is (1) the ACTIVE DDB-parity
-feature epic — its bestiary flagship SHIPPED (330 SRD monsters EN+IT + the compendium Monsters
-section, 2026-07-24), then the encounter picker, the 2024-DMG difficulty calculator, companions, and
-the account-level homebrew library + quickbuild (both 2026-07-30) — the live head is now share
-links (`PROGRESS.md` → "Active epic"; competitive map: `docs/POSITIONING.md` — **GA is the
-ratified destination**, owner 2026-07-31), and
-(2) the **pre-GA checklist** — fleshed out by the owner 2026-07-31 (App Check + quotas · the
-budget-posture decision · the precache trim · the AGPL-3.0 license decision · legal pages ·
-trademark-safe branding · auth breadth beyond Google · the react-router advisory triage · backups ·
-observability — `PROGRESS.md` → the charter's 2026-07-31 amendment) — parked now, blocking GA
-later, EXCEPT the subset the **soft-launch charter** (owner-ratified 2026-08-02, same file)
-promotes to "blocking the first community post": budget rethreshold to £10–15 · App Check +
-quotas · privacy/terms pages · a pre-post export + minimal error watch · trademark-safe
-nominative-use post copy (IT-first; composed-build exposure = owner-accepted risk with the
-two-site fallback documented). The forward UI frontier reopened owner-ratified 2026-08-04: the
-whole-product UI/UX perfection epic now targets the open-source D&D Beyond alternative, with BG3 as
-the craft/interaction north star. Its first approved wave is the **Shaded Scriptorium** light-theme
-rebuild (neutral stone/linen work plane, daylight scene in controlled shade, warm ivory decision
-surfaces), followed by Creation progressive disclosure and the curated icon/item-art recognition
-system; `PROGRESS.md` is the live ledger. Roadmap + open decisions: `PROGRESS.md`; competitive
-positioning vs D&D Beyond: `docs/POSITIONING.md`; the closed automation-audit ledger:
-`docs/AUTOMATION_BACKLOG.md`.
+The app has live users. Preserve stored characters and the deployed experience. `main` is the
+integration line, not proof of what is deployed; deployment is always owner-triggered.
 
-## Canonical doc index
+For the current roadmap and release state, inspect [PROGRESS.md](PROGRESS.md), git, and the relevant
+runtime/configuration rather than copying dated status into this briefing.
 
-**These are the ONLY source-of-truth docs.** Keep each one **EXACT, COMPLETE, and CURRENT.** If
-reality and a doc disagree, the doc is the bug. Every change updates the relevant doc in the same
-commit. Broken cross-references are a bug. Do not add new top-level docs casually — fold detail into
-the canonical set.
+## Authority and document roles
 
-| Doc                            | What                                                                                                                                                                                                                                                                                             |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `README.md`                    | Project front door — what it is, how to run it, links into the doc set.                                                                                                                                                                                                                          |
-| `CLAUDE.md`                    | This agent briefing (the lean index — `AGENTS.md` is a compatibility symlink to this same file so Claude Code and Codex cannot drift).                                                                                                                                                           |
-| `LICENSE`                      | AGPL-3.0-or-later (app code). SRD content stays CC-BY-4.0.                                                                                                                                                                                                                                       |
-| `PROGRESS.md`                  | **Living roadmap + phase status.** Keep it current as you ship.                                                                                                                                                                                                                                  |
-| `CHANGELOG.md`                 | Shipped releases (minted by `@changesets/cli`; see `docs/RELEASE.md`).                                                                                                                                                                                                                           |
-| `DESIGN.md`                    | **The design system** — defers to `src/index.css` + `src/styles/folio.css` (canonical tokens).                                                                                                                                                                                                   |
-| `PRODUCT.md`                   | The `impeccable` skill's project-context file (register/users/purpose/anti-references) — a distillation `docs/PRODUCT_CONSTITUTION.md` stays the source of truth for; not a second constitution.                                                                                                 |
-| `docs/PRODUCT_CONSTITUTION.md` | **THE PRODUCT CONSTITUTION — supreme product/UX/design rules.** Read before any redesign/feature work; validate ALL work against it; an owner request that conflicts is complied with but surfaced (informed override).                                                                          |
-| `docs/GOLDEN_RULES.md`         | **The non-negotiable golden rules — cross-cutting engineering/process disciplines + owner philosophy. Read every session.**                                                                                                                                                                      |
-| `docs/ARCHITECTURE.md`         | **How the system works** — the layered model (data→engine→views→UI), i18n-completeness locks, multiclass model. Start here if new to the code.                                                                                                                                                   |
-| `docs/CHARACTER_SCHEMA.md`     | The v3 portable character codec — the ONLY supported import/export format (`{ schema: 3, build, state, meta? }`).                                                                                                                                                                                |
-| `docs/MECHANICS.md`            | The declarative-grant taxonomy (every mechanic the engine models).                                                                                                                                                                                                                               |
-| `docs/AUTOMATION_BACKLOG.md`   | The closed automation-audit ledger — the minimum-interaction doctrine, defect-class taxonomy (A–E), the ranked 2024 core-rules SYSTEM-audit record (RA-01…RA-35, all resolved), and the closing seams S1–S13 (companion to the coverage matrix; pack-entity items live in `content-pack/docs/`). |
-| `docs/AUTOMATION_COVERAGE.md`  | The per-entity coverage **matrix** (automated/partial/narrative/override) — companion to the backlog; what's auto-computed vs the gap frontier (pack-entity rows live in `content-pack/docs/`).                                                                                                  |
-| `docs/CONTRIBUTING.md`         | Local dev + contribution flow.                                                                                                                                                                                                                                                                   |
-| `docs/RELEASE.md`              | The changeset → release flow.                                                                                                                                                                                                                                                                    |
-| `docs/WORKTREES.md`            | **The work standard** — one worktree + branch-off-`main` per task; NO PRs — agents converge, then merge to `main` (`just wt-new/wt-rm/wt-list`).                                                                                                                                                 |
-| `docs/BUG_REPORTING.md`        | Cloud-Functions runbook — bug-report → GitHub-issue, new-user email, and the SAFE-01 billing kill-switch (setup · IAM · restore path).                                                                                                                                                           |
-| `docs/POSITIONING.md`          | **Competitive north star** — where d20 Folio stands vs D&D Beyond (the ahead/behind map), the deliberate non-goals, the moat-vs-opening, and the SRD-only monetization boundary. The "why/where"; `PROGRESS.md`'s DDB-parity epic is the "what/when".                                            |
-| `docs/IT_NAME_REGISTRY.md`     | **The canonical Italian lexicon** — the authority hierarchy (D2 cascade) + the closed-set core glossary (schools/damage/conditions/masteries/properties) every entity cross-references; enforced by the IT-name-consistency guard. The `name` fields stay the per-entity source of truth.        |
+No source is infallible merely because it is called canonical. A fact has one document owner, while
+code, configuration, tests, git, and deployed behavior provide evidence about reality.
 
-**The contract:**
+| Role         | Owners                                                                                                                                                                           | Use                                                      |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Constitution | [Product Constitution](docs/PRODUCT_CONSTITUTION.md), [Golden Rules](docs/GOLDEN_RULES.md)                                                                                       | Durable product, safety, and repository invariants       |
+| Map          | [Architecture](docs/ARCHITECTURE.md), [Mechanics](docs/MECHANICS.md), [Character schema](docs/CHARACTER_SCHEMA.md), [Design](DESIGN.md), [IT registry](docs/IT_NAME_REGISTRY.md) | How the current system is intended to work               |
+| Status       | [Progress](PROGRESS.md), [Automation coverage](docs/AUTOMATION_COVERAGE.md), [Automation audit record](docs/AUTOMATION_BACKLOG.md)                                               | Current and remaining work; verify claims before acting  |
+| History      | [Changelog](CHANGELOG.md), changesets, git history                                                                                                                               | What changed and why; not current operating instructions |
+| Operations   | [Contributing](docs/CONTRIBUTING.md), [Worktrees](docs/WORKTREES.md), [Release](docs/RELEASE.md), [Bug reporting](docs/BUG_REPORTING.md)                                         | Task-specific procedures and runbooks                    |
 
-- **Every change updates the relevant canonical doc in the same commit.** Engine/data change →
-  `docs/ARCHITECTURE.md` + `docs/MECHANICS.md`. UI/tokens → `DESIGN.md`. Workflow/tooling →
-  `docs/CONTRIBUTING.md`. Status/roadmap → `PROGRESS.md`. Releases → `CHANGELOG.md` via a changeset.
-- **Broken cross-references are a bug** — a doc that links a moved/deleted path must be fixed, not left
-  dangling.
-- Do not add new top-level docs casually — fold detail into the canonical set; this index stays lean.
-  Anything that can grow INDEFINITELY becomes its own SINGLE-concern referenced doc (golden rule 16),
-  but the number of docs stays minimal — one concern per doc, never proliferate.
+When sources disagree: respect the user's latest informed decision; identify the owner of the fact;
+inspect current code/config/runtime and relevant tests; use history to recover intent; then reconcile
+the owner document in the same change. Tests and memory are evidence, not authority. A branch is a
+proposal until integrated.
 
-## The architecture in one breath
+## Product and safety invariants
 
-A character's effective stats are **not** computed from prose. Every mechanic-bearing fact is a
-typed `Grant` on the SRD data (race trait / feat / class feature / subclass / magic item). At
-render time `evaluateGrants(sources)` (`src/lib/grants.ts`) aggregates every grant the character
-receives, and the sheet reads the aggregated view. Trackers/actions/riders resolve through
-`src/lib/smart-tracker.ts`; derived stats (AC, PB, spell DC, attack, passives) through
-`src/lib/compute.ts`; level-up recompute through `src/lib/level-up.ts`. **Adding a mechanic =
-adding a `Grant` kind + an evaluator branch + a consumer — never a regex over English.** This is
-the single seam between data and UI; keep it that way. Full detail: `docs/ARCHITECTURE.md`,
-`docs/MECHANICS.md`.
+- **No dice rolling:** never generate dice results or use RNG for dice. Show formulas; deterministic
+  effects may apply with undo, while rolled effects require user input.
+- **Bilingual by construction:** every user-visible string ships in EN and IT through i18n; never
+  branch on display text or persist translated labels.
+- **Licensing partition:** public `src/data` and `src/i18n/*/srd` contain only SRD 5.2.1 content.
+  Non-SRD content lives in the private `content-pack/`. Design against the full product and keep
+  `just ci` plus `just ci-srd-only` green when the pack seam is touched.
+- **Offline-first and zero-cost posture:** avoid redundant listeners/polling, preserve PWA behavior,
+  and stay within Firebase safeguards and bundle budgets.
+- **Live-user safety:** schema, derived-value, and stored-string changes validate against the six
+  team fixtures. Migrations use the snapshot → dry-run → idempotent apply → verify protocol.
+- **Owner gates:** never deploy or publish externally without explicit per-change permission. Any
+  visual change requires the repository's screenshot approval gate before integration.
+- **Secrets:** never print, commit, or store them in agent memory. Use `.env.local`, CI secrets, and
+  Secret Manager.
 
-## Tech stack
+## Architecture in one breath
 
-React 19 + TypeScript (strict) + Vite 8 (Rolldown bundler) · Tailwind v4 · a **custom in-house UI
-layer** (`src/components/ui/*` — hand-written folio components on Radix primitives: dialog, popover,
-tooltip, checkbox, radio-group, switch, slot). NOT shadcn/ui — no `shadcn` package is installed.
-Zustand state · React Router v7 · Firebase (Auth Google-only, Firestore, Storage, Hosting) ·
-Vite PWA (Workbox) · react-i18next (EN + IT) · Vitest (unit) + Playwright (E2E) · ESLint + Prettier ·
-`@changesets/cli` · GitHub Actions (three workflows — verify ambiently, promote on demand:
-`ci.yml` — the SRD-only push/PR gate, parallel jobs; `verify.yml` — the composed per-merge verdict
-(pack unit suite + the full Playwright e2e matrix sharded 8×); `deploy.yml` — dispatch-only, waits
-for green CI + Verify on the SHA then builds + deploys. The pre-push hook is the last line of
-defence BEFORE a merge; detail in `docs/CONTRIBUTING.md` → "The gate split"). No server/SSR —
-client-side SPA.
+Mechanics are typed data, never prose parsing: a mechanic-bearing source declares a `Grant`;
+`evaluateGrants` aggregates it; pure engine/presenter seams expose it; UI consumes the result.
+Dependencies point data/types/stores/lib → views → features/UI, never backwards. A shared fact has
+one model home and may be edited from several surfaces through that seam.
 
-**Toolchain pinned via asdf** (`.tool-versions`): **Node 24.16.0** + **Temurin 25** (the JDK the
-Firestore emulator needs) — run `asdf install` after cloning. The root app uses **pnpm**; the
-standalone `functions/` package uses **npm** (see Firebase essentials).
+Read [Architecture](docs/ARCHITECTURE.md) before changing boundaries, persistence, or Firebase;
+[Mechanics](docs/MECHANICS.md) before changing rules automation; and
+[Character schema](docs/CHARACTER_SCHEMA.md) before changing stored/imported data.
 
-## Project layout (high level)
+## Stack and repository boundaries
 
-The tree is **feature-centric** — `src/features/` is the primary home of UI; `src/components/` holds
-only shared chrome.
+React 19, strict TypeScript, Vite 8, Tailwind v4, Zustand, React Router v7, Firebase, Vite PWA,
+react-i18next, Vitest, Playwright, ESLint, Prettier, and Changesets. The UI layer is custom
+`src/components/ui/*` on Radix primitives; it is not shadcn/ui.
 
-```
-src/
-  features/                          PRIMARY UI HOME, one dir per surface — account, campaigns,
-                                     character (CharacterCockpit), compendium, creation (CreationWizard),
-                                     leveling, report, roster, wizard
-  app/                               AppShell.tsx · router.tsx · routes/ (login, not-found) · shell/ · _data/
-  components/{ui,sheet,shared}              custom UI primitives (ui/) + shared sheet chrome + modals
-  hooks/                             cross-feature React hooks (useCharacterSubscription, useLocale, …)
-  data/                              the SRD database (static TS) — classes/, spells/, feats,
-                                     races, backgrounds, equipment, magic-items, conditions, types
-  lib/                               engine: grants, smart-tracker, level-up, compute, cast-options,
-                                     cost-engine + condition-effects (combat model),
-                                     the *-pick / feat-*-choices choice resolvers, character-io,
-                                     firebase/firestore/storage, sanitize-character, utils
-  lib/views/                         the PRESENTER seam (R2): pure (engine output+locale)→view-model;
-                                     the ONLY engine-side layer that localizes — sheet-view,
-                                     combat-action-view, toast-intent (engine-core is i18n-free)
-  stores/                            Zustand: character/combat/save/ui/toast/auth/confirm
-  types/                             CharacterDoc, SessionState, campaign types
-  i18n/{en,it}/{ui,srd}/*.json        chrome split into per-group `ui/*.json` shards (merged into ONE
-                                     runtime `common` ns) + id-keyed `srd/*.json` content catalogues
-                                     (SRD 5.2.1 ONLY — the pack adds its own); async lazy-per-locale
-                                     bootstrap (index.ts) — only the active locale loads at startup;
-                                     EN srd always loads (engine FACTS)
-  index.css · styles/folio.css       the CANONICAL design tokens + folio styles
-tests/{unit,e2e}                     Vitest + Playwright (suites here pass in BOTH build modes)
-content-pack/                        the PRIVATE content pack (docs/ARCHITECTURE.md → content-pack seam):
-                                     all non-SRD data + i18n + the composed-build overlay + pack dev
-                                     scenarios + pack-only test suites + the 6 live-user conformance
-                                     fixtures (content-pack/fixtures/team/*.json); composed
-                                     via the `@pack` alias when present (VITE_CONTENT_PACK≠0), else the
-                                     app builds SRD-only. NOT in this repo: a gitignored SYMLINK to the
-                                     sibling checkout of the private repo salvodicara/d20-folio-content
-                                     (`ln -s ../d20-folio-content/content-pack content-pack`) — `just
-                                     wt-new` auto-links it into every task worktree when the pack sibling
-                                     exists (composed-by-default), else SRD-only; pack tests reach public-root helpers via
-                                     the `@tests/*`/`@scripts/*` aliases (docs/CONTRIBUTING.md → "The
-                                     two build modes")
-.githooks/{pre-commit,pre-push}      strict local CI gate
-```
+- UI: `src/features`, `src/app`, `src/components`, `src/hooks`
+- Engine/data: `src/lib`, `src/stores`, `src/data`, `src/types`; localized presenters only in
+  `src/lib/views`
+- Locales: `src/i18n/{en,it}`; tests: `tests/{unit,e2e}`
+- Private composition: gitignored `content-pack/` symlink
+- Root package manager: pnpm. `functions/` is standalone npm. Toolchain is pinned in
+  `.tool-versions` (Node 24.16.0, Temurin 25).
 
-Character & session shapes live in `src/types/character.ts`; SRD types in `src/data/types.ts` —
-read those rather than duplicating them here.
+## Delivery workflow
 
-## Constraints
+Superpowers is the default lifecycle: discovery/brainstorming → written plan → isolated worktree →
+TDD → systematic debugging as needed → review → verification before completion. Project-specific
+adapters below override generic command examples, not the lifecycle:
 
-- **Zero budget.** Firebase Blaze, stays in free tier; alerts from £1, the SAFE-01 hard cap at
-  £15 (the soft-launch posture, owner 2026-08-02 — worst month = a pizza).
-- **Licensing partition.** `src/data` + `src/i18n/*/srd` carry ONLY SRD 5.2.1 (CC-BY-4.0) content,
-  every entry `source: "SRD"` (guard-enforced); ALL other content lives in the private
-  `content-pack/`, composed in via the `@pack` alias (docs/ARCHITECTURE.md → "The content-pack
-  seam"). Both build modes stay green: `just ci` (pack) and `just ci-srd-only` (the public
-  snapshot's composition). The partition is a licensing boundary, never a scope boundary — every
-  change is designed against the FULL game and pack-side twins update in the same motion
-  (`docs/GOLDEN_RULES.md` golden rule 28 (D11)).
-- **Source of truth = `http://dnd2024.wikidot.com/`** — the standard public 2024-rules reference
-  5e tools verify against. Model the **facts** (which spells a subclass grants and at what level,
-  numeric values, level tables) as declarative data; don't paste long verbatim prose — write
-  concise functional descriptions. The sourcing workflow detail lives in
-  `content-pack/docs/SOURCING.md`. (IT translations still follow the i18n cascade below.)
-- **Bilingual** EN + IT for everything user-visible — no English-only strings ship (see i18n rule).
-- **Offline-first** (Firestore offline persistence + service worker).
-- **No dice rolling, ever** — show formulas; users roll externally. No `Math.random()` for dice.
-- **Campaign/party features are built** (Party · Chronicle · Treasury · SharedNotes · Sessions · DM
-  Tools). **There is no AI/LLM assistant** — the planned multi-provider assistant was DROPPED
-  (owner, 2026-07-06; `PROGRESS.md`): the deterministic engine IS the product's intelligence.
-- **100% AI-developed.** CI/tests are the only quality gate — there is no human code review.
-- **LIVE USERS since 2026-06-08.** Friends use the deployed app with real characters. The 6
-  conformance fixtures in `content-pack/fixtures/team/*.json` (single-class L2–3) represent them.
-  Schema/derived-value/string-storage changes **must validate against them** — additive-only ids;
-  pre-v3 imports are rejected with a friendly message (no read-time upgrade shim); any one-off data
-  migration runs AUTONOMOUSLY under a snapshot-verify safety net, lives in `scripts/`, and is
-  `git rm`'d once spent (golden rules 10 + 22, `docs/CHARACTER_SCHEMA.md`).
-  Deploys are owner-triggered only (`gh workflow run deploy.yml` / `just deploy` — golden rule 22,
-  never on push); never break the deployed app.
+- Every repo change uses `just wt-new <slug> [kind]` from the shared checkout; never edit, commit,
+  or switch branches in that checkout. Full flow: [Worktrees](docs/WORKTREES.md).
+- Small Conventional Commits; the owner is the sole commit author, with no co-author/footer/trailer.
+  Every commit includes a `.changeset/*.md` and reconciles the document that owns the changed fact.
+- Never use `--no-verify`. The authoritative local gate for integration is `just ci`; use
+  `just ci-srd-only` when the licensing seam is affected. Rules changes also run `pnpm test:rules`.
+- Non-visual work may integrate after review and green gates. Visual work waits for approved,
+  curated before/after screenshots across the affected theme/locale/viewport matrix.
+- Finish by rebasing on fresh `origin/main`, pushing explicit `HEAD:main`, confirming the SHA, and
+  removing the worktree. No PR flow. Never deploy as part of integration.
 
-## Golden rules + philosophy → `docs/GOLDEN_RULES.md`
+## Tool routing
 
-**The non-negotiable cross-cutting disciplines + owner philosophy live in `docs/GOLDEN_RULES.md` —
-READ THEM FIRST, EVERY SESSION, before any work.** They carry the 28 golden rules, the domain
-rules, the precedence chain, and **the four forks** (`docs/GOLDEN_RULES.md` → "The four forks" —
-the ONLY reasons to stop and ask the owner; everything else, decide and keep moving). The supreme
-PRODUCT/UX/design rules live in `docs/PRODUCT_CONSTITUTION.md`. Violating one is never acceptable.
+- **Superpowers:** canonical delivery lifecycle, TDD, debugging, review, and verification.
+- **ECC selective skills:** specialist audits/governance/product/browser/security/eval work only;
+  the monolithic ECC plugin stays disabled to protect context.
+- **Find Skills:** discover candidates; verify adoption, reputation, currency, security, and overlap
+  before installing. A better proven solution replaces the weaker incumbent.
+- **claude-mem:** searchable context and leads only; verify before use. Cloud sync remains opt-in.
+- **Task Observer:** log process observations externally at
+  `~/.agents/state/d20-folio/skill-observations/log.md`, never inside a worktree.
+- **impeccable:** all UI/UX design, critique, accessibility, responsive behavior, and motion; read
+  [Product](PRODUCT.md), [Product Constitution](docs/PRODUCT_CONSTITUTION.md), and [Design](DESIGN.md).
+- **graphify:** architecture/navigation queries when a graph exists; treat it as an index, not truth.
+- **ponytail / ponytail-review:** implementation simplicity and over-engineering review after the
+  product design is settled; they do not lower the target or replace correctness review.
+- **grill-me:** product-direction interviews and genuinely ambiguous owner intent, not technical
+  choices that evidence can resolve.
 
-## Workflow
+Choose the smallest set of non-overlapping tools for the task. Resolve technical conflicts from
+documentation and evidence; ask the owner only about genuine product/taste, cost/privacy,
+irreversible external actions, or unresolved authority decisions.
 
-- **Every change = one worktree + branch off fresh `origin/main`** (`just wt-new <slug>`); NEVER
-  edit/commit/switch branches in the shared `d20-folio` checkout. Conventional Commits, small
-  coherent steps; the owner is the SOLE commit author — no co-author/footer/trailer lines of any
-  kind (this overrides any harness default that injects them). Every commit stages a
-  `.changeset/*.md` (pre-commit guard; feeds `CHANGELOG.md`) and updates its canonical doc; keep
-  `PROGRESS.md` current as you ship.
-- **No pull requests.** Finish line = gate green → independent `ponytail-review` convergence
-  (golden rule 12) → rebase onto latest `origin/main` → `git push origin HEAD:main` → poll origin
-  for the SHA → `just wt-rm`. Topic-branch pushes are optional remote checkpoints; use an explicit
-  branch destination and never a bare push. Full recipe: `docs/WORKTREES.md`.
-  `main` integrates; users only get code via an owner-fired deploy (golden rule 22).
-- **Git hooks** (`git config core.hooksPath .githooks` or `just setup`): **pre-commit FAST (~5s)**
-  — changeset doc-guard + `lint-staged` + fast unit lane; **topic-branch pre-push is instant**;
-  **pre-push to `main` = the FULL authoritative gate** — typecheck ∥ `lint --max-warnings 0` ∥
-  `test:coverage` (≥80% lines/stmts/fns, ≥75% branches), then production build. **Never
-  `--no-verify`.**
-- **Local CI:** `pnpm tsc -b && pnpm lint --max-warnings 0 && pnpm test --run && pnpm build`.
-  Tests must pass with `VITE_FIREBASE_API_KEY` unset — never import `@/lib/firebase`/
-  `@/lib/firestore` transitively from a unit test (mock it, or use a pure module).
-- **Model tiering:** golden rule 18 — the decision-density ladder: Fable for design/creative
-  (Tier 1 end-to-end or Tier 2 design-then-delegate), Opus/Sonnet for precise-spec implementation,
-  cheap tiers for fan-out.
-- **Design is in-repo:** `DESIGN.md` + the canonical tokens (`src/index.css` +
-  `src/styles/folio.css`); validate all UI work against `docs/PRODUCT_CONSTITUTION.md`.
+## Common commands
 
-## Skill roster (golden rule 18 — one canonical skill per job)
-
-| Skill                          | Job / trigger                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `impeccable`                   | ALL UI/UX design/audit/polish (golden rule 19). Official [pbakaus/impeccable](https://github.com/pbakaus/impeccable), committed once at `.claude/skills/impeccable/`; `.agents/skills/impeccable` is a compatibility symlink to that same copy for Codex. Reads root `PRODUCT.md` + `DESIGN.md` — `DESIGN.md` §15 is the project checklist.                                                                                                                                                                                                                |
-| `ponytail` + `ponytail-review` | ALL code changes, implicitly (golden rule 1) + the independent-review side of the convergence loop (golden rule 12).                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `graphify`                     | Code navigation / architecture queries ("what calls X", dependency maps, find ALL consumers before changing a seam) — `/graphify src`. On the symbol-level AST graph the STRUCTURAL views earn their keep: read the **God Nodes** for the hub / highest-risk modules, extract a **directory-scoped subgraph** for a seam's fan-in/out; the NL `graphify query` only literal-token-matches an AST graph, so prefer the structural queries. Locally installed (PyPI `graphifyy`), NOT a repo dep; `graphify-out/` is gitignored; an index, not ground truth. |
-| `grill-me`                     | Owner forks + plan stress-tests (the four forks).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `claude-md-optimizer`          | Steering-doc bloat — progressive disclosure, tiering, zero information loss.                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-
-A better skill for a job REPLACES the incumbent (golden rule 18).
-
-## Firebase essentials
-
-- Project: `d20-folio` · Hosting: `d20-folio.web.app` · Region: `europe-west1`.
-- Auth: Google only; first sign-in creates `/users/{uid}` (`status: "active"`).
-- **Admin is data-driven** (owner-ratified): a user is admin iff their `/users/{uid}` doc has
-  `role: "admin"`. The SAME field is read by the client gate (`useIsAdmin` →
-  `profile.role`) and `firestore.rules` (`isAdmin()` reads the doc), so they can't drift
-  and nothing admin-related is in the client bundle. Granted out-of-band (Firestore
-  console or an admin script); the client can never set it (users `update` is admin-only;
-  `create` forbids self-assigning `role`). The current admin uid is not written down here — read
-  it from the Firestore console (or `.env.local`).
-- Security rules live in `firestore.rules` / `storage.rules` (owner-scoped reads/writes;
-  blocked users denied; admin override). Env in `.env.local` (not committed); CI uses repo secrets.
-- Data model: one Firestore doc per character (`/users/{uid}/characters/{charId}`) holding
-  `character` (sheet) + `session` (play state); SRD content stored as **references** (`srdId`),
-  resolved against the bundled SRD at render. Full shapes in `src/types/character.ts`.
-- **Cloud Functions** (`functions/`, 2nd-gen, `europe-west1`, Node 24): two Firestore `onCreate`
-  triggers — `onBugReportCreated` (in-app report → GitHub issue) and `onUserCreated` (new signup →
-  owner email) — plus `deleteUser` (admin-only account nuke), `onBudgetAlert` (SAFE-01 billing
-  kill-switch: a Pub/Sub trigger on the `budget-kill` topic that detaches billing when the £15 budget
-  is exceeded, hard-guaranteeing the zero-budget promise), and `ogShell` (the one HTTP function —
-  Hosting rewrites `/view/**` + `/join/**` to it so a shared link unfurls with per-entity Open Graph
-  tags; `docs/ARCHITECTURE.md` → "Link previews"). This package uses **npm** (standalone —
-  NOT the pnpm workspace; never run `pnpm` in `functions/`). Deploy with
-  `firebase deploy --only functions` (its `firebase.json` predeploy runs `npm ci` + lint + build).
-  Secrets live in **Secret Manager** (`defineSecret`), not `.env`. Full setup runbook:
-  `docs/BUG_REPORTING.md`.
-
-## Key design decisions (the durable ones)
-
-SRD references (not copies) so SRD updates auto-propagate · auto-save debounced ~2s, last-write-wins ·
-portraits in Storage (base64 only in JSON export) · level-up wizard is SRD-aware (auto-suggests
-features/spells/ASI) · every derived value = auto-compute + override · combat algorithm kept (useful
-for new players) · PDF export targets the official 2024 layout · responsive: cards on mobile, tables
-on desktop · dark + light themes. The complete decision log is in git history / `CHANGELOG.md`.
+- Setup: `asdf install && pnpm install && git config core.hooksPath .githooks`
+- Development: `pnpm dev`
+- Focused tests: `pnpm test --run <path-or-pattern>`
+- Full composed gate: `just ci`
+- SRD-only gate: `just ci-srd-only`
+- Firebase rules: `pnpm test:rules`
+- Release and deploy procedures: [Release](docs/RELEASE.md) and
+  [Contributing](docs/CONTRIBUTING.md)

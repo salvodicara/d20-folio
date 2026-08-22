@@ -4,7 +4,7 @@
 > its own **git worktree** + **branch off the freshest `origin/main`**; when it converges, the
 > agent **merges it to `main` autonomously** and tears the worktree down. There are **no pull
 > requests** — one owner + agents, nobody reviews PRs; the adversarial `ponytail-review`
-> convergence loop (golden rule 12) is the review. `main` is the integration line, NOT production:
+> Superpowers review plus the optional simplicity pass (golden rule 12) is the review. `main` is the integration line, NOT production:
 > the owner's only gate is deploy (golden rule 22).
 
 ## Why
@@ -30,8 +30,9 @@ cd ../d20-folio-<slug>
 git add -A && git commit -m "feat(scope): …"        # never --no-verify; owner = sole author,
                                                     # NO co-author/trailer lines
 
-# 3. Converge: gate green, then an INDEPENDENT agent runs ponytail-review on the diff;
-#    apply or rebut every finding until a zero-finding pass (max 3 rounds — golden rule 12).
+# 3. Review: use Superpowers correctness/requirements review; add ponytail-review when the
+#    diff carries meaningful complexity risk. Address or reason about actionable findings,
+#    then verify the final tree (golden rule 12).
 
 # 4. Merge to main FROM the worktree (never touch the shared checkout):
 git fetch origin main
