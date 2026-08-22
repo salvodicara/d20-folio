@@ -34,7 +34,11 @@ import {
   mechanicsInstallationFactAddress,
 } from "@/lib/mechanics-authority-ref";
 import { mechanicsCapabilitySnapshotFingerprint } from "@/lib/mechanics-capability";
-import { beginMechanicsCausalState } from "@/lib/mechanics-world";
+import {
+  beginMechanicsCausalState,
+  readMechanicsKernelProofStats,
+  resetMechanicsKernelProofStats,
+} from "@/lib/mechanics-world";
 import type { CharacterDoc } from "@/types/character";
 import type { CharacterMaterialState } from "@/types/material-state";
 import type { MechanicsAuthorityDefinition } from "@/types/mechanics-authority";
@@ -693,6 +697,7 @@ describe("mechanics world store", () => {
   });
 
   it("pulses a persisted moonbeam zone through the round-tripped authority", () => {
+    resetMechanicsKernelProofStats();
     const world = characterWorldState(MOCK_CHARACTER, "test-uid", 60);
     if (!world) throw new Error("world fixture");
     const capability = characterSpellCapability(MOCK_CHARACTER, "test-uid", "moonbeam", {
@@ -947,6 +952,13 @@ describe("mechanics world store", () => {
       lastTriggerEventId: triggerEventId,
     });
     expect(activeEnginePulses(pulsed.world)[0]?.execution).toBe(1);
+
+    // Deterministic proof-work budget (the performance regression guard): the
+    // kernel must not slide back into re-proving what its own completed
+    // proofs already guarantee stable.
+    const proofStats = readMechanicsKernelProofStats();
+    expect(proofStats.causalProofs).toBeLessThanOrEqual(26);
+    expect(proofStats.worldParses).toBeLessThanOrEqual(72);
   });
 
   it("lay on hands heals exactly the chosen pool amount and debits the pool", () => {
@@ -1779,6 +1791,7 @@ describe("corpus endgame e2e", () => {
   });
 
   it("geas scales the charmed lifetime by the chosen slot level", () => {
+    resetMechanicsKernelProofStats();
     const doc = endgameDoc();
     const world = characterWorldState(doc, "test-uid", 60);
     if (!world) throw new Error("world fixture");
@@ -1835,6 +1848,11 @@ describe("corpus endgame e2e", () => {
     // A 9th-level slot: the indefinite tier keeps a table-owned manual end.
     const indefinite = charmedAt(9, "geas-nine");
     expect(indefinite?.endRules).toHaveLength(0);
+
+    // Deterministic proof-work budget (the performance regression guard).
+    const proofStats = readMechanicsKernelProofStats();
+    expect(proofStats.causalProofs).toBeLessThanOrEqual(30);
+    expect(proofStats.worldParses).toBeLessThanOrEqual(90);
   });
 
   it("goodberry conjures the berry batch and one eaten berry heals exactly 1", () => {
@@ -1944,6 +1962,7 @@ describe("corpus endgame e2e", () => {
     // exactly reversible. (The compiler's own `concentration-replacement`
     // coordination exists but does not converge through the coordinator
     // today, so the one-action form stays out of reach.)
+    resetMechanicsKernelProofStats();
     const doc = endgameDoc();
     const world = characterWorldState(doc, "test-uid", 60);
     if (!world) throw new Error("world fixture");
@@ -2045,6 +2064,11 @@ describe("corpus endgame e2e", () => {
     if (!undoneEnd) return;
     expect(engineConcentrationHandle(undoneEnd.world)?.spellId).toBe("bless");
     expect(undoneEnd.session.concentration).toBe("bless");
+
+    // Deterministic proof-work budget (the performance regression guard).
+    const proofStats = readMechanicsKernelProofStats();
+    expect(proofStats.causalProofs).toBeLessThanOrEqual(26);
+    expect(proofStats.worldParses).toBeLessThanOrEqual(85);
   });
 });
 

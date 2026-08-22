@@ -26,16 +26,31 @@ function canonicalTypeError(): never {
 }
 
 /**
+ * Canonical text of trees whose every object node was frozen when the full
+ * walk last ran. A deeply frozen plain-JSON tree is immutable (the walk
+ * accepts data properties only — accessors are rejected — and freezing locks
+ * values and prototypes), so its canonical form can never change and the
+ * completed walk is reused. Trees containing any unfrozen node never cache.
+ */
+const frozenCanonicalJson = new WeakMap<object, string>();
+const frozenCanonicalFingerprints = new WeakMap<object, CanonicalFingerprint>();
+
+/**
  * Exact canonical form for plain JSON mechanics data.
  *
  * Object keys are sorted; array order is semantic. The boundary deliberately
  * rejects values whose JSON encoding would erase information or execute code.
  */
 export function canonicalJson(value: unknown): string {
+  if (typeof value === "object" && value !== null) {
+    const cached = frozenCanonicalJson.get(value);
+    if (cached !== undefined) return cached;
+  }
   const chunks: string[] = [];
   const ancestors = new Set<object>();
   let characters = 0;
   let nodes = 0;
+  let unfrozenNodes = 0;
 
   const append = (chunk: string): void => {
     characters += chunk.length;
@@ -87,6 +102,7 @@ export function canonicalJson(value: unknown): string {
       canonicalTypeError();
     }
     if (ownKeys.length > MAX_CANONICAL_NODES) canonicalTypeError();
+    if (!Object.isFrozen(current)) unfrozenNodes += 1;
 
     ancestors.add(current);
     try {
@@ -143,7 +159,11 @@ export function canonicalJson(value: unknown): string {
   };
 
   visit(value, 0);
-  return chunks.join("");
+  const result = chunks.join("");
+  if (unfrozenNodes === 0 && typeof value === "object" && value !== null) {
+    frozenCanonicalJson.set(value, result);
+  }
+  return result;
 }
 
 function rotateRight(value: number, count: number): number {
@@ -232,7 +252,18 @@ function sha256(bytes: Uint8Array): string {
 
 /** Compact stable digest of canonical plain JSON data. */
 export function canonicalFingerprint(value: unknown): CanonicalFingerprint {
-  return `sha256:${sha256(new TextEncoder().encode(canonicalJson(value)))}`;
+  const cacheable = typeof value === "object" && value !== null;
+  if (cacheable) {
+    const cached = frozenCanonicalFingerprints.get(value);
+    if (cached !== undefined) return cached;
+  }
+  const json = canonicalJson(value);
+  const fingerprint: CanonicalFingerprint = `sha256:${sha256(new TextEncoder().encode(json))}`;
+  // Cache only what the canonical walk itself proved deeply frozen.
+  if (cacheable && frozenCanonicalJson.get(value) === json) {
+    frozenCanonicalFingerprints.set(value, fingerprint);
+  }
+  return fingerprint;
 }
 
 /** Exact shared boundary for persisted mechanics fingerprints and revisions. */

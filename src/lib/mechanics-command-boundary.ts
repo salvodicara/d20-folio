@@ -413,12 +413,29 @@ export function conformProgramRootReceipt(
   return receipt && programRootReceiptIsCoherent(receipt) ? receipt : null;
 }
 
+/**
+ * Frames this boundary already conformed and deep-froze. Membership is a
+ * completed proof: the exact frozen object came out of this conformer, whose
+ * output is canonical by construction and whose checks are pure in the frame,
+ * so re-conforming it must reproduce the same value. Never exported.
+ */
+const conformedExecutionFrames = new WeakSet<object>();
+
 /** Exact standalone recoverable frame boundary shared by commands and execution. */
 export function conformMechanicsExecutionFrame(
   value: unknown
 ): Readonly<MechanicsExecutionFrame> | null {
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    conformedExecutionFrames.has(value)
+  ) {
+    return value as Readonly<MechanicsExecutionFrame>;
+  }
   const frame = conformExecutionFrameStructure(value);
-  return frame && frameSemantics(frame) ? frame : null;
+  if (!frame || !frameSemantics(frame)) return null;
+  conformedExecutionFrames.add(frame);
+  return frame;
 }
 
 type SuspensionIdentity = Pick<

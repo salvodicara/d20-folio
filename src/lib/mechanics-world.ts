@@ -99,6 +99,36 @@ const MAX_PENDING_SLOT = 2_048;
 /** Nonempty pending stacks are process-local capabilities, never JSON credentials. */
 const kernelCausalStates = new WeakSet<object>();
 
+/**
+ * Worlds this module itself structure-parsed and deep-froze. Membership is a
+ * completed structural proof: the exact object was produced by
+ * `parseMechanicsWorldStructure`, is deeply frozen, and the parse is a
+ * deterministic fixed point — re-parsing it must reproduce the same value, so
+ * the proof is reused instead of re-run. Never exported.
+ */
+const kernelParsedWorlds = new WeakSet<object>();
+
+/**
+ * Deterministic proof-work counters — the performance regression guard's
+ * observable. Counts FULL proofs only (identity-cached reuses never count), so
+ * a ceiling pinned per scenario fails when redundant re-proving returns.
+ */
+const kernelProofStats = { causalProofs: 0, worldParses: 0 };
+
+/** Snapshot the deterministic kernel proof-work counters. */
+export function readMechanicsKernelProofStats(): {
+  readonly causalProofs: number;
+  readonly worldParses: number;
+} {
+  return { ...kernelProofStats };
+}
+
+/** Reset the deterministic kernel proof-work counters (test instrumentation). */
+export function resetMechanicsKernelProofStats(): void {
+  kernelProofStats.causalProofs = 0;
+  kernelProofStats.worldParses = 0;
+}
+
 type MutableDocument =
   | {
       kind: "character";
@@ -988,7 +1018,9 @@ function pendingFramePermit(
   const phase = program?.phases.find(
     ({ phaseId }) => phaseId === frame.rootReceipt.next.phaseId
   );
-  if (!program || !phase || !exactEqual(frame, value.frame)) return null;
+  if (!program || !phase || (frame !== value.frame && !exactEqual(frame, value.frame))) {
+    return null;
+  }
   const cursor = conformPendingFrameCursor(value.cursor, phase.steps.length);
   if (
     !cursor ||
@@ -1001,7 +1033,7 @@ function pendingFramePermit(
   if (
     root?.kind !== "program" ||
     (root.ending !== null && !value.selectedEvent) ||
-    !exactEqual(root.authority, frame.authority)
+    (root.authority !== frame.authority && !exactEqual(root.authority, frame.authority))
   ) {
     return null;
   }
@@ -1167,6 +1199,10 @@ function validateWorldInvariantsWithPermits(
 
 /** Parse exact physical documents without assuming their causal closure already ran. */
 function parseMechanicsWorldStructure(value: unknown): MechanicsWorldParseResult {
+  if (typeof value === "object" && value !== null && kernelParsedWorlds.has(value)) {
+    return { ok: true, value: value as Readonly<MechanicsWorld> };
+  }
+  kernelProofStats.worldParses += 1;
   if (
     !isExactRecord(value, ["scope", "documents"]) ||
     !isMaterialRef(value.scope) ||
@@ -1217,12 +1253,16 @@ function parseMechanicsWorldStructure(value: unknown): MechanicsWorldParseResult
     return { ok: false, reason: "missing-scope" };
   }
   const world = { scope: { ...scope }, documents } satisfies MechanicsWorld;
+  // Freeze before the canonical walk so the walk's result is cacheable — the
+  // acceptance decision is identical either way.
+  const frozen = freezeDeep(world);
   try {
-    canonicalJson(world);
+    canonicalJson(frozen);
   } catch {
     return { ok: false, reason: "invalid-shape" };
   }
-  return { ok: true, value: freezeDeep(world) };
+  kernelParsedWorlds.add(frozen);
+  return { ok: true, value: frozen };
 }
 
 /** Parse the exact physical world and every live reference; causal proof is separate. */
@@ -2219,6 +2259,7 @@ function rebaseMechanicsCausalStateWithFrames(
   additionalEndRequests: readonly Readonly<OccurrenceGenerationRef>[],
   nextPendingFramesValue: unknown
 ): MechanicsCausalStateResult {
+  kernelProofStats.causalProofs += 1;
   const structured = parseMechanicsWorldStructure(value);
   if (!structured.ok) return { ok: false, reason: "invalid-world" };
   if (
@@ -2358,6 +2399,13 @@ function rebaseMechanicsCausalStateWithFrames(
 
 /** Re-prove one exact kernel causal state without closing its readable world. */
 export function conformMechanicsCausalState(value: unknown): MechanicsCausalStateResult {
+  // A state in `kernelCausalStates` was constructed by `kernelCausalState`
+  // from a proof this module completed, then deep-frozen — it cannot have
+  // changed since, and the re-proof is deterministic, so re-running it must
+  // reproduce the same value. Reuse the completed proof instead.
+  if (typeof value === "object" && value !== null && kernelCausalStates.has(value)) {
+    return { ok: true, value: value as Readonly<MechanicsCausalState> };
+  }
   if (!isExactRecord(value, ["context", "world"])) {
     return { ok: false, reason: "invalid-end-wave" };
   }
@@ -2377,7 +2425,12 @@ export function conformMechanicsCausalState(value: unknown): MechanicsCausalStat
 
 function exactCausalState(value: unknown): Readonly<MechanicsCausalState> | null {
   const conformed = conformMechanicsCausalState(value);
-  return conformed.ok && exactEqual(conformed.value, value) ? conformed.value : null;
+  // Identity implies exactness: a kernel-born state is canonical plain JSON
+  // by construction (its world and context components were each
+  // canonical-checked before `kernelCausalState` froze them).
+  return conformed.ok && (conformed.value === value || exactEqual(conformed.value, value))
+    ? conformed.value
+    : null;
 }
 
 function exactExecutionFrame(value: unknown): Readonly<MechanicsExecutionFrame> | null {

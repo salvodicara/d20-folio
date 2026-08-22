@@ -14,6 +14,8 @@ import {
   beginMechanicsCausalState,
   parseMechanicsWorld,
   pushMechanicsPendingFrame,
+  readMechanicsKernelProofStats,
+  resetMechanicsKernelProofStats,
 } from "@/lib/mechanics-world";
 import type {
   MechanicsAuthorityDefinition,
@@ -2315,6 +2317,7 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
   });
 
   it("death ward on self: the floor holds at 1, consumes the spell, and the next drop dies", async () => {
+    resetMechanicsKernelProofStats();
     // Cast Death Ward selecting SELF as the recipient: the active-key standing
     // AND the zero-hp-floor fact standing both land on the selected entity.
     const cast = await runAttackCast({
@@ -2395,6 +2398,13 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
     });
     expect(kill.state.vitals.hitPoints.current).toBe(0);
     expect(kill.state.vitals.zeroHitPoints).toMatchObject({ kind: "dying" });
+
+    // Deterministic proof-work budget (the performance regression guard): the
+    // kernel must not slide back into re-proving what its own completed
+    // proofs already guarantee stable.
+    const proofStats = readMechanicsKernelProofStats();
+    expect(proofStats.causalProofs).toBeLessThanOrEqual(32);
+    expect(proofStats.worldParses).toBeLessThanOrEqual(128);
   });
 
   it("consumes only one dart's worth of floor: dart six drops the warded hero", async () => {

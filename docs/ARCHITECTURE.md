@@ -573,7 +573,13 @@ reusable causal receipt, and cloned, serialized or reconstructed projections fai
 ephemeral registries behind such capabilities (kernel causal states, event emissions, subscriber
 selections, compiler continuations, transaction projections) are possession proofs of kernel provenance
 only: every authoritative fact lives in the frozen value and the causal state, so a registry can never
-become a second history, progress or persistence model. Prefix
+become a second history, progress or persistence model. Possession proofs double as COMPLETED proofs:
+a kernel-born frozen causal state, structure-parsed world, conformed execution frame or exact-schema
+output conforms by identity instead of re-running its deterministic proof — the values are deeply
+frozen and the proofs are pure fixed points, so reuse changes cost, never outcome (the deterministic
+proof-work counters `readMechanicsKernelProofStats`/`resetMechanicsKernelProofStats` expose full-proof
+counts, and per-scenario ceilings in the kernel suites guard against redundant re-proving returning).
+Hostile or unregistered values always take the full fail-closed proof. Prefix
 projection validates protected journal epoch/revision/actions plus character build revision, but never
 runs end discovery, causal rebase or pending-phase acceptance. The compiler refresh validates the
 projected world against the already-conformed basis and its exact pending frames without conforming or
