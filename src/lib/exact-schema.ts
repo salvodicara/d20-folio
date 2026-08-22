@@ -535,6 +535,13 @@ function conformNode(
     case "custom": {
       const conformer = context.customs[schema.name];
       const parsed = conformer?.(value);
+      // An object this runtime itself produced is already canonical plain
+      // JSON, key-sorted and deeply frozen — the defensive re-walk and
+      // de-aliasing re-clone below exist for untrusted conformer output and
+      // would only reproduce the same value.
+      if (parsed !== null && typeof parsed === "object" && isCanonicalOutput(parsed)) {
+        return parsed as ConformedValue;
+      }
       return parsed == null || !plainJson(parsed) ? undefined : clonePlainJson(parsed);
     }
   }
@@ -546,15 +553,60 @@ function freezeDeep(value: unknown): void {
   if (!Object.isFrozen(value)) Object.freeze(value);
 }
 
+/**
+ * Objects `conformExactRuntime` itself produced: canonical plain JSON,
+ * key-sorted, deeply frozen. Membership is a completed canonicalization —
+ * re-validating or re-cloning such an object must reproduce the same value.
+ * Never exported.
+ */
+const canonicalExactOutputs = new WeakSet<object>();
+
+function isCanonicalOutput(value: object): boolean {
+  return canonicalExactOutputs.has(value);
+}
+
+/**
+ * Per-(schema, context) completed proofs: objects this runtime already
+ * conformed under the SAME schema and context objects and returned
+ * unchanged. Conforming an immutable canonical output under the exact
+ * binding that produced it is deterministic and idempotent, so the
+ * completed proof is reused. Never exported.
+ */
+const conformedBySchema = new WeakMap<
+  ExactSchema,
+  WeakMap<RuntimeContext, WeakSet<object>>
+>();
+
 function conformExactRuntime(
   schema: ExactSchema,
   value: unknown,
   context: RuntimeContext
 ): ConformedValue | null {
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    conformedBySchema.get(schema)?.get(context)?.has(value)
+  ) {
+    return value as ConformedValue;
+  }
   if (!plainJson(value)) return null;
   const parsed = conformNode(schema, value, context, 0);
   if (parsed === undefined) return null;
   freezeDeep(parsed);
+  if (typeof parsed === "object" && parsed !== null) {
+    canonicalExactOutputs.add(parsed);
+    let byContext = conformedBySchema.get(schema);
+    if (!byContext) {
+      byContext = new WeakMap();
+      conformedBySchema.set(schema, byContext);
+    }
+    let proved = byContext.get(context);
+    if (!proved) {
+      proved = new WeakSet();
+      byContext.set(context, proved);
+    }
+    proved.add(parsed);
+  }
   return parsed;
 }
 
