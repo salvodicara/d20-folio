@@ -5,13 +5,13 @@
 > product, and engineering work — by humans or AI agents — must be validated
 > against this constitution. It takes precedence over convenience.
 
-|                |                                                                                                                                                                                                                                                                                                                                                        |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Status**     | Active — authoritative                                                                                                                                                                                                                                                                                                                                 |
-| **Version**    | 1.9                                                                                                                                                                                                                                                                                                                                                    |
-| **Ratified**   | 2026-05-31                                                                                                                                                                                                                                                                                                                                             |
-| **Owner**      | Salvatore Di Cara (sole owner; 100% AI-developed project)                                                                                                                                                                                                                                                                                              |
-| **Precedence** | Supreme for product/UX/design + the listed engineering principles. Sits **above** convenience and above any single brief. Does not override hard project constraints in `CLAUDE.md` (zero-budget, offline-first, bilingual EN+IT, no dice, source-of-truth rules) — those remain binding and this constitution is designed to be consistent with them. |
+|               |                                                                                                                                                                                                                                                                             |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**    | Active — authoritative                                                                                                                                                                                                                                                      |
+| **Version**   | 1.9                                                                                                                                                                                                                                                                         |
+| **Ratified**  | 2026-05-31                                                                                                                                                                                                                                                                  |
+| **Owner**     | Salvatore Di Cara (sole owner; 100% AI-developed project)                                                                                                                                                                                                                   |
+| **Authority** | Owns durable product/UX/design intent and the listed engineering principles. It works with the repository invariants in `docs/GOLDEN_RULES.md`; conflicts are reconciled through that document's evidence-based authority model, not by assuming either file is infallible. |
 
 ## How to use this document
 
@@ -19,9 +19,10 @@
    we are building and the rules every surface must obey.
 2. **Validate every change against it.** **An owner request** that conflicts
    with these principles: comply but surface it explicitly (informed override,
-   `docs/GOLDEN_RULES.md` → Precedence). **Your own plan or implementation**
-   that conflicts: fix it — the constitution wins. Fork (d) covers only
-   conflicts BETWEEN steering docs. (See _Enforcement_.)
+   `docs/GOLDEN_RULES.md` → _Authority and reconciliation_). **Your own plan or
+   implementation** that conflicts: fix it unless current evidence shows this
+   document has drifted, in which case reconcile the owning rule first. (See
+   _Enforcement_.)
 3. **Keep it maintained.** When the owner ratifies a new product-level decision,
    record it here (bump the version + add a dated note under _Amendments_).
 4. **When in doubt**, prioritize: usability, consistency, discoverability,
@@ -345,9 +346,8 @@ vision.**
 - **All future work must be validated against this constitution.**
 - **Future agents must follow this constitution.**
 - A request that conflicts with these principles: **surface the conflict** per
-  the informed-override clause (`docs/GOLDEN_RULES.md` → Precedence) — the
-  owner's live word wins, knowingly. Fork (d) covers only conflicts BETWEEN
-  steering docs, never the owner's live word.
+  the informed-override clause (`docs/GOLDEN_RULES.md` → _Authority and
+  reconciliation_) — the owner's live word wins knowingly when safe.
 - The constitution takes precedence over convenience.
 
 **When in doubt:** prioritize usability, consistency, discoverability, immersion,
