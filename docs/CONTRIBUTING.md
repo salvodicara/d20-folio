@@ -103,6 +103,11 @@ sharded e2e matrix) on every push to `main`. Both green = both build modes green
 merge (golden rule 28). The local pre-push hook remains the last line of defence BEFORE a merge
 lands; the remote lanes are the standing verdict every SHA carries after.
 
+Tests that read `content-pack/fixtures/` or assert private catalogue facts live under
+`content-pack/tests/`, never under the public `tests/` tree. This keeps a fresh public checkout
+genuinely self-contained: CI must not rely on a developer's optional sibling-pack symlink, while
+Verify still runs those live-user conformance contracts in the composed build.
+
 > **Never add a slow check to a hook "to be safe."** If a check is slow, it belongs in the
 > per-merge remote lane (`ci.yml` / `verify.yml`), not on every push. Keep `--cache` everywhere it
 > helps (eslint `.eslintcache`, tsc incremental) so a no-op re-run is seconds.
