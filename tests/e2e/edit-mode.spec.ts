@@ -123,6 +123,7 @@ test.describe("Edit Mode", () => {
     const dialog = page.getByRole("dialog", { name: /hit points/i });
     await dialog.getByRole("spinbutton", { name: /amount/i }).fill("3");
     await dialog.getByRole("button", { name: /^damage$/i }).click();
+    await page.getByRole("button", { name: /^take 3 damage$/i }).click();
     await expect(page.getByRole("button", { name: /^undo$/i })).toBeVisible();
 
     // Enter EDIT mode → the name + every vital become editable.

@@ -256,5 +256,15 @@ describe("useMechanicsCast", () => {
       difficultyClass: 10,
       spell: "hold-person",
     });
+
+    // A second invocation with identical answers is a distinct journal action.
+    // Extra Attack and repeatable features must not collide with the first run.
+    let second: string | null = null;
+    act(() => {
+      second = result.current.commit();
+    });
+    expect(second).not.toBeNull();
+    expect(second).not.toBe(committed);
+    expect(useCharacterStore.getState().character?.session.hp.current).toBe(22);
   });
 });

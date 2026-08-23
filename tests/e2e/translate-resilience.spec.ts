@@ -135,7 +135,12 @@ test.describe("external-text-mutation resilience (issue #24)", () => {
   // fires when React reconciles/unmounts a text node whose recorded parent an
   // external agent has changed; a hard navigation remounts the whole tree and
   // sidesteps it, so the in-app click is what faithfully reproduces issue #24.
-  const selectTab = (page: Page, name: RegExp) => page.getByRole("tab", { name }).click();
+  // Select through the locale- and text-mutation-proof ARIA relationship. Once
+  // the simulated translator wraps the label text, accessible-name queries are
+  // intentionally no longer reliable; `aria-controls` remains React-owned
+  // structure and is the stable contract this resilience test should drive.
+  const selectTab = (page: Page, id: "combat" | "features") =>
+    page.locator(`[role="tab"][aria-controls$="-panel-${id}"]`).click();
 
   test("Features tab survives simulated Chrome auto-translate", async ({ page }) => {
     await page.goto("/characters/mock-1?tab=features");
@@ -153,13 +158,14 @@ test.describe("external-text-mutation resilience (issue #24)", () => {
     //  1. FILTER the feature list — React DELETES whole card subtrees whose text
     //     nodes the live observer reparented (the `removeChild` not-a-child path).
     //  2. SWITCH tabs — React unmounts the active panel subtree.
-    const searchToggle = page
-      .getByRole("button", { name: /search|cerca|filtra/i })
-      .first();
+    const featuresPanel = page.locator(
+      '[role="tabpanel"][aria-labelledby$="-tab-features"]'
+    );
+    const searchToggle = featuresPanel.locator(".csearch-lens");
     if (await searchToggle.isVisible({ timeout: 1500 }).catch(() => false)) {
       await searchToggle.click().catch(() => {});
     }
-    const searchBox = page.getByRole("textbox").first();
+    const searchBox = featuresPanel.locator(".csearch-input");
     if (await searchBox.isVisible({ timeout: 1500 }).catch(() => false)) {
       await searchBox.fill("zzzznomatch");
       await expect(errorBoundary(page)).toHaveCount(0);
@@ -167,9 +173,9 @@ test.describe("external-text-mutation resilience (issue #24)", () => {
       await expect(errorBoundary(page)).toHaveCount(0);
     }
 
-    await selectTab(page, /combat/i);
+    await selectTab(page, "combat");
     await expect(errorBoundary(page)).toHaveCount(0);
-    await selectTab(page, /features/i);
+    await selectTab(page, "features");
     await expect(errorBoundary(page)).toHaveCount(0);
     await expect(page.locator(".uc-name").first()).toBeVisible();
   });
@@ -183,7 +189,7 @@ test.describe("external-text-mutation resilience (issue #24)", () => {
       5
     );
 
-    await selectTab(page, /features/i);
+    await selectTab(page, "features");
     await expect(errorBoundary(page)).toHaveCount(0);
     await expect(page.locator(".uc-name").first()).toBeVisible();
   });

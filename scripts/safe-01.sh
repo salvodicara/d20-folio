@@ -102,6 +102,9 @@ resolve_billing_id() {  # bare XXXXXX-XXXXXX-XXXXXX, or empty when detached
 billing_enabled() {  # "true" / "false" — gcloud prints "True"/"False"; normalize so every == "true" site works
   query "true" gcloud billing projects describe "$PROJECT_ID" --format='value(billingEnabled)' | tr '[:upper:]' '[:lower:]'
 }
+billing_account_open() {  # $1 = bare billing account id; "true" only when charges can be linked
+  query "true" gcloud billing accounts describe "$1" --format='value(open)' | tr '[:upper:]' '[:lower:]'
+}
 sa_email() { printf '%s-compute@developer.gserviceaccount.com' "$1"; }
 
 iam_bound() {  # 0 if $sa holds $DETACH_ROLE on the project
@@ -125,6 +128,8 @@ cmd_arm() {
     [[ -n "$DRY" ]] && bid="0X0X0X-0X0X0X-0X0X0X" \
       || die "no billing account attached to $PROJECT_ID. Attach one (Console → Billing), or run 'just safe-restore' if the switch FIRED."
   fi
+  [[ "$(billing_account_open "$bid")" == "true" || -n "$DRY" ]] \
+    || die "billing account $bid is CLOSED (for example, an expired trial). Reopen/upgrade it in Google Cloud Billing before arming SAFE-01."
   sa="$(sa_email "$pnum")"
   ok "project number     $pnum"
   ok "billing account    $bid"
@@ -211,16 +216,24 @@ cmd_status() {
   step "SAFE-01 STATUS"
   preflight
 
-  local pnum bid enabled sa
+  local pnum bid enabled account_open="" sa
   pnum="$(resolve_project_number)"
   bid="$(resolve_billing_id)"
   enabled="$(billing_enabled)"
   sa="$(sa_email "$pnum")"
   [[ -z "$bid" && -f "$BILLING_CACHE" ]] && bid="$(tr -d '[:space:]' < "$BILLING_CACHE")"
+  [[ -n "$bid" ]] && account_open="$(billing_account_open "$bid")"
 
   step "state…"
   local billing_ok=0 topic_ok=0 budget_ok=0 iam_ok=0 fn_ok=0
-  if [[ "$enabled" == "true" ]]; then billing_ok=1; ok "billing ATTACHED ($bid)"; else warn "billing DETACHED — the switch FIRED (or was never attached)"; fi
+  if [[ "$enabled" == "true" ]]; then
+    billing_ok=1
+    ok "billing ATTACHED ($bid)"
+  elif [[ "$account_open" == "false" ]]; then
+    warn "billing account $bid is CLOSED — consistent with an expired trial, not proof that SAFE-01 fired"
+  else
+    warn "billing DETACHED — SAFE-01 may have fired (or billing was never attached)"
+  fi
 
   if [[ -z "$DRY" ]] && gcloud pubsub topics describe "$TOPIC" --project="$PROJECT_ID" >/dev/null 2>&1; then
     topic_ok=1; ok "topic '$TOPIC' exists"
@@ -252,7 +265,9 @@ cmd_status() {
   [[ -n "$lastfire" ]] && warn "a DETACH was logged at $lastfire" || ok "no detach event in recent logs"
 
   step "verdict:"
-  if [[ "$billing_ok" == 0 ]]; then
+  if [[ "$billing_ok" == 0 && "$account_open" == "false" ]]; then
+    printf '  ✗ BILLING ACCOUNT CLOSED — reopen/upgrade it in Google Cloud Billing, then run: just safe-restore\n'
+  elif [[ "$billing_ok" == 0 ]]; then
     printf '  ✗ FIRED — billing is detached. Recover with: just safe-restore\n'
   elif [[ "$topic_ok" == 1 && "$budget_ok" == 1 && "$iam_ok" == 1 && "$fn_ok" == 1 ]]; then
     printf '  ✓ ARMED — every piece is in place.\n'
@@ -276,16 +291,8 @@ cmd_restore() {
     printf '    (check the whole switch with: just safe-status)\n'
     return 0
   fi
-  warn "billing is DETACHED — the kill-switch FIRED. Running the SAFE restore."
-  warn "FIRST ban the abusive UID in /admin (or set status:\"blocked\" on their /users doc) before re-arming."
-
-  # 1. DEFUSE — drop the detach grant so a still-over-budget month can't instantly re-fire.
-  step "DEFUSE — removing $DETACH_ROLE from $sa (neutralises the detach; topic/budget/function untouched)…"
-  mutate gcloud projects remove-iam-policy-binding "$PROJECT_ID" \
-    --member="serviceAccount:$sa" --role="$DETACH_ROLE" --condition=None || true
-  ok "detach capability removed — the function can no longer stop billing"
-
-  # 2. Resolve the billing account id (cache first, then prompt).
+  # Resolve the account before touching IAM. A closed trial account cannot be
+  # repaired here and must not be misdiagnosed as a kill-switch fire.
   local bid=""
   [[ -f "$BILLING_CACHE" ]] && bid="$(tr -d '[:space:]' < "$BILLING_CACHE")"
   if [[ -z "$bid" ]]; then
@@ -295,13 +302,25 @@ cmd_restore() {
   fi
   [[ -n "$bid" ]] || die "no billing account id. Find it: gcloud billing accounts list"
   ok "billing account $bid"
+  if [[ "$(billing_account_open "$bid")" != "true" && -z "$DRY" ]]; then
+    die "billing account $bid is CLOSED. Reopen/upgrade it at https://console.cloud.google.com/billing/$bid/manage?project=$PROJECT_ID, then re-run just safe-restore. No IAM state was changed."
+  fi
 
-  # 3. RE-LINK billing.
+  warn "billing is DETACHED while its account is open — SAFE-01 may have fired. Running the SAFE restore."
+  warn "FIRST ban any abusive UID in /admin (or set status:\"blocked\" on their /users doc) before re-arming."
+
+  # 1. DEFUSE — drop the detach grant so a still-over-budget month can't instantly re-fire.
+  step "DEFUSE — removing $DETACH_ROLE from $sa (neutralises the detach; topic/budget/function untouched)…"
+  mutate gcloud projects remove-iam-policy-binding "$PROJECT_ID" \
+    --member="serviceAccount:$sa" --role="$DETACH_ROLE" --condition=None || true
+  ok "detach capability removed — the function can no longer stop billing"
+
+  # 2. RE-LINK billing.
   step "re-linking billing to bring the project back…"
   mutate gcloud billing projects link "$PROJECT_ID" --billing-account="$bid"
   ok "billing re-linked"
 
-  # 4. Re-enable APIs a detach can disable, then verify.
+  # 3. Re-enable APIs a detach can disable, then verify.
   step "re-enabling core APIs (a detach can disable them)…"
   mutate gcloud services enable \
     cloudfunctions.googleapis.com run.googleapis.com \
@@ -312,7 +331,7 @@ cmd_restore() {
   local nowon; nowon="$(billing_enabled)"
   [[ "$nowon" == "true" || -n "$DRY" ]] && ok "billing verified ENABLED" || warn "billing still shows disabled — check the Console"
 
-  # 5. RE-ARM the defused piece — gated: re-arming while cost is still over budget re-detaches.
+  # 4. RE-ARM the defused piece — gated: re-arming while cost is still over budget re-detaches.
   printf '\n'
   warn "Re-arming re-grants the detach role. If month-to-date cost is STILL over £$BUDGET_AMOUNT the budget re-fires and re-detaches within minutes."
   warn "Only re-arm once the abuse is fixed AND cost is under budget (or the month rolled over)."

@@ -257,7 +257,7 @@ export function RosterPage() {
                   character={character}
                   // Gate the tile's HP fill on its combat-subdoc hydration so the gold
                   // bar first-paints at the real width (no full-HP placeholder slide).
-                  hpReady={hpReady?.[character.id]}
+                  hpReady={hpReady?.[character.id] ?? false}
                   selection={{
                     selecting: selection.selecting,
                     selected: selection.isSelected(character.id),

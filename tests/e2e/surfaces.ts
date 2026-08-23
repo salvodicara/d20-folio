@@ -418,8 +418,17 @@ async function openRosterGallery(page: Page): Promise<void> {
 /** Expand the first shared reading card and prove its inline detail painted. */
 async function openFirstUniversalCard(page: Page): Promise<void> {
   const card = page.locator(".uc").first();
-  await card.locator(".uc-chevron").click();
-  await expect(card).toHaveClass(/is-open/);
+  await expect(async () => {
+    await card.locator(".uc-chevron").click();
+    await expect(card).toHaveClass(/is-open/, { timeout: 1500 });
+  }).toPass();
+}
+
+/** Mobile play defaults to Pinned; reveal the full action corpus before driving
+ * a fixture-specific feature that is intentionally not pinned. */
+async function revealAllActions(page: Page): Promise<void> {
+  const allActions = page.getByRole("button", { name: /^all$|^tutti$/i });
+  if (await allActions.isVisible()) await allActions.click();
 }
 
 /** Drive the seeded Bard 9→10 journey through its two required spell picks.
@@ -631,6 +640,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     variants: OVERLAY_VARIANTS,
     ready: readyByName,
     prepare: async (page) => {
+      await revealAllActions(page);
       await page
         .getByRole("button", { name: /^(cast: thunderwave|lancia: onda tonante)$/i })
         .click();
@@ -658,6 +668,9 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       // crossing the massive-damage instant-death threshold.
       await healthyEditor.getByRole("spinbutton").fill("43");
       await healthyEditor.getByRole("button", { name: /^(damage|danno)$/i }).click();
+      await page
+        .getByRole("button", { name: /^(take 43 damage|subisci 43 danni)$/i })
+        .click();
 
       await page.locator('button.vital-hp[data-state="dying"]').click();
       const dyingEditor = page.getByRole("dialog").first();
@@ -672,6 +685,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     variants: OVERLAY_VARIANTS,
     ready: readyText(/Archmage Velt/),
     prepare: async (page) => {
+      await revealAllActions(page);
       const useArcaneRecovery = page.getByRole("button", {
         name: /^(use: arcane recovery|usa: recupero arcano)$/i,
       });
@@ -701,6 +715,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     variants: OVERLAY_VARIANTS,
     ready: readyText(/Auriel, Oath of Devotion/),
     prepare: async (page) => {
+      await revealAllActions(page);
       await page
         .getByRole("button", {
           name: /^(use: lay on hands|usa: imposizione delle mani)$/i,
@@ -714,6 +729,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     variants: OVERLAY_VARIANTS,
     ready: readyText(/Maelis, Elemental Druid/),
     prepare: async (page) => {
+      await revealAllActions(page);
       await page
         .getByRole("button", {
           name: /^(use: wild companion|usa: compagno selvatico)$/i,
@@ -1083,7 +1099,9 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     overlay: false,
     ready: readyText(/starless keep/i),
     prepare: async (page) => {
-      await page.getByRole("tab", { name: /^resources$|^risorse$/i }).click();
+      await page
+        .getByRole("tab", { name: /^(party resources|risorse del gruppo)$/i })
+        .click();
       await page
         .getByRole("button", { name: /^add coins$|^aggiungi monete$/i })
         .first()

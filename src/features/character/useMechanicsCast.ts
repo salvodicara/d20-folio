@@ -113,6 +113,7 @@ export function useMechanicsEngineAction(
     if (!state.ok) {
       return { phase: { kind: "unavailable", reason: "causal-state" } as const };
     }
+    const invocationId = `${source.key}-${world.nextOccurrenceOrdinal}`;
     const outcome = runMechanicsCausalAction({
       answers,
       authoritySnapshot: {
@@ -121,7 +122,7 @@ export function useMechanicsEngineAction(
       facts: [...source.capability.facts, ...(source.extraFacts ?? [])],
       frameAnswers: [],
       intent: {
-        actionId: `${source.key}:${canonicalFingerprint({ answers, key: source.key })}`,
+        actionId: `${invocationId}:${canonicalFingerprint({ answers, key: source.key })}`,
         factGuards: [],
         frame: {
           authority: source.capability.authority,
@@ -136,7 +137,7 @@ export function useMechanicsEngineAction(
             root: {
               occurrence: {
                 material,
-                occurrenceId: `${source.key}-${world.nextOccurrenceOrdinal}`,
+                occurrenceId: invocationId,
               },
               ordinal: world.nextOccurrenceOrdinal,
             },

@@ -10,9 +10,9 @@
  * `window.scrollY`), and browser scroll-anchoring fails here because the moved node was
  * itself the anchor, so the viewport lands on different content.
  *
- * The fix combines two parts in one layout frame: keep the edited row at the same
- * viewport position, then FLIP-slide every other row from its old position into the new
- * initiative order. The list communicates what changed without teleporting content.
+ * The fix snapshots the old row positions and FLIP-slides every moved row into the new
+ * initiative order. The document scroll position stays untouched: moving the viewport
+ * as well as the cards creates an over-correction when the page is near a scroll boundary.
  */
 
 import { useLayoutEffect, useRef, type RefObject } from "react";
@@ -35,7 +35,7 @@ export function initiativeChangeAnchor(
 }
 
 interface Snapshot {
-  /** Each row id → its viewport top (px) as of the last measured frame. */
+  /** Each row id → its document top (px) as of the last measured frame. */
   tops: Map<string, number>;
   /** Each row id → its initiative as of the last measured frame. */
   inits: Map<string, number | null>;
@@ -52,10 +52,10 @@ function reducedMotion(): boolean {
 }
 
 /**
- * Preserve the user's VISUAL position across a gathering re-sort. On every frame while
- * `enabled`, measure the current row tops (the list renders one child per `rowIds`
- * entry, in order), and when a row's initiative changed since the previous frame, shift
- * the window so that row lands back at its pre-sort viewport position. A no-op the first
+ * Preserve visual continuity across a gathering re-sort. On every frame while
+ * `enabled`, measure the current document-space row tops (the list renders one child per `rowIds`
+ * entry, in order), and when a row's initiative changed since the previous frame, animate
+ * every moved row from its pre-sort viewport position. A no-op the first
  * frame, when disabled (turns begun → the order is frozen, no live re-sort), or when the
  * DOM and model row counts disagree (a defensively-nulled row → don't compensate on a
  * bad map).
@@ -89,7 +89,11 @@ export function useGatheringScrollAnchor<E extends HTMLElement>({
     for (let i = 0; i < rowIds.length; i++) {
       const el = children[i];
       const id = rowIds[i];
-      if (el && id !== undefined) tops.set(id, el.getBoundingClientRect().top);
+      if (el && id !== undefined) {
+        // Document coordinates make the FLIP baseline immune to the user scrolling
+        // between the initial render and the initiative commit.
+        tops.set(id, el.getBoundingClientRect().top + window.scrollY);
+      }
     }
     const prev = prevRef.current;
     prevRef.current = { tops, inits: new Map(initByRowId) };
@@ -99,22 +103,12 @@ export function useGatheringScrollAnchor<E extends HTMLElement>({
     const prevTop = prev.tops.get(anchor);
     const newTop = tops.get(anchor);
     if (prevTop === undefined || newTop === undefined) return;
-    const delta = newTop - prevTop;
-    if (Math.abs(delta) < 1) return; // the anchor didn't actually move
-    window.scrollBy(0, delta);
-    // The document may be against its top/bottom scroll boundary, so the browser might
-    // apply only PART of the requested compensation. Re-measure what actually happened;
-    // the residual becomes a FLIP transform instead of a visible teleport.
-    for (let i = 0; i < rowIds.length; i++) {
-      const el = children[i];
-      const id = rowIds[i];
-      if (el && id !== undefined) tops.set(id, el.getBoundingClientRect().top);
-    }
+    if (Math.abs(newTop - prevTop) < 1) return; // the anchor didn't actually move
 
     if (reducedMotion()) return;
-    // The scroll compensation keeps the edited card fixed. Every other card begins at
-    // its previous visual top and glides to its newly-sorted slot (FLIP). Inline styles
-    // are transient and removed after the motion, so normal card CSS remains the owner.
+    // Every moved card begins at its previous visual top and glides to its newly-sorted
+    // slot (FLIP). The viewport never moves, so the pointer/cursor remains stable. Inline
+    // styles are transient and removed after the motion, so normal card CSS remains owner.
     for (let i = 0; i < rowIds.length; i++) {
       const id = rowIds[i];
       const el = children[i] as HTMLElement | undefined;

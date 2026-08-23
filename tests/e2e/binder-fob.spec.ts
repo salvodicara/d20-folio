@@ -53,11 +53,14 @@ async function castHealingWord(page: Page): Promise<void> {
   await page.getByRole("button", { name: /Expand: Healing Word/i }).click();
   const detail = page.getByRole("region", { name: /Healing Word/i });
   await detail.getByRole("button", { name: /cast/i }).first().click();
-  // A leveled spell may open the slot-level picker — pick the first slot option.
   const modal = page.getByRole("dialog");
-  if (await modal.isVisible({ timeout: 1500 }).catch(() => false)) {
-    await modal.locator(".cl-slot").first().click();
-  }
+  await modal.getByRole("button", { name: /Level 1 slot/i }).click();
+  await modal.getByRole("button", { name: /^Yourself$/i }).click();
+  for (const die of await modal.getByRole("spinbutton").all()) await die.fill("4");
+  await modal.getByRole("button", { name: /^Apply$/i }).click();
+  await expect(modal.getByText(/Everything resolved/i)).toBeVisible();
+  await modal.getByRole("button", { name: /^Apply$/i }).click();
+  await expect(modal).toBeHidden();
 }
 
 test("no-reflow: the ✎ coin toggles edit by lighting in place; the masthead is pure identity + vitals", async ({

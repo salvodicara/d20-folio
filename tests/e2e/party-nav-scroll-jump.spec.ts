@@ -70,8 +70,10 @@ test.describe("combat-pip sheet↔party navigation — plain landing (no auto-sc
     const partyHead = page.locator("#party-head");
     await partyHead.waitFor({ timeout: 20_000 });
     // Scroll the encounter down so the upcoming top-landings are non-vacuous.
-    await page.evaluate(() => window.scrollTo(0, 600));
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(400);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    // The tabbed hub is intentionally shorter than the old all-sections page;
+    // any meaningful non-zero offset makes the subsequent top reset non-vacuous.
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(50);
 
     // ── (a) HERO FLIP — a bare /characters/<id> PUSH → tops out. ──
     await resetTopResets(page);

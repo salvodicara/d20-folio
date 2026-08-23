@@ -68,7 +68,27 @@ export function ScrollRestorer(): null {
     // lazy route to be tall enough); every PUSH targets 0 and lands synchronously here.
     let scrolled = target <= 0;
     if (scrolled) window.scrollTo(0, 0);
-    let focused = !focusOnPush;
+    // Suspense may keep the SOURCE route painted after the URL has changed, then
+    // briefly show a loader before data creates the destination main. Observe that
+    // bounded settle instead of focusing the stale node once and losing focus when
+    // it unmounts. The identity check means mutations inside the same page never
+    // steal focus back from the user.
+    let focusedMain: HTMLElement | null = null;
+    let focusObserver: MutationObserver | null = null;
+    let focusTimer = 0;
+    const focusCurrentMain = () => {
+      const main = document.getElementById("main");
+      if (!main || main === focusedMain) return;
+      if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
+      main.focus({ preventScroll: true });
+      focusedMain = main;
+    };
+    if (focusOnPush) {
+      focusCurrentMain();
+      focusObserver = new MutationObserver(focusCurrentMain);
+      focusObserver.observe(document.body, { childList: true, subtree: true });
+      focusTimer = window.setTimeout(() => focusObserver?.disconnect(), 10_000);
+    }
     let raf = 0;
     const start = performance.now();
     const tick = () => {
@@ -82,20 +102,16 @@ export function ScrollRestorer(): null {
           scrolled = true;
         }
       }
-      if (!focused) {
-        const main = document.getElementById("main");
-        if (main) {
-          if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
-          main.focus({ preventScroll: true });
-          focused = true;
-        }
-      }
-      if ((!scrolled || !focused) && elapsed < 1000) {
+      if (!scrolled && elapsed < 1000) {
         raf = requestAnimationFrame(tick);
       }
     };
-    if (!scrolled || !focused) raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    if (!scrolled) raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      focusObserver?.disconnect();
+      window.clearTimeout(focusTimer);
+    };
     // location.key is unique per history entry (and per REPLACE), so this fires
     // exactly once per navigation.
   }, [location.key, location.pathname, location.search, navType]);

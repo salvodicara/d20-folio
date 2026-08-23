@@ -467,6 +467,15 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     }
     const live = useCharacterStore.getState().character;
     if (!live) return null;
+    const slot = getEconomySlot(action);
+    if (
+      slot !== "free" &&
+      resolveConditionEffects(effectiveSessionConditions(live.session)).blockedSlots.has(
+        slot
+      )
+    ) {
+      return t("combat.slotBlockedByCondition");
+    }
     if (action.locksMovement && useCombatStore.getState().movementUsedFt > 0) {
       return t("combat.blockedReasonAlreadyMoved");
     }
@@ -1949,15 +1958,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Condition gate — the Incapacitated family forbids the slot.
-    const blockedSlots = resolveConditionEffects(
-      character ? effectiveSessionConditions(character.session) : []
-    ).blockedSlots;
-    if (execution.consumesTurnEconomy && slot !== "free" && blockedSlots.has(slot)) {
-      showToast({ message: t("combat.slotBlockedByCondition"), duration: 2500 });
-      return;
-    }
-
     const costOptions = getActionCostOptions(action);
 
     // A depleted PRIMARY resource does not make an alternate payment illegal.
@@ -2103,15 +2103,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     // so this is unreachable from the UI — a silent defensive bail ("never
     // trust the view"), not a redundant "already used" toast.
     if (useCombatStore.getState().reactionUsed) return;
-    // Incapacitated and its kin forbid reactions too.
-    const blockedSlots = resolveConditionEffects(
-      character ? effectiveSessionConditions(character.session) : []
-    ).blockedSlots;
-    if (blockedSlots.has("reaction")) {
-      showToast({ message: t("combat.slotBlockedByCondition"), duration: 2500 });
-      return;
-    }
-
     if (!(await confirmConcentrationBreak(action))) return;
     if (expendsSpellSlot && !spellSlotExpenditureAvailable()) {
       showSpellSlotExpenditureLimit();

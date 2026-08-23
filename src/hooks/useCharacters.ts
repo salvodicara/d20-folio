@@ -245,7 +245,13 @@ function useRosterCombatStates(
         scopeUid,
         id,
         (combat) => {
-          if (!cancelled) setStates((prev) => ({ ...prev, [id]: combat }));
+          // The dev document replica truthfully emits `null` before the dedicated
+          // two-phase HP repro timer publishes its synthetic real subdoc. Ignore
+          // only that harness prelude: treating it as settled would reveal the
+          // full-HP baseline and invalidate the production sequence under test.
+          if (!cancelled && !(devHpHydrateDelay() && combat === null)) {
+            setStates((prev) => ({ ...prev, [id]: combat }));
+          }
         },
         (err) => console.error("Roster combat-state subscription error", err)
       )

@@ -75,6 +75,17 @@ round/initiative and never silently re-arms a spent action; switching heroes and
 boundaries still reset it. A focused regression pins the navigation-remount case with no new
 listener or per-action write.
 
+**Mechanics release-hardening checkpoint (2026-08-23; ACTIVE):** the converged engine candidate is
+rebased onto current `origin/main`. Browser dogfood found and fixed three release blockers before
+promotion: a condition applied while an action flow was open could race a stale React closure; two
+identical engine invocations collided on one journal id; and initiative FLIP stored viewport-space
+positions, producing a deterministic 110px teleport after the user scrolled. Live-state rereads,
+ordinal invocation identity and document-space FLIP baselines now have fail-before unit/Chromium
+regressions; the focused combat/dying/initiative battery is green. Full composed + SRD-only gates,
+live-fixture/security verification and production promotion remain pending. Production Cloud Billing
+is currently disabled after an expired-trial Spark downgrade, so Cloud Functions are stopped and no
+deploy is allowed until the owner reopens paid billing and SAFE-01 is re-verified.
+
 **Integration watch (2026-08-05):** `origin/main` now carries the parallel test-estate convergence
 wave (duplicate retirement, settled-box sharing, mobile gates and race fixes). The UI epic remains
 isolated; its final rebase must preserve those new test owners and reconcile this branch's surface

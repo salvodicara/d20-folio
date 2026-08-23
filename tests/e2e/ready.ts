@@ -154,6 +154,7 @@ export async function seedChronicle(
   );
   await page.setViewportSize({ width: opts.width, height: 850 });
   await page.goto("/campaigns/DEVCAMPAIGN24");
+  await page.getByRole("tab", { name: /^journal$/i }).click();
   // The FIXED reading body renders the latest chapter's prose as soon as the reader
   // mounts with the seeded text — the deterministic "hub + seeded chronicle are
   // ready" signal (always visible; the chapter navigator now lives in the section's

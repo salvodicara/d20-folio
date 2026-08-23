@@ -90,6 +90,7 @@ for (const theme of THEMES) {
       const dialog = page.getByRole("dialog", { name: /hit points/i });
       await dialog.getByRole("spinbutton", { name: /amount/i }).fill("60");
       await dialog.getByRole("button", { name: /^Damage$/i }).click();
+      await page.getByRole("button", { name: /^Take 60 damage$/i }).click();
       // The banner (verdict + roll entry + pips) is up; reopen the at-0 popover
       // so its Critical-hit toggle is in the scanned tree too.
       await page
@@ -118,6 +119,7 @@ for (const theme of THEMES) {
       const dialog = page.getByRole("dialog", { name: /hit points/i });
       await dialog.getByRole("spinbutton", { name: /amount/i }).fill("60");
       await dialog.getByRole("button", { name: /^Damage$/i }).click();
+      await page.getByRole("button", { name: /^Take 60 damage$/i }).click();
       await page
         .getByText(/death saves/i)
         .first()

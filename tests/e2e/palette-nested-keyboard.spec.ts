@@ -52,6 +52,10 @@ test("arrow nav + type work in the palette opened over a modal", async ({ page }
   await page.keyboard.type("char");
   await expect(page.locator('[role="combobox"]')).toHaveValue("char");
 
+  const palette = page
+    .getByRole("dialog")
+    .filter({ has: page.locator("#palette-search-input") });
+
   // ↑↓ moves the roving highlight (aria-activedescendant).
   const ad = () =>
     page.evaluate(
@@ -62,7 +66,7 @@ test("arrow nav + type work in the palette opened over a modal", async ({ page }
     );
   // ≥2 results means the lazily-built SRD index has landed (specs + monster
   // catalogue load async on first open) — only then can ArrowDown move at all.
-  await expect(page.locator('[role="option"]').nth(1)).toBeVisible();
+  await expect(palette.getByRole("option").nth(1)).toBeVisible();
   const before = await ad();
   await page.keyboard.press("ArrowDown");
   await expect.poll(async () => ad()).not.toBe(before);

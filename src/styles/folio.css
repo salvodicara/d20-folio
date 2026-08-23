@@ -6256,16 +6256,17 @@ button.trk-pip:active {
    with the crisp dark outline so they pop on the busy scene (the vellum-deep light
    defaults above would vanish here). */
 [data-theme="light"] .brand-intro .brand-word-d20 {
-  color: var(--accent-primary-bright);
+  color: var(--text-on-backdrop-title);
 }
 [data-theme="light"] .brand-intro .brand-word-folio {
-  color: #f8f1de;
+  color: var(--text-on-backdrop);
 }
 /* No hard outline on the wordmark — it sits on the dark centre scrim (below), so
    like the dark theme it reads bright on dark; a hard outline on the small
    "d20" muddied its gilt fill. A soft drop adds depth without dulling the gold. */
+[data-theme="light"] .brand-intro .brand-word-d20,
 [data-theme="light"] .brand-intro .brand-word-folio {
-  text-shadow: 0 1px 3px rgba(10, 6, 1, 0.6);
+  text-shadow: var(--on-art-halo);
 }
 /* size steps — drive wordmark type; the mark px is set on the SVG */
 .brand-sm {

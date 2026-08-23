@@ -1,10 +1,9 @@
 /**
  * useGatheringScrollAnchor — WIRING GUARD for B23 (owner-reported "jumps to a weird
  * place"). jsdom cannot lay out or scroll, so this does NOT prove the visual result —
- * it MOCKS each row's before/after top and asserts the hook computes the right
- * `window.scrollBy` delta on a gathering re-sort and stays inert when disabled / when
- * nothing re-sorted. The actual viewport behaviour MUST be verified by the owner in real
- * Chromium.
+ * it MOCKS each row's before/after top and asserts the hook FLIP-animates every moved row
+ * without moving the viewport, and stays inert when disabled / when nothing re-sorted.
+ * The actual viewport behaviour is covered in real Chromium by the companion E2E.
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { useRef } from "react";
@@ -36,10 +35,7 @@ beforeAll(() => {
       toJSON: () => ({}),
     };
   });
-  vi.spyOn(window, "scrollBy").mockImplementation((_x, y) => {
-    const delta = y;
-    for (const [id, top] of positions) positions.set(id, top - delta);
-  });
+  vi.spyOn(window, "scrollBy").mockImplementation(() => undefined);
 });
 afterAll(() => {
   vi.restoreAllMocks();
@@ -109,7 +105,7 @@ describe("initiativeChangeAnchor (pure)", () => {
 });
 
 describe("useGatheringScrollAnchor (motion wiring guard — NOT a visual proof)", () => {
-  it("keeps the committed row put and FLIP-slides the displaced siblings", () => {
+  it("FLIP-slides the committed row and displaced siblings without moving the viewport", () => {
     // Baseline frame: the DM scrolled down; monster-1 (blank) sits at viewport top 100.
     positions.set("pc-a", 0);
     positions.set("monster-1", 100);
@@ -137,14 +133,11 @@ describe("useGatheringScrollAnchor (motion wiring guard — NOT a visual proof)"
         ]}
       />
     );
-    // delta = newTop(0) − prevTop(100) = −100 → scroll UP 100px so monster-1 lands back
-    // under the user's eye. INSTANT (no smooth-behaviour arg).
-    expect(scrollBySpy()).toHaveBeenCalledTimes(1);
-    expect(scrollBySpy()).toHaveBeenCalledWith(0, -100);
+    expect(scrollBySpy()).not.toHaveBeenCalled();
 
     const anchor = document.querySelector<HTMLElement>('[data-id="monster-1"]');
     const displaced = document.querySelector<HTMLElement>('[data-id="pc-a"]');
-    expect(anchor?.style.transition).toBe("");
+    expect(anchor?.style.transition).toContain("transform 220ms");
     expect(anchor?.style.transform).toBe("");
     expect(displaced?.style.transition).toContain("transform 220ms");
     expect(displaced?.style.transform).toBe("");

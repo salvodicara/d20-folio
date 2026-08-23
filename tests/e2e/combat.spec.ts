@@ -147,6 +147,15 @@ test.describe("Combat live-play loop (cockpit)", () => {
 
     // BONUS — Bardic Inspiration (a fixed-cost bonus-action feature).
     await page.getByRole("button", { name: "Use: Bardic Inspiration" }).click();
+    const inspiration = page.getByRole("dialog", {
+      name: /Resolve action · Bardic Inspiration/i,
+    });
+    await inspiration.getByRole("button", { name: "Spend 1" }).click();
+    await inspiration
+      .getByRole("button", { name: /No sheet target \(resolve at the table\)/i })
+      .click();
+    await expect(inspiration.getByText(/Everything resolved/i)).toBeVisible();
+    await inspiration.getByRole("button", { name: /^Apply$/i }).click();
     await expect(bonusToken).toHaveAttribute("data-state", "spent");
     await expect(
       page.getByRole("button", { name: "Used: Bardic Inspiration", exact: true })
@@ -247,6 +256,14 @@ test.describe("Combat live-play loop (cockpit)", () => {
 
     // Swing 1 — the Action coin spends fully (plain action semantics)…
     await greataxe.click();
+    let attack = page.getByRole("dialog", { name: /Resolve attack · Greataxe/i });
+    await attack.getByRole("spinbutton", { name: /^AC$/i }).fill("10");
+    await attack.getByRole("button", { name: /^Apply$/i }).click();
+    await attack
+      .getByRole("button", { name: /No sheet target \(resolve at the table\)/i })
+      .click();
+    await expect(attack.getByText(/Everything resolved/i)).toBeVisible();
+    await attack.getByRole("button", { name: /^Apply$/i }).click();
     await expect(actionToken).toHaveAttribute("data-state", "spent");
     // …but EVERY attack-capable CTA stays LIVE + struck gold (BG3 grammar), the
     // count discoverable on the CTA's hover title only.
@@ -258,6 +275,14 @@ test.describe("Combat live-play loop (cockpit)", () => {
     // Swing 2 (the last) — the Attack action is fully swung: the gold drops and
     // every attack CTA disables to "Used" like any spent action (ONE rule).
     await greataxe.click();
+    attack = page.getByRole("dialog", { name: /Resolve attack · Greataxe/i });
+    await attack.getByRole("spinbutton", { name: /^AC$/i }).fill("10");
+    await attack.getByRole("button", { name: /^Apply$/i }).click();
+    await attack
+      .getByRole("button", { name: /No sheet target \(resolve at the table\)/i })
+      .click();
+    await expect(attack.getByText(/Everything resolved/i)).toBeVisible();
+    await attack.getByRole("button", { name: /^Apply$/i }).click();
     await expect(greataxe).toBeDisabled();
     await expect(handaxe).toBeDisabled();
     await expect(page.locator(".uc-cta.is-emphasis")).toHaveCount(0);
@@ -285,6 +310,7 @@ test.describe("Combat live-play loop (cockpit)", () => {
     let dialog = await openHpPopover(page);
     await dialog.getByRole("spinbutton", { name: /amount/i }).fill("10");
     await dialog.getByRole("button", { name: /^Damage$/i }).click();
+    await page.getByRole("button", { name: /^Take 10 damage$/i }).click();
     // Applying closes the popover; the header readout updates to 33 (temp spent).
     await expect(page.getByRole("button", { name: /hit points: open/i })).toContainText(
       "33"
@@ -312,6 +338,7 @@ test.describe("Combat live-play loop (cockpit)", () => {
     const dialog = await openHpPopover(page);
     await dialog.getByRole("spinbutton", { name: /amount/i }).fill("60");
     await dialog.getByRole("button", { name: /^Damage$/i }).click();
+    await page.getByRole("button", { name: /^Take 60 damage$/i }).click();
 
     const dying = page.getByRole("status").filter({ hasText: /death saves/i });
     await expect(dying).toBeVisible();

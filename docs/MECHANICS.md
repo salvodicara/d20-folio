@@ -52,6 +52,12 @@ against the same pre-mutation action basis before any terminal step runs, so spe
 cannot make a sibling operation's authority depend on operation order. No client-supplied authority can
 authorize itself.
 
+Each user invocation also owns a fresh physical identity. The adapter derives that identity from the
+world's next occurrence ordinal and uses it for both the program root and the journal action id; the
+answers fingerprint is only a deterministic suffix. Two identical attacks, casts or feature uses with
+identical table answers are therefore two reversible actions, never an idempotency collision. Replaying
+one issued invocation keeps its identity; starting the mechanic again allocates the next one.
+
 Every physical runtime value uses a generation, never a reusable storage id. Program/effect occurrences,
 non-self entities and inventory copies are allocated by monotonic high-water counters. Entity/item create
 steps atomically create exactly one `material-lifecycle`; a lifecycle cannot own two physical generations.

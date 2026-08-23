@@ -691,6 +691,12 @@ BEFORE a merge lands. Exactly three workflows live in `.github/workflows/`:
   `FIREBASE_SERVICE_ACCOUNT` secret — no re-verification, ~6 min. The local twin is
   `just deploy` (it skips its local e2e leg on the same green-Verify condition).
 
+The promotion workflow deliberately does **not** deploy Cloud Functions. When a release changes
+`functions/`, promote the verified main SHA normally, then deploy that same checkout separately with
+`firebase deploy --only functions --project d20-folio` after confirming Blaze billing, secrets and the
+SAFE-01 posture are healthy. A Hosting 200 is not a Functions health check; finish with
+`firebase functions:list` plus a harmless function/log smoke as described in `docs/BUG_REPORTING.md`.
+
 There is deliberately **no release workflow** — releases are owner-triggered, agent-executed
 (`just release`, synthesized changelog — golden rule 17). There is no remote pixel-diff or
 baseline-regen workflow either: the visual lane is on-demand and local (`VISUAL=1`, no committed

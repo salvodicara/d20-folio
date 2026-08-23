@@ -37,8 +37,9 @@ test.describe("Campaigns flow", () => {
     await dialog.getByRole("button", { name: /open campaign/i }).click();
 
     await expect(page).toHaveURL(/\/campaigns\/[A-Z0-9]+/i);
-    await expect(page.getByRole("heading", { name: /treasury/i })).toBeVisible();
     await expect(page.getByRole("heading", { name: /party/i })).toBeVisible();
+    await page.getByRole("tab", { name: /party resources/i }).click();
+    await expect(page.getByRole("heading", { name: /treasury/i })).toBeVisible();
 
     // The hub names the campaign in its banner header (the breadcrumb was removed
     // per owner — the flat-hub topbar / bottom-nav carries the back navigation).
@@ -59,6 +60,8 @@ test.describe("Campaigns flow", () => {
     await dialog.getByRole("button", { name: /^join$/i }).click();
 
     await expect(page).toHaveURL(/\/campaigns\/ABCDEFGH234567/i);
+    await expect(page.getByRole("heading", { name: /party/i })).toBeVisible();
+    await page.getByRole("tab", { name: /party resources/i }).click();
     await expect(page.getByRole("heading", { name: /treasury/i })).toBeVisible();
   });
 
@@ -66,6 +69,7 @@ test.describe("Campaigns flow", () => {
     page,
   }) => {
     await page.goto("/campaigns/mock-1");
+    await page.getByRole("tab", { name: /^journal$/i }).click();
     await expect(page.getByRole("heading", { name: /shared notes/i })).toBeVisible();
 
     // The notes board keeps only the most-recent (pinned) note in the always-visible
@@ -96,6 +100,10 @@ test.describe("Campaigns flow", () => {
       .poll(async () => (await noteBody.boundingBox())?.height ?? 0)
       .toBeLessThanOrEqual(200);
 
+    // Sessions live in the table's Live workspace; return there after proving
+    // the Journal note behavior.
+    await page.getByRole("tab", { name: /^live$/i }).click();
+
     // The session list shows the latest 5 of the fixture's 7; the archive sits
     // behind "View all (7)".
     const rows = page.locator(".sess-item");
@@ -106,22 +114,20 @@ test.describe("Campaigns flow", () => {
     await page.getByRole("button", { name: /view all \(7\)/i }).click();
     await expect(rows).toHaveCount(7);
 
-    // Expanding the long recap (Session 5) clamps it at the `reading` cap
-    // (min(420px, 55vh)) with its own Show more.
+    // Expanding the long recap (Session 5) opens the directly editable living
+    // document. It grows with content up to min(420px, 55vh), then scrolls inside
+    // its native textarea instead of stretching the whole hub.
     const longRow = page.locator(".sess-item", { hasText: "Session 5" });
     await longRow.locator(".sess-toggle").click();
-    const sessMore = longRow.getByRole("button", { name: /show more/i });
-    await expect(sessMore).toBeVisible();
-    const sessBody = longRow.locator(".note-clamp-body");
-    // Wait for the accordion glide to settle at the cap before measuring.
+    const sessionEditor = longRow.getByRole("textbox", { name: /session summary/i });
+    await expect(sessionEditor).toBeVisible();
     await expect
-      .poll(async () => (await sessBody.boundingBox())?.height ?? 0)
+      .poll(async () => (await sessionEditor.boundingBox())?.height ?? 0)
       .toBeGreaterThan(300);
-    expect((await sessBody.boundingBox())?.height ?? 0).toBeLessThanOrEqual(421);
-    await sessMore.click();
-    await expect
-      .poll(async () => (await sessBody.boundingBox())?.height ?? 0)
-      .toBeGreaterThan(421);
+    expect((await sessionEditor.boundingBox())?.height ?? 0).toBeLessThanOrEqual(421);
+    expect(
+      await sessionEditor.evaluate((node) => node.scrollHeight > node.clientHeight)
+    ).toBe(true);
   });
 
   test("a Personal character shows no campaign chrome (chrome hidden)", async ({

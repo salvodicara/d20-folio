@@ -170,7 +170,9 @@ test.describe("initiative editor floats — the card never reflows", () => {
     await page.addInitScript(() => {
       window.localStorage.setItem("d20-dev-encounter", "gathering");
       (
-        window as typeof window & { __initiativeTransitions: string[] }
+        window as typeof window & {
+          __initiativeTransitions: Array<{ fromY: number | null; label: string }>;
+        }
       ).__initiativeTransitions = [];
       document.addEventListener("transitionrun", (event) => {
         if (
@@ -180,8 +182,33 @@ test.describe("initiative editor floats — the card never reflows", () => {
           event.target.matches(".party-card")
         ) {
           (
-            window as typeof window & { __initiativeTransitions: string[] }
-          ).__initiativeTransitions.push(event.target.dataset.combatantId ?? "unknown");
+            window as typeof window & {
+              __initiativeTransitions: Array<{ fromY: number | null; label: string }>;
+            }
+          ).__initiativeTransitions.push({
+            fromY: (() => {
+              const transition = event.target
+                .getAnimations()
+                .filter(
+                  (animation): animation is CSSTransition =>
+                    animation instanceof CSSTransition &&
+                    animation.transitionProperty === "transform"
+                )
+                .sort(
+                  (a, b) => Number(a.currentTime ?? 0) - Number(b.currentTime ?? 0)
+                )[0];
+              const keyframe =
+                transition?.effect instanceof KeyframeEffect
+                  ? transition.effect
+                      .getKeyframes()
+                      .find((frame) => typeof frame.transform === "string")
+                  : undefined;
+              return typeof keyframe?.transform === "string"
+                ? new DOMMatrix(keyframe.transform).m42
+                : null;
+            })(),
+            label: event.target.textContent,
+          });
         }
       });
     });
@@ -195,24 +222,32 @@ test.describe("initiative editor floats — the card never reflows", () => {
     await page.waitForTimeout(150);
     const beforeTop = (await bossCard.boundingBox())?.y;
     expect(beforeTop).toBeDefined();
+    await page.evaluate(() => {
+      (
+        window as typeof window & {
+          __initiativeTransitions: Array<{ fromY: number | null; label: string }>;
+        }
+      ).__initiativeTransitions = [];
+    });
 
     await bossTrigger.click();
     const input = page.locator("input.init-edit-input");
     await input.fill("99");
     await input.press("Enter");
 
-    const duringTop = (await bossCard.boundingBox())?.y;
-    // Playwright returns after the transition has begun, so scheduler timing determines
-    // how far through the 220ms glide this sample lands. It must remain a bounded fraction
-    // of the move; the old defect teleported the card the full ~280 px in one frame.
-    expect(Math.abs((duringTop ?? 0) - (beforeTop ?? 0))).toBeLessThanOrEqual(80);
     await expect
       .poll(
         () =>
           page.evaluate(
             () =>
-              (window as typeof window & { __initiativeTransitions: string[] })
-                .__initiativeTransitions.length
+              (
+                window as typeof window & {
+                  __initiativeTransitions: Array<{
+                    fromY: number | null;
+                    label: string;
+                  }>;
+                }
+              ).__initiativeTransitions.length
           ),
         { timeout: 1000 }
       )
@@ -220,6 +255,30 @@ test.describe("initiative editor floats — the card never reflows", () => {
     await page.waitForTimeout(280);
     const settledTop = (await bossCard.boundingBox())?.y;
     expect(Math.abs((settledTop ?? 0) - (beforeTop ?? 0))).toBeGreaterThan(100);
+    const transitionFromYs = await page.evaluate(() =>
+      (
+        window as typeof window & {
+          __initiativeTransitions: Array<{ fromY: number | null; label: string }>;
+        }
+      ).__initiativeTransitions
+        .filter((entry) => entry.label.includes("Goblin Chief"))
+        .map((entry) => entry.fromY)
+    );
+    expect(transitionFromYs.length).toBeGreaterThan(0);
+    const numericFromYs = transitionFromYs.filter(
+      (value): value is number => value !== null
+    );
+    expect(numericFromYs).toHaveLength(transitionFromYs.length);
+    // Assert the actual FROM keyframes, not a scheduler-dependent sample inside
+    // a 220ms glide. Every moved row must reconstruct its exact pre-sort position;
+    // the viewport itself stays fixed.
+    expect(
+      Math.abs(
+        (settledTop ?? 0) +
+          numericFromYs.reduce((sum, value) => sum + value, 0) -
+          (beforeTop ?? 0)
+      )
+    ).toBeLessThanOrEqual(2);
     await expect(bossTrigger).toContainText("99");
   });
 });

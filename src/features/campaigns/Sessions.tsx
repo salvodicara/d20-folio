@@ -112,6 +112,10 @@ export function Sessions({
   const saveChain = useRef<Promise<void>>(Promise.resolve());
   const saveSequence = useRef(0);
   const activeDraft = useRef<{ id: string; value: string; saved: string } | null>(null);
+  // Only an explicit user action should move focus into the editor. The live desk
+  // opens its newest session automatically on load, but focusing that textarea
+  // would override cross-page focus restoration (and summon a phone keyboard).
+  const focusEditorRequested = useRef(false);
 
   function keepDraft(id: string, value: string): void {
     try {
@@ -187,7 +191,8 @@ export function Sessions({
   // `autoFocus` yanked the accordion into view). Caret to the end so an existing
   // recap is appended to, never select-all-then-typed-over.
   useEffect(() => {
-    if (!editingId) return;
+    if (!editingId || !focusEditorRequested.current) return;
+    focusEditorRequested.current = false;
     const el = editorRef.current;
     if (!el) return;
     el.focus({ preventScroll: true });
@@ -255,6 +260,7 @@ export function Sessions({
     const active = activeDraft.current;
     if (active && active.value !== active.saved) flushNotes(active.id, active.value);
     setOpenIds(new Set([s.id]));
+    focusEditorRequested.current = true;
     setEditingId(s.id);
     const value = readSessionDraft(campaignId, s);
     setDraft(value);
@@ -285,6 +291,7 @@ export function Sessions({
       setSessions((prev) => [created, ...prev]);
       // Open it AND drop straight into edit mode — write the recap on the spot.
       setOpenIds(new Set([id]));
+      focusEditorRequested.current = true;
       setEditingId(id);
       setDraft("");
       activeDraft.current = { id, value: "", saved: "" };

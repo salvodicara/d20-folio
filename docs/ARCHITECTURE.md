@@ -1736,6 +1736,13 @@ engine), and the planned `JournalActionDraft` commits through `reduceActionJourn
 canonical reducer that owns fences, generations and byte budgets. `undoCharacterAction` reverses a
 committed action through the same reducer, exactly.
 
+The UI adapter allocates one invocation id from `nextOccurrenceOrdinal` before it enters the
+coordinator and uses that id for both the root occurrence and journal action. Answer fingerprints do
+not identify an invocation: repeating the same weapon swing or spell with the same physical inputs
+must still produce a distinct commit. At the final mutation boundary, action restrictions (life state,
+effective conditions, spellcasting and movement gates) re-read the live Zustand character rather than
+the React render closure, so a condition applied while a picker is open cannot be bypassed by Apply.
+
 **Rollout bridge (temporary, deleted with this epic's final document migration):** while a legacy
 surface still reads a session field the world now owns (hp, exhaustion, spell-slot usage), the
 commit mirrors that exact field write-through so the two representations can never diverge. The

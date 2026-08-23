@@ -97,6 +97,7 @@ export function DialogContent({
       >
         <RadixDialog.Content
           className={cn("modal", size === "sm" && "sm", size === "lg" && "lg", className)}
+          {...(description ? {} : { "aria-describedby": undefined })}
           {...props}
         >
           <ModalHead title={title} rubric={rubric} closeLabel={closeLabel} />

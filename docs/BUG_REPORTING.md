@@ -25,6 +25,27 @@ A client PWA can't safely hold a GitHub token or SMTP credentials, so the client
 only writes to Firestore; the privileged work happens in Cloud Functions (Admin
 SDK + secrets in Secret Manager).
 
+## Expired Google Cloud trial / unexpected Spark downgrade
+
+An expired Google Cloud free trial can close the billing account and return the Firebase project to
+Spark. This is not proof that SAFE-01 fired. Diagnose both sides explicitly:
+
+```bash
+gcloud billing projects describe d20-folio
+gcloud billing accounts describe BILLING_ACCOUNT_ID
+firebase functions:list --project d20-folio
+```
+
+`billingEnabled: false` plus billing-account `open: false` means the account itself must first be
+reopened/upgraded to a paid account in Cloud Billing. `just safe-status` reports this as **BILLING
+ACCOUNT CLOSED**, and `just safe-restore` refuses before changing IAM; it can re-link an open account
+but cannot reopen a closed one. Do that within Google's documented post-trial grace period, then verify
+`billingEnabled: true`, re-deploy any missing Functions, and run `just safe-status` before re-arming the
+£15 detach permission. Blaze still includes the applicable no-cost quotas; it enables billing for usage
+beyond them rather than charging a flat subscription. References: [Firebase pricing plans](https://firebase.google.com/docs/projects/billing/firebase-pricing-plans),
+[Google Cloud free trial](https://docs.cloud.google.com/free/docs/free-cloud-features), and
+[reopening a billing account](https://docs.cloud.google.com/billing/docs/how-to/close-or-reopen-billing-account).
+
 > **Closing the loop — the fix commit auto-closes the issue** (owner, 2026-06-12 —
 > golden rule 17, docs/GOLDEN_RULES.md). A report opens GitHub issue **#N**; the commit that
 > FIXES it must use a closing **keyword** — `Fixes #N` / `Closes #N` / `Resolves #N`,
@@ -438,18 +459,20 @@ possible, and removing it is exactly how `safe-restore` defuses the switch.
 
 ### What breaks while billing is detached
 
-Per current Google docs, detaching billing **terminates all billable services in the
-project — including Free Tier usage**. Concretely for d20 Folio:
+Detaching billing returns eligible Firebase usage to the Spark posture and terminates the services
+that require Blaze. Concretely for d20 Folio:
 
 - **Cloud Functions** stop — including `onBudgetAlert` itself (so it cannot re-detach;
   it doesn't need to), the bug-report and signup-email triggers, and `deleteUser`.
-- **Firebase Hosting** — a custom domain / paid-tier serving stops; a Spark-style
-  static serve may linger briefly, but treat the app as **down**.
-- **Cloud Firestore / Storage** reads and writes fail — the live app can't sync.
+- **Firebase Hosting / Firestore** may continue within their Spark quotas; this can leave the shell
+  apparently healthy while server workflows are already broken. Never use Hosting 200 as the health
+  verdict for the whole app.
+- **Cloud Storage** and any other feature whose current Firebase terms require Blaze become unavailable;
+  portrait/media paths must be treated as degraded until billing is restored.
 - **Artifact Registry, Secret Manager, Pub/Sub** — all suspended.
 
-In short: the deployed app goes **dark**. That is the intended trade — a dark app beats
-an unbounded bill. Recovery is manual and immediate once you re-attach billing.
+In short: the deployed app is **degraded and must be treated as unavailable for a session**, even if
+the static shell still loads. Recovery is manual once an open billing account is re-attached.
 
 ### After an emergency — one command
 

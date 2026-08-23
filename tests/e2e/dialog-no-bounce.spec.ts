@@ -53,11 +53,19 @@ test.describe("a dialog interaction never bounces off the sheet", () => {
     await expect(dialog).toBeHidden();
     await expect(page).toHaveURL(url);
 
-    // Re-open and COMMIT (Spend) — committing a resource must not bounce either.
+    // Re-open and complete the engine-guided use — target, dice count, pool
+    // payment, physical die face, final apply. Committing must not bounce either.
     await page.getByRole("button", { name: "Use: Warrior of the Gods" }).click();
     dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await dialog.getByRole("button", { name: "Spend" }).click();
+    await dialog.getByRole("button", { name: "Yourself" }).click();
+    await dialog.getByRole("spinbutton", { name: "Points" }).fill("1");
+    await dialog.getByRole("button", { name: "Apply" }).click();
+    await dialog.getByRole("button", { name: "Spend 1" }).click();
+    await dialog.getByRole("spinbutton", { name: "Die 1" }).fill("6");
+    await dialog.getByRole("button", { name: "Apply" }).click();
+    await expect(dialog.getByText(/Everything resolved/i)).toBeVisible();
+    await dialog.getByRole("button", { name: "Apply" }).click();
     await expect(dialog).toBeHidden();
     await expect(page).toHaveURL(url);
   });

@@ -474,11 +474,11 @@ correction. The global chip disappears for an opted-out player, so the app never
 they chose not to make.
 
 **Initiative entry never teleports the card** (owner-reported 2026-08-03). Gathering still previews
-the true sorted order immediately, but `gathering-scroll-anchor.ts` measures the pre-sort rows, keeps
-the edited row under the reader's eye with the available window scroll, then FLIP-animates any residual
-movement for every displaced row. Re-measurement happens after the real scroll because document bounds
-can consume only part of the requested delta. The result is a short 220ms spatial explanation instead
-of a premium-breaking jump; `prefers-reduced-motion` skips all animation.
+the true sorted order immediately, but `gathering-scroll-anchor.ts` measures every row in document
+coordinates and FLIP-animates every moved card from its exact pre-sort position. The document scroll
+position never changes, so a user scroll between render and commit cannot stale the baseline or move the
+pointer. The result is a short 220ms spatial explanation instead of a premium-breaking jump;
+`prefers-reduced-motion` skips all animation.
 
 **Alert swaps initiative in context, before turns begin.** When at least one ready, participating
 Alert holder and one willing ally have initiative, the DM banner adds one quiet tertiary action—not a
@@ -1018,7 +1018,9 @@ anchored to nowhere). The three anchors:
   in the role-gated Admin console.
 - **Wordmark material:** wordmark text always uses a solid, theme-safe gilt ink. Material depth
   belongs to the faceted d20 mark and surrounding scene, not to gradient-clipped letterforms; hero
-  and persistent chrome therefore share one typographic material.
+  and persistent chrome therefore share one typographic material. When the hero lockup sits directly
+  on atmospheric art, its light-theme words use the canonical `--text-on-backdrop-title` /
+  `--text-on-backdrop` inks plus `--on-art-halo`, never a field-safe dark gold token.
 - **The colophon leaf** (`/legal`) → the footer's "Legal & attribution" link (gilt-current).
 
 **The mobile bottom nav stays exactly 3 realms (D6).** It is a realm _switcher_, not a location bar:
@@ -1111,9 +1113,12 @@ routes are `React.lazy` + Suspense, so at that instant the page is still the emp
    navigation signal). The realm tabs still return to the index's last query
    (`realm-memory` → the compendium's `?type`); Back (POP) still restores exactly.
 3. **In-place `?tab` / `?type` rewrites are REPLACE** — scroll and focus untouched.
-4. **Focus (a11y).** A PUSH moves focus to the page's `#main` with `preventScroll`
-   (the tab-strip anti-jump precedent); a POP never steals focus. The skip-link is
-   unchanged.
+4. **Focus (a11y).** A PUSH moves focus to the destination page's `#main` with
+   `preventScroll` (the tab-strip anti-jump precedent); a POP never steals focus.
+   Suspense may temporarily retain the source route after the URL changes, so the
+   restorer follows a replacement `<main>` during its bounded settle window and
+   focuses the new node once — never repeatedly stealing focus within the same page.
+   The skip-link is unchanged.
 5. **Back closes overlays, not the page.** `useOverlayBack` (in the ModalShell /
    Dialog / lightbox primitives — never per-dialog) pushes a sentinel history entry
    per open overlay tier; hardware / gesture Back peels the topmost overlay and
@@ -1315,9 +1320,10 @@ in a void: last ink → panel edge = strip → panel edge.
   `.pg-bar-fill { position:absolute }`.) The `.hp-fill` **`transition: width`** animates genuine HP
   changes (damage/heal) — but on the **roster tile** the HP arrives in two phases (parent doc's
   full-HP placeholder → the `combat/state` subdoc folds the real HP a beat later), so the card
-  **renders `.hp-fill` only once that subdoc has hydrated** (`hpReady`): the fill then MOUNTS at the
-  real width instead of painting a full bar that slides down. Until then the empty recessed channel is
-  the rail and the number shows the honest `—` blank.
+  **renders `.hp-fill` only once that subdoc has hydrated** (`hpReady`): an unresolved map entry is
+  explicitly not ready, so no placeholder fill can paint first; the fill mounts at the authoritative
+  `--w` and genuine later damage/heal changes still animate.
+  Until then the empty recessed channel is the rail and the number shows the honest `—` blank.
 - **Spell slots = carved gem sockets:** empty = the `--pip-empty-*` recessed socket; filled = the
   chromatic `--sl-*` gem. **Trackers** = pips when max ≤ 5, a pool bar when > 5 (`Tracker` auto-mode),
   with a die badge + recovery chip (LR/SR). Immediate commit means these pips show only the persisted
