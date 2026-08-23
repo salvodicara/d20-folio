@@ -39,7 +39,8 @@ the new durable decision or kept explicitly one-off.
 1. **Optimal target, simplest sound implementation.** Settle the correct product/system target first.
    Then use the smallest implementation that preserves correctness, clarity, resilience, a11y,
    security, and tests: delete/reuse/platform/stdlib before new abstraction or dependency. Ponytail
-   helps with implementation simplicity; it never lowers the target.
+   governs every code change implicitly; it never lowers the target and does not need to be invoked
+   by the owner each time.
 2. **Fix the root seam.** Reproduce, locate the shared cause, and pin it with the cheapest regression.
    Do not patch a caller, infer mechanics from prose, or hide an invariant failure behind a fallback.
 3. **Reuse first.** Extend existing primitives, components, helpers, and model homes. A parallel
@@ -118,7 +119,9 @@ the new durable decision or kept explicitly one-off.
 
 25. **Every visual change is owner-approved before integration.** Send curated before/after Chromium
     screenshots cropped to the affected region, covering the locale/theme/viewport combinations that
-    materially differ. Wait for approval before `main`; deployment remains a separate gate.
+    materially differ. Deliver the actual images through the shared chat so they are viewable on the
+    owner's phone; a local path or written report is not delivery. Wait for approval before `main`;
+    deployment remains a separate gate.
 26. **Discover ambiguous product intent before implementation.** Use Superpowers brainstorming and,
     when a real interview is needed, grill-me. For contested UI choices, Impeccable decides from the
     product/design system; if a meaningful tie remains, show concrete visual alternatives to the owner.

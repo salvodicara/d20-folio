@@ -90,7 +90,8 @@ adapters below override generic command examples, not the lifecycle:
 - Never use `--no-verify`. The authoritative local gate for integration is `just ci`; use
   `just ci-srd-only` when the licensing seam is affected. Rules changes also run `pnpm test:rules`.
 - Non-visual work may integrate after review and green gates. Visual work waits for approved,
-  curated before/after screenshots across the affected theme/locale/viewport matrix.
+  curated before/after screenshots across the affected theme/locale/viewport matrix, delivered as
+  actual chat images viewable on the owner's phone rather than local file paths.
 - Finish by rebasing on fresh `origin/main`, pushing explicit `HEAD:main`, confirming the SHA, and
   removing the worktree. No PR flow. Never deploy as part of integration.
 
@@ -107,8 +108,9 @@ adapters below override generic command examples, not the lifecycle:
 - **impeccable:** all UI/UX design, critique, accessibility, responsive behavior, and motion; read
   [Product](PRODUCT.md), [Product Constitution](docs/PRODUCT_CONSTITUTION.md), and [Design](DESIGN.md).
 - **graphify:** architecture/navigation queries when a graph exists; treat it as an index, not truth.
-- **ponytail / ponytail-review:** implementation simplicity and over-engineering review after the
-  product design is settled; they do not lower the target or replace correctness review.
+- **ponytail / ponytail-review:** Ponytail applies implicitly to every code change after the product
+  design is settled; ponytail-review checks risky diffs for avoidable complexity. Neither lowers the
+  target or replaces correctness review.
 - **grill-me:** product-direction interviews and genuinely ambiguous owner intent, not technical
   choices that evidence can resolve.
 
