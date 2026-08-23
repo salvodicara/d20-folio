@@ -86,8 +86,12 @@ preflight() {
   local acct; acct="$(gcloud auth list --filter=status:ACTIVE --format='value(account)' 2>/dev/null || true)"
   [[ -n "$acct" ]] || die "gcloud not authed. Run: gcloud auth login && gcloud config set project $PROJECT_ID"
   ok "gcloud authed as $acct"
-  firebase login:list 2>/dev/null | grep -q '@' || die "firebase not authed. Run: firebase login"
-  ok "firebase authed"
+  if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" && -r "$GOOGLE_APPLICATION_CREDENTIALS" ]]; then
+    ok "Firebase ADC credential present"
+  else
+    firebase login:list 2>/dev/null | grep -q '@' || die "firebase not authed. Run: firebase login"
+    ok "firebase authed"
+  fi
 }
 
 # ── Resolvers ─────────────────────────────────────────────────────────────────
@@ -256,7 +260,14 @@ cmd_status() {
   local fn_state
   fn_state="$(query "ACTIVE" gcloud functions describe "$FUNCTION" --region="$REGION" --gen2 \
     --project="$PROJECT_ID" --format='value(state)')"
-  if [[ -n "$fn_state" ]]; then fn_ok=1; ok "function $FUNCTION: $fn_state"; else warn "function $FUNCTION not deployed"; fi
+  if [[ "$fn_state" == "ACTIVE" ]]; then
+    fn_ok=1
+    ok "function $FUNCTION: ACTIVE"
+  elif [[ -n "$fn_state" ]]; then
+    warn "function $FUNCTION is not healthy: $fn_state"
+  else
+    warn "function $FUNCTION not deployed"
+  fi
 
   local lastfire
   lastfire="$(query "" gcloud logging read \
@@ -267,12 +278,15 @@ cmd_status() {
   step "verdict:"
   if [[ "$billing_ok" == 0 && "$account_open" == "false" ]]; then
     printf '  ✗ BILLING ACCOUNT CLOSED — reopen/upgrade it in Google Cloud Billing, then run: just safe-restore\n'
+    [[ -n "$DRY" ]] || return 1
   elif [[ "$billing_ok" == 0 ]]; then
     printf '  ✗ FIRED — billing is detached. Recover with: just safe-restore\n'
+    [[ -n "$DRY" ]] || return 1
   elif [[ "$topic_ok" == 1 && "$budget_ok" == 1 && "$iam_ok" == 1 && "$fn_ok" == 1 ]]; then
     printf '  ✓ ARMED — every piece is in place.\n'
   else
     printf '  ⚠ NOT ARMED — a piece above is missing. Arm with: just safe-arm\n'
+    [[ -n "$DRY" ]] || return 1
   fi
 }
 

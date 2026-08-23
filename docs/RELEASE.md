@@ -23,8 +23,9 @@ end to end.** There is no release workflow in CI: the changelog section is **syn
 rule 17) — a judgment step no "Version Packages" bot can perform — so the agent runs the whole
 ritual deliberately, on the owner's go. The owner may review and adjust
 wording before it publishes, but never writes it (the owner writes nothing —
-`docs/GOLDEN_RULES.md` → Philosophy). Deploys ship separately — the owner fires `just deploy`
-(the primary, local deploy) or `gh workflow run deploy.yml` (the remote twin).
+`docs/GOLDEN_RULES.md` → Philosophy). Deploys ship separately — the owner fires
+`gh workflow run deploy.yml --ref main` directly or through the `just deploy` dispatcher; both
+names reach the same GitHub Actions production path.
 
 `just release` drives `@changesets/cli` and enforces golden rule 17. The steps:
 
@@ -69,14 +70,12 @@ merge to `main` runs the SRD-only gate and the composed unit + full sharded e2e 
 ambiently). **Only with explicit owner permission** (golden rule 22) — never deploy on your own
 initiative.
 
-- **Remote:** `gh workflow run deploy.yml --ref main` — waits for green CI + Verify on the target
-  SHA (up to 40 min if still in flight), then composes the private content pack, builds, checks
-  the bundle budget, and runs `firebase deploy` (hosting + Firestore/Storage rules). ~6 min once
-  the verdicts are in.
-- **Local:** `just deploy` — the full local gate, then it checks origin for a green Verify run on
-  the exact HEAD SHA: green (clean tree, no pack commit newer than the run) → the local e2e leg
-  is skipped automatically; anything else → the full local Playwright matrix runs as the
-  fallback, then `firebase deploy`.
+- **Production path:** `gh workflow run deploy.yml --ref main` — waits for green CI + Verify on the
+  target SHA (up to 40 min if still in flight), refuses a newer unverified content pack, composes and
+  builds, checks the bundle budget and Blaze posture, exports Firestore, deploys every Cloud Function
+  on Node 24, requires all six healthy, then deploys Hosting plus Firestore/Storage rules and requires
+  SAFE-01 armed. `just deploy` only verifies that the clean checkout equals `origin/main` and dispatches
+  this workflow; it never calls Firebase locally.
 
 If the SHA's Verify run was superseded (cancelled by a newer merge) or the content pack moved
 after it ran (a pack-only merge), re-verify first: `gh workflow run verify.yml --ref main`.

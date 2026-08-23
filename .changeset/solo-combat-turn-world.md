@@ -1,5 +1,0 @@
----
-"d20-folio": patch
----
-
-The SOLO combat loop cuts over to the canonical mechanics runtime: the character's own world carries a local single-participant encounter (started lazily on the first End Turn with the entered initiative), every solo round advance fires the kernel's complete-turn boundary — turn-anchored lifetimes expire exactly and mirror onto the legacy chips in one commit — and End Combat closes it through end-encounter. Every engine dispatch now feeds the character's live turn-economy projection (attacks per Attack action, Speed, condition incapacitation), so authored per-turn claims compile in solo play and the kernel rejects a second capped claim in the same turn. In-combat casts and actions keep the engine path with the legacy economy mirrored exactly (rules category, attack turn events, the one-slot-per-turn claim on the solo turn key, and Extra-Attack swings riding the attack-pips ledger), engine self-damage surfaces the entered-d20 Concentration prompt (with the 0-HP outright break), and casts whose while-active grants carry sheet mechanics (Shield-style buffs, reactions) honestly stay legacy until the standing-occurrence read migration.

@@ -1,5 +1,0 @@
----
-"d20-folio": patch
----
-
-Restore play-state parsing for logs, keep the engine world across sync echoes: the v1 play-state validator no longer rejects every array (an array's own non-enumerable `length` tripped the plain-JSON check, so any sheet with log history hung at Loading and any log-appending action failed its combat write); the persisted mechanics world now rides the play state as an opaque, verbatim-carried member (re-proved by its own fail-closed parser at read), so engine surfaces survive a subscription echo; the dev-bypass document replica mirrors Firestore's data-change-only snapshot contract (a byte-identical rewrite raises no snapshot, breaking a dev-only synchronous render storm); the pool-spend amount prompt (Lay on Hands) is bounded by the live payable pool instead of the transcription's 1000-point domain cap; and the combat resolver's per-roll damage labels are restored for non-attack multi-instance parts (Magic Missile's darts no longer render two identical accessible names).

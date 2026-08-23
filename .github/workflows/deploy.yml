@@ -8,15 +8,17 @@ name: Deploy
 # This workflow WAITS for both verdicts on the target SHA (they may still be in
 # flight when the owner fires it), requires them green, then composes the
 # private content pack, builds, checks the bundle budget, and deploys — a few
-# minutes instead of re-running a ~48-minute unsharded matrix. It also refuses
+# minutes instead of re-running a ~48-minute unsharded matrix. The promotion
+# owns the whole Firebase release: a blocking Firestore export, Functions on
+# Node 24, then Hosting + Firestore/Storage rules, all from this exact SHA. It refuses
 # to promote a composition Verify never saw: a PACK-ONLY merge changes what
 # deploys without moving this repo's SHA, so the pack head must not postdate
 # the green Verify run. In either case (superseded run, stale composition),
 # re-verify the SHA first:
 #   gh workflow run verify.yml --ref main
 #
-# The local twin is `just deploy` (it also skips its local e2e leg when this
-# SHA already carries a green Verify run). Secrets: CONTENT_PACK_TOKEN (read
+# `just deploy` is only a convenience dispatcher for this workflow; there is no
+# second local production path. Secrets: CONTENT_PACK_TOKEN (read
 # access to salvodicara/d20-folio-content), FIREBASE_SERVICE_ACCOUNT, and the
 # VITE_FIREBASE_* build secrets below.
 
@@ -122,6 +124,7 @@ jobs:
       VITE_FIREBASE_STORAGE_BUCKET: "d20-folio.firebasestorage.app"
       VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
       VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+      VITE_APPCHECK_SITE_KEY: ${{ secrets.VITE_APPCHECK_SITE_KEY }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
@@ -149,15 +152,82 @@ jobs:
 
       # Build the deploy artifact (the i18n leak-lock runs inside the build);
       # the bundle-budget guard reads the dist/ that actually ships.
+      - name: Require production client configuration
+        run: |
+          set -euo pipefail
+          for name in VITE_FIREBASE_API_KEY VITE_FIREBASE_MESSAGING_SENDER_ID VITE_FIREBASE_APP_ID VITE_APPCHECK_SITE_KEY; do
+            test -n "${!name:-}" || { echo "::error::Missing required repository secret: $name"; exit 1; }
+          done
       - name: Build
         run: pnpm build
       - name: Bundle budget
         run: pnpm test:budget
 
-      # Same targets as `just deploy`: hosting + Firestore/Storage rules.
-      - name: Deploy to Firebase (hosting + rules)
-        uses: w9jds/firebase-action@7008efd406382c7ee939a5331a502ccaad8f3107 # v13.22.0
+      # Authenticate only after building, so the short-lived credentials file can
+      # never enter dist/. The existing secret is a service-account JSON key;
+      # google-github-actions/auth exports standard ADC and removes the file in its
+      # post step. WIF is the eventual keyless replacement, but the current
+      # long-running Functions deploy needs the already-proven credential path.
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
-          args: deploy --only hosting,firestore:rules,storage --project d20-folio
-        env:
-          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
+
+      - name: Require live Blaze billing
+        run: |
+          set -euo pipefail
+          account="$(gcloud billing projects describe d20-folio --format='value(billingAccountName)')"
+          enabled="$(gcloud billing projects describe d20-folio --format='value(billingEnabled)' | tr '[:upper:]' '[:lower:]')"
+          account="${account#billingAccounts/}"
+          open="$(gcloud billing accounts describe "$account" --format='value(open)' | tr '[:upper:]' '[:lower:]')"
+          test "$enabled" = true && test "$open" = true || {
+            echo "::error::Blaze billing is not attached to an open account; refusing every deploy target."
+            exit 1
+          }
+
+      - name: Back up Firestore before promotion
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          backup="gs://d20-folio-backups/pre-v${version}-${GITHUB_SHA::12}-$(date -u +%Y%m%dT%H%M%SZ)"
+          gcloud firestore export "$backup" --project=d20-folio
+          gcloud storage ls "$backup/" >/dev/null
+          echo "✓ Firestore backup: $backup"
+
+      # Pin the CLI instead of inheriting a Docker action's stale Node 20 runtime:
+      # firebase.json deliberately requires Node 24 for the Functions predeploy.
+      - name: Install Firebase CLI
+        run: npm install --global firebase-tools@15.28.1
+
+      # Functions go first. They are backwards-compatible with the currently live
+      # client, so a later Hosting failure leaves the old UI on a compatible backend.
+      - name: Deploy Cloud Functions
+        run: firebase deploy --only functions --project d20-folio --non-interactive
+
+      - name: Require every Function healthy on Node 24
+        run: |
+          set -euo pipefail
+          expected='deleteUser ogImage ogShell onBudgetAlert onBugReportCreated onUserCreated'
+          for attempt in $(seq 1 12); do
+            active="$(firebase functions:list --project d20-folio --json \
+              | jq -r '.result[] | select(.region == "europe-west1" and .runtime == "nodejs24" and .state == "ACTIVE") | .id' \
+              | sort | xargs)"
+            if [ "$active" = "$expected" ]; then
+              echo "✓ all Functions ACTIVE on Node 24"
+              break
+            fi
+            [ "$attempt" -lt 12 ] || {
+              echo "::error::Functions health mismatch. Expected: $expected · Active: $active"
+              exit 1
+            }
+            sleep 10
+          done
+
+      - name: Deploy Hosting and security rules
+        run: firebase deploy --only hosting,firestore:rules,storage --project d20-folio --non-interactive
+
+      - name: Require SAFE-01 armed after promotion
+        run: scripts/safe-01.sh status

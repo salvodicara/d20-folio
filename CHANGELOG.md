@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.24.0
+
+d20 Folio’s largest play release yet: the deterministic mechanics engine becomes a table-ready runtime that asks players only for real-world inputs, commits the consequences atomically, and keeps solo and shared play coherent without introducing virtual dice or an AI rules layer.
+
+### Added
+
+- A causal mechanics coordinator with persisted world state, exact physical-input prompts, immutable authority receipts, deterministic replay, and action-level undo.
+- Engine-driven attacks, saves, damage, healing, temporary HP, Death Saves, Concentration checks, reactions, condition lifetimes, recurring effects, rests, and resource payments.
+- Broad authored automation across spells, class features, feats, weapons, masteries, magic items, companions, and adversaries; 273 of 422 composed-corpus spells now execute through the canonical runtime.
+- Shared encounter automation for player characters and monsters, including damage reactions, expiring adversary conditions, physical initiative entry, and Alert’s willing-ally initiative swap.
+- Mutable magic-item resource ownership with atomic spending, Dawn/Dusk and rest recovery, inventory integration, and exact undo.
+- Engine surfaces for recurring and reactive effects such as Moonbeam, Fire Shield, Hex, Rage, Second Wind, Lay on Hands, pact slots, and concentration replacement.
+- A bilingual, interactive mechanics-engine explainer with worked examples, linked diagrams, ownership rules, undo semantics, limitations, glossary, and a filterable coverage appendix.
+
+### Changed
+
+- The campaign hub is now a compact live-play workspace: encounter state, session recap, journal, shared resources, DM tools, and member sheets remain coherent across navigation.
+- The character play experience uses a focused mobile hotbar, concise guided decisions, clearer payment and choice dialogs, and consistent iconography across the sheet, compendium, creation, level-up, settings, and admin surfaces.
+- Initiative reordering and roster HP updates animate from authoritative state without page jumps or placeholder slides; route focus reaches the destination without auto-opening the session editor or phone keyboard.
+- The Shaded Scriptorium light theme, on-art typography, responsive dialogs, crop tools, touch targets, and EN/IT coverage were expanded across the whole product.
+- Production promotion is now one owner-fired GitHub Actions path: exact-SHA CI + Verify gates, private-pack freshness, a blocking Firestore export, Node 24 Functions deployment and health checks, Hosting/rules deployment, and a final SAFE-01 assertion.
+
+### Fixed
+
+- Persisted mechanics worlds now survive Firestore subscription echoes, while play-state logs containing arrays parse correctly instead of leaving affected sheets stuck loading.
+- Stale condition commits, repeated-action identity collisions, concentration-replacement livelocks, pact-slot seeding, tracker reseeding, and resource/payment edge cases now fail closed or converge deterministically.
+- Kernel-owned frozen proofs and canonical representations are reused safely: hostile values still take the full validation path, while the heaviest mechanics suites run about 18× faster with deterministic regression ceilings.
+- SAFE-01 now distinguishes a closed or expired billing account from a genuine kill-switch event, refuses unsafe recovery before touching IAM, and returns a failing status whenever billing, budget, IAM, or the budget function is unhealthy.
+- The browser gate now covers previously orphaned mobile journeys, stable async readiness, accessibility, bilingual strings, scroll/focus continuity, service-worker portrait export, and the current guided interaction model.
+- Dependency security floors, Firestore/Storage rules, Cloud Functions, build modes, and the six live-character conformance fixtures were revalidated for the release.
+
 ## 0.23.1
 
 ### Patch Changes

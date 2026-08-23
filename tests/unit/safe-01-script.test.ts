@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -79,5 +79,48 @@ describe("safe-01.sh (dry-run)", () => {
       { encoding: "utf8" }
     );
     expect(out.trim()).toBe("true");
+  });
+
+  it("status exits non-zero when the budget function is not ACTIVE", () => {
+    const fakeBinDir = fs.mkdtempSync(path.join(os.tmpdir(), "safe01-status-bin-"));
+    const fakeGcloud = path.join(fakeBinDir, "gcloud");
+    const fakeFirebase = path.join(fakeBinDir, "firebase");
+    const fakeCredentials = path.join(fakeBinDir, "adc.json");
+    fs.writeFileSync(
+      fakeGcloud,
+      `#!/usr/bin/env bash
+args="$*"
+case "$args" in
+  *"auth list"*) echo ci@example.test ;;
+  *"billing projects describe"*"billingAccountName"*) echo billingAccounts/TEST-ACCOUNT ;;
+  *"billing projects describe"*"billingEnabled"*) echo True ;;
+  *"billing accounts describe"*) echo True ;;
+  *"billing budgets list"*) echo billingAccounts/TEST-ACCOUNT/budgets/test ;;
+  *"billing budgets describe"*) echo 15 ;;
+  *"projects describe"*) echo 874159997575 ;;
+  *"projects get-iam-policy"*) echo roles/billing.projectManager ;;
+  *"functions describe"*) echo UNKNOWN ;;
+  *"logging read"*) ;;
+  *) ;;
+esac
+`
+    );
+    fs.writeFileSync(fakeFirebase, "#!/usr/bin/env bash\nexit 0\n");
+    fs.writeFileSync(fakeCredentials, "{}\n");
+    fs.chmodSync(fakeGcloud, 0o755);
+    fs.chmodSync(fakeFirebase, 0o755);
+
+    const result = spawnSync("bash", [script, "status"], {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        PATH: `${fakeBinDir}:${process.env.PATH ?? ""}`,
+        GOOGLE_APPLICATION_CREDENTIALS: fakeCredentials,
+      },
+    });
+
+    expect(result.status).not.toBe(0);
+    expect(result.stdout).toContain("function onBudgetAlert is not healthy: UNKNOWN");
+    expect(result.stdout).toContain("NOT ARMED");
   });
 });

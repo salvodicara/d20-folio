@@ -34,14 +34,14 @@ let checks slow development or deployment**. The repo is public, so GitHub Actio
 free — the heavy lanes run REMOTELY on every merge, off the local critical path. Every check still
 runs MANDATORILY before code reaches a USER, each in exactly ONE lane, never twice on one path.
 
-| Lane                          | What it runs                                                                                                                           | Cost                           | Where                          |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------------------ |
-| **pre-commit**                | doc-guard + `lint-staged` + fast unit lane                                                                                             | ~5 s                           | `.githooks/pre-commit`         |
-| **pre-push → topic branch**   | no gate — topic branches are recoverable remote checkpoints                                                                            | instant                        | `.githooks/pre-push`           |
-| **pre-push → `main`**         | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e**       | ~3 min (max of three, not sum) | `.githooks/pre-push`           |
-| **per merge — CI** (`ci.yml`) | the SRD-only gate: typecheck + lint ∥ unit ∥ build + budget as **parallel jobs**, every push to `main` + every PR                      | ~4 min wall, free              | `.github/workflows/ci.yml`     |
-| **per merge — Verify**        | the COMPOSED verdict: pack unit suite + the **full Playwright e2e matrix sharded 8×** across parallel runners, every push to `main`    | ~10 min wall, free             | `.github/workflows/verify.yml` |
-| **deploy** (owner-fired)      | **PROMOTES a verified SHA**: requires green CI + Verify on the exact SHA, then build + budget + `firebase deploy` — no re-verification | ~6 min                         | `deploy.yml` / `justfile`      |
+| Lane                          | What it runs                                                                                                                           | Cost                           | Where                                      |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------------------------------ |
+| **pre-commit**                | doc-guard + `lint-staged` + fast unit lane                                                                                             | ~5 s                           | `.githooks/pre-commit`                     |
+| **pre-push → topic branch**   | no gate — topic branches are recoverable remote checkpoints                                                                            | instant                        | `.githooks/pre-push`                       |
+| **pre-push → `main`**         | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e**       | ~3 min (max of three, not sum) | `.githooks/pre-push`                       |
+| **per merge — CI** (`ci.yml`) | the SRD-only gate: typecheck + lint ∥ unit ∥ build + budget as **parallel jobs**, every push to `main` + every PR                      | ~4 min wall, free              | `.github/workflows/ci.yml`                 |
+| **per merge — Verify**        | the COMPOSED verdict: pack unit suite + the **full Playwright e2e matrix sharded 8×** across parallel runners, every push to `main`    | ~10 min wall, free             | `.github/workflows/verify.yml`             |
+| **deploy** (owner-fired)      | **PROMOTES a verified SHA** in Actions: green CI + Verify → build/budget → Firestore export → Functions → Hosting/rules → health gates | ~10–15 min                     | `deploy.yml` (`just deploy` dispatches it) |
 
 > **Why `workers: 1` in CI, not 2.** A 2nd Playwright worker was measured and REJECTED: on the
 > 2-vCPU `ubuntu-latest` runner one worker already saturates the cores (a full-page Chromium render
@@ -52,7 +52,7 @@ runs MANDATORILY before code reaches a USER, each in exactly ONE lane, never twi
 > worker (`playwright.config.ts`).
 
 **E2E lane shape (cost-trimmed 2026-06-13, ZERO coverage loss).** The Playwright matrix that
-`verify.yml` (and the local fallback in `just deploy`) runs is the same `playwright.config.ts`,
+`verify.yml` runs is the same `playwright.config.ts`,
 trimmed of provable waste:
 
 - **The native-mobile project runs only the specs that NEED the touch profile.** The project is
@@ -70,7 +70,7 @@ trimmed of provable waste:
   gate lost ~344 duplicate navigations and zero unique signal.
 - **The service-worker dev server (`:5175`) boots ONLY for the SW projects.** `playwright.config.ts`
   reads the `--project` flags: the SW `webServer` is started only when `portrait-sw` /
-  `portrait-sw-mobile` are in the run (or no `--project` filter = the full `just deploy` matrix). The
+  `portrait-sw-mobile` are in the run (or no `--project` filter = the full matrix). The
   `--project=chromium` / `--project=mobile` CI legs and `pnpm test:e2e` skip that second `vite` boot.
   It fails toward booting (anything not provably SW-free still gets the server), so the SW journey is
   never starved of its origin.
@@ -84,16 +84,14 @@ that green verdict on the exact SHA. The behavioural suite still runs mandatoril
 sees the code — exactly once, ambiently, and every merged SHA carries a full verdict instead of
 e2e rot accumulating silently between deploys.
 
-**How to deploy (owner-fired, always — a deploy PROMOTES a verified SHA).** The remote path is
-`gh workflow run deploy.yml --ref main`: it WAITS for green CI + Verify on the target SHA (up to
-40 min if they're still in flight), then composes the private content pack, builds, checks the
-bundle budget, and runs `firebase deploy --only hosting,firestore:rules,storage` — ~6 min when the
-verdicts are already in. The local path is `just deploy`: the full local gate, then it checks
-origin for a green Verify run on the exact HEAD SHA — green (with a clean tree and no pack
-commit newer than the run) → the local e2e leg is skipped automatically; anything else → the
-full local matrix runs as the fallback. ONE flow, no double-running (golden rule 14). Both paths
-refuse to promote a composition Verify never saw: a **pack-only merge** changes what deploys
-without moving the public SHA, so after one, re-verify before deploying —
+**How to deploy (owner-fired, always — a deploy PROMOTES a verified SHA).** The sole production
+path is `gh workflow run deploy.yml --ref main`: it WAITS for green CI + Verify on the target SHA
+(up to 40 min if they're still in flight), composes the private pack, builds once, checks bundle
+budget + open Blaze billing, exports Firestore, deploys and health-checks all Node 24 Functions,
+then deploys Hosting/rules and requires SAFE-01 armed. `just deploy` is only a clean-`origin/main`
+dispatcher for that workflow — there is no local Firebase mutation path to drift. ONE flow, no
+double-running (golden rule 14). It refuses to promote a composition Verify never saw: a
+**pack-only merge** changes what deploys without moving the public SHA, so after one, re-verify —
 `gh workflow run verify.yml --ref main` (also the fix when a run was superseded/cancelled by a
 newer merge).
 
@@ -133,7 +131,7 @@ detectors over EN + IT and every `srd/` catalogue and **fails the build (non-zer
   English (the `STRONG_EN` heuristic; loanwords / proper nouns / abbreviations never trip it),
 - a **static `t("…")` literal** in `src/` whose key is absent from the catalogue.
 
-It's free on `pnpm build` (so it runs in pre-push, `just deploy`, and CI automatically), and you can
+It's free on `pnpm build` (so it runs in pre-push, the deploy workflow, and CI automatically), and you can
 run it standalone with **`pnpm i18n:check`** (prints each problem + a non-zero exit). When it fails,
 **fix the leak** — translate via the IT SRD 5.2.1 cascade (never leave IT == EN-English), or add the
 missing key to BOTH `src/i18n/{en,it}/ui/<group>.json` shards. Do NOT weaken the detector to make it
@@ -636,8 +634,8 @@ git push origin main vX.Y.Z
 
 Releases are owner-triggered and agent-executed with `just release` (the changelog entry is a
 synthesized thematic section, never the raw changeset dump — golden rule 17; there is deliberately
-no release workflow in CI) and deployed separately, only on explicit owner go:
-`just deploy` (primary, local) or `gh workflow run deploy.yml` (the remote twin).
+no release workflow in CI) and deployed separately, only on explicit owner go, through
+`gh workflow run deploy.yml --ref main` (`just deploy` dispatches that same workflow).
 
 ---
 
@@ -686,16 +684,13 @@ BEFORE a merge lands. Exactly three workflows live in `.github/workflows/`:
   runners (blob reports, merged into one HTML artifact when a shard fails). Together CI + Verify
   keep BOTH build modes green remotely, per merge (golden rule 28).
 - **Deploy** (`deploy.yml`) — `workflow_dispatch` ONLY, owner-fired (golden rule 22; never on
-  push). It WAITS for green CI + Verify on the target SHA, then composes the pack, builds, checks
-  the bundle budget, and runs `firebase deploy --only hosting,firestore:rules,storage` with the
-  `FIREBASE_SERVICE_ACCOUNT` secret — no re-verification, ~6 min. The local twin is
-  `just deploy` (it skips its local e2e leg on the same green-Verify condition).
-
-The promotion workflow deliberately does **not** deploy Cloud Functions. When a release changes
-`functions/`, promote the verified main SHA normally, then deploy that same checkout separately with
-`firebase deploy --only functions --project d20-folio` after confirming Blaze billing, secrets and the
-SAFE-01 posture are healthy. A Hosting 200 is not a Functions health check; finish with
-`firebase functions:list` plus a harmless function/log smoke as described in `docs/BUG_REPORTING.md`.
+  push). It WAITS for green CI + Verify on the target SHA, composes and builds the pack, checks
+  bundle budget + open Blaze billing, creates a blocking Firestore export, deploys all Functions
+  under the repo's Node 24 pin, requires all six `ACTIVE`, then deploys Hosting/Firestore/Storage
+  rules and requires SAFE-01 armed. Authentication uses the existing
+  `FIREBASE_SERVICE_ACCOUNT` through the pinned official Google auth action after the build, so
+  credentials cannot enter `dist/`. `just deploy` only dispatches this workflow from clean
+  `origin/main`; Cloud Functions never have a separate local production path.
 
 There is deliberately **no release workflow** — releases are owner-triggered, agent-executed
 (`just release`, synthesized changelog — golden rule 17). There is no remote pixel-diff or

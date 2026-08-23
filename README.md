@@ -143,7 +143,7 @@ finished push to `main`. A `justfile` collects common recipes.
 
 ### Deployment
 
-The app deploys to Firebase Hosting at [d20-folio.web.app](https://d20-folio.web.app) (project `d20-folio`, region `europe-west1`). Deploys are always explicitly owner-triggered (never on push) and **promote a verified commit**: every merge to `main` is verified remotely by CI (the SRD-only gate) and Verify (the composed unit suite + the full Playwright e2e matrix, sharded), and a deploy — `gh workflow run deploy.yml`, or `just deploy` locally — requires those green verdicts on the exact commit before building and deploying. Hosting serves `dist/` as an SPA (rewrites `**` to `/index.html`), with `firestore.rules` and `storage.rules` for security; Cloud Functions deploy separately.
+The app deploys to Firebase Hosting at [d20-folio.web.app](https://d20-folio.web.app) (project `d20-folio`, region `europe-west1`). Deploys are always explicitly owner-triggered (never on push) and **promote a verified commit**: every merge to `main` is verified remotely by CI (the SRD-only gate) and Verify (the composed unit suite + the full Playwright e2e matrix, sharded), then the sole production path — `gh workflow run deploy.yml --ref main` (`just deploy` is its convenience dispatcher) — requires both green verdicts on the exact commit, exports Firestore, and deploys that SHA's Cloud Functions, Hosting, and security rules.
 
 ## Documentation
 

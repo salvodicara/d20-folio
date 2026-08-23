@@ -1,5 +1,0 @@
----
-"d20-folio": minor
----
-
-PC participants join the composed encounter world through the party lease: when a member's rolled fight begins turns, the member client commits the kernel's own start-encounter boundary over its OWN character material (a lease-identified local encounter, ending any lingering solo encounter first), fires the character-side complete-turn each time the shared pointer passes off its PC (buffs anchored to the PC's turns expire exactly, once per fight round, with the local clock advancing six seconds per observed shared round so pre-fight durations keep their remainder across join and leave), releases the lease through the kernel's end-encounter when the fight ends, and correlates cross-material actions by one identity: a member-declared attack stamps the same pc-action seed on the encounter journal, the mirrored chronicle beat, and the member's own character journal as a turn-economy claim. Fail-closed throughout: a corrupt member world degrades only that member's join and the encounter document is never touched from the member seam.

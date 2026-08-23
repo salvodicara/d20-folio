@@ -31,6 +31,8 @@ dev-dist
 firebase-debug.log
 firebase-debug.*.log
 .firebaserc.local
+# Ephemeral ADC file created and removed by google-github-actions/auth.
+gha-creds-*.json
 
 # Env
 .env

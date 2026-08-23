@@ -287,15 +287,15 @@ provider's SMTP instead — the transport is provider-agnostic.)
 ### 4. Deploy
 
 ```bash
-# The functions package uses npm (standalone — NOT part of the pnpm workspace).
-# Its install + lint + build run automatically via the firebase.json predeploy
-# hook (`npm --prefix functions ci/run lint/run build`), so just deploy:
-firebase deploy --only functions,firestore:rules,storage
+# Production promotion is Actions-only and deploys Functions with the same
+# verified SHA as Hosting/rules:
+gh workflow run deploy.yml --ref main
 ```
 
 The `functions` predeploy in `firebase.json` already runs `npm ci` + lint + build,
-so a plain `firebase deploy --only functions` works once `functions/package-lock.json`
-is committed.
+and `deploy.yml` runs it under Node 24 before requiring all six functions `ACTIVE`.
+Direct `firebase deploy` remains a diagnostic/emergency command, not the ordinary
+production path.
 
 ### 5. Test via the emulator
 
@@ -609,9 +609,9 @@ step 4 (enforce) remains, owner-gated on metrics.
 
 1. **Register the web app** — DONE 2026-08-02 (headless, as above). Console twin: Firebase
    console → **App Check** → **Apps** → web app → **Register** → reCAPTCHA Enterprise.
-2. **Wire the key** — DONE for `.env.local` (the local-primary deploy builds from it;
-   the site key is public-by-design, safe in the bundle). The `deploy.yml` remote twin
-   needs the same var as a repo secret IF remote deploys resume. **Local dev never
+2. **Wire the key** — DONE for `.env.local` and the GitHub Actions
+   `VITE_APPCHECK_SITE_KEY` repository secret (the site key is public-by-design, safe in the
+   bundle). The Actions-only `deploy.yml` build consumes that secret. **Local dev never
    initializes App Check** (`import.meta.env.DEV` gate in `src/lib/firebase.ts`) —
    localhost is not a registered reCAPTCHA domain, so the live key could only produce
    `appCheck/recaptcha-error` console noise there. The dev opt-in is
