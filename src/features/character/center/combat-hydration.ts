@@ -32,6 +32,7 @@
 import { useCombatStore, type SelectedAction } from "@/stores/combatStore";
 import type { CombatState, PersistedTurnAction } from "@/types/combat-state";
 import type { GlobalCombat } from "@/features/campaigns/global-combat-context";
+import { canonicalJson } from "@/lib/canonical-fingerprint";
 import { localizeText } from "@/lib/views/srd-i18n";
 
 type Locale = "en" | "it";
@@ -115,6 +116,21 @@ function restoreTurnEconomy(
   snapshot: NonNullable<CombatState["turnEconomy"]>,
   locale: Locale
 ): void {
+  const normalizedSnapshot = {
+    ...snapshot,
+    spellSlotCastTurnKey:
+      snapshot.spellSlotCastsThisTurn > 0
+        ? (snapshot.spellSlotCastTurnKey ?? snapshot.key)
+        : null,
+    nextAttackAdvantage: snapshot.nextAttackAdvantage ?? false,
+    movementLocked: snapshot.movementLocked ?? false,
+  };
+  if (
+    canonicalJson(snapshotTurnEconomy(useCombatStore.getState(), snapshot.key)) ===
+    canonicalJson(normalizedSnapshot)
+  ) {
+    return;
+  }
   useCombatStore.setState({
     selected: {
       action: snapshot.selected.action.map((action) => selectedAction(action, locale)),

@@ -234,6 +234,27 @@ describe("Combat sync — async character arrival", () => {
     expect(restored.movementLocked).toBe(true);
   });
 
+  it("does not re-emit a server-confirmed baseline turn as a local change", () => {
+    const key = "solo:char-1:1";
+    const persisted = snapshotTurnEconomy(useCombatStore.getState(), key);
+    delete persisted.spellSlotCastTurnKey;
+    delete persisted.nextAttackAdvantage;
+    delete persisted.movementLocked;
+    const arrive = makeArriver();
+    arrive("char-1", 1, "", persisted, key);
+
+    let emittedChanges = 0;
+    const unsubscribe = useCombatStore.subscribe(() => {
+      emittedChanges += 1;
+    });
+    try {
+      expect(arrive("char-1", 1, "", structuredClone(persisted), key)).toBe(false);
+      expect(emittedChanges).toBe(0);
+    } finally {
+      unsubscribe();
+    }
+  });
+
   it("never restores a spent action into a different turn pointer", () => {
     const persisted = {
       ...snapshotTurnEconomy(useCombatStore.getState(), "encounter:camp:9:3:pc-member"),

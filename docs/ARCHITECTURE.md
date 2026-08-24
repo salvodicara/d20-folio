@@ -2286,11 +2286,14 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
   lands after the tiny combat doc). The cockpit keeps the SOLO raw initiative ROLL in `combatStore` (a
   separate in-memory copy the turn meter reads); `TurnEconomyProvider`'s `syncCombatFromSession` policy
   pulls it from `session.initiative` on **every** snapshot — seeding round + roll hydrate-once on a fresh
-  character, then RECONCILING the roll (only) on each later same-character snapshot. (An ENCOUNTER roll
-  needs no such plumbing: the sheet reads it straight off the live campaign doc via the global-combat
-  status — a DM rolling for the player re-syncs in the same snapshot every surface gets.) The in-progress
-  local roll lives in the `InitVital` tile (seeded on open), so the reconcile updates the display without
-  clobbering a live edit; reusing the one character subscription keeps the free-tier listener count flat.
+  character, then reconciling the subdoc round + roll on each later same-character snapshot. An exact-key
+  persisted turn-economy snapshot may hydrate only while the local ledger is still baseline; its normalized
+  durable projection is compared before touching the store, so an identical server confirmation is a true
+  no-op and can never echo back into the Firestore write queue. (An ENCOUNTER roll needs no such plumbing:
+  the sheet reads it straight off the live campaign doc via the global-combat status — a DM rolling for the
+  player re-syncs in the same snapshot every surface gets.) The in-progress local roll lives in the
+  `InitVital` tile (seeded on open), so the reconcile updates the display without clobbering a live edit;
+  reusing the one character subscription keeps the free-tier listener count flat.
 - **Persistence routing** — two store subscribers split a transition by field: a **non-combat** change
   (`nonCombatSessionChanged`, incl. the action log, which stays on the parent) writes the parent doc (the
   serialization boundary omits the trio); a **trio** change persists the WHOLE `CombatState` to the subdoc
