@@ -36,6 +36,29 @@ SrdSubclassInfo     ─┘    └──────────────┘  
 mechanic = adding a `Grant` discriminated-union variant + an evaluator branch + (where applicable) a
 consumer; never a regex over text.
 
+### Automation-first command kernel (K1)
+
+`src/lib/command` owns the one pure `resolveCommand` boundary for the automation-first migration. Its
+versioned, closed codecs conform serializable commands, external requests and answers, outcomes,
+patches, events, revisions and receipts before resolution; `RuleDefinition` is the typed rule seam and
+`EffectInstance` is committed activity. `Grant` remains normalized capability/modifier/trigger IR: it
+is neither a command, an active effect nor an executable rule language.
+
+Browser code imports that root entry directly. The local standalone Functions/predeploy build runs
+`scripts/build-functions.ts` after its existing TypeScript compile and bundles the same root entry into
+the ignored `functions/lib/command-kernel.cjs`; `functions/src/index.ts` re-exports only
+`resolveCommand` and `canonicalResolutionJson`. The package-local `gcp-build` then uses only Node
+built-ins inside the uploaded archive and fails closed unless both `lib/index.js` and
+`lib/command-kernel.cjs` are present; it never reaches for the parent builder remotely. There is no
+copied kernel source, second reducer, Firebase dependency or divergent server implementation, and the
+golden contract requires canonical browser/Functions output bytes to match.
+
+K1 does not cut over a live caller. `src/lib/mechanics-command.ts` and its current store adapter remain
+the sole unchanged compatibility path, so no command is dual-dispatched and K1 adds no persistence
+writer. The serial kernel lease continues K1 → C1 → O1 → F1–F6; each successor migrates only its domain
+after parity. X1 owns domain convergence and temporary-adapter deletion, while Tactical Task 15 alone
+owns removal of the final live visual caller after its visual gate.
+
 The active execution-model cutover adds one stricter seam above derived grants: immutable capability
 snapshots contain the sole authored `MechanicsProgram`; installed authority resolves to one exact
 receipt; one program-root occurrence owns runtime authority and phase/register state; direct child
