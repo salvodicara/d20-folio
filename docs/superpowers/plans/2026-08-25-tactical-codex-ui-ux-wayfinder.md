@@ -52,7 +52,7 @@ The atlas PNGs under `docs/design/tactical-codex-atlas/boards/` are design input
 - [ ] Each implementation worker owns only the exact candidate files named by its child plan, paired `src/i18n/tactical-codex/{en,it}/<family>.json` shards, colocated `specimen.tsx`, tests, scoped styles, deletion ledger, and changeset. It does not edit production routes/shell, `src/main.tsx`, `src/styles/folio.css`, shared primitives, the central specimen registry, or another slice's census file.
 - [ ] Task 2 alone owns `src/app/tactical-codex/TacticalCodexShell.tsx`, `TacticalCodexRail.tsx`, `TacticalCodexBottomNav.tsx`, `TacticalCodexImmersiveShell.tsx`, `specimen-i18n.ts`, `src/app/routes/tactical-codex-specimens.tsx`, and the DEV/TEST-only router branch. The serial specimen integrator alone owns `src/app/tactical-codex/specimen-registry.ts`; Task 15 alone owns the production route tree, `AppShell.tsx`, live shell files, `src/main.tsx`, and global style activation.
 - [ ] The asset owner alone owns Tactical Codex fonts, brand/icon APIs, provenance, and tokens. The design-system owner alone owns candidate adaptive overlays, B01 motion utilities, and their tests; neither edits the live legacy equivalents before cutover.
-- [ ] Each feature worker owns one census fragment under `tests/e2e/surface-census/<family>.ts`. Test Wayfinder Task 7 alone owns `surface-census/index.ts`, `surface-manifest.ts`, `surfaces.ts`, graders/audit, and the schema; Test Task 8 alone owns visual/motion configs, specs, scripts, and commands. UI workers only consume those frozen interfaces.
+- [ ] Each feature worker owns one census fragment under `tests/e2e/surface-census/<family>.ts`. Test Wayfinder Task 7A alone bootstraps and freezes the schema/index plus legacy manifest adapters before UI work; Test Task 7B alone registers completed fragments and owns graders/audit after UI Tasks 1–14. Test Tasks 8A/8B alone own visual/motion configs, specs, scripts, and commands. UI workers only consume those frozen interfaces.
 - [ ] Feature styling is colocated in a CSS module or feature-owned stylesheet imported by that feature. New selectors never enter `src/styles/folio.css`.
 - [ ] After every implementation worker, start a short cleanup worker that removes obsolete candidate/prototype files and writes `docs/superpowers/plans/deletions/tactical-codex-<nn>-<slice>.md` with exact live files, selectors, imports, and test candidates. Every test candidate is classified through Test Portfolio D1–D7; only durable outcome signals are replaced, while representation-only behavior is explicitly retired. It must not remove the current production owner early.
 - [ ] Start a fresh reviewer with `superpowers:requesting-code-review`; fix High/Medium findings before rebasing the slice and integrating it to `main` as inert code.
@@ -76,29 +76,34 @@ The atlas PNGs under `docs/design/tactical-codex-atlas/boards/` are design input
 
 ### Cross-Wayfinder serial chokepoint registry
 
-| Chokepoint                                                                      | Serial owner order                                                                          | Handoff gate                                                                                    |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `package.json`, `pnpm-lock.yaml`                                                | Test T3 → T4 → T8A → UI Task 1 → UI Task 15                                                 | Prior commit integrated; scripts/dependencies and lockfile green; next owner rebases            |
-| `src/app/router.tsx`                                                            | UI Task 2 DEV/TEST branch → UI Task 15 complete production tree                             | Production route snapshot unchanged after Task 2; Task 15 owns the only public switch           |
-| `src/app/tactical-codex/specimen-registry.ts`                                   | UI Task 2 create → serial specimen integrator after each slice → UI Task 15 delete          | Colocated specimen export reviewed; registry change contains no feature logic                   |
-| `src/i18n/loaders.ts`, live `src/i18n/{en,it}/ui/*`                             | UI Task 15 only                                                                             | Candidate catalogues stay outside the production glob; parity and bundle proof before promotion |
-| `playwright.config.ts`, `playwright.critical.config.ts`                         | Test Tasks 3 → 4                                                                            | Zero-retry and authenticated critical contracts frozen; UI never edits them                     |
-| `surface-census/index.ts`, manifest/surfaces, surface graders                   | Test Task 7 bootstrap/freeze → Test Task 7 serial registrations/parity → UI Task 15 consume | Schema published before UI work; feature workers own fragments only; no second manifest         |
-| `playwright.visual.config.ts`, `tests/visual/*`, `scripts/qa/*`, visual scripts | Test Task 8 only                                                                            | `visual:review` and `visual:motion` list and run with zero retries before UI Task 1 approval    |
-| `.github/workflows/*`                                                           | Test Tasks 3 → 6 → 14                                                                       | Each workflow owner integrates and rebases; UI consumes gates and never edits workflows         |
-| `PROGRESS.md`                                                                   | Integrated Automation producer → matching UI slice status → Automation X1 → UI Task 15      | One status owner at a time; inert means DEV/TEST-only, final means verified live candidate      |
-| `docs/TEST_PORTFOLIO.md`                                                        | Test Tasks 1 → 7/8 → 10/14                                                                  | UI supplies D1–D7 evidence in deletion ledgers; Test Wayfinder alone reconciles the portfolio   |
+| Chokepoint                                                                      | Serial owner order                                                                              | Handoff gate                                                                                           |
+| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `package.json`, `pnpm-lock.yaml`                                                | Test T3 → T8A → UI Task 1 → Test T4 → UI Task 15                                                | Prior commit integrated; scripts/dependencies and lockfile green; T4 waits for P1 without blocking T8A |
+| `src/app/router.tsx`                                                            | UI Task 2 DEV/TEST branch → UI Task 15 complete production tree                                 | Production route snapshot unchanged after Task 2; Task 15 owns the only public switch                  |
+| `src/app/tactical-codex/specimen-registry.ts`                                   | UI Task 2 create → serial specimen integrator after each slice → UI Task 15 delete              | Colocated specimen export reviewed; registry change contains no feature logic                          |
+| `src/i18n/loaders.ts`, live `src/i18n/{en,it}/ui/*`                             | UI Task 15 only                                                                                 | Candidate catalogues stay outside the production glob; parity and bundle proof before promotion        |
+| `src/stores/saveStore.ts`                                                       | Automation P1 product owner; Test T4 and UI Task 3 consume without editing                      | Locale-free `SaveStatus` transitions contract-tested; no mock or second producer                       |
+| `playwright.config.ts`, `playwright.critical.config.ts`                         | Test Tasks 3 → 4                                                                                | Zero-retry and authenticated critical contracts frozen; UI never edits them                            |
+| `surface-census/index.ts`, manifest/surfaces, surface graders                   | Test T7A bootstrap/freeze → disjoint UI fragments → Test T7B consolidation → UI Task 15 consume | Schema published before UI work; feature workers own fragments only; no second manifest                |
+| `playwright.visual.config.ts`, `tests/visual/*`, `scripts/qa/*`, visual scripts | Test T8A foundation → Test T8B consolidation                                                    | `visual:review` and `visual:motion` list and run with zero retries before UI Task 1 approval           |
+| `.github/workflows/*`                                                           | Test Tasks 3 → 6 → 14                                                                           | Each workflow owner integrates and rebases; UI consumes gates and never edits workflows                |
+| `PROGRESS.md`                                                                   | Integrated Automation producer → matching UI slice status → Automation X1 → UI Task 15          | One status owner at a time; inert means DEV/TEST-only, final means verified live candidate             |
+| `docs/TEST_PORTFOLIO.md`                                                        | Test T1 → T7A → T7B/T8B → T10/T14                                                               | UI supplies D1–D7 evidence in deletion ledgers; Test Wayfinder alone reconciles the portfolio          |
 
-- [ ] Test Task 7 freezes a bootstrap census schema/index without waiting for the full Tactical corpus; Test Task 8 builds the final visual/motion runners on that interface. UI fragments then populate the registry, so visual infrastructure precedes UI approval without a Test↔UI dependency cycle.
-- [ ] B00 remains the first Tactical Codex implementation slice; completing Test Tasks 7–8 beforehand is test infrastructure, not a competing visual foundation.
+- [ ] Test Task 7A freezes a bootstrap census schema/index without waiting for the Tactical corpus; Test Task 8A builds the visual/motion runners on that interface. UI fragments then populate the registry; Test T7B/T8B consolidate them only after UI Tasks 1–14, so visual infrastructure precedes UI approval without a Test↔UI dependency cycle.
+- [ ] B00 remains the first Tactical Codex implementation slice; completing Test T7A/T8A beforehand is test infrastructure, not a competing visual foundation.
 
 ## Dependency DAG and Waves
 
 ```text
+Test:        T2 + T3 ─► T7A census contract ─► T8A visual foundation ─► UI Task 1
+             UI Tasks 1–14 ─► T7B census consolidation ─► T8B visual consolidation ─► UI Task 15
+
 Automation:  C1 spell kernel ─► U1 headless flow ───────────────► UI 4 spell visual
              F1..F6 headless family exits ──────────────────────► UI 8 family adapters
              A2 canonical session records ──────────────────────► UI 10 records/S01
              H1 typed/versioned homebrew ───────────────────────► UI 13 Homebrew/S02
+             X1 domain convergence ──────────────────────────────► UI 15 atomic cutover
 
 UI Wave 0:   [1 B00 asset foundation]
                               |
@@ -120,13 +125,13 @@ UI Wave 4:               [10 Records/S01]   [13 Homebrew/S02]
 UI Wave 5:              [15 atomic app-wide cutover]
 ```
 
-- [ ] Wave 0 is strictly first; no UI slice starts before its assets, licenses, tokens, and provenance tests are accepted.
-- [ ] After Wave 0, shell and primitives may run in parallel because their file ownership does not overlap.
+- [ ] Wave labels are scheduling groups for eligible, non-overlapping work, not dependency barriers. Only the explicit edges in this section, each task's `Depends on`, the producer matrix, serial leases, and owner gates block start or integration; placement in a later wave adds no edge.
+- [ ] UI Task 1 is the explicit B00 prerequisite for UI Tasks 2–14. Tasks 2 and 3 may then run in parallel. Any later task that consumes their shell or overlay contract names that edge in its local `Depends on`; wave placement never supplies it. Task 1 itself starts only after Test T7A/T8A are integrated.
 - [ ] Task 4 waits for Tasks 1–3 plus the integrated Automation C1 spell vertical and Automation U1 headless flow contract. It does not precede, replace, or become a dependency of either automation slice.
 - [ ] Wave 3 feature workers may run in parallel from the same fresh base when their candidate directories do not overlap. Integrate them one at a time after rebasing; only Task 15 may edit or delete legacy global CSS.
 - [ ] Automation F1–F6 depend only on the Automation headless contracts, never on UI Task 4. Each family enters the Tactical Codex candidate only after its Automation exit gate and the matching UI adapter/review gate below; therefore the graph has no UI↔automation cycle.
 - [ ] Task 10 waits for Task 9 and Automation A2's canonical session/record contract. Task 11 waits for Tasks 9–10, the canonical encounter model, and the admitted F1/F3/F4 UI adapters. Task 13 waits for Task 12 and Automation H1's typed/versioned Homebrew contract.
-- [ ] The specimen/census integrator runs after each wave, not concurrently with feature workers. This keeps central dev/test files single-owned while making completed slices immediately inspectable without changing production routes.
+- [ ] The specimen integrator runs after each completed scheduling batch, not concurrently with feature workers. T7A already owns the central census contract; feature workers add only disjoint fragments, and T7B consolidates them after Tasks 1–14. This keeps central dev/test files single-owned without turning a wave label into a barrier.
 
 ### ActionFlow family admission gates
 
@@ -147,9 +152,9 @@ UI Wave 5:              [15 atomic app-wide cutover]
 
 | UI task             | Automation producer                          | Frozen interface consumed                                                                              | Gate before UI integration                                                               |
 | ------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| 1 Assets            | None                                         | B00 atlas/tokens/provenance contract                                                                   | Asset/license tests and Test Task 8 visual lane green                                    |
+| 1 Assets            | None                                         | B00 atlas/tokens/provenance contract                                                                   | Asset/license tests and Test T7A/T8A visual foundation green                             |
 | 2 Shell/Home        | P1 + A1 for Home data; none for shell chrome | Canonical character summary and campaign capability/read client                                        | Producer exits recorded; no new listener/store; A00 matrix approved                      |
-| 3 Primitives/Motion | None                                         | A16 task-surface semantics and B01 frame ledger                                                        | Test Tasks 7–8 schemas/commands frozen                                                   |
+| 3 Primitives/Motion | P1 preserves the existing sync seam          | A16 task-surface semantics, B01 frame ledger, locale-free `SaveStatus`                                 | Test T7A/T8A schemas/commands frozen; no second sync producer                            |
 | 4 Spell ActionFlow  | K1 + C1 + headless U1                        | `SemanticCommand`, `ActionFlowState`, `ActionFlowView`, semantic events/answers                        | C1/U1 contract lanes green; DEV/TEST import proof; spell matrix approved                 |
 | 5 Access/Public     | P1 plus existing Auth/share seams            | Canonical public character projection and existing auth capability                                     | P1 fixture/public-read proof and access security review                                  |
 | 6 Roster            | P1                                           | Canonical character identity/build/material summaries and existing import/export seam                  | Six-fixture round trip, sync/offline proof, roster matrix approved                       |
@@ -161,9 +166,10 @@ UI Wave 5:              [15 atomic app-wide cutover]
 | 12 Compendium       | K1 plus existing typed catalogue presenters  | Versioned `RuleDefinition`/provenance and SRD/private-pack presenter seam                              | Kernel codec and both composed/SRD-only gates green                                      |
 | 13 Homebrew/S02     | H1 + K1                                      | Typed draft/version/provenance/library/share contract compiling to `RuleDefinition`                    | H1 validation/persistence/security gates green; Homebrew matrix approved                 |
 | 14 Settings/Admin   | None beyond existing Auth/admin I/O          | Existing theme, locale, identity, sign-out, admin query/mutation capabilities                          | Retained behavior/security tests green; no unapproved account capability                 |
-| 15 Cutover          | All rows above                               | Frozen aggregate of approved candidate exports; no new domain interface                                | All producer/UI gates, D1–D7 ledgers, full visual/motion matrix and owner approval green |
+| 15 Cutover          | All rows above plus Automation X1            | Frozen aggregate of approved candidate exports; no new domain interface                                | X1 convergence plus all producer/UI, T7B/T8B, D1–D7, visual/motion and owner gates green |
 
 - [ ] Automation O1 owns only creation/growth domain, view data and atomic persistence; UI Task 7 exclusively owns its React flow, visual state, bilingual copy, responsive behavior and screenshots.
+- [ ] P1 owns and preserves the existing locale-free `SaveStatus` seam in `src/stores/saveStore.ts`, fed by `src/lib/firestore.ts#saveStatusCallbacks`. Test T4 observes the current `SaveIndicator` projection; UI Task 3's future `DocumentSyncStatus` consumes the same seam and owns only presentation, so neither task waits on nor mocks the other.
 
 ## Mandatory Slice-Plan Template
 
@@ -193,7 +199,7 @@ Every detailed slice plan must include these sections before implementation begi
   - Tablet `1024x768` in both themes/locales only where the layout changes at that breakpoint.
 - [ ] Task 4 runs the spell vertical through all eight locale × theme × desktop/mobile combinations for closed, opening, payment, target, observation/save input, review, busy, success/effect, recoverable error, and undo. Each later F1–F6 adapter reruns all eight combinations for the states it adds; Task 15 reruns the complete combined matrix.
 - [ ] Each family covers meaningful combinations of loading, empty, sparse, dense, long EN/IT content, offline, pending sync, sync error, permission denied, revoked/deleted, and reduced motion; avoid meaningless Cartesian duplication.
-- [ ] `pnpm exec playwright test surface-audit` proves composable behavior/a11y/i18n/layout signal; `pnpm visual:review` captures curated states and `pnpm visual:motion` captures B01 frames through Test Task 8's final lane. Never create a second capture manifest.
+- [ ] `pnpm exec playwright test surface-audit` proves composable behavior/a11y/i18n/layout signal; `pnpm visual:review` captures curated states and `pnpm visual:motion` captures B01 frames through Test T8A, then T7B/T8B consolidate the completed corpus. Never create a second capture manifest.
 
 ### Image-to-code comparison
 
@@ -222,6 +228,8 @@ Every detailed slice plan must include these sections before implementation begi
 
 **Detailed plan:** `docs/superpowers/plans/2026-08-25-tactical-codex-01-assets.md`
 
+**Depends on:** integrated Test T7A census contract and Test T8A visual-lane foundation.
+
 **Owns:** `package.json`, `pnpm-lock.yaml`, new `src/styles/tactical-codex/foundation.css`, new `src/components/tactical-codex/brand/*`, new `src/components/tactical-codex/icons/*`, new `src/assets/tactical-codex/brand/*`, removal of `public/assets/prototype/*`, `docs/assets/ASSET_PROVENANCE.md`, asset tests. Production font imports, brand component, favicon, and install-icon replacement remain in Task 15.
 
 - [ ] Baseline current fonts, logo sizes, icon consumers, PWA/install assets, PDF font dependencies, and every file under `public/assets/prototype/` before changing anything.
@@ -243,6 +251,8 @@ Every detailed slice plan must include these sections before implementation begi
 
 **Detailed plan:** `docs/superpowers/plans/2026-08-25-tactical-codex-02-shell.md`
 
+**Depends on:** UI Task 1. Shell chrome may start immediately after B00; Task 2 integration additionally waits for Automation P1 and A1 so Home renders canonical character/campaign data without a new listener or store.
+
 **Owns:** the exact Task 2 shell/specimen files listed in the serial registry, the DEV/TEST-only router branch, new `src/features/home/tactical-codex/HomeCandidatePage.tsx`, `HomeCharacterSummary.tsx`, `HomeCampaignSummary.tsx`, shell/home candidate i18n, tests and census. Task 10/13 export their own later Home cards; Task 15 alone composes them and switches production routes/shell.
 
 - [ ] Make `/home` the eventual authenticated landing route and `/` redirect there at Task 15. In the specimen, desktop exposes exactly Home, Characters, Campaigns, Compendium, Settings in the persistent rail.
@@ -258,10 +268,12 @@ Every detailed slice plan must include these sections before implementation begi
 
 **Detailed plan:** `docs/superpowers/plans/2026-08-25-tactical-codex-03-primitives-motion.md`
 
+**Depends on:** UI Task 1, integrated Test T7A/T8A interfaces, and Automation P1's handoff preserving the current non-UI `SaveStatus` contract.
+
 **Owns:** new `src/components/tactical-codex/ui/*`, new `src/components/tactical-codex/workflow/*`, shared candidate-overlay tests, motion-frame tests, `tests/e2e/surface-census/overlays.ts`. Existing live primitives remain untouched until Task 15.
 
 - [ ] Define one semantic task-surface API that renders a desktop tray/popover or mobile bottom sheet without changing workflow state, validation, focus ownership, or callbacks.
-- [ ] Standardize blocking dialog, destructive confirmation, searchable picker, payment/input sheet, detail preview, command palette, toast/undo, save/sync indicator, tooltip, popover, and nonmodal disclosure.
+- [ ] Standardize blocking dialog, destructive confirmation, searchable picker, payment/input sheet, detail preview, command palette, toast/undo, `DocumentSyncStatus`, tooltip, popover, and nonmodal disclosure. The sync component renders P1's existing `SaveStatus` seam and does not produce or reinterpret sync state.
 - [ ] Encode B01 motion tokens, interruption behavior, focus return, live-region announcements, scroll lock, safe-area padding, reduced motion, and touch targets.
 - [ ] Re-express the behavior currently covered by `ModalShell`, `ConfirmDialog`, picker shells, `ModalTabSwitcher`, and ad-hoc modal heads through the smallest candidate primitive; keep Radix as the accessibility base.
 - [ ] Delete duplicate candidate modal/sheet code immediately. Record live wrapper, CSS, and representation-test removals for Task 15 and add a post-cutover import guard for retired wrappers.
@@ -287,6 +299,8 @@ Every detailed slice plan must include these sections before implementation begi
 
 **Detailed plan:** `docs/superpowers/plans/2026-08-25-tactical-codex-05-access.md`
 
+**Depends on:** UI Tasks 1–3.
+
 **Owns:** new candidate access/public presenters under `src/features/access/tactical-codex/*`, auth/public error states, access i18n/tests/census. Existing `/login`, `/legal`, and shared-character routes switch only in Task 15.
 
 - [ ] Implement logged-out, sign-in busy/error, offline, account recovery guidance, public shared character, revoked/deleted share, legal/attribution, route error, 404, and crash-report entry states.
@@ -296,6 +310,8 @@ Every detailed slice plan must include these sections before implementation begi
 ### Task 6: A02–A03 multi-character roster, import, and data actions
 
 **Detailed plan:** `docs/superpowers/plans/2026-08-25-tactical-codex-06-roster.md`
+
+**Depends on:** UI Tasks 1–3 and Automation P1's canonical character/read seam.
 
 **Owns:** new `src/features/roster/tactical-codex/*`, roster/import i18n/tests/census, candidate roster-owned task surfaces.
 
@@ -309,7 +325,7 @@ Every detailed slice plan must include these sections before implementation begi
 
 **Detailed plan:** `docs/superpowers/plans/2026-08-25-tactical-codex-07-character-growth.md`
 
-**Depends on:** integrated Automation O1 domain/headless creation contract; O1 owns no React, i18n or screenshots. **Owns:** new Tactical Codex presenters under `src/features/creation/tactical-codex/*` and `src/features/leveling/tactical-codex/*`, shared candidate wizard pieces, growth i18n/tests/census.
+**Depends on:** UI Tasks 1–3 and the integrated Automation O1 domain/headless creation contract; O1 owns no React, i18n or screenshots. **Owns:** new Tactical Codex presenters under `src/features/creation/tactical-codex/*` and `src/features/leveling/tactical-codex/*`, shared candidate wizard pieces, growth i18n/tests/census.
 
 - [ ] Implement start/resume, every required step, search/picker/detail, validation, long-content, rolled-value entry without rolling, review, save busy/error/success, leave confirmation, and level-up/multiclass/subclass branches.
 - [ ] Render O1's locale-free `CreationDraft` resolution/view/events and atomic-create result; reuse A16 pickers and ActionFlow-compatible review language without rebuilding domain rules or persistence in React.
@@ -331,6 +347,8 @@ Every detailed slice plan must include these sections before implementation begi
 
 **Detailed plan:** `docs/superpowers/plans/2026-08-25-tactical-codex-09-campaigns.md`
 
+**Depends on:** UI Tasks 1–3 and Automation A1's canonical campaign/capability seam.
+
 **Owns:** `src/features/campaigns/tactical-codex/CampaignsCandidatePage.tsx`, `CampaignWorkspaceCandidatePage.tsx`, and only `tactical-codex/{roster,workspace,invites}/*`, plus campaign i18n/tests/census. Task 10 exclusively owns `tactical-codex/records/*`; Task 11 exclusively owns `tactical-codex/encounters/*`; existing routes remain mounted until Task 15.
 
 - [ ] Cover zero/one/many campaigns, create/join/invite, invalid/expired invite, player/DM/owner permissions, party roster, member sheet, empty/dense workspace, pending sync, offline, permission error, and campaign art/fallback provenance.
@@ -340,6 +358,8 @@ Every detailed slice plan must include these sections before implementation begi
 ### Task 12: A14 compendium and bestiary
 
 **Detailed plan:** `docs/superpowers/plans/2026-08-25-tactical-codex-12-compendium.md`
+
+**Depends on:** UI Tasks 1–3 and Automation K1's typed catalogue contract.
 
 **Owns:** new `src/features/compendium/tactical-codex/*`, compendium i18n/tests/census, candidate compendium-specific art presenters.
 
@@ -351,6 +371,8 @@ Every detailed slice plan must include these sections before implementation begi
 ### Task 14: A15 existing settings, account, and administration
 
 **Detailed plan:** `docs/superpowers/plans/2026-08-25-tactical-codex-14-settings.md`
+
+**Depends on:** UI Tasks 1–3.
 
 **Owns:** new `src/features/account/tactical-codex/*`, candidate account-menu integrations, settings/admin i18n/tests/census.
 
@@ -400,7 +422,7 @@ Every detailed slice plan must include these sections before implementation begi
 
 **Detailed plan:** `docs/superpowers/plans/2026-08-25-tactical-codex-15-cutover.md`
 
-**Depends on:** UI Tasks 1–14 and their approved screenshots; integrated Automation C1 + headless U1, every required F1–F6 exit/UI adapter, A2, H1, and the canonical campaign/encounter handoffs. **Owns:** central production route/shell/style activation, census aggregation, all reviewed legacy deletion ledgers, specimen-scaffold deletion, screenshot packaging, release docs/changeset; it does not redesign feature slices.
+**Depends on:** UI Tasks 1–14 and their approved screenshots; Test T7B/T8B; integrated Automation C1 + headless U1, every required F1–F6 exit/UI adapter, A2, H1, the canonical campaign/encounter handoffs, and Automation X1's convergence/deletion exit. **Owns:** central production route/shell/style activation, execution and packaging of the frozen T7B/T8B census, all reviewed legacy deletion ledgers, specimen-scaffold deletion, screenshot packaging, release docs/changeset; it neither edits the shared census owner files nor redesigns feature slices.
 
 - [ ] Wire completed route components atomically: `/home`, existing character/campaign/compendium/settings/public routes, `/campaigns/:campaignId/sessions`, `/campaigns/:campaignId/encounters/:encounterId`, and `/homebrew` with correct A00 anchors and lazy boundaries.
 - [ ] In that same commit, replace every live spell and admitted F1–F6 action call site with the one reviewed ActionFlow visual grammar over the headless protocol. No call site, shell segment, overlay or route may switch in an earlier task.

@@ -253,6 +253,8 @@ G0 capability/branch ledgers + T0 test contract
 | 5    | H1, A2, and F slices develop on non-overlap files but integrate serially through Functions/Rules | Typed homebrew, planning, and complete headless automation        |
 | 6    | X1, then Tactical Codex Task 15                                                                  | Domain convergence followed by the single approved visual cutover |
 
+Wave labels are scheduling groups for eligible work, not dependency barriers. A slice waits only for an explicit DAG arrow or `Depends on`, a serial file lease, a migration/owner gate, or a named consumer handoff; membership in a later wave never creates an unstated edge.
+
 C1 + U1 is the first architecture vertical, not a live UI release. Customer-visible casting value belongs to Tactical Codex Task 4's DEV/TEST candidate and Task 15's owner-approved cutover.
 
 ### Architecture-to-UI handoffs
@@ -261,10 +263,11 @@ C1 + U1 is the first architecture vertical, not a live UI release. Customer-visi
 | ------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------- |
 | U1 semantic ActionFlow state          | Tactical Codex Task 4 after headless fixtures pass                 | Task 4 candidate; Task 15 live switch/deletion             |
 | O1 creation domain/persistence        | Task 7 after atomic reload/first-command fixtures pass             | Task 7 candidate; Task 15 live switch/deletion             |
+| P1 locale-free `SaveStatus` seam      | Test T4 and UI Task 3 after P1 preserves its Firestore transitions | Product seam in P1; Task 3 presentation; Task 15 live swap |
 | P1/S1/A1 character/campaign authority | Tasks 6, 8, 9, and 11 after relevant contracts pass                | Each candidate task; Task 15 live switch                   |
 | A2 planner/chronicle/calendar         | Task 10 only after A2 migration/authority/export gates pass        | Task 10 candidate; Task 15 live switch/deletion            |
 | H1 typed/versioned homebrew           | Task 13 only after compiler/sandbox/version/pin gates pass         | Task 13 candidate; Task 15 live switch/deletion            |
-| F1–F6 family projections              | Tasks 4, 8, 11, and 12 consume each completed family incrementally | UI tasks render; no F slice owns UI/screenshots/call sites |
+| F1–F6 family projections              | Tasks 8, 11, and 12 consume each completed family as applicable    | UI tasks render; no F slice owns UI/screenshots/call sites |
 
 An UI task consumes typed outputs and may not redefine mechanics or persistence. An architecture slice may not implement the candidate, mount a public call site, delete a visual carrier, or claim screenshot parity.
 
@@ -289,6 +292,7 @@ An UI task consumes typed outputs and may not redefine mechanics or persistence.
 
 - [ ] Approve the companion plan before Wave 1 implementation.
 - [ ] Publish the retained lanes for kernel contracts, fixture parity, migrations, Functions emulator authorization, UI behavior, and curated screenshots.
+- [ ] Publish the acyclic visual-foundation handoff `T2/T3 → T7A census contract → T8A`, with T7B/T8B reserved for consolidation after Tactical Codex UI Tasks 1–14.
 - [ ] Publish deletion rules for legacy representation tests and duplicate regressions.
 - [ ] Give every later slice an exact focused command and an authoritative integration command.
 
@@ -314,7 +318,7 @@ An UI task consumes typed outputs and may not redefine mechanics or persistence.
 
 ## 10. Slice P1 — Canonical Character Material State
 
-**Depends on:** K1 and T0. **Owns:** `src/types/material-state.ts`, `src/lib/material-state.ts`, `src/lib/combat-state-io.ts`, the character-state portions of `src/lib/firestore.ts`, `src/hooks/useCharacterSubscription.ts`, character persistence fixtures/migrations, and only the personal-state blocks of `firestore.rules` during its serial ownership window. **Must not edit:** campaign paths, casting UI, creation UI, or Functions gameplay files.
+**Depends on:** K1 and T0. **Owns:** `src/types/material-state.ts`, `src/lib/material-state.ts`, `src/lib/combat-state-io.ts`, the character-state portions of `src/lib/firestore.ts`, `src/stores/saveStore.ts`, `src/hooks/useCharacterSubscription.ts`, character persistence fixtures/migrations, and only the personal-state blocks of `firestore.rules` during its serial ownership window. **Must not edit:** campaign paths, casting UI, creation UI, or Functions gameplay files.
 
 - [ ] Write and review the P1 child plan, including the exact live schema version and rollback evidence.
 - [ ] Specify the character parent allowlist: build/custom/meta/sharing/attachment/buildRevision/derived cache only.
@@ -323,6 +327,7 @@ An UI task consumes typed outputs and may not redefine mechanics or persistence.
 - [ ] Keep a single legacy decode boundary and canonical-only writes; prohibit dual writes in a test.
 - [ ] Implement snapshot, dry-run, idempotent apply, and verify against all six fixtures before requesting any live migration permission.
 - [ ] Prove save acknowledgement with server echo and surface rejected/pending writes instead of optimistic success.
+- [ ] Preserve and contract-test the existing locale-free `SaveStatus = "saved" | "pending" | "saving" | "error" | "offline"` seam fed by `src/lib/firestore.ts#saveStatusCallbacks`. Test T4 and the current/future status presenters consume that product contract; neither tests nor Tactical Codex UI may mock, produce, or redefine its transitions.
 - [ ] Keep solo offline writes functional and bounded.
 - [ ] Simplify personal-state Rules to owner, attachment authority, keys/types/sizes, and immutable identity.
 - **Deletion:** after owner-approved migration verification, delete `playStateVersion`, `SessionState.world`, legacy material mirrors, codec branches, and representation-only tests in the next commit.
@@ -509,22 +514,23 @@ T0 supplies focused commands; applicable slices still run Functions/browser buil
 
 ## 21. File-Ownership and Handoff Registry
 
-| Chokepoint                                                                                | Serial owner order                                                          | Handoff condition                                                      |
-| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `src/lib/command/**`                                                                      | K1 → C1 → F1..F6                                                            | exported contract green and base SHA recorded                          |
-| `src/types/material-state.ts`                                                             | P1 → F1..F5 → X1                                                            | schema/migration owner reviewed                                        |
-| `src/lib/firestore.ts`                                                                    | P1 → O1 → X1                                                                | prior slice integrated; exact functions recorded                       |
-| `firestore.rules`                                                                         | P1 → S1 → A1 → A2 → H1 → F1..F6 → X1                                        | emulator suite green before handoff                                    |
-| `functions/src/index.ts` and `functions/package*.json`                                    | K1 → S1 → A1 → A2 → H1                                                      | Functions build/lockfile green; exports only unless planned            |
-| `src/types/action-flow.ts`, `src/lib/action-flow/**`, `src/lib/views/action-flow-view.ts` | U1 → F1..F6 family projections                                              | no React/TSX, public call site, i18n, or screenshot ownership          |
-| `src/features/commands/**`                                                                | C1 local executor → S1 shared client                                        | UI Task 4 owns candidate rendering; Task 15 owns live switch           |
-| `src/features/campaigns/campaign-io.ts`                                                   | A1 → X1 → UI Task 15 deletion                                               | thin clients integrated before visual-carrier removal                  |
-| root `package.json` / `pnpm-lock.yaml`                                                    | Test portfolio C0: T3 → T4 → T8A; then Tactical Codex Task 1 → Task 15      | prior owner integrates and records the exact SHA before handoff        |
-| `src/app/router.tsx`, production route/shell files                                        | UI Task 2 DEV/TEST branch → Task 15 production cutover                      | no architecture slice edits or mounts a route                          |
-| specimen i18n loader and `src/i18n/{en,it}/ui/**`                                         | UI Task 2 candidate loader → owning UI slice catalogues → Task 15 promotion | architecture emits locale-free semantic keys only                      |
-| `playwright*.config.ts`, `.github/workflows/**`                                           | Test portfolio C2/C3 lease holders only                                     | UI consumes the frozen commands and never edits config or workflows    |
-| `tests/e2e/surface-census/<family>.ts`                                                    | owning UI candidate slice → Test T7 serial registry → UI Task 15 consume    | feature fragments stay disjoint; T7 alone owns the shared index/schema |
-| capability/status/architecture docs                                                       | G0 single-writer ledger → architecture X1 → UI Task 15 final reconciliation | update only after integrated evidence, never concurrently              |
+| Chokepoint                                                                                | Serial owner order                                                                        | Handoff condition                                                      |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `src/lib/command/**`                                                                      | K1 → C1 → F1..F6                                                                          | exported contract green and base SHA recorded                          |
+| `src/types/material-state.ts`                                                             | P1 → F1..F5 → X1                                                                          | schema/migration owner reviewed                                        |
+| `src/lib/firestore.ts`                                                                    | P1 → O1 → X1                                                                              | prior slice integrated; exact functions recorded                       |
+| `src/stores/saveStore.ts`                                                                 | P1 product seam; Test T4/UI Task 3 consume without editing                                | locale-free transitions contract-tested before consumer handoff        |
+| `firestore.rules`                                                                         | P1 → S1 → A1 → A2 → H1 → F1..F6 → X1                                                      | emulator suite green before handoff                                    |
+| `functions/src/index.ts` and `functions/package*.json`                                    | K1 → S1 → A1 → A2 → H1                                                                    | Functions build/lockfile green; exports only unless planned            |
+| `src/types/action-flow.ts`, `src/lib/action-flow/**`, `src/lib/views/action-flow-view.ts` | U1 → F1..F6 family projections                                                            | no React/TSX, public call site, i18n, or screenshot ownership          |
+| `src/features/commands/**`                                                                | C1 local executor → S1 shared client                                                      | UI Task 4 owns candidate rendering; Task 15 owns live switch           |
+| `src/features/campaigns/campaign-io.ts`                                                   | A1 → X1 → UI Task 15 deletion                                                             | thin clients integrated before visual-carrier removal                  |
+| root `package.json` / `pnpm-lock.yaml`                                                    | Test C0: T3 → T8A → UI Task 1 → T4 → UI Task 15                                           | T4 waits for P1 without blocking the visual foundation; SHA handed off |
+| `src/app/router.tsx`, production route/shell files                                        | UI Task 2 DEV/TEST branch → Task 15 production cutover                                    | no architecture slice edits or mounts a route                          |
+| specimen i18n loader and `src/i18n/{en,it}/ui/**`                                         | UI Task 2 candidate loader → owning UI slice catalogues → Task 15 promotion               | architecture emits locale-free semantic keys only                      |
+| `playwright*.config.ts`, `.github/workflows/**`                                           | Test portfolio C2/C3 lease holders only                                                   | UI consumes the frozen commands and never edits config or workflows    |
+| `tests/e2e/surface-census/<family>.ts`                                                    | Test T7A schema/index → owning UI fragments → Test T7B consolidation → UI Task 15 consume | fragments stay disjoint; only T7A/T7B own shared census files          |
+| capability/status/architecture docs                                                       | G0 single-writer ledger → architecture X1 → UI Task 15 final reconciliation               | update only after integrated evidence, never concurrently              |
 
 If a child plan needs a chokepoint before its turn, it waits or negotiates a new serial order with the program owner; it does not edit concurrently.
 

@@ -238,8 +238,11 @@ Delete only after each replacement is proven in the same slice:
 
 ## Execution sequence
 
-Each phase is a live-safe vertical cut. Never dual-write one fact. Old and new may coexist only on
-different versioned documents or feature families, with a single owner selected by an atomic marker.
+Phase numbers organize outcomes; they are not scheduling barriers. The explicit Automation, Test
+Portfolio, and Tactical Codex Wayfinder DAGs own start/integration order. Never dual-write one fact.
+Old and new domain representations may coexist only on different versioned documents or feature
+families, with a single owner selected by an atomic marker. Candidate UI remains inert and DEV/TEST-only
+until Tactical Codex Task 15 performs the one public visual cutover.
 
 ### Phase 0 — Baseline and product authority
 
@@ -264,11 +267,14 @@ Use casting because it exposes the current architecture and UX failures in one b
 
 1. Compile one spell definition through payment, upcast, targets, attack/save observation,
    damage/effect, commit, and undo.
-2. Build the shared `ActionFlow` presenter and components.
+2. Build the shared headless `ActionFlow` state/view contract, then render its spell-only vertical in
+   the inert Tactical Codex Task 4 DEV/TEST specimen.
 3. Reuse the good chromatic slot options, entered-roll controls, and target cards as primitives;
-   delete their monolithic owners when no consumer remains.
+   delete candidate-local duplicates and record every still-live monolithic visual owner for Task 15.
 4. Generate high-fidelity dark/light, EN/IT, desktop/mobile screenshots and motion traces.
-5. After owner approval, switch the slice once and delete its legacy route and tests.
+5. After owner approval, integrate only the unreachable DEV/TEST candidate. Do not switch a public
+   route, call site, overlay, or shell and do not delete its live visual carrier/tests; Task 15 performs
+   those changes atomically after all candidate families and deletion ledgers are ready.
 
 ### Phase 3 — Authoritative shared command
 
@@ -300,13 +306,18 @@ must never recreate legacy fields.
    activators back to their action/source surfaces.
 2. Make ability and saving-throw tiles directly editable; remove the duplicate lists.
 3. Replace the profile jewel with an accessible `DocumentSyncStatus` placed near edited content and
-   a recoverable error path that preserves input.
+   a recoverable error path that preserves input. This future visual component consumes the existing
+   locale-free `SaveStatus` contract owned by `src/stores/saveStore.ts` and fed by
+   `src/lib/firestore.ts#saveStatusCallbacks`; it does not own or redefine sync transitions. The
+   authenticated Test T4 lane observes that current semantic seam and never waits for, mocks, or
+   produces the Tactical component.
 4. Propagate the approved token/component/motion system through onboarding, roster, character,
    spell/action discovery, campaign, encounter, settings, and error/empty/loading/offline states.
-5. Do not expose a partially restyled application: integrate coherent surface groups behind the
-   screenshot approval gate.
+5. Do not expose a partially restyled application: integrate coherent candidate surface groups only
+   as inert DEV/TEST specimens behind the screenshot approval gate, then activate every public surface
+   together in Tactical Codex Task 15.
 
-### Phase 6 — Test portfolio reset
+### Phase 6 — Cross-cutting test portfolio reset
 
 Target lanes:
 
@@ -318,11 +329,18 @@ Target lanes:
 - L5 visual/motion: curated screenshots and frame timelines for human approval.
 - L6 post-deploy: health and read-only smoke on the exact SHA.
 
-Immediate cleanup merges repeated a11y/i18n/mobile/art traversal, moves capture probes outside the
-test gate, removes vacuous conditional flows and row-count meta-tests, and adds Functions to CI.
-After cutover, rewrite semantic outcomes against `resolveCommand` and delete journal/proof/lease/
-mirror representation tests. The current audit estimates 10k–17k test LOC can be removed or merged
-without losing durable coverage after the legacy cutover.
+The test work is interleaved by explicit dependency, not deferred wholesale until after Phase 5:
+
+1. **Before candidate UI:** T1/T2 establish the portfolio/meta contract, T3 adds Functions/no-retry,
+   T7A freezes the one census schema/index, and T8A establishes the curated visual/motion commands.
+2. **After Tactical Codex UI Tasks 1–14 but before Task 15:** T7B consolidates the completed census and
+   repeated a11y/i18n/mobile/ink traversal; T8B consolidates curated/motion evidence. Both are explicit
+   Task 15 dependencies.
+3. **After the atomic UI/Automation cutovers:** T9/T10/T13/T14 remove vacuous flows, source-regex and
+   journal/proof/lease/mirror representation tests only after their durable replacements pass D1–D7.
+
+The current audit estimates 10k–17k test LOC can be removed or merged without losing durable coverage
+after the relevant legacy cutover; this is an estimate, never a deletion quota.
 
 ## Visual approval matrix
 

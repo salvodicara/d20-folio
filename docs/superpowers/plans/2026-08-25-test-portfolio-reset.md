@@ -96,23 +96,28 @@ Merge tests when setup, authority boundary, and failure mode are identical and o
 ## Dependency DAG, Waves, and Serial Chokepoints
 
 ```text
-Wave 0  T1 ledger ─────┐
-        T2 fast meta ──┼──► T3 Functions/no-retry ─► T8A visual-lane foundation
-                       │
-Wave 1  K1/P1 ready ───┴──► T4 save/offline ───────┐
+Wave 0  T1 ledger + T2 fast meta ─► T3 Functions/no-retry
+                                      │
+                                      ▼
+                                  T7A census contract ─► T8A visual-lane foundation
+
+Wave 1  P1 + existing SaveStatus ──► T4 save/offline ─┐
         S1 ready ─────────► T6 shared boundary ────┤
         pack baseline ────► T11 primitives ────────┼─ independent private worktrees
                          └► T12 grants ────────────┘
-Wave 2  UI Tasks 1–14 + T8A ─► T7 census merge ─► T8B curated consolidation
+Wave 2  UI Tasks 1–14 + T8A ─► T7B census consolidation ─► T8B curated consolidation
 Wave 3  UI Task 15 cutover ───► T9 vacuous/layout + T10 UI-regex retirement
         Automation X1 cutover ► T13 causal + T14 material retirement/close
 ```
 
-- Wave 0 starts T1/T2 immediately in disjoint worktrees. T3 takes the shared-config lease next; T8A takes it only after T3 hands it off.
-- T4 waits for P1's canonical document/sync seam; T6 waits for S1's callable/App Check seam. Neither invents an interim boundary.
-- T7/T8B wait for the candidate UI census and rendered states. T8A lands the `visual:review`/`visual:motion` lane before any UI slice invokes it.
+- Wave labels are scheduling groups for currently eligible nodes, not dependency barriers. A node waits only for its stated dependency or DAG arrow, an exclusive C0–C4 lease, or an explicit owner gate; sharing a later wave never creates an unstated edge.
+- Wave 0 starts T1/T2 immediately in disjoint worktrees. T3 takes the shared-config lease next; T7A freezes the census contract after Tasks 1–3; T8A starts only after both T3's C0/C2 handoff and T7A's schema/index handoff.
+- T4 waits for P1's canonical document plus the existing locale-free `SaveStatus` seam; T6 waits for S1's callable/App Check seam. Neither invents an interim boundary or waits for a future Tactical Codex component.
+- T7B/T8B wait for the candidate UI census and rendered states. T7A/T8A land the frozen census and `visual:review`/`visual:motion` lane before any UI slice invokes it.
 - A read-only pack baseline freezes titles/outcomes; T11 and T12 then branch independently from the same verified private `origin/main`, own disjoint harnesses/tables, and use separate public verifier worktrees.
 - T9/T10/T13/T14 are cutover cleanup, never speculative early deletion. Every deletion still passes D1-D7.
+
+The immediate C0 handoff is `T3 → T8A → Tactical Codex UI Task 1`. T4 takes the next available C0/C2 window only after P1 is integrated; it does not hold the visual-foundation path open while waiting for P1. UI Task 15 is the final C0 owner.
 
 The portfolio ledger contains a serial lease registry for these shared chokepoints:
 
@@ -142,9 +147,12 @@ The initial L3 inventory contains these twelve jobs: authenticated create/import
 | A2              | `session-record-contract.test.ts`, `session-record-migration.test.ts`                       | `pnpm exec vitest run --project fast tests/unit/session-record-{contract,migration}.test.ts`                                    |
 | H1              | `homebrew-rule-definition.test.ts`, `homebrew-rule-migration.test.ts`                       | `pnpm exec vitest run --project fast tests/unit/homebrew-rule-{definition,migration}.test.ts && pnpm test:rules`                |
 | F1-F6           | `resolve-command-{vitals,resources,effects,economy,inventory,discovery}.test.ts`            | `pnpm exec vitest run --project fast tests/unit/resolve-command-{vitals,resources,effects,economy,inventory,discovery}.test.ts` |
+| T7A             | `surface-census.test.ts`, canonical schema/index, unchanged legacy adapters                 | `pnpm exec vitest run --project fast tests/unit/surface-census.test.ts tests/unit/route-coverage.guard.test.ts`                 |
+| T8A             | isolated visual config, curated/motion detector specimen, public command listing            | `pnpm visual:review -- --list && pnpm visual:motion -- --list`                                                                  |
 | UI Task 4       | UI-owned component behavior, `surface-census/action-flow.ts`, A08 rendered frames           | `pnpm visual:review -- --grep A08 && pnpm visual:motion -- --grep A08`                                                          |
 | UI Task 8       | UI-owned component behavior, `surface-census/character.ts`, A05-A07 rendered frames         | `pnpm visual:review -- --grep 'A0[5-7]' && pnpm visual:motion -- --grep 'A0[5-7]'`                                              |
 | Tactical slices | slice-owned `tests/e2e/surface-census/*.ts`, rendered behavior and curated frames           | `pnpm exec playwright test surface-audit && pnpm visual:review && pnpm visual:motion`                                           |
+| T7B/T8B         | consolidated surface graders plus curated/motion corpus                                     | `pnpm exec playwright test surface-audit && pnpm visual:review && pnpm visual:motion`                                           |
 | X1 / UI cutover | all retained lanes                                                                          | Task 14 authoritative command set; no deleted representation suite is reintroduced                                              |
 
 A2 is mandatory when canonical sessions/records remain in the Task 15 release scope; H1 is mandatory when typed/versioned Homebrew remains. Their contract, codec/migration, provenance/pinning, hostile-input, and authorization proofs land with their Automation owner before UI Tasks 10/13 render them. U1 remains DOM-free and locale-free; UI Tasks 4/8 alone own rendered behavior, screenshots, and motion.
@@ -223,11 +231,11 @@ git commit -m "test: gate functions and browser flakes"
 
 ### Task 4: Add the Authenticated Save/Reload/Server-Echo Lane
 
-**Dependency:** Automation Wayfinder's canonical character document and Tactical Codex `DocumentSyncStatus` (`role="status"`, semantic `data-state`).
+**Dependency:** Automation P1's canonical character document and the already-available non-UI `SaveStatus` contract from `src/stores/saveStore.ts`, produced by `src/lib/firestore.ts#saveStatusCallbacks`. It does not depend on Tactical Codex UI Task 3 or a future `DocumentSyncStatus` component.
 
 **Files:** Create `playwright.critical.config.ts`, `tests/critical/emulator-fixture.ts`, `tests/critical/authenticated-save-reload.spec.ts`; modify `scripts/dev-seed-sandbox.ts`, `package.json`; create `.changeset/authenticated-save-journey.md`.
 
-**Interfaces:** `readEmulatorDocument(path): Promise<{fields:unknown; updateTime:string}>`; `emulatorTest` exposes authenticated `page` with no `VITE_DEV_BYPASS_AUTH`. Config reads `D20_CRITICAL_GREP` into `grep` and `D20_REPEAT_EACH` into `repeatEach`; add `pnpm test:e2e:critical`.
+**Interfaces:** Product code owns the locale-free `SaveStatus = "saved" | "pending" | "saving" | "error" | "offline"` vocabulary and Firestore callback transitions. The current `SaveIndicator` and the future Tactical `DocumentSyncStatus` are visual consumers that expose the same state as `role="status"` plus semantic `data-state`; tests never produce, mock, or redefine it. `readEmulatorDocument(path): Promise<{fields:unknown; updateTime:string}>`; `emulatorTest` exposes authenticated `page` with no `VITE_DEV_BYPASS_AUTH`. Config reads `D20_CRITICAL_GREP` into `grep` and `D20_REPEAT_EACH` into `repeatEach`; add `pnpm test:e2e:critical`.
 
 - [ ] Write a failing journey: edit one ability through its accessible tile, observe `saving` then `saved`, read the emulator document, wait for the server snapshot, assert `updateTime` did not change again, reload, and assert the edited value.
 - [ ] Configure port 5184, one Chromium worker, zero retry, demo Firebase variables, `VITE_USE_EMULATORS=true`, and no auth bypass. Seed a deterministic owner character from a real team fixture; `D20_REQUIRE_TEAM_FIXTURES=1` must fail rather than skip when composition is absent.
@@ -279,13 +287,13 @@ pnpm exec prettier --check .github/workflows/verify.yml docs/CONTRIBUTING.md
 
 - [ ] Commit `test: gate shared command authority` with Changeset text `Gate authoritative shared commands and thin Firebase access rules.`
 
-### Task 7: Merge Repeated Surface Traversals After Candidate UI
+### Task 7A: Bootstrap and Freeze the Surface Census Before Candidate UI
 
-**Dependency:** Tactical Codex Tasks 1-14 have registered their slice-owned `tests/e2e/surface-census/<family>.ts` fragments; Task 8A is integrated. Run in a fresh short-lived worktree after a C2/C4 handoff.
+**Dependency:** Test Tasks 1–3 are integrated. Run before Task 8A and before Tactical Codex UI Task 1, in a fresh short-lived worktree after the C4 handoff.
 
-**Files:** Create `tests/e2e/surface-graders.ts`, `tests/e2e/surface-audit.spec.ts`; modify `tests/e2e/surface-census/index.ts`, `tests/e2e/surface-manifest.ts`, `tests/e2e/surfaces.ts`, `tests/e2e/mobile-layout.spec.ts`; delete `tests/e2e/a11y.spec.ts`, `tests/e2e/i18n-sweep.spec.ts`, `tests/e2e/on-art-ink.spec.ts` after parity; create `.changeset/surface-audit.md`.
+**Files:** Create `tests/e2e/surface-census/schema.ts`, `tests/e2e/surface-census/index.ts`, `tests/unit/surface-census.test.ts`; modify `tests/e2e/surface-manifest.ts`, `tests/e2e/surfaces.ts`, `docs/TEST_PORTFOLIO.md`; create `.changeset/surface-census-bootstrap.md`.
 
-**Interfaces:** `surface-census/index.ts` remains the only state/route owner and derives the legacy-compatible manifest while migration is in flight. One navigation runs composable `gradeI18n`, `gradeA11y`, `gradeLayout`, and `gradeInk`. Use exactly this pairwise set per ordinary surface:
+**Interfaces:** `surface-census/index.ts` becomes the only state/route owner and derives the legacy-compatible manifest while migration is in flight. Its pure-data schema names stable id, board, route, state, locale/theme/viewport applicability, authority, call site, curated-review flag, and optional motion frames without importing Playwright. Use exactly this frozen pairwise set per ordinary surface:
 
 ```ts
 const PAIRWISE = [
@@ -295,6 +303,26 @@ const PAIRWISE = [
   { locale: "en", theme: "dark", device: "mobile" },
 ] as const;
 ```
+
+- [ ] Start with a failing pure contract test that rejects duplicate ids, missing routes/authority/call sites, unknown boards, empty variant applicability, and invalid B01 frame names.
+- [ ] Move or adapt the current legacy manifest declarations behind the new index without deleting or weakening any current traversal. T7A registers no future UI fragment and owns no grader.
+- [ ] Export the stable schema/index consumed by T8A and all slice-owned `surface-census/<family>.ts` fragments; prove neither `surface-manifest.ts` nor `surfaces.ts` can become a second route/state owner.
+- [ ] Verify the pure contract, existing route guard, and unchanged default Playwright inventory:
+
+```bash
+pnpm exec vitest run --project fast tests/unit/surface-census.test.ts tests/unit/route-coverage.guard.test.ts
+pnpm exec playwright test --list | tail -n 1
+```
+
+- [ ] Commit `test: freeze surface census contract` with Changeset text `Freeze one surface census contract before Tactical Codex visual work.`
+
+### Task 7B: Merge Repeated Surface Traversals After Candidate UI
+
+**Dependency:** Tactical Codex Tasks 1–14 have registered their slice-owned `tests/e2e/surface-census/<family>.ts` fragments; Tasks 7A and 8A are integrated. Run in a fresh short-lived worktree after a C2/C4 handoff.
+
+**Files:** Create `tests/e2e/surface-graders.ts`, `tests/e2e/surface-audit.spec.ts`; modify `tests/e2e/surface-census/index.ts`, `tests/e2e/surface-manifest.ts`, `tests/e2e/surfaces.ts`, `tests/e2e/mobile-layout.spec.ts`, `docs/TEST_PORTFOLIO.md`; delete `tests/e2e/a11y.spec.ts`, `tests/e2e/i18n-sweep.spec.ts`, `tests/e2e/on-art-ink.spec.ts` after parity; create `.changeset/surface-audit.md`.
+
+**Interfaces:** Keep T7A's schema/index as the only state/route owner, register the completed feature fragments, and derive the legacy-compatible manifest while migration is in flight. One navigation runs composable `gradeI18n`, `gradeA11y`, `gradeLayout`, and `gradeInk` over T7A's frozen pairwise set; T7B does not redefine that set.
 
 - [ ] Add detector-sensitivity cases using `page.setContent`: raw i18n key, serious axe violation, horizontal overflow, and unreadable light-theme on-art ink must each fail its grader.
 - [ ] Run old and new graders over representative A00, A04, A08, A11, and A16 states; compare every old failure class before deleting loops. Retain unique mobile interaction tests outside the manifest loop.
@@ -309,7 +337,7 @@ pnpm exec playwright test --list | tail -n 1
 
 ### Task 8A: Establish the Curated Visual and Motion Lane
 
-**Dependency:** Task 3 has handed off C0/C2. This foundation integrates before any Tactical Codex slice uses a visual command.
+**Dependency:** Task 3 has handed off C0/C2 and Task 7A has handed off the frozen census schema/index. This foundation integrates before any Tactical Codex slice uses a visual command.
 
 **Files:** Create `playwright.visual.config.ts`, `tests/visual/curated.spec.ts`, `tests/visual/motion.spec.ts`, `scripts/qa/perf-probe.ts`; modify `package.json`; create `.changeset/visual-review-lane.md`.
 
@@ -328,7 +356,7 @@ pnpm visual:motion -- --list
 
 ### Task 8B: Consolidate Curated Evidence After Candidate UI
 
-**Dependency:** Tactical Codex Tasks 1-14, Task 7, and the A00-A16/B01 census are complete. Run in a separate worktree after C2/C4 handoff.
+**Dependency:** Tactical Codex Tasks 1–14, Task 7B, and the A00–A16/B01 census are complete. Run in a separate worktree after C2/C4 handoff.
 
 **Files:** Modify `tests/visual/{curated,motion}.spec.ts`; remove `tests/e2e/visual-full.spec.ts` and `_*-shots`/`_perf-probe` specs only after parity; update `docs/TEST_PORTFOLIO.md`; create `.changeset/visual-review-consolidation.md`.
 
@@ -357,7 +385,7 @@ pnpm exec playwright test character-creation spells features rest equipment layo
 
 ### Task 10: Retire UI Source-Regex Guards After Rendered Replacement
 
-**Dependency:** Tactical Codex Task 15 atomic cutover, its reviewed deletion ledgers, approved screenshots, and Task 7/8 graders.
+**Dependency:** Tactical Codex Task 15 atomic cutover, its reviewed deletion ledgers, approved screenshots, and Task 7B/8B graders.
 
 **Files:** Delete only eligible UI implementation guards under `tests/unit/*guard.test.ts`; update `docs/TEST_PORTFOLIO.md`; create `.changeset/retire-ui-source-guards.md`.
 
@@ -499,4 +527,4 @@ git commit -m "test: complete portfolio reset"
 
 ## Execution Handoff
 
-Execute the DAG by waves with `superpowers:subagent-driven-development`, not as a serial 1-14 queue. Give every node its own short-lived worktree and disjoint ownership; enforce C0-C4 leases and explicit SHA handoffs. Tasks 11/12 use their named independent private-pack and public-verifier worktrees. After each node, run its focused command, review D1-D7 where deletion occurs, rebase, integrate, and retire the worktree before releasing its lease. Final integration follows the repository worktree/rebase/push procedure and still requires explicit owner approval; this plan never authorizes deployment.
+Execute the explicit DAG with `superpowers:subagent-driven-development`, using waves only to batch nodes whose stated dependencies are already satisfied—not as barriers or as a serial 1–14 queue. Give every node its own short-lived worktree and disjoint ownership; enforce C0-C4 leases and explicit SHA handoffs. The first handoff is T2/T3 → T7A/T8A → Tactical Codex UI Task 1. Tasks 11/12 use their named independent private-pack and public-verifier worktrees. After each node, run its focused command, review D1-D7 where deletion occurs, rebase, integrate, and retire the worktree before releasing its lease. Final integration follows the repository worktree/rebase/push procedure and still requires explicit owner approval; this plan never authorizes deployment.
