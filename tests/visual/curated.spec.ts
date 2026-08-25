@@ -7,6 +7,7 @@ import {
   loadVisualCensus,
   reachVisualSurface,
   visualArtifactName,
+  withIsolatedVisualPage,
 } from "./census";
 
 const FUTURE_VARIANT: SurfaceVariant = {
@@ -53,8 +54,60 @@ test("detector hard-fails duplicate planned curated artifact paths", () => {
   ).not.toThrow();
 });
 
-test("captures every curated census variant", async ({ page }, testInfo) => {
-  test.setTimeout(10 * 60_000);
+test("legacy captures isolate storage while preserving their runtime contract", async ({
+  browser,
+}) => {
+  const census = await loadVisualCensus();
+  const isolationKey = "d20-folio-visual-isolation";
+  const captures = [
+    { id: "roster-empty", mode: "play" },
+    { id: "home", mode: "play" },
+    { id: "character-spell-add", mode: "edit" },
+  ] as const;
+
+  for (const expected of captures) {
+    const surface = census.find(({ id }) => id === expected.id);
+    if (!surface) throw new Error(`Missing regression surface "${expected.id}".`);
+    const variant = surface.variants[0];
+    if (!variant) throw new Error(`Regression surface "${expected.id}" has no variant.`);
+
+    await withIsolatedVisualPage(browser, async (page) => {
+      await page.goto("/");
+      expect(
+        await page.evaluate((key) => window.localStorage.getItem(key), isolationKey)
+      ).toBeNull();
+      await reachVisualSurface(page, surface, variant);
+      const seededMode = await page.evaluate(() => {
+        const persisted = window.localStorage.getItem("d20-folio-ui");
+        if (!persisted) return null;
+        return (JSON.parse(persisted) as { state?: { sheetMode?: unknown } }).state
+          ?.sheetMode;
+      });
+      expect(seededMode).toBe(expected.mode);
+      await page.evaluate(([key, value]) => window.localStorage.setItem(key, value), [
+        isolationKey,
+        expected.id,
+      ] as const);
+    });
+  }
+});
+
+test("detector fails a hung capture with its census identity", async ({ browser }) => {
+  test.setTimeout(5_000);
+  const surface = futureSurface("future.hung", "/future-hung", "blocked");
+
+  await expect(
+    withIsolatedVisualPage(browser, async () => new Promise<void>(() => {}), {
+      capture: { surface, variant: FUTURE_VARIANT, frame: "entry" },
+      timeoutMs: 1_000,
+    })
+  ).rejects.toThrow(
+    "future.hung [en/light/desktop/entry]: visual capture exceeded 1000ms"
+  );
+});
+
+test("captures every curated census variant", async ({ browser }, testInfo) => {
+  test.setTimeout(30 * 60_000);
   const census = await loadVisualCensus();
   const captures = census
     .filter(({ curatedReview }) => curatedReview)
@@ -62,11 +115,17 @@ test("captures every curated census variant", async ({ page }, testInfo) => {
   assertUniqueArtifactPaths(captures);
 
   for (const { surface, variant } of captures) {
-    await reachVisualSurface(page, surface, variant);
-    await page.screenshot({
-      path: testInfo.outputPath(visualArtifactName(surface, variant)),
-      fullPage: true,
-    });
+    await withIsolatedVisualPage(
+      browser,
+      async (page) => {
+        await reachVisualSurface(page, surface, variant);
+        await page.screenshot({
+          path: testInfo.outputPath(visualArtifactName(surface, variant)),
+          fullPage: true,
+        });
+      },
+      { capture: { surface, variant } }
+    );
   }
 });
 

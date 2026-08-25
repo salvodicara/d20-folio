@@ -5,10 +5,11 @@ import {
   loadVisualCensus,
   reachVisualSurface,
   visualArtifactName,
+  withIsolatedVisualPage,
 } from "./census";
 
 test("captures B01 frames for motion-enabled census entries", async ({
-  page,
+  browser,
 }, testInfo) => {
   test.setTimeout(10 * 60_000);
   const surfaces = (await loadVisualCensus()).filter(
@@ -26,16 +27,22 @@ test("captures B01 frames for motion-enabled census entries", async ({
   assertUniqueArtifactPaths(captures);
 
   for (const { surface, variant, frame } of captures) {
-    await reachVisualSurface(page, surface, variant, frame);
-    if (frame === "reduced") {
-      await expect(
-        page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)
-      ).resolves.toBe(true);
-    }
-    await page.screenshot({
-      path: testInfo.outputPath(visualArtifactName(surface, variant, frame)),
-      fullPage: true,
-    });
+    await withIsolatedVisualPage(
+      browser,
+      async (page) => {
+        await reachVisualSurface(page, surface, variant, frame);
+        if (frame === "reduced") {
+          await expect(
+            page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)
+          ).resolves.toBe(true);
+        }
+        await page.screenshot({
+          path: testInfo.outputPath(visualArtifactName(surface, variant, frame)),
+          fullPage: true,
+        });
+      },
+      { capture: { surface, variant, frame } }
+    );
   }
 });
 

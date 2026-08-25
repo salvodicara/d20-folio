@@ -34,6 +34,16 @@ in `_identity-shots.spec.ts` remains untouched and classified for T8B
 consolidation. `CAND-surface-sweeps` stays `blocked-on-wayfinder`: T7A adds the
 census contract only, with no grader, deletion, or D1-D7 evidence.
 
+The dedicated T8A visual runtime preserves that legacy behavior by deriving the
+sheet mode from each runtime surface and opening every curated variant and B01
+motion frame in its own browser context while retaining the fixture's configured
+base URL. Every named capture has a 60-second deadline whose diagnostic carries
+its locale, theme, viewport, and optional motion frame. Its focused lifecycle proof traverses
+`roster-empty` → `home` → `character-spell-add`, so both page-state reuse and an
+edit surface seeded as Play fail before screenshots can be accepted. Census
+counts, `PAIRWISE`, default discovery, and the 2,331-registration baseline are
+unchanged.
+
 On exact base `1ccb8af74b69e8af2f2b8568480ab1e3048c1eac`, the read-only
 recalculation is 619 public unit files / 168,225 LOC; 178 private-pack unit
 files / 49,189 LOC; two Rules files / 3,239 LOC; seven Functions files /

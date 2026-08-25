@@ -1,7 +1,7 @@
 import { readdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { expect, type Page } from "@playwright/test";
+import { expect, type Browser, type Page } from "@playwright/test";
 import {
   assertSurfaceCensus,
   SURFACE_CENSUS,
@@ -22,6 +22,7 @@ const VIEWPORTS = {
   desktop: { width: 1440, height: 900 },
   mobile: { width: 390, height: 844 },
 } as const;
+const VISUAL_CAPTURE_TIMEOUT_MS = 60_000;
 
 type CensusFragmentModule = { SURFACE_CENSUS_FRAGMENT?: unknown };
 
@@ -29,6 +30,47 @@ export interface VisualCapture {
   readonly surface: SurfaceCensusEntry;
   readonly variant: SurfaceVariant;
   readonly frame?: B01MotionFrame;
+}
+
+export interface IsolatedVisualPageOptions {
+  readonly capture?: VisualCapture;
+  readonly timeoutMs?: number;
+}
+
+function visualCaptureLabel(capture?: VisualCapture): string {
+  if (!capture) return "visual capture";
+  const { locale, theme, device } = capture.variant;
+  return `${capture.surface.id} [${locale}/${theme}/${device}${
+    capture.frame ? `/${capture.frame}` : ""
+  }]`;
+}
+
+/** Run one capture in its own browser context so page-local state cannot cross cases. */
+export async function withIsolatedVisualPage(
+  browser: Browser,
+  capture: (page: Page) => Promise<void>,
+  {
+    capture: visualCapture,
+    timeoutMs = VISUAL_CAPTURE_TIMEOUT_MS,
+  }: IsolatedVisualPageOptions = {}
+): Promise<void> {
+  const label = visualCaptureLabel(visualCapture);
+  const page = await browser.newPage();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      void page.close().catch(() => {});
+      reject(new Error(`${label}: visual capture exceeded ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+  const work = capture(page);
+
+  try {
+    await Promise.race([work, deadline]);
+  } finally {
+    if (timer) clearTimeout(timer);
+    await page.close().catch(() => {});
+  }
 }
 
 function fragmentFiles(): readonly string[] {
@@ -120,10 +162,10 @@ export async function reachVisualSurface(
   frame?: B01MotionFrame
 ): Promise<void> {
   await page.setViewportSize(VIEWPORTS[variant.device]);
-  await seedUI(page, variant.theme, "play");
+  const legacy = LEGACY_RUNTIME.get(surface.id);
+  await seedUI(page, variant.theme, legacy?.edit ? "edit" : "play");
   await seedLang(page, variant.locale);
 
-  const legacy = LEGACY_RUNTIME.get(surface.id);
   if (legacy) {
     expect(
       legacy.route,
