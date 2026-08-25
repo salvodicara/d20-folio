@@ -7,11 +7,12 @@ product
 ## Users
 
 D&D 2024 players, from first-timers to veterans, creating, managing, and playing characters
-digitally — bilingual (EN + IT), offline-first PWA. Desktop is the primary in-session surface
-(active gameplay, combat, management); mobile is for between-session review and quick updates
-(studying the character, reading spells/abilities, campaign review, lore browsing). Beginner-friendly
-(no manual required) yet expert-capable (hints ignorable). Friends of the owner are live users with
-real characters — this is not a hypothetical audience.
+digitally — bilingual (EN + IT), offline-first PWA. Desktop and mobile expose the complete product:
+desktop optimizes simultaneous context, encounter management and dense preparation; mobile
+optimizes one-handed play, fast table input, reading and between-session review. Neither is a
+reduced edition of the other. Beginner-friendly (no manual required) yet expert-capable (hints
+ignorable). Friends of the owner are live users with real characters — this is not a hypothetical
+audience.
 
 ## Product Purpose
 
@@ -27,31 +28,29 @@ complements (never replaces) a virtual tabletop like Owlbear Rodeo.
 
 ## Brand Personality
 
-Scholarly, tactile, heirloom. Three words: **magical · premium · alive.** The product reads like a
-beautifully bound spellbook or folio brought to candlelight: struck-gold accents and engraved Cinzel
-titling over translucent leather panels, carved and embossed depth, real material weight — the dark
-flagship glows over owner-generated atmospheric art (painted darkness), with champlevé enamel
-accents. A premium fantasy artifact, not a fantasy skin applied to forms. Voice is clear and
-confident, plain-language for beginners, never jargon-gatekeeping, no em dashes or marketing
-buzzwords in UI copy. Visual inspirations (not clones — the illuminated-folio struck-gold identity is
-the through-line): **D&D Beyond** (the benchmark for character-sheet information architecture and
-data density) and **Baldur's Gate 3 menus** (the craft / "wow on sight" bar — an owner-ratified
-FULL-fidelity mandate since 2026-07-16: candlelit gilded framing, translucent leather over painted
-darkness, champlevé enamel, crisp readable typographic hierarchy, and the Gilded Reliquary frame
-grammar — worked-gold corner goldwork on earned hero frames, engraved ceremonial titling; light is
-the daylight sibling of the same grammar). Visual fantasy must never reduce usability — the app is
-still used during real tabletop sessions.
+**Tactical Codex:** magical, premium, confident, alive. The product feels like a first-class fantasy
+game companion built for use at a real table: distinctive at a glance, calm under pressure, rich
+where identity or consequence matters, and quiet where the user is reading or deciding. Dark
+graphite, warm ivory, restrained antique gold, semantic pigments, original portraits and precise
+tactical iconography form the current working direction. The name describes a product quality and
+interaction grammar, not a theme that every surface must decorate literally.
+
+Voice is clear and confident, plain-language for beginners, never jargon-gatekeeping, with no
+marketing filler in task copy. Publicly observable interaction patterns from **D&D Beyond**
+(character-sheet information architecture and density), **Roll20** (physical-table input and inline
+editing), and **Baldur's Gate 3** (interaction confidence, action presentation and craft ceiling) are
+benchmarks, not assets or proprietary internals to copy. D20 Folio's imagery, components and domain
+architecture remain original. Visual fantasy must never reduce usability during a real session.
 
 ## Anti-references
 
-Generic flat SaaS dashboards (Linear/Notion gray-on-white), Material-flat surfaces, neon/cyber, and
-corporate fintech navy-and-gold. Also explicitly rejected: the lazy warm-neutral "AI cream default" —
-the candlelit struck-gold world here is a deliberate, committed identity (translucent leather panels
-over atmospheric art, struck-gold accents, engraved serif type, carved depth), never an accidental
-tinted near-white body. D20 Folio is **not** a dashboard, **not** an enterprise application, and
-**not** a fantasy skin over plain forms. The candlelit struck-gold skeuomorphism is a deliberate,
-committed identity (golden rule / DESIGN.md §8's Identity Guard) — no review, audit, or design pass
-ever flattens, de-parchments, or "modernizes away" the folio look in the name of "modern minimalism."
+Generic flat SaaS dashboards, Material-flat surfaces, neon/cyber, corporate fintech navy-and-gold,
+the warm-neutral "AI cream default", ornamental parchment everywhere, and fantasy decoration pasted
+over generic forms. D20 Folio is **not** a dashboard, **not** an enterprise application, and **not**
+a fantasy skin. Illuminated Folio, Gilded Reliquary and any other historical visual treatment are
+evidence, not permanent constraints. Keep a treatment only when it remains the best expression of
+the current product; remove it when hierarchy, coherence, accessibility or interaction quality
+improves without it.
 
 ## Design Principles
 
@@ -68,8 +67,9 @@ ever flattens, de-parchments, or "modernizes away" the folio look in the name of
 4. **Choosing is sacred (the Picker Doctrine).** Read-then-choose (browsing never commits), detail on
    SELECTED only (no per-row info affordances), never state met preconditions (unmet options are
    filtered out, not greyed), cascading choices expand under their visible cause.
-5. **Desktop-first gameplay, mobile-first exploration.** Desktop and mobile serve different purposes
-   and are each designed deliberately — mobile is never a collapsed desktop layout.
+5. **Capability parity, purpose-built composition.** Desktop and mobile expose the same product
+   capabilities through deliberately different compositions — mobile is never a collapsed desktop
+   layout and desktop is never a stretched phone layout.
 6. **Consistency over novelty; reusable systems over one-off screens.** A small number of highly
    reusable UI patterns used everywhere; a bespoke restyle of an existing job is a defect.
 7. **No truncation.** Identity text is never mid-string ellipsized — swap to a shorter true form at a

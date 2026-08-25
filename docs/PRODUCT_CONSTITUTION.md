@@ -8,8 +8,8 @@
 |               |                                                                                                                                                                                                                                                                             |
 | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Status**    | Active — authoritative                                                                                                                                                                                                                                                      |
-| **Version**   | 1.9                                                                                                                                                                                                                                                                         |
-| **Ratified**  | 2026-05-31                                                                                                                                                                                                                                                                  |
+| **Version**   | 2.0                                                                                                                                                                                                                                                                         |
+| **Ratified**  | 2026-08-25                                                                                                                                                                                                                                                                  |
 | **Owner**     | Salvatore Di Cara (sole owner; 100% AI-developed project)                                                                                                                                                                                                                   |
 | **Authority** | Owns durable product/UX/design intent and the listed engineering principles. It works with the repository invariants in `docs/GOLDEN_RULES.md`; conflicts are reconciled through that document's evidence-based authority model, not by assuming either file is infallible. |
 
@@ -33,41 +33,38 @@
 ## 1. Product Vision
 
 **Users:** D&D 2024 players, from first-timers to veterans — creating, managing, and playing
-characters digitally. Bilingual (EN + IT), offline-first PWA. Desktop is the primary in-session
-surface; mobile is for between-session adding and reviewing. Beginner-friendly (no manual required)
-yet expert-capable (hints ignorable).
+characters digitally. Bilingual (EN + IT), offline-first PWA. Desktop and mobile expose the complete
+product: desktop optimizes simultaneous context and encounter management; mobile optimizes
+one-handed table play, fast external input, reading and review. Neither is a reduced edition of the
+other. Beginner-friendly (no manual required) yet expert-capable (hints ignorable).
 
 **Purpose:** A character manager that auto-computes every D&D 2024 rule while always allowing a
 manual override, so players trust it over paper. Success = a player runs an entire character
 lifecycle (create, level up, play a combat, manage a campaign) without leaving the app, and it
 feels premium enough to prefer.
 
-**Brand personality:** Scholarly, tactile, heirloom. The product reads like a beautifully bound
-spellbook or folio brought to candlelight: struck-gold accents and engraved Cinzel titling over
-translucent leather panels, carved and embossed depth, real material weight. The dark flagship glows
-over owner-generated atmospheric art (painted darkness), with champlevé enamel accents lighting the
-moments that matter. Warm and premium, never a flat utility dashboard. Voice is clear and confident,
+**Brand personality:** **Tactical Codex** — magical, premium, confident, alive. The product feels
+like a first-class fantasy game companion built for a real table: distinctive at a glance, calm
+under pressure, rich where identity or consequence matters, and quiet where the user is reading or
+deciding. Dark graphite, warm ivory, restrained antique gold, semantic pigments, original portraits
+and precise tactical iconography form the current working direction. Voice is clear and confident,
 plain-language for beginners, never jargon-gatekeeping.
 
-**Visual inspirations** (not clones — the illuminated-folio struck-gold identity is the
-through-line):
+**Visual and interaction benchmarks** (public behavior to study, never proprietary internals or
+assets to copy):
 
-- **D&D Beyond** — the benchmark for D&D character-sheet IA and data density.
-- **Baldur's Gate 3 menus** — the craft / "wow" bar, and since 2026-07-16 an owner-ratified
-  mandate to reach it at FULL fidelity across the whole app (menus, navigation, panels, dialogs,
-  chrome, ornament, hero surfaces). The owner's verbatim bar: _"It has to be woooooow. Users have
-  to go: woooow man this is so professional and curated, it's even better than DND Beyond!"_ The
-  shipped material world (candlelit gilded framing, translucent leather panels over painted
-  darkness, champlevé enamel, crisp readable typographic hierarchy) is the base; the **Gilded
-  Reliquary** grammar (worked-gold corner goldwork on earned hero frames, engraved ceremonial
-  titling, tapered ceremony rules, candle-smoke panel depth — `DESIGN.md` §5) is the first shipped
-  wave of the full-fidelity push. The light theme lives as the daylight sibling of the SAME
-  grammar (engraved bronze goldwork, letterpress titling, morning-shade depth) — designed, never
-  adapted; dark stays the flagship.
+- **D&D Beyond** — character-sheet information architecture and useful density.
+- **Roll20** — support for physical-table input, resources and contextual inline editing.
+- **Baldur's Gate 3** — interaction confidence, action presentation, feedback and craft ceiling.
 
-**Anti-references:** Generic flat SaaS dashboards (Linear/Notion gray-on-white), Material-flat,
-neon/cyber, corporate fintech navy-and-gold. The candlelit struck-gold identity is **deliberate and
-committed** — do not flatten or strip it in the name of "modern minimalism."
+D20 Folio remains original. Historical treatments such as Illuminated Folio, Gilded Reliquary and
+Worked Bronze are not constitutional constraints; they are retained only where they remain the best
+solution. A new direction is valid only when it is applied coherently across the whole product rather
+than exposed as a permanent hybrid.
+
+**Anti-references:** Generic flat SaaS dashboards, Material-flat surfaces, neon/cyber, corporate
+fintech navy-and-gold, the warm-neutral "AI cream default", parchment everywhere, and fantasy
+decoration pasted over generic forms.
 
 D20 Folio is **NOT** a dashboard.
 D20 Folio is **NOT** an enterprise application.
@@ -236,17 +233,18 @@ _wants_ them, because they make the DM's job easier **and** the players' experie
 Mobile is **NOT** a reduced afterthought. Desktop and mobile serve **different
 purposes.**
 
-**Desktop** is optimized for: active gameplay · combat · management · multitasking.
+**Desktop** is optimized for: active gameplay · combat · management · multitasking · preparation.
 
-**Mobile** is optimized for: studying the character · reading abilities · reading
-spells · campaign review · lore browsing · quick updates · between-session usage.
+**Mobile** is optimized for: one-handed active play · fast table facts and physical-roll input ·
+character actions · reading abilities and spells · campaign coordination · lore browsing · quick
+updates · between-session usage.
 
 Mobile should feel **equally premium and intentional.**
 
 **Do NOT simply collapse desktop layouts onto mobile. Design mobile experiences
 deliberately.**
 
-> Shorthand: **desktop-first gameplay, mobile-first exploration.**
+> Shorthand: **complete capability, purpose-built composition.**
 
 ---
 
@@ -368,11 +366,12 @@ and long-term maintainability.
 | 2026-07-03 | 1.6     | The BG3-grade identity evolution ratified (owner-directed): the illuminated folio evolved to its candlelit struck-gold form — the dark flagship renders struck gold and engraved Cinzel titling over translucent leather panels on owner-generated atmospheric art, with champlevé enamel accents, the cream special-ink tier, and warm-black neutrals. §1 Brand personality / Visual inspirations / Anti-references rewritten to the current material world; the light theme's rebuild to full parity is scheduled as its own phase (`PROGRESS.md`).                                                                                                                                                                                                                                                                                                |
 | 2026-07-16 | 1.8     | The FULL-BG3 fidelity push ratified (owner): the whole app must evoke Baldur's Gate 3's menu craft at full fidelity — an owner-ratified informed override superseding the "Ember Penumbra" / "Daylight Sibling Plates" directions as the ceiling (their shipped work remains the base). §1 Visual inspirations updated with the mandate, the owner's verbatim bar, and the first shipped wave (the **Gilded Reliquary** frame grammar: reliquary corner goldwork on the three earned hero frames, engraved ceremonial titling, the tapered modal seat rule, panel smoke/morning-shade — `DESIGN.md` §5). Light theme = the daylight sibling of the new grammar, designed never adapted; dark stays flagship. Art regeneration rides the owner's ChatGPT pipeline (the batch-4 precision prompt doc, delivered 2026-07-16); nothing blocks on assets. |
 | 2026-08-03 | 1.9     | Ratified the combat observability boundary: the table declares facts the app cannot observe; the engine resolves every deterministic consequence from modeled rules and data; the user can always review, override, and reverse the result for rulings and homebrew. Override-ability never excuses a missing deterministic default.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| 2026-08-25 | 2.0     | Ratified the automation-first product reset and removed permanent authority from historical visual treatments. The product must converge on one deterministic command engine, one canonical owner per fact, one coherent app-wide interaction and visual grammar, and a screenshot/motion-approved atlas covering every real capability, role, state and breakpoint. Desktop and mobile have complete capability through purpose-built composition. Session planning and typed, versioned homebrew become first-class product capabilities. Tactical Codex is the working visual direction; D&D Beyond, Roll20 and Baldur's Gate 3 remain public interaction benchmarks, never sources of copied assets or invented proprietary architecture.                                                                                                        |
 | 2026-07-06 | 1.7     | AI assistant DROPPED (owner-ratified). The long-carried "Phase-3 multi-provider AI assistant" is removed from the roadmap entirely: the deterministic engine is the product's intelligence, and an LLM conflicts with rules-correctness (hallucination risk), zero-budget (API cost / BYOK friction), and offline-first (needs network). A narrow BYOK narrative-only variant was considered and also declined. §6's module note de-references its surfaces; decision recorded in `PROGRESS.md` → _Open decisions_.                                                                                                                                                                                                                                                                                                                                  |
 
 ---
 
-> **Origin.** This constitution ratified a 2026-05-31 from-first-principles product exploration;
-> that process completed — the owner selected **"Illuminated Folio, Evolved"**, froze the identity,
-> and the redesign shipped. The living design system of record is `DESIGN.md` (+ the canonical
-> tokens in `src/index.css` / `src/styles/folio.css`).
+> **Origin.** This constitution ratified a 2026-05-31 from-first-principles product exploration.
+> Its selected treatments shipped and remain historical evidence, not frozen authority. The living
+> design system of record is `DESIGN.md` plus the canonical tokens in `src/index.css` and
+> `src/styles/folio.css`, reconciled to the latest owner-ratified direction.

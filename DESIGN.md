@@ -1,6 +1,6 @@
 ---
 name: d20 Folio
-description: Illuminated Folio — a beautifully bound spellbook for D&D 2024, parchment + gold-leaf, full light/dark parity.
+description: Tactical Codex — a coherent premium companion for D&D 2024, designed across every surface, state and breakpoint.
 colors:
   # Mineral-pigment ramps (theme-independent; the raw material the themes assign to roles)
   gold-leaf-50: "#f5e6b8"
@@ -153,49 +153,48 @@ components:
 > guard; it never re-derives values. Validate every UI surface against it; on conflict with the
 > Product Constitution (`docs/PRODUCT_CONSTITUTION.md`), stop and ask.
 >
-> **Reader's map.** §1–6 = the visual design system (north star, color, type, elevation, components,
-> do/don't). §7 = the seven craft laws (the per-surface enforcement checklist). §8 = the identity
-> guard + the deliberate-choices "do NOT fix" list. §9 = motion. §10 = light/dark parity. §11 =
-> mobile recomposition. §12 = edit-in-place doctrine. §13 = the asset contract. §14 = the audit
-> methodology + verification gates.
+> **Reader's map.** §1–6 = the target visual design system (north star, color, type, elevation,
+> components, do/don't). §7 = the per-surface craft laws. §8 = the coherence guard. §9 = motion.
+> §10 = light/dark parity. §11 = mobile recomposition. §12 = edit-in-place doctrine. §13 = the asset
+> contract. §14 = audit and verification. §16 onward documents shipped construction that is pending
+> reconciliation during the Tactical Codex cutover; it is evidence, not target authority, and is
+> deleted when the corresponding surface migrates.
 
 ## 1. Overview
 
-**Creative North Star: "The Illuminated Folio, Evolved"**
+**Creative North Star: "Tactical Codex"**
 
-The identity is **FROZEN**. "Evolved" names the IA / navigation refinement (the entity model and
-D&D-Beyond-style flat hub in `docs/PRODUCT_CONSTITUTION.md`), **not** a new or different look — the
-tokens in `src/index.css` / `src/styles/folio.css` are the same shipped "Illuminated Folio" style.
+The identity is intentionally **open to improvement and closed to fragmentation**. Historical
+systems such as Illuminated Folio, Gilded Reliquary and Worked Bronze are implementation evidence,
+not permanent constraints. Keep what remains excellent, replace what does not, and expose one
+coherent product direction at a time.
 
-A beautifully bound spellbook or tome made interactive. Warm parchment and vellum surfaces carry
-carved and embossed depth; gold-leaf accents and rule-lines, layered shadows, and subtle gradients
-give every surface real material weight. The character is aged-manuscript and illuminated-codex:
-premium and tactile, never flat. It is committed skeuomorphism on purpose, not a decorative veneer
-over a spreadsheet. Surfaces read as struck brass and pigment on parchment.
+Tactical Codex is a premium fantasy companion built for a real table: dark graphite working
+surfaces, warm ivory reading text, restrained antique gold for focus and commit, semantic pigments
+for mechanics, original portrait/sigil art and precise tactical iconography. It is rich where
+identity or consequence matters and quiet where the player is reading or deciding. Fantasy identity
+comes from material, composition, information and interaction, never decoration pasted onto generic
+forms.
 
-The two named inspirations set the bar. D&D Beyond is the benchmark for character-sheet information
-architecture and data density, and for putting an atmospheric, themed background under a data-heavy
-sheet; this system matches that IA/density bar and exceeds its craft. Baldur's Gate 3 menus set the
-craft / "wow on sight" bar: ornate gilded framing, rich tactile materials (parchment, leather,
-metal), and crisp, highly readable typographic hierarchy layered over decorated backgrounds without
-sacrificing legibility. Light and dark are the same world at full parity, not a default plus an
-afterthought; each is designed, with its own elevation recipes, accent steps, and contrast tuning.
+Publicly observable product behavior sets the benchmark: D&D Beyond for character-sheet IA and
+density, Roll20 for physical-table input and contextual editing, and Baldur's Gate 3 for interaction
+confidence, feedback and craft. We do not claim or reproduce proprietary architecture or assets.
+Light and dark are full peers, not a default plus an adaptation.
 
-The system explicitly rejects generic flat SaaS dashboards (Linear/Notion gray-on-white),
-Material-flat surfaces, neon/cyber, and corporate fintech navy-and-gold. It also rejects the lazy
-warm-neutral "AI cream default": the parchment here is a deliberate, committed identity carried by
-the whole tome aesthetic (surfaces, gold accents, serif type, carved depth), not an accidental
-tinted near-white body. When the source CSS (`src/index.css`, `src/styles/folio.css`) and this prose
-disagree, the CSS is authoritative.
+The system rejects generic flat SaaS dashboards, Material-flat surfaces, neon/cyber, corporate
+fintech navy-and-gold, warm-neutral AI defaults, ornamental parchment everywhere, and fantasy skins
+over plain forms. During the reset this document owns the target direction; shipped CSS describes
+the current implementation and may legitimately lag until a visually coherent surface group cuts
+over.
 
 **Key Characteristics:**
 
-- Parchment/vellum surfaces with carved (inset) and embossed (raised) depth, never flat fills.
-- Gold-leaf as the single brand voice; semantic and domain pigments do the rest of the talking.
-- Serif display for names/titles/numbers, serif body for reading, mono for every label and count.
-- Lapidary geometry: sharp-to-small radii (0 to 12px); chips are 4px facets, not pills.
+- Graphite working surfaces with deliberate depth and bounded atmospheric art.
+- Antique gold for focus, current selection and primary commit; semantic pigments do the rest.
+- Display serif for identity and important titles; a highly readable UI face for controls and body.
+- Consistent compact geometry chosen by component purpose, not a universal ornamental rule.
 - Full light + dark parity, each AA-tuned, driven by `[data-theme]` on `<html>`.
-- Motion is brass-and-spring: snappy, slightly overshooting, and fully reduced-motion-safe.
+- Motion explains state and consequence, remains interruption-safe, and is fully reduced-motion-safe.
 
 ## 2. Colors
 
@@ -1944,31 +1943,25 @@ hold >10:1 (the honey plate can only darken the composite, which only helps dark
 
 ## 7. The Seven Craft Laws (per-surface enforcement)
 
-The north star in one line: **an heirloom illuminated tome made interactive** — struck brass,
-gold-leaf, and pigment on aged vellum, with the **information density of D&D Beyond** and the
-**tactile gilded craft of Baldur's Gate 3 menus**. Premium on sight, in both themes, without
+The north star in one line: **a premium tactical fantasy companion that makes complex play feel
+obvious**. It combines useful density, confident feedback and original atmosphere without
 sacrificing legibility or speed. Every surface (light + dark, mobile + ultrawide, EN + IT) must pass
-all seven laws. On conflict with a "modern-minimal" instinct, the committed-skeuomorphic identity
-**wins** — deepen the tome, never flatten it.
+all seven laws. No historical treatment wins by default: hierarchy, coherence, accessibility and
+task performance decide.
 
-1. **Material depth, not flat fills.** Every panel/card/control reads as a struck tile on parchment:
-   layered carved/embossed elevation (`--elev-*`), a top sheen (`--emboss-sheen`), a real cast shadow
-   over the field. No surface is a plain rectangle of flat color. Hero surfaces (cockpit identity
-   band, home hero, campaign banner, modal heads) carry a **gilt frame** (a gold-leaf edge, §5 —
-   `.folio-panel.gilt-frame`), not just a 1px border.
-2. **Gold-leaf is gilding, not just text color.** Use gold as a _material_: gradient gilt on seals,
-   active states, section heads, and frames, with an inner highlight + deeper edge. Reserve thin gold
-   _outlines_ for quiet chrome. Never let gold read as flat mustard.
-3. **Atmosphere under content.** No barren flat field. The `--vellum-grain` texture + (where specced)
-   painterly backgrounds under app-owned scrims give every page air and depth. Content always sits on
-   a legible scrimmed zone (AA-guaranteed); art enriches, never competes.
-4. **Light = dark's equal, designed not adapted.** Light is aged-gilt vellum with the SAME depth
-   budget as dark: gilt-cream surface gradients (never plain white), the warm-near-white emboss
-   sheen, full-color borders, real umber cast shadows. If a light surface reads flatter or cheaper
-   than its dark twin, it FAILS. (Detail in §10.)
-5. **Density with air (the D&D Beyond bar).** Pack the useful-at-a-glance info, but with deliberate
-   rhythm: the spacing scale, clear sectioning (diamond rubric + the one divider rule, §5 "The
-   ornament vocabulary"), no clutter, no buggy
+1. **Hierarchy before material.** Elevation, borders, art and texture exist to explain grouping,
+   focus or consequence. A quiet flat surface is valid when it improves reading; decorative depth is
+   not a requirement. Hero treatment is earned by identity or live state, never by component type.
+2. **Gold carries authority.** Antique gold marks current selection, focus and primary commit. It is
+   not generic chrome and never competes with semantic danger, success, action or magic pigments.
+3. **Atmosphere is bounded.** Original art enriches identity, characters, campaigns and content
+   readers. Working surfaces use controlled scrims and low-contrast material; art never competes
+   with controls or turns every page into a hero scene.
+4. **Light = dark's equal, designed not adapted.** Both themes preserve hierarchy, atmosphere,
+   semantic color and perceived quality with their own contrast/elevation recipes. Neither is the
+   other's mechanical inversion. (Detail in §10.)
+5. **Density with air.** Pack the useful-at-a-glance information with deliberate rhythm, clear
+   sectioning, no clutter and no buggy
    overflow at ANY width (test 360 → 2560). Progressive disclosure for the rest — on demand, never by
    default.
 6. **One vocabulary, zero one-offs.** Reuse the shared recipes/primitives (buttons, inputs, badges,
@@ -2004,60 +1997,36 @@ while a curious user can drill in without dead-ends? If either answer is no, it 
   and states benefits only at the decision moment (the sign-up CTA) — never as ambient claims
   ("free", "no account") on the artifact itself.
 
-## 8. The Identity Guard + "Deliberate Choices, Do NOT Fix"
+## 8. The Coherence Guard
 
-**The identity guard (binding).** The candlelit struck-gold skeuomorphism (carved/embossed depth
-over the owner-generated atmospheric art, translucent leather panels, gold-leaf accents, champlevé
-enamel sigils, the Gilded Plate type triad — Cinzel / Alegreya / Source Serif 4) is a **deliberate,
-committed identity** — NOT the "AI cream default." No review, audit, or design-skill pass ever
-flattens, de-parchments, or "modernizes away" the folio look. Every change improves craft,
-consistency, hierarchy, a11y, responsiveness, or richness **within** the identity. Light must reach
-**dark-mode parity** in depth/richness, never be flattened toward it. Generic anti-parchment
-heuristics (including those a design-critique tool emits) are **overridden** by this guard.
+**The coherence guard is binding; a historical skin is not.** A visual decision survives only while
+it remains the strongest solution for the current product. Illuminated Folio, Gilded Reliquary,
+Worked Bronze and any named successor may be simplified, replaced or deleted. What may never be
+exposed is a permanently hybrid application where identical jobs look or behave differently because
+they were implemented in different eras.
 
-**The do-NOT-fix list.** These are things a naive reviewer (or an automated design-critique pass)
-would flag that are **intended**. Filing them as defects violates the identity guard.
+1. A chosen token, component and motion grammar applies across every affected route, overlay, theme,
+   locale and breakpoint before the old grammar is removed.
+2. Gold, portrait art, sigils, texture and ceremony are resources with semantic cost. They are used
+   where identity, current state or consequence earns them; otherwise the interface stays quiet.
+3. `EffectInstance` drives every surface labeled active. Available actions, passive traits and active
+   effects are different information domains and never share a misleading section.
+4. Identical jobs use one component anatomy: one ActionFlow, one searchable picker, one compact input
+   family, one confirm family, one document-sync status and one mobile-sheet adaptation.
+5. A redesign is evaluated from rendered screenshots and motion frames in the complete visual atlas,
+   not from class names, historical prose or a single happy-path desktop capture.
+   The preserved native atlas and its implementation contract live in
+   [`docs/design/tactical-codex-atlas/`](docs/design/tactical-codex-atlas/README.md).
+6. A shipped choice may be challenged by evidence from Taste, Impeccable, UI/UX review, accessibility,
+   browser QA or user observation. The review must improve the whole system rather than locally polish
+   one screen.
+7. Sub-10px text, inaccessible contrast, ambiguous controls, inactive state presented as active,
+   native controls that escape the component system and unresolved save state are defects regardless
+   of aesthetic direction.
 
-1. **Candlelit translucent panels over atmospheric art + struck-gold gradients + carved/embossed
-   elevation everywhere** — the committed skeuomorphic identity (the dark flagship glows over the
-   owner-generated painted darkness; light wears its Shaded Scriptorium materials). Never flatten or
-   de-parchment.
-2. **The Cinzel / Alegreya / Source Serif 4 triad** (ceremonial Cinzel titling on the four
-   ceremonial surfaces, Alegreya headings + body prose, Source Serif 4 tabular-lining numbers and
-   uppercase labels) — the deliberate "Gilded Plate" type system (owner-ratified 2026-07-02), not
-   "old/heavy."
-3. **Lapidary square avatars + sharp/small radii (0–4px) + chips as 4px facets** — the locked
-   lapidary geometry. The round-avatar / pill-chip "fix" is explicitly rejected.
-4. **The single 999px pill = the settings switch track** — the one sanctioned pill.
-5. **Gold-halo focus rings** (`--illumination` + `--focus-ring`) — the deliberate "Gold Halo" pick,
-   not "too much glow."
-6. **Gold-on-gold defenses** (`--accent-text` deep-gold for all gold text; the brand mark shifting to
-   the deep ramp under light) — these are _correct_ Rule 1/2 compliance, not findings.
-7. **Skeuomorphic "lit" states** — the gilded End-Turn climax, the editing-pill amber gradient +
-   breathing dot (`.editpill.editing`), the struck-medallion economy discs + the gold movement
-   channel, the runic login sigil — all deliberate craft, all reduced-motion-gated. Not "too loud."
-8. **CreationWizard selected tints** — the fix direction is to route selection through the carved
-   `.opt-cell` gold-leaf (more depth), **not** to neutralize it.
-9. **Login `GoogleIcon` literal brand hex** (`#4285F4` …) — a brand-guideline requirement; a
-   sanctioned exception to the token-only rule.
-10. **DmTools showing unbuilt tools as muted Phase-2 badges** — correct stub-signalling, not a defect.
-11. **`·` middot separators / engraved mono letter-spacing on invite codes** — idiomatic folio.
-12. **The geometric ornament vocabulary** — the leading section-rubric diamond over its nodeless
-    tip-fading `.sec-rule` divider, the diamond-marker family (rail-head node, slot/charge gem
-    pips, scene-break, footer node), the silver-over-bronze `--frame-selected` selection frame,
-    the jewelry-thin scrollbars, and — since the full-BG3 push (owner-ratified 2026-07-16) — the
-    **reliquary corner goldwork** on the three earned hero frames (framed masthead, gilt hero
-    band, dialogs), the **engraved ceremonial titling**, the tapered modal-head seat rule, and the
-    panel smoke/morning-shade vignettes (§5, "The ornament vocabulary"). Ornament marks STATE,
-    leads a rubric / rail-head / slot pip, and caps an EARNED hero frame's corners; "strip the
-    flourishes" is rejected.
-13. **The settling motion grammar** — entrances / presses / expansions ease INTO place on
-    `--ease-settle` with no overshoot (BG3's "settles, never travels", §9); overshoot survives only
-    on `--ease-pop`, reserved for warning/urgent pops. "Add bounce / a snappier spring" is rejected.
-
-> **The one genuine violation that looks like a misfire but is NOT** (always fix it): sub-10px
-> arbitrary text literals (`text-[0.55rem]` etc.) breach the project's own 10px legibility floor.
-> Raise them to `--text-micro`.
+Historical construction detail that no longer describes the chosen system belongs in git history,
+not in a permanent do-not-fix list. The current implementation may temporarily lag during a bounded
+surface cutover, but the product never integrates a half-restyled public experience.
 
 ## 9. Motion + Feedback
 
@@ -2650,13 +2619,13 @@ error string), and edit/active/selected.
 
 ### 15.4 Responsive — Desktop + Mobile
 
-Desktop and mobile serve different purposes (Product Constitution §3): desktop is optimized for
-active gameplay, combat, management (full density, multi-column, tables); mobile is optimized for
-reading, reviewing, between-session use (cards, ≥44px touch targets, stacked layout) — a deliberate
-mobile design, never a collapsed desktop layout. An icon may remain optically 16–32px, but its
-interactive owner must reuse `IconButton` or the canonical `--touch-min` hit-slop; the visible glyph
-is never the entire target. Controls that must remain visually tiny (inline reset, tracker release)
-expand invisibly rather than forcing every dense ledger row taller.
+Desktop and mobile expose the complete product through different compositions (Product Constitution
+§3). Desktop optimizes simultaneous context, encounter management and preparation through bounded
+multi-column layouts; mobile optimizes one-handed table play, fast external input, reading and review
+through task-focused layers and deliberate disclosures. Neither is a reduced edition or a mechanical
+collapse of the other. An icon may remain optically 16–32px, but its interactive owner uses the
+canonical `--touch-min` hit area; the visible glyph is never the entire target. Controls that must
+remain visually compact expand their hit target invisibly rather than forcing every ledger row taller.
 
 ### 15.5 Dark + Light — Each Designed, Not Adapted
 
@@ -2665,11 +2634,13 @@ background tints on interactive chips/cards, no inline hex, every chip reads as 
 theme is adapted from the other — both are designed directly using the token set (§10 above). Run the
 a11y gate after any token change.
 
-### 15.6 Reuse Existing Recipes — Never Author Bespoke CSS
+### 15.6 Reuse the Target System — Delete Superseded Recipes
 
-Before writing new CSS or a new component, check what existing primitives already solve it (`OptionGrid`,
-`InlineEditable`, `NumberStepper`, `InfoCard`, `SectionHeader`, `Button`, `IconButton`, `Input`,
-`Textarea`, `ModalHead`) and whether a sibling surface already uses the pattern. Search is bilingual +
+Before writing a component, check whether a target-system primitive already owns the job. Reuse it
+when its semantics, interaction states and responsive behavior match; replace and delete it when it
+encodes a superseded visual or interaction model. Existing components are evidence, not an automatic
+constraint. A bespoke one-screen restyle is still a defect: a new primitive must be justified by a
+distinct product job and adopted across every matching surface. Search remains bilingual +
 accent-insensitive + **token-based** via `matchesSearch` (pass both the localized label and `name.en`)
 — the query is split into whitespace tokens and every token must appear somewhere in the joined
 candidate corpus, so word order and interstitial words ("di"/"of") never break a match ("pozione
