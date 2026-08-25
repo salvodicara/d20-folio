@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: use `superpowers:writing-plans` to write a detailed child plan for every slice below, then use `superpowers:subagent-driven-development` or `superpowers:executing-plans` to execute that child plan. This Wayfinder coordinates the program; it is not permission to start coding.
 
-**Goal:** Replace the accumulated dual runtime with one deterministic command kernel that automates every knowable D&D consequence, asks the table only for external observations, and serves solo, shared play, onboarding, and every UI surface without duplicated rules or state.
+**Goal:** Replace the accumulated dual runtime with one deterministic command kernel that automates every knowable D&D consequence, asks the table only for external observations, and serves solo, shared play, character creation and advancement, and every UI surface without duplicated rules or state.
 
 **Architecture:** One locale-free `resolveCommand` kernel consumes typed rules, canonical material state, a semantic command, and external answers. Solo play executes it locally and writes one canonical character state document through Firestore offline persistence. Shared play sends the same command to an authenticated callable, which loads authoritative facts, runs the same bundled kernel, and transactionally writes changed aggregates plus a receipt. React renders semantic `ActionFlow` views and never owns rule math.
 
@@ -28,14 +28,14 @@ Branches, worktrees, historical documents, code, and tests are evidence; `PRODUC
 - [ ] Solo remains usable offline through local resolution plus the Firestore SDK's existing queue.
 - [ ] Shared mutation is server-authoritative and idempotent; offline shared play may preview but cannot commit stale facts.
 - [ ] Firestore has one owner for each durable fact and Rules enforce access/schema, not gameplay.
-- [ ] Character onboarding produces a playable canonical state without UI-authored derived mechanics.
-- [ ] Architecture slices expose headless semantic contracts; Tactical Codex Tasks 4 and 15 alone own ActionFlow rendering and live visual cutover.
+- [ ] Character creation and advancement produce locale-free canonical outputs; P1 alone persists them without UI-authored derived mechanics.
+- [ ] Architecture slices expose headless semantic contracts; Tactical Codex Task 4 owns ActionFlow candidate rendering, Task 7 owns creation/advancement candidate rendering, and Task 15 alone owns live visual call-site cutover.
 - [ ] A compatibility bridge is temporary, single-write, measured, and deleted at its explicit parity gate.
 - [ ] No deploy, release, migration apply, or publication occurs without explicit owner permission for that exact change.
 
 ## 2. Evidence Baseline
 
-Verified evidence: `mechanics-coordinator.ts`, `material-state.ts`, and `action-journal.ts` contain pure/canonical foundations; `mechanics-world-store.ts`, character/combat/session codecs, `campaign-io.ts`, and `firestore.rules` duplicate runtime facts and policy; Functions has no authoritative gameplay command; current casting carriers expose dual dispatch; `CreationWizard.tsx` authors derived state in UI. Live stored characters require the six-fixture migration protocol.
+Verified evidence: `mechanics-coordinator.ts`, `material-state.ts`, and `action-journal.ts` contain pure/canonical foundations; `mechanics-world-store.ts`, character/combat/session codecs, `campaign-io.ts`, and `firestore.rules` duplicate runtime facts and policy; Functions has no authoritative gameplay command; current casting carriers expose dual dispatch; `CreationWizard.tsx` and `LevelUpWizard.tsx` author derived state in UI. Live stored characters require the six-fixture migration protocol.
 
 ### Baseline commands for every child plan
 
@@ -74,7 +74,7 @@ NeedExternalInput  Rejected   Preview | CommitResult
 The exact exported vocabulary is:
 
 - `RuleDefinition` is versioned/provenanced rule data; `WorldState` is the minimum locale-free canonical fact set.
-- `SemanticCommand` carries stable actor/subject/rule identity, choices, and expected revisions; `ExternalAnswers` contains only selected targets, table geometry, physical/hidden outcomes, or rulings.
+- `SemanticCommand` carries stable actor/subject/rule identity, choices, and expected revisions; `ExternalAnswers` contains only selected targets, table geometry, physical/hidden outcomes, or rulings. For `advance-character`, all knowable choices use stable IDs in command configuration and the sole external value is the raw observed face of a physical hit die, bounded to `1..hitDie`.
 - `ExternalInputRequest` is semantic and constrained; `ResolutionOutcome` is `NeedExternalInput | Rejected | Preview | CommitResult`.
 - `CommitResult` carries patches/events/revisions/bounded undo receipt; `resolveCommand(input)` is the only production resolution entry point.
 
@@ -163,7 +163,7 @@ Calendar export is a pure, explicit projection of scheduled sessions; it owns no
 
 ### Solo and shared command flow
 
-**Solo:** assemble `WorldState`, run `resolveCommand`, apply through one local executor, and write only `combat/state`; Firestore supplies the offline queue while `fromCache`/`hasPendingWrites` expose durability.
+**Solo gameplay:** assemble `WorldState`, run `resolveCommand`, apply through one local executor, and write only `combat/state`; Firestore supplies the offline queue while `fromCache`/`hasPendingWrites` expose durability. Character creation and advancement instead hand one canonical build/material patch to the P1 repository because P1 alone owns their atomic parent/material persistence and revisions.
 
 **Shared:** preview locally, then send command/answers—not patches—to `executeSharedCommand`; the server verifies Auth/App Check/role/participation/build and aggregate revisions/identity, loads trusted rules/facts, runs the same kernel, and transactionally writes changed documents plus an immutable idempotent receipt. Offline retains only an in-memory draft and must reconnect, reload, and re-preview before commit.
 
@@ -231,8 +231,8 @@ G0 capability/branch ledgers + T0 test contract
           P1 personal state   C1 casting
                   ├──────┬──────┤
                   ▼      ▼      ▼
-                 S1     U1     O1 (after U1)
-                  │   headless   └────► UI Task 7 candidate
+                 S1     U1     O1 create/advance (after U1/P1)
+                  │   headless        └────► UI Task 7 candidate
                   ▼      ├────────────► UI Task 4 candidate
             A1 campaigns ├────────────► F1..F6 headless families
              ┌────┴────┐ │                    │
@@ -248,7 +248,7 @@ G0 capability/branch ledgers + T0 test contract
 | 0    | G0 and T0                                                                                        | Complete capability/disposition ledgers and governed test lanes   |
 | 1    | K1 only; UI research remains read-only                                                           | Frozen kernel contract shared by browser and Functions            |
 | 2    | P1 and C1                                                                                        | Canonical personal state and automated casting behavior           |
-| 3    | U1 and S1; O1 starts after U1                                                                    | Headless flow/onboarding contracts and server authority           |
+| 3    | U1 and S1; O1 starts after U1                                                                    | Headless flow/creation/advancement contracts and server authority |
 | 4    | A1 first; then H1/A2/F preparation plus UI Tasks 4/7 candidates                                  | Simple campaign ownership and inspectable candidates              |
 | 5    | H1, A2, and F slices develop on non-overlap files but integrate serially through Functions/Rules | Typed homebrew, planning, and complete headless automation        |
 | 6    | X1, then Tactical Codex Task 15                                                                  | Domain convergence followed by the single approved visual cutover |
@@ -262,7 +262,7 @@ C1 + U1 is the first architecture vertical, not a live UI release. Customer-visi
 | Architecture output                   | UI consumer and start gate                                         | Rendering/cutover owner                                    |
 | ------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------- |
 | U1 semantic ActionFlow state          | Tactical Codex Task 4 after headless fixtures pass                 | Task 4 candidate; Task 15 live switch/deletion             |
-| O1 creation domain/persistence        | Task 7 after atomic reload/first-command fixtures pass             | Task 7 candidate; Task 15 live switch/deletion             |
+| O1 creation/advancement domain        | Task 7 after creation/advancement and P1 reload fixtures pass      | Task 7 candidate; Task 15 live switch/deletion             |
 | P1 locale-free `SaveStatus` seam      | Test T4 and UI Task 3 after P1 preserves its Firestore transitions | Product seam in P1; Task 3 presentation; Task 15 live swap |
 | P1/S1/A1 character/campaign authority | Tasks 6, 8, 9, and 11 after relevant contracts pass                | Each candidate task; Task 15 live switch                   |
 | A2 planner/chronicle/calendar         | Task 10 only after A2 migration/authority/export gates pass        | Task 10 candidate; Task 15 live switch/deletion            |
@@ -278,9 +278,9 @@ An UI task consumes typed outputs and may not redefine mechanics or persistence.
 - [ ] Write the detailed G0 child plan with `superpowers:writing-plans`; no production code is in scope.
 - [ ] Snapshot current fixture hashes, current schema versions, focused baseline test outcomes, and the deployed-version evidence available to the owner.
 - [ ] Inventory all causal-branch paths and assign the four dispositions defined above.
-- [ ] Inventory every current action and manual input, not only causal-branch work, across character creation/editing, spells, attacks, features, items, rests, resources, conditions, encounter, campaign, and homebrew.
-- [ ] Give every capability-ledger row exact columns for current caller, `SemanticCommand`, valid `ExternalAnswers`, kernel handler, solo/shared/offline behavior, persistence owner, Tactical Codex board/task, retained test, and legacy deletion target.
-- [ ] Map every accepted causal behavior to K1, P1, C1, U1, S1, H1, A2, or an F slice; an unowned extraction or capability blocks K1.
+- [ ] Inventory every current action and manual input, not only causal-branch work, across character creation, advancement/level-up, editing, spells, attacks, features, items, rests, resources, conditions, encounter, campaign, and homebrew.
+- [ ] Give every capability-ledger row exact columns for current caller, `SemanticCommand`, valid `ExternalAnswers`, kernel handler, solo/shared/offline behavior, persistence owner, Tactical Codex board/task, retained test, and legacy deletion target; advancement choices/configuration are not external answers, and only a bounded observed physical hit-die face may cross that seam.
+- [ ] Map every accepted causal behavior to K1, P1, C1, U1, O1, S1, H1, A2, or an F slice; an unowned extraction or capability blocks K1.
 - [ ] Confirm the causal worktree remains byte-for-byte untouched.
 - [ ] Obtain architecture review of the ledger before K1 copies any behavior.
 
@@ -291,7 +291,7 @@ An UI task consumes typed outputs and may not redefine mechanics or persistence.
 **Depends on:** `docs/superpowers/plans/2026-08-25-test-portfolio-reset.md`. **Owns only:** files assigned by that plan; this Wayfinder grants no additional test-file ownership.
 
 - [ ] Approve the companion plan before Wave 1 implementation.
-- [ ] Publish the retained lanes for kernel contracts, fixture parity, migrations, Functions emulator authorization, UI behavior, and curated screenshots.
+- [ ] Publish the retained lanes for kernel contracts, creation and advancement domain contracts, fixture parity, migrations, Functions emulator authorization, UI behavior, and curated screenshots.
 - [ ] Publish the acyclic visual-foundation handoff `T2/T3 → T7A census contract → T8A`, with T7B/T8B reserved for consolidation after Tactical Codex UI Tasks 1–14.
 - [ ] Publish deletion rules for legacy representation tests and duplicate regressions.
 - [ ] Give every later slice an exact focused command and an authoritative integration command.
@@ -318,12 +318,13 @@ An UI task consumes typed outputs and may not redefine mechanics or persistence.
 
 ## 10. Slice P1 — Canonical Character Material State
 
-**Depends on:** K1 and T0. **Owns:** `src/types/material-state.ts`, `src/lib/material-state.ts`, `src/lib/combat-state-io.ts`, the character-state portions of `src/lib/firestore.ts`, `src/stores/saveStore.ts`, `src/hooks/useCharacterSubscription.ts`, character persistence fixtures/migrations, and only the personal-state blocks of `firestore.rules` during its serial ownership window. **Must not edit:** campaign paths, casting UI, creation UI, or Functions gameplay files.
+**Depends on:** K1 and T0. **Owns:** `src/types/material-state.ts`, `src/lib/material-state.ts`, `src/lib/combat-state-io.ts`, the character-state portions of `src/lib/firestore.ts`, `src/stores/saveStore.ts`, `src/hooks/useCharacterSubscription.ts`, the atomic creation/advancement repository boundary including CRE-006 snapshot/server-echo evidence, character persistence fixtures/migrations, and only the personal-state blocks of `firestore.rules` during its serial ownership window. **Must not edit:** campaign paths, casting UI, creation or advancement UI, or Functions gameplay files.
 
 - [ ] Write and review the P1 child plan, including the exact live schema version and rollback evidence.
 - [ ] Specify the character parent allowlist: build/custom/meta/sharing/attachment/buildRevision/derived cache only.
 - [ ] Store one direct `CharacterMaterialState` in `combat/state`; do not nest `playState`, `session`, or `world`.
-- [ ] Define revision ownership for build and material state and the preconditions executors will use.
+- [ ] Define revision ownership for build and material state and the expected-revision preconditions executors will use.
+- [ ] Expose one atomic repository operation for a validated creation/advancement build-and-material patch; advancement records the CRE-006 pre-level snapshot first, applies one patch, and proves the server echo without a second write.
 - [ ] Keep a single legacy decode boundary and canonical-only writes; prohibit dual writes in a test.
 - [ ] Implement snapshot, dry-run, idempotent apply, and verify against all six fixtures before requesting any live migration permission.
 - [ ] Prove save acknowledgement with server echo and surface rejected/pending writes instead of optimistic success.
@@ -365,25 +366,26 @@ An UI task consumes typed outputs and may not redefine mechanics or persistence.
 - **Verification:** headless transition/presenter fixtures, deterministic request/result mapping, TypeScript/import guards, and the retained T0 contract lane.
 - **Exit:** one UI-agnostic semantic state contract exists in DEV/TEST with zero live rendering or public call-site change.
 
-## 13. Slice O1 — Headless Automated Onboarding Domain
+## 13. Slice O1 — Headless Character Creation and Advancement Domain
 
-**Depends on:** K1, P1, and U1. **Owns:** `src/types/creation.ts`, `src/lib/creation/**`, `src/lib/views/creation-flow-view.ts`, atomic character-create code in a reserved section of `src/lib/firestore.ts`, and headless creation fixtures/tests. **Must not edit:** `CreationWizard.tsx`, `src/features/creation/steps/**`, React, styles, i18n catalogues, live routes, screenshots, campaign I/O, or Rules outside a scheduled P1 handoff.
+**Depends on:** K1, P1, and U1. **Owns:** `src/types/creation.ts`, `src/types/advancement.ts`, `src/lib/creation/**`, `src/lib/advancement/**`, `src/lib/views/creation-flow-view.ts`, O1's creation and `advance-character` handlers under `src/lib/command/**`, and headless creation/advancement fixtures and tests. **Must not edit:** P1 schemas or repository implementations, `src/lib/firestore.ts`, `firestore.rules`, `CreationWizard.tsx`, `LevelUpWizard.tsx`, `src/features/creation/steps/**`, React, styles, i18n catalogues, live routes or call sites, screenshots, or campaign I/O.
 
 - [ ] Write and review the O1 child plan before implementing domain behavior.
-- [ ] Define `CreationDraft`, user-authored inputs, validation outcomes, and `resolveCreationDraft` as pure locale-free domain code.
-- [ ] Derive proficiencies, grants, spell choices, equipment, HP policy, resources, actions, and initial material state outside React.
+- [ ] Define locale-free `CreationDraft` and `AdvancementDraft` values with stable choice IDs, user-authored configuration, and validation outcomes; compile them to `create-character` or `advance-character` and resolve both only through the single `resolveCommand` entry point.
+- [ ] Derive proficiencies, grants, spell choices, equipment, HP policy, resources, actions, initial material state, advancement legality, and all knowable advancement choices outside React; every knowable choice is command configuration.
+- [ ] Accept only the raw observed face of a physical hit die as an advancement `ExternalAnswer`, require an integer in `1..hitDie`, and never roll or generate it.
 - [ ] Keep only meaningful player decisions in the flow; automate defaults and explain reversible choices.
-- [ ] Atomically create the parent and direct `combat/state` with `buildRevision: 1`; partial creation must not become visible.
-- [ ] Reload from the server echo and prove the same canonical character is reconstructed.
-- [ ] Produce a headless first-playable `SemanticCommand` and U1 state fixture without mounting or redirecting a production route.
-- [ ] Gate Tactical Codex Task 7 on O1 for candidate presentation and Task 15 for the only live wizard/call-site cutover.
-- **Deletion:** no live creation component; Task 15 deletes UI construction of `SessionState`, duplicate defaults, and old representation tests after Task 7 parity.
-- **Verification:** headless creation domain, six-fixture compatibility, atomic persistence/emulator, `just ci`, and `just ci-srd-only`.
-- **Exit:** domain and persistence deterministically produce one playable character and first command; live onboarding remains unchanged until UI cutover.
+- [ ] Consume the P1 repository contract to atomically create the parent and direct `combat/state` with `buildRevision: 1`; O1 adds no writer or schema, and partial creation must not become visible.
+- [ ] For advancement, require P1 to record the CRE-006 pre-level snapshot, then apply exactly one canonical build/material patch fenced by expected build and material revisions; consume the server echo and prove the committed revision reconstructs the resolved character.
+- [ ] Produce headless first-playable and post-advancement `SemanticCommand`/U1 fixtures without mounting, redirecting, or wiring a production route or caller.
+- [ ] Gate Tactical Codex Task 7 on O1 for creation/advancement candidate presentation and Task 15 for the only live wizard/call-site cutover.
+- **Deletion:** no live creation or advancement component in O1; after Task 7 parity, Task 15 deletes UI construction of `SessionState`, creation defaults, `LevelUpWizard.tsx` rule/choice composition and whole-character write path, and old representation tests.
+- **Verification:** `pnpm exec vitest run --project fast tests/unit/creation-domain.test.ts tests/unit/advancement-domain.test.ts`, six-fixture compatibility, P1 atomic persistence/snapshot/server-echo evidence, `just ci`, and `just ci-srd-only`.
+- **Exit:** the headless domain deterministically produces a playable new character and resolves one revision-fenced advancement through `resolveCommand`; creation and advancement live callers remain unchanged until Task 15 cutover.
 
 ## 14. Slice S1 — Server-Authoritative Shared Commands
 
-**Depends on:** K1, P1, and a stable C1 fixture. **Owns:** `functions/src/gameplay/execute-shared-command.ts`, `load-shared-aggregate.ts`, `shared-command-transaction.ts`, `authoritative-rule-catalog.ts`, the gameplay export in `functions/src/index.ts`, `src/features/commands/shared-command-client.ts`, Functions/emulator tests, and shared-runtime Rules blocks during exclusive ownership. **Must not edit:** React presentation, onboarding, or A1's campaign membership shape.
+**Depends on:** K1, P1, and a stable C1 fixture. **Owns:** `functions/src/gameplay/execute-shared-command.ts`, `load-shared-aggregate.ts`, `shared-command-transaction.ts`, `authoritative-rule-catalog.ts`, the gameplay export in `functions/src/index.ts`, `src/features/commands/shared-command-client.ts`, Functions/emulator tests, and shared-runtime Rules blocks during exclusive ownership. **Must not edit:** React presentation, the O1 creation/advancement domain, or A1's campaign membership shape.
 
 - [ ] Write and review the S1 child plan, threat model, transaction state machine, and emulator matrix.
 - [ ] Require Auth and App Check, then verify membership, role, participation, attachment, build revision, affected aggregate revisions, and command identity.
@@ -516,13 +518,14 @@ T0 supplies focused commands; applicable slices still run Functions/browser buil
 
 | Chokepoint                                                                                | Serial owner order                                                                        | Handoff condition                                                      |
 | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `src/lib/command/**`                                                                      | K1 → C1 → F1..F6                                                                          | exported contract green and base SHA recorded                          |
+| `src/lib/command/**`                                                                      | K1 → C1 → O1 → F1..F6                                                                     | exported contract green and base SHA recorded                          |
 | `src/types/material-state.ts`                                                             | P1 → F1..F5 → X1                                                                          | schema/migration owner reviewed                                        |
-| `src/lib/firestore.ts`                                                                    | P1 → O1 → X1                                                                              | prior slice integrated; exact functions recorded                       |
+| `src/lib/firestore.ts`                                                                    | P1 → X1                                                                                   | CRE-006 snapshot/server echo and exact P1 repository API/SHA are green |
 | `src/stores/saveStore.ts`                                                                 | P1 product seam; Test T4/UI Task 3 consume without editing                                | locale-free transitions contract-tested before consumer handoff        |
 | `firestore.rules`                                                                         | P1 → S1 → A1 → A2 → H1 → F1..F6 → X1                                                      | emulator suite green before handoff                                    |
 | `functions/src/index.ts` and `functions/package*.json`                                    | K1 → S1 → A1 → A2 → H1                                                                    | Functions build/lockfile green; exports only unless planned            |
 | `src/types/action-flow.ts`, `src/lib/action-flow/**`, `src/lib/views/action-flow-view.ts` | U1 → F1..F6 family projections                                                            | no React/TSX, public call site, i18n, or screenshot ownership          |
+| O1 locale-free creation/advancement domain paths                                          | O1 → UI Task 7 consume → UI Task 15 live callers                                          | Task 7 does not redefine the domain; Task 15 alone switches callers    |
 | `src/features/commands/**`                                                                | C1 local executor → S1 shared client                                                      | UI Task 4 owns candidate rendering; Task 15 owns live switch           |
 | `src/features/campaigns/campaign-io.ts`                                                   | A1 → X1 → UI Task 15 deletion                                                             | thin clients integrated before visual-carrier removal                  |
 | root `package.json` / `pnpm-lock.yaml`                                                    | Test C0: T3 → T8A → UI Task 1 → T4 → UI Task 15                                           | T4 waits for P1 without blocking the visual foundation; SHA handed off |
@@ -537,15 +540,16 @@ If a child plan needs a chokepoint before its turn, it waits or negotiates a new
 ## 22. Program Completion Criteria
 
 - [ ] A new character is deterministically built, persisted atomically, reloaded, and can perform its first action.
+- [ ] Character advancement resolves a locale-free `AdvancementDraft` through `resolveCommand`, accepts only a bounded observed physical hit-die face as external input, and commits one revision-fenced P1 patch after the CRE-006 snapshot.
 - [ ] A solo command previews and commits offline using the canonical state and later receives a server acknowledgement.
 - [ ] The equivalent shared command previews locally, commits through Auth/App Check, and is idempotent under retry.
-- [ ] The table is asked only for observations the software cannot know.
+- [ ] The table is asked only for observations the software cannot know; advancement accepts only the raw face of a physically rolled hit die, while level and every knowable choice remain command configuration.
 - [ ] All active UI derives from committed `EffectInstance` values; possible actions are presented separately.
 - [ ] Firestore contains no duplicate live PC facts and no persisted pending command protocol.
 - [ ] Rules contain access/schema policy and no D&D transition logic.
 - [ ] Browser and Functions use one `resolveCommand` source and pass the same deterministic vectors.
 - [ ] The capability ledger maps every current action/manual input to command, observation seam, authority, UI handoff, test, and deletion.
-- [ ] U1 and O1 remain headless until Tactical Codex candidate tasks consume them; Task 15 alone cuts over public visual call sites.
+- [ ] U1 and O1 creation/advancement remain headless until Tactical Codex candidate tasks consume them; Task 15 alone cuts over public visual call sites.
 - [ ] Homebrew has one typed/versioned account authority, immutable campaign pins/provenance, and a bounded deterministic sandbox.
 - [ ] Planner proposals, availability, RSVP, agenda, notes, sessions, and chronicle have canonical owners; calendar export is explicit with no polling or duplicate timeline.
 - [ ] Legacy runtime, mirrors, codecs, dispatch gates, proof fanout, dead tests, and stale docs are gone.
