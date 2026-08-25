@@ -1,0 +1,115 @@
+# Test Portfolio
+
+This ledger owns the current risk-based test portfolio baseline and later
+replacement/deletion evidence. It implements the execution direction in the
+[Automation-first Wayfinder](superpowers/plans/2026-08-25-automation-first-wayfinder.md)
+and the [Tactical Codex UI/UX Wayfinder](superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md);
+those documents remain the owners of their respective designs.
+
+Both Wayfinders are pinned in the sibling documentation stream at `7590b18` and
+must land before these repository-relative links resolve on `main`; they are not
+copied into this commit.
+
+Counts and timings here are observable health indicators, not quotas, deletion
+targets, or completion gates. A test may be merged or deleted only when its
+risk signal remains protected and its row has the applicable D1-D7 evidence.
+
+## Baseline inventory
+
+The reset audit recorded 619 public unit files / 168,204 LOC; 178 private-pack
+unit files / 49,189 LOC; one 98-LOC source guard; two Rules files / 3,239 LOC;
+seven Functions files / 1,533 LOC; and 62 E2E specs / 10,191 LOC: 232,454 test
+LOC total, including its one 98-LOC guard. The composed Vitest baseline was 797 files / 19,024 tests. The
+Playwright baseline was 2,331 registrations, including about 930 env-gated
+capture/pixel registrations and 1,124 ambient registrations across four
+overlapping surface sweeps.
+
+On exact base `1ccb8af74b69e8af2f2b8568480ab1e3048c1eac`, the read-only
+recalculation is 619 public unit files / 168,225 LOC; 178 private-pack unit
+files / 49,189 LOC; two Rules files / 3,239 LOC; seven Functions files /
+1,533 LOC; and 62 E2E specs / 10,191 LOC. The six mandated commands produce a
+232,377-LOC subtotal across their five measured groups and exclude the colocated
+`src/components/shared/folio-card-migration.guard.test.ts` guard (98 LOC).
+All tracked test source is therefore 232,475 LOC. Playwright lists 2,331
+registrations. Future deltas compare to these exact-base measurements.
+
+The composed `pnpm test` baseline observed 19,022 of 19,024 passing under
+portfolio load, with two five-second timeouts; each passed three isolated
+executions. This is a reliability signal, not a semantic failure. Do not add a
+retry or timeout to mask it.
+
+### Read-only inventory commands
+
+```bash
+find tests/unit -type f \( -name '*.test.ts' -o -name '*.test.tsx' \) | wc -l
+find -L content-pack/tests/unit -type f \( -name '*.test.ts' -o -name '*.test.tsx' \) | wc -l
+find tests/e2e -type f -name '*.spec.ts' | wc -l
+find tests functions/src -type f \( -name '*.test.ts' -o -name '*.test.tsx' -o -name '*.spec.ts' \) -print0 | xargs -0 wc -l | tail -n 1
+find -L content-pack/tests/unit -type f \( -name '*.test.ts' -o -name '*.test.tsx' \) -print0 | xargs -0 wc -l | tail -n 1
+pnpm exec playwright test --list | tail -n 1
+wc -l src/components/shared/folio-card-migration.guard.test.ts
+```
+
+## Durable proof registry
+
+| ID             | risk | invariant                                                                                                                                                           | owner                                                    | current proof                                    | replacement proof                                                                                                                                                                                   | state | measured cost                                                                 |
+| -------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----------------------------------------------------------------------------- |
+| R0-rules       | R0   | Pure rule outcomes are deterministic formulas; they never roll dice.                                                                                                | Automation Wayfinder; `docs/MECHANICS.md`                | Existing rule/unit coverage and no-RNG guard.    | Table and mutation proofs around `resolveCommand` in L1.                                                                                                                                            | keep  | Baseline not yet apportioned; 232,377 LOC is an indicator.                    |
+| R0-character   | R0   | Stored characters remain readable; migrations preserve data and six-fixture parity.                                                                                 | `docs/CHARACTER_SCHEMA.md`; six team fixtures            | Existing codec, migration, and fixture coverage. | Codec round-trip plus snapshot → dry-run → idempotent apply → verify in L1/L2.                                                                                                                      | keep  | Baseline not yet apportioned; 232,377 LOC is an indicator.                    |
+| R0-persistence | R0   | Authenticated edits save once and survive server echo, reload, offline work, and rebase.                                                                            | Automation Wayfinder persistence seam                    | Existing persistence representations.            | Real Auth + Firestore-emulator browser journeys in L2/L3.                                                                                                                                           | keep  | Baseline not yet apportioned; 2,331 registrations is an indicator.            |
+| R0-shared      | R0   | Shared commands retain real Auth and App Check, Firestore Rules/direct-write denial, role matrix, callable atomicity, revision fence, and idempotent receipt proof. | `executeSharedCommand`; Firestore Rules                  | Existing Functions and Rules coverage.           | Emulator proof of real Auth/App Check, Rules/direct-write denial, owner/member/DM/admin/outsider/blocked role matrix, callable atomicity, revision fencing, and idempotent receipt replay in L2/L3. | keep  | 2 Rules files / 3,239 LOC; 7 Functions files / 1,533 LOC.                     |
+| R1-action-flow | R1   | ActionFlow completes high-frequency play jobs.                                                                                                                      | Both Wayfinders                                          | Existing browser journeys.                       | Semantic L3 journeys for cast, attack/save observation, resources/rest, undo, onboarding/import, and remaining distinct high-frequency jobs.                                                        | keep  | 62 E2E specs / 10,191 LOC; count is an indicator.                             |
+| R1-rendered    | R1   | Designed states are bilingual, accessible, responsive, and honest about sync.                                                                                       | Tactical Codex Wayfinder; `DESIGN.md`; atlas A00–A16/B01 | Existing surface, visual, and motion coverage.   | Pairwise rendered L4/L5 evidence for EN+IT, a11y, responsive layout, offline/pending/reconnect/error states, and visual/motion including reduced motion.                                            | keep  | 1,124 overlapping-sweep registrations; not a reduction target.                |
+| R2-policy      | R2   | Static policy cannot regress: licensing partition, i18n key parity, import direction, route coverage, and no RNG.                                                   | Constitution/map owners                                  | Existing lint and focused source guards.         | Retain focused L0 guards.                                                                                                                                                                           | keep  | One colocated guard / 98 LOC plus in-suite policy guards not yet apportioned. |
+
+## Candidate proof registry
+
+Every candidate remains classification-only in this baseline. No row is
+deleted; the durable rows above remain `keep` while candidate work is proved at
+its own scope.
+
+| ID                        | risk | invariant                                                                                          | owner                                            | current proof                                                   | replacement proof                                                                     | state                | measured cost                                                    |
+| ------------------------- | ---- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------- | ------------------------------------------------------------------------------------- | -------------------- | ---------------------------------------------------------------- |
+| CAND-fast-meta            | R2   | Fast-lane meta checks retain distinct static policy signal.                                        | Test portfolio owner                             | Duplicate fast-lane meta tests.                                 | Merge only identical setup, authority boundary, and failure mode after D1-D7 mapping. | merge-candidate      | 1 file / 143 LOC.                                                |
+| CAND-functions-zero-retry | R0   | Functions and critical browser proofs remain zero-retry and faithful.                              | Automation Wayfinder                             | Current Functions/critical coverage has a zero-retry gap.       | Emulator boundary proof with retries 0 and critical `pass^3` evidence.                | blocked-on-wayfinder | Not yet separately measured; coverage gap, not a numeric target. |
+| CAND-auth-persistence     | R0   | Authenticated persistence is proved through real boundary journeys.                                | Automation Wayfinder persistence seam            | No faithful real Auth critical journeys.                        | Auth + Firestore-emulator save/echo/reload/offline/rebase journeys.                   | blocked-on-wayfinder | 0 faithful journeys.                                             |
+| CAND-surface-sweeps       | R1   | Each designed state has one faithful pairwise rendered traversal.                                  | Tactical Codex Wayfinder                         | Four overlapping a11y/i18n/layout/ink sweeps.                   | One composable pairwise surface audit after Wayfinder census handoff.                 | blocked-on-wayfinder | 4 files / 987 LOC; 1,124 registrations.                          |
+| CAND-capture-visual       | R1   | Curated capture, performance, visual, and motion evidence stays outside default release discovery. | Tactical Codex Wayfinder                         | Capture/performance/visual harness cohort in default discovery. | Dedicated curated visual/motion and explicit performance lanes.                       | blocked-on-wayfinder | 5 files / 661 LOC; about 930 env-gated registrations.            |
+| CAND-conditional-layout   | R1   | Browser journeys fail semantically rather than conditionally or on layout symptoms alone.          | Tactical Codex Wayfinder                         | Conditional/vacuous E2E and layout-symptom cohort.              | Semantic journeys and merged layout-stability proofs with D1-D7 evidence.             | delete-candidate     | 11 files / 1,385 LOC indicator.                                  |
+| CAND-ui-regex-guards      | R1   | Rendered UI evidence replaces implementation-shape checks only where it catches the same failure.  | Tactical Codex Wayfinder                         | Eligible UI source-regex guards.                                | Component, surface grader, screenshot, or motion mutation proof.                      | delete-candidate     | 13 files / 1,246 LOC.                                            |
+| CAND-pack-aggregates      | R0   | Private-pack primitive/grant outcomes retain equal or stronger semantic signal.                    | Private content-pack test owners                 | Aggregate tables.                                               | Focused semantic tables with unique rows and evaluator mutations.                     | merge-candidate      | 2 files / 12,783 LOC.                                            |
+| CAND-causal-protocol      | R0   | Semantic command outcomes replace retired causal-protocol representation assertions.               | Automation Wayfinder                             | Named causal-protocol representations.                          | Golden/contract command proofs plus D1-D7 cutover evidence.                           | delete-candidate     | 6 files / 4,923 LOC.                                             |
+| CAND-legacy-material      | R0   | Canonical material/persistence codec and migration preserve live-user compatibility.               | `docs/CHARACTER_SCHEMA.md`; Automation Wayfinder | Legacy material/persistence representations.                    | Canonical codec/migration and boundary journey proof plus D1-D7 cutover evidence.     | delete-candidate     | 2 files / 1,255 LOC.                                             |
+
+### D1-D7 deletion evidence
+
+`deleted(D1-D7 evidence)` is permitted only when the row records all of the
+following in the same slice and commit:
+
+1. **D1 — Owner:** Name the durable invariant and its fact owner.
+2. **D2 — Replacement:** Prove the outcome at the cheapest faithful boundary.
+3. **D3 — Sensitivity:** Show the replacement failing before the fix or against a deliberate owned-seam mutation.
+4. **D4 — Fidelity:** Firebase/Auth/offline assertions use emulators; visual/motion assertions use rendered output. Mocks or source text are not substitutes.
+5. **D5 — Unique signal:** Map every candidate assertion to its replacement or explicitly retire the behavior.
+6. **D6 — Cutover:** `rg` finds no reachable producer, consumer, import, field, selector, or feature flag for a retired representation.
+7. **D7 — Green evidence:** Run focused tests and the applicable composed/SRD/Rules gate; every critical journey supplying coverage has Playwright retries set to 0 and passes three consecutive executions (`pass^3 = 100%`) with no skip, quarantine, conditional pass, or flaky classification; update this inventory and the owner document in the same commit.
+
+Merge only when setup, authority boundary, and failure mode are identical and
+the variation is fixture, theme, locale, or example. Keep tests separate when
+they have different failure causes or recovery. Proof state is exactly one of
+`keep`, `merge-candidate`, `delete-candidate`, `blocked-on-wayfinder`, or
+`deleted(D1-D7 evidence)`.
+
+## Shared-path lease registry
+
+Only the named holder edits a leased chokepoint. Other workers record their
+requested change in task evidence and wait for an explicit handoff. An
+unperformed handoff has no fabricated SHA.
+
+| lease | holder                       | base SHA                                 | pending change                                                                                                                                    | handoff SHA | focused command                                               |
+| ----- | ---------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------- |
+| C0    | unassigned (next: T3)        | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | Root command manifests: `package.json`, `pnpm-lock.yaml`, scripts; future order T3 → T4 → T8A → UI Task 1 → UI Task 15.                           | —           | Established at the approved handoff.                          |
+| C1    | unassigned (next: UI Task 2) | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `src/app/router.tsx`, specimen/production i18n loaders, catalogue registration; future order UI Task 2 → owning UI catalogue slices → UI Task 15. | —           | Established at the approved handoff.                          |
+| C2    | unassigned (next: T3)        | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `playwright*.config.ts`, shared Playwright fixtures/reporters; future order T3 → T4 → T8A.                                                        | —           | Established at the approved handoff.                          |
+| C3    | unassigned (next: T3)        | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `.github/workflows/**`, `Justfile`; future order T3 → T6 → T14.                                                                                   | —           | Established at the approved handoff.                          |
+| C4    | T1                           | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `docs/TEST_PORTFOLIO.md`, `PROGRESS.md`, automation/UI status documents, final owner-map documentation; future order T1 → T7/T8 → T10/T14.        | —           | `pnpm exec prettier --check docs/TEST_PORTFOLIO.md CLAUDE.md` |
