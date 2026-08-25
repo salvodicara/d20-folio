@@ -2689,7 +2689,9 @@ After every design/change pass — not before:
    relevant states (hover, empty, error, loading).
 3. **a11y gate**: `pnpm exec playwright test tests/e2e/a11y.spec.ts` — must stay green; re-run after
    any light-token change.
-4. **New surfaces**: add an entry to `tests/e2e/surface-manifest.ts` so the a11y gate covers it.
+4. **New surfaces**: add a typed entry to the canonical
+   `tests/e2e/surface-census/index.ts` (or its registered slice-owned fragment) so the
+   rendered gates cover it. `surface-manifest.ts` is only a compatibility re-export.
 5. **i18n check**: confirm no raw English strings in the IT locale path.
 6. **Lint + typecheck**: `pnpm tsc -b && pnpm lint --max-warnings 0`.
 

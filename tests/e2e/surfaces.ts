@@ -5,9 +5,9 @@
  * (`a11y.spec.ts`). One model means they can never drift: the same surface list,
  * the same theme/locale/viewport variants, the same `ready`/`prepare`.
  *
- * The pure `{ slug, route }` shape lives in `surface-manifest.ts` (no Playwright
- * import) so the unit-side route-coverage guard can read it without dragging in a
- * browser framework. This file ADDS the runtime bits (the per-surface
+ * The pure route/state shape lives in `surface-census/index.ts` (no Playwright
+ * import); `surface-manifest.ts` is now a compatibility re-export for legacy
+ * consumers. This file ADDS the runtime bits (the per-surface
  * `ready`/`prepare` interactions + the variant matrix + the seeding helpers) on
  * top of that manifest, and asserts at load time that every manifest slug is
  * realised here.
@@ -20,7 +20,7 @@
 import { expect, type Page } from "@playwright/test";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SURFACE_ROUTES, type SurfaceRoute } from "./surface-manifest";
+import { SURFACE_ROUTES, type SurfaceRoute } from "./surface-census";
 import { firstWord, teamFixtureName } from "./team-fixture";
 
 export type Theme = "dark" | "light";
@@ -1437,7 +1437,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
 };
 
 /**
- * Build the full SURFACES array by merging each manifest `{ slug, route }` with
+ * Build the full SURFACES array by merging each census `{ slug, route }` adapter with
  * its runtime def. Guided-create steps get their semantic step-jump `prepare`
  * injected here. Throws at load time if a manifest slug has no runtime.
  */
@@ -1461,7 +1461,7 @@ function buildSurfaces(): Surface[] {
     const runtime = RUNTIME[slug];
     if (!runtime) {
       throw new Error(
-        `Surface "${slug}" is declared in surface-manifest.ts but has no runtime ` +
+        `Surface "${slug}" is declared in surface-census/index.ts but has no runtime ` +
           `definition in surfaces.ts. Add its { edit, ready, prepare?, variants? }.`
       );
     }

@@ -411,11 +411,13 @@ in `DESIGN.md` (the single design + UX system of record) + the canonical tokens 
 
 ```text
 1. Add a route to src/app/router.tsx as usual.
-2. Add a { slug, route } entry to tests/e2e/surface-manifest.ts (the SINGLE source
-   of truth for "every surface the visual suite covers"). One entry per distinct
-   captured state — a page, an edit variant, a wizard step, a modal/popover/drawer,
-   or a scenario state (e.g. an HP band).
-3. Add the matching runtime def in tests/e2e/surfaces.ts: { edit, ready, prepare?,
+2. Add a typed entry to tests/e2e/surface-census/index.ts, or to the owning
+   tests/e2e/surface-census/<family>.ts fragment registered there. The census/index
+   is the SINGLE route/state owner; surface-manifest.ts is a compatibility re-export.
+   Add one entry per distinct captured state — a page, edit variant, wizard step,
+   modal/popover/drawer, or scenario state (e.g. an HP band).
+3. During the legacy migration, add the matching runtime adapter in
+   tests/e2e/surfaces.ts: { edit, ready, prepare?,
    variants? }. `ready` is a locator that proves the surface painted; `prepare`
    opens the overlay / drives the state; `variants` restricts the locale×theme×
    viewport matrix for overlays whose trigger only exists at some breakpoints
@@ -616,7 +618,8 @@ hint rather than letting an unverified rules change through — no Homebrew JDK 
 - **Co-update docs.** A `.changeset/*.md` must be staged on every commit (the pre-commit hook
   enforces it; it feeds `CHANGELOG.md` at release time). Keep `PROGRESS.md` current as you ship.
 - **New surface → new screenshot.** Adding a page / form / wizard step / modal means adding its
-  visual surface (`tests/e2e/surface-manifest.ts` + `surfaces.ts`). The route-coverage guard
+  canonical census entry (`tests/e2e/surface-census/index.ts` or an owned fragment) plus the
+  temporary `surfaces.ts` runtime adapter. The route-coverage guard
   fails CI otherwise. See "I'm adding a new page / form / wizard step / modal" above.
 - **Rules change → emulator tests.** Touching `firestore.rules` / `tests/rules/**` runs
   `pnpm test:rules` at pre-push (needs a JDK; emulator-only `demo-` project, no cost). See

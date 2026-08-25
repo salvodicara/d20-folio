@@ -24,6 +24,16 @@ Playwright baseline was 2,331 registrations, including about 930 env-gated
 capture/pixel registrations and 1,124 ambient registrations across four
 overlapping surface sweeps.
 
+Task T7A freezes that exact legacy surface baseline on
+`250e5d555f82c9727fc0043347b99e7a9558a987`: 100 stable ids in original order
+over 42 routes, with the default Playwright inventory still at 2,331
+registrations in 62 files. The canonical, Playwright-free census/index now owns
+route and state data; `surface-manifest.ts` is a compatibility re-export and
+`surfaces.ts` retains the legacy runtime behavior. The separate ten-route list
+in `_identity-shots.spec.ts` remains untouched and classified for T8B
+consolidation. `CAND-surface-sweeps` stays `blocked-on-wayfinder`: T7A adds the
+census contract only, with no grader, deletion, or D1-D7 evidence.
+
 On exact base `1ccb8af74b69e8af2f2b8568480ab1e3048c1eac`, the read-only
 recalculation is 619 public unit files / 168,225 LOC; 178 private-pack unit
 files / 49,189 LOC; two Rules files / 3,239 LOC; seven Functions files /
@@ -106,10 +116,10 @@ Only the named holder edits a leased chokepoint. Other workers record their
 requested change in task evidence and wait for an explicit handoff. An
 unperformed handoff has no fabricated SHA.
 
-| lease | holder                       | base SHA                                 | pending change                                                                                                                                    | handoff SHA | focused command                                               |
-| ----- | ---------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------- |
-| C0    | unassigned (next: T3)        | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | Root command manifests: `package.json`, `pnpm-lock.yaml`, scripts; future order T3 → T4 → T8A → UI Task 1 → UI Task 15.                           | —           | Established at the approved handoff.                          |
-| C1    | unassigned (next: UI Task 2) | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `src/app/router.tsx`, specimen/production i18n loaders, catalogue registration; future order UI Task 2 → owning UI catalogue slices → UI Task 15. | —           | Established at the approved handoff.                          |
-| C2    | unassigned (next: T3)        | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `playwright*.config.ts`, shared Playwright fixtures/reporters; future order T3 → T4 → T8A.                                                        | —           | Established at the approved handoff.                          |
-| C3    | unassigned (next: T3)        | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `.github/workflows/**`, `Justfile`; future order T3 → T6 → T14.                                                                                   | —           | Established at the approved handoff.                          |
-| C4    | T1                           | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `docs/TEST_PORTFOLIO.md`, `PROGRESS.md`, automation/UI status documents, final owner-map documentation; future order T1 → T7/T8 → T10/T14.        | —           | `pnpm exec prettier --check docs/TEST_PORTFOLIO.md CLAUDE.md` |
+| lease | holder                       | base SHA                                 | pending change                                                                                                                                    | handoff SHA | focused command                                                                                                 |
+| ----- | ---------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
+| C0    | unassigned (next: T3)        | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | Root command manifests: `package.json`, `pnpm-lock.yaml`, scripts; future order T3 → T4 → T8A → UI Task 1 → UI Task 15.                           | —           | Established at the approved handoff.                                                                            |
+| C1    | unassigned (next: UI Task 2) | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `src/app/router.tsx`, specimen/production i18n loaders, catalogue registration; future order UI Task 2 → owning UI catalogue slices → UI Task 15. | —           | Established at the approved handoff.                                                                            |
+| C2    | unassigned (next: T3)        | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `playwright*.config.ts`, shared Playwright fixtures/reporters; future order T3 → T4 → T8A.                                                        | —           | Established at the approved handoff.                                                                            |
+| C3    | unassigned (next: T3)        | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `.github/workflows/**`, `Justfile`; future order T3 → T6 → T14.                                                                                   | —           | Established at the approved handoff.                                                                            |
+| C4    | released by T7A (next: T8A)  | 250e5d555f82c9727fc0043347b99e7a9558a987 | T7A froze the surface census contract and left `CAND-surface-sweeps` blocked; future order T8A → T10/T14.                                         | this commit | `pnpm exec vitest run --project fast tests/unit/surface-census.test.ts tests/unit/route-coverage.guard.test.ts` |
