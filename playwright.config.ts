@@ -30,7 +30,7 @@ export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: 0,
   // ONE worker per CI leg — measured, not assumed. The 2-vCPU `ubuntu-latest`
   // runner is already CPU-saturated by a SINGLE worker (a full-page Chromium
   // render + the vite DEV server transforming modules on demand), so a second
@@ -47,7 +47,7 @@ export default defineConfig({
     // picks up the dev server which has no VITE_DEV_BYPASS_AUTH and every test
     // lands on the login page instead of the mock character.
     baseURL: `http://localhost:${E2E_PORT}`,
-    trace: "on-first-retry",
+    trace: "retain-on-failure",
   },
   projects: [
     {

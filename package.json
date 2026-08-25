@@ -27,6 +27,7 @@
     "test:slow": "vitest run --project slow",
     "test:watch": "vitest",
     "test:coverage": "vitest run --project fast --project slow --coverage",
+    "test:functions": "npm --prefix functions test",
     "test:srd-only": "VITE_CONTENT_PACK=0 vitest run --project fast --project slow",
     "typecheck:srd-only": "tsc -p tsconfig.srd-only.json",
     "build:srd-only": "pnpm typecheck:srd-only && VITE_CONTENT_PACK=0 vite build",

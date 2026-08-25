@@ -12,6 +12,7 @@ git clone git@github.com:salvodicara/d20-folio.git
 cd d20-folio
 asdf install                          # Node 24 + Temurin 25 JDK, pinned in .tool-versions
 pnpm install                          # root app deps
+npm --prefix functions ci --prefer-offline --no-audit  # standalone Functions deps
 git config core.hooksPath .githooks   # or `just setup`
 ```
 
@@ -34,14 +35,14 @@ let checks slow development or deployment**. The repo is public, so GitHub Actio
 free — the heavy lanes run REMOTELY on every merge, off the local critical path. Every check still
 runs MANDATORILY before code reaches a USER, each in exactly ONE lane, never twice on one path.
 
-| Lane                          | What it runs                                                                                                                           | Cost                           | Where                                      |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------------------------------ |
-| **pre-commit**                | doc-guard + `lint-staged` + fast unit lane                                                                                             | ~5 s                           | `.githooks/pre-commit`                     |
-| **pre-push → topic branch**   | no gate — topic branches are recoverable remote checkpoints                                                                            | instant                        | `.githooks/pre-push`                       |
-| **pre-push → `main`**         | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e**       | ~3 min (max of three, not sum) | `.githooks/pre-push`                       |
-| **per merge — CI** (`ci.yml`) | the SRD-only gate: typecheck + lint ∥ unit ∥ build + budget as **parallel jobs**, every push to `main` + every PR                      | ~4 min wall, free              | `.github/workflows/ci.yml`                 |
-| **per merge — Verify**        | the COMPOSED verdict: pack unit suite + the **full Playwright e2e matrix sharded 8×** across parallel runners, every push to `main`    | ~10 min wall, free             | `.github/workflows/verify.yml`             |
-| **deploy** (owner-fired)      | **PROMOTES a verified SHA** in Actions: green CI + Verify → build/budget → Firestore export → Functions → Hosting/rules → health gates | ~10–15 min                     | `deploy.yml` (`just deploy` dispatches it) |
+| Lane                          | What it runs                                                                                                                                      | Cost                           | Where                                      |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------------------------------ |
+| **pre-commit**                | doc-guard + `lint-staged` + fast unit lane                                                                                                        | ~5 s                           | `.githooks/pre-commit`                     |
+| **pre-push → topic branch**   | no gate — topic branches are recoverable remote checkpoints                                                                                       | instant                        | `.githooks/pre-push`                       |
+| **pre-push → `main`**         | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e**                  | ~3 min (max of three, not sum) | `.githooks/pre-push`                       |
+| **per merge — CI** (`ci.yml`) | the SRD-only gate: Functions lint + test + build ∥ typecheck + lint ∥ unit ∥ build + budget as **parallel jobs**, every push to `main` + every PR | ~4 min wall, free              | `.github/workflows/ci.yml`                 |
+| **per merge — Verify**        | the COMPOSED verdict: pack unit suite + the **full Playwright e2e matrix sharded 8×** across parallel runners, every push to `main`               | ~10 min wall, free             | `.github/workflows/verify.yml`             |
+| **deploy** (owner-fired)      | **PROMOTES a verified SHA** in Actions: green CI + Verify → build/budget → Firestore export → Functions → Hosting/rules → health gates            | ~10–15 min                     | `deploy.yml` (`just deploy` dispatches it) |
 
 > **Why `workers: 1` in CI, not 2.** A 2nd Playwright worker was measured and REJECTED: on the
 > 2-vCPU `ubuntu-latest` runner one worker already saturates the cores (a full-page Chromium render
@@ -96,8 +97,8 @@ double-running (golden rule 14). It refuses to promote a composition Verify neve
 newer merge).
 
 **The two remote workflows are the two compositions.** `ci.yml` verifies what the public tree IS
-(SRD-only — no secrets, no pack; parallel jobs so the wall clock is the slowest lane) on every
-push to `main` and every PR. `verify.yml` verifies what actually DEPLOYS (the composed build: it
+(SRD-only — no secrets, no pack; its independent Functions job runs `npm ci`, lint, test, and build;
+parallel jobs so the wall clock is the slowest lane) on every push to `main` and every PR. `verify.yml` verifies what actually DEPLOYS (the composed build: it
 checks out the private pack via `CONTENT_PACK_TOKEN`, runs the composed unit suite and the full
 sharded e2e matrix) on every push to `main`. Both green = both build modes green, remotely, per
 merge (golden rule 28). The local pre-push hook remains the last line of defence BEFORE a merge
@@ -218,8 +219,8 @@ and `VITE_CONTENT_PACK` ≠ `0`. Two lanes exist:
   which pin `VITE_CONTENT_PACK=0`). No pack suites, no coverage floors.
 - **Pack mode** — the maintainer's composition (the default wherever
   `content-pack/` exists): the full catalogue; the authoritative gate
-  (`just ci`: typecheck ∥ lint ∥ `test:coverage` with the coverage floors ∥
-  build) runs in this mode, and the pack's own suites
+  (`just ci`: typecheck ∥ lint ∥ app tests ∥ Functions tests ∥ build) runs in this mode, and the
+  pack's own suites
   (`content-pack/tests/unit/**`) join the same fast/slow vitest lanes.
 
 Every suite in `tests/unit` must pass in BOTH modes.

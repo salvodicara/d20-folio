@@ -1,8 +1,8 @@
 name: CI
 
 # The SRD-only ambient gate: every push to main and every pull request runs
-# typecheck + lint, the unit suite, and the production build — as PARALLEL jobs
-# so the wall clock is the slowest lane (the unit suite), not the sum.
+# typecheck + lint, the unit suite, the production build, and independent Functions lint/test/build
+# jobs — as PARALLEL jobs so the wall clock is the slowest lane (the unit suite), not the sum.
 #
 # SRD-only by construction: the public tree has no `content-pack/`, and the
 # `@pack` alias resolves by directory PRESENCE (scripts/content-pack-mode.ts;
@@ -26,6 +26,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  functions:
+    name: functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".tool-versions"
+          cache: "npm"
+          cache-dependency-path: functions/package-lock.json
+      - name: Install Functions dependencies
+        run: npm ci
+        working-directory: functions
+      - name: Lint Functions
+        run: npm run lint
+        working-directory: functions
+      - name: Test Functions
+        run: npm test
+        working-directory: functions
+      - name: Build Functions
+        run: npm run build
+        working-directory: functions
+
   static:
     name: typecheck + lint
     runs-on: ubuntu-latest

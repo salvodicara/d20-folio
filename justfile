@@ -10,6 +10,7 @@ default:
 # First-time setup (installs deps + git hooks)
 setup:
     pnpm install
+    npm --prefix functions ci --prefer-offline --no-audit
     git config core.hooksPath .githooks
     @echo "✓ Git hooks installed (.githooks/pre-push)"
 
@@ -39,6 +40,10 @@ check:
 test:
     pnpm test
 
+# Run Cloud Functions tests
+test-functions:
+    pnpm test:functions
+
 # Run tests in watch mode
 test-watch:
     pnpm test:watch
@@ -51,8 +56,8 @@ lint:
 fmt:
     pnpm format
 
-# Full CI check (typecheck + lint + test + build)
-ci: check lint test build
+# Full CI check (typecheck + lint + app tests + Functions tests + build)
+ci: check lint test test-functions build
 
 # The SRD-only lane — the composition the public repo snapshot builds:
 # `@pack` pinned to the typed-empty stub (VITE_CONTENT_PACK=0), pack suites
@@ -204,7 +209,7 @@ wt-new slug kind="feat":
         echo "→ no content pack → SRD-only mode (external-contributor gate)"
     fi
     echo "→ installing deps + git hooks…"
-    ( cd "$dest" && pnpm install --silent && git config core.hooksPath .githooks )
+    ( cd "$dest" && pnpm install --silent && npm --prefix functions ci --prefer-offline --no-audit && git config core.hooksPath .githooks )
     echo ""
     echo "✓ worktree ready: $dest   (branch $branch)"
     echo "  next:  cd $dest  →  work + commit per step  →  converge  →  rebase + push origin HEAD:main"
