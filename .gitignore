@@ -93,6 +93,7 @@ scratch_*
 
 # Throwaway screenshot-harness output (self-verify shots)
 scratch-shots/
+artifacts/visual-review/
 
 # Local one-off screenshot harness script — regenerable, never committed
 /_shot.mjs

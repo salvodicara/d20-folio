@@ -339,9 +339,9 @@ pnpm exec playwright test --list | tail -n 1
 
 **Dependency:** Task 3 has handed off C0/C2 and Task 7A has handed off the frozen census schema/index. This foundation integrates before any Tactical Codex slice uses a visual command.
 
-**Files:** Create `playwright.visual.config.ts`, `tests/visual/curated.spec.ts`, `tests/visual/motion.spec.ts`, `scripts/qa/perf-probe.ts`; modify `package.json`; create `.changeset/visual-review-lane.md`.
+**Files:** Create `playwright.visual.config.ts`, `tests/visual/census.ts`, `tests/visual/curated.spec.ts`, `tests/visual/motion.spec.ts`, `scripts/qa/perf-probe.ts`; modify `package.json`, `.gitignore`, and `docs/TEST_PORTFOLIO.md`; create `.changeset/visual-review-lane.md`.
 
-**Interfaces:** Both runners consume the Tactical Codex `surface-census/index.ts`; they do not create a second review manifest. Each census entry names board, route, state, locale/theme/viewport applicability, authority, call site, curated-review flag, and optional motion frames. Motion captures `entry`, `mid`, `settled`, `interrupted`, `exit`, and `reduced-motion`. Artifacts go to `artifacts/visual-review/`, never default test discovery.
+**Interfaces:** Both runners consume the Tactical Codex `surface-census/index.ts`; they do not create a second review manifest. `tests/visual/census.ts` deterministically aggregates named `SURFACE_CENSUS_FRAGMENT` exports with identity de-duplication and reruns `assertSurfaceCensus`. Each census entry names board, route, state, locale/theme/viewport applicability, authority, call site, curated-review flag, and optional motion frames. Motion captures `entry`, `mid`, `settled`, `interrupted`, `exit`, and `reduced`; browser emulation remains `prefers-reduced-motion: reduce`. Artifacts go to `artifacts/visual-review/`, never default test discovery.
 
 - [ ] Add `pnpm visual:review`, `pnpm visual:motion`, and explicit `pnpm qa:perf`; none appears in default Playwright discovery. Commands use zero retry and fail if a registered state cannot be reached. Do not delete any former harness yet.
 - [ ] Seed one detector-sensitivity specimen for curated and six-frame/reduced-motion capture, then verify the public commands:
