@@ -418,6 +418,7 @@ describe("Program Supervisor untrusted-data schemas", () => {
       ["branch", "feat/task-a.lock"],
       ["branch", "feat/@{task-a}"],
       ["branch", "feat/\u0001task-a"],
+      ["branch", "HEAD"],
     ] as const;
 
     for (const [field, value] of invalidValues) {
@@ -1662,6 +1663,56 @@ describe("Program Supervisor deterministic event coverage", () => {
         }),
       ])
     ).not.toThrow();
+  });
+
+  it("preserves activation history while the supervisor reconciles later authority", () => {
+    const terminal = bootstrapFixture();
+    const task = itemAt(terminal.tasks, 0);
+    task.state = "integrated";
+    task.receipt = "Remote integration proved.";
+    const provisioned = event(2, "supervisor-provisioned", provisionedIdentity());
+    const activated = event(3, "heartbeat-activated", activationProof());
+    const reconciled = event(4, "authority-reconciled", {
+      writerId: SUPERVISOR_THREAD_ID,
+      previousMainSha: SHA_B,
+      mainSha: SHA_C,
+      changes: [
+        { path: STATUS_OWNER_PATH, previousBlob: SHA_D, blob: SHA_E },
+        { path: LEASE_OWNER_PATH, previousBlob: SHA_A, blob: SHA_F },
+      ],
+      proof: "Supervisor reconciled the post-activation main authorities.",
+    });
+    const continued = event(5, "no-frontier-recorded", {
+      writerId: SUPERVISOR_THREAD_ID,
+      wayfinder: "automation-first",
+      receipt: "Supervisor continued after authority reconciliation.",
+    });
+
+    const afterReconciliation = replayEvents([
+      terminal,
+      provisioned,
+      activated,
+      reconciled,
+    ]);
+    expect(() => validateSnapshot(afterReconciliation.snapshot)).not.toThrow();
+    expect(afterReconciliation.snapshot.heartbeat).toMatchObject(activationProof());
+    expect(afterReconciliation.snapshot.authority).toMatchObject({
+      mainSha: SHA_C,
+      statusOwner: { path: STATUS_OWNER_PATH, blob: SHA_E },
+      repositoryLeaseOwners: [{ path: LEASE_OWNER_PATH, blob: SHA_F }],
+    });
+
+    const afterContinuation = replayEvents([
+      terminal,
+      provisioned,
+      activated,
+      reconciled,
+      continued,
+    ]);
+    expect(afterContinuation.snapshot.heartbeat).toEqual(
+      afterReconciliation.snapshot.heartbeat
+    );
+    expect(afterContinuation.snapshot.noFrontiers).toHaveLength(1);
   });
 
   it("rejects activation with an active lease or stale handoff proofs", () => {

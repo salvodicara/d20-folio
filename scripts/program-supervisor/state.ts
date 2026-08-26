@@ -533,6 +533,7 @@ function gitBranchAt(value: unknown, path: string): string {
   const branch = stringAt(value, path);
   const parts = branch.split("/");
   if (
+    branch === "HEAD" ||
     branch.includes("..") ||
     branch.includes("@{") ||
     parts.some(
@@ -1424,19 +1425,6 @@ function enforceProjectionSemantics(snapshot: ProgramSnapshot, path: string): vo
       snapshot.currentWriter.id !== snapshot.supervisor?.threadId
     ) {
       corruption(`${path}.currentWriter`, "active heartbeat requires supervisor writer");
-    }
-    if (
-      snapshot.heartbeat.finalMainSha !== snapshot.authority.mainSha ||
-      !sameAuthorityReference(
-        snapshot.heartbeat.statusOwner,
-        snapshot.authority.statusOwner
-      ) ||
-      !sameAuthorityReferenceSet(
-        snapshot.heartbeat.repositoryLeaseOwners,
-        snapshot.authority.repositoryLeaseOwners
-      )
-    ) {
-      corruption(`${path}.heartbeat`, "handoff authority does not match the manifest");
     }
   } else if (
     snapshot.currentWriter.kind !== "controller" ||
