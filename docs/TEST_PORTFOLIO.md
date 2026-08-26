@@ -131,5 +131,31 @@ unperformed handoff has no fabricated SHA.
 | C0    | T8A (this commit)            | 6efda521d6a0c3ecdd481628656fbb4c4a7792bb | Add isolated `visual:review`, `visual:motion`, and `qa:perf` commands without changing the lockfile; next owner is UI Task 1.                     | this commit | `pnpm visual:review -- --list`; `pnpm visual:motion -- --list`; `pnpm qa:perf -- --help`                        |
 | C1    | unassigned (next: UI Task 2) | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `src/app/router.tsx`, specimen/production i18n loaders, catalogue registration; future order UI Task 2 → owning UI catalogue slices → UI Task 15. | —           | Established at the approved handoff.                                                                            |
 | C2    | T8A (this commit)            | 6efda521d6a0c3ecdd481628656fbb4c4a7792bb | Add the isolated visual Playwright config and artifact/report root; ordinary `playwright.config.ts` stays untouched; next owner is T4.            | this commit | `pnpm exec playwright test --list` (2,331 / 62); `pnpm visual:review -- --list`; `pnpm visual:motion -- --list` |
-| C3    | unassigned (next: T3)        | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `.github/workflows/**`, `Justfile`; future order T3 → T6 → T14.                                                                                   | —           | Established at the approved handoff.                                                                            |
+| C3    | unassigned (next: T3)        | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `.github/workflows/**`; `Justfile` is exclusively leased by F0 until its recorded release.                                                        | —           | Established at the approved handoff; assign `Justfile` again only after the F0 handoff.                         |
 | C4    | T8A (this commit)            | 6efda521d6a0c3ecdd481628656fbb4c4a7792bb | Record the visual-lane foundation over T7A's census; `CAND-surface-sweeps` remains blocked pending T7B/T8B; next owner is T10/T14.                | this commit | `pnpm visual:review -- --grep detector`; `pnpm visual:motion -- --grep detector`                                |
+
+### F0 — Program Supervisor Foundation shared-path lease
+
+- **Holder and location:** `program-supervisor-foundation` in
+  `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-supervisor-foundation`, branch
+  `feat/program-supervisor-foundation`.
+- **Fresh base and term:** fetched `origin/main`
+  `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`; acquired
+  `2026-08-26T01:38:26Z`, expires `2026-08-27T01:38:26Z`.
+- **Exclusive paths:** `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`,
+  `docs/WORKTREES.md`, `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and
+  `scripts/program-supervisor/**`. This is a repository-authority lease only; it
+  does not claim a runtime lease before the runtime exists.
+- **Conflict receipt:** K1 is clean at
+  `7ae43494be58f92651b02a32de821c0d3f59fb98`; its fresh
+  `origin/main...HEAD` path set is disjoint from every F0 path. B00 is clean and
+  frozen at `7b66c828b1f181c22e5921abf678c436825bc089`; its committed candidate
+  overlaps `package.json` and `PROGRESS.md` (and related `pnpm-lock.yaml`), so it
+  is serialized behind F0. The clean private `main` checkout is
+  `1d5226f564d2c790f5409c294afe9d9ba6cc2ab7` and is read-only for this lease.
+- **Handoff:** release F0 only after remote integration proof or an evidence-backed
+  blocker/recovery disposition. Until then B00 receives no writer lease and may
+  not edit, rebase, or integrate its frozen candidate. After F0 integrates, B00
+  must freshly rebase onto the final F0 `origin/main`, explicitly reconcile
+  `package.json`, `PROGRESS.md`, and `pnpm-lock.yaml`, receive new review and all
+  visual gates, and never overwrite the integrated F0 authority.
