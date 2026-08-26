@@ -51,6 +51,7 @@ export interface RuntimeSnapshot extends ProgramSnapshot {
 export interface RecoveryState {
   recoverableTornTail: boolean;
   abandonedStaging: string[];
+  abandonedLockOwners: string[];
   staleLocks: string[];
   tornLedgers: string[];
 }
@@ -65,6 +66,7 @@ export interface RuntimeOptions {
   now?: () => Date;
   lockTimeoutMs?: number;
   beforeInitializeRename?: (stagingRoot: string) => void | Promise<void>;
+  afterLockOwnerDurable?: (ownerPath: string) => void | Promise<void>;
   afterLockPublish?: (lockPath: string) => void | Promise<void>;
   afterLockAcquired?: (lockPath: string) => void | Promise<void>;
   probePid?: (pid: number) => void;
@@ -427,6 +429,46 @@ async function listAbandonedStaging(
   return abandoned.sort();
 }
 
+async function listAbandonedLockOwners(
+  root: string,
+  options: RuntimeOptions
+): Promise<string[]> {
+  const entries = await readdir(root, { withFileTypes: true });
+  const abandoned: string[] = [];
+  for (const entry of entries) {
+    const match =
+      /^\.write-lock\.owner-(\d+)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.exec(
+        entry.name
+      );
+    if (!match) continue;
+    if (!entry.isFile()) {
+      throw new Error(
+        `Runtime write-lock owner candidate must be a regular file: ${entry.name}`
+      );
+    }
+    const filenamePid = Number(match[1]);
+    if (!Number.isSafeInteger(filenamePid) || filenamePid <= 0) {
+      throw new Error(
+        `Runtime write-lock owner filename has an invalid PID: ${entry.name}`
+      );
+    }
+    const owner = await readSecureFile(
+      join(root, entry.name),
+      "Runtime write-lock owner candidate"
+    );
+    const record = validateLock(
+      parseJson(owner.bytes, "Runtime write-lock owner candidate")
+    );
+    if (record.pid !== filenamePid) {
+      throw new Error(
+        `Runtime write-lock owner filename PID does not match its record: ${entry.name}`
+      );
+    }
+    if (!pidIsAlive(record.pid, options)) abandoned.push(entry.name);
+  }
+  return abandoned.sort();
+}
+
 async function recoveryState(
   root: string,
   options: RuntimeOptions = {}
@@ -435,6 +477,7 @@ async function recoveryState(
   return {
     recoverableTornTail: false,
     abandonedStaging: await listAbandonedStaging(root, options),
+    abandonedLockOwners: await listAbandonedLockOwners(root, options),
     staleLocks: entries
       .filter(
         (entry) =>
@@ -646,6 +689,8 @@ async function publishCompleteLock(
   };
   let published = false;
   try {
+    await fsyncDirectory(root);
+    await options.afterLockOwnerDurable?.(ownerPath);
     await link(ownerPath, lockPath);
     published = true;
     const canonical = await lstat(lockPath);
@@ -680,7 +725,9 @@ async function acquireLock(
   }
   const started = Date.now();
   let lastReason = "Runtime write lock is busy";
-  while (Date.now() - started <= timeout) {
+  let retryRecoveredLock = false;
+  while (retryRecoveredLock || Date.now() - started <= timeout) {
+    retryRecoveredLock = false;
     const acquired = await publishCompleteLock(root, options);
     if (acquired) return acquired;
     try {
@@ -690,7 +737,10 @@ async function acquireLock(
           throw inspectionError;
         }
       );
-      if (disposition === "recovered") continue;
+      if (disposition === "recovered") {
+        retryRecoveredLock = true;
+        continue;
+      }
       lastReason = disposition;
     } catch (error) {
       if (errorCode(error) === "ENOENT") continue;

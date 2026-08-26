@@ -500,6 +500,104 @@ describe("Program Supervisor atomic runtime", () => {
     expect(recovered.recoveryState.staleLocks).toHaveLength(1);
   });
 
+  it("surfaces a complete abandoned owner inode when its process dies before lock publication", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    const source = [
+      `import { loadRuntime } from ${JSON.stringify(RUNTIME_URL)};`,
+      `await loadRuntime(process.argv[1], {`,
+      `  now: () => new Date("2026-08-26T01:00:00.000Z"),`,
+      `  afterLockOwnerDurable: () => process.exit(93),`,
+      `});`,
+    ].join("\n");
+
+    const crashed = spawnSync(
+      process.execPath,
+      ["--input-type=module", "-e", source, root],
+      { cwd: process.cwd(), encoding: "utf8" }
+    );
+    expect(crashed.status).toBe(93);
+    await expect(lstat(join(root, ".write-lock"))).rejects.toMatchObject({
+      code: "ENOENT",
+    });
+    const ownerNames = (await readdir(root)).filter((name) =>
+      /^\.write-lock\.owner-\d+-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
+        name
+      )
+    );
+    expect(ownerNames).toHaveLength(1);
+    const ownerName = itemAt(ownerNames, 0);
+    const ownerPath = join(root, ownerName);
+    expect((await stat(ownerPath)).mode & 0o7777).toBe(0o600);
+    expect(JSON.parse(await readFile(ownerPath, "utf8"))).toEqual({
+      schemaVersion: 1,
+      pid: crashed.pid,
+      acquiredAt: "2026-08-26T01:00:00.000Z",
+    });
+
+    const loaded = await loadRuntime(root);
+    expect(loaded.recoveryState.abandonedLockOwners).toEqual([ownerName]);
+    expect(await readFile(ownerPath, "utf8")).not.toHaveLength(0);
+    expect(loaded.snapshot.lastEventSeq).toBe(1);
+  });
+
+  it("validates abandoned owner candidates and fails closed on unknown PID probes", async () => {
+    const uuid = "12345678-1234-4234-8234-123456789abc";
+    const mismatchedRoot = await makeRoot();
+    await initializeRuntime(mismatchedRoot, bootstrapInput());
+    const mismatchedPath = join(mismatchedRoot, `.write-lock.owner-42-${uuid}`);
+    await writeSecureJson(mismatchedPath, {
+      schemaVersion: 1,
+      pid: 43,
+      acquiredAt: "2026-08-26T01:00:00.000Z",
+    });
+    await expect(loadRuntime(mismatchedRoot)).rejects.toThrow(/filename.*PID/i);
+
+    const unsafeRoot = await makeRoot();
+    await initializeRuntime(unsafeRoot, bootstrapInput());
+    const unsafePath = join(unsafeRoot, `.write-lock.owner-42-${uuid}`);
+    await writeSecureJson(unsafePath, {
+      schemaVersion: 1,
+      pid: 42,
+      acquiredAt: "2026-08-26T01:00:00.000Z",
+    });
+    await chmod(unsafePath, 0o644);
+    await expect(loadRuntime(unsafeRoot)).rejects.toThrow(/mode 0600/i);
+
+    const unknownRoot = await makeRoot();
+    await initializeRuntime(unknownRoot, bootstrapInput());
+    const unknownPath = join(unknownRoot, `.write-lock.owner-42-${uuid}`);
+    await writeSecureJson(unknownPath, {
+      schemaVersion: 1,
+      pid: 42,
+      acquiredAt: "2026-08-26T01:00:00.000Z",
+    });
+    await expect(
+      loadRuntime(unknownRoot, {
+        probePid: () => {
+          throw Object.assign(new Error("invalid platform PID"), { code: "EINVAL" });
+        },
+      })
+    ).rejects.toThrow(/cannot prove.*PID.*EINVAL/i);
+    expect((await stat(unknownPath)).isFile()).toBe(true);
+
+    const inaccessibleRoot = await makeRoot();
+    await initializeRuntime(inaccessibleRoot, bootstrapInput());
+    const inaccessiblePath = join(inaccessibleRoot, `.write-lock.owner-42-${uuid}`);
+    await writeSecureJson(inaccessiblePath, {
+      schemaVersion: 1,
+      pid: 42,
+      acquiredAt: "2026-08-26T01:00:00.000Z",
+    });
+    const inaccessible = await loadRuntime(inaccessibleRoot, {
+      probePid: () => {
+        throw Object.assign(new Error("permission denied"), { code: "EPERM" });
+      },
+    });
+    expect(inaccessible.recoveryState.abandonedLockOwners).toEqual([]);
+    expect((await stat(inaccessiblePath)).isFile()).toBe(true);
+  });
+
   it("does not unlink a successor that replaces the acquired lock pathname", async () => {
     const root = await makeRoot();
     await initializeRuntime(root, bootstrapInput());
@@ -845,6 +943,7 @@ describe("Program Supervisor bootstrap identity and CLI", () => {
       valid: true,
       tasks: 3,
       lastEventSeq: 1,
+      recoveryState: { abandonedLockOwners: [] },
     });
 
     const validated = runCli([
@@ -859,6 +958,7 @@ describe("Program Supervisor bootstrap identity and CLI", () => {
       valid: true,
       bootstrapFingerprint: initSummary.bootstrapFingerprint,
       activeLeases: { writers: 1, evaluators: 0, total: 1 },
+      recoveryState: { abandonedLockOwners: [] },
     });
 
     const retried = runCli(["init", "--root", root, "--bootstrap-file", bootstrapPath]);
