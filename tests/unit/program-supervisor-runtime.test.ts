@@ -827,7 +827,7 @@ describe("Program Supervisor private bare-Git runtime", () => {
     await initializeRuntime(root, bootstrapInput());
     const payload = join(dirname(root), "large-sparse-payload");
     const payloadHandle = await open(payload, "w");
-    await payloadHandle.truncate(512 * 1024 * 1024);
+    await payloadHandle.truncate(128 * 1024 * 1024);
     await payloadHandle.close();
     const child = spawn(
       "/usr/bin/git",
@@ -836,6 +836,10 @@ describe("Program Supervisor private bare-Git runtime", () => {
         "core.fsync=all",
         "-c",
         "core.fsyncMethod=fsync",
+        "-c",
+        "core.bigFileThreshold=1g",
+        "-c",
+        "core.looseCompression=0",
         `--git-dir=${root}`,
         "hash-object",
         "-w",
@@ -844,18 +848,22 @@ describe("Program Supervisor private bare-Git runtime", () => {
       { env: GIT_TEST_ENV, stdio: ["ignore", "pipe", "pipe"] }
     );
     activeChildren.push(child);
-    await waitFor(
-      async () => (await findObjectTemps(root)).length > 0,
-      "Git object temp"
-    );
     const exit = new Promise<{ code: number | null; signal: string | null }>(
       (resolveExit) => {
         child.once("exit", (code, signal) => resolveExit({ code, signal }));
       }
     );
-    child.kill("SIGKILL");
+    let residues: string[] = [];
+    await waitFor(async () => {
+      residues = await findObjectTemps(root);
+      if (residues.length > 0) return true;
+      if (child.exitCode !== null || child.signalCode !== null) {
+        throw new Error("Git exited before creating its loose-object temporary");
+      }
+      return false;
+    }, "Git object temp");
+    expect(child.kill("SIGKILL")).toBe(true);
     expect((await exit).signal).toBe("SIGKILL");
-    const residues = await findObjectTemps(root);
     expect(residues).not.toEqual([]);
     const before = await Promise.all(residues.map((path) => lstat(path)));
 
