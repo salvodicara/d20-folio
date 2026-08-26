@@ -34,6 +34,7 @@
 
 - `scripts/program-supervisor/worktree.ts` — resolve and validate the one legal local task root and task worktree path.
 - `scripts/program-supervisor/bootstrap-worktree.sh` — install both package trees with the exact pinned Node runtime.
+- `scripts/program-supervisor/adapter-preflight.sh` — require every adapter invoker, including program-control, to be the exact registered, clean, fresh worktree of this repository.
 - `scripts/program-supervisor/state.ts` — runtime-state types, validation, transition rules, and deterministic projection from the append-only event ledger.
 - `scripts/program-supervisor/runtime.ts` — atomic filesystem loading, initialization, event append, cache rebuild, and verification.
 - `scripts/program-supervisor/cli.ts` — `init`, `validate`, `append`, and `rebuild` command boundary.
@@ -102,6 +103,7 @@ Add an empty-package Changeset stating “Acquire the Program Supervisor Foundat
 
 - Create: `scripts/program-supervisor/worktree.ts`
 - Create: `scripts/program-supervisor/bootstrap-worktree.sh`
+- Create: `scripts/program-supervisor/adapter-preflight.sh`
 - Create: `tests/unit/program-supervisor-worktree.test.ts`
 - Modify: `justfile`
 - Modify: `docs/WORKTREES.md`
@@ -256,6 +258,11 @@ Create `scripts/program-supervisor/bootstrap-worktree.sh` with this behavior:
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [ "${1:-}" = "--run" ] && [ "$#" -lt 2 ]; then
+  echo "Use: bootstrap-worktree.sh --run COMMAND [ARG...]" >&2
+  exit 1
+fi
+
 required_node="$(awk '$1 == "nodejs" { print $2 }' .tool-versions)"
 [ "$required_node" = "24.16.0" ] || { echo "Unexpected Node pin: $required_node" >&2; exit 1; }
 
@@ -313,6 +320,8 @@ branch="$kind_value/$slug_value"
 ```
 
 The `candidate` command validates the nearest existing physical ancestor before `mkdir`; `root` then proves the created root itself is physical and unsynchronized. No `{{slug}}` or `{{kind}}` text appears inside shell code. This follows the [official Just exported-argument boundary](https://just.systems/man/en/avoiding-argument-splitting.html) and remains safe for quotes or shell metacharacters before the typed lowercase-slug rejection.
+
+Both recipes call one `adapter-preflight.sh` first. It rejects the shared checkout, fetches `origin/main`, and then requires every invoker—including the path named `d20-folio-program-control`—to be the exact canonical root of a registered worktree whose Git common directory equals this repository's common directory, whose tracked/untracked status is clean, and whose HEAD equals that fresh remote. A basename never grants authority; unrelated same-name repositories, unregistered paths, wrong-common-dir worktrees, dirty control, and stale control all fail closed.
 
 After `git worktree add`, invoke `scripts/program-supervisor/bootstrap-worktree.sh` from the new worktree. Replicate the content-pack link as the absolute physical target returned by `cd "$main_root/content-pack" && pwd -P`; never reuse a relative link whose meaning changes under `~/Workspace/Codex`. The recipe is a manual/same-thread adapter invoked only from `d20-folio-program-control` or another worktree whose HEAD was just proven equal to fresh `origin/main`; explicitly document that pushing this change does not update the shared checkout and that its stale recipe must never be invoked.
 

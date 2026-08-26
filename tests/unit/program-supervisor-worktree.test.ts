@@ -146,6 +146,9 @@ function createAdapterFixture() {
   const origin = join(root, "origin.git");
   const allowed = join(root, "d20-folio-approved");
   const control = join(root, "d20-folio-program-control");
+  const unrelatedControl = join(root, "unrelated", "d20-folio-program-control");
+  const wrongCommonMain = join(root, "wrong-common-main");
+  const wrongCommonWorktree = join(root, "wrong-common-worktree");
   mkdirSync(main);
   runChecked("git", ["init", "-q", "-b", "main"], main);
   runChecked("git", ["config", "user.email", "test@example.com"], main);
@@ -175,7 +178,35 @@ function createAdapterFixture() {
   runChecked("git", ["worktree", "add", "--detach", allowed, "origin/main"], main);
   runChecked("git", ["worktree", "add", "--detach", control, "origin/main"], main);
 
-  return { allowed, control, main, root };
+  mkdirSync(unrelatedControl, { recursive: true });
+  runChecked("git", ["init", "-q", "-b", "main"], unrelatedControl);
+  runChecked("git", ["config", "user.email", "test@example.com"], unrelatedControl);
+  runChecked("git", ["config", "user.name", "Test User"], unrelatedControl);
+  writeFileSync(join(unrelatedControl, "README.md"), "unrelated\n");
+  runChecked("git", ["add", "."], unrelatedControl);
+  runChecked("git", ["commit", "-qm", "unrelated"], unrelatedControl);
+
+  mkdirSync(wrongCommonMain);
+  runChecked("git", ["init", "-q", "-b", "main"], wrongCommonMain);
+  runChecked("git", ["config", "user.email", "test@example.com"], wrongCommonMain);
+  runChecked("git", ["config", "user.name", "Test User"], wrongCommonMain);
+  writeFileSync(join(wrongCommonMain, "README.md"), "wrong common\n");
+  runChecked("git", ["add", "."], wrongCommonMain);
+  runChecked("git", ["commit", "-qm", "wrong common"], wrongCommonMain);
+  runChecked(
+    "git",
+    ["worktree", "add", "--detach", wrongCommonWorktree, "HEAD"],
+    wrongCommonMain
+  );
+
+  return {
+    allowed,
+    control,
+    main,
+    root,
+    unrelatedControl,
+    wrongCommonWorktree,
+  };
 }
 
 describe("program supervisor worktree coordinates", () => {
@@ -270,10 +301,24 @@ describe("program supervisor bootstrap", () => {
       rmSync(fixture.root, { recursive: true, force: true });
     }
   });
+
+  it("rejects --run without a command", () => {
+    const fixture = createBootstrapFixture();
+    try {
+      const toolchain = createFakeToolchain(fixture.root);
+      const result = fixture.runBootstrap(["--run"], toolchain.env);
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain(
+        "Use: bootstrap-worktree.sh --run COMMAND [ARG...]"
+      );
+    } finally {
+      rmSync(fixture.root, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("program supervisor adapter authority", () => {
-  it("rejects the shared, dirty, and stale checkout while permitting program control", () => {
+  it("accepts only a registered clean worktree at fresh origin/main", () => {
     const fixture = createAdapterFixture();
     const preflight = join(supervisorRoot, "adapter-preflight.sh");
     try {
@@ -282,6 +327,15 @@ describe("program supervisor adapter authority", () => {
       expect(shared.stderr).toContain("shared checkout");
 
       expect(run(preflight, [fixture.main], fixture.allowed).status).toBe(0);
+      expect(run(preflight, [fixture.main], fixture.control).status).toBe(0);
+
+      const unrelated = run(preflight, [fixture.main], fixture.unrelatedControl);
+      expect(unrelated.status).toBe(1);
+      expect(unrelated.stderr).toContain("exact Git common directory");
+
+      const wrongCommon = run(preflight, [fixture.main], fixture.wrongCommonWorktree);
+      expect(wrongCommon.status).toBe(1);
+      expect(wrongCommon.stderr).toContain("exact Git common directory");
 
       writeFileSync(join(fixture.allowed, "dirty.txt"), "dirty\n");
       const dirty = run(preflight, [fixture.main], fixture.allowed);
@@ -294,7 +348,27 @@ describe("program supervisor adapter authority", () => {
       const stale = run(preflight, [fixture.main], fixture.allowed);
       expect(stale.status).toBe(1);
       expect(stale.stderr).toContain("fresh origin/main");
-      expect(run(preflight, [fixture.main], fixture.control).status).toBe(0);
+
+      const staleControl = run(preflight, [fixture.main], fixture.control);
+      expect(staleControl.status).toBe(1);
+      expect(staleControl.stderr).toContain("fresh origin/main");
+    } finally {
+      rmSync(fixture.root, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects dirty program control and an unregistered same-name directory", () => {
+    const fixture = createAdapterFixture();
+    const preflight = join(supervisorRoot, "adapter-preflight.sh");
+    try {
+      writeFileSync(join(fixture.control, "dirty.txt"), "dirty\n");
+      const dirtyControl = run(preflight, [fixture.main], fixture.control);
+      expect(dirtyControl.status).toBe(1);
+      expect(dirtyControl.stderr).toContain("clean invoking worktree");
+
+      const unrelated = run(preflight, [fixture.main], fixture.unrelatedControl);
+      expect(unrelated.status).toBe(1);
+      expect(unrelated.stderr).toContain("exact Git common directory");
     } finally {
       rmSync(fixture.root, { recursive: true, force: true });
     }

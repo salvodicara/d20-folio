@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [ "${1:-}" = "--run" ] && [ "$#" -lt 2 ]; then
+  echo "Use: bootstrap-worktree.sh --run COMMAND [ARG...]" >&2
+  exit 1
+fi
+
 required_node="$(awk '$1 == "nodejs" { print $2 }' .tool-versions)"
 [ "$required_node" = "24.16.0" ] || { echo "Unexpected Node pin: $required_node" >&2; exit 1; }
 
