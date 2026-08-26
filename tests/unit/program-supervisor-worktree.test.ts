@@ -176,15 +176,11 @@ printf '%s\\n' "$FAKE_NODE_ROOT"
   };
 }
 
-function createAdapterFixture() {
+function createAuthorizedAdapterFixture() {
   const root = mkdtempSync(join(tmpdir(), "d20-adapter-"));
   const main = join(root, "d20-folio");
   const origin = join(root, "origin.git");
   const allowed = join(root, "d20-folio-approved");
-  const control = join(root, "d20-folio-program-control");
-  const unrelatedControl = join(root, "unrelated", "d20-folio-program-control");
-  const wrongCommonMain = join(root, "wrong-common-main");
-  const wrongCommonWorktree = join(root, "wrong-common-worktree");
   mkdirSync(main);
   runChecked("git", ["init", "-q", "-b", "main"], main);
   runChecked("git", ["config", "user.email", "test@example.com"], main);
@@ -212,6 +208,17 @@ function createAdapterFixture() {
   runChecked("git", ["remote", "add", "origin", origin], main);
   runChecked("git", ["push", "-qu", "origin", "main"], main);
   runChecked("git", ["worktree", "add", "--detach", allowed, "origin/main"], main);
+
+  return { allowed, main, origin, root };
+}
+
+function createAdapterFixture() {
+  const fixture = createAuthorizedAdapterFixture();
+  const { main, root } = fixture;
+  const control = join(root, "d20-folio-program-control");
+  const unrelatedControl = join(root, "unrelated", "d20-folio-program-control");
+  const wrongCommonMain = join(root, "wrong-common-main");
+  const wrongCommonWorktree = join(root, "wrong-common-worktree");
   runChecked("git", ["worktree", "add", "--detach", control, "origin/main"], main);
 
   mkdirSync(unrelatedControl, { recursive: true });
@@ -236,10 +243,8 @@ function createAdapterFixture() {
   );
 
   return {
-    allowed,
+    ...fixture,
     control,
-    main,
-    root,
     unrelatedControl,
     wrongCommonWorktree,
   };
@@ -481,7 +486,7 @@ describe("program supervisor adapter authority", () => {
   });
 
   it("creates from the origin/main proven by the single adapter fetch", () => {
-    const fixture = createAdapterFixture();
+    const fixture = createAuthorizedAdapterFixture();
     const home = join(fixture.root, "home");
     const advancer = join(fixture.root, "remote-advancer");
     const gitBin = join(fixture.root, "git-bin");
@@ -493,7 +498,7 @@ describe("program supervisor adapter authority", () => {
     mkdirSync(gitBin);
     runChecked(
       "git",
-      ["clone", "-q", "--branch", "main", join(fixture.root, "origin.git"), advancer],
+      ["clone", "-q", "--branch", "main", fixture.origin, advancer],
       fixture.root
     );
     runChecked("git", ["config", "user.email", "test@example.com"], advancer);
