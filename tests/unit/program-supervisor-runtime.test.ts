@@ -1,9 +1,11 @@
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   chmod,
   lstat,
   mkdir,
   mkdtemp,
+  open,
   readFile,
   readdir,
   rm,
@@ -12,6 +14,7 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -22,6 +25,7 @@ import {
   loadRuntime,
   rebuildRuntime,
   type RuntimeOptions,
+  type RuntimeProjection,
 } from "../../scripts/program-supervisor/runtime";
 
 const SHA_A = "a".repeat(40);
@@ -47,8 +51,29 @@ const STATUS_OWNER_PATH = "docs/PROGRAM_STATUS.md";
 const CLI_PATH = resolve("scripts/program-supervisor/cli.ts");
 const RUNTIME_URL = pathToFileURL(resolve("scripts/program-supervisor/runtime.ts")).href;
 const CONTROLLER_WRITER_ID = "program-supervisor-bootstrap-controller";
+const GIT_TEST_ENV = {
+  PATH: "/usr/bin:/bin",
+  LANG: "C",
+  LC_ALL: "C",
+  TZ: "UTC",
+  GIT_CONFIG_NOSYSTEM: "1",
+  GIT_CONFIG_SYSTEM: "/dev/null",
+  GIT_CONFIG_GLOBAL: "/dev/null",
+  GIT_CONFIG_NOREPLACEOBJECTS: "1",
+  GIT_NO_REPLACE_OBJECTS: "1",
+  GIT_TERMINAL_PROMPT: "0",
+};
 
 const temporaryParents: string[] = [];
+const activeChildren: ReturnType<typeof spawn>[] = [];
+type RuntimeTestOptions = RuntimeOptions & {
+  afterTipRead?: (tip: string) => void | Promise<void>;
+  onGitCommand?: (args: readonly string[]) => void;
+};
+const loadRuntimeWithOptions = loadRuntime as unknown as (
+  root: string,
+  options: RuntimeTestOptions
+) => Promise<RuntimeProjection>;
 
 function authorityPointer(repository = PROGRAM_REPOSITORY, repositoryLeaseId = "F0") {
   return {
@@ -220,11 +245,11 @@ async function writeSecureJson(path: string, value: unknown): Promise<void> {
   await chmod(path, 0o600);
 }
 
-function runCli(args: readonly string[]) {
+function runCli(args: readonly string[], environment: NodeJS.ProcessEnv = process.env) {
   return spawnSync(process.execPath, [CLI_PATH, ...args], {
     cwd: process.cwd(),
     encoding: "utf8",
-    env: { ...process.env, NO_COLOR: "1" },
+    env: { ...environment, NO_COLOR: "1" },
   });
 }
 
@@ -242,18 +267,7 @@ function gitRaw(root: string, args: readonly string[], input?: string): string {
     {
       encoding: "utf8",
       input,
-      env: {
-        PATH: "/usr/bin:/bin",
-        LANG: "C",
-        LC_ALL: "C",
-        TZ: "UTC",
-        GIT_CONFIG_NOSYSTEM: "1",
-        GIT_CONFIG_SYSTEM: "/dev/null",
-        GIT_CONFIG_GLOBAL: "/dev/null",
-        GIT_CONFIG_NOREPLACEOBJECTS: "1",
-        GIT_NO_REPLACE_OBJECTS: "1",
-        GIT_TERMINAL_PROMPT: "0",
-      },
+      env: GIT_TEST_ENV,
     }
   );
   if (result.status !== 0) {
@@ -311,16 +325,7 @@ function createCommit(
       encoding: "utf8",
       input: `d20-folio program event ${seq}\n`,
       env: {
-        PATH: "/usr/bin:/bin",
-        LANG: "C",
-        LC_ALL: "C",
-        TZ: "UTC",
-        GIT_CONFIG_NOSYSTEM: "1",
-        GIT_CONFIG_SYSTEM: "/dev/null",
-        GIT_CONFIG_GLOBAL: "/dev/null",
-        GIT_CONFIG_NOREPLACEOBJECTS: "1",
-        GIT_NO_REPLACE_OBJECTS: "1",
-        GIT_TERMINAL_PROMPT: "0",
+        ...GIT_TEST_ENV,
         GIT_AUTHOR_NAME: "d20 Folio Program Supervisor",
         GIT_AUTHOR_EMAIL: "program-supervisor@localhost",
         GIT_COMMITTER_NAME: "d20 Folio Program Supervisor",
@@ -338,6 +343,143 @@ function publish(root: string, next: string, previous: string): void {
   git(root, ["update-ref", "--no-deref", EVENT_REF, next, previous]);
 }
 
+function createEvidenceCommit(
+  root: string,
+  parent: string,
+  id: string,
+  seq: number,
+  at = "2026-08-26T02:02:00.000Z"
+): string {
+  const bootstrapOid = git(root, ["rev-parse", `${parent}:bootstrap.json`]);
+  const eventOid = git(
+    root,
+    ["hash-object", "-w", "--stdin"],
+    canonicalBytes({ ...evidenceInput(id), seq, at })
+  );
+  return createCommit(
+    root,
+    createTree(root, [
+      { oid: bootstrapOid, name: "bootstrap.json" },
+      { oid: eventOid, name: "event.json" },
+    ]),
+    [parent],
+    seq,
+    at
+  );
+}
+
+async function waitFor(
+  predicate: () => boolean | Promise<boolean>,
+  label: string
+): Promise<void> {
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    if (await predicate()) return;
+    await delay(10);
+  }
+  throw new Error(`Timed out waiting for ${label}`);
+}
+
+async function prepareRefTransaction(
+  root: string,
+  next: string,
+  previous: string
+): Promise<{ commit: () => Promise<void> }> {
+  const child = spawn(
+    "/usr/bin/git",
+    [
+      "-c",
+      "core.fsync=all",
+      "-c",
+      "core.fsyncMethod=fsync",
+      `--git-dir=${root}`,
+      "update-ref",
+      "--stdin",
+    ],
+    { env: GIT_TEST_ENV, stdio: ["pipe", "pipe", "pipe"] }
+  );
+  activeChildren.push(child);
+  let stdout = "";
+  let stderr = "";
+  child.stdout.setEncoding("utf8");
+  child.stderr.setEncoding("utf8");
+  child.stdout.on("data", (chunk: string) => {
+    stdout += chunk;
+  });
+  child.stderr.on("data", (chunk: string) => {
+    stderr += chunk;
+  });
+  child.stdin.write(`start\nupdate ${EVENT_REF} ${next} ${previous}\nprepare\n`);
+  await waitFor(() => stdout.includes("prepare: ok"), "prepared update-ref lock");
+  return {
+    commit: async () => {
+      child.stdin.end("commit\n");
+      const result = await new Promise<{ code: number | null; signal: string | null }>(
+        (resolveExit) => {
+          child.once("exit", (code, signal) => resolveExit({ code, signal }));
+        }
+      );
+      if (result.code !== 0) {
+        throw new Error(`prepared update-ref failed: ${stderr || stdout}`);
+      }
+    },
+  };
+}
+
+async function findObjectTemps(root: string): Promise<string[]> {
+  const found: string[] = [];
+  async function visit(path: string): Promise<void> {
+    for (const entry of await readdir(path, { withFileTypes: true })) {
+      const child = join(path, entry.name);
+      if (entry.name.startsWith("tmp_obj_")) found.push(child);
+      if (entry.isDirectory()) await visit(child);
+    }
+  }
+  await visit(join(root, "objects"));
+  return found.sort();
+}
+
+interface ManifestEntry {
+  path: string;
+  kind: "directory" | "file";
+  inode: string;
+  mode: number;
+  size: string;
+  mtimeNs: string;
+  bytes?: string;
+  sha256?: string;
+}
+
+async function recursiveManifest(root: string): Promise<ManifestEntry[]> {
+  const result: ManifestEntry[] = [];
+  async function visit(path: string, relativePath: string): Promise<void> {
+    const metadata = await lstat(path, { bigint: true });
+    const entry: ManifestEntry = {
+      path: relativePath,
+      kind: metadata.isDirectory() ? "directory" : "file",
+      inode: `${metadata.dev}:${metadata.ino}`,
+      mode: Number(metadata.mode & 0o7777n),
+      size: metadata.size.toString(),
+      mtimeNs: metadata.mtimeNs.toString(),
+    };
+    if (metadata.isFile()) {
+      const bytes = await readFile(path);
+      entry.bytes = bytes.toString("base64");
+      entry.sha256 = createHash("sha256").update(bytes).digest("hex");
+    }
+    result.push(entry);
+    if (metadata.isDirectory()) {
+      for (const name of (await readdir(path)).sort()) {
+        await visit(
+          join(path, name),
+          relativePath === "." ? name : join(relativePath, name)
+        );
+      }
+    }
+  }
+  await visit(root, ".");
+  return result;
+}
+
 async function storeResidues(root: string): Promise<string[]> {
   const residues: string[] = [];
   async function visit(path: string): Promise<void> {
@@ -345,6 +487,7 @@ async function storeResidues(root: string): Promise<string[]> {
       const fullPath = join(path, entry.name);
       if (
         entry.name.endsWith(".lock") ||
+        entry.name.startsWith("tmp_obj_") ||
         entry.name.endsWith(".tmp") ||
         entry.name.includes("write-lock") ||
         ["events.ndjson", "program.json", "leases.json"].includes(entry.name)
@@ -359,6 +502,9 @@ async function storeResidues(root: string): Promise<string[]> {
 }
 
 afterEach(async () => {
+  for (const child of activeChildren.splice(0)) {
+    if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+  }
   await Promise.all(
     temporaryParents
       .splice(0)
@@ -452,6 +598,52 @@ describe("Program Supervisor private bare-Git runtime", () => {
     ]);
   });
 
+  it("waits for a real prepared update-ref transaction before retrying from its committed tip", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    const previous = refTip(root);
+    const competing = createEvidenceCommit(root, previous, "prepared-writer", 2);
+    const transaction = await prepareRefTransaction(root, competing, previous);
+
+    const observed = appendEvent(root, evidenceInput("waiting-writer"), {
+      now: () => new Date("2026-08-26T02:03:00.000Z"),
+    }).then(
+      (value) => ({ value, error: undefined }),
+      (error: unknown) => ({ value: undefined, error })
+    );
+    await delay(50);
+    await transaction.commit();
+    const outcome = await observed;
+
+    expect(outcome.error).toBeUndefined();
+    expect(outcome.value?.snapshot.lastEventSeq).toBe(3);
+    expect(outcome.value?.snapshot.tasks[0]?.evidence.map(({ id }) => id).sort()).toEqual(
+      ["prepared-writer", "waiting-writer"]
+    );
+  });
+
+  it("validates one captured ref linearization point when a cooperating writer advances later", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    const previous = refTip(root);
+    const next = createEvidenceCommit(root, previous, "load-advance", 2);
+    let advanced = 0;
+
+    const loaded = await loadRuntimeWithOptions(root, {
+      afterTipRead: (captured) => {
+        expect(captured).toBe(previous);
+        publish(root, next, previous);
+        advanced += 1;
+      },
+    });
+
+    expect(advanced).toBe(1);
+    expect(loaded.store.tip).toBe(previous);
+    expect(loaded.snapshot.lastEventSeq).toBe(1);
+    expect(refTip(root)).toBe(next);
+    expect((await loadRuntime(root)).snapshot.lastEventSeq).toBe(2);
+  });
+
   it("adopts a successful CAS whose command result is lost", async () => {
     const root = await makeRoot();
     await initializeRuntime(root, bootstrapInput());
@@ -468,6 +660,43 @@ describe("Program Supervisor private bare-Git runtime", () => {
     expect(injected).toBe(1);
     expect(result.snapshot.lastEventSeq).toBe(2);
     expect((await loadRuntime(root)).snapshot.lastEventSeq).toBe(2);
+  });
+
+  it("validates its accepted candidate and returns a later cooperating descendant", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    let candidate: string | undefined;
+    let descendant: string | undefined;
+    let advanced = 0;
+    const options: RuntimeTestOptions = {
+      now: () => new Date("2026-08-26T02:03:00.000Z"),
+      afterPublish: (published) => {
+        candidate = published;
+        descendant = createEvidenceCommit(
+          root,
+          published,
+          "post-cas-descendant",
+          3,
+          "2026-08-26T02:04:00.000Z"
+        );
+      },
+      afterTipRead: (captured) => {
+        if (captured === candidate && descendant) {
+          publish(root, descendant, captured);
+          advanced += 1;
+        }
+      },
+    };
+
+    const result = await appendEvent(root, evidenceInput("accepted-candidate"), options);
+
+    expect(advanced).toBe(1);
+    expect(result.store.tip).toBe(descendant);
+    expect(result.snapshot.lastEventSeq).toBe(3);
+    expect(result.snapshot.tasks[0]?.evidence.map(({ id }) => id)).toEqual([
+      "accepted-candidate",
+      "post-cas-descendant",
+    ]);
   });
 
   it("does not retry an update failure whose tip did not change", async () => {
@@ -513,6 +742,27 @@ describe("Program Supervisor private bare-Git runtime", () => {
     expect(await readFile(join(root, "crash-receipt"), "utf8")).toBe("incomplete\n");
   });
 
+  it("rejects an unsafe immediate runtime parent through the exported API and CLI", async () => {
+    const root = await makeRoot("existing-runtime");
+    const parent = dirname(root);
+    const bootstrapPath = join(parent, "bootstrap.json");
+    await writeSecureJson(bootstrapPath, bootstrapInput());
+    await initializeRuntime(root, bootstrapInput());
+    await chmod(parent, 0o777);
+    try {
+      expect((await lstat(parent)).uid).toBe(process.getuid?.());
+      await expect(loadRuntime(root)).rejects.toThrow(/parent.*writable|parent.*mode/i);
+      await expect(
+        initializeRuntime(join(parent, "new-runtime"), bootstrapInput())
+      ).rejects.toThrow(/parent.*writable|parent.*mode/i);
+      const cli = runCli(["validate", "--root", root]);
+      expect(cli.status).not.toBe(0);
+      expect(cli.stderr).toMatch(/parent.*writable|parent.*mode/i);
+    } finally {
+      await chmod(parent, 0o700);
+    }
+  });
+
   it("allows exactly one concurrent initializer to claim an absent root", async () => {
     const root = await makeRoot();
     const results = await Promise.allSettled([
@@ -547,25 +797,105 @@ describe("Program Supervisor private bare-Git runtime", () => {
     expect(await storeResidues(root)).toEqual([]);
   });
 
+  it("preserves and surfaces a real Git object-writer SIGKILL residue", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    const payload = join(dirname(root), "large-sparse-payload");
+    const payloadHandle = await open(payload, "w");
+    await payloadHandle.truncate(512 * 1024 * 1024);
+    await payloadHandle.close();
+    const child = spawn(
+      "/usr/bin/git",
+      [
+        "-c",
+        "core.fsync=all",
+        "-c",
+        "core.fsyncMethod=fsync",
+        `--git-dir=${root}`,
+        "hash-object",
+        "-w",
+        payload,
+      ],
+      { env: GIT_TEST_ENV, stdio: ["ignore", "pipe", "pipe"] }
+    );
+    activeChildren.push(child);
+    await waitFor(
+      async () => (await findObjectTemps(root)).length > 0,
+      "Git object temp"
+    );
+    const exit = new Promise<{ code: number | null; signal: string | null }>(
+      (resolveExit) => {
+        child.once("exit", (code, signal) => resolveExit({ code, signal }));
+      }
+    );
+    child.kill("SIGKILL");
+    expect((await exit).signal).toBe("SIGKILL");
+    const residues = await findObjectTemps(root);
+    expect(residues).not.toEqual([]);
+    const before = await Promise.all(residues.map((path) => lstat(path)));
+
+    await expect(loadRuntime(root)).rejects.toThrow(
+      /Git-internal.*temp.*manual|temporary Git object.*manual/i
+    );
+    const after = await Promise.all(residues.map((path) => lstat(path)));
+    expect(after.map(({ ino }) => ino)).toEqual(before.map(({ ino }) => ino));
+    expect(await findObjectTemps(root)).toEqual(residues);
+  });
+
   it("leaves no mutable application residue and rebuild is a read-only no-op", async () => {
     const root = await makeRoot();
     await initializeRuntime(root, bootstrapInput());
     await appendEvent(root, evidenceInput("rebuild-proof"));
     const tipBefore = refTip(root);
-    const objectsBefore = (await readdir(join(root, "objects"))).sort();
+    const manifestBefore = await recursiveManifest(root);
+    expect(manifestBefore.some(({ path }) => path === "config")).toBe(true);
+    expect(manifestBefore.some(({ path }) => path === "HEAD")).toBe(true);
+    expect(manifestBefore.some(({ path }) => path.startsWith("refs/"))).toBe(true);
+    expect(manifestBefore.some(({ path }) => path.startsWith("objects/"))).toBe(true);
 
     const before = await loadRuntime(root);
     const rebuilt = await rebuildRuntime(root);
 
     expect(rebuilt).toEqual(before);
     expect(refTip(root)).toBe(tipBefore);
-    expect((await readdir(join(root, "objects"))).sort()).toEqual(objectsBefore);
+    expect(await recursiveManifest(root)).toEqual(manifestBefore);
     expect(await storeResidues(root)).toEqual([]);
     await expect(lstat(join(root, "logs"))).rejects.toMatchObject({ code: "ENOENT" });
     await expect(lstat(join(root, "packed-refs"))).rejects.toMatchObject({
       code: "ENOENT",
     });
   });
+
+  it("uses a constant number of Git processes for full replay regardless of chain length", async () => {
+    const shortRoot = await makeRoot("short-runtime");
+    const longRoot = await makeRoot("long-runtime");
+    await initializeRuntime(shortRoot, bootstrapInput());
+    await initializeRuntime(longRoot, bootstrapInput());
+    for (let index = 0; index < 8; index += 1) {
+      await appendEvent(longRoot, evidenceInput(`linear-${index}`), {
+        now: () =>
+          new Date(`2026-08-26T02:${String(index + 1).padStart(2, "0")}:00.000Z`),
+      });
+    }
+
+    async function commandsFor(root: string): Promise<string[][]> {
+      const commands: string[][] = [];
+      await loadRuntimeWithOptions(root, {
+        onGitCommand: (args) => commands.push([...args]),
+      });
+      return commands;
+    }
+    const shortCommands = await commandsFor(shortRoot);
+    const longCommands = await commandsFor(longRoot);
+    const named = (commands: readonly string[][], name: string) =>
+      commands.filter(([command]) => command === name);
+
+    expect(named(shortCommands, "rev-list")).toHaveLength(1);
+    expect(named(longCommands, "rev-list")).toHaveLength(1);
+    expect(named(shortCommands, "cat-file")).toHaveLength(3);
+    expect(named(longCommands, "cat-file")).toHaveLength(3);
+    expect(longCommands).toHaveLength(shortCommands.length);
+  }, 30_000);
 
   it.each([
     ["non-canonical config", "config", "\n[include]\n\tpath = /tmp/evil\n"],
@@ -792,6 +1122,71 @@ describe("Program Supervisor private bare-Git runtime", () => {
     ]);
     expect(mismatch.status).not.toBe(0);
     expect(mismatch.stderr).toMatch(/bootstrap fingerprint mismatch/i);
+  });
+
+  it("ignores poisoned inherited Git and config environments for metacharacter paths", async () => {
+    const root = await makeRoot("runtime with spaces;$(exit 17)");
+    const parent = dirname(root);
+    const bootstrap = bootstrapInput({
+      foundationState: "verification",
+      activeFoundation: true,
+    });
+    const poisonHome = join(parent, "poison home");
+    const poisonXdg = join(parent, "poison xdg");
+    const poisonConfig = join(parent, "poison.gitconfig");
+    await mkdir(join(poisonXdg, "git"), { recursive: true });
+    await mkdir(poisonHome, { recursive: true });
+    await writeFile(poisonConfig, "this is not valid git config\n");
+    await writeFile(join(poisonHome, ".gitconfig"), "this is not valid git config\n");
+    await writeFile(join(poisonXdg, "git", "config"), "this is not valid git config\n");
+    const bootstrapPath = join(parent, "bootstrap with spaces.json");
+    await writeSecureJson(bootstrapPath, bootstrap);
+    const poison: NodeJS.ProcessEnv = {
+      ...process.env,
+      HOME: poisonHome,
+      XDG_CONFIG_HOME: poisonXdg,
+      GIT_CONFIG_NOSYSTEM: "0",
+      GIT_CONFIG_SYSTEM: poisonConfig,
+      GIT_CONFIG_GLOBAL: poisonConfig,
+      GIT_CONFIG_COUNT: "1",
+      GIT_CONFIG_KEY_0: "core.bare",
+      GIT_CONFIG_VALUE_0: "false",
+      GIT_DIR: "/definitely/not/the/runtime.git",
+      GIT_COMMON_DIR: "/definitely/not/common.git",
+      GIT_WORK_TREE: "/definitely/not/a/worktree",
+      GIT_OBJECT_DIRECTORY: "/definitely/not/objects",
+      GIT_ALTERNATE_OBJECT_DIRECTORIES: "/definitely/not/alternates",
+      GIT_INDEX_FILE: "/definitely/not/an-index",
+      GIT_REPLACE_REF_BASE: "refs/replace-poison/",
+    };
+    const poisonedKeys = Object.keys(poison).filter(
+      (key) =>
+        key in process.env ||
+        key.startsWith("GIT_") ||
+        key === "HOME" ||
+        key === "XDG_CONFIG_HOME"
+    );
+    const saved = new Map(poisonedKeys.map((key) => [key, process.env[key]]));
+    for (const key of poisonedKeys) {
+      const value = poison[key];
+      if (value === undefined) Reflect.deleteProperty(process.env, key);
+      else process.env[key] = value;
+    }
+    try {
+      await initializeRuntime(root, bootstrap);
+      await appendEvent(root, evidenceInput("hermetic-environment"));
+      expect((await loadRuntime(root)).snapshot.lastEventSeq).toBe(2);
+      const validated = runCli(
+        ["validate", "--root", root, "--expect-bootstrap-file", bootstrapPath],
+        poison
+      );
+      expect(validated.status, validated.stderr).toBe(0);
+    } finally {
+      for (const [key, value] of saved) {
+        if (value === undefined) Reflect.deleteProperty(process.env, key);
+        else process.env[key] = value;
+      }
+    }
   });
 
   it("keeps the CLI input boundary mode-0600 and rejects caller coordinates", async () => {

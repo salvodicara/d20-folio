@@ -12,9 +12,9 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
 import {
-  parseEvents,
   replayEvents,
   validateEventInput,
   validateLeaseFile,
@@ -33,6 +33,8 @@ const CANONICAL_VALIDATION_TIME = "2000-01-01T00:00:00.000Z";
 const OID_PATTERN = /^[0-9a-f]{40}$/;
 const LOOSE_DIRECTORY_PATTERN = /^[0-9a-f]{2}$/;
 const LOOSE_OBJECT_PATTERN = /^[0-9a-f]{38}$/;
+const CONTENTION_ATTEMPTS = 40;
+const CONTENTION_DELAY_MS = 10;
 const COMMIT_IDENTITY = "d20 Folio Program Supervisor <program-supervisor@localhost>";
 const STORE_CONFIG = Buffer.from(
   [
@@ -60,7 +62,7 @@ const GIT_BASE_ENV: NodeJS.ProcessEnv = Object.freeze({
   GIT_TERMINAL_PROMPT: "0",
 });
 
-type ProgramEvent = ReturnType<typeof parseEvents>[number];
+type ProgramEvent = ReturnType<typeof validateEventInput>;
 
 export interface RuntimeSnapshot extends ProgramSnapshot {
   programId: typeof PROGRAM_ID;
@@ -86,6 +88,10 @@ export interface RuntimeOptions {
   beforePublish?: (candidate: string, previous: string) => void | Promise<void>;
   /** Test-only lost-result injection point after a successful compare-and-swap. */
   afterPublish?: (candidate: string, previous: string) => void | Promise<void>;
+  /** Test-only coordination point after capturing the direct event ref. */
+  afterTipRead?: (tip: string) => void | Promise<void>;
+  /** Test-only Git subprocess diagnostic for constant-process replay assertions. */
+  onGitCommand?: (args: readonly string[]) => void;
 }
 
 interface CanonicalBootstrap {
@@ -106,6 +112,12 @@ interface GitResult {
   stderr: Buffer;
 }
 
+interface BatchObject {
+  oid: string;
+  type: string;
+  bytes: Buffer;
+}
+
 class GitCommandError extends Error {
   readonly stdout: Buffer;
   readonly stderr: Buffer;
@@ -115,6 +127,13 @@ class GitCommandError extends Error {
     this.name = "GitCommandError";
     this.stdout = stdout;
     this.stderr = stderr;
+  }
+}
+
+class GitContentionError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = "GitContentionError";
   }
 }
 
@@ -242,6 +261,16 @@ async function physicalRoot(root: string, mustExist: boolean): Promise<string> {
       `Runtime parent must be a regular non-symlink directory: ${logicalParent}`
     );
   }
+  const currentUid = process.getuid?.();
+  if (
+    currentUid === undefined ||
+    parentMetadata.uid !== currentUid ||
+    (parentMetadata.mode & 0o022) !== 0
+  ) {
+    throw new Error(
+      `Runtime parent must be owned by the current UID and not group/other writable: ${logicalParent}`
+    );
+  }
   const projected = join(await realpath(logicalParent), basename(root));
   try {
     const rootMetadata = await lstat(root);
@@ -340,9 +369,11 @@ async function runGit(
     input?: Uint8Array;
     mutate?: boolean;
     identity?: { at: string };
+    runtime?: RuntimeOptions;
   } = {}
 ): Promise<Buffer> {
   await assertTrustedGit();
+  options.runtime?.onGitCommand?.(args);
   const command = [
     ...(options.mutate ? ["-c", "core.fsync=all", "-c", "core.fsyncMethod=fsync"] : []),
     `--git-dir=${root}`,
@@ -423,20 +454,59 @@ function expectNames(
 }
 
 async function rejectSymlinksAndLocks(path: string): Promise<void> {
-  const entries = await readdir(path, { withFileTypes: true });
+  let entries: Dirent[];
+  try {
+    entries = await readdir(path, { withFileTypes: true });
+  } catch (error) {
+    if (errorCode(error) === "ENOENT") {
+      throw new GitContentionError(
+        `Git store changed while checking cooperating activity: ${path}`,
+        { cause: error }
+      );
+    }
+    throw error;
+  }
   for (const entry of entries) {
     const child = join(path, entry.name);
-    const metadata = await lstat(child);
+    let metadata;
+    try {
+      metadata = await lstat(child);
+    } catch (error) {
+      if (errorCode(error) === "ENOENT") {
+        throw new GitContentionError(
+          `Git store changed while checking cooperating activity: ${child}`,
+          { cause: error }
+        );
+      }
+      throw error;
+    }
     if (metadata.isSymbolicLink()) {
       throw new Error(`Runtime store contains a symlink: ${child}`);
     }
-    if (entry.name.endsWith(".lock")) {
-      throw new Error(
-        `Git-internal lock residue requires manual quiescent recovery: ${child}`
+    if (entry.name.endsWith(".lock") || entry.name.startsWith("tmp_obj_")) {
+      throw new GitContentionError(
+        `Git-internal lock or temporary object shows cooperating activity: ${child}`
       );
     }
     if (metadata.isDirectory()) await rejectSymlinksAndLocks(child);
   }
+}
+
+async function retryGitContention<T>(operation: () => Promise<T>): Promise<T> {
+  let contention: GitContentionError | undefined;
+  for (let attempt = 0; attempt < CONTENTION_ATTEMPTS; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!(error instanceof GitContentionError)) throw error;
+      contention = error;
+      if (attempt + 1 < CONTENTION_ATTEMPTS) await delay(CONTENTION_DELAY_MS);
+    }
+  }
+  throw new Error(
+    `Git-internal lock or temporary object persisted beyond the bounded contention window and requires manual quiescent recovery`,
+    { cause: contention }
+  );
 }
 
 async function assertEmptyDirectory(path: string, label: string): Promise<void> {
@@ -512,21 +582,33 @@ async function validateStoreShape(root: string): Promise<string> {
   return refText.trim();
 }
 
-async function validateGitView(root: string, directTip: string): Promise<void> {
+async function validateGitView(
+  root: string,
+  validationTip: string,
+  options: RuntimeOptions
+): Promise<void> {
   const objectFormat = textOutput(
-    await runGit(root, ["rev-parse", "--show-object-format"])
+    await runGit(root, ["rev-parse", "--show-object-format"], { runtime: options })
   );
-  const refFormat = textOutput(await runGit(root, ["rev-parse", "--show-ref-format"]));
+  const refFormat = textOutput(
+    await runGit(root, ["rev-parse", "--show-ref-format"], { runtime: options })
+  );
   if (objectFormat !== "sha1" || refFormat !== "files") {
     throw new Error(`Runtime store must use SHA-1 objects and files refs`);
   }
   const refs = textOutput(
-    await runGit(root, ["for-each-ref", "--format=%(refname) %(objectname)"])
+    await runGit(root, ["for-each-ref", "--format=%(refname)"], {
+      runtime: options,
+    })
   );
-  if (refs !== `${EVENT_REF} ${directTip}`) {
+  if (refs !== EVENT_REF) {
     throw new Error(`Runtime store contains an unexpected ref: ${refs || "<none>"}`);
   }
-  await runGit(root, ["fsck", "--strict", "--no-reflogs", "--no-dangling", directTip]);
+  await runGit(
+    root,
+    ["fsck", "--strict", "--no-reflogs", "--no-dangling", validationTip],
+    { runtime: options }
+  );
 }
 
 function parseCanonicalEvent(bytes: Buffer, label: string): ProgramEvent {
@@ -577,77 +659,175 @@ function parseCommit(
 }
 
 function parseTree(bytes: Buffer): Array<{ oid: string; name: string }> {
-  const entries = bytes.length === 0 ? [] : bytes.toString("utf8").split("\0");
-  if (entries.at(-1) === "") entries.pop();
-  return entries.map((entry) => {
-    const match = /^100644 blob ([0-9a-f]{40})\t([^\0]+)$/.exec(entry);
+  const entries: Array<{ oid: string; name: string }> = [];
+  let cursor = 0;
+  while (cursor < bytes.length) {
+    const separator = bytes.indexOf(0, cursor);
+    if (separator < 0 || separator + 21 > bytes.length) {
+      throw new Error("Event commit tree contains a truncated entry");
+    }
+    const header = bytes.subarray(cursor, separator).toString("utf8");
+    const match = /^100644 ([^\0]+)$/.exec(header);
     if (!match) throw new Error("Event commit tree contains a non-canonical entry");
-    return { oid: match[1] as string, name: match[2] as string };
-  });
+    entries.push({
+      oid: bytes.subarray(separator + 1, separator + 21).toString("hex"),
+      name: match[1] as string,
+    });
+    cursor = separator + 21;
+  }
+  return entries;
 }
 
-async function loadStore(rootValue: string): Promise<LoadedStore> {
-  const root = await physicalRoot(rootValue, true);
-  await assertTrustedGit();
-  const tip = await validateStoreShape(root);
-  await validateGitView(root, tip);
-  const commitsText = textOutput(
-    await runGit(root, ["rev-list", "--first-parent", "--reverse", tip])
+function commitTreeOid(bytes: Buffer): string {
+  const firstLineEnd = bytes.indexOf("\n");
+  if (firstLineEnd < 0) {
+    throw new Error("Git commit envelope is missing its canonical tree");
+  }
+  const firstLine = bytes.subarray(0, firstLineEnd).toString("utf8");
+  const match = /^tree ([0-9a-f]{40})$/.exec(firstLine);
+  if (!match) {
+    throw new Error("Git commit envelope is missing its canonical tree");
+  }
+  return match[1] as string;
+}
+
+async function readBatchObjects(
+  root: string,
+  requestedOids: readonly string[],
+  options: RuntimeOptions
+): Promise<Map<string, BatchObject>> {
+  const oids = [...new Set(requestedOids)];
+  const output = await runGit(root, ["cat-file", "--batch"], {
+    input: Buffer.from(`${oids.join("\n")}\n`, "utf8"),
+    runtime: options,
+  });
+  const result = new Map<string, BatchObject>();
+  let cursor = 0;
+  for (const expectedOid of oids) {
+    const headerEnd = output.indexOf("\n", cursor);
+    if (headerEnd < 0) throw new Error("Git cat-file batch output is truncated");
+    const header = output.subarray(cursor, headerEnd).toString("utf8");
+    const match = /^([0-9a-f]{40}) ([a-z]+) ([0-9]+)$/.exec(header);
+    if (!match || match[1] !== expectedOid) {
+      throw new Error(`Git cat-file batch returned an invalid object header: ${header}`);
+    }
+    const size = Number(match[3]);
+    const contentStart = headerEnd + 1;
+    const contentEnd = contentStart + size;
+    if (
+      !Number.isSafeInteger(size) ||
+      size < 0 ||
+      contentEnd >= output.length ||
+      output[contentEnd] !== 0x0a
+    ) {
+      throw new Error(`Git cat-file batch returned invalid object bytes: ${expectedOid}`);
+    }
+    result.set(expectedOid, {
+      oid: expectedOid,
+      type: match[2] as string,
+      bytes: output.subarray(contentStart, contentEnd),
+    });
+    cursor = contentEnd + 1;
+  }
+  if (cursor !== output.length) {
+    throw new Error("Git cat-file batch returned unexpected trailing bytes");
+  }
+  return result;
+}
+
+function batchObject(
+  objects: ReadonlyMap<string, BatchObject>,
+  oid: string,
+  type: string
+): BatchObject {
+  const object = objects.get(oid);
+  if (!object || object.type !== type) {
+    throw new Error(`Git object ${oid} must resolve to a ${type}`);
+  }
+  return object;
+}
+
+async function loadStoreAttempt(
+  root: string,
+  options: RuntimeOptions,
+  requestedTip?: string
+): Promise<LoadedStore> {
+  const capturedTip = await validateStoreShape(root);
+  await options.afterTipRead?.(capturedTip);
+  const tip = requestedTip ?? capturedTip;
+  if (!OID_PATTERN.test(tip)) throw new Error("Validation tip is not a SHA-1 OID");
+  await validateGitView(root, tip, options);
+  const chainText = textOutput(
+    await runGit(root, ["rev-list", "--first-parent", "--reverse", "--parents", tip], {
+      runtime: options,
+    })
   );
-  const commits = commitsText === "" ? [] : commitsText.split("\n");
+  const chain =
+    chainText === "" ? [] : chainText.split("\n").map((line) => line.split(" "));
+  const commits = chain.map(([commit]) => commit as string);
   if (commits.length === 0 || commits.at(-1) !== tip) {
     throw new Error("Program Supervisor event ref has no strict commit chain");
   }
+  for (const [index, record] of chain.entries()) {
+    if (record.some((oid) => !OID_PATTERN.test(oid))) {
+      throw new Error("Event chain contains an invalid OID");
+    }
+    const parents = record.slice(1);
+    const expectedParents = index === 0 ? [] : [commits[index - 1] as string];
+    if (JSON.stringify(parents) !== JSON.stringify(expectedParents)) {
+      throw new Error(`Event commit ${record[0]} does not have one strict parent`);
+    }
+  }
 
-  const events: ProgramEvent[] = [];
-  let immutableBootstrap: Buffer | undefined;
-  let immutableBootstrapOid: string | undefined;
-  for (const [index, commit] of commits.entries()) {
-    if (!OID_PATTERN.test(commit)) throw new Error("Event chain contains an invalid OID");
-    const type = textOutput(await runGit(root, ["cat-file", "-t", commit]));
-    if (type !== "commit")
-      throw new Error(`Event chain object is not a commit: ${commit}`);
-    const treeOid = oidOutput(
-      await runGit(root, ["show", "-s", "--format=%T", commit]),
-      "Commit tree"
-    );
-    const treeEntries = parseTree(await runGit(root, ["ls-tree", "-z", commit]));
+  const commitObjects = await readBatchObjects(root, commits, options);
+  const commitBytes = commits.map(
+    (commit) => batchObject(commitObjects, commit, "commit").bytes
+  );
+  const treeOids = commitBytes.map(commitTreeOid);
+  const treeObjects = await readBatchObjects(root, treeOids, options);
+  const treeEntries = treeOids.map((tree) =>
+    parseTree(batchObject(treeObjects, tree, "tree").bytes)
+  );
+  for (const [index, entries] of treeEntries.entries()) {
     if (
-      treeEntries.length !== 2 ||
-      treeEntries[0]?.name !== "bootstrap.json" ||
-      treeEntries[1]?.name !== "event.json"
+      entries.length !== 2 ||
+      entries[0]?.name !== "bootstrap.json" ||
+      entries[1]?.name !== "event.json"
     ) {
       throw new Error(
-        `Event commit ${commit} must contain exactly bootstrap.json and event.json`
+        `Event commit ${commits[index]} must contain exactly bootstrap.json and event.json`
       );
     }
-    const bootstrapEntry = treeEntries[0];
-    const eventEntry = treeEntries[1];
-    for (const entry of treeEntries) {
-      const entryType = textOutput(await runGit(root, ["cat-file", "-t", entry.oid]));
-      if (entryType !== "blob") throw new Error(`${entry.name} must resolve to a blob`);
-    }
-    const bootstrapBytes = await runGit(root, ["cat-file", "blob", bootstrapEntry.oid]);
-    const eventBytes = await runGit(root, ["cat-file", "blob", eventEntry.oid]);
-    if (index === 0) {
-      immutableBootstrap = bootstrapBytes;
-      immutableBootstrapOid = bootstrapEntry.oid;
-    } else {
-      if (
-        immutableBootstrap === undefined ||
-        bootstrapEntry.oid !== immutableBootstrapOid ||
-        !bootstrapBytes.equals(immutableBootstrap)
-      ) {
-        throw new Error("Immutable bootstrap blob changed within the event chain");
-      }
-    }
+  }
+  const immutableBootstrapOid = treeEntries[0]?.[0]?.oid;
+  if (!immutableBootstrapOid) {
+    throw new Error("Event chain is missing its immutable bootstrap blob");
+  }
+  if (treeEntries.some((entries) => entries[0]?.oid !== immutableBootstrapOid)) {
+    throw new Error("Immutable bootstrap blob changed within the event chain");
+  }
+  const eventOids = treeEntries.map((entries) => entries[1]?.oid as string);
+  const blobObjects = await readBatchObjects(
+    root,
+    [immutableBootstrapOid, ...eventOids],
+    options
+  );
+  const immutableBootstrap = batchObject(
+    blobObjects,
+    immutableBootstrapOid,
+    "blob"
+  ).bytes;
+
+  const events: ProgramEvent[] = [];
+  for (const [index, commit] of commits.entries()) {
+    const eventBytes = batchObject(blobObjects, eventOids[index] as string, "blob").bytes;
     const event = parseCanonicalEvent(eventBytes, `event ${index + 1}`);
     if (event.seq !== index + 1) {
       throw new Error(`Event sequence is not contiguous at commit ${commit}`);
     }
     parseCommit(
-      await runGit(root, ["cat-file", "commit", commit]),
-      treeOid,
+      commitBytes[index] as Buffer,
+      treeOids[index] as string,
       index === 0 ? [] : [commits[index - 1] as string],
       event
     );
@@ -655,12 +835,7 @@ async function loadStore(rootValue: string): Promise<LoadedStore> {
   }
 
   const first = events[0];
-  if (
-    !first ||
-    first.type !== "bootstrap" ||
-    !immutableBootstrap ||
-    !immutableBootstrapOid
-  ) {
+  if (!first || first.type !== "bootstrap") {
     throw new Error("Event chain must begin with one bootstrap event");
   }
   const bootstrapBody = { ...first } as Record<string, unknown>;
@@ -671,11 +846,7 @@ async function loadStore(rootValue: string): Promise<LoadedStore> {
     throw new Error("Bootstrap event does not match its immutable bootstrap blob");
   }
 
-  // Retain the compatibility parser as an in-memory canonical-record check only.
-  const reparsed = parseEvents(
-    Buffer.concat(events.map((event) => canonicalJsonBytes(event))).toString("utf8")
-  );
-  const reconstructed = replayEvents(reparsed);
+  const reconstructed = replayEvents(events);
   validateSnapshot(reconstructed.snapshot);
   validateLeaseFile(reconstructed.leases);
   const projection: RuntimeProjection = {
@@ -690,10 +861,20 @@ async function loadStore(rootValue: string): Promise<LoadedStore> {
   };
   return {
     projection,
-    events: reparsed,
+    events,
     bootstrapBytes: immutableBootstrap,
     bootstrapOid: immutableBootstrapOid,
   };
+}
+
+async function loadStore(
+  rootValue: string,
+  options: RuntimeOptions = {},
+  requestedTip?: string
+): Promise<LoadedStore> {
+  const root = await physicalRoot(rootValue, true);
+  await assertTrustedGit();
+  return retryGitContention(() => loadStoreAttempt(root, options, requestedTip));
 }
 
 async function hashBlob(root: string, bytes: Uint8Array): Promise<string> {
@@ -746,26 +927,57 @@ async function publish(root: string, candidate: string, previous: string): Promi
 
 async function directTip(rootValue: string): Promise<string> {
   const root = await physicalRoot(rootValue, true);
-  const path = join(root, "refs", "program-supervisor", "events");
-  await assertRegularFile(path, "Program Supervisor event ref");
-  const value = (await readFile(path, "utf8")).trim();
-  if (!OID_PATTERN.test(value))
-    throw new Error("Program Supervisor event ref is invalid");
-  return value;
+  return retryGitContention(async () => {
+    await rejectSymlinksAndLocks(root);
+    const path = join(root, "refs", "program-supervisor", "events");
+    await assertRegularFile(path, "Program Supervisor event ref");
+    const value = (await readFile(path, "utf8")).trim();
+    if (!OID_PATTERN.test(value))
+      throw new Error("Program Supervisor event ref is invalid");
+    return value;
+  });
 }
 
 async function candidateIsAncestor(
   root: string,
   candidate: string,
-  current: string
+  current: string,
+  options: RuntimeOptions = {}
 ): Promise<boolean> {
   if (candidate === current) return true;
   try {
-    await runGit(root, ["merge-base", "--is-ancestor", candidate, current]);
+    await runGit(root, ["merge-base", "--is-ancestor", candidate, current], {
+      runtime: options,
+    });
     return true;
   } catch {
     return false;
   }
+}
+
+async function reconcilePublishedCandidate(
+  root: string,
+  candidate: string,
+  options: RuntimeOptions
+): Promise<RuntimeProjection> {
+  const candidateStore = await loadStore(root, options, candidate);
+  const observedTip = await directTip(root);
+  if (!(await candidateIsAncestor(root, candidate, observedTip, options))) {
+    throw new Error("Published candidate is not the current tip or its ancestor");
+  }
+  if (observedTip === candidate) return candidateStore.projection;
+  const currentStore = await loadStore(root, options);
+  if (
+    !(await candidateIsAncestor(
+      root,
+      candidate,
+      currentStore.projection.store.tip,
+      options
+    ))
+  ) {
+    throw new Error("Published candidate disappeared while reconciling the current tip");
+  }
+  return currentStore.projection;
 }
 
 export async function readSecureJsonFile(path: string): Promise<unknown> {
@@ -861,11 +1073,14 @@ export async function initializeRuntime(
   const treeOid = await createEventTree(root, bootstrapOid, eventOid);
   const commitOid = await createEventCommit(root, treeOid, null, event);
   await publish(root, commitOid, ZERO_OID);
-  return (await loadStore(root)).projection;
+  return (await loadStore(root, options)).projection;
 }
 
-export async function loadRuntime(root: string): Promise<RuntimeProjection> {
-  return (await loadStore(root)).projection;
+export async function loadRuntime(
+  root: string,
+  options: RuntimeOptions = {}
+): Promise<RuntimeProjection> {
+  return (await loadStore(root, options)).projection;
 }
 
 export async function appendEvent(
@@ -876,7 +1091,7 @@ export async function appendEvent(
   const body = rejectAssignedCoordinates(eventValue);
   const root = await physicalRoot(rootValue, true);
   for (let attempt = 0; attempt < 16; attempt += 1) {
-    const loaded = await loadStore(root);
+    const loaded = await loadStore(root, options);
     const previous = loaded.projection.store.tip;
     const event = validateEventInput(
       assignEventCoordinates(body, loaded.events.length + 1, nowIso(options))
@@ -890,11 +1105,11 @@ export async function appendEvent(
     try {
       await publish(root, candidate, previous);
       await options.afterPublish?.(candidate, previous);
-      return (await loadStore(root)).projection;
+      return await reconcilePublishedCandidate(root, candidate, options);
     } catch (error) {
       const current = await directTip(root);
-      if (await candidateIsAncestor(root, candidate, current)) {
-        return (await loadStore(root)).projection;
+      if (await candidateIsAncestor(root, candidate, current, options)) {
+        return await reconcilePublishedCandidate(root, candidate, options);
       }
       if (current === previous) {
         throw new Error(
@@ -903,13 +1118,27 @@ export async function appendEvent(
         );
       }
       // A cooperating writer won the CAS. Only this demonstrated tip advance permits retry.
-      if (!(await candidateIsAncestor(root, previous, current))) {
+      if (!(await candidateIsAncestor(root, previous, current, options))) {
         throw new Error(
           `Event publication observed an unrelated tip and cannot reconcile safely`,
           { cause: error }
         );
       }
-      await loadStore(root);
+      const advanced = await loadStore(root, options);
+      if (
+        advanced.projection.store.tip === previous ||
+        !(await candidateIsAncestor(
+          root,
+          previous,
+          advanced.projection.store.tip,
+          options
+        ))
+      ) {
+        throw new Error(
+          `Event publication could not validate the demonstrated advanced tip`,
+          { cause: error }
+        );
+      }
     }
   }
   throw new Error("Event publication exceeded the bounded CAS retry limit");
