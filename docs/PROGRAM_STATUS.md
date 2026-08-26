@@ -71,15 +71,16 @@ The shared checkout remains untouched even when its branch name is `main`.
   `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-supervisor-foundation`; branch
   `feat/program-supervisor-foundation`; base
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`; pre-status fix HEAD
-  `39752fec057dceb79b56b5d9a0d5aaf10ca18f5c` (tree
-  `cd34e14a9d89f1639336a9d11aa21abc75317ea7`); no private write. The charter owns
+  `e8d41d1ed3bdd80c8d21baba3d2fcc91ef201113` (tree
+  `79affdf0d6846afd322d761cd3f65e3c7eaf063f`); no private write. The charter owns
   `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
   `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, `scripts/program-supervisor/**`,
   `tests/unit/program-supervisor-{worktree,state,runtime}.test.ts`, and its uniquely named
   `.changeset/program-supervisor-*.md` files. Task 4 itself owns only the five tracked paths named
   in its plan.
 - **State and receipt:** `executing`; the tree was clean at pre-status fix HEAD
-  `39752fec057dceb79b56b5d9a0d5aaf10ca18f5c`. The first whole-branch evaluator required fixes.
+  `e8d41d1ed3bdd80c8d21baba3d2fcc91ef201113` (tree
+  `79affdf0d6846afd322d761cd3f65e3c7eaf063f`). The first whole-branch evaluator required fixes.
   Adapter authority (`4d39f30eb1296d7f25a4801c28467b143f86e38c`), dependency/lease state
   (`41114180176d67fda475bb0b060be630031ee9fb`), writer handoff
   (`a14b772739c38ce0f0e180bc84608cc5d16b7c81`), runtime crash integrity
