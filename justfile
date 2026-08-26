@@ -191,7 +191,6 @@ wt-new $slug $kind="feat":
     case "$kind_value" in feat|fix|chore|docs|refactor) ;; *) echo "unsafe branch kind" >&2; exit 1 ;; esac
     candidate="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts candidate "$home_dir")"
     mkdir -p "$candidate"
-    tasks_root="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts root "$home_dir")"
     dest="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts path "$home_dir" "$project" "$slug_value")"
     branch="$kind_value/$slug_value"
     if [ -e "$dest" ]; then echo "✗ $dest already exists — pick another safe slug or remove its worktree"; exit 1; fi
@@ -229,7 +228,6 @@ wt-rm $slug:
     scripts/program-supervisor/adapter-preflight.sh "$main_root"
     home_dir="$(cd && pwd -P)"
     slug_value="$slug"
-    tasks_root="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts root "$home_dir")"
     dest="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts path "$home_dir" "$project" "$slug_value")"
     git -C "$main_root" worktree remove "$dest"
     echo "✓ removed worktree $dest"
