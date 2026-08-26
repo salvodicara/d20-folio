@@ -347,7 +347,6 @@ type ProgramEvent =
 const SHA_PATTERN = /^[0-9a-f]{40}$/;
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
 const DAY_MS = 24 * 60 * 60 * 1_000;
-const REPOSITORY_LEASE_OWNER = "docs/TEST_PORTFOLIO.md";
 const EVIDENCED_STATES = new Set<TaskState>([
   "review",
   "verification",
@@ -591,12 +590,6 @@ function validateTaskCharter(value: unknown, path: string): TaskCharter {
     ownership.repositoryLease,
     `${path}.ownership.repositoryLease`
   );
-  if (repositoryLease.ownerDocumentPath !== REPOSITORY_LEASE_OWNER) {
-    corruption(
-      `${path}.ownership.repositoryLease.ownerDocumentPath`,
-      `repository lease owner must be ${REPOSITORY_LEASE_OWNER}`
-    );
-  }
   const pinnedOwner = authority.find(
     ({ path: authorityPath }) => authorityPath === repositoryLease.ownerDocumentPath
   );
@@ -1002,6 +995,9 @@ function enforceAuthorityCoherence(
   const globalBlobs = new Map(
     manifestAuthorities(authority).map((reference) => [reference.path, reference.blob])
   );
+  const repositoryLeaseOwnerBlobs = new Map(
+    authority.repositoryLeaseOwners.map((reference) => [reference.path, reference.blob])
+  );
   const ownerDocumentEpochs = new Map<
     string,
     {
@@ -1020,11 +1016,11 @@ function enforceAuthorityCoherence(
       }
     }
     const repositoryLease = task.charter.ownership.repositoryLease;
-    const ownerBlob = globalBlobs.get(repositoryLease.ownerDocumentPath);
+    const ownerBlob = repositoryLeaseOwnerBlobs.get(repositoryLease.ownerDocumentPath);
     if (ownerBlob === undefined || repositoryLease.ownerDocumentBlob !== ownerBlob) {
       corruption(
         path,
-        `task ${task.charter.id} repository authority does not match the global manifest`
+        `task ${task.charter.id} repository authority does not match a declared lease-owner authority in the global manifest`
       );
     }
     const ownerDocumentKey = `${task.charter.ownership.repository}\0${repositoryLease.ownerDocumentPath}`;

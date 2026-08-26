@@ -17,6 +17,7 @@ const SHA_E = "e".repeat(40);
 const SHA_F = "f".repeat(40);
 const REPOSITORY = "/repo/d20-folio";
 const LEASE_OWNER_PATH = "docs/TEST_PORTFOLIO.md";
+const SECOND_LEASE_OWNER_PATH = "docs/SECOND_REPOSITORY_LEASES.md";
 const OPERATING_MODEL_PATH =
   "docs/plans/2026-08-25-agent-first-operating-model-design.md";
 const AUTOMATION_WAYFINDER_PATH =
@@ -252,13 +253,58 @@ describe("Program Supervisor untrusted-data schemas", () => {
     expect(() => validateEventInput(cleanup)).toThrow(/cleanup.*proof/);
   });
 
-  it("keeps docs/TEST_PORTFOLIO.md as the repository lease owner", () => {
+  it("rejects a charter owner that appears only in a non-owner manifest role", () => {
     const fixture = bootstrapFixture();
-    itemAt(itemAt(fixture.tasks, 0).charter.authority, 1).path = "docs/OTHER.md";
-    itemAt(fixture.tasks, 0).charter.ownership.repositoryLease.ownerDocumentPath =
-      "docs/OTHER.md";
+    fixture.authority.testPortfolioRoadmap = {
+      path: LEASE_OWNER_PATH,
+      blob: SHA_A,
+    };
+    fixture.authority.repositoryLeaseOwners = [
+      { path: SECOND_LEASE_OWNER_PATH, blob: SHA_E },
+    ];
 
-    expect(() => validateEventInput(fixture)).toThrow(/TEST_PORTFOLIO/);
+    expect(() => validateEventInput(fixture)).toThrow(
+      /repository authority.*declared lease-owner/i
+    );
+  });
+
+  it("lets a second declared lease owner govern a charter, active lease, and cache", () => {
+    const fixture = bootstrapFixture();
+    fixture.authority.repositoryLeaseOwners.push({
+      path: SECOND_LEASE_OWNER_PATH,
+      blob: SHA_E,
+    });
+    const secondTask = itemAt(fixture.tasks, 1);
+    itemAt(secondTask.charter.authority, 1).path = SECOND_LEASE_OWNER_PATH;
+    itemAt(secondTask.charter.authority, 1).blob = SHA_E;
+    secondTask.charter.ownership.repositoryLease = {
+      id: "K1",
+      ownerDocumentPath: SECOND_LEASE_OWNER_PATH,
+      ownerDocumentBlob: SHA_E,
+      mainSha: SHA_B,
+    };
+    secondTask.state = "leased";
+    const active = lease("task-b", "writer", {
+      leaseId: "runtime-task-b-k1",
+      pointer: {
+        repository: REPOSITORY,
+        ownerDocumentPath: SECOND_LEASE_OWNER_PATH,
+        repositoryLeaseId: "K1",
+        reconciledOwnerBlob: SHA_E,
+        reconciledMainSha: SHA_B,
+      },
+    });
+    active.acquiredAt = fixture.at;
+    fixture.activeLeases.push(active);
+
+    const result = replayEvents([fixture]);
+
+    expect(itemAt(result.snapshot.tasks, 1).activeLease?.authorityPointer).toEqual(
+      active.authorityPointer
+    );
+    expect(itemAt(result.leases.leases, 0).authorityPointer).toEqual(
+      active.authorityPointer
+    );
   });
 
   it("rejects a bootstrap lease pointer that disagrees with its complete charter", () => {
