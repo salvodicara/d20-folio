@@ -145,9 +145,10 @@ unperformed handoff has no fabricated SHA.
   `docs/WORKTREES.md`, `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and
   `scripts/program-supervisor/**`. This is a repository-authority lease only; it
   does not claim a runtime lease before the runtime exists.
-- **Current state and conflict receipt (Task 5 Fix Round 4 pre-status, observed
-  `2026-08-26T10:15:02Z`):** F0 remains active; the Foundation worktree was clean at
-  pre-status fix HEAD `7e986f48721bf9bf4411c1b426438b320a69c595` on freshly fetched `origin/main`
+- **Current state and conflict receipt (Task 5 Fix Round 5 pre-status, observed
+  `2026-08-26T11:33:33Z`):** F0 remains active; the Foundation worktree was clean at
+  pre-status fix HEAD `e8ab82ca50e6cd96952db4253fa3880159c7f8ab` (tree
+  `b696b791ba3d6e81ad9b6f082e11a979793af6c6`) on freshly fetched `origin/main`
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`. K1 is clean at
   `7ae43494be58f92651b02a32de821c0d3f59fb98`; its fresh
   `origin/main...HEAD` path set is disjoint from every F0 path. B00 is clean and
@@ -156,10 +157,13 @@ unperformed handoff has no fabricated SHA.
   is serialized behind F0. Neither retained product worktree has a rebase or active
   writer. The freshly remote-verified, clean private `main` checkout is
   `1d5226f564d2c790f5409c294afe9d9ba6cc2ab7` and is read-only for this lease.
-  This supersedes but preserves the Fix Round 3 clean pre-status receipt at
+  This supersedes but preserves the Fix Round 4 clean pre-status receipt at
+  `7e986f48721bf9bf4411c1b426438b320a69c595`, the Fix Round 3 receipt at
   `e816e5e6ba822d49530e8e113de54f6240fc2912`, the Fix Round 2 receipt at
   `addc80513176801d56014e9f3b15eb74b53b6bcc`, and the Fix Round 1 receipt at
-  `be84367069e47ce029eadf1c11fbdf9aac90df2d`.
+  `be84367069e47ce029eadf1c11fbdf9aac90df2d`. Fix Round 5 replaces the former
+  pathname lock/cache/ledger recovery design with the reviewed private bare-Git event-store
+  contract; it does not change the lease term or any test-risk ownership.
 - **Handoff:** release F0 only after remote integration proof or an evidence-backed
   blocker/recovery disposition. Until then B00 receives no writer lease and may
   not edit, rebase, or integrate its frozen candidate. After F0 integrates, B00
