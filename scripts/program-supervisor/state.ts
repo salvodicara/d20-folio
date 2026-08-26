@@ -724,20 +724,25 @@ function validateTaskCharter(value: unknown, path: string): TaskCharter {
   if (new Set(dependencies.map(({ taskId }) => taskId)).size !== dependencies.length) {
     corruption(`${path}.dependencies`, "contains duplicate dependency task IDs");
   }
+  const repository = absoluteNormalizedPathAt(
+    ownership.repository,
+    `${path}.ownership.repository`
+  );
+  const worktree = absoluteNormalizedPathAt(
+    ownership.worktree,
+    `${path}.ownership.worktree`
+  );
+  if (repository === worktree) {
+    corruption(`${path}.ownership`, "repository and worktree paths must be distinct");
+  }
   return {
     id: idAt(record.id, `${path}.id`),
     outcome: stringAt(record.outcome, `${path}.outcome`),
     authority,
     dependencies,
     ownership: {
-      repository: absoluteNormalizedPathAt(
-        ownership.repository,
-        `${path}.ownership.repository`
-      ),
-      worktree: absoluteNormalizedPathAt(
-        ownership.worktree,
-        `${path}.ownership.worktree`
-      ),
+      repository,
+      worktree,
       branch: gitBranchAt(ownership.branch, `${path}.ownership.branch`),
       baseSha: shaAt(ownership.baseSha, `${path}.ownership.baseSha`),
       headSha: shaAt(ownership.headSha, `${path}.ownership.headSha`),
@@ -1146,6 +1151,14 @@ function enforceActiveLeases(tasks: TaskProjection[], path: string): void {
   const writers = active.filter(
     ({ lease: activeLease }) => activeLease.role === "writer"
   );
+  const writerWorktrees = new Set<string>();
+  for (const { task } of writers) {
+    const worktree = task.charter.ownership.worktree;
+    if (writerWorktrees.has(worktree)) {
+      corruption(path, "active writer worktrees must be globally distinct");
+    }
+    writerWorktrees.add(worktree);
+  }
   for (let leftIndex = 0; leftIndex < writers.length; leftIndex += 1) {
     for (let rightIndex = leftIndex + 1; rightIndex < writers.length; rightIndex += 1) {
       const leftWriter = writers[leftIndex];
@@ -1155,6 +1168,9 @@ function enforceActiveLeases(tasks: TaskProjection[], path: string): void {
       }
       const left = leftWriter.task;
       const right = rightWriter.task;
+      if (left.charter.ownership.repository !== right.charter.ownership.repository) {
+        continue;
+      }
       for (const leftPath of left.charter.ownership.paths) {
         for (const rightPath of right.charter.ownership.paths) {
           if (pathsOverlap(leftPath, rightPath)) {
@@ -2001,10 +2017,21 @@ export function validateEventInput(value: unknown): ProgramEvent {
           "previousBlob",
           "blob",
         ]);
+        const previousBlob = shaAt(
+          item.previousBlob,
+          `event.changes[${index}].previousBlob`
+        );
+        const blob = shaAt(item.blob, `event.changes[${index}].blob`);
+        if (previousBlob === blob) {
+          corruption(
+            `event.changes[${index}]`,
+            "authority change previousBlob and blob must differ"
+          );
+        }
         return {
           path: normalizedPathAt(item.path, `event.changes[${index}].path`),
-          previousBlob: shaAt(item.previousBlob, `event.changes[${index}].previousBlob`),
-          blob: shaAt(item.blob, `event.changes[${index}].blob`),
+          previousBlob,
+          blob,
         };
       });
       assertUnique(
@@ -2584,6 +2611,12 @@ export function replayEvents(events: readonly unknown[]): {
         }
         if (Date.parse(current.at) >= Date.parse(activeLease.expiresAt)) {
           corruption("event.at", "renewal must occur before expiry");
+        }
+        if (Date.parse(current.at) <= Date.parse(activeLease.termStartedAt)) {
+          corruption(
+            "event.at",
+            "renewal must be strictly later than the active termStartedAt"
+          );
         }
         if (current.previousExpiresAt !== activeLease.expiresAt) {
           corruption("event.previousExpiresAt", "does not match the active lease");

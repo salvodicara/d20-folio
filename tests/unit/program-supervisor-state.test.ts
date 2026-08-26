@@ -431,6 +431,15 @@ describe("Program Supervisor untrusted-data schemas", () => {
     }
   });
 
+  it("rejects a task whose repository and worktree resolve to the same path", () => {
+    const fixture = bootstrapFixture();
+    itemAt(fixture.tasks, 0).charter.ownership.worktree = REPOSITORY;
+
+    expect(() => validateEventInput(fixture)).toThrow(
+      /repository and worktree.*distinct/i
+    );
+  });
+
   it("validates structured dependency identities, SHAs, interfaces, and unique task IDs", () => {
     const valid = bootstrapFixture();
     itemAt(valid.tasks, 0).charter.dependencies = [dependency("task-b")];
@@ -598,6 +607,31 @@ describe("Program Supervisor structured task prerequisites", () => {
     expect(() =>
       replayEvents([bootstrapFixture(), acquire(2, active), unbounded])
     ).toThrow(/24 hours.*renewal|24 hours.*current term/i);
+  });
+
+  it("requires renewal time to advance beyond the active term start", () => {
+    const active = lease("task-a");
+    const sameTermRenewal = event(
+      3,
+      "lease-renewed",
+      {
+        taskId: "task-a",
+        leaseId: active.leaseId,
+        holder: active.holder,
+        agentId: active.agentId,
+        role: active.role,
+        readOnly: active.readOnly,
+        previousExpiresAt: active.expiresAt,
+        expiresAt: "2026-08-26T21:00:00.000Z",
+        authorityPointer: active.authorityPointer,
+        proof: "A renewal cannot reuse the current term boundary.",
+      },
+      active.termStartedAt
+    );
+
+    expect(() =>
+      replayEvents([bootstrapFixture(), acquire(2, active), sameTermRenewal])
+    ).toThrow(/strictly later.*termStartedAt|advance.*term start/i);
   });
 });
 
@@ -825,6 +859,44 @@ describe("Program Supervisor lease authority and WIP", () => {
         }),
       ])
     ).toThrow(/overlap.*scripts\/a/i);
+  });
+
+  it("allows the same relative owned path in different repositories", () => {
+    const fixture = bootstrapFixture();
+    const secondTask = itemAt(fixture.tasks, 1);
+    secondTask.charter.ownership.repository = "/repo/private-content";
+    secondTask.charter.ownership.paths = ["scripts/a"];
+    const secondLease = lease("task-b", "writer", {
+      pointer: {
+        ...authorityPointer(),
+        repository: "/repo/private-content",
+      },
+    });
+    secondLease.acquiredAt = "2026-08-26T03:00:00.000Z";
+    secondLease.termStartedAt = secondLease.acquiredAt;
+
+    expect(() =>
+      replayEvents([fixture, acquire(2, lease("task-a")), acquire(3, secondLease)])
+    ).not.toThrow();
+  });
+
+  it("requires every active writer to use a globally distinct worktree", () => {
+    const fixture = bootstrapFixture();
+    const secondTask = itemAt(fixture.tasks, 1);
+    secondTask.charter.ownership.repository = "/repo/private-content";
+    secondTask.charter.ownership.worktree = "/worktrees/task-a";
+    const secondLease = lease("task-b", "writer", {
+      pointer: {
+        ...authorityPointer(),
+        repository: "/repo/private-content",
+      },
+    });
+    secondLease.acquiredAt = "2026-08-26T03:00:00.000Z";
+    secondLease.termStartedAt = secondLease.acquiredAt;
+
+    expect(() =>
+      replayEvents([fixture, acquire(2, lease("task-a")), acquire(3, secondLease)])
+    ).toThrow(/writer worktree.*distinct|same worktree/i);
   });
 
   it("treats a normalized trailing glob as ownership of every descendant", () => {
@@ -1127,6 +1199,22 @@ describe("Program Supervisor lease authority and WIP", () => {
       ])
     ).toThrow(/main SHA.*advance|must differ/i);
   });
+
+  it.each([READINESS_BASELINE_PATH, LEASE_OWNER_PATH])(
+    "rejects an authority change whose previous and next blobs are identical for %s",
+    (authorityPath) => {
+      expect(() =>
+        validateEventInput(
+          event(2, "authority-reconciled", {
+            previousMainSha: SHA_B,
+            mainSha: SHA_C,
+            changes: [{ path: authorityPath, previousBlob: SHA_A, blob: SHA_A }],
+            proof: "A listed authority change must mutate its blob identity.",
+          })
+        )
+      ).toThrow(/previousBlob.*blob.*differ|authority change.*blob/i);
+    }
+  );
 
   it("advances main without inventing authority blob changes", () => {
     const fixture = bootstrapFixture();
