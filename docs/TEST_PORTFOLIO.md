@@ -6,9 +6,8 @@ replacement/deletion evidence. It implements the execution direction in the
 and the [Tactical Codex UI/UX Wayfinder](superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md);
 those documents remain the owners of their respective designs.
 
-Both Wayfinders are pinned in the sibling documentation stream at `7590b18` and
-must land before these repository-relative links resolve on `main`; they are not
-copied into this commit.
+Both Wayfinders are integrated and resolve from current `main`; this portfolio links their design
+authority rather than copying it.
 
 Counts and timings here are observable health indicators, not quotas, deletion
 targets, or completion gates. A test may be merged or deleted only when its

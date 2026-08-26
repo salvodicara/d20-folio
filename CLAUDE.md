@@ -127,7 +127,9 @@ irreversible external actions, or unresolved authority decisions.
 
 ## Common commands
 
-- Setup: `asdf install && pnpm install && git config core.hooksPath .githooks`
+- Setup: `scripts/program-supervisor/bootstrap-worktree.sh`. This pinned idempotent bootstrap
+  verifies Node 24.16.0 and pnpm 11.2.2, installs the root and standalone `functions/`
+  dependencies, and configures `core.hooksPath=.githooks`.
 - Development: `pnpm dev`
 - Focused tests: `pnpm test --run <path-or-pattern>`
 - Full composed gate: `just ci`

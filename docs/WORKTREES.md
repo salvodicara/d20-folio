@@ -3,9 +3,10 @@
 > **The repo standard for every change** (golden rule 11, `docs/GOLDEN_RULES.md`). Each task gets
 > its own **git worktree** + **branch off the freshest `origin/main`**; when it converges, the
 > agent **merges it to `main` autonomously** and tears the worktree down. There are **no pull
-> requests** — one owner + agents, nobody reviews PRs; the adversarial `ponytail-review`
-> Superpowers review plus the optional simplicity pass (golden rule 12) is the review. `main` is the integration line, NOT production:
-> the owner's only gate is deploy (golden rule 22).
+> requests** — one owner + agents, nobody reviews PRs. The opening review route is an independent
+> specification-compliance and correctness review. Ponytail is an optional complexity pass after
+> correctness, never the primary review or a substitute for it (golden rule 12). `main` is the
+> integration line, NOT production; the owner's only gate is deploy (golden rule 22).
 
 ## Why
 
@@ -71,17 +72,16 @@ just wt-list
   `--run` mode executes resolver and verification commands under that same pinned runtime.
 - **`.env.local`** is copied into each worktree by `wt-new` so `pnpm dev` works; it is git-ignored
   and never committed.
-- **The `content-pack` symlink is created automatically — composed-by-default.** When the
+- **The `content-pack` symlink is created automatically — composed-by-default and read-only.** When the
   maintainer's private pack is available, `wt-new` resolves its absolute physical target before
   linking it into the new worktree, so its final `main` pre-push gate runs in **COMPOSED (pack-present) mode** and pack-side breakage — a
   public API change that breaks a pack test — is caught before merge. When no pack sibling exists
   (external contributors), the link is skipped silently and the worktree gates in **SRD-only mode**,
   which is the correct and complete build for a public tree (`docs/CONTRIBUTING.md` → "The two build
-  modes"). `wt-new` echoes which mode it set up. Caveat: every worktree's `content-pack` points at the
-  **one** private pack working tree, so concurrent **edits** to pack files across worktrees can race
-  (rare — only when a public API change needs a pack-test update); gating (which only **reads** the
-  pack) is always safe. The belt-and-suspenders check in `.githooks/pre-push` warns loudly if a
-  worktree gates SRD-only while the pack actually exists.
+  modes"). `wt-new` echoes which mode it set up. The shared private `main` checkout is read-only;
+  the automatic link is safe for verification, never authority to edit private files. The
+  belt-and-suspenders check in `.githooks/pre-push` warns loudly if a worktree gates SRD-only while
+  the pack actually exists. Private edits follow the paired-worktree protocol below.
 - **Committed tooling comes with every worktree.** Tracked files include the committed skills
   (`.claude/skills/` — e.g. the official
   [pbakaus/impeccable](https://github.com/pbakaus/impeccable) design skill, which reads root
@@ -94,6 +94,35 @@ just wt-list
   `origin/main`). They reject the shared checkout before running the local bootstrap or resolver,
   fetch `origin/main` in preflight, and reject a dirty or stale non-control invoker. Pushing this
   change does not update the shared checkout: its stale worktree recipe must never be invoked.
+
+## Editing the private content pack
+
+Every private edit uses a dedicated private worktree and a paired public verifier. Never edit the
+shared private `main` checkout through a public worktree's `content-pack` link.
+
+Before either edit, write one two-repository charter that records:
+
+- the public and private repositories, fresh public base and private base, branches, absolute
+  worktrees, owned paths, expected heads, and the verifier's exact absolute `content-pack` target;
+- the compatibility contract across both bases, including which old/new public and private pairs
+  must remain valid;
+- the explicit push order and why every intermediate public/private pairing remains compatible;
+- both pre-push SHAs and a rollback order that restores a compatible pair without force-pushing;
+- separate recovery locations and a prohibition on placing private source, diffs, bundles, archives,
+  paths, or receipts containing private material in public recovery or public Git history.
+
+Create the dedicated private worktree from freshly fetched private `origin/main`; keep the shared
+private checkout read-only. Create the paired public verifier from fresh public `origin/main`, then
+link its `content-pack` to the dedicated private worktree's exact physical pack directory. Run the
+owned focused tests in both repositories, the composed `just ci` gate against that exact pair, and
+the public `just ci-srd-only` gate with the pack absent. Record both candidate SHAs and gate receipts.
+
+Prefer a compatibility bridge that makes either push order safe. Otherwise, the charter chooses
+private-first only when the new private candidate works with old public main, or public-first only
+when the new public candidate works with old private main. If neither intermediate pair is valid,
+stop; two Git remotes cannot provide an atomic cross-repository push. After each push, verify the
+remote SHA and the composed pair before the next push. Roll back in the chartered compatibility
+order with reviewed revert commits; never rewrite either `main`.
 
 ## Splitting parallel tasks to minimize conflicts
 
@@ -112,14 +141,25 @@ thin consumer-wiring, handled at the rebase.
 
 ## Cleaning up stale worktrees
 
-```sh
-git worktree list                       # what exists
-just wt-rm <slug>                       # safe remove (refuses if dirty)
-git worktree remove --force <path>      # force (discards uncommitted work)
-git worktree prune                      # drop admin entries for deleted dirs
-```
+List the registered worktrees first. A clean completed task is removed through `just wt-rm <slug>`
+only after its exact reviewed SHA is remotely proven. Never advertise or use force removal as
+cleanup. Never remove a worktree while a `main` push from it is still gating; poll the remote SHA
+first.
 
-A worktree locked by a running agent shows `locked`; unlock with `git worktree unlock <path>` (or
-`git worktree remove -f -f <path>` if the locking process is dead). Never remove a worktree while
-a `main` push from it is still gating — the pre-push hook dies when `node_modules` vanishes; poll
-origin for the SHA first (step 5 above).
+A dirty or locked worktree stays in place until one of these conditions is proved:
+
+1. **Integrated/empty equivalence:** its HEAD is remotely integrated (or its exact changes are
+   already represented by a proved integrated commit), and tracked, staged, and untracked state is
+   empty or byte-equivalent to that integrated evidence.
+2. **Verified recovery capsule:** a separate safe destination contains a manifest of canonical
+   worktree/common-dir, branch, base, HEAD, status, refs, and ownership; a complete bundle covering
+   every required reachable ref; binary-safe tracked and staged patches; an untracked archive with
+   an explicit file inventory; and checksums for every artifact. Restore into a separate probe and
+   perform source-match verification against the original status, tracked/staged diffs, untracked
+   inventory, and checksums before authorizing removal.
+
+Private and public recovery capsules remain physically separate; no private material enters public
+recovery. An app-managed worktree additionally requires a Codex handoff and detach, followed by
+proof that no running task or process still owns it. A repository-managed locked worktree likewise
+requires proof that its owner is idle. If equivalence, capsule verification, or ownership cannot be
+proved, record the blocker and retain the worktree.

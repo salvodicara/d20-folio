@@ -402,3 +402,72 @@ describe("program supervisor adapter authority", () => {
     }
   });
 });
+
+describe("program supervisor durable runbook guards", () => {
+  it("routes setup through the pinned idempotent bootstrap", () => {
+    const briefing = readFileSync(join(repositoryRoot, "CLAUDE.md"), "utf8");
+    expect(briefing).toContain("scripts/program-supervisor/bootstrap-worktree.sh");
+    expect(briefing).toMatch(/root and standalone `functions\/`\s+dependenc/i);
+    expect(briefing).not.toContain(
+      "Setup: `asdf install && pnpm install && git config core.hooksPath .githooks`"
+    );
+  });
+
+  it("requires dedicated paired worktrees and a complete two-repository charter for private edits", () => {
+    const runbook = readFileSync(join(repositoryRoot, "docs", "WORKTREES.md"), "utf8");
+    for (const evidence of [
+      /shared private `main`.*read-only/is,
+      /dedicated private worktree/i,
+      /paired public verifier/i,
+      /two-repository charter/i,
+      /public base/i,
+      /private base/i,
+      /compatibility/i,
+      /push order/i,
+      /rollback/i,
+      /just ci/,
+      /just ci-srd-only/,
+      /no private material.*public\s+recovery/is,
+    ]) {
+      expect(runbook).toMatch(evidence);
+    }
+    expect(runbook).not.toMatch(/one private pack working tree.*concurrent edits/is);
+  });
+
+  it("permits removal only after equivalence or a verified recovery capsule", () => {
+    const runbook = readFileSync(join(repositoryRoot, "docs", "WORKTREES.md"), "utf8");
+    expect(runbook).not.toMatch(/git worktree remove --force|remove -f -f/);
+    for (const evidence of [
+      /recovery capsule/i,
+      /manifest/i,
+      /complete bundle/i,
+      /binary-safe.*tracked.*staged/is,
+      /untracked archive/i,
+      /checksums/i,
+      /source-match verification/i,
+      /integrated.*empty equivalence/is,
+      /app-managed.*handoff.*detach/is,
+    ]) {
+      expect(runbook).toMatch(evidence);
+    }
+  });
+
+  it("opens with independent specification and correctness review and treats Ponytail as optional", () => {
+    const runbook = readFileSync(join(repositoryRoot, "docs", "WORKTREES.md"), "utf8");
+    const opening = runbook.slice(0, 1_200);
+    expect(opening).toMatch(
+      /independent.*specification(?:-compliance)? and correctness review/is
+    );
+    expect(opening).toMatch(/Ponytail.*optional complexity/is);
+    expect(opening).not.toMatch(/adversarial `ponytail-review`.*is the review/is);
+  });
+
+  it("does not describe already-integrated Wayfinders as pending", () => {
+    const portfolio = readFileSync(
+      join(repositoryRoot, "docs", "TEST_PORTFOLIO.md"),
+      "utf8"
+    );
+    expect(portfolio).toMatch(/Both Wayfinders.*integrated.*`main`/is);
+    expect(portfolio).not.toMatch(/must land before.*links resolve/is);
+  });
+});
