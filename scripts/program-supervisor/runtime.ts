@@ -68,6 +68,7 @@ export interface RuntimeOptions {
   now?: () => Date;
   lockTimeoutMs?: number;
   beforeInitializeRename?: (stagingRoot: string) => void | Promise<void>;
+  afterStaleLockClaim?: (evidencePath: string) => void | Promise<void>;
   afterLockOwnerDurable?: (ownerPath: string) => void | Promise<void>;
   afterLockPublish?: (lockPath: string) => void | Promise<void>;
   afterLockAcquired?: (lockPath: string) => void | Promise<void>;
@@ -736,7 +737,7 @@ async function preserveExactLink(
   evidencePath: string,
   expected: SecureFile,
   label: string
-): Promise<void> {
+): Promise<boolean> {
   try {
     await link(source, evidencePath);
   } catch (error) {
@@ -751,12 +752,13 @@ async function preserveExactLink(
         cause: error,
       });
     }
-    return;
+    return false;
   }
   const linked = await stat(evidencePath);
   if (linked.dev !== expected.device || linked.ino !== expected.inode) {
     throw new Error(`${label} was not hard-linked to the exact original bytes`);
   }
+  return true;
 }
 
 async function inspectOrRecoverLock(
@@ -775,8 +777,17 @@ async function inspectOrRecoverLock(
   }
   const hash = sha256(locked.bytes);
   const evidencePath = join(root, "recovery", `write-lock-stale-${hash}.json`);
-  await preserveExactLink(lockPath, evidencePath, locked, "Stale lock evidence");
+  const claimed = await preserveExactLink(
+    lockPath,
+    evidencePath,
+    locked,
+    "Stale lock evidence"
+  );
+  if (!claimed) {
+    return "Stale lock recovery is already claimed; manual recovery is required if the claimant does not finish";
+  }
   await fsyncDirectory(join(root, "recovery"));
+  await options.afterStaleLockClaim?.(evidencePath);
   const current = await lstat(lockPath).catch((error: unknown) => {
     if (errorCode(error) === "ENOENT") return null;
     throw error;
@@ -784,8 +795,16 @@ async function inspectOrRecoverLock(
   if (current && current.dev === locked.device && current.ino === locked.inode) {
     await unlink(lockPath);
     await fsyncDirectory(root);
+    return "recovered";
   }
-  return "recovered";
+  if (!current) {
+    throw new Error(
+      "Runtime write lock disappeared after stale recovery claim; manual recovery is required"
+    );
+  }
+  throw new Error(
+    "Runtime write lock changed after stale recovery claim; preserving the successor inode"
+  );
 }
 
 async function unlinkIfOwned(path: string, expected: LockOwnership): Promise<boolean> {

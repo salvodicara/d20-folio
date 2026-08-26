@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import {
   appendFile,
   chmod,
+  link,
   lstat,
   mkdtemp,
   readFile,
@@ -1010,6 +1011,178 @@ describe("Program Supervisor atomic runtime", () => {
         lockTimeoutMs: 25,
       })
     ).rejects.toThrow(/younger than 30 minutes/i);
+  });
+
+  it("never unlinks a stale lock whose exact recovery claim already exists", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    const deadPid = absentPid();
+    const lockPath = join(root, ".write-lock");
+    await writeSecureJson(lockPath, {
+      schemaVersion: 1,
+      pid: deadPid,
+      acquiredAt: "2026-08-26T00:00:00.000Z",
+    });
+    const lockBytes = await readFile(lockPath);
+    const evidencePath = join(
+      root,
+      "recovery",
+      `write-lock-stale-${createHash("sha256").update(lockBytes).digest("hex")}.json`
+    );
+    await link(lockPath, evidencePath);
+    const before = await stat(lockPath);
+
+    await expect(
+      loadRuntime(root, {
+        now: () => new Date("2026-08-26T01:00:01.000Z"),
+        lockTimeoutMs: 0,
+      })
+    ).rejects.toThrow(/recovery.*claimed|manual.*recovery|busy/i);
+
+    const canonical = await stat(lockPath);
+    const evidence = await stat(evidencePath);
+    expect({ device: canonical.dev, inode: canonical.ino }).toEqual({
+      device: before.dev,
+      inode: before.ino,
+    });
+    expect({ device: evidence.dev, inode: evidence.ino }).toEqual({
+      device: before.dev,
+      inode: before.ino,
+    });
+  });
+
+  it("allows only the new stale-lock claimant to recover and enter the critical section", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    const lockPath = join(root, ".write-lock");
+    await writeSecureJson(lockPath, {
+      schemaVersion: 1,
+      pid: absentPid(),
+      acquiredAt: "2026-08-26T00:00:00.000Z",
+    });
+    let signalClaimed = (): void => undefined;
+    const claimed = new Promise<void>((resolveClaimed) => {
+      signalClaimed = resolveClaimed;
+    });
+    let releaseClaim = (): void => undefined;
+    const holdClaim = new Promise<void>((resolveClaim) => {
+      releaseClaim = resolveClaim;
+    });
+    let criticalEntries = 0;
+    const claimant = loadRuntime(root, {
+      now: () => new Date("2026-08-26T01:00:01.000Z"),
+      lockTimeoutMs: 250,
+      afterStaleLockClaim: async () => {
+        signalClaimed();
+        await holdClaim;
+      },
+      afterLockAcquired: () => {
+        criticalEntries += 1;
+      },
+    });
+    const claimWasObserved = await Promise.race([
+      claimed.then(() => true),
+      claimant.then(() => false),
+      new Promise<boolean>((resolveTimeout) =>
+        setTimeout(() => resolveTimeout(false), 250)
+      ),
+    ]);
+
+    try {
+      expect(claimWasObserved).toBe(true);
+      await expect(
+        loadRuntime(root, {
+          now: () => new Date("2026-08-26T01:00:01.000Z"),
+          lockTimeoutMs: 25,
+          afterLockAcquired: () => {
+            criticalEntries += 1;
+          },
+        })
+      ).rejects.toThrow(/recovery.*claimed|manual.*recovery|busy/i);
+      expect(criticalEntries).toBe(0);
+      expect((await stat(lockPath)).isFile()).toBe(true);
+    } finally {
+      releaseClaim();
+    }
+
+    await claimant;
+    expect(criticalEntries).toBe(1);
+  });
+
+  it("does not unlink a successor lock that replaces the stale claimant's canonical path", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    const lockPath = join(root, ".write-lock");
+    const displacedPath = join(root, ".write-lock.stale-displaced");
+    await writeSecureJson(lockPath, {
+      schemaVersion: 1,
+      pid: absentPid(),
+      acquiredAt: "2026-08-26T00:00:00.000Z",
+    });
+    const successor = {
+      schemaVersion: 1,
+      pid: process.pid,
+      acquiredAt: "2026-08-26T01:00:01.000Z",
+    };
+
+    await expect(
+      loadRuntime(root, {
+        now: () => new Date("2026-08-26T01:00:01.000Z"),
+        lockTimeoutMs: 0,
+        afterStaleLockClaim: async () => {
+          await rename(lockPath, displacedPath);
+          await writeSecureJson(lockPath, successor);
+        },
+      })
+    ).rejects.toThrow(
+      new RegExp(`live PID ${process.pid}|write lock.*(?:busy|changed)`, "i")
+    );
+
+    expect(JSON.parse(await readFile(lockPath, "utf8"))).toEqual(successor);
+    expect((await stat(displacedPath)).isFile()).toBe(true);
+  });
+
+  it("fails closed when a stale-lock claimant process crashes after its durable claim", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    const lockPath = join(root, ".write-lock");
+    await writeSecureJson(lockPath, {
+      schemaVersion: 1,
+      pid: absentPid(),
+      acquiredAt: "2026-08-26T00:00:00.000Z",
+    });
+    const source = [
+      `import { loadRuntime } from ${JSON.stringify(RUNTIME_URL)};`,
+      `await loadRuntime(process.argv[1], {`,
+      `  now: () => new Date("2026-08-26T01:00:01.000Z"),`,
+      `  afterStaleLockClaim: () => process.exit(94),`,
+      `});`,
+    ].join("\n");
+
+    const crashed = spawnSync(
+      process.execPath,
+      ["--input-type=module", "-e", source, root],
+      { cwd: process.cwd(), encoding: "utf8" }
+    );
+    expect(crashed.status).toBe(94);
+    const lock = await stat(lockPath);
+    const claimNames = (await readdir(join(root, "recovery"))).filter((name) =>
+      /^write-lock-stale-[0-9a-f]{64}\.json$/.test(name)
+    );
+    expect(claimNames).toHaveLength(1);
+    const claim = await stat(join(root, "recovery", itemAt(claimNames, 0)));
+    expect({ device: claim.dev, inode: claim.ino }).toEqual({
+      device: lock.dev,
+      inode: lock.ino,
+    });
+
+    await expect(
+      loadRuntime(root, {
+        now: () => new Date("2026-08-26T01:00:02.000Z"),
+        lockTimeoutMs: 0,
+      })
+    ).rejects.toThrow(/recovery.*claimed|manual.*recovery/i);
+    expect((await stat(lockPath)).ino).toBe(lock.ino);
   });
 
   it("fails closed when PID liveness cannot be determined", async () => {
