@@ -8,7 +8,7 @@ leases (`docs/TEST_PORTFOLIO.md`). Those owners are linked rather than copied.
 ## Reconciliation snapshot
 
 - `reconciledThrough`: `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`
-- `observedAt`: `2026-08-26T07:09:58Z`
+- `observedAt`: `2026-08-26T07:19:17Z`
 - Public `origin/main` was freshly fetched and inspected at that exact SHA before authoring.
 - The snapshot is evidence-bound, not self-referential: it does not claim the SHA or blob of the
   commit that contains this file.
@@ -25,7 +25,7 @@ repository lease owner are deliberately separate roles; one cannot substitute fo
 | `tacticalWayfinder`        | `docs/superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md` | `062ffd48783311a77e1ad5bee962ef5cd637c079`                     |
 | `testRoadmap`              | `docs/superpowers/plans/2026-08-25-test-portfolio-reset.md`           | `9f3e42f7e50f104a35ceab21f5469a4291407bb4`                     |
 | `readinessBaseline`        | `docs/superpowers/plans/2026-08-25-g0-automation-readiness.md`        | `0a7f1ec661390aa475dfbde83eab72a4fbbe8b89`                     |
-| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `b7ba776b64d7b9cf8ff1b801ae5e5381b396865d`                     |
+| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `9826c2ea5a452c12c2ad8aef52134b0004c5e3a5`                     |
 | `statusOwner`              | `docs/PROGRAM_STATUS.md`                                              | Task 6 resolves the integrated blob and records it in runtime. |
 
 The status owner cannot truthfully contain its own Git blob. Task 6 must resolve
@@ -70,21 +70,22 @@ The shared checkout remains untouched even when its branch name is `main`.
   `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-supervisor-foundation`; branch
   `feat/program-supervisor-foundation`; base
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`; pre-status fix HEAD
-  `51bdb38ba5ca5df6dc826ee896b4b1a916cd6fd1`; no private write. The charter owns
+  `be84367069e47ce029eadf1c11fbdf9aac90df2d`; no private write. The charter owns
   `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
   `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, `scripts/program-supervisor/**`,
   `tests/unit/program-supervisor-{worktree,state,runtime}.test.ts`, and its uniquely named
   `.changeset/program-supervisor-*.md` files. Task 4 itself owns only the five tracked paths named
   in its plan.
 - **State and receipt:** `executing`; the tree was clean at pre-status fix HEAD
-  `51bdb38ba5ca5df6dc826ee896b4b1a916cd6fd1`. The first whole-branch evaluator required fixes.
+  `be84367069e47ce029eadf1c11fbdf9aac90df2d`. The first whole-branch evaluator required fixes.
   Adapter authority (`4d39f30eb1296d7f25a4801c28467b143f86e38c`), dependency/lease state
   (`41114180176d67fda475bb0b060be630031ee9fb`), writer handoff
   (`a14b772739c38ce0f0e180bc84608cc5d16b7c81`), runtime crash integrity
   (`e7cd860df3c16e83f1b5ee7b93029341dfad33ba`), and recovery runbooks
   (`34bf65e9511147858ac0186f23d602a6af9d20c3`) each have focused RED/GREEN receipts and passed
   commit hooks. The pinned Node command/child inheritance proof is
-  `51bdb38ba5ca5df6dc826ee896b4b1a916cd6fd1`. This status commit is intentionally not self-embedded.
+  `51bdb38ba5ca5df6dc826ee896b4b1a916cd6fd1`, with strict typecheck/lint repair at
+  `be84367069e47ce029eadf1c11fbdf9aac90df2d`. This status commit is intentionally not self-embedded.
   Fix Round 1 still requires a fresh independent whole-branch review before the full composed gates
   may run.
 - **First lease:** repository lease `F0`, holder `program-supervisor-foundation`, acquired
@@ -215,7 +216,7 @@ current execution pointer so agents can route correctly; it cannot grant or chan
   `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
   `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and `scripts/program-supervisor/**`; expires
   `2026-08-27T01:38:26Z`. Its authority pointer is
-  `docs/TEST_PORTFOLIO.md@b7ba776b64d7b9cf8ff1b801ae5e5381b396865d`, reconciled through
+  `docs/TEST_PORTFOLIO.md@9826c2ea5a452c12c2ad8aef52134b0004c5e3a5`, reconciled through
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`.
 - **Inactive next lease:** `K1`; acquire only after F0 release and a fresh rebase/review/gate cycle.
 - **Inactive blocked lease:** `B00`; acquire only after F0 release, T8A adapter repair, overlap

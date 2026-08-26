@@ -523,7 +523,7 @@ describe("program supervisor durable runbook guards", () => {
     expect(status).toContain(planBlob);
     expect(status).toContain(portfolioBlob);
     expect(status).not.toContain(statusBlob);
-    expect(status).toContain("51bdb38ba5ca5df6dc826ee896b4b1a916cd6fd1");
-    expect(portfolio).toContain("51bdb38ba5ca5df6dc826ee896b4b1a916cd6fd1");
+    expect(status).toContain("be84367069e47ce029eadf1c11fbdf9aac90df2d");
+    expect(portfolio).toContain("be84367069e47ce029eadf1c11fbdf9aac90df2d");
   });
 });

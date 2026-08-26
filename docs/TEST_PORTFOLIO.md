@@ -146,8 +146,8 @@ unperformed handoff has no fabricated SHA.
   `scripts/program-supervisor/**`. This is a repository-authority lease only; it
   does not claim a runtime lease before the runtime exists.
 - **Current state and conflict receipt (Task 5 Fix Round 1 pre-status, observed
-  `2026-08-26T07:09:58Z`):** F0 remains active; the Foundation worktree was clean at
-  pre-status fix HEAD `51bdb38ba5ca5df6dc826ee896b4b1a916cd6fd1` on freshly fetched `origin/main`
+  `2026-08-26T07:19:17Z`):** F0 remains active; the Foundation worktree was clean at
+  pre-status fix HEAD `be84367069e47ce029eadf1c11fbdf9aac90df2d` on freshly fetched `origin/main`
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`. K1 is clean at
   `7ae43494be58f92651b02a32de821c0d3f59fb98`; its fresh
   `origin/main...HEAD` path set is disjoint from every F0 path. B00 is clean and
