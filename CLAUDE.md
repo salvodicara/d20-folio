@@ -21,13 +21,17 @@ runtime/configuration rather than copying dated status into this briefing.
 No source is infallible merely because it is called canonical. A fact has one document owner, while
 code, configuration, tests, git, and deployed behavior provide evidence about reality.
 
-| Role         | Owners                                                                                                                                                                           | Use                                                      |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| Constitution | [Product Constitution](docs/PRODUCT_CONSTITUTION.md), [Golden Rules](docs/GOLDEN_RULES.md)                                                                                       | Durable product, safety, and repository invariants       |
-| Map          | [Architecture](docs/ARCHITECTURE.md), [Mechanics](docs/MECHANICS.md), [Character schema](docs/CHARACTER_SCHEMA.md), [Design](DESIGN.md), [IT registry](docs/IT_NAME_REGISTRY.md) | How the current system is intended to work               |
-| Status       | [Progress](PROGRESS.md), [Test portfolio](docs/TEST_PORTFOLIO.md), [Automation coverage](docs/AUTOMATION_COVERAGE.md), [Automation audit record](docs/AUTOMATION_BACKLOG.md)     | Current and remaining work; verify claims before acting  |
-| History      | [Changelog](CHANGELOG.md), changesets, git history                                                                                                                               | What changed and why; not current operating instructions |
-| Operations   | [Contributing](docs/CONTRIBUTING.md), [Worktrees](docs/WORKTREES.md), [Release](docs/RELEASE.md), [Bug reporting](docs/BUG_REPORTING.md)                                         | Task-specific procedures and runbooks                    |
+| Role         | Owners                                                                                                                                                                                                                               | Use                                                      |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| Constitution | [Product Constitution](docs/PRODUCT_CONSTITUTION.md), [Golden Rules](docs/GOLDEN_RULES.md)                                                                                                                                           | Durable product, safety, and repository invariants       |
+| Map          | [Architecture](docs/ARCHITECTURE.md), [Mechanics](docs/MECHANICS.md), [Character schema](docs/CHARACTER_SCHEMA.md), [Design](DESIGN.md), [IT registry](docs/IT_NAME_REGISTRY.md)                                                     | How the current system is intended to work               |
+| Status       | [Program status](docs/PROGRAM_STATUS.md)                                                                                                                                                                                             | active agent-program execution control                   |
+| Status       | [Progress](PROGRESS.md), [Test portfolio](docs/TEST_PORTFOLIO.md), [Automation coverage](docs/AUTOMATION_COVERAGE.md), [Automation audit record](docs/AUTOMATION_BACKLOG.md)                                                         | Current and remaining work; verify claims before acting  |
+| History      | [Changelog](CHANGELOG.md), changesets, git history                                                                                                                                                                                   | What changed and why; not current operating instructions |
+| Operations   | [Agent-first operating model](docs/plans/2026-08-25-agent-first-operating-model-design.md), [Contributing](docs/CONTRIBUTING.md), [Worktrees](docs/WORKTREES.md), [Release](docs/RELEASE.md), [Bug reporting](docs/BUG_REPORTING.md) | Approved agent-program contract and task runbooks        |
+
+Agents update `docs/PROGRAM_STATUS.md` whenever a frontier, lease, blocker, owner gate, or
+integration SHA changes. Do not duplicate those execution facts in product/release status.
 
 When sources disagree: respect the user's latest informed decision; identify the owner of the fact;
 inspect current code/config/runtime and relevant tests; use history to recover intent; then reconcile
@@ -83,8 +87,11 @@ Superpowers is the default lifecycle: discovery/brainstorming → written plan �
 TDD → systematic debugging as needed → review → verification before completion. Project-specific
 adapters below override generic command examples, not the lifecycle:
 
-- Every repo change uses `just wt-new <slug> [kind]` from the shared checkout; never edit, commit,
-  or switch branches in that checkout. Full flow: [Worktrees](docs/WORKTREES.md).
+- Every repo change uses an isolated worktree. Supervisor and manual same-thread worktree adapters
+  run from the clean detached program-control worktree, or another clean worktree whose HEAD has
+  just been proven equal to fresh `origin/main`; never run a stale worktree recipe from the shared
+  checkout. The shared checkout stays untouched and is never recipe authority merely because it is
+  on local `main`. Full flow: [Worktrees](docs/WORKTREES.md).
 - Small Conventional Commits; the owner is the sole commit author, with no co-author/footer/trailer.
   Every commit includes a `.changeset/*.md` and reconciles the document that owns the changed fact.
 - Never use `--no-verify`. The authoritative local gate for integration is `just ci`; use

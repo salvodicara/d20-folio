@@ -146,12 +146,16 @@ unperformed handoff has no fabricated SHA.
   `docs/WORKTREES.md`, `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and
   `scripts/program-supervisor/**`. This is a repository-authority lease only; it
   does not claim a runtime lease before the runtime exists.
-- **Conflict receipt:** K1 is clean at
+- **Current state and conflict receipt (Task 4 pre-authoring, observed
+  `2026-08-26T05:18:32Z`):** F0 remains active; the Foundation worktree is clean at
+  `4425731423bcd08b405046ff525b4aaffa58f235` on fresh `origin/main`
+  `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`. K1 is clean at
   `7ae43494be58f92651b02a32de821c0d3f59fb98`; its fresh
   `origin/main...HEAD` path set is disjoint from every F0 path. B00 is clean and
   frozen at `7b66c828b1f181c22e5921abf678c436825bc089`; its committed candidate
   overlaps `package.json` and `PROGRESS.md` (and related `pnpm-lock.yaml`), so it
-  is serialized behind F0. The clean private `main` checkout is
+  is serialized behind F0. Neither retained product worktree has a rebase or active
+  writer. The clean private `main` checkout is
   `1d5226f564d2c790f5409c294afe9d9ba6cc2ab7` and is read-only for this lease.
 - **Handoff:** release F0 only after remote integration proof or an evidence-backed
   blocker/recovery disposition. Until then B00 receives no writer lease and may

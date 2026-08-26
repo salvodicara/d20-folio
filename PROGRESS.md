@@ -8,6 +8,10 @@
 > - **The open gap frontier** (per-seam, per-entity) → `docs/AUTOMATION_BACKLOG.md`.
 > - **How it works today** (incl. the architecture invariants the R1–R8 campaign locked in) → `docs/ARCHITECTURE.md`.
 
+Active agent-program execution control—frontiers, leases, blockers, owner gates, and integration
+SHAs—lives in [`docs/PROGRAM_STATUS.md`](docs/PROGRAM_STATUS.md). This tracker remains the
+product/release forward plan.
+
 ## CLOSED — UI/UX perfection: the open-source D&D Beyond alternative (owner-ratified 2026-08-04; approved 2026-08-12)
 
 The owner has reopened the WHOLE product experience for a fresh, evidence-led redesign campaign:
