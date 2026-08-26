@@ -138,7 +138,7 @@ unperformed handoff has no fabricated SHA.
 - **Repository lease F0 (Task 0):** holder `program-supervisor-foundation` in
   `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-supervisor-foundation`, branch
   `feat/program-supervisor-foundation`; acquired `2026-08-26T01:38:26Z`, expires
-  `2026-08-27T01:38:26Z`, and rechecked valid at `2026-08-26T16:19:08Z`. Its exact
+  `2026-08-27T01:38:26Z`, and rechecked valid at `2026-08-26T18:30:26.000Z`. Its exact
   repository-exclusive paths remain `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`,
   `docs/WORKTREES.md`, `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and
   `scripts/program-supervisor/**` until the terminal handoff rule below is satisfied.
@@ -148,9 +148,20 @@ unperformed handoff has no fabricated SHA.
   strict subset `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and
   `.changeset/program-supervisor-activation.md`. It does not narrow or release the versioned
   repository lease; the remaining F0 paths are dependency-frozen by that lease, not implicitly
-  owned by the activation runtime task.
-- **Fresh base:** fetched public `origin/main`, local control HEAD, and remote main are
-  `fd5d84cec2e5da2986bda412e277d7cc68c77735`.
+  owned by the activation runtime task. Its acquisition-time repository pointer remains
+  `F0`, `docs/TEST_PORTFOLIO.md@7cb89ed4b26021aa46a7d4cdc8ef7888df692d52`, reconciled through
+  `fd5d84cec2e5da2986bda412e277d7cc68c77735`; that is the preserved pre-authority-reconciliation
+  lease receipt, not the current public or runtime main authority.
+- **Current base and activation candidate:** fetched public `origin/main`, remote main, clean
+  detached program-control HEAD, and runtime main authority are
+  `1a549625175af1802cc521f6c4bcba03ebe0f8b9`. The clean rebased activation worktree is two commits
+  ahead at pre-refresh HEAD `f9f29e95bda67ff8757396adda6abc258175d526` (tree
+  `95d5d2fdb959d5b019fff3428953b0fc55f774b4`), with first activation commit
+  `07e694a9e2493f2c44408abd3db94634dc93c076`. Runtime has not yet reconciled that rebase: its last
+  activation `task-reconciled` identity remains base
+  `b9cdabde76aae63c9418b0ae3cb2b5a7d10ac3fa` and head
+  `512e0ffca44db0945393fb7013c190c88a4c3060` until this refreshed candidate is committed and the
+  next typed reconciliation event is appended.
 - **Integrated core receipt:** exact remote SHA
   `fd5d84cec2e5da2986bda412e277d7cc68c77735` received independent PASS review. `just ci` passed
   801/801 Vitest files and 18,613/18,613 tests, 7/7 Functions files and 129/129 Functions tests,
@@ -159,29 +170,53 @@ unperformed handoff has no fabricated SHA.
   Vitest files and 18,613/18,613 tests, coverage, build, and 6/6 bundle-budget tests. The pinned
   toolchain/typecheck authority correction remains evidenced by
   `be84367069e47ce029eadf1c11fbdf9aac90df2d`. No deployment occurred.
+- **Subsequent test-harness repair receipts:** current main advanced from historical core F0 through
+  independently reviewed runtime-residue repair
+  `b9cdabde76aae63c9418b0ae3cb2b5a7d10ac3fa` and worktree-race repair
+  `1a549625175af1802cc521f6c4bcba03ebe0f8b9`, not through another core integration. Each separate
+  repair passed `just ci`, `just ci-srd-only`, and the actual pre-push coverage/build/budget lane
+  before remote integration, authority reconciliation, and runtime-lease release. Neither changed
+  production or private content, and neither deployed. Their clean worktrees and branches remain
+  retained only for supervisor cleanup after handoff.
 - **Runtime and adapter receipt:** private bootstrap fingerprint
-  `840c0ce7c9514608040389ae234b0cd526b4754ab2799c738310db653b34984e`; event sequence `14`;
-  fixed-ref tip `4db74c21436aad08d569a6aab78efc9a00009382`; validation and read-only rebuild match. The
-  dedicated supervisor task and exact 30-minute heartbeat are provisioned; the heartbeat remains
-  `PAUSED`. A disposable probe proved `just wt-new`, pinned Node `v24.16.0`, pnpm `11.2.2`,
-  root and Functions installs, hooks, idempotent bootstrap, and the exact read-only content-pack
-  link, then was cleanly removed with its branch.
-- **Current conflict receipt (observed `2026-08-26T16:19:08Z`):** K1 is clean and queued at
+  `840c0ce7c9514608040389ae234b0cd526b4754ab2799c738310db653b34984e`; event sequence `49`;
+  fixed-ref tip `25c24b798c10f9c72d64e85f510b30cc77415c51`; main authority
+  `1a549625175af1802cc521f6c4bcba03ebe0f8b9`. The projection contains six tasks, exactly one active
+  writer lease for activation, and current writer `program-supervisor-bootstrap-controller`. The
+  activation task remains `executing` with its sequence-39 failed-gate reconciliation pending:
+  `just ci` passed typecheck and lint, then completed 800/801 test files and 18,612/18,613 tests
+  because the single-fetch worktree test exceeded 5 seconds. The separately chartered
+  `foundation-worktree-race-test` removed only its irrelevant harness setup, received independent
+  PASS review, passed both full gates plus the actual pre-push coverage/build/budget lane, integrated
+  at current main, reconciled authority, and released its lease at sequence 49. Provisioning records
+  task `d20 Folio Program Supervisor`,
+  saved project `1ffe790a-2e8c-41fd-b048-932ad89d0d4e`, thread
+  `01a03eba-ac75-7fb0-80b0-88356b3aba67`, host `local`, marker
+  `d20-folio-program-supervisor:v1:05405bae8b24f3ec1f120985f66bf755c1011b19`, automation ID
+  `d20-folio-program-supervisor-heartbeat`, automation name
+  `d20 Folio Program Supervisor Heartbeat`, cadence 30 minutes, the same target thread,
+  destination `thread`, notifications `failed_runs_only`, and status `PAUSED`. A disposable probe
+  proved `just wt-new`, pinned Node `v24.16.0`, pnpm `11.2.2`, root and Functions installs, hooks,
+  idempotent bootstrap, and the exact read-only content-pack link, then was cleanly removed with its
+  branch.
+- **Current conflict receipt (observed `2026-08-26T18:30:26.000Z`):** K1 is clean and queued at
   `7ae43494be58f92651b02a32de821c0d3f59fb98`; B00 is clean and frozen at
   `7b66c828b1f181c22e5921abf678c436825bc089`; neither has an active writer or rebase. The private
   content repository is clean with HEAD, fetched `origin/main`, and remote main all equal to
   `1d5226f564d2c790f5409c294afe9d9ba6cc2ab7`; retained product links resolve to its
   `content-pack/` and are read-only.
-- **Terminal handoff rule:** F0 is released only after this activation-status change is remotely
-  proven and its authority event is appended. Then and only then may the activation task become
-  `integrated`, its runtime lease be released, the exact heartbeat change from `PAUSED` to
-  `ACTIVE`, and `heartbeat-activated` irreversibly transfer the sole runtime writer role to
-  thread `01a03eba-ac75-7fb0-80b0-88356b3aba67`.
+- **Terminal handoff rule:** F0 is released only after this refreshed rebased activation-status
+  candidate is remotely proven, its current base/head is reconciled into runtime, and its authority
+  event is appended. Then and only then may the activation task become `integrated`, its runtime
+  lease be released, the exact heartbeat change from `PAUSED` to `ACTIVE`, and
+  `heartbeat-activated` irreversibly transfer the sole runtime writer role to thread
+  `01a03eba-ac75-7fb0-80b0-88356b3aba67`.
 - **Verification contract:** the exact candidate requires independent read-only review,
   documentation guards, `just ci`, `just ci-srd-only`, clean private/link proof, fresh-base
   verification immediately before candidate evidence, explicit `HEAD:main` remote proof, and
   atomic reconciliation of the new `docs/PROGRAM_STATUS.md` and `docs/TEST_PORTFOLIO.md` blobs.
 - **Cleanup:** after the typed writer handoff, only the provisioned supervisor may prove the
-  bootstrap controller detached, remove the clean remotely integrated Foundation worktree and
-  branch from program-control, and append `cleanup-recorded`. Program-control, the active runtime,
-  immutable bootstrap evidence, shared checkout, K1, and B00 are not cleanup candidates.
+  bootstrap controller detached and each tree clean, remotely integrated, and unowned; remove the
+  Foundation, runtime-residue-repair, and worktree-race-repair worktrees and branches from
+  program-control; and append `cleanup-recorded`. Program-control, the active runtime, immutable
+  bootstrap evidence, shared checkout, K1, and B00 are not cleanup candidates.
