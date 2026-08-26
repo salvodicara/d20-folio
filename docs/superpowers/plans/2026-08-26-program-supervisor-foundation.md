@@ -402,7 +402,7 @@ From the committed Task 1 HEAD, first prove `/Users/salvatoredicara/Workspace/Co
 **Interfaces:**
 
 - Consumes: untrusted JSON event values whose first record is a complete bootstrap event containing the authority manifest, full task charters, and active leases.
-- Produces: `validateSnapshot`, `validateLeaseFile`, `parseEvents`, `validateEventInput`, `validateTransition`, and `replayEvents` with deterministic `{ snapshot, leases }` output, mechanical two-writer/one-evaluator enforcement, and precise corruption errors.
+- Produces: `validateSnapshot`, `validateLeaseFile`, `parseEvents`, `validateEventInput`, `validateTransition`, and `replayEvents` with deterministic `{ snapshot, leases }` output, mechanical two-writer/one-evaluator enforcement, and precise corruption errors. `parseEvents` is a pure compatibility parser for the canonical newline-terminated event blobs joined in memory after Git validation; it does not imply or authorize a persisted NDJSON ledger.
 
 - [ ] **Step 1: Write failing schema and replay tests**
 
@@ -504,7 +504,7 @@ Use `join(mkdtempSync(join(tmpdir(), "d20-program-parent-")), "runtime")` so eve
 - initialization creates a mode-`0o700` private bare repository, one bootstrap root commit, and exactly `refs/program-supervisor/events`;
 - every commit tree contains exactly `100644 bootstrap.json` and `100644 event.json`; every `event.json` is canonical newline-terminated JSON, every tree reuses the bootstrap commit's exact immutable bootstrap blob OID, the bootstrap commit has no parent, and each later commit has exactly one parent;
 - the complete first-parent chain reconstructs contiguous sequence numbers and the Task 2 projection, while malformed trees, non-canonical JSON/envelopes, missing/wrong object types, missing objects, a merge, or a forward commit that replays an earlier sequence fails closed;
-- the store rejects unexpected refs, symbolic or packed refs, reflogs, replacement refs, non-canonical config, alternates, grafts, shallow metadata, common-dir/worktree indirection, packfiles, symlinks, and any Git-internal `.lock` residue without deleting it;
+- the store rejects unexpected refs, a symbolic or packed fixed event ref, reflogs, replacement refs, non-canonical config, alternates, grafts, shallow metadata, common-dir/worktree indirection, packfiles, symlinks, and any Git-internal `.lock` residue without deleting it; the canonical `HEAD` file is the sole allowed symbolic reference and points exactly to the fixed event ref;
 - two deterministically synchronized writers build from one old tip; exactly one first CAS wins, the loser rereads/replays/revalidates, rebuilds against the demonstrated new tip, and publishes the next contiguous event without loss or duplication;
 - an injected lost-result fault after successful `update-ref` is reconciled by proving the candidate equals or is an ancestor of the current tip; an update failure with an unchanged tip is not retried;
 - a process crash before CAS leaves at most unreachable immutable objects and no authoritative event, while an incomplete claimed initialization root is preserved and every later init/load rejects it;
