@@ -130,7 +130,7 @@ unperformed handoff has no fabricated SHA.
 | C0    | T8A (this commit)            | 6efda521d6a0c3ecdd481628656fbb4c4a7792bb | Add isolated `visual:review`, `visual:motion`, and `qa:perf` commands without changing the lockfile; next owner is UI Task 1.                     | this commit | `pnpm visual:review -- --list`; `pnpm visual:motion -- --list`; `pnpm qa:perf -- --help`                        |
 | C1    | unassigned (next: UI Task 2) | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `src/app/router.tsx`, specimen/production i18n loaders, catalogue registration; future order UI Task 2 → owning UI catalogue slices → UI Task 15. | —           | Established at the approved handoff.                                                                            |
 | C2    | T8A (this commit)            | 6efda521d6a0c3ecdd481628656fbb4c4a7792bb | Add the isolated visual Playwright config and artifact/report root; ordinary `playwright.config.ts` stays untouched; next owner is T4.            | this commit | `pnpm exec playwright test --list` (2,331 / 62); `pnpm visual:review -- --list`; `pnpm visual:motion -- --list` |
-| C3    | unassigned (next: T3)        | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `.github/workflows/**`; `Justfile` is exclusively leased by F0 until its recorded release.                                                        | —           | Established at the approved handoff; assign `Justfile` again only after the F0 handoff.                         |
+| C3    | unassigned (next: T3)        | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `.github/workflows/**`; `justfile` is exclusively leased by F0 until its recorded release.                                                        | —           | Established at the approved handoff; assign `justfile` again only after the F0 handoff.                         |
 | C4    | T8A (this commit)            | 6efda521d6a0c3ecdd481628656fbb4c4a7792bb | Record the visual-lane foundation over T7A's census; `CAND-surface-sweeps` remains blocked pending T7B/T8B; next owner is T10/T14.                | this commit | `pnpm visual:review -- --grep detector`; `pnpm visual:motion -- --grep detector`                                |
 
 ### F0 — Program Supervisor Foundation shared-path lease
@@ -145,10 +145,10 @@ unperformed handoff has no fabricated SHA.
   `docs/WORKTREES.md`, `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and
   `scripts/program-supervisor/**`. This is a repository-authority lease only; it
   does not claim a runtime lease before the runtime exists.
-- **Current state and conflict receipt (Task 5 Fix Round 5 correction pre-status, observed
-  `2026-08-26T12:10:47Z`):** F0 remains active; the Foundation worktree was clean at
-  pre-status fix HEAD `39752fec057dceb79b56b5d9a0d5aaf10ca18f5c` (tree
-  `cd34e14a9d89f1639336a9d11aa21abc75317ea7`) on freshly fetched `origin/main`
+- **Current state and conflict receipt (Task 5 Fix Round 5 streaming correction pre-status,
+  observed `2026-08-26T13:09:44Z`):** F0 remains active; the Foundation worktree was clean at
+  pre-status fix HEAD `e8d41d1ed3bdd80c8d21baba3d2fcc91ef201113` (tree
+  `79affdf0d6846afd322d761cd3f65e3c7eaf063f`) on freshly fetched `origin/main`
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`. K1 is clean at
   `7ae43494be58f92651b02a32de821c0d3f59fb98`; its fresh
   `origin/main...HEAD` path set is disjoint from every F0 path. B00 is clean and
@@ -166,9 +166,13 @@ unperformed handoff has no fabricated SHA.
   contract. The scoped correction at `39752fec057dceb79b56b5d9a0d5aaf10ca18f5c`
   proves current-UID/non-writable parent authority, bounded non-deleting Git contention,
   captured-ref and exact-candidate reconciliation, real `tmp_obj_*` crash evidence, constant
-  subprocess replay, hermetic execution, and recursive no-mutation rebuild behavior; its runtime
-  suite passed 32/32 and its hook passed. This updates only the F0 receipt and does not change the
-  lease term or any test-risk ownership.
+  subprocess replay, hermetic execution, and recursive no-mutation rebuild behavior. The follow-up
+  streaming correction at `e8d41d1ed3bdd80c8d21baba3d2fcc91ef201113` replaces the 32 MiB
+  whole-response ceiling with three incremental `cat-file --batch` readers, admits a valid 33 MiB
+  event through append/load/rebuild, rejects events over the 64 MiB object bound before CAS, and
+  retries real Git activity that begins after the initial residue scan. Its runtime suite passed
+  35/35 and its hook passed. This updates only the F0 receipt and does not change the lease term or
+  any test-risk ownership.
 - **Handoff:** release F0 only after remote integration proof or an evidence-backed
   blocker/recovery disposition. Until then B00 receives no writer lease and may
   not edit, rebase, or integrate its frozen candidate. After F0 integrates, B00

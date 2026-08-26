@@ -8,7 +8,7 @@ leases (`docs/TEST_PORTFOLIO.md`). Those owners are linked rather than copied.
 ## Reconciliation snapshot
 
 - `reconciledThrough`: `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`
-- `observedAt`: `2026-08-26T12:10:47Z`
+- `observedAt`: `2026-08-26T13:09:44Z`
 - Public `origin/main` was freshly fetched and inspected at that exact SHA before authoring.
 - The snapshot is evidence-bound, not self-referential: it does not claim the SHA or blob of the
   commit that contains this file.
@@ -26,7 +26,7 @@ other.
 | `tacticalWayfinder`        | `docs/superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md` | `062ffd48783311a77e1ad5bee962ef5cd637c079`                     |
 | `testRoadmap`              | `docs/superpowers/plans/2026-08-25-test-portfolio-reset.md`           | `9f3e42f7e50f104a35ceab21f5469a4291407bb4`                     |
 | `readinessBaseline`        | `docs/superpowers/plans/2026-08-25-g0-automation-readiness.md`        | `0a7f1ec661390aa475dfbde83eab72a4fbbe8b89`                     |
-| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `baa9f08cd88bb5d4ee4e3bacfc17aaf470bccf41`                     |
+| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `7772c59487d2404af3b991b476d6cefd87a8c8e3`                     |
 | `statusOwner`              | `docs/PROGRAM_STATUS.md`                                              | Task 6 resolves the integrated blob and records it in runtime. |
 
 The status owner cannot truthfully contain its own Git blob. Task 6 must resolve
@@ -36,7 +36,7 @@ authority may invent or cache a status blob.
 
 Supporting Foundation authorities in the same inspected tree are the implementation plan
 (`docs/superpowers/plans/2026-08-26-program-supervisor-foundation.md`, blob
-`9782eb00b11f83f4fe3c98eabc0891cdae006ead`) and the dependency baseline
+`9f14272201ca284cc2b42e707c5554d651eb61e7`) and the dependency baseline
 (`docs/superpowers/status/2026-08-26-foundation-security-baseline.md`, blob
 `3102f341c1c2815dce2f164646764b28911e9f97`). Tactical visual decisions additionally remain owned
 by `DESIGN.md` at blob `85a7942355904c4a57e2e4729491c99a3ae1b97f`.
@@ -120,8 +120,14 @@ The shared checkout remains untouched even when its branch name is `main`.
   when the next writer advances; SIGKILLed `tmp_obj_*` evidence remains fail-closed; full replay is
   one `rev-list` plus three `cat-file --batch` processes independent of chain length; and hermetic
   execution plus recursive no-mutation rebuild are proved. Its runtime suite passed 32/32 and its
-  hook passed. This status commit is intentionally not self-embedded. Fix Round 5 still requires a
-  fresh independent whole-branch review before the full composed gates may run.
+  hook passed. The whole-branch evaluator then identified the 32 MiB batch-response ceiling,
+  post-scan Git contention classification gap, and stale `Justfile` spelling. The streaming
+  correction at `e8d41d1ed3bdd80c8d21baba3d2fcc91ef201113` closes those findings with a
+  no-shell incremental `cat-file --batch` frame reader, a 64 MiB per-object/pre-CAS bound, a valid
+  33 MiB append/load/rebuild proof, and same-window reclassification of real Git activity that
+  begins after the initial residue scan; its runtime suite passed 35/35 and its hook passed. This
+  status commit is intentionally not self-embedded. Fix Round 5 still requires one exact fresh
+  independent whole-branch review before the full composed gates may run.
 - **First lease:** repository lease `F0`, holder `program-supervisor-foundation`, acquired
   `2026-08-26T01:38:26Z`, expires `2026-08-27T01:38:26Z`; active and writable. No runtime lease is
   claimed before Task 6 creates the runtime. The future reviewed runtime lease ID is
@@ -255,7 +261,7 @@ current execution pointer so agents can route correctly; it cannot grant or chan
   `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
   `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and `scripts/program-supervisor/**`; expires
   `2026-08-27T01:38:26Z`. Its authority pointer is
-  `docs/TEST_PORTFOLIO.md@baa9f08cd88bb5d4ee4e3bacfc17aaf470bccf41`, reconciled through
+  `docs/TEST_PORTFOLIO.md@7772c59487d2404af3b991b476d6cefd87a8c8e3`, reconciled through
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`.
 - **Inactive next lease:** `K1`; acquire only after F0 release and a fresh rebase/review/gate cycle.
 - **Inactive blocked lease:** `B00`; acquire only after F0 release, T8A adapter repair, overlap
