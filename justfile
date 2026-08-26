@@ -173,21 +173,27 @@ stats:
 # ponytail-review convergence (golden rule 12) the agent merges it FROM the
 # worktree — `git rebase origin/main && git push origin HEAD:main` — polls
 # origin for the SHA, then tears down:
-#   just wt-new <slug> [kind]   create ../<project>-<slug> on <kind>/<slug> off origin/main
+#   just wt-new <slug> [kind]   create ~/Workspace/Codex/<project>-<slug> on <kind>/<slug> off origin/main
 #   (cd into it; work; commit per step — hooks run the gate)
 #   just wt-rm <slug>           remove the worktree once its merge has landed
 #   just wt-list                show every worktree
 
 # Create a new task worktree + branch off the freshest origin/main (kind defaults to "feat")
-wt-new slug kind="feat":
+wt-new $slug $kind="feat":
     #!/usr/bin/env bash
     set -euo pipefail
     main_root="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
-    parent="$(dirname "$main_root")"
     project="$(basename "$main_root")"
-    dest="$parent/$project-{{slug}}"
-    branch="{{kind}}/{{slug}}"
-    if [ -e "$dest" ]; then echo "✗ $dest already exists — pick another slug or 'just wt-rm {{slug}}'"; exit 1; fi
+    home_dir="$(cd && pwd -P)"
+    slug_value="$slug"
+    kind_value="$kind"
+    case "$kind_value" in feat|fix|chore|docs|refactor) ;; *) echo "unsafe branch kind" >&2; exit 1 ;; esac
+    candidate="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts candidate "$home_dir")"
+    mkdir -p "$candidate"
+    tasks_root="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts root "$home_dir")"
+    dest="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts path "$home_dir" "$project" "$slug_value")"
+    branch="$kind_value/$slug_value"
+    if [ -e "$dest" ]; then echo "✗ $dest already exists — pick another safe slug or remove its worktree"; exit 1; fi
     if git -C "$main_root" show-ref --verify --quiet "refs/heads/$branch"; then echo "✗ branch $branch already exists"; exit 1; fi
     echo "→ fetching origin/main…"
     git -C "$main_root" fetch origin main --quiet
@@ -195,31 +201,34 @@ wt-new slug kind="feat":
     git -C "$main_root" worktree add -b "$branch" "$dest" origin/main
     if [ -f "$main_root/.env.local" ]; then cp "$main_root/.env.local" "$dest/.env.local"; echo "→ copied .env.local (dev preview)"; fi
     # Content-pack symlink → COMPOSED-mode gate (docs/CONTRIBUTING.md → "The two build modes").
-    # The maintainer's private pack lives in a sibling checkout, symlinked into the main checkout as
-    # `content-pack` (a relative `../d20-folio-content/content-pack`). Replicate that SAME target into
-    # the new worktree — sibling dirs, so it resolves identically — so its pre-push gate runs COMPOSED
+    # The maintainer's private pack is linked into the main checkout. Replicate its absolute physical target into
+    # the new worktree so its pre-push gate runs COMPOSED
     # (pack tests included), closing the gap where a pack-absent worktree silently gated SRD-only and
     # let a public API change break the pack. No pack sibling (external contributors) → skipped
     # silently → SRD-only, unchanged. Guarded on the target resolving, so it never links a dangle.
-    pack_link="$(readlink "$main_root/content-pack" 2>/dev/null || true)"
-    if [ -n "$pack_link" ] && [ -e "$main_root/content-pack" ]; then
-        ln -s "$pack_link" "$dest/content-pack"
-        echo "→ linked content-pack ($pack_link) → COMPOSED mode (pack tests gate here)"
+    if [ -e "$main_root/content-pack" ]; then
+        pack_target="$(cd "$main_root/content-pack" && pwd -P)"
+        ln -s "$pack_target" "$dest/content-pack"
+        echo "→ linked content-pack ($pack_target) → COMPOSED mode (pack tests gate here)"
     else
         echo "→ no content pack → SRD-only mode (external-contributor gate)"
     fi
     echo "→ installing deps + git hooks…"
-    ( cd "$dest" && pnpm install --silent && npm --prefix functions ci --prefer-offline --no-audit && git config core.hooksPath .githooks )
+    ( cd "$dest" && scripts/program-supervisor/bootstrap-worktree.sh )
     echo ""
     echo "✓ worktree ready: $dest   (branch $branch)"
     echo "  next:  cd $dest  →  work + commit per step  →  converge  →  rebase + push origin HEAD:main"
 
 # Remove a task worktree once its merge has landed (safe: refuses if it has uncommitted changes)
-wt-rm slug:
+wt-rm $slug:
     #!/usr/bin/env bash
     set -euo pipefail
     main_root="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
-    dest="$(dirname "$main_root")/$(basename "$main_root")-{{slug}}"
+    project="$(basename "$main_root")"
+    home_dir="$(cd && pwd -P)"
+    slug_value="$slug"
+    tasks_root="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts root "$home_dir")"
+    dest="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts path "$home_dir" "$project" "$slug_value")"
     git -C "$main_root" worktree remove "$dest"
     echo "✓ removed worktree $dest"
     echo "  branch kept — once its merge has landed on origin/main, delete it: git branch -d <branch>"

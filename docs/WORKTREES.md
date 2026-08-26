@@ -22,11 +22,11 @@
 ```sh
 # 1. Spawn a worktree + branch off the latest main. Installs deps + hooks, copies .env.local.
 just wt-new <slug> [kind]          # kind defaults to "feat" → branch <kind>/<slug>
-#   e.g.  just wt-new ui-polish            → ../d20-folio-ui-polish on feat/ui-polish
-#         just wt-new wave2-data chore     → ../d20-folio-wave2-data on chore/wave2-data
+#   e.g.  just wt-new ui-polish            → ~/Workspace/Codex/d20-folio-ui-polish on feat/ui-polish
+#         just wt-new wave2-data chore     → ~/Workspace/Codex/d20-folio-wave2-data on chore/wave2-data
 
 # 2. Work in the new directory; commit per coherent step (hooks gate every commit/push).
-cd ../d20-folio-<slug>
+cd ~/Workspace/Codex/d20-folio-<slug>
 git add -A && git commit -m "feat(scope): …"        # never --no-verify; owner = sole author,
                                                     # NO co-author/trailer lines
 
@@ -41,7 +41,7 @@ git push origin HEAD:main                           # the ff-merge; non-ff rejec
 
 # 5. Confirm the SHA landed, THEN tear down (removing early orphans an in-flight push):
 git ls-remote origin main                           # poll until it shows your SHA
-cd ../d20-folio                                     # leave the worktree before removing it
+cd ~/Workspace/d20-folio                             # leave the worktree before removing it
 just wt-rm <slug>
 git branch -d <kind>/<slug>
 
@@ -51,8 +51,10 @@ just wt-list
 
 ## Conventions
 
-- **Directory:** `../<project>-<slug>` next to the main checkout. The main worktree (`d20-folio`)
-  **always stays on `main`**.
+- **Directory:** `~/Workspace/Codex/<project>-<slug>` (for this repository,
+  `~/Workspace/Codex/d20-folio-<slug>`). The main worktree (`~/Workspace/d20-folio`)
+  **always stays on `main`**. The logical task root must resolve to its stable physical path and
+  must never be inside Documents, iCloud, Dropbox, OneDrive, or another synchronized directory.
 - **Branch:** `<kind>/<slug>` — `kind` ∈ `feat` (default) · `fix` · `chore` · `docs` · `refactor`.
   Branch **off `origin/main`**, never off another task branch. A topic branch may be pushed as an
   occasional recoverable milestone (`git push -u origin HEAD:<branch>`); its pre-push is instant.
@@ -62,17 +64,20 @@ just wt-list
 - **Agent fan-out:** each delegated track gets its OWN worktree (`isolation: "worktree"` for
   `Agent`/`agent()`), never the shared tree. When two tasks run together, split ownership along
   the data↔UI seam (below) so merges stay cheap.
+- **Pinned bootstrap:** `wt-new` runs `scripts/program-supervisor/bootstrap-worktree.sh` in the
+  new worktree. It resolves and verifies Node `24.16.0` plus pnpm `11.2.2`, then installs both the
+  root and standalone `functions/` dependency trees and sets `core.hooksPath=.githooks`. The
+  `--run` mode executes resolver and verification commands under that same pinned runtime.
 - **`.env.local`** is copied into each worktree by `wt-new` so `pnpm dev` works; it is git-ignored
   and never committed.
 - **The `content-pack` symlink is created automatically — composed-by-default.** When the
-  maintainer's private pack is available (the main checkout carries a `content-pack` symlink into the
-  sibling `../d20-folio-content` checkout), `wt-new` replicates that same relative link into the new
-  worktree, so its final `main` pre-push gate runs in **COMPOSED (pack-present) mode** and pack-side breakage — a
+  maintainer's private pack is available, `wt-new` resolves its absolute physical target before
+  linking it into the new worktree, so its final `main` pre-push gate runs in **COMPOSED (pack-present) mode** and pack-side breakage — a
   public API change that breaks a pack test — is caught before merge. When no pack sibling exists
   (external contributors), the link is skipped silently and the worktree gates in **SRD-only mode**,
   which is the correct and complete build for a public tree (`docs/CONTRIBUTING.md` → "The two build
   modes"). `wt-new` echoes which mode it set up. Caveat: every worktree's `content-pack` points at the
-  **one** sibling pack working tree, so concurrent **edits** to pack files across worktrees can race
+  **one** private pack working tree, so concurrent **edits** to pack files across worktrees can race
   (rare — only when a public API change needs a pack-test update); gating (which only **reads** the
   pack) is always safe. The belt-and-suspenders check in `.githooks/pre-push` warns loudly if a
   worktree gates SRD-only while the pack actually exists.
@@ -83,6 +88,10 @@ just wt-list
   agent session has them with no install step.
 - **Hooks are shared.** `core.hooksPath=.githooks` lives in the common git config, so every
   worktree runs the same ref-aware pre-commit/pre-push hooks. **Never `--no-verify`.**
+- **Program Supervisor boundary:** `just wt-new` and `just wt-rm` are manual, same-thread adapters
+  for `d20-folio-program-control` (or a worktree whose HEAD has just been proved equal to fresh
+  `origin/main`). Pushing this change does not update the shared checkout: its stale worktree recipe
+  must never be invoked.
 
 ## Splitting parallel tasks to minimize conflicts
 
