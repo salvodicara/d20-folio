@@ -1113,6 +1113,36 @@ describe("Program Supervisor lease authority and WIP", () => {
       authorityPointer(),
     ]);
   });
+
+  it("rejects a reconciliation that does not advance main", () => {
+    expect(() =>
+      replayEvents([
+        bootstrapFixture(),
+        event(2, "authority-reconciled", {
+          previousMainSha: SHA_B,
+          mainSha: SHA_B,
+          changes: [{ path: READINESS_BASELINE_PATH, previousBlob: SHA_F, blob: SHA_D }],
+          proof: "Attempted authority mutation without a new main commit.",
+        }),
+      ])
+    ).toThrow(/main SHA.*advance|must differ/i);
+  });
+
+  it("advances main without inventing authority blob changes", () => {
+    const fixture = bootstrapFixture();
+    const before = clone(fixture.authority);
+    const result = replayEvents([
+      fixture,
+      event(2, "authority-reconciled", {
+        previousMainSha: SHA_B,
+        mainSha: SHA_C,
+        changes: [],
+        proof: "The new main commit leaves every pinned authority blob unchanged.",
+      }),
+    ]);
+
+    expect(result.snapshot.authority).toEqual({ ...before, mainSha: SHA_C });
+  });
 });
 
 describe("Program Supervisor lease lifecycle and state transitions", () => {

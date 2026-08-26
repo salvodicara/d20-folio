@@ -1989,23 +1989,18 @@ export function validateEventInput(value: unknown): ProgramEvent {
         "changes",
         "proof",
       ]);
-      const changes = arrayAt(record.changes, "event.changes", true).map(
-        (change, index) => {
-          const item = objectAt(change, `event.changes[${index}]`, [
-            "path",
-            "previousBlob",
-            "blob",
-          ]);
-          return {
-            path: normalizedPathAt(item.path, `event.changes[${index}].path`),
-            previousBlob: shaAt(
-              item.previousBlob,
-              `event.changes[${index}].previousBlob`
-            ),
-            blob: shaAt(item.blob, `event.changes[${index}].blob`),
-          };
-        }
-      );
+      const changes = arrayAt(record.changes, "event.changes").map((change, index) => {
+        const item = objectAt(change, `event.changes[${index}]`, [
+          "path",
+          "previousBlob",
+          "blob",
+        ]);
+        return {
+          path: normalizedPathAt(item.path, `event.changes[${index}].path`),
+          previousBlob: shaAt(item.previousBlob, `event.changes[${index}].previousBlob`),
+          blob: shaAt(item.blob, `event.changes[${index}].blob`),
+        };
+      });
       assertUnique(
         changes.map(({ path: authorityPath }) => authorityPath),
         "event.changes.path"
@@ -2269,6 +2264,9 @@ function applyAuthorityReconciliation(
 ): void {
   if (snapshot.authority.mainSha !== current.previousMainSha) {
     corruption("event.previousMainSha", "does not match reconstructed authority.mainSha");
+  }
+  if (current.mainSha === current.previousMainSha) {
+    corruption("event.mainSha", "main SHA must advance beyond the previous value");
   }
   for (const change of current.changes) {
     let matched = false;
