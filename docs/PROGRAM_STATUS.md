@@ -8,7 +8,7 @@ leases (`docs/TEST_PORTFOLIO.md`). Those owners are linked rather than copied.
 ## Reconciliation snapshot
 
 - `reconciledThrough`: `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`
-- `observedAt`: `2026-08-26T11:33:33Z`
+- `observedAt`: `2026-08-26T12:10:47Z`
 - Public `origin/main` was freshly fetched and inspected at that exact SHA before authoring.
 - The snapshot is evidence-bound, not self-referential: it does not claim the SHA or blob of the
   commit that contains this file.
@@ -26,7 +26,7 @@ other.
 | `tacticalWayfinder`        | `docs/superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md` | `062ffd48783311a77e1ad5bee962ef5cd637c079`                     |
 | `testRoadmap`              | `docs/superpowers/plans/2026-08-25-test-portfolio-reset.md`           | `9f3e42f7e50f104a35ceab21f5469a4291407bb4`                     |
 | `readinessBaseline`        | `docs/superpowers/plans/2026-08-25-g0-automation-readiness.md`        | `0a7f1ec661390aa475dfbde83eab72a4fbbe8b89`                     |
-| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `7d2f1fb56b8371f31f520b63252ee2266ac28680`                     |
+| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `baa9f08cd88bb5d4ee4e3bacfc17aaf470bccf41`                     |
 | `statusOwner`              | `docs/PROGRAM_STATUS.md`                                              | Task 6 resolves the integrated blob and records it in runtime. |
 
 The status owner cannot truthfully contain its own Git blob. Task 6 must resolve
@@ -36,7 +36,7 @@ authority may invent or cache a status blob.
 
 Supporting Foundation authorities in the same inspected tree are the implementation plan
 (`docs/superpowers/plans/2026-08-26-program-supervisor-foundation.md`, blob
-`e4b2d02a201c326f85bac1bd5ea8f970fd6c95f8`) and the dependency baseline
+`9782eb00b11f83f4fe3c98eabc0891cdae006ead`) and the dependency baseline
 (`docs/superpowers/status/2026-08-26-foundation-security-baseline.md`, blob
 `3102f341c1c2815dce2f164646764b28911e9f97`). Tactical visual decisions additionally remain owned
 by `DESIGN.md` at blob `85a7942355904c4a57e2e4729491c99a3ae1b97f`.
@@ -71,15 +71,15 @@ The shared checkout remains untouched even when its branch name is `main`.
   `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-supervisor-foundation`; branch
   `feat/program-supervisor-foundation`; base
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`; pre-status fix HEAD
-  `e8ab82ca50e6cd96952db4253fa3880159c7f8ab` (tree
-  `b696b791ba3d6e81ad9b6f082e11a979793af6c6`); no private write. The charter owns
+  `39752fec057dceb79b56b5d9a0d5aaf10ca18f5c` (tree
+  `cd34e14a9d89f1639336a9d11aa21abc75317ea7`); no private write. The charter owns
   `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
   `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, `scripts/program-supervisor/**`,
   `tests/unit/program-supervisor-{worktree,state,runtime}.test.ts`, and its uniquely named
   `.changeset/program-supervisor-*.md` files. Task 4 itself owns only the five tracked paths named
   in its plan.
 - **State and receipt:** `executing`; the tree was clean at pre-status fix HEAD
-  `e8ab82ca50e6cd96952db4253fa3880159c7f8ab`. The first whole-branch evaluator required fixes.
+  `39752fec057dceb79b56b5d9a0d5aaf10ca18f5c`. The first whole-branch evaluator required fixes.
   Adapter authority (`4d39f30eb1296d7f25a4801c28467b143f86e38c`), dependency/lease state
   (`41114180176d67fda475bb0b060be630031ee9fb`), writer handoff
   (`a14b772739c38ce0f0e180bc84608cc5d16b7c81`), runtime crash integrity
@@ -113,9 +113,15 @@ The shared checkout remains untouched even when its branch name is `main`.
   runtime/CLI implementation is `e8ab82ca50e6cd96952db4253fa3880159c7f8ab`. The rewritten
   runtime suite passed 25/25 with real compare-and-swap contention, lost-result adoption,
   crash/incomplete-init handling, strict ref/config/tree/commit/bootstrap validation, residue-free
-  read-only rebuild, and CLI receipts. Each commit passed its hook. This status commit is
-  intentionally not self-embedded. Fix Round 5 still requires a fresh independent whole-branch
-  review before the full composed gates may run.
+  read-only rebuild, and CLI receipts. The later scoped review's four Important and two Minor
+  findings are addressed together at `39752fec057dceb79b56b5d9a0d5aaf10ca18f5c`: every runtime
+  root parent is current-UID-owned and not group/other writable; active Git locks/object temps and
+  ref movement receive bounded non-deleting contention handling; accepted candidates remain valid
+  when the next writer advances; SIGKILLed `tmp_obj_*` evidence remains fail-closed; full replay is
+  one `rev-list` plus three `cat-file --batch` processes independent of chain length; and hermetic
+  execution plus recursive no-mutation rebuild are proved. Its runtime suite passed 32/32 and its
+  hook passed. This status commit is intentionally not self-embedded. Fix Round 5 still requires a
+  fresh independent whole-branch review before the full composed gates may run.
 - **First lease:** repository lease `F0`, holder `program-supervisor-foundation`, acquired
   `2026-08-26T01:38:26Z`, expires `2026-08-27T01:38:26Z`; active and writable. No runtime lease is
   claimed before Task 6 creates the runtime. The future reviewed runtime lease ID is
@@ -129,9 +135,10 @@ The shared checkout remains untouched even when its branch name is `main`.
   Task 5 whole-branch evaluator returned Fix Round 1; the next review returned the five Fix Round 2
   findings; the next review returned five Fix Round 3 findings; the next review returned six Fix
   Round 4 corrections; and the latest architecture review required the Fix Round 5 bare-Git pivot
-  now addressed above plus this authority reconciliation. The exact resulting candidate still owes
-  a fresh independent specification/correctness review; every further fix or changed base returns
-  through review before verification.
+  followed by a scoped correction review with four Important and two Minor findings, now addressed
+  above plus this authority reconciliation. The exact resulting candidate still owes a fresh
+  independent specification/correctness review; every further fix or changed base returns through
+  review before verification.
 - **Owner gate:** none for repository integration. Deployment, publication, billing/privacy, and
   any destructive action remain separate owner gates; Task 6 must not deploy.
 - **Cleanup:** retain this worktree and branch through remote integration, authority reconciliation,
@@ -248,7 +255,7 @@ current execution pointer so agents can route correctly; it cannot grant or chan
   `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
   `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and `scripts/program-supervisor/**`; expires
   `2026-08-27T01:38:26Z`. Its authority pointer is
-  `docs/TEST_PORTFOLIO.md@7d2f1fb56b8371f31f520b63252ee2266ac28680`, reconciled through
+  `docs/TEST_PORTFOLIO.md@baa9f08cd88bb5d4ee4e3bacfc17aaf470bccf41`, reconciled through
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`.
 - **Inactive next lease:** `K1`; acquire only after F0 release and a fresh rebase/review/gate cycle.
 - **Inactive blocked lease:** `B00`; acquire only after F0 release, T8A adapter repair, overlap
@@ -306,13 +313,13 @@ independent review. A development/build classification alone is not permission t
 
 Nothing here may be deleted merely because it looks complete.
 
-| Candidate                                                                                                           | Earliest evidence-backed cleanup boundary                                                                                                                                                        |
-| ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/Users/salvatoredicara/Workspace/Codex/d20-folio-agent-first-operating-model` + `docs/agent-first-operating-model` | Prove integrated commit `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97` is in fresh `origin/main`, the tree is clean, and no Codex task owns it; then remove from program-control and record cleanup. |
-| Foundation worktree + `feat/program-supervisor-foundation`                                                          | Task 6 remote integration, authority reconciliation, clean/remote-integrated receipt, activated heartbeat, and bootstrap-controller detachment; the supervisor then records `cleanup-recorded`.  |
-| K1 worktree + `feat/automation-k1`                                                                                  | Exact K1 candidate is proven in remote `main`, its evidence is retained, and no task owns the tree.                                                                                              |
-| B00 worktree + `feat/wayfinder-b00-successor`                                                                       | Exact owner-approved rebased candidate is proven in remote `main`, visual artifacts are retained, and no task owns the tree.                                                                     |
-| Incomplete runtime root or Git-internal `.lock` residue                                                             | Preserve unchanged for manual quiescent recovery; runtime init/load/append/rebuild fail closed and never adopt, delete, repair, or reinitialize it.                                              |
+| Candidate                                                                                                           | Earliest evidence-backed cleanup boundary                                                                                                                                                                        |
+| ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/Users/salvatoredicara/Workspace/Codex/d20-folio-agent-first-operating-model` + `docs/agent-first-operating-model` | Prove integrated commit `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97` is in fresh `origin/main`, the tree is clean, and no Codex task owns it; then remove from program-control and record cleanup.                 |
+| Foundation worktree + `feat/program-supervisor-foundation`                                                          | Task 6 remote integration, authority reconciliation, clean/remote-integrated receipt, activated heartbeat, and bootstrap-controller detachment; the supervisor then records `cleanup-recorded`.                  |
+| K1 worktree + `feat/automation-k1`                                                                                  | Exact K1 candidate is proven in remote `main`, its evidence is retained, and no task owns the tree.                                                                                                              |
+| B00 worktree + `feat/wayfinder-b00-successor`                                                                       | Exact owner-approved rebased candidate is proven in remote `main`, visual artifacts are retained, and no task owns the tree.                                                                                     |
+| Incomplete runtime root or persistent Git-internal `.lock`/`tmp_obj_*` residue                                      | Give active cooperating Git evidence only its bounded non-deleting contention window, then preserve persistent residue unchanged for manual quiescent recovery; never adopt, delete, repair, or reinitialize it. |
 
 Never place the active runtime root, immutable bootstrap evidence, program-control worktree, shared
 checkout, dirty worktree, or unintegrated branch in the delete zone. Deployment remains owner-only.

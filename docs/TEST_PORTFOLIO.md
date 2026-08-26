@@ -145,10 +145,10 @@ unperformed handoff has no fabricated SHA.
   `docs/WORKTREES.md`, `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and
   `scripts/program-supervisor/**`. This is a repository-authority lease only; it
   does not claim a runtime lease before the runtime exists.
-- **Current state and conflict receipt (Task 5 Fix Round 5 pre-status, observed
-  `2026-08-26T11:33:33Z`):** F0 remains active; the Foundation worktree was clean at
-  pre-status fix HEAD `e8ab82ca50e6cd96952db4253fa3880159c7f8ab` (tree
-  `b696b791ba3d6e81ad9b6f082e11a979793af6c6`) on freshly fetched `origin/main`
+- **Current state and conflict receipt (Task 5 Fix Round 5 correction pre-status, observed
+  `2026-08-26T12:10:47Z`):** F0 remains active; the Foundation worktree was clean at
+  pre-status fix HEAD `39752fec057dceb79b56b5d9a0d5aaf10ca18f5c` (tree
+  `cd34e14a9d89f1639336a9d11aa21abc75317ea7`) on freshly fetched `origin/main`
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`. K1 is clean at
   `7ae43494be58f92651b02a32de821c0d3f59fb98`; its fresh
   `origin/main...HEAD` path set is disjoint from every F0 path. B00 is clean and
@@ -163,7 +163,12 @@ unperformed handoff has no fabricated SHA.
   `addc80513176801d56014e9f3b15eb74b53b6bcc`, and the Fix Round 1 receipt at
   `be84367069e47ce029eadf1c11fbdf9aac90df2d`. Fix Round 5 replaces the former
   pathname lock/cache/ledger recovery design with the reviewed private bare-Git event-store
-  contract; it does not change the lease term or any test-risk ownership.
+  contract. The scoped correction at `39752fec057dceb79b56b5d9a0d5aaf10ca18f5c`
+  proves current-UID/non-writable parent authority, bounded non-deleting Git contention,
+  captured-ref and exact-candidate reconciliation, real `tmp_obj_*` crash evidence, constant
+  subprocess replay, hermetic execution, and recursive no-mutation rebuild behavior; its runtime
+  suite passed 32/32 and its hook passed. This updates only the F0 receipt and does not change the
+  lease term or any test-risk ownership.
 - **Handoff:** release F0 only after remote integration proof or an evidence-backed
   blocker/recovery disposition. Until then B00 receives no writer lease and may
   not edit, rebase, or integrate its frozen candidate. After F0 integrates, B00
