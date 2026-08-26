@@ -130,101 +130,58 @@ unperformed handoff has no fabricated SHA.
 | C0    | T8A (this commit)            | 6efda521d6a0c3ecdd481628656fbb4c4a7792bb | Add isolated `visual:review`, `visual:motion`, and `qa:perf` commands without changing the lockfile; next owner is UI Task 1.                     | this commit | `pnpm visual:review -- --list`; `pnpm visual:motion -- --list`; `pnpm qa:perf -- --help`                        |
 | C1    | unassigned (next: UI Task 2) | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `src/app/router.tsx`, specimen/production i18n loaders, catalogue registration; future order UI Task 2 → owning UI catalogue slices → UI Task 15. | —           | Established at the approved handoff.                                                                            |
 | C2    | T8A (this commit)            | 6efda521d6a0c3ecdd481628656fbb4c4a7792bb | Add the isolated visual Playwright config and artifact/report root; ordinary `playwright.config.ts` stays untouched; next owner is T4.            | this commit | `pnpm exec playwright test --list` (2,331 / 62); `pnpm visual:review -- --list`; `pnpm visual:motion -- --list` |
-| C3    | unassigned (next: T3)        | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `.github/workflows/**`; `justfile` is exclusively leased by F0 until its recorded release.                                                        | —           | Established at the approved handoff; assign `justfile` again only after the F0 handoff.                         |
+| C3    | unassigned (next: T3)        | 1ccb8af74b69e8af2f2b8568480ab1e3048c1eac | `.github/workflows/**`; `justfile` is outside the narrow activation diff but may be reassigned only after the final F0 authority handoff.         | —           | Established at the approved handoff; assign `justfile` only after the activation handoff is remotely proven.    |
 | C4    | T8A (this commit)            | 6efda521d6a0c3ecdd481628656fbb4c4a7792bb | Record the visual-lane foundation over T7A's census; `CAND-surface-sweeps` remains blocked pending T7B/T8B; next owner is T10/T14.                | this commit | `pnpm visual:review -- --grep detector`; `pnpm visual:motion -- --grep detector`                                |
 
 ### F0 — Program Supervisor Foundation shared-path lease
 
-- **Holder and location:** `program-supervisor-foundation` in
+- **Repository lease F0 (Task 0):** holder `program-supervisor-foundation` in
   `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-supervisor-foundation`, branch
-  `feat/program-supervisor-foundation`.
-- **Fresh base and term:** fetched `origin/main`
-  `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`; acquired
-  `2026-08-26T01:38:26Z`, expires `2026-08-27T01:38:26Z`.
-- **Exclusive paths:** `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`,
+  `feat/program-supervisor-foundation`; acquired `2026-08-26T01:38:26Z`, expires
+  `2026-08-27T01:38:26Z`, and rechecked valid at `2026-08-26T16:19:08Z`. Its exact
+  repository-exclusive paths remain `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`,
   `docs/WORKTREES.md`, `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and
-  `scripts/program-supervisor/**`. This is a repository-authority lease only; it
-  does not claim a runtime lease before the runtime exists.
-- **Current state and conflict receipt (Task 6 post-integration CLI verification, observed
-  `2026-08-26T15:21:54Z`):** F0 remains active; the Foundation worktree was clean at reviewed
-  pre-repair HEAD `ead344b3e72616332dee29fe7f35831015fac707` (tree
-  `154cbaec85d49fe3e4f287ce7473ada2cb8826e1`) on freshly fetched `origin/main`
-  `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`. K1 is clean at
-  `7ae43494be58f92651b02a32de821c0d3f59fb98`; its fresh
-  `origin/main...HEAD` path set is disjoint from every F0 path. B00 is clean and
-  frozen at `7b66c828b1f181c22e5921abf678c436825bc089`; its committed candidate
-  overlaps `package.json` and `PROGRESS.md` (and related `pnpm-lock.yaml`), so it
-  is serialized behind F0. Neither retained product worktree has a rebase or active
-  writer. The freshly remote-verified, clean private `main` checkout is
-  `1d5226f564d2c790f5409c294afe9d9ba6cc2ab7` and is read-only for this lease.
-  This supersedes but preserves the Fix Round 4 clean pre-status receipt at
-  `7e986f48721bf9bf4411c1b426438b320a69c595`, the Fix Round 3 receipt at
-  `e816e5e6ba822d49530e8e113de54f6240fc2912`, the Fix Round 2 receipt at
-  `addc80513176801d56014e9f3b15eb74b53b6bcc`, and the Fix Round 1 receipt at
-  `be84367069e47ce029eadf1c11fbdf9aac90df2d`. Fix Round 5 replaces the former
-  pathname lock/cache/ledger recovery design with the reviewed private bare-Git event-store
-  contract. The scoped correction at `39752fec057dceb79b56b5d9a0d5aaf10ca18f5c`
-  proves current-UID/non-writable parent authority, bounded non-deleting Git contention,
-  captured-ref and exact-candidate reconciliation, real `tmp_obj_*` crash evidence, constant
-  subprocess replay, hermetic execution, and recursive no-mutation rebuild behavior. The follow-up
-  streaming correction at `e8d41d1ed3bdd80c8d21baba3d2fcc91ef201113` replaces the 32 MiB
-  whole-response ceiling with three incremental `cat-file --batch` readers, admits a valid 33 MiB
-  event through append/load/rebuild, rejects events over the 64 MiB object bound before CAS, and
-  retries real Git activity that begins after the initial residue scan. Its runtime suite passed
-  35/35 and its hook passed. The first composed-gate attempt passed typecheck and lint,
-  then completed 800/801 Vitest files and 18,610/18,611 tests. The sole failure was the worktree
-  shell-injection regression exceeding the global five-second deadline under full-suite load;
-  focused and repeated evidence found an oversized fixture, no sentinel leak, and no product bug.
-  Test-only stabilization `5ed51097812b3cade71965e44011386ba2eba5c2` replaces two real
-  bootstrap/Corepack cycles with the existing fake toolchain while preserving the real
-  Just/adapter/`worktree.ts` proof. Its target now completes in about 1.9–2.2 seconds and the full
-  worktree file passes 22/22. On clean pre-receipt HEAD
-  `f54f01aaf8999db6224095d1c1023bd207c175cf` (tree
-  `d920ad4980bd181611086deacdce2860a60e64e3`), the exact composed gate then passed 801/801 Vitest
-  files and 18,611/18,611 tests, 7/7 Functions files and 129/129 Functions tests, typecheck, lint,
-  and production build. The sequential SRD-only gate passed 623/623 Vitest files and
-  13,035/13,035 tests, typecheck, and production build. The later main pre-push coverage lane
-  exposed hook-local Git environment leakage: 800/801 files and 18,607/18,611 tests passed, while
-  four adapter fixtures addressed the parent repository and the failed fixture changed shared
-  local `core.bare`, `user.name`, and `user.email`. No push occurred; `core.bare` was restored
-  exactly to `false`; the two injected local identity keys were removed so the global owner
-  identity is effective again; remote `main` remained unchanged; and all retained worktrees were
-  rechecked. The new hostile-environment
-  regression reproduced the wrong top-level path before the repair, then passed 1/1 after child
-  fixture commands removed the documented local Git variables. The owning file passes 23/23 under
-  explicit hook-local `GIT_DIR`/`GIT_WORK_TREE`, with `core.bare` still `false`. The exact repair at
-  `1eec62dc716c402f368583b207c8d2a0a91cebac` received an independent PASS. Its composed-gate rerun
-  passed typecheck and lint before the public/private partition guard rejected one owner email in
-  the public status receipt; 800/801 files and 18,611/18,612 tests passed. The amended exact
-  candidate `de65fe29574b64d68513aa361c573bc98490a621` (tree
-  `fc6ec526e39bfe7460c6530dcacf9f45d2e242af`) removes that identity value, received an independent
-  PASS, and completed the applicable gates sequentially with the pinned bootstrap wrapper. The
-  composed gate exited zero with 801/801 Vitest files and 18,612/18,612 tests, 7/7 Functions files
-  and 129/129 Functions tests, typecheck, lint, and production build. The immediately following
-  SRD-only gate exited zero with 623/623 Vitest files and 13,036/13,036 tests, typecheck, and
-  production build. The final receipt-only commit
-  `b1448fbba62047e52a24155ecb2d817d605d33a9` (tree
-  `0008db10569e88195baa029f669d277973b080db`) received an exact independent PASS. Its mandatory
-  pre-push gate passed typecheck, lint, 801/801 Vitest files, 18,612/18,612 tests, coverage, build,
-  and 6/6 bundle-budget tests before remote `main` was proven equal to that exact commit. The first
-  documented post-integration missing-store probe then exposed that the CLI rejected pnpm's
-  conventional standalone `--` before reaching runtime validation. A focused regression failed
-  against the usage error, then passed after the parser consumed exactly one leading separator;
-  the owning runtime file passes 36/36 and the documented invocation now reports the precise
-  missing-store error without creating the absent root. The exact repair
-  `a7b273eed7d82cd30a7ec898b20c2c7e2d5c6d77` (tree
-  `6e1ad9bd497d9715a747804b0dd3472436500fa5`) received an independent PASS. Its pinned composed
-  gate exited zero with 801/801 Vitest files and 18,613/18,613 tests, 7/7 Functions files and
-  129/129 Functions tests, typecheck, lint, and production build. The immediately following pinned
-  SRD-only gate exited zero with 623/623 Vitest files and 13,037/13,037 tests, typecheck, and
-  production build. The final receipt-only commit still requires exact read-only review before the
-  main pre-push gate and remote proof. This does not change the lease term or test-risk ownership.
-- **Handoff:** release F0 only after remote integration proof or an evidence-backed
-  blocker/recovery disposition. Until then B00 receives no writer lease and may
-  not edit, rebase, or integrate its frozen candidate. After F0 integrates, B00
-  must freshly rebase onto the final F0 `origin/main`, explicitly reconcile
-  `package.json`, `PROGRESS.md`, and `pnpm-lock.yaml`, receive new review and all
-  visual gates, and never overwrite the integrated F0 authority.
-- **Focused proof (acquisition `0690ee5a31477397c752cc3110effd30b49af1c0`):**
-  `/Users/salvatoredicara/.asdf/installs/nodejs/24.16.0/bin/node /Users/salvatoredicara/.asdf/installs/nodejs/24.16.0/lib/node_modules/corepack/dist/corepack.js pnpm exec prettier --check docs/TEST_PORTFOLIO.md .changeset/program-supervisor-preflight.md`
-  **PASS**; `git diff --check` **PASS**.
+  `scripts/program-supervisor/**` until the terminal handoff rule below is satisfied.
+- **Activation runtime lease:** `runtime-foundation-f0-activation-status`, holder
+  `program-supervisor-foundation-activation-status`, was acquired
+  `2026-08-26T15:50:42.912Z` and expires `2026-08-27T15:40:00.000Z`. Its mutation scope is the
+  strict subset `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and
+  `.changeset/program-supervisor-activation.md`. It does not narrow or release the versioned
+  repository lease; the remaining F0 paths are dependency-frozen by that lease, not implicitly
+  owned by the activation runtime task.
+- **Fresh base:** fetched public `origin/main`, local control HEAD, and remote main are
+  `fd5d84cec2e5da2986bda412e277d7cc68c77735`.
+- **Integrated core receipt:** exact remote SHA
+  `fd5d84cec2e5da2986bda412e277d7cc68c77735` received independent PASS review. `just ci` passed
+  801/801 Vitest files and 18,613/18,613 tests, 7/7 Functions files and 129/129 Functions tests,
+  typecheck, lint, and both builds. `just ci-srd-only` passed 623/623 files and 13,037/13,037
+  tests, typecheck, and build. The separate final pre-push gate passed typecheck, lint, 801/801
+  Vitest files and 18,613/18,613 tests, coverage, build, and 6/6 bundle-budget tests. The pinned
+  toolchain/typecheck authority correction remains evidenced by
+  `be84367069e47ce029eadf1c11fbdf9aac90df2d`. No deployment occurred.
+- **Runtime and adapter receipt:** private bootstrap fingerprint
+  `840c0ce7c9514608040389ae234b0cd526b4754ab2799c738310db653b34984e`; event sequence `14`;
+  fixed-ref tip `4db74c21436aad08d569a6aab78efc9a00009382`; validation and read-only rebuild match. The
+  dedicated supervisor task and exact 30-minute heartbeat are provisioned; the heartbeat remains
+  `PAUSED`. A disposable probe proved `just wt-new`, pinned Node `v24.16.0`, pnpm `11.2.2`,
+  root and Functions installs, hooks, idempotent bootstrap, and the exact read-only content-pack
+  link, then was cleanly removed with its branch.
+- **Current conflict receipt (observed `2026-08-26T16:19:08Z`):** K1 is clean and queued at
+  `7ae43494be58f92651b02a32de821c0d3f59fb98`; B00 is clean and frozen at
+  `7b66c828b1f181c22e5921abf678c436825bc089`; neither has an active writer or rebase. The private
+  content repository is clean with HEAD, fetched `origin/main`, and remote main all equal to
+  `1d5226f564d2c790f5409c294afe9d9ba6cc2ab7`; retained product links resolve to its
+  `content-pack/` and are read-only.
+- **Terminal handoff rule:** F0 is released only after this activation-status change is remotely
+  proven and its authority event is appended. Then and only then may the activation task become
+  `integrated`, its runtime lease be released, the exact heartbeat change from `PAUSED` to
+  `ACTIVE`, and `heartbeat-activated` irreversibly transfer the sole runtime writer role to
+  thread `01a03eba-ac75-7fb0-80b0-88356b3aba67`.
+- **Verification contract:** the exact candidate requires independent read-only review,
+  documentation guards, `just ci`, `just ci-srd-only`, clean private/link proof, fresh-base
+  verification immediately before candidate evidence, explicit `HEAD:main` remote proof, and
+  atomic reconciliation of the new `docs/PROGRAM_STATUS.md` and `docs/TEST_PORTFOLIO.md` blobs.
+- **Cleanup:** after the typed writer handoff, only the provisioned supervisor may prove the
+  bootstrap controller detached, remove the clean remotely integrated Foundation worktree and
+  branch from program-control, and append `cleanup-recorded`. Program-control, the active runtime,
+  immutable bootstrap evidence, shared checkout, K1, and B00 are not cleanup candidates.

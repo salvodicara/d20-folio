@@ -7,32 +7,33 @@ leases (`docs/TEST_PORTFOLIO.md`). Those owners are linked rather than copied.
 
 ## Reconciliation snapshot
 
-- `reconciledThrough`: `b1448fbba62047e52a24155ecb2d817d605d33a9`
-- `observedAt`: `2026-08-26T15:21:54Z`
+- `reconciledThrough`: `fd5d84cec2e5da2986bda412e277d7cc68c77735`
+- `observedAt`: `2026-08-26T16:19:08Z`
 - Public `origin/main` was freshly fetched and inspected at that exact SHA before authoring.
 - The snapshot is evidence-bound, not self-referential: it does not claim the SHA or blob of the
   commit that contains this file.
 
 ### Authority manifest
 
-Every resolved blob below comes from the exact Task 5 Fix Round 5 pre-status authority set. The test
-roadmap and repository lease owner are deliberately separate roles; one cannot substitute for the
-other.
+This manifest deliberately distinguishes the inspected base authority from the pending candidate
+authority. Unchanged roles and the self-referential status-owner boundary come from public
+`origin/main` at `fd5d84cec2e5da2986bda412e277d7cc68c77735`; the repository-lease row names the exact
+candidate blob that will be reconciled only after remote proof. The test roadmap and repository
+lease owner remain separate roles; one cannot substitute for the other.
 
-| Runtime role               | Authority path                                                        | Blob / reconciliation boundary                                 |
-| -------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `operatingModel`           | `docs/plans/2026-08-25-agent-first-operating-model-design.md`         | `05405bae8b24f3ec1f120985f66bf755c1011b19`                     |
-| `automationWayfinder`      | `docs/superpowers/plans/2026-08-25-automation-first-wayfinder.md`     | `44560c49a166dbd897fff2d316cb3b17b6a1aef5`                     |
-| `tacticalWayfinder`        | `docs/superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md` | `062ffd48783311a77e1ad5bee962ef5cd637c079`                     |
-| `testRoadmap`              | `docs/superpowers/plans/2026-08-25-test-portfolio-reset.md`           | `9f3e42f7e50f104a35ceab21f5469a4291407bb4`                     |
-| `readinessBaseline`        | `docs/superpowers/plans/2026-08-25-g0-automation-readiness.md`        | `0a7f1ec661390aa475dfbde83eab72a4fbbe8b89`                     |
-| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `7cb89ed4b26021aa46a7d4cdc8ef7888df692d52`                     |
-| `statusOwner`              | `docs/PROGRAM_STATUS.md`                                              | Task 6 resolves the integrated blob and records it in runtime. |
+| Runtime role               | Authority path                                                        | Blob / reconciliation boundary                                                                        |
+| -------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `operatingModel`           | `docs/plans/2026-08-25-agent-first-operating-model-design.md`         | `05405bae8b24f3ec1f120985f66bf755c1011b19`                                                            |
+| `automationWayfinder`      | `docs/superpowers/plans/2026-08-25-automation-first-wayfinder.md`     | `44560c49a166dbd897fff2d316cb3b17b6a1aef5`                                                            |
+| `tacticalWayfinder`        | `docs/superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md` | `062ffd48783311a77e1ad5bee962ef5cd637c079`                                                            |
+| `testRoadmap`              | `docs/superpowers/plans/2026-08-25-test-portfolio-reset.md`           | `9f3e42f7e50f104a35ceab21f5469a4291407bb4`                                                            |
+| `readinessBaseline`        | `docs/superpowers/plans/2026-08-25-g0-automation-readiness.md`        | `0a7f1ec661390aa475dfbde83eab72a4fbbe8b89`                                                            |
+| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | candidate `8cfbbc6440616f3053057ec7b8f6b30211afa5a3`; base `7cb89ed4b26021aa46a7d4cdc8ef7888df692d52` |
+| `statusOwner`              | `docs/PROGRAM_STATUS.md`                                              | base `ed43234fa7dedd065e6c809998c94568a852d41f`; candidate resolves after integration                 |
 
-The status owner cannot truthfully contain its own Git blob. Task 6 must resolve
-`<integrated-main>:docs/PROGRAM_STATUS.md` after phase-one integration and record that exact path,
-blob, and main SHA in the runtime bootstrap/authority-reconciliation evidence. Until then no runtime
-authority may invent or cache a status blob.
+The status owner cannot truthfully contain the blob produced by its own pending edit. The runtime
+therefore still pins both base blobs above; after this activation change is remotely proven,
+`authority-reconciled` advances both paths, blobs, and the main SHA atomically before handoff.
 
 Supporting Foundation authorities in the same inspected tree are the implementation plan
 (`docs/superpowers/plans/2026-08-26-program-supervisor-foundation.md`, blob
@@ -43,12 +44,14 @@ by `DESIGN.md` at blob `85a7942355904c4a57e2e4729491c99a3ae1b97f`.
 
 ### Operational coordinates
 
-| Surface             | Exact observation                                                                                                                                                                                                                                                                                      |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Shared checkout     | `/Users/salvatoredicara/Workspace/d20-folio`, branch `main`, clean HEAD `8c4e37e7ddabe3d8d99a8a1ffe2ef592e3ed2add`. This is non-authoritative operational evidence. Never run its stale worktree recipe or treat local `main` as recipe authority.                                                     |
-| Program control     | `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-control` is absent. Task 6 must create it detached, clean, and exactly at the then-fresh `origin/main` (currently integrated `b1448fbba62047e52a24155ecb2d817d605d33a9`; the CLI repair will advance it) before any supervisor adapter runs. |
-| Private composition | `/Users/salvatoredicara/Workspace/d20-folio-content`, clean branch `main`; HEAD and fresh `origin/main` are `1d5226f564d2c790f5409c294afe9d9ba6cc2ab7`. `content-pack` resolves to that repository's `content-pack/` directory and is read-only for F0.                                                |
-| External runtime    | `/Users/salvatoredicara/Workspace/Codex/d20-folio-program` and `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-bootstrap.json` are absent. Task 6 alone may create/adopt them under the bootstrap protocol.                                                                                  |
+| Surface             | Exact observation                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Shared checkout     | `/Users/salvatoredicara/Workspace/d20-folio`, branch `main`, clean stale HEAD `8c4e37e7ddabe3d8d99a8a1ffe2ef592e3ed2add`. It remains untouched and non-authoritative.                                                                                                                                                                                                                                        |
+| Program control     | `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-control`, clean detached HEAD `fd5d84cec2e5da2986bda412e277d7cc68c77735`, equal to freshly fetched and remotely queried `origin/main`. This is the sole persistent command surface.                                                                                                                                                                |
+| Supervisor task     | Saved project `1ffe790a-2e8c-41fd-b048-932ad89d0d4e`; local task `d20 Folio Program Supervisor`; thread `01a03eba-ac75-7fb0-80b0-88356b3aba67`. Its bootstrap turn completed read-only and it remains idle pending the typed writer handoff.                                                                                                                                                                 |
+| Heartbeat           | `d20-folio-program-supervisor-heartbeat`, exact target thread above, 30-minute cadence, destination `thread`, notifications `failed_runs_only`, status `PAUSED`.                                                                                                                                                                                                                                             |
+| Private composition | `/Users/salvatoredicara/Workspace/d20-folio-content`, clean branch `main`; HEAD, fetched `origin/main`, and remote main are `1d5226f564d2c790f5409c294afe9d9ba6cc2ab7`. K1 and B00 links resolve to its `content-pack/` and remain read-only.                                                                                                                                                                |
+| External runtime    | Private root `/Users/salvatoredicara/Workspace/Codex/d20-folio-program` is mode `0700`; bootstrap input is mode `0600`. Fingerprint `840c0ce7c9514608040389ae234b0cd526b4754ab2799c738310db653b34984e`; event sequence `14`; fixed-ref tip `4db74c21436aad08d569a6aab78efc9a00009382`; validation and read-only rebuild match. The bootstrap controller remains the sole writer until `heartbeat-activated`. |
 
 Supervisor and manual same-thread adapters run only from the clean detached program-control
 worktree or another clean worktree whose HEAD has just been proven equal to fresh `origin/main`.
@@ -58,167 +61,64 @@ The shared checkout remains untouched even when its branch name is `main`.
 
 ### Foundation — `foundation-f0`
 
-- **Outcome:** integrate the short-lived Program Supervisor Foundation: validated worktree/bootstrap
-  authority, reconstructible state/runtime/CLI, one status owner, and the later Task 6 control
-  worktree/runtime/heartbeat handoff. This does not close the whole Foundation lane.
-- **Authority:** the operating model, Foundation implementation plan, test roadmap, readiness
-  baseline, repository lease owner, this status owner, and Foundation security baseline pinned
-  above.
-- **Dependencies:** approved operating model integrated at `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`;
-  active F0 repository lease; clean retained K1/B00/private evidence; Tasks 0-3 implemented and
-  independently reviewed. The phase-one candidate and final receipt received exact independent
-  PASS results, both full gates passed, the mandatory pre-push gate passed, and remote `main` is
-  proven at `b1448fbba62047e52a24155ecb2d817d605d33a9`. The first post-integration probe exposed one
-  CLI separator defect; its narrow repair has an independent PASS and both full gates green. The
-  final receipt-only review and main pre-push gate remain before Task 6 runtime initialization.
+- **Outcome:** provide the durable Program Supervisor control plane: pinned worktree bootstrap,
+  deterministic program state, private bare-Git event store, stable detached program-control
+  surface, and one typed writer handoff.
+- **Authority:** operating model, Foundation implementation plan, test roadmap, readiness baseline,
+  repository lease owner, this status owner, and Foundation security baseline pinned above.
+- **State and receipt:** `integrated` exactly once. Public remote `main` is
+  `fd5d84cec2e5da2986bda412e277d7cc68c77735`; the exact candidate and its CLI repair received
+  independent PASS reviews. `just ci` passed 801/801 Vitest files and 18,613/18,613 tests, 7/7
+  Functions files and 129/129 Functions tests, typecheck, lint, and both builds.
+  `just ci-srd-only` passed 623/623 files and 13,037/13,037 tests, typecheck, and build. The
+  separate final pre-push gate passed typecheck, lint, 801/801 Vitest files and 18,613/18,613
+  tests, coverage, build, and 6/6 bundle-budget tests. The pinned toolchain/typecheck authority
+  correction remains evidenced by
+  `be84367069e47ce029eadf1c11fbdf9aac90df2d`.
+- **Runtime receipt:** immutable bootstrap fingerprint
+  `840c0ce7c9514608040389ae234b0cd526b4754ab2799c738310db653b34984e`; the exact paused
+  supervisor identity is provisioned; the official worktree adapter was proved end to end at the
+  public SHA above against clean private SHA `1d5226f564d2c790f5409c294afe9d9ba6cc2ab7`, including a
+  second idempotent bootstrap and clean probe removal. Core runtime lease
+  `runtime-foundation-f0` is released.
+- **Owner gate:** none for integration. No deployment, publication, billing/privacy change, or
+  visual approval occurred.
+- **Cleanup:** the remotely integrated Foundation worktree and branch remain intentionally present
+  until the final writer handoff. On its first post-handoff wake, only the provisioned supervisor
+  may prove controller detachment, remove them from program-control, and record cleanup.
+- **Roadmap exits:** core F0 is complete. Dependency remediation, risk-owned test-portfolio reset,
+  release/rollback hardening, and skill/plugin/context decisions remain separate Foundation
+  successors rather than hidden work in this task.
+
+### Foundation activation — `foundation-f0-activation-status`
+
+- **Outcome:** reconcile the integrated Foundation into this status owner and
+  `docs/TEST_PORTFOLIO.md`, remotely prove those exact blobs, then atomically transfer the sole
+  runtime writer role to the provisioned heartbeat.
+- **Dependencies:** integrated `foundation-f0` at
+  `fd5d84cec2e5da2986bda412e277d7cc68c77735`; provisioned supervisor thread
+  `01a03eba-ac75-7fb0-80b0-88356b3aba67`; exact heartbeat
+  `d20-folio-program-supervisor-heartbeat`, still `PAUSED`.
 - **Ownership:** public repository `d20-folio`; worktree
   `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-supervisor-foundation`; branch
-  `feat/program-supervisor-foundation`; base
-  `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`; phase-one remote integration
-  `b1448fbba62047e52a24155ecb2d817d605d33a9` (tree
-  `0008db10569e88195baa029f669d277973b080db`); current repair base is that exact remote commit; no
-  private write. The charter owns
-  `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
-  `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, `scripts/program-supervisor/**`,
-  `tests/unit/program-supervisor-{worktree,state,runtime}.test.ts`, and its uniquely named
-  `.changeset/program-supervisor-*.md` files. Task 4 itself owns only the five tracked paths named
-  in its plan.
-- **State and receipt:** `verification`; the tree was clean at reviewed pre-repair HEAD
-  `ead344b3e72616332dee29fe7f35831015fac707` (tree
-  `154cbaec85d49fe3e4f287ce7473ada2cb8826e1`). The first whole-branch evaluator required fixes.
-  Adapter authority (`4d39f30eb1296d7f25a4801c28467b143f86e38c`), dependency/lease state
-  (`41114180176d67fda475bb0b060be630031ee9fb`), writer handoff
-  (`a14b772739c38ce0f0e180bc84608cc5d16b7c81`), runtime crash integrity
-  (`e7cd860df3c16e83f1b5ee7b93029341dfad33ba`), and recovery runbooks
-  (`34bf65e9511147858ac0186f23d602a6af9d20c3`) each have focused RED/GREEN receipts and passed
-  commit hooks. The pinned Node command/child inheritance proof is
-  `51bdb38ba5ca5df6dc826ee896b4b1a916cd6fd1`, with strict typecheck/lint repair at
-  `be84367069e47ce029eadf1c11fbdf9aac90df2d`. Fix Round 2 preserves activation history and rejects
-  reserved `HEAD` (`7ca90e257d7cf2daa06cc3c5f3a95838b3f3dd31`), models pending/terminal owner-gate cycles
-  (`6e2e48f3f79ba1054058797e3dcb3de4806c1153`), fails closed on malformed lock-owner artifacts
-  (`4af6f48653eec32864f36e456930d912c1cc1436`), and removes only the two unused Just locals
-  (`addc80513176801d56014e9f3b15eb74b53b6bcc`). Each fix has RED/GREEN or source-guard evidence
-  and passed its commit hook. Fix Round 3 rejects no-op main authority reconciliation
-  (`7d534156b023868d6e1aeab94875f355fed456ac`), freezes authority paths throughout verification and
-  owner-gate cycles (`ae8cda59b20356fba56264b313a28915760358c1`), removes the post-proof worktree
-  fetch (`306c225dcae986d172948bc17cb1bbbff4a82434`), and makes correctness, visual integration,
-  and deployment gates unambiguous (`e816e5e6ba822d49530e8e113de54f6240fc2912`). Each commit has
-  focused RED/GREEN or durable-guard evidence and passed its hook. Fix Round 4 enforces the
-  supervisor-only cleanup handoff and reserved identity
-  (`15ba860436cbb87c6eb94bbe95376b8f21a65abc`), validates authority changes, lease renewal order,
-  and multi-repository writer topology (`03c08d9860e4d5eec22bb26ac0105820308ebefb`), claims stale
-  locks with deterministic exact-inode evidence (`400ab88e647b3e882d4e89ca1e678564bc02957e`), claims runtime
-  roots without replacement while preserving interrupted state
-  (`f5eb41971b5408ed41e42df2a6cc524c82488411`), and removes the dead torn-tail recovery projection
-  (`7e986f48721bf9bf4411c1b426438b320a69c595`). Each commit has focused RED/GREEN evidence and
-  passed its hook. Those Round 4 pathname lock, mutable-cache, and torn-ledger mechanisms are
-  historical only: the Fix Round 5 architecture verdict replaced them with a private bare-Git event
-  store. The plan amendment is `a7658165e05f87dda7a326a0e693a1ba1edad574`, its in-memory
-  parser/symbolic-HEAD clarification is `633c948fea4eec1674d3ab67f32f8b35a734dc68`, the
-  equal/earlier renewal boundary coverage is `6cea24e05e9ffbc4d047ee411600a6c87d21e8e6`, and the
-  runtime/CLI implementation is `e8ab82ca50e6cd96952db4253fa3880159c7f8ab`. The rewritten
-  runtime suite passed 25/25 with real compare-and-swap contention, lost-result adoption,
-  crash/incomplete-init handling, strict ref/config/tree/commit/bootstrap validation, residue-free
-  read-only rebuild, and CLI receipts. The later scoped review's four Important and two Minor
-  findings are addressed together at `39752fec057dceb79b56b5d9a0d5aaf10ca18f5c`: every runtime
-  root parent is current-UID-owned and not group/other writable; active Git locks/object temps and
-  ref movement receive bounded non-deleting contention handling; accepted candidates remain valid
-  when the next writer advances; SIGKILLed `tmp_obj_*` evidence remains fail-closed; full replay is
-  one `rev-list` plus three `cat-file --batch` processes independent of chain length; and hermetic
-  execution plus recursive no-mutation rebuild are proved. Its runtime suite passed 32/32 and its
-  hook passed. The whole-branch evaluator then identified the 32 MiB batch-response ceiling,
-  post-scan Git contention classification gap, and stale `Justfile` spelling. The streaming
-  correction at `e8d41d1ed3bdd80c8d21baba3d2fcc91ef201113` closes those findings with a
-  no-shell incremental `cat-file --batch` frame reader, a 64 MiB per-object/pre-CAS bound, a valid
-  33 MiB append/load/rebuild proof, and same-window reclassification of real Git activity that
-  begins after the initial residue scan; its runtime suite passed 35/35 and its hook passed. The
-  first composed-gate attempt then passed typecheck and lint before Vitest reported
-  800/801 files and 18,610/18,611 tests passing. Its sole failure was the worktree shell-injection
-  regression exceeding Vitest's global five-second deadline under full-suite load; focused and
-  repeated evidence diagnosed an oversized test fixture, with no sentinel leak or product defect.
-  Test-only stabilization `5ed51097812b3cade71965e44011386ba2eba5c2` reuses the existing fake
-  toolchain instead of performing two real bootstrap/Corepack cycles while retaining the real
-  Just/adapter/`worktree.ts` boundary proof. The target now completes in about 1.9–2.2 seconds and
-  the whole worktree file passes 22/22. On the exact clean pre-receipt candidate
-  `f54f01aaf8999db6224095d1c1023bd207c175cf`,
-  `scripts/program-supervisor/bootstrap-worktree.sh --run just ci` then exited zero with 801/801
-  Vitest files and 18,611/18,611 tests, 7/7 Functions files and 129/129 Functions tests, plus the
-  composed typecheck, lint, and production build. The immediately following
-  `scripts/program-supervisor/bootstrap-worktree.sh --run just ci-srd-only` exited zero with 623/623
-  Vitest files and 13,035/13,035 tests plus the SRD-only typecheck and production build. The two
-  gate-receipt commits through `ead344b3e72616332dee29fe7f35831015fac707` changed only program/test
-  status documentation and their Changesets and received an exact independent PASS. The mandatory
-  main pre-push gate then passed typecheck and lint but blocked before any remote update: its
-  coverage lane completed 800/801 files and 18,607/18,611 tests because four adapter fixtures
-  inherited the hook's local Git variables and addressed the parent repository instead of their
-  temporary repositories. The failed fixture also changed shared local Git configuration:
-  `core.bare` became `true`, while `user.name`/`user.email` became the fixture identity. The bare
-  flag was restored to its exact prior `false`; the two injected local identity keys were removed
-  so the effective owner identity is again sourced from the untouched global configuration; all
-  retained worktrees became readable; and remote `main` remained at
-  `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`. A focused regression reproduced the wrong top-level
-  path, then the test boundary removed every documented
-  `git rev-parse --local-env-vars` key from child processes. The regression passes 1/1, the owning
-  file passes 23/23 under an explicitly hostile hook environment, and `core.bare` remains `false`.
-  The exact repair candidate `1eec62dc716c402f368583b207c8d2a0a91cebac` received an independent
-  PASS. Its next composed-gate run passed typecheck and lint, then completed 800/801 files and
-  18,611/18,612 tests: the sole failure was the public/private partition guard correctly rejecting
-  an owner email copied into this public status receipt. No product or private-pack file changed.
-  The amended exact candidate `de65fe29574b64d68513aa361c573bc98490a621` (tree
-  `fc6ec526e39bfe7460c6530dcacf9f45d2e242af`) removes that identity value and received an
-  independent PASS. Its pinned composed gate exited zero with 801/801 Vitest files and
-  18,612/18,612 tests, 7/7 Functions files and 129/129 Functions tests, typecheck, lint, and
-  production build. The immediately following pinned SRD-only gate exited zero with 623/623
-  Vitest files and 13,036/13,036 tests, typecheck, and production build. The receipt-only commit
-  documenting those results is `b1448fbba62047e52a24155ecb2d817d605d33a9` (tree
-  `0008db10569e88195baa029f669d277973b080db`) and received an exact independent PASS. Its mandatory
-  pre-push gate passed typecheck, lint, 801/801 Vitest files, 18,612/18,612 tests, coverage, build,
-  and 6/6 bundle-budget tests; remote `main` was then proven equal to that commit and no deployment
-  occurred. The documented post-integration missing-store probe exposed that the CLI rejected
-  pnpm's conventional standalone `--` before runtime validation. Its focused regression failed on
-  the usage error, then passed after consuming exactly one leading separator; the owning runtime
-  file passes 36/36 and the documented invocation now reaches the precise missing-store error
-  without creating state. The exact repair `a7b273eed7d82cd30a7ec898b20c2c7e2d5c6d77` (tree
-  `6e1ad9bd497d9715a747804b0dd3472436500fa5`) received an independent PASS. Its pinned composed
-  gate exited zero with 801/801 Vitest files and 18,613/18,613 tests, 7/7 Functions files and
-  129/129 Functions tests, typecheck, lint, and production build. The immediately following pinned
-  SRD-only gate exited zero with 623/623 Vitest files and 13,037/13,037 tests, typecheck, and
-  production build. The receipt-only commit documenting those results still requires exact
-  read-only review, followed by the mandatory main pre-push gate and remote proof; runtime remains
-  absent.
-- **First lease:** repository lease `F0`, holder `program-supervisor-foundation`, acquired
-  `2026-08-26T01:38:26Z`, expires `2026-08-27T01:38:26Z`; active and writable. No runtime lease is
-  claimed before Task 6 creates the runtime. The future reviewed runtime lease ID is
-  `runtime-foundation-f0`.
-- **Acceptance:** Task 1 path/bootstrap tests; Task 2 deterministic state/replay tests; Task 3
-  private bare-Git runtime/CLI/read-only-rebuild tests; one routed status owner; exact authority
-  blobs; pinned
-  toolchain; no shared/private/product-worktree mutation; then independent whole-branch review,
-  `just ci`, `just ci-srd-only`, rebuild proof, and Task 6 activation evidence.
-- **Independent review:** Task 1-3 scoped reviews are accepted at their recorded commits. The first
-  Task 5 whole-branch evaluator returned Fix Round 1; the next review returned the five Fix Round 2
-  findings; the next review returned five Fix Round 3 findings; the next review returned six Fix
-  Round 4 corrections; and the latest architecture review required the Fix Round 5 bare-Git pivot
-  followed by a scoped correction review with four Important and two Minor findings, now addressed
-  above plus this authority reconciliation. The whole-branch candidate at `e8e86e0e59047c7a3664413812d0271735391a0c`,
-  the test-only stabilization, and the pre-gate status correction each received an independent
-  PASS. The gate-receipt candidate at `ead344b3e72616332dee29fe7f35831015fac707`, the
-  hook-environment repair at `1eec62dc716c402f368583b207c8d2a0a91cebac`, and the privacy-safe
-  exact gate candidate at `de65fe29574b64d68513aa361c573bc98490a621` also received independent
-  passes. The final receipt-only commit at `b1448fbba62047e52a24155ecb2d817d605d33a9`
-  received an exact PASS before its green pre-push gate and remote integration. The post-integration
-  CLI separator repair at `a7b273eed7d82cd30a7ec898b20c2c7e2d5c6d77` also received an exact
-  independent PASS; its final receipt-only commit still owes exact read-only review. Every fix or
-  changed base returns through review before verification.
-- **Owner gate:** none for repository integration. Deployment, publication, billing/privacy, and
-  any destructive action remain separate owner gates; Task 6 must not deploy.
-- **Cleanup:** retain this worktree and branch through remote integration, authority reconciliation,
-  runtime writer handoff, and a clean/remote-integrated cleanup-pending receipt. Only the activated
-  supervisor may remove them after proving the bootstrap controller is detached, then append
-  `cleanup-recorded`. Keep program-control as active infrastructure.
-- **Roadmap exits:** Operating Model §11 “Foundation bootstrap” items 1-7 and §12; Foundation plan
-  Tasks 5-6. Phase-one F0 completion is not evidence that dependency remediation, test-portfolio
-  reset, release/rollback hardening, or the skill/plugin ledger is complete.
+  `feat/program-supervisor-foundation`; fresh base and pre-change head
+  `fd5d84cec2e5da2986bda412e277d7cc68c77735`. Its runtime mutation scope is only
+  `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and
+  `.changeset/program-supervisor-activation.md`, a strict subset of the still-versioned F0
+  repository lease; no private write.
+- **State and receipt:** `executing`. Runtime lease
+  `runtime-foundation-f0-activation-status` was acquired
+  `2026-08-26T15:50:42.912Z` and expires `2026-08-27T15:40:00.000Z`, pinned to repository lease
+  `F0`, `docs/TEST_PORTFOLIO.md@7cb89ed4b26021aa46a7d4cdc8ef7888df692d52`, reconciled through
+  `fd5d84cec2e5da2986bda412e277d7cc68c77735`.
+- **Acceptance:** fresh independent review, composed and SRD-only gates, clean private/link proof,
+  candidate evidence before push, explicit remote ancestry, atomic reconciliation of both changed
+  authority blobs, zero active leases, matching validate/rebuild output, and one irreversible
+  `heartbeat-activated` handoff.
+- **Owner gate:** none. The heartbeat remains paused until every acceptance proof above is durable;
+  integration does not authorize deployment.
+- **Cleanup:** physical cleanup is deferred to the provisioned supervisor after handoff because the
+  bootstrap controller cannot safely remove its own final execution context.
 
 ### Automation-first — `automation-k1`
 
@@ -228,9 +128,10 @@ The shared checkout remains untouched even when its branch name is `main`.
   live caller, second reducer, persistence writer, UI, or generated die result.
 - **Authority:** operating model, Automation-first Wayfinder, test roadmap, G0 readiness baseline,
   repository lease owner, and this status owner pinned above.
-- **Dependencies:** reviewed G0/T0 foundations are satisfied in current `main`. K1 is serialized
-  behind F0 for the next integration boundary: after F0 lands it must fetch and freshly rebase onto
-  the final F0 `origin/main`, then re-ground every identity and receipt.
+- **Dependencies:** reviewed G0/T0 and core F0 are integrated. K1 remains queued only until the
+  activation-status candidate is remotely integrated, both authority blobs are reconciled, and the
+  supervisor writer handoff is valid; it must then freshly rebase onto that final `origin/main` and
+  re-ground every identity and receipt.
 - **Ownership:** public repository `d20-folio`; retained worktree
   `/Users/salvatoredicara/Workspace/Codex/d20-folio-automation-k1`; branch `feat/automation-k1`;
   base `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`; clean head
@@ -246,8 +147,8 @@ The shared checkout remains untouched even when its branch name is `main`.
   typecheck/lint/build/Functions gates, `just ci`, and `just ci-srd-only` green, but that dated
   evidence is not integration permission after F0 changes the base.
 - **First lease:** repository lease ID `K1` is declared for the future charter but is inactive; no
-  runtime lease or writer is active. Acquire it only after F0 release and exact authority/base
-  reconciliation.
+  K1 runtime lease or writer is active. Acquire it only after the activation handoff and exact
+  authority/base reconciliation.
 - **Acceptance:** Wayfinder §9 exit; the test-roadmap K1 contract/golden row; hostile codec and
   deterministic vectors; canonical browser/Functions byte parity; no forbidden imports or live
   caller; fresh composed and SRD-only gates.
@@ -270,10 +171,11 @@ The shared checkout remains untouched even when its branch name is `main`.
   foundation with zero production-reachable candidate bytes.
 - **Authority:** operating model, Tactical Codex Wayfinder, test roadmap, repository lease owner,
   this status owner, and `DESIGN.md` pinned above.
-- **Dependencies:** B00 remains frozen behind F0. After F0 integrates and releases its lease, B00
-  must fetch and freshly rebase onto final F0 `origin/main`; explicitly reconcile `package.json`,
-  `PROGRESS.md`, and related `pnpm-lock.yaml`; preserve the integrated F0 authority; and consume the
-  repaired T8A visual adapter before a new writer lease or integration attempt.
+- **Dependencies:** core F0 is integrated, but B00 remains frozen until the activation handoff and
+  the repaired T8A visual adapter are proven. It must then fetch and freshly rebase onto final
+  activation `origin/main`; explicitly reconcile `package.json`, `PROGRESS.md`, and related
+  `pnpm-lock.yaml`; preserve supervisor authority; and complete a new exact-SHA visual cycle before
+  any integration attempt.
 - **Ownership:** public repository `d20-folio`; retained worktree
   `/Users/salvatoredicara/Workspace/Codex/d20-folio-wayfinder-b00-successor`; branch
   `feat/wayfinder-b00-successor`; base `9fa32980abfc08e32e06853bd29823b947496f49`;
@@ -294,9 +196,9 @@ The shared checkout remains untouched even when its branch name is `main`.
   receipt has scoped review `APPROVED`, focused/composed/build/motion evidence green, and 8 normal +
   8 derived 200%-zoom captures. Central `visual:review` remains blocked by the inherited T8A
   `play`-before-`edit` adapter defect, and all affected evidence expires when the candidate rebases.
-- **First lease:** repository lease ID `B00` is declared but inactive. F0's overlapping
-  `package.json`/`PROGRESS.md` ownership forbids a B00 writer lease until F0 remote integration and
-  release are proven.
+- **First lease:** repository lease ID `B00` is declared but inactive. Acquire it only after the
+  activation handoff, exact authority refresh, visual-runner repair, and a fresh overlap-aware
+  charter.
 - **Acceptance:** Tactical Wayfinder Task 1 and Completion Definition B00 row; original/licensed
   assets and complete provenance; exact font/icon/ratio contracts; no production bundle/precache
   reachability; fresh focused, `just ci`, applicable SRD, `visual:review`, and `visual:motion` gates
@@ -322,22 +224,31 @@ The shared checkout remains untouched even when its branch name is `main`.
 `docs/TEST_PORTFOLIO.md` is the only repository lease/path owner. This section mirrors only the
 current execution pointer so agents can route correctly; it cannot grant or change ownership.
 
-- **Active writer lease:** `F0` → `program-supervisor-foundation`; exact exclusive paths are
-  `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
-  `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and `scripts/program-supervisor/**`; expires
-  `2026-08-27T01:38:26Z`. Its authority pointer is
+- **Active repository lease:** `F0` → `program-supervisor-foundation`; acquired
+  `2026-08-26T01:38:26Z`, expires `2026-08-27T01:38:26Z`, and rechecked valid at
+  `2026-08-26T16:19:08Z`.
+  Its versioned exclusive paths remain `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`,
+  `docs/WORKTREES.md`, `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and
+  `scripts/program-supervisor/**` until the terminal authority handoff.
+- **Active runtime writer lease:** `runtime-foundation-f0-activation-status` →
+  `program-supervisor-foundation-activation-status`; acquired `2026-08-26T15:50:42.912Z`, expires
+  `2026-08-27T15:40:00.000Z`, and may mutate only `docs/PROGRAM_STATUS.md`,
+  `docs/TEST_PORTFOLIO.md`, and `.changeset/program-supervisor-activation.md`. This narrow runtime
+  scope is a strict subset and does not release the remaining repository paths. Its authority
+  pointer is
   `docs/TEST_PORTFOLIO.md@7cb89ed4b26021aa46a7d4cdc8ef7888df692d52`, reconciled through
-  `b1448fbba62047e52a24155ecb2d817d605d33a9`.
-- **Inactive next lease:** `K1`; acquire only after F0 release and a fresh rebase/review/gate cycle.
-- **Inactive blocked lease:** `B00`; acquire only after F0 release, T8A adapter repair, overlap
-  reconciliation, and exact authority refresh.
+  `fd5d84cec2e5da2986bda412e277d7cc68c77735`.
+- **Inactive next lease:** `K1`; acquire only after the activation candidate is remotely proven,
+  authority-reconciled, and the supervisor heartbeat owns the runtime writer role.
+- **Inactive blocked lease:** `B00`; acquire only after the same handoff plus visual-runner repair,
+  overlap reconciliation, and exact authority refresh.
 - The C0-C4 rows in the lease owner remain serial handoff history/next-owner routing, not extra
-  active supervisor leases. No runtime lease exists before Task 6.
+  active supervisor leases.
 
-Current executable order is F0 review/verification/integration → K1 fresh rebase/review/gates and
-integration. B00 stays frozen until F0, the visual-runner dependency, and its taste/screenshot gates
-are satisfied. K1 and the later B00 writer may overlap only when their exact leases are disjoint;
-integration remains serialized.
+Current executable order is activation status → remote proof and writer handoff → K1 fresh
+rebase/review/gates and integration. B00 stays frozen until the visual-runner dependency and its
+taste/screenshot gates are satisfied. After handoff, K1 and a disjoint visual dependency repair may
+overlap only under separate valid leases; integration remains evidence-driven.
 
 ## Foundation security frontier
 
@@ -387,7 +298,7 @@ Nothing here may be deleted merely because it looks complete.
 | Candidate                                                                                                           | Earliest evidence-backed cleanup boundary                                                                                                                                                                        |
 | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/Users/salvatoredicara/Workspace/Codex/d20-folio-agent-first-operating-model` + `docs/agent-first-operating-model` | Prove integrated commit `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97` is in fresh `origin/main`, the tree is clean, and no Codex task owns it; then remove from program-control and record cleanup.                 |
-| Foundation worktree + `feat/program-supervisor-foundation`                                                          | Task 6 remote integration, authority reconciliation, clean/remote-integrated receipt, activated heartbeat, and bootstrap-controller detachment; the supervisor then records `cleanup-recorded`.                  |
+| Foundation worktree + `feat/program-supervisor-foundation`                                                          | Activation-status remote integration, authority reconciliation, clean/remote-integrated receipt, activated heartbeat, and bootstrap-controller detachment; the supervisor then records `cleanup-recorded`.       |
 | K1 worktree + `feat/automation-k1`                                                                                  | Exact K1 candidate is proven in remote `main`, its evidence is retained, and no task owns the tree.                                                                                                              |
 | B00 worktree + `feat/wayfinder-b00-successor`                                                                       | Exact owner-approved rebased candidate is proven in remote `main`, visual artifacts are retained, and no task owns the tree.                                                                                     |
 | Incomplete runtime root or persistent Git-internal `.lock`/`tmp_obj_*` residue                                      | Give active cooperating Git evidence only its bounded non-deleting contention window, then preserve persistent residue unchanged for manual quiescent recovery; never adopt, delete, repair, or reinitialize it. |
