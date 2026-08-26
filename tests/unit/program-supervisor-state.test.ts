@@ -29,6 +29,8 @@ const READINESS_BASELINE_PATH =
   "docs/superpowers/plans/2026-08-25-g0-automation-readiness.md";
 const STATUS_OWNER_PATH = "docs/PROGRAM_STATUS.md";
 const LEASE_ID = "F0";
+const CONTROLLER_WRITER_ID = "program-supervisor-bootstrap-controller";
+const SUPERVISOR_THREAD_ID = "thread-supervisor";
 
 function clone<T>(value: T): T {
   return structuredClone(value);
@@ -130,6 +132,7 @@ function bootstrapFixture() {
     eventId: "event-bootstrap",
     seq: 1,
     type: "bootstrap",
+    writerId: CONTROLLER_WRITER_ID,
     at: "2026-08-26T00:00:00.000Z",
     authority: {
       mainSha: SHA_B,
@@ -165,6 +168,7 @@ function event<T extends Record<string, unknown>>(
   eventId: string;
   seq: number;
   type: string;
+  writerId: string;
   at: string;
 } & T {
   return {
@@ -172,8 +176,40 @@ function event<T extends Record<string, unknown>>(
     eventId: `event-${seq}-${type}`,
     seq,
     type,
+    writerId: CONTROLLER_WRITER_ID,
     at,
     ...fields,
+  };
+}
+
+function provisionedIdentity() {
+  return {
+    taskTitle: "d20 Folio Program Supervisor",
+    savedProjectId: "project-d20-folio",
+    threadId: SUPERVISOR_THREAD_ID,
+    hostId: "host-local",
+    marker: `d20-folio-program-supervisor:v1:${SHA_C}`,
+    automationId: "automation-heartbeat",
+    automationName: "d20 Folio Program Supervisor heartbeat",
+    cadenceMinutes: 30,
+    targetThreadId: SUPERVISOR_THREAD_ID,
+    destination: "thread",
+    notificationPolicy: "failed_runs_only",
+    status: "PAUSED",
+    receipt: "Exact paused task and heartbeat identity verified.",
+  };
+}
+
+function activationProof() {
+  return {
+    automationId: "automation-heartbeat",
+    threadId: SUPERVISOR_THREAD_ID,
+    finalMainSha: SHA_B,
+    statusOwner: { path: STATUS_OWNER_PATH, blob: SHA_D },
+    repositoryLeaseOwners: [{ path: LEASE_OWNER_PATH, blob: SHA_A }],
+    rebuildProof: "Ledger and both caches rebuilt and validated.",
+    cleanupPendingProof: "Integrated clean Foundation checkout retained for handoff.",
+    receipt: "Exact active heartbeat observed before irreversible ledger handoff.",
   };
 }
 
@@ -1524,6 +1560,153 @@ describe("Program Supervisor lease lifecycle and state transitions", () => {
 });
 
 describe("Program Supervisor deterministic event coverage", () => {
+  it("records the bootstrap controller and requires the current writer on every later event", () => {
+    const missingBootstrapWriter = clone(bootstrapFixture()) as Record<string, unknown>;
+    delete missingBootstrapWriter.writerId;
+    expect(() => validateEventInput(missingBootstrapWriter)).toThrow(/writerId/);
+
+    const wrongBootstrapWriter = clone(bootstrapFixture());
+    wrongBootstrapWriter.writerId = "another-controller";
+    expect(() => validateEventInput(wrongBootstrapWriter)).toThrow(
+      /bootstrap controller writer/i
+    );
+
+    const missingLaterWriter = clone(
+      event(2, "no-frontier-recorded", {
+        wayfinder: "automation-first",
+        receipt: "No executable frontier.",
+      })
+    ) as Record<string, unknown>;
+    delete missingLaterWriter.writerId;
+    expect(() => replayEvents([bootstrapFixture(), missingLaterWriter])).toThrow(
+      /writerId/
+    );
+  });
+
+  it("reconstructs one exact paused supervisor task and heartbeat identity", () => {
+    const provisioned = event(2, "supervisor-provisioned", provisionedIdentity());
+    const result = replayEvents([bootstrapFixture(), provisioned]);
+    expect(result.snapshot.currentWriter).toEqual({
+      kind: "controller",
+      id: CONTROLLER_WRITER_ID,
+    });
+    expect(result.snapshot.supervisor).toMatchObject({
+      ...provisionedIdentity(),
+      at: "2026-08-26T02:00:00.000Z",
+    });
+
+    for (const [field, value, error] of [
+      ["taskTitle", "Another task", /task title/i],
+      ["marker", `wrong:${SHA_C}`, /operating-model blob|marker/i],
+      ["targetThreadId", "thread-other", /target.*thread/i],
+      ["destination", "local", /destination.*thread/i],
+      ["notificationPolicy", "always", /failed_runs_only/i],
+      ["status", "ACTIVE", /PAUSED/],
+      ["cadenceMinutes", 15, /30 minutes/i],
+    ] as const) {
+      const fields = { ...provisionedIdentity(), [field]: value };
+      expect(
+        () =>
+          replayEvents([bootstrapFixture(), event(2, "supervisor-provisioned", fields)]),
+        field
+      ).toThrow(error);
+    }
+
+    expect(() =>
+      replayEvents([
+        bootstrapFixture(),
+        provisioned,
+        event(3, "supervisor-provisioned", provisionedIdentity()),
+      ])
+    ).toThrow(/already provisioned|duplicate/i);
+  });
+
+  it("activates only from a quiescent exact authority state and irreversibly hands off writing", () => {
+    const terminal = bootstrapFixture();
+    const task = itemAt(terminal.tasks, 0);
+    task.state = "integrated";
+    task.receipt = "Remote integration proved.";
+    const provisioned = event(2, "supervisor-provisioned", provisionedIdentity());
+    const activated = event(3, "heartbeat-activated", activationProof());
+
+    const handedOff = replayEvents([terminal, provisioned, activated]);
+    expect(handedOff.snapshot.currentWriter).toEqual({
+      kind: "supervisor-thread",
+      id: SUPERVISOR_THREAD_ID,
+    });
+    expect(handedOff.snapshot.heartbeat).toMatchObject(activationProof());
+
+    expect(() =>
+      replayEvents([
+        terminal,
+        provisioned,
+        activated,
+        event(4, "no-frontier-recorded", {
+          wayfinder: "automation-first",
+          receipt: "Controller must be permanently read-only.",
+        }),
+      ])
+    ).toThrow(/current writer|supervisor thread/i);
+
+    expect(() =>
+      replayEvents([
+        terminal,
+        provisioned,
+        activated,
+        event(4, "cleanup-recorded", {
+          writerId: SUPERVISOR_THREAD_ID,
+          taskId: "task-a",
+          removed: ["worktree", "branch"],
+          remoteProof: "Reviewed remote SHA contains the task.",
+          recoveryProof: null,
+        }),
+      ])
+    ).not.toThrow();
+  });
+
+  it("rejects activation with an active lease or stale handoff proofs", () => {
+    const active = lease("task-a");
+    const busy = [
+      bootstrapFixture(),
+      event(2, "supervisor-provisioned", provisionedIdentity()),
+      acquire(3, {
+        ...active,
+        acquiredAt: "2026-08-26T03:00:00.000Z",
+        termStartedAt: "2026-08-26T03:00:00.000Z",
+      }),
+      event(4, "heartbeat-activated", activationProof()),
+    ];
+    expect(() => replayEvents(busy)).toThrow(/zero active leases|quiescent/i);
+
+    const prefix = [
+      bootstrapFixture(),
+      event(2, "supervisor-provisioned", provisionedIdentity()),
+    ];
+    for (const [field, value, error] of [
+      ["finalMainSha", SHA_C, /final main SHA/i],
+      ["statusOwner", { path: STATUS_OWNER_PATH, blob: SHA_E }, /status owner/i],
+      [
+        "repositoryLeaseOwners",
+        [{ path: LEASE_OWNER_PATH, blob: SHA_F }],
+        /repository lease owner/i,
+      ],
+      ["automationId", "automation-other", /provisioned automation/i],
+      ["threadId", "thread-other", /provisioned.*thread/i],
+    ] as const) {
+      expect(
+        () =>
+          replayEvents([
+            ...prefix,
+            event(3, "heartbeat-activated", {
+              ...activationProof(),
+              [field]: value,
+            }),
+          ]),
+        field
+      ).toThrow(error);
+    }
+  });
+
   it("projects reconciliation, evidence, rulings, owner gates, no-frontier, authority, provisioning, heartbeat, and cleanup", () => {
     const fixture = bootstrapFixture();
     itemAt(fixture.tasks, 0).charter.ownerGate = {
@@ -1572,57 +1755,53 @@ describe("Program Supervisor deterministic event coverage", () => {
         wayfinder: "automation-first",
         receipt: "All safe automation-first frontiers are leased.",
       }),
-      event(9, "supervisor-provisioned", {
-        threadId: "thread-supervisor",
-        hostId: "host-local",
-        receipt: "Supervisor task created paused.",
-      }),
-      event(10, "heartbeat-activated", {
-        automationId: "automation-heartbeat",
-        threadId: "thread-supervisor",
-        receipt: "Heartbeat activated after provisioning.",
-      }),
-      event(11, "authority-reconciled", {
+      event(9, "supervisor-provisioned", provisionedIdentity()),
+      event(10, "authority-reconciled", {
         previousMainSha: SHA_B,
         mainSha: SHA_C,
         changes: [{ path: LEASE_OWNER_PATH, previousBlob: SHA_A, blob: SHA_F }],
         proof: "Authority blobs resolved at the new main SHA.",
       }),
-      event(12, "state-transitioned", {
+      event(11, "state-transitioned", {
         taskId: "task-a",
         from: "review",
         to: "verification",
         receipt: "review r1 passed",
       }),
-      event(13, "owner-gate-recorded", {
+      event(12, "owner-gate-recorded", {
         taskId: "task-a",
         gate: "product-owner",
         decision: "approved",
         receipt: "Owner approved curated screenshots.",
       }),
-      event(14, "state-transitioned", {
+      event(13, "state-transitioned", {
         taskId: "task-a",
         from: "verification",
         to: "owner-gate",
         receipt: "verification gates passed",
         ownerGate: "product-owner",
       }),
-      event(15, "state-transitioned", {
+      event(14, "state-transitioned", {
         taskId: "task-a",
         from: "owner-gate",
         to: "integrated",
         receipt: "remote SHA and owner approval proven",
       }),
-      event(16, "lease-released", {
+      event(15, "lease-released", {
         taskId: "task-a",
         leaseId: active.leaseId,
         proof: "Integrated remote SHA closes the runtime lease.",
       }),
-      event(17, "cleanup-recorded", {
+      event(16, "cleanup-recorded", {
         taskId: "task-a",
         removed: ["worktree", "branch"],
         remoteProof: "origin/main contains the reviewed SHA",
         recoveryProof: null,
+      }),
+      event(17, "heartbeat-activated", {
+        ...activationProof(),
+        finalMainSha: SHA_C,
+        repositoryLeaseOwners: [{ path: LEASE_OWNER_PATH, blob: SHA_F }],
       }),
     ];
 
@@ -1630,7 +1809,7 @@ describe("Program Supervisor deterministic event coverage", () => {
     const task = itemAt(result.snapshot.tasks, 0);
     expect(task).toMatchObject({
       state: "integrated",
-      updatedAt: "2026-08-26T17:00:00.000Z",
+      updatedAt: "2026-08-26T16:00:00.000Z",
       cleanup: {
         removed: ["worktree", "branch"],
         remoteProof: "origin/main contains the reviewed SHA",
@@ -1999,9 +2178,8 @@ describe("Program Supervisor persisted snapshot semantics", () => {
   it("rejects heartbeat/supervisor incoherence and duplicate global evidence IDs", () => {
     const heartbeat = snapshotFixture();
     heartbeat.heartbeat = {
-      automationId: "automation-heartbeat",
+      ...activationProof(),
       threadId: "missing-supervisor",
-      receipt: "orphan heartbeat",
       at: "2026-08-26T02:00:00.000Z",
     };
     expect(() => validateSnapshot(heartbeat)).toThrow(/heartbeat.*supervisor/i);

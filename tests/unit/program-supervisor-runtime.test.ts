@@ -47,6 +47,7 @@ const READINESS_BASELINE_PATH =
 const STATUS_OWNER_PATH = "docs/PROGRAM_STATUS.md";
 const CLI_PATH = resolve("scripts/program-supervisor/cli.ts");
 const RUNTIME_URL = pathToFileURL(resolve("scripts/program-supervisor/runtime.ts")).href;
+const CONTROLLER_WRITER_ID = "program-supervisor-bootstrap-controller";
 
 const temporaryParents: string[] = [];
 
@@ -162,6 +163,7 @@ function bootstrapInput(
     schemaVersion: 1,
     eventId: "event-bootstrap-foundation",
     type: "bootstrap",
+    writerId: CONTROLLER_WRITER_ID,
     authority: {
       mainSha: SHA_B,
       operatingModel: {
@@ -198,6 +200,7 @@ function transitionToVerificationInput() {
     schemaVersion: 1,
     eventId: "event-foundation-verification",
     type: "state-transitioned",
+    writerId: CONTROLLER_WRITER_ID,
     taskId: "foundation-f0",
     from: "review",
     to: "verification",
@@ -213,6 +216,7 @@ function leaseAcquiredInput(
     schemaVersion: 1,
     eventId: `event-${taskId}-lease-acquired`,
     type: "lease-acquired",
+    writerId: CONTROLLER_WRITER_ID,
     lease: {
       leaseId: `runtime-${taskId}`,
       taskId,
@@ -411,6 +415,7 @@ describe("Program Supervisor atomic runtime", () => {
         schemaVersion: 1,
         eventId: "event-illegal-transition",
         type: "state-transitioned",
+        writerId: CONTROLLER_WRITER_ID,
         taskId: "foundation-f0",
         from: "review",
         to: "integrated",
@@ -671,6 +676,7 @@ describe("Program Supervisor atomic runtime", () => {
       schemaVersion: 1,
       eventId: "event-recovered-evidence",
       type: "evidence-recorded",
+      writerId: CONTROLLER_WRITER_ID,
       taskId: "foundation-f0",
       evidence: {
         id: "recovery-continued",
@@ -699,6 +705,7 @@ describe("Program Supervisor atomic runtime", () => {
         eventId: "event-sequence-gap",
         seq: 3,
         type: "no-frontier-recorded",
+        writerId: CONTROLLER_WRITER_ID,
         at: "2026-08-26T03:00:00.000Z",
         wayfinder: "foundation",
         receipt: "No safe frontier remains.",
@@ -1277,6 +1284,7 @@ describe("Program Supervisor bootstrap identity and CLI", () => {
       schemaVersion: 1,
       eventId: "event-cli-evidence",
       type: "evidence-recorded",
+      writerId: CONTROLLER_WRITER_ID,
       taskId: "foundation-f0",
       evidence: {
         id: "cli-evidence",
@@ -1294,6 +1302,7 @@ describe("Program Supervisor bootstrap identity and CLI", () => {
       schemaVersion: 1,
       eventId: "event-illegal-at",
       type: "no-frontier-recorded",
+      writerId: CONTROLLER_WRITER_ID,
       at: "2026-08-26T01:00:00.000Z",
       wayfinder: "foundation",
       receipt: "Caller supplied an event timestamp.",
@@ -1307,6 +1316,7 @@ describe("Program Supervisor bootstrap identity and CLI", () => {
       schemaVersion: 1,
       eventId: "event-weak-mode",
       type: "no-frontier-recorded",
+      writerId: CONTROLLER_WRITER_ID,
       wayfinder: "foundation",
       receipt: "A weak-mode event file must be rejected before parsing.",
     });
@@ -1320,6 +1330,7 @@ describe("Program Supervisor bootstrap identity and CLI", () => {
       schemaVersion: 1,
       eventId: "event-special-mode",
       type: "no-frontier-recorded",
+      writerId: CONTROLLER_WRITER_ID,
       wayfinder: "foundation",
       receipt: "A special-bit event file must be rejected before parsing.",
     });
@@ -1334,6 +1345,7 @@ describe("Program Supervisor bootstrap identity and CLI", () => {
       schemaVersion: 1,
       eventId: "event-symlink",
       type: "no-frontier-recorded",
+      writerId: CONTROLLER_WRITER_ID,
       wayfinder: "foundation",
       receipt: "A symlinked event file must be rejected before parsing.",
     });

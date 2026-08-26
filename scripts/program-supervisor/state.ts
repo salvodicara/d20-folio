@@ -14,6 +14,12 @@ export const TASK_STATES = [
 
 export type TaskState = (typeof TASK_STATES)[number];
 export type LeaseRole = "writer" | "evaluator";
+export const BOOTSTRAP_CONTROLLER_WRITER_ID = "program-supervisor-bootstrap-controller";
+
+export interface CurrentWriter {
+  kind: "controller" | "supervisor-thread";
+  id: string;
+}
 
 export interface AuthorityReference {
   path: string;
@@ -135,6 +141,7 @@ export interface ProgramSnapshot {
   noFrontiers: NoFrontierRecord[];
   supervisor: SupervisorRecord | null;
   heartbeat: HeartbeatRecord | null;
+  currentWriter: CurrentWriter;
   wip: { writers: number; evaluators: number };
   updatedAt: string;
   lastEventSeq: number;
@@ -164,6 +171,7 @@ interface BaseEvent {
   eventId: string;
   seq: number;
   type: string;
+  writerId: string;
   at: string;
 }
 
@@ -300,22 +308,47 @@ interface AuthorityReconciledEvent extends BaseEvent {
 }
 
 export interface SupervisorRecord {
+  taskTitle: "d20 Folio Program Supervisor";
+  savedProjectId: string;
   threadId: string;
   hostId: string;
+  marker: string;
+  automationId: string;
+  automationName: string;
+  cadenceMinutes: 30;
+  targetThreadId: string;
+  destination: "thread";
+  notificationPolicy: "failed_runs_only";
+  status: "PAUSED";
   receipt: string;
   at: string;
 }
 
 interface SupervisorProvisionedEvent extends BaseEvent {
   type: "supervisor-provisioned";
+  taskTitle: SupervisorRecord["taskTitle"];
+  savedProjectId: string;
   threadId: string;
   hostId: string;
+  marker: string;
+  automationId: string;
+  automationName: string;
+  cadenceMinutes: 30;
+  targetThreadId: string;
+  destination: SupervisorRecord["destination"];
+  notificationPolicy: SupervisorRecord["notificationPolicy"];
+  status: SupervisorRecord["status"];
   receipt: string;
 }
 
 export interface HeartbeatRecord {
   automationId: string;
   threadId: string;
+  finalMainSha: string;
+  statusOwner: AuthorityReference;
+  repositoryLeaseOwners: AuthorityReference[];
+  rebuildProof: string;
+  cleanupPendingProof: string;
   receipt: string;
   at: string;
 }
@@ -324,6 +357,11 @@ interface HeartbeatActivatedEvent extends BaseEvent {
   type: "heartbeat-activated";
   automationId: string;
   threadId: string;
+  finalMainSha: string;
+  statusOwner: AuthorityReference;
+  repositoryLeaseOwners: AuthorityReference[];
+  rebuildProof: string;
+  cleanupPendingProof: string;
   receipt: string;
 }
 
@@ -465,6 +503,22 @@ function normalizedPathAt(value: unknown, path: string): string {
     corruption(path, "expected a normalized repository-relative path");
   }
   return normalized;
+}
+
+function sameAuthorityReference(
+  left: AuthorityReference,
+  right: AuthorityReference
+): boolean {
+  return left.path === right.path && left.blob === right.blob;
+}
+
+function sameAuthorityReferenceSet(
+  left: readonly AuthorityReference[],
+  right: readonly AuthorityReference[]
+): boolean {
+  if (left.length !== right.length) return false;
+  const expected = new Set(right.map(({ path, blob }) => `${path}\0${blob}`));
+  return left.every(({ path, blob }) => expected.has(`${path}\0${blob}`));
 }
 
 function absoluteNormalizedPathAt(value: unknown, path: string): string {
@@ -869,23 +923,104 @@ function validateNoFrontierRecord(value: unknown, path: string): NoFrontierRecor
 }
 
 function validateSupervisorRecord(value: unknown, path: string): SupervisorRecord {
-  const record = objectAt(value, path, ["threadId", "hostId", "receipt", "at"]);
+  const record = objectAt(value, path, [
+    "taskTitle",
+    "savedProjectId",
+    "threadId",
+    "hostId",
+    "marker",
+    "automationId",
+    "automationName",
+    "cadenceMinutes",
+    "targetThreadId",
+    "destination",
+    "notificationPolicy",
+    "status",
+    "receipt",
+    "at",
+  ]);
+  if (record.taskTitle !== "d20 Folio Program Supervisor") {
+    corruption(`${path}.taskTitle`, "expected exact Program Supervisor task title");
+  }
+  const threadId = idAt(record.threadId, `${path}.threadId`);
+  if (record.targetThreadId !== threadId) {
+    corruption(`${path}.targetThreadId`, "must equal the provisioned task thread");
+  }
+  if (record.destination !== "thread") {
+    corruption(`${path}.destination`, "expected destination thread");
+  }
+  if (record.notificationPolicy !== "failed_runs_only") {
+    corruption(`${path}.notificationPolicy`, "expected failed_runs_only");
+  }
+  if (record.status !== "PAUSED") {
+    corruption(`${path}.status`, "expected PAUSED");
+  }
+  if (record.cadenceMinutes !== 30) {
+    corruption(`${path}.cadenceMinutes`, "expected cadence of 30 minutes");
+  }
   return {
-    threadId: idAt(record.threadId, `${path}.threadId`),
+    taskTitle: "d20 Folio Program Supervisor",
+    savedProjectId: idAt(record.savedProjectId, `${path}.savedProjectId`),
+    threadId,
     hostId: idAt(record.hostId, `${path}.hostId`),
+    marker: idAt(record.marker, `${path}.marker`),
+    automationId: idAt(record.automationId, `${path}.automationId`),
+    automationName: stringAt(record.automationName, `${path}.automationName`),
+    cadenceMinutes: 30,
+    targetThreadId: threadId,
+    destination: "thread",
+    notificationPolicy: "failed_runs_only",
+    status: "PAUSED",
     receipt: stringAt(record.receipt, `${path}.receipt`),
     at: timestampAt(record.at, `${path}.at`),
   };
 }
 
 function validateHeartbeatRecord(value: unknown, path: string): HeartbeatRecord {
-  const record = objectAt(value, path, ["automationId", "threadId", "receipt", "at"]);
+  const record = objectAt(value, path, [
+    "automationId",
+    "threadId",
+    "finalMainSha",
+    "statusOwner",
+    "repositoryLeaseOwners",
+    "rebuildProof",
+    "cleanupPendingProof",
+    "receipt",
+    "at",
+  ]);
+  const repositoryLeaseOwners = arrayAt(
+    record.repositoryLeaseOwners,
+    `${path}.repositoryLeaseOwners`,
+    true
+  ).map((reference, index) =>
+    validateAuthorityReference(reference, `${path}.repositoryLeaseOwners[${index}]`)
+  );
+  assertUnique(
+    repositoryLeaseOwners.map(({ path: ownerPath }) => ownerPath),
+    `${path}.repositoryLeaseOwners`
+  );
   return {
     automationId: idAt(record.automationId, `${path}.automationId`),
     threadId: idAt(record.threadId, `${path}.threadId`),
+    finalMainSha: shaAt(record.finalMainSha, `${path}.finalMainSha`),
+    statusOwner: validateAuthorityReference(record.statusOwner, `${path}.statusOwner`),
+    repositoryLeaseOwners,
+    rebuildProof: stringAt(record.rebuildProof, `${path}.rebuildProof`),
+    cleanupPendingProof: stringAt(
+      record.cleanupPendingProof,
+      `${path}.cleanupPendingProof`
+    ),
     receipt: stringAt(record.receipt, `${path}.receipt`),
     at: timestampAt(record.at, `${path}.at`),
   };
+}
+
+function validateCurrentWriter(value: unknown, path: string): CurrentWriter {
+  const record = objectAt(value, path, ["kind", "id"]);
+  if (record.kind !== "controller" && record.kind !== "supervisor-thread") {
+    corruption(`${path}.kind`, "expected controller or supervisor-thread");
+  }
+  return { kind: record.kind, id: idAt(record.id, `${path}.id`) };
 }
 
 function validateCleanupProjection(value: unknown, path: string): CleanupProjection {
@@ -1274,11 +1409,42 @@ function enforceProjectionSemantics(snapshot: ProgramSnapshot, path: string): vo
   }
   if (
     snapshot.heartbeat &&
-    (!snapshot.supervisor || snapshot.heartbeat.threadId !== snapshot.supervisor.threadId)
+    (!snapshot.supervisor ||
+      snapshot.heartbeat.threadId !== snapshot.supervisor.threadId ||
+      snapshot.heartbeat.automationId !== snapshot.supervisor.automationId)
   ) {
     corruption(
       `${path}.heartbeat`,
       "heartbeat does not match the provisioned supervisor"
+    );
+  }
+  if (snapshot.heartbeat) {
+    if (
+      snapshot.currentWriter.kind !== "supervisor-thread" ||
+      snapshot.currentWriter.id !== snapshot.supervisor?.threadId
+    ) {
+      corruption(`${path}.currentWriter`, "active heartbeat requires supervisor writer");
+    }
+    if (
+      snapshot.heartbeat.finalMainSha !== snapshot.authority.mainSha ||
+      !sameAuthorityReference(
+        snapshot.heartbeat.statusOwner,
+        snapshot.authority.statusOwner
+      ) ||
+      !sameAuthorityReferenceSet(
+        snapshot.heartbeat.repositoryLeaseOwners,
+        snapshot.authority.repositoryLeaseOwners
+      )
+    ) {
+      corruption(`${path}.heartbeat`, "handoff authority does not match the manifest");
+    }
+  } else if (
+    snapshot.currentWriter.kind !== "controller" ||
+    snapshot.currentWriter.id !== BOOTSTRAP_CONTROLLER_WRITER_ID
+  ) {
+    corruption(
+      `${path}.currentWriter`,
+      "paused runtime requires the bootstrap controller writer"
     );
   }
 }
@@ -1343,6 +1509,7 @@ export function validateSnapshot(value: unknown): ProgramSnapshot {
     "noFrontiers",
     "supervisor",
     "heartbeat",
+    "currentWriter",
     "wip",
     "updatedAt",
     "lastEventSeq",
@@ -1388,6 +1555,7 @@ export function validateSnapshot(value: unknown): ProgramSnapshot {
       record.heartbeat === null
         ? null
         : validateHeartbeatRecord(record.heartbeat, "snapshot.heartbeat"),
+    currentWriter: validateCurrentWriter(record.currentWriter, "snapshot.currentWriter"),
     wip,
     updatedAt: timestampAt(record.updatedAt, "snapshot.updatedAt"),
     lastEventSeq: integerAt(record.lastEventSeq, "snapshot.lastEventSeq", 1),
@@ -1429,7 +1597,7 @@ function validateBaseEvent(value: unknown): Record<string, unknown> {
   const record = objectAt(
     value,
     "event",
-    ["schemaVersion", "eventId", "seq", "type", "at"],
+    ["schemaVersion", "eventId", "seq", "type", "writerId", "at"],
     [
       "authority",
       "tasks",
@@ -1470,6 +1638,20 @@ function validateBaseEvent(value: unknown): Record<string, unknown> {
       "threadId",
       "hostId",
       "automationId",
+      "taskTitle",
+      "savedProjectId",
+      "marker",
+      "automationName",
+      "cadenceMinutes",
+      "targetThreadId",
+      "destination",
+      "notificationPolicy",
+      "status",
+      "finalMainSha",
+      "statusOwner",
+      "repositoryLeaseOwners",
+      "rebuildProof",
+      "cleanupPendingProof",
       "removed",
       "remoteProof",
       "recoveryProof",
@@ -1479,6 +1661,7 @@ function validateBaseEvent(value: unknown): Record<string, unknown> {
   idAt(record.eventId, "event.eventId");
   integerAt(record.seq, "event.seq", 1);
   stringAt(record.type, "event.type");
+  idAt(record.writerId, "event.writerId");
   timestampAt(record.at, "event.at");
   return record;
 }
@@ -1491,7 +1674,7 @@ function eventObject(
   return objectAt(
     record,
     "event",
-    ["schemaVersion", "eventId", "seq", "type", "at", ...required],
+    ["schemaVersion", "eventId", "seq", "type", "writerId", "at", ...required],
     optional
   );
 }
@@ -1502,6 +1685,7 @@ function baseFrom(record: Record<string, unknown>): BaseEvent {
     eventId: idAt(record.eventId, "event.eventId"),
     seq: integerAt(record.seq, "event.seq", 1),
     type: stringAt(record.type, "event.type"),
+    writerId: idAt(record.writerId, "event.writerId"),
     at: timestampAt(record.at, "event.at"),
   };
 }
@@ -1527,6 +1711,12 @@ export function validateEventInput(value: unknown): ProgramEvent {
   switch (base.type) {
     case "bootstrap": {
       const record = eventObject(broad, ["authority", "tasks", "activeLeases"]);
+      if (base.writerId !== BOOTSTRAP_CONTROLLER_WRITER_ID) {
+        corruption(
+          "event.writerId",
+          `bootstrap controller writer must be ${BOOTSTRAP_CONTROLLER_WRITER_ID}`
+        );
+      }
       const authority = validateAuthorityManifest(record.authority, "event.authority");
       const tasks = arrayAt(record.tasks, "event.tasks", true).map((task, index) =>
         validateBootstrapTask(task, `event.tasks[${index}]`)
@@ -1784,23 +1974,94 @@ export function validateEventInput(value: unknown): ProgramEvent {
       };
     }
     case "supervisor-provisioned": {
-      const record = eventObject(broad, ["threadId", "hostId", "receipt"]);
+      const record = eventObject(broad, [
+        "taskTitle",
+        "savedProjectId",
+        "threadId",
+        "hostId",
+        "marker",
+        "automationId",
+        "automationName",
+        "cadenceMinutes",
+        "targetThreadId",
+        "destination",
+        "notificationPolicy",
+        "status",
+        "receipt",
+      ]);
+      const supervisor = validateSupervisorRecord(
+        {
+          taskTitle: record.taskTitle,
+          savedProjectId: record.savedProjectId,
+          threadId: record.threadId,
+          hostId: record.hostId,
+          marker: record.marker,
+          automationId: record.automationId,
+          automationName: record.automationName,
+          cadenceMinutes: record.cadenceMinutes,
+          targetThreadId: record.targetThreadId,
+          destination: record.destination,
+          notificationPolicy: record.notificationPolicy,
+          status: record.status,
+          receipt: record.receipt,
+          at: base.at,
+        },
+        "event.supervisor"
+      );
       return {
         ...base,
         type: "supervisor-provisioned",
-        threadId: idAt(record.threadId, "event.threadId"),
-        hostId: idAt(record.hostId, "event.hostId"),
-        receipt: stringAt(record.receipt, "event.receipt"),
+        taskTitle: supervisor.taskTitle,
+        savedProjectId: supervisor.savedProjectId,
+        threadId: supervisor.threadId,
+        hostId: supervisor.hostId,
+        marker: supervisor.marker,
+        automationId: supervisor.automationId,
+        automationName: supervisor.automationName,
+        cadenceMinutes: supervisor.cadenceMinutes,
+        targetThreadId: supervisor.targetThreadId,
+        destination: supervisor.destination,
+        notificationPolicy: supervisor.notificationPolicy,
+        status: supervisor.status,
+        receipt: supervisor.receipt,
       };
     }
     case "heartbeat-activated": {
-      const record = eventObject(broad, ["automationId", "threadId", "receipt"]);
+      const record = eventObject(broad, [
+        "automationId",
+        "threadId",
+        "finalMainSha",
+        "statusOwner",
+        "repositoryLeaseOwners",
+        "rebuildProof",
+        "cleanupPendingProof",
+        "receipt",
+      ]);
+      const heartbeat = validateHeartbeatRecord(
+        {
+          automationId: record.automationId,
+          threadId: record.threadId,
+          finalMainSha: record.finalMainSha,
+          statusOwner: record.statusOwner,
+          repositoryLeaseOwners: record.repositoryLeaseOwners,
+          rebuildProof: record.rebuildProof,
+          cleanupPendingProof: record.cleanupPendingProof,
+          receipt: record.receipt,
+          at: base.at,
+        },
+        "event.heartbeat"
+      );
       return {
         ...base,
         type: "heartbeat-activated",
-        automationId: idAt(record.automationId, "event.automationId"),
-        threadId: idAt(record.threadId, "event.threadId"),
-        receipt: stringAt(record.receipt, "event.receipt"),
+        automationId: heartbeat.automationId,
+        threadId: heartbeat.threadId,
+        finalMainSha: heartbeat.finalMainSha,
+        statusOwner: heartbeat.statusOwner,
+        repositoryLeaseOwners: heartbeat.repositoryLeaseOwners,
+        rebuildProof: heartbeat.rebuildProof,
+        cleanupPendingProof: heartbeat.cleanupPendingProof,
+        receipt: heartbeat.receipt,
       };
     }
     case "cleanup-recorded": {
@@ -2057,6 +2318,10 @@ function bootstrapSnapshot(first: BootstrapEvent): ProgramSnapshot {
     noFrontiers: [],
     supervisor: null,
     heartbeat: null,
+    currentWriter: {
+      kind: "controller",
+      id: BOOTSTRAP_CONTROLLER_WRITER_ID,
+    },
     wip: wipForTasks(tasks),
     updatedAt: first.at,
     lastEventSeq: 1,
@@ -2104,6 +2369,12 @@ export function replayEvents(events: readonly unknown[]): {
   const seenRulingIds = new Set<string>();
 
   for (const current of validated.slice(1)) {
+    if (current.writerId !== snapshot.currentWriter.id) {
+      corruption(
+        "event.writerId",
+        `event writer ${current.writerId} is not current writer ${snapshot.currentWriter.id}`
+      );
+    }
     switch (current.type) {
       case "task-created": {
         if (
@@ -2487,28 +2758,107 @@ export function replayEvents(events: readonly unknown[]): {
         break;
       case "supervisor-provisioned":
         if (snapshot.supervisor) corruption("event", "supervisor is already provisioned");
+        if (
+          current.marker !==
+          `d20-folio-program-supervisor:v1:${snapshot.authority.operatingModel.blob}`
+        ) {
+          corruption(
+            "event.marker",
+            "supervisor marker must contain the current operating-model blob"
+          );
+        }
         snapshot.supervisor = {
+          taskTitle: current.taskTitle,
+          savedProjectId: current.savedProjectId,
           threadId: current.threadId,
           hostId: current.hostId,
+          marker: current.marker,
+          automationId: current.automationId,
+          automationName: current.automationName,
+          cadenceMinutes: current.cadenceMinutes,
+          targetThreadId: current.targetThreadId,
+          destination: current.destination,
+          notificationPolicy: current.notificationPolicy,
+          status: current.status,
           receipt: current.receipt,
           at: current.at,
         };
         break;
-      case "heartbeat-activated":
-        if (!snapshot.supervisor || snapshot.supervisor.threadId !== current.threadId) {
+      case "heartbeat-activated": {
+        if (
+          !snapshot.supervisor ||
+          snapshot.supervisor.threadId !== current.threadId ||
+          snapshot.supervisor.targetThreadId !== current.threadId
+        ) {
           corruption(
             "event.threadId",
             "heartbeat requires the provisioned supervisor thread"
           );
         }
+        if (snapshot.supervisor.automationId !== current.automationId) {
+          corruption(
+            "event.automationId",
+            "heartbeat requires the provisioned automation"
+          );
+        }
+        if (
+          snapshot.supervisor.marker !==
+          `d20-folio-program-supervisor:v1:${snapshot.authority.operatingModel.blob}`
+        ) {
+          corruption(
+            "event.marker",
+            "provisioned marker does not match the current operating-model blob"
+          );
+        }
         if (snapshot.heartbeat) corruption("event", "heartbeat is already active");
+        if (snapshot.tasks.some(({ activeLease }) => activeLease !== null)) {
+          corruption("event", "heartbeat handoff requires zero active leases");
+        }
+        const inFlight = snapshot.tasks.find(({ state }) =>
+          ["leased", "executing", "review", "verification", "owner-gate"].includes(state)
+        );
+        if (inFlight) {
+          corruption(
+            "event",
+            `heartbeat handoff requires quiescent tasks; ${inFlight.charter.id} is ${inFlight.state}`
+          );
+        }
+        if (current.finalMainSha !== snapshot.authority.mainSha) {
+          corruption("event.finalMainSha", "does not match the current final main SHA");
+        }
+        if (
+          !sameAuthorityReference(current.statusOwner, snapshot.authority.statusOwner)
+        ) {
+          corruption("event.statusOwner", "does not match the current status owner");
+        }
+        if (
+          !sameAuthorityReferenceSet(
+            current.repositoryLeaseOwners,
+            snapshot.authority.repositoryLeaseOwners
+          )
+        ) {
+          corruption(
+            "event.repositoryLeaseOwners",
+            "does not match the current repository lease owner set"
+          );
+        }
         snapshot.heartbeat = {
           automationId: current.automationId,
           threadId: current.threadId,
+          finalMainSha: current.finalMainSha,
+          statusOwner: structuredClone(current.statusOwner),
+          repositoryLeaseOwners: structuredClone(current.repositoryLeaseOwners),
+          rebuildProof: current.rebuildProof,
+          cleanupPendingProof: current.cleanupPendingProof,
           receipt: current.receipt,
           at: current.at,
         };
+        snapshot.currentWriter = {
+          kind: "supervisor-thread",
+          id: current.threadId,
+        };
         break;
+      }
       case "cleanup-recorded": {
         const task = taskById(snapshot, current.taskId);
         if (task.state !== "integrated" && task.state !== "retired") {
