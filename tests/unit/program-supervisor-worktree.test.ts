@@ -554,12 +554,24 @@ describe("program supervisor durable runbook guards", () => {
 
   it("opens with independent specification and correctness review and treats Ponytail as optional", () => {
     const runbook = readFileSync(join(repositoryRoot, "docs", "WORKTREES.md"), "utf8");
+    const recipes = readFileSync(join(repositoryRoot, "justfile"), "utf8");
     const opening = runbook.slice(0, 1_200);
     expect(opening).toMatch(
       /independent.*specification(?:-compliance)? and correctness review/is
     );
-    expect(opening).toMatch(/Ponytail.*optional complexity/is);
+    expect(opening).toMatch(/Ponytail.*optional.*meaningful complexity risk/is);
     expect(opening).not.toMatch(/adversarial `ponytail-review`.*is the review/is);
+    expect(opening).toMatch(
+      /curated.*screenshots.*owner approval.*before (?:every|any) visual integration/is
+    );
+    expect(opening).toMatch(/deployment.*separate.*explicit per-change owner gate/is);
+    expect(opening).toMatch(/nonvisual.*reviewed.*green.*autonomous/is);
+    expect(opening).not.toMatch(/owner's only gate is deploy/i);
+    expect(recipes).toMatch(
+      /mandatory independent\s+specification(?:-compliance)? and correctness review/i
+    );
+    expect(recipes).toMatch(/Ponytail.*optional.*meaningful complexity risk/i);
+    expect(recipes).not.toMatch(/ponytail-review convergence/i);
   });
 
   it("does not describe already-integrated Wayfinders as pending", () => {

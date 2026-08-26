@@ -3,10 +3,12 @@
 > **The repo standard for every change** (golden rule 11, `docs/GOLDEN_RULES.md`). Each task gets
 > its own **git worktree** + **branch off the freshest `origin/main`**; when it converges, the
 > agent **merges it to `main` autonomously** and tears the worktree down. There are **no pull
-> requests** — one owner + agents, nobody reviews PRs. The opening review route is an independent
-> specification-compliance and correctness review. Ponytail is an optional complexity pass after
-> correctness, never the primary review or a substitute for it (golden rule 12). `main` is the
-> integration line, NOT production; the owner's only gate is deploy (golden rule 22).
+> requests** — one owner + agents, nobody reviews PRs. The opening review route is a mandatory
+> independent specification-compliance and correctness review. Ponytail is optional only when a
+> diff carries meaningful complexity risk, never the primary review or a substitute for it (golden
+> rule 12). Nonvisual reviewed and gate-green work integrates autonomously. Curated exact-SHA
+> screenshots require owner approval before every visual integration. Deployment is a separate
+> explicit per-change owner gate; screenshot approval never authorizes deployment (golden rule 22).
 
 ## Why
 
@@ -31,16 +33,20 @@ cd ~/Workspace/Codex/d20-folio-<slug>
 git add -A && git commit -m "feat(scope): …"        # never --no-verify; owner = sole author,
                                                     # NO co-author/trailer lines
 
-# 3. Review: use Superpowers correctness/requirements review; add ponytail-review when the
-#    diff carries meaningful complexity risk. Address or reason about actionable findings,
-#    then verify the final tree (golden rule 12).
+# 3. Review: complete an independent specification-compliance and correctness review; add
+#    ponytail-review only when the diff carries meaningful complexity risk. Address or reason
+#    about actionable findings, then verify the final tree (golden rule 12).
 
-# 4. Merge to main FROM the worktree (never touch the shared checkout):
+# 4. Integration gate: reviewed, gate-green nonvisual work proceeds autonomously. Every visual
+#    change first needs owner approval of curated exact-SHA screenshots. Deployment remains a
+#    separate explicit per-change owner gate; neither integration nor screenshot approval deploys.
+
+# 5. Merge to main FROM the worktree (never touch the shared checkout):
 git fetch origin main
 git rebase origin/main                              # re-run the gate if the rebase changed anything
 git push origin HEAD:main                           # the ff-merge; non-ff rejection ⇒ re-rebase, retry
 
-# 5. Confirm the SHA landed, THEN tear down (removing early orphans an in-flight push):
+# 6. Confirm the SHA landed, THEN tear down (removing early orphans an in-flight push):
 git ls-remote origin main                           # poll until it shows your SHA
 # Leave the task worktree. Do not invoke the stale shared checkout's recipe.
 cd ~/Workspace/Codex/d20-folio-program-control       # or another clean worktree at fresh origin/main

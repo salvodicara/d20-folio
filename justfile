@@ -169,9 +169,11 @@ stats:
 
 # ─── Parallel worktrees (branch off main → agent merge, NO PRs) ─────────────
 # The repo standard for every change (docs/WORKTREES.md, golden rule 11). Each
-# task gets its own worktree + branch off the freshest main; after gate-green +
-# ponytail-review convergence (golden rule 12) the agent merges it FROM the
-# worktree — `git rebase origin/main && git push origin HEAD:main` — polls
+# task gets its own worktree + branch off the freshest main.
+# Mandatory independent specification-compliance and correctness review comes before integration;
+# Ponytail is optional only for a diff with meaningful complexity risk (golden rule
+# 12). After the applicable review, visual approval, and gates, the agent merges it
+# FROM the worktree — `git rebase origin/main && git push origin HEAD:main` — polls
 # origin for the SHA, then tears down:
 #   just wt-new <slug> [kind]   create ~/Workspace/Codex/<project>-<slug> on <kind>/<slug> off origin/main
 #   (cd into it; work; commit per step — hooks run the gate)
