@@ -2203,6 +2203,15 @@ export function validateTransition(
       corruption("transition.fixBack.kind", "review fix-back requires review-finding");
     }
   }
+  if (from === "owner-gate" && to === "blocked-with-evidence" && context.fixBack) {
+    const fixBack = validateFixBack(context.fixBack, "transition.fixBack");
+    if (fixBack.kind !== "changed-base") {
+      corruption(
+        "transition.fixBack.kind",
+        "owner-gate authority invalidation requires changed-base evidence"
+      );
+    }
+  }
   if (to === "owner-gate") {
     const ownerGate = idAt(context.ownerGate, "transition.ownerGate");
     const requiredOwnerGate = idAt(
@@ -2267,6 +2276,23 @@ function applyAuthorityReconciliation(
   }
   if (current.mainSha === current.previousMainSha) {
     corruption("event.mainSha", "main SHA must advance beyond the previous value");
+  }
+  for (const change of current.changes) {
+    for (const task of snapshot.tasks) {
+      if (task.state !== "verification" && task.state !== "owner-gate") continue;
+      if (task.charter.ownership.repositoryLease.ownerDocumentPath === change.path) {
+        corruption(
+          "event.changes",
+          `${task.state} task ${task.charter.id} freezes repository authority path ${change.path}; exit the frozen cycle first`
+        );
+      }
+      if (task.charter.authority.some(({ path }) => path === change.path)) {
+        corruption(
+          "event.changes",
+          `${task.state} task ${task.charter.id} freezes pinned authority path ${change.path}; exit the frozen cycle first`
+        );
+      }
+    }
   }
   for (const change of current.changes) {
     let matched = false;
@@ -2662,14 +2688,19 @@ export function replayEvents(events: readonly unknown[]): {
           corruption("event.to", `${current.to} requires an active lease`);
         }
         const gateTerminal = terminalGateDecision(snapshot, task);
+        const ownerGateAuthorityInvalidated =
+          current.from === "owner-gate" &&
+          current.to === "blocked-with-evidence" &&
+          current.fixBack?.kind === "changed-base";
         if (
           current.from === "owner-gate" &&
           current.to === "blocked-with-evidence" &&
-          gateTerminal?.decision !== "rejected"
+          gateTerminal?.decision !== "rejected" &&
+          !ownerGateAuthorityInvalidated
         ) {
           corruption(
             "event.to",
-            "owner-gate may block only after its terminal rejection"
+            "owner-gate may block only after its terminal rejection or changed-base invalidation"
           );
         }
         if (current.to === "blocked-with-evidence" && task.activeLease) {

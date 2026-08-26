@@ -1848,6 +1848,279 @@ describe("Program Supervisor lease lifecycle and state transitions", () => {
       ])
     ).toThrow(/owner-gate.*reconcil|fresh review/i);
   });
+
+  it("freezes charter authority during pending verification and requires a fresh cycle", () => {
+    const fixture = bootstrapFixture();
+    const task = itemAt(fixture.tasks, 0);
+    task.charter.ownerGate = { required: true, name: "product-owner" };
+    task.state = "verification";
+    task.receipt = "verification passed for the pinned authorities";
+    const active = lease("task-a");
+    active.acquiredAt = fixture.at;
+    active.termStartedAt = fixture.at;
+    fixture.activeLeases.push(active);
+    const pending = event(2, "owner-gate-recorded", {
+      taskId: "task-a",
+      gate: "product-owner",
+      decision: "pending",
+      receipt: "Owner decision requested for the pinned authority cycle.",
+    });
+    const changedPinnedAuthority = event(3, "authority-reconciled", {
+      previousMainSha: SHA_B,
+      mainSha: SHA_D,
+      changes: [{ path: OPERATING_MODEL_PATH, previousBlob: SHA_C, blob: SHA_E }],
+      proof: "The operating-model authority changed on the new main.",
+    });
+
+    expect(() => replayEvents([fixture, pending, changedPinnedAuthority])).toThrow(
+      /verification.*pinned authority|frozen.*verification/i
+    );
+
+    const fixBack = event(3, "state-transitioned", {
+      taskId: "task-a",
+      from: "verification",
+      to: "executing",
+      receipt: "Changed authority invalidated the verification cycle.",
+      fixBack: {
+        kind: "changed-base",
+        proof: "Fresh main changes the task's pinned operating-model authority.",
+      },
+    });
+    const reconciled = {
+      ...changedPinnedAuthority,
+      seq: 4,
+      eventId: "event-4-authority",
+    };
+    const taskReconciled = event(5, "task-reconciled", {
+      taskId: "task-a",
+      repository: REPOSITORY,
+      worktree: "/worktrees/task-a",
+      branch: "feat/task-a",
+      previousBaseSha: SHA_B,
+      previousHeadSha: SHA_B,
+      baseSha: SHA_D,
+      headSha: SHA_E,
+      proof: "Clean Git receipt for the new main authority.",
+    });
+    const freshReview = event(6, "state-transitioned", {
+      taskId: "task-a",
+      from: "executing",
+      to: "review",
+      receipt: "Fresh independent review passed.",
+    });
+    const freshVerification = event(7, "state-transitioned", {
+      taskId: "task-a",
+      from: "review",
+      to: "verification",
+      receipt: "Fresh verification passed.",
+    });
+    const freshPrefix = [
+      fixture,
+      pending,
+      fixBack,
+      reconciled,
+      taskReconciled,
+      freshReview,
+      freshVerification,
+    ];
+
+    expect(() =>
+      replayEvents([
+        ...freshPrefix,
+        event(8, "state-transitioned", {
+          taskId: "task-a",
+          from: "verification",
+          to: "owner-gate",
+          receipt: "Attempted reuse of the old pending owner decision.",
+          ownerGate: "product-owner",
+        }),
+      ])
+    ).toThrow(/pending.*current verification|fresh.*pending/i);
+
+    const result = replayEvents([
+      ...freshPrefix,
+      event(8, "owner-gate-recorded", {
+        taskId: "task-a",
+        gate: "product-owner",
+        decision: "pending",
+        receipt: "Fresh owner decision requested.",
+      }),
+      event(9, "state-transitioned", {
+        taskId: "task-a",
+        from: "verification",
+        to: "owner-gate",
+        receipt: "Fresh cycle paused for the owner.",
+        ownerGate: "product-owner",
+      }),
+      event(10, "owner-gate-recorded", {
+        taskId: "task-a",
+        gate: "product-owner",
+        decision: "approved",
+        receipt: "Owner approved only the fresh verification cycle.",
+      }),
+      event(11, "state-transitioned", {
+        taskId: "task-a",
+        from: "owner-gate",
+        to: "integrated",
+        receipt: "Fresh approved authority integrated.",
+      }),
+    ]);
+    expect(itemAt(result.snapshot.tasks, 0).state).toBe("integrated");
+  });
+
+  it("allows an unrelated authority change while verification identities stay pinned", () => {
+    const fixture = bootstrapFixture();
+    const task = itemAt(fixture.tasks, 0);
+    task.state = "verification";
+    task.receipt = "verification passed";
+
+    const result = replayEvents([
+      fixture,
+      event(2, "authority-reconciled", {
+        previousMainSha: SHA_B,
+        mainSha: SHA_C,
+        changes: [{ path: READINESS_BASELINE_PATH, previousBlob: SHA_F, blob: SHA_D }],
+        proof: "An unrelated readiness authority changed.",
+      }),
+    ]);
+
+    expect(itemAt(result.snapshot.tasks, 0)).toMatchObject({
+      state: "verification",
+      verificationEventId: "event-bootstrap",
+    });
+    expect(result.snapshot.authority.readinessBaseline.blob).toBe(SHA_D);
+  });
+
+  it("blocks an approved owner-gate cycle before reconciling its repository owner", () => {
+    const fixture = bootstrapFixture();
+    const task = itemAt(fixture.tasks, 0);
+    task.charter.ownerGate = { required: true, name: "product-owner" };
+    task.state = "verification";
+    task.receipt = "verification passed";
+    const active = lease("task-a");
+    active.acquiredAt = fixture.at;
+    active.termStartedAt = fixture.at;
+    fixture.activeLeases.push(active);
+    const approvedCycle = [
+      fixture,
+      event(2, "owner-gate-recorded", {
+        taskId: "task-a",
+        gate: "product-owner",
+        decision: "pending",
+        receipt: "Owner decision requested.",
+      }),
+      event(3, "state-transitioned", {
+        taskId: "task-a",
+        from: "verification",
+        to: "owner-gate",
+        receipt: "Paused for owner decision.",
+        ownerGate: "product-owner",
+      }),
+      event(4, "owner-gate-recorded", {
+        taskId: "task-a",
+        gate: "product-owner",
+        decision: "approved",
+        receipt: "Owner approved the old repository-owner identity.",
+      }),
+    ];
+    const changedRepositoryOwner = event(5, "authority-reconciled", {
+      previousMainSha: SHA_B,
+      mainSha: SHA_D,
+      changes: [{ path: LEASE_OWNER_PATH, previousBlob: SHA_A, blob: SHA_F }],
+      proof: "The repository owner authority changed after approval.",
+    });
+
+    expect(() =>
+      replayEvents([
+        ...approvedCycle,
+        changedRepositoryOwner,
+        event(6, "state-transitioned", {
+          taskId: "task-a",
+          from: "owner-gate",
+          to: "integrated",
+          receipt: "Attempted integration using the old owner approval.",
+        }),
+      ])
+    ).toThrow(/owner-gate.*repository.*authority|frozen.*owner-gate/i);
+
+    const blocked = event(5, "state-transitioned", {
+      taskId: "task-a",
+      from: "owner-gate",
+      to: "blocked-with-evidence",
+      receipt: "Changed repository authority invalidated the approved cycle.",
+      fixBack: {
+        kind: "changed-base",
+        proof: "Fresh main changed the pinned repository-owner document.",
+      },
+    });
+    const afterBlock = replayEvents([...approvedCycle, blocked]);
+    expect(itemAt(afterBlock.snapshot.tasks, 0)).toMatchObject({
+      state: "blocked-with-evidence",
+      activeLease: null,
+      verificationEventId: null,
+    });
+
+    const reconciled = {
+      ...changedRepositoryOwner,
+      seq: 6,
+      eventId: "event-6-authority-reconciled",
+    };
+    const fresh = lease("task-a", "writer", {
+      leaseId: "runtime-task-a-fresh-authority",
+      pointer: authorityPointer(SHA_F, SHA_D),
+    });
+    fresh.acquiredAt = "2026-08-26T07:00:00.000Z";
+    fresh.termStartedAt = fresh.acquiredAt;
+    const freshCycle = replayEvents([
+      ...approvedCycle,
+      blocked,
+      reconciled,
+      acquire(7, fresh),
+      event(8, "dispatch-recorded", {
+        taskId: "task-a",
+        leaseId: fresh.leaseId,
+        receipt: "Fresh authority cycle dispatched.",
+      }),
+      event(9, "state-transitioned", {
+        taskId: "task-a",
+        from: "executing",
+        to: "review",
+        receipt: "Fresh authority review passed.",
+      }),
+      event(10, "state-transitioned", {
+        taskId: "task-a",
+        from: "review",
+        to: "verification",
+        receipt: "Fresh authority verification passed.",
+      }),
+      event(11, "owner-gate-recorded", {
+        taskId: "task-a",
+        gate: "product-owner",
+        decision: "pending",
+        receipt: "Fresh owner decision requested.",
+      }),
+      event(12, "state-transitioned", {
+        taskId: "task-a",
+        from: "verification",
+        to: "owner-gate",
+        receipt: "Fresh owner-gate cycle entered.",
+        ownerGate: "product-owner",
+      }),
+      event(13, "owner-gate-recorded", {
+        taskId: "task-a",
+        gate: "product-owner",
+        decision: "approved",
+        receipt: "Owner approved the fresh repository authority.",
+      }),
+      event(14, "state-transitioned", {
+        taskId: "task-a",
+        from: "owner-gate",
+        to: "integrated",
+        receipt: "Fresh approved authority integrated.",
+      }),
+    ]);
+    expect(itemAt(freshCycle.snapshot.tasks, 0).state).toBe("integrated");
+  });
 });
 
 describe("Program Supervisor deterministic event coverage", () => {
