@@ -632,6 +632,12 @@ describe("Program Supervisor structured task prerequisites", () => {
     expect(() =>
       replayEvents([bootstrapFixture(), acquire(2, active), sameTermRenewal])
     ).toThrow(/strictly later.*termStartedAt|advance.*term start/i);
+
+    const earlierTermRenewal = clone(sameTermRenewal);
+    earlierTermRenewal.at = "2026-08-26T01:59:59.999Z";
+    expect(() =>
+      replayEvents([bootstrapFixture(), acquire(2, active), earlierTermRenewal])
+    ).toThrow(/strictly later.*termStartedAt|advance.*term start/i);
   });
 });
 
