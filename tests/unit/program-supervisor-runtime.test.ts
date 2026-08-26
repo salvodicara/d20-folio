@@ -703,6 +703,46 @@ describe("Program Supervisor atomic runtime", () => {
     expect(loaded.snapshot.lastEventSeq).toBe(1);
   });
 
+  it.each([
+    ["missing identity", ".write-lock.owner-"],
+    [
+      "non-numeric PID",
+      ".write-lock.owner-not-a-pid-12345678-1234-4234-8234-123456789abc",
+    ],
+    ["invalid UUID", ".write-lock.owner-42-not-a-uuid"],
+    ["non-canonical UUID", ".write-lock.owner-42-12345678-1234-4234-8234-123456789ABC"],
+  ])("fails closed on a %s reserved owner artifact", async (_case, name) => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    await writeSecureJson(join(root, name), {
+      schemaVersion: 1,
+      pid: 42,
+      acquiredAt: "2026-08-26T01:00:00.000Z",
+    });
+
+    await expect(loadRuntime(root)).rejects.toThrow(
+      /write-lock owner.*invalid filename identity/i
+    );
+    expect((await stat(join(root, name))).isFile()).toBe(true);
+  });
+
+  it("ignores unrelated root entries without weakening the zero-residue proof", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    await writeFile(join(root, ".unrelated-owner-note"), "preserve me\n", {
+      mode: 0o600,
+    });
+
+    const loaded = await loadRuntime(root);
+    expect(loaded.recoveryState.abandonedLockOwners).toEqual([]);
+    expect(
+      (await readdir(root)).filter((name) => name.startsWith(".write-lock.owner-"))
+    ).toEqual([]);
+    expect(await readFile(join(root, ".unrelated-owner-note"), "utf8")).toBe(
+      "preserve me\n"
+    );
+  });
+
   it("validates abandoned owner candidates and fails closed on unknown PID probes", async () => {
     const uuid = "12345678-1234-4234-8234-123456789abc";
     const mismatchedRoot = await makeRoot();

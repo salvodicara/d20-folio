@@ -507,14 +507,20 @@ async function listAbandonedLockOwners(
   root: string,
   options: RuntimeOptions
 ): Promise<string[]> {
+  const prefix = ".write-lock.owner-";
   const entries = await readdir(root, { withFileTypes: true });
   const abandoned: string[] = [];
   for (const entry of entries) {
+    if (!entry.name.startsWith(prefix)) continue;
     const match =
       /^\.write-lock\.owner-(\d+)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.exec(
         entry.name
       );
-    if (!match) continue;
+    if (!match) {
+      throw new Error(
+        `Runtime write-lock owner has an invalid filename identity: ${entry.name}`
+      );
+    }
     if (!entry.isFile()) {
       throw new Error(
         `Runtime write-lock owner candidate must be a regular file: ${entry.name}`
