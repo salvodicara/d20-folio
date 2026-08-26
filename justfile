@@ -195,8 +195,6 @@ wt-new $slug $kind="feat":
     branch="$kind_value/$slug_value"
     if [ -e "$dest" ]; then echo "✗ $dest already exists — pick another safe slug or remove its worktree"; exit 1; fi
     if git -C "$main_root" show-ref --verify --quiet "refs/heads/$branch"; then echo "✗ branch $branch already exists"; exit 1; fi
-    echo "→ fetching origin/main…"
-    git -C "$main_root" fetch origin main --quiet
     echo "→ creating worktree $dest on branch $branch (off origin/main)…"
     git -C "$main_root" worktree add -b "$branch" "$dest" origin/main
     if [ -f "$main_root/.env.local" ]; then cp "$main_root/.env.local" "$dest/.env.local"; echo "→ copied .env.local (dev preview)"; fi

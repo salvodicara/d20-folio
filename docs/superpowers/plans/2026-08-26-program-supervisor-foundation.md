@@ -318,14 +318,13 @@ kind_value="$kind"
 case "$kind_value" in feat|fix|chore|docs|refactor) ;; *) echo "unsafe branch kind" >&2; exit 1 ;; esac
 candidate="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts candidate "$home_dir")"
 mkdir -p "$candidate"
-tasks_root="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts root "$home_dir")"
 dest="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts path "$home_dir" "$project" "$slug_value")"
 branch="$kind_value/$slug_value"
 ```
 
 The `candidate` command validates the nearest existing physical ancestor before `mkdir`; `root` then proves the created root itself is physical and unsynchronized. No `{{slug}}` or `{{kind}}` text appears inside shell code. This follows the [official Just exported-argument boundary](https://just.systems/man/en/avoiding-argument-splitting.html) and remains safe for quotes or shell metacharacters before the typed lowercase-slug rejection.
 
-Both recipes call one `adapter-preflight.sh` first. It rejects the shared checkout, fetches `origin/main`, and then requires every invoker—including the path named `d20-folio-program-control`—to be the exact canonical root of a registered worktree whose Git common directory equals this repository's common directory, whose tracked/untracked status is clean, and whose HEAD equals that fresh remote. A basename never grants authority; unrelated same-name repositories, unregistered paths, wrong-common-dir worktrees, dirty control, and stale control all fail closed.
+Both recipes call one `adapter-preflight.sh` first. It rejects the shared checkout, fetches `origin/main`, and then requires every invoker—including the path named `d20-folio-program-control`—to be the exact canonical root of a registered worktree whose Git common directory equals this repository's common directory, whose tracked/untracked status is clean, and whose HEAD equals that fresh remote. A basename never grants authority; unrelated same-name repositories, unregistered paths, wrong-common-dir worktrees, dirty control, and stale control all fail closed. `wt-new` performs no second fetch after that proof: all destination, branch-existence, and other pre-creation checks run before `git worktree add`, and creation consumes the exact local `origin/main` that preflight just proved equal to the invoking HEAD.
 
 After `git worktree add`, invoke `scripts/program-supervisor/bootstrap-worktree.sh` from the new worktree. Replicate the content-pack link as the absolute physical target returned by `cd "$main_root/content-pack" && pwd -P`; never reuse a relative link whose meaning changes under `~/Workspace/Codex`. The recipe is a manual/same-thread adapter invoked only from `d20-folio-program-control` or another worktree whose HEAD was just proven equal to fresh `origin/main`; explicitly document that pushing this change does not update the shared checkout and that its stale recipe must never be invoked.
 

@@ -104,6 +104,9 @@ if [ "\${1:-}" = "-p" ]; then
   printf '%s\\n' 'pnpm@11.2.2'
   exit 0
 fi
+if [[ "\${1:-}" = *scripts/program-supervisor/worktree.ts ]]; then
+  exec "$FAKE_REAL_NODE" "$@"
+fi
 if [ "\${1:-}" = "$FAKE_COREPACK" ]; then
   ln -s "$FAKE_PNPM" "$4/pnpm"
   exit 0
@@ -136,6 +139,7 @@ printf '%s\\n' "$FAKE_NODE_ROOT"
       FAKE_NPM: npm,
       FAKE_PNPM: pnpm,
       FAKE_PNPM_VERSION: "11.2.2",
+      FAKE_REAL_NODE: process.execPath,
     },
   };
 }
@@ -422,6 +426,77 @@ describe("program supervisor adapter authority", () => {
       expect(result.status).toBe(1);
       expect(`${result.stdout}${result.stderr}`).toContain("safe lowercase slug");
       expect(existsSync(sentinel)).toBe(false);
+    } finally {
+      rmSync(fixture.root, { recursive: true, force: true });
+    }
+  });
+
+  it("creates from the origin/main proven by the single adapter fetch", () => {
+    const fixture = createAdapterFixture();
+    const home = join(fixture.root, "home");
+    const advancer = join(fixture.root, "remote-advancer");
+    const gitBin = join(fixture.root, "git-bin");
+    const fetchCount = join(fixture.root, "fetch-count");
+    const destination = join(home, "Workspace", "Codex", "d20-folio-proof-race");
+    const realGit = run("which", ["git"], fixture.allowed).stdout.trim();
+    const toolchain = createFakeToolchain(fixture.root);
+    mkdirSync(home);
+    mkdirSync(gitBin);
+    runChecked(
+      "git",
+      ["clone", "-q", "--branch", "main", join(fixture.root, "origin.git"), advancer],
+      fixture.root
+    );
+    runChecked("git", ["config", "user.email", "test@example.com"], advancer);
+    runChecked("git", ["config", "user.name", "Test User"], advancer);
+    writeFileSync(join(advancer, "advanced.txt"), "new remote main\n");
+    runChecked("git", ["add", "advanced.txt"], advancer);
+    runChecked("git", ["commit", "-qm", "advance remote during proof"], advancer);
+    writeExecutable(
+      join(gitBin, "git"),
+      `#!/usr/bin/env bash
+set -euo pipefail
+is_fetch=0
+for arg in "$@"; do
+  if [ "$arg" = fetch ]; then is_fetch=1; fi
+done
+if [ "$is_fetch" -eq 1 ]; then
+  count=0
+  if [ -f "$FETCH_COUNT" ]; then read -r count < "$FETCH_COUNT"; fi
+  count=$((count + 1))
+  printf '%s\\n' "$count" > "$FETCH_COUNT"
+  "$REAL_GIT" "$@"
+  if [ "$count" -eq 1 ]; then
+    "$REAL_GIT" -C "$ADVANCER" push -q origin HEAD:main
+  fi
+  exit 0
+fi
+exec "$REAL_GIT" "$@"
+`
+    );
+
+    try {
+      const provenMain = run("git", ["rev-parse", "HEAD"], fixture.allowed).stdout.trim();
+      const result = run("just", ["wt-new", "proof-race", "feat"], fixture.allowed, {
+        ...toolchain.env,
+        ADVANCER: advancer,
+        FETCH_COUNT: fetchCount,
+        HOME: home,
+        PATH: `${gitBin}:${toolchain.env.PATH}`,
+        REAL_GIT: realGit,
+      });
+
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(readFileSync(fetchCount, "utf8")).toBe("1\n");
+      expect(
+        run("git", ["rev-parse", "origin/main"], fixture.allowed).stdout.trim()
+      ).toBe(provenMain);
+      expect(run("git", ["rev-parse", "HEAD"], destination).stdout.trim()).toBe(
+        provenMain
+      );
+      expect(run("git", ["rev-parse", "HEAD"], advancer).stdout.trim()).not.toBe(
+        provenMain
+      );
     } finally {
       rmSync(fixture.root, { recursive: true, force: true });
     }
