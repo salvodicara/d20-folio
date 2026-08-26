@@ -7,8 +7,8 @@ leases (`docs/TEST_PORTFOLIO.md`). Those owners are linked rather than copied.
 
 ## Reconciliation snapshot
 
-- `reconciledThrough`: `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`
-- `observedAt`: `2026-08-26T13:43:02Z`
+- `reconciledThrough`: `b1448fbba62047e52a24155ecb2d817d605d33a9`
+- `observedAt`: `2026-08-26T15:04:27Z`
 - Public `origin/main` was freshly fetched and inspected at that exact SHA before authoring.
 - The snapshot is evidence-bound, not self-referential: it does not claim the SHA or blob of the
   commit that contains this file.
@@ -26,7 +26,7 @@ other.
 | `tacticalWayfinder`        | `docs/superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md` | `062ffd48783311a77e1ad5bee962ef5cd637c079`                     |
 | `testRoadmap`              | `docs/superpowers/plans/2026-08-25-test-portfolio-reset.md`           | `9f3e42f7e50f104a35ceab21f5469a4291407bb4`                     |
 | `readinessBaseline`        | `docs/superpowers/plans/2026-08-25-g0-automation-readiness.md`        | `0a7f1ec661390aa475dfbde83eab72a4fbbe8b89`                     |
-| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `4cd1c57eca79baf707088d70d8de5728215c4843`                     |
+| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `f5c972115fe405a0b66cd8788b596db9e01c0748`                     |
 | `statusOwner`              | `docs/PROGRAM_STATUS.md`                                              | Task 6 resolves the integrated blob and records it in runtime. |
 
 The status owner cannot truthfully contain its own Git blob. Task 6 must resolve
@@ -43,12 +43,12 @@ by `DESIGN.md` at blob `85a7942355904c4a57e2e4729491c99a3ae1b97f`.
 
 ### Operational coordinates
 
-| Surface             | Exact observation                                                                                                                                                                                                                                                    |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Shared checkout     | `/Users/salvatoredicara/Workspace/d20-folio`, branch `main`, clean HEAD `8c4e37e7ddabe3d8d99a8a1ffe2ef592e3ed2add`. This is non-authoritative operational evidence. Never run its stale worktree recipe or treat local `main` as recipe authority.                   |
-| Program control     | `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-control` is absent. Task 6 must create it detached, clean, and exactly at the then-fresh `origin/main` (currently expected `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`) before any supervisor adapter runs. |
-| Private composition | `/Users/salvatoredicara/Workspace/d20-folio-content`, clean branch `main`; HEAD and fresh `origin/main` are `1d5226f564d2c790f5409c294afe9d9ba6cc2ab7`. `content-pack` resolves to that repository's `content-pack/` directory and is read-only for F0.              |
-| External runtime    | `/Users/salvatoredicara/Workspace/Codex/d20-folio-program` and `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-bootstrap.json` are absent. Task 6 alone may create/adopt them under the bootstrap protocol.                                                |
+| Surface             | Exact observation                                                                                                                                                                                                                                                                                      |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Shared checkout     | `/Users/salvatoredicara/Workspace/d20-folio`, branch `main`, clean HEAD `8c4e37e7ddabe3d8d99a8a1ffe2ef592e3ed2add`. This is non-authoritative operational evidence. Never run its stale worktree recipe or treat local `main` as recipe authority.                                                     |
+| Program control     | `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-control` is absent. Task 6 must create it detached, clean, and exactly at the then-fresh `origin/main` (currently integrated `b1448fbba62047e52a24155ecb2d817d605d33a9`; the CLI repair will advance it) before any supervisor adapter runs. |
+| Private composition | `/Users/salvatoredicara/Workspace/d20-folio-content`, clean branch `main`; HEAD and fresh `origin/main` are `1d5226f564d2c790f5409c294afe9d9ba6cc2ab7`. `content-pack` resolves to that repository's `content-pack/` directory and is read-only for F0.                                                |
+| External runtime    | `/Users/salvatoredicara/Workspace/Codex/d20-folio-program` and `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-bootstrap.json` are absent. Task 6 alone may create/adopt them under the bootstrap protocol.                                                                                  |
 
 Supervisor and manual same-thread adapters run only from the clean detached program-control
 worktree or another clean worktree whose HEAD has just been proven equal to fresh `origin/main`.
@@ -66,16 +66,17 @@ The shared checkout remains untouched even when its branch name is `main`.
   above.
 - **Dependencies:** approved operating model integrated at `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`;
   active F0 repository lease; clean retained K1/B00/private evidence; Tasks 0-3 implemented and
-  independently reviewed. The hook-local Git-context repair and its privacy-safe receipt have
-  independent PASS results, and both full gates are green on the exact repaired candidate. The
-  final receipt-only review and mandatory main pre-push gate remain; Task 6 integration/bootstrap
-  is still open.
+  independently reviewed. The phase-one candidate and final receipt received exact independent
+  PASS results, both full gates passed, the mandatory pre-push gate passed, and remote `main` is
+  proven at `b1448fbba62047e52a24155ecb2d817d605d33a9`. The first post-integration probe exposed one
+  CLI separator defect; its narrow repair is in verification before Task 6 runtime initialization.
 - **Ownership:** public repository `d20-folio`; worktree
   `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-supervisor-foundation`; branch
   `feat/program-supervisor-foundation`; base
-  `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`; exact reviewed and fully gated phase-one candidate
-  `de65fe29574b64d68513aa361c573bc98490a621` (tree
-  `fc6ec526e39bfe7460c6530dcacf9f45d2e242af`); no private write. The charter owns
+  `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`; phase-one remote integration
+  `b1448fbba62047e52a24155ecb2d817d605d33a9` (tree
+  `0008db10569e88195baa029f669d277973b080db`); current repair base is that exact remote commit; no
+  private write. The charter owns
   `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
   `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, `scripts/program-supervisor/**`,
   `tests/unit/program-supervisor-{worktree,state,runtime}.test.ts`, and its uniquely named
@@ -168,8 +169,16 @@ The shared checkout remains untouched even when its branch name is `main`.
   18,612/18,612 tests, 7/7 Functions files and 129/129 Functions tests, typecheck, lint, and
   production build. The immediately following pinned SRD-only gate exited zero with 623/623
   Vitest files and 13,036/13,036 tests, typecheck, and production build. The receipt-only commit
-  documenting those results still requires exact read-only review, followed by the mandatory main
-  pre-push gate; no remote update or deployment has occurred.
+  documenting those results is `b1448fbba62047e52a24155ecb2d817d605d33a9` (tree
+  `0008db10569e88195baa029f669d277973b080db`) and received an exact independent PASS. Its mandatory
+  pre-push gate passed typecheck, lint, 801/801 Vitest files, 18,612/18,612 tests, coverage, build,
+  and 6/6 bundle-budget tests; remote `main` was then proven equal to that commit and no deployment
+  occurred. The documented post-integration missing-store probe exposed that the CLI rejected
+  pnpm's conventional standalone `--` before runtime validation. Its focused regression failed on
+  the usage error, then passed after consuming exactly one leading separator; the owning runtime
+  file passes 36/36 and the documented invocation now reaches the precise missing-store error
+  without creating state. This narrow repair returns through exact review and applicable gates
+  before runtime initialization.
 - **First lease:** repository lease `F0`, holder `program-supervisor-foundation`, acquired
   `2026-08-26T01:38:26Z`, expires `2026-08-27T01:38:26Z`; active and writable. No runtime lease is
   claimed before Task 6 creates the runtime. The future reviewed runtime lease ID is
@@ -189,8 +198,10 @@ The shared checkout remains untouched even when its branch name is `main`.
   PASS. The gate-receipt candidate at `ead344b3e72616332dee29fe7f35831015fac707`, the
   hook-environment repair at `1eec62dc716c402f368583b207c8d2a0a91cebac`, and the privacy-safe
   exact gate candidate at `de65fe29574b64d68513aa361c573bc98490a621` also received independent
-  passes. The final receipt-only commit still owes exact read-only review; every fix or changed base
-  returns through review before verification.
+  passes. The final receipt-only commit at `b1448fbba62047e52a24155ecb2d817d605d33a9`
+  received an exact PASS before its green pre-push gate and remote integration. The post-integration
+  CLI separator repair still owes exact independent review; every fix or changed base returns
+  through review before verification.
 - **Owner gate:** none for repository integration. Deployment, publication, billing/privacy, and
   any destructive action remain separate owner gates; Task 6 must not deploy.
 - **Cleanup:** retain this worktree and branch through remote integration, authority reconciliation,
@@ -307,8 +318,8 @@ current execution pointer so agents can route correctly; it cannot grant or chan
   `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
   `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and `scripts/program-supervisor/**`; expires
   `2026-08-27T01:38:26Z`. Its authority pointer is
-  `docs/TEST_PORTFOLIO.md@4cd1c57eca79baf707088d70d8de5728215c4843`, reconciled through
-  `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`.
+  `docs/TEST_PORTFOLIO.md@f5c972115fe405a0b66cd8788b596db9e01c0748`, reconciled through
+  `b1448fbba62047e52a24155ecb2d817d605d33a9`.
 - **Inactive next lease:** `K1`; acquire only after F0 release and a fresh rebase/review/gate cycle.
 - **Inactive blocked lease:** `B00`; acquire only after F0 release, T8A adapter repair, overlap
   reconciliation, and exact authority refresh.

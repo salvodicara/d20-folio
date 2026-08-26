@@ -1116,6 +1116,16 @@ describe("Program Supervisor private bare-Git runtime", () => {
     );
   });
 
+  it("accepts the package-manager separator before CLI options", async () => {
+    const root = await makeRoot();
+
+    const validated = runCli(["validate", "--", "--root", root]);
+
+    expect(validated.status).not.toBe(0);
+    expect(validated.stderr).toMatch(/runtime root does not exist/i);
+    expect(validated.stderr).not.toMatch(/^Use:/m);
+  });
+
   it("prints the immutable store identity through the CLI", async () => {
     const root = await makeRoot();
     const bootstrapPath = join(dirname(root), "bootstrap.json");

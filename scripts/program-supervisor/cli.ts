@@ -91,7 +91,7 @@ function parseFlags(values: readonly string[]): Map<string, string> {
 }
 
 async function parseArguments(argv: readonly string[]): Promise<Arguments> {
-  const [commandValue, ...rest] = argv;
+  const [commandValue, ...rawOptions] = argv;
   if (
     commandValue !== "init" &&
     commandValue !== "validate" &&
@@ -100,6 +100,7 @@ async function parseArguments(argv: readonly string[]): Promise<Arguments> {
   ) {
     usage();
   }
+  const rest = rawOptions[0] === "--" ? rawOptions.slice(1) : rawOptions;
   const flags = parseFlags(rest);
   const allowed = new Set(
     commandValue === "init"
