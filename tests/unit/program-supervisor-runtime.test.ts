@@ -85,7 +85,11 @@ function charter(
       },
       { path: LEASE_OWNER_PATH, blob: SHA_A },
     ],
-    dependencies: [] as string[],
+    dependencies: [] as {
+      taskId: string;
+      integratedSha: string;
+      requiredInterface: string;
+    }[],
     ownership: {
       repository: PROGRAM_REPOSITORY,
       worktree: `/worktrees/${id}`,
@@ -141,6 +145,7 @@ function activeFoundationLease() {
     role: "writer" as const,
     readOnly: false,
     acquiredAt: "2026-08-26T01:00:00.000Z",
+    termStartedAt: "2026-08-26T01:00:00.000Z",
     expiresAt: "2026-08-27T01:00:00.000Z",
     authorityPointer: authorityPointer(),
   };

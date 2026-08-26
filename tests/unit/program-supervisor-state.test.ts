@@ -50,6 +50,14 @@ function authorityPointer(reconciledOwnerBlob = SHA_A, reconciledMainSha = SHA_B
   };
 }
 
+function dependency(
+  taskId: string,
+  integratedSha = SHA_B,
+  requiredInterface = "program-supervisor:command-surface"
+) {
+  return { taskId, integratedSha, requiredInterface };
+}
+
 function charter(
   id: string,
   path: string,
@@ -65,7 +73,7 @@ function charter(
       },
       { path: LEASE_OWNER_PATH, blob: SHA_A },
     ],
-    dependencies: [],
+    dependencies: [] as ReturnType<typeof dependency>[],
     ownership: {
       repository: REPOSITORY,
       worktree: `/worktrees/${id}`,
@@ -187,6 +195,7 @@ function lease(
     role,
     readOnly: options.readOnly ?? role === "evaluator",
     acquiredAt: "2026-08-26T02:00:00.000Z",
+    termStartedAt: "2026-08-26T02:00:00.000Z",
     expiresAt: options.expiresAt ?? "2026-08-26T20:00:00.000Z",
     authorityPointer: options.pointer ?? authorityPointer(),
   };
@@ -295,6 +304,7 @@ describe("Program Supervisor untrusted-data schemas", () => {
       },
     });
     active.acquiredAt = fixture.at;
+    active.termStartedAt = fixture.at;
     fixture.activeLeases.push(active);
 
     const result = replayEvents([fixture]);
@@ -358,6 +368,84 @@ describe("Program Supervisor untrusted-data schemas", () => {
     expect(() => validateEventInput(makeValue())).toThrow();
   });
 
+  it("requires absolute normalized repository/worktree paths and a safe Git branch", () => {
+    const invalidValues = [
+      ["repository", "repo/d20-folio"],
+      ["repository", "/repo/../repo/d20-folio"],
+      ["worktree", "worktrees/task-a"],
+      ["worktree", "/worktrees/../task-a"],
+      ["branch", "../main"],
+      ["branch", "feat/with space"],
+      ["branch", "feat//task-a"],
+      ["branch", "feat/.hidden"],
+      ["branch", "feat/task-a."],
+      ["branch", "feat/task-a.lock"],
+      ["branch", "feat/@{task-a}"],
+      ["branch", "feat/\u0001task-a"],
+    ] as const;
+
+    for (const [field, value] of invalidValues) {
+      const fixture = bootstrapFixture();
+      itemAt(fixture.tasks, 0).charter.ownership[field] = value;
+      expect(
+        () => validateEventInput(fixture),
+        `${field}=${JSON.stringify(value)}`
+      ).toThrow(/absolute normalized path|safe normalized Git branch/);
+    }
+  });
+
+  it("validates structured dependency identities, SHAs, interfaces, and unique task IDs", () => {
+    const valid = bootstrapFixture();
+    itemAt(valid.tasks, 0).charter.dependencies = [dependency("task-b")];
+    expect(() => validateEventInput(valid)).not.toThrow();
+
+    const duplicate = bootstrapFixture();
+    itemAt(duplicate.tasks, 0).charter.dependencies = [
+      dependency("task-b"),
+      dependency("task-b", SHA_C, "program-supervisor:second-interface"),
+    ];
+    expect(() => validateEventInput(duplicate)).toThrow(/duplicate dependency task/i);
+
+    const uppercaseSha = bootstrapFixture();
+    itemAt(uppercaseSha.tasks, 0).charter.dependencies = [
+      dependency("task-b", "B".repeat(40)),
+    ];
+    expect(() => validateEventInput(uppercaseSha)).toThrow(/40 lowercase hexadecimal/);
+
+    const unstableInterface = bootstrapFixture();
+    itemAt(unstableInterface.tasks, 0).charter.dependencies = [
+      dependency("task-b", SHA_B, "interface with spaces"),
+    ];
+    expect(() => validateEventInput(unstableInterface)).toThrow(/stable identifier/);
+  });
+
+  it("requires termStartedAt and bounds the current lease term", () => {
+    const missingTerm = clone(lease("task-a")) as Record<string, unknown>;
+    delete missingTerm.termStartedAt;
+    expect(() =>
+      replayEvents([
+        bootstrapFixture(),
+        event(2, "lease-acquired", { lease: missingTerm }, "2026-08-26T02:00:00.000Z"),
+      ])
+    ).toThrow(/termStartedAt/);
+
+    const mismatchedTerm = {
+      ...lease("task-a"),
+      termStartedAt: "2026-08-26T03:00:00.000Z",
+    };
+    expect(() => replayEvents([bootstrapFixture(), acquire(2, mismatchedTerm)])).toThrow(
+      /acquisition time.*termStartedAt/i
+    );
+
+    const unboundedTerm = {
+      ...lease("task-a", "writer", { expiresAt: "2026-08-27T02:00:00.001Z" }),
+      termStartedAt: "2026-08-26T02:00:00.000Z",
+    };
+    expect(() => replayEvents([bootstrapFixture(), acquire(2, unboundedTerm)])).toThrow(
+      /24 hours.*current term/i
+    );
+  });
+
   it("parses strict NDJSON and rejects malformed or blank records", () => {
     const first = bootstrapFixture();
     const second = event(2, "no-frontier-recorded", {
@@ -372,6 +460,107 @@ describe("Program Supervisor untrusted-data schemas", () => {
       parseEvents(`${JSON.stringify(first)}\n\n${JSON.stringify(second)}`)
     ).toThrow(/blank NDJSON record/);
     expect(() => parseEvents(`${JSON.stringify(first)}\n{broken}`)).toThrow(/line 2/);
+  });
+});
+
+describe("Program Supervisor structured task prerequisites", () => {
+  function dependentFixture(dependencySha = SHA_B) {
+    const fixture = bootstrapFixture();
+    const prerequisite = itemAt(fixture.tasks, 1);
+    prerequisite.state = "integrated";
+    prerequisite.receipt = "task-b integrated at its charter head";
+    itemAt(fixture.tasks, 0).charter.dependencies = [dependency("task-b", dependencySha)];
+    return fixture;
+  }
+
+  it("leases only after every exact dependency SHA and interface is integrated", () => {
+    const readyLease = {
+      ...lease("task-a"),
+      termStartedAt: "2026-08-26T02:00:00.000Z",
+    };
+    expect(() =>
+      replayEvents([dependentFixture(), acquire(2, readyLease)])
+    ).not.toThrow();
+
+    const unintegrated = dependentFixture();
+    itemAt(unintegrated.tasks, 1).state = "queued";
+    itemAt(unintegrated.tasks, 1).receipt = null;
+    expect(() => replayEvents([unintegrated, acquire(2, readyLease)])).toThrow(
+      /dependency task-b.*integrated or retired/i
+    );
+
+    expect(() => replayEvents([dependentFixture(SHA_C), acquire(2, readyLease)])).toThrow(
+      /dependency task-b.*integrated SHA/i
+    );
+  });
+
+  it("rechecks dependency identity at dispatch after a leased prerequisite changes", () => {
+    const readyLease = {
+      ...lease("task-a"),
+      termStartedAt: "2026-08-26T02:00:00.000Z",
+    };
+    const changedPrerequisite = event(3, "task-reconciled", {
+      taskId: "task-b",
+      repository: REPOSITORY,
+      worktree: "/worktrees/task-b",
+      branch: "feat/task-b",
+      previousBaseSha: SHA_B,
+      previousHeadSha: SHA_B,
+      baseSha: SHA_B,
+      headSha: SHA_C,
+      proof: "task-b advanced after task-a acquired its lease",
+    });
+    const dispatch = event(4, "dispatch-recorded", {
+      taskId: "task-a",
+      leaseId: "runtime-task-a",
+      receipt: "dispatch must recheck dependencies",
+    });
+
+    expect(() =>
+      replayEvents([
+        dependentFixture(),
+        acquire(2, readyLease),
+        changedPrerequisite,
+        dispatch,
+      ])
+    ).toThrow(/dependency task-b.*integrated SHA/i);
+  });
+
+  it("renews from hour one through hour twenty-five without losing acquisition evidence", () => {
+    const active = {
+      ...lease("task-a", "writer", { expiresAt: "2026-08-27T02:00:00.000Z" }),
+      termStartedAt: "2026-08-26T02:00:00.000Z",
+    };
+    const renewed = event(
+      3,
+      "lease-renewed",
+      {
+        taskId: "task-a",
+        leaseId: active.leaseId,
+        holder: active.holder,
+        agentId: active.agentId,
+        role: active.role,
+        readOnly: active.readOnly,
+        previousExpiresAt: active.expiresAt,
+        expiresAt: "2026-08-27T03:00:00.000Z",
+        authorityPointer: active.authorityPointer,
+        proof: "renew at hour one through hour twenty-five",
+      },
+      "2026-08-26T03:00:00.000Z"
+    );
+
+    const result = replayEvents([bootstrapFixture(), acquire(2, active), renewed]);
+    expect(itemAt(result.snapshot.tasks, 0).activeLease).toMatchObject({
+      acquiredAt: "2026-08-26T02:00:00.000Z",
+      termStartedAt: "2026-08-26T03:00:00.000Z",
+      expiresAt: "2026-08-27T03:00:00.000Z",
+    });
+
+    const unbounded = clone(renewed);
+    unbounded.expiresAt = "2026-08-27T03:00:00.001Z";
+    expect(() =>
+      replayEvents([bootstrapFixture(), acquire(2, active), unbounded])
+    ).toThrow(/24 hours.*renewal|24 hours.*current term/i);
   });
 });
 
@@ -431,10 +620,12 @@ describe("Program Supervisor bootstrap and task projection", () => {
     secondTask.charter.ownership.repositoryLease.mainSha = SHA_C;
     const first = lease("task-a");
     first.acquiredAt = fixture.at;
+    first.termStartedAt = fixture.at;
     const second = lease("task-b", "writer", {
       pointer: authorityPointer(SHA_A, SHA_C),
     });
     second.acquiredAt = fixture.at;
+    second.termStartedAt = fixture.at;
     fixture.activeLeases.push(first, second);
 
     expect(() => validateEventInput(fixture)).toThrow(
@@ -515,10 +706,15 @@ describe("Program Supervisor lease authority and WIP", () => {
     const result = replayEvents([
       bootstrapFixture(),
       acquire(2, lease("task-a")),
-      acquire(3, { ...lease("task-b"), acquiredAt: "2026-08-26T03:00:00.000Z" }),
+      acquire(3, {
+        ...lease("task-b"),
+        acquiredAt: "2026-08-26T03:00:00.000Z",
+        termStartedAt: "2026-08-26T03:00:00.000Z",
+      }),
       acquire(4, {
         ...lease("task-evaluator", "evaluator"),
         acquiredAt: "2026-08-26T04:00:00.000Z",
+        termStartedAt: "2026-08-26T04:00:00.000Z",
       }),
     ]);
 
@@ -540,7 +736,11 @@ describe("Program Supervisor lease authority and WIP", () => {
     const twoWriters = [
       bootstrapFixture(),
       acquire(2, lease("task-a")),
-      acquire(3, { ...lease("task-b"), acquiredAt: "2026-08-26T03:00:00.000Z" }),
+      acquire(3, {
+        ...lease("task-b"),
+        acquiredAt: "2026-08-26T03:00:00.000Z",
+        termStartedAt: "2026-08-26T03:00:00.000Z",
+      }),
     ];
     expect(() =>
       replayEvents([
@@ -548,6 +748,7 @@ describe("Program Supervisor lease authority and WIP", () => {
         acquire(4, {
           ...lease("task-evaluator"),
           acquiredAt: "2026-08-26T04:00:00.000Z",
+          termStartedAt: "2026-08-26T04:00:00.000Z",
         }),
       ])
     ).toThrow(/two active writers/);
@@ -559,6 +760,7 @@ describe("Program Supervisor lease authority and WIP", () => {
         acquire(3, {
           ...lease("task-b", "evaluator"),
           acquiredAt: "2026-08-26T03:00:00.000Z",
+          termStartedAt: "2026-08-26T03:00:00.000Z",
         }),
       ])
     ).toThrow(/one active evaluator/);
@@ -579,7 +781,11 @@ describe("Program Supervisor lease authority and WIP", () => {
       replayEvents([
         fixture,
         acquire(2, lease("task-a")),
-        acquire(3, { ...lease("task-b"), acquiredAt: "2026-08-26T03:00:00.000Z" }),
+        acquire(3, {
+          ...lease("task-b"),
+          acquiredAt: "2026-08-26T03:00:00.000Z",
+          termStartedAt: "2026-08-26T03:00:00.000Z",
+        }),
       ])
     ).toThrow(/overlap.*scripts\/a/i);
   });
@@ -593,7 +799,11 @@ describe("Program Supervisor lease authority and WIP", () => {
       replayEvents([
         fixture,
         acquire(2, lease("task-a")),
-        acquire(3, { ...lease("task-b"), acquiredAt: "2026-08-26T03:00:00.000Z" }),
+        acquire(3, {
+          ...lease("task-b"),
+          acquiredAt: "2026-08-26T03:00:00.000Z",
+          termStartedAt: "2026-08-26T03:00:00.000Z",
+        }),
       ])
     ).toThrow(/overlap.*scripts/i);
   });
@@ -716,6 +926,7 @@ describe("Program Supervisor lease authority and WIP", () => {
     const second = {
       ...lease("task-b"),
       acquiredAt: "2026-08-26T03:00:00.000Z",
+      termStartedAt: "2026-08-26T03:00:00.000Z",
     };
     const splitRenewal = event(
       4,
@@ -750,6 +961,7 @@ describe("Program Supervisor lease authority and WIP", () => {
     const second = {
       ...lease("task-b"),
       acquiredAt: "2026-08-26T03:00:00.000Z",
+      termStartedAt: "2026-08-26T03:00:00.000Z",
     };
     const result = replayEvents([
       bootstrapFixture(),
@@ -793,6 +1005,7 @@ describe("Program Supervisor lease authority and WIP", () => {
         pointer: { ...authorityPointer(), repositoryLeaseId: "F1" },
       }),
       acquiredAt: "2026-08-26T03:00:00.000Z",
+      termStartedAt: "2026-08-26T03:00:00.000Z",
     };
     const result = replayEvents([
       fixture,
@@ -831,6 +1044,7 @@ describe("Program Supervisor lease authority and WIP", () => {
     const second = {
       ...lease("task-b"),
       acquiredAt: "2026-08-26T03:00:00.000Z",
+      termStartedAt: "2026-08-26T03:00:00.000Z",
     };
     const result = replayEvents([
       bootstrapFixture(),
@@ -983,7 +1197,11 @@ describe("Program Supervisor lease lifecycle and state transitions", () => {
         receipt: "leased worktree and patch preserved",
       }),
     ];
-    const stale = { ...active, acquiredAt: "2026-08-26T04:00:00.000Z" };
+    const stale = {
+      ...active,
+      acquiredAt: "2026-08-26T04:00:00.000Z",
+      termStartedAt: "2026-08-26T04:00:00.000Z",
+    };
     expect(() => replayEvents([...blocked, acquire(4, stale)])).toThrow(
       /duplicate lease ID|stale lease/i
     );
@@ -992,6 +1210,7 @@ describe("Program Supervisor lease lifecycle and state transitions", () => {
       leaseId: "runtime-task-a-reacquired",
     });
     fresh.acquiredAt = "2026-08-26T04:00:00.000Z";
+    fresh.termStartedAt = "2026-08-26T04:00:00.000Z";
     const reacquired = replayEvents([...blocked, acquire(4, fresh)]);
     expect(itemAt(reacquired.snapshot.tasks, 0)).toMatchObject({
       state: "leased",
@@ -1181,6 +1400,7 @@ describe("Program Supervisor lease lifecycle and state transitions", () => {
     task.receipt = "verification cycle one";
     const active = lease("task-a");
     active.acquiredAt = fixture.at;
+    active.termStartedAt = fixture.at;
     fixture.activeLeases.push(active);
 
     expect(() =>
@@ -1679,6 +1899,7 @@ describe("Program Supervisor deterministic event coverage", () => {
     task.receipt = "integration receipt";
     const active = lease("task-a");
     active.acquiredAt = fixture.at;
+    active.termStartedAt = fixture.at;
     fixture.activeLeases.push(active);
 
     expect(() =>
@@ -1744,12 +1965,12 @@ describe("Program Supervisor persisted snapshot semantics", () => {
 
   it("rejects unknown and cyclic task dependencies", () => {
     const unknown = snapshotFixture();
-    itemAt(unknown.tasks, 0).charter.dependencies = ["missing-task"];
+    itemAt(unknown.tasks, 0).charter.dependencies = [dependency("missing-task")];
     expect(() => validateSnapshot(unknown)).toThrow(/unknown dependency/);
 
     const cycle = snapshotFixture();
-    itemAt(cycle.tasks, 0).charter.dependencies = ["task-b"];
-    itemAt(cycle.tasks, 1).charter.dependencies = ["task-a"];
+    itemAt(cycle.tasks, 0).charter.dependencies = [dependency("task-b")];
+    itemAt(cycle.tasks, 1).charter.dependencies = [dependency("task-a")];
     expect(() => validateSnapshot(cycle)).toThrow(/dependency cycle/);
   });
 

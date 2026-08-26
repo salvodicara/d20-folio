@@ -1,3 +1,5 @@
+import { isAbsolute, normalize } from "node:path";
+
 export const TASK_STATES = [
   "queued",
   "leased",
@@ -39,7 +41,7 @@ export interface TaskCharter {
   id: string;
   outcome: string;
   authority: AuthorityReference[];
-  dependencies: string[];
+  dependencies: TaskDependency[];
   ownership: {
     repository: string;
     worktree: string;
@@ -66,6 +68,12 @@ export interface TaskCharter {
   };
 }
 
+export interface TaskDependency {
+  taskId: string;
+  integratedSha: string;
+  requiredInterface: string;
+}
+
 export interface LeaseAuthorityPointer {
   repository: string;
   ownerDocumentPath: string;
@@ -82,6 +90,7 @@ export interface ActiveLease {
   role: LeaseRole;
   readOnly: boolean;
   acquiredAt: string;
+  termStartedAt: string;
   expiresAt: string;
   authorityPointer: LeaseAuthorityPointer;
 }
@@ -458,6 +467,32 @@ function normalizedPathAt(value: unknown, path: string): string {
   return normalized;
 }
 
+function absoluteNormalizedPathAt(value: unknown, path: string): string {
+  const candidate = stringAt(value, path);
+  if (!isAbsolute(candidate) || normalize(candidate) !== candidate) {
+    corruption(path, "expected an absolute normalized path");
+  }
+  return candidate;
+}
+
+function gitBranchAt(value: unknown, path: string): string {
+  const branch = stringAt(value, path);
+  const parts = branch.split("/");
+  if (
+    branch.includes("..") ||
+    branch.includes("@{") ||
+    parts.some(
+      (part) =>
+        !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(part) ||
+        part.endsWith(".") ||
+        part.endsWith(".lock")
+    )
+  ) {
+    corruption(path, "expected a safe normalized Git branch");
+  }
+  return branch;
+}
+
 function uniqueStrings(
   values: unknown,
   path: string,
@@ -556,6 +591,15 @@ function validateRepositoryLease(value: unknown, path: string): RepositoryLeaseA
   };
 }
 
+function validateTaskDependency(value: unknown, path: string): TaskDependency {
+  const record = objectAt(value, path, ["taskId", "integratedSha", "requiredInterface"]);
+  return {
+    taskId: idAt(record.taskId, `${path}.taskId`),
+    integratedSha: shaAt(record.integratedSha, `${path}.integratedSha`),
+    requiredInterface: idAt(record.requiredInterface, `${path}.requiredInterface`),
+  };
+}
+
 function validateTaskCharter(value: unknown, path: string): TaskCharter {
   const record = objectAt(value, path, [
     "id",
@@ -618,20 +662,28 @@ function validateTaskCharter(value: unknown, path: string): TaskCharter {
   if (cleanup.proof !== "remote-or-recovery") {
     corruption(`${path}.cleanup.proof`, "expected remote-or-recovery");
   }
+  const dependencies = arrayAt(record.dependencies, `${path}.dependencies`).map(
+    (dependency, index) =>
+      validateTaskDependency(dependency, `${path}.dependencies[${index}]`)
+  );
+  if (new Set(dependencies.map(({ taskId }) => taskId)).size !== dependencies.length) {
+    corruption(`${path}.dependencies`, "contains duplicate dependency task IDs");
+  }
   return {
     id: idAt(record.id, `${path}.id`),
     outcome: stringAt(record.outcome, `${path}.outcome`),
     authority,
-    dependencies: uniqueStrings(
-      record.dependencies,
-      `${path}.dependencies`,
-      false,
-      false
-    ),
+    dependencies,
     ownership: {
-      repository: stringAt(ownership.repository, `${path}.ownership.repository`),
-      worktree: stringAt(ownership.worktree, `${path}.ownership.worktree`),
-      branch: stringAt(ownership.branch, `${path}.ownership.branch`),
+      repository: absoluteNormalizedPathAt(
+        ownership.repository,
+        `${path}.ownership.repository`
+      ),
+      worktree: absoluteNormalizedPathAt(
+        ownership.worktree,
+        `${path}.ownership.worktree`
+      ),
+      branch: gitBranchAt(ownership.branch, `${path}.ownership.branch`),
       baseSha: shaAt(ownership.baseSha, `${path}.ownership.baseSha`),
       headSha: shaAt(ownership.headSha, `${path}.ownership.headSha`),
       paths: uniqueStrings(ownership.paths, `${path}.ownership.paths`, true),
@@ -724,6 +776,7 @@ function validateActiveLease(value: unknown, path: string): ActiveLease {
     "role",
     "readOnly",
     "acquiredAt",
+    "termStartedAt",
     "expiresAt",
     "authorityPointer",
   ]);
@@ -736,12 +789,16 @@ function validateActiveLease(value: unknown, path: string): ActiveLease {
     );
   }
   const acquiredAt = timestampAt(record.acquiredAt, `${path}.acquiredAt`);
+  const termStartedAt = timestampAt(record.termStartedAt, `${path}.termStartedAt`);
   const expiresAt = timestampAt(record.expiresAt, `${path}.expiresAt`);
-  const duration = Date.parse(expiresAt) - Date.parse(acquiredAt);
+  if (Date.parse(termStartedAt) < Date.parse(acquiredAt)) {
+    corruption(path, "current lease term cannot begin before acquisition");
+  }
+  const duration = Date.parse(expiresAt) - Date.parse(termStartedAt);
   if (duration <= 0 || duration > DAY_MS) {
     corruption(
       path,
-      "lease expiry must be later and no more than 24 hours after acquisition"
+      "lease expiry must be later and no more than 24 hours after current term start"
     );
   }
   return {
@@ -752,6 +809,7 @@ function validateActiveLease(value: unknown, path: string): ActiveLease {
     role,
     readOnly,
     acquiredAt,
+    termStartedAt,
     expiresAt,
     authorityPointer: validateLeaseAuthorityPointer(
       record.authorityPointer,
@@ -1046,8 +1104,11 @@ function enforceDependencies(tasks: TaskProjection[], path: string): void {
   const byId = new Map(tasks.map((task) => [task.charter.id, task]));
   for (const task of tasks) {
     for (const dependency of task.charter.dependencies) {
-      if (!byId.has(dependency)) {
-        corruption(path, `task ${task.charter.id} has unknown dependency ${dependency}`);
+      if (!byId.has(dependency.taskId)) {
+        corruption(
+          path,
+          `task ${task.charter.id} has unknown dependency ${dependency.taskId}`
+        );
       }
     }
   }
@@ -1059,11 +1120,33 @@ function enforceDependencies(tasks: TaskProjection[], path: string): void {
     visiting.add(taskId);
     const task = byId.get(taskId);
     if (!task) corruption(path, `unknown dependency ${taskId}`);
-    for (const dependency of task.charter.dependencies) visit(dependency);
+    for (const dependency of task.charter.dependencies) visit(dependency.taskId);
     visiting.delete(taskId);
     visited.add(taskId);
   };
   for (const task of tasks) visit(task.charter.id);
+}
+
+function assertDependenciesSatisfied(
+  snapshot: ProgramSnapshot,
+  task: TaskProjection,
+  path: string
+): void {
+  for (const dependency of task.charter.dependencies) {
+    const prerequisite = taskById(snapshot, dependency.taskId);
+    if (prerequisite.state !== "integrated" && prerequisite.state !== "retired") {
+      corruption(
+        path,
+        `dependency ${dependency.taskId} must be integrated or retired before task ${task.charter.id}`
+      );
+    }
+    if (prerequisite.charter.ownership.headSha !== dependency.integratedSha) {
+      corruption(
+        path,
+        `dependency ${dependency.taskId} does not match required integrated SHA ${dependency.integratedSha}`
+      );
+    }
+  }
 }
 
 function latestGateDecision(
@@ -1517,9 +1600,9 @@ export function validateEventInput(value: unknown): ProgramEvent {
         ...base,
         type: "task-reconciled",
         taskId: idAt(record.taskId, "event.taskId"),
-        repository: stringAt(record.repository, "event.repository"),
-        worktree: stringAt(record.worktree, "event.worktree"),
-        branch: stringAt(record.branch, "event.branch"),
+        repository: absoluteNormalizedPathAt(record.repository, "event.repository"),
+        worktree: absoluteNormalizedPathAt(record.worktree, "event.worktree"),
+        branch: gitBranchAt(record.branch, "event.branch"),
         previousBaseSha: shaAt(record.previousBaseSha, "event.previousBaseSha"),
         previousHeadSha: shaAt(record.previousHeadSha, "event.previousHeadSha"),
         baseSha: shaAt(record.baseSha, "event.baseSha"),
@@ -1938,10 +2021,10 @@ function bootstrapSnapshot(first: BootstrapEvent): ProgramSnapshot {
   assertUnique(taskIds, "event.tasks");
   for (const task of first.tasks) {
     for (const dependency of task.charter.dependencies) {
-      if (!taskIds.includes(dependency)) {
-        corruption("event.tasks.dependencies", `unknown dependency ${dependency}`);
+      if (!taskIds.includes(dependency.taskId)) {
+        corruption("event.tasks.dependencies", `unknown dependency ${dependency.taskId}`);
       }
-      if (dependency === task.charter.id) {
+      if (dependency.taskId === task.charter.id) {
         corruption("event.tasks.dependencies", "task cannot depend on itself");
       }
     }
@@ -2038,7 +2121,7 @@ export function replayEvents(events: readonly unknown[]): {
           );
         }
         for (const dependency of current.task.charter.dependencies) {
-          taskById(snapshot, dependency);
+          taskById(snapshot, dependency.taskId);
         }
         snapshot.tasks.push({
           charter: structuredClone(current.task.charter),
@@ -2116,8 +2199,14 @@ export function replayEvents(events: readonly unknown[]): {
       }
       case "lease-acquired": {
         const task = taskById(snapshot, current.lease.taskId);
-        if (current.at !== current.lease.acquiredAt) {
-          corruption("event.at", "lease acquisition time must equal acquiredAt");
+        if (
+          current.at !== current.lease.acquiredAt ||
+          current.at !== current.lease.termStartedAt
+        ) {
+          corruption(
+            "event.at",
+            "lease acquisition time must equal acquiredAt and termStartedAt"
+          );
         }
         if (task.activeLease)
           corruption("event.lease", "task already has an active lease");
@@ -2130,6 +2219,7 @@ export function replayEvents(events: readonly unknown[]): {
             `duplicate lease ID ${current.lease.leaseId}`
           );
         }
+        assertDependenciesSatisfied(snapshot, task, "event.lease.dependencies");
         assertLeaseAuthority(task, current.lease, "event.lease.authorityPointer");
         task.activeLease = structuredClone(current.lease);
         task.state = "leased";
@@ -2180,6 +2270,7 @@ export function replayEvents(events: readonly unknown[]): {
           );
         }
         activeLease.expiresAt = current.expiresAt;
+        activeLease.termStartedAt = current.at;
         setTaskUpdated(task, current.at);
         enforceActiveLeases(snapshot.tasks, "event.lease-renewed");
         break;
@@ -2229,6 +2320,7 @@ export function replayEvents(events: readonly unknown[]): {
         if (task.state !== "leased") {
           corruption("event.taskId", `dispatch requires leased state, got ${task.state}`);
         }
+        assertDependenciesSatisfied(snapshot, task, "event.dispatch.dependencies");
         task.state = "executing";
         task.receipt = null;
         setTaskUpdated(task, current.at);

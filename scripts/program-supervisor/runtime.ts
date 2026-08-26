@@ -152,6 +152,7 @@ function assignEventCoordinates(
     body.lease = {
       ...objectRecord(body.lease, "lease-acquired input.lease"),
       acquiredAt: at,
+      termStartedAt: at,
     };
   }
   return { ...body, seq, at };
