@@ -406,22 +406,15 @@ describe("program supervisor adapter authority", () => {
   it("keeps exported Just arguments out of the shell before slug validation", () => {
     const fixture = createAdapterFixture();
     const home = join(fixture.root, "home");
-    const asdfBin = join(fixture.root, "asdf-bin");
     const sentinel = join(fixture.root, "injection-sentinel");
-    const pinnedNode = run("asdf", ["where", "nodejs", "24.16.0"], repositoryRoot);
+    const toolchain = createFakeToolchain(fixture.root);
     mkdirSync(home);
-    mkdirSync(asdfBin);
-    expect(pinnedNode).toMatchObject({ status: 0 });
-    writeExecutable(
-      join(asdfBin, "asdf"),
-      "#!/usr/bin/env bash\nprintf '%s\\n' '" + pinnedNode.stdout.trim() + "'\n"
-    );
     try {
       const result = run(
         "just",
         ["wt-new", `unsafe; touch ${sentinel}`],
         fixture.allowed,
-        { ...process.env, HOME: home, PATH: `${asdfBin}:${process.env.PATH}` }
+        { ...toolchain.env, HOME: home }
       );
       expect(result.status).toBe(1);
       expect(`${result.stdout}${result.stderr}`).toContain("safe lowercase slug");
