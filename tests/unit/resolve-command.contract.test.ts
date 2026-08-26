@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { dirname, join, relative, resolve as resolvePath } from "node:path";
+import { join, relative, resolve as resolvePath } from "node:path";
 
 import ts from "typescript";
 import { describe, expect, expectTypeOf, it } from "vitest";
@@ -2189,6 +2189,65 @@ describe("Automation K1 receipts, collision, and bounded undo", () => {
     });
   });
 
+  it("reports a source receipt revision divergence after a fresh undo fence", () => {
+    const input = undoInput(REDO_RECEIPT, {
+      commandId: "cmd:v1:k-fresh-undo",
+      payloadFingerprint:
+        "fp:v1:845ad46a323641930386755edbba97c3fdc3c682a3493e46363a43f48cfd0ed2",
+      revision: 11,
+      current: 1,
+    });
+    if (input.command.kind !== "undo-receipt") {
+      throw new TypeError("Expected undo command");
+    }
+    input.command.payloadFingerprint = commandPayloadFingerprint(input.command);
+
+    expect(resolveCommand(input)).toEqual({
+      status: "rejected",
+      reason: "revision-mismatch",
+    });
+  });
+
+  it("rejects a digest-valid receipt with duplicate ordered resource legs", () => {
+    const receipt = structuredClone(COMMITTED_RECEIPT) as CommandReceipt;
+    const first = receipt.patches[0];
+    const firstInverse = receipt.inversePatches[0];
+    if (first === undefined || firstInverse === undefined) {
+      throw new TypeError("Missing receipt patch fixtures");
+    }
+    const patchLegs = [
+      { ...first, before: 1, after: 2 },
+      { ...first, before: 1, after: 3 },
+    ];
+    const inverseLegs = [
+      { ...firstInverse, before: 2, after: 1 },
+      { ...firstInverse, before: 3, after: 1 },
+    ];
+    receipt.patches = patchLegs.map((patch, index) => ({
+      ...patch,
+      patchId: commandPatchId(receipt.commandId, index, patch),
+    }));
+    receipt.inversePatches = inverseLegs.map((patch, index) => ({
+      ...patch,
+      patchId: commandPatchId(receipt.commandId, index, patch),
+    }));
+    receipt.resultFingerprint = resolutionResultFingerprint(receipt);
+    receipt.receiptId = commandReceiptId(receipt);
+
+    expect(decodeCommandReceipt(receipt)).toEqual({ ok: false, reason: "invalid-patch" });
+    expect(
+      resolveCommand(
+        undoInput(receipt, {
+          commandId: "cmd:v1:k-duplicate-undo",
+          payloadFingerprint:
+            "fp:v1:4c7c2af1e20c2e504b6a18d588eaf3085cb554e5556f5d814cd79a9314497d4c",
+          revision: 8,
+          current: 2,
+        })
+      )
+    ).toEqual({ status: "rejected", reason: "invalid-patch" });
+  });
+
   it("retains only the newest exact bounded receipts", () => {
     expect(
       retainCommandReceipts([COMMITTED_RECEIPT, UNDO_RECEIPT, REDO_RECEIPT], 2)
@@ -2227,289 +2286,63 @@ function commandGraphSourceFiles(): readonly string[] {
   ];
 }
 
-function moduleSpecifiersFromSource(
-  sourceText: string,
-  path = "synthetic-command-boundary.ts"
-): readonly string[] {
-  const source = ts.createSourceFile(
-    path,
-    sourceText,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TS
-  );
-  const found: string[] = [];
-  const directLoaders = new Set<string>();
-  const collectDirectLoaders = (node: ts.Node): void => {
-    if (
-      ts.isVariableDeclaration(node) &&
-      ts.isIdentifier(node.name) &&
-      node.initializer !== undefined &&
-      ts.isCallExpression(node.initializer) &&
-      ts.isIdentifier(node.initializer.expression) &&
-      node.initializer.expression.text === "createRequire"
-    ) {
-      directLoaders.add(node.name.text);
-    }
-    ts.forEachChild(node, collectDirectLoaders);
-  };
-  collectDirectLoaders(source);
+function moduleSpecifiersFromSource(sourceText: string): readonly string[] {
+  return ts
+    .preProcessFile(sourceText, true, true)
+    .importedFiles.map(({ fileName }) => fileName);
+}
 
+function hasExecutableLoader(sourceText: string): boolean {
+  let found = false;
   const visit = (node: ts.Node): void => {
+    const expression = ts.isCallExpression(node) ? node.expression : null;
     if (
-      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
-      node.moduleSpecifier !== undefined &&
-      ts.isStringLiteral(node.moduleSpecifier)
+      ts.isImportEqualsDeclaration(node) ||
+      expression?.kind === ts.SyntaxKind.ImportKeyword ||
+      (expression !== null &&
+        ts.isIdentifier(expression) &&
+        (expression.text === "require" || expression.text === "createRequire"))
     ) {
-      found.push(node.moduleSpecifier.text);
-    }
-    if (
-      ts.isImportEqualsDeclaration(node) &&
-      ts.isExternalModuleReference(node.moduleReference) &&
-      ts.isStringLiteral(node.moduleReference.expression)
-    ) {
-      found.push(node.moduleReference.expression.text);
-    }
-    if (
-      ts.isCallExpression(node) &&
-      node.arguments.length === 1 &&
-      node.arguments[0] !== undefined &&
-      ts.isStringLiteral(node.arguments[0]) &&
-      (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
-        (ts.isIdentifier(node.expression) &&
-          (node.expression.text === "require" ||
-            directLoaders.has(node.expression.text))) ||
-        (ts.isCallExpression(node.expression) &&
-          ts.isIdentifier(node.expression.expression) &&
-          node.expression.expression.text === "createRequire"))
-    ) {
-      found.push(node.arguments[0].text);
+      found = true;
+      return;
     }
     ts.forEachChild(node, visit);
   };
-  visit(source);
+  visit(
+    ts.createSourceFile(
+      "boundary.ts",
+      sourceText,
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TS
+    )
+  );
   return found;
 }
 
-function moduleSpecifiers(path: string): readonly string[] {
-  return moduleSpecifiersFromSource(readFileSync(path, "utf8"), path);
-}
+const CARRIER_PATHS = new Set([
+  "src/types/command.ts",
+  "src/types/rule-definition.ts",
+  "src/types/effect-instance.ts",
+]);
+const CARRIER_IMPORTS = new Set([
+  "@/types/command",
+  "@/types/rule-definition",
+  "@/types/effect-instance",
+]);
 
-type GrantSourceFile = {
-  readonly path: string;
-  readonly sourceText: string;
-};
-
-type GrantTypeDeclaration = {
-  readonly id: string;
-  readonly file: GrantParsedSource;
-  readonly node: ts.TypeAliasDeclaration | ts.InterfaceDeclaration;
-};
-
-type GrantParsedSource = {
-  readonly path: string;
-  readonly source: ts.SourceFile;
-  readonly declarations: Map<string, GrantTypeDeclaration>;
-  readonly namedImports: Map<
-    string,
-    { readonly moduleSpecifier: string; readonly importedName: string }
-  >;
-  readonly namespaceImports: Map<string, string>;
-};
-
-function grantEmbeddingViolations(files: readonly GrantSourceFile[]): readonly string[] {
-  const parsedFiles: GrantParsedSource[] = files.map(({ path, sourceText }) => {
-    const absolutePath = resolvePath(path);
-    return {
-      path: absolutePath,
-      source: ts.createSourceFile(
-        absolutePath,
-        sourceText,
-        ts.ScriptTarget.Latest,
-        true,
-        ts.ScriptKind.TS
-      ),
-      declarations: new Map(),
-      namedImports: new Map(),
-      namespaceImports: new Map(),
-    };
-  });
-  const filesByPath = new Map(parsedFiles.map((file) => [file.path, file]));
-
-  for (const file of parsedFiles) {
-    for (const statement of file.source.statements) {
-      if (ts.isTypeAliasDeclaration(statement) || ts.isInterfaceDeclaration(statement)) {
-        const name = statement.name.text;
-        file.declarations.set(name, {
-          id: `${file.path}\u0000${name}`,
-          file,
-          node: statement,
-        });
-        continue;
-      }
-      if (
-        !ts.isImportDeclaration(statement) ||
-        !ts.isStringLiteral(statement.moduleSpecifier)
-      ) {
-        continue;
-      }
-      const moduleSpecifier = statement.moduleSpecifier.text;
-      const importClause = statement.importClause;
-      const bindings = importClause?.namedBindings;
-      if (bindings === undefined) continue;
-      if (ts.isNamespaceImport(bindings)) {
-        file.namespaceImports.set(bindings.name.text, moduleSpecifier);
-        continue;
-      }
-      for (const element of bindings.elements) {
-        file.namedImports.set(element.name.text, {
-          moduleSpecifier,
-          importedName: (element.propertyName ?? element.name).text,
-        });
-      }
-    }
-  }
-
-  const moduleCandidates = (
-    importer: GrantParsedSource,
-    moduleSpecifier: string
-  ): readonly string[] => {
-    const base = moduleSpecifier.startsWith("@/")
-      ? resolvePath(process.cwd(), "src", moduleSpecifier.slice(2))
-      : moduleSpecifier.startsWith(".")
-        ? resolvePath(dirname(importer.path), moduleSpecifier)
-        : null;
-    return base === null ? [] : [base, `${base}.ts`, join(base, "index.ts")];
-  };
-  const resolveScannedModule = (
-    importer: GrantParsedSource,
-    moduleSpecifier: string
-  ): GrantParsedSource | undefined =>
-    moduleCandidates(importer, moduleSpecifier)
-      .map((candidate) => filesByPath.get(candidate))
-      .find((candidate) => candidate !== undefined);
-  const isGrantModule = (
-    importer: GrantParsedSource,
-    moduleSpecifier: string
-  ): boolean => {
-    const grantPath = resolvePath(process.cwd(), "src/lib/grants");
-    return moduleCandidates(importer, moduleSpecifier).some(
-      (candidate) => candidate === grantPath || candidate === `${grantPath}.ts`
+function carrierImportsAreClosed(
+  files: readonly { readonly path: string; readonly sourceText: string }[]
+): boolean {
+  return files.every(({ path, sourceText }) => {
+    const sourcePath = relative(process.cwd(), resolvePath(path)).replaceAll("\\", "/");
+    return (
+      !CARRIER_PATHS.has(sourcePath) ||
+      moduleSpecifiersFromSource(sourceText).every((specifier) =>
+        CARRIER_IMPORTS.has(specifier)
+      )
     );
-  };
-
-  const found: string[] = [];
-  const visitDeclaration = (
-    declaration: GrantTypeDeclaration,
-    visited: Set<string>
-  ): void => {
-    if (visited.has(declaration.id)) return;
-    visited.add(declaration.id);
-    if (ts.isTypeAliasDeclaration(declaration.node)) {
-      visitOwnedType(declaration.node.type, declaration.file, visited);
-      return;
-    }
-    for (const heritage of declaration.node.heritageClauses ?? []) {
-      visitOwnedType(heritage, declaration.file, visited);
-    }
-    for (const member of declaration.node.members) {
-      visitOwnedType(member, declaration.file, visited);
-    }
-  };
-  const followNamedType = (
-    name: string,
-    file: GrantParsedSource,
-    visited: Set<string>
-  ): void => {
-    const local = file.declarations.get(name);
-    if (local !== undefined) {
-      visitDeclaration(local, visited);
-      return;
-    }
-    const imported = file.namedImports.get(name);
-    if (imported === undefined) return;
-    if (
-      imported.importedName === "Grant" &&
-      isGrantModule(file, imported.moduleSpecifier)
-    ) {
-      found.push("Grant");
-      return;
-    }
-    const target = resolveScannedModule(file, imported.moduleSpecifier);
-    const declaration = target?.declarations.get(imported.importedName);
-    if (declaration !== undefined) visitDeclaration(declaration, visited);
-  };
-  const followNamespaceType = (
-    namespace: string,
-    name: string,
-    file: GrantParsedSource,
-    visited: Set<string>
-  ): void => {
-    const moduleSpecifier = file.namespaceImports.get(namespace);
-    if (moduleSpecifier === undefined) return;
-    if (name === "Grant" && isGrantModule(file, moduleSpecifier)) {
-      found.push("Grant");
-      return;
-    }
-    const target = resolveScannedModule(file, moduleSpecifier);
-    const declaration = target?.declarations.get(name);
-    if (declaration !== undefined) visitDeclaration(declaration, visited);
-  };
-  const visitOwnedType = (
-    node: ts.Node,
-    file: GrantParsedSource,
-    visited: Set<string>
-  ): void => {
-    if (
-      ts.isFunctionTypeNode(node) ||
-      ts.isConstructorTypeNode(node) ||
-      ts.isCallSignatureDeclaration(node) ||
-      ts.isConstructSignatureDeclaration(node) ||
-      ts.isMethodSignature(node)
-    ) {
-      return;
-    }
-    if (ts.isTypeReferenceNode(node)) {
-      const name = node.typeName;
-      if (ts.isIdentifier(name)) {
-        followNamedType(name.text, file, visited);
-      } else if (ts.isIdentifier(name.left)) {
-        followNamespaceType(name.left.text, name.right.text, file, visited);
-      }
-      for (const argument of node.typeArguments ?? []) {
-        visitOwnedType(argument, file, visited);
-      }
-      return;
-    }
-    if (ts.isExpressionWithTypeArguments(node)) {
-      if (ts.isIdentifier(node.expression)) {
-        followNamedType(node.expression.text, file, visited);
-      } else if (
-        ts.isPropertyAccessExpression(node.expression) &&
-        ts.isIdentifier(node.expression.expression)
-      ) {
-        followNamespaceType(
-          node.expression.expression.text,
-          node.expression.name.text,
-          file,
-          visited
-        );
-      }
-      for (const argument of node.typeArguments ?? []) {
-        visitOwnedType(argument, file, visited);
-      }
-      return;
-    }
-    ts.forEachChild(node, (child) => visitOwnedType(child, file, visited));
-  };
-
-  for (const carrier of ["SemanticCommand", "CommandPatch", "EffectInstance"]) {
-    for (const file of parsedFiles) {
-      const declaration = file.declarations.get(carrier);
-      if (declaration !== undefined) visitDeclaration(declaration, new Set());
-    }
-  }
-  return found;
+  });
 }
 
 describe("Automation K1 import and Grant boundary", () => {
@@ -2556,9 +2389,10 @@ describe("Automation K1 import and Grant boundary", () => {
     expect(commandImportViolation(specifier)).toBe(specifier);
   });
 
-  it("keeps every real command-kernel import inside the allowlist", () => {
-    const violations = commandGraphSourceFiles().flatMap((path) =>
-      moduleSpecifiers(path).flatMap((specifier) => {
+  it("keeps the real graph inside the import allowlist without executable loaders", () => {
+    const paths = commandGraphSourceFiles();
+    const violations = paths.flatMap((path) =>
+      moduleSpecifiersFromSource(readFileSync(path, "utf8")).flatMap((specifier) => {
         const violation = commandImportViolation(specifier);
         return violation === null
           ? []
@@ -2566,56 +2400,50 @@ describe("Automation K1 import and Grant boundary", () => {
       })
     );
     expect(violations).toEqual([]);
+    for (const path of paths) {
+      expect(hasExecutableLoader(readFileSync(path, "utf8")), path).toBe(false);
+    }
   });
 
-  it("finds direct CommonJS, TS import-equals, and createRequire loader imports", () => {
-    const sources = [
-      'const React = require("react");',
-      'import React = require("react");',
-      'const load = createRequire(import.meta.url); load("react");',
-      'createRequire(import.meta.url)("react");',
-    ];
-
-    expect(sources.map((source) => moduleSpecifiersFromSource(source))).toEqual([
-      ["react"],
-      ["react"],
-      ["react"],
-      ["react"],
-    ]);
+  it.each([
+    'import("@/lib/command/identity")',
+    'const command = require("@/types/command");',
+    'import command = require("@/types/command");',
+    'const load = createRequire(import.meta.url); load("@/types/command");',
+    'createRequire(import.meta.url)("@/types/command");',
+  ])("rejects executable module loading: %s", (source) => {
+    expect(hasExecutableLoader(source)).toBe(true);
   });
 
-  it("allows the audited Grant seam in pure function parameters and returns", () => {
+  it("allows the audited Grant seam in a pure command function", () => {
     expect(
-      grantEmbeddingViolations([
+      carrierImportsAreClosed([
         {
           path: "src/lib/command/pure-grant.ts",
-          sourceText: `
-            import type { Grant } from "@/lib/grants";
-            type PureGrantAlias = Grant;
-            function normalizeGrant(grant: Grant): Grant { return grant; }
-          `,
+          sourceText:
+            'import type { Grant } from "@/lib/grants"; function normalizeGrant(grant: Grant): Grant { return grant; }',
         },
       ])
-    ).toEqual([]);
+    ).toBe(true);
   });
 
-  it("finds direct, optional, nested, and helper-alias Grant carrier state", () => {
-    expect(
-      grantEmbeddingViolations([
-        {
-          path: "src/types/synthetic-carriers.ts",
-          sourceText: `
-            import type { Grant } from "@/lib/grants";
-            interface HelperInterface { grant: Grant }
-            type HelperAlias = HelperInterface;
-            type NestedState = { state: { grants: readonly Grant[] } };
-            export type SemanticCommand = Grant | HelperAlias;
-            export type CommandPatch = { grant?: Grant };
-            export type EffectInstance = NestedState;
-          `,
-        },
-      ])
-    ).toEqual(["Grant", "Grant", "Grant", "Grant"]);
+  it.each([
+    [
+      "function-valued carrier",
+      'import type { Grant } from "@/lib/grants"; export type SemanticCommand = { grantFactory: () => Grant };',
+    ],
+    [
+      "direct, optional, nested, and helper-alias state",
+      'import type { Grant } from "@/lib/grants"; interface Helper { grant: Grant } type Nested = { state: { grants: readonly Grant[] } }; export type SemanticCommand = Grant | Helper; export type CommandPatch = { grant?: Grant }; export type EffectInstance = Nested;',
+    ],
+    [
+      "inline import-type state",
+      'export type SemanticCommand = import("@/lib/grants").Grant;',
+    ],
+  ])("rejects Grant from carrier closure through %s", (_name, sourceText) => {
+    expect(carrierImportsAreClosed([{ path: "src/types/command.ts", sourceText }])).toBe(
+      false
+    );
   });
 
   it.each([
@@ -2637,34 +2465,30 @@ describe("Automation K1 import and Grant boundary", () => {
   ])(
     "finds cross-file Grant carrier state through a %s",
     (_name, importLine, typeName) => {
-      const files = [
-        {
-          path: "src/types/command.ts",
-          sourceText: `${importLine}\nexport type SemanticCommand = ${typeName};`,
-        },
-        {
-          path: "src/lib/command/grant-state.ts",
-          sourceText: `
-          import type { Grant } from "@/lib/grants";
-          export type CrossFileGrantState = { readonly grant: Grant };
-        `,
-        },
-      ];
-      expect(grantEmbeddingViolations(files)).toEqual(["Grant"]);
+      expect(
+        carrierImportsAreClosed([
+          {
+            path: "src/types/command.ts",
+            sourceText: `${importLine}\nexport type SemanticCommand = ${typeName};`,
+          },
+        ])
+      ).toBe(false);
     }
   );
 
-  it("keeps Grant normalized IR out of command, patch, and effect state", () => {
-    const embeddings = grantEmbeddingViolations(
-      commandGraphSourceFiles().map((path) => ({
-        path,
-        sourceText: readFileSync(path, "utf8"),
-      }))
-    );
-    expect(embeddings).toEqual([]);
+  it("keeps Grant and executable payloads out of the real carrier closure", () => {
+    const sources = commandGraphSourceFiles().map((path) => ({
+      path,
+      sourceText: readFileSync(path, "utf8"),
+    }));
+    expect(carrierImportsAreClosed(sources)).toBe(true);
     expectTypeOf<Grant>().not.toExtend<SemanticCommand>();
     expectTypeOf<Grant>().not.toExtend<CommandPatch>();
     expectTypeOf<Grant>().not.toExtend<EffectInstance>();
+    expectTypeOf<SemanticCommand>().toExtend<SerializableValue>();
+    expectTypeOf<CommandPatch>().toExtend<SerializableValue>();
+    expectTypeOf<EffectInstance>().toExtend<SerializableValue>();
+    expectTypeOf<() => Grant>().not.toExtend<SerializableValue>();
   });
 
   it("exposes the one resolver through the canonical public entry", () => {

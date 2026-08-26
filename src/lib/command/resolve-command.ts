@@ -163,13 +163,16 @@ function replay(receipt: CommandReceipt): CommitResult {
 function undoFacts(
   command: UndoReceiptCommand,
   world: WorldState
-): (ResolvedFacts & { readonly inversePatches: readonly CommandPatch[] }) | null {
+):
+  | (ResolvedFacts & { readonly inversePatches: readonly CommandPatch[] })
+  | "revision-mismatch"
+  | null {
   const source = command.receipt;
   if (source.revisions.length !== 1) return null;
   const sourceRevision = source.revisions[0];
   if (sourceRevision === undefined || sourceRevision.stateId !== world.stateId)
     return null;
-  if (sourceRevision.after !== world.revision) return null;
+  if (sourceRevision.after !== world.revision) return "revision-mismatch";
 
   for (const inverse of source.inversePatches) {
     const resource = world.resources.find(
@@ -268,6 +271,7 @@ export function resolveCommand(input: unknown): ResolutionOutcome {
     if (rule !== null || externalAnswers.values.length !== 0)
       return rejected("invalid-receipt");
     const facts = undoFacts(command, world);
+    if (facts === "revision-mismatch") return rejected(facts);
     if (facts === null) return rejected("invalid-patch");
     if (mode === "commit") return commit(facts);
     return {

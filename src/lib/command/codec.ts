@@ -707,6 +707,15 @@ function revisionChange(value: unknown): RevisionChange {
   return { stateId: stableId(source.stateId, "state"), before, after };
 }
 
+function rejectDuplicatePatchResources(patches: readonly CommandPatch[]): void {
+  const resources = new Set<string>();
+  for (const patch of patches) {
+    const identity = `${patch.stateId}\u0000${patch.resourceId}`;
+    if (resources.has(identity)) fail("invalid-patch");
+    resources.add(identity);
+  }
+}
+
 function receipt(value: unknown): CommandReceipt {
   const source = exact(value, [
     "schemaVersion",
@@ -744,6 +753,8 @@ function receipt(value: unknown): CommandReceipt {
   ) {
     fail("invalid-patch");
   }
+  rejectDuplicatePatchResources(result.patches);
+  rejectDuplicatePatchResources(result.inversePatches);
   for (const [index, entry] of result.patches.entries()) {
     if (commandPatchId(result.commandId, index, entry) !== entry.patchId)
       fail("invalid-patch");
