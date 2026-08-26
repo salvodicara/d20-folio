@@ -41,7 +41,8 @@ git push origin HEAD:main                           # the ff-merge; non-ff rejec
 
 # 5. Confirm the SHA landed, THEN tear down (removing early orphans an in-flight push):
 git ls-remote origin main                           # poll until it shows your SHA
-cd ~/Workspace/d20-folio                             # leave the worktree before removing it
+# Leave the task worktree. Do not invoke the stale shared checkout's recipe.
+cd ~/Workspace/Codex/d20-folio-program-control       # or another clean worktree at fresh origin/main
 just wt-rm <slug>
 git branch -d <kind>/<slug>
 
@@ -90,8 +91,9 @@ just wt-list
   worktree runs the same ref-aware pre-commit/pre-push hooks. **Never `--no-verify`.**
 - **Program Supervisor boundary:** `just wt-new` and `just wt-rm` are manual, same-thread adapters
   for `d20-folio-program-control` (or a worktree whose HEAD has just been proved equal to fresh
-  `origin/main`). Pushing this change does not update the shared checkout: its stale worktree recipe
-  must never be invoked.
+  `origin/main`). They reject the shared checkout before running the local bootstrap or resolver,
+  fetch `origin/main` in preflight, and reject a dirty or stale non-control invoker. Pushing this
+  change does not update the shared checkout: its stale worktree recipe must never be invoked.
 
 ## Splitting parallel tasks to minimize conflicts
 

@@ -184,6 +184,7 @@ wt-new $slug $kind="feat":
     set -euo pipefail
     main_root="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
     project="$(basename "$main_root")"
+    scripts/program-supervisor/adapter-preflight.sh "$main_root"
     home_dir="$(cd && pwd -P)"
     slug_value="$slug"
     kind_value="$kind"
@@ -225,6 +226,7 @@ wt-rm $slug:
     set -euo pipefail
     main_root="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
     project="$(basename "$main_root")"
+    scripts/program-supervisor/adapter-preflight.sh "$main_root"
     home_dir="$(cd && pwd -P)"
     slug_value="$slug"
     tasks_root="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts root "$home_dir")"
