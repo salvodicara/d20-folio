@@ -11,6 +11,7 @@ import {
   rename,
   stat,
   unlink,
+  type FileHandle,
 } from "node:fs/promises";
 import { createHash, randomUUID } from "node:crypto";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
@@ -52,6 +53,7 @@ export interface RecoveryState {
   recoverableTornTail: boolean;
   abandonedStaging: string[];
   abandonedLockOwners: string[];
+  abandonedTemps: string[];
   staleLocks: string[];
   tornLedgers: string[];
 }
@@ -69,6 +71,8 @@ export interface RuntimeOptions {
   afterLockOwnerDurable?: (ownerPath: string) => void | Promise<void>;
   afterLockPublish?: (lockPath: string) => void | Promise<void>;
   afterLockAcquired?: (lockPath: string) => void | Promise<void>;
+  beforeLedgerAppend?: (ledgerPath: string) => void | Promise<void>;
+  beforeAtomicReplaceRename?: (temporaryPath: string) => void | Promise<void>;
   probePid?: (pid: number) => void;
 }
 
@@ -89,6 +93,14 @@ interface SecureFile {
   bytes: Buffer;
   device: number;
   inode: number;
+}
+
+interface OpenLedger {
+  handle: FileHandle;
+  path: string;
+  device: number;
+  inode: number;
+  analysis: LedgerAnalysis;
 }
 
 interface LockOwnership {
@@ -305,23 +317,42 @@ async function writeFreshFile(path: string, bytes: Uint8Array): Promise<void> {
   }
 }
 
-async function atomicReplace(path: string, bytes: Uint8Array): Promise<void> {
+async function atomicReplace(
+  path: string,
+  bytes: Uint8Array,
+  options: RuntimeOptions = {}
+): Promise<void> {
   const directory = dirname(path);
-  const temporary = join(directory, `.${basename(path)}.${process.pid}.tmp`);
+  const temporary = join(
+    directory,
+    `.${basename(path)}.${process.pid}-${randomUUID()}.tmp`
+  );
   const handle = await open(
     temporary,
     constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL,
     FILE_MODE
   );
+  const opened = await handle.stat();
+  const ownership: LockOwnership = {
+    path: temporary,
+    device: opened.dev,
+    inode: opened.ino,
+  };
   try {
     await handle.writeFile(bytes);
     await handle.chmod(FILE_MODE);
     await handle.sync();
-  } finally {
     await handle.close();
+    await options.beforeAtomicReplaceRename?.(temporary);
+    await rename(temporary, path);
+    await fsyncDirectory(directory);
+  } catch (error) {
+    await handle.close().catch(() => undefined);
+    if (await unlinkIfOwned(temporary, ownership)) {
+      await fsyncDirectory(directory);
+    }
+    throw error;
   }
-  await rename(temporary, path);
-  await fsyncDirectory(directory);
 }
 
 function cacheBytes(value: unknown): Buffer {
@@ -331,10 +362,11 @@ function cacheBytes(value: unknown): Buffer {
 async function writeCaches(
   root: string,
   snapshot: RuntimeSnapshot,
-  leases: LeaseFile
+  leases: LeaseFile,
+  options: RuntimeOptions = {}
 ): Promise<void> {
-  await atomicReplace(join(root, "state", "program.json"), cacheBytes(snapshot));
-  await atomicReplace(join(root, "state", "leases.json"), cacheBytes(leases));
+  await atomicReplace(join(root, "state", "program.json"), cacheBytes(snapshot), options);
+  await atomicReplace(join(root, "state", "leases.json"), cacheBytes(leases), options);
 }
 
 function parseJson(bytes: Buffer, label: string): unknown {
@@ -365,9 +397,7 @@ function validateRuntimeSnapshot(value: unknown): RuntimeSnapshot {
   return withRuntimeMetadata(validateSnapshot(stateValue), record.bootstrapFingerprint);
 }
 
-async function analyzeLedger(root: string): Promise<LedgerAnalysis> {
-  const ledgerPath = join(root, "ledger", "events.ndjson");
-  const { bytes } = await readSecureFile(ledgerPath, "Authoritative ledger");
+function analyzeLedgerBytes(bytes: Buffer): LedgerAnalysis {
   const finalNewline = bytes.lastIndexOf(0x0a);
   if (finalNewline < 0) {
     throw new Error(
@@ -383,6 +413,49 @@ async function analyzeLedger(root: string): Promise<LedgerAnalysis> {
     validPrefix,
     tornTail: tail.length === 0 ? null : tail,
   };
+}
+
+async function analyzeLedger(root: string): Promise<LedgerAnalysis> {
+  const ledgerPath = join(root, "ledger", "events.ndjson");
+  const { bytes } = await readSecureFile(ledgerPath, "Authoritative ledger");
+  return analyzeLedgerBytes(bytes);
+}
+
+async function openLedgerForAppend(root: string): Promise<OpenLedger> {
+  const path = join(root, "ledger", "events.ndjson");
+  const before = await lstat(path);
+  if (before.isSymbolicLink() || !before.isFile()) {
+    throw new Error(`Authoritative ledger must be a regular non-symlink file: ${path}`);
+  }
+  if ((before.mode & 0o7777) !== FILE_MODE) {
+    throw new Error(`Authoritative ledger must use mode 0600: ${path}`);
+  }
+  const handle = await open(
+    path,
+    constants.O_RDWR | constants.O_APPEND | constants.O_NOFOLLOW
+  );
+  try {
+    const opened = await handle.stat();
+    if (
+      !opened.isFile() ||
+      (opened.mode & 0o7777) !== FILE_MODE ||
+      opened.dev !== before.dev ||
+      opened.ino !== before.ino
+    ) {
+      throw new Error(`Authoritative ledger changed while it was being opened: ${path}`);
+    }
+    const bytes = await handle.readFile();
+    return {
+      handle,
+      path,
+      device: opened.dev,
+      inode: opened.ino,
+      analysis: analyzeLedgerBytes(bytes),
+    };
+  } catch (error) {
+    await handle.close().catch(() => undefined);
+    throw error;
+  }
 }
 
 function bootstrapFromLedger(first: ProgramEvent): CanonicalBootstrap {
@@ -470,6 +543,73 @@ async function listAbandonedLockOwners(
   return abandoned.sort();
 }
 
+async function validateAtomicTemp(
+  path: string,
+  target: "program.json" | "leases.json" | "events.ndjson"
+): Promise<void> {
+  const candidate = await readSecureFile(path, "Atomic-replace temp candidate");
+  if (target === "program.json") {
+    validateRuntimeSnapshot(parseJson(candidate.bytes, "Atomic-replace program temp"));
+    return;
+  }
+  if (target === "leases.json") {
+    validateLeaseFile(parseJson(candidate.bytes, "Atomic-replace leases temp"));
+    return;
+  }
+  const analysis = analyzeLedgerBytes(candidate.bytes);
+  if (analysis.tornTail) {
+    throw new Error("Atomic-replace ledger temp has a torn tail");
+  }
+  replayEvents(analysis.events);
+}
+
+async function listAbandonedTemps(
+  root: string,
+  options: RuntimeOptions
+): Promise<string[]> {
+  const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+  const pattern = new RegExp(`^\\.(.+)\\.(\\d+)-(${uuid})\\.tmp$`);
+  const directories = [
+    { name: "state", targets: new Set(["program.json", "leases.json"]) },
+    { name: "ledger", targets: new Set(["events.ndjson"]) },
+  ] as const;
+  const abandoned: string[] = [];
+  for (const directory of directories) {
+    const entries = await readdir(join(root, directory.name), { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.name.endsWith(".tmp")) continue;
+      const match = pattern.exec(entry.name);
+      if (!match) {
+        throw new Error(
+          `Atomic-replace temp has an invalid owner identity: ${entry.name}`
+        );
+      }
+      const target = match[1];
+      const pid = Number(match[2]);
+      if (!target || !directory.targets.has(target)) {
+        throw new Error(
+          `Atomic-replace temp target is mismatched for ${directory.name}: ${entry.name}`
+        );
+      }
+      if (!entry.isFile()) {
+        throw new Error(`Atomic-replace temp must be a regular file: ${entry.name}`);
+      }
+      if (!Number.isSafeInteger(pid) || pid <= 0) {
+        throw new Error(`Atomic-replace temp has an invalid owner PID: ${entry.name}`);
+      }
+      const path = join(root, directory.name, entry.name);
+      await validateAtomicTemp(
+        path,
+        target as "program.json" | "leases.json" | "events.ndjson"
+      );
+      if (!pidIsAlive(pid, options)) {
+        abandoned.push(`${directory.name}/${entry.name}`);
+      }
+    }
+  }
+  return abandoned.sort();
+}
+
 async function recoveryState(
   root: string,
   options: RuntimeOptions = {}
@@ -479,6 +619,7 @@ async function recoveryState(
     recoverableTornTail: false,
     abandonedStaging: await listAbandonedStaging(root, options),
     abandonedLockOwners: await listAbandonedLockOwners(root, options),
+    abandonedTemps: await listAbandonedTemps(root, options),
     staleLocks: entries
       .filter(
         (entry) =>
@@ -495,11 +636,11 @@ async function recoveryState(
   };
 }
 
-async function loadUnlocked(
+async function loadFromAnalysis(
   root: string,
+  analysis: LedgerAnalysis,
   options: RuntimeOptions = {}
 ): Promise<RuntimeProjection> {
-  const analysis = await analyzeLedger(root);
   if (analysis.tornTail) {
     throw new Error(
       `Authoritative ledger has a recoverable torn tail (${analysis.tornTail.length} bytes); run rebuild`
@@ -544,6 +685,13 @@ async function loadUnlocked(
     leases: projected.leases,
     recoveryState: await recoveryState(root, options),
   };
+}
+
+async function loadUnlocked(
+  root: string,
+  options: RuntimeOptions = {}
+): Promise<RuntimeProjection> {
+  return loadFromAnalysis(root, await analyzeLedger(root), options);
 }
 
 interface LockRecord {
@@ -868,59 +1016,68 @@ export async function appendEvent(
   options: RuntimeOptions = {}
 ): Promise<RuntimeProjection> {
   return withLock(root, options, async (physical) => {
-    await loadUnlocked(physical, options);
-    const existing = await analyzeLedger(physical);
-    if (existing.tornTail) {
-      throw new Error("Authoritative ledger has a recoverable torn tail; run rebuild");
-    }
-    replayEvents(existing.events);
-    const record = rejectAssignedCoordinates(eventInput);
-    const event = validateEventInput(
-      assignEventCoordinates(record, existing.events.length + 1, nowIso(options))
-    );
-    if (event.type === "bootstrap") {
-      throw new TypeError("Bootstrap cannot be appended after initialization");
-    }
-    replayEvents([...existing.events, event]);
-    const ledgerPath = join(physical, "ledger", "events.ndjson");
-    const handle = await open(
-      ledgerPath,
-      constants.O_WRONLY | constants.O_APPEND | constants.O_NOFOLLOW
-    );
-    const bytes = Buffer.from(`${JSON.stringify(event)}\n`, "utf8");
+    const ledger = await openLedgerForAppend(physical);
     try {
-      const metadata = await handle.stat();
-      if (!metadata.isFile() || (metadata.mode & 0o7777) !== FILE_MODE) {
-        throw new Error("Authoritative ledger must be a mode 0600 regular file");
+      const existing = ledger.analysis;
+      if (existing.tornTail) {
+        throw new Error("Authoritative ledger has a recoverable torn tail; run rebuild");
       }
-      const written = await handle.write(bytes, 0, bytes.length, null);
+      await loadFromAnalysis(physical, existing, options);
+      const record = rejectAssignedCoordinates(eventInput);
+      const event = validateEventInput(
+        assignEventCoordinates(record, existing.events.length + 1, nowIso(options))
+      );
+      if (event.type === "bootstrap") {
+        throw new TypeError("Bootstrap cannot be appended after initialization");
+      }
+      replayEvents([...existing.events, event]);
+      await options.beforeLedgerAppend?.(ledger.path);
+      const current = await lstat(ledger.path);
+      if (
+        current.isSymbolicLink() ||
+        !current.isFile() ||
+        (current.mode & 0o7777) !== FILE_MODE ||
+        current.dev !== ledger.device ||
+        current.ino !== ledger.inode
+      ) {
+        throw new Error(
+          "Authoritative ledger inode changed after replay and before append"
+        );
+      }
+      const bytes = Buffer.from(`${JSON.stringify(event)}\n`, "utf8");
+      const written = await ledger.handle.write(bytes, 0, bytes.length, null);
       if (written.bytesWritten !== bytes.length) {
         throw new Error(
           `Authoritative ledger append was torn after ${written.bytesWritten} bytes`
         );
       }
-      await handle.sync();
+      await ledger.handle.sync();
+      const appended = analyzeLedgerBytes(Buffer.concat([existing.bytes, bytes]));
+      if (appended.tornTail) {
+        throw new Error("Authoritative ledger append produced a recoverable torn tail");
+      }
+      const projected = replayEvents(appended.events);
+      const first = appended.events[0];
+      if (!first) throw new Error("Authoritative ledger is empty after append");
+      const canonical = bootstrapFromLedger(first);
+      await writeCaches(
+        physical,
+        withRuntimeMetadata(projected.snapshot, canonical.fingerprint),
+        projected.leases,
+        options
+      );
     } finally {
-      await handle.close();
+      await ledger.handle.close();
     }
-    const appended = await analyzeLedger(physical);
-    if (appended.tornTail) {
-      throw new Error("Authoritative ledger append produced a recoverable torn tail");
-    }
-    const projected = replayEvents(appended.events);
-    const first = appended.events[0];
-    if (!first) throw new Error("Authoritative ledger is empty after append");
-    const canonical = bootstrapFromLedger(first);
-    await writeCaches(
-      physical,
-      withRuntimeMetadata(projected.snapshot, canonical.fingerprint),
-      projected.leases
-    );
     return loadUnlocked(physical, options);
   });
 }
 
-async function preserveTornLedger(root: string, analysis: LedgerAnalysis): Promise<void> {
+async function preserveTornLedger(
+  root: string,
+  analysis: LedgerAnalysis,
+  options: RuntimeOptions
+): Promise<void> {
   const ledgerPath = join(root, "ledger", "events.ndjson");
   const original = await readSecureFile(ledgerPath, "Authoritative ledger");
   if (!original.bytes.equals(analysis.bytes)) {
@@ -930,7 +1087,7 @@ async function preserveTornLedger(root: string, analysis: LedgerAnalysis): Promi
   const evidencePath = join(root, "recovery", `events-torn-${hash}.ndjson`);
   await preserveExactLink(ledgerPath, evidencePath, original, "Torn ledger evidence");
   await fsyncDirectory(join(root, "recovery"));
-  await atomicReplace(ledgerPath, analysis.validPrefix);
+  await atomicReplace(ledgerPath, analysis.validPrefix, options);
 }
 
 export async function rebuildRuntime(
@@ -941,7 +1098,7 @@ export async function rebuildRuntime(
     let analysis = await analyzeLedger(physical);
     replayEvents(analysis.events);
     if (analysis.tornTail) {
-      await preserveTornLedger(physical, analysis);
+      await preserveTornLedger(physical, analysis, options);
       analysis = await analyzeLedger(physical);
       if (analysis.tornTail) {
         throw new Error("Authoritative ledger still has a torn tail after recovery");
@@ -954,7 +1111,8 @@ export async function rebuildRuntime(
     await writeCaches(
       physical,
       withRuntimeMetadata(projected.snapshot, canonical.fingerprint),
-      projected.leases
+      projected.leases,
+      options
     );
     return loadUnlocked(physical, options);
   });

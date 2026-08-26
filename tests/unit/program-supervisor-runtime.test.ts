@@ -313,6 +313,10 @@ describe("Program Supervisor atomic runtime", () => {
     expect(
       (await readdir(join(root, "state"))).some((name) => name.includes(".tmp"))
     ).toBe(false);
+    expect(
+      (await readdir(join(root, "ledger"))).some((name) => name.includes(".tmp"))
+    ).toBe(false);
+    expect(rebuilt.recoveryState.abandonedTemps).toEqual([]);
     expect((await stat(root)).mode & 0o777).toBe(0o700);
     for (const directory of ["state", "ledger", "handoffs", "evidence", "recovery"]) {
       expect((await stat(join(root, directory))).mode & 0o777).toBe(0o700);
@@ -426,6 +430,154 @@ describe("Program Supervisor atomic runtime", () => {
     await expect(lstat(join(root, ".write-lock"))).rejects.toMatchObject({
       code: "ENOENT",
     });
+  });
+
+  it("rejects a ledger pathname swap between replay and its one append write", async () => {
+    const root = await makeRoot("runtime-authority");
+    const foreignRoot = await makeRoot("runtime-foreign-authority");
+    const foreignBootstrap = bootstrapInput();
+    itemAt(foreignBootstrap.tasks, 1).charter.outcome =
+      "A different runtime authority must never receive this event.";
+    await initializeRuntime(root, bootstrapInput());
+    await initializeRuntime(foreignRoot, foreignBootstrap);
+
+    const ledgerPath = join(root, "ledger", "events.ndjson");
+    const displacedPath = join(root, "ledger", "events.displaced.ndjson");
+    const originalBytes = await readFile(ledgerPath);
+    const foreignBytes = await readFile(join(foreignRoot, "ledger", "events.ndjson"));
+
+    await expect(
+      appendEvent(root, transitionToVerificationInput(), {
+        beforeLedgerAppend: async (openedPath) => {
+          expect(basename(openedPath)).toBe("events.ndjson");
+          await rename(openedPath, join(dirname(openedPath), "events.displaced.ndjson"));
+          await writeFile(openedPath, foreignBytes, { mode: 0o600 });
+          await chmod(openedPath, 0o600);
+        },
+      })
+    ).rejects.toThrow(/ledger.*changed|inode.*append/i);
+
+    expect(await readFile(displacedPath)).toEqual(originalBytes);
+    expect(await readFile(ledgerPath)).toEqual(foreignBytes);
+    expect(parseEvents((await readFile(displacedPath)).toString("utf8"))).toHaveLength(1);
+    expect(parseEvents((await readFile(ledgerPath)).toString("utf8"))).toHaveLength(1);
+  });
+
+  it("removes only its unique atomic-replace temp after an ordinary failure", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+
+    await expect(
+      rebuildRuntime(root, {
+        beforeAtomicReplaceRename: () => {
+          throw new Error("injected cache replace failure");
+        },
+      })
+    ).rejects.toThrow(/injected cache replace failure/i);
+
+    expect(
+      (await readdir(join(root, "state"))).filter((name) => name.endsWith(".tmp"))
+    ).toEqual([]);
+    expect((await loadRuntime(root)).recoveryState.abandonedTemps).toEqual([]);
+  });
+
+  it("surfaces a real dead-child atomic-replace residue without deleting it", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    const source = [
+      `import { rebuildRuntime } from ${JSON.stringify(RUNTIME_URL)};`,
+      `await rebuildRuntime(process.argv[1], {`,
+      `  beforeAtomicReplaceRename: () => process.exit(94),`,
+      `});`,
+    ].join("\n");
+
+    const crashed = spawnSync(
+      process.execPath,
+      ["--input-type=module", "-e", source, root],
+      { cwd: process.cwd(), encoding: "utf8" }
+    );
+    expect(crashed.status).toBe(94);
+
+    const loaded = await loadRuntime(root, {
+      now: () => new Date(Date.now() + 31 * 60 * 1_000),
+      lockTimeoutMs: 25,
+    });
+    expect(loaded.recoveryState.abandonedTemps).toHaveLength(1);
+    const residue = itemAt(loaded.recoveryState.abandonedTemps, 0);
+    expect(residue).toMatch(
+      new RegExp(`^state/\\.program\\.json\\.${crashed.pid}-[0-9a-f-]{36}\\.tmp$`)
+    );
+    expect((await stat(join(root, residue))).isFile()).toBe(true);
+  });
+
+  it("validates dead temp residues and skips live owners while failing closed on ambiguity", async () => {
+    const uuid = "12345678-1234-4234-8234-123456789abc";
+    const deadPid = absentPid();
+
+    const classifiedRoot = await makeRoot();
+    await initializeRuntime(classifiedRoot, bootstrapInput());
+    const deadName = `.leases.json.${deadPid}-${uuid}.tmp`;
+    const liveName = `.program.json.${process.pid}-${uuid}.tmp`;
+    await writeFile(
+      join(classifiedRoot, "state", deadName),
+      await readFile(join(classifiedRoot, "state", "leases.json")),
+      { mode: 0o600 }
+    );
+    await writeFile(
+      join(classifiedRoot, "state", liveName),
+      await readFile(join(classifiedRoot, "state", "program.json")),
+      { mode: 0o600 }
+    );
+    const classified = await loadRuntime(classifiedRoot);
+    expect(classified.recoveryState.abandonedTemps).toEqual([`state/${deadName}`]);
+    expect((await stat(join(classifiedRoot, "state", deadName))).isFile()).toBe(true);
+    expect((await stat(join(classifiedRoot, "state", liveName))).isFile()).toBe(true);
+
+    const mismatchedRoot = await makeRoot();
+    await initializeRuntime(mismatchedRoot, bootstrapInput());
+    await writeSecureJson(
+      join(mismatchedRoot, "state", `.events.ndjson.${deadPid}-${uuid}.tmp`),
+      {}
+    );
+    await expect(loadRuntime(mismatchedRoot)).rejects.toThrow(
+      /atomic-replace temp.*target|mismatched/i
+    );
+
+    const unsafeRoot = await makeRoot();
+    await initializeRuntime(unsafeRoot, bootstrapInput());
+    const unsafePath = join(
+      unsafeRoot,
+      "ledger",
+      `.events.ndjson.${deadPid}-${uuid}.tmp`
+    );
+    await writeFile(
+      unsafePath,
+      await readFile(join(unsafeRoot, "ledger", "events.ndjson")),
+      { mode: 0o600 }
+    );
+    await chmod(unsafePath, 0o644);
+    await expect(loadRuntime(unsafeRoot)).rejects.toThrow(/mode 0600/i);
+
+    const indeterminateRoot = await makeRoot();
+    await initializeRuntime(indeterminateRoot, bootstrapInput());
+    const indeterminatePath = join(
+      indeterminateRoot,
+      "state",
+      `.program.json.42-${uuid}.tmp`
+    );
+    await writeFile(
+      indeterminatePath,
+      await readFile(join(indeterminateRoot, "state", "program.json")),
+      { mode: 0o600 }
+    );
+    await expect(
+      loadRuntime(indeterminateRoot, {
+        probePid: () => {
+          throw Object.assign(new Error("unknown PID state"), { code: "EINVAL" });
+        },
+      })
+    ).rejects.toThrow(/cannot prove.*PID.*EINVAL/i);
+    expect((await stat(indeterminatePath)).isFile()).toBe(true);
   });
 
   it.each(["missing", "altered"] as const)(
