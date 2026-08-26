@@ -178,8 +178,13 @@ unperformed handoff has no fabricated SHA.
   Test-only stabilization `5ed51097812b3cade71965e44011386ba2eba5c2` replaces two real
   bootstrap/Corepack cycles with the existing fake toolchain while preserving the real
   Just/adapter/`worktree.ts` proof. Its target now completes in about 1.9–2.2 seconds and the full
-  worktree file passes 22/22. The composed gate remains pending an exact rerun and is not green.
-  This updates only the F0 receipt and does not change the lease term or any test-risk ownership.
+  worktree file passes 22/22. On clean pre-receipt HEAD
+  `f54f01aaf8999db6224095d1c1023bd207c175cf` (tree
+  `d920ad4980bd181611086deacdce2860a60e64e3`), the exact composed gate then passed 801/801 Vitest
+  files and 18,611/18,611 tests, 7/7 Functions files and 129/129 Functions tests, typecheck, lint,
+  and production build. The sequential SRD-only gate passed 623/623 Vitest files and
+  13,035/13,035 tests, typecheck, and production build. This updates only the F0 receipt and does
+  not change the lease term or any test-risk ownership.
 - **Handoff:** release F0 only after remote integration proof or an evidence-backed
   blocker/recovery disposition. Until then B00 receives no writer lease and may
   not edit, rebase, or integrate its frozen candidate. After F0 integrates, B00

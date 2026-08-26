@@ -66,21 +66,22 @@ The shared checkout remains untouched even when its branch name is `main`.
   above.
 - **Dependencies:** approved operating model integrated at `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`;
   active F0 repository lease; clean retained K1/B00/private evidence; Tasks 0-3 implemented and
-  independently reviewed. Task 5 review/full gates and Task 6 integration/bootstrap remain open.
+  independently reviewed. Task 5 implementation, review, and both full gates are complete; Task 6
+  integration/bootstrap remains open.
 - **Ownership:** public repository `d20-folio`; worktree
   `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-supervisor-foundation`; branch
   `feat/program-supervisor-foundation`; base
-  `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`; pre-status fix HEAD
-  `5ed51097812b3cade71965e44011386ba2eba5c2` (tree
-  `9ce36ada2a649c520bf52056235bf64a9ee74040`); no private write. The charter owns
+  `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`; gated pre-receipt HEAD
+  `f54f01aaf8999db6224095d1c1023bd207c175cf` (tree
+  `d920ad4980bd181611086deacdce2860a60e64e3`); no private write. The charter owns
   `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
   `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, `scripts/program-supervisor/**`,
   `tests/unit/program-supervisor-{worktree,state,runtime}.test.ts`, and its uniquely named
   `.changeset/program-supervisor-*.md` files. Task 4 itself owns only the five tracked paths named
   in its plan.
-- **State and receipt:** `executing`; the tree was clean at pre-status fix HEAD
-  `5ed51097812b3cade71965e44011386ba2eba5c2` (tree
-  `9ce36ada2a649c520bf52056235bf64a9ee74040`). The first whole-branch evaluator required fixes.
+- **State and receipt:** `verification`; the tree was clean at gated pre-receipt HEAD
+  `f54f01aaf8999db6224095d1c1023bd207c175cf` (tree
+  `d920ad4980bd181611086deacdce2860a60e64e3`). The first whole-branch evaluator required fixes.
   Adapter authority (`4d39f30eb1296d7f25a4801c28467b143f86e38c`), dependency/lease state
   (`41114180176d67fda475bb0b060be630031ee9fb`), writer handoff
   (`a14b772739c38ce0f0e180bc84608cc5d16b7c81`), runtime crash integrity
@@ -134,9 +135,15 @@ The shared checkout remains untouched even when its branch name is `main`.
   Test-only stabilization `5ed51097812b3cade71965e44011386ba2eba5c2` reuses the existing fake
   toolchain instead of performing two real bootstrap/Corepack cycles while retaining the real
   Just/adapter/`worktree.ts` boundary proof. The target now completes in about 1.9–2.2 seconds and
-  the whole worktree file passes 22/22. This status commit is intentionally not self-embedded. The
-  composed gate is pending an exact rerun and has no green receipt; every changed candidate still
-  returns through exact independent review before verification.
+  the whole worktree file passes 22/22. On the exact clean pre-receipt candidate
+  `f54f01aaf8999db6224095d1c1023bd207c175cf`,
+  `scripts/program-supervisor/bootstrap-worktree.sh --run just ci` then exited zero with 801/801
+  Vitest files and 18,611/18,611 tests, 7/7 Functions files and 129/129 Functions tests, plus the
+  composed typecheck, lint, and production build. The immediately following
+  `scripts/program-supervisor/bootstrap-worktree.sh --run just ci-srd-only` exited zero with 623/623
+  Vitest files and 13,035/13,035 tests plus the SRD-only typecheck and production build. This
+  receipt commit changes only program/test status documentation and its Changeset; it is
+  intentionally not self-embedded and still requires exact read-only review before integration.
 - **First lease:** repository lease `F0`, holder `program-supervisor-foundation`, acquired
   `2026-08-26T01:38:26Z`, expires `2026-08-27T01:38:26Z`; active and writable. No runtime lease is
   claimed before Task 6 creates the runtime. The future reviewed runtime lease ID is
@@ -151,9 +158,10 @@ The shared checkout remains untouched even when its branch name is `main`.
   findings; the next review returned five Fix Round 3 findings; the next review returned six Fix
   Round 4 corrections; and the latest architecture review required the Fix Round 5 bare-Git pivot
   followed by a scoped correction review with four Important and two Minor findings, now addressed
-  above plus this authority reconciliation. The exact resulting candidate still owes a fresh
-  independent specification/correctness review; every further fix or changed base returns through
-  review before verification.
+  above plus this authority reconciliation. The whole-branch candidate at `e8e86e0e59047c7a3664413812d0271735391a0c`,
+  the test-only stabilization, and the pre-gate status correction each received an independent
+  PASS. The exact gate-receipt-only candidate still owes its final read-only review; every fix or
+  changed base returns through review before verification.
 - **Owner gate:** none for repository integration. Deployment, publication, billing/privacy, and
   any destructive action remain separate owner gates; Task 6 must not deploy.
 - **Cleanup:** retain this worktree and branch through remote integration, authority reconciliation,
