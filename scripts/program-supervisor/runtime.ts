@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { constants, type Dirent } from "node:fs";
 import {
@@ -35,6 +35,8 @@ const LOOSE_DIRECTORY_PATTERN = /^[0-9a-f]{2}$/;
 const LOOSE_OBJECT_PATTERN = /^[0-9a-f]{38}$/;
 const CONTENTION_ATTEMPTS = 40;
 const CONTENTION_DELAY_MS = 10;
+const MAX_GIT_OBJECT_BYTES = 64 * 1024 * 1024;
+const MAX_GIT_DIAGNOSTIC_BYTES = 1024 * 1024;
 const COMMIT_IDENTITY = "d20 Folio Program Supervisor <program-supervisor@localhost>";
 const STORE_CONFIG = Buffer.from(
   [
@@ -90,6 +92,8 @@ export interface RuntimeOptions {
   afterPublish?: (candidate: string, previous: string) => void | Promise<void>;
   /** Test-only coordination point after capturing the direct event ref. */
   afterTipRead?: (tip: string) => void | Promise<void>;
+  /** Test-only coordination point after the initial Git-residue scan. */
+  afterResidueScan?: () => void | Promise<void>;
   /** Test-only Git subprocess diagnostic for constant-process replay assertions. */
   onGitCommand?: (args: readonly string[]) => void;
 }
@@ -166,6 +170,12 @@ function canonicalJsonBytes(value: unknown): Buffer {
   return Buffer.from(`${JSON.stringify(canonicalValue(value))}\n`, "utf8");
 }
 
+function assertObjectSize(bytes: Uint8Array, label: string): void {
+  if (bytes.byteLength > MAX_GIT_OBJECT_BYTES) {
+    throw new Error(`${label} exceeds the ${MAX_GIT_OBJECT_BYTES}-byte Git object limit`);
+  }
+}
+
 function sha256(bytes: Uint8Array): string {
   return createHash("sha256").update(bytes).digest("hex");
 }
@@ -214,6 +224,7 @@ function canonicalBootstrap(value: unknown): CanonicalBootstrap {
   delete body.seq;
   delete body.at;
   const bytes = canonicalJsonBytes(body);
+  assertObjectSize(bytes, "Canonical bootstrap");
   return { body, bytes, fingerprint: sha256(bytes) };
 }
 
@@ -441,11 +452,28 @@ function names(entries: readonly Dirent[]): string[] {
   return entries.map(({ name }) => name).sort();
 }
 
+function isGitContentionName(name: string): boolean {
+  return name.endsWith(".lock") || name.startsWith("tmp_obj_");
+}
+
+function rejectContentionEntries(
+  entries: readonly { name: string }[],
+  label: string
+): void {
+  const reserved = entries.find(({ name }) => isGitContentionName(name));
+  if (reserved) {
+    throw new GitContentionError(
+      `${label} contains active Git-internal lock or temporary object: ${reserved.name}`
+    );
+  }
+}
+
 function expectNames(
   actual: readonly Dirent[],
   expected: readonly string[],
   label: string
 ): void {
+  rejectContentionEntries(actual, label);
   const current = names(actual);
   const wanted = [...expected].sort();
   if (JSON.stringify(current) !== JSON.stringify(wanted)) {
@@ -483,7 +511,7 @@ async function rejectSymlinksAndLocks(path: string): Promise<void> {
     if (metadata.isSymbolicLink()) {
       throw new Error(`Runtime store contains a symlink: ${child}`);
     }
-    if (entry.name.endsWith(".lock") || entry.name.startsWith("tmp_obj_")) {
+    if (isGitContentionName(entry.name)) {
       throw new GitContentionError(
         `Git-internal lock or temporary object shows cooperating activity: ${child}`
       );
@@ -512,6 +540,10 @@ async function retryGitContention<T>(operation: () => Promise<T>): Promise<T> {
 async function assertEmptyDirectory(path: string, label: string): Promise<void> {
   await assertDirectory(path, label);
   const entries = await readdir(path);
+  rejectContentionEntries(
+    entries.map((name) => ({ name })),
+    label
+  );
   if (entries.length !== 0) throw new Error(`${label} must be empty: ${path}`);
 }
 
@@ -519,6 +551,7 @@ async function validateLooseObjects(root: string): Promise<void> {
   const objectsRoot = join(root, "objects");
   await assertDirectory(objectsRoot, "Git objects directory");
   const entries = await readdir(objectsRoot, { withFileTypes: true });
+  rejectContentionEntries(entries, "Git objects directory");
   for (const entry of entries) {
     const path = join(objectsRoot, entry.name);
     if (entry.name === "info" || entry.name === "pack") {
@@ -528,7 +561,9 @@ async function validateLooseObjects(root: string): Promise<void> {
     if (!LOOSE_DIRECTORY_PATTERN.test(entry.name) || !entry.isDirectory()) {
       throw new Error(`Git objects directory contains unexpected storage: ${path}`);
     }
-    for (const object of await readdir(path, { withFileTypes: true })) {
+    const objects = await readdir(path, { withFileTypes: true });
+    rejectContentionEntries(objects, `Git loose-object directory ${path}`);
+    for (const object of objects) {
       const objectPath = join(path, object.name);
       if (!LOOSE_OBJECT_PATTERN.test(object.name) || !object.isFile()) {
         throw new Error(
@@ -540,46 +575,58 @@ async function validateLooseObjects(root: string): Promise<void> {
   }
 }
 
-async function validateStoreShape(root: string): Promise<string> {
+async function validateStoreShape(
+  root: string,
+  options: RuntimeOptions
+): Promise<string> {
   await assertDirectory(root, "Runtime root", DIRECTORY_MODE);
   await rejectSymlinksAndLocks(root);
-  const rootEntries = await readdir(root, { withFileTypes: true });
-  expectNames(rootEntries, ["HEAD", "config", "objects", "refs"], "Runtime root");
+  await options.afterResidueScan?.();
+  try {
+    const rootEntries = await readdir(root, { withFileTypes: true });
+    expectNames(rootEntries, ["HEAD", "config", "objects", "refs"], "Runtime root");
 
-  await assertRegularFile(join(root, "HEAD"), "Git HEAD", FILE_MODE);
-  await assertRegularFile(join(root, "config"), "Git config", FILE_MODE);
-  if (!(await readFile(join(root, "HEAD"))).equals(STORE_HEAD)) {
-    throw new Error(`Git HEAD must point exactly to ${EVENT_REF}`);
-  }
-  if (!(await readFile(join(root, "config"))).equals(STORE_CONFIG)) {
-    throw new Error("Git config is not the canonical private-store config");
-  }
+    await assertRegularFile(join(root, "HEAD"), "Git HEAD", FILE_MODE);
+    await assertRegularFile(join(root, "config"), "Git config", FILE_MODE);
+    if (!(await readFile(join(root, "HEAD"))).equals(STORE_HEAD)) {
+      throw new Error(`Git HEAD must point exactly to ${EVENT_REF}`);
+    }
+    if (!(await readFile(join(root, "config"))).equals(STORE_CONFIG)) {
+      throw new Error("Git config is not the canonical private-store config");
+    }
 
-  await validateLooseObjects(root);
-  const refsRoot = join(root, "refs");
-  await assertDirectory(refsRoot, "Git refs directory");
-  expectNames(
-    await readdir(refsRoot, { withFileTypes: true }),
-    ["heads", "program-supervisor", "tags"],
-    "Git refs directory"
-  );
-  await assertEmptyDirectory(join(refsRoot, "heads"), "Git heads directory");
-  await assertEmptyDirectory(join(refsRoot, "tags"), "Git tags directory");
-  const programRefs = join(refsRoot, "program-supervisor");
-  await assertDirectory(programRefs, "Program Supervisor refs directory");
-  expectNames(
-    await readdir(programRefs, { withFileTypes: true }),
-    ["events"],
-    "Program Supervisor refs directory"
-  );
-  const refPath = join(programRefs, "events");
-  await assertRegularFile(refPath, "Program Supervisor event ref");
-  const refBytes = await readFile(refPath);
-  const refText = refBytes.toString("utf8");
-  if (!/^[0-9a-f]{40}\n$/.test(refText)) {
-    throw new Error("Program Supervisor event ref must be one direct SHA-1 OID");
+    await validateLooseObjects(root);
+    const refsRoot = join(root, "refs");
+    await assertDirectory(refsRoot, "Git refs directory");
+    expectNames(
+      await readdir(refsRoot, { withFileTypes: true }),
+      ["heads", "program-supervisor", "tags"],
+      "Git refs directory"
+    );
+    await assertEmptyDirectory(join(refsRoot, "heads"), "Git heads directory");
+    await assertEmptyDirectory(join(refsRoot, "tags"), "Git tags directory");
+    const programRefs = join(refsRoot, "program-supervisor");
+    await assertDirectory(programRefs, "Program Supervisor refs directory");
+    expectNames(
+      await readdir(programRefs, { withFileTypes: true }),
+      ["events"],
+      "Program Supervisor refs directory"
+    );
+    const refPath = join(programRefs, "events");
+    await assertRegularFile(refPath, "Program Supervisor event ref");
+    const refBytes = await readFile(refPath);
+    const refText = refBytes.toString("utf8");
+    if (!/^[0-9a-f]{40}\n$/.test(refText)) {
+      throw new Error("Program Supervisor event ref must be one direct SHA-1 OID");
+    }
+    return refText.trim();
+  } catch (error) {
+    if (error instanceof GitContentionError) throw error;
+    // A cooperating writer may create a reserved entry after the initial scan.
+    // Reclassify that race so the caller retries inside the same bounded window.
+    await rejectSymlinksAndLocks(root);
+    throw error;
   }
-  return refText.trim();
 }
 
 async function validateGitView(
@@ -691,60 +738,196 @@ function commitTreeOid(bytes: Buffer): string {
   return match[1] as string;
 }
 
-async function readBatchObjects(
-  root: string,
-  requestedOids: readonly string[],
-  options: RuntimeOptions
-): Promise<Map<string, BatchObject>> {
-  const oids = [...new Set(requestedOids)];
-  const output = await runGit(root, ["cat-file", "--batch"], {
-    input: Buffer.from(`${oids.join("\n")}\n`, "utf8"),
-    runtime: options,
-  });
-  const result = new Map<string, BatchObject>();
-  let cursor = 0;
-  for (const expectedOid of oids) {
-    const headerEnd = output.indexOf("\n", cursor);
-    if (headerEnd < 0) throw new Error("Git cat-file batch output is truncated");
-    const header = output.subarray(cursor, headerEnd).toString("utf8");
-    const match = /^([0-9a-f]{40}) ([a-z]+) ([0-9]+)$/.exec(header);
-    if (!match || match[1] !== expectedOid) {
-      throw new Error(`Git cat-file batch returned an invalid object header: ${header}`);
-    }
-    const size = Number(match[3]);
-    const contentStart = headerEnd + 1;
-    const contentEnd = contentStart + size;
-    if (
-      !Number.isSafeInteger(size) ||
-      size < 0 ||
-      contentEnd >= output.length ||
-      output[contentEnd] !== 0x0a
-    ) {
-      throw new Error(`Git cat-file batch returned invalid object bytes: ${expectedOid}`);
-    }
-    result.set(expectedOid, {
-      oid: expectedOid,
-      type: match[2] as string,
-      bytes: output.subarray(contentStart, contentEnd),
-    });
-    cursor = contentEnd + 1;
+class BatchByteReader {
+  private readonly iterator: AsyncIterator<Uint8Array>;
+  private readonly chunks: Buffer[] = [];
+  private offset = 0;
+
+  constructor(source: AsyncIterable<Uint8Array>) {
+    this.iterator = source[Symbol.asyncIterator]();
   }
-  if (cursor !== output.length) {
-    throw new Error("Git cat-file batch returned unexpected trailing bytes");
+
+  private async fill(): Promise<boolean> {
+    while (this.chunks.length === 0) {
+      const next = await this.iterator.next();
+      if (next.done) return false;
+      const chunk = Buffer.from(next.value);
+      if (chunk.length > 0) this.chunks.push(chunk);
+    }
+    return true;
   }
-  return result;
+
+  private consume(count: number): void {
+    const chunk = this.chunks[0];
+    if (!chunk || count < 0 || this.offset + count > chunk.length) {
+      throw new Error("Git cat-file batch parser lost its frame boundary");
+    }
+    this.offset += count;
+    if (this.offset === chunk.length) {
+      this.chunks.shift();
+      this.offset = 0;
+    }
+  }
+
+  async readLine(limit: number): Promise<Buffer> {
+    const pieces: Buffer[] = [];
+    let size = 0;
+    for (;;) {
+      if (!(await this.fill())) {
+        throw new Error("Git cat-file batch output is truncated");
+      }
+      const chunk = this.chunks[0] as Buffer;
+      const newline = chunk.indexOf(0x0a, this.offset);
+      const end = newline < 0 ? chunk.length : newline;
+      const piece = chunk.subarray(this.offset, end);
+      size += piece.length;
+      if (size > limit) throw new Error("Git cat-file batch header is oversized");
+      pieces.push(piece);
+      this.consume(end - this.offset + (newline < 0 ? 0 : 1));
+      if (newline >= 0) return Buffer.concat(pieces, size);
+    }
+  }
+
+  async readExactly(size: number): Promise<Buffer> {
+    const result = Buffer.allocUnsafe(size);
+    let cursor = 0;
+    while (cursor < size) {
+      if (!(await this.fill())) {
+        throw new Error("Git cat-file batch output is truncated");
+      }
+      const chunk = this.chunks[0] as Buffer;
+      const available = chunk.length - this.offset;
+      const count = Math.min(available, size - cursor);
+      chunk.copy(result, cursor, this.offset, this.offset + count);
+      this.consume(count);
+      cursor += count;
+    }
+    return result;
+  }
+
+  async expectEnd(): Promise<void> {
+    if (this.chunks.length > 0) {
+      throw new Error("Git cat-file batch returned unexpected trailing bytes");
+    }
+    for (;;) {
+      const next = await this.iterator.next();
+      if (next.done) return;
+      if (next.value.byteLength > 0) {
+        throw new Error("Git cat-file batch returned unexpected trailing bytes");
+      }
+    }
+  }
 }
 
-function batchObject(
-  objects: ReadonlyMap<string, BatchObject>,
-  oid: string,
-  type: string
-): BatchObject {
-  const object = objects.get(oid);
-  if (!object || object.type !== type) {
-    throw new Error(`Git object ${oid} must resolve to a ${type}`);
+function gitErrorOutput(chunks: readonly Buffer[]): Buffer {
+  return Buffer.concat(chunks);
+}
+
+async function streamBatchObjects(
+  root: string,
+  requestedOids: readonly string[],
+  options: RuntimeOptions,
+  consume: (object: BatchObject, index: number) => void | Promise<void>
+): Promise<void> {
+  if (requestedOids.some((oid) => !OID_PATTERN.test(oid))) {
+    throw new Error("Git cat-file batch request contains an invalid SHA-1 OID");
   }
-  return object;
+  await assertTrustedGit();
+  const args = ["cat-file", "--batch"] as const;
+  options.onGitCommand?.(args);
+  const child = spawn(GIT_EXECUTABLE, [`--git-dir=${root}`, ...args], {
+    env: GIT_BASE_ENV,
+    shell: false,
+    stdio: ["pipe", "pipe", "pipe"],
+    windowsHide: true,
+  });
+  const stderrChunks: Buffer[] = [];
+  let stderrBytes = 0;
+  child.stderr.on("data", (value: Buffer) => {
+    if (stderrBytes >= MAX_GIT_DIAGNOSTIC_BYTES) return;
+    const bytes = Buffer.from(value);
+    const kept = bytes.subarray(0, MAX_GIT_DIAGNOSTIC_BYTES - stderrBytes);
+    stderrChunks.push(kept);
+    stderrBytes += kept.length;
+  });
+  child.stdin.on("error", () => {
+    // The command exit and bounded stderr carry the authoritative failure.
+  });
+  const closed = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>(
+    (resolveExit, rejectExit) => {
+      child.once("error", rejectExit);
+      child.once("close", (code, signal) => resolveExit({ code, signal }));
+    }
+  );
+  child.stdin.end(Buffer.from(`${requestedOids.join("\n")}\n`, "utf8"));
+
+  const reader = new BatchByteReader(child.stdout);
+  let parserError: unknown;
+  try {
+    for (const [index, expectedOid] of requestedOids.entries()) {
+      const header = (await reader.readLine(256)).toString("utf8");
+      const match = /^([0-9a-f]{40}) ([a-z]+) ([0-9]+)$/.exec(header);
+      if (!match || match[1] !== expectedOid) {
+        throw new Error(
+          `Git cat-file batch returned an invalid object header: ${header}`
+        );
+      }
+      const size = Number(match[3]);
+      if (!Number.isSafeInteger(size) || size < 0) {
+        throw new Error(`Git cat-file batch returned an invalid object size: ${header}`);
+      }
+      if (size > MAX_GIT_OBJECT_BYTES) {
+        throw new Error(
+          `Git object ${expectedOid} exceeds the ${MAX_GIT_OBJECT_BYTES}-byte object limit`
+        );
+      }
+      const bytes = await reader.readExactly(size);
+      const terminator = await reader.readExactly(1);
+      if (terminator[0] !== 0x0a) {
+        throw new Error(
+          `Git cat-file batch returned invalid object bytes: ${expectedOid}`
+        );
+      }
+      await consume({ oid: expectedOid, type: match[2] as string, bytes }, index);
+    }
+    await reader.expectEnd();
+  } catch (error) {
+    parserError = error;
+    child.kill("SIGKILL");
+    child.stdout.destroy();
+    child.stdin.destroy();
+  }
+
+  let exit;
+  try {
+    exit = await closed;
+  } catch (error) {
+    throw new GitCommandError(
+      "Trusted Git cat-file batch failed to start",
+      Buffer.alloc(0),
+      gitErrorOutput(stderrChunks),
+      error
+    );
+  }
+  if (parserError) {
+    if (parserError instanceof Error) throw parserError;
+    throw new Error("Git cat-file batch parser failed", { cause: parserError });
+  }
+  if (exit.code !== 0) {
+    const stderr = gitErrorOutput(stderrChunks);
+    throw new GitCommandError(
+      `Trusted Git command failed: ${stderr.toString("utf8").trim()}`,
+      Buffer.alloc(0),
+      stderr
+    );
+  }
+}
+
+function requireBatchType(object: BatchObject, type: string): Buffer {
+  if (object.type !== type) {
+    throw new Error(`Git object ${object.oid} must resolve to a ${type}`);
+  }
+  return object.bytes;
 }
 
 async function loadStoreAttempt(
@@ -752,7 +935,7 @@ async function loadStoreAttempt(
   options: RuntimeOptions,
   requestedTip?: string
 ): Promise<LoadedStore> {
-  const capturedTip = await validateStoreShape(root);
+  const capturedTip = await validateStoreShape(root, options);
   await options.afterTipRead?.(capturedTip);
   const tip = requestedTip ?? capturedTip;
   if (!OID_PATTERN.test(tip)) throw new Error("Validation tip is not a SHA-1 OID");
@@ -779,15 +962,15 @@ async function loadStoreAttempt(
     }
   }
 
-  const commitObjects = await readBatchObjects(root, commits, options);
-  const commitBytes = commits.map(
-    (commit) => batchObject(commitObjects, commit, "commit").bytes
-  );
+  const commitBytes: Buffer[] = [];
+  await streamBatchObjects(root, commits, options, (object) => {
+    commitBytes.push(requireBatchType(object, "commit"));
+  });
   const treeOids = commitBytes.map(commitTreeOid);
-  const treeObjects = await readBatchObjects(root, treeOids, options);
-  const treeEntries = treeOids.map((tree) =>
-    parseTree(batchObject(treeObjects, tree, "tree").bytes)
-  );
+  const treeEntries: Array<Array<{ oid: string; name: string }>> = [];
+  await streamBatchObjects(root, treeOids, options, (object) => {
+    treeEntries.push(parseTree(requireBatchType(object, "tree")));
+  });
   for (const [index, entries] of treeEntries.entries()) {
     if (
       entries.length !== 2 ||
@@ -807,31 +990,36 @@ async function loadStoreAttempt(
     throw new Error("Immutable bootstrap blob changed within the event chain");
   }
   const eventOids = treeEntries.map((entries) => entries[1]?.oid as string);
-  const blobObjects = await readBatchObjects(
+  let immutableBootstrap: Buffer | undefined;
+  const events: ProgramEvent[] = [];
+  await streamBatchObjects(
     root,
     [immutableBootstrapOid, ...eventOids],
-    options
-  );
-  const immutableBootstrap = batchObject(
-    blobObjects,
-    immutableBootstrapOid,
-    "blob"
-  ).bytes;
-
-  const events: ProgramEvent[] = [];
-  for (const [index, commit] of commits.entries()) {
-    const eventBytes = batchObject(blobObjects, eventOids[index] as string, "blob").bytes;
-    const event = parseCanonicalEvent(eventBytes, `event ${index + 1}`);
-    if (event.seq !== index + 1) {
-      throw new Error(`Event sequence is not contiguous at commit ${commit}`);
+    options,
+    (object, batchIndex) => {
+      const bytes = requireBatchType(object, "blob");
+      if (batchIndex === 0) {
+        immutableBootstrap = bytes;
+        return;
+      }
+      const index = batchIndex - 1;
+      const commit = commits[index] as string;
+      const eventBytes = bytes;
+      const event = parseCanonicalEvent(eventBytes, `event ${index + 1}`);
+      if (event.seq !== index + 1) {
+        throw new Error(`Event sequence is not contiguous at commit ${commit}`);
+      }
+      parseCommit(
+        commitBytes[index] as Buffer,
+        treeOids[index] as string,
+        index === 0 ? [] : [commits[index - 1] as string],
+        event
+      );
+      events.push(event);
     }
-    parseCommit(
-      commitBytes[index] as Buffer,
-      treeOids[index] as string,
-      index === 0 ? [] : [commits[index - 1] as string],
-      event
-    );
-    events.push(event);
+  );
+  if (!immutableBootstrap) {
+    throw new Error("Event chain is missing its immutable bootstrap bytes");
   }
 
   const first = events[0];
@@ -1069,7 +1257,9 @@ export async function initializeRuntime(
   }
   replayEvents([event]);
   const bootstrapOid = await hashBlob(root, canonical.bytes);
-  const eventOid = await hashBlob(root, canonicalJsonBytes(event));
+  const eventBytes = canonicalJsonBytes(event);
+  assertObjectSize(eventBytes, "Bootstrap event");
+  const eventOid = await hashBlob(root, eventBytes);
   const treeOid = await createEventTree(root, bootstrapOid, eventOid);
   const commitOid = await createEventCommit(root, treeOid, null, event);
   await publish(root, commitOid, ZERO_OID);
@@ -1096,8 +1286,10 @@ export async function appendEvent(
     const event = validateEventInput(
       assignEventCoordinates(body, loaded.events.length + 1, nowIso(options))
     );
+    const eventBytes = canonicalJsonBytes(event);
+    assertObjectSize(eventBytes, "Program event");
     replayEvents([...loaded.events, event]);
-    const eventOid = await hashBlob(root, canonicalJsonBytes(event));
+    const eventOid = await hashBlob(root, eventBytes);
     const treeOid = await createEventTree(root, loaded.bootstrapOid, eventOid);
     const candidate = await createEventCommit(root, treeOid, previous, event);
     await options.beforePublish?.(candidate, previous);

@@ -67,6 +67,7 @@ const GIT_TEST_ENV = {
 const temporaryParents: string[] = [];
 const activeChildren: ReturnType<typeof spawn>[] = [];
 type RuntimeTestOptions = RuntimeOptions & {
+  afterResidueScan?: () => void | Promise<void>;
   afterTipRead?: (tip: string) => void | Promise<void>;
   onGitCommand?: (args: readonly string[]) => void;
 };
@@ -622,6 +623,30 @@ describe("Program Supervisor private bare-Git runtime", () => {
     );
   });
 
+  it("reclassifies real Git activity that begins after the residue scan as transient contention", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    const previous = refTip(root);
+    const next = createEvidenceCommit(root, previous, "post-scan-writer", 2);
+    let started = 0;
+    let commit: Promise<void> | undefined;
+
+    const loaded = await loadRuntimeWithOptions(root, {
+      afterResidueScan: async () => {
+        if (started > 0) return;
+        started += 1;
+        const transaction = await prepareRefTransaction(root, next, previous);
+        commit = delay(50).then(() => transaction.commit());
+      },
+    });
+    await commit;
+
+    expect(started).toBe(1);
+    expect(loaded.store.tip).toBe(next);
+    expect(loaded.snapshot.lastEventSeq).toBe(2);
+    expect(loaded.snapshot.tasks[0]?.evidence.at(-1)?.id).toBe("post-scan-writer");
+  });
+
   it("validates one captured ref linearization point when a cooperating writer advances later", async () => {
     const root = await makeRoot();
     await initializeRuntime(root, bootstrapInput());
@@ -896,6 +921,39 @@ describe("Program Supervisor private bare-Git runtime", () => {
     expect(named(longCommands, "cat-file")).toHaveLength(3);
     expect(longCommands).toHaveLength(shortCommands.length);
   }, 30_000);
+
+  it("publishes and replays a valid event larger than the former 32 MiB batch buffer", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    const receiptBytes = 33 * 1024 * 1024;
+    const event = evidenceInput("large-event");
+    event.evidence.receipt = "x".repeat(receiptBytes);
+
+    const appended = await appendEvent(root, event, {
+      now: () => new Date("2026-08-26T02:05:00.000Z"),
+    });
+    const loaded = await loadRuntime(root);
+    const rebuilt = await rebuildRuntime(root);
+
+    expect(git(root, ["rev-list", "--count", EVENT_REF])).toBe("2");
+    expect(appended.snapshot.lastEventSeq).toBe(2);
+    expect(loaded.snapshot.tasks[0]?.evidence.at(-1)?.receipt).toHaveLength(receiptBytes);
+    expect(rebuilt).toEqual(loaded);
+  }, 120_000);
+
+  it("rejects an event above the object bound before publishing it", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    const previous = refTip(root);
+    const event = evidenceInput("oversized-event");
+    event.evidence.receipt = "x".repeat(64 * 1024 * 1024);
+
+    await expect(appendEvent(root, event)).rejects.toThrow(/object limit/i);
+
+    expect(refTip(root)).toBe(previous);
+    expect(git(root, ["rev-list", "--count", EVENT_REF])).toBe("1");
+    expect((await loadRuntime(root)).snapshot.lastEventSeq).toBe(1);
+  }, 120_000);
 
   it.each([
     ["non-canonical config", "config", "\n[include]\n\tpath = /tmp/evil\n"],
