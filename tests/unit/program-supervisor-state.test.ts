@@ -318,6 +318,19 @@ describe("Program Supervisor bootstrap and task projection", () => {
     );
   });
 
+  it("rejects bootstrap and created-task repository authority that diverges from the manifest", () => {
+    const bootstrap = bootstrapFixture();
+    bootstrap.authority.testPortfolioRoadmap.blob = SHA_C;
+    expect(() => validateEventInput(bootstrap)).toThrow(/global.*authority|manifest/i);
+
+    const successor = bootstrapTask("task-successor", "scripts/successor");
+    itemAt(successor.charter.authority, 1).blob = SHA_C;
+    successor.charter.ownership.repositoryLease.ownerDocumentBlob = SHA_C;
+    expect(() =>
+      replayEvents([bootstrapFixture(), event(2, "task-created", { task: successor })])
+    ).toThrow(/global.*authority|manifest/i);
+  });
+
   it("requires contiguous sequences from one, unique event IDs, and one bootstrap", () => {
     expect(() =>
       replayEvents([
@@ -436,6 +449,15 @@ describe("Program Supervisor lease authority and WIP", () => {
     ).toThrow(/overlap.*scripts/i);
   });
 
+  it.each(["scripts/**/**", "scripts/**/generated", "scripts/*/generated"])(
+    "rejects malformed ownership wildcard %s",
+    (path) => {
+      const fixture = bootstrapFixture();
+      itemAt(fixture.tasks, 0).charter.ownership.paths = [path];
+      expect(() => validateEventInput(fixture)).toThrow(/normalized.*path|wildcard/);
+    }
+  );
+
   it.each([
     ["repository", "/repo/other"],
     ["ownerDocumentPath", "docs/OTHER.md"],
@@ -476,7 +498,7 @@ describe("Program Supervisor lease authority and WIP", () => {
     ).toThrow(/paths|unexpected key/);
   });
 
-  it("renews only an active unchanged identity before expiry and advances only reconciled hashes", () => {
+  it("renews only an active unchanged identity and globally reconciled pointer", () => {
     const acquired = lease("task-a");
     const renewal = event(
       3,
@@ -490,8 +512,8 @@ describe("Program Supervisor lease authority and WIP", () => {
         readOnly: acquired.readOnly,
         previousExpiresAt: acquired.expiresAt,
         expiresAt: "2026-08-27T02:00:00.000Z",
-        authorityPointer: authorityPointer(SHA_C, SHA_D),
-        proof: "Owner document and main SHA reconciled before renewal.",
+        authorityPointer: authorityPointer(),
+        proof: "The globally reconciled authority pointer is unchanged.",
       },
       "2026-08-26T03:00:00.000Z"
     );
@@ -501,8 +523,14 @@ describe("Program Supervisor lease authority and WIP", () => {
     expect(result.leases.leases[0]).toEqual({
       taskId: "task-a",
       expiresAt: "2026-08-27T02:00:00.000Z",
-      authorityPointer: authorityPointer(SHA_C, SHA_D),
+      authorityPointer: authorityPointer(),
     });
+
+    const splitAuthority = clone(renewal);
+    splitAuthority.authorityPointer = authorityPointer(SHA_C, SHA_D);
+    expect(() =>
+      replayEvents([bootstrapFixture(), acquire(2, acquired), splitAuthority])
+    ).toThrow(/authority-reconciled|globally reconciled pointer/);
 
     for (const [field, value] of [
       ["holder", "other-holder"],
@@ -532,6 +560,79 @@ describe("Program Supervisor lease authority and WIP", () => {
     expect(() =>
       replayEvents([bootstrapFixture(), acquire(2, acquired), unbounded])
     ).toThrow(/24 hours/);
+  });
+
+  it("does not let one of two leases split their shared repository authority", () => {
+    const first = lease("task-a");
+    const second = {
+      ...lease("task-b"),
+      acquiredAt: "2026-08-26T03:00:00.000Z",
+    };
+    const splitRenewal = event(
+      4,
+      "lease-renewed",
+      {
+        taskId: "task-a",
+        leaseId: first.leaseId,
+        holder: first.holder,
+        agentId: first.agentId,
+        role: first.role,
+        readOnly: first.readOnly,
+        previousExpiresAt: first.expiresAt,
+        expiresAt: "2026-08-27T02:00:00.000Z",
+        authorityPointer: authorityPointer(SHA_C, SHA_D),
+        proof: "Attempted one-sided owner advancement.",
+      },
+      "2026-08-26T04:00:00.000Z"
+    );
+
+    expect(() =>
+      replayEvents([
+        bootstrapFixture(),
+        acquire(2, first),
+        acquire(3, second),
+        splitRenewal,
+      ])
+    ).toThrow(/authority-reconciled|globally reconciled pointer/);
+  });
+
+  it("reconciles shared owner identity across manifest, charters, leases, and cache atomically", () => {
+    const first = lease("task-a");
+    const second = {
+      ...lease("task-b"),
+      acquiredAt: "2026-08-26T03:00:00.000Z",
+    };
+    const result = replayEvents([
+      bootstrapFixture(),
+      acquire(2, first),
+      acquire(3, second),
+      event(4, "authority-reconciled", {
+        previousMainSha: SHA_B,
+        mainSha: SHA_D,
+        changes: [{ path: LEASE_OWNER_PATH, previousBlob: SHA_A, blob: SHA_C }],
+        proof: "Every shared repository owner pointer reconciled together.",
+      }),
+    ]);
+
+    expect(result.snapshot.authority).toMatchObject({
+      mainSha: SHA_D,
+      testPortfolioRoadmap: { path: LEASE_OWNER_PATH, blob: SHA_C },
+    });
+    for (const projectedTask of result.snapshot.tasks) {
+      expect(projectedTask.charter.ownership.repositoryLease).toMatchObject({
+        ownerDocumentBlob: SHA_C,
+        mainSha: SHA_D,
+      });
+      if (projectedTask.activeLease) {
+        expect(projectedTask.activeLease.authorityPointer).toEqual(
+          authorityPointer(SHA_C, SHA_D)
+        );
+      }
+    }
+    expect(result.leases.leases.map(({ authorityPointer }) => authorityPointer)).toEqual([
+      authorityPointer(SHA_C, SHA_D),
+      authorityPointer(SHA_C, SHA_D),
+    ]);
   });
 });
 
@@ -719,6 +820,128 @@ describe("Program Supervisor lease lifecycle and state transitions", () => {
       ])
     ).toThrow(/owner-gate/);
   });
+
+  it("records owner-gate decisions only while the named task is awaiting that gate", () => {
+    const fixture = bootstrapFixture();
+    itemAt(fixture.tasks, 0).charter.ownerGate = {
+      required: true,
+      name: "product-owner",
+    };
+
+    expect(() =>
+      replayEvents([
+        fixture,
+        event(2, "owner-gate-recorded", {
+          taskId: "task-a",
+          gate: "product-owner",
+          decision: "approved",
+          receipt: "Stale approval outside verification.",
+        }),
+      ])
+    ).toThrow(/verification|awaiting/i);
+  });
+
+  it("rejects duplicate gate decisions and honors the latest rejection", () => {
+    const fixture = bootstrapFixture();
+    const task = itemAt(fixture.tasks, 0);
+    task.charter.ownerGate = { required: true, name: "product-owner" };
+    task.state = "verification";
+    task.receipt = "verification complete";
+    const approved = event(2, "owner-gate-recorded", {
+      taskId: "task-a",
+      gate: "product-owner",
+      decision: "approved",
+      receipt: "Owner approval A.",
+    });
+
+    expect(() =>
+      replayEvents([
+        fixture,
+        approved,
+        { ...approved, seq: 3, eventId: "event-3-owner-gate-recorded" },
+      ])
+    ).toThrow(/duplicate.*decision/i);
+
+    expect(() =>
+      replayEvents([
+        fixture,
+        approved,
+        event(3, "owner-gate-recorded", {
+          taskId: "task-a",
+          gate: "product-owner",
+          decision: "rejected",
+          receipt: "Owner rejection supersedes approval A.",
+        }),
+        event(4, "state-transitioned", {
+          taskId: "task-a",
+          from: "verification",
+          to: "owner-gate",
+          receipt: "Attempted stale approval reuse.",
+          ownerGate: "product-owner",
+        }),
+      ])
+    ).toThrow(/latest.*approved|rejected/i);
+  });
+
+  it("does not reuse an approval from an earlier verification cycle", () => {
+    const fixture = bootstrapFixture();
+    const task = itemAt(fixture.tasks, 0);
+    task.charter.ownerGate = { required: true, name: "product-owner" };
+    task.state = "verification";
+    task.receipt = "verification cycle one";
+    const active = lease("task-a");
+    active.acquiredAt = fixture.at;
+    fixture.activeLeases.push(active);
+
+    expect(() =>
+      replayEvents([
+        fixture,
+        event(2, "owner-gate-recorded", {
+          taskId: "task-a",
+          gate: "product-owner",
+          decision: "approved",
+          receipt: "Cycle one approval.",
+        }),
+        event(3, "state-transitioned", {
+          taskId: "task-a",
+          from: "verification",
+          to: "executing",
+          receipt: "Cycle one verification failed.",
+          fixBack: { kind: "failed-gate", proof: "typecheck failed" },
+        }),
+        event(4, "task-reconciled", {
+          taskId: "task-a",
+          repository: REPOSITORY,
+          worktree: "/worktrees/task-a",
+          branch: "feat/task-a",
+          previousBaseSha: SHA_B,
+          previousHeadSha: SHA_B,
+          baseSha: SHA_B,
+          headSha: SHA_E,
+          proof: "Fix commit changed HEAD.",
+        }),
+        event(5, "state-transitioned", {
+          taskId: "task-a",
+          from: "executing",
+          to: "review",
+          receipt: "review cycle two",
+        }),
+        event(6, "state-transitioned", {
+          taskId: "task-a",
+          from: "review",
+          to: "verification",
+          receipt: "verification cycle two",
+        }),
+        event(7, "state-transitioned", {
+          taskId: "task-a",
+          from: "verification",
+          to: "owner-gate",
+          receipt: "Attempted cycle one approval reuse.",
+          ownerGate: "product-owner",
+        }),
+      ])
+    ).toThrow(/current verification|latest.*approved|stale/i);
+  });
 });
 
 describe("Program Supervisor deterministic event coverage", () => {
@@ -811,7 +1034,12 @@ describe("Program Supervisor deterministic event coverage", () => {
         to: "integrated",
         receipt: "remote SHA and owner approval proven",
       }),
-      event(16, "cleanup-recorded", {
+      event(16, "lease-released", {
+        taskId: "task-a",
+        leaseId: active.leaseId,
+        proof: "Integrated remote SHA closes the runtime lease.",
+      }),
+      event(17, "cleanup-recorded", {
         taskId: "task-a",
         removed: ["worktree", "branch"],
         remoteProof: "origin/main contains the reviewed SHA",
@@ -823,7 +1051,7 @@ describe("Program Supervisor deterministic event coverage", () => {
     const task = itemAt(result.snapshot.tasks, 0);
     expect(task).toMatchObject({
       state: "integrated",
-      updatedAt: "2026-08-26T16:00:00.000Z",
+      updatedAt: "2026-08-26T17:00:00.000Z",
       cleanup: {
         removed: ["worktree", "branch"],
         remoteProof: "origin/main contains the reviewed SHA",
@@ -848,9 +1076,13 @@ describe("Program Supervisor deterministic event coverage", () => {
       path: LEASE_OWNER_PATH,
       blob: SHA_F,
     });
-    expect(itemAt(result.leases.leases, 0).authorityPointer).toEqual(
-      authorityPointer(SHA_F, SHA_C)
-    );
+    expect(result.leases.leases).toEqual([]);
+    for (const projectedTask of result.snapshot.tasks) {
+      expect(projectedTask.charter.ownership.repositoryLease).toMatchObject({
+        ownerDocumentBlob: SHA_F,
+        mainSha: SHA_C,
+      });
+    }
   });
 
   it("rejects reconciliation without exact Git/worktree evidence", () => {
@@ -926,6 +1158,181 @@ describe("Program Supervisor deterministic event coverage", () => {
     ).not.toThrow();
   });
 
+  it("preserves exact verification fix-back identity and rejects no-op reconciliation", () => {
+    const active = lease("task-a");
+    const prefix = [
+      bootstrapFixture(),
+      acquire(2, active),
+      event(3, "dispatch-recorded", {
+        taskId: "task-a",
+        leaseId: active.leaseId,
+        receipt: "dispatch",
+      }),
+      event(4, "state-transitioned", {
+        taskId: "task-a",
+        from: "executing",
+        to: "review",
+        receipt: "review",
+      }),
+      event(5, "state-transitioned", {
+        taskId: "task-a",
+        from: "review",
+        to: "verification",
+        receipt: "review passed",
+      }),
+      event(6, "state-transitioned", {
+        taskId: "task-a",
+        from: "verification",
+        to: "executing",
+        receipt: "verification failed",
+        fixBack: { kind: "failed-gate", proof: "typecheck failed" },
+      }),
+    ];
+    const fixedBack = replayEvents(prefix);
+    expect(
+      (itemAt(fixedBack.snapshot.tasks, 0) as unknown as Record<string, unknown>)[
+        "pendingReconciliation"
+      ]
+    ).toEqual({
+      kind: "failed-gate",
+      proof: "typecheck failed",
+      baseSha: SHA_B,
+      headSha: SHA_B,
+    });
+
+    expect(() =>
+      replayEvents([
+        ...prefix,
+        event(7, "task-reconciled", {
+          taskId: "task-a",
+          repository: REPOSITORY,
+          worktree: "/worktrees/task-a",
+          branch: "feat/task-a",
+          previousBaseSha: SHA_B,
+          previousHeadSha: SHA_B,
+          baseSha: SHA_B,
+          headSha: SHA_B,
+          proof: "No identity changed.",
+        }),
+      ])
+    ).toThrow(/identity.*change|no-op/i);
+  });
+
+  it("clears pending reconciliation when expiry atomically blocks fix-back work", () => {
+    const active = lease("task-a");
+    const result = replayEvents([
+      bootstrapFixture(),
+      acquire(2, active),
+      event(3, "dispatch-recorded", {
+        taskId: "task-a",
+        leaseId: active.leaseId,
+        receipt: "dispatch",
+      }),
+      event(4, "state-transitioned", {
+        taskId: "task-a",
+        from: "executing",
+        to: "review",
+        receipt: "review",
+      }),
+      event(5, "state-transitioned", {
+        taskId: "task-a",
+        from: "review",
+        to: "verification",
+        receipt: "review passed",
+      }),
+      event(6, "state-transitioned", {
+        taskId: "task-a",
+        from: "verification",
+        to: "executing",
+        receipt: "verification failed",
+        fixBack: { kind: "failed-gate", proof: "typecheck failed" },
+      }),
+      event(
+        7,
+        "lease-expired",
+        {
+          taskId: "task-a",
+          leaseId: active.leaseId,
+          preservationReceipt: "fix-back identity and patch preserved",
+        },
+        active.expiresAt
+      ),
+    ]);
+
+    expect(itemAt(result.snapshot.tasks, 0)).toMatchObject({
+      state: "blocked-with-evidence",
+      activeLease: null,
+      pendingReconciliation: null,
+    });
+  });
+
+  it("requires typed review fix-back evidence", () => {
+    expect(() =>
+      validateTransition("review", "executing", {
+        receipt: "untyped review fix-back",
+      })
+    ).toThrow(/review-finding|fixBack/);
+    expect(() =>
+      validateTransition("review", "executing", {
+        receipt: "review finding",
+        fixBack: { kind: "review-finding", proof: "finding R1" },
+      })
+    ).not.toThrow();
+  });
+
+  it("rejects an invalid blocked intermediate projection even if a later event repairs it", () => {
+    const active = lease("task-a");
+    expect(() =>
+      replayEvents([
+        bootstrapFixture(),
+        acquire(2, active),
+        event(3, "dispatch-recorded", {
+          taskId: "task-a",
+          leaseId: active.leaseId,
+          receipt: "dispatch",
+        }),
+        event(4, "state-transitioned", {
+          taskId: "task-a",
+          from: "executing",
+          to: "blocked-with-evidence",
+          receipt: "blocked but lease left open",
+        }),
+        event(
+          5,
+          "lease-expired",
+          {
+            taskId: "task-a",
+            leaseId: active.leaseId,
+            preservationReceipt: "later repair must not legitimize torn state",
+          },
+          active.expiresAt
+        ),
+      ])
+    ).toThrow(/blocked.*active lease|atomically close/i);
+  });
+
+  it("rejects cleanup while a terminal task still has an active lease", () => {
+    const fixture = bootstrapFixture();
+    const task = itemAt(fixture.tasks, 0);
+    task.state = "integrated";
+    task.receipt = "integration receipt";
+    const active = lease("task-a");
+    active.acquiredAt = fixture.at;
+    fixture.activeLeases.push(active);
+
+    expect(() =>
+      replayEvents([
+        fixture,
+        event(2, "cleanup-recorded", {
+          taskId: "task-a",
+          removed: ["worktree", "branch"],
+          remoteProof: "remote integration proof",
+          recoveryProof: null,
+        }),
+      ])
+    ).toThrow(/active lease/);
+  });
+
   it("fails cleanup before a terminal state or without remote/recovery proof", () => {
     const cleanup = event(2, "cleanup-recorded", {
       taskId: "task-a",
@@ -943,5 +1350,142 @@ describe("Program Supervisor deterministic event coverage", () => {
     const noProof = clone(cleanup);
     (noProof as Record<string, unknown>).remoteProof = null;
     expect(() => replayEvents([fixture, noProof])).toThrow(/remote or recovery proof/);
+  });
+});
+
+describe("Program Supervisor persisted snapshot semantics", () => {
+  function snapshotFixture() {
+    return replayEvents([bootstrapFixture()]).snapshot;
+  }
+
+  it("rejects cleanup outside terminal state and cleanup without proof", () => {
+    const nonTerminal = snapshotFixture();
+    itemAt(nonTerminal.tasks, 0).cleanup = {
+      removed: ["worktree", "branch"],
+      remoteProof: "remote proof",
+      recoveryProof: null,
+    };
+    expect(() => validateSnapshot(nonTerminal)).toThrow(
+      /cleanup.*terminal|integrated|retired/i
+    );
+
+    const noProof = snapshotFixture();
+    const task = itemAt(noProof.tasks, 0);
+    task.state = "integrated";
+    task.receipt = "integration receipt";
+    task.cleanup = {
+      removed: ["worktree", "branch"],
+      remoteProof: null,
+      recoveryProof: null,
+    };
+    expect(() => validateSnapshot(noProof)).toThrow(/remote or recovery proof/);
+  });
+
+  it("rejects unknown and cyclic task dependencies", () => {
+    const unknown = snapshotFixture();
+    itemAt(unknown.tasks, 0).charter.dependencies = ["missing-task"];
+    expect(() => validateSnapshot(unknown)).toThrow(/unknown dependency/);
+
+    const cycle = snapshotFixture();
+    itemAt(cycle.tasks, 0).charter.dependencies = ["task-b"];
+    itemAt(cycle.tasks, 1).charter.dependencies = ["task-a"];
+    expect(() => validateSnapshot(cycle)).toThrow(/dependency cycle/);
+  });
+
+  it("rejects ruling and owner-gate records for unknown tasks", () => {
+    const ruling = snapshotFixture();
+    ruling.rulings.push({
+      id: "ruling-unknown",
+      taskId: "missing-task",
+      decision: "invalid",
+      receipt: "invalid reference",
+    });
+    expect(() => validateSnapshot(ruling)).toThrow(/ruling.*unknown task/i);
+
+    const gate = snapshotFixture();
+    gate.ownerGates.push({
+      taskId: "missing-task",
+      gate: "product-owner",
+      decision: "approved",
+      receipt: "invalid reference",
+      verificationEventId: "event-bootstrap",
+      at: "2026-08-26T02:00:00.000Z",
+    });
+    expect(() => validateSnapshot(gate)).toThrow(/owner-gate.*unknown task/i);
+  });
+
+  it("rejects heartbeat/supervisor incoherence and duplicate global evidence IDs", () => {
+    const heartbeat = snapshotFixture();
+    heartbeat.heartbeat = {
+      automationId: "automation-heartbeat",
+      threadId: "missing-supervisor",
+      receipt: "orphan heartbeat",
+      at: "2026-08-26T02:00:00.000Z",
+    };
+    expect(() => validateSnapshot(heartbeat)).toThrow(/heartbeat.*supervisor/i);
+
+    const evidence = snapshotFixture();
+    itemAt(evidence.tasks, 0).evidence.push({
+      id: "evidence-shared",
+      kind: "review",
+      receipt: "first",
+    });
+    itemAt(evidence.tasks, 1).evidence.push({
+      id: "evidence-shared",
+      kind: "verification",
+      receipt: "second",
+    });
+    expect(() => validateSnapshot(evidence)).toThrow(/duplicate.*evidence/i);
+  });
+
+  it("rejects reconciliation flags outside executing and latest rejected owner gates", () => {
+    const misplaced = snapshotFixture();
+    const task = itemAt(misplaced.tasks, 0);
+    task.state = "review";
+    task.receipt = "review receipt";
+    task.pendingReconciliation = {
+      kind: "failed-gate",
+      proof: "misplaced pending reconciliation",
+      baseSha: SHA_B,
+      headSha: SHA_B,
+    };
+    expect(() => validateSnapshot(misplaced)).toThrow(/reconciliation.*executing/i);
+
+    const gateFixture = bootstrapFixture();
+    const gateTask = itemAt(gateFixture.tasks, 0);
+    gateTask.charter.ownerGate = { required: true, name: "product-owner" };
+    gateTask.state = "verification";
+    gateTask.receipt = "verification receipt";
+    const integrated = replayEvents([
+      gateFixture,
+      event(2, "owner-gate-recorded", {
+        taskId: "task-a",
+        gate: "product-owner",
+        decision: "approved",
+        receipt: "approval",
+      }),
+      event(3, "state-transitioned", {
+        taskId: "task-a",
+        from: "verification",
+        to: "owner-gate",
+        receipt: "gate entered",
+        ownerGate: "product-owner",
+      }),
+      event(4, "state-transitioned", {
+        taskId: "task-a",
+        from: "owner-gate",
+        to: "integrated",
+        receipt: "integration",
+      }),
+    ]).snapshot;
+    integrated.ownerGates.push({
+      taskId: "task-a",
+      gate: "product-owner",
+      decision: "rejected",
+      receipt: "later rejection",
+      verificationEventId: itemAt(integrated.ownerGates, 0).verificationEventId,
+      at: "2026-08-26T05:00:00.000Z",
+    });
+    expect(() => validateSnapshot(integrated)).toThrow(/latest.*approved|rejected/i);
   });
 });

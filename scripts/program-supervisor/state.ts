@@ -98,8 +98,16 @@ export interface TaskProjection {
   activeLease: ActiveLease | null;
   evidence: EvidenceRecord[];
   cleanup: CleanupProjection | null;
-  reconciliationRequired: boolean;
+  pendingReconciliation: PendingReconciliation | null;
+  verificationEventId: string | null;
   updatedAt: string;
+}
+
+export interface PendingReconciliation {
+  kind: "failed-gate" | "changed-base";
+  proof: string;
+  baseSha: string;
+  headSha: string;
 }
 
 export interface CleanupProjection {
@@ -197,7 +205,10 @@ interface DispatchEvent extends BaseEvent {
 
 export interface TransitionContext {
   receipt?: string;
-  fixBack?: { kind: "failed-gate" | "changed-base"; proof: string };
+  fixBack?: {
+    kind: "review-finding" | "failed-gate" | "changed-base";
+    proof: string;
+  };
   ownerGate?: string;
   requiredOwnerGate?: string;
 }
@@ -246,6 +257,7 @@ export interface OwnerGateRecord {
   gate: string;
   decision: "approved" | "rejected";
   receipt: string;
+  verificationEventId: string;
   at: string;
 }
 
@@ -432,12 +444,13 @@ function timestampAt(value: unknown, path: string): string {
 
 function normalizedPathAt(value: unknown, path: string): string {
   const normalized = stringAt(value, path);
+  const hasValidTerminalWildcard = /^[^*]+\/\*\*$/.test(normalized);
   if (
     normalized.startsWith("/") ||
     normalized.startsWith("./") ||
     normalized.endsWith("/") ||
     normalized.includes("//") ||
-    (normalized.includes("*") && !normalized.endsWith("/**")) ||
+    (normalized.includes("*") && !hasValidTerminalWildcard) ||
     normalized.split("/").some((part) => part === "." || part === "..")
   ) {
     corruption(path, "expected a normalized repository-relative path");
@@ -763,7 +776,14 @@ function validateRulingRecord(value: unknown, path: string): RulingRecord {
 }
 
 function validateOwnerGateRecord(value: unknown, path: string): OwnerGateRecord {
-  const record = objectAt(value, path, ["taskId", "gate", "decision", "receipt", "at"]);
+  const record = objectAt(value, path, [
+    "taskId",
+    "gate",
+    "decision",
+    "receipt",
+    "verificationEventId",
+    "at",
+  ]);
   if (record.decision !== "approved" && record.decision !== "rejected") {
     corruption(`${path}.decision`, "expected approved or rejected");
   }
@@ -772,6 +792,7 @@ function validateOwnerGateRecord(value: unknown, path: string): OwnerGateRecord 
     gate: idAt(record.gate, `${path}.gate`),
     decision: record.decision,
     receipt: stringAt(record.receipt, `${path}.receipt`),
+    verificationEventId: idAt(record.verificationEventId, `${path}.verificationEventId`),
     at: timestampAt(record.at, `${path}.at`),
   };
 }
@@ -811,6 +832,22 @@ function validateCleanupProjection(value: unknown, path: string): CleanupProject
     removed: uniqueStrings(record.removed, `${path}.removed`),
     remoteProof: nullableStringAt(record.remoteProof, `${path}.remoteProof`),
     recoveryProof: nullableStringAt(record.recoveryProof, `${path}.recoveryProof`),
+  };
+}
+
+function validatePendingReconciliation(
+  value: unknown,
+  path: string
+): PendingReconciliation {
+  const record = objectAt(value, path, ["kind", "proof", "baseSha", "headSha"]);
+  if (record.kind !== "failed-gate" && record.kind !== "changed-base") {
+    corruption(`${path}.kind`, "expected failed-gate or changed-base");
+  }
+  return {
+    kind: record.kind,
+    proof: stringAt(record.proof, `${path}.proof`),
+    baseSha: shaAt(record.baseSha, `${path}.baseSha`),
+    headSha: shaAt(record.headSha, `${path}.headSha`),
   };
 }
 
@@ -935,6 +972,205 @@ function enforceActiveLeases(tasks: TaskProjection[], path: string): void {
   }
 }
 
+function manifestAuthorities(manifest: AuthorityManifest): AuthorityReference[] {
+  return [
+    manifest.operatingModel,
+    ...manifest.productWayfinders,
+    manifest.testPortfolioRoadmap,
+    manifest.readinessBaseline,
+    manifest.statusOwner,
+  ];
+}
+
+function enforceAuthorityCoherence(
+  authority: AuthorityManifest,
+  tasks: TaskProjection[],
+  path: string
+): void {
+  const globalBlobs = new Map(
+    manifestAuthorities(authority).map((reference) => [reference.path, reference.blob])
+  );
+  for (const task of tasks) {
+    for (const reference of task.charter.authority) {
+      const globalBlob = globalBlobs.get(reference.path);
+      if (globalBlob !== undefined && globalBlob !== reference.blob) {
+        corruption(
+          path,
+          `task ${task.charter.id} splits global authority ${reference.path}`
+        );
+      }
+    }
+    const repositoryLease = task.charter.ownership.repositoryLease;
+    const ownerBlob = globalBlobs.get(repositoryLease.ownerDocumentPath);
+    if (
+      ownerBlob === undefined ||
+      repositoryLease.ownerDocumentBlob !== ownerBlob ||
+      repositoryLease.mainSha !== authority.mainSha
+    ) {
+      corruption(
+        path,
+        `task ${task.charter.id} repository authority does not match the global manifest`
+      );
+    }
+  }
+}
+
+function enforceDependencies(tasks: TaskProjection[], path: string): void {
+  const byId = new Map(tasks.map((task) => [task.charter.id, task]));
+  for (const task of tasks) {
+    for (const dependency of task.charter.dependencies) {
+      if (!byId.has(dependency)) {
+        corruption(path, `task ${task.charter.id} has unknown dependency ${dependency}`);
+      }
+    }
+  }
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+  const visit = (taskId: string): void => {
+    if (visiting.has(taskId)) corruption(path, `dependency cycle includes ${taskId}`);
+    if (visited.has(taskId)) return;
+    visiting.add(taskId);
+    const task = byId.get(taskId);
+    if (!task) corruption(path, `unknown dependency ${taskId}`);
+    for (const dependency of task.charter.dependencies) visit(dependency);
+    visiting.delete(taskId);
+    visited.add(taskId);
+  };
+  for (const task of tasks) visit(task.charter.id);
+}
+
+function latestGateDecision(
+  snapshot: ProgramSnapshot,
+  task: TaskProjection
+): OwnerGateRecord | undefined {
+  if (task.verificationEventId === null) return undefined;
+  return snapshot.ownerGates
+    .filter(
+      (record) =>
+        record.taskId === task.charter.id &&
+        record.gate === task.charter.ownerGate.name &&
+        record.verificationEventId === task.verificationEventId
+    )
+    .at(-1);
+}
+
+function enforceProjectionSemantics(snapshot: ProgramSnapshot, path: string): void {
+  enforceActiveLeases(snapshot.tasks, `${path}.tasks`);
+  enforceAuthorityCoherence(snapshot.authority, snapshot.tasks, `${path}.authority`);
+  enforceDependencies(snapshot.tasks, `${path}.tasks`);
+  const derivedWip = wipForTasks(snapshot.tasks);
+  if (
+    snapshot.wip.writers !== derivedWip.writers ||
+    snapshot.wip.evaluators !== derivedWip.evaluators
+  ) {
+    corruption(`${path}.wip`, "does not match active leases reconstructed from tasks");
+  }
+
+  const evidenceIds: string[] = [];
+  for (const task of snapshot.tasks) {
+    evidenceIds.push(...task.evidence.map(({ id }) => id));
+    if (task.cleanup) {
+      if (task.state !== "integrated" && task.state !== "retired") {
+        corruption(
+          `${path}.tasks`,
+          `task ${task.charter.id} has cleanup outside terminal state`
+        );
+      }
+      if (task.activeLease) {
+        corruption(
+          `${path}.tasks`,
+          `task ${task.charter.id} cleanup retains an active lease`
+        );
+      }
+      if (task.cleanup.remoteProof === null && task.cleanup.recoveryProof === null) {
+        corruption(
+          `${path}.tasks`,
+          `task ${task.charter.id} cleanup lacks remote or recovery proof`
+        );
+      }
+      if (!sameValues(task.cleanup.removed, task.charter.cleanup.removal)) {
+        corruption(
+          `${path}.tasks`,
+          `task ${task.charter.id} cleanup violates its removal rule`
+        );
+      }
+    }
+    if (task.pendingReconciliation) {
+      if (task.state !== "executing" || !task.activeLease) {
+        corruption(
+          `${path}.tasks`,
+          `task ${task.charter.id} pending reconciliation must be executing with an active lease`
+        );
+      }
+      if (
+        task.pendingReconciliation.baseSha !== task.charter.ownership.baseSha ||
+        task.pendingReconciliation.headSha !== task.charter.ownership.headSha
+      ) {
+        corruption(
+          `${path}.tasks`,
+          `task ${task.charter.id} pending reconciliation identities are not current`
+        );
+      }
+    }
+    if (
+      task.verificationEventId !== null &&
+      task.state !== "verification" &&
+      task.state !== "owner-gate" &&
+      task.state !== "integrated"
+    ) {
+      corruption(
+        `${path}.tasks`,
+        `task ${task.charter.id} has stale verification identity in ${task.state}`
+      );
+    }
+    if (
+      task.charter.ownerGate.required &&
+      (task.state === "owner-gate" || task.state === "integrated")
+    ) {
+      const latest = latestGateDecision(snapshot, task);
+      if (!latest || latest.decision !== "approved") {
+        corruption(
+          `${path}.ownerGates`,
+          `task ${task.charter.id} latest owner-gate decision is not approved`
+        );
+      }
+    }
+  }
+  assertUnique(evidenceIds, `${path}.duplicate evidence IDs`);
+
+  const taskIds = new Set(snapshot.tasks.map(({ charter }) => charter.id));
+  for (const ruling of snapshot.rulings) {
+    if (!taskIds.has(ruling.taskId)) {
+      corruption(`${path}.rulings`, `ruling ${ruling.id} references unknown task`);
+    }
+  }
+  const gateDecisionKeys = new Set<string>();
+  for (const gate of snapshot.ownerGates) {
+    const task = snapshot.tasks.find(({ charter }) => charter.id === gate.taskId);
+    if (!task) corruption(`${path}.ownerGates`, "owner-gate references unknown task");
+    if (!task.charter.ownerGate.required || task.charter.ownerGate.name !== gate.gate) {
+      corruption(`${path}.ownerGates`, `owner-gate does not match task ${gate.taskId}`);
+    }
+    const key = `${gate.taskId}\0${gate.gate}\0${gate.verificationEventId}\0${gate.decision}`;
+    if (gateDecisionKeys.has(key)) {
+      corruption(
+        `${path}.ownerGates`,
+        "duplicate owner-gate decision for verification cycle"
+      );
+    }
+    gateDecisionKeys.add(key);
+  }
+  if (
+    snapshot.heartbeat &&
+    (!snapshot.supervisor || snapshot.heartbeat.threadId !== snapshot.supervisor.threadId)
+  ) {
+    corruption(
+      `${path}.heartbeat`,
+      "heartbeat does not match the provisioned supervisor"
+    );
+  }
+}
+
 function validateTaskProjection(value: unknown, path: string): TaskProjection {
   const record = objectAt(value, path, [
     "charter",
@@ -943,7 +1179,8 @@ function validateTaskProjection(value: unknown, path: string): TaskProjection {
     "activeLease",
     "evidence",
     "cleanup",
-    "reconciliationRequired",
+    "pendingReconciliation",
+    "verificationEventId",
     "updatedAt",
   ]);
   const state = taskStateAt(record.state, `${path}.state`);
@@ -969,10 +1206,17 @@ function validateTaskProjection(value: unknown, path: string): TaskProjection {
       record.cleanup === null
         ? null
         : validateCleanupProjection(record.cleanup, `${path}.cleanup`),
-    reconciliationRequired: booleanAt(
-      record.reconciliationRequired,
-      `${path}.reconciliationRequired`
-    ),
+    pendingReconciliation:
+      record.pendingReconciliation === null
+        ? null
+        : validatePendingReconciliation(
+            record.pendingReconciliation,
+            `${path}.pendingReconciliation`
+          ),
+    verificationEventId:
+      record.verificationEventId === null
+        ? null
+        : idAt(record.verificationEventId, `${path}.verificationEventId`),
     updatedAt: timestampAt(record.updatedAt, `${path}.updatedAt`),
   };
 }
@@ -1017,12 +1261,7 @@ export function validateSnapshot(value: unknown): ProgramSnapshot {
     writers: integerAt(wipRecord.writers, "snapshot.wip.writers"),
     evaluators: integerAt(wipRecord.evaluators, "snapshot.wip.evaluators"),
   };
-  enforceActiveLeases(tasks, "snapshot.tasks");
-  const derivedWip = wipForTasks(tasks);
-  if (wip.writers !== derivedWip.writers || wip.evaluators !== derivedWip.evaluators) {
-    corruption("snapshot.wip", "does not match active leases reconstructed from tasks");
-  }
-  return {
+  const snapshot: ProgramSnapshot = {
     schemaVersion: 1,
     authority: validateAuthorityManifest(record.authority, "snapshot.authority"),
     tasks,
@@ -1041,6 +1280,8 @@ export function validateSnapshot(value: unknown): ProgramSnapshot {
     updatedAt: timestampAt(record.updatedAt, "snapshot.updatedAt"),
     lastEventSeq: integerAt(record.lastEventSeq, "snapshot.lastEventSeq", 1),
   };
+  enforceProjectionSemantics(snapshot, "snapshot");
+  return snapshot;
 }
 
 function validateLeaseCacheEntry(value: unknown, path: string): LeaseCacheEntry {
@@ -1153,10 +1394,17 @@ function baseFrom(record: Record<string, unknown>): BaseEvent {
   };
 }
 
-function validateFixBack(value: unknown, path: string): TransitionContext["fixBack"] {
+function validateFixBack(
+  value: unknown,
+  path: string
+): NonNullable<TransitionContext["fixBack"]> {
   const record = objectAt(value, path, ["kind", "proof"]);
-  if (record.kind !== "failed-gate" && record.kind !== "changed-base") {
-    corruption(`${path}.kind`, "expected failed-gate or changed-base");
+  if (
+    record.kind !== "review-finding" &&
+    record.kind !== "failed-gate" &&
+    record.kind !== "changed-base"
+  ) {
+    corruption(`${path}.kind`, "expected review-finding, failed-gate, or changed-base");
   }
   return { kind: record.kind, proof: stringAt(record.proof, `${path}.proof`) };
 }
@@ -1167,6 +1415,7 @@ export function validateEventInput(value: unknown): ProgramEvent {
   switch (base.type) {
     case "bootstrap": {
       const record = eventObject(broad, ["authority", "tasks", "activeLeases"]);
+      const authority = validateAuthorityManifest(record.authority, "event.authority");
       const tasks = arrayAt(record.tasks, "event.tasks", true).map((task, index) =>
         validateBootstrapTask(task, `event.tasks[${index}]`)
       );
@@ -1188,7 +1437,8 @@ export function validateEventInput(value: unknown): ProgramEvent {
         activeLease: null,
         evidence: [],
         cleanup: null,
-        reconciliationRequired: false,
+        pendingReconciliation: null,
+        verificationEventId: task.state === "verification" ? base.eventId : null,
         updatedAt: task.updatedAt,
       }));
       for (const activeLease of activeLeases) {
@@ -1205,10 +1455,11 @@ export function validateEventInput(value: unknown): ProgramEvent {
         task.activeLease = activeLease;
       }
       enforceActiveLeases(projectedTasks, "event.activeLeases");
+      enforceAuthorityCoherence(authority, projectedTasks, "event.authority");
       return {
         ...base,
         type: "bootstrap",
-        authority: validateAuthorityManifest(record.authority, "event.authority"),
+        authority,
         tasks,
         activeLeases,
       };
@@ -1518,7 +1769,25 @@ export function validateTransition(
     if (!context.fixBack) {
       corruption("transition.fixBack", "verification fix-back requires an exact receipt");
     }
-    validateFixBack(context.fixBack, "transition.fixBack");
+    const fixBack = validateFixBack(context.fixBack, "transition.fixBack");
+    if (fixBack.kind !== "failed-gate" && fixBack.kind !== "changed-base") {
+      corruption(
+        "transition.fixBack.kind",
+        "verification fix-back requires failed-gate or changed-base"
+      );
+    }
+  }
+  if (from === "review" && to === "executing") {
+    if (!context.fixBack) {
+      corruption(
+        "transition.fixBack",
+        "review fix-back requires review-finding evidence"
+      );
+    }
+    const fixBack = validateFixBack(context.fixBack, "transition.fixBack");
+    if (fixBack.kind !== "review-finding") {
+      corruption("transition.fixBack.kind", "review fix-back requires review-finding");
+    }
   }
   if (to === "owner-gate") {
     const ownerGate = idAt(context.ownerGate, "transition.ownerGate");
@@ -1652,7 +1921,8 @@ function bootstrapSnapshot(first: BootstrapEvent): ProgramSnapshot {
     activeLease: null,
     evidence: [],
     cleanup: null,
-    reconciliationRequired: false,
+    pendingReconciliation: null,
+    verificationEventId: task.state === "verification" ? first.eventId : null,
     updatedAt: task.updatedAt,
   }));
   for (const activeLease of first.activeLeases) {
@@ -1745,7 +2015,8 @@ export function replayEvents(events: readonly unknown[]): {
           activeLease: null,
           evidence: [],
           cleanup: null,
-          reconciliationRequired: false,
+          pendingReconciliation: null,
+          verificationEventId: null,
           updatedAt: current.at,
         });
         break;
@@ -1771,9 +2042,37 @@ export function replayEvents(events: readonly unknown[]): {
             "previous SHAs do not match reconstructed task heads"
           );
         }
+        const baseChanged = current.baseSha !== current.previousBaseSha;
+        const headChanged = current.headSha !== current.previousHeadSha;
+        if (!baseChanged && !headChanged) {
+          corruption(
+            "event.task-reconciled",
+            "reconciliation is a no-op; base or head identity must change"
+          );
+        }
+        if (task.pendingReconciliation) {
+          if (
+            task.pendingReconciliation.baseSha !== current.previousBaseSha ||
+            task.pendingReconciliation.headSha !== current.previousHeadSha
+          ) {
+            corruption(
+              "event.task-reconciled",
+              "previous identities do not match the pending verification fix-back"
+            );
+          }
+          if (
+            (task.pendingReconciliation.kind === "failed-gate" && !headChanged) ||
+            (task.pendingReconciliation.kind === "changed-base" && !baseChanged)
+          ) {
+            corruption(
+              "event.task-reconciled",
+              `required ${task.pendingReconciliation.kind} identity did not change`
+            );
+          }
+        }
         ownership.baseSha = current.baseSha;
         ownership.headSha = current.headSha;
-        task.reconciliationRequired = false;
+        task.pendingReconciliation = null;
         setTaskUpdated(task, current.at);
         break;
       }
@@ -1825,17 +2124,10 @@ export function replayEvents(events: readonly unknown[]): {
             "holder, agent identity, role, and readOnly must not change"
           );
         }
-        if (
-          current.authorityPointer.repository !==
-            activeLease.authorityPointer.repository ||
-          current.authorityPointer.ownerDocumentPath !==
-            activeLease.authorityPointer.ownerDocumentPath ||
-          current.authorityPointer.repositoryLeaseId !==
-            activeLease.authorityPointer.repositoryLeaseId
-        ) {
+        if (!pointersEqual(current.authorityPointer, activeLease.authorityPointer)) {
           corruption(
             "event.authorityPointer",
-            "renewal cannot change repository owner path or lease ID"
+            "renewal must preserve the globally reconciled pointer; use authority-reconciled first"
           );
         }
         const extension = Date.parse(current.expiresAt) - Date.parse(current.at);
@@ -1850,16 +2142,6 @@ export function replayEvents(events: readonly unknown[]): {
           );
         }
         activeLease.expiresAt = current.expiresAt;
-        activeLease.authorityPointer = structuredClone(current.authorityPointer);
-        const repositoryLease = task.charter.ownership.repositoryLease;
-        repositoryLease.ownerDocumentBlob = current.authorityPointer.reconciledOwnerBlob;
-        repositoryLease.mainSha = current.authorityPointer.reconciledMainSha;
-        const pinnedOwner = task.charter.authority.find(
-          ({ path: authorityPath }) => authorityPath === repositoryLease.ownerDocumentPath
-        );
-        if (!pinnedOwner)
-          corruption("event.authorityPointer", "owner document is not charter authority");
-        pinnedOwner.blob = current.authorityPointer.reconciledOwnerBlob;
         setTaskUpdated(task, current.at);
         enforceActiveLeases(snapshot.tasks, "event.lease-renewed");
         break;
@@ -1894,6 +2176,8 @@ export function replayEvents(events: readonly unknown[]): {
         if (task.state === "leased" || task.state === "executing") {
           task.state = "blocked-with-evidence";
           task.receipt = current.preservationReceipt ?? null;
+          task.pendingReconciliation = null;
+          task.verificationEventId = null;
         }
         setTaskUpdated(task, current.at);
         enforceActiveLeases(snapshot.tasks, "event.lease-expired");
@@ -1932,18 +2216,23 @@ export function replayEvents(events: readonly unknown[]): {
         ) {
           corruption("event.to", `${current.to} requires an active lease`);
         }
-        if (current.to === "review" && task.reconciliationRequired) {
+        if (current.to === "blocked-with-evidence" && task.activeLease) {
+          corruption(
+            "event.to",
+            "blocked transition must atomically close its active lease or reject"
+          );
+        }
+        if (current.to === "review" && task.pendingReconciliation) {
           corruption("event.to", "task-reconciled is required before review resumes");
         }
         if (current.to === "owner-gate") {
-          const approved = snapshot.ownerGates.some(
-            (record) =>
-              record.taskId === task.charter.id &&
-              record.gate === current.ownerGate &&
-              record.decision === "approved"
-          );
-          if (!approved)
-            corruption("event.ownerGate", "named owner gate has no approval receipt");
+          const latest = latestGateDecision(snapshot, task);
+          if (!latest || latest.decision !== "approved") {
+            corruption(
+              "event.ownerGate",
+              "latest decision for the current verification must be approved"
+            );
+          }
         }
         if (
           current.to === "integrated" &&
@@ -1952,10 +2241,42 @@ export function replayEvents(events: readonly unknown[]): {
         ) {
           corruption("event.to", "integration cannot bypass the chartered owner-gate");
         }
+        if (
+          current.to === "integrated" &&
+          task.charter.ownerGate.required &&
+          latestGateDecision(snapshot, task)?.decision !== "approved"
+        ) {
+          corruption(
+            "event.to",
+            "latest owner-gate decision must remain approved for integration"
+          );
+        }
         task.state = current.to;
         task.receipt = current.receipt;
+        if (current.to === "verification") {
+          task.verificationEventId = current.eventId;
+        }
         if (current.from === "verification" && current.to === "executing") {
-          task.reconciliationRequired = true;
+          const fixBack = current.fixBack;
+          if (
+            !fixBack ||
+            (fixBack.kind !== "failed-gate" && fixBack.kind !== "changed-base")
+          ) {
+            corruption("event.fixBack", "verification fix-back evidence is invalid");
+          }
+          task.pendingReconciliation = {
+            kind: fixBack.kind,
+            proof: fixBack.proof,
+            baseSha: task.charter.ownership.baseSha,
+            headSha: task.charter.ownership.headSha,
+          };
+          task.verificationEventId = null;
+        } else if (
+          current.to === "blocked-with-evidence" ||
+          current.to === "retired" ||
+          (current.to === "integrated" && !task.charter.ownerGate.required)
+        ) {
+          task.verificationEventId = null;
         }
         setTaskUpdated(task, current.at);
         break;
@@ -1988,11 +2309,31 @@ export function replayEvents(events: readonly unknown[]): {
         ) {
           corruption("event.gate", "does not match the task's named owner gate");
         }
+        if (task.state !== "verification" || task.verificationEventId === null) {
+          corruption(
+            "event.gate",
+            "owner-gate decision requires a task currently awaiting the gate in verification"
+          );
+        }
+        const duplicate = snapshot.ownerGates.some(
+          (record) =>
+            record.taskId === current.taskId &&
+            record.gate === current.gate &&
+            record.verificationEventId === task.verificationEventId &&
+            record.decision === current.decision
+        );
+        if (duplicate) {
+          corruption(
+            "event.gate",
+            "duplicate owner-gate decision for the current verification"
+          );
+        }
         snapshot.ownerGates.push({
           taskId: current.taskId,
           gate: current.gate,
           decision: current.decision,
           receipt: current.receipt,
+          verificationEventId: task.verificationEventId,
           at: current.at,
         });
         setTaskUpdated(task, current.at);
@@ -2037,6 +2378,9 @@ export function replayEvents(events: readonly unknown[]): {
         if (task.state !== "integrated" && task.state !== "retired") {
           corruption("event.taskId", "cleanup requires integrated or retired state");
         }
+        if (task.activeLease) {
+          corruption("event.cleanup", "cleanup requires the active lease to be closed");
+        }
         if (current.remoteProof === null && current.recoveryProof === null) {
           corruption("event.cleanup", "cleanup requires remote or recovery proof");
         }
@@ -2061,9 +2405,10 @@ export function replayEvents(events: readonly unknown[]): {
     snapshot.lastEventSeq = current.seq;
     snapshot.updatedAt = current.at;
     snapshot.wip = wipForTasks(snapshot.tasks);
+    enforceProjectionSemantics(snapshot, `ledger[${current.seq - 1}]`);
   }
 
-  enforceActiveLeases(snapshot.tasks, "snapshot.tasks");
+  enforceProjectionSemantics(snapshot, "snapshot");
   const result = { snapshot, leases: projectLeaseFile(snapshot) };
   validateSnapshot(result.snapshot);
   validateLeaseFile(result.leases);
