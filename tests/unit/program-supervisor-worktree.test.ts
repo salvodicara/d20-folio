@@ -255,6 +255,27 @@ describe("program supervisor worktree coordinates", () => {
 });
 
 describe("program supervisor bootstrap", () => {
+  it("propagates the pinned Node executable to commands and child processes", () => {
+    const script = join(supervisorRoot, "bootstrap-worktree.sh");
+    const probe = `
+      const { spawnSync } = require("node:child_process");
+      const child = spawnSync("node", ["-p", "JSON.stringify({ version: process.version, execPath: process.execPath })"], { encoding: "utf8" });
+      if (child.status !== 0) process.exit(child.status ?? 1);
+      process.stdout.write(JSON.stringify({ version: process.version, execPath: process.execPath }) + "\\n" + child.stdout);
+    `;
+    const result = run(script, ["--run", "node", "-e", probe], repositoryRoot);
+    expect(result.status).toBe(0);
+    const [command, child] = result.stdout.trim().split("\n").map(JSON.parse) as Array<{
+      version: string;
+      execPath: string;
+    }>;
+
+    expect(command.version).toBe("v24.16.0");
+    expect(child.version).toBe("v24.16.0");
+    expect(command.execPath).toMatch(/\/nodejs\/24\.16\.0\/bin\/node$/);
+    expect(child.execPath).toBe(command.execPath);
+  });
+
   it("runs the pinned pnpm and npm installers twice and configures hooks", () => {
     const fixture = createBootstrapFixture();
     try {

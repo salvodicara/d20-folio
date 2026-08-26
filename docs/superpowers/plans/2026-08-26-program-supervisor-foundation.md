@@ -302,6 +302,10 @@ git config core.hooksPath .githooks
 ```
 
 Run `chmod 0755 scripts/program-supervisor/bootstrap-worktree.sh`; the executable bit is part of the committed bootstrap contract.
+The focused bootstrap proof must also execute a command that records `node --version` and
+`process.execPath`, spawn a child `node` that records the same values, and prove both command and
+child use Node `v24.16.0` at the exact pinned executable. A parent Corepack invocation alone is not
+evidence that a test worker inherited the pin.
 
 - [ ] **Step 6: Route `just wt-new` and `just wt-rm` through the one task root**
 
