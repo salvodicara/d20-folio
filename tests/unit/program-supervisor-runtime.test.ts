@@ -35,6 +35,16 @@ const SHA_E = "e".repeat(40);
 const SHA_F = "f".repeat(40);
 const PROGRAM_REPOSITORY = "/repo/d20-folio";
 const LEASE_OWNER_PATH = "docs/TEST_PORTFOLIO.md";
+const OPERATING_MODEL_PATH =
+  "docs/plans/2026-08-25-agent-first-operating-model-design.md";
+const AUTOMATION_WAYFINDER_PATH =
+  "docs/superpowers/plans/2026-08-25-automation-first-wayfinder.md";
+const TACTICAL_WAYFINDER_PATH =
+  "docs/superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md";
+const TEST_ROADMAP_PATH = "docs/superpowers/plans/2026-08-25-test-portfolio-reset.md";
+const READINESS_BASELINE_PATH =
+  "docs/superpowers/plans/2026-08-25-g0-automation-readiness.md";
+const STATUS_OWNER_PATH = "docs/PROGRAM_STATUS.md";
 const CLI_PATH = resolve("scripts/program-supervisor/cli.ts");
 const RUNTIME_URL = pathToFileURL(resolve("scripts/program-supervisor/runtime.ts")).href;
 
@@ -70,7 +80,7 @@ function charter(
     outcome: `Observable outcome for ${id}`,
     authority: [
       {
-        path: "docs/plans/2026-08-25-agent-first-operating-model-design.md",
+        path: OPERATING_MODEL_PATH,
         blob: SHA_C,
       },
       { path: LEASE_OWNER_PATH, blob: SHA_A },
@@ -150,16 +160,17 @@ function bootstrapInput(
     authority: {
       mainSha: SHA_B,
       operatingModel: {
-        path: "docs/plans/2026-08-25-agent-first-operating-model-design.md",
+        path: OPERATING_MODEL_PATH,
         blob: SHA_C,
       },
       productWayfinders: [
-        { path: "PRODUCT.md", blob: SHA_D },
-        { path: "docs/PRODUCT_CONSTITUTION.md", blob: SHA_E },
+        { path: AUTOMATION_WAYFINDER_PATH, blob: SHA_D },
+        { path: TACTICAL_WAYFINDER_PATH, blob: SHA_E },
       ],
-      testPortfolioRoadmap: { path: LEASE_OWNER_PATH, blob: SHA_A },
-      readinessBaseline: { path: "PROGRESS.md", blob: SHA_F },
-      statusOwner: { path: "docs/PROGRAM_STATUS.md", blob: SHA_D },
+      testPortfolioRoadmap: { path: TEST_ROADMAP_PATH, blob: SHA_E },
+      readinessBaseline: { path: READINESS_BASELINE_PATH, blob: SHA_F },
+      repositoryLeaseOwners: [{ path: LEASE_OWNER_PATH, blob: SHA_A }],
+      statusOwner: { path: STATUS_OWNER_PATH, blob: SHA_D },
     },
     tasks: [
       task("foundation-f0", "scripts/program-supervisor", foundationState),
@@ -214,10 +225,10 @@ function leaseAcquiredInput(
   };
 }
 
-async function makeRoot(): Promise<string> {
+async function makeRoot(name = "runtime"): Promise<string> {
   const parent = await mkdtemp(join(tmpdir(), "d20-program-parent-"));
   temporaryParents.push(parent);
-  return join(parent, "runtime");
+  return join(parent, name);
 }
 
 async function writeSecureJson(path: string, value: unknown): Promise<void> {

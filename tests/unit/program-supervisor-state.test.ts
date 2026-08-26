@@ -17,6 +17,16 @@ const SHA_E = "e".repeat(40);
 const SHA_F = "f".repeat(40);
 const REPOSITORY = "/repo/d20-folio";
 const LEASE_OWNER_PATH = "docs/TEST_PORTFOLIO.md";
+const OPERATING_MODEL_PATH =
+  "docs/plans/2026-08-25-agent-first-operating-model-design.md";
+const AUTOMATION_WAYFINDER_PATH =
+  "docs/superpowers/plans/2026-08-25-automation-first-wayfinder.md";
+const TACTICAL_WAYFINDER_PATH =
+  "docs/superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md";
+const TEST_ROADMAP_PATH = "docs/superpowers/plans/2026-08-25-test-portfolio-reset.md";
+const READINESS_BASELINE_PATH =
+  "docs/superpowers/plans/2026-08-25-g0-automation-readiness.md";
+const STATUS_OWNER_PATH = "docs/PROGRAM_STATUS.md";
 const LEASE_ID = "F0";
 
 function clone<T>(value: T): T {
@@ -49,7 +59,7 @@ function charter(
     outcome: `Observable outcome for ${id}`,
     authority: [
       {
-        path: "docs/plans/2026-08-25-agent-first-operating-model-design.md",
+        path: OPERATING_MODEL_PATH,
         blob: SHA_C,
       },
       { path: LEASE_OWNER_PATH, blob: SHA_A },
@@ -115,16 +125,17 @@ function bootstrapFixture() {
     authority: {
       mainSha: SHA_B,
       operatingModel: {
-        path: "docs/plans/2026-08-25-agent-first-operating-model-design.md",
+        path: OPERATING_MODEL_PATH,
         blob: SHA_C,
       },
       productWayfinders: [
-        { path: "PRODUCT.md", blob: SHA_D },
-        { path: "docs/PRODUCT_CONSTITUTION.md", blob: SHA_E },
+        { path: AUTOMATION_WAYFINDER_PATH, blob: SHA_D },
+        { path: TACTICAL_WAYFINDER_PATH, blob: SHA_E },
       ],
-      testPortfolioRoadmap: { path: LEASE_OWNER_PATH, blob: SHA_A },
-      readinessBaseline: { path: "PROGRESS.md", blob: SHA_F },
-      statusOwner: { path: "docs/PROGRAM_STATUS.md", blob: SHA_D },
+      testPortfolioRoadmap: { path: TEST_ROADMAP_PATH, blob: SHA_E },
+      readinessBaseline: { path: READINESS_BASELINE_PATH, blob: SHA_F },
+      repositoryLeaseOwners: [{ path: LEASE_OWNER_PATH, blob: SHA_A }],
+      statusOwner: { path: STATUS_OWNER_PATH, blob: SHA_D },
     },
     tasks: [
       bootstrapTask("task-a", "scripts/a"),
@@ -185,6 +196,40 @@ function acquire(seq: number, value: ReturnType<typeof lease>) {
 }
 
 describe("Program Supervisor untrusted-data schemas", () => {
+  it("requires distinct, non-empty, globally unique repository lease-owner authorities", () => {
+    const missing = bootstrapFixture() as unknown as {
+      authority: Record<string, unknown>;
+    };
+    delete missing.authority.repositoryLeaseOwners;
+    expect(() => validateEventInput(missing)).toThrow(/repositoryLeaseOwners|missing/i);
+
+    const empty = bootstrapFixture();
+    empty.authority.repositoryLeaseOwners = [];
+    expect(() => validateEventInput(empty)).toThrow(/repositoryLeaseOwners|non-empty/i);
+
+    const duplicateOwner = bootstrapFixture();
+    duplicateOwner.authority.repositoryLeaseOwners.push({
+      path: LEASE_OWNER_PATH,
+      blob: SHA_A,
+    });
+    expect(() => validateEventInput(duplicateOwner)).toThrow(/unique|duplicate/i);
+
+    const duplicateRole = bootstrapFixture();
+    duplicateRole.authority.repositoryLeaseOwners[0] = {
+      ...duplicateRole.authority.statusOwner,
+    };
+    expect(() => validateEventInput(duplicateRole)).toThrow(/authority paths|duplicate/i);
+
+    const unmanifested = bootstrapFixture();
+    unmanifested.authority.repositoryLeaseOwners[0] = {
+      path: "docs/OTHER_LEASE_OWNER.md",
+      blob: SHA_A,
+    };
+    expect(() => validateEventInput(unmanifested)).toThrow(
+      /repository authority.*global manifest/i
+    );
+  });
+
   it("rejects a charter with any required field missing", () => {
     const fixture = bootstrapFixture();
     const malformed = itemAt(fixture.tasks, 0).charter as Record<string, unknown>;
@@ -320,7 +365,7 @@ describe("Program Supervisor bootstrap and task projection", () => {
 
   it("rejects bootstrap and created-task repository authority that diverges from the manifest", () => {
     const bootstrap = bootstrapFixture();
-    bootstrap.authority.testPortfolioRoadmap.blob = SHA_C;
+    itemAt(bootstrap.authority.repositoryLeaseOwners, 0).blob = SHA_C;
     expect(() => validateEventInput(bootstrap)).toThrow(/global.*authority|manifest/i);
 
     const successor = bootstrapTask("task-successor", "scripts/successor");
@@ -674,7 +719,7 @@ describe("Program Supervisor lease authority and WIP", () => {
 
     expect(result.snapshot.authority).toMatchObject({
       mainSha: SHA_D,
-      testPortfolioRoadmap: { path: LEASE_OWNER_PATH, blob: SHA_C },
+      repositoryLeaseOwners: [{ path: LEASE_OWNER_PATH, blob: SHA_C }],
     });
     for (const projectedTask of result.snapshot.tasks) {
       expect(projectedTask.charter.ownership.repositoryLease).toMatchObject({
@@ -748,14 +793,14 @@ describe("Program Supervisor lease authority and WIP", () => {
       event(4, "authority-reconciled", {
         previousMainSha: SHA_B,
         mainSha: SHA_C,
-        changes: [{ path: "PROGRESS.md", previousBlob: SHA_F, blob: SHA_D }],
+        changes: [{ path: READINESS_BASELINE_PATH, previousBlob: SHA_F, blob: SHA_D }],
         proof: "Only the status authority changed at the new main SHA.",
       }),
     ]);
 
     expect(result.snapshot.authority).toMatchObject({
       mainSha: SHA_C,
-      readinessBaseline: { path: "PROGRESS.md", blob: SHA_D },
+      readinessBaseline: { path: READINESS_BASELINE_PATH, blob: SHA_D },
     });
     for (const projectedTask of result.snapshot.tasks) {
       expect(projectedTask.charter.ownership.repositoryLease).toMatchObject({
@@ -1340,10 +1385,12 @@ describe("Program Supervisor deterministic event coverage", () => {
       automationId: "automation-heartbeat",
     });
     expect(result.snapshot.authority).toMatchObject({ mainSha: SHA_C });
-    expect(result.snapshot.authority.testPortfolioRoadmap).toEqual({
-      path: LEASE_OWNER_PATH,
-      blob: SHA_F,
-    });
+    expect(result.snapshot.authority.repositoryLeaseOwners).toEqual([
+      {
+        path: LEASE_OWNER_PATH,
+        blob: SHA_F,
+      },
+    ]);
     expect(result.leases.leases).toEqual([]);
     for (const projectedTask of result.snapshot.tasks) {
       expect(projectedTask.charter.ownership.repositoryLease).toMatchObject({

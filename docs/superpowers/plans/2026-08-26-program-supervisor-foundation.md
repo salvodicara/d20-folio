@@ -393,7 +393,7 @@ From the committed Task 1 HEAD, first prove `/Users/salvatoredicara/Workspace/Co
 
 - [ ] **Step 1: Write failing schema and replay tests**
 
-Build one complete `bootstrapFixture()` whose three initial charters contain every required field listed below and whose authority manifest pins the operating model, both product Wayfinders, test-portfolio roadmap, readiness baseline, and status owner by path plus blob. Tests must prove:
+Build one complete `bootstrapFixture()` whose three initial charters contain every required field listed below and whose authority manifest pins the operating model, both product Wayfinders, test-portfolio roadmap, readiness baseline, one or more distinct repository lease-owner authorities, and status owner by path plus blob. The initial d20 manifest has exactly one repository lease-owner authority, `docs/TEST_PORTFOLIO.md`; it never substitutes for the separate `docs/superpowers/plans/2026-08-25-test-portfolio-reset.md` roadmap role. Tests must prove:
 
 - a missing charter field fails validation;
 - `task-created` adds a fully chartered successor after bootstrap;
@@ -428,7 +428,7 @@ export const TASK_STATES = [
 ] as const;
 ```
 
-Define one `TaskCharter` with required `outcome`, pinned `authority[]`, `dependencies`, `ownership` (repository, worktree, branch, base/head SHA, normalized paths), observable `acceptance[]`, independent `review`, explicit `ownerGate`, and `cleanup` proof/removal rule. Repository charters and `docs/TEST_PORTFOLIO.md` remain the only path-ownership authorities. A lease event names task/holder/agent identity, `writer | evaluator` role, read-only flag, acquisition/expiry timestamps, and an `authorityPointer` containing only repository, owner-document path, repository lease ID, last reconciled owner blob, and last reconciled main SHA—never a copied ownership-path list.
+Define one `TaskCharter` with required `outcome`, pinned `authority[]`, `dependencies`, `ownership` (repository, worktree, branch, base/head SHA, normalized paths), observable `acceptance[]`, independent `review`, explicit `ownerGate`, and `cleanup` proof/removal rule. `AuthorityManifest` contains a required non-empty `repositoryLeaseOwners: AuthorityReference[]` role whose normalized paths are unique across the entire manifest and participate in authority reconciliation. Repository charters and the manifested `docs/TEST_PORTFOLIO.md` owner remain the only path-ownership authorities. A lease event names task/holder/agent identity, `writer | evaluator` role, read-only flag, acquisition/expiry timestamps, and an `authorityPointer` containing only repository, owner-document path, repository lease ID, last reconciled owner blob, and last reconciled main SHA—never a copied ownership-path list.
 
 Project `state/leases.json` through a separate narrow `LeaseCacheEntry` containing only `taskId`, `expiresAt`, and that exact authority pointer, as required by the operating model. Role/holder/read-only execution facts remain reconstructible in the ledger and current task projection; overlap checks dereference the named task charter's normalized ownership paths and verify the pointer against its pinned repository lease. The cache is not a second ownership model.
 
@@ -531,7 +531,7 @@ it("preserves and repairs only a torn final ledger record", async () => {
 });
 ```
 
-Also test the CLI boundary with a mode-`0o600` bootstrap file containing the complete authority manifest, all three full Task 2 charters, their exact states/receipts, and the active F0 lease. Prove initialization rejects a partial charter, a non-`0o600` file, and any supplied `seq`/`at`; a retry validates the complete canonical bootstrap identity; changing one nested authority blob, acceptance criterion, repository pointer, lease path, receipt, or holder makes `validate --expect-bootstrap-file` fail. The same semantic JSON with different harmless whitespace has the same canonical fingerprint.
+Also test the CLI boundary with a mode-`0o600` bootstrap file containing the complete authority manifest—including separate test-roadmap and repository lease-owner roles—all three full Task 2 charters, their exact states/receipts, and the active F0 lease. Prove initialization rejects a partial charter, a non-`0o600` file, and any supplied `seq`/`at`; a retry validates the complete canonical bootstrap identity; changing one nested authority blob, acceptance criterion, repository pointer, lease path, receipt, or holder makes `validate --expect-bootstrap-file` fail. The same semantic JSON with different harmless whitespace or semantic object-key order has the same canonical fingerprint.
 
 - [ ] **Step 2: Run and confirm the missing-module failure**
 

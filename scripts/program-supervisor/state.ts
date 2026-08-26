@@ -24,6 +24,7 @@ export interface AuthorityManifest {
   productWayfinders: [AuthorityReference, AuthorityReference];
   testPortfolioRoadmap: AuthorityReference;
   readinessBaseline: AuthorityReference;
+  repositoryLeaseOwners: AuthorityReference[];
   statusOwner: AuthorityReference;
 }
 
@@ -489,12 +490,18 @@ function validateAuthorityManifest(value: unknown, path: string): AuthorityManif
     "productWayfinders",
     "testPortfolioRoadmap",
     "readinessBaseline",
+    "repositoryLeaseOwners",
     "statusOwner",
   ]);
   const wayfinders = arrayAt(record.productWayfinders, `${path}.productWayfinders`);
   if (wayfinders.length !== 2) {
     corruption(`${path}.productWayfinders`, "expected exactly two product Wayfinders");
   }
+  const repositoryLeaseOwners = arrayAt(
+    record.repositoryLeaseOwners,
+    `${path}.repositoryLeaseOwners`,
+    true
+  );
   const manifest: AuthorityManifest = {
     mainSha: shaAt(record.mainSha, `${path}.mainSha`),
     operatingModel: validateAuthorityReference(
@@ -513,6 +520,9 @@ function validateAuthorityManifest(value: unknown, path: string): AuthorityManif
       record.readinessBaseline,
       `${path}.readinessBaseline`
     ),
+    repositoryLeaseOwners: repositoryLeaseOwners.map((owner, index) =>
+      validateAuthorityReference(owner, `${path}.repositoryLeaseOwners[${index}]`)
+    ),
     statusOwner: validateAuthorityReference(record.statusOwner, `${path}.statusOwner`),
   };
   const authorityPaths = [
@@ -520,6 +530,7 @@ function validateAuthorityManifest(value: unknown, path: string): AuthorityManif
     ...manifest.productWayfinders.map(({ path: authorityPath }) => authorityPath),
     manifest.testPortfolioRoadmap.path,
     manifest.readinessBaseline.path,
+    ...manifest.repositoryLeaseOwners.map(({ path: authorityPath }) => authorityPath),
     manifest.statusOwner.path,
   ];
   if (new Set(authorityPaths).size !== authorityPaths.length) {
@@ -978,6 +989,7 @@ function manifestAuthorities(manifest: AuthorityManifest): AuthorityReference[] 
     ...manifest.productWayfinders,
     manifest.testPortfolioRoadmap,
     manifest.readinessBaseline,
+    ...manifest.repositoryLeaseOwners,
     manifest.statusOwner,
   ];
 }
@@ -1884,6 +1896,9 @@ function applyAuthorityReconciliation(
       matched;
     matched =
       replaceAuthorityReference(snapshot.authority.readinessBaseline, change) || matched;
+    for (const owner of snapshot.authority.repositoryLeaseOwners) {
+      matched = replaceAuthorityReference(owner, change) || matched;
+    }
     matched =
       replaceAuthorityReference(snapshot.authority.statusOwner, change) || matched;
     for (const task of snapshot.tasks) {
