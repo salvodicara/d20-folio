@@ -12,7 +12,7 @@ import {
   stat,
   unlink,
 } from "node:fs/promises";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 
 import {
@@ -65,6 +65,9 @@ export interface RuntimeOptions {
   now?: () => Date;
   lockTimeoutMs?: number;
   beforeInitializeRename?: (stagingRoot: string) => void | Promise<void>;
+  afterLockPublish?: (lockPath: string) => void | Promise<void>;
+  afterLockAcquired?: (lockPath: string) => void | Promise<void>;
+  probePid?: (pid: number) => void;
 }
 
 interface CanonicalBootstrap {
@@ -82,6 +85,12 @@ interface LedgerAnalysis {
 
 interface SecureFile {
   bytes: Buffer;
+  device: number;
+  inode: number;
+}
+
+interface LockOwnership {
+  path: string;
   device: number;
   inode: number;
 }
@@ -192,7 +201,7 @@ async function assertDirectory(path: string, label: string): Promise<void> {
   if (metadata.isSymbolicLink() || !metadata.isDirectory()) {
     throw new Error(`${label} must be a regular non-symlink directory: ${path}`);
   }
-  if ((metadata.mode & 0o777) !== DIRECTORY_MODE) {
+  if ((metadata.mode & 0o7777) !== DIRECTORY_MODE) {
     throw new Error(`${label} must use mode 0700: ${path}`);
   }
 }
@@ -241,7 +250,7 @@ async function readSecureFile(path: string, label: string): Promise<SecureFile> 
   if (before.isSymbolicLink() || !before.isFile()) {
     throw new Error(`${label} must be a regular non-symlink file: ${path}`);
   }
-  if ((before.mode & 0o777) !== FILE_MODE) {
+  if ((before.mode & 0o7777) !== FILE_MODE) {
     throw new Error(`${label} must use mode 0600: ${path}`);
   }
   const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
@@ -249,7 +258,7 @@ async function readSecureFile(path: string, label: string): Promise<SecureFile> 
     const opened = await handle.stat();
     if (
       !opened.isFile() ||
-      (opened.mode & 0o777) !== FILE_MODE ||
+      (opened.mode & 0o7777) !== FILE_MODE ||
       opened.dev !== before.dev ||
       opened.ino !== before.ino
     ) {
@@ -383,36 +392,49 @@ function bootstrapFromLedger(first: ProgramEvent): CanonicalBootstrap {
   return canonicalBootstrap(body);
 }
 
-function pidIsAlive(pid: number): boolean {
+function pidIsAlive(pid: number, options: RuntimeOptions): boolean {
   try {
-    process.kill(pid, 0);
+    if (options.probePid) options.probePid(pid);
+    else process.kill(pid, 0);
     return true;
   } catch (error) {
-    return errorCode(error) === "EPERM";
+    const code = errorCode(error);
+    if (code === "ESRCH") return false;
+    if (code === "EPERM") return true;
+    throw new Error(
+      `Cannot prove whether runtime lock PID ${pid} is absent (${code ?? "unknown error"})`,
+      { cause: error }
+    );
   }
 }
 
-async function listAbandonedStaging(root: string): Promise<string[]> {
+async function listAbandonedStaging(
+  root: string,
+  options: RuntimeOptions
+): Promise<string[]> {
   const prefix = `.${basename(root)}.staging-`;
   const entries = await readdir(dirname(root), { withFileTypes: true });
   const abandoned: string[] = [];
   for (const entry of entries) {
     if (!entry.isDirectory() || !entry.name.startsWith(prefix)) continue;
-    const match = /^\.[^.]+\.staging-(\d+)-/.exec(entry.name);
+    const match = /^(\d+)-/.exec(entry.name.slice(prefix.length));
     if (!match) continue;
     const pid = Number(match[1]);
-    if (Number.isSafeInteger(pid) && pid > 0 && !pidIsAlive(pid)) {
+    if (Number.isSafeInteger(pid) && pid > 0 && !pidIsAlive(pid, options)) {
       abandoned.push(entry.name);
     }
   }
   return abandoned.sort();
 }
 
-async function recoveryState(root: string): Promise<RecoveryState> {
+async function recoveryState(
+  root: string,
+  options: RuntimeOptions = {}
+): Promise<RecoveryState> {
   const entries = await readdir(join(root, "recovery"), { withFileTypes: true });
   return {
     recoverableTornTail: false,
-    abandonedStaging: await listAbandonedStaging(root),
+    abandonedStaging: await listAbandonedStaging(root, options),
     staleLocks: entries
       .filter(
         (entry) =>
@@ -429,7 +451,10 @@ async function recoveryState(root: string): Promise<RecoveryState> {
   };
 }
 
-async function loadUnlocked(root: string): Promise<RuntimeProjection> {
+async function loadUnlocked(
+  root: string,
+  options: RuntimeOptions = {}
+): Promise<RuntimeProjection> {
   const analysis = await analyzeLedger(root);
   if (analysis.tornTail) {
     throw new Error(
@@ -473,7 +498,7 @@ async function loadUnlocked(root: string): Promise<RuntimeProjection> {
   return {
     snapshot: expectedSnapshot,
     leases: projected.leases,
-    recoveryState: await recoveryState(root),
+    recoveryState: await recoveryState(root, options),
   };
 }
 
@@ -519,7 +544,11 @@ async function preserveExactLink(
   } catch (error) {
     if (errorCode(error) !== "EEXIST") throw error;
     const existing = await readSecureFile(evidencePath, label);
-    if (!existing.bytes.equals(expected.bytes)) {
+    if (
+      !existing.bytes.equals(expected.bytes) ||
+      existing.device !== expected.device ||
+      existing.inode !== expected.inode
+    ) {
       throw new Error(`Conflicting recovery evidence at ${evidencePath}`, {
         cause: error,
       });
@@ -539,7 +568,7 @@ async function inspectOrRecoverLock(
   const lockPath = join(root, ".write-lock");
   const locked = await readSecureFile(lockPath, "Runtime write lock");
   const record = validateLock(parseJson(locked.bytes, "Runtime write lock"));
-  if (pidIsAlive(record.pid)) {
+  if (pidIsAlive(record.pid, options)) {
     return `Runtime is locked by live PID ${record.pid} since ${record.acquiredAt}`;
   }
   const age = Date.parse(nowIso(options)) - Date.parse(record.acquiredAt);
@@ -561,8 +590,90 @@ async function inspectOrRecoverLock(
   return "recovered";
 }
 
-async function acquireLock(root: string, options: RuntimeOptions): Promise<void> {
+async function unlinkIfOwned(path: string, expected: LockOwnership): Promise<boolean> {
+  const current = await lstat(path).catch((error: unknown) => {
+    if (errorCode(error) === "ENOENT") return null;
+    throw error;
+  });
+  if (!current || current.dev !== expected.device || current.ino !== expected.inode) {
+    return false;
+  }
+  await unlink(path);
+  return true;
+}
+
+async function writeCompleteLockOwner(path: string, bytes: Buffer): Promise<SecureFile> {
+  const handle = await open(
+    path,
+    constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL,
+    FILE_MODE
+  );
+  let ownership: LockOwnership | null = null;
+  try {
+    const opened = await handle.stat();
+    ownership = { path, device: opened.dev, inode: opened.ino };
+    await handle.writeFile(bytes);
+    await handle.chmod(FILE_MODE);
+    await handle.sync();
+    await handle.close();
+    return { bytes, device: opened.dev, inode: opened.ino };
+  } catch (error) {
+    await handle.close().catch(() => undefined);
+    if (ownership) await unlinkIfOwned(path, ownership);
+    throw error;
+  }
+}
+
+async function publishCompleteLock(
+  root: string,
+  options: RuntimeOptions
+): Promise<LockOwnership | null> {
   const lockPath = join(root, ".write-lock");
+  const ownerPath = join(root, `.write-lock.owner-${process.pid}-${randomUUID()}`);
+  const lock: LockRecord = {
+    schemaVersion: 1,
+    pid: process.pid,
+    acquiredAt: nowIso(options),
+  };
+  const owner = await writeCompleteLockOwner(
+    ownerPath,
+    Buffer.from(`${canonicalJson(lock)}\n`, "utf8")
+  );
+  const ownership: LockOwnership = {
+    path: lockPath,
+    device: owner.device,
+    inode: owner.inode,
+  };
+  let published = false;
+  try {
+    await link(ownerPath, lockPath);
+    published = true;
+    const canonical = await lstat(lockPath);
+    if (canonical.dev !== ownership.device || canonical.ino !== ownership.inode) {
+      throw new Error("Published runtime write lock changed before durability");
+    }
+    await options.afterLockPublish?.(lockPath);
+    await fsyncDirectory(root);
+    await unlinkIfOwned(ownerPath, ownership);
+    await fsyncDirectory(root);
+    return ownership;
+  } catch (error) {
+    if (!published && errorCode(error) === "EEXIST") {
+      await unlinkIfOwned(ownerPath, ownership);
+      await fsyncDirectory(root);
+      return null;
+    }
+    if (published) await unlinkIfOwned(lockPath, ownership);
+    await unlinkIfOwned(ownerPath, ownership);
+    await fsyncDirectory(root).catch(() => undefined);
+    throw error;
+  }
+}
+
+async function acquireLock(
+  root: string,
+  options: RuntimeOptions
+): Promise<LockOwnership> {
   const timeout = options.lockTimeoutMs ?? DEFAULT_LOCK_TIMEOUT_MS;
   if (!Number.isFinite(timeout) || timeout < 0) {
     throw new Error("lockTimeoutMs must be a non-negative finite number");
@@ -570,28 +681,9 @@ async function acquireLock(root: string, options: RuntimeOptions): Promise<void>
   const started = Date.now();
   let lastReason = "Runtime write lock is busy";
   while (Date.now() - started <= timeout) {
+    const acquired = await publishCompleteLock(root, options);
+    if (acquired) return acquired;
     try {
-      const handle = await open(
-        lockPath,
-        constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL,
-        FILE_MODE
-      );
-      try {
-        const lock: LockRecord = {
-          schemaVersion: 1,
-          pid: process.pid,
-          acquiredAt: nowIso(options),
-        };
-        await handle.writeFile(`${canonicalJson(lock)}\n`, "utf8");
-        await handle.chmod(FILE_MODE);
-        await handle.sync();
-      } finally {
-        await handle.close();
-      }
-      await fsyncDirectory(root);
-      return;
-    } catch (error) {
-      if (errorCode(error) !== "EEXIST") throw error;
       const disposition = await inspectOrRecoverLock(root, options).catch(
         (inspectionError: unknown) => {
           if (errorCode(inspectionError) === "ENOENT") return "recovered";
@@ -600,6 +692,9 @@ async function acquireLock(root: string, options: RuntimeOptions): Promise<void>
       );
       if (disposition === "recovered") continue;
       lastReason = disposition;
+    } catch (error) {
+      if (errorCode(error) === "ENOENT") continue;
+      throw error;
     }
     await new Promise((resolveDelay) => setTimeout(resolveDelay, LOCK_RETRY_MS));
   }
@@ -613,15 +708,19 @@ async function withLock<T>(
 ): Promise<T> {
   const root = await physicalRoot(rootInput, true);
   await ensureRuntimeLayout(root);
-  await acquireLock(root, options);
-  const outcome = await operation(root).then(
+  const ownership = await acquireLock(root, options);
+  const outcome = await (async () => {
+    await options.afterLockAcquired?.(ownership.path);
+    return operation(root);
+  })().then(
     (value) => ({ ok: true as const, value }),
     (error: unknown) => ({ ok: false as const, error })
   );
   const release = await (async () => {
     try {
-      await unlink(join(root, ".write-lock"));
-      await fsyncDirectory(root);
+      if (await unlinkIfOwned(ownership.path, ownership)) {
+        await fsyncDirectory(root);
+      }
       return { ok: true as const };
     } catch (error) {
       return errorCode(error) === "ENOENT"
@@ -701,7 +800,7 @@ export async function initializeRuntime(
   return {
     snapshot,
     leases: projected.leases,
-    recoveryState: await recoveryState(root),
+    recoveryState: await recoveryState(root, options),
   };
 }
 
@@ -709,7 +808,7 @@ export async function loadRuntime(
   root: string,
   options: RuntimeOptions = {}
 ): Promise<RuntimeProjection> {
-  return withLock(root, options, loadUnlocked);
+  return withLock(root, options, (physical) => loadUnlocked(physical, options));
 }
 
 export async function appendEvent(
@@ -718,6 +817,7 @@ export async function appendEvent(
   options: RuntimeOptions = {}
 ): Promise<RuntimeProjection> {
   return withLock(root, options, async (physical) => {
+    await loadUnlocked(physical, options);
     const existing = await analyzeLedger(physical);
     if (existing.tornTail) {
       throw new Error("Authoritative ledger has a recoverable torn tail; run rebuild");
@@ -739,7 +839,7 @@ export async function appendEvent(
     const bytes = Buffer.from(`${JSON.stringify(event)}\n`, "utf8");
     try {
       const metadata = await handle.stat();
-      if (!metadata.isFile() || (metadata.mode & 0o777) !== FILE_MODE) {
+      if (!metadata.isFile() || (metadata.mode & 0o7777) !== FILE_MODE) {
         throw new Error("Authoritative ledger must be a mode 0600 regular file");
       }
       const written = await handle.write(bytes, 0, bytes.length, null);
@@ -765,7 +865,7 @@ export async function appendEvent(
       withRuntimeMetadata(projected.snapshot, canonical.fingerprint),
       projected.leases
     );
-    return loadUnlocked(physical);
+    return loadUnlocked(physical, options);
   });
 }
 
@@ -805,6 +905,6 @@ export async function rebuildRuntime(
       withRuntimeMetadata(projected.snapshot, canonical.fingerprint),
       projected.leases
     );
-    return loadUnlocked(physical);
+    return loadUnlocked(physical, options);
   });
 }

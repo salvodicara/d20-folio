@@ -252,6 +252,26 @@ async function recoveredTornLedger(root: string): Promise<Buffer> {
   return readFile(join(root, "recovery", itemAt(names, 0)));
 }
 
+async function recoveredTornLedgerPath(root: string): Promise<string> {
+  const names = (await readdir(join(root, "recovery"))).filter((name) =>
+    /^events-torn-[0-9a-f]{64}\.ndjson$/.test(name)
+  );
+  expect(names).toHaveLength(1);
+  return join(root, "recovery", itemAt(names, 0));
+}
+
+function reverseObjectKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(reverseObjectKeys);
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .reverse()
+        .map(([key, item]) => [key, reverseObjectKeys(item)])
+    );
+  }
+  return value;
+}
+
 function absentPid(): number {
   for (let candidate = 9_999_999; candidate > 9_999_900; candidate -= 1) {
     try {
@@ -393,6 +413,114 @@ describe("Program Supervisor atomic runtime", () => {
       })
     ).rejects.toThrow(/illegal transition/i);
     expect(await readFile(ledgerPath)).toEqual(before);
+    await expect(lstat(join(root, ".write-lock"))).rejects.toMatchObject({
+      code: "ENOENT",
+    });
+  });
+
+  it.each(["missing", "altered"] as const)(
+    "rejects append before mutation when bootstrap evidence is %s",
+    async (damage) => {
+      const root = await makeRoot();
+      const initialized = await initializeRuntime(root, bootstrapInput());
+      const ledgerPath = join(root, "ledger", "events.ndjson");
+      const programPath = join(root, "state", "program.json");
+      const leasesPath = join(root, "state", "leases.json");
+      const evidencePath = join(
+        root,
+        "evidence",
+        `bootstrap-input-${initialized.snapshot.bootstrapFingerprint}.json`
+      );
+      const before = await Promise.all(
+        [ledgerPath, programPath, leasesPath].map((path) => readFile(path))
+      );
+      if (damage === "missing") {
+        await rm(evidencePath);
+      } else {
+        await writeFile(evidencePath, "{}\n", { mode: 0o600 });
+      }
+
+      await expect(appendEvent(root, transitionToVerificationInput())).rejects.toThrow(
+        /bootstrap identity evidence|ENOENT/i
+      );
+      const after = await Promise.all(
+        [ledgerPath, programPath, leasesPath].map((path) => readFile(path))
+      );
+      expect(after).toEqual(before);
+    }
+  );
+
+  it("cleans only its complete unpublished lock when publication durability fails", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+
+    await expect(
+      loadRuntime(root, {
+        afterLockPublish: () => {
+          throw new Error("injected root fsync failure");
+        },
+      })
+    ).rejects.toThrow(/injected root fsync failure/i);
+    expect((await readdir(root)).filter((name) => name.includes("write-lock"))).toEqual(
+      []
+    );
+  });
+
+  it("leaves a complete recoverable lock when its owner dies after publication", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    const source = [
+      `import { loadRuntime } from ${JSON.stringify(RUNTIME_URL)};`,
+      `await loadRuntime(process.argv[1], {`,
+      `  now: () => new Date("2026-08-26T01:00:00.000Z"),`,
+      `  afterLockAcquired: () => process.exit(92),`,
+      `});`,
+    ].join("\n");
+
+    const crashed = spawnSync(
+      process.execPath,
+      ["--input-type=module", "-e", source, root],
+      { cwd: process.cwd(), encoding: "utf8" }
+    );
+    expect(crashed.status).toBe(92);
+    const lock = JSON.parse(await readFile(join(root, ".write-lock"), "utf8")) as Record<
+      string,
+      unknown
+    >;
+    expect(lock).toEqual({
+      schemaVersion: 1,
+      pid: crashed.pid,
+      acquiredAt: "2026-08-26T01:00:00.000Z",
+    });
+
+    const recovered = await loadRuntime(root, {
+      now: () => new Date("2026-08-26T01:30:01.000Z"),
+      lockTimeoutMs: 25,
+    });
+    expect(recovered.recoveryState.staleLocks).toHaveLength(1);
+  });
+
+  it("does not unlink a successor that replaces the acquired lock pathname", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    const displacedPath = join(root, ".write-lock.displaced");
+    const successor = {
+      schemaVersion: 1,
+      pid: process.pid,
+      acquiredAt: "2026-08-26T03:00:00.000Z",
+    };
+
+    await loadRuntime(root, {
+      afterLockAcquired: async (lockPath) => {
+        await rename(lockPath, displacedPath);
+        await writeSecureJson(lockPath, successor);
+      },
+    });
+
+    expect(JSON.parse(await readFile(join(root, ".write-lock"), "utf8"))).toEqual(
+      successor
+    );
+    expect((await stat(displacedPath)).isFile()).toBe(true);
   });
 
   it("assigns a lease acquisition timestamp under the lock", async () => {
@@ -424,11 +552,17 @@ describe("Program Supervisor atomic runtime", () => {
     const ledgerPath = join(root, "ledger", "events.ndjson");
     await appendFile(ledgerPath, '{"schemaVersion":1,"seq":2');
     const tornBytes = await readFile(ledgerPath);
+    const original = await stat(ledgerPath);
 
     await expect(loadRuntime(root)).rejects.toThrow("recoverable torn tail");
     await rebuildRuntime(root);
 
     expect(await recoveredTornLedger(root)).toEqual(tornBytes);
+    const evidence = await stat(await recoveredTornLedgerPath(root));
+    expect({ dev: evidence.dev, ino: evidence.ino }).toEqual({
+      dev: original.dev,
+      ino: original.ino,
+    });
     expect(parseEvents(await readFile(ledgerPath, "utf8"))).toHaveLength(1);
     const appended = await appendEvent(root, {
       schemaVersion: 1,
@@ -488,7 +622,7 @@ describe("Program Supervisor atomic runtime", () => {
   });
 
   it("leaves a crashed staging tree non-authoritative and surfaces it only after its PID exits", async () => {
-    const root = await makeRoot();
+    const root = await makeRoot("runtime.with.dots");
     const inputPath = join(dirname(root), "bootstrap.json");
     await writeSecureJson(inputPath, bootstrapInput());
     const source = [
@@ -576,6 +710,44 @@ describe("Program Supervisor atomic runtime", () => {
     ).rejects.toThrow(/younger than 30 minutes/i);
   });
 
+  it("fails closed when PID liveness cannot be determined", async () => {
+    const root = await makeRoot();
+    await initializeRuntime(root, bootstrapInput());
+    const lockPath = join(root, ".write-lock");
+    const lock = {
+      schemaVersion: 1,
+      pid: 42,
+      acquiredAt: "2026-08-26T00:00:00.000Z",
+    };
+    await writeSecureJson(lockPath, lock);
+
+    await expect(
+      loadRuntime(root, {
+        now: () => new Date("2026-08-26T01:00:01.000Z"),
+        lockTimeoutMs: 0,
+        probePid: () => {
+          throw Object.assign(new Error("invalid platform PID"), { code: "EINVAL" });
+        },
+      })
+    ).rejects.toThrow(/cannot prove.*PID.*EINVAL/i);
+    expect(JSON.parse(await readFile(lockPath, "utf8"))).toEqual(lock);
+    expect(await readdir(join(root, "recovery"))).toEqual([]);
+
+    const inaccessibleRoot = await makeRoot();
+    await initializeRuntime(inaccessibleRoot, bootstrapInput());
+    const inaccessiblePath = join(inaccessibleRoot, ".write-lock");
+    await writeSecureJson(inaccessiblePath, lock);
+    await expect(
+      loadRuntime(inaccessibleRoot, {
+        lockTimeoutMs: 0,
+        probePid: () => {
+          throw Object.assign(new Error("permission denied"), { code: "EPERM" });
+        },
+      })
+    ).rejects.toThrow(/live PID 42/i);
+    expect(JSON.parse(await readFile(inaccessiblePath, "utf8"))).toEqual(lock);
+  });
+
   it("rejects symlinked roots and runtime files with unsafe modes or file types", async () => {
     const root = await makeRoot();
     await initializeRuntime(root, bootstrapInput());
@@ -596,12 +768,24 @@ describe("Program Supervisor atomic runtime", () => {
     await symlink(movedPath, programPath);
     await expect(loadRuntime(cacheRoot)).rejects.toThrow(/regular non-symlink/i);
   });
+
+  it("rejects special permission bits on runtime files and directories", async () => {
+    const fileRoot = await makeRoot();
+    await initializeRuntime(fileRoot, bootstrapInput());
+    await chmod(join(fileRoot, "ledger", "events.ndjson"), 0o4600);
+    await expect(loadRuntime(fileRoot)).rejects.toThrow(/mode 0600/i);
+
+    const directoryRoot = await makeRoot();
+    await initializeRuntime(directoryRoot, bootstrapInput());
+    await chmod(join(directoryRoot, "state"), 0o1700);
+    await expect(loadRuntime(directoryRoot)).rejects.toThrow(/mode 0700/i);
+  });
 });
 
 describe("Program Supervisor bootstrap identity and CLI", () => {
-  it("fingerprints the complete semantic bootstrap independent of harmless whitespace", () => {
+  it("fingerprints semantic bootstrap identity independent of whitespace and object key order", () => {
     const left = bootstrapInput({ foundationState: "verification" });
-    const right = JSON.parse(JSON.stringify(left, null, 8)) as unknown;
+    const right = JSON.parse(JSON.stringify(reverseObjectKeys(left), null, 8)) as unknown;
 
     expect(canonicalBootstrapFingerprint(left)).toBe(
       canonicalBootstrapFingerprint(right)
@@ -682,6 +866,145 @@ describe("Program Supervisor bootstrap identity and CLI", () => {
     expect(retried.stderr).toMatch(/already exists/i);
   });
 
+  it.each([
+    [
+      "replacement task ID",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        itemAt(value.tasks, 0).charter.id = "foundation-replacement";
+        itemAt(value.activeLeases, 0).taskId = "foundation-replacement";
+      },
+    ],
+    [
+      "swapped K1/B00 states",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        itemAt(value.tasks, 1).state = "blocked-with-evidence";
+        itemAt(value.tasks, 1).receipt = "automation-k1-blocked-receipt";
+        itemAt(value.tasks, 2).state = "queued";
+        itemAt(value.tasks, 2).receipt = null;
+      },
+    ],
+    [
+      "wrong operating-model role path",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        value.authority.operatingModel.path = "docs/WRONG_OPERATING_MODEL.md";
+      },
+    ],
+    [
+      "wrong Wayfinder role path",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        itemAt(value.authority.productWayfinders, 0).path = "docs/WRONG.md";
+      },
+    ],
+    [
+      "swapped Wayfinder role paths",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        value.authority.productWayfinders.reverse();
+      },
+    ],
+    [
+      "wrong test-roadmap role path",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        value.authority.testPortfolioRoadmap.path = "docs/WRONG_TEST_ROADMAP.md";
+      },
+    ],
+    [
+      "wrong readiness role path",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        value.authority.readinessBaseline.path = "docs/WRONG_READINESS.md";
+      },
+    ],
+    [
+      "wrong status-owner role path",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        value.authority.statusOwner.path = "docs/WRONG_STATUS.md";
+      },
+    ],
+    [
+      "wrong F0 holder",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        itemAt(value.activeLeases, 0).holder = "different-holder";
+      },
+    ],
+    [
+      "wrong F0 agent",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        itemAt(value.activeLeases, 0).agentId = "different-agent";
+      },
+    ],
+    [
+      "wrong runtime lease ID",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        itemAt(value.activeLeases, 0).leaseId = "runtime-other";
+      },
+    ],
+    [
+      "wrong F0 repository lease identity",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        itemAt(value.tasks, 0).charter.ownership.repositoryLease.id = "F9";
+        itemAt(value.activeLeases, 0).authorityPointer.repositoryLeaseId = "F9";
+      },
+    ],
+    [
+      "wrong repository lease owner path",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        const wrongPath = "docs/OTHER_LEASE_OWNER.md";
+        itemAt(value.authority.repositoryLeaseOwners, 0).path = wrongPath;
+        for (const taskValue of value.tasks) {
+          itemAt(taskValue.charter.authority, 1).path = wrongPath;
+          taskValue.charter.ownership.repositoryLease.ownerDocumentPath = wrongPath;
+        }
+        itemAt(value.activeLeases, 0).authorityPointer.ownerDocumentPath = wrongPath;
+      },
+    ],
+    [
+      "wrong K1 repository lease identity",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        itemAt(value.tasks, 1).charter.ownership.repositoryLease.id = "K9";
+      },
+    ],
+    [
+      "wrong B00 repository lease identity",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        itemAt(value.tasks, 2).charter.ownership.repositoryLease.id = "B99";
+      },
+    ],
+    [
+      "extra active lease",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        const automation = itemAt(value.tasks, 1);
+        automation.state = "review";
+        automation.receipt = "automation-k1-review-receipt";
+        value.activeLeases.push({
+          ...activeFoundationLease(),
+          leaseId: "runtime-automation-k1",
+          taskId: "automation-k1",
+          holder: "automation-k1-holder",
+          agentId: "automation-k1-agent",
+          authorityPointer: authorityPointer(PROGRAM_REPOSITORY, "K1"),
+        });
+      },
+    ],
+    [
+      "extra repository lease owner",
+      (value: ReturnType<typeof bootstrapInput>) => {
+        value.authority.repositoryLeaseOwners.push({
+          path: "docs/OTHER_LEASE_OWNER.md",
+          blob: SHA_B,
+        });
+      },
+    ],
+  ] as const)("rejects initial adoption with %s", async (_name, mutate) => {
+    const root = await makeRoot();
+    const bootstrapPath = join(dirname(root), "hostile-bootstrap.json");
+    const input = bootstrapInput({ foundationState: "verification" });
+    mutate(input);
+    await writeSecureJson(bootstrapPath, input);
+
+    const result = runCli(["init", "--root", root, "--bootstrap-file", bootstrapPath]);
+    expect(result.status).not.toBe(0);
+    await expect(lstat(root)).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
   it("rejects partial, weak-mode, symlinked, and caller-timestamped CLI inputs", async () => {
     const parentRoot = await makeRoot();
     const parent = dirname(parentRoot);
@@ -707,6 +1030,23 @@ describe("Program Supervisor bootstrap identity and CLI", () => {
     const weakResult = runCli(["init", "--root", weakRoot, "--bootstrap-file", weakPath]);
     expect(weakResult.status).not.toBe(0);
     expect(weakResult.stderr).toMatch(/mode 0600/i);
+
+    const specialRoot = join(parent, "special-runtime");
+    const specialPath = join(parent, "special.json");
+    await writeSecureJson(
+      specialPath,
+      bootstrapInput({ foundationState: "verification" })
+    );
+    await chmod(specialPath, 0o4600);
+    const specialResult = runCli([
+      "init",
+      "--root",
+      specialRoot,
+      "--bootstrap-file",
+      specialPath,
+    ]);
+    expect(specialResult.status).not.toBe(0);
+    expect(specialResult.stderr).toMatch(/mode 0600/i);
 
     const realPath = join(parent, "real-bootstrap.json");
     const symlinkPath = join(parent, "symlink-bootstrap.json");
@@ -869,6 +1209,19 @@ describe("Program Supervisor bootstrap identity and CLI", () => {
     const weak = runCli(["append", "--root", root, "--event-file", weakPath]);
     expect(weak.status).not.toBe(0);
     expect(weak.stderr).toMatch(/mode 0600/i);
+
+    const specialPath = join(parent, "event-special-mode.json");
+    await writeSecureJson(specialPath, {
+      schemaVersion: 1,
+      eventId: "event-special-mode",
+      type: "no-frontier-recorded",
+      wayfinder: "foundation",
+      receipt: "A special-bit event file must be rejected before parsing.",
+    });
+    await chmod(specialPath, 0o4600);
+    const special = runCli(["append", "--root", root, "--event-file", specialPath]);
+    expect(special.status).not.toBe(0);
+    expect(special.stderr).toMatch(/mode 0600/i);
 
     const realEventPath = join(parent, "event-real.json");
     const symlinkEventPath = join(parent, "event-symlink.json");

@@ -24,6 +24,18 @@ interface Arguments {
   eventFile?: string;
 }
 
+const OPERATING_MODEL_PATH =
+  "docs/plans/2026-08-25-agent-first-operating-model-design.md";
+const AUTOMATION_WAYFINDER_PATH =
+  "docs/superpowers/plans/2026-08-25-automation-first-wayfinder.md";
+const TACTICAL_WAYFINDER_PATH =
+  "docs/superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md";
+const TEST_ROADMAP_PATH = "docs/superpowers/plans/2026-08-25-test-portfolio-reset.md";
+const READINESS_BASELINE_PATH =
+  "docs/superpowers/plans/2026-08-25-g0-automation-readiness.md";
+const LEASE_OWNER_PATH = "docs/TEST_PORTFOLIO.md";
+const STATUS_OWNER_PATH = "docs/PROGRAM_STATUS.md";
+
 function usage(): never {
   throw new Error(
     "Use: init [--root ROOT] --bootstrap-file JSON_FILE | validate [--root ROOT] [--expect-bootstrap-file JSON_FILE] | append [--root ROOT] --event-file JSON_FILE | rebuild [--root ROOT]"
@@ -125,25 +137,92 @@ async function parseArguments(argv: readonly string[]): Promise<Arguments> {
 function assertFoundationBootstrap(value: unknown): void {
   canonicalBootstrapFingerprint(value);
   const record = value as {
-    tasks?: Array<{ charter?: { id?: unknown }; state?: unknown }>;
-    activeLeases?: Array<{ taskId?: unknown; role?: unknown; readOnly?: unknown }>;
+    authority?: {
+      operatingModel?: { path?: unknown };
+      productWayfinders?: Array<{ path?: unknown }>;
+      testPortfolioRoadmap?: { path?: unknown };
+      readinessBaseline?: { path?: unknown };
+      repositoryLeaseOwners?: Array<{ path?: unknown }>;
+      statusOwner?: { path?: unknown };
+    };
+    tasks?: Array<{
+      charter?: {
+        id?: unknown;
+        ownership?: {
+          repositoryLease?: { id?: unknown; ownerDocumentPath?: unknown };
+        };
+      };
+      state?: unknown;
+    }>;
+    activeLeases?: Array<{
+      leaseId?: unknown;
+      taskId?: unknown;
+      holder?: unknown;
+      agentId?: unknown;
+      role?: unknown;
+      readOnly?: unknown;
+      authorityPointer?: {
+        repositoryLeaseId?: unknown;
+        ownerDocumentPath?: unknown;
+      };
+    }>;
   };
+  const authority = record.authority;
+  const expectedWayfinders = [AUTOMATION_WAYFINDER_PATH, TACTICAL_WAYFINDER_PATH];
+  if (
+    authority?.operatingModel?.path !== OPERATING_MODEL_PATH ||
+    authority.productWayfinders?.length !== expectedWayfinders.length ||
+    authority.productWayfinders.some(
+      (reference, index) => reference.path !== expectedWayfinders[index]
+    ) ||
+    authority.testPortfolioRoadmap?.path !== TEST_ROADMAP_PATH ||
+    authority.readinessBaseline?.path !== READINESS_BASELINE_PATH ||
+    authority.repositoryLeaseOwners?.length !== 1 ||
+    authority.repositoryLeaseOwners[0]?.path !== LEASE_OWNER_PATH ||
+    authority.statusOwner?.path !== STATUS_OWNER_PATH
+  ) {
+    throw new Error("Bootstrap authority roles do not match the reviewed program");
+  }
   if (!Array.isArray(record.tasks) || record.tasks.length !== 3) {
     throw new Error("Bootstrap must contain exactly the three reviewed initial charters");
   }
-  const foundation = record.tasks.find(({ charter }) => charter?.id === "foundation-f0");
-  if (!foundation || foundation.state !== "verification") {
-    throw new Error("foundation-f0 must start in verification, never integrated");
+  const expectedTasks = new Map([
+    ["foundation-f0", { state: "verification", repositoryLeaseId: "F0" }],
+    ["automation-k1", { state: "queued", repositoryLeaseId: "K1" }],
+    ["tactical-b00", { state: "blocked-with-evidence", repositoryLeaseId: "B00" }],
+  ]);
+  for (const task of record.tasks) {
+    const id = task.charter?.id;
+    const expected = typeof id === "string" ? expectedTasks.get(id) : undefined;
+    const repositoryLease = task.charter?.ownership?.repositoryLease;
+    if (
+      !expected ||
+      task.state !== expected.state ||
+      repositoryLease?.id !== expected.repositoryLeaseId ||
+      repositoryLease.ownerDocumentPath !== LEASE_OWNER_PATH
+    ) {
+      throw new Error("Bootstrap task identity does not match the reviewed program");
+    }
+    expectedTasks.delete(id as string);
   }
-  const foundationLease = record.activeLeases?.find(
-    ({ taskId }) => taskId === "foundation-f0"
-  );
+  if (expectedTasks.size !== 0) {
+    throw new Error("Bootstrap must contain every reviewed initial task exactly once");
+  }
+  const foundationLease = record.activeLeases?.[0];
   if (
-    !foundationLease ||
+    record.activeLeases?.length !== 1 ||
+    foundationLease?.leaseId !== "runtime-foundation-f0" ||
+    foundationLease.taskId !== "foundation-f0" ||
+    foundationLease.holder !== "program-supervisor-foundation" ||
+    foundationLease.agentId !== "agent-foundation-f0" ||
     foundationLease.role !== "writer" ||
-    foundationLease.readOnly !== false
+    foundationLease.readOnly !== false ||
+    foundationLease.authorityPointer?.repositoryLeaseId !== "F0" ||
+    foundationLease.authorityPointer.ownerDocumentPath !== LEASE_OWNER_PATH
   ) {
-    throw new Error("foundation-f0 must start with its active writable F0 lease");
+    throw new Error(
+      "Bootstrap lease identity must be the exact reviewed active writable foundation-f0 F0 lease"
+    );
   }
 }
 
