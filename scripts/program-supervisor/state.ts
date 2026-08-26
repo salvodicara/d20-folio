@@ -273,7 +273,7 @@ interface RulingRecordedEvent extends BaseEvent {
 export interface OwnerGateRecord {
   taskId: string;
   gate: string;
-  decision: "approved" | "rejected";
+  decision: "pending" | "approved" | "rejected";
   receipt: string;
   verificationEventId: string;
   at: string;
@@ -283,7 +283,7 @@ interface OwnerGateRecordedEvent extends BaseEvent {
   type: "owner-gate-recorded";
   taskId: string;
   gate: string;
-  decision: "approved" | "rejected";
+  decision: OwnerGateRecord["decision"];
   receipt: string;
 }
 
@@ -901,8 +901,12 @@ function validateOwnerGateRecord(value: unknown, path: string): OwnerGateRecord 
     "verificationEventId",
     "at",
   ]);
-  if (record.decision !== "approved" && record.decision !== "rejected") {
-    corruption(`${path}.decision`, "expected approved or rejected");
+  if (
+    record.decision !== "pending" &&
+    record.decision !== "approved" &&
+    record.decision !== "rejected"
+  ) {
+    corruption(`${path}.decision`, "expected pending, approved, or rejected");
   }
   return {
     taskId: idAt(record.taskId, `${path}.taskId`),
@@ -1285,19 +1289,35 @@ function assertDependenciesSatisfied(
   }
 }
 
-function latestGateDecision(
+function gateRecordsForCycle(
+  snapshot: ProgramSnapshot,
+  task: TaskProjection
+): OwnerGateRecord[] {
+  if (task.verificationEventId === null) return [];
+  return snapshot.ownerGates.filter(
+    (record) =>
+      record.taskId === task.charter.id &&
+      record.gate === task.charter.ownerGate.name &&
+      record.verificationEventId === task.verificationEventId
+  );
+}
+
+function pendingGateRequest(
   snapshot: ProgramSnapshot,
   task: TaskProjection
 ): OwnerGateRecord | undefined {
-  if (task.verificationEventId === null) return undefined;
-  return snapshot.ownerGates
-    .filter(
-      (record) =>
-        record.taskId === task.charter.id &&
-        record.gate === task.charter.ownerGate.name &&
-        record.verificationEventId === task.verificationEventId
-    )
-    .at(-1);
+  return gateRecordsForCycle(snapshot, task).find(
+    ({ decision }) => decision === "pending"
+  );
+}
+
+function terminalGateDecision(
+  snapshot: ProgramSnapshot,
+  task: TaskProjection
+): OwnerGateRecord | undefined {
+  return gateRecordsForCycle(snapshot, task).find(
+    ({ decision }) => decision === "approved" || decision === "rejected"
+  );
 }
 
 function enforceProjectionSemantics(snapshot: ProgramSnapshot, path: string): void {
@@ -1371,15 +1391,28 @@ function enforceProjectionSemantics(snapshot: ProgramSnapshot, path: string): vo
         `task ${task.charter.id} verification identity does not match ${task.state}`
       );
     }
-    if (
-      task.charter.ownerGate.required &&
-      (task.state === "owner-gate" || task.state === "integrated")
-    ) {
-      const latest = latestGateDecision(snapshot, task);
-      if (!latest || latest.decision !== "approved") {
+    if (task.charter.ownerGate.required) {
+      const pending = pendingGateRequest(snapshot, task);
+      const terminal = terminalGateDecision(snapshot, task);
+      if (task.state === "verification" && terminal) {
         corruption(
           `${path}.ownerGates`,
-          `task ${task.charter.id} latest owner-gate decision is not approved`
+          `task ${task.charter.id} terminal owner-gate decision occurred before owner-gate`
+        );
+      }
+      if (task.state === "owner-gate" && !pending) {
+        corruption(
+          `${path}.ownerGates`,
+          `task ${task.charter.id} owner-gate lacks its pending request`
+        );
+      }
+      if (
+        task.state === "integrated" &&
+        (!pending || terminal?.decision !== "approved")
+      ) {
+        corruption(
+          `${path}.ownerGates`,
+          `task ${task.charter.id} owner-gate cycle lacks a terminal approval`
         );
       }
     }
@@ -1392,21 +1425,42 @@ function enforceProjectionSemantics(snapshot: ProgramSnapshot, path: string): vo
       corruption(`${path}.rulings`, `ruling ${ruling.id} references unknown task`);
     }
   }
-  const gateDecisionKeys = new Set<string>();
+  const gateCycles = new Map<
+    string,
+    { pending: boolean; terminal: "approved" | "rejected" | null }
+  >();
   for (const gate of snapshot.ownerGates) {
     const task = snapshot.tasks.find(({ charter }) => charter.id === gate.taskId);
     if (!task) corruption(`${path}.ownerGates`, "owner-gate references unknown task");
     if (!task.charter.ownerGate.required || task.charter.ownerGate.name !== gate.gate) {
       corruption(`${path}.ownerGates`, `owner-gate does not match task ${gate.taskId}`);
     }
-    const key = `${gate.taskId}\0${gate.gate}\0${gate.verificationEventId}\0${gate.decision}`;
-    if (gateDecisionKeys.has(key)) {
-      corruption(
-        `${path}.ownerGates`,
-        "duplicate owner-gate decision for verification cycle"
-      );
+    const key = `${gate.taskId}\0${gate.gate}\0${gate.verificationEventId}`;
+    const cycle = gateCycles.get(key) ?? { pending: false, terminal: null };
+    if (gate.decision === "pending") {
+      if (cycle.pending || cycle.terminal !== null) {
+        corruption(
+          `${path}.ownerGates`,
+          "owner-gate cycle must contain exactly one pending request before a terminal decision"
+        );
+      }
+      cycle.pending = true;
+    } else {
+      if (!cycle.pending) {
+        corruption(
+          `${path}.ownerGates`,
+          "terminal owner-gate decision requires the pending request first"
+        );
+      }
+      if (cycle.terminal !== null) {
+        corruption(
+          `${path}.ownerGates`,
+          "owner-gate cycle already has a terminal decision"
+        );
+      }
+      cycle.terminal = gate.decision;
     }
-    gateDecisionKeys.add(key);
+    gateCycles.set(key, cycle);
   }
   if (
     snapshot.heartbeat &&
@@ -1903,8 +1957,12 @@ export function validateEventInput(value: unknown): ProgramEvent {
     }
     case "owner-gate-recorded": {
       const record = eventObject(broad, ["taskId", "gate", "decision", "receipt"]);
-      if (record.decision !== "approved" && record.decision !== "rejected") {
-        corruption("event.decision", "expected approved or rejected");
+      if (
+        record.decision !== "pending" &&
+        record.decision !== "approved" &&
+        record.decision !== "rejected"
+      ) {
+        corruption("event.decision", "expected pending, approved, or rejected");
       }
       return {
         ...base,
@@ -2605,8 +2663,23 @@ export function replayEvents(events: readonly unknown[]): {
         ) {
           corruption("event.to", `${current.to} requires an active lease`);
         }
+        const gateTerminal = terminalGateDecision(snapshot, task);
+        if (
+          current.from === "owner-gate" &&
+          current.to === "blocked-with-evidence" &&
+          gateTerminal?.decision !== "rejected"
+        ) {
+          corruption(
+            "event.to",
+            "owner-gate may block only after its terminal rejection"
+          );
+        }
         if (current.to === "blocked-with-evidence" && task.activeLease) {
-          if (current.from !== "leased" && current.from !== "executing") {
+          if (
+            current.from !== "leased" &&
+            current.from !== "executing" &&
+            current.from !== "owner-gate"
+          ) {
             corruption(
               "event.to",
               `cannot close an active lease while blocking from ${current.from}`
@@ -2618,11 +2691,14 @@ export function replayEvents(events: readonly unknown[]): {
           corruption("event.to", "task-reconciled is required before review resumes");
         }
         if (current.to === "owner-gate") {
-          const latest = latestGateDecision(snapshot, task);
-          if (!latest || latest.decision !== "approved") {
+          const records = gateRecordsForCycle(snapshot, task);
+          if (
+            records.filter(({ decision }) => decision === "pending").length !== 1 ||
+            records.some(({ decision }) => decision !== "pending")
+          ) {
             corruption(
               "event.ownerGate",
-              "latest decision for the current verification must be approved"
+              "owner-gate requires exactly one pending request for the current verification"
             );
           }
         }
@@ -2636,12 +2712,9 @@ export function replayEvents(events: readonly unknown[]): {
         if (
           current.to === "integrated" &&
           task.charter.ownerGate.required &&
-          latestGateDecision(snapshot, task)?.decision !== "approved"
+          gateTerminal?.decision !== "approved"
         ) {
-          corruption(
-            "event.to",
-            "latest owner-gate decision must remain approved for integration"
-          );
+          corruption("event.to", "owner-gate integration requires its terminal approval");
         }
         task.state = current.to;
         task.receipt = current.receipt;
@@ -2704,24 +2777,42 @@ export function replayEvents(events: readonly unknown[]): {
         ) {
           corruption("event.gate", "does not match the task's named owner gate");
         }
-        if (task.state !== "verification" || task.verificationEventId === null) {
+        if (task.verificationEventId === null) {
           corruption(
             "event.gate",
-            "owner-gate decision requires a task currently awaiting the gate in verification"
+            "owner-gate record requires a current verification identity"
           );
         }
-        const duplicate = snapshot.ownerGates.some(
-          (record) =>
-            record.taskId === current.taskId &&
-            record.gate === current.gate &&
-            record.verificationEventId === task.verificationEventId &&
-            record.decision === current.decision
-        );
-        if (duplicate) {
-          corruption(
-            "event.gate",
-            "duplicate owner-gate decision for the current verification"
-          );
+        const records = gateRecordsForCycle(snapshot, task);
+        if (current.decision === "pending") {
+          if (task.state !== "verification") {
+            corruption(
+              "event.gate",
+              "pending owner-gate request may be recorded only in verification"
+            );
+          }
+          if (records.length !== 0) {
+            corruption(
+              "event.gate",
+              "current verification already has its pending owner-gate request"
+            );
+          }
+        } else {
+          if (task.state !== "owner-gate") {
+            corruption(
+              "event.gate",
+              "terminal owner-gate decision may be recorded only in owner-gate"
+            );
+          }
+          if (!records.some(({ decision }) => decision === "pending")) {
+            corruption(
+              "event.gate",
+              "terminal owner-gate decision requires the pending request first"
+            );
+          }
+          if (records.some(({ decision }) => decision !== "pending")) {
+            corruption("event.gate", "owner-gate cycle already has a terminal decision");
+          }
         }
         snapshot.ownerGates.push({
           taskId: current.taskId,

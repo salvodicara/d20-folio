@@ -1367,78 +1367,45 @@ describe("Program Supervisor lease lifecycle and state transitions", () => {
     ).toThrow(/owner-gate/);
   });
 
-  it("records owner-gate decisions only while the named task is awaiting that gate", () => {
-    const fixture = bootstrapFixture();
-    itemAt(fixture.tasks, 0).charter.ownerGate = {
-      required: true,
-      name: "product-owner",
-    };
-
-    expect(() =>
-      replayEvents([
-        fixture,
-        event(2, "owner-gate-recorded", {
-          taskId: "task-a",
-          gate: "product-owner",
-          decision: "approved",
-          receipt: "Stale approval outside verification.",
-        }),
-      ])
-    ).toThrow(/verification|awaiting/i);
-  });
-
-  it("rejects duplicate gate decisions and honors the latest rejection", () => {
+  it("records one pending owner-gate request in verification and reconstructs the paused gate", () => {
     const fixture = bootstrapFixture();
     const task = itemAt(fixture.tasks, 0);
     task.charter.ownerGate = { required: true, name: "product-owner" };
     task.state = "verification";
     task.receipt = "verification complete";
-    const approved = event(2, "owner-gate-recorded", {
+    const pending = event(2, "owner-gate-recorded", {
       taskId: "task-a",
       gate: "product-owner",
-      decision: "approved",
-      receipt: "Owner approval A.",
+      decision: "pending",
+      receipt: "Exact verified identity submitted for owner decision.",
+    });
+    const enterGate = event(3, "state-transitioned", {
+      taskId: "task-a",
+      from: "verification",
+      to: "owner-gate",
+      receipt: "Paused before the owner answers.",
+      ownerGate: "product-owner",
     });
 
-    expect(() =>
-      replayEvents([
-        fixture,
-        approved,
-        { ...approved, seq: 3, eventId: "event-3-owner-gate-recorded" },
-      ])
-    ).toThrow(/duplicate.*decision/i);
+    const requested = replayEvents([fixture, pending]);
+    expect(requested.snapshot.ownerGates).toEqual([
+      {
+        taskId: "task-a",
+        gate: "product-owner",
+        decision: "pending",
+        receipt: "Exact verified identity submitted for owner decision.",
+        verificationEventId: "event-bootstrap",
+        at: "2026-08-26T02:00:00.000Z",
+      },
+    ]);
+    expect(() => validateSnapshot(requested.snapshot)).not.toThrow();
 
-    expect(() =>
-      replayEvents([
-        fixture,
-        approved,
-        event(3, "owner-gate-recorded", {
-          taskId: "task-a",
-          gate: "product-owner",
-          decision: "rejected",
-          receipt: "Owner rejection supersedes approval A.",
-        }),
-        event(4, "state-transitioned", {
-          taskId: "task-a",
-          from: "verification",
-          to: "owner-gate",
-          receipt: "Attempted stale approval reuse.",
-          ownerGate: "product-owner",
-        }),
-      ])
-    ).toThrow(/latest.*approved|rejected/i);
-  });
-
-  it("does not reuse an approval from an earlier verification cycle", () => {
-    const fixture = bootstrapFixture();
-    const task = itemAt(fixture.tasks, 0);
-    task.charter.ownerGate = { required: true, name: "product-owner" };
-    task.state = "verification";
-    task.receipt = "verification cycle one";
-    const active = lease("task-a");
-    active.acquiredAt = fixture.at;
-    active.termStartedAt = fixture.at;
-    fixture.activeLeases.push(active);
+    const paused = replayEvents([fixture, pending, enterGate]);
+    expect(itemAt(paused.snapshot.tasks, 0)).toMatchObject({
+      state: "owner-gate",
+      verificationEventId: "event-bootstrap",
+    });
+    expect(() => validateSnapshot(paused.snapshot)).not.toThrow();
 
     expect(() =>
       replayEvents([
@@ -1447,50 +1414,337 @@ describe("Program Supervisor lease lifecycle and state transitions", () => {
           taskId: "task-a",
           gate: "product-owner",
           decision: "approved",
-          receipt: "Cycle one approval.",
+          receipt: "Terminal answer before the task pauses.",
         }),
-        event(3, "state-transitioned", {
+      ])
+    ).toThrow(/terminal.*owner-gate|pending.*first/i);
+
+    expect(() =>
+      replayEvents([
+        fixture,
+        { ...enterGate, seq: 2, eventId: "event-2-state-transitioned" },
+      ])
+    ).toThrow(/pending.*request/i);
+
+    expect(() =>
+      replayEvents([
+        fixture,
+        pending,
+        event(3, "owner-gate-recorded", {
           taskId: "task-a",
-          from: "verification",
-          to: "executing",
-          receipt: "Cycle one verification failed.",
-          fixBack: { kind: "failed-gate", proof: "typecheck failed" },
+          gate: "product-owner",
+          decision: "pending",
+          receipt: "Duplicate pending request in verification.",
         }),
-        event(4, "task-reconciled", {
+      ])
+    ).toThrow(/already.*pending/i);
+
+    expect(() =>
+      replayEvents([
+        fixture,
+        pending,
+        enterGate,
+        event(4, "owner-gate-recorded", {
           taskId: "task-a",
-          repository: REPOSITORY,
-          worktree: "/worktrees/task-a",
-          branch: "feat/task-a",
-          previousBaseSha: SHA_B,
-          previousHeadSha: SHA_B,
-          baseSha: SHA_B,
-          headSha: SHA_E,
-          proof: "Fix commit changed HEAD.",
+          gate: "product-owner",
+          decision: "pending",
+          receipt: "Second pending request after the pause.",
         }),
+      ])
+    ).toThrow(/pending.*verification|already.*pending/i);
+  });
+
+  it("allows exactly one terminal approval in owner-gate and approval alone integrates", () => {
+    const fixture = bootstrapFixture();
+    const task = itemAt(fixture.tasks, 0);
+    task.charter.ownerGate = { required: true, name: "product-owner" };
+    task.state = "verification";
+    task.receipt = "verification complete";
+    const pending = event(2, "owner-gate-recorded", {
+      taskId: "task-a",
+      gate: "product-owner",
+      decision: "pending",
+      receipt: "Owner decision requested.",
+    });
+    const enterGate = event(3, "state-transitioned", {
+      taskId: "task-a",
+      from: "verification",
+      to: "owner-gate",
+      receipt: "Paused for the owner.",
+      ownerGate: "product-owner",
+    });
+    const approved = event(4, "owner-gate-recorded", {
+      taskId: "task-a",
+      gate: "product-owner",
+      decision: "approved",
+      receipt: "Owner approved the exact verification identity.",
+    });
+    const integrated = event(5, "state-transitioned", {
+      taskId: "task-a",
+      from: "owner-gate",
+      to: "integrated",
+      receipt: "Remote integration includes the approved identity.",
+    });
+
+    const result = replayEvents([fixture, pending, enterGate, approved, integrated]);
+    expect(itemAt(result.snapshot.tasks, 0)).toMatchObject({
+      state: "integrated",
+      verificationEventId: "event-bootstrap",
+    });
+
+    expect(() =>
+      replayEvents([
+        fixture,
+        pending,
+        enterGate,
+        { ...integrated, seq: 4, eventId: "event-4-state-transitioned" },
+      ])
+    ).toThrow(/terminal approval/i);
+
+    expect(() =>
+      replayEvents([
+        fixture,
+        pending,
+        enterGate,
+        approved,
+        event(5, "owner-gate-recorded", {
+          taskId: "task-a",
+          gate: "product-owner",
+          decision: "approved",
+          receipt: "Duplicate terminal approval.",
+        }),
+      ])
+    ).toThrow(/already.*terminal|duplicate.*terminal/i);
+
+    expect(() =>
+      replayEvents([
+        fixture,
+        pending,
+        enterGate,
+        approved,
+        event(5, "owner-gate-recorded", {
+          taskId: "task-a",
+          gate: "product-owner",
+          decision: "rejected",
+          receipt: "Attempted terminal switch.",
+        }),
+      ])
+    ).toThrow(/already.*terminal|switch/i);
+
+    expect(() =>
+      replayEvents([
+        fixture,
+        pending,
+        enterGate,
+        approved,
         event(5, "state-transitioned", {
           taskId: "task-a",
-          from: "executing",
-          to: "review",
-          receipt: "review cycle two",
+          from: "owner-gate",
+          to: "blocked-with-evidence",
+          receipt: "Approved identity cannot follow the rejection path.",
         }),
-        event(6, "state-transitioned", {
+      ])
+    ).toThrow(/terminal rejection/i);
+  });
+
+  it.each([false, true])(
+    "rejects an owner gate with active lease=%s and atomically blocks the cycle",
+    (withActiveLease) => {
+      const fixture = bootstrapFixture();
+      const task = itemAt(fixture.tasks, 0);
+      task.charter.ownerGate = { required: true, name: "product-owner" };
+      task.state = "verification";
+      task.receipt = "verification complete";
+      if (withActiveLease) {
+        const active = lease("task-a");
+        active.acquiredAt = fixture.at;
+        active.termStartedAt = fixture.at;
+        fixture.activeLeases.push(active);
+      }
+      const pending = event(2, "owner-gate-recorded", {
+        taskId: "task-a",
+        gate: "product-owner",
+        decision: "pending",
+        receipt: "Owner decision requested.",
+      });
+      const enterGate = event(3, "state-transitioned", {
+        taskId: "task-a",
+        from: "verification",
+        to: "owner-gate",
+        receipt: "Paused for the owner.",
+        ownerGate: "product-owner",
+      });
+      const rejected = event(4, "owner-gate-recorded", {
+        taskId: "task-a",
+        gate: "product-owner",
+        decision: "rejected",
+        receipt: "Owner rejected the exact verification identity.",
+      });
+      const blocked = event(5, "state-transitioned", {
+        taskId: "task-a",
+        from: "owner-gate",
+        to: "blocked-with-evidence",
+        receipt: "Rejected candidate and recovery evidence preserved.",
+      });
+
+      const result = replayEvents([fixture, pending, enterGate, rejected, blocked]);
+      expect(itemAt(result.snapshot.tasks, 0)).toMatchObject({
+        state: "blocked-with-evidence",
+        activeLease: null,
+        verificationEventId: null,
+      });
+      expect(result.leases.leases).toEqual([]);
+
+      expect(() =>
+        replayEvents([
+          fixture,
+          pending,
+          enterGate,
+          rejected,
+          event(5, "state-transitioned", {
+            taskId: "task-a",
+            from: "owner-gate",
+            to: "integrated",
+            receipt: "Rejected identity cannot integrate.",
+          }),
+        ])
+      ).toThrow(/rejected|terminal approval/i);
+    }
+  );
+
+  it("requires a fresh lease, verification identity, and pending request after rejection and expiry", () => {
+    const fixture = bootstrapFixture();
+    const task = itemAt(fixture.tasks, 0);
+    task.charter.ownerGate = { required: true, name: "product-owner" };
+    task.state = "verification";
+    task.receipt = "verification cycle one";
+    const active = lease("task-a", "writer", {
+      expiresAt: "2026-08-26T04:00:00.000Z",
+    });
+    active.acquiredAt = fixture.at;
+    active.termStartedAt = fixture.at;
+    fixture.activeLeases.push(active);
+    const cycleOne = [
+      fixture,
+      event(2, "owner-gate-recorded", {
+        taskId: "task-a",
+        gate: "product-owner",
+        decision: "pending",
+        receipt: "Cycle one owner decision requested.",
+      }),
+      event(3, "state-transitioned", {
+        taskId: "task-a",
+        from: "verification",
+        to: "owner-gate",
+        receipt: "Cycle one paused for the owner.",
+        ownerGate: "product-owner",
+      }),
+      event(
+        4,
+        "lease-expired",
+        {
           taskId: "task-a",
-          from: "review",
-          to: "verification",
-          receipt: "verification cycle two",
-        }),
-        event(7, "state-transitioned", {
+          leaseId: active.leaseId,
+          preservationReceipt: "Owner-gate evidence remains reconstructible.",
+        },
+        active.expiresAt
+      ),
+      event(5, "owner-gate-recorded", {
+        taskId: "task-a",
+        gate: "product-owner",
+        decision: "rejected",
+        receipt: "Cycle one rejected after lease expiry.",
+      }),
+      event(6, "state-transitioned", {
+        taskId: "task-a",
+        from: "owner-gate",
+        to: "blocked-with-evidence",
+        receipt: "Cycle one rejection preserved.",
+      }),
+    ];
+    const fresh = lease("task-a", "writer", {
+      leaseId: "runtime-task-a-cycle-two",
+    });
+    fresh.acquiredAt = "2026-08-26T07:00:00.000Z";
+    fresh.termStartedAt = "2026-08-26T07:00:00.000Z";
+    const cycleTwoBeforeRequest = [
+      ...cycleOne,
+      acquire(7, fresh),
+      event(8, "dispatch-recorded", {
+        taskId: "task-a",
+        leaseId: fresh.leaseId,
+        receipt: "Cycle two dispatched under a fresh lease.",
+      }),
+      event(9, "state-transitioned", {
+        taskId: "task-a",
+        from: "executing",
+        to: "review",
+        receipt: "Cycle two independent review passed.",
+      }),
+      event(10, "state-transitioned", {
+        taskId: "task-a",
+        from: "review",
+        to: "verification",
+        receipt: "Cycle two verification passed.",
+      }),
+    ];
+
+    expect(() =>
+      replayEvents([
+        ...cycleTwoBeforeRequest,
+        event(11, "state-transitioned", {
           taskId: "task-a",
           from: "verification",
           to: "owner-gate",
-          receipt: "Attempted cycle one approval reuse.",
+          receipt: "Attempted cross-cycle pending reuse.",
           ownerGate: "product-owner",
         }),
       ])
-    ).toThrow(/current verification|latest.*approved|stale/i);
+    ).toThrow(/pending.*current verification|fresh.*pending/i);
+
+    expect(() =>
+      replayEvents([
+        ...cycleTwoBeforeRequest,
+        event(11, "owner-gate-recorded", {
+          taskId: "task-a",
+          gate: "product-owner",
+          decision: "approved",
+          receipt: "Terminal decision cannot precede the fresh pending request.",
+        }),
+      ])
+    ).toThrow(/terminal.*owner-gate|pending.*first/i);
+
+    const cycleTwo = replayEvents([
+      ...cycleTwoBeforeRequest,
+      event(11, "owner-gate-recorded", {
+        taskId: "task-a",
+        gate: "product-owner",
+        decision: "pending",
+        receipt: "Cycle two owner decision requested.",
+      }),
+      event(12, "state-transitioned", {
+        taskId: "task-a",
+        from: "verification",
+        to: "owner-gate",
+        receipt: "Cycle two paused for the owner.",
+        ownerGate: "product-owner",
+      }),
+      event(13, "owner-gate-recorded", {
+        taskId: "task-a",
+        gate: "product-owner",
+        decision: "approved",
+        receipt: "Cycle two approved.",
+      }),
+    ]);
+    const cycleIds = cycleTwo.snapshot.ownerGates.map(
+      ({ verificationEventId }) => verificationEventId
+    );
+    expect(new Set(cycleIds)).toEqual(
+      new Set(["event-bootstrap", "event-10-state-transitioned"])
+    );
   });
 
-  it("rejects reconciliation inside an approved verification cycle", () => {
+  it("rejects reconciliation inside a pending verification cycle", () => {
     const fixture = bootstrapFixture();
     const task = itemAt(fixture.tasks, 0);
     task.charter.ownerGate = { required: true, name: "product-owner" };
@@ -1503,8 +1757,8 @@ describe("Program Supervisor lease lifecycle and state transitions", () => {
         event(2, "owner-gate-recorded", {
           taskId: "task-a",
           gate: "product-owner",
-          decision: "approved",
-          receipt: "Owner approved the verified identities.",
+          decision: "pending",
+          receipt: "Owner decision requested for the verified identities.",
         }),
         event(3, "task-reconciled", {
           taskId: "task-a",
@@ -1515,7 +1769,7 @@ describe("Program Supervisor lease lifecycle and state transitions", () => {
           previousHeadSha: SHA_B,
           baseSha: SHA_B,
           headSha: SHA_E,
-          proof: "HEAD changed after owner approval.",
+          proof: "HEAD changed after the owner request.",
         }),
       ])
     ).toThrow(/verification.*reconcil|fresh review/i);
@@ -1534,17 +1788,23 @@ describe("Program Supervisor lease lifecycle and state transitions", () => {
         event(2, "owner-gate-recorded", {
           taskId: "task-a",
           gate: "product-owner",
-          decision: "approved",
-          receipt: "Owner approved the verified identities.",
+          decision: "pending",
+          receipt: "Owner decision requested for the verified identities.",
         }),
         event(3, "state-transitioned", {
           taskId: "task-a",
           from: "verification",
           to: "owner-gate",
-          receipt: "Entered the approved owner gate.",
+          receipt: "Entered the pending owner gate.",
           ownerGate: "product-owner",
         }),
-        event(4, "task-reconciled", {
+        event(4, "owner-gate-recorded", {
+          taskId: "task-a",
+          gate: "product-owner",
+          decision: "approved",
+          receipt: "Owner approved the verified identities.",
+        }),
+        event(5, "task-reconciled", {
           taskId: "task-a",
           repository: REPOSITORY,
           worktree: "/worktrees/task-a",
@@ -1822,8 +2082,8 @@ describe("Program Supervisor deterministic event coverage", () => {
       event(12, "owner-gate-recorded", {
         taskId: "task-a",
         gate: "product-owner",
-        decision: "approved",
-        receipt: "Owner approved curated screenshots.",
+        decision: "pending",
+        receipt: "Curated screenshots submitted for owner decision.",
       }),
       event(13, "state-transitioned", {
         taskId: "task-a",
@@ -1832,24 +2092,30 @@ describe("Program Supervisor deterministic event coverage", () => {
         receipt: "verification gates passed",
         ownerGate: "product-owner",
       }),
-      event(14, "state-transitioned", {
+      event(14, "owner-gate-recorded", {
+        taskId: "task-a",
+        gate: "product-owner",
+        decision: "approved",
+        receipt: "Owner approved curated screenshots.",
+      }),
+      event(15, "state-transitioned", {
         taskId: "task-a",
         from: "owner-gate",
         to: "integrated",
         receipt: "remote SHA and owner approval proven",
       }),
-      event(15, "lease-released", {
+      event(16, "lease-released", {
         taskId: "task-a",
         leaseId: active.leaseId,
         proof: "Integrated remote SHA closes the runtime lease.",
       }),
-      event(16, "cleanup-recorded", {
+      event(17, "cleanup-recorded", {
         taskId: "task-a",
         removed: ["worktree", "branch"],
         remoteProof: "origin/main contains the reviewed SHA",
         recoveryProof: null,
       }),
-      event(17, "heartbeat-activated", {
+      event(18, "heartbeat-activated", {
         ...activationProof(),
         finalMainSha: SHA_C,
         repositoryLeaseOwners: [{ path: LEASE_OWNER_PATH, blob: SHA_F }],
@@ -1860,7 +2126,7 @@ describe("Program Supervisor deterministic event coverage", () => {
     const task = itemAt(result.snapshot.tasks, 0);
     expect(task).toMatchObject({
       state: "integrated",
-      updatedAt: "2026-08-26T16:00:00.000Z",
+      updatedAt: "2026-08-26T17:00:00.000Z",
       cleanup: {
         removed: ["worktree", "branch"],
         remoteProof: "origin/main contains the reviewed SHA",
@@ -1875,7 +2141,7 @@ describe("Program Supervisor deterministic event coverage", () => {
     });
     expect(result.snapshot.rulings).toHaveLength(1);
     expect(result.snapshot.noFrontiers).toHaveLength(1);
-    expect(result.snapshot.ownerGates).toHaveLength(1);
+    expect(result.snapshot.ownerGates).toHaveLength(2);
     expect(result.snapshot.supervisor).toMatchObject({ threadId: "thread-supervisor" });
     expect(result.snapshot.heartbeat).toMatchObject({
       automationId: "automation-heartbeat",
@@ -2249,7 +2515,7 @@ describe("Program Supervisor persisted snapshot semantics", () => {
     expect(() => validateSnapshot(evidence)).toThrow(/duplicate.*evidence/i);
   });
 
-  it("rejects reconciliation flags outside executing and latest rejected owner gates", () => {
+  it("rejects reconciliation flags outside executing and a switched terminal gate", () => {
     const misplaced = snapshotFixture();
     const task = itemAt(misplaced.tasks, 0);
     task.state = "review";
@@ -2272,8 +2538,8 @@ describe("Program Supervisor persisted snapshot semantics", () => {
       event(2, "owner-gate-recorded", {
         taskId: "task-a",
         gate: "product-owner",
-        decision: "approved",
-        receipt: "approval",
+        decision: "pending",
+        receipt: "owner decision requested",
       }),
       event(3, "state-transitioned", {
         taskId: "task-a",
@@ -2282,7 +2548,13 @@ describe("Program Supervisor persisted snapshot semantics", () => {
         receipt: "gate entered",
         ownerGate: "product-owner",
       }),
-      event(4, "state-transitioned", {
+      event(4, "owner-gate-recorded", {
+        taskId: "task-a",
+        gate: "product-owner",
+        decision: "approved",
+        receipt: "approval",
+      }),
+      event(5, "state-transitioned", {
         taskId: "task-a",
         from: "owner-gate",
         to: "integrated",
@@ -2295,9 +2567,9 @@ describe("Program Supervisor persisted snapshot semantics", () => {
       decision: "rejected",
       receipt: "later rejection",
       verificationEventId: itemAt(integrated.ownerGates, 0).verificationEventId,
-      at: "2026-08-26T05:00:00.000Z",
+      at: "2026-08-26T06:00:00.000Z",
     });
-    expect(() => validateSnapshot(integrated)).toThrow(/latest.*approved|rejected/i);
+    expect(() => validateSnapshot(integrated)).toThrow(/already.*terminal/i);
   });
 
   it("rejects verification state without its verification event identity", () => {
