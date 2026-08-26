@@ -8,7 +8,7 @@ leases (`docs/TEST_PORTFOLIO.md`). Those owners are linked rather than copied.
 ## Reconciliation snapshot
 
 - `reconciledThrough`: `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`
-- `observedAt`: `2026-08-26T13:09:44Z`
+- `observedAt`: `2026-08-26T13:43:02Z`
 - Public `origin/main` was freshly fetched and inspected at that exact SHA before authoring.
 - The snapshot is evidence-bound, not self-referential: it does not claim the SHA or blob of the
   commit that contains this file.
@@ -26,7 +26,7 @@ other.
 | `tacticalWayfinder`        | `docs/superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md` | `062ffd48783311a77e1ad5bee962ef5cd637c079`                     |
 | `testRoadmap`              | `docs/superpowers/plans/2026-08-25-test-portfolio-reset.md`           | `9f3e42f7e50f104a35ceab21f5469a4291407bb4`                     |
 | `readinessBaseline`        | `docs/superpowers/plans/2026-08-25-g0-automation-readiness.md`        | `0a7f1ec661390aa475dfbde83eab72a4fbbe8b89`                     |
-| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `7772c59487d2404af3b991b476d6cefd87a8c8e3`                     |
+| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `323a34fcac8b4815e8d3630378ce040075cc263f`                     |
 | `statusOwner`              | `docs/PROGRAM_STATUS.md`                                              | Task 6 resolves the integrated blob and records it in runtime. |
 
 The status owner cannot truthfully contain its own Git blob. Task 6 must resolve
@@ -71,16 +71,16 @@ The shared checkout remains untouched even when its branch name is `main`.
   `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-supervisor-foundation`; branch
   `feat/program-supervisor-foundation`; base
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`; pre-status fix HEAD
-  `e8d41d1ed3bdd80c8d21baba3d2fcc91ef201113` (tree
-  `79affdf0d6846afd322d761cd3f65e3c7eaf063f`); no private write. The charter owns
+  `5ed51097812b3cade71965e44011386ba2eba5c2` (tree
+  `9ce36ada2a649c520bf52056235bf64a9ee74040`); no private write. The charter owns
   `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
   `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, `scripts/program-supervisor/**`,
   `tests/unit/program-supervisor-{worktree,state,runtime}.test.ts`, and its uniquely named
   `.changeset/program-supervisor-*.md` files. Task 4 itself owns only the five tracked paths named
   in its plan.
 - **State and receipt:** `executing`; the tree was clean at pre-status fix HEAD
-  `e8d41d1ed3bdd80c8d21baba3d2fcc91ef201113` (tree
-  `79affdf0d6846afd322d761cd3f65e3c7eaf063f`). The first whole-branch evaluator required fixes.
+  `5ed51097812b3cade71965e44011386ba2eba5c2` (tree
+  `9ce36ada2a649c520bf52056235bf64a9ee74040`). The first whole-branch evaluator required fixes.
   Adapter authority (`4d39f30eb1296d7f25a4801c28467b143f86e38c`), dependency/lease state
   (`41114180176d67fda475bb0b060be630031ee9fb`), writer handoff
   (`a14b772739c38ce0f0e180bc84608cc5d16b7c81`), runtime crash integrity
@@ -126,9 +126,17 @@ The shared checkout remains untouched even when its branch name is `main`.
   correction at `e8d41d1ed3bdd80c8d21baba3d2fcc91ef201113` closes those findings with a
   no-shell incremental `cat-file --batch` frame reader, a 64 MiB per-object/pre-CAS bound, a valid
   33 MiB append/load/rebuild proof, and same-window reclassification of real Git activity that
-  begins after the initial residue scan; its runtime suite passed 35/35 and its hook passed. This
-  status commit is intentionally not self-embedded. Fix Round 5 still requires one exact fresh
-  independent whole-branch review before the full composed gates may run.
+  begins after the initial residue scan; its runtime suite passed 35/35 and its hook passed. The
+  first composed-gate attempt then passed typecheck and lint before Vitest reported
+  800/801 files and 18,610/18,611 tests passing. Its sole failure was the worktree shell-injection
+  regression exceeding Vitest's global five-second deadline under full-suite load; focused and
+  repeated evidence diagnosed an oversized test fixture, with no sentinel leak or product defect.
+  Test-only stabilization `5ed51097812b3cade71965e44011386ba2eba5c2` reuses the existing fake
+  toolchain instead of performing two real bootstrap/Corepack cycles while retaining the real
+  Just/adapter/`worktree.ts` boundary proof. The target now completes in about 1.9–2.2 seconds and
+  the whole worktree file passes 22/22. This status commit is intentionally not self-embedded. The
+  composed gate is pending an exact rerun and has no green receipt; every changed candidate still
+  returns through exact independent review before verification.
 - **First lease:** repository lease `F0`, holder `program-supervisor-foundation`, acquired
   `2026-08-26T01:38:26Z`, expires `2026-08-27T01:38:26Z`; active and writable. No runtime lease is
   claimed before Task 6 creates the runtime. The future reviewed runtime lease ID is
@@ -262,7 +270,7 @@ current execution pointer so agents can route correctly; it cannot grant or chan
   `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
   `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and `scripts/program-supervisor/**`; expires
   `2026-08-27T01:38:26Z`. Its authority pointer is
-  `docs/TEST_PORTFOLIO.md@7772c59487d2404af3b991b476d6cefd87a8c8e3`, reconciled through
+  `docs/TEST_PORTFOLIO.md@323a34fcac8b4815e8d3630378ce040075cc263f`, reconciled through
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`.
 - **Inactive next lease:** `K1`; acquire only after F0 release and a fresh rebase/review/gate cycle.
 - **Inactive blocked lease:** `B00`; acquire only after F0 release, T8A adapter repair, overlap

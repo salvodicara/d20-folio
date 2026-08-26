@@ -145,10 +145,10 @@ unperformed handoff has no fabricated SHA.
   `docs/WORKTREES.md`, `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and
   `scripts/program-supervisor/**`. This is a repository-authority lease only; it
   does not claim a runtime lease before the runtime exists.
-- **Current state and conflict receipt (Task 5 Fix Round 5 streaming correction pre-status,
-  observed `2026-08-26T13:09:44Z`):** F0 remains active; the Foundation worktree was clean at
-  pre-status fix HEAD `e8d41d1ed3bdd80c8d21baba3d2fcc91ef201113` (tree
-  `79affdf0d6846afd322d761cd3f65e3c7eaf063f`) on freshly fetched `origin/main`
+- **Current state and conflict receipt (Task 5 final gate stabilization pre-status, observed
+  `2026-08-26T13:43:02Z`):** F0 remains active; the Foundation worktree was clean at pre-status fix
+  HEAD `5ed51097812b3cade71965e44011386ba2eba5c2` (tree
+  `9ce36ada2a649c520bf52056235bf64a9ee74040`) on freshly fetched `origin/main`
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`. K1 is clean at
   `7ae43494be58f92651b02a32de821c0d3f59fb98`; its fresh
   `origin/main...HEAD` path set is disjoint from every F0 path. B00 is clean and
@@ -171,8 +171,15 @@ unperformed handoff has no fabricated SHA.
   whole-response ceiling with three incremental `cat-file --batch` readers, admits a valid 33 MiB
   event through append/load/rebuild, rejects events over the 64 MiB object bound before CAS, and
   retries real Git activity that begins after the initial residue scan. Its runtime suite passed
-  35/35 and its hook passed. This updates only the F0 receipt and does not change the lease term or
-  any test-risk ownership.
+  35/35 and its hook passed. The first composed-gate attempt passed typecheck and lint,
+  then completed 800/801 Vitest files and 18,610/18,611 tests. The sole failure was the worktree
+  shell-injection regression exceeding the global five-second deadline under full-suite load;
+  focused and repeated evidence found an oversized fixture, no sentinel leak, and no product bug.
+  Test-only stabilization `5ed51097812b3cade71965e44011386ba2eba5c2` replaces two real
+  bootstrap/Corepack cycles with the existing fake toolchain while preserving the real
+  Just/adapter/`worktree.ts` proof. Its target now completes in about 1.9–2.2 seconds and the full
+  worktree file passes 22/22. The composed gate remains pending an exact rerun and is not green.
+  This updates only the F0 receipt and does not change the lease term or any test-risk ownership.
 - **Handoff:** release F0 only after remote integration proof or an evidence-backed
   blocker/recovery disposition. Until then B00 receives no writer lease and may
   not edit, rebase, or integrate its frozen candidate. After F0 integrates, B00
