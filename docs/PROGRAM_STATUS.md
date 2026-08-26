@@ -26,7 +26,7 @@ other.
 | `tacticalWayfinder`        | `docs/superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md` | `062ffd48783311a77e1ad5bee962ef5cd637c079`                     |
 | `testRoadmap`              | `docs/superpowers/plans/2026-08-25-test-portfolio-reset.md`           | `9f3e42f7e50f104a35ceab21f5469a4291407bb4`                     |
 | `readinessBaseline`        | `docs/superpowers/plans/2026-08-25-g0-automation-readiness.md`        | `0a7f1ec661390aa475dfbde83eab72a4fbbe8b89`                     |
-| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `323a34fcac8b4815e8d3630378ce040075cc263f`                     |
+| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `328dd4b240f4f10df4b1064c43d23c87a7c69578`                     |
 | `statusOwner`              | `docs/PROGRAM_STATUS.md`                                              | Task 6 resolves the integrated blob and records it in runtime. |
 
 The status owner cannot truthfully contain its own Git blob. Task 6 must resolve
@@ -66,8 +66,9 @@ The shared checkout remains untouched even when its branch name is `main`.
   above.
 - **Dependencies:** approved operating model integrated at `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`;
   active F0 repository lease; clean retained K1/B00/private evidence; Tasks 0-3 implemented and
-  independently reviewed. Task 5 implementation, review, and both full gates are complete; Task 6
-  integration/bootstrap remains open.
+  independently reviewed. Task 5 implementation, prior review rounds, and both full gates are
+  complete; this receipt correction still requires its exact final review before Task 6
+  integration/bootstrap.
 - **Ownership:** public repository `d20-folio`; worktree
   `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-supervisor-foundation`; branch
   `feat/program-supervisor-foundation`; base
@@ -278,7 +279,7 @@ current execution pointer so agents can route correctly; it cannot grant or chan
   `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
   `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and `scripts/program-supervisor/**`; expires
   `2026-08-27T01:38:26Z`. Its authority pointer is
-  `docs/TEST_PORTFOLIO.md@323a34fcac8b4815e8d3630378ce040075cc263f`, reconciled through
+  `docs/TEST_PORTFOLIO.md@328dd4b240f4f10df4b1064c43d23c87a7c69578`, reconciled through
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`.
 - **Inactive next lease:** `K1`; acquire only after F0 release and a fresh rebase/review/gate cycle.
 - **Inactive blocked lease:** `B00`; acquire only after F0 release, T8A adapter repair, overlap

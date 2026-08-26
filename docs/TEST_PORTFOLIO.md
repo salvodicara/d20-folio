@@ -145,10 +145,10 @@ unperformed handoff has no fabricated SHA.
   `docs/WORKTREES.md`, `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and
   `scripts/program-supervisor/**`. This is a repository-authority lease only; it
   does not claim a runtime lease before the runtime exists.
-- **Current state and conflict receipt (Task 5 final gate stabilization pre-status, observed
-  `2026-08-26T13:43:02Z`):** F0 remains active; the Foundation worktree was clean at pre-status fix
-  HEAD `5ed51097812b3cade71965e44011386ba2eba5c2` (tree
-  `9ce36ada2a649c520bf52056235bf64a9ee74040`) on freshly fetched `origin/main`
+- **Current state and conflict receipt (Task 5 gate-receipt reconciliation, observed
+  `2026-08-26T14:04:16Z`):** F0 remains active; the Foundation worktree was clean at the exact
+  pre-reconciliation parent `dbbdf809bbf71cfb29a47cc0aa40191c6eb5de0b` (tree
+  `38873722426f516c36ed0da22f14fc4c5e9ac847`) on freshly fetched `origin/main`
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`. K1 is clean at
   `7ae43494be58f92651b02a32de821c0d3f59fb98`; its fresh
   `origin/main...HEAD` path set is disjoint from every F0 path. B00 is clean and
