@@ -8,14 +8,14 @@ leases (`docs/TEST_PORTFOLIO.md`). Those owners are linked rather than copied.
 ## Reconciliation snapshot
 
 - `reconciledThrough`: `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`
-- `observedAt`: `2026-08-26T09:07:58Z`
+- `observedAt`: `2026-08-26T10:15:02Z`
 - Public `origin/main` was freshly fetched and inspected at that exact SHA before authoring.
 - The snapshot is evidence-bound, not self-referential: it does not claim the SHA or blob of the
   commit that contains this file.
 
 ### Authority manifest
 
-Every resolved blob below comes from the exact Task 5 Fix Round 3 pre-status authority set. The test
+Every resolved blob below comes from the exact Task 5 Fix Round 4 pre-status authority set. The test
 roadmap and repository lease owner are deliberately separate roles; one cannot substitute for the
 other.
 
@@ -26,7 +26,7 @@ other.
 | `tacticalWayfinder`        | `docs/superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md` | `062ffd48783311a77e1ad5bee962ef5cd637c079`                     |
 | `testRoadmap`              | `docs/superpowers/plans/2026-08-25-test-portfolio-reset.md`           | `9f3e42f7e50f104a35ceab21f5469a4291407bb4`                     |
 | `readinessBaseline`        | `docs/superpowers/plans/2026-08-25-g0-automation-readiness.md`        | `0a7f1ec661390aa475dfbde83eab72a4fbbe8b89`                     |
-| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `b3c7a86585a0f1d4522e8a6280a0b8a7612b9504`                     |
+| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `ebd433d49de646d8619541c7c43b71bf4985976a`                     |
 | `statusOwner`              | `docs/PROGRAM_STATUS.md`                                              | Task 6 resolves the integrated blob and records it in runtime. |
 
 The status owner cannot truthfully contain its own Git blob. Task 6 must resolve
@@ -36,7 +36,7 @@ authority may invent or cache a status blob.
 
 Supporting Foundation authorities in the same inspected tree are the implementation plan
 (`docs/superpowers/plans/2026-08-26-program-supervisor-foundation.md`, blob
-`119ce08544d3be7247a4436f9a01b3584ac0e159`) and the dependency baseline
+`284eacaa618f9e3df07548dc6b9be5395c6139a6`) and the dependency baseline
 (`docs/superpowers/status/2026-08-26-foundation-security-baseline.md`, blob
 `3102f341c1c2815dce2f164646764b28911e9f97`). Tactical visual decisions additionally remain owned
 by `DESIGN.md` at blob `85a7942355904c4a57e2e4729491c99a3ae1b97f`.
@@ -71,14 +71,14 @@ The shared checkout remains untouched even when its branch name is `main`.
   `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-supervisor-foundation`; branch
   `feat/program-supervisor-foundation`; base
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`; pre-status fix HEAD
-  `e816e5e6ba822d49530e8e113de54f6240fc2912`; no private write. The charter owns
+  `7e986f48721bf9bf4411c1b426438b320a69c595`; no private write. The charter owns
   `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
   `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, `scripts/program-supervisor/**`,
   `tests/unit/program-supervisor-{worktree,state,runtime}.test.ts`, and its uniquely named
   `.changeset/program-supervisor-*.md` files. Task 4 itself owns only the five tracked paths named
   in its plan.
 - **State and receipt:** `executing`; the tree was clean at pre-status fix HEAD
-  `e816e5e6ba822d49530e8e113de54f6240fc2912`. The first whole-branch evaluator required fixes.
+  `7e986f48721bf9bf4411c1b426438b320a69c595`. The first whole-branch evaluator required fixes.
   Adapter authority (`4d39f30eb1296d7f25a4801c28467b143f86e38c`), dependency/lease state
   (`41114180176d67fda475bb0b060be630031ee9fb`), writer handoff
   (`a14b772739c38ce0f0e180bc84608cc5d16b7c81`), runtime crash integrity
@@ -96,9 +96,16 @@ The shared checkout remains untouched even when its branch name is `main`.
   owner-gate cycles (`ae8cda59b20356fba56264b313a28915760358c1`), removes the post-proof worktree
   fetch (`306c225dcae986d172948bc17cb1bbbff4a82434`), and makes correctness, visual integration,
   and deployment gates unambiguous (`e816e5e6ba822d49530e8e113de54f6240fc2912`). Each commit has
-  focused RED/GREEN or durable-guard evidence and passed its hook. This status commit is
-  intentionally not self-embedded. Fix Round 3 still requires a fresh independent whole-branch
-  review before the full composed gates may run.
+  focused RED/GREEN or durable-guard evidence and passed its hook. Fix Round 4 enforces the
+  supervisor-only cleanup handoff and reserved identity
+  (`15ba860436cbb87c6eb94bbe95376b8f21a65abc`), validates authority changes, lease renewal order,
+  and multi-repository writer topology (`03c08d9860e4d5eec22bb26ac0105820308ebefb`), claims stale
+  locks with deterministic exact-inode evidence (`400ab88e647b3e882d4e89ca1e678564bc02957e`), claims runtime
+  roots without replacement while preserving interrupted state
+  (`f5eb41971b5408ed41e42df2a6cc524c82488411`), and removes the dead torn-tail recovery projection
+  (`7e986f48721bf9bf4411c1b426438b320a69c595`). Each commit has focused RED/GREEN evidence and
+  passed its hook. This status commit is intentionally not self-embedded. Fix Round 4 still
+  requires a fresh independent whole-branch review before the full composed gates may run.
 - **First lease:** repository lease `F0`, holder `program-supervisor-foundation`, acquired
   `2026-08-26T01:38:26Z`, expires `2026-08-27T01:38:26Z`; active and writable. No runtime lease is
   claimed before Task 6 creates the runtime. The future reviewed runtime lease ID is
@@ -109,10 +116,10 @@ The shared checkout remains untouched even when its branch name is `main`.
   `just ci`, `just ci-srd-only`, rebuild proof, and Task 6 activation evidence.
 - **Independent review:** Task 1-3 scoped reviews are accepted at their recorded commits. The first
   Task 5 whole-branch evaluator returned Fix Round 1; the next review returned the five Fix Round 2
-  findings, and the most recent review returned the five Fix Round 3 findings now addressed above
-  plus this authority reconciliation. The exact resulting candidate still owes a fresh independent
-  specification/correctness review; every further fix or changed base returns through review
-  before verification.
+  findings; the next review returned five Fix Round 3 findings; and the most recent review returned
+  the six Fix Round 4 corrections now addressed above plus this authority reconciliation. The exact
+  resulting candidate still owes a fresh independent specification/correctness review; every
+  further fix or changed base returns through review before verification.
 - **Owner gate:** none for repository integration. Deployment, publication, billing/privacy, and
   any destructive action remain separate owner gates; Task 6 must not deploy.
 - **Cleanup:** retain this worktree and branch through remote integration, authority reconciliation,
