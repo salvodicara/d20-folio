@@ -246,7 +246,7 @@ function summary(runtime: RuntimeProjection): Record<string, unknown> {
       total: writers + evaluators,
     },
     lastEventSeq: runtime.snapshot.lastEventSeq,
-    recoveryState: runtime.recoveryState,
+    store: runtime.store,
     valid: true,
   };
 }
