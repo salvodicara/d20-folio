@@ -26,7 +26,7 @@ other.
 | `tacticalWayfinder`        | `docs/superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md` | `062ffd48783311a77e1ad5bee962ef5cd637c079`                     |
 | `testRoadmap`              | `docs/superpowers/plans/2026-08-25-test-portfolio-reset.md`           | `9f3e42f7e50f104a35ceab21f5469a4291407bb4`                     |
 | `readinessBaseline`        | `docs/superpowers/plans/2026-08-25-g0-automation-readiness.md`        | `0a7f1ec661390aa475dfbde83eab72a4fbbe8b89`                     |
-| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `328dd4b240f4f10df4b1064c43d23c87a7c69578`                     |
+| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `19b735e5c4e04902b05e2f535f845b6d6eb6e5c3`                     |
 | `statusOwner`              | `docs/PROGRAM_STATUS.md`                                              | Task 6 resolves the integrated blob and records it in runtime. |
 
 The status owner cannot truthfully contain its own Git blob. Task 6 must resolve
@@ -66,23 +66,23 @@ The shared checkout remains untouched even when its branch name is `main`.
   above.
 - **Dependencies:** approved operating model integrated at `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`;
   active F0 repository lease; clean retained K1/B00/private evidence; Tasks 0-3 implemented and
-  independently reviewed. Task 5 implementation, prior review rounds, and both full gates are
-  complete; this receipt correction still requires its exact final review before Task 6
-  integration/bootstrap.
+  independently reviewed. Task 5 prior review rounds and both full gates are complete, but the
+  mandatory main pre-push gate exposed hook-local Git context leaking into temporary test
+  repositories. Its repair is executing; Task 6 integration/bootstrap remains open.
 - **Ownership:** public repository `d20-folio`; worktree
   `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-supervisor-foundation`; branch
   `feat/program-supervisor-foundation`; base
-  `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`; gated pre-receipt HEAD
-  `f54f01aaf8999db6224095d1c1023bd207c175cf` (tree
-  `d920ad4980bd181611086deacdce2860a60e64e3`); no private write. The charter owns
+  `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`; reviewed pre-repair HEAD
+  `ead344b3e72616332dee29fe7f35831015fac707` (tree
+  `154cbaec85d49fe3e4f287ce7473ada2cb8826e1`); no private write. The charter owns
   `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
   `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, `scripts/program-supervisor/**`,
   `tests/unit/program-supervisor-{worktree,state,runtime}.test.ts`, and its uniquely named
   `.changeset/program-supervisor-*.md` files. Task 4 itself owns only the five tracked paths named
   in its plan.
-- **State and receipt:** `verification`; the tree was clean at gated pre-receipt HEAD
-  `f54f01aaf8999db6224095d1c1023bd207c175cf` (tree
-  `d920ad4980bd181611086deacdce2860a60e64e3`). The first whole-branch evaluator required fixes.
+- **State and receipt:** `executing`; the tree was clean at reviewed pre-repair HEAD
+  `ead344b3e72616332dee29fe7f35831015fac707` (tree
+  `154cbaec85d49fe3e4f287ce7473ada2cb8826e1`). The first whole-branch evaluator required fixes.
   Adapter authority (`4d39f30eb1296d7f25a4801c28467b143f86e38c`), dependency/lease state
   (`41114180176d67fda475bb0b060be630031ee9fb`), writer handoff
   (`a14b772739c38ce0f0e180bc84608cc5d16b7c81`), runtime crash integrity
@@ -142,9 +142,27 @@ The shared checkout remains untouched even when its branch name is `main`.
   Vitest files and 18,611/18,611 tests, 7/7 Functions files and 129/129 Functions tests, plus the
   composed typecheck, lint, and production build. The immediately following
   `scripts/program-supervisor/bootstrap-worktree.sh --run just ci-srd-only` exited zero with 623/623
-  Vitest files and 13,035/13,035 tests plus the SRD-only typecheck and production build. This
-  receipt commit changes only program/test status documentation and its Changeset; it is
-  intentionally not self-embedded and still requires exact read-only review before integration.
+  Vitest files and 13,035/13,035 tests plus the SRD-only typecheck and production build. The two
+  gate-receipt commits through `ead344b3e72616332dee29fe7f35831015fac707` changed only program/test
+  status documentation and their Changesets and received an exact independent PASS. The mandatory
+  main pre-push gate then passed typecheck and lint but blocked before any remote update: its
+  coverage lane completed 800/801 files and 18,607/18,611 tests because four adapter fixtures
+  inherited the hook's local Git variables and addressed the parent repository instead of their
+  temporary repositories. The failed fixture also changed shared local Git configuration:
+  `core.bare` became `true`, while `user.name`/`user.email` became the fixture identity. The bare
+  flag was restored to its exact prior `false`; the two injected local identity keys were removed
+  so the effective owner identity is again sourced from the untouched global configuration; all
+  retained worktrees became readable; and remote `main` remained at
+  `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`. A focused regression reproduced the wrong top-level
+  path, then the test boundary removed every documented
+  `git rev-parse --local-env-vars` key from child processes. The regression passes 1/1, the owning
+  file passes 23/23 under an explicitly hostile hook environment, and `core.bare` remains `false`.
+  The exact repair candidate `1eec62dc716c402f368583b207c8d2a0a91cebac` received an independent
+  PASS. Its next composed-gate run passed typecheck and lint, then completed 800/801 files and
+  18,611/18,612 tests: the sole failure was the public/private partition guard correctly rejecting
+  an owner email copied into this public status receipt. No product or private-pack file changed.
+  This amendment removes that identity value and returns through exact review and the applicable
+  full gates before another push.
 - **First lease:** repository lease `F0`, holder `program-supervisor-foundation`, acquired
   `2026-08-26T01:38:26Z`, expires `2026-08-27T01:38:26Z`; active and writable. No runtime lease is
   claimed before Task 6 creates the runtime. The future reviewed runtime lease ID is
@@ -161,8 +179,10 @@ The shared checkout remains untouched even when its branch name is `main`.
   followed by a scoped correction review with four Important and two Minor findings, now addressed
   above plus this authority reconciliation. The whole-branch candidate at `e8e86e0e59047c7a3664413812d0271735391a0c`,
   the test-only stabilization, and the pre-gate status correction each received an independent
-  PASS. The exact gate-receipt-only candidate still owes its final read-only review; every fix or
-  changed base returns through review before verification.
+  PASS. The gate-receipt candidate at `ead344b3e72616332dee29fe7f35831015fac707` and the
+  hook-environment repair at `1eec62dc716c402f368583b207c8d2a0a91cebac` also received exact
+  passes. The partition-receipt amendment still owes independent review; every fix or changed base
+  returns through review before verification.
 - **Owner gate:** none for repository integration. Deployment, publication, billing/privacy, and
   any destructive action remain separate owner gates; Task 6 must not deploy.
 - **Cleanup:** retain this worktree and branch through remote integration, authority reconciliation,
@@ -279,7 +299,7 @@ current execution pointer so agents can route correctly; it cannot grant or chan
   `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
   `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and `scripts/program-supervisor/**`; expires
   `2026-08-27T01:38:26Z`. Its authority pointer is
-  `docs/TEST_PORTFOLIO.md@328dd4b240f4f10df4b1064c43d23c87a7c69578`, reconciled through
+  `docs/TEST_PORTFOLIO.md@19b735e5c4e04902b05e2f535f845b6d6eb6e5c3`, reconciled through
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`.
 - **Inactive next lease:** `K1`; acquire only after F0 release and a fresh rebase/review/gate cycle.
 - **Inactive blocked lease:** `B00`; acquire only after F0 release, T8A adapter repair, overlap

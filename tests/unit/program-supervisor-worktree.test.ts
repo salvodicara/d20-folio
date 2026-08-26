@@ -5,6 +5,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -21,6 +22,33 @@ import {
 
 const repositoryRoot = process.cwd();
 const supervisorRoot = join(repositoryRoot, "scripts", "program-supervisor");
+const gitLocalEnvironmentVariables = [
+  "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+  "GIT_COMMON_DIR",
+  "GIT_CONFIG",
+  "GIT_CONFIG_COUNT",
+  "GIT_CONFIG_PARAMETERS",
+  "GIT_DIR",
+  "GIT_GRAFT_FILE",
+  "GIT_IMPLICIT_WORK_TREE",
+  "GIT_INDEX_FILE",
+  "GIT_INTERNAL_SUPER_PREFIX",
+  "GIT_NO_REPLACE_OBJECTS",
+  "GIT_OBJECT_DIRECTORY",
+  "GIT_PREFIX",
+  "GIT_REPLACE_REF_BASE",
+  "GIT_SHALLOW_FILE",
+  "GIT_WORK_TREE",
+] as const;
+const gitLocalEnvironmentVariableSet = new Set<string>(gitLocalEnvironmentVariables);
+
+function withoutCallerGitContext(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return Object.fromEntries(
+    Object.entries(env).filter(
+      ([variable]) => !gitLocalEnvironmentVariableSet.has(variable)
+    )
+  );
+}
 
 function writeExecutable(path: string, contents: string): void {
   writeFileSync(path, contents, { mode: 0o755 });
@@ -32,7 +60,11 @@ function run(
   cwd: string,
   env: NodeJS.ProcessEnv = process.env
 ) {
-  return spawnSync(command, args, { cwd, encoding: "utf8", env });
+  return spawnSync(command, args, {
+    cwd,
+    encoding: "utf8",
+    env: withoutCallerGitContext(env),
+  });
 }
 
 function runChecked(command: string, args: string[], cwd: string): void {
@@ -347,6 +379,30 @@ describe("program supervisor bootstrap", () => {
 });
 
 describe("program supervisor adapter authority", () => {
+  it("isolates fixture repositories from hook-local Git environment", () => {
+    const root = mkdtempSync(join(tmpdir(), "d20-git-env-"));
+    const repository = join(root, "repository");
+    mkdirSync(repository);
+    try {
+      runChecked("git", ["init", "-q"], repository);
+      const outerGitDir = run(
+        "git",
+        ["rev-parse", "--absolute-git-dir"],
+        repositoryRoot
+      ).stdout.trim();
+      const result = run("git", ["rev-parse", "--show-toplevel"], repository, {
+        ...process.env,
+        GIT_DIR: outerGitDir,
+        GIT_WORK_TREE: repositoryRoot,
+      });
+
+      expect(result.status).toBe(0);
+      expect(realpathSync(result.stdout.trim())).toBe(realpathSync(repository));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("accepts only a registered clean worktree at fresh origin/main", () => {
     const fixture = createAdapterFixture();
     const preflight = join(supervisorRoot, "adapter-preflight.sh");

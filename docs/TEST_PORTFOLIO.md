@@ -145,10 +145,10 @@ unperformed handoff has no fabricated SHA.
   `docs/WORKTREES.md`, `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and
   `scripts/program-supervisor/**`. This is a repository-authority lease only; it
   does not claim a runtime lease before the runtime exists.
-- **Current state and conflict receipt (Task 5 gate-receipt reconciliation, observed
-  `2026-08-26T14:04:16Z`):** F0 remains active; the Foundation worktree was clean at the exact
-  pre-reconciliation parent `dbbdf809bbf71cfb29a47cc0aa40191c6eb5de0b` (tree
-  `38873722426f516c36ed0da22f14fc4c5e9ac847`) on freshly fetched `origin/main`
+- **Current state and conflict receipt (Task 5 hook-environment repair, observed
+  `2026-08-26T14:20:19Z`):** F0 remains active; the Foundation worktree was clean at reviewed
+  pre-repair HEAD `ead344b3e72616332dee29fe7f35831015fac707` (tree
+  `154cbaec85d49fe3e4f287ce7473ada2cb8826e1`) on freshly fetched `origin/main`
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`. K1 is clean at
   `7ae43494be58f92651b02a32de821c0d3f59fb98`; its fresh
   `origin/main...HEAD` path set is disjoint from every F0 path. B00 is clean and
@@ -183,8 +183,21 @@ unperformed handoff has no fabricated SHA.
   `d920ad4980bd181611086deacdce2860a60e64e3`), the exact composed gate then passed 801/801 Vitest
   files and 18,611/18,611 tests, 7/7 Functions files and 129/129 Functions tests, typecheck, lint,
   and production build. The sequential SRD-only gate passed 623/623 Vitest files and
-  13,035/13,035 tests, typecheck, and production build. This updates only the F0 receipt and does
-  not change the lease term or any test-risk ownership.
+  13,035/13,035 tests, typecheck, and production build. The later main pre-push coverage lane
+  exposed hook-local Git environment leakage: 800/801 files and 18,607/18,611 tests passed, while
+  four adapter fixtures addressed the parent repository and the failed fixture changed shared
+  local `core.bare`, `user.name`, and `user.email`. No push occurred; `core.bare` was restored
+  exactly to `false`; the two injected local identity keys were removed so the global owner
+  identity is effective again; remote `main` remained unchanged; and all retained worktrees were
+  rechecked. The new hostile-environment
+  regression reproduced the wrong top-level path before the repair, then passed 1/1 after child
+  fixture commands removed the documented local Git variables. The owning file passes 23/23 under
+  explicit hook-local `GIT_DIR`/`GIT_WORK_TREE`, with `core.bare` still `false`. The exact repair at
+  `1eec62dc716c402f368583b207c8d2a0a91cebac` received an independent PASS. Its composed-gate rerun
+  passed typecheck and lint before the public/private partition guard rejected one owner email in
+  the public status receipt; 800/801 files and 18,611/18,612 tests passed. The amended receipt
+  removes that identity value and returns through exact review and full gates. This does not change
+  the lease term or test-risk ownership.
 - **Handoff:** release F0 only after remote integration proof or an evidence-backed
   blocker/recovery disposition. Until then B00 receives no writer lease and may
   not edit, rebase, or integrate its frozen candidate. After F0 integrates, B00
