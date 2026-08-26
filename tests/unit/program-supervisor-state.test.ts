@@ -2185,6 +2185,31 @@ describe("Program Supervisor deterministic event coverage", () => {
     ).toThrow(/already provisioned|duplicate/i);
   });
 
+  it("rejects the reserved bootstrap controller as the supervisor thread identity", () => {
+    expect(() =>
+      replayEvents([
+        bootstrapFixture(),
+        event(2, "supervisor-provisioned", {
+          ...provisionedIdentity(),
+          threadId: CONTROLLER_WRITER_ID,
+          targetThreadId: CONTROLLER_WRITER_ID,
+        }),
+      ])
+    ).toThrow(/reserved bootstrap controller/i);
+  });
+
+  it("rejects a snapshot whose provisioned supervisor collides with the bootstrap controller", () => {
+    const projected = replayEvents([
+      bootstrapFixture(),
+      event(2, "supervisor-provisioned", provisionedIdentity()),
+    ]).snapshot;
+    if (!projected.supervisor) throw new Error("Expected a provisioned supervisor");
+    projected.supervisor.threadId = CONTROLLER_WRITER_ID;
+    projected.supervisor.targetThreadId = CONTROLLER_WRITER_ID;
+
+    expect(() => validateSnapshot(projected)).toThrow(/reserved bootstrap controller/i);
+  });
+
   it("activates only from a quiescent exact authority state and irreversibly hands off writing", () => {
     const terminal = bootstrapFixture();
     const task = itemAt(terminal.tasks, 0);
@@ -2226,6 +2251,24 @@ describe("Program Supervisor deterministic event coverage", () => {
         }),
       ])
     ).not.toThrow();
+  });
+
+  it("reserves cleanup-recorded for the provisioned supervisor after heartbeat handoff", () => {
+    const terminal = bootstrapFixture();
+    const task = itemAt(terminal.tasks, 0);
+    task.state = "integrated";
+    task.receipt = "Remote integration proved.";
+    const provisioned = event(2, "supervisor-provisioned", provisionedIdentity());
+    const cleanup = event(3, "cleanup-recorded", {
+      taskId: "task-a",
+      removed: ["worktree", "branch"],
+      remoteProof: "Reviewed remote SHA contains the task.",
+      recoveryProof: null,
+    });
+
+    expect(() => replayEvents([terminal, provisioned, cleanup])).toThrow(
+      /heartbeat handoff|supervisor.*cleanup/i
+    );
   });
 
   it("preserves activation history while the supervisor reconciles later authority", () => {
@@ -2412,16 +2455,17 @@ describe("Program Supervisor deterministic event coverage", () => {
         leaseId: active.leaseId,
         proof: "Integrated remote SHA closes the runtime lease.",
       }),
-      event(17, "cleanup-recorded", {
+      event(17, "heartbeat-activated", {
+        ...activationProof(),
+        finalMainSha: SHA_C,
+        repositoryLeaseOwners: [{ path: LEASE_OWNER_PATH, blob: SHA_F }],
+      }),
+      event(18, "cleanup-recorded", {
+        writerId: SUPERVISOR_THREAD_ID,
         taskId: "task-a",
         removed: ["worktree", "branch"],
         remoteProof: "origin/main contains the reviewed SHA",
         recoveryProof: null,
-      }),
-      event(18, "heartbeat-activated", {
-        ...activationProof(),
-        finalMainSha: SHA_C,
-        repositoryLeaseOwners: [{ path: LEASE_OWNER_PATH, blob: SHA_F }],
       }),
     ];
 
@@ -2429,7 +2473,7 @@ describe("Program Supervisor deterministic event coverage", () => {
     const task = itemAt(result.snapshot.tasks, 0);
     expect(task).toMatchObject({
       state: "integrated",
-      updatedAt: "2026-08-26T17:00:00.000Z",
+      updatedAt: "2026-08-26T18:00:00.000Z",
       cleanup: {
         removed: ["worktree", "branch"],
         remoteProof: "origin/main contains the reviewed SHA",
@@ -2691,7 +2735,7 @@ describe("Program Supervisor deterministic event coverage", () => {
     ).toThrow(/expiry requires an active lease/);
   });
 
-  it("rejects cleanup while a terminal task still has an active lease", () => {
+  it("rejects heartbeat handoff while a terminal task still has an active lease", () => {
     const fixture = bootstrapFixture();
     const task = itemAt(fixture.tasks, 0);
     task.state = "integrated";
@@ -2704,33 +2748,42 @@ describe("Program Supervisor deterministic event coverage", () => {
     expect(() =>
       replayEvents([
         fixture,
-        event(2, "cleanup-recorded", {
-          taskId: "task-a",
-          removed: ["worktree", "branch"],
-          remoteProof: "remote integration proof",
-          recoveryProof: null,
-        }),
+        event(2, "supervisor-provisioned", provisionedIdentity()),
+        event(3, "heartbeat-activated", activationProof()),
       ])
-    ).toThrow(/active lease/);
+    ).toThrow(/zero active leases/);
   });
 
   it("fails cleanup before a terminal state or without remote/recovery proof", () => {
-    const cleanup = event(2, "cleanup-recorded", {
+    const cleanup = event(4, "cleanup-recorded", {
+      writerId: SUPERVISOR_THREAD_ID,
       taskId: "task-a",
       removed: ["worktree", "branch"],
       remoteProof: "remote",
       recoveryProof: null,
     });
-    expect(() => replayEvents([bootstrapFixture(), cleanup])).toThrow(
-      /integrated or retired/
-    );
+    expect(() =>
+      replayEvents([
+        bootstrapFixture(),
+        event(2, "supervisor-provisioned", provisionedIdentity()),
+        event(3, "heartbeat-activated", activationProof()),
+        cleanup,
+      ])
+    ).toThrow(/integrated or retired/);
 
     const fixture = bootstrapFixture();
     itemAt(fixture.tasks, 0).state = "integrated";
     itemAt(fixture.tasks, 0).receipt = "integration proof";
     const noProof = clone(cleanup);
     (noProof as Record<string, unknown>).remoteProof = null;
-    expect(() => replayEvents([fixture, noProof])).toThrow(/remote or recovery proof/);
+    expect(() =>
+      replayEvents([
+        fixture,
+        event(2, "supervisor-provisioned", provisionedIdentity()),
+        event(3, "heartbeat-activated", activationProof()),
+        noProof,
+      ])
+    ).toThrow(/remote or recovery proof/);
   });
 });
 

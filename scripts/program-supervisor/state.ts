@@ -948,6 +948,12 @@ function validateSupervisorRecord(value: unknown, path: string): SupervisorRecor
     corruption(`${path}.taskTitle`, "expected exact Program Supervisor task title");
   }
   const threadId = idAt(record.threadId, `${path}.threadId`);
+  if (threadId === BOOTSTRAP_CONTROLLER_WRITER_ID) {
+    corruption(
+      `${path}.threadId`,
+      "reserved bootstrap controller identity cannot be a supervisor thread"
+    );
+  }
   if (record.targetThreadId !== threadId) {
     corruption(`${path}.targetThreadId`, "must equal the provisioned task thread");
   }
@@ -2968,6 +2974,17 @@ export function replayEvents(events: readonly unknown[]): {
         break;
       }
       case "cleanup-recorded": {
+        if (
+          !snapshot.heartbeat ||
+          !snapshot.supervisor ||
+          snapshot.currentWriter.kind !== "supervisor-thread" ||
+          snapshot.currentWriter.id !== snapshot.supervisor.threadId
+        ) {
+          corruption(
+            "event.cleanup",
+            "cleanup requires heartbeat handoff to the exact provisioned supervisor writer"
+          );
+        }
         const task = taskById(snapshot, current.taskId);
         if (task.state !== "integrated" && task.state !== "retired") {
           corruption("event.taskId", "cleanup requires integrated or retired state");
