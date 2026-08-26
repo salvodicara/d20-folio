@@ -319,6 +319,7 @@ describe("Program Supervisor atomic runtime", () => {
       (await readdir(join(root, "ledger"))).some((name) => name.includes(".tmp"))
     ).toBe(false);
     expect(rebuilt.recoveryState.abandonedTemps).toEqual([]);
+    expect(rebuilt.recoveryState).not.toHaveProperty("recoverableTornTail");
     expect((await stat(root)).mode & 0o777).toBe(0o700);
     for (const directory of ["state", "ledger", "handoffs", "evidence", "recovery"]) {
       expect((await stat(join(root, directory))).mode & 0o777).toBe(0o700);

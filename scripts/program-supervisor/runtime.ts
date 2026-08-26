@@ -51,7 +51,6 @@ export interface RuntimeSnapshot extends ProgramSnapshot {
 }
 
 export interface RecoveryState {
-  recoverableTornTail: boolean;
   abandonedStaging: string[];
   abandonedLockOwners: string[];
   abandonedTemps: string[];
@@ -625,7 +624,6 @@ async function recoveryState(
 ): Promise<RecoveryState> {
   const entries = await readdir(join(root, "recovery"), { withFileTypes: true });
   return {
-    recoverableTornTail: false,
     abandonedStaging: await listAbandonedStaging(root, options),
     abandonedLockOwners: await listAbandonedLockOwners(root, options),
     abandonedTemps: await listAbandonedTemps(root, options),
