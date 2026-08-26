@@ -990,6 +990,14 @@ function enforceAuthorityCoherence(
   const globalBlobs = new Map(
     manifestAuthorities(authority).map((reference) => [reference.path, reference.blob])
   );
+  const repositoryAuthorities = new Map<
+    string,
+    {
+      ownerDocumentPath: string;
+      ownerDocumentBlob: string;
+      mainSha: string;
+    }
+  >();
   for (const task of tasks) {
     for (const reference of task.charter.authority) {
       const globalBlob = globalBlobs.get(reference.path);
@@ -1002,16 +1010,30 @@ function enforceAuthorityCoherence(
     }
     const repositoryLease = task.charter.ownership.repositoryLease;
     const ownerBlob = globalBlobs.get(repositoryLease.ownerDocumentPath);
-    if (
-      ownerBlob === undefined ||
-      repositoryLease.ownerDocumentBlob !== ownerBlob ||
-      repositoryLease.mainSha !== authority.mainSha
-    ) {
+    if (ownerBlob === undefined || repositoryLease.ownerDocumentBlob !== ownerBlob) {
       corruption(
         path,
         `task ${task.charter.id} repository authority does not match the global manifest`
       );
     }
+    const repositoryAuthorityKey = `${task.charter.ownership.repository}\0${repositoryLease.id}`;
+    const sharedAuthority = repositoryAuthorities.get(repositoryAuthorityKey);
+    if (
+      sharedAuthority &&
+      (sharedAuthority.ownerDocumentPath !== repositoryLease.ownerDocumentPath ||
+        sharedAuthority.ownerDocumentBlob !== repositoryLease.ownerDocumentBlob ||
+        sharedAuthority.mainSha !== repositoryLease.mainSha)
+    ) {
+      corruption(
+        path,
+        `task ${task.charter.id} splits shared repository lease ${repositoryLease.id}`
+      );
+    }
+    repositoryAuthorities.set(repositoryAuthorityKey, {
+      ownerDocumentPath: repositoryLease.ownerDocumentPath,
+      ownerDocumentBlob: repositoryLease.ownerDocumentBlob,
+      mainSha: repositoryLease.mainSha,
+    });
   }
 }
 
@@ -1112,15 +1134,17 @@ function enforceProjectionSemantics(snapshot: ProgramSnapshot, path: string): vo
         );
       }
     }
+    const requiresVerificationIdentity =
+      task.state === "verification" ||
+      task.state === "owner-gate" ||
+      (task.state === "integrated" && task.charter.ownerGate.required);
     if (
-      task.verificationEventId !== null &&
-      task.state !== "verification" &&
-      task.state !== "owner-gate" &&
-      task.state !== "integrated"
+      (requiresVerificationIdentity && task.verificationEventId === null) ||
+      (!requiresVerificationIdentity && task.verificationEventId !== null)
     ) {
       corruption(
         `${path}.tasks`,
-        `task ${task.charter.id} has stale verification identity in ${task.state}`
+        `task ${task.charter.id} verification identity does not match ${task.state}`
       );
     }
     if (
@@ -2024,6 +2048,12 @@ export function replayEvents(events: readonly unknown[]): {
       case "task-reconciled": {
         const task = taskById(snapshot, current.taskId);
         const ownership = task.charter.ownership;
+        if (task.state === "verification" || task.state === "owner-gate") {
+          corruption(
+            "event.task-reconciled",
+            `${task.state} reconciliation is forbidden; return to execution and complete fresh review`
+          );
+        }
         if (current.repository !== ownership.repository) {
           corruption("event.repository", "does not match the task charter repository");
         }
@@ -2217,10 +2247,13 @@ export function replayEvents(events: readonly unknown[]): {
           corruption("event.to", `${current.to} requires an active lease`);
         }
         if (current.to === "blocked-with-evidence" && task.activeLease) {
-          corruption(
-            "event.to",
-            "blocked transition must atomically close its active lease or reject"
-          );
+          if (current.from !== "leased" && current.from !== "executing") {
+            corruption(
+              "event.to",
+              `cannot close an active lease while blocking from ${current.from}`
+            );
+          }
+          task.activeLease = null;
         }
         if (current.to === "review" && task.pendingReconciliation) {
           corruption("event.to", "task-reconciled is required before review resumes");
@@ -2277,6 +2310,9 @@ export function replayEvents(events: readonly unknown[]): {
           (current.to === "integrated" && !task.charter.ownerGate.required)
         ) {
           task.verificationEventId = null;
+        }
+        if (current.to === "blocked-with-evidence") {
+          task.pendingReconciliation = null;
         }
         setTaskUpdated(task, current.at);
         break;
