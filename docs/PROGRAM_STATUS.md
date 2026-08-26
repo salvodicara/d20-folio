@@ -8,7 +8,7 @@ leases (`docs/TEST_PORTFOLIO.md`). Those owners are linked rather than copied.
 ## Reconciliation snapshot
 
 - `reconciledThrough`: `b1448fbba62047e52a24155ecb2d817d605d33a9`
-- `observedAt`: `2026-08-26T15:04:27Z`
+- `observedAt`: `2026-08-26T15:21:54Z`
 - Public `origin/main` was freshly fetched and inspected at that exact SHA before authoring.
 - The snapshot is evidence-bound, not self-referential: it does not claim the SHA or blob of the
   commit that contains this file.
@@ -26,7 +26,7 @@ other.
 | `tacticalWayfinder`        | `docs/superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md` | `062ffd48783311a77e1ad5bee962ef5cd637c079`                     |
 | `testRoadmap`              | `docs/superpowers/plans/2026-08-25-test-portfolio-reset.md`           | `9f3e42f7e50f104a35ceab21f5469a4291407bb4`                     |
 | `readinessBaseline`        | `docs/superpowers/plans/2026-08-25-g0-automation-readiness.md`        | `0a7f1ec661390aa475dfbde83eab72a4fbbe8b89`                     |
-| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `f5c972115fe405a0b66cd8788b596db9e01c0748`                     |
+| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | `7cb89ed4b26021aa46a7d4cdc8ef7888df692d52`                     |
 | `statusOwner`              | `docs/PROGRAM_STATUS.md`                                              | Task 6 resolves the integrated blob and records it in runtime. |
 
 The status owner cannot truthfully contain its own Git blob. Task 6 must resolve
@@ -69,7 +69,8 @@ The shared checkout remains untouched even when its branch name is `main`.
   independently reviewed. The phase-one candidate and final receipt received exact independent
   PASS results, both full gates passed, the mandatory pre-push gate passed, and remote `main` is
   proven at `b1448fbba62047e52a24155ecb2d817d605d33a9`. The first post-integration probe exposed one
-  CLI separator defect; its narrow repair is in verification before Task 6 runtime initialization.
+  CLI separator defect; its narrow repair has an independent PASS and both full gates green. The
+  final receipt-only review and main pre-push gate remain before Task 6 runtime initialization.
 - **Ownership:** public repository `d20-folio`; worktree
   `/Users/salvatoredicara/Workspace/Codex/d20-folio-program-supervisor-foundation`; branch
   `feat/program-supervisor-foundation`; base
@@ -177,8 +178,14 @@ The shared checkout remains untouched even when its branch name is `main`.
   pnpm's conventional standalone `--` before runtime validation. Its focused regression failed on
   the usage error, then passed after consuming exactly one leading separator; the owning runtime
   file passes 36/36 and the documented invocation now reaches the precise missing-store error
-  without creating state. This narrow repair returns through exact review and applicable gates
-  before runtime initialization.
+  without creating state. The exact repair `a7b273eed7d82cd30a7ec898b20c2c7e2d5c6d77` (tree
+  `6e1ad9bd497d9715a747804b0dd3472436500fa5`) received an independent PASS. Its pinned composed
+  gate exited zero with 801/801 Vitest files and 18,613/18,613 tests, 7/7 Functions files and
+  129/129 Functions tests, typecheck, lint, and production build. The immediately following pinned
+  SRD-only gate exited zero with 623/623 Vitest files and 13,037/13,037 tests, typecheck, and
+  production build. The receipt-only commit documenting those results still requires exact
+  read-only review, followed by the mandatory main pre-push gate and remote proof; runtime remains
+  absent.
 - **First lease:** repository lease `F0`, holder `program-supervisor-foundation`, acquired
   `2026-08-26T01:38:26Z`, expires `2026-08-27T01:38:26Z`; active and writable. No runtime lease is
   claimed before Task 6 creates the runtime. The future reviewed runtime lease ID is
@@ -200,8 +207,9 @@ The shared checkout remains untouched even when its branch name is `main`.
   exact gate candidate at `de65fe29574b64d68513aa361c573bc98490a621` also received independent
   passes. The final receipt-only commit at `b1448fbba62047e52a24155ecb2d817d605d33a9`
   received an exact PASS before its green pre-push gate and remote integration. The post-integration
-  CLI separator repair still owes exact independent review; every fix or changed base returns
-  through review before verification.
+  CLI separator repair at `a7b273eed7d82cd30a7ec898b20c2c7e2d5c6d77` also received an exact
+  independent PASS; its final receipt-only commit still owes exact read-only review. Every fix or
+  changed base returns through review before verification.
 - **Owner gate:** none for repository integration. Deployment, publication, billing/privacy, and
   any destructive action remain separate owner gates; Task 6 must not deploy.
 - **Cleanup:** retain this worktree and branch through remote integration, authority reconciliation,
@@ -318,7 +326,7 @@ current execution pointer so agents can route correctly; it cannot grant or chan
   `justfile`, `package.json`, `CLAUDE.md`, `PROGRESS.md`, `docs/WORKTREES.md`,
   `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and `scripts/program-supervisor/**`; expires
   `2026-08-27T01:38:26Z`. Its authority pointer is
-  `docs/TEST_PORTFOLIO.md@f5c972115fe405a0b66cd8788b596db9e01c0748`, reconciled through
+  `docs/TEST_PORTFOLIO.md@7cb89ed4b26021aa46a7d4cdc8ef7888df692d52`, reconciled through
   `b1448fbba62047e52a24155ecb2d817d605d33a9`.
 - **Inactive next lease:** `K1`; acquire only after F0 release and a fresh rebase/review/gate cycle.
 - **Inactive blocked lease:** `B00`; acquire only after F0 release, T8A adapter repair, overlap
