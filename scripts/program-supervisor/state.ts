@@ -990,10 +990,9 @@ function enforceAuthorityCoherence(
   const globalBlobs = new Map(
     manifestAuthorities(authority).map((reference) => [reference.path, reference.blob])
   );
-  const repositoryAuthorities = new Map<
+  const ownerDocumentEpochs = new Map<
     string,
     {
-      ownerDocumentPath: string;
       ownerDocumentBlob: string;
       mainSha: string;
     }
@@ -1016,21 +1015,19 @@ function enforceAuthorityCoherence(
         `task ${task.charter.id} repository authority does not match the global manifest`
       );
     }
-    const repositoryAuthorityKey = `${task.charter.ownership.repository}\0${repositoryLease.id}`;
-    const sharedAuthority = repositoryAuthorities.get(repositoryAuthorityKey);
+    const ownerDocumentKey = `${task.charter.ownership.repository}\0${repositoryLease.ownerDocumentPath}`;
+    const sharedEpoch = ownerDocumentEpochs.get(ownerDocumentKey);
     if (
-      sharedAuthority &&
-      (sharedAuthority.ownerDocumentPath !== repositoryLease.ownerDocumentPath ||
-        sharedAuthority.ownerDocumentBlob !== repositoryLease.ownerDocumentBlob ||
-        sharedAuthority.mainSha !== repositoryLease.mainSha)
+      sharedEpoch &&
+      (sharedEpoch.ownerDocumentBlob !== repositoryLease.ownerDocumentBlob ||
+        sharedEpoch.mainSha !== repositoryLease.mainSha)
     ) {
       corruption(
         path,
-        `task ${task.charter.id} splits shared repository lease ${repositoryLease.id}`
+        `task ${task.charter.id} splits the owner document reconciliation epoch for ${repositoryLease.ownerDocumentPath}`
       );
     }
-    repositoryAuthorities.set(repositoryAuthorityKey, {
-      ownerDocumentPath: repositoryLease.ownerDocumentPath,
+    ownerDocumentEpochs.set(ownerDocumentKey, {
       ownerDocumentBlob: repositoryLease.ownerDocumentBlob,
       mainSha: repositoryLease.mainSha,
     });

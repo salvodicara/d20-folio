@@ -347,8 +347,46 @@ describe("Program Supervisor bootstrap and task projection", () => {
     fixture.activeLeases.push(first, second);
 
     expect(() => validateEventInput(fixture)).toThrow(
-      /shared repository lease|repository authority/i
+      /owner document.*epoch|repository authority/i
     );
+  });
+
+  it("rejects divergent F0/F1 epochs governed by the same bootstrap owner document", () => {
+    const fixture = bootstrapFixture();
+    const secondLease = itemAt(fixture.tasks, 1).charter.ownership.repositoryLease;
+    secondLease.id = "F1";
+    secondLease.mainSha = SHA_C;
+
+    expect(() => validateEventInput(fixture)).toThrow(/owner document.*epoch/i);
+  });
+
+  it("rejects a created task that invents a new lease ID epoch for the same owner document", () => {
+    const successor = bootstrapTask("task-successor", "scripts/successor");
+    successor.charter.ownership.repositoryLease.id = "F1";
+    successor.charter.ownership.repositoryLease.mainSha = SHA_C;
+
+    expect(() =>
+      replayEvents([bootstrapFixture(), event(2, "task-created", { task: successor })])
+    ).toThrow(/owner document.*epoch/i);
+  });
+
+  it("accepts coherent distinct lease IDs governed by the same owner document", () => {
+    const fixture = bootstrapFixture();
+    itemAt(fixture.tasks, 1).charter.ownership.repositoryLease.id = "F1";
+
+    const result = replayEvents([fixture]);
+    expect(
+      result.snapshot.tasks.map(
+        ({ charter: projectedCharter }) => projectedCharter.ownership.repositoryLease.id
+      )
+    ).toEqual(["F0", "F1", "F0"]);
+    for (const task of result.snapshot.tasks) {
+      expect(task.charter.ownership.repositoryLease).toMatchObject({
+        ownerDocumentPath: LEASE_OWNER_PATH,
+        ownerDocumentBlob: SHA_A,
+        mainSha: SHA_B,
+      });
+    }
   });
 
   it("requires contiguous sequences from one, unique event IDs, and one bootstrap", () => {
@@ -652,6 +690,48 @@ describe("Program Supervisor lease authority and WIP", () => {
     expect(result.leases.leases.map(({ authorityPointer }) => authorityPointer)).toEqual([
       authorityPointer(SHA_C, SHA_D),
       authorityPointer(SHA_C, SHA_D),
+    ]);
+  });
+
+  it("reconciles every distinct lease ID governed by the changed owner document", () => {
+    const fixture = bootstrapFixture();
+    itemAt(fixture.tasks, 1).charter.ownership.repositoryLease.id = "F1";
+    const first = lease("task-a");
+    const second = {
+      ...lease("task-b", "writer", {
+        pointer: { ...authorityPointer(), repositoryLeaseId: "F1" },
+      }),
+      acquiredAt: "2026-08-26T03:00:00.000Z",
+    };
+    const result = replayEvents([
+      fixture,
+      acquire(2, first),
+      acquire(3, second),
+      event(4, "authority-reconciled", {
+        previousMainSha: SHA_B,
+        mainSha: SHA_D,
+        changes: [{ path: LEASE_OWNER_PATH, previousBlob: SHA_A, blob: SHA_C }],
+        proof: "The owner document governs both F0 and F1 epochs.",
+      }),
+    ]);
+
+    expect(
+      result.snapshot.tasks.map(({ charter: projectedCharter }) => ({
+        id: projectedCharter.ownership.repositoryLease.id,
+        blob: projectedCharter.ownership.repositoryLease.ownerDocumentBlob,
+        mainSha: projectedCharter.ownership.repositoryLease.mainSha,
+      }))
+    ).toEqual([
+      { id: "F0", blob: SHA_C, mainSha: SHA_D },
+      { id: "F1", blob: SHA_C, mainSha: SHA_D },
+      { id: "F0", blob: SHA_C, mainSha: SHA_D },
+    ]);
+    expect(result.leases.leases.map(({ authorityPointer }) => authorityPointer)).toEqual([
+      authorityPointer(SHA_C, SHA_D),
+      {
+        ...authorityPointer(SHA_C, SHA_D),
+        repositoryLeaseId: "F1",
+      },
     ]);
   });
 
