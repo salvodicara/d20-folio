@@ -145,8 +145,8 @@ unperformed handoff has no fabricated SHA.
   `docs/WORKTREES.md`, `docs/PROGRAM_STATUS.md`, `docs/TEST_PORTFOLIO.md`, and
   `scripts/program-supervisor/**`. This is a repository-authority lease only; it
   does not claim a runtime lease before the runtime exists.
-- **Current state and conflict receipt (Task 5 hook-environment repair, observed
-  `2026-08-26T14:20:19Z`):** F0 remains active; the Foundation worktree was clean at reviewed
+- **Current state and conflict receipt (Task 5 final phase-one verification, observed
+  `2026-08-26T14:53:29Z`):** F0 remains active; the Foundation worktree was clean at reviewed
   pre-repair HEAD `ead344b3e72616332dee29fe7f35831015fac707` (tree
   `154cbaec85d49fe3e4f287ce7473ada2cb8826e1`) on freshly fetched `origin/main`
   `c476f2b3bf2a1cf9d504d8b1281d6979463f2f97`. K1 is clean at
@@ -195,9 +195,15 @@ unperformed handoff has no fabricated SHA.
   explicit hook-local `GIT_DIR`/`GIT_WORK_TREE`, with `core.bare` still `false`. The exact repair at
   `1eec62dc716c402f368583b207c8d2a0a91cebac` received an independent PASS. Its composed-gate rerun
   passed typecheck and lint before the public/private partition guard rejected one owner email in
-  the public status receipt; 800/801 files and 18,611/18,612 tests passed. The amended receipt
-  removes that identity value and returns through exact review and full gates. This does not change
-  the lease term or test-risk ownership.
+  the public status receipt; 800/801 files and 18,611/18,612 tests passed. The amended exact
+  candidate `de65fe29574b64d68513aa361c573bc98490a621` (tree
+  `fc6ec526e39bfe7460c6530dcacf9f45d2e242af`) removes that identity value, received an independent
+  PASS, and completed the applicable gates sequentially with the pinned bootstrap wrapper. The
+  composed gate exited zero with 801/801 Vitest files and 18,612/18,612 tests, 7/7 Functions files
+  and 129/129 Functions tests, typecheck, lint, and production build. The immediately following
+  SRD-only gate exited zero with 623/623 Vitest files and 13,036/13,036 tests, typecheck, and
+  production build. The final receipt-only commit still requires exact read-only review before the
+  main pre-push gate. This does not change the lease term or test-risk ownership.
 - **Handoff:** release F0 only after remote integration proof or an evidence-backed
   blocker/recovery disposition. Until then B00 receives no writer lease and may
   not edit, rebase, or integrate its frozen candidate. After F0 integrates, B00
