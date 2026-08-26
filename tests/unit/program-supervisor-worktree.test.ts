@@ -265,10 +265,14 @@ describe("program supervisor bootstrap", () => {
     `;
     const result = run(script, ["--run", "node", "-e", probe], repositoryRoot);
     expect(result.status).toBe(0);
-    const [command, child] = result.stdout.trim().split("\n").map(JSON.parse) as Array<{
-      version: string;
-      execPath: string;
-    }>;
+    const records = result.stdout.trim().split("\n");
+    expect(records).toHaveLength(2);
+    const [commandRecord, childRecord] = records;
+    if (commandRecord === undefined || childRecord === undefined) {
+      throw new Error(`Expected command and child records, got ${result.stdout}`);
+    }
+    const command = JSON.parse(commandRecord) as { version: string; execPath: string };
+    const child = JSON.parse(childRecord) as { version: string; execPath: string };
 
     expect(command.version).toBe("v24.16.0");
     expect(child.version).toBe("v24.16.0");
