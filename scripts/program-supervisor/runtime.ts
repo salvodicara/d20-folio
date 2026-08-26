@@ -9,6 +9,7 @@ import {
   readdir,
   realpath,
   rename,
+  rmdir,
   stat,
   unlink,
   type FileHandle,
@@ -68,6 +69,7 @@ export interface RuntimeOptions {
   now?: () => Date;
   lockTimeoutMs?: number;
   beforeInitializeRename?: (stagingRoot: string) => void | Promise<void>;
+  afterInitializeClaim?: (root: string) => void | Promise<void>;
   afterStaleLockClaim?: (evidencePath: string) => void | Promise<void>;
   afterLockOwnerDurable?: (ownerPath: string) => void | Promise<void>;
   afterLockPublish?: (lockPath: string) => void | Promise<void>;
@@ -1013,13 +1015,23 @@ export async function initializeRuntime(
   await fsyncDirectory(stagingRoot);
   await options.beforeInitializeRename?.(stagingRoot);
   try {
-    await rename(stagingRoot, root);
+    await mkdir(root, { mode: DIRECTORY_MODE });
   } catch (error) {
-    if (errorCode(error) === "EEXIST" || errorCode(error) === "ENOTEMPTY") {
+    if (errorCode(error) === "EEXIST") {
       throw new Error(`Runtime root already exists: ${rootInput}`, { cause: error });
     }
     throw error;
   }
+  await chmod(root, DIRECTORY_MODE);
+  await fsyncDirectory(root);
+  await fsyncDirectory(parent);
+  await options.afterInitializeClaim?.(root);
+  for (const directory of RUNTIME_DIRECTORIES) {
+    await rename(join(stagingRoot, directory), join(root, directory));
+  }
+  await fsyncDirectory(root);
+  await fsyncDirectory(stagingRoot);
+  await rmdir(stagingRoot);
   await fsyncDirectory(parent);
   return {
     snapshot,

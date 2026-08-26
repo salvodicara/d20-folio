@@ -5,6 +5,7 @@ import {
   chmod,
   link,
   lstat,
+  mkdir,
   mkdtemp,
   readFile,
   readdir,
@@ -407,6 +408,24 @@ describe("Program Supervisor atomic runtime", () => {
     await expect(loadRuntime(root)).resolves.toMatchObject({
       snapshot: { lastEventSeq: 1 },
     });
+  });
+
+  it("does not replace an empty target created at the pre-claim hook", async () => {
+    const root = await makeRoot();
+    let targetInode: number | null = null;
+
+    await expect(
+      initializeRuntime(root, bootstrapInput(), {
+        beforeInitializeRename: async () => {
+          await mkdir(root, { mode: 0o700 });
+          targetInode = (await stat(root)).ino;
+        },
+      })
+    ).rejects.toThrow(/runtime root already exists/i);
+
+    expect(targetInode).not.toBeNull();
+    expect((await stat(root)).ino).toBe(targetInode);
+    expect(await readdir(root)).toEqual([]);
   });
 
   it("validates an event against reconstructed state before appending bytes", async () => {
@@ -950,6 +969,43 @@ describe("Program Supervisor atomic runtime", () => {
     expect(initialized.recoveryState.abandonedStaging).toHaveLength(1);
     expect(initialized.recoveryState.abandonedStaging[0]).toMatch(
       new RegExp(`^\\.${basename(root)}\\.staging-\\d+-`)
+    );
+  });
+
+  it("preserves an incomplete root and staging when the initializer dies after claiming", async () => {
+    const root = await makeRoot("runtime.claim-crash");
+    const inputPath = join(dirname(root), "bootstrap-claim-crash.json");
+    await writeSecureJson(inputPath, bootstrapInput());
+    const source = [
+      `import { readFile } from "node:fs/promises";`,
+      `import { initializeRuntime } from ${JSON.stringify(RUNTIME_URL)};`,
+      `const input = JSON.parse(await readFile(process.argv[1], "utf8"));`,
+      `await initializeRuntime(process.argv[2], input, { afterInitializeClaim: () => process.exit(95) });`,
+    ].join("\n");
+
+    const crashed = spawnSync(
+      process.execPath,
+      ["--input-type=module", "-e", source, inputPath, root],
+      { cwd: process.cwd(), encoding: "utf8" }
+    );
+    expect(crashed.status).toBe(95);
+    const claimed = await stat(root);
+    expect(claimed.mode & 0o7777).toBe(0o700);
+    expect(await readdir(root)).toEqual([]);
+    const stagingNames = (await readdir(dirname(root))).filter((name) =>
+      name.startsWith(`.${basename(root)}.staging-${crashed.pid}-`)
+    );
+    expect(stagingNames).toHaveLength(1);
+
+    await expect(loadRuntime(root)).rejects.toThrow(/runtime state directory|ENOENT/i);
+    await expect(initializeRuntime(root, bootstrapInput())).rejects.toThrow(
+      /runtime root already exists/i
+    );
+    expect((await stat(root)).ino).toBe(claimed.ino);
+    expect(stagingNames).toEqual(
+      (await readdir(dirname(root))).filter((name) =>
+        name.startsWith(`.${basename(root)}.staging-${crashed.pid}-`)
+      )
     );
   });
 
