@@ -142,6 +142,27 @@ class GitContentionError extends Error {
 }
 
 let trustedGitPromise: Promise<void> | undefined;
+let trustedGitSupportsReferenceOptOut = false;
+
+function parseGitVersion(
+  versionOutput: string
+): { major: number; minor: number; patch: number } | undefined {
+  const match = /^git version (\d+)\.(\d+)\.(\d+)/.exec(versionOutput.trim());
+  if (match === null) return undefined;
+  return {
+    major: Number(match[1]),
+    minor: Number(match[2]),
+    patch: Number(match[3]),
+  };
+}
+
+export function supportsFsckReferenceOptOut(versionOutput: string): boolean {
+  const version = parseGitVersion(versionOutput);
+  return (
+    version !== undefined &&
+    (version.major > 2 || (version.major === 2 && version.minor >= 50))
+  );
+}
 
 function errorCode(error: unknown): string | undefined {
   return (error as NodeJS.ErrnoException).code;
@@ -320,16 +341,21 @@ async function assertTrustedGit(): Promise<void> {
       );
     }
     const result = await executeGit(["--version"]);
-    const match = /^git version (\d+)\.(\d+)\.(\d+)/.exec(
-      result.stdout.toString("utf8").trim()
-    );
-    const major = Number(match?.[1]);
-    const minor = Number(match?.[2]);
-    if (!match || major < 2 || (major === 2 && minor < 45)) {
+    const versionOutput = result.stdout.toString("utf8").trim();
+    const version = parseGitVersion(versionOutput);
+    if (
+      version === undefined ||
+      version.major < 2 ||
+      (version.major === 2 && version.minor < 45)
+    ) {
       throw new Error(
         "Trusted Git must support files refs, SHA-1 init, and fsync controls"
       );
     }
+    // Git 2.50 added reference-database verification to `fsck`. The runtime
+    // validates its deliberately non-branch HEAD and complete ref shape above,
+    // so keep `fsck` focused on the captured tip's object graph when supported.
+    trustedGitSupportsReferenceOptOut = supportsFsckReferenceOptOut(versionOutput);
   })();
   return trustedGitPromise;
 }
@@ -653,7 +679,14 @@ async function validateGitView(
   }
   await runGit(
     root,
-    ["fsck", "--strict", "--no-reflogs", "--no-dangling", validationTip],
+    [
+      "fsck",
+      "--strict",
+      ...(trustedGitSupportsReferenceOptOut ? ["--no-references"] : []),
+      "--no-reflogs",
+      "--no-dangling",
+      validationTip,
+    ],
     { runtime: options }
   );
 }

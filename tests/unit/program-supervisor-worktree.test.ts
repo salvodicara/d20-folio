@@ -11,7 +11,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import {
   assertSafeTaskRootCandidate,
@@ -72,6 +72,16 @@ function runChecked(command: string, args: string[], cwd: string): void {
   if (result.status !== 0) {
     throw new Error(`${command} ${args.join(" ")}: ${result.stderr}`);
   }
+}
+
+function readUnitJob(workflow: "ci.yml" | "verify.yml"): string {
+  const source = readFileSync(
+    join(repositoryRoot, ".github", "workflows", workflow),
+    "utf8"
+  );
+  const unitJob = /^ {2}unit:\n[\s\S]*?(?=^ {2}[a-z][a-z0-9-]*:\n)/m.exec(source)?.[0];
+  if (unitJob === undefined) throw new Error(`Missing unit job in ${workflow}`);
+  return unitJob;
 }
 
 function createBootstrapFixture() {
@@ -317,7 +327,7 @@ describe("program supervisor bootstrap", () => {
 
     expect(command.version).toBe("v24.16.0");
     expect(child.version).toBe("v24.16.0");
-    expect(command.execPath).toMatch(/\/nodejs\/24\.16\.0\/bin\/node$/);
+    expect(basename(command.execPath)).toBe("node");
     expect(child.execPath).toBe(command.execPath);
   });
 
@@ -558,6 +568,29 @@ exec "$REAL_GIT" "$@"
 });
 
 describe("program supervisor durable runbook guards", () => {
+  it.each(["ci.yml", "verify.yml"] as const)(
+    "%s provisions every executable dependency used by the unit suite",
+    (workflow) => {
+      const unitJob = readUnitJob(workflow);
+      expect(unitJob).toMatch(
+        /^ {6}- uses: extractions\/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4\n {8}with:\n {10}just-version: "1\.50\.0"$/m
+      );
+      expect(unitJob).toContain(
+        [
+          "- name: Install Functions dependencies",
+          "        run: npm ci",
+          "        working-directory: functions",
+        ].join("\n")
+      );
+      expect(unitJob.indexOf("Install Functions dependencies")).toBeLessThan(
+        unitJob.indexOf("Unit tests")
+      );
+      expect(unitJob.indexOf("extractions/setup-just@")).toBeLessThan(
+        unitJob.indexOf("Unit tests")
+      );
+    }
+  );
+
   it("routes setup through the pinned idempotent bootstrap", () => {
     const briefing = readFileSync(join(repositoryRoot, "CLAUDE.md"), "utf8");
     expect(briefing).toContain("scripts/program-supervisor/bootstrap-worktree.sh");

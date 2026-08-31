@@ -24,6 +24,7 @@ import {
   initializeRuntime,
   loadRuntime,
   rebuildRuntime,
+  supportsFsckReferenceOptOut,
   type RuntimeOptions,
   type RuntimeProjection,
 } from "../../scripts/program-supervisor/runtime";
@@ -514,6 +515,16 @@ afterEach(async () => {
 });
 
 describe("Program Supervisor private bare-Git runtime", () => {
+  it.each([
+    ["git version 2.45.0", false],
+    ["git version 2.49.9", false],
+    ["git version 2.50.0", true],
+    ["git version 3.0.0", true],
+    ["not a Git version", false],
+  ] as const)("maps fsck reference opt-out support for %s", (version, expected) => {
+    expect(supportsFsckReferenceOptOut(version)).toBe(expected);
+  });
+
   it("initializes the exact immutable chain and reconstructs it", async () => {
     const root = await makeRoot();
     const bootstrap = bootstrapInput();
@@ -897,6 +908,29 @@ describe("Program Supervisor private bare-Git runtime", () => {
     await expect(lstat(join(root, "packed-refs"))).rejects.toMatchObject({
       code: "ENOENT",
     });
+  });
+
+  it("checks object integrity without re-validating the canonical non-branch HEAD", async () => {
+    const root = await makeRoot();
+    const commands: string[][] = [];
+    const version = spawnSync("/usr/bin/git", ["--version"], {
+      encoding: "utf8",
+      env: GIT_TEST_ENV,
+    });
+    expect(version.status).toBe(0);
+
+    await initializeRuntime(root, bootstrapInput(), {
+      onGitCommand: (args) => commands.push([...args]),
+    });
+
+    expect(commands.find(([command]) => command === "fsck")).toEqual([
+      "fsck",
+      "--strict",
+      ...(supportsFsckReferenceOptOut(version.stdout) ? ["--no-references"] : []),
+      "--no-reflogs",
+      "--no-dangling",
+      expect.stringMatching(/^[0-9a-f]{40}$/),
+    ]);
   });
 
   it("uses a constant number of Git processes for full replay regardless of chain length", async () => {
