@@ -392,13 +392,17 @@ async function updateCharacterParent(
   charId: string,
   data: CharacterDoc
 ): Promise<void> {
-  if (data.id !== charId || data.playStateVersion !== 1) {
+  const hasPlayStateVersion = Object.hasOwn(data, "playStateVersion");
+  if (hasPlayStateVersion && data.playStateVersion !== 1) {
+    throw new TypeError("Invalid character play-state ownership marker");
+  }
+  if (data.id !== charId) {
     throw new TypeError("A complete canonical character snapshot is required");
   }
   const payload = await toStoredPayload({
     character: data.character,
     session: data.session,
-    playStateVersion: 1,
+    ...(hasPlayStateVersion ? { playStateVersion: 1 as const } : {}),
   });
   const { playStateVersion: _marker, ...write } = payload;
   void _marker;
@@ -408,7 +412,12 @@ async function updateCharacterParent(
     ...(stripUndefined(write) as Record<string, unknown>),
     updatedAt,
   });
-  await queuePublicProjection(batch, uid, data, updatedAt);
+  // Historical shared=true parents predate the sanitized public projection and
+  // have no v1 ownership marker. Keep their private autosave working without
+  // manufacturing a projection from a non-canonical ownership generation.
+  if (data.playStateVersion === 1 || !data.shared) {
+    await queuePublicProjection(batch, uid, data, updatedAt);
+  }
   await batch.commit();
 }
 
@@ -720,14 +729,41 @@ export interface DebouncedSaveHandle {
   cancel: () => void;
 }
 
+const pendingParentSaveCancellers = new Map<string, () => void>();
+
+function pendingParentSaveKey(uid: string, charId: string): string {
+  return `${uid}/${charId}`;
+}
+
+function cancelPendingParentSave(uid: string, charId: string): boolean {
+  const cancel = pendingParentSaveCancellers.get(pendingParentSaveKey(uid, charId));
+  if (!cancel) return false;
+  cancel();
+  return true;
+}
+
 export function createDebouncedSave(
   uid: string,
   charId: string,
   delayMs: number = 2000
 ): DebouncedSaveHandle {
+  const key = pendingParentSaveKey(uid, charId);
   let timer: ReturnType<typeof setTimeout> | null = null;
   let pendingPayload: CharacterDoc | null = null;
   let inflight: Promise<void> = Promise.resolve();
+
+  function clearPendingRegistration(): void {
+    if (pendingParentSaveCancellers.get(key) === cancel) {
+      pendingParentSaveCancellers.delete(key);
+    }
+  }
+
+  function cancel(): void {
+    if (timer) clearTimeout(timer);
+    timer = null;
+    pendingPayload = null;
+    clearPendingRegistration();
+  }
 
   function runWrite(data: CharacterDoc): Promise<void> {
     saveStatusCallbacks.onSaving();
@@ -745,11 +781,13 @@ export function createDebouncedSave(
     save(data) {
       if (timer) clearTimeout(timer);
       pendingPayload = data;
+      pendingParentSaveCancellers.set(key, cancel);
       saveStatusCallbacks.onPending();
       timer = setTimeout(() => {
         const payload = pendingPayload;
         pendingPayload = null;
         timer = null;
+        clearPendingRegistration();
         if (payload) inflight = runWrite(payload);
       }, delayMs);
     },
@@ -760,16 +798,13 @@ export function createDebouncedSave(
       }
       const payload = pendingPayload;
       pendingPayload = null;
+      clearPendingRegistration();
       if (payload) {
         inflight = runWrite(payload);
       }
       return inflight;
     },
-    cancel() {
-      if (timer) clearTimeout(timer);
-      timer = null;
-      pendingPayload = null;
-    },
+    cancel,
   };
 }
 
@@ -931,7 +966,12 @@ export async function restoreCharacterSnapshot(
     combatStateRef(uid, charId),
     combatStateWriteData(sessionToCombatState(snapshot.session))
   );
+  // A whole-state ceremony already carries the latest complete parent + session.
+  // Drop its same-tab debounced predecessor immediately before the atomic v1
+  // replacement, so an older legacy payload cannot be enqueued after the cutover.
+  const supersededPendingSave = cancelPendingParentSave(uid, charId);
   await batch.commit();
+  if (supersededPendingSave) saveStatusCallbacks.onSaved();
 }
 
 /** Whole character replacement boundary for level-up and similar ceremonies. */

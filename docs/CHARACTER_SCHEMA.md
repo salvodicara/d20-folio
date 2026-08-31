@@ -375,6 +375,12 @@ fields removed; git history preserves the script). The durable result: the subdo
 parent carries no trio, and every reader falls to the full-HP default only when the subdoc is genuinely
 absent.
 
+`playStateVersion: 1` is a storage-ownership marker, not a character-schema version. A historical
+schema-3 parent that does not yet carry the marker remains writable in its established mode: non-combat
+session facts such as spent spell slots stay in the parent `state`, while the combat trio stays in
+`combat/state`. Parent autosave must preserve that mode until an atomic parent+child cutover adds the
+marker; it must never reject the complete snapshot merely because that cutover has not happened yet.
+
 ## Verification (Definition of Done)
 
 1. `serialize(parse(json)) === json` for every v3 fixture (idempotent, byte-identical).

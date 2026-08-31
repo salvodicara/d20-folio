@@ -106,7 +106,9 @@ import {
   createDebouncedSave,
   getFullCharacter,
   getPublicCharacter,
+  replaceCharacterState,
   restoreCharacterSnapshot,
+  saveStatusCallbacks,
   setCharacterSharing,
   updateCharacter,
 } from "@/lib/firestore";
@@ -152,6 +154,106 @@ beforeEach(() => {
 });
 
 describe("play-state v1 persistence cutover", () => {
+  it("keeps an unmarked legacy character's spell-slot edit on its parent", async () => {
+    const legacy = { ...makeCharacterDoc(), id: "c1" };
+    delete legacy.playStateVersion;
+    legacy.session = {
+      ...legacy.session,
+      spellSlots: { ...legacy.session.spellSlots, "1": { used: 2 } },
+    };
+    const pending = createDebouncedSave("u1", "c1");
+
+    pending.save(legacy);
+    await pending.flush();
+
+    expect(harness.commits).toHaveBeenCalledTimes(1);
+    const parent = harness.operations.find(
+      ({ path }) => path === "users/u1/characters/c1"
+    );
+    expect(parent).toMatchObject({
+      kind: "update",
+      data: { state: { usedSlots: { "1": 2 } }, updatedAt: "server-ts" },
+    });
+    expect(parent?.data).not.toHaveProperty("playStateVersion");
+  });
+
+  it.each([undefined, null, 2])(
+    "rejects a present invalid play-state marker without writing (%s)",
+    async (invalidMarker) => {
+      const malformed = { ...makeCharacterDoc(), id: "c1" };
+      Object.defineProperty(malformed, "playStateVersion", {
+        enumerable: true,
+        value: invalidMarker,
+      });
+      const pending = createDebouncedSave("u1", "c1");
+
+      pending.save(malformed);
+      await pending.flush();
+
+      expect(harness.commits).not.toHaveBeenCalled();
+      expect(harness.operations).toEqual([]);
+    }
+  );
+
+  it("autosaves an already-shared legacy parent without synthesizing a public projection", async () => {
+    const legacy = { ...makeCharacterDoc(), id: "c1", shared: true };
+    delete legacy.playStateVersion;
+    legacy.session = {
+      ...legacy.session,
+      spellSlots: { ...legacy.session.spellSlots, "1": { used: 2 } },
+    };
+    const pending = createDebouncedSave("u1", "c1");
+
+    pending.save(legacy);
+    await pending.flush();
+
+    expect(harness.commits).toHaveBeenCalledTimes(1);
+    expect(harness.operations).toHaveLength(1);
+    expect(harness.operations[0]).toMatchObject({
+      kind: "update",
+      path: "users/u1/characters/c1",
+      data: { state: { usedSlots: { "1": 2 } }, updatedAt: "server-ts" },
+    });
+  });
+
+  it("drops a queued legacy autosave before the level-up whole-state cutover", async () => {
+    const legacy = { ...makeCharacterDoc(), id: "c1" };
+    delete legacy.playStateVersion;
+    legacy.session = {
+      ...legacy.session,
+      spellSlots: { ...legacy.session.spellSlots, "1": { used: 2 } },
+    };
+    const pending = createDebouncedSave("u1", "c1");
+    const onSaved = vi.fn();
+    const previousOnSaved = saveStatusCallbacks.onSaved;
+    saveStatusCallbacks.onSaved = onSaved;
+
+    try {
+      pending.save(legacy);
+
+      await replaceCharacterState("u1", "c1", legacy.character, legacy.session);
+      await pending.flush();
+
+      expect(harness.commits).toHaveBeenCalledTimes(1);
+      expect(harness.operations).toHaveLength(2);
+      expect(harness.operations[0]).toMatchObject({
+        kind: "update",
+        path: "users/u1/characters/c1",
+        data: { playStateVersion: 1, state: {} },
+      });
+      expect(harness.operations[1]).toMatchObject({
+        kind: "set",
+        path: "users/u1/characters/c1/combat/state",
+        data: {
+          playState: { version: 1, state: { usedSlots: { "1": 2 } } },
+        },
+      });
+      expect(onSaved).toHaveBeenCalledTimes(1);
+    } finally {
+      saveStatusCallbacks.onSaved = previousOnSaved;
+    }
+  });
+
   it("discards a cancelled pending parent save without a later timer or flush write", async () => {
     vi.useFakeTimers();
     try {
