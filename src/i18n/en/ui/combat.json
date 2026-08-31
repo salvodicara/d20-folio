@@ -219,6 +219,8 @@
     "castLevelHint": "Pick the slot level to spend.",
     "castLevelBase": "Level {{level}} (base)",
     "castLevelUp": "Level {{level}} (upcast)",
+    "castSlotBaseAria": "Level {{level}} slot (base)",
+    "castSlotUpAria": "Level {{level}} slot (upcast)",
     "pactSlotBadge": "PACT",
     "freeCastBadge": "FREE",
     "freeCastToast": "Cast {{name}} free ({{source}})",

@@ -18,6 +18,12 @@ import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { spellLevelVar } from "@/components/shared/folio-colors";
+import { CastSlotOptionRow } from "@/components/sheet/CastSlotOptionRow";
+import {
+  damageAtSlotLevel,
+  healAtSlotLevel,
+  type CastSlotScalingFacts,
+} from "@/lib/views/cast-slot-preview";
 // The discriminated union (slot / free-cast / mastery) is owned by the engine —
 // the resolver produces it, this modal only renders it. Importing it from the
 // engine keeps the dependency direction one-way (UI → engine, never reverse).
@@ -27,7 +33,6 @@ import {
   type CastRecoveryCadence,
 } from "@/lib/cast-options";
 import { itemResourceRecoveryTranslationKey } from "@/lib/views/item-resource-view";
-import { scaleUpcastDice, spellInstanceCount } from "@/lib/utils";
 
 export type { CastLevelOption };
 
@@ -87,25 +92,7 @@ export interface CastLevelModalProps {
      * seam the spell card reads, so they can't drift — golden rule 6). Omit for a
      * spell that deals no scaling dice (the rows show the bare level only).
      */
-    upcast?: {
-      /** Spell base level — the floor the per-slot increment counts above. */
-      level: number;
-      /** Base dice at the spell's own level ("8d6"); omit for ray-count spells. */
-      damageDice?: string;
-      /** Per-slot-level dice increment ("1d6"); omit when the dice don't scale. */
-      damageDicePerUpcast?: string;
-      /** RA-07 — base HEAL dice at the spell's own level ("2d8"); omit for non-heal. */
-      healDice?: string;
-      /** RA-07 — per-slot-level heal-dice increment ("2d8"); omit when it doesn't scale. */
-      healDicePerUpcast?: string;
-      /** Base separate-instance count (Scorching Ray 3); omit for single-roll. */
-      instances?: number;
-      /** Extra instances per slot above base (Scorching Ray +1); omit if fixed. */
-      instancesPerUpcast?: number;
-      /** A second simultaneous damage instance (Ice Storm/Ice Knife) previewed as
-       *  "{primary} + {secondary}"; its Cold/Bludgeoning scales independently. */
-      secondaryDamage?: { dice: string; damageType: string; dicePerUpcast?: string };
-    };
+    upcast?: CastSlotScalingFacts;
   } | null;
   /**
    * Called with the chosen slot level, the selected option, AND the selected
@@ -167,29 +154,8 @@ export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalP
   // `spellInstanceCount` ("N × dice"). Null when the spell carries no scaling
   // damage facts (the row shows the bare level). Numeric only — no leak (rule 7).
   const upcast = request?.upcast;
-  const damageAtLevel = (level: number): string | null => {
-    if (!upcast) return null;
-    const dice = scaleUpcastDice(upcast, level);
-    if (dice == null) return null;
-    const count = spellInstanceCount(upcast, level);
-    const primary = count != null && count > 1 ? `${count} × ${dice}` : dice;
-    // A dual-damage-instance spell (Ice Storm/Ice Knife) scales its SECOND
-    // instance independently via the SAME shared helper — Ice Knife's Cold
-    // scales +1d6/slot while its Piercing is fixed. Preview "{primary} + {sec}".
-    const sec = upcast.secondaryDamage;
-    if (sec) {
-      const secDice = scaleUpcastDice(
-        {
-          level: upcast.level,
-          damageDice: sec.dice,
-          damageDicePerUpcast: sec.dicePerUpcast,
-        },
-        level
-      );
-      if (secDice) return `${primary} + ${secDice}`;
-    }
-    return primary;
-  };
+  const damageAtLevel = (level: number): string | null =>
+    damageAtSlotLevel(upcast, level);
 
   // RA-07 — the HEAL a given slot level restores, scaled via the SAME shared
   // `scaleUpcastDice` helper the damage preview uses (golden rule 6): base
@@ -197,19 +163,7 @@ export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalP
   // L1 "2d8" → L3 "6d8"). Null when the spell carries no scaling heal facts (the
   // row shows no heal chip). Dice only — no mod (the combat card folds the mod),
   // no rolls (golden rule 21).
-  const healAtLevel = (level: number): string | null => {
-    if (!upcast?.healDice) return null;
-    return (
-      scaleUpcastDice(
-        {
-          level: upcast.level,
-          damageDice: upcast.healDice,
-          damageDicePerUpcast: upcast.healDicePerUpcast,
-        },
-        level
-      ) ?? null
-    );
-  };
+  const healAtLevel = (level: number): string | null => healAtSlotLevel(upcast, level);
 
   return (
     <Dialog
@@ -287,37 +241,17 @@ export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalP
                 // A cantrip carries no slot row — it commits via the footer Cast
                 // button (G6/W3); never rendered as a tappable option row here.
                 if (opt.kind === "cantrip") return null;
-                // Chromatic slot button — per-level --sl seal + remaining count.
-                const isBase = opt.level === request.baseLevel;
-                const dmg = damageAtLevel(opt.level);
-                const heal = healAtLevel(opt.level);
                 return (
-                  <button
+                  <CastSlotOptionRow
                     key={`${opt.level}-${opt.pactMagic === true ? "p" : "r"}`}
-                    type="button"
-                    className="cl-opt cl-slot"
-                    style={{ ["--sl" as string]: spellLevelVar(opt.level) }}
-                    onClick={() => onConfirm(opt.level, opt, selectedMetamagic)}
-                  >
-                    <span className="cl-seal" aria-hidden>
-                      {opt.level}
-                    </span>
-                    <span className="cl-name">
-                      {isBase
-                        ? t("combat.castLevelBase", { level: opt.level })
-                        : t("combat.castLevelUp", { level: opt.level })}
-                    </span>
-                    {/* S12c — the dice this slot deals, scaled for upcast. */}
-                    {dmg && <span className="cl-dmg">{dmg}</span>}
-                    {/* RA-07 — the heal this slot restores, scaled for upcast. */}
-                    {heal && <span className="cl-heal">{heal}</span>}
-                    {opt.pactMagic === true && (
-                      <span className="cl-tag">{t("combat.pactSlotBadge")}</span>
-                    )}
-                    <span className="cl-count">
-                      {opt.remaining}/{opt.total}
-                    </span>
-                  </button>
+                    baseLevel={request.baseLevel}
+                    level={opt.level}
+                    onSelect={() => onConfirm(opt.level, opt, selectedMetamagic)}
+                    pactMagic={opt.pactMagic}
+                    remaining={opt.remaining}
+                    total={opt.total}
+                    upcast={upcast}
+                  />
                 );
               })}
             </div>

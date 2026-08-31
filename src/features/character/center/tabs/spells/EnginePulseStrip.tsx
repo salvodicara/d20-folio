@@ -40,7 +40,7 @@ function PulseFlow({
       cast={cast}
       material={characterMaterialRef(doc, uid)}
       onClose={onClose}
-      slotRemaining={{}}
+      slots={[]}
       spellName={spellName}
     />
   );

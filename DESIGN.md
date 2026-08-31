@@ -1324,9 +1324,13 @@ in a void: last ink → panel edge = strip → panel edge.
   `--w` and genuine later damage/heal changes still animate.
   Until then the empty recessed channel is the rail and the number shows the honest `—` blank.
 - **Spell slots = carved gem sockets:** empty = the `--pip-empty-*` recessed socket; filled = the
-  chromatic `--sl-*` gem. **Trackers** = pips when max ≤ 5, a pool bar when > 5 (`Tracker` auto-mode),
-  with a die badge + recovery chip (LR/SR). Immediate commit means these pips show only the persisted
-  resource count; there is no separate “pending spend” appearance derived from the turn receipt.
+  chromatic `--sl-*` gem. Every multi-level cast picker, including an engine-driven cast, uses the
+  same non-mutating slot row: chromatic level seal, base/upcast label, scaled damage or healing,
+  complete live sockets, remaining/total count, and Pact badge when applicable. The sockets in a
+  picker are decorative; choosing the row only answers the cast protocol, and the engine commit is
+  the sole debit. **Trackers** = pips when max ≤ 5, a pool bar when > 5 (`Tracker` auto-mode), with a
+  die badge + recovery chip (LR/SR). Immediate commit means these pips show only the persisted resource
+  count; there is no separate “pending spend” appearance derived from the turn receipt.
 - **Recorded-roll trackers = compact numbered sockets:** each remaining use owns one recessed numeric
   field and a separate consume control. Editing never spends; spending never opens another dialog;
   both have explicit focus/accessible labels and the exact consumed value is undoable. This is the

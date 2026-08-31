@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/firebase", () => ({
@@ -33,7 +33,7 @@ function castState(
 }
 
 describe("MechanicsCastModal", () => {
-  it("offers the available slot levels for the payment requirement", () => {
+  it("shows the complete chromatic slot state before choosing an upcast level", () => {
     const answer = vi.fn();
     render(
       <MechanicsCastModal
@@ -62,13 +62,31 @@ describe("MechanicsCastModal", () => {
         )}
         material={MATERIAL}
         onClose={vi.fn()}
-        slotRemaining={{ 1: 2, 2: 0, 3: 1 }}
+        slots={[
+          { level: 1, total: 4, remaining: 2, pactMagic: false },
+          { level: 2, total: 3, remaining: 0, pactMagic: false },
+          { level: 3, total: 2, remaining: 2, pactMagic: false },
+        ]}
         spellName="Cure Wounds"
+        upcast={{ level: 1, healDice: "2d8", healDicePerUpcast: "2d8" }}
       />
     );
-    expect(screen.getByText(/Level 1 slot/)).toBeTruthy();
-    expect(screen.queryByText(/Level 2 slot/)).toBeNull();
-    fireEvent.click(screen.getByText(/Level 3 slot/));
+    const base = screen.getByRole("button", {
+      name: /Level 1 slot \(base\).*2\/4/i,
+    });
+    expect(base).toHaveClass("cl-opt", "cl-slot");
+    expect(within(base).getByText("2d8")).toBeTruthy();
+    expect(base.querySelectorAll(".sc-pip")).toHaveLength(4);
+    expect(base.querySelectorAll(".sc-pip.used")).toHaveLength(2);
+
+    expect(screen.queryByText(/Level 2/)).toBeNull();
+    const upcast = screen.getByRole("button", {
+      name: /Level 3 slot \(upcast\).*6d8.*2\/2/i,
+    });
+    expect(upcast.querySelectorAll(".sc-pip")).toHaveLength(2);
+    expect(upcast.querySelectorAll(".sc-pip.used")).toHaveLength(0);
+
+    fireEvent.click(upcast);
     expect(answer).toHaveBeenCalledWith({
       inputId: "slot",
       kind: "resource",
@@ -105,13 +123,21 @@ describe("MechanicsCastModal", () => {
         )}
         material={MATERIAL}
         onClose={vi.fn()}
-        pactSlot={{ level: 2, remaining: 1 }}
-        slotRemaining={{ 1: 2 }}
+        slots={[
+          { level: 1, total: 4, remaining: 2, pactMagic: false },
+          { level: 2, total: 2, remaining: 1, pactMagic: true },
+        ]}
         spellName="Hex"
       />
     );
-    expect(screen.getByText(/Level 1 slot/)).toBeTruthy();
-    fireEvent.click(screen.getByText(/Pact slot, level 2/));
+    expect(
+      screen.getByRole("button", { name: /Level 1 slot \(base\).*2\/4/i })
+    ).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Level 2 slot \(upcast\).*PACT.*1\/2/i,
+      })
+    );
     expect(answer).toHaveBeenCalledWith({
       inputId: "slot",
       kind: "resource",
@@ -144,15 +170,18 @@ describe("MechanicsCastModal", () => {
         })}
         material={MATERIAL}
         onClose={vi.fn()}
-        pactSlot={{ level: 1, remaining: 2 }}
-        slotRemaining={{ 1: 2, 2: 1 }}
+        slots={[
+          { level: 1, total: 4, remaining: 2, pactMagic: false },
+          { level: 1, total: 2, remaining: 2, pactMagic: true },
+          { level: 2, total: 3, remaining: 1, pactMagic: false },
+        ]}
         spellName="Hold Person"
       />
     );
     // A level-1 slot (standard or pact) cannot pay a level-2 spell.
-    expect(screen.queryByText(/Level 1 slot/)).toBeNull();
-    expect(screen.queryByText(/Pact slot/)).toBeNull();
-    expect(screen.getByText(/Level 2 slot/)).toBeTruthy();
+    expect(screen.queryByText(/Level 1/)).toBeNull();
+    expect(screen.queryByText(/PACT/)).toBeNull();
+    expect(screen.getByText(/Level 2 \(base\)/)).toBeTruthy();
   });
 
   it("answers a pool payment with one spend confirm", () => {
@@ -179,7 +208,7 @@ describe("MechanicsCastModal", () => {
         )}
         material={MATERIAL}
         onClose={vi.fn()}
-        slotRemaining={{}}
+        slots={[]}
         spellName="Patient Defense"
       />
     );
@@ -223,7 +252,7 @@ describe("MechanicsCastModal", () => {
         )}
         material={MATERIAL}
         onClose={vi.fn()}
-        slotRemaining={{}}
+        slots={[]}
         sourceItem={{ instanceId: "goodberry-berry-1", instanceOrdinal: 1 }}
         spellName="Goodberry"
       />
@@ -269,7 +298,7 @@ describe("MechanicsCastModal", () => {
         )}
         material={MATERIAL}
         onClose={vi.fn()}
-        slotRemaining={{}}
+        slots={[]}
         spellName="Mass Heal"
       />
     );
@@ -323,7 +352,7 @@ describe("MechanicsCastModal", () => {
         material={MATERIAL}
         onClose={vi.fn()}
         poolRemaining={5}
-        slotRemaining={{}}
+        slots={[]}
         spellName="Lay on Hands"
       />
     );
@@ -394,7 +423,7 @@ describe("MechanicsCastModal", () => {
         )}
         material={MATERIAL}
         onClose={vi.fn()}
-        slotRemaining={{}}
+        slots={[]}
         spellName="Cure Wounds"
       />
     );

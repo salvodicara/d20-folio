@@ -273,7 +273,7 @@ export function EngineActionFlow({ dispatch, onClose }: EngineActionFlowProps) {
       onClose={onClose}
       {...(poolRemaining !== null ? { poolRemaining } : {})}
       requiresArmorClass={needsArmorClass && targetArmorClass === null}
-      slotRemaining={{}}
+      slots={[]}
       spellName={dispatch.actionName}
     />
   );

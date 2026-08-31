@@ -98,7 +98,7 @@ function ConsumeFlow({
       flavor="action"
       material={characterMaterialRef(doc, uid)}
       onClose={onClose}
-      slotRemaining={{}}
+      slots={[]}
       sourceItem={{
         instanceId: row.instanceId,
         instanceOrdinal: row.instanceOrdinal,

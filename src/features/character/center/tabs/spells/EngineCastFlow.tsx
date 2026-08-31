@@ -207,22 +207,19 @@ export function EngineCastFlow({
     [concentrationSwap, doc, economy, engineCast, spellId, spellName, t]
   );
 
-  const slotRemaining = useMemo(
-    () =>
-      Object.fromEntries(
-        slots
-          .filter((slot) => !slot.pactMagic)
-          .map((slot) => [slot.level, slot.remaining])
-      ),
-    [slots]
-  );
-  // The pact pool, when the character has one with casts left — the modal
-  // offers it beside the standard levels (the kernel's `spell-slot` selector
-  // admits both pools) with its level shown, and enforces the level floor.
-  const pactSlot = useMemo(() => {
-    const pact = slots.find((slot) => slot.pactMagic && slot.remaining > 0);
-    return pact ? { level: pact.level, remaining: pact.remaining } : undefined;
-  }, [slots]);
+  const spell = spellIndex.get(spellId);
+  const upcast = spell
+    ? {
+        level: spell.level,
+        damageDice: spell.damageDice,
+        damageDicePerUpcast: spell.damageDicePerUpcast,
+        healDice: spell.healDice,
+        healDicePerUpcast: spell.healDicePerUpcast,
+        instances: spell.instances,
+        instancesPerUpcast: spell.instancesPerUpcast,
+        secondaryDamage: spell.secondaryDamage,
+      }
+    : undefined;
 
   if (!doc || uid === null) return null;
   return (
@@ -231,10 +228,10 @@ export function EngineCastFlow({
       material={characterMaterialRef(doc, uid)}
       onArmorClass={setTargetArmorClass}
       onClose={onClose}
-      {...(pactSlot ? { pactSlot } : {})}
       requiresArmorClass={hasAttack && targetArmorClass === null}
-      slotRemaining={slotRemaining}
+      slots={slots}
       spellName={spellName}
+      {...(upcast ? { upcast } : {})}
       // An enemy-affinity target (Hex's mark) is a creature the solo world
       // does not model: the entity step's self answer is the table-abstract
       // stand-in, so the button must say "the creature at the table".

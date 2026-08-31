@@ -219,6 +219,8 @@
     "castLevelHint": "Scegli il livello dello slot da spendere.",
     "castLevelBase": "Livello {{level}} (base)",
     "castLevelUp": "Livello {{level}} (potenziato)",
+    "castSlotBaseAria": "Slot di livello {{level}} (base)",
+    "castSlotUpAria": "Slot di livello {{level}} (potenziato)",
     "pactSlotBadge": "PATTO",
     "freeCastBadge": "GRATIS",
     "freeCastToast": "Lanciato {{name}} gratis ({{source}})",

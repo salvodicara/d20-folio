@@ -267,7 +267,7 @@ describe("SpellsTab", () => {
     // The engine modal resolves the cast: slot, target, the entered heal die.
     await screen.findByText(/Resolve cast/);
     const modal = () => within(screen.getByRole("dialog"));
-    fireEvent.click(modal().getByRole("button", { name: /Level 1 slot/ }));
+    fireEvent.click(modal().getByRole("button", { name: /Level 1 slot \(base\)/ }));
     fireEvent.click(await modal().findByRole("button", { name: "Yourself" }));
     // 2024 Healing Word rolls 2d4 + modifier: enter both entered die faces.
     const dice = await modal().findAllByRole("spinbutton");
@@ -316,7 +316,7 @@ describe("SpellsTab", () => {
     // warded target (yourself), then commit.
     await screen.findByText(/Resolve cast/);
     const modal = () => within(screen.getByRole("dialog"));
-    fireEvent.click(modal().getByRole("button", { name: /Level 1 slot/ }));
+    fireEvent.click(modal().getByRole("button", { name: /Level 1 slot \(base\)/ }));
     fireEvent.click(await modal().findByRole("button", { name: "Yourself" }));
     await modal().findByText(/Everything resolved/);
     fireEvent.click(modal().getByRole("button", { name: "Apply" }));
@@ -592,7 +592,7 @@ describe("SpellsTab", () => {
     fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 1/i }));
     await screen.findByText(/Resolve cast/);
     const modal = () => within(screen.getByRole("dialog"));
-    fireEvent.click(modal().getByRole("button", { name: /Level 1 slot/ }));
+    fireEvent.click(modal().getByRole("button", { name: /Level 1 slot \(base\)/ }));
     fireEvent.click(await modal().findByRole("button", { name: "Yourself" }));
     const dice = await modal().findAllByRole("spinbutton");
     for (const die of dice) fireEvent.change(die, { target: { value: "4" } });
@@ -666,7 +666,7 @@ describe("SpellsTab", () => {
     fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 1/i }));
     await screen.findByText(/Resolve cast/);
     const modal = () => within(screen.getByRole("dialog"));
-    fireEvent.click(modal().getByRole("button", { name: /Level 1 slot/ }));
+    fireEvent.click(modal().getByRole("button", { name: /Level 1 slot \(base\)/ }));
     fireEvent.click(await modal().findByRole("button", { name: "Yourself" }));
     const dice = await modal().findAllByRole("spinbutton");
     for (const die of dice) fireEvent.change(die, { target: { value: "4" } });
@@ -749,7 +749,7 @@ describe("SpellsTab", () => {
       fireEvent.click(bless.querySelector(".uc-chevron") as HTMLElement);
       fireEvent.click(within(bless).getByRole("button", { name: /Cast · Lv 1/i }));
       await screen.findByText(/Resolve cast/);
-      fireEvent.click(modal().getByRole("button", { name: /Level 1 slot/ }));
+      fireEvent.click(modal().getByRole("button", { name: /Level 1 slot \(base\)/ }));
       await answerTargetsUntilResolved();
       fireEvent.click(modal().getByRole("button", { name: "Apply" }));
       await waitFor(() => expect(screen.queryByText(/Resolve cast/)).toBeNull());
@@ -776,7 +776,7 @@ describe("SpellsTab", () => {
       // Still nothing committed — backing out here would keep Bless held.
       expect(useCharacterStore.getState().character?.session.concentration).toBe("bless");
       expect(committedWorldActions()).toBe(committedBefore);
-      fireEvent.click(modal().getByRole("button", { name: /Level 1 slot/ }));
+      fireEvent.click(modal().getByRole("button", { name: /Level 1 slot \(base\)/ }));
       await answerTargetsUntilResolved();
       fireEvent.click(modal().getByRole("button", { name: "Apply" }));
       await waitFor(() => expect(screen.queryByText(/Resolve cast/)).toBeNull());

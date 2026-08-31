@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 
 import { Dialog, DialogBody, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { CastSlotOptionRow } from "@/components/sheet/CastSlotOptionRow";
 import { useLocale } from "@/hooks/useLocale";
 import { conditionLabel } from "@/lib/views/tracker-view";
 import type { MechanicsCastState } from "@/features/character/useMechanicsCast";
@@ -21,6 +22,7 @@ import type {
   MechanicsRequirement,
 } from "@/types/mechanics-program";
 import type { CharacterMaterialRef } from "@/types/mechanics-reference";
+import type { CastSlotScalingFacts } from "@/lib/views/cast-slot-preview";
 
 interface DieEntry {
   readonly sides: number;
@@ -50,13 +52,6 @@ export interface MechanicsCastModalProps {
    */
   readonly onArmorClass?: (value: number) => void;
   /**
-   * The caster's Pact Magic pool (level + remaining), when one has casts
-   * left. Offered beside the standard levels for a `spell-slot` payment whose
-   * selector admits the pact pool; the modal enforces the selector's level
-   * floor (a pact slot below the spell's level cannot pay for it).
-   */
-  readonly pactSlot?: Readonly<{ level: number; remaining: number }>;
-  /**
    * The LIVE remaining of the pool the chosen amount debits (Lay on Hands).
    * The transcribed integer requirement carries only the domain cap (1000);
    * the kernel enforces affordability at review, but the PROMPT must show the
@@ -72,8 +67,13 @@ export interface MechanicsCastModalProps {
    */
   readonly targetFlavor?: "self" | "table";
   readonly requiresArmorClass?: boolean;
-  /** Remaining count per standard slot level, for the payment prompt. */
-  readonly slotRemaining: Readonly<Record<number, number>>;
+  /** Complete live slot pools; totals are required to render honest sockets. */
+  readonly slots: ReadonlyArray<{
+    readonly level: number;
+    readonly pactMagic: boolean;
+    readonly remaining: number;
+    readonly total: number;
+  }>;
   /**
    * The inventory instance an item-sourced program pays from (a conjured
    * consumable's own quantity) — the answer for a `source-item` payment. The
@@ -82,6 +82,8 @@ export interface MechanicsCastModalProps {
    */
   readonly sourceItem?: Readonly<{ instanceId: string; instanceOrdinal: number }>;
   readonly spellName: string;
+  /** Structured spell facts used only for the per-level outcome preview. */
+  readonly upcast?: CastSlotScalingFacts;
 }
 
 export function MechanicsCastModal({
@@ -90,13 +92,13 @@ export function MechanicsCastModal({
   material,
   onClose,
   onArmorClass,
-  pactSlot,
   poolRemaining,
   requiresArmorClass = false,
-  slotRemaining,
+  slots,
   sourceItem,
   spellName,
   targetFlavor = "self",
+  upcast,
 }: MechanicsCastModalProps) {
   const { t, i18n } = useTranslation();
   const { language: locale } = useLocale();
@@ -197,56 +199,50 @@ export function MechanicsCastModal({
                 selector.level.kind === "minimum"
                   ? level >= selector.level.value
                   : level === selector.level.value;
-              const pactPayable =
-                selector.pool !== "standard" &&
-                pactSlot !== undefined &&
-                pactSlot.remaining > 0 &&
-                admitsLevel(pactSlot.level);
+              const payableSlots = slots
+                .filter(
+                  (slot) =>
+                    slot.remaining > 0 &&
+                    admitsLevel(slot.level) &&
+                    (slot.pactMagic
+                      ? selector.pool !== "standard"
+                      : selector.pool !== "pact")
+                )
+                .sort(
+                  (a, b) => a.level - b.level || Number(a.pactMagic) - Number(b.pactMagic)
+                );
               return (
                 <div>
                   <p>{t("mechanics.cast.slotPrompt")}</p>
-                  <div role="group">
-                    {selector.pool !== "pact" &&
-                      Object.entries(slotRemaining)
-                        .map(([level, remaining]) => [Number(level), remaining] as const)
-                        .filter(
-                          ([level, remaining]) => remaining > 0 && admitsLevel(level)
-                        )
-                        .sort(([a], [b]) => a - b)
-                        .map(([level, remaining]) => (
-                          <Button
-                            key={level}
-                            onClick={() =>
-                              cast.answer({
-                                inputId,
-                                kind: "resource",
-                                resource: {
-                                  character: material,
-                                  kind: "standard-spell-slot",
-                                  level,
-                                },
-                              })
-                            }
-                          >
-                            {t("mechanics.cast.slotOption", { level, remaining })}
-                          </Button>
-                        ))}
-                    {pactPayable && (
-                      <Button
-                        onClick={() =>
+                  <div
+                    className="cl-opts"
+                    role="group"
+                    aria-label={t("mechanics.cast.slotPrompt")}
+                  >
+                    {payableSlots.map((slot) => (
+                      <CastSlotOptionRow
+                        key={`${slot.level}-${slot.pactMagic ? "pact" : "standard"}`}
+                        baseLevel={selector.level.value}
+                        level={slot.level}
+                        onSelect={() =>
                           cast.answer({
                             inputId,
                             kind: "resource",
-                            resource: { character: material, kind: "pact-spell-slot" },
+                            resource: slot.pactMagic
+                              ? { character: material, kind: "pact-spell-slot" }
+                              : {
+                                  character: material,
+                                  kind: "standard-spell-slot",
+                                  level: slot.level,
+                                },
                           })
                         }
-                      >
-                        {t("mechanics.cast.slotOptionPact", {
-                          level: pactSlot.level,
-                          remaining: pactSlot.remaining,
-                        })}
-                      </Button>
-                    )}
+                        pactMagic={slot.pactMagic}
+                        remaining={slot.remaining}
+                        total={slot.total}
+                        {...(upcast ? { upcast } : {})}
+                      />
+                    ))}
                   </div>
                 </div>
               );
