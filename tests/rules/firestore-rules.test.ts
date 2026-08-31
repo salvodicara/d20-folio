@@ -1394,6 +1394,38 @@ describe("firestore.rules — character reads: owner + admin + LIVE campaign mem
     await assertSucceeds(batch.commit());
   });
 
+  it("rejects a legacy-to-v1 cutover that leaves stale session state on the parent", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(
+        doc(
+          ctx.firestore(),
+          "users",
+          "member",
+          "characters",
+          "char-member",
+          "combat",
+          "state"
+        ),
+        {
+          hp: { current: 9, temp: 0 },
+          conditions: [],
+          initiativeRoll: null,
+          deathSaves: { successes: 0, failures: 0 },
+        }
+      );
+    });
+    const owner = testEnv.authenticatedContext("member").firestore();
+    const parent = doc(owner, "users", "member", "characters", "char-member");
+    const combat = doc(parent, "combat", "state");
+    const batch = writeBatch(owner);
+    batch.update(combat, { playState: { version: 1, state: {} } });
+    batch.update(parent, {
+      playStateVersion: 1,
+      state: { usedSlots: { "1": 1 } },
+    });
+    await assertFails(batch.commit());
+  });
+
   it("an owner cannot remove or change an existing v1 marker", async () => {
     const owner = testEnv.authenticatedContext("member").firestore();
     const ref = doc(owner, "users", "member", "characters", "char-versioned");
@@ -1412,6 +1444,16 @@ describe("firestore.rules — character reads: owner + admin + LIVE campaign mem
       updateDoc(doc(owner, "users", "member", "characters", "char-versioned"), {
         status: "retired",
         playStateVersion: 1,
+      })
+    );
+  });
+
+  it("allows normal owner updates for a v1 parent whose state stays empty", async () => {
+    const owner = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(
+      updateDoc(doc(owner, "users", "member", "characters", "char-versioned"), {
+        status: "retired",
+        state: {},
       })
     );
   });
@@ -1632,6 +1674,13 @@ describe("firestore.rules — sanitized public character projection", () => {
   const PUBLIC_SHEET = [...SHARED_PARENT, "public", "sheet"] as const;
   const PRIVATE_PARENT = ["users", "member", "characters", "char-private"] as const;
   const PRIVATE_SHEET = [...PRIVATE_PARENT, "public", "sheet"] as const;
+  const LEGACY_SHARED_PARENT = [
+    "users",
+    "member",
+    "characters",
+    "char-legacy-shared",
+  ] as const;
+  const LEGACY_PUBLIC_SHEET = [...LEGACY_SHARED_PARENT, "public", "sheet"] as const;
   const SOURCE_UPDATED_AT = Timestamp.fromMillis(1_720_000_000_000);
   const NEXT_UPDATED_AT = Timestamp.fromMillis(1_720_000_001_000);
   const BUILD = { name: "Mara Quickfingers", classes: [{ id: "rogue", level: 5 }] };
@@ -1690,6 +1739,12 @@ describe("firestore.rules — sanitized public character projection", () => {
           attachedCampaignId: null,
         })
       );
+      const legacyShared = parentDoc({
+        state: { usedSlots: { "1": 1 } },
+        attachedCampaignId: null,
+      });
+      delete (legacyShared as Record<string, unknown>).playStateVersion;
+      await setDoc(doc(db, ...LEGACY_SHARED_PARENT), legacyShared);
       await setDoc(doc(db, ...SHARED_PARENT, "snapshots", "snap1"), {
         build: {},
         state: {},
@@ -1699,6 +1754,23 @@ describe("firestore.rules — sanitized public character projection", () => {
         conditions: [] as string[],
       });
     });
+  });
+
+  it("an existing shared legacy parent may autosave while its absent public projection stays absent", async () => {
+    const owner = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(
+      updateDoc(doc(owner, ...LEGACY_SHARED_PARENT), {
+        state: { usedSlots: { "1": 2 } },
+        updatedAt: NEXT_UPDATED_AT,
+      })
+    );
+
+    const parent = await getDoc(doc(owner, ...LEGACY_SHARED_PARENT));
+    expect(parent.data()?.state).toEqual({ usedSlots: { "1": 2 } });
+    expect(parent.data()).not.toHaveProperty("playStateVersion");
+    await assertFails(
+      getDoc(doc(testEnv.unauthenticatedContext().firestore(), ...LEGACY_PUBLIC_SHEET))
+    );
   });
 
   it("anonymous exact GET returns only the closed public schema", async () => {
@@ -2040,7 +2112,6 @@ describe("firestore.rules — combat/state peer effect fence", () => {
 
   function legacyPeerCreate(overrides: Record<string, unknown> = {}) {
     return {
-      actionRevision: 1,
       hp: { current: 7, temp: 0 },
       conditions: ["prone"],
       initiativeRoll: null,
@@ -2105,93 +2176,61 @@ describe("firestore.rules — combat/state peer effect fence", () => {
     expect(snapshot.data()).toEqual(combatState());
   });
 
-  it("owner writes may preserve revision or advance exactly one with structural action metadata", async () => {
+  it("the owner overwrite may shed obsolete action metadata like the production writer", async () => {
     const owner = testEnv.authenticatedContext("member").firestore();
     const ref = doc(owner, ...COMBAT_PATH);
     await assertSucceeds(
-      updateDoc(ref, {
+      setDoc(ref, {
         hp: { current: 9, temp: 0 },
-        actionRevision: 7,
+        conditions: [],
+        bardicInspirationDie: "",
+        heroicInspiration: false,
+        initiativeRoll: 15,
+        deathSaves: { successes: 0, failures: 0 },
+        round: 1,
+        recentActions: [],
+        playState: { version: 1, state: { usedSlots: { "1": 1 } } },
+        updatedAt: Timestamp.now(),
       })
     );
+    const stored = await getDoc(ref);
+    expect(stored.data()).not.toHaveProperty("actionRevision");
+    expect(stored.data()).not.toHaveProperty("actionHead");
+    expect(stored.data()).not.toHaveProperty("actionLifecycles");
+  });
+
+  it("an attached peer may apply the runtime effect patch without obsolete revision metadata", async () => {
+    const peer = testEnv.authenticatedContext("peer").firestore();
     await assertSucceeds(
-      updateDoc(ref, {
-        hp: { current: 8, temp: 0 },
-        actionRevision: 8,
-        actionHead: "attack-2",
-        "actionLifecycles.attack-2": actionLifecycle(),
+      updateDoc(doc(peer, ...COMBAT_PATH), {
+        hp: { current: 9, temp: 0 },
+        updatedAt: Timestamp.now(),
       })
     );
   });
 
-  it("an undo-like +1 may clear the action head while changing the lifecycle map", async () => {
-    const owner = testEnv.authenticatedContext("member").firestore();
+  it("an attached peer may persist the concentration queue and encounter receipt emitted by the runtime writer", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), "campaigns", "campA"), {
+        encounter: { epoch: 4 },
+      });
+    });
+    const peer = testEnv.authenticatedContext("peer").firestore();
     await assertSucceeds(
-      updateDoc(doc(owner, ...COMBAT_PATH), {
-        actionRevision: 8,
-        actionHead: null,
-        actionLifecycles: {
-          "owner-command": actionLifecycle({
-            state: "undone",
-            generation: 2,
-          }),
-        },
+      updateDoc(doc(peer, ...COMBAT_PATH), {
+        pendingConcentrationSaves: [
+          { id: "hit-1", spell: "bless", damage: 12, difficultyClass: 10 },
+        ],
+        appliedEncounterEffects: { epoch: 4, ids: ["effect-1"] },
+        updatedAt: Timestamp.now(),
       })
     );
   });
 
-  it("owner/admin updates cannot regress, jump, delete, or metadata-free advance revision", async () => {
-    const writers = [
-      testEnv.authenticatedContext("member").firestore(),
-      testEnv.authenticatedContext(ADMIN_UID).firestore(),
-    ];
-    for (const writer of writers) {
-      const ref = doc(writer, ...COMBAT_PATH);
-      for (const revision of [6, 9]) {
-        await assertFails(
-          updateDoc(ref, {
-            hp: { current: 9, temp: 0 },
-            actionRevision: revision,
-          })
-        );
-      }
-      await assertFails(updateDoc(ref, { actionRevision: deleteField() }));
-      await assertFails(
-        updateDoc(ref, {
-          hp: { current: 9, temp: 0 },
-          actionRevision: 8,
-        })
-      );
-      await assertFails(
-        updateDoc(ref, {
-          hp: { current: 9, temp: 0 },
-          actionRevision: 8,
-          actionHead: "missing-lifecycle",
-        })
-      );
-      await assertFails(
-        updateDoc(ref, {
-          actionRevision: 8,
-          actionHead: null,
-          actionLifecycles: {},
-        })
-      );
-      await assertFails(
-        updateDoc(ref, {
-          actionRevision: 8,
-          actionHead: "attack-2",
-          "actionLifecycles.attack-2": actionLifecycle(),
-          "actionLifecycles.extra": actionLifecycle({
-            payloadIdentity: "payload:extra",
-          }),
-        })
-      );
-    }
-  });
-
-  it("the peer +1 exception cannot change action metadata or any owner root", async () => {
+  it("the peer effect fence cannot change action metadata or any owner root", async () => {
     const peer = testEnv.authenticatedContext("peer").firestore();
     for (const smuggled of [
+      { actionRevision: 8 },
       { actionHead: "attack-2" },
       { "actionLifecycles.attack-2": actionLifecycle() },
       { initiativeRoll: 20 },
@@ -2200,29 +2239,13 @@ describe("firestore.rules — combat/state peer effect fence", () => {
       await assertFails(
         updateDoc(doc(peer, ...COMBAT_PATH), {
           hp: { current: 9, temp: 0 },
-          actionRevision: 8,
           ...smuggled,
         })
       );
     }
   });
 
-  it("a legacy absent revision may stay absent or initialize only to zero", async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await updateDoc(doc(ctx.firestore(), ...COMBAT_PATH), {
-        actionRevision: deleteField(),
-        actionHead: deleteField(),
-        actionLifecycles: deleteField(),
-      });
-    });
-    const owner = testEnv.authenticatedContext("member").firestore();
-    const ref = doc(owner, ...COMBAT_PATH);
-    await assertSucceeds(updateDoc(ref, { hp: { current: 9, temp: 0 } }));
-    await assertFails(updateDoc(ref, { actionRevision: 1 }));
-    await assertSucceeds(updateDoc(ref, { actionRevision: 0, actionHead: null }));
-  });
-
-  it("an attached peer may change every legitimate effect root with one revision increment", async () => {
+  it("an attached peer may change every legitimate effect root", async () => {
     const peer = testEnv.authenticatedContext("peer").firestore();
     await assertSucceeds(getDoc(doc(peer, ...COMBAT_PATH)));
     const mutations: ReadonlyArray<Record<string, unknown>> = [
@@ -2232,25 +2255,22 @@ describe("firestore.rules — combat/state peer effect fence", () => {
       { heroicInspiration: true },
       { deathSaves: { successes: 1, failures: 0 } },
     ];
-    let actionRevision = 7;
     for (const mutation of mutations) {
-      actionRevision += 1;
       await assertSucceeds(
         updateDoc(doc(peer, ...COMBAT_PATH), {
           ...mutation,
-          actionRevision,
           updatedAt: Timestamp.now(),
         })
       );
     }
   });
 
-  it("a peer cannot skip/stall the revision or write revision/timestamp without an effect", async () => {
+  it("a peer cannot mutate obsolete revision metadata or write a timestamp without an effect", async () => {
     const peer = testEnv.authenticatedContext("peer").firestore();
     await assertFails(
       updateDoc(doc(peer, ...COMBAT_PATH), {
         hp: { current: 9, temp: 0 },
-        actionRevision: 7,
+        actionRevision: 8,
       })
     );
     await assertFails(
@@ -2261,7 +2281,6 @@ describe("firestore.rules — combat/state peer effect fence", () => {
     );
     await assertFails(
       updateDoc(doc(peer, ...COMBAT_PATH), {
-        actionRevision: 8,
         updatedAt: Timestamp.now(),
       })
     );
@@ -2277,7 +2296,6 @@ describe("firestore.rules — combat/state peer effect fence", () => {
     await assertSucceeds(
       updateDoc(doc(peer, ...COMBAT_PATH), {
         hp: { current: 9, temp: 0 },
-        actionRevision: 8,
       })
     );
   });
@@ -2292,25 +2310,21 @@ describe("firestore.rules — combat/state peer effect fence", () => {
     await assertSucceeds(
       updateDoc(doc(peer, ...COMBAT_PATH), {
         conditions: ["custom:bleeding", "prone"],
-        actionRevision: 8,
       })
     );
     await assertSucceeds(
       updateDoc(doc(peer, ...COMBAT_PATH), {
         conditions: ["custom:bleeding"],
-        actionRevision: 9,
       })
     );
     await assertFails(
       updateDoc(doc(peer, ...COMBAT_PATH), {
         conditions: ["custom:bleeding", "custom:burning"],
-        actionRevision: 10,
       })
     );
     await assertFails(
       updateDoc(doc(peer, ...COMBAT_PATH), {
         conditions: [],
-        actionRevision: 10,
       })
     );
   });
@@ -2326,7 +2340,6 @@ describe("firestore.rules — combat/state peer effect fence", () => {
       await assertFails(
         updateDoc(doc(peer, ...COMBAT_PATH), {
           ...malformed,
-          actionRevision: 8,
         })
       );
     }
@@ -2346,7 +2359,6 @@ describe("firestore.rules — combat/state peer effect fence", () => {
       await assertFails(
         updateDoc(doc(peer, ...COMBAT_PATH), {
           ...mutation,
-          actionRevision: 8,
         })
       );
     }
@@ -2357,6 +2369,7 @@ describe("firestore.rules — combat/state peer effect fence", () => {
     const forbidden: ReadonlyArray<Record<string, unknown>> = [
       { playState: { version: 1, state: { exhaustion: 6 } } },
       { playState: deleteField() },
+      { actionRevision: 8 },
       { actionHead: "peer-command" },
       { actionLifecycles: {} },
       { round: 99 },
@@ -2365,21 +2378,12 @@ describe("firestore.rules — combat/state peer effect fence", () => {
       { initiativeRoll: 20 },
       { effectOps: [] },
       { activeEffects: [] },
-      {
-        pendingConcentrationSaves: [
-          { id: "hit-1", spell: "bless", damage: 12, difficultyClass: 10 },
-        ],
-      },
-      { pendingConcentrationSaves: [{ malformed: true }] },
-      { appliedEncounterEffects: { epoch: 4, ids: ["effect-1"] } },
-      { appliedEncounterEffects: { epoch: 4, ids: [7] } },
       { someFutureOwnerField: true },
     ];
     for (const smuggled of forbidden) {
       await assertFails(
         updateDoc(doc(peer, ...COMBAT_PATH), {
           hp: { current: 9, temp: 0 },
-          actionRevision: 8,
           ...smuggled,
         })
       );
@@ -2393,10 +2397,31 @@ describe("firestore.rules — combat/state peer effect fence", () => {
     await assertFails(
       updateDoc(doc(peer, ...COMBAT_PATH), {
         hp: { current: 9, temp: 0 },
-        actionRevision: 8,
         playState: { version: 1, state: { exhaustion: 0 } },
       })
     );
+  });
+
+  it("a peer queue must be a list and an encounter receipt must match the live epoch", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), "campaigns", "campA"), {
+        encounter: { epoch: 4 },
+      });
+    });
+    const peer = testEnv.authenticatedContext("peer").firestore();
+    for (const malformed of [
+      { pendingConcentrationSaves: {} },
+      { appliedEncounterEffects: { epoch: 3, ids: ["effect-1"] } },
+      { appliedEncounterEffects: { epoch: 4, ids: ["effect-1", "effect-1"] } },
+      { appliedEncounterEffects: { epoch: 4, ids: [], extra: true } },
+    ]) {
+      await assertFails(
+        updateDoc(doc(peer, ...COMBAT_PATH), {
+          hp: { current: 9, temp: 0 },
+          ...malformed,
+        })
+      );
+    }
   });
 
   it("a marked-v1 missing combat document fails closed for every attached peer", async () => {
@@ -2427,6 +2452,9 @@ describe("firestore.rules — combat/state peer effect fence", () => {
       await updateDoc(doc(db, "users", "member", "characters", "char-cbt"), {
         playStateVersion: deleteField(),
       });
+      await updateDoc(doc(db, "campaigns", "campA"), {
+        encounter: { epoch: 1 },
+      });
       await deleteDoc(doc(db, ...COMBAT_PATH));
     });
     const peer = testEnv.authenticatedContext("peer").firestore();
@@ -2437,19 +2465,15 @@ describe("firestore.rules — combat/state peer effect fence", () => {
         legacyPeerCreate({ playState: { version: 1, state: {} } })
       )
     );
-    await assertFails(
+    await assertSucceeds(
       setDoc(
         doc(peer, ...COMBAT_PATH),
-        legacyPeerCreate({ pendingConcentrationSaves: [] })
+        legacyPeerCreate({
+          pendingConcentrationSaves: [],
+          appliedEncounterEffects: { epoch: 1, ids: [] },
+        })
       )
     );
-    await assertFails(
-      setDoc(
-        doc(peer, ...COMBAT_PATH),
-        legacyPeerCreate({ appliedEncounterEffects: { epoch: 1, ids: [] } })
-      )
-    );
-    await assertSucceeds(setDoc(doc(peer, ...COMBAT_PATH), legacyPeerCreate()));
   });
 
   it("owner/admin remain additive-field tolerant while preserving action metadata", async () => {
@@ -2478,14 +2502,12 @@ describe("firestore.rules — combat/state peer effect fence", () => {
     await assertFails(
       updateDoc(doc(stranger, ...COMBAT_PATH), {
         hp: { current: 9, temp: 0 },
-        actionRevision: 8,
       })
     );
     await assertFails(getDoc(doc(anonymous, ...COMBAT_PATH)));
     await assertFails(
       updateDoc(doc(anonymous, ...COMBAT_PATH), {
         hp: { current: 9, temp: 0 },
-        actionRevision: 8,
       })
     );
   });
@@ -2503,7 +2525,6 @@ describe("firestore.rules — combat/state peer effect fence", () => {
     await assertFails(
       updateDoc(doc(peer, ...COMBAT_PATH), {
         hp: { current: 9, temp: 0 },
-        actionRevision: 8,
       })
     );
   });
@@ -2522,7 +2543,6 @@ describe("firestore.rules — combat/state peer effect fence", () => {
     await assertFails(
       updateDoc(doc(peer, ...COMBAT_PATH), {
         hp: { current: 9, temp: 0 },
-        actionRevision: 8,
       })
     );
 
@@ -2544,7 +2564,6 @@ describe("firestore.rules — combat/state peer effect fence", () => {
     await assertFails(
       updateDoc(doc(peer, ...COMBAT_PATH), {
         conditions: ["prone"],
-        actionRevision: 8,
       })
     );
   });
@@ -2555,13 +2574,11 @@ describe("firestore.rules — combat/state peer effect fence", () => {
     await assertSucceeds(
       updateDoc(doc(dm, ...COMBAT_PATH), {
         conditions: ["prone"],
-        actionRevision: 8,
       })
     );
     await assertFails(
       updateDoc(doc(dm, ...COMBAT_PATH), {
         hp: { current: 8, temp: 0 },
-        actionRevision: 9,
         anotherFutureField: true,
       })
     );
@@ -2588,7 +2605,6 @@ describe("firestore.rules — combat/state peer effect fence", () => {
     await assertFails(
       updateDoc(doc(blocked, ...COMBAT_PATH), {
         hp: { current: 9, temp: 0 },
-        actionRevision: 8,
       })
     );
   });
@@ -2604,7 +2620,6 @@ describe("firestore.rules — combat/state peer effect fence", () => {
     await assertFails(
       updateDoc(doc(dm, ...COMBAT_PATH), {
         hp: { current: 9, temp: 0 },
-        actionRevision: 8,
       })
     );
     const owner = testEnv.authenticatedContext("member").firestore();

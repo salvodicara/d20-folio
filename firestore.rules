@@ -159,6 +159,15 @@ service cloud.firestore {
                      request.resource.data
                    ))
           || (request.resource.data.get('shared', false) != true
+              && !existsAfter(sheetPath))
+          // Historical schema-3 parents may already carry shared=true while
+          // predating both the v1 ownership marker and public/sheet. Preserve
+          // that exact non-public generation so ordinary private autosaves work;
+          // no new legacy publication or marker transition is admitted here.
+          || (resource.data.get('shared', false) == true
+              && !resource.data.keys().hasAny(['playStateVersion'])
+              && request.resource.data.get('shared', false) == true
+              && !request.resource.data.keys().hasAny(['playStateVersion'])
               && !existsAfter(sheetPath));
       }
       // A v1 marker may be born only when the post-write combat owner exists and
@@ -191,6 +200,14 @@ service cloud.firestore {
               && request.resource.data.playStateVersion == 1
               && hasV1CombatOwnerAfter());
       }
+      // Once v1 moves all session facts into combat/state, the parent `state`
+      // must remain an empty envelope. This also makes an atomic legacy cutover
+      // fail closed if a stale autosave tries to retain its old session payload.
+      function validV1ParentStateAfter() {
+        return request.resource.data.get('playStateVersion', null) != 1
+          || (request.resource.data.state is map
+              && request.resource.data.state.size() == 0);
+      }
       // The campaign DM may clear only a departing target's stale claim, and only
       // in the SAME atomic operation that removes the target from both roster
       // projections. Reading the old campaign proves this is a transition, not a
@@ -214,10 +231,12 @@ service cloud.firestore {
       allow create: if isNotBlocked()
         && request.auth.uid == uid
         && validPlayStateVersionOnCreate()
+        && validV1ParentStateAfter()
         && publicSheetMatchesAfter();
       allow update: if isNotBlocked()
         && ((request.auth.uid == uid && validPlayStateVersionOnUpdate())
             || isCampaignDmDetach())
+        && validV1ParentStateAfter()
         && publicSheetMatchesAfter();
       allow delete: if isNotBlocked()
         && request.auth.uid == uid
@@ -272,11 +291,10 @@ service cloud.firestore {
     // full control: a newer client may add owner-private state without waiting for a
     // rules deploy. A current attached peer has a different, deliberately narrow
     // capability: apply reviewed table effects to HP, conditions, held inspiration,
-    // death saves, the concentration-save queue, or the legacy delivery receipt.
-    // Every such update advances `actionRevision` exactly once. This makes a peer
-    // write visible to the outer compare-and-swap seam while protecting playState,
-    // action history, round, recent actions, turn economy, and every future private
-    // root byte-for-byte.
+    // death saves, the concentration-save queue, or the delivery receipt. The peer
+    // patch writer does not own the retired action-revision fields, so the rules fence
+    // the exact runtime roots while protecting playState, action history, round,
+    // recent actions, turn economy, and every future private root byte-for-byte.
     //
     // A legacy parent without `playStateVersion: 1` may still need its first combat
     // document created while the target is offline. That one create is restricted to
@@ -308,10 +326,7 @@ service cloud.firestore {
           && isCurrentCampaignAttachment();
       }
       function validPeerEffectState(data) {
-        return data.actionRevision is int
-          && data.actionRevision >= 0
-          && data.actionRevision <= 9007199254740991
-          && data.hp is map
+        return data.hp is map
           && data.hp.keys().hasOnly(['current', 'temp'])
           && data.hp.keys().hasAll(['current', 'temp'])
           && data.hp.current is number
@@ -333,7 +348,32 @@ service cloud.firestore {
           && data.deathSaves.failures <= 3
           && data.get('bardicInspirationDie', '') is string
           && data.get('heroicInspiration', false) is bool
+          && (!data.keys().hasAny(['pendingConcentrationSaves'])
+              || validPendingConcentrationQueue(data.pendingConcentrationSaves))
+          && (!data.keys().hasAny(['appliedEncounterEffects'])
+              || validAppliedEncounterEffects(data.appliedEncounterEffects))
           && (!data.keys().hasAny(['updatedAt']) || data.updatedAt is timestamp);
+      }
+      function validPendingConcentrationQueue(queue) {
+        // Rules cannot quantify over a list of maps; the defensive parser
+        // validates every row and discards malformed input.
+        return queue is list;
+      }
+      function validAppliedEncounterEffects(applied) {
+        return applied is map
+          && applied.keys().hasAll(['epoch', 'ids'])
+          && applied.keys().hasOnly(['epoch', 'ids'])
+          && applied.epoch is int
+          && applied.epoch >= 0
+          && applied.epoch <= 9007199254740991
+          && applied.ids is list
+          && applied.ids.size() == applied.ids.toSet().size();
+      }
+      function validPeerEncounterReceipt(applied) {
+        let encounter = parentCampaign().get('encounter', null);
+        return validAppliedEncounterEffects(applied)
+          && encounter is map
+          && encounter.get('epoch', null) == applied.epoch;
       }
       function coreConditions() {
         return [
@@ -374,13 +414,17 @@ service cloud.firestore {
           && (!changed.hasAny(['conditions'])
               || validPeerConditions(resource.data.conditions,
                                      request.resource.data.conditions))
+          && (!changed.hasAny(['appliedEncounterEffects'])
+              || validPeerEncounterReceipt(
+                   request.resource.data.appliedEncounterEffects))
           && changed.hasOnly([
             'hp',
             'conditions',
             'bardicInspirationDie',
             'heroicInspiration',
             'deathSaves',
-            'actionRevision',
+            'pendingConcentrationSaves',
+            'appliedEncounterEffects',
             'updatedAt'
           ])
           && changed.hasAny([
@@ -388,122 +432,35 @@ service cloud.firestore {
             'conditions',
             'bardicInspirationDie',
             'heroicInspiration',
-            'deathSaves'
-          ])
-          && request.resource.data.actionRevision
-               == resource.data.get('actionRevision', 0) + 1;
-      }
-      function actionMetadataUnchanged() {
-        // Missing and canonical-empty are parser-equivalent on legacy documents;
-        // normalizing either during the additive revision-0 write is not an action.
-        return request.resource.data.get('actionHead', null)
-               == resource.data.get('actionHead', null)
-          && request.resource.data.get('actionLifecycles', {})
-               == resource.data.get('actionLifecycles', {});
-      }
-      function validLifecycleRecord(lifecycles, key) {
-        let record = lifecycles.get(key, {});
-        return lifecycles.keys().hasAny([key])
-          && record is map
-          && record.keys().hasAll([
-            'payloadIdentity',
-            'actor',
-            'state',
-            'generation',
-            'predecessor'
-          ])
-          && record.keys().hasOnly([
-            'payloadIdentity',
-            'actor',
-            'state',
-            'generation',
-            'predecessor'
-          ])
-          && record.payloadIdentity is string
-          && record.payloadIdentity.size() > 0
-          && record.actor is map
-          && record.actor.size() > 0
-          && record.state in ['committed', 'undone']
-          && record.generation is int
-          && record.generation >= 1
-          && record.generation <= 9007199254740991
-          && (record.predecessor == null
-              || (record.predecessor is string
-                  && record.predecessor.size() > 0
-                  && record.predecessor != key));
-      }
-      function validAdvancedActionMetadata() {
-        let changed = request.resource.data.diff(resource.data).affectedKeys();
-        let head = request.resource.data.get('actionHead', null);
-        let priorHead = resource.data.get('actionHead', null);
-        let lifecycles = request.resource.data.get('actionLifecycles', {});
-        let lifecycleChanged = lifecycles
-          .diff(resource.data.get('actionLifecycles', {})).affectedKeys();
-        return changed.hasAll(['actionHead', 'actionLifecycles'])
-          && request.resource.data.keys().hasAll(['actionHead', 'actionLifecycles'])
-          && lifecycles is map
-          && lifecycles.size() > 0
-          && lifecycles.size() <= 128
-          && lifecycleChanged.size() == 1
-          && ((head is string && lifecycleChanged.hasAny([head]))
-              || (priorHead is string && lifecycleChanged.hasAny([priorHead])))
-          && (head != null || priorHead != null)
-          && (head == null
-              || (head is string
-                  && head.size() > 0
-                  && validLifecycleRecord(lifecycles, head)
-                  && lifecycles.get(head, {}).state == 'committed'
-                  ))
-          && (priorHead == null
-              || (priorHead is string
-                  && priorHead.size() > 0
-                  && validLifecycleRecord(lifecycles, priorHead)));
-      }
-      function validOwnerAdminRevisionUpdate() {
-        let beforeHas = resource.data.keys().hasAny(['actionRevision']);
-        let afterHas = request.resource.data.keys().hasAny(['actionRevision']);
-        return (beforeHas
-                && afterHas
-                && request.resource.data.actionRevision is int
-                && request.resource.data.actionRevision >= 0
-                && request.resource.data.actionRevision <= 9007199254740991
-                && ((request.resource.data.actionRevision
-                       == resource.data.actionRevision
-                      && actionMetadataUnchanged())
-                    || (request.resource.data.actionRevision
-                          == resource.data.actionRevision + 1
-                        && validAdvancedActionMetadata())))
-          || (!beforeHas
-              && afterHas
-              && request.resource.data.actionRevision == 0
-              && actionMetadataUnchanged())
-          || (!beforeHas
-              && !afterHas
-              && actionMetadataUnchanged());
+            'deathSaves',
+            'pendingConcentrationSaves',
+            'appliedEncounterEffects'
+          ]);
       }
       function peerLegacyCoreCreate() {
         let data = request.resource.data;
         return !parentChar().keys().hasAny(['playStateVersion'])
           && data.keys().hasAll([
-            'actionRevision',
             'hp',
             'conditions',
             'initiativeRoll',
             'deathSaves'
           ])
           && data.keys().hasOnly([
-            'actionRevision',
             'hp',
             'conditions',
             'bardicInspirationDie',
             'heroicInspiration',
             'initiativeRoll',
             'deathSaves',
+            'pendingConcentrationSaves',
+            'appliedEncounterEffects',
             'updatedAt'
           ])
-          && data.actionRevision == 1
           && data.initiativeRoll == null
           && validPeerConditions([], data.conditions)
+          && (!data.keys().hasAny(['appliedEncounterEffects'])
+              || validPeerEncounterReceipt(data.appliedEncounterEffects))
           && validPeerEffectState(data);
       }
       allow read: if isNotBlocked() && (
@@ -517,8 +474,8 @@ service cloud.firestore {
         || (isAttachedPeer() && peerLegacyCoreCreate())
       );
       allow update: if isNotBlocked() && (
-        ((request.auth.uid == uid || isAdmin())
-          && validOwnerAdminRevisionUpdate())
+        request.auth.uid == uid
+        || isAdmin()
         || (isAttachedPeer() && peerEffectUpdate())
       );
       allow delete: if isNotBlocked() && (request.auth.uid == uid || isAdmin());
