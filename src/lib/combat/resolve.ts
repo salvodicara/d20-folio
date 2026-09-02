@@ -6,6 +6,7 @@
  */
 import type { Catalogue } from "./catalogue";
 import { assertNever } from "./ids";
+import { applyCheck, applyIntent } from "./intent";
 import { applyTable } from "./table";
 import type { Action, FoldedState, Receipt, Resolution } from "./types";
 
@@ -18,7 +19,6 @@ export function resolve(
   action: Action,
   catalogue: Catalogue
 ): Resolution {
-  void catalogue; // consumed by intents (Task 5)
   switch (action.kind) {
     case "table": {
       const result = applyTable(state, action.table);
@@ -31,11 +31,19 @@ export function resolve(
         summary: [`table:${action.table.op}`],
       });
     }
-    case "intent":
+    case "intent": {
+      const result = applyIntent(state, action, catalogue);
+      if (result.kind === "rejected") return result;
+      return applied(result.state, result.receipt);
+    }
+    case "check": {
+      const result = applyCheck(state, action);
+      if (result.kind === "rejected") return result;
+      return applied(result.state, result.receipt);
+    }
     case "declare":
     case "override":
     case "resolve":
-    case "check":
       return {
         kind: "rejected",
         rejection: { reason: "unknown-action", action: action.id },

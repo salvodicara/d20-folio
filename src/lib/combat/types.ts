@@ -397,7 +397,8 @@ export type Rejection =
   | { readonly reason: "no-such-check"; readonly check: string }
   | { readonly reason: "invalid-table-op"; readonly detail: string }
   | { readonly reason: "already-undone"; readonly action: ActionId }
-  | { readonly reason: "unknown-action"; readonly action: ActionId };
+  | { readonly reason: "unknown-action"; readonly action: ActionId }
+  | { readonly reason: "invalid-target"; readonly entity: EntityId };
 
 export interface Receipt {
   readonly action: ActionId;

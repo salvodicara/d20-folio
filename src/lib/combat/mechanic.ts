@@ -28,6 +28,7 @@ export type Predicate =
       readonly value?: boolean;
     }
   | { readonly condition: ConditionId; readonly on: Binding; readonly present: boolean }
+  | { readonly is: readonly [Binding, Binding] }
   | {
       readonly hp: Binding;
       readonly op: "<=" | "<" | ">=" | ">";
