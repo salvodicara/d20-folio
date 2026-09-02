@@ -81,10 +81,29 @@ describe("character snapshot reconciler", () => {
     expect(r.current()).toEqual({
       parent: undefined,
       child: undefined,
+      parentRemote: undefined,
+      childRemote: undefined,
       parentPending: false,
       childPending: false,
       parentConflict: false,
       childConflict: false,
     });
+  });
+
+  it("exposes the last SERVER value separately, so an optimistic payload is never a write base", () => {
+    const r = createCharacterSnapshotReconciler<Parent, Child>();
+    const confirmed = { name: "Bo", equipment: [] };
+    r.receiveParent(confirmed, server);
+    const pending = { name: "Bo", equipment: ["Bo's shoes"] };
+    r.markParentPending(pending);
+    // `parent` is the optimistic payload; `parentRemote` stays on the confirmed one.
+    expect(r.current().parent).toEqual(pending);
+    expect(r.current().parentRemote).toEqual(confirmed);
+    // An own echo of the in-flight write does not promote it either.
+    r.receiveParent(pending, local);
+    expect(r.current().parentRemote).toEqual(confirmed);
+    // Only the server confirmation does.
+    r.receiveParent(pending, server);
+    expect(r.current().parentRemote).toEqual(pending);
   });
 });

@@ -21,6 +21,7 @@ const {
   debouncedSave,
   debouncedFlush,
   debouncedCancel,
+  createDebouncedSaveMock,
   subscribeMock,
   refreshAttachedSheetsMock,
   createTrackerMock,
@@ -31,6 +32,7 @@ const {
     (
       data: import("@/types/character").CharacterDoc,
       callbacks?: {
+        onSend?: (data: import("@/types/character").CharacterDoc) => void;
         onResolved?: (data: import("@/types/character").CharacterDoc) => void;
         onRejected?: (
           data: import("@/types/character").CharacterDoc,
@@ -40,6 +42,17 @@ const {
       }
     ) => void
   >(),
+  // Captures the hook's SEND-TIME revision allocator (the 4th argument), so a replay
+  // can stamp a payload exactly as the real debounced saver does.
+  createDebouncedSaveMock:
+    vi.fn<
+      (
+        uid: string,
+        charId: string,
+        delayMs?: number,
+        allocateRevision?: () => number
+      ) => unknown
+    >(),
   debouncedFlush: vi.fn(() => Promise.resolve()),
   debouncedCancel: vi.fn(),
   subscribeMock: vi.fn<
@@ -92,11 +105,15 @@ vi.mock("@/stores/authStore", () => ({
 }));
 vi.mock("@/lib/firestore", () => ({
   subscribeToCharacter: subscribeMock,
-  createDebouncedSave: () => ({
-    save: debouncedSave,
-    flush: debouncedFlush,
-    cancel: debouncedCancel,
-  }),
+  createDebouncedSave: (
+    uid: string,
+    charId: string,
+    delayMs?: number,
+    allocateRevision?: () => number
+  ) => {
+    createDebouncedSaveMock(uid, charId, delayMs, allocateRevision);
+    return { save: debouncedSave, flush: debouncedFlush, cancel: debouncedCancel };
+  },
   saveStatusCallbacks: { onPending() {}, onSaving() {}, onSaved() {}, onError() {} },
 }));
 vi.mock("@/lib/combat-state-io", () => ({
@@ -281,6 +298,8 @@ beforeEach(() => {
   createTrackerMock.mockClear();
   combatSubscribeMock.mockClear();
   writeCombatStateMock.mockClear();
+  createDebouncedSaveMock.mockClear();
+  useSaveStore.setState({ status: "saved", errorMessage: null });
   authState.user = { uid: "u1" };
   useCharacterStore.setState({
     character: null,
@@ -772,6 +791,25 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
     return { payload, callbacks };
   }
 
+  /** The hook's SEND-TIME revision allocator, handed to `createDebouncedSave`. */
+  function allocateRevision(): number {
+    const allocate = createDebouncedSaveMock.mock.calls.at(-1)?.[3];
+    if (!allocate) throw new Error("revision allocator not captured");
+    return allocate();
+  }
+
+  /**
+   * Emulate exactly what the real debounced saver does when a queued write LEAVES:
+   * stamp the generation from the hook's allocator and hand the sent object back
+   * through `onSend` (which re-marks it pending so ack/reject still match).
+   */
+  function sendLastSave(): CharacterDoc {
+    const { payload, callbacks } = lastSave();
+    const sent: CharacterDoc = { ...payload, revision: allocateRevision() };
+    act(() => callbacks.onSend?.(sent));
+    return sent;
+  }
+
   function lastChildWrite(): import("@/types/combat-state").CombatState {
     const call = writeCombatStateMock.mock.calls.at(-1);
     if (!call) throw new Error("play-state write not captured");
@@ -804,8 +842,11 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
     });
     const { payload } = lastSave();
     expect(payload.character.equipment).toContainEqual(boots);
-    // Compare-and-set: the observed parent is generation 4, so the write claims 5.
-    expect(payload.revision).toBe(5);
+    // The QUEUED payload still carries the acknowledged generation; the write claims
+    // the next one only when it actually leaves.
+    expect(payload.revision).toBe(4);
+    const sent = sendLastSave();
+    expect(sent.revision).toBe(5);
     // the remote child snapshot arrives before the parent write is acknowledged
     await act(async () => {
       combatCb()(sessionToCombatState(doc().session));
@@ -814,17 +855,19 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
     expect(openCharacter().character.equipment).toContainEqual(boots);
     // the local echo of our own write
     await act(async () => {
-      snapshotCb({ hasPendingWrites: true })({ ...payload });
+      snapshotCb({ hasPendingWrites: true })({ ...sent });
       await Promise.resolve();
     });
     expect(openCharacter().character.equipment).toContainEqual(boots);
     // the server confirms; nothing changes, nothing re-saves
     const saves = debouncedSave.mock.calls.length;
     await act(async () => {
-      snapshotCb()({ ...payload });
+      snapshotCb()({ ...sent });
       await Promise.resolve();
     });
     expect(openCharacter().character.equipment).toContainEqual(boots);
+    // …and the store now reports the ACKNOWLEDGED generation.
+    expect(openCharacter().revision).toBe(5);
     expect(debouncedSave.mock.calls.length).toBe(saves);
   });
 
@@ -883,21 +926,34 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
         .getState()
         .setCharacter({ ...cur, character: { ...cur.character, quote: "local" } });
     });
-    const { payload, callbacks } = lastSave();
+    const { callbacks } = lastSave();
+    const sent = sendLastSave();
     // Another device advanced the parent past our base — a conflict, not a clobber.
     await act(async () => {
       snapshotCb()({
         ...doc(),
-        revision: 5,
+        revision: 9,
         character: { ...doc().character, quote: "other device" },
       });
       await Promise.resolve();
     });
     expect(openCharacter().character.quote).toBe("local");
     act(() => {
-      callbacks.onRejected?.(payload, new Error("permission-denied"));
+      // The save store already holds the REAL Firestore message (`runWrite`); the hook
+      // must not overwrite it. Mirror that here, then run the hook's rejection handler.
+      useSaveStore.getState().markError("permission-denied");
+      callbacks.onRejected?.(sent, new Error("permission-denied"));
     });
     expect(openCharacter().character.quote).toBe("other device");
     expect(useSaveStore.getState().status).toBe("error");
+    expect(useSaveStore.getState().errorMessage).toBe("permission-denied");
+    // …and the next write re-bases on the SERVER's generation, not on what we sent.
+    act(() => {
+      const cur = openCharacter();
+      useCharacterStore
+        .getState()
+        .setCharacter({ ...cur, character: { ...cur.character, quote: "retry" } });
+    });
+    expect(sendLastSave().revision).toBe(10);
   });
 });

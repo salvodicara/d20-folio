@@ -99,10 +99,8 @@ function parentDomainKey(doc: CharacterDoc): unknown {
 
 /** The child domain's identity: the whole play document minus its server stamp. */
 function childDomainKey(state: CombatState): unknown {
-  const { updatedAt: _updatedAt, ...rest } = state as CombatState & {
-    updatedAt?: unknown;
-  };
-  void _updatedAt;
+  const rest: Record<string, unknown> = { ...state };
+  delete rest.updatedAt;
   return rest;
 }
 
@@ -177,13 +175,9 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     CharacterDoc,
     CombatState
   > | null>(null);
-  /**
-   * The highest `revision` this client has SENT. The compare-and-set base is
-   * `max(observed parent revision, lastSent)`, so a burst of debounced edits keeps
-   * advancing even before the first write is confirmed; a rejection resets it to 0 so
-   * the next attempt re-bases on whatever the server actually holds.
-   */
-  const lastSentRevisionRef = useRef(0);
+  /** Re-base the compare-and-set cursor on the server's own generation (after a
+   *  rejection). Owned by the subscription effect; a no-op while none is active. */
+  const resetRevisionCursorRef = useRef<() => void>(() => {});
   const republishRef = useRef<() => void>(() => {});
 
   /**
@@ -408,8 +402,37 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     setLoading(true);
     setError(null);
 
+    const reconciler = createCharacterSnapshotReconciler<CharacterDoc, CombatState>(
+      reconciledDomainEquals
+    );
+    reconcilerRef.current = reconciler;
+
+    /**
+     * The highest generation this client has SENT. It is allocated AT SEND TIME (see
+     * `createDebouncedSave`): a payload superseded inside the debounce window consumes
+     * nothing, so consecutive writes carry consecutive generations and the rules' CAS
+     * accepts them in queue order — offline included. It never runs ahead of the server:
+     * a snapshot from another device pulls the cursor forward through the `max` below.
+     */
+    let sentRevisionCursor = 0;
+    const acknowledgedRevision = (): number =>
+      reconciler.current().parentRemote?.revision ?? 0;
+    const nextRevision = (): number => {
+      sentRevisionCursor = Math.max(sentRevisionCursor, acknowledgedRevision());
+      return ++sentRevisionCursor;
+    };
+    const resetRevisionCursor = (): void => {
+      sentRevisionCursor = acknowledgedRevision();
+    };
+    resetRevisionCursorRef.current = resetRevisionCursor;
+
     // Create debounced save for auto-persistence
-    debouncedSaveRef.current = createDebouncedSave(user.uid, characterId);
+    debouncedSaveRef.current = createDebouncedSave(
+      user.uid,
+      characterId,
+      undefined,
+      nextRevision
+    );
     // Slot/tracker mutators request this AFTER their synchronous composite action.
     // The microtask in characterStore lets the autosave subscriber arm the latest
     // full payload first, then this flush makes the play resource durable immediately.
@@ -470,11 +493,6 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     // membership-scoped read on the first save; nothing until the owner edits).
     attachedCampaignsRef.current = createAttachedCampaignTracker(user.uid, characterId);
 
-    const reconciler = createCharacterSnapshotReconciler<CharacterDoc, CombatState>(
-      reconciledDomainEquals
-    );
-    reconcilerRef.current = reconciler;
-    lastSentRevisionRef.current = 0;
     let idbRestoreStarted = false;
     let quarantined = false;
 
@@ -483,6 +501,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       diagnosticsLog("error", "character.quarantine", { message });
       quarantined = true;
       reconciler.reset();
+      resetRevisionCursor();
       persistenceEnabled = false;
       pendingPlayWrite = null;
       debouncedSaveRef.current?.cancel();
@@ -521,7 +540,21 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       // The RESOLVED pair: each domain's unacknowledged local payload when it has one,
       // otherwise the last server value. Never a mix of one domain's local edit with
       // the other domain's stale remote.
-      const { parent: lastParent, child: lastCombat } = reconciler.current();
+      const {
+        parent: resolvedParent,
+        parentRemote,
+        child: lastCombat,
+      } = reconciler.current();
+      // The store doc's `revision` ALWAYS means "the last generation the server
+      // acknowledged", never the optimistic one riding an in-flight write. Every
+      // whole-document ceremony (snapshot restore, level-up, sharing) reads its
+      // compare-and-set base from this doc, so it must be a base the server holds. A
+      // ceremony that races an already-sent autosave is denied by the CAS and surfaces
+      // the ordinary save error — correct, and preferable to a silent overwrite.
+      const lastParent =
+        resolvedParent && parentRemote
+          ? { ...resolvedParent, revision: parentRemote.revision }
+          : resolvedParent;
       if (lastParent === undefined) return;
       if (lastParent === null) {
         quarantine("Character not found");
@@ -638,6 +671,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       reconciler.reset();
       reconcilerRef.current = null;
       republishRef.current = () => {};
+      resetRevisionCursorRef.current = () => {};
       setCharacter(null);
       setDiagnosticsContext({ characterId: undefined });
     };
@@ -708,39 +742,33 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           // combat slice (HP/conditions/held dice/initiative/death saves) is omitted from the parent doc at
           // the Firestore serialization boundary (`toStoredPayload`) — it lives ONLY in
           // the `combat/state` subdoc (the writer below).
-          // COMPARE-AND-SET (design §5.3): the write carries exactly base + 1, where the
-          // base is the newest generation this client knows of — the reconciled parent,
-          // or a still-unconfirmed revision we already sent. The rules reject anything
-          // else, which is how a stale OFFLINE write surfaces as a conflict instead of
-          // clobbering another device (a transaction cannot run offline).
-          const reconciler = reconcilerRef.current;
-          const base = Math.max(
-            reconciler?.current().parent?.revision ?? 0,
-            lastSentRevisionRef.current
-          );
+          // COMPARE-AND-SET (design §5.3). The payload is QUEUED carrying the store
+          // doc's acknowledged generation; the real one is allocated when the write
+          // actually leaves (`onSend`), so a payload superseded inside the debounce
+          // window burns no generation. `onSend` re-marks the SENT object pending so the
+          // later acknowledge/reject still matches it by equality.
           const payload: CharacterDoc = {
             ...state.character,
             character:
               charData.ac === stampedAc ? charData : { ...charData, ac: stampedAc },
-            revision: base + 1,
           };
-          lastSentRevisionRef.current = payload.revision;
-          reconciler?.markParentPending(payload);
+          reconcilerRef.current?.markParentPending(payload);
           debouncedSaveRef.current.save(payload, {
-            onResolved: (saved) => reconcilerRef.current?.acknowledgeParentWrite(saved),
-            onRejected: (saved) => {
+            onSend: (sent) => reconcilerRef.current?.markParentPending(sent),
+            onResolved: (sent) => reconcilerRef.current?.acknowledgeParentWrite(sent),
+            onRejected: (sent) => {
               // The server refused this generation (a revision conflict, a permission
-              // change): drop the local payload, re-base on the server's own revision,
-              // surface the save error and republish what the server actually holds.
-              reconcilerRef.current?.rejectParentWrite(saved);
-              lastSentRevisionRef.current = 0;
-              saveStatusCallbacks.onError("conflict");
+              // change): drop the local payload, re-base the cursor on the server's own
+              // generation and republish what the server actually holds. The save store
+              // already carries the REAL Firestore error message from `runWrite`.
+              reconcilerRef.current?.rejectParentWrite(sent);
+              resetRevisionCursorRef.current();
               republishRef.current();
             },
-            onCancelled: (saved) => {
-              reconcilerRef.current?.rejectParentWrite(saved);
-              republishRef.current();
-            },
+            // Only the restore / level-up ceremony cancels a queued save. It publishes
+            // its own whole-document state and its batch echoes back, so republishing the
+            // PRE-ceremony remote here would briefly flash the superseded sheet.
+            onCancelled: (queued) => reconcilerRef.current?.rejectParentWrite(queued),
           });
         }
       }

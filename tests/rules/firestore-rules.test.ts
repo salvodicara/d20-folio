@@ -1462,14 +1462,24 @@ describe("firestore.rules — character reads: owner + admin + LIVE campaign mem
     );
   });
 
-  it("a build write must carry revision + 1; a stale revision is denied; metadata leaves it alone", async () => {
+  it("a build write must carry exactly revision + 1; stale and ahead are both denied", async () => {
     const owner = testEnv.authenticatedContext("member").firestore();
     const ref = doc(owner, "users", "member", "characters", "char-member");
     await assertFails(updateDoc(ref, { build: { name: "Mara II" }, revision: 3 }));
     await assertFails(updateDoc(ref, { build: { name: "Mara II" }, revision: 5 }));
+    await assertFails(updateDoc(ref, { build: { name: "Mara II" } }));
     await assertSucceeds(updateDoc(ref, { build: { name: "Mara II" }, revision: 4 }));
-    await assertFails(updateDoc(ref, { status: "retired", revision: 5 }));
+  });
+
+  it("a metadata-only write may leave the generation alone OR advance it by exactly one", async () => {
+    // A whole-document ceremony (sharing publish, snapshot restore) rewrites the parent
+    // with values that often diff to nothing, yet legitimately advances the generation.
+    const owner = testEnv.authenticatedContext("member").firestore();
+    const ref = doc(owner, "users", "member", "characters", "char-member");
     await assertSucceeds(updateDoc(ref, { status: "retired" }));
+    await assertSucceeds(updateDoc(ref, { status: "dead", revision: 4 }));
+    await assertFails(updateDoc(ref, { status: "archived", revision: 6 }));
+    await assertFails(updateDoc(ref, { status: "archived", revision: 3 }));
   });
 
   it("a character is born at revision 0", async () => {
@@ -2007,6 +2017,39 @@ describe("firestore.rules — sanitized public character projection", () => {
     const anon = testEnv.unauthenticatedContext().firestore();
     await assertSucceeds(getDoc(doc(anon, ...PRIVATE_SHEET)));
     await assertFails(getDoc(doc(anon, ...PRIVATE_PARENT)));
+  });
+
+  it("the REAL sharing payload (whole parent + shared + revision + 1) publishes atomically", async () => {
+    // `setCharacterSharing` rewrites the WHOLE parent: schema/build/state/cache are
+    // re-sent with the SAME values (so they diff to nothing) while `shared` flips and
+    // the generation advances. The first cut of the rule demanded an unchanged
+    // `revision` whenever build/state/cache were unaffected, which denied exactly this
+    // real client write (and the no-op snapshot restore).
+    const owner = testEnv.authenticatedContext("member").firestore();
+    const sharingBatch = writeBatch(owner);
+    sharingBatch.update(doc(owner, ...PRIVATE_PARENT), {
+      schema: 3,
+      build: BUILD,
+      state: {},
+      cache: CACHE,
+      shared: true,
+      revision: 4,
+      updatedAt: NEXT_UPDATED_AT,
+    });
+    sharingBatch.set(
+      doc(owner, ...PRIVATE_SHEET),
+      publicSheet({
+        hasPortrait: false,
+        portraitCrop: null,
+        sourceUpdatedAt: NEXT_UPDATED_AT,
+      })
+    );
+    await assertSucceeds(sharingBatch.commit());
+
+    const anon = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(getDoc(doc(anon, ...PRIVATE_SHEET)));
+    const stored = await getDoc(doc(owner, ...PRIVATE_PARENT));
+    expect(stored.data()?.revision).toBe(4);
   });
 
   it("public-relevant parent updates require the matching projection in the same commit", async () => {

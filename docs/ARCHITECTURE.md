@@ -2149,23 +2149,47 @@ true`) never clears it, an equal server snapshot acknowledges it, a DIFFERING se
   `reconciler.current()` — never a mix of one domain's local edit with the other's stale
   remote. Parent identity is the codec envelope plus `revision`/`shared`/`status`; child
   identity is the whole play document minus its server stamp.
-- **`createDebouncedSave(...).save(payload, callbacks)`** reports the outcome of the
-  payload it settles: `onResolved` acknowledges, `onRejected` drops it, `onCancelled`
-  reports what `cancel()` discarded. A later `save()` silently SUPERSEDES the queued
-  payload (no callback — the newer one is what the reconciler now tracks).
+  `current()` also exposes `parentRemote`/`childRemote` — the last SERVER-acknowledged
+  value, independent of any pending payload. `parentConflict`/`childConflict` are
+  informational; the write's own rejection callback drives the error state.
+- **`createDebouncedSave(uid, charId, delayMs, allocateRevision)`**: `save(payload,
+callbacks)` reports the outcome of the payload it settles — `onSend` (synchronously,
+  with the payload AS SENT), `onResolved`, `onRejected`, and `onCancelled` (the queued
+  payload a `cancel()` dropped). A later `save()` silently SUPERSEDES the queued payload
+  (no callback — the newer one is what the reconciler now tracks).
 - **`revision`** is a required non-negative integer on every character parent
   (`readDocMeta` quarantines a document without one; the cutover migration stamps
-  `revision: 0` — ADR-0009). `createCharacter` writes 0; every build/state/cache write
-  carries exactly `base + 1` where `base = max(observed parent revision, the highest
-revision this client already sent)`; a metadata-only write leaves it untouched. The
-  Firestore rules (`revisionAdvancesWithBuild()`) enforce that compare-and-set. A
-  TRANSACTION cannot run offline, so the rules — not a client read-modify-write — are
-  what make a queued offline write safe: a stale one is rejected on reconnect.
-- **A rejection surfaces, it never clobbers**: `SaveStatus="error"` (the internal message
-  is `"conflict"`; the indicator shows the translated generic error state), the pending
-  payload is dropped, `lastSentRevision` resets so the next attempt re-bases on the
-  server, the remote value is republished, and `diagnosticsLog("error",
-"character.save-rejected", …)` records it.
+  `revision: 0` — ADR-0009). `createCharacter` writes 0. The rules
+  (`revisionAdvancesWithBuild()`) require a **build/state/cache change to carry exactly
+  `resource.revision + 1`**; any other write may leave `revision` untouched OR advance it
+  by exactly one — a whole-document ceremony (sharing publish, snapshot restore) re-sends
+  build/state/cache with unchanged VALUES, so it diffs to nothing yet must still advance.
+  `+2` and any stale value are always denied. A TRANSACTION cannot run offline, so the
+  rules — not a client read-modify-write — are what make a queued offline write safe: a
+  stale one is rejected on reconnect.
+- **The generation is allocated AT SEND, never at queue time.** The subscription hook owns
+  a cursor seeded at the last acknowledged server generation; `createDebouncedSave`'s
+  `allocateRevision` stamps `++cursor` onto the payload the moment the write leaves, and
+  `onSend` re-marks that exact object pending so acknowledge/reject still match. A payload
+  superseded inside the debounce window therefore consumes NOTHING — stamping at queue
+  time burned a number the server never saw, so the next write claimed `+2`, the rules
+  denied it, and the user's edits were silently discarded on the ordinary burst path.
+- **The store doc's `revision` always means "last server-acknowledged"** —
+  `publishResolvedPair` publishes the pending payload's build/session but with
+  `parentRemote`'s generation, never an optimistic one. Every ceremony (`SnapshotsModal`,
+  `LevelUpWizard` → `replaceCharacterState`, `setCharacterSharing`) therefore reads a base
+  the server holds. A ceremony racing an already-sent autosave is denied by the CAS and
+  surfaces the ordinary save error — correct, and preferable to a silent overwrite.
+- **A rejection surfaces, it never clobbers**: `SaveStatus="error"` carrying the REAL
+  Firestore message, the pending payload is dropped, the send cursor re-bases on the
+  server's own generation, the remote value is republished, and `diagnosticsLog("error",
+"character.save-rejected", …)` records it. `onCancelled` (only the restore/level-up
+  ceremony's `cancelPendingParentSave`) drops the pending payload WITHOUT republishing —
+  the ceremony publishes its own whole-document state.
+- **Roster fault isolation**: `subscribeToCharacters` projects each document inside its own
+  `try`/`catch`; a row that cannot be read (a corrupt cache, or a pre-migration parent the
+  metadata reader quarantines) is skipped and logged as `roster.quarantine`. One bad
+  document can never blank the roster.
 - `setCharacterSharing` compares-and-sets on `revision` in its transaction and writes
   `revision + 1`; `restoreCharacterSnapshot`/`replaceCharacterState` take the observed
   base revision from the caller and write `base + 1`.

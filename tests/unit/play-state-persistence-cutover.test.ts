@@ -29,6 +29,7 @@ const harness = vi.hoisted(() => {
     getDoc: vi.fn(),
     updateDoc: vi.fn(() => Promise.resolve()),
     deleteDoc: vi.fn(() => Promise.resolve()),
+    rosterSnapshot: null as ((snap: unknown) => void) | null,
     Timestamp,
   };
 });
@@ -54,7 +55,14 @@ vi.mock("firebase/firestore", () => ({
   getCountFromServer: vi.fn(),
   updateDoc: harness.updateDoc,
   deleteDoc: harness.deleteDoc,
-  onSnapshot: vi.fn(),
+  onSnapshot: (
+    _q: unknown,
+    _options: unknown,
+    next: (snap: unknown) => void
+  ): (() => void) => {
+    harness.rosterSnapshot = next;
+    return () => {};
+  },
   serverTimestamp: () => "server-ts",
   query: vi.fn((value: unknown) => value),
   orderBy: vi.fn(),
@@ -101,9 +109,11 @@ vi.mock("@/lib/log-persistence", () => ({
   clearLogFromIDB: vi.fn(() => Promise.resolve()),
 }));
 
+import { breadcrumbSnapshot, resetDiagnostics } from "@/lib/diagnostics";
 import {
   createCharacter,
   createDebouncedSave,
+  subscribeToCharacters,
   getFullCharacter,
   getPublicCharacter,
   replaceCharacterState,
@@ -207,6 +217,43 @@ describe("play-state v1 persistence cutover", () => {
     await pending.flush();
     expect(outcomes.onRejected).toHaveBeenCalledTimes(1);
     expect(outcomes.onRejected.mock.calls[0]?.[0]).toEqual(second);
+  });
+
+  it("allocates the generation AT SEND: a superseded payload consumes none", async () => {
+    vi.useFakeTimers();
+    try {
+      // The hook's allocator: a cursor seeded at the last acknowledged server value.
+      let cursor = 4;
+      const pending = createDebouncedSave("u1", "c1", 2000, () => ++cursor);
+      const base = { ...makeCharacterDoc(), id: "c1", playStateVersion: 1 as const };
+      const sent: number[] = [];
+      const outcomes = { onSend: (d: CharacterDoc) => sent.push(d.revision) };
+
+      // TWO edits inside ONE debounce window — the ordinary burst path (a composite
+      // command fans several subscriber saves through `flushParentPersistence`).
+      pending.save({ ...base, character: { ...base.character, quote: "a" } }, outcomes);
+      pending.save({ ...base, character: { ...base.character, quote: "b" } }, outcomes);
+      await vi.advanceTimersByTimeAsync(2_000);
+
+      // Exactly ONE write, carrying remote + 1 — the superseded payload burned nothing.
+      expect(harness.commits).toHaveBeenCalledTimes(1);
+      expect(sent).toEqual([5]);
+      const first = harness.operations.find(
+        ({ path }) => path === "users/u1/characters/c1"
+      );
+      expect(first?.data).toMatchObject({ revision: 5 });
+
+      // A later edit takes the NEXT generation, not a burned one the rules would deny.
+      harness.operations.length = 0;
+      pending.save({ ...base, character: { ...base.character, quote: "c" } }, outcomes);
+      await vi.advanceTimersByTimeAsync(2_000);
+      expect(sent).toEqual([5, 6]);
+      expect(
+        harness.operations.find(({ path }) => path === "users/u1/characters/c1")?.data
+      ).toMatchObject({ revision: 6 });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("rejects a parent write whose generation is not a non-negative integer", async () => {
@@ -553,6 +600,38 @@ describe("play-state v1 persistence cutover", () => {
     await expect(setCharacterSharing("u1", full, true)).rejects.toThrow(
       "Character changed before sharing"
     );
+  });
+
+  it("skips a single unreadable roster row instead of blanking the roster", () => {
+    resetDiagnostics();
+    const good = makeCharacterDoc();
+    const rows: Array<{ id: string; data: () => Record<string, unknown> }> = [
+      // A pre-migration parent: no `revision` → `readDocMeta` quarantines it.
+      {
+        id: "stale",
+        data: () => {
+          const raw = { ...parentData(good) } as Record<string, unknown>;
+          delete raw.revision;
+          return raw;
+        },
+      },
+      { id: "healthy", data: () => parentData(good) },
+    ];
+    const received: Array<Array<{ id: string }>> = [];
+    const onError = vi.fn();
+    subscribeToCharacters("u1", (docs) => received.push(docs), onError);
+    if (!harness.rosterSnapshot) throw new Error("roster listener not captured");
+    harness.rosterSnapshot({ docs: rows, metadata: { fromCache: false } });
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(received.at(-1)?.map((d) => d.id)).toEqual(["healthy"]);
+    expect(
+      breadcrumbSnapshot().some(
+        (crumb) =>
+          crumb.event === "roster.quarantine" &&
+          String(crumb.data?.message).includes("invalid-revision")
+      )
+    ).toBe(true);
   });
 
   it("rejects sharing through the generic metadata writer", async () => {

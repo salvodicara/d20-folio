@@ -507,6 +507,10 @@ export async function deleteCharacter(uid: string, charId: string): Promise<void
  * characters" answer. `includeMetadataChanges` is set so the cache→server transition
  * (which changes only metadata, not the doc set) re-invokes the callback, letting the
  * consumer wait for a server-confirmed answer.
+ *
+ * Per-document faults are ISOLATED: a row that cannot be projected (a corrupt cache, or
+ * a parent the metadata reader quarantines) is skipped and logged as
+ * `roster.quarantine`, never allowed to fail the whole list.
  */
 export function subscribeToCharacters(
   uid: string,
@@ -518,17 +522,24 @@ export function subscribeToCharacters(
     q,
     { includeMetadataChanges: true },
     (snap) => {
+      // FAULT ISOLATION, per document: `rosterDoc` returns `null` for a corrupt cache
+      // (no valid name) and THROWS for a document the metadata reader quarantines (e.g.
+      // a parent with no `revision` — a pre-migration doc). Either way exactly that ONE
+      // row is skipped; one bad document must never blank the whole roster, and no
+      // invented name is ever rendered.
+      const docs: RosterCharacterDoc[] = [];
+      for (const d of snap.docs) {
+        try {
+          const row = rosterDoc(d.id, d.data());
+          if (row) docs.push(row);
+        } catch (error) {
+          diagnosticsLog("error", "roster.quarantine", {
+            message: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
       try {
-        callback(
-          // `rosterDoc` returns `null` for a corrupt cache (no valid name) — SKIP it,
-          // so one bad doc can never blank the whole roster (fault isolation) and no
-          // invented name is ever rendered. Writers guarantee non-empty names, so this
-          // should never fire; it's a safety net.
-          snap.docs
-            .map((d) => rosterDoc(d.id, d.data() as Record<string, unknown>))
-            .filter((d): d is RosterCharacterDoc => d !== null),
-          snap.metadata.fromCache
-        );
+        callback(docs, snap.metadata.fromCache);
       } catch (error) {
         onError?.(error instanceof Error ? error : new Error(String(error)));
       }
@@ -755,8 +766,15 @@ async function parseStoredCharacter(
  * the one the reconciler now tracks.
  */
 export interface DebouncedSaveCallbacks {
+  /**
+   * Fired SYNCHRONOUSLY the moment the write leaves, with the payload as SENT — i.e.
+   * carrying the `revision` the allocator just handed out. The caller re-marks this
+   * exact object pending so the later acknowledge/reject still matches by equality.
+   */
+  onSend?: (data: CharacterDoc) => void;
   onResolved?: (data: CharacterDoc) => void;
   onRejected?: (data: CharacterDoc, error: unknown) => void;
+  /** Fired with the QUEUED payload a `cancel()` dropped (it was never stamped or sent). */
   onCancelled?: (data: CharacterDoc) => void;
 }
 
@@ -779,10 +797,19 @@ function cancelPendingParentSave(uid: string, charId: string): boolean {
   return true;
 }
 
+/**
+ * @param allocateRevision - hands out the compare-and-set generation AT SEND TIME. A
+ * debounced payload that is superseded before it leaves must consume NO generation:
+ * stamping at queue time burned a number the server never saw, so the next write claimed
+ * `resource.revision + 2` and the rules denied it — silently discarding the user's edits.
+ * The client's offline queue preserves order, so consecutive sends carry consecutive
+ * generations. Omitted (tests, callers with no reconciler) → the payload's own `revision`.
+ */
 export function createDebouncedSave(
   uid: string,
   charId: string,
-  delayMs: number = 2000
+  delayMs: number = 2000,
+  allocateRevision?: () => number
 ): DebouncedSaveHandle {
   const key = pendingParentSaveKey(uid, charId);
   let timer: ReturnType<typeof setTimeout> | null = null;
@@ -814,21 +841,25 @@ export function createDebouncedSave(
   }
 
   function runWrite(
-    data: CharacterDoc,
+    queued: CharacterDoc,
     callbacks?: DebouncedSaveCallbacks
   ): Promise<void> {
+    // Allocate the generation HERE — the write is actually going out now.
+    const data = allocateRevision ? { ...queued, revision: allocateRevision() } : queued;
+    callbacks?.onSend?.(data);
     saveStatusCallbacks.onSaving();
-    return updateCharacterParent(uid, charId, data)
-      .then(() => {
+    return updateCharacterParent(uid, charId, data).then(
+      () => {
         saveStatusCallbacks.onSaved();
         callbacks?.onResolved?.(data);
-      })
-      .catch((err: unknown) => {
+      },
+      (err: unknown) => {
         const msg = err instanceof Error ? err.message : "Save failed";
         diagnosticsLog("error", "character.save-rejected", { message: msg });
         saveStatusCallbacks.onError(msg);
         callbacks?.onRejected?.(data, err);
-      });
+      }
+    );
   }
 
   return {

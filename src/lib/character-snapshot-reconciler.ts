@@ -23,10 +23,23 @@ interface Domain<V> {
 }
 
 export interface Reconciliation<P, C> {
+  /** What to publish: the unacknowledged local payload, else the last server value. */
   parent: P | null | undefined;
   child: C | null | undefined;
+  /**
+   * The last SERVER-acknowledged value, independent of any pending payload. The parent's
+   * is what the compare-and-set bases on: a caller must never advance a `revision` past a
+   * generation the server has not confirmed, and never publish an optimistic one.
+   */
+  parentRemote: P | null | undefined;
+  childRemote: C | null | undefined;
   parentPending: boolean;
   childPending: boolean;
+  /**
+   * INFORMATIONAL only — a server value that differs from the pending payload. The
+   * write's own rejection callback is what drives the error state and the republish;
+   * nothing reads these flags to decide behaviour.
+   */
   parentConflict: boolean;
   childConflict: boolean;
 }
@@ -111,6 +124,8 @@ export function createCharacterSnapshotReconciler<P, C>(
       return {
         parent: parent.pending ?? parent.remote,
         child: child.pending ?? child.remote,
+        parentRemote: parent.remote,
+        childRemote: child.remote,
         parentPending: parent.pending !== undefined,
         childPending: child.pending !== undefined,
         parentConflict: parent.conflict,
