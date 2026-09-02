@@ -32,9 +32,12 @@ ClassEntry[]` (single-class = a one-entry array). The old single-class `build.cl
    2026-06-09: a superseded format is removed COMPLETELY, never a permanent read shim). The v2→v3
    migration of live data is COMPLETE (every stored doc is schema-3), so the only transitional seam
    is the graceful pre-v3 import REJECTION at the untrusted-input boundary — a pasted old export
-   never crashes, it is told to ask for a regenerated file. The reader still tolerates **unknown
-   future fields** (ignored) and **missing optional fields** (defaulted), and the writer always
-   emits the latest `schema` — so v3 evolves additively. When optimal modeling instead demands a
+   never crashes, it is told to ask for a regenerated file. The reader **preserves** unknown fields
+   verbatim (`unknown` buckets on the character, the session and every entry) and writes them back;
+   a structurally malformed entry **quarantines** the document with a typed `{ code, path }`
+   (`parseCharacterEnvelope` → `ok: false`), never a silent drop. **Missing optional fields** still
+   default, and the writer always emits the latest `schema` — so v3 evolves additively. When
+   optimal modeling instead demands a
    NON-additive format change, the live data is MIGRATED forward autonomously under rule 22's
    snapshot-verify net, then the old shape is deleted entirely (rule 10) — backward compatibility is
    never a goal.
@@ -297,11 +300,37 @@ Everything absent ⇒ its fresh/default value on import. So a brand-new characte
   fails with the stable sentinel `SCHEMA_2_REJECTED_REASON === "schema-2-unsupported"`, which the
   import UI maps to the friendly `import.oldFormat` copy (EN + IT) — the only transitional seam at
   the untrusted-input boundary (a pasted old export never crashes). There is NO upgrade-on-read.
-  Unknown fields ignored, missing defaulted.
-- **Round-trip invariant:** `serialize(parse(x)) === x` for any canonical v3 `x` (byte-identical).
-  Pinned by `tests/unit/character-codec.test.ts` + the 6 team fixtures (their on-disk form IS the
-  canonical v3 — `tests/unit/team-fixtures-new-export.test.ts` asserts `serialize(parse(file)) === file`
-  and that a pasted pre-v3 envelope is REJECTED with the friendly sentinel, never a crash).
+  Missing optional fields are defaulted; unknown fields are PRESERVED (below).
+- **Totality (design §5.5).** The codec never loses data silently:
+  - **Closed worlds.** `KNOWN_BUILD_KEYS` (`character-codec.ts`) and `KNOWN_STATE_KEYS`
+    (`session-state-codec.ts`) are exactly the keys the writer can emit for `build` / `state`;
+    each entry parser has the same list for its own fields. Every key OUTSIDE its list is kept
+    verbatim in an `unknown` bucket — `CharacterData.unknown`, `SessionState.unknown`, and
+    `unknown` on each spell/weapon/equipment/feature entry (SRD ref and custom alike) — and is
+    written back **last**, so a canonical document's bytes are unchanged and a document written by
+    a NEWER app version round-trips through an older client untouched. The buckets are never read
+    by the app. `RETIRED_STATE_KEYS` (currently `round`) names the keys the format deliberately
+    dropped: read-and-discarded one-way, never resurrected as an unknown future key.
+  - **Typed quarantine.** A structurally malformed entry fails the WHOLE document rather than
+    being skipped (skipping would write a shorter array back over a live user's data):
+    `parseCharacterEnvelope` returns `{ ok: false, error, failure: CodecFailure }` where
+    `CodecFailure = { code: "malformed-entry" | "invalid-item-resources" | "invalid-build" |
+"validation"; path; detail? }` and `path` addresses the offence (`build.equipment[3].charges`,
+    `build.customs.features[0].contentBlocks[2]`). `error` is `` `${code}:${path}` `` for a
+    structural failure and the human message for `validation`. A required field breaks the entry
+    itself (`build.spells[2]`); an OPTIONAL field present with the wrong type breaks at its own
+    path (`build.spells[2].notes`). `parseCharacter` forwards `failure` on its `ImportError`, and
+    `parseStoredCharacter` throws `TypeError("Invalid character document: <code>:<path>")`, which
+    the subscription's quarantine reports to diagnostics.
+  - The two documented one-way read-normalizations survive unchanged: a non-token `unit` is
+    dropped, and `build.overrides` still conforms legacy proficiency keys / the boolean
+    initiative-advantage leg.
+- **Round-trip invariant:** `serialize(parse(x)) === x` for any canonical v3 `x` (byte-identical),
+  and `parse(serialize(x)) ≡ x` for a document carrying unknown keys at every level. Pinned by
+  `tests/unit/character-codec.test.ts`, `tests/unit/character-codec-totality.test.ts` (seeded
+  property test) + the 6 team fixtures (their on-disk form IS the canonical v3 —
+  `tests/unit/team-fixtures-new-export.test.ts` asserts `serialize(parse(file)) === file` and that a
+  pasted pre-v3 envelope is REJECTED with the friendly sentinel, never a crash).
 
 ## Migration appendix — the v2→v3 migration (DONE)
 

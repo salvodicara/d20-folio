@@ -23,8 +23,21 @@
  * rejected (a pre-v3 file fails with the sentinel `SCHEMA_2_REJECTED_REASON`, which
  * the import UI maps to the friendly `import.oldFormat` copy). There is NO
  * upgrade-on-read; the v2→v3 migration is complete (every live doc is schema-3).
- * The reader still tolerates unknown future fields (ignored) and missing optional
- * fields (defaulted), and the writer always emits schema 3.
+ * Missing optional fields still default, and the writer always emits schema 3.
+ *
+ * TOTALITY (design §5.5): the reader never silently loses data.
+ *  - Unknown keys are PRESERVED verbatim in an `unknown` bucket on the character
+ *    (unknown `build` keys), the session (unknown `state` keys) and every entry,
+ *    and are written back — spread LAST, so a canonical document's bytes are
+ *    unchanged and a future document round-trips byte-identically.
+ *  - A structurally malformed entry QUARANTINES the whole document with a typed
+ *    {@link CodecFailure} (`{ code, path }`) instead of being skipped, so a
+ *    shorter array can never be written back over a live user's data. The failure
+ *    reaches `parseStoredCharacter` → the subscription quarantine → diagnostics.
+ *  - The four ENTRY collections (`spells` / `weapons` / `equipment` / features) and
+ *    the two envelope maps are total. `build.classes` is NOT yet: `parseClasses`
+ *    still normalizes levels and drops a malformed entry (see its note), and a
+ *    `ClassEntry` carries no `unknown` bucket. That is the one remaining gap.
  *
  * Round-trip invariant: `serialize(parse(x)) === x` (byte-identical) for any v3 x.
  *
@@ -87,6 +100,92 @@ import {
 
 export function isRecord(val: unknown): val is Record<string, unknown> {
   return typeof val === "object" && val !== null && !Array.isArray(val);
+}
+
+// ─── Totality: typed quarantine + unknown-key preservation ──────────────────
+
+/**
+ * Why a stored / imported document could not be decoded, and exactly WHERE. The
+ * codec is total: rather than dropping the offending entry (which would write a
+ * shorter array back over a live user's data), the whole document is quarantined
+ * with this typed reason. `path` is a dotted/indexed address into the envelope
+ * (`build.equipment[3].charges.recovery`).
+ */
+export interface CodecFailure {
+  code: "malformed-entry" | "invalid-item-resources" | "invalid-build" | "validation";
+  path: string;
+  detail?: string;
+}
+
+/** Thrown by the parsers, caught ONCE by {@link parseCharacterEnvelope}. */
+class CodecFailureError extends Error {
+  readonly failure: CodecFailure;
+  constructor(failure: CodecFailure) {
+    super(`${failure.code}:${failure.path}`);
+    this.name = "CodecFailureError";
+    this.failure = failure;
+  }
+}
+
+function fail(code: CodecFailure["code"], path: string, detail?: string): never {
+  throw new CodecFailureError(detail ? { code, path, detail } : { code, path });
+}
+
+/**
+ * Read an OPTIONAL field: absent is fine (the caller checks), but a field that IS
+ * present with the wrong type quarantines the document at its own path — never a
+ * silent skip that would drop the player's value on the next write.
+ */
+function opt<T>(value: unknown, guard: (v: unknown) => v is T, path: string): T {
+  if (!guard(value)) fail("malformed-entry", path);
+  return value;
+}
+
+const isString = (v: unknown): v is string => typeof v === "string";
+const isBool = (v: unknown): v is boolean => typeof v === "boolean";
+const isNumber = (v: unknown): v is number => typeof v === "number";
+const isNullableNumber = (v: unknown): v is number | null =>
+  v === null || typeof v === "number";
+const isNullableString = (v: unknown): v is string | null =>
+  v === null || typeof v === "string";
+
+/** An array whose every element is a record, failing at the offending INDEX. */
+function recordArray(value: unknown, path: string): Record<string, unknown>[] {
+  if (!Array.isArray(value)) fail("malformed-entry", path);
+  return value.map((item, index) => {
+    if (!isRecord(item)) fail("malformed-entry", `${path}[${index}]`);
+    return item;
+  });
+}
+
+/**
+ * The keys the parser consumed; everything else on `obj` is preserved verbatim
+ * under `unknown` so a document written by a NEWER app version survives a
+ * round-trip through this one. `undefined` when the object is fully known — a
+ * canonical document must never grow an empty bucket.
+ */
+function leftover(
+  obj: Record<string, unknown>,
+  known: readonly string[]
+): Record<string, unknown> | undefined {
+  const knownSet = new Set(known);
+  let out: Record<string, unknown> | undefined;
+  for (const [key, value] of Object.entries(obj)) {
+    if (knownSet.has(key)) continue;
+    (out ??= {})[key] = value;
+  }
+  return out;
+}
+
+/** Re-flatten a parsed entry for serialization: known fields first, `unknown` LAST. */
+function flattenEntry(entry: unknown): unknown {
+  if (!isRecord(entry)) return entry;
+  const { unknown, ...rest } = entry;
+  return isRecord(unknown) ? { ...rest, ...unknown } : { ...rest };
+}
+
+function flattenEntries(list: unknown): unknown[] {
+  return Array.isArray(list) ? list.map(flattenEntry) : [];
 }
 
 const SPELL_SCHOOLS: SpellSchool[] = [
@@ -152,24 +251,31 @@ type EquipmentCharges = {
   recoveryFormula?: string;
 };
 
-function parseEquipmentCharges(val: unknown): EquipmentCharges | undefined {
-  if (!isRecord(val)) return undefined;
-  if (typeof val.current !== "number" || typeof val.max !== "number") return undefined;
+function parseEquipmentCharges(val: unknown, path: string): EquipmentCharges {
+  if (!isRecord(val)) fail("malformed-entry", path);
+  if (typeof val.current !== "number") fail("malformed-entry", `${path}.current`);
+  if (typeof val.max !== "number") fail("malformed-entry", `${path}.max`);
   const charges: EquipmentCharges = { current: val.current, max: val.max };
-  if (isRecovery(val.recovery)) charges.recovery = val.recovery;
-  if (typeof val.recoveryFormula === "string")
-    charges.recoveryFormula = val.recoveryFormula;
+  if (val.recovery !== undefined)
+    charges.recovery = opt(val.recovery, isRecovery, `${path}.recovery`);
+  if (val.recoveryFormula !== undefined)
+    charges.recoveryFormula = opt(
+      val.recoveryFormula,
+      isString,
+      `${path}.recoveryFormula`
+    );
   return charges;
 }
 
 /** Custom-armor AC shape for CustomEquipment.ac. */
 type CustomArmorAc = { base: number; dexBonus: boolean; maxDex?: number };
 
-function parseCustomArmorAc(val: unknown): CustomArmorAc | undefined {
-  if (!isRecord(val)) return undefined;
-  if (typeof val.base !== "number" || typeof val.dexBonus !== "boolean") return undefined;
+function parseCustomArmorAc(val: unknown, path: string): CustomArmorAc {
+  if (!isRecord(val)) fail("malformed-entry", path);
+  if (typeof val.base !== "number") fail("malformed-entry", `${path}.base`);
+  if (typeof val.dexBonus !== "boolean") fail("malformed-entry", `${path}.dexBonus`);
   const ac: CustomArmorAc = { base: val.base, dexBonus: val.dexBonus };
-  if (typeof val.maxDex === "number") ac.maxDex = val.maxDex;
+  if (val.maxDex !== undefined) ac.maxDex = opt(val.maxDex, isNumber, `${path}.maxDex`);
   return ac;
 }
 
@@ -180,107 +286,255 @@ function isArmorCategory(val: unknown): val is ArmorCategory {
 }
 
 // ─── SRD ref constructors ────────────────────────────────────────────────────
-// Validate the required field(s), then pick optional fields individually so the
-// returned object is fully typed with no casts and LOSSLESS (every optional field
-// the in-memory type carries survives a parse — the round-trip invariant).
+// Validate the required field(s), then read every optional field individually so
+// the returned object is fully typed with no casts and LOSSLESS: an optional field
+// present with the WRONG type quarantines the document at `<entryPath>.<field>`
+// (never a silent skip), and any key outside the module-level key list is kept in
+// the entry's `unknown` bucket and re-emitted last.
 
-function parseFreeCastSource(val: unknown): SrdSpellRef["freeCastSource"] | undefined {
-  if (!isRecord(val)) return undefined;
-  if (typeof val.sourceId !== "string") return undefined;
-  if (val.rest !== "short" && val.rest !== "long") return undefined;
-  if (typeof val.usesPerRest !== "number") return undefined;
+function parseFreeCastSource(
+  val: unknown,
+  path: string
+): NonNullable<SrdSpellRef["freeCastSource"]> {
+  if (!isRecord(val)) fail("malformed-entry", path);
+  if (typeof val.sourceId !== "string") fail("malformed-entry", `${path}.sourceId`);
+  if (val.rest !== "short" && val.rest !== "long")
+    fail("malformed-entry", `${path}.rest`);
+  if (typeof val.usesPerRest !== "number") fail("malformed-entry", `${path}.usesPerRest`);
   return { sourceId: val.sourceId, rest: val.rest, usesPerRest: val.usesPerRest };
 }
 
-function parseSrdSpellRef(obj: Record<string, unknown>): SrdSpellRef | null {
-  if (typeof obj.srdId !== "string") return null;
+const SRD_SPELL_KEYS = [
+  "srdId",
+  "prepared",
+  "alwaysPrepared",
+  "notes",
+  "tags",
+  "overrides",
+  "spellAbilityOverride",
+  "wizardSpellMastery",
+  "wizardSignatureSpell",
+  "speciesSpellAbility",
+  "freeCastSource",
+] as const;
+
+function parseSrdSpellRef(obj: Record<string, unknown>, path: string): SrdSpellRef {
+  if (typeof obj.srdId !== "string") fail("malformed-entry", path);
   const ref: SrdSpellRef = { srdId: obj.srdId };
-  if (typeof obj.prepared === "boolean") ref.prepared = obj.prepared;
-  if (typeof obj.alwaysPrepared === "boolean") ref.alwaysPrepared = obj.alwaysPrepared;
-  if (typeof obj.notes === "string") ref.notes = obj.notes;
-  if (isTagArray(obj.tags)) ref.tags = obj.tags;
-  if (isRecord(obj.overrides)) ref.overrides = obj.overrides;
-  if (isAbilityCode(obj.spellAbilityOverride))
-    ref.spellAbilityOverride = obj.spellAbilityOverride;
-  if (typeof obj.wizardSpellMastery === "boolean")
-    ref.wizardSpellMastery = obj.wizardSpellMastery;
-  if (typeof obj.wizardSignatureSpell === "boolean")
-    ref.wizardSignatureSpell = obj.wizardSignatureSpell;
-  if (typeof obj.speciesSpellAbility === "boolean")
-    ref.speciesSpellAbility = obj.speciesSpellAbility;
-  const freeCast = parseFreeCastSource(obj.freeCastSource);
-  if (freeCast) ref.freeCastSource = freeCast;
+  if (obj.prepared !== undefined)
+    ref.prepared = opt(obj.prepared, isBool, `${path}.prepared`);
+  if (obj.alwaysPrepared !== undefined)
+    ref.alwaysPrepared = opt(obj.alwaysPrepared, isBool, `${path}.alwaysPrepared`);
+  if (obj.notes !== undefined) ref.notes = opt(obj.notes, isString, `${path}.notes`);
+  if (obj.tags !== undefined) ref.tags = opt(obj.tags, isTagArray, `${path}.tags`);
+  // The per-source `overrides` dialect is opaque to this codec (P2/P3 replace it):
+  // it must be a record, but its members are carried verbatim.
+  if (obj.overrides !== undefined)
+    ref.overrides = opt(obj.overrides, isRecord, `${path}.overrides`);
+  if (obj.spellAbilityOverride !== undefined)
+    ref.spellAbilityOverride = opt(
+      obj.spellAbilityOverride,
+      isAbilityCode,
+      `${path}.spellAbilityOverride`
+    );
+  if (obj.wizardSpellMastery !== undefined)
+    ref.wizardSpellMastery = opt(
+      obj.wizardSpellMastery,
+      isBool,
+      `${path}.wizardSpellMastery`
+    );
+  if (obj.wizardSignatureSpell !== undefined)
+    ref.wizardSignatureSpell = opt(
+      obj.wizardSignatureSpell,
+      isBool,
+      `${path}.wizardSignatureSpell`
+    );
+  if (obj.speciesSpellAbility !== undefined)
+    ref.speciesSpellAbility = opt(
+      obj.speciesSpellAbility,
+      isBool,
+      `${path}.speciesSpellAbility`
+    );
+  if (obj.freeCastSource !== undefined)
+    ref.freeCastSource = parseFreeCastSource(
+      obj.freeCastSource,
+      `${path}.freeCastSource`
+    );
+  const unknown = leftover(obj, SRD_SPELL_KEYS);
+  if (unknown) ref.unknown = unknown;
   return ref;
 }
 
-function parseSrdWeaponRef(obj: Record<string, unknown>): SrdWeaponRef | null {
-  if (typeof obj.srdId !== "string") return null;
+const SRD_WEAPON_KEYS = [
+  "srdId",
+  "quantity",
+  "notes",
+  "tags",
+  "attackBonusOverride",
+  "damageOverride",
+  "enchantItemId",
+  "overrides",
+] as const;
+
+function parseSrdWeaponRef(obj: Record<string, unknown>, path: string): SrdWeaponRef {
+  if (typeof obj.srdId !== "string") fail("malformed-entry", path);
   const ref: SrdWeaponRef = {
     srdId: obj.srdId,
-    quantity: typeof obj.quantity === "number" ? obj.quantity : 1,
+    quantity:
+      obj.quantity === undefined ? 1 : opt(obj.quantity, isNumber, `${path}.quantity`),
   };
-  if (typeof obj.notes === "string") ref.notes = obj.notes;
-  if (isTagArray(obj.tags)) ref.tags = obj.tags;
-  if (obj.attackBonusOverride === null || typeof obj.attackBonusOverride === "number")
-    ref.attackBonusOverride = obj.attackBonusOverride;
-  if (obj.damageOverride === null || typeof obj.damageOverride === "string")
-    ref.damageOverride = obj.damageOverride;
-  if (isRecord(obj.overrides)) ref.overrides = obj.overrides;
+  if (obj.notes !== undefined) ref.notes = opt(obj.notes, isString, `${path}.notes`);
+  if (obj.tags !== undefined) ref.tags = opt(obj.tags, isTagArray, `${path}.tags`);
+  if (obj.attackBonusOverride !== undefined)
+    ref.attackBonusOverride = opt(
+      obj.attackBonusOverride,
+      isNullableNumber,
+      `${path}.attackBonusOverride`
+    );
+  if (obj.damageOverride !== undefined)
+    ref.damageOverride = opt(
+      obj.damageOverride,
+      isNullableString,
+      `${path}.damageOverride`
+    );
+  if (obj.enchantItemId !== undefined)
+    ref.enchantItemId = opt(obj.enchantItemId, isString, `${path}.enchantItemId`);
+  if (obj.overrides !== undefined)
+    ref.overrides = opt(obj.overrides, isRecord, `${path}.overrides`);
+  const unknown = leftover(obj, SRD_WEAPON_KEYS);
+  if (unknown) ref.unknown = unknown;
   return ref;
 }
 
-function parseSrdEquipmentRef(obj: Record<string, unknown>): SrdEquipmentRef | null {
-  if (typeof obj.srdId !== "string") return null;
+const SRD_EQUIPMENT_KEYS = [
+  "srdId",
+  "instanceId",
+  "notes",
+  "equipped",
+  "tracked",
+  "quantity",
+  "recovery",
+  "isConsumable",
+  "isPotion",
+  "potionFormula",
+  "isPool",
+  "unit",
+  "acBonus",
+  "attuned",
+  "charges",
+  "overrides",
+] as const;
+
+function parseSrdEquipmentRef(
+  obj: Record<string, unknown>,
+  path: string
+): SrdEquipmentRef {
+  if (typeof obj.srdId !== "string") fail("malformed-entry", path);
   const ref: SrdEquipmentRef = { srdId: obj.srdId };
+  // `instanceId` keeps its TOLERANT read for now: identity is Task 4's subject
+  // (it mints and requires ids across the four custom types) and tightening the
+  // guard here first would quarantine a doc that migration is about to repair.
   if (isItemInstanceId(obj.instanceId)) ref.instanceId = obj.instanceId;
-  if (typeof obj.notes === "string") ref.notes = obj.notes;
-  if (typeof obj.equipped === "boolean") ref.equipped = obj.equipped;
-  if (typeof obj.tracked === "boolean") ref.tracked = obj.tracked;
-  if (typeof obj.quantity === "number") ref.quantity = obj.quantity;
-  if (isRecovery(obj.recovery)) ref.recovery = obj.recovery;
-  if (typeof obj.isConsumable === "boolean") ref.isConsumable = obj.isConsumable;
-  if (typeof obj.isPotion === "boolean") ref.isPotion = obj.isPotion;
-  if (typeof obj.potionFormula === "string") ref.potionFormula = obj.potionFormula;
-  if (typeof obj.isPool === "boolean") ref.isPool = obj.isPool;
+  if (obj.notes !== undefined) ref.notes = opt(obj.notes, isString, `${path}.notes`);
+  if (obj.equipped !== undefined)
+    ref.equipped = opt(obj.equipped, isBool, `${path}.equipped`);
+  if (obj.tracked !== undefined)
+    ref.tracked = opt(obj.tracked, isBool, `${path}.tracked`);
+  if (obj.quantity !== undefined)
+    ref.quantity = opt(obj.quantity, isNumber, `${path}.quantity`);
+  if (obj.recovery !== undefined)
+    ref.recovery = opt(obj.recovery, isRecovery, `${path}.recovery`);
+  if (obj.isConsumable !== undefined)
+    ref.isConsumable = opt(obj.isConsumable, isBool, `${path}.isConsumable`);
+  if (obj.isPotion !== undefined)
+    ref.isPotion = opt(obj.isPotion, isBool, `${path}.isPotion`);
+  if (obj.potionFormula !== undefined)
+    ref.potionFormula = opt(obj.potionFormula, isString, `${path}.potionFormula`);
+  if (obj.isPool !== undefined) ref.isPool = opt(obj.isPool, isBool, `${path}.isPool`);
+  // Documented one-way read-normalization (golden rule 10): a legacy/foreign `unit`
+  // that is not a TRACKER_UNITS token is dropped, never written back.
   if (isTrackerUnit(obj.unit)) ref.unit = obj.unit;
-  if (typeof obj.acBonus === "number") ref.acBonus = obj.acBonus;
-  if (typeof obj.attuned === "boolean") ref.attuned = obj.attuned;
-  const charges = parseEquipmentCharges(obj.charges);
-  if (charges) ref.charges = charges;
-  if (isRecord(obj.overrides)) ref.overrides = obj.overrides;
+  if (obj.acBonus !== undefined)
+    ref.acBonus = opt(obj.acBonus, isNumber, `${path}.acBonus`);
+  if (obj.attuned !== undefined)
+    ref.attuned = opt(obj.attuned, isBool, `${path}.attuned`);
+  if (obj.charges !== undefined)
+    ref.charges = parseEquipmentCharges(obj.charges, `${path}.charges`);
+  if (obj.overrides !== undefined)
+    ref.overrides = opt(obj.overrides, isRecord, `${path}.overrides`);
+  const unknown = leftover(obj, SRD_EQUIPMENT_KEYS);
+  if (unknown) ref.unknown = unknown;
   return ref;
 }
 
-function parseSrdFeatureRef(obj: Record<string, unknown>): SrdFeatureRef | null {
-  if (typeof obj.srdId !== "string") return null;
+const SRD_FEATURE_KEYS = [
+  "srdId",
+  "notes",
+  "tags",
+  "trackerOverrides",
+  "actionOverrides",
+  "contentOverrides",
+  "overrides",
+] as const;
+
+function parseSrdFeatureRef(obj: Record<string, unknown>, path: string): SrdFeatureRef {
+  if (typeof obj.srdId !== "string") fail("malformed-entry", path);
   const ref: SrdFeatureRef = { srdId: obj.srdId };
-  if (typeof obj.notes === "string") ref.notes = obj.notes;
-  if (isTagArray(obj.tags)) ref.tags = obj.tags;
-  if (isRecord(obj.trackerOverrides)) ref.trackerOverrides = obj.trackerOverrides;
-  if (Array.isArray(obj.actionOverrides))
-    ref.actionOverrides = obj.actionOverrides as SrdFeatureRef["actionOverrides"];
-  if (Array.isArray(obj.contentOverrides))
-    ref.contentOverrides = obj.contentOverrides as SrdFeatureRef["contentOverrides"];
-  if (isRecord(obj.overrides)) ref.overrides = obj.overrides;
+  if (obj.notes !== undefined) ref.notes = opt(obj.notes, isString, `${path}.notes`);
+  if (obj.tags !== undefined) ref.tags = opt(obj.tags, isTagArray, `${path}.tags`);
+  // The three override dialects stay OPAQUE (a record / arrays of records); P2/P3
+  // replace them with the authored mechanics format, which will own their shape.
+  if (obj.trackerOverrides !== undefined)
+    ref.trackerOverrides = opt(
+      obj.trackerOverrides,
+      isRecord,
+      `${path}.trackerOverrides`
+    );
+  if (obj.actionOverrides !== undefined)
+    ref.actionOverrides = recordArray(obj.actionOverrides, `${path}.actionOverrides`);
+  if (obj.contentOverrides !== undefined)
+    ref.contentOverrides = recordArray(obj.contentOverrides, `${path}.contentOverrides`);
+  if (obj.overrides !== undefined)
+    ref.overrides = opt(obj.overrides, isRecord, `${path}.overrides`);
+  const unknown = leftover(obj, SRD_FEATURE_KEYS);
+  if (unknown) ref.unknown = unknown;
   return ref;
 }
 
 // ─── Custom item constructors ─────────────────────────────────────────────────
 
-function parseCustomSpell(obj: Record<string, unknown>): CustomSpell | null {
-  if (obj.custom !== true) return null;
-  if (typeof obj.name !== "string") return null;
-  if (typeof obj.level !== "number") return null;
-  if (!isSpellSchool(obj.school)) return null;
-  if (typeof obj.castingTime !== "string") return null;
-  if (typeof obj.range !== "string") return null;
-  if (!isRecord(obj.components)) return null;
+const CUSTOM_SPELL_KEYS = [
+  "custom",
+  "name",
+  "level",
+  "school",
+  "castingTime",
+  "range",
+  "components",
+  "duration",
+  "concentration",
+  "description",
+  "higherLevels",
+  "prepared",
+  "notes",
+  "tags",
+  "spellAbilityOverride",
+] as const;
+
+function parseCustomSpell(obj: Record<string, unknown>, path: string): CustomSpell {
+  if (obj.custom !== true) fail("malformed-entry", path);
+  if (typeof obj.name !== "string") fail("malformed-entry", path);
+  if (typeof obj.level !== "number") fail("malformed-entry", path);
+  if (!isSpellSchool(obj.school)) fail("malformed-entry", path);
+  if (typeof obj.castingTime !== "string") fail("malformed-entry", path);
+  if (typeof obj.range !== "string") fail("malformed-entry", path);
+  if (!isRecord(obj.components)) fail("malformed-entry", path);
   const c = obj.components;
   if (typeof c.v !== "boolean" || typeof c.s !== "boolean" || typeof c.m !== "boolean")
-    return null;
-  if (typeof obj.duration !== "string") return null;
-  if (typeof obj.concentration !== "boolean") return null;
-  if (typeof obj.description !== "string") return null;
+    fail("malformed-entry", path);
+  if (typeof obj.duration !== "string") fail("malformed-entry", path);
+  if (typeof obj.concentration !== "boolean") fail("malformed-entry", path);
+  if (typeof obj.description !== "string") fail("malformed-entry", path);
   const spell: CustomSpell = {
     custom: true,
     name: obj.name,
@@ -292,95 +546,207 @@ function parseCustomSpell(obj: Record<string, unknown>): CustomSpell | null {
       v: c.v,
       s: c.s,
       m: c.m,
-      ...(typeof c.material === "string" ? { material: c.material } : {}),
+      ...(c.material !== undefined
+        ? { material: opt(c.material, isString, `${path}.components.material`) }
+        : {}),
     },
     duration: obj.duration,
     concentration: obj.concentration,
     description: obj.description,
   };
-  if (typeof obj.higherLevels === "string") spell.higherLevels = obj.higherLevels;
-  if (typeof obj.prepared === "boolean") spell.prepared = obj.prepared;
-  if (typeof obj.notes === "string") spell.notes = obj.notes;
-  if (isTagArray(obj.tags)) spell.tags = obj.tags;
-  if (isAbilityCode(obj.spellAbilityOverride))
-    spell.spellAbilityOverride = obj.spellAbilityOverride;
+  if (obj.higherLevels !== undefined)
+    spell.higherLevels = opt(obj.higherLevels, isString, `${path}.higherLevels`);
+  if (obj.prepared !== undefined)
+    spell.prepared = opt(obj.prepared, isBool, `${path}.prepared`);
+  if (obj.notes !== undefined) spell.notes = opt(obj.notes, isString, `${path}.notes`);
+  if (obj.tags !== undefined) spell.tags = opt(obj.tags, isTagArray, `${path}.tags`);
+  if (obj.spellAbilityOverride !== undefined)
+    spell.spellAbilityOverride = opt(
+      obj.spellAbilityOverride,
+      isAbilityCode,
+      `${path}.spellAbilityOverride`
+    );
+  const unknown = leftover(obj, CUSTOM_SPELL_KEYS);
+  if (unknown) spell.unknown = unknown;
   return spell;
 }
 
-function parseCustomWeapon(obj: Record<string, unknown>): CustomWeapon | null {
-  if (obj.custom !== true) return null;
-  if (typeof obj.name !== "string") return null;
-  if (typeof obj.damageDie !== "string") return null;
-  if (!isDamageType(obj.damageType)) return null;
-  if (obj.attackStat !== "STR" && obj.attackStat !== "DEX") return null;
-  if (typeof obj.properties !== "string") return null;
+const CUSTOM_WEAPON_KEYS = [
+  "custom",
+  "name",
+  "quantity",
+  "damageDie",
+  "damageType",
+  "attackStat",
+  "properties",
+  "emoji",
+  "attackBonusOverride",
+  "damageOverride",
+  "description",
+  "notes",
+  "tags",
+] as const;
+
+function parseCustomWeapon(obj: Record<string, unknown>, path: string): CustomWeapon {
+  if (obj.custom !== true) fail("malformed-entry", path);
+  if (typeof obj.name !== "string") fail("malformed-entry", path);
+  if (typeof obj.damageDie !== "string") fail("malformed-entry", path);
+  if (!isDamageType(obj.damageType)) fail("malformed-entry", path);
+  if (obj.attackStat !== "STR" && obj.attackStat !== "DEX") fail("malformed-entry", path);
+  if (typeof obj.properties !== "string") fail("malformed-entry", path);
   const weapon: CustomWeapon = {
     custom: true,
     name: obj.name,
-    quantity: typeof obj.quantity === "number" ? obj.quantity : 1,
+    quantity:
+      obj.quantity === undefined ? 1 : opt(obj.quantity, isNumber, `${path}.quantity`),
     damageDie: obj.damageDie,
     damageType: obj.damageType,
     attackStat: obj.attackStat,
     properties: obj.properties,
   };
-  if (typeof obj.emoji === "string") weapon.emoji = obj.emoji;
-  if (obj.attackBonusOverride === null || typeof obj.attackBonusOverride === "number")
-    weapon.attackBonusOverride = obj.attackBonusOverride;
-  if (obj.damageOverride === null || typeof obj.damageOverride === "string")
-    weapon.damageOverride = obj.damageOverride;
-  if (typeof obj.description === "string") weapon.description = obj.description;
-  if (typeof obj.notes === "string") weapon.notes = obj.notes;
-  if (isTagArray(obj.tags)) weapon.tags = obj.tags;
+  if (obj.emoji !== undefined) weapon.emoji = opt(obj.emoji, isString, `${path}.emoji`);
+  if (obj.attackBonusOverride !== undefined)
+    weapon.attackBonusOverride = opt(
+      obj.attackBonusOverride,
+      isNullableNumber,
+      `${path}.attackBonusOverride`
+    );
+  if (obj.damageOverride !== undefined)
+    weapon.damageOverride = opt(
+      obj.damageOverride,
+      isNullableString,
+      `${path}.damageOverride`
+    );
+  if (obj.description !== undefined)
+    weapon.description = opt(obj.description, isString, `${path}.description`);
+  if (obj.notes !== undefined) weapon.notes = opt(obj.notes, isString, `${path}.notes`);
+  if (obj.tags !== undefined) weapon.tags = opt(obj.tags, isTagArray, `${path}.tags`);
+  const unknown = leftover(obj, CUSTOM_WEAPON_KEYS);
+  if (unknown) weapon.unknown = unknown;
   return weapon;
 }
 
-function parseCustomEquipment(obj: Record<string, unknown>): CustomEquipment | null {
-  if (obj.custom !== true) return null;
-  if (typeof obj.name !== "string") return null;
+const CUSTOM_EQUIPMENT_KEYS = [
+  "custom",
+  "name",
+  "description",
+  "emoji",
+  "notes",
+  "equipped",
+  "ac",
+  "armorCategory",
+  "acBonus",
+  "tracked",
+  "quantity",
+  "recovery",
+  "isConsumable",
+  "isPotion",
+  "potionFormula",
+  "isPool",
+  "unit",
+  "attuned",
+  "charges",
+] as const;
+
+function parseCustomEquipment(
+  obj: Record<string, unknown>,
+  path: string
+): CustomEquipment {
+  if (obj.custom !== true) fail("malformed-entry", path);
+  if (typeof obj.name !== "string") fail("malformed-entry", path);
   const equip: CustomEquipment = { custom: true, name: obj.name };
-  if (typeof obj.description === "string") equip.description = obj.description;
-  if (typeof obj.emoji === "string") equip.emoji = obj.emoji;
-  if (typeof obj.notes === "string") equip.notes = obj.notes;
-  if (typeof obj.equipped === "boolean") equip.equipped = obj.equipped;
-  const ac = parseCustomArmorAc(obj.ac);
-  if (ac) equip.ac = ac;
-  if (isArmorCategory(obj.armorCategory)) equip.armorCategory = obj.armorCategory;
-  if (typeof obj.acBonus === "number") equip.acBonus = obj.acBonus;
-  if (typeof obj.tracked === "boolean") equip.tracked = obj.tracked;
-  if (typeof obj.quantity === "number") equip.quantity = obj.quantity;
-  if (isRecovery(obj.recovery)) equip.recovery = obj.recovery;
-  if (typeof obj.isConsumable === "boolean") equip.isConsumable = obj.isConsumable;
-  if (typeof obj.isPotion === "boolean") equip.isPotion = obj.isPotion;
-  if (typeof obj.potionFormula === "string") equip.potionFormula = obj.potionFormula;
-  if (typeof obj.isPool === "boolean") equip.isPool = obj.isPool;
+  if (obj.description !== undefined)
+    equip.description = opt(obj.description, isString, `${path}.description`);
+  if (obj.emoji !== undefined) equip.emoji = opt(obj.emoji, isString, `${path}.emoji`);
+  if (obj.notes !== undefined) equip.notes = opt(obj.notes, isString, `${path}.notes`);
+  if (obj.equipped !== undefined)
+    equip.equipped = opt(obj.equipped, isBool, `${path}.equipped`);
+  if (obj.ac !== undefined) equip.ac = parseCustomArmorAc(obj.ac, `${path}.ac`);
+  if (obj.armorCategory !== undefined)
+    equip.armorCategory = opt(
+      obj.armorCategory,
+      isArmorCategory,
+      `${path}.armorCategory`
+    );
+  if (obj.acBonus !== undefined)
+    equip.acBonus = opt(obj.acBonus, isNumber, `${path}.acBonus`);
+  if (obj.tracked !== undefined)
+    equip.tracked = opt(obj.tracked, isBool, `${path}.tracked`);
+  if (obj.quantity !== undefined)
+    equip.quantity = opt(obj.quantity, isNumber, `${path}.quantity`);
+  if (obj.recovery !== undefined)
+    equip.recovery = opt(obj.recovery, isRecovery, `${path}.recovery`);
+  if (obj.isConsumable !== undefined)
+    equip.isConsumable = opt(obj.isConsumable, isBool, `${path}.isConsumable`);
+  if (obj.isPotion !== undefined)
+    equip.isPotion = opt(obj.isPotion, isBool, `${path}.isPotion`);
+  if (obj.potionFormula !== undefined)
+    equip.potionFormula = opt(obj.potionFormula, isString, `${path}.potionFormula`);
+  if (obj.isPool !== undefined) equip.isPool = opt(obj.isPool, isBool, `${path}.isPool`);
+  // Same documented one-way `unit` read-normalization as the SRD equipment ref.
   if (isTrackerUnit(obj.unit)) equip.unit = obj.unit;
-  if (typeof obj.attuned === "boolean") equip.attuned = obj.attuned;
-  const charges = parseEquipmentCharges(obj.charges);
-  if (charges) equip.charges = charges;
+  if (obj.attuned !== undefined)
+    equip.attuned = opt(obj.attuned, isBool, `${path}.attuned`);
+  if (obj.charges !== undefined)
+    equip.charges = parseEquipmentCharges(obj.charges, `${path}.charges`);
+  const unknown = leftover(obj, CUSTOM_EQUIPMENT_KEYS);
+  if (unknown) equip.unknown = unknown;
   return equip;
 }
 
-function parseCustomFeature(obj: Record<string, unknown>): CustomFeature | null {
-  if (obj.custom !== true) return null;
-  if (typeof obj.title !== "string") return null;
-  if (typeof obj.emoji !== "string") return null;
-  if (typeof obj.source !== "string") return null;
+const CUSTOM_FEATURE_KEYS = [
+  "custom",
+  "title",
+  "emoji",
+  "source",
+  "tags",
+  "contentBlocks",
+  "trackers",
+  "actions",
+  "subtitle",
+] as const;
+
+function parseCustomFeature(obj: Record<string, unknown>, path: string): CustomFeature {
+  if (obj.custom !== true) fail("malformed-entry", path);
+  if (typeof obj.title !== "string") fail("malformed-entry", path);
+  if (typeof obj.emoji !== "string") fail("malformed-entry", path);
+  if (typeof obj.source !== "string") fail("malformed-entry", path);
+  const unknown = leftover(obj, CUSTOM_FEATURE_KEYS);
   return {
     custom: true,
     title: obj.title,
     emoji: obj.emoji,
     source: obj.source,
-    tags: isTagArray(obj.tags) ? obj.tags : [],
-    contentBlocks: Array.isArray(obj.contentBlocks)
-      ? (obj.contentBlocks as CustomFeature["contentBlocks"])
-      : [],
-    ...(Array.isArray(obj.trackers)
-      ? { trackers: obj.trackers as CustomFeature["trackers"] }
+    tags: obj.tags === undefined ? [] : opt(obj.tags, isTagArray, `${path}.tags`),
+    // The authored block/tracker/action dialects stay opaque (records), but the
+    // ARRAY shape is enforced element-by-element so a malformed block quarantines.
+    contentBlocks:
+      obj.contentBlocks === undefined
+        ? []
+        : (recordArray(
+            obj.contentBlocks,
+            `${path}.contentBlocks`
+          ) as unknown as CustomFeature["contentBlocks"]),
+    ...(obj.trackers !== undefined
+      ? {
+          trackers: recordArray(
+            obj.trackers,
+            `${path}.trackers`
+          ) as unknown as CustomFeature["trackers"],
+        }
       : {}),
-    ...(Array.isArray(obj.actions)
-      ? { actions: obj.actions as CustomFeature["actions"] }
+    ...(obj.actions !== undefined
+      ? {
+          actions: recordArray(
+            obj.actions,
+            `${path}.actions`
+          ) as unknown as CustomFeature["actions"],
+        }
       : {}),
-    ...(typeof obj.subtitle === "string" ? { subtitle: obj.subtitle } : {}),
+    ...(obj.subtitle !== undefined
+      ? { subtitle: opt(obj.subtitle, isString, `${path}.subtitle`) }
+      : {}),
+    ...(unknown ? { unknown } : {}),
   };
 }
 
@@ -396,6 +762,8 @@ export interface ImportResult {
 export interface ImportError {
   success: false;
   error: string;
+  /** Present when the rejection came from the codec itself (typed code + path). */
+  failure?: CodecFailure;
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────
@@ -624,6 +992,12 @@ const CLASS_ENTRY_PICK_KEYS = [
  * `rehydrateCharacter`→`getClasses` then backfills to a non-empty default. (The codec
  * only ever sees v3 envelopes — schema 2 is rejected upstream — so there are no legacy
  * single-class fields here to synthesize from.)
+ *
+ * NOT yet total (the module note): a malformed entry is dropped rather than
+ * quarantining the document (the empty result then fails `validateCharacterData`
+ * with the human "Character must have a class."), and an unknown key on an entry is
+ * not preserved — `ClassEntry` has no `unknown` bucket. Tightening this needs its
+ * own pass over `ClassEntry` + `minimizeClasses`.
  */
 function parseClasses(raw: unknown): ClassEntry[] {
   if (!Array.isArray(raw)) return [];
@@ -672,6 +1046,34 @@ function loreFromBuild(lore: unknown): CharacterLore {
   return out;
 }
 
+/**
+ * The CLOSED WORLD of `build` keys — exactly the keys {@link minToBuild} can emit.
+ * Anything else on a stored `build` is a key this app version does not know: it is
+ * preserved verbatim in `CharacterData.unknown` and written back LAST.
+ */
+export const KNOWN_BUILD_KEYS: readonly string[] = [
+  "name",
+  "player",
+  "quote",
+  "race",
+  "classes",
+  "background",
+  "alignment",
+  "abilities",
+  ...BUILD_PASSTHROUGH,
+  "skills",
+  "spells",
+  "weapons",
+  "equipment",
+  "combatAlgorithm",
+  "asi",
+  "originFeats",
+  "overrides",
+  "features",
+  "customs",
+  "lore",
+];
+
 /** Reshape a minimal flat character record into the id-based `build`. */
 function minToBuild(min: Record<string, unknown>): Record<string, unknown> {
   const build: Record<string, unknown> = {};
@@ -697,9 +1099,12 @@ function minToBuild(min: Record<string, unknown>): Record<string, unknown> {
   // The always-kept collections — emit only when they carry data (an empty
   // skills/spells/weapons/equipment is the default and re-appears on read).
   if (isNonEmptyRecord(min.skills)) build.skills = min.skills;
-  if (isNonEmptyArray(min.spells)) build.spells = min.spells;
-  if (isNonEmptyArray(min.weapons)) build.weapons = min.weapons;
-  if (isNonEmptyArray(min.equipment)) build.equipment = min.equipment;
+  // Each entry is re-flattened: its known fields keep their order and the
+  // preserved `unknown` bucket is spread back LAST (byte-identity for a canonical
+  // document; verbatim survival for a future one).
+  if (isNonEmptyArray(min.spells)) build.spells = flattenEntries(min.spells);
+  if (isNonEmptyArray(min.weapons)) build.weapons = flattenEntries(min.weapons);
+  if (isNonEmptyArray(min.equipment)) build.equipment = flattenEntries(min.equipment);
   // Combat algorithm is a decision-tree the player can customise — keep only a
   // non-empty one (the empty default re-appears on read).
   if (isNonEmptyArray(min.combatAlgorithm)) build.combatAlgorithm = min.combatAlgorithm;
@@ -732,14 +1137,18 @@ function minToBuild(min: Record<string, unknown>): Record<string, unknown> {
   const featuresRaw = Array.isArray(min.features) ? min.features : [];
   const srdFeatures = featuresRaw.filter((f) => !(isRecord(f) && f.custom === true));
   const customFeatures = featuresRaw.filter((f) => isRecord(f) && f.custom === true);
-  if (srdFeatures.length > 0) build.features = srdFeatures;
+  if (srdFeatures.length > 0) build.features = flattenEntries(srdFeatures);
   const customs: Record<string, unknown> = {};
-  if (customFeatures.length > 0) customs.features = customFeatures;
+  if (customFeatures.length > 0) customs.features = flattenEntries(customFeatures);
   if (isNonEmptyArray(min.customConditions)) customs.conditions = min.customConditions;
   if (Object.keys(customs).length > 0) build.customs = customs;
 
   const lore = loreToBuild(min.lore);
   if (lore) build.lore = lore;
+
+  // Unknown `build` keys the reader preserved: written back LAST, so a canonical
+  // document (which has none) keeps its exact byte layout.
+  if (isRecord(min.unknown)) Object.assign(build, min.unknown);
 
   return build;
 }
@@ -822,85 +1231,87 @@ function buildToMin(build: Record<string, unknown>): MinimalCharacter {
     ? build.customToolProficiencies
     : [];
 
-  // Features: combine SRD refs (validated) before custom features (validated).
-  const features: Array<SrdFeatureRef | CustomFeature> = [];
-  if (Array.isArray(build.features)) {
-    for (const f of build.features) {
-      if (isRecord(f)) {
-        const ref = parseSrdFeatureRef(f);
-        if (ref) features.push(ref);
-      }
-    }
+  // Features: SRD refs (validated) before custom features (validated). Both
+  // collections are TOTAL — a malformed feature quarantines the document.
+  if (build.customs !== undefined && !isRecord(build.customs)) {
+    fail("invalid-build", "build.customs");
   }
   const customs = isRecord(build.customs) ? build.customs : {};
-  if (Array.isArray(customs.features)) {
-    for (const f of customs.features) {
-      if (isRecord(f)) {
-        const cf = parseCustomFeature(f);
-        if (cf) features.push(cf);
-      }
-    }
-  }
+  const features: Array<SrdFeatureRef | CustomFeature> = [
+    ...parseEntries(build.features, "build.features", parseFeatureEntry),
+    ...parseEntries(customs.features, "build.customs.features", parseCustomFeature),
+  ];
   if (features.length > 0) min.features = features;
   min.customConditions = stringArray(customs.conditions);
 
   // Items: validate/reconstruct via the reused parsers.
   min.skills = isRecord(build.skills) ? build.skills : {};
-  min.spells = parseSpells(build.spells);
-  min.weapons = parseWeapons(build.weapons);
-  min.equipment = parseEquipment(build.equipment);
+  min.spells = parseEntries(build.spells, "build.spells", parseSpellEntry);
+  min.weapons = parseEntries(build.weapons, "build.weapons", parseWeaponEntry);
+  min.equipment = parseEntries(build.equipment, "build.equipment", parseEquipmentEntry);
 
   min.lore = loreFromBuild(build.lore);
+
+  // Everything this app version does not know about `build`, preserved verbatim.
+  const unknownBuild = leftover(build, KNOWN_BUILD_KEYS);
+  if (unknownBuild) min.unknown = unknownBuild;
 
   return min as MinimalCharacter;
 }
 
-function parseSpells(raw: unknown): Array<SrdSpellRef | CustomSpell> {
-  if (!Array.isArray(raw)) return [];
-  const out: Array<SrdSpellRef | CustomSpell> = [];
-  for (const item of raw) {
-    if (!isRecord(item)) continue;
-    const custom = parseCustomSpell(item);
-    if (custom) {
-      out.push(custom);
-      continue;
-    }
-    const srd = parseSrdSpellRef(item);
-    if (srd) out.push(srd);
-  }
-  return out;
+/**
+ * The TOTAL collection reader: an absent collection is the empty default, a
+ * non-array is an `invalid-build` failure at its own path, and every element is
+ * parsed — a malformed one quarantines the document at `<path>[<index>]` instead
+ * of being skipped (which would write a SHORTER array back over the user's data).
+ */
+function parseEntries<T>(
+  raw: unknown,
+  path: string,
+  parseOne: (obj: Record<string, unknown>, path: string) => T
+): T[] {
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw)) fail("invalid-build", path);
+  return raw.map((item, index) => {
+    if (!isRecord(item)) fail("malformed-entry", `${path}[${index}]`);
+    return parseOne(item, `${path}[${index}]`);
+  });
 }
 
-function parseWeapons(raw: unknown): Array<SrdWeaponRef | CustomWeapon> {
-  if (!Array.isArray(raw)) return [];
-  const out: Array<SrdWeaponRef | CustomWeapon> = [];
-  for (const item of raw) {
-    if (!isRecord(item)) continue;
-    const custom = parseCustomWeapon(item);
-    if (custom) {
-      out.push(custom);
-      continue;
-    }
-    const srd = parseSrdWeaponRef(item);
-    if (srd) out.push(srd);
-  }
-  return out;
+function parseSpellEntry(
+  obj: Record<string, unknown>,
+  path: string
+): SrdSpellRef | CustomSpell {
+  if (obj.custom === true) return parseCustomSpell(obj, path);
+  if (typeof obj.srdId === "string") return parseSrdSpellRef(obj, path);
+  return fail("malformed-entry", path);
 }
 
-function parseEquipment(raw: unknown): Array<SrdEquipmentRef | CustomEquipment> {
-  if (!Array.isArray(raw)) return [];
-  const out: Array<SrdEquipmentRef | CustomEquipment> = [];
-  for (const item of raw) {
-    if (!isRecord(item)) continue;
-    const custom = parseCustomEquipment(item);
-    if (custom) {
-      out.push(custom);
-      continue;
-    }
-    const srd = parseSrdEquipmentRef(item);
-    if (srd) out.push(srd);
-  }
-  return out;
+function parseWeaponEntry(
+  obj: Record<string, unknown>,
+  path: string
+): SrdWeaponRef | CustomWeapon {
+  if (obj.custom === true) return parseCustomWeapon(obj, path);
+  if (typeof obj.srdId === "string") return parseSrdWeaponRef(obj, path);
+  return fail("malformed-entry", path);
+}
+
+function parseEquipmentEntry(
+  obj: Record<string, unknown>,
+  path: string
+): SrdEquipmentRef | CustomEquipment {
+  if (obj.custom === true) return parseCustomEquipment(obj, path);
+  if (typeof obj.srdId === "string") return parseSrdEquipmentRef(obj, path);
+  return fail("malformed-entry", path);
+}
+
+function parseFeatureEntry(
+  obj: Record<string, unknown>,
+  path: string
+): SrdFeatureRef | CustomFeature {
+  if (obj.custom === true) return parseCustomFeature(obj, path);
+  if (typeof obj.srdId === "string") return parseSrdFeatureRef(obj, path);
+  return fail("malformed-entry", path);
 }
 
 // ── public codec ─────────────────────────────────────────────────────────────
@@ -986,11 +1397,15 @@ function stampImportedAc(result: ImportResult): ImportResult {
  */
 export const SCHEMA_2_REJECTED_REASON = "schema-2-unsupported" as const;
 
-/** Result of {@link parseCharacterEnvelope} — the parsed engine core or a validation
- *  error (the SAME message the import surfaces). */
+/**
+ * Result of {@link parseCharacterEnvelope} — the parsed engine core, or a TYPED
+ * quarantine. `error` stays the existing human/sentinel string (`${code}:${path}`
+ * for a structural failure, the validation message for `validation`) so existing
+ * consumers are unchanged; `failure` carries the machine-readable reason.
+ */
 export type ParsedEnvelope =
   | { ok: true; character: CharacterData; session: SessionState }
-  | { ok: false; error: string };
+  | { ok: false; error: string; failure: CodecFailure };
 
 /**
  * The codec CORE (Firestore-facing): parse an ALREADY-PARSED `build` + `state`
@@ -1006,13 +1421,40 @@ export function parseCharacterEnvelope(
   build: Record<string, unknown>,
   state: Record<string, unknown>
 ): ParsedEnvelope {
+  try {
+    return decodeEnvelope(build, state);
+  } catch (error) {
+    // The ONE place a codec quarantine becomes a value: every structural failure
+    // raised by the entry parsers surfaces here as `{ ok: false, failure }`, so
+    // the caller never sees a throw and never sees a silently repaired document.
+    if (error instanceof CodecFailureError) {
+      return { ok: false, error: error.message, failure: error.failure };
+    }
+    throw error;
+  }
+}
+
+function decodeEnvelope(
+  build: Record<string, unknown>,
+  state: Record<string, unknown>
+): ParsedEnvelope {
   if (!parseItemResources(state.itemResources).ok) {
-    return { ok: false, error: "invalid-item-resources" };
+    return {
+      ok: false,
+      error: "invalid-item-resources",
+      failure: { code: "invalid-item-resources", path: "state.itemResources" },
+    };
   }
   const min = buildToMin(build);
   const character = rehydrateCharacter(min);
   const validation = validateCharacterData(character);
-  if (validation) return { ok: false, error: validation };
+  if (validation) {
+    return {
+      ok: false,
+      error: validation,
+      failure: { code: "validation", path: "build", detail: validation },
+    };
+  }
   // Validation just PROVED the name is non-empty; brand it so the returned
   // `CharacterData.name` is a real `NonEmptyString` (not merely a plain string that
   // happens to be non-empty). This is the ONE seam shared by the portable import AND
@@ -1122,7 +1564,9 @@ export function parseCharacter(jsonString: string): ImportResult | ImportError {
   const meta = isRecord(parsed.meta) ? parsed.meta : {};
 
   const parsedCore = parseCharacterEnvelope(build, state);
-  if (!parsedCore.ok) return { success: false, error: parsedCore.error };
+  if (!parsedCore.ok) {
+    return { success: false, error: parsedCore.error, failure: parsedCore.failure };
+  }
   const { character, session: conformedSession } = parsedCore;
 
   // Portrait: the image (data URL) + its framing CROP both ride under `meta`. The

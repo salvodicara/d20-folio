@@ -99,6 +99,8 @@ export interface SrdSpellRef {
    * "species"`. A literal `spellAbilityOverride` still takes precedence.
    */
   speciesSpellAbility?: boolean;
+  /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
+  unknown?: Record<string, unknown>;
 }
 
 /** Custom/homebrew spell (not in SRD) */
@@ -124,6 +126,8 @@ export interface CustomSpell {
   tags?: CharacterTag[];
   /** Per-spell casting-ability override (see SrdSpellRef.spellAbilityOverride). */
   spellAbilityOverride?: AbilityCode;
+  /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
+  unknown?: Record<string, unknown>;
 }
 
 /** Reference to an SRD feature on a character */
@@ -142,6 +146,8 @@ export interface SrdFeatureRef {
   contentOverrides?: Partial<ContentBlockData>[];
   /** Generic field overrides */
   overrides?: Record<string, unknown>;
+  /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
+  unknown?: Record<string, unknown>;
 }
 
 /** Custom/homebrew feature (not in SRD) */
@@ -155,6 +161,8 @@ export interface CustomFeature {
   contentBlocks: ContentBlockData[];
   trackers?: TrackerData[];
   actions?: ActionData[];
+  /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
+  unknown?: Record<string, unknown>;
 }
 
 /** Reference to an SRD equipment item on a character */
@@ -206,6 +214,8 @@ export interface SrdEquipmentRef {
   attuned?: boolean;
   /** User overrides to SRD data fields */
   overrides?: Record<string, unknown>;
+  /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
+  unknown?: Record<string, unknown>;
 }
 
 /** Custom/homebrew equipment (not in SRD) */
@@ -242,6 +252,8 @@ export interface CustomEquipment {
   };
   /** MAGIC-ITEMS — true when the player has attuned to this item. */
   attuned?: boolean;
+  /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
+  unknown?: Record<string, unknown>;
 }
 
 /** Reference to an SRD weapon on a character */
@@ -271,6 +283,8 @@ export interface SrdWeaponRef {
   enchantItemId?: string;
   /** User overrides to SRD data fields */
   overrides?: Record<string, unknown>;
+  /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
+  unknown?: Record<string, unknown>;
 }
 
 /** Custom/homebrew weapon (not in SRD) */
@@ -288,6 +302,8 @@ export interface CustomWeapon {
   description?: string;
   notes?: string;
   tags?: CharacterTag[];
+  /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
+  unknown?: Record<string, unknown>;
 }
 
 // ============================================================
@@ -811,6 +827,8 @@ export interface CharacterData {
   customConditions: string[];
   /** Sidebar layout configuration */
   sidebar: Array<string | { type: "sep" }>;
+  /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
+  unknown?: Record<string, unknown>;
 }
 
 // ============================================================
@@ -1136,6 +1154,8 @@ export interface SessionState {
   };
   notes: string;
   logEntries: LogEntry[];
+  /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
+  unknown?: Record<string, unknown>;
 }
 
 /**

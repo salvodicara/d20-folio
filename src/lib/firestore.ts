@@ -700,7 +700,10 @@ async function parseStoredCharacter(
   }
 
   const parsed = parseCharacterEnvelope(build, state);
-  if (!parsed.ok) throw new Error(parsed.error);
+  // A codec quarantine (`code:path`) must reach the subscription's `quarantine()`
+  // verbatim: it is what the diagnostics report records, and the doc is left
+  // untouched rather than repaired into a lossy write.
+  if (!parsed.ok) throw new TypeError(`Invalid character document: ${parsed.error}`);
   const character = stampEffectiveAc(parsed.character, parsed.session);
   const session = normalizeSessionActionIds(character, parsed.session);
   // The combat-mutable trio (HP/temp · conditions · initiative · death saves) is NOT on

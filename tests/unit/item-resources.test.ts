@@ -417,6 +417,7 @@ describe("item resource persistence normalization", () => {
     expect(parseCharacter(JSON.stringify(encoded))).toEqual({
       success: false,
       error: "invalid-item-resources",
+      failure: { code: "invalid-item-resources", path: "state.itemResources" },
     });
 
     doc.session.itemResources = malformed;

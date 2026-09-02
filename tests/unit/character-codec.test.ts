@@ -3,7 +3,7 @@
  * format). Pins the contract from `docs/CHARACTER_SCHEMA.md`:
  *
  *  - byte-identity: `serialize(parse(x)) === x` for any canonical v2 `x`;
- *  - tolerance: unknown fields are ignored, missing optional fields default;
+ *  - preservation: unknown fields survive verbatim, missing optional fields default;
  *  - state restoration: vitals / currency / conditions / spent slots / log survive;
  *  - override-safety: a manual override survives and never breaks the sheet;
  *  - single-format: a document with NO `schema` is rejected.
@@ -421,27 +421,25 @@ describe("codec — initiative-advantage override normalizes legacy booleans (RA
   });
 });
 
-describe("codec — tolerance", () => {
-  it("ignores unknown top-level + build + state fields", () => {
-    const res = parseCharacter(
-      JSON.stringify({
-        schema: 3,
-        future: "ignored",
-        build: {
-          name: "X",
-          race: "elf",
-          classes: [{ classId: "wizard", level: 5 }],
-          background: "sage",
-          abilities: { STR: 8, DEX: 14, CON: 14, INT: 16, WIS: 12, CHA: 10 },
-          futureBuildKey: 42,
-        },
-        state: { futureStateKey: true },
-      })
-    );
-    expect(res.success).toBe(true);
-    if (!res.success) return;
-    expect(res.doc.character.name).toBe("X");
-    expect(res.doc.character.race).toBe("elf");
+describe("codec — preservation (design §5.5)", () => {
+  it("unknown build, state and entry keys survive a round-trip verbatim", () => {
+    const env = JSON.parse(serializeCharacter(MOCK_CHARACTER)) as {
+      build: Record<string, unknown> & { equipment: Record<string, unknown>[] };
+      state: Record<string, unknown>;
+    };
+    env.build.futureBuildField = { a: 1 };
+    env.state.futureStateField = [1, 2];
+    const firstItem = env.build.equipment[0];
+    if (!firstItem) throw new Error("the mock character carries equipment");
+    firstItem.futureEntryField = "kept";
+    const doc = lift(parseCharacter(JSON.stringify(env)));
+    const again = JSON.parse(serializeCharacter(doc)) as Record<string, unknown>;
+    expect((again.build as Record<string, unknown>).futureBuildField).toEqual({ a: 1 });
+    expect((again.state as Record<string, unknown>).futureStateField).toEqual([1, 2]);
+    expect(
+      (again.build as { equipment: Record<string, unknown>[] }).equipment[0]
+        ?.futureEntryField
+    ).toBe("kept");
   });
 
   it("fills missing optional fields with defaults (bare build = empty session)", () => {

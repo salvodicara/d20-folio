@@ -2222,6 +2222,16 @@ produced by `serializeCharacterEnvelope` (`src/lib/character-codec.ts`, the shar
     `state.exhaustion` into the baseline (the only parent-`state` field the projection reads) — aligned
     by construction, no denormalized copy. Under auth bypass, the local document replica exposes the
     same parent + combat-subdoc split, so the dev roster/party/sheet all observe one combat source too.
+- **TOTAL codec — no silent drops (design §5.5).** The parse is total in both directions. Every key
+  outside the closed worlds (`KNOWN_BUILD_KEYS`, `KNOWN_STATE_KEYS`, and the per-entry key lists) is
+  PRESERVED verbatim in an `unknown` bucket on the character / session / entry and written back last,
+  so an older client can never trim a document a newer one wrote. A structurally malformed entry
+  QUARANTINES the whole document — `parseCharacterEnvelope` returns `{ ok: false, failure: { code,
+path } }` instead of skipping the entry (a skip would write a SHORTER array back over live data).
+  The quarantine path is: `parseStoredCharacter` throws `TypeError("Invalid character document:
+<code>:<path>")` → `subscribeToCharacter` → the subscription's `quarantine(message)` → the
+  diagnostics report (`diagnosticsLog`), which stops persistence for that document instead of
+  repairing it. See `docs/CHARACTER_SCHEMA.md` → "The codec (implementation contract)".
 - **The name is a branded `NonEmptyString`, UNREPRESENTABLE empty** — see the dedicated invariant
   section below for the construction-site contract; per-section fault isolation (the shared
   `ErrorBoundary` + `SectionErrorFallback` around each `CampaignHubPage` section) is the belt-and-

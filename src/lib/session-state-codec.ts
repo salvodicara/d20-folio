@@ -57,6 +57,60 @@ export interface CompactSessionState extends Record<string, unknown> {
   world?: unknown;
 }
 
+/**
+ * The CLOSED WORLD of compact `state` keys — exactly the keys {@link sessionToState}
+ * can emit. Anything else on a stored `state` is a key this app version does not
+ * know: {@link stateToSession} preserves it verbatim in `SessionState.unknown` and
+ * {@link sessionToState} writes it back LAST, so a newer document survives a
+ * round-trip through an older client instead of being silently trimmed.
+ */
+export const KNOWN_STATE_KEYS: readonly string[] = [
+  "hp",
+  "usedHitDice",
+  "trackers",
+  "itemResources",
+  "usedSlots",
+  "currency",
+  "concentration",
+  "concentrationCastLevel",
+  "initiative",
+  "conditions",
+  "concentrationConditions",
+  "hiddenDc",
+  "deathSucc",
+  "deathFail",
+  "inspiration",
+  "exhaustion",
+  "sessionDefenses",
+  "pinnedActions",
+  "unpinnedActions",
+  "notes",
+  "log",
+  "activeFeatures",
+  "activeSpellCastLevels",
+  "effectTimers",
+  "effectBoundaries",
+  "grantBundleChoices",
+  "companionHp",
+  "companionVariant",
+  "familiar",
+  "manifestedWeaponOverrides",
+  "pactWeaponConfig",
+  "pactWeaponRiderTypes",
+  "polymorphForm",
+  "bardicInspirationDie",
+  "world",
+];
+
+/**
+ * Keys the compact `state` ONCE carried and that were deliberately RETIRED — the
+ * solo-round consolidation moved `round` into the `combat/state` subdoc. They are
+ * read-and-DROPPED at the untrusted-input boundary (golden rule 10: bounded,
+ * one-way, never written back), so a legacy export re-exports without them instead
+ * of resurrecting them as an unknown FUTURE key.
+ */
+const RETIRED_STATE_KEYS: readonly string[] = ["round"];
+
 const COMBAT_STATE_KEYS = [
   "hp",
   "initiative",
@@ -276,6 +330,10 @@ export function sessionToState(session: SessionState): CompactSessionState {
     const raw = stringify(session.world);
     if (raw !== undefined) state.world = JSON.parse(raw) as unknown;
   }
+
+  // Unknown `state` keys the reader preserved, written back LAST so a canonical
+  // session (which has none) keeps its exact layout.
+  if (session.unknown) Object.assign(state, session.unknown);
 
   return state;
 }
@@ -526,7 +584,24 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   // The engine world is carried VERBATIM (opaque member): its own fail-closed
   // parser re-proves it at read, so this codec never interprets it.
   if (state.world !== undefined) session.world = state.world;
+  // Everything this app version does not know about `state`, preserved verbatim.
+  const unknown = leftover(state, [...KNOWN_STATE_KEYS, ...RETIRED_STATE_KEYS]);
+  if (unknown) session.unknown = unknown;
   return session;
+}
+
+/** Keys the reader consumed; everything else is kept verbatim (`undefined` when none). */
+function leftover(
+  state: Record<string, unknown>,
+  known: readonly string[]
+): Record<string, unknown> | undefined {
+  const knownSet = new Set(known);
+  let out: Record<string, unknown> | undefined;
+  for (const [key, value] of Object.entries(state)) {
+    if (knownSet.has(key)) continue;
+    (out ??= {})[key] = value;
+  }
+  return out;
 }
 
 /** Serialize only the play facts that do not already have a top-level combat owner. */

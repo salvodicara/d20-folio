@@ -185,5 +185,10 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     // (the #81 class of bug). OPAQUE here: `characterWorldState` re-proves it
     // fail-closed at read, so this rebuild never interprets it.
     world: session.world,
+    // The codec's unknown-`state`-key bucket (design §5.5): keys a NEWER app
+    // version wrote that this one does not know. Copied only when present, so a
+    // canonical session never grows the field, and never interpreted here — the
+    // codec writes it straight back so an older client can't trim a newer doc.
+    ...(session.unknown ? { unknown: session.unknown } : {}),
   };
 }
