@@ -5,6 +5,7 @@
  */
 import { assertNever, type EntityId } from "./ids";
 import { dueAt, endEffects } from "./effects";
+import { mustEntity } from "./state";
 import type {
   CombatEvent,
   Entity,
@@ -45,7 +46,7 @@ function startTurn(
   entity: EntityId,
   events: CombatEvent[]
 ): FoldedState {
-  let next = withEntity(state, { ...state.entities[entity], turn: FRESH_LEDGER });
+  let next = withEntity(state, { ...mustEntity(state, entity), turn: FRESH_LEDGER });
   events.push({ kind: "turn-start", entity });
   const due = dueAt(
     next,
@@ -187,7 +188,8 @@ export function applyTable(state: FoldedState, op: TableOp): TableResult {
       if (state.clock.phase !== "gathering") return reject("begin-turns: not gathering");
       for (const id of op.order)
         if (!state.entities[id]) return reject(`begin-turns: unknown ${id}`);
-      if (op.order.length === 0) return reject("begin-turns: empty order");
+      const first = op.order[0];
+      if (first === undefined) return reject("begin-turns: empty order");
       let next: FoldedState = {
         ...state,
         clock: {
@@ -195,11 +197,11 @@ export function applyTable(state: FoldedState, op: TableOp): TableResult {
           phase: "turns",
           round: 1,
           order: [...op.order],
-          current: op.order[0],
+          current: first,
         },
       };
       events.push({ kind: "round-start", round: 1 });
-      next = startTurn(next, op.order[0], events);
+      next = startTurn(next, first, events);
       return { kind: "applied", state: next, events };
     }
     case "end-turn": {
@@ -211,6 +213,7 @@ export function applyTable(state: FoldedState, op: TableOp): TableResult {
       if (!found) return reject("end-turn: no living participant");
       const round = found.wrapped ? next.clock.round + 1 : next.clock.round;
       const entity = next.clock.order[found.index];
+      if (entity === undefined) return reject("end-turn: order out of range");
       next = { ...next, clock: { ...next.clock, round, current: entity } };
       if (found.wrapped) events.push({ kind: "round-start", round });
       next = startTurn(next, entity, events);

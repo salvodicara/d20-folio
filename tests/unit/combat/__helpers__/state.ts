@@ -58,3 +58,10 @@ export function openingActions(
     tableAction(by, seq(), { op: "begin-turns", order }),
   ];
 }
+
+/** The first element, asserted present (test-only invariant). */
+export function firstOf<T>(items: readonly T[]): T {
+  const item = items[0];
+  if (item === undefined) throw new Error("expected at least one element");
+  return item;
+}

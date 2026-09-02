@@ -4,6 +4,8 @@
  * Costs are compiled and paid before any effect; an unaffordable intent is rejected and
  * nothing changes. Every caster-side consequence (effects, concentration, receipt) is a
  * function of the resolved per-target outcomes, so a negated cast leaves only its payment.
+ * A declared attack that another creature may react to is held in a reaction window and
+ * resolved later against the state the reactions produced.
  */
 import { applyDamage, applyHealing, type DamagePacket } from "./damage";
 import { endEffects } from "./effects";
@@ -12,6 +14,7 @@ import type { Catalogue } from "./catalogue";
 import { programOf } from "./catalogue";
 import type { LifetimeSpec, Program, Step } from "./mechanic";
 import { bind, evalExpr, evalPredicate, type EvalContext } from "./predicates";
+import { mustEntity } from "./state";
 import type {
   Action,
   CombatEvent,
@@ -22,13 +25,18 @@ import type {
   Outcome,
   PaymentChoice,
   PendingCheck,
+  ReactionWindow,
   Receipt,
   Rejection,
   TurnLedger,
 } from "./types";
+import { eventEntity, subscribersFor } from "./windows";
 
 export type IntentAction = Extract<Action, { kind: "intent" }>;
 export type CheckAction = Extract<Action, { kind: "check" }>;
+export type DeclareAction = Extract<Action, { kind: "declare" }>;
+export type OverrideAction = Extract<Action, { kind: "override" }>;
+export type ResolveAction = Extract<Action, { kind: "resolve" }>;
 
 export type StepResult =
   | { readonly kind: "applied"; readonly state: FoldedState; readonly receipt: Receipt }
@@ -117,8 +125,9 @@ function payCosts(
       }
       case "resource": {
         const pool = resources[cost.id];
-        if (!pool || pool.current < cost.amount)
+        if (!pool || pool.current < cost.amount) {
           return { reason: "unaffordable", cost: `resource:${cost.id}` };
+        }
         resources = {
           ...resources,
           [cost.id]: { ...pool, current: pool.current - cost.amount },
@@ -166,8 +175,9 @@ function resolveLifetime(
       };
     case "turn-edge": {
       const entity = bind(spec.entity, ctx) ?? ctx.self;
-      // "until the start of your next turn": the next start is next round when it is your turn now
-      // or your turn already passed this round; otherwise it is later this round.
+      // "until the start of your next turn": later this round if your turn is still to come,
+      // otherwise next round. "until the end of your turn": this round if your turn is now or
+      // still to come, otherwise next round.
       const index = state.clock.order.indexOf(entity);
       const currentIndex =
         state.clock.current === null
@@ -196,11 +206,12 @@ export function effectiveAc(
   target: EntityId,
   attacker: EntityId | null
 ): number {
-  const entity = state.entities[target];
+  const entity = mustEntity(state, target);
   let ac = entity.stats.ac;
   for (const effect of Object.values(state.effects)) {
-    if (effect.target === target && effect.payload.kind === "standing")
+    if (effect.target === target && effect.payload.kind === "standing") {
       ac += effect.payload.facts.acBonus ?? 0;
+    }
   }
   for (const relation of state.relations) {
     if (
@@ -227,7 +238,7 @@ function deliverDamage(
   actionId: string,
   events: CombatEvent[]
 ): FoldedState {
-  const before = state.entities[target];
+  const before = mustEntity(state, target);
   const result = applyDamage(before, packets, {});
   let next: FoldedState = {
     ...state,
@@ -273,10 +284,23 @@ function answerNumber(answers: IntentAction["answers"], key: string): number | n
 // ── The program runner ──────────────────────────────────────────────────────
 
 interface RunOutcome {
+  readonly kind: "ran";
   readonly state: FoldedState;
   readonly created: EffectId[];
   readonly dealt: number;
   readonly outcomes: Outcome[];
+}
+
+interface RunHeld {
+  readonly kind: "held";
+  readonly event: CombatEvent;
+  readonly eligible: EntityId[];
+}
+
+interface RunOptions {
+  readonly catalogue: Catalogue;
+  readonly hold: boolean; // may this run open a reaction window?
+  readonly eventEntity: EntityId | null;
 }
 
 function runSteps(
@@ -285,8 +309,9 @@ function runSteps(
   action: IntentAction,
   target: EntityId | null,
   castLevel: number | null,
-  events: CombatEvent[]
-): RunOutcome | Rejection {
+  events: CombatEvent[],
+  options: RunOptions
+): RunOutcome | RunHeld | Rejection {
   let next = state;
   const created: EffectId[] = [];
   const outcomes: Outcome[] = [];
@@ -295,34 +320,41 @@ function runSteps(
   let ctx: EvalContext = {
     self: action.entity,
     target,
-    eventEntity: null,
+    eventEntity: options.eventEntity,
     outcome: null,
     answers: action.answers,
   };
-  const caster = state.entities[action.entity];
+  const caster = mustEntity(state, action.entity);
 
   for (const step of program.steps) {
     if (step.when && !evalPredicate(step.when, next, ctx)) continue;
     const result = runStep(step);
     if ("reason" in result) return result;
+    if ("held" in result) return result.held;
     if (result.stop) break;
   }
-  return { state: next, created, dealt, outcomes };
+  return { kind: "ran", state: next, created, dealt, outcomes };
 
-  function runStep(step: Step): { stop: boolean } | Rejection {
+  function runStep(step: Step): { stop: boolean } | { held: RunHeld } | Rejection {
     switch (step.kind) {
       case "attack": {
         if (target === null) return { reason: "invalid-target", entity: "" };
         const face = answerNumber(action.answers, step.roll);
         if (face === null) return { reason: "missing-answer", input: step.roll };
-        const bonus = evalExpr(step.bonus, caster, castLevel);
-        const ac = effectiveAc(next, target, action.entity);
-        events.push({
+        const declared: CombatEvent = {
           kind: "attack-declared",
           attacker: action.entity,
           target,
           action: action.id,
-        });
+        };
+        if (options.hold) {
+          const eligible = subscribersFor(next, options.catalogue, declared);
+          if (eligible.length > 0)
+            return { held: { kind: "held", event: declared, eligible } };
+        }
+        events.push(declared);
+        const bonus = evalExpr(step.bonus, caster, castLevel);
+        const ac = effectiveAc(next, target, action.entity);
         let outcome: Outcome =
           face === 20
             ? "crit"
@@ -352,8 +384,9 @@ function runSteps(
             relation.kind !== "mark" ||
             relation.by !== action.entity ||
             relation.on !== target
-          )
+          ) {
             continue;
+          }
           const mark = next.effects[relation.effect];
           if (!mark || mark.payload.kind !== "mark") continue;
           for (const rider of mark.payload.riders) {
@@ -364,25 +397,24 @@ function runSteps(
             packets.push({ amount, type: rider.type });
           }
         }
-        const hpBefore = next.entities[target].vitals.hp;
+        const hpBefore = mustEntity(next, target).vitals.hp;
         next = deliverDamage(next, target, packets, action.id, events);
-        dealt += hpBefore - next.entities[target].vitals.hp;
+        dealt += hpBefore - mustEntity(next, target).vitals.hp;
         return { stop: false };
       }
       case "save": {
         if (target === null) return { reason: "invalid-target", entity: "" };
-        const key = program.inputs?.find(
-          (i) => i.id === step.roll && i.kind === "d20" && i.perTarget
-        )
-          ? `${step.roll}:${target}`
-          : step.roll;
+        const perTarget = program.inputs?.some(
+          (i) => i.id === step.roll && i.kind === "d20" && i.perTarget === true
+        );
+        const key = perTarget ? `${step.roll}:${target}` : step.roll;
         const face = answerNumber(action.answers, key);
         if (face === null) return { reason: "missing-answer", input: key };
         const dc =
           step.dc === "spell"
             ? (caster.stats.spellSaveDc ?? 0)
             : evalExpr(step.dc, caster, castLevel);
-        const total = face + next.entities[target].stats.saves[step.ability];
+        const total = face + mustEntity(next, target).stats.saves[step.ability];
         const success = total >= dc;
         const outcome: Outcome = success ? "save-success" : "save-fail";
         outcomes.push(outcome);
@@ -403,9 +435,9 @@ function runSteps(
             type: part.type,
           });
         }
-        const hpBefore = next.entities[to].vitals.hp;
+        const hpBefore = mustEntity(next, to).vitals.hp;
         next = deliverDamage(next, to, packets, action.id, events);
-        dealt += hpBefore - next.entities[to].vitals.hp;
+        dealt += hpBefore - mustEntity(next, to).vitals.hp;
         return { stop: false };
       }
       case "heal": {
@@ -414,7 +446,10 @@ function runSteps(
         const amount = evalExpr(step.amount, caster, castLevel);
         next = {
           ...next,
-          entities: { ...next.entities, [to]: applyHealing(next.entities[to], amount) },
+          entities: {
+            ...next.entities,
+            [to]: applyHealing(mustEntity(next, to), amount),
+          },
         };
         return { stop: false };
       }
@@ -460,8 +495,9 @@ function runSteps(
       case "condition": {
         const to = bind(step.to, ctx);
         if (to === null) return { reason: "invalid-target", entity: "" };
-        if (next.entities[to].stats.conditionImmunities.includes(step.condition))
+        if (mustEntity(next, to).stats.conditionImmunities.includes(step.condition)) {
           return { stop: false };
+        }
         const id: EffectId = `effect-${next.nextOrdinal}`;
         const effect: Effect = {
           id,
@@ -493,6 +529,7 @@ function runSteps(
         );
         if (!relation || relation.kind !== "mark") return { stop: false };
         const effect = next.effects[relation.effect];
+        if (!effect) return { stop: false };
         next = {
           ...next,
           relations: next.relations.map((r) =>
@@ -503,15 +540,16 @@ function runSteps(
         return { stop: false };
       }
       case "turn-claim": {
-        const ledger = next.entities[action.entity].turn;
-        if (ledger.claims.includes(step.key))
+        const ledger = mustEntity(next, action.entity).turn;
+        if (ledger.claims.includes(step.key)) {
           return { reason: "unaffordable", cost: `claim:${step.key}` };
+        }
         next = {
           ...next,
           entities: {
             ...next.entities,
             [action.entity]: {
-              ...next.entities[action.entity],
+              ...mustEntity(next, action.entity),
               turn: { ...ledger, claims: [...ledger.claims, step.key] },
             },
           },
@@ -527,6 +565,76 @@ function runSteps(
   }
 }
 
+// ── Running a whole program over its targets ────────────────────────────────
+
+interface ProgramRun {
+  readonly kind: "ran";
+  readonly state: FoldedState;
+  readonly created: EffectId[];
+  readonly dealt: number;
+  readonly tried: boolean;
+}
+
+function runProgram(
+  state: FoldedState,
+  program: Program,
+  action: IntentAction,
+  castLevel: number | null,
+  events: CombatEvent[],
+  options: RunOptions
+): ProgramRun | RunHeld | Rejection {
+  let next = state;
+  const created: EffectId[] = [];
+  let dealt = 0;
+  let tried = false;
+  const targets: (EntityId | null)[] =
+    action.targets.length > 0 ? [...action.targets] : [null];
+  for (const target of targets) {
+    const run = runSteps(next, program, action, target, castLevel, events, options);
+    if ("reason" in run) return run;
+    if (run.kind === "held") return run;
+    next = run.state;
+    created.push(...run.created);
+    dealt += run.dealt;
+    tried = tried || run.outcomes.length > 0;
+  }
+  return { kind: "ran", state: next, created, dealt, tried };
+}
+
+function settleConcentration(
+  state: FoldedState,
+  action: IntentAction,
+  created: readonly EffectId[],
+  wants: boolean,
+  events: CombatEvent[]
+): FoldedState {
+  const held = created.filter((id) => state.effects[id]?.concentration);
+  const first = held[0];
+  if (!wants || first === undefined) return state;
+  let next = state;
+  const caster = mustEntity(next, action.entity);
+  if (caster.concentration !== null) {
+    const replaced = endEffects(next, [caster.concentration]);
+    next = replaced.state;
+    events.push(...replaced.events);
+  }
+  return {
+    ...next,
+    entities: {
+      ...next.entities,
+      [action.entity]: { ...mustEntity(next, action.entity), concentration: first },
+    },
+  };
+}
+
+function receiptOutcome(
+  created: number,
+  dealt: number,
+  tried: boolean
+): Receipt["outcome"] {
+  return created > 0 || dealt > 0 ? "established" : tried ? "negated" : "applied";
+}
+
 // ── Entry points ────────────────────────────────────────────────────────────
 
 export function applyIntent(
@@ -540,30 +648,56 @@ export function applyIntent(
   if (!program || !entity.mechanics.includes(action.mechanic)) {
     return rejected({ reason: "unknown-mechanic", mechanic: action.mechanic });
   }
-  const claimsTurn =
-    program.trigger.kind === "invocation" &&
-    program.trigger.economy !== "none" &&
-    program.trigger.economy !== "reaction";
-  if (claimsTurn && action.window === null) {
-    if (state.clock.phase !== "turns") return rejected({ reason: "not-in-turns" });
-    if (state.clock.current !== action.entity)
-      return rejected({ reason: "not-your-turn", entity: action.entity });
+
+  let windowEvent: EntityId | null = null;
+  if (action.window !== null) {
+    const window = state.windows.find((w) => w.id === action.window);
+    if (!window) return rejected({ reason: "no-window", window: action.window });
+    if (!window.eligible.includes(action.entity)) {
+      return rejected({
+        reason: "not-eligible",
+        window: action.window,
+        entity: action.entity,
+      });
+    }
+    if (program.trigger.kind !== "event" || !program.trigger.window) {
+      return rejected({
+        reason: "not-eligible",
+        window: action.window,
+        entity: action.entity,
+      });
+    }
+    windowEvent = eventEntity(window.event);
+  } else {
+    const claimsTurn =
+      program.trigger.kind === "invocation" &&
+      program.trigger.economy !== "none" &&
+      program.trigger.economy !== "reaction";
+    if (claimsTurn) {
+      if (state.clock.phase !== "turns") return rejected({ reason: "not-in-turns" });
+      if (state.clock.current !== action.entity) {
+        return rejected({ reason: "not-your-turn", entity: action.entity });
+      }
+    }
   }
+
   if (program.targets) {
-    if (action.targets.length !== program.targets.count)
+    if (action.targets.length !== program.targets.count) {
       return rejected({ reason: "invalid-target", entity: "" });
+    }
     for (const target of action.targets) {
       if (!state.entities[target])
         return rejected({ reason: "unknown-entity", entity: target });
       const ctx: EvalContext = {
         self: action.entity,
         target,
-        eventEntity: null,
+        eventEntity: windowEvent,
         outcome: null,
         answers: action.answers,
       };
-      if (!evalPredicate(program.targets.eligibility, state, ctx))
+      if (!evalPredicate(program.targets.eligibility, state, ctx)) {
         return rejected({ reason: "invalid-target", entity: target });
+      }
     }
   }
 
@@ -571,57 +705,198 @@ export function applyIntent(
   if ("reason" in payment) return rejected(payment);
 
   const events: CombatEvent[] = [];
-  let next: FoldedState = {
+  const paidState: FoldedState = {
     ...state,
     entities: {
       ...state.entities,
       [action.entity]: { ...entity, turn: payment.ledger, resources: payment.resources },
     },
   };
-  const created: EffectId[] = [];
-  const outcomes: Outcome[] = [];
-  let dealt = 0;
-  const targets: (EntityId | null)[] =
-    action.targets.length > 0 ? [...action.targets] : [null];
-  for (const target of targets) {
-    const run = runSteps(next, program, action, target, payment.castLevel, events);
-    if ("reason" in run) return rejected(run);
-    next = run.state;
-    created.push(...run.created);
-    outcomes.push(...run.outcomes);
-    dealt += run.dealt;
-  }
+  const run = runProgram(paidState, program, action, payment.castLevel, events, {
+    catalogue,
+    hold: action.window === null,
+    eventEntity: windowEvent,
+  });
+  if ("reason" in run) return rejected(run);
 
-  // Concentration is a consequence of established effects, never of the cast alone.
-  const held = created.filter((id) => next.effects[id]?.concentration);
-  if (payment.concentration && held.length > 0) {
-    const caster = next.entities[action.entity];
-    if (caster.concentration !== null) {
-      const replaced = endEffects(next, [caster.concentration]);
-      next = replaced.state;
-      events.push(...replaced.events);
-    }
-    next = {
-      ...next,
-      entities: {
-        ...next.entities,
-        [action.entity]: { ...next.entities[action.entity], concentration: held[0] },
+  if (run.kind === "held") {
+    const window: ReactionWindow = {
+      id: `window-${paidState.nextOrdinal}`,
+      event: run.event,
+      eligible: run.eligible,
+      declared: action.id,
+    };
+    return {
+      kind: "applied",
+      state: {
+        ...paidState,
+        nextOrdinal: paidState.nextOrdinal + 1,
+        windows: [...paidState.windows, window],
+        declared: { ...paidState.declared, [action.id]: { ...action, payment: [] } },
+      },
+      receipt: {
+        action: action.id,
+        outcome: "applied",
+        paid: payment.paid,
+        events: [run.event],
+        summary: [action.mechanic, `window:${run.event.kind}`],
       },
     };
   }
 
-  const tried = outcomes.length > 0;
-  const outcome: Receipt["outcome"] =
-    created.length > 0 || dealt > 0 ? "established" : tried ? "negated" : "applied";
+  const next = settleConcentration(
+    run.state,
+    action,
+    run.created,
+    payment.concentration,
+    events
+  );
   return {
     kind: "applied",
     state: next,
     receipt: {
       action: action.id,
-      outcome,
+      outcome: receiptOutcome(run.created.length, run.dealt, run.tried),
       paid: payment.paid,
       events,
       summary: [action.mechanic],
+    },
+  };
+}
+
+/** Closes a window: a held attack is resolved against the state the reactions produced. */
+export function applyResolve(
+  state: FoldedState,
+  action: ResolveAction,
+  catalogue: Catalogue
+): StepResult {
+  const window = state.windows.find((w) => w.id === action.window);
+  if (!window) return rejected({ reason: "no-window", window: action.window });
+  const closed: FoldedState = {
+    ...state,
+    windows: state.windows.filter((w) => w.id !== window.id),
+  };
+  const declared = state.declared[window.declared];
+  if (!declared || declared.kind !== "intent") {
+    return {
+      kind: "applied",
+      state: closed,
+      receipt: {
+        action: action.id,
+        outcome: "applied",
+        paid: [],
+        events: [],
+        summary: ["window:closed"],
+      },
+    };
+  }
+  const program = programOf(catalogue, declared.mechanic, declared.program);
+  if (!program)
+    return rejected({ reason: "unknown-mechanic", mechanic: declared.mechanic });
+  const events: CombatEvent[] = [];
+  const remaining = Object.fromEntries(
+    Object.entries(closed.declared).filter(([id]) => id !== declared.id)
+  );
+  const run = runProgram(
+    { ...closed, declared: remaining },
+    program,
+    declared,
+    null,
+    events,
+    {
+      catalogue,
+      hold: false,
+      eventEntity: null,
+    }
+  );
+  if ("reason" in run) return rejected(run);
+  if (run.kind === "held") return rejected({ reason: "no-window", window: window.id });
+  return {
+    kind: "applied",
+    state: run.state,
+    receipt: {
+      action: action.id,
+      outcome: receiptOutcome(run.created.length, run.dealt, run.tried),
+      paid: [],
+      events,
+      summary: [declared.mechanic, "window:resolved"],
+    },
+  };
+}
+
+/** A declared tactical fact; leaving reach may open an opportunity-attack window. */
+export function applyDeclare(
+  state: FoldedState,
+  action: DeclareAction,
+  catalogue: Catalogue
+): StepResult {
+  const same = (a: unknown, b: unknown): boolean =>
+    JSON.stringify(a) === JSON.stringify(b);
+  const kept = state.relations.filter((r) => !same(r, action.relation));
+  const relations = action.remove ? kept : [...kept, action.relation];
+  let next: FoldedState = { ...state, relations };
+  const events: CombatEvent[] = [];
+  const relation = action.relation;
+  if (
+    action.remove &&
+    action.mover !== null &&
+    (relation.kind === "adjacent" || relation.kind === "engaged")
+  ) {
+    const from = relation.a === action.mover ? relation.b : relation.a;
+    const event: CombatEvent = { kind: "entity-left-reach", entity: action.mover, from };
+    events.push(event);
+    const eligible = subscribersFor(next, catalogue, event);
+    if (eligible.length > 0) {
+      const window: ReactionWindow = {
+        id: `window-${next.nextOrdinal}`,
+        event,
+        eligible,
+        declared: action.id,
+      };
+      next = {
+        ...next,
+        nextOrdinal: next.nextOrdinal + 1,
+        windows: [...next.windows, window],
+      };
+    }
+  }
+  return {
+    kind: "applied",
+    state: next,
+    receipt: {
+      action: action.id,
+      outcome: "applied",
+      paid: [],
+      events,
+      summary: ["declare"],
+    },
+  };
+}
+
+export function applyOverride(state: FoldedState, action: OverrideAction): StepResult {
+  const entity = state.entities[action.entity];
+  if (!entity) return rejected({ reason: "unknown-entity", entity: action.entity });
+  return {
+    kind: "applied",
+    state: {
+      ...state,
+      entities: {
+        ...state.entities,
+        [action.entity]: {
+          ...entity,
+          overrides: {
+            ...entity.overrides,
+            [action.path]: { value: action.value, reason: action.reason, by: action.by },
+          },
+        },
+      },
+    },
+    receipt: {
+      action: action.id,
+      outcome: "applied",
+      paid: [],
+      events: [],
+      summary: ["override"],
     },
   };
 }
@@ -631,7 +906,7 @@ export function applyCheck(state: FoldedState, action: CheckAction): StepResult 
   if (!check) return rejected({ reason: "no-such-check", check: action.check });
   const face = answerNumber(action.answers, "d20");
   if (face === null) return rejected({ reason: "missing-answer", input: "d20" });
-  const entity = state.entities[check.entity];
+  const entity = mustEntity(state, check.entity);
   const events: CombatEvent[] = [];
   let next: FoldedState = {
     ...state,

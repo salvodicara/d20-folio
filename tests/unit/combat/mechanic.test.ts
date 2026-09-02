@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { conformMechanic, type Mechanic, type Program } from "@/lib/combat/mechanic";
+import {
+  conformMechanic,
+  type Mechanic,
+  type Program,
+  type Step,
+} from "@/lib/combat/mechanic";
 
 const castProgram: Program = {
   id: "cast",
@@ -49,10 +54,9 @@ describe("conformMechanic — the authoring contract", () => {
   });
 
   it("rejects a `when` that references an input the program never asks, with a path", () => {
-    const [mark] = castProgram.steps;
-    const result = conformMechanic(
-      withCast({ steps: [{ ...mark, when: { answer: "roll", equals: 20 } }] })
-    );
+    const mark = castProgram.steps[0] as Step;
+    const broken = { ...mark, when: { answer: "roll", equals: 20 } } as Step;
+    const result = conformMechanic(withCast({ steps: [broken] }));
     expect(result).toEqual({
       ok: false,
       rule: "input-referenced-by-when",

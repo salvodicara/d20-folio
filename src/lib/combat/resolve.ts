@@ -6,7 +6,13 @@
  */
 import type { Catalogue } from "./catalogue";
 import { assertNever } from "./ids";
-import { applyCheck, applyIntent } from "./intent";
+import {
+  applyCheck,
+  applyDeclare,
+  applyIntent,
+  applyOverride,
+  applyResolve,
+} from "./intent";
 import { applyTable } from "./table";
 import type { Action, FoldedState, Receipt, Resolution } from "./types";
 
@@ -41,13 +47,21 @@ export function resolve(
       if (result.kind === "rejected") return result;
       return applied(result.state, result.receipt);
     }
-    case "declare":
-    case "override":
-    case "resolve":
-      return {
-        kind: "rejected",
-        rejection: { reason: "unknown-action", action: action.id },
-      };
+    case "declare": {
+      const result = applyDeclare(state, action, catalogue);
+      if (result.kind === "rejected") return result;
+      return applied(result.state, result.receipt);
+    }
+    case "override": {
+      const result = applyOverride(state, action);
+      if (result.kind === "rejected") return result;
+      return applied(result.state, result.receipt);
+    }
+    case "resolve": {
+      const result = applyResolve(state, action, catalogue);
+      if (result.kind === "rejected") return result;
+      return applied(result.state, result.receipt);
+    }
     case "undo":
       // Undo is a fold-level operation: the fold skips the undone action and its dependents.
       return {

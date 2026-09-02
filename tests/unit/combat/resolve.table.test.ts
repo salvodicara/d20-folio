@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { mustEntity } from "@/lib/combat/state";
 import { resolve } from "@/lib/combat/resolve";
 import { emptyCatalogue } from "@/lib/combat/catalogue";
 import type { Action, Effect, FoldedState } from "@/lib/combat/types";
@@ -76,21 +77,21 @@ describe("resolve — table operations and the clock", () => {
       entities: {
         ...state.entities,
         "monster-1": {
-          ...state.entities["monster-1"],
-          turn: { ...state.entities["monster-1"].turn, action: 1 },
+          ...mustEntity(state, "monster-1"),
+          turn: { ...mustEntity(state, "monster-1").turn, action: 1 },
         },
       },
     };
     state = applyAll(state, [tableAction("dm", seq3(), { op: "end-turn" })]); // goblin → ranger, round 1
     expect(state.clock.current).toBe("ranger");
     expect(state.clock.round).toBe(1);
-    expect(state.entities["monster-1"].turn.action).toBe(1); // a ledger resets at the START of its owner's turn
+    expect(mustEntity(state, "monster-1").turn.action).toBe(1); // a ledger resets at the START of its owner's turn
     expect(state.effects["effect-1"]).toBeDefined(); // ranger's round-1 turn start is not round 2
 
     state = applyAll(state, [tableAction("dm", seq3(), { op: "end-turn" })]); // ranger → goblin, round 2
     expect(state.clock.current).toBe("monster-1");
     expect(state.clock.round).toBe(2);
-    expect(state.entities["monster-1"].turn.action).toBe(0); // reset at the goblin's round-2 turn start
+    expect(mustEntity(state, "monster-1").turn.action).toBe(0); // reset at the goblin's round-2 turn start
     expect(state.effects["effect-1"]).toBeDefined();
 
     state = applyAll(state, [tableAction("dm", seq3(), { op: "end-turn" })]); // goblin → ranger, round 2 start

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { mustEntity } from "@/lib/combat/state";
 import { buildCatalogue } from "@/lib/combat/catalogue";
 import { resolve } from "@/lib/combat/resolve";
 import type { Action, FoldedState, Relation } from "@/lib/combat/types";
@@ -6,6 +7,7 @@ import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
 import { testEntity } from "./__helpers__/entities";
 import {
   emptyState,
+  firstOf,
   nextActionId,
   openingActions,
   seqFactory,
@@ -110,11 +112,11 @@ describe("resolve — intents", () => {
     );
     expect(result.kind).toBe("applied");
     if (result.kind !== "applied") return;
-    expect(result.state.entities["monster-1"].vitals.hp).toBe(2);
+    expect(mustEntity(result.state, "monster-1").vitals.hp).toBe(2);
     expect(result.receipt.paid).toEqual(["turn:attack"]);
     expect(result.receipt.outcome).toBe("established");
-    expect(result.state.entities.ranger.turn.attacksUsed).toBe(1);
-    expect(result.state.entities.ranger.turn.action).toBe(1);
+    expect(mustEntity(result.state, "ranger").turn.attacksUsed).toBe(1);
+    expect(mustEntity(result.state, "ranger").turn.action).toBe(1);
   });
 
   it("a natural 1 misses even when the total would hit; a miss pays the claim and deals nothing", () => {
@@ -129,7 +131,7 @@ describe("resolve — intents", () => {
     );
     expect(result.kind).toBe("applied");
     if (result.kind !== "applied") return;
-    expect(result.state.entities["monster-1"].vitals.hp).toBe(7);
+    expect(mustEntity(result.state, "monster-1").vitals.hp).toBe(7);
     expect(result.receipt.outcome).toBe("negated");
     expect(result.receipt.paid).toEqual(["turn:attack"]);
   });
@@ -142,9 +144,9 @@ describe("resolve — intents", () => {
         payment: [{ kind: "slot", level: 1, pool: "standard" }],
       }),
     ]);
-    expect(state.entities.ranger.resources["slot-1"].current).toBe(1);
-    expect(state.entities.ranger.turn.bonus).toBe(1);
-    const markId = state.entities.ranger.concentration;
+    expect(mustEntity(state, "ranger").resources["slot-1"]?.current).toBe(1);
+    expect(mustEntity(state, "ranger").turn.bonus).toBe(1);
+    const markId = mustEntity(state, "ranger").concentration;
     expect(markId).not.toBeNull();
     expect(state.effects[markId as string].payload.kind).toBe("mark");
     expect(state.relations).toContainEqual({
@@ -174,8 +176,8 @@ describe("resolve — intents", () => {
         answers: { roll: 15, damage: 3, [`rider:${markId}`]: 4 },
       }),
     ]);
-    expect(hit.entities["monster-1"].vitals.hp).toBe(0); // 7 - 3 - 4
-    expect(hit.entities["monster-1"].vitals.life).toBe("dead");
+    expect(mustEntity(hit, "monster-1").vitals.hp).toBe(0); // 7 - 3 - 4
+    expect(mustEntity(hit, "monster-1").vitals.life).toBe("dead");
   });
 
   it("a save-gated concentration spell whose target succeeds is negated: slot spent, no concentration, no condition", () => {
@@ -192,8 +194,8 @@ describe("resolve — intents", () => {
     expect(result.kind).toBe("applied");
     if (result.kind !== "applied") return;
     expect(result.receipt.outcome).toBe("negated");
-    expect(result.state.entities.ranger.resources["slot-1"].current).toBe(1);
-    expect(result.state.entities.ranger.concentration).toBeNull();
+    expect(mustEntity(result.state, "ranger").resources["slot-1"]?.current).toBe(1);
+    expect(mustEntity(result.state, "ranger").concentration).toBeNull();
     expect(Object.keys(result.state.effects)).toEqual([]);
   });
 
@@ -205,7 +207,7 @@ describe("resolve — intents", () => {
         answers: { "save:monster-1": 5 },
       }),
     ]);
-    const held = state.entities.ranger.concentration;
+    const held = mustEntity(state, "ranger").concentration;
     expect(held).not.toBeNull();
     const conditions = Object.values(state.effects).filter(
       (e) => e.payload.kind === "condition"
@@ -225,7 +227,7 @@ describe("resolve — intents", () => {
       entities: {
         ...broke.entities,
         ranger: {
-          ...broke.entities.ranger,
+          ...mustEntity(broke, "ranger"),
           resources: { "slot-1": { current: 0, max: 2, recharge: "long" as const } },
         },
       },
@@ -268,16 +270,27 @@ describe("resolve — intents", () => {
       }),
       tableAction("dm", seq(), { op: "end-turn" }), // goblin's turn
     ]);
-    const markId = state.entities.ranger.concentration as string;
+    const markId = mustEntity(state, "ranger").concentration as string;
     state = run(state, [
       intent("dm", "monster-1", "monster:goblin:scimitar", "attack", {
         targets: ["ranger"],
         answers: { roll: 12, damage: 6 }, // 12 + 4 = 16 ≥ AC 15 → 6 damage
       }),
     ]);
-    expect(state.entities.ranger.vitals.hp).toBe(14);
+    // The ranger knows Shield, so the attack is held in a window; the ranger declines.
+    expect(state.windows).toHaveLength(1);
+    state = run(state, [
+      {
+        kind: "resolve",
+        id: nextActionId("r"),
+        seq: seq(),
+        by: "p1",
+        window: firstOf(state.windows).id,
+      },
+    ]);
+    expect(mustEntity(state, "ranger").vitals.hp).toBe(14);
     expect(state.checks).toHaveLength(1);
-    expect(state.checks[0]).toMatchObject({
+    expect(firstOf(state.checks)).toMatchObject({
       entity: "ranger",
       kind: "concentration",
       dc: 10,
@@ -288,11 +301,11 @@ describe("resolve — intents", () => {
         id: nextActionId("c"),
         seq: seq(),
         by: "p1",
-        check: state.checks[0].id,
+        check: firstOf(state.checks).id,
         answers: { d20: 3 },
       }, // 3 + 2 < 10
     ]);
-    expect(failed.entities.ranger.concentration).toBeNull();
+    expect(mustEntity(failed, "ranger").concentration).toBeNull();
     expect(failed.effects[markId]).toBeUndefined();
     expect(failed.relations.some((r) => r.kind === "mark")).toBe(false);
     expect(failed.checks).toEqual([]);

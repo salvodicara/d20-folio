@@ -334,6 +334,7 @@ export type Action =
       readonly kind: "declare";
       readonly relation: Relation;
       readonly remove: boolean;
+      readonly mover: EntityId | null; // the entity whose movement changed the fact, if any
     })
   | (ActionBase & {
       readonly kind: "override";
