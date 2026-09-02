@@ -9,8 +9,10 @@
  *
  * Same singleton pattern as `combat-state-io.ts`: a full-doc `setDoc` OVERWRITE (no
  * `merge` — the payload is always the complete list, and the overwrite sheds any stray
- * key), offline-queueable, with a DEFENSIVE read (`parseEntries`) so shape tolerance
- * lives at the read edge and the rules only validate AUTHORIZATION + the cap. Every
+ * key), offline-queueable. The read edge parses through the PURE, TOTAL
+ * `parseLibraryEntries` (`library-codec.ts`) — a malformed document QUARANTINES rather
+ * than dropping the offending element (see that module's doc for why: a per-entry drop
+ * would be permanently baked in by the very next unrelated full-doc write). Every
  * payload goes through `stripUndefined` (domain rule D1 — Firestore rejects
  * `undefined`, and a homebrew item is full of optional fields).
  *
@@ -21,52 +23,23 @@ import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { stripUndefined } from "@/lib/strip-undefined";
-import { isItemInstanceId } from "@/lib/item-resources";
-import { LIBRARY_KINDS, type LibraryEntry, type LibraryKind } from "@/lib/library";
+import { diagnosticsLog } from "@/lib/diagnostics";
+import { parseLibraryEntries } from "@/lib/library-codec";
+import type { LibraryEntry } from "@/lib/library";
 
 /** Ref to the user's single homebrew-library document. */
 export function libraryRef(uid: string) {
   return doc(db, "users", uid, "library", "index");
 }
 
-/** Defensively parse one stored entry (our own write, but never trust IO). */
-function parseEntry(raw: unknown): LibraryEntry | null {
-  if (typeof raw !== "object" || raw === null) return null;
-  const r = raw as Record<string, unknown>;
-  const kind = r.kind;
-  if (typeof kind !== "string" || !LIBRARY_KINDS.includes(kind as LibraryKind))
-    return null;
-  if (typeof r.id !== "string" || r.id === "") return null;
-  if (typeof r.savedAt !== "number" || !Number.isFinite(r.savedAt)) return null;
-  if (typeof r.item !== "object" || r.item === null) return null;
-  // Every sheet kind's item carries its own stable `instanceId` (required, never
-  // derived from the display name); a monster template has no per-item instanceId
-  // of its own, so it alone is exempt. `id` is trusted as stored — an OLDER entry may
-  // still carry a UUID `id` distinct from its item's `instanceId` (both are stable;
-  // Task 5's migration aligns them), so no `id === item.instanceId` check here.
-  if (kind !== "monster") {
-    const item = r.item as Record<string, unknown>;
-    if (!isItemInstanceId(item.instanceId)) return null;
-  }
-  // Past the `kind` tag the item shape is our own write; every renderer reads it
-  // through the same optional-field types the sheet already tolerates.
-  return { id: r.id, savedAt: r.savedAt, kind, item: r.item } as LibraryEntry;
-}
-
-/** Defensively parse the stored `entries` array, dropping anything malformed. */
-function parseEntries(data: Record<string, unknown>): LibraryEntry[] {
-  if (!Array.isArray(data.entries)) return [];
-  return data.entries
-    .map(parseEntry)
-    .filter((entry): entry is LibraryEntry => entry !== null);
-}
-
-/** Defensively parse one stored SRD-art override — the crop is optional + trusted (our
- *  own write), so only the URL is validated (a broken entry is simply dropped). */
 /**
  * Subscribe to the live library doc. `cb([])` when the doc is ABSENT (a user who has
- * never saved homebrew) — an empty library, not an error. Returns an unsubscribe; a
- * no-op under DEV_BYPASS (no real listener).
+ * never saved homebrew) — an empty library, not an error. A malformed document
+ * QUARANTINES: `cb` is never called (the store stays unhydrated — `loaded` stays
+ * false, so every write path already refuses with `"unavailable"`), a diagnostics
+ * report is logged (`library.quarantine`), and `onError` fires with a `TypeError`
+ * naming the typed failure, mirroring `subscribeCombatState`'s fail-closed read.
+ * Returns an unsubscribe; a no-op under DEV_BYPASS (no real listener).
  */
 export function subscribeLibrary(
   uid: string,
@@ -78,7 +51,14 @@ export function subscribeLibrary(
     libraryRef(uid),
     (snap) => {
       const data = snap.exists() ? snap.data() : {};
-      cb(parseEntries(data));
+      const parsed = parseLibraryEntries(data);
+      if (!parsed.ok) {
+        const { code, path } = parsed.failure;
+        diagnosticsLog("error", "library.quarantine", { code, path });
+        onError?.(new TypeError(`Invalid library document: ${code}:${path}`));
+        return;
+      }
+      cb(parsed.entries);
     },
     (err) => onError?.(err)
   );

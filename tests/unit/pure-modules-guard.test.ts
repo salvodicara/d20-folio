@@ -67,6 +67,10 @@ const PURE_MODULES = [
   // The homebrew-library MODEL (strip / upsert / landing rules). Its IO twin
   // `library-io.ts` owns the Firestore seam, so the model stays CI-pure.
   "src/lib/library.ts",
+  // The homebrew-library document's TOTAL parser (fail-closed quarantine on a
+  // malformed entry, never a silent per-entry drop). `library-io.ts` is the only
+  // Firebase-touching consumer.
+  "src/lib/library-codec.ts",
   // …and so does the STORE: its write seam is INJECTED by the lazy `LibraryMount`
   // (the `combatPersistence` pattern), which is why the five cockpit cards that
   // render a save affordance need no Firebase mock.

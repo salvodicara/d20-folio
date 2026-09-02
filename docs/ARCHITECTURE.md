@@ -2738,6 +2738,16 @@ lands a picked entry's `instanceId` UNCHANGED (so the library template and every
 character's still-untouched copy share one identity) and mints a fresh one only on
 collision — `takenIds`, the set of instanceIds already on the landing character.
 
+The read side is FAIL-CLOSED, not tolerant: `subscribeLibrary`'s parse (the pure, total
+`parseLibraryEntries`) requires every sheet-kind entry's item to carry a valid
+`instanceId`, and a document that fails to parse QUARANTINES whole — with a typed
+`CodecFailure` and a diagnostics report — rather than silently dropping the offending
+entry, because `writeLibrary` is a full-doc overwrite that would otherwise bake a
+partial drop in permanently on the very next unrelated save. The Task 5 migration
+stamps a stable `instanceId` onto every pre-existing library entry (aligning `id` and
+`item.instanceId` where they'd drifted) BEFORE the deploy that starts requiring one —
+see ADR-0009.
+
 `upsertEntry` matches on `id` ALONE — the display name never enters the comparison.
 Because an item's `instanceId` never changes on a rename, a renamed row upserts as the
 SAME record with no separate rename-detection step: there is no name-keyed identity
@@ -2772,11 +2782,17 @@ The layering mirrors combat-state exactly:
   to their kinds, so an edit seam mirrors what is stored). An entry is a TEMPLATE, never
   a copy of one character's row.
 - **IO** — `src/lib/library-io.ts`: the only library seam touching `firebase/firestore` —
-  defensive read (`parseEntries` drops anything malformed), full-doc `setDoc` OVERWRITE
-  through `stripUndefined` (offline-queueable), no-op under `DEV_BYPASS_AUTH`, and
-  `createLibraryWriter` — the DEBOUNCED writer (`LIBRARY_WRITE_DEBOUNCE_MS` = 2 s, the
-  character auto-save cadence) that coalesces a per-keystroke edit burst into ONE
-  whole-doc write and is flushed on teardown.
+  FAIL-CLOSED read through the pure, total `parseLibraryEntries` (`src/lib/library-codec.ts`):
+  a malformed document QUARANTINES with a typed `CodecFailure` (never a silent per-entry
+  drop — `writeLibrary` is a full-doc overwrite, so a dropped entry would be permanently
+  erased by the very next unrelated write) — `subscribeLibrary` skips `cb` entirely on a
+  quarantine (the store never hydrates, so `loaded` stays false and `saveToLibrary` keeps
+  refusing with `"unavailable"`) and reports it via `diagnosticsLog("error", "library.quarantine", …)`
+  plus `onError`. Also: full-doc `setDoc` OVERWRITE through `stripUndefined`
+  (offline-queueable), no-op under `DEV_BYPASS_AUTH`, and `createLibraryWriter` — the
+  DEBOUNCED writer (`LIBRARY_WRITE_DEBOUNCE_MS` = 2 s, the character auto-save cadence)
+  that coalesces a per-keystroke edit burst into ONE whole-doc write and is flushed on
+  teardown.
 - **State** — `src/stores/libraryStore.ts` holds the live list and its mutations
   (`saveToLibrary`, returning the saved/updated entry's `id` alongside the outcome; its
   `(kind, instanceId)` convenience `syncFromCharacter`; `removeFromLibrary`), emitting

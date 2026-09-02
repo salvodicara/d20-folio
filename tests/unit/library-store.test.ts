@@ -4,7 +4,10 @@
  * Pins the facts the portrait + custom-monster persistence rests on:
  *  1. every mutation flushes the whole entry list through the injected persist seam;
  *  2. `setEntryPortrait` attaches / removes a custom monster's portrait in place, by id,
- *     and is inert for a non-monster (or unknown) id.
+ *     and is inert for a non-monster (or unknown) id;
+ *  3. an UNHYDRATED store (a quarantined document never calls `hydrate`) refuses every
+ *     write outright — `saveToLibrary` returns `"unavailable"` and `persist` is never
+ *     called, so a bad read can never clobber the last-known-good document.
  *
  * Pure store, no Firebase — the persist seam is a plain mock (mirrors how `LibraryMount`
  * injects the debounced writer in production).
@@ -83,6 +86,27 @@ describe("libraryStore — custom-monster portrait persistence", () => {
     // Neither a missing id nor a spell entry is a monster → no write, no mutation.
     expect(persist).not.toHaveBeenCalled();
     expect(useLibraryStore.getState().entries).toEqual([spellEntry]);
+  });
+});
+
+describe("libraryStore — a quarantined library (never hydrated) refuses every write", () => {
+  it("saveToLibrary returns unavailable and never calls persist", () => {
+    // A quarantined document (library-io's `subscribeLibrary` refused to `cb`) never
+    // calls `hydrate`, so `loaded` stays false — `persist` may still be wired (the
+    // writer is created regardless), but a write must never reach it: overwriting the
+    // last-known-good doc with a stripped-down "we couldn't read it" payload would be
+    // exactly the data loss the quarantine exists to prevent.
+    const persist = vi.fn<LibraryPersistence>();
+    useLibraryStore.setState({ persist, loaded: false });
+    expect(useLibraryStore.getState().loaded).toBe(false);
+
+    const result = useLibraryStore
+      .getState()
+      .saveToLibrary({ kind: "monster", item: MONSTER });
+
+    expect(result).toEqual({ outcome: "unavailable", id: null });
+    expect(persist).not.toHaveBeenCalled();
+    expect(useLibraryStore.getState().entries).toEqual([]);
   });
 });
 
