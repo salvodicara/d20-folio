@@ -946,8 +946,41 @@ service cloud.firestore {
     // rules, so without this exclusion the broad member grant here would defeat the
     // hidden-note gate (a player could read a staged-hidden note through it).
     match /campaigns/{campId}/{subcol}/{docId} {
-      allow read, write: if subcol != 'dmNotes' && isNotBlocked()
+      allow read, write: if subcol != 'dmNotes' && subcol != 'encounters' && isNotBlocked()
         && request.auth.uid in get(/databases/$(database)/documents/campaigns/$(campId)).data.members;
+    }
+
+    // The encounter document (combat re-architecture, P2 prototype — ADR-0002/0005).
+    // The ONLY shared writable gameplay surface of the target architecture. Members
+    // APPEND actions to `log` (the array only grows; nothing else changes); the DM and
+    // the admin may create, checkpoint (rewrite) and delete. Rules enforce membership
+    // and shape; game legality is the reducer's job (`src/lib/combat`). This block is
+    // deliberately excluded from the member wildcard above so the append-only grant
+    // cannot be defeated by the broad subcollection rule.
+    match /campaigns/{campId}/encounters/{eid} {
+      function campaign() {
+        return get(/databases/$(database)/documents/campaigns/$(campId)).data;
+      }
+      function encounterMember() {
+        return isNotBlocked() && request.auth.uid in campaign().members;
+      }
+      function encounterDm() {
+        return isNotBlocked() && request.auth.uid == campaign().dmUid;
+      }
+      function validEncounterShape() {
+        return request.resource.data.schema == 1
+          && request.resource.data.log is list
+          && request.resource.data.log.size() <= 2000;
+      }
+      function logOnlyGrew() {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['log'])
+          && request.resource.data.log.size() > resource.data.log.size();
+      }
+      allow read: if isAdmin() || encounterMember();
+      allow create: if (isAdmin() || encounterDm()) && validEncounterShape();
+      allow update: if validEncounterShape()
+        && ((isAdmin() || encounterDm()) || (encounterMember() && logOnlyGrew()));
+      allow delete: if isAdmin() || encounterDm();
     }
 
     // Bug / feature reports (OWN-37). A signed-in, non-blocked user CREATES a
