@@ -551,7 +551,9 @@ export async function runGuardedMigration<TPlan extends GuardedPlan>(
         `Check failed: ${corpusIssues.length} verification issue(s), ${plan.changedDocuments.length} pending change(s)`
       );
     }
-    console.log("Global check and idempotency check passed");
+    // Planning the LIVE corpus and finding zero changes IS the idempotency
+    // property; there is no second plan to run, so the line says exactly that.
+    console.log("Check passed: corpus verified, zero pending changes");
     return;
   }
 
@@ -593,7 +595,20 @@ export async function runGuardedMigration<TPlan extends GuardedPlan>(
         batch.update(found.ref, write.data, { lastUpdateTime: found.updateTime });
       }
     }
-    await batch.commit();
+    try {
+      await batch.commit();
+    } catch (error) {
+      // A precondition rejection names the offending document path; report the
+      // failure by CODE only (the original stays attached as `cause`, which the CLI
+      // never prints — it logs `error.message` alone).
+      const raw = isRecord(error) ? error.code : undefined;
+      const code =
+        typeof raw === "string" || typeof raw === "number" ? String(raw) : "unknown";
+      throw new Error(
+        `Batch commit refused for ${plan.changedDocuments.length} document(s) [code ${code}]; nothing was written`,
+        { cause: error }
+      );
+    }
   }
 
   for (const document of plan.changedDocuments) {
@@ -602,10 +617,12 @@ export async function runGuardedMigration<TPlan extends GuardedPlan>(
     const data = snapshot.data();
     if (!data) throw new Error(`Verification read lost ${pathHash(document.path)}`);
     const actualHash = hashFirestoreDocument(data);
-    const issues = args.verify([{ path: document.path, data }]);
-    if (actualHash !== document.afterHash || issues.length > 0) {
+    // Per document this proves the stored bytes are EXACTLY what was planned;
+    // `verify` is a CORPUS predicate (it may compare a document against another,
+    // such as a public projection against its parent) and runs globally below.
+    if (actualHash !== document.afterHash) {
       throw new Error(
-        `Reread/hash verification failed for ${pathHash(document.path)}: expected ${document.afterHash}, got ${actualHash}, ${issues.length} issue(s)`
+        `Reread/hash verification failed for ${pathHash(document.path)}: expected ${document.afterHash}, got ${actualHash}`
       );
     }
   }

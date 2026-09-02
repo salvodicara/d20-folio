@@ -180,3 +180,194 @@ describe("custom identity migration", () => {
     ]);
   });
 });
+
+const sheetPath = `${parentPath}/public/sheet`;
+
+/** The anonymous share projection: `build` must stay byte-identical to the parent's
+ *  (`isExactPublicCharacterSheet` in firestore.rules). */
+function sheetDoc(build: Record<string, unknown>) {
+  return {
+    publicSchema: 1,
+    schema: 3,
+    build,
+    cache: { name: "x" },
+    status: "active",
+    hasPortrait: false,
+    portraitCrop: null,
+    sourceUpdatedAt: 0,
+  };
+}
+
+function customBuild() {
+  return { name: "Bo", equipment: [{ custom: true, name: "Boots" }] };
+}
+
+function planned(plan: ReturnType<typeof planCustomIdentity>) {
+  return plan.documents.map((d) => ({ path: d.path, data: d.after }));
+}
+
+function buildOf(
+  plan: ReturnType<typeof planCustomIdentity>,
+  path: string
+): Record<string, unknown> {
+  const document = must(
+    plan.documents.find((d) => d.path === path),
+    `a planned ${path === sheetPath ? "sheet" : "document"}`
+  );
+  return document.after.build as Record<string, unknown>;
+}
+
+describe("public share projection", () => {
+  it("stamps a shared parent and its public sheet with identical ids, in one plan", () => {
+    const plan = planCustomIdentity([
+      { path: parentPath, data: envelope(customBuild()) },
+      { path: sheetPath, data: sheetDoc(customBuild()) },
+    ]);
+    expect(plan.issues).toEqual([]);
+    expect(plan.counts.sheets).toBe(1);
+    expect(plan.counts.parents).toBe(1);
+    expect(plan.changedDocuments).toHaveLength(2);
+    const parentBuild = buildOf(plan, parentPath);
+    const sheetBuild = buildOf(plan, sheetPath);
+    const equipment = parentBuild.equipment as { instanceId?: string }[];
+    expect(at(equipment, 0).instanceId).toBe(
+      deterministicCustomInstanceId("u1", "c1", "equipment", 0)
+    );
+    // The projection stays byte-identical to its parent's build.
+    expect(sheetBuild).toEqual(parentBuild);
+    // Everything the projection alone owns survives.
+    const sheetAfter = must(
+      plan.documents.find((d) => d.path === sheetPath),
+      "a planned sheet"
+    ).after;
+    expect(sheetAfter.publicSchema).toBe(1);
+    expect(sheetAfter.sourceUpdatedAt).toBe(0);
+    expect(verifyCustomIdentityCorpus(planned(plan))).toEqual([]);
+  });
+
+  it("reports a sheet discovered without its parent, and a sheet that diverged from it", () => {
+    expect(
+      verifyCustomIdentityCorpus([
+        { path: sheetPath, data: sheetDoc(customBuild()) },
+      ]).map((issue) => issue.code)
+    ).toEqual(["verification-failed", "missing-parent"]);
+
+    const diverged = verifyCustomIdentityCorpus([
+      { path: parentPath, data: envelope(customBuild()) },
+      {
+        path: sheetPath,
+        data: sheetDoc({ name: "Bo", equipment: [{ custom: true, name: "Sandals" }] }),
+      },
+    ]);
+    expect(diverged.map((issue) => issue.code)).toContain("projection-mismatch");
+  });
+
+  it("leaves a sheet already equal to a migrated parent untouched", () => {
+    const first = planCustomIdentity([
+      { path: parentPath, data: envelope(customBuild()) },
+      { path: sheetPath, data: sheetDoc(customBuild()) },
+    ]);
+    const second = planCustomIdentity(planned(first));
+    expect(second.changedDocuments).toEqual([]);
+    expect(second.issues).toEqual([]);
+    expect(verifyCustomIdentityCorpus(planned(second))).toEqual([]);
+  });
+});
+
+describe("custom identity refusals and rewrites", () => {
+  it("realigns a library entry id to a valid item identity without touching the item", () => {
+    const plan = planCustomIdentity([
+      {
+        path: libraryPath,
+        data: {
+          entries: [
+            {
+              id: "legacy-uuid-1",
+              savedAt: 1,
+              kind: "feature",
+              item: { custom: true, title: "Grit", instanceId: "grit-1" },
+            },
+          ],
+        },
+      },
+    ]);
+    expect(plan.issues).toEqual([]);
+    const entries = at(plan.changedDocuments, 0).after.entries as {
+      id: string;
+      item: { instanceId: string; title: string };
+    }[];
+    expect(at(entries, 0).id).toBe("grit-1");
+    expect(at(entries, 0).item).toEqual({
+      custom: true,
+      title: "Grit",
+      instanceId: "grit-1",
+    });
+    expect(plan.counts.stampedByCollection).toEqual({ "library.feature": 1 });
+  });
+
+  it("replaces an invalid sheet instanceId and counts it as stamped", () => {
+    const plan = planCustomIdentity([
+      {
+        path: parentPath,
+        data: envelope({
+          name: "Bo",
+          equipment: [{ custom: true, name: "Boots", instanceId: "NOT VALID" }],
+        }),
+      },
+    ]);
+    expect(plan.issues).toEqual([]);
+    const equipment = buildOf(plan, parentPath).equipment as { instanceId: string }[];
+    expect(at(equipment, 0).instanceId).toBe(
+      deterministicCustomInstanceId("u1", "c1", "equipment", 0)
+    );
+    expect(plan.counts.stampedByCollection).toEqual({ equipment: 1 });
+  });
+
+  it("never hands a sheet entry an id a monster entry already holds", () => {
+    const plan = planCustomIdentity([
+      {
+        path: libraryPath,
+        data: {
+          entries: [
+            { id: "shared-id", savedAt: 1, kind: "monster", item: { name: "Goblin" } },
+            {
+              id: "shared-id",
+              savedAt: 1,
+              kind: "spell",
+              item: { custom: true, name: "Zap" },
+            },
+          ],
+        },
+      },
+    ]);
+    expect(plan.changedDocuments).toEqual([]);
+    expect(plan.issues.map((issue) => issue.code)).toEqual(["duplicate-instance-id"]);
+  });
+
+  it("refuses an out-of-scope path, a repeated path, and malformed containers", () => {
+    expect(
+      planCustomIdentity([
+        { path: "users/u1/campaigns/x", data: { build: {} } },
+      ]).issues.map((issue) => issue.code)
+    ).toEqual(["unexpected-path"]);
+
+    const repeated = planCustomIdentity([
+      { path: parentPath, data: envelope(customBuild()) },
+      { path: parentPath, data: envelope(customBuild()) },
+    ]);
+    expect(repeated.issues.map((issue) => issue.code)).toEqual(["duplicate-document"]);
+    expect(repeated.documents).toHaveLength(1);
+
+    expect(
+      planCustomIdentity([
+        { path: libraryPath, data: { entries: { nope: true } } },
+      ]).issues.map((issue) => issue.code)
+    ).toEqual(["invalid-envelope"]);
+
+    const customs = planCustomIdentity([
+      { path: parentPath, data: envelope({ name: "Bo", customs: "nope" }) },
+    ]);
+    expect(customs.changedDocuments).toEqual([]);
+    expect(customs.issues.map((issue) => issue.code)).toEqual(["invalid-envelope"]);
+  });
+});

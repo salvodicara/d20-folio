@@ -28,7 +28,7 @@
 
 import { readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { argv as processArgv, exit } from "node:process";
+import process, { argv as processArgv } from "node:process";
 import { pathToFileURL } from "node:url";
 import {
   discoverDocuments,
@@ -41,6 +41,7 @@ import {
   sha256,
   type GuardedDocumentPlan,
   type GuardedPlan,
+  type GuardedWrite,
   type MigrationIssue,
   type MigrationSourceDocument,
   type RawMap,
@@ -49,7 +50,11 @@ import {
 const PARENT = /^users\/([^/]+)\/characters\/([^/]+)$/;
 const SNAPSHOT = /^users\/([^/]+)\/characters\/([^/]+)\/snapshots\/([^/]+)$/;
 const LIBRARY = /^users\/([^/]+)\/library\/index$/;
-/** Mirrors `ITEM_INSTANCE_ID_RE` in src/lib/item-resources.ts. */
+/** The anonymous share projection. `firestore.rules` (`isExactPublicCharacterSheet`)
+ *  and the projection function both require `sheet.build` to be byte-identical to its
+ *  parent's, so the sheet is stamped in the SAME batch, under the PARENT's scope. */
+const PUBLIC_SHEET = /^users\/([^/]+)\/characters\/([^/]+)\/public\/sheet$/;
+/** Mirrors `ITEM_INSTANCE_ID_RE` in src/lib/resources.ts. */
 const ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const COLLECTIONS = ["spells", "weapons", "equipment"] as const;
 /** A monster template lands in no sheet array and owns no per-item identity. */
@@ -169,18 +174,22 @@ export function stampEnvelope(
     );
     if (next !== undefined) build[collection] = next;
   }
-  if (isRecord(build.customs) && build.customs.features !== undefined) {
-    build.customs = {
-      ...build.customs,
-      features: stampList(
-        build.customs.features,
-        [uid, charId, `${prefix}customs.features`],
-        path,
-        seen,
-        stamped,
-        issues
-      ),
-    };
+  if (build.customs !== undefined) {
+    if (!isRecord(build.customs)) {
+      issues.push({ path, code: "invalid-envelope", detail: "customs is not a map" });
+    } else if (build.customs.features !== undefined) {
+      build.customs = {
+        ...build.customs,
+        features: stampList(
+          build.customs.features,
+          [uid, charId, `${prefix}customs.features`],
+          path,
+          seen,
+          stamped,
+          issues
+        ),
+      };
+    }
   }
   return { data: { ...data, build }, stamped, issues };
 }
@@ -197,8 +206,22 @@ export function stampLibrary(uid: string, data: RawMap, path: string): Stamped {
     issues.push({ path, code: "invalid-envelope", detail: "entries is not an array" });
     return { data, stamped, issues };
   }
-  const seen = new Set<string>();
   const stored: readonly unknown[] = data.entries;
+  // ONE id space for the whole document, across kinds: `entry.id` is the library's
+  // primary key, so a sheet entry that adopted an id a monster template already holds
+  // would collide on read. Ids of the entries this pass never rewrites (monsters,
+  // unknown kinds) are therefore reserved BEFORE any stamping.
+  const seen = new Set<string>();
+  for (const entry of stored) {
+    if (
+      !isRecord(entry) ||
+      (typeof entry.kind === "string" && SHEET_KINDS.has(entry.kind))
+    ) {
+      continue;
+    }
+    const reserved = validId(entry.id);
+    if (reserved !== undefined) seen.add(reserved);
+  }
   const entries = stored.map((entry, ordinal) => {
     if (!isRecord(entry) || typeof entry.kind !== "string" || !isRecord(entry.item)) {
       issues.push({
@@ -241,6 +264,7 @@ export interface CustomIdentityPlan extends GuardedPlan<CustomIdentityDocumentPl
   counts: {
     parents: number;
     snapshots: number;
+    sheets: number;
     libraries: number;
     stampedByCollection: Record<string, number>;
   };
@@ -256,6 +280,7 @@ export function planCustomIdentity(
   const counts = {
     parents: 0,
     snapshots: 0,
+    sheets: 0,
     libraries: 0,
     stampedByCollection: {} as Record<string, number>,
   };
@@ -274,10 +299,16 @@ export function planCustomIdentity(
     seenPaths.add(source.path);
     const snapshot = SNAPSHOT.exec(source.path);
     const parent = PARENT.exec(source.path);
+    const sheet = PUBLIC_SHEET.exec(source.path);
     const library = LIBRARY.exec(source.path);
     let result: Stamped;
-    let kind: "parents" | "snapshots" | "libraries";
-    if (snapshot?.[1] && snapshot[2] && snapshot[3]) {
+    let kind: "parents" | "snapshots" | "sheets" | "libraries";
+    if (sheet?.[1] && sheet[2]) {
+      // The PARENT's scope, so parent and projection receive identical ids and the
+      // byte-equality the rules demand survives the migration.
+      kind = "sheets";
+      result = stampEnvelope(sheet[1], sheet[2], "", source.data, source.path);
+    } else if (snapshot?.[1] && snapshot[2] && snapshot[3]) {
       kind = "snapshots";
       result = stampEnvelope(
         snapshot[1],
@@ -297,7 +328,7 @@ export function planCustomIdentity(
         path: source.path,
         code: "unexpected-path",
         detail:
-          "Only character parents, their snapshots, and library indexes are in scope",
+          "Only character parents, their snapshots, public sheets and library indexes are in scope",
       });
       continue;
     }
@@ -330,13 +361,17 @@ export function planCustomIdentity(
   };
 }
 
-/** The corpus is migrated exactly when planning it again needs no change and raises
- *  no issue — one custom entry without a valid id, or two entries sharing one, fails. */
+/**
+ * The corpus is migrated exactly when planning it again needs no change, raises no
+ * issue, and every public projection still mirrors its parent's build byte for byte
+ * (`isExactPublicCharacterSheet` in `firestore.rules` — a divergent sheet would make
+ * the parent's next ordinary save, and every anonymous read, fail).
+ */
 export function verifyCustomIdentityCorpus(
   sources: readonly MigrationSourceDocument[]
 ): MigrationIssue[] {
   const plan = planCustomIdentity(sources);
-  return [
+  const issues: MigrationIssue[] = [
     ...plan.issues,
     ...plan.changedDocuments.map((document) => ({
       path: document.path,
@@ -344,9 +379,36 @@ export function verifyCustomIdentityCorpus(
       detail: `${Object.values(document.stamped).reduce(
         (total, stamps) => total + stamps,
         0
-      )} custom entries still lack a stable instanceId`,
+      )} custom entry identity write(s) still pending`,
     })),
   ];
+  const parentBuilds = new Map<string, string>();
+  for (const document of plan.documents) {
+    if (PARENT.test(document.path)) {
+      parentBuilds.set(
+        document.path,
+        hashFirestoreDocument({ build: document.after.build })
+      );
+    }
+  }
+  for (const document of plan.documents) {
+    if (!PUBLIC_SHEET.test(document.path)) continue;
+    const parentBuild = parentBuilds.get(document.path.slice(0, -"/public/sheet".length));
+    if (parentBuild === undefined) {
+      issues.push({
+        path: document.path,
+        code: "missing-parent",
+        detail: "A public sheet was discovered without a planned parent character",
+      });
+    } else if (parentBuild !== hashFirestoreDocument({ build: document.after.build })) {
+      issues.push({
+        path: document.path,
+        code: "projection-mismatch",
+        detail: "The public sheet build no longer equals its parent's build",
+      });
+    }
+  }
+  return issues;
 }
 
 /** The one report every mode prints: counts, hashes and issue codes only. */
@@ -367,9 +429,19 @@ export function reportFor(plan: CustomIdentityPlan) {
   };
 }
 
-const DISCOVERY = [
+/** The exact field this migration owns, per family — never the whole envelope, so a
+ *  concurrent unrelated field write on the same document is never clobbered. A public
+ *  sheet takes the same `{ build }` write as its parent, in the SAME atomic batch. */
+export function writesForCustomIdentity(document: GuardedDocumentPlan): GuardedWrite {
+  return LIBRARY.test(document.path)
+    ? { kind: "update", data: { entries: document.after.entries } }
+    : { kind: "update", data: { build: document.after.build } };
+}
+
+export const DISCOVERY = [
   { collectionGroup: "characters", pattern: PARENT },
   { collectionGroup: "snapshots", pattern: SNAPSHOT },
+  { collectionGroup: "public", pattern: PUBLIC_SHEET },
   { collectionGroup: "library", pattern: LIBRARY },
 ];
 
@@ -382,9 +454,20 @@ async function planFixtures(directory: string): Promise<CustomIdentityPlan> {
     .sort();
   const sources: MigrationSourceDocument[] = [];
   for (const name of names) {
-    const parsed: unknown = JSON.parse(await readFile(join(directory, name), "utf8"));
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await readFile(join(directory, name), "utf8"));
+    } catch (error) {
+      // A read/parse failure echoes the FILE NAME; report the fixture by hash.
+      throw new Error(
+        `Fixture ${pathHash(name)} could not be read: ${
+          isRecord(error) && typeof error.code === "string" ? error.code : "parse error"
+        }`,
+        { cause: error }
+      );
+    }
     if (!isRecord(parsed)) {
-      throw new TypeError(`Fixture ${sha256(name).slice(0, 16)} is not an object`);
+      throw new TypeError(`Fixture ${pathHash(name)} is not an object`);
     }
     sources.push({
       path: `users/fixtures/characters/${name.slice(0, -".json".length)}`,
@@ -399,7 +482,7 @@ async function run(): Promise<void> {
   if (options.mode === "fixtures") {
     const plan = await planFixtures(options.directory);
     console.log(JSON.stringify(reportFor(plan), null, 2));
-    if (plan.issues.length > 0) exit(1);
+    if (plan.issues.length > 0) process.exitCode = 1;
     return;
   }
   const target = await readTargetConfiguration();
@@ -420,12 +503,7 @@ async function run(): Promise<void> {
     discover: (database) => discoverDocuments(database, DISCOVERY),
     plan: planCustomIdentity,
     verify: verifyCustomIdentityCorpus,
-    // Only the field this migration owns is written, so a concurrent unrelated
-    // field write on the same document is never clobbered.
-    writesFor: (document) =>
-      LIBRARY.test(document.path)
-        ? { kind: "update", data: { entries: document.after.entries } }
-        : { kind: "update", data: { build: document.after.build } },
+    writesFor: writesForCustomIdentity,
     report: reportFor,
     options,
     db: getFirestore(app),
@@ -435,6 +513,6 @@ async function run(): Promise<void> {
 if (processArgv[1] && import.meta.url === pathToFileURL(resolve(processArgv[1])).href) {
   run().catch((error: unknown) => {
     console.error(error instanceof Error ? error.message : error);
-    exit(1);
+    process.exitCode = 1;
   });
 }
