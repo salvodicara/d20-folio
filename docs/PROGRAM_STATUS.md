@@ -77,6 +77,19 @@ Codex was blocked by the owner on 2026-09-02; `fix/structural-automation-fixes` 
 baseline. The next session starts from
 `docs/superpowers/plans/2026-09-02-next-session-handoff.md`.
 
+## Pending migrations
+
+One-off data migrations that are committed and verified locally but have NOT yet run on production.
+ADR-0009: before deploying a SHA that reads a new persisted shape, every row here must be `--check`
+green against production; a deploy with a pending migration is refused. Commands and credentials:
+`docs/RELEASE.md` → "Migrate before you deploy". A row is deleted only after the script has run on
+production, been verified idempotent, and had its script + test removed (golden rule 10).
+
+| Migration                              | Persisted shape it prepares                                                                                         | State                                                              |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `scripts/migrate-custom-identity.ts`   | `instanceId` on every custom sheet entry and library id                                                             | Committed; not yet run on production.                              |
+| `scripts/migrate-character-parents.ts` | every parent v1 (`state: {}`), every character has a `combat/state` child with `playState`, every parent `revision` | Committed; not yet run on production. Needs `VITE_CONTENT_PACK=0`. |
+
 ## Active charters
 
 ### Foundation — `foundation-f0`

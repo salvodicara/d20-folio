@@ -434,11 +434,31 @@ fields removed; git history preserves the script). The durable result: the subdo
 parent carries no trio, and every reader falls to the full-HP default only when the subdoc is genuinely
 absent.
 
-`playStateVersion: 1` is a storage-ownership marker, not a character-schema version. A historical
-schema-3 parent that does not yet carry the marker remains writable in its established mode: non-combat
-session facts such as spent spell slots stay in the parent `state`, while the combat trio stays in
-`combat/state`. Parent autosave must preserve that mode until an atomic parent+child cutover adds the
-marker; it must never reject the complete snapshot merely because that cutover has not happened yet.
+### Legacy parent cutover — the one-off `migrate-character-parents` (P1, prepared)
+
+P1 cutover (`scripts/migrate-character-parents.ts`): every live parent is v1 (`state: {}`, the play
+session lives in `combat/state.playState`), every character has a `combat/state` child, every parent
+carries `revision`. `playStateVersion: 1` remains a dead stored field until the P3 `combat/state` v2
+migration deletes it; no code reads it.
+
+Until that script has run on production, a historical schema-3 parent that does not yet carry the
+marker remains writable in its established mode: non-combat session facts such as spent spell slots
+stay in the parent `state`, while the combat trio stays in `combat/state`.
+
+The script is read-only by default and follows the ADR-0009 protocol shared with
+`scripts/migrate-custom-identity.ts` (`--check` proves the corpus migrated; `--apply --backup <dir>` is
+the only write mode). Three properties are worth knowing before running it:
+
+- It never touches `build` or `updatedAt`, so the anonymous share projection (`public/sheet`, which
+  requires `sheet.build == character.build` and `sourceUpdatedAt == character.updatedAt`) needs no
+  write. A legacy SHARED parent that has no sheet yet simply stays without one — the owner's client
+  creates it on the next autosave.
+- The child it creates for a never-wounded character starts at FULL HP, taken from `cache.hpMax`; a
+  parent without a usable `cache.hpMax` is refused (`missing-cache-hpmax`), never given invented HP.
+- It runs SRD-only (`VITE_CONTENT_PACK=0`) because a plain `node` process cannot evaluate the composed
+  content pack. That is safe by construction: the only SRD-dependent step in the codec chain is the
+  stored concentration ref, and a family whose concentration would not survive canonicalization
+  unchanged is refused (`unresolved-concentration`) rather than rewritten.
 
 ## Verification (Definition of Done)
 

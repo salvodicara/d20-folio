@@ -80,6 +80,23 @@ initiative.
 If the SHA's Verify run was superseded (cancelled by a newer merge) or the content pack moved
 after it ran (a pack-only merge), re-verify first: `gh workflow run verify.yml --ref main`.
 
+### Migrate before you deploy (ADR-0009)
+
+Before deploying a SHA that reads a new persisted shape, run the migration(s) listed under
+"Pending migrations" in `docs/PROGRAM_STATUS.md` with `--check` green against production; a deploy
+with a pending migration is refused. The two currently prepared:
+
+```sh
+node --import ./scripts/alias-loader.mjs scripts/migrate-custom-identity.ts --check
+VITE_CONTENT_PACK=0 node --import ./scripts/alias-loader.mjs \
+  scripts/migrate-character-parents.ts --check
+```
+
+Both are read-only in `--check`; each needs `GOOGLE_APPLICATION_CREDENTIALS` pointing at a
+`d20-folio` service-account key. `migrate-character-parents.ts` needs `VITE_CONTENT_PACK=0` because a
+plain `node` process cannot evaluate the composed content pack — see the migration appendix in
+`docs/CHARACTER_SCHEMA.md` for why that is safe.
+
 ## What goes in `CHANGELOG.md`
 
 **Yes:** owner-visible behaviour changes, new automations, new SRD batches, schema changes (with

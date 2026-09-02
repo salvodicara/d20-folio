@@ -11,8 +11,28 @@
  * `tsc -b` (same treatment as `vitest.config.ts`).
  */
 import { defineConfig } from "vitest/config";
+import path from "path";
+import { PACK_EMPTY_ENTRY } from "./scripts/content-pack-mode";
 
 export default defineConfig({
+  // The emulator suites drive the one-off migration scripts, and the parent-cutover
+  // migration reuses the app's play codec — so this lane needs the `@/` alias. `@pack`
+  // resolves to the typed-empty stub UNCONDITIONALLY here, matching the composition the
+  // migrations actually run in: a plain `node` script cannot evaluate the composed pack
+  // (its barrel reaches `src/i18n/loaders.ts`, whose `import.meta.glob` exists only
+  // under Vite), so every migration run sets `VITE_CONTENT_PACK=0`. String aliases match
+  // by prefix, so the `@pack` sub-entries stay ahead of `@pack`.
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+      "@pack/item-art": PACK_EMPTY_ENTRY,
+      "@pack/monster-art": PACK_EMPTY_ENTRY,
+      "@pack/monsters": PACK_EMPTY_ENTRY,
+      "@pack": PACK_EMPTY_ENTRY,
+      "@tests": path.resolve(__dirname, "./tests"),
+      "@scripts": path.resolve(__dirname, "./scripts"),
+    },
+  },
   test: {
     include: ["tests/rules/**/*.test.ts"],
     environment: "node",

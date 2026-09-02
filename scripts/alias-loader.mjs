@@ -29,6 +29,11 @@ register(
       import { fileURLToPath, pathToFileURL } from "node:url";
       import { dirname, resolve as resolvePath } from "node:path";
       const SRC = ${JSON.stringify(SRC)};
+      // The documented content-pack opt-out (scripts/content-pack-mode.ts — "the ONE
+      // place that decides"): presence + \`VITE_CONTENT_PACK !== "0"\`. Read on the MAIN
+      // thread at register time, because a module hook runs on its own thread with a
+      // frozen copy of the environment.
+      const PACK_DISABLED = ${JSON.stringify(process.env.VITE_CONTENT_PACK === "0")};
       // Append a .ts/.tsx/index.ts extension to an extension-less file path.
       function withExt(abs) {
         if (/\\.[a-z0-9]+$/i.test(abs)) return abs;
@@ -44,7 +49,7 @@ register(
           const packRoot = resolvePath(SRC, "..", "content-pack");
           const sub = specifier === "@pack" ? "" : specifier.slice("@pack".length);
           const packTarget = withExt(packRoot + (sub === "" ? "/index" : sub));
-          if (existsSync(packTarget)) {
+          if (!PACK_DISABLED && existsSync(packTarget)) {
             return next(pathToFileURL(packTarget).href, context);
           }
           const stub = withExt(SRC + "/data/pack-empty");
