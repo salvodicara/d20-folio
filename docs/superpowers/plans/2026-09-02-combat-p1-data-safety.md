@@ -1474,7 +1474,7 @@ git commit -m "feat(identity): required instanceId on custom entries and library
 
 **Files (private repository `~/Workspace/d20-folio-content`):**
 
-- Modify: `content-pack/fixtures/team/mandorlino-paladin.json:55-75` — append `"instanceId": "talon-mandorlino-1"` as the **last key** of the Talon weapon entry (after `tags`).
+- Modify: the team fixture that owns the Talon weapon (`content-pack/fixtures/team/<paladin>.json`, the custom weapon entry) — append `"instanceId": "talon-1"` as the **last key** of the Talon weapon entry (after `tags`).
 
 - [ ] **Step 1: Write the two-repository charter** (a file in the scratchpad, not in either repo) recording: public base = the Integration A SHA, private base = fresh private `origin/main`, private worktree path (`~/Workspace/Codex/d20-folio-content-combat-p1-identity`, branch `feat/combat-p1-identity`), verifier = this worktree with `content-pack` relinked to that private worktree's `content-pack` directory, compatibility: (old private + public A) valid, (new private + public A) valid, (new private + public B) valid; push order private → public B; rollback = revert commits, never force-push.
 
@@ -1485,7 +1485,7 @@ git -C ~/Workspace/d20-folio-content fetch origin main
 git -C ~/Workspace/d20-folio-content worktree add -b feat/combat-p1-identity ~/Workspace/Codex/d20-folio-content-combat-p1-identity origin/main
 ```
 
-Edit the fixture (the entry ends `…"tags": [ { "label": "Arma del gruppo", "color": "purple" } ]` → add `,\n        "instanceId": "talon-mandorlino-1"` after the closing bracket of `tags`, keeping the 2-space indentation the file uses).
+Edit the fixture (the entry ends `…"tags": [ { "label": "Arma del gruppo", "color": "purple" } ]` → add `,\n        "instanceId": "talon-1"` after the closing bracket of `tags`, keeping the 2-space indentation the file uses).
 
 - [ ] **Step 3: Relink the verifier and run the composed gate on the pair**
 
