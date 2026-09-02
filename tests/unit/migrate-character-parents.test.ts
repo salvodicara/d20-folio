@@ -8,6 +8,7 @@ import { effectiveMaxHp } from "@/lib/aggregate-character";
 import { parseCombatState } from "@/lib/combat-state-codec";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import {
+  packCompositionRefusal,
   planParentCutover,
   planParentCutoverSources,
   reportForParentCutover,
@@ -281,6 +282,40 @@ describe("legacy parent cutover", () => {
     expect(at(log, 1)).toBe("keep-me");
   });
 
+  it("carries a resolvable concentration ref but refuses one canonicalization would rewrite", () => {
+    const kept = planParentCutover(
+      [family(legacyParent({ concentration: "fireball" }))],
+      STAMP
+    );
+    expect(kept.issues).toEqual([]);
+    expect(writeAt(kept, childPath).data.playState).toMatchObject({
+      state: { concentration: "fireball" },
+    });
+
+    // A legacy bare NAME is not a spell id in ANY composition: persisting the
+    // in-memory `custom:` net would silently rewrite the spell a player is holding.
+    const rewritten = planParentCutover(
+      [family(legacyParent({ concentration: "Palla di Fuoco" }))],
+      STAMP
+    );
+    expect(rewritten.issues.map((issue) => issue.code)).toEqual([
+      "unresolved-concentration",
+    ]);
+    expect(rewritten.writes).toEqual([]);
+  });
+
+  it("names the codec refusal by CODE only — a codec path can embed a stored map key", () => {
+    const plan = planParentCutover(
+      [family(legacyParent({}, { build: { classes: "nope" } }))],
+      STAMP
+    );
+    const issue = at(plan.issues, 0);
+    expect(issue.code).toBe("invalid-envelope");
+    // The codec's own message is `<code>:<path>`; only the stable code survives.
+    expect(issue.detail).toMatch(/^Character codec refusal: [a-z-]+$/);
+    expect(issue.detail).not.toContain("classes");
+  });
+
   it("refuses an envelope the character codec will not hydrate, and never invents HP", () => {
     const plan = planParentCutover(
       [family(legacyParent({}, { build: { classes: "nope" } }))],
@@ -288,6 +323,19 @@ describe("legacy parent cutover", () => {
     );
     expect(plan.issues.map((issue) => issue.code)).toEqual(["invalid-envelope"]);
     expect(plan.writes).toEqual([]);
+  });
+});
+
+describe("composition proof", () => {
+  it("refuses to plan unless the content pack both should and did compose", () => {
+    const message =
+      "Refusing: content pack not composed — the plan would rewrite pack-only references";
+    // The migration hydrates through the SRD-AWARE codec: an SRD-only process would
+    // see a pack-only spell id as unknown and rewrite a held concentration.
+    expect(packCompositionRefusal(false, 12)).toBe(message);
+    expect(packCompositionRefusal(true, 0)).toBe(message);
+    expect(packCompositionRefusal(false, 0)).toBe(message);
+    expect(packCompositionRefusal(true, 12)).toBeUndefined();
   });
 });
 

@@ -463,6 +463,11 @@ the only write mode). What it guarantees:
   requires `sheet.build == character.build` and `sourceUpdatedAt == character.updatedAt`) needs no
   write. A legacy SHARED parent that has no sheet yet simply stays without one — the owner's client
   creates it on the next autosave.
+- **It refuses to run uncomposed.** The hydration is SRD-aware, so the script proves the private
+  content pack actually composed before it plans anything; a pack-only concentration reference could
+  otherwise be rewritten to `custom:<id>`. Behind that assertion a per-family guard refuses
+  (`unresolved-concentration`) any stored concentration reference that does not survive
+  canonicalization unchanged, so no plan can depend on which catalogue happened to load.
 - **It is deterministic.** A stored log row with no id would otherwise be given a random UUID by
   `normalizeLogEntry`; the planner stamps such rows with an id derived from the family path and the
   row's ordinal (reported as `logIdsStamped`) before the codec sees them.

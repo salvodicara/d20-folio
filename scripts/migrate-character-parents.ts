@@ -32,6 +32,14 @@
  *   • character snapshots (`snapshots/*`) — they are independent stored copies of a
  *     past envelope, not a live play owner.
  *
+ * COMPOSITION. The hydration is SRD-AWARE, so the run first PROVES that the private
+ * content pack actually composed (`packCompositionRefusal`) and refuses otherwise —
+ * an SRD-only process would see a pack-only spell id as unknown and rewrite a held
+ * concentration to `custom:<id>`. A per-family drift guard sits behind that
+ * assertion: a stored concentration ref that does not survive canonicalization
+ * unchanged refuses its family (`unresolved-concentration`) rather than being
+ * rewritten, so no plan can depend on which catalogue happened to load.
+ *
  * DETERMINISM. `normalizeLogEntry` mints `crypto.randomUUID()` for a stored log row
  * that carries no id, which would make two dry-runs disagree and would leave the id
  * to chance. The planner therefore stamps such a row with a DETERMINISTIC id derived
@@ -60,6 +68,7 @@ import { join, resolve } from "node:path";
 import process, { argv as processArgv } from "node:process";
 import { pathToFileURL } from "node:url";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { contentPackEnabled } from "./content-pack-mode.ts";
 import {
   discoverDocuments,
   hashFirestoreDocument,
@@ -487,10 +496,13 @@ function planFamily(family: CharacterFamily, updatedAt: Timestamp): FamilyPlan {
   const stamped = stampLogIds(envelopeMap(parent.state), path);
   const parsed = parseCharacterEnvelope(envelopeMap(parent.build), stamped.state);
   if (!parsed.ok) {
+    // `CodecFailureError.message` is `<code>:<path>`, and that path can name a STORED
+    // MAP KEY (a tracker id, an item instanceId). Only the stable code leaves this
+    // process; the document is identified by its hash, like every other issue.
     return quarantine(
       path,
       "invalid-envelope",
-      `Codec refused the envelope: ${parsed.error}`
+      `Character codec refusal: ${parsed.error.split(":")[0] ?? "unknown"}`
     );
   }
   const hpMax = effectiveMaxHp(parsed.character, parsed.session);
@@ -511,6 +523,26 @@ function planFamily(family: CharacterFamily, updatedAt: Timestamp): FamilyPlan {
     );
   }
   const playState = sessionToPlayStateV1(hydrated.session);
+
+  // DRIFT GUARD (belt and braces behind the composition assertion in `run()`). The
+  // codec chain is SRD-free except one boundary: `normalizeConcentrationRef` marks a
+  // ref the loaded spell index does not know as `custom:<value>`. That is a correct
+  // in-memory read-time net, but PERSISTING it would silently rewrite the spell a
+  // player is holding. A family whose stored ref does not survive canonicalization
+  // unchanged is refused, never rewritten — so a plan can never depend on which
+  // catalogue happened to be composed.
+  const storedConcentration = stamped.state.concentration;
+  if (
+    typeof storedConcentration === "string" &&
+    storedConcentration !== "" &&
+    playState.state.concentration !== storedConcentration
+  ) {
+    return quarantine(
+      path,
+      "unresolved-concentration",
+      "The stored concentration ref does not survive canonicalization"
+    );
+  }
 
   const parentAfter: RawMap = {
     ...parent,
@@ -811,8 +843,30 @@ async function planFixtures(
   return planParentCutover(families, updatedAt);
 }
 
+/**
+ * The refusal message when this run's module composition cannot be trusted, else
+ * `undefined`. The migration hydrates through the app's SRD-AWARE codec, so a run
+ * whose `@pack` resolved to the typed-empty stub — an absent `content-pack` symlink,
+ * an exported `VITE_CONTENT_PACK=0`, a renamed loader warm-up target — would see a
+ * pack-only spell id as unknown and rewrite it. BOTH signals are required: the
+ * documented switch saying the pack SHOULD compose, and a positive runtime count
+ * saying it DID.
+ */
+export function packCompositionRefusal(
+  enabled: boolean,
+  packSpellCount: number
+): string | undefined {
+  return enabled && packSpellCount > 0
+    ? undefined
+    : "Refusing: content pack not composed — the plan would rewrite pack-only references";
+}
+
 async function run(): Promise<void> {
   const options = parseCliOptions(processArgv.slice(2));
+  // BEFORE any planning, in EVERY mode (`--fixtures` included).
+  const { packSpells } = (await import("@pack")) as { packSpells: readonly unknown[] };
+  const refusal = packCompositionRefusal(contentPackEnabled(), packSpells.length);
+  if (refusal) throw new Error(refusal);
   // ONE stamp for the whole run: the plan is hashed and then written verbatim, so a
   // per-document `Timestamp.now()` would make the reread verification unprovable.
   const updatedAt = Timestamp.now();

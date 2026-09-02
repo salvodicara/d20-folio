@@ -20,9 +20,13 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
+import { contentPackEnabled } from "../../scripts/content-pack-mode";
 import { expandImportMetaGlob } from "../../scripts/alias-hooks.mjs";
 
 const run = promisify(execFile);
+/** The pack-composed cases assert a private corpus is present; the SRD-only lane
+ *  legitimately has none, so they are skipped there rather than failing. */
+const withPack = it.skipIf(!contentPackEnabled());
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const REPO = `${pathToFileURL(ROOT).href}/`;
 
@@ -72,35 +76,53 @@ describe("admin-script module loader", () => {
     expect(result.spells).toBeGreaterThan(0);
   }, 60_000);
 
-  it("expands the eager ?url glob and the lazy ?raw glob", async () => {
+  it("expands the eager ?url glob over the public asset tree", async () => {
     const out = await underLoader(`
-      const R = ${JSON.stringify(REPO)};
-      const art = await import(R + "src/data/monster-art.ts");
-      const fixtures = await import(R + "content-pack/fixtures.ts");
+      const art = await import(${JSON.stringify(REPO)} + "src/data/monster-art.ts");
+      console.log(JSON.stringify({ art: Object.keys(art.MONSTER_ART).length }));
+    `);
+    expect((JSON.parse(out) as { art: number }).art).toBeGreaterThan(0);
+  }, 60_000);
+
+  withPack(
+    "expands the lazy ?raw glob into readable file contents",
+    async () => {
+      const out = await underLoader(`
+      const fixtures = await import(${JSON.stringify(REPO)} + "content-pack/fixtures.ts");
       const names = Object.keys(fixtures.packFixtures);
       const raw = await fixtures.packFixtures[names[0]]();
       console.log(JSON.stringify({
-        art: Object.keys(art.MONSTER_ART).length,
         fixtures: names.length,
         raw: typeof raw,
         schema: JSON.parse(raw).schema,
       }));
     `);
-    const result = JSON.parse(out) as Record<string, unknown>;
-    expect(result.art).toBeGreaterThan(0);
-    expect(result).toMatchObject({ raw: "string", schema: 3 });
-  }, 60_000);
+      const result = JSON.parse(out) as Record<string, unknown>;
+      expect(result.fixtures).toBeGreaterThan(0);
+      expect(result).toMatchObject({ raw: "string", schema: 3 });
+    },
+    60_000
+  );
 
-  it("honours the documented VITE_CONTENT_PACK=0 opt-out", async () => {
-    const composed = await underLoader(
-      `const s = await import(${JSON.stringify(REPO)} + "src/data/spells.ts"); console.log(s.spellIndex.size);`
-    );
-    const srdOnly = await underLoader(
-      `const s = await import(${JSON.stringify(REPO)} + "src/data/spells.ts"); console.log(s.spellIndex.size);`,
-      { VITE_CONTENT_PACK: "0" }
-    );
-    expect(Number(composed)).toBeGreaterThanOrEqual(Number(srdOnly));
-  }, 60_000);
+  withPack(
+    "composes the private catalogue, and the VITE_CONTENT_PACK=0 opt-out removes it",
+    async () => {
+      const size = async (env: NodeJS.ProcessEnv = {}): Promise<number> =>
+        Number(
+          await underLoader(
+            `const s = await import(${JSON.stringify(REPO)} + "src/data/spells.ts"); console.log(s.spellIndex.size);`,
+            env
+          )
+        );
+      const composed = await size();
+      const srdOnly = await size({ VITE_CONTENT_PACK: "0" });
+      expect(srdOnly).toBeGreaterThan(0);
+      // STRICT: an equal count would mean the pack silently failed to compose —
+      // exactly the condition the migration refuses to plan under.
+      expect(composed).toBeGreaterThan(srdOnly);
+    },
+    60_000
+  );
 });
 
 describe("import.meta.glob expansion", () => {

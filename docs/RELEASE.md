@@ -94,6 +94,11 @@ node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts --
 Both are read-only in `--check`; each needs `GOOGLE_APPLICATION_CREDENTIALS` pointing at a
 `d20-folio` service-account key. `scripts/alias-loader.mjs` composes the private content pack exactly
 as the app does, so a migration resolves the same ids and catalogues the client would.
+`migrate-character-parents.ts` hydrates through the SRD-aware codec and therefore PROVES the pack
+composed before it plans anything, in every mode: with the `content-pack` symlink missing or
+`VITE_CONTENT_PACK=0` exported it refuses with
+`Refusing: content pack not composed — the plan would rewrite pack-only references` and exits 1,
+rather than quietly rewriting a pack-only spell reference.
 
 An `--apply` run commits at most 500 documents in ONE atomic batch. `migrate-character-parents.ts`
 writes up to two documents per character (the parent and its `combat/state`), so it migrates at most
