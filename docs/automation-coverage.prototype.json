@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "rows": [
+    {
+      "mechanic": "monster:goblin:scimitar",
+      "program": "attack",
+      "step": "*",
+      "status": "automated"
+    },
+    {
+      "mechanic": "monster:goblin:scimitar",
+      "program": "attack",
+      "step": "slash",
+      "status": "physical-input"
+    },
+    {
+      "mechanic": "proto:spell:giggle",
+      "program": "cast",
+      "step": "*",
+      "status": "automated"
+    },
+    {
+      "mechanic": "proto:spell:giggle",
+      "program": "cast",
+      "step": "resist",
+      "status": "physical-input"
+    },
+    {
+      "mechanic": "proto:spell:giggle",
+      "program": "cast",
+      "step": "prone",
+      "status": "automated"
+    },
+    {
+      "mechanic": "proto:spell:giggle",
+      "program": "cast",
+      "step": "laughing",
+      "status": "automated"
+    },
+    {
+      "mechanic": "srd:spell:hunters-mark",
+      "program": "cast",
+      "step": "*",
+      "status": "automated"
+    },
+    {
+      "mechanic": "srd:spell:hunters-mark",
+      "program": "cast",
+      "step": "mark",
+      "status": "automated"
+    },
+    {
+      "mechanic": "srd:spell:hunters-mark",
+      "program": "move",
+      "step": "*",
+      "status": "window"
+    },
+    {
+      "mechanic": "srd:spell:hunters-mark",
+      "program": "move",
+      "step": "move",
+      "status": "automated"
+    },
+    {
+      "mechanic": "srd:spell:shield",
+      "program": "react",
+      "step": "*",
+      "status": "window"
+    },
+    {
+      "mechanic": "srd:spell:shield",
+      "program": "react",
+      "step": "ward",
+      "status": "automated"
+    },
+    {
+      "mechanic": "srd:weapon:longbow",
+      "program": "attack",
+      "step": "*",
+      "status": "automated"
+    },
+    {
+      "mechanic": "srd:weapon:longbow",
+      "program": "attack",
+      "step": "swing",
+      "status": "physical-input"
+    },
+    {
+      "mechanic": "srd:weapon:shortsword",
+      "program": "attack",
+      "step": "*",
+      "status": "automated"
+    },
+    {
+      "mechanic": "srd:weapon:shortsword",
+      "program": "attack",
+      "step": "stab",
+      "status": "physical-input"
+    },
+    {
+      "mechanic": "srd:weapon:shortsword",
+      "program": "opportunity",
+      "step": "*",
+      "status": "window"
+    },
+    {
+      "mechanic": "srd:weapon:shortsword",
+      "program": "opportunity",
+      "step": "stab",
+      "status": "physical-input"
+    }
+  ]
+}

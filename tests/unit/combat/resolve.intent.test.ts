@@ -148,7 +148,7 @@ describe("resolve — intents", () => {
     expect(mustEntity(state, "ranger").turn.bonus).toBe(1);
     const markId = mustEntity(state, "ranger").concentration;
     expect(markId).not.toBeNull();
-    expect(state.effects[markId as string].payload.kind).toBe("mark");
+    expect(state.effects[markId as string]?.payload.kind).toBe("mark");
     expect(state.relations).toContainEqual({
       kind: "mark",
       effect: markId,
