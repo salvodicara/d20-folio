@@ -1119,6 +1119,13 @@ override always remains (golden rule 8).
 
 ## Non-automatable residuals (the deliberate "did NOT automate, and why")
 
+> **Superseded in part (2026-09-02):** several entries below are residuals of the single-character
+> model, not of the rules. The re-derived list (dice, declared geometry facts, rulings, lair actions,
+> narrative clauses) is owned by the target architecture, §13 of
+> `docs/superpowers/specs/2026-09-02-total-combat-automation-design.md`; the per-rule classification
+> that proves it is `docs/superpowers/status/2026-09-02-combat-rules-classification.md`. This section
+> is folded into that list in migration Phase 5.
+
 > A mechanic here is **not a gap** — it is a triaged decision. Re-auditing should treat each as
 > already-settled. (The live-campaign frontier view is `docs/AUTOMATION_BACKLOG.md`; this is the
 > standing taxonomy record.) Most former entries have since SHIPPED as PRIM grant kinds — those are

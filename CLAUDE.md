@@ -58,6 +58,13 @@ proposal until integrated.
 
 ## Architecture in one breath
 
+> **Direction (2026-09-02):** the combat runtime is being re-architected. The target — one
+> entity-generic reducer over an append-only Encounter log, one mechanics authoring format, rules as
+> access policy — is owned by
+> [`docs/superpowers/specs/2026-09-02-total-combat-automation-design.md`](docs/superpowers/specs/2026-09-02-total-combat-automation-design.md)
+> and its [migration program](docs/superpowers/plans/2026-09-02-total-combat-automation-migration.md).
+> The paragraph below describes the code as it is today; `src/lib/combat` is the P2 prototype.
+
 Mechanics are typed data, never prose parsing: a mechanic-bearing source declares a `Grant`;
 `evaluateGrants` aggregates it; pure engine/presenter seams expose it; UI consumes the result.
 Dependencies point data/types/stores/lib → views → features/UI, never backwards. A shared fact has

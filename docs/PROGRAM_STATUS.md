@@ -62,6 +62,21 @@ Supervisor and manual same-thread adapters run only from the clean detached prog
 worktree or another clean worktree whose HEAD has just been proven equal to fresh `origin/main`.
 The shared checkout remains untouched even when its branch name is `main`.
 
+## Automation direction under re-architecture (2026-09-02)
+
+The owner opened a full architecture round on 2026-09-02. Evidence, verdicts and the target are owned
+by `docs/superpowers/status/2026-09-02-combat-automation-audit.md`,
+`docs/superpowers/specs/2026-09-02-total-combat-automation-design.md`, `docs/adr/0001…0009` and
+`docs/superpowers/plans/2026-09-02-total-combat-automation-migration.md`. Owner rulings: no ratified
+kernel destination before this round; trust at the table and minimum cost (no gameplay Cloud
+Functions); one engine for solo and shared play; migrate live data before every deploy; fewer,
+meaningful tests. Consequences for this ledger: the `automation-k1` charter and the Wayfinder slices
+K1→X1 are **superseded** (ADR-0004); `mechanics-*` is salvaged, not adopted (ADR-0003); the P2
+prototype lives in `src/lib/combat` (`docs/superpowers/status/2026-09-02-p2-prototype-report.md`).
+Codex was blocked by the owner on 2026-09-02; `fix/structural-automation-fixes` is an input, not a
+baseline. The next session starts from
+`docs/superpowers/plans/2026-09-02-next-session-handoff.md`.
+
 ## Active charters
 
 ### Foundation — `foundation-f0`
