@@ -587,6 +587,8 @@ export interface ClassEntry {
   maneuverChoices?: string[];
   /** Fighting Style ids chosen for THIS class. */
   fightingStyles?: string[];
+  /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
+  unknown?: Record<string, unknown>;
 }
 
 // ============================================================

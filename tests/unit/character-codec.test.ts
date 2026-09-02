@@ -442,6 +442,30 @@ describe("codec — preservation (design §5.5)", () => {
     ).toBe("kept");
   });
 
+  // The ENVELOPE contract is `{ schema, build, state, meta }` — a key outside it is
+  // not part of the format, so it is TOLERATED on import (never a crash) but not
+  // preserved; only `build` / `state` / entry keys have `unknown` buckets.
+  it("tolerates an unknown TOP-LEVEL envelope field (outside the format contract)", () => {
+    const res = parseCharacter(
+      JSON.stringify({
+        schema: 3,
+        future: "ignored",
+        build: {
+          name: "X",
+          race: "elf",
+          classes: [{ classId: "wizard", level: 5 }],
+          background: "sage",
+          abilities: { STR: 8, DEX: 14, CON: 14, INT: 16, WIS: 12, CHA: 10 },
+        },
+        state: {},
+      })
+    );
+    expect(res.success).toBe(true);
+    if (!res.success) return;
+    expect(res.doc.character.name).toBe("X");
+    expect(res.doc.character.race).toBe("elf");
+  });
+
   it("fills missing optional fields with defaults (bare build = empty session)", () => {
     const res = parseCharacter(
       JSON.stringify({

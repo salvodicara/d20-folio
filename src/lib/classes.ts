@@ -72,6 +72,9 @@ function normalizeEntry(e: ClassEntry): ClassEntry {
     const v = e[key];
     if (Array.isArray(v) && v.length > 0) out[key] = v;
   }
+  // The codec's unknown-key bucket rides along untouched: this rebuild must not be
+  // the seam that drops a key a NEWER app version wrote (design §5.5).
+  if (e.unknown) out.unknown = e.unknown;
   return out;
 }
 

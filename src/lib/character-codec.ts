@@ -25,19 +25,24 @@
  * upgrade-on-read; the v2→v3 migration is complete (every live doc is schema-3).
  * Missing optional fields still default, and the writer always emits schema 3.
  *
- * TOTALITY (design §5.5): the reader never silently loses data.
+ * TOTALITY (design §5.5): every COLLECTION is total — the reader never skips an
+ * element and never trims an unknown key.
  *  - Unknown keys are PRESERVED verbatim in an `unknown` bucket on the character
- *    (unknown `build` keys), the session (unknown `state` keys) and every entry,
- *    and are written back — spread LAST, so a canonical document's bytes are
- *    unchanged and a future document round-trips byte-identically.
- *  - A structurally malformed entry QUARANTINES the whole document with a typed
- *    {@link CodecFailure} (`{ code, path }`) instead of being skipped, so a
- *    shorter array can never be written back over a live user's data. The failure
+ *    (unknown `build` keys), the session (unknown `state` keys) and every entry —
+ *    spells, weapons, equipment, features AND `build.classes[]` — and are written
+ *    back spread LAST, so a canonical document's bytes are unchanged and a future
+ *    document round-trips byte-identically.
+ *  - A structurally malformed element QUARANTINES the whole document with a typed
+ *    {@link CodecFailure} (`{ code, path }`) instead of being skipped, so a shorter
+ *    array or map can never be written back over a live user's data. The failure
  *    reaches `parseStoredCharacter` → the subscription quarantine → diagnostics.
- *  - The four ENTRY collections (`spells` / `weapons` / `equipment` / features) and
- *    the two envelope maps are total. `build.classes` is NOT yet: `parseClasses`
- *    still normalizes levels and drops a malformed entry (see its note), and a
- *    `ClassEntry` carries no `unknown` bucket. That is the one remaining gap.
+ *  - Totality is STRUCTURAL. The remaining value-level seams are ENUMERATED in
+ *    `docs/CHARACTER_SCHEMA.md` → "The codec (implementation contract)": the
+ *    `normalizeLogEntry` semantic degrade (dies with the log seam in P5), the three
+ *    documented one-way read-normalizations (`unit`, the two on `build.overrides`)
+ *    plus the tolerant `instanceId` read, top-level envelope keys outside
+ *    `{ schema, build, state, meta }` (not part of the format contract), and the
+ *    compact `state` map's absence-defaulting scalar readers.
  *
  * Round-trip invariant: `serialize(parse(x)) === x` (byte-identical) for any v3 x.
  *
@@ -95,6 +100,12 @@ import {
   stateToSession,
   type CompactSessionState,
 } from "@/lib/session-state-codec";
+import {
+  CodecFailureError,
+  fail,
+  leftover,
+  type CodecFailure,
+} from "@/lib/codec-failure";
 
 // ─── Primitive validators ───────────────────────────────────────────────────
 
@@ -103,33 +114,9 @@ export function isRecord(val: unknown): val is Record<string, unknown> {
 }
 
 // ─── Totality: typed quarantine + unknown-key preservation ──────────────────
-
-/**
- * Why a stored / imported document could not be decoded, and exactly WHERE. The
- * codec is total: rather than dropping the offending entry (which would write a
- * shorter array back over a live user's data), the whole document is quarantined
- * with this typed reason. `path` is a dotted/indexed address into the envelope
- * (`build.equipment[3].charges.recovery`).
- */
-export interface CodecFailure {
-  code: "malformed-entry" | "invalid-item-resources" | "invalid-build" | "validation";
-  path: string;
-  detail?: string;
-}
-
-/** Thrown by the parsers, caught ONCE by {@link parseCharacterEnvelope}. */
-class CodecFailureError extends Error {
-  readonly failure: CodecFailure;
-  constructor(failure: CodecFailure) {
-    super(`${failure.code}:${failure.path}`);
-    this.name = "CodecFailureError";
-    this.failure = failure;
-  }
-}
-
-function fail(code: CodecFailure["code"], path: string, detail?: string): never {
-  throw new CodecFailureError(detail ? { code, path, detail } : { code, path });
-}
+// `CodecFailure` / `CodecFailureError` / `fail` / `leftover` live in the shared
+// `codec-failure.ts` so BOTH halves of the envelope raise the same error identity
+// (a failure thrown inside `stateToSession` is caught by the one decoder catch).
 
 /**
  * Read an OPTIONAL field: absent is fine (the caller checks), but a field that IS
@@ -158,23 +145,14 @@ function recordArray(value: unknown, path: string): Record<string, unknown>[] {
   });
 }
 
-/**
- * The keys the parser consumed; everything else on `obj` is preserved verbatim
- * under `unknown` so a document written by a NEWER app version survives a
- * round-trip through this one. `undefined` when the object is fully known — a
- * canonical document must never grow an empty bucket.
- */
-function leftover(
-  obj: Record<string, unknown>,
-  known: readonly string[]
-): Record<string, unknown> | undefined {
-  const knownSet = new Set(known);
-  let out: Record<string, unknown> | undefined;
-  for (const [key, value] of Object.entries(obj)) {
-    if (knownSet.has(key)) continue;
-    (out ??= {})[key] = value;
-  }
-  return out;
+/** A list of plain strings, failing at the offending INDEX (never a filtered copy). */
+function stringList(raw: unknown, path: string): string[] {
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw)) fail("invalid-build", path);
+  return raw.map((item, index) => {
+    if (typeof item !== "string") fail("malformed-entry", `${path}[${index}]`);
+    return item;
+  });
 }
 
 /** Re-flatten a parsed entry for serialization: known fields first, `unknown` LAST. */
@@ -184,8 +162,12 @@ function flattenEntry(entry: unknown): unknown {
   return isRecord(unknown) ? { ...rest, ...unknown } : { ...rest };
 }
 
+/** Internal invariant: the caller has already proven the member is an array. */
 function flattenEntries(list: unknown): unknown[] {
-  return Array.isArray(list) ? list.map(flattenEntry) : [];
+  if (!Array.isArray(list)) {
+    throw new TypeError("flattenEntries expects an array of parsed entries");
+  }
+  return list.map(flattenEntry);
 }
 
 const SPELL_SCHOOLS: SpellSchool[] = [
@@ -874,11 +856,6 @@ function isNonEmptyRecord(v: unknown): v is Record<string, unknown> {
 function asString(v: unknown): string {
   return typeof v === "string" ? v : "";
 }
-function stringArray(v: unknown): string[] {
-  return Array.isArray(v)
-    ? v.filter((item): item is string => typeof item === "string")
-    : [];
-}
 // ── build reshape (minimal flat record ⇄ id-based `build`) ────────────────────
 
 /**
@@ -986,42 +963,56 @@ const CLASS_ENTRY_PICK_KEYS = [
   "fightingStyles",
 ] as const;
 
+/** The closed world of one `build.classes[]` entry (what `minimizeClasses` emits). */
+const KNOWN_CLASS_ENTRY_KEYS: readonly string[] = [
+  "classId",
+  "subclassId",
+  "level",
+  ...CLASS_ENTRY_PICK_KEYS,
+];
+
 /**
- * Parse `build.classes` into the in-memory `ClassEntry[]`. Validates ids/levels and
- * keeps only well-formed entries; an empty/garbage array yields `[]`, which
- * `rehydrateCharacter`→`getClasses` then backfills to a non-empty default. (The codec
- * only ever sees v3 envelopes — schema 2 is rejected upstream — so there are no legacy
- * single-class fields here to synthesize from.)
+ * Parse `build.classes` into the in-memory `ClassEntry[]` — TOTAL, like every other
+ * entry collection: a non-record element or an element without a usable `classId` is
+ * a `malformed-entry` at `build.classes[i]`, a wrong-typed `level` / `subclassId` /
+ * pick array fails at its own field path, and every key outside
+ * {@link KNOWN_CLASS_ENTRY_KEYS} is preserved in the entry's `unknown` bucket. An
+ * absent `classes` yields `[]`, which `rehydrateCharacter`→`getClasses` backfills to a
+ * non-empty default (and which `validateCharacterData` then rejects with the human
+ * "Character must have a class."). (The codec only ever sees v3 envelopes — schema 2
+ * is rejected upstream — so there are no legacy single-class fields to synthesize.)
  *
- * NOT yet total (the module note): a malformed entry is dropped rather than
- * quarantining the document (the empty result then fails `validateCharacterData`
- * with the human "Character must have a class."), and an unknown key on an entry is
- * not preserved — `ClassEntry` has no `unknown` bucket. Tightening this needs its
- * own pass over `ClassEntry` + `minimizeClasses`.
+ * `level` is carried VERBATIM: range/integer normalization belongs to the ONE owner,
+ * `getClasses`→`normalizeEntry` (clamp to [1,20]), so it is not duplicated here.
+ * An EMPTY `subclassId` / pick array is treated as absent — the documented default the
+ * minimizer also writes (`minimizeClasses` omits both), so the round-trip is exact.
  */
 function parseClasses(raw: unknown): ClassEntry[] {
-  if (!Array.isArray(raw)) return [];
-  const out: ClassEntry[] = [];
-  for (const item of raw) {
-    if (!isRecord(item)) continue;
-    if (typeof item.classId !== "string" || item.classId === "") continue;
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw)) fail("invalid-build", "build.classes");
+  return raw.map((item, index) => {
+    const path = `build.classes[${index}]`;
+    if (!isRecord(item)) fail("malformed-entry", path);
+    if (typeof item.classId !== "string" || item.classId === "") {
+      fail("malformed-entry", path);
+    }
     const entry: ClassEntry = {
       classId: item.classId,
-      level:
-        typeof item.level === "number" && item.level >= 1 ? Math.floor(item.level) : 1,
+      level: opt(item.level, isNumber, `${path}.level`),
     };
-    if (typeof item.subclassId === "string" && item.subclassId !== "") {
-      entry.subclassId = item.subclassId;
+    if (item.subclassId !== undefined) {
+      const subclassId = opt(item.subclassId, isString, `${path}.subclassId`);
+      if (subclassId !== "") entry.subclassId = subclassId;
     }
     for (const key of CLASS_ENTRY_PICK_KEYS) {
-      const v = item[key];
-      if (Array.isArray(v) && v.length > 0 && v.every((s) => typeof s === "string")) {
-        entry[key] = v;
-      }
+      if (item[key] === undefined) continue;
+      const picks = stringList(item[key], `${path}.${key}`);
+      if (picks.length > 0) entry[key] = picks;
     }
-    out.push(entry);
-  }
-  return out;
+    const unknown = leftover(item, KNOWN_CLASS_ENTRY_KEYS);
+    if (unknown) entry.unknown = unknown;
+    return entry;
+  });
 }
 
 /** Strip empty-string lore fields (only flavor that was actually written ships). */
@@ -1242,7 +1233,7 @@ function buildToMin(build: Record<string, unknown>): MinimalCharacter {
     ...parseEntries(customs.features, "build.customs.features", parseCustomFeature),
   ];
   if (features.length > 0) min.features = features;
-  min.customConditions = stringArray(customs.conditions);
+  min.customConditions = stringList(customs.conditions, "build.customs.conditions");
 
   // Items: validate/reconstruct via the reused parsers.
   min.skills = isRecord(build.skills) ? build.skills : {};
@@ -1591,5 +1582,7 @@ export function parseCharacter(jsonString: string): ImportResult | ImportError {
 }
 
 // `sanitizeSession` re-exported so existing `from "@/lib/character-codec"` callers
-// (and the character-io re-export) get it from one place.
+// (and the character-io re-export) get it from one place; `CodecFailure` likewise,
+// so a consumer that reads `ImportError.failure` needs only the codec import.
 export { sanitizeSession };
+export type { CodecFailure } from "./codec-failure";

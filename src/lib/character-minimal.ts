@@ -234,6 +234,8 @@ function minimizeClasses(character: CharacterData): ClassEntry[] {
       const v = e[key];
       if (v?.length) out[key] = v;
     }
+    // Preserved unknown keys are written back LAST (the codec's ordering rule).
+    if (e.unknown) Object.assign(out, e.unknown);
     return out;
   });
 }

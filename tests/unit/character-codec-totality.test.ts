@@ -57,15 +57,26 @@ const BASES: Envelope[] = [
 ].map((doc: CharacterDoc) => structuredClone(serializeCharacterEnvelope(doc)));
 const COLLECTIONS = ["spells", "weapons", "equipment"] as const;
 
-function withUnknownKeys(rng: () => number, env: Envelope): Envelope {
+/** Where an unknown key was planted, so the ordering rule can be asserted on it. */
+type Injection = { coll: (typeof COLLECTIONS)[number]; index: number; key: string };
+
+function withUnknownKeys(
+  rng: () => number,
+  env: Envelope
+): { env: Envelope; buildKey: string; injections: Injection[] } {
   const out = structuredClone(env);
-  out.build[unknownKey(rng, new Set(KNOWN_BUILD_KEYS))] = pick(rng, JSON_VALUES);
+  const buildKey = unknownKey(rng, new Set(KNOWN_BUILD_KEYS));
+  out.build[buildKey] = pick(rng, JSON_VALUES);
   out.state[unknownKey(rng, new Set(KNOWN_STATE_KEYS))] = pick(rng, JSON_VALUES);
+  const injections: Injection[] = [];
   for (const coll of COLLECTIONS) {
     const list = out.build[coll];
     if (!Array.isArray(list) || list.length === 0) continue;
-    const entry = list[Math.floor(rng() * list.length)] as Record<string, unknown>;
-    entry[unknownKey(rng, new Set(Object.keys(entry)))] = pick(rng, JSON_VALUES);
+    const index = Math.floor(rng() * list.length);
+    const entry = list[index] as Record<string, unknown>;
+    const key = unknownKey(rng, new Set(Object.keys(entry)));
+    entry[key] = pick(rng, JSON_VALUES);
+    injections.push({ coll, index, key });
   }
   const customs = out.build.customs as
     | { features?: Record<string, unknown>[] }
@@ -76,7 +87,7 @@ function withUnknownKeys(rng: () => number, env: Envelope): Envelope {
       rng,
       JSON_VALUES
     );
-  return out;
+  return { env: out, buildKey, injections };
 }
 
 function sortKeys(value: unknown): unknown {
@@ -95,7 +106,7 @@ describe("codec totality", () => {
   it("round-trips generated envelopes with unknown keys at every level (200 seeds)", () => {
     for (let seed = 1; seed <= 200; seed++) {
       const rng = mulberry32(seed);
-      const env = withUnknownKeys(rng, pick(rng, BASES));
+      const { env, buildKey, injections } = withUnknownKeys(rng, pick(rng, BASES));
       const parsed = parseCharacterEnvelope(env.build, env.state);
       expect(parsed.ok, `seed ${seed}: ${parsed.ok ? "" : parsed.error}`).toBe(true);
       if (!parsed.ok) continue;
@@ -105,6 +116,18 @@ describe("codec totality", () => {
         session: parsed.session,
       });
       expect(sortKeys(again), `seed ${seed}`).toEqual(sortKeys(env));
+      // The ORDERING rule: a preserved key is written back LAST, so a canonical
+      // document's existing bytes never shift.
+      expect(Object.keys(again.build).at(-1), `seed ${seed}: build key order`).toBe(
+        buildKey
+      );
+      for (const { coll, index, key } of injections) {
+        const entry = (again.build[coll] as Record<string, unknown>[])[index];
+        expect(
+          entry && Object.keys(entry).at(-1),
+          `seed ${seed}: ${coll}[${index}]`
+        ).toBe(key);
+      }
     }
   });
 
@@ -189,6 +212,61 @@ describe("codec totality", () => {
         path: `build.${coll}[${at}].notes`,
       });
     }
+  });
+
+  it("a malformed class entry quarantines with its path", () => {
+    for (const [bad, path] of [
+      [7, "build.classes[0]"],
+      [{ level: 3 }, "build.classes[0]"],
+      [{ classId: "", level: 3 }, "build.classes[0]"],
+      [{ classId: "wizard", level: "five" }, "build.classes[0].level"],
+      [
+        { classId: "wizard", level: 3, fightingStyles: [7] },
+        "build.classes[0].fightingStyles[0]",
+      ],
+    ] as const) {
+      const env = structuredClone(BASES[0] as Envelope);
+      (env.build.classes as unknown[])[0] = bad;
+      const parsed = parseCharacterEnvelope(env.build, env.state);
+      expect(parsed.ok).toBe(false);
+      if (parsed.ok) continue;
+      expect(parsed.failure).toEqual({ code: "malformed-entry", path });
+    }
+  });
+
+  it("a non-string custom condition quarantines with its path", () => {
+    const env = structuredClone(BASES[0] as Envelope);
+    env.build.customs = { conditions: ["dazzled", 7] };
+    expect(parseCharacterEnvelope(env.build, env.state)).toMatchObject({
+      ok: false,
+      failure: { code: "malformed-entry", path: "build.customs.conditions[1]" },
+    });
+    env.build.customs = { conditions: "dazzled" };
+    expect(parseCharacterEnvelope(env.build, env.state)).toMatchObject({
+      ok: false,
+      failure: { code: "invalid-build", path: "build.customs.conditions" },
+    });
+  });
+
+  it("a malformed session collection quarantines with its path", () => {
+    const env = structuredClone(BASES[0] as Envelope);
+    env.state.log = [{ event: { kind: "legacy", text: "ok" }, ts: 1, id: "a" }, "nope"];
+    expect(parseCharacterEnvelope(env.build, env.state)).toMatchObject({
+      ok: false,
+      failure: { code: "malformed-entry", path: "state.log[1]" },
+    });
+    const nonArray = structuredClone(BASES[0] as Envelope);
+    nonArray.state.log = { not: "an array" };
+    expect(parseCharacterEnvelope(nonArray.build, nonArray.state)).toMatchObject({
+      ok: false,
+      failure: { code: "invalid-build", path: "state.log" },
+    });
+    const map = structuredClone(BASES[0] as Envelope);
+    map.state.pactWeaponConfig = { "pact-blade": 7 };
+    expect(parseCharacterEnvelope(map.build, map.state)).toMatchObject({
+      ok: false,
+      failure: { code: "malformed-entry", path: "state.pactWeaponConfig.pact-blade" },
+    });
   });
 
   it("a non-array collection is a build failure with its path", () => {

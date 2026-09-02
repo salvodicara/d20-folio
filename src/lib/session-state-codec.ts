@@ -8,6 +8,7 @@ import { normalizeStoredConcentration } from "@/lib/concentration";
 import { FAMILIAR_CREATURE_TYPES, type FamiliarCreatureType } from "@/lib/familiar-ids";
 import { normalizeItemResources, parseItemResources } from "@/lib/item-resources";
 import { sanitizeSession } from "@/lib/sanitize-session";
+import { CodecFailureError, fail, leftover } from "@/lib/codec-failure";
 
 type CompactTrackerState = number | { used?: number; rolls: Array<number | null> };
 type Coin = keyof SessionState["currency"];
@@ -372,12 +373,15 @@ function parseCompanionHp(value: unknown): SessionState["companionHp"] {
 }
 
 function parseManifestedWeaponOverrides(
-  value: unknown
+  value: unknown,
+  path: string
 ): SessionState["manifestedWeaponOverrides"] {
   if (!isRecord(value)) return undefined;
   const result: NonNullable<SessionState["manifestedWeaponOverrides"]> = {};
   for (const [key, candidate] of Object.entries(value)) {
-    if (!isRecord(candidate)) continue;
+    // Total: a malformed member quarantines the document rather than vanishing
+    // from the map (a dropped override silently un-pins a player's weapon).
+    if (!isRecord(candidate)) fail("malformed-entry", `${path}.${key}`);
     const override: NonNullable<SessionState["manifestedWeaponOverrides"]>[string] = {};
     if (
       candidate.attackBonus === null ||
@@ -394,11 +398,15 @@ function parseManifestedWeaponOverrides(
   return Object.keys(result).length > 0 ? result : undefined;
 }
 
-function parsePactWeaponConfig(value: unknown): SessionState["pactWeaponConfig"] {
+function parsePactWeaponConfig(
+  value: unknown,
+  path: string
+): SessionState["pactWeaponConfig"] {
   if (!isRecord(value)) return undefined;
   const result: NonNullable<SessionState["pactWeaponConfig"]> = {};
   for (const [key, candidate] of Object.entries(value)) {
-    if (!isRecord(candidate)) continue;
+    // Total: same rule as the manifested-weapon map above.
+    if (!isRecord(candidate)) fail("malformed-entry", `${path}.${key}`);
     const config: NonNullable<SessionState["pactWeaponConfig"]>[string] = {};
     for (const field of ["weaponName", "damageDie", "baseDamageType"] as const) {
       if (typeof candidate[field] === "string") config[field] = candidate[field];
@@ -515,8 +523,17 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
     session.unpinnedActions = stringArray(state.unpinnedActions);
   }
   session.notes = asString(state.notes);
-  if (Array.isArray(state.log)) {
-    session.logEntries = state.log.filter(isRecord) as unknown as LogEntry[];
+  if (state.log !== undefined) {
+    // Total: the log is a collection, so a non-array member and a non-record ROW
+    // both quarantine — filtering the row out would write a SHORTER history back.
+    // (The SEMANTIC degrade of a structurally valid but unrenderable row still
+    // happens later, in `sanitizeSession`'s `normalizeLogEntry` — the documented
+    // one-way normalization that dies with the log seam in P5.)
+    if (!Array.isArray(state.log)) fail("invalid-build", "state.log");
+    session.logEntries = state.log.map((row, index) => {
+      if (!isRecord(row)) fail("malformed-entry", `state.log[${index}]`);
+      return row as unknown as LogEntry;
+    });
   }
   session.grantBundleChoices = parseStringRecord(state.grantBundleChoices);
   if (Array.isArray(state.activeFeatures)) {
@@ -573,9 +590,13 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
     };
   }
   session.manifestedWeaponOverrides = parseManifestedWeaponOverrides(
-    state.manifestedWeaponOverrides
+    state.manifestedWeaponOverrides,
+    "state.manifestedWeaponOverrides"
   );
-  session.pactWeaponConfig = parsePactWeaponConfig(state.pactWeaponConfig);
+  session.pactWeaponConfig = parsePactWeaponConfig(
+    state.pactWeaponConfig,
+    "state.pactWeaponConfig"
+  );
   session.pactWeaponRiderTypes = parsePactWeaponRiderTypes(state.pactWeaponRiderTypes);
   session.polymorphForm = parsePolymorphForm(state.polymorphForm);
   if (isNonEmptyString(state.bardicInspirationDie)) {
@@ -588,20 +609,6 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   const unknown = leftover(state, [...KNOWN_STATE_KEYS, ...RETIRED_STATE_KEYS]);
   if (unknown) session.unknown = unknown;
   return session;
-}
-
-/** Keys the reader consumed; everything else is kept verbatim (`undefined` when none). */
-function leftover(
-  state: Record<string, unknown>,
-  known: readonly string[]
-): Record<string, unknown> | undefined {
-  const knownSet = new Set(known);
-  let out: Record<string, unknown> | undefined;
-  for (const [key, value] of Object.entries(state)) {
-    if (knownSet.has(key)) continue;
-    (out ??= {})[key] = value;
-  }
-  return out;
 }
 
 /** Serialize only the play facts that do not already have a top-level combat owner. */
@@ -709,7 +716,18 @@ export function parsePersistedPlayStateV1(value: unknown): PersistedPlayStatePar
   ) {
     return { ok: false, reason: "invalid-play-state" };
   }
-  const session = sanitizeSession(stateToSession(value.state));
+  // `stateToSession` is TOTAL: a structurally malformed member raises a
+  // `CodecFailureError` rather than trimming it. For this strict decoder that is
+  // simply an invalid play state — the caller's fail-closed leg already exists.
+  let session: SessionState;
+  try {
+    session = sanitizeSession(stateToSession(value.state));
+  } catch (error) {
+    if (error instanceof CodecFailureError) {
+      return { ok: false, reason: "invalid-play-state" };
+    }
+    throw error;
+  }
   const canonical = sessionToPlayStateV1(session);
   return jsonEquals(value, canonical)
     ? { ok: true, value: canonical, session }
