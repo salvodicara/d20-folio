@@ -13,14 +13,18 @@
  * "users own what they type" carve-out does not cover machine-authored text. So
  * the prefill carries NO route (the crash pathname embeds character/campaign
  * ids; admins still get it privately via the report's `debugContext`), and the
- * error text is passed through `redactIdentifiers` — a Firestore error can
- * quote `users/{uid}/…` doc paths, and `error-log.ts`'s token redaction only
- * catches 40+ char runs, so a 28-char Firebase uid would sail through it.
+ * error text is passed through the shared `redactIdentifiers` (ADR-0008,
+ * `@/lib/diagnostics/redact`) — a Firestore error can quote `users/{uid}/…`
+ * doc paths, and `error-log.ts`'s token redaction only catches 40+ char runs,
+ * so a 28-char Firebase uid would sail through it. The static `/characters/new`
+ * route is not an id and stays readable; `/join/{code}` is redacted too (the
+ * invite code is a capability token: it auto-joins a campaign).
  *
  * Pure except `reportCrash` (opens the dialog) — the builder is unit-testable
  * without a DOM.
  */
 
+import { redactIdentifiers } from "@/lib/diagnostics/redact";
 import { openReport } from "./open-report";
 import { MAX_DESCRIPTION, MAX_TITLE, type ReportPrefill } from "./types";
 
@@ -31,21 +35,6 @@ function stackHead(stack: string | undefined): string[] {
     .map((line) => line.trim())
     .filter((line) => line.startsWith("at ") || /@.+:\d+/.test(line))
     .slice(0, 4);
-}
-
-/**
- * Strip identifying path shapes from machine-authored error text before it can
- * enter the (publicly published) title/description: Firestore doc paths
- * (`users/{uid}/…`) and secret-carrying app routes — `/characters/{id}`,
- * `/campaigns/{id}` (the static `/characters/new` route is not an id) and
- * `/join/{code}` (the invite code is a capability token: it auto-joins a
- * campaign). Idempotent; best-effort hygiene mirroring
- * `collect-debug-context.ts`'s notion of which path segments carry ids.
- */
-function redactIdentifiers(text: string): string {
-  return text
-    .replace(/\busers\/[^\s"'`)]+/g, "users/[redacted]")
-    .replace(/\/(characters|campaigns|join)\/(?!new\b)[^\s/?#"'`)]+/g, "/$1/[redacted]");
 }
 
 /** Build the crash prefill: bug · high · redacted headline · error + stack block. */

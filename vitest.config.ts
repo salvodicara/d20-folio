@@ -137,6 +137,7 @@ export default defineConfig({
         "src/lib/storage.ts", // Firebase Storage uploads
         "src/lib/action-log.ts", // IDB + Firestore log persistence
         "src/lib/log-persistence.ts", // IndexedDB wrapper
+        "src/lib/diagnostics/idb.ts", // IndexedDB wrapper
         "src/lib/online-status.ts", // navigator.onLine listener
         "src/lib/dev-bypass.ts", // dev-only auth override
         // (smart-tracker.ts exclusion removed — now covered by smart-tracker*.test.ts)

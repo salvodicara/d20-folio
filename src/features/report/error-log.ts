@@ -22,6 +22,8 @@
  * still runs, so devtools behavior is unchanged.
  */
 
+import { redact } from "@/lib/diagnostics/redact";
+
 /** A single captured error: when it happened + a truncated, redacted message. */
 export interface ErrorLogEntry {
   /** Epoch milliseconds the entry was captured. */
@@ -40,18 +42,6 @@ const DEFAULT_CAPACITY = 15;
 let capacity = DEFAULT_CAPACITY;
 let buffer: ErrorLogEntry[] = [];
 let installed = false;
-
-/**
- * Light redaction so an error string that happens to embed a credential or
- * email never lands in a report. This is best-effort hygiene, not security:
- *  - bearer-ish tokens (long base64url / JWT-like runs) → `[redacted]`
- *  - email addresses → `[email]`
- */
-function redact(text: string): string {
-  return text
-    .replace(/\b[A-Za-z0-9._-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, "[email]")
-    .replace(/\b[A-Za-z0-9_-]{40,}\b/g, "[redacted]");
-}
 
 /** Coerce any thrown/console argument into a short, safe string. */
 function toMessage(args: unknown[]): string {

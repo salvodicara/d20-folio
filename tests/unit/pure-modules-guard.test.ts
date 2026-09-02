@@ -92,6 +92,13 @@ const PURE_MODULES = [
   "src/features/report/error-log.ts",
   "src/features/report/collect-debug-context.ts",
   "src/features/report/screens.ts",
+  // ADR-0008 — the pure diagnostics core (structured logger + ring + report
+  // builder + shared redaction). No Firebase; the IndexedDB adapter
+  // (`idb.ts`) stays off this list, mirroring `log-persistence.ts`.
+  "src/lib/diagnostics/logger.ts",
+  "src/lib/diagnostics/ring.ts",
+  "src/lib/diagnostics/redact.ts",
+  "src/lib/diagnostics/index.ts",
 ] as const;
 
 const FORBIDDEN_IMPORT_PATTERNS = [

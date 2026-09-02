@@ -131,8 +131,8 @@ describe("buildCrashPrefill — pure builder", () => {
     const text = `${prefill.title}\n${prefill.description ?? ""}`;
     expect(text).not.toContain(uid);
     expect(text).not.toContain("char-777");
-    expect(text).toContain("users/[redacted]");
-    expect(text).toContain("/characters/[redacted]");
+    expect(text).toContain("users/[uid]");
+    expect(text).toContain("/characters/[id]");
     // The crash route itself is no longer prefilled at all — admins read it
     // privately from the report's debugContext.
     expect(prefill.description?.startsWith("Missing or insufficient")).toBe(true);
@@ -141,7 +141,7 @@ describe("buildCrashPrefill — pure builder", () => {
     joinError.stack = "";
     const joinTitle = buildCrashPrefill(joinError).title ?? "";
     expect(joinTitle).not.toContain("SeCrEtC0de9");
-    expect(joinTitle).toContain("/join/[redacted]");
+    expect(joinTitle).toContain("/join/[code]");
   });
 
   it("leaves the static /characters/new route readable", () => {
