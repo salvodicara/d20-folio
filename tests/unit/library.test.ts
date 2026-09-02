@@ -5,15 +5,15 @@
  * Pins the three facts the whole feature rests on:
  *  1. a saved entry is a TEMPLATE — every per-character play value is stripped, per
  *     kind (table-driven over all four kinds, so a new kind can't ship unstripped);
- *  2. re-saving the same (kind, name) REPLACES in place — original id, original
- *     position, `replaced: true` — and the cap only bites on genuinely new entries;
+ *  2. re-saving the same id (the item's own stable `instanceId`) REPLACES in place —
+ *     original position, `replaced: true` — and the cap only bites on genuinely new
+ *     entries;
  *  3. landing re-seeds the create-form defaults and never aliases the stored entry.
  */
 import { describe, expect, it } from "vitest";
 import {
-  customDraftAt,
+  customDraftById,
   entryToCharacterItem,
-  isEntryNamed,
   libraryEntryName,
   toLibraryEntry,
   upsertEntry,
@@ -205,32 +205,41 @@ describe("toLibraryEntry — a saved entry is a template, not a sheet row", () =
   });
 });
 
-describe("customDraftAt — only a HOMEBREW row is library material", () => {
+describe("customDraftById — only a HOMEBREW row matching the id is library material", () => {
   const data = {
     spells: [SPELL, { srdId: "fireball" }],
     features: [FEATURE],
     equipment: [EQUIPMENT],
     weapons: [WEAPON],
-  } as unknown as Parameters<typeof customDraftAt>[0];
+  } as unknown as Parameters<typeof customDraftById>[0];
 
   it("returns the stored item, tagged with its kind", () => {
-    expect(customDraftAt(data, "spell", 0)).toEqual({ kind: "spell", item: SPELL });
-    expect(customDraftAt(data, "feature", 0)).toEqual({ kind: "feature", item: FEATURE });
-    expect(customDraftAt(data, "equipment", 0)).toEqual({
+    expect(customDraftById(data, "spell", SPELL.instanceId)).toEqual({
+      kind: "spell",
+      item: SPELL,
+    });
+    expect(customDraftById(data, "feature", FEATURE.instanceId)).toEqual({
+      kind: "feature",
+      item: FEATURE,
+    });
+    expect(customDraftById(data, "equipment", EQUIPMENT.instanceId)).toEqual({
       kind: "equipment",
       item: EQUIPMENT,
     });
-    expect(customDraftAt(data, "weapon", 0)).toEqual({ kind: "weapon", item: WEAPON });
+    expect(customDraftById(data, "weapon", WEAPON.instanceId)).toEqual({
+      kind: "weapon",
+      item: WEAPON,
+    });
   });
 
-  it("returns null for an SRD reference and for a gone index", () => {
-    expect(customDraftAt(data, "spell", 1)).toBeNull();
-    expect(customDraftAt(data, "spell", 9)).toBeNull();
-    expect(customDraftAt(data, "weapon", 3)).toBeNull();
+  it("returns null for an SRD reference and for an unknown instanceId", () => {
+    expect(customDraftById(data, "spell", "fireball")).toBeNull();
+    expect(customDraftById(data, "spell", "no-such-id")).toBeNull();
+    expect(customDraftById(data, "weapon", "no-such-id")).toBeNull();
   });
 });
 
-describe("upsertEntry — same (kind, name) replaces in place", () => {
+describe("upsertEntry — same id replaces in place", () => {
   const first = toLibraryEntry({ kind: "spell", item: SPELL }, NOW);
   const other = toLibraryEntry({ kind: "weapon", item: WEAPON }, NOW);
 
@@ -240,30 +249,30 @@ describe("upsertEntry — same (kind, name) replaces in place", () => {
     expect(entries.map((e) => e.id)).toEqual([first.id, other.id]);
   });
 
-  it("replaces the same (kind, name) keeping the OLD id and position", () => {
+  it("replaces the same id, keeping POSITION (a rename never changes the id)", () => {
     const resaved = toLibraryEntry(
-      { kind: "spell", item: { ...SPELL, description: "brighter embers" } },
+      {
+        kind: "spell",
+        item: {
+          ...SPELL,
+          name: "Hearthfire Bolt, Renamed",
+          description: "brighter embers",
+        },
+      },
       NOW + 1000
     );
+    expect(resaved.id).toBe(first.id); // same instanceId → same id, unaffected by the rename
     const { entries, replaced } = upsertEntry([first, other], resaved);
     expect(replaced).toBe(true);
     expect(entries).toHaveLength(2);
-    expect(entries[0]?.id).toBe(first.id); // old id survives
-    expect(entries[1]?.id).toBe(other.id); // position preserved
+    expect(entries[0]?.id).toBe(first.id); // position preserved
+    expect(entries[1]?.id).toBe(other.id);
     expect(entries[0]?.savedAt).toBe(NOW + 1000); // content is the new one
     const item = entries[0]?.item as CustomSpell;
     expect(item.description).toBe("brighter embers");
   });
 
-  it("matches the name case- and whitespace-insensitively", () => {
-    const resaved = toLibraryEntry(
-      { kind: "spell", item: { ...SPELL, name: "  hearthfire BOLT " } },
-      NOW
-    );
-    expect(upsertEntry([first], resaved).replaced).toBe(true);
-  });
-
-  it("does NOT collide across kinds with the same name", () => {
+  it("does NOT collide across kinds sharing an incidental name", () => {
     const sameName = toLibraryEntry(
       { kind: "equipment", item: { ...EQUIPMENT, name: SPELL.name } },
       NOW
@@ -290,28 +299,16 @@ describe("upsertEntry — same (kind, name) replaces in place", () => {
     expect(appended.entries.length).toBeGreaterThan(FREE_TIER_LIMITS.libraryEntries);
     const replacedSame = upsertEntry(
       full,
-      toLibraryEntry({ kind: "spell", item: { ...SPELL, name: "S0" } }, NOW)
+      toLibraryEntry(
+        {
+          kind: "spell",
+          item: { ...SPELL, name: "S0 renamed", instanceId: customInstanceId("S0") },
+        },
+        NOW
+      )
     );
     expect(replacedSame.replaced).toBe(true);
     expect(replacedSame.entries).toHaveLength(FREE_TIER_LIMITS.libraryEntries);
-  });
-});
-
-describe("isEntryNamed — the identity a rename has to move", () => {
-  const spell = toLibraryEntry({ kind: "spell", item: SPELL }, NOW);
-  const feature = toLibraryEntry({ kind: "feature", item: FEATURE }, NOW);
-
-  it("matches the SAME (kind, name) that upsertEntry matches on", () => {
-    expect(isEntryNamed(spell, "spell", "Hearthfire Bolt")).toBe(true);
-    expect(isEntryNamed(spell, "spell", "  hearthfire BOLT ")).toBe(true);
-    // A feature is named by its title, like everywhere else.
-    expect(isEntryNamed(feature, "feature", "Oath of the Long Road")).toBe(true);
-  });
-
-  it("never matches another kind or another name", () => {
-    expect(isEntryNamed(spell, "equipment", "Hearthfire Bolt")).toBe(false);
-    expect(isEntryNamed(spell, "spell", "Hearthfire Bolts")).toBe(false);
-    expect(isEntryNamed(feature, "feature", "Oath of the Short Road")).toBe(false);
   });
 });
 

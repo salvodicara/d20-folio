@@ -5,8 +5,9 @@
  * that don't exist in the SRD. Used within the Add modals' Custom tab.
  *
  * CUSTOM IS THE LIBRARY: every commit here lands on the character AND upserts the
- * same homebrew into the account-level library ({@link keepInLibrary}, keyed by kind +
- * name), so it is offerable to every other character with no save gesture. A SUCCESSFUL
+ * same homebrew into the account-level library ({@link keepInLibrary}, keyed by the
+ * item's own stable `instanceId`), so it is offerable to every other character with
+ * no save gesture. A SUCCESSFUL
  * keep is silent — the creation itself is the feedback; a second toast would just
  * narrate bookkeeping — but a keep REFUSED by the free-tier cap says so, since the
  * player would otherwise believe their homebrew was filed away. An unhydrated library
@@ -61,7 +62,7 @@ export interface LibraryEditProps<TItem> {
 }
 
 function keepInLibrary(draft: LibraryDraft, t: TFunction): void {
-  const outcome = useLibraryStore.getState().saveToLibrary(draft);
+  const { outcome } = useLibraryStore.getState().saveToLibrary(draft);
   if (outcome !== "full") return;
   useToastStore.getState().showToast({
     message: t("custom.libraryFull", { max: FREE_TIER_LIMITS.libraryEntries }),
@@ -704,11 +705,9 @@ export function CustomFeatureForm({
     const nextData = { ...character.character, features };
     store.setCharacter({ ...character, character: nextData });
     if (isEditing) {
-      // The EDIT leg goes through the rename-aware seam: a retitled feature MOVES its
-      // library entry (identity is (kind, title)) instead of stranding the old one.
-      useLibraryStore
-        .getState()
-        .syncFromCharacter(nextData, "feature", editIndex, editFeature.title);
+      // The EDIT leg mirrors the retitled feature into its library entry, found by
+      // the feature's own stable instanceId (unchanged by a rename).
+      useLibraryStore.getState().syncFromCharacter(nextData, "feature", built.instanceId);
     } else {
       keepInLibrary({ kind: "feature", item: built }, t);
     }

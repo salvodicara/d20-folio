@@ -2725,11 +2725,11 @@ read/write): one listener, one write, zero queries.
 
 **CUSTOM IS THE LIBRARY (owner-ratified 2026-07-30).** There is no "save to library"
 gesture and no manager surface: every Custom form commit — and every sheet-side edit of a
-custom row — UPSERTS that homebrew into the library by (kind, name), silently (the
+custom row — UPSERTS that homebrew into the library by **id**, silently (the
 creation is its own feedback). The only curation is the Custom tab's per-row trash, and a
 deletion STICKS — nothing re-adds an entry but a real create/edit.
 
-Every custom spell/weapon/equipment/feature now carries a REQUIRED, stable `instanceId`
+Every custom spell/weapon/equipment/feature carries a REQUIRED, stable `instanceId`
 (minted once at creation, never re-derived from the display name — the combat-P1
 data-safety identity work). A library entry's `id` IS that item's `instanceId` — the
 SAME identity a character's own copy carries — except a `monster` template, which has no
@@ -2738,29 +2738,22 @@ lands a picked entry's `instanceId` UNCHANGED (so the library template and every
 character's still-untouched copy share one identity) and mints a fresh one only on
 collision — `takenIds`, the set of instanceIds already on the landing character.
 
-`upsertEntry` checks an **id match first** (a rename never changes an item's
-`instanceId`, so the SAME record upserts in place even though its display name no longer
-matches what was stored) and falls back to the (kind, name) match below only when no id
-match exists. This is a safety net inside the still name-keyed model below, not yet the
-model itself — that migration (id-based `upsertEntry`/`customDraftAt`/`syncFromCharacter`,
-deleting `identityKey`/`isEntryNamed`/the rename-move dance) is a separate increment.
+`upsertEntry` matches on `id` ALONE — the display name never enters the comparison.
+Because an item's `instanceId` never changes on a rename, a renamed row upserts as the
+SAME record with no separate rename-detection step: there is no name-keyed identity
+layer underneath, and no "move" to perform — the record was never anywhere else. Two
+consequences:
 
-Two consequences of the (kind, name) layer this id-match sits in front of:
-
-- a RENAME must MOVE the entry — each SHEET-side edit seam passes the PRE-edit name to
-  `syncFromCharacter`, which removes the old-named entry once the new one lands, so a
-  rename can never strand a ghost. In practice the id-match above already resolves a
-  same-item rename as an in-place update (the (kind, name) removal step then finds
-  nothing stale to drop) — the append-then-remove path only still applies to a genuine
-  (kind, name) COLLISION between two different items. It only moves after a SUCCESSFUL
-  upsert: at the cap the append is refused, and dropping the old entry would lose the
-  template outright. The Custom tab's own pencil needs none of that: it knows WHICH
-  entry it opened, so it commits through `updateEntry(id, draft)` — id-keyed,
-  position-preserving, and it absorbs a rename onto another kept entry's name (two rows
-  under one identity would leave the second unreachable by every name-keyed upsert).
-- the free-tier CAP can refuse a keep — but only a genuinely NEW entry (id-match found
-  none, name-match found none): renaming your own already-kept homebrew is an in-place
-  update, so it can never be refused by the cap. A CREATE says so (`keepInLibrary` in
+- a RENAME just re-saves in place — each SHEET-side edit seam passes the item's own
+  `instanceId` to `syncFromCharacter`, which looks the row up by that id
+  (`customDraftById`) and upserts; the id is unaffected by the field that changed, so
+  the SAME entry updates whatever the rename. The Custom tab's own pencil commits
+  through `updateEntry(id, draft)` instead — id-keyed, position-preserving, and it
+  never has to reconcile against another entry, since two entries sharing one id is
+  not a state `upsertEntry`/`updateEntry` can produce.
+- the free-tier CAP can refuse a keep — but only a genuinely NEW id: renaming your own
+  already-kept homebrew is an in-place update (same id, `replaced: true`), so it can
+  never be refused by the cap. A CREATE says so (`keepInLibrary` in
   `CustomCreationForms` — the item still lands on the sheet, only the reusable template
   is lost); the per-keystroke EDIT seam deliberately ignores the outcome, because a
   notice there would fire on every character typed.
@@ -2773,11 +2766,11 @@ The layering mirrors combat-state exactly:
   prepared/equipped/quantity/attuned/notes/tags/overrides, charges wound back to full;
   an item's authored tracking MODE — `tracked`/`isConsumable`/`isPotion` — is content and
   stays, or the pencil's round-trip would silently drop it), `upsertEntry` (an id match
-  replaces IN PLACE first, then falls back to the same (kind, name) match — see above —
-  keeping the original id + position either way), `entryToCharacterItem` (a deep copy re-seeded with the SAME defaults the
-  Custom creation forms produce) and `customDraftAt` (the ONE map from the four character
-  arrays to their kinds, so an edit seam mirrors what is stored). An entry is a TEMPLATE,
-  never a copy of one character's row.
+  replaces IN PLACE, keeping the original position; no match appends), `entryToCharacterItem`
+  (a deep copy re-seeded with the SAME defaults the Custom creation forms produce) and
+  `customDraftById` (the ONE map from the four character arrays, by kind + instanceId,
+  to their kinds, so an edit seam mirrors what is stored). An entry is a TEMPLATE, never
+  a copy of one character's row.
 - **IO** — `src/lib/library-io.ts`: the only library seam touching `firebase/firestore` —
   defensive read (`parseEntries` drops anything malformed), full-doc `setDoc` OVERWRITE
   through `stripUndefined` (offline-queueable), no-op under `DEV_BYPASS_AUTH`, and
@@ -2785,9 +2778,10 @@ The layering mirrors combat-state exactly:
   character auto-save cadence) that coalesces a per-keystroke edit burst into ONE
   whole-doc write and is flushed on teardown.
 - **State** — `src/stores/libraryStore.ts` holds the live list and its mutations
-  (`saveToLibrary` / its `(kind, idx)` convenience `syncFromCharacter` /
-  `removeFromLibrary`), emitting OUTCOMES (`saved`/`updated`/`full`/`unavailable`) rather
-  than strings. Its write seam is **injected** (`LibraryPersistence`), the
+  (`saveToLibrary`, returning the saved/updated entry's `id` alongside the outcome; its
+  `(kind, instanceId)` convenience `syncFromCharacter`; `removeFromLibrary`), emitting
+  OUTCOMES (`saved`/`updated`/`full`/`unavailable`) rather than strings. Its write seam
+  is **injected** (`LibraryPersistence`), the
   `characterStore.combatPersistence` pattern — that is what keeps the store, and therefore
   every create form and edit handler that upserts through it, Firebase-free (pinned by the
   pure-modules guard). A mutation refuses to run until `loaded`, because the write is a

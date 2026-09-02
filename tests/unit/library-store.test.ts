@@ -12,8 +12,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useLibraryStore, type LibraryPersistence } from "@/stores/libraryStore";
 import { toLibraryEntry } from "@/lib/library";
+import { MOCK_CHARACTER } from "@/lib/mock";
 import type { CustomMonster } from "@/types/campaign";
-import type { CustomSpell } from "@/types/character";
+import type { CustomEquipment, CustomSpell } from "@/types/character";
 import { customInstanceId } from "./__helpers__/custom-items";
 
 const MONSTER: CustomMonster = { name: "Ashmaw Hound", ac: 14, maxHp: 33 };
@@ -82,5 +83,26 @@ describe("libraryStore — custom-monster portrait persistence", () => {
     // Neither a missing id nor a spell entry is a monster → no write, no mutation.
     expect(persist).not.toHaveBeenCalled();
     expect(useLibraryStore.getState().entries).toEqual([spellEntry]);
+  });
+});
+
+describe("libraryStore — syncFromCharacter is instanceId-keyed", () => {
+  it("a rename keeps exactly one entry, found by instanceId", () => {
+    useLibraryStore.getState().hydrate([], vi.fn<LibraryPersistence>());
+    const item: CustomEquipment = {
+      custom: true,
+      name: "Boots",
+      instanceId: "boots-1",
+    };
+    const data = { ...MOCK_CHARACTER.character, equipment: [item] };
+    useLibraryStore.getState().syncFromCharacter(data, "equipment", "boots-1");
+    const renamed = {
+      ...data,
+      equipment: [{ ...item, name: "Boots of Bo" }],
+    };
+    useLibraryStore.getState().syncFromCharacter(renamed, "equipment", "boots-1");
+    const entries = useLibraryStore.getState().entries;
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({ id: "boots-1", item: { name: "Boots of Bo" } });
   });
 });

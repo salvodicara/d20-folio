@@ -2,12 +2,12 @@
  * Library Store — the in-memory home of the account-level homebrew library.
  *
  * CUSTOM IS THE LIBRARY: nothing is curated by hand. {@link LibraryState.saveToLibrary}
- * (and its `(kind, idx)` convenience {@link LibraryState.syncFromCharacter}) is called
- * by the CREATE forms and by every sheet-side custom EDIT seam, upserting by kind +
- * name; {@link LibraryState.removeFromLibrary} is the Custom tab's trash — the only
- * deletion, and it STICKS (only a real create/edit ever re-adds an entry). Both apply
- * OPTIMISTICALLY and then hand the whole list to the injected persistence seam, so the
- * Custom tab always reads one list.
+ * (and its `(kind, instanceId)` convenience {@link LibraryState.syncFromCharacter}) is
+ * called by the CREATE forms and by every sheet-side custom EDIT seam, upserting by
+ * id (the item's own `instanceId`); {@link LibraryState.removeFromLibrary} is the
+ * Custom tab's trash — the only deletion, and it STICKS (only a real create/edit ever
+ * re-adds an entry). Both apply OPTIMISTICALLY and then hand the whole list to the
+ * injected persistence seam, so the Custom tab always reads one list.
  *
  * PERSISTENCE IS INJECTED (`persist`), never imported — the same seam
  * `characterStore.combatPersistence` uses, and for the same reason: `library-mount`
@@ -28,9 +28,7 @@
 import { create } from "zustand";
 import { FREE_TIER_LIMITS } from "@/lib/limits";
 import {
-  customDraftAt,
-  isEntryNamed,
-  libraryEntryName,
+  customDraftById,
   toLibraryEntry,
   upsertEntry,
   type LibraryDraft,
@@ -57,8 +55,17 @@ interface LibraryState {
   hydrate: (entries: LibraryEntry[], persist: LibraryPersistence | null) => void;
   /** Drop the library on sign-out / uid change so no entry leaks across accounts. */
   reset: () => void;
-  /** Promote a homebrew item to a reusable entry (upsert by kind + name). */
-  saveToLibrary: (draft: LibraryDraft) => SaveToLibraryOutcome;
+  /**
+   * Promote a homebrew item to a reusable entry (upsert by id — the item's own
+   * `instanceId` for a sheet kind, a fresh UUID for a monster template). Returns
+   * the outcome plus the saved/updated entry's `id` (`null` when refused), so a
+   * caller that just created the entry can find it again without a name-keyed
+   * lookup.
+   */
+  saveToLibrary: (draft: LibraryDraft) => {
+    outcome: SaveToLibraryOutcome;
+    id: string | null;
+  };
   /**
    * Set (or clear, with `null`) the uploaded portrait on a KEPT library entry, by id —
    * a custom monster's face (Part B). No-op for an unknown id. Same debounced persist
@@ -69,20 +76,15 @@ interface LibraryState {
     portrait: { portraitUrl: string; portraitCrop?: PortraitCrop } | null
   ) => void;
   /**
-   * Mirror the character's item at `(kind, idx)` into the library — the shape every
-   * sheet-side EDIT seam uses. A no-op for an SRD row, so a caller never branches.
-   *
-   * `previousName` is the item's identity field as it read BEFORE this edit. Identity
-   * is (kind, name), so a rename would otherwise upsert a second entry and strand the
-   * old-named one forever: when it changed, the stale entry is removed in the same
-   * motion — a rename MOVES the template, never duplicates it. Pass it from every seam
-   * that can touch the name/title; omit it where the field can't change.
+   * Mirror the character's custom item of `kind` whose `instanceId` matches into the
+   * library — the shape every sheet-side EDIT seam uses. A no-op for an SRD row or a
+   * gone id, so a caller never branches. Id-keyed, so a rename upserts the SAME
+   * entry in place — there is no separate rename-move step to run.
    */
   syncFromCharacter: (
     data: CharacterData,
     kind: SheetLibraryKind,
-    idx: number,
-    previousName?: string
+    instanceId: string
   ) => void;
   /**
    * Edit a KEPT entry in place, by id — the Custom tab's pencil. Id-keyed, not
@@ -113,49 +115,35 @@ export const useLibraryStore = create<LibraryState>()((set, get) => {
 
     saveToLibrary: (draft) => {
       const { entries, loaded } = get();
-      if (!loaded) return "unavailable";
-      const { entries: next, replaced } = upsertEntry(
-        entries,
-        toLibraryEntry(draft, Date.now())
-      );
-      if (!replaced && next.length > FREE_TIER_LIMITS.libraryEntries) return "full";
+      if (!loaded) return { outcome: "unavailable", id: null };
+      const entry = toLibraryEntry(draft, Date.now());
+      const { entries: next, replaced } = upsertEntry(entries, entry);
+      if (!replaced && next.length > FREE_TIER_LIMITS.libraryEntries) {
+        return { outcome: "full", id: null };
+      }
       set({ entries: next });
       flush();
-      return replaced ? "updated" : "saved";
+      return { outcome: replaced ? "updated" : "saved", id: entry.id };
     },
 
-    syncFromCharacter: (data, kind, idx, previousName) => {
-      const draft = customDraftAt(data, kind, idx);
+    syncFromCharacter: (data, kind, instanceId) => {
+      const draft = customDraftById(data, kind, instanceId);
       if (!draft) return;
       // The outcome is DELIBERATELY ignored here: this is a per-keystroke edit seam, so
       // a cap/limbo notice would fire on every character typed. The create seams (which
       // fire once, on a deliberate act) are where "full" is spoken —
       // `CustomCreationForms`.
-      const outcome = get().saveToLibrary(draft);
-      // Only MOVE the entry once the new name actually landed; if the upsert was refused
-      // (cap reached / library not hydrated) dropping the old one would lose it outright.
-      if (outcome !== "saved" && outcome !== "updated") return;
-      if (previousName === undefined) return;
-      const stale = get().entries.find((e) => isEntryNamed(e, kind, previousName));
-      // The lookup IS the rename check: when the name did not change, the entry found
-      // under `previousName` is the one just upserted, so there is nothing to move.
-      if (!stale || isEntryNamed(stale, kind, libraryEntryName(draft))) return;
-      get().removeFromLibrary(stale.id);
+      get().saveToLibrary(draft);
     },
 
     updateEntry: (id, draft) => {
       const { entries, loaded } = get();
       if (!loaded || !entries.some((e) => e.id === id)) return;
       const rewritten = toLibraryEntry(draft, Date.now());
-      const next = entries
-        // The edited entry keeps its id and its place in the list.
-        .map((e) => (e.id === id ? { ...rewritten, id } : e))
-        // A rename ONTO another kept entry's name would leave two rows sharing one
-        // (kind, name) identity — the second unreachable by every name-keyed upsert.
-        // The edit absorbs it.
-        .filter(
-          (e) => e.id === id || !isEntryNamed(e, draft.kind, libraryEntryName(draft))
-        );
+      // The edited entry keeps its id (and its place in the list) even when the
+      // draft's own instanceId/UUID would otherwise mint a different one — the
+      // Custom tab's pencil is editing THIS entry, not creating a new one.
+      const next = entries.map((e) => (e.id === id ? { ...rewritten, id } : e));
       set({ entries: next });
       flush();
     },

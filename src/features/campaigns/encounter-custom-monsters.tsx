@@ -40,7 +40,6 @@ import { compressImage, uploadMonsterPortrait } from "@/lib/storage";
 import { readFileAsDataUrl } from "@/lib/image-crop";
 import { normalizePortraitCrop } from "@/lib/portrait-crop";
 import { matchesSearch } from "@/lib/search";
-import { isEntryNamed } from "@/lib/library";
 import { xpForCr } from "@/lib/monster";
 import { fmtXp, formatCr } from "@/lib/utils";
 import { useLocale } from "@/hooks/useLocale";
@@ -233,28 +232,22 @@ export function EncounterCustomMonsters({
     addCount: number,
     initiative: number | null
   ): void {
-    const outcome = saveToLibrary({ kind: "monster", item: template });
+    const { outcome, id } = saveToLibrary({ kind: "monster", item: template });
     if (outcome === "full") {
       showToast({ message: t("custom.libraryFull"), duration: 4000 });
       return;
     }
-    const saved = useLibraryStore
-      .getState()
-      .entries.find(
-        (entry): entry is MonsterEntry =>
-          isMonsterEntry(entry) && isEntryNamed(entry, "monster", template.name)
-      );
-    if (!saved) return;
+    if (!id) return;
     setCount(addCount);
     setPendingInitiative(initiative);
-    setViewingId(saved.id);
+    setViewingId(id);
     setCreating(false);
     const portrait = draftPortrait;
     setDraftPortrait(null);
     if (portrait) {
-      void uploadMonsterPortrait(uid, saved.id, portrait.blob)
+      void uploadMonsterPortrait(uid, id, portrait.blob)
         .then((portraitUrl) =>
-          useLibraryStore.getState().setEntryPortrait(saved.id, {
+          useLibraryStore.getState().setEntryPortrait(id, {
             portraitUrl,
             portraitCrop: portrait.crop,
           })

@@ -33,7 +33,7 @@ import { createItemInstanceId } from "@/lib/item-resources";
  * The homebrew kinds, in display order — the union below derives from it. The first
  * four are SHEET items (they land on a `CharacterData` array); `monster` is the odd
  * one — a reusable ENCOUNTER template that never touches a character sheet, so the
- * character-materialization helpers ({@link entryToCharacterItem}, {@link customDraftAt})
+ * character-materialization helpers ({@link entryToCharacterItem}, {@link customDraftById})
  * exclude it by TYPE ({@link SheetLibraryKind}) and it materializes through the
  * campaigns-side `customMonsterToInput` instead.
  */
@@ -49,7 +49,7 @@ export const LIBRARY_KINDS = [
 export type LibraryKind = (typeof LIBRARY_KINDS)[number];
 
 /** The kinds that land on a character SHEET array (everything but `monster`) — the
- *  domain of {@link entryToCharacterItem} / {@link customDraftAt} / the sheet edit seam. */
+ *  domain of {@link entryToCharacterItem} / {@link customDraftById} / the sheet edit seam. */
 export type SheetLibraryKind = Exclude<LibraryKind, "monster">;
 
 /**
@@ -93,61 +93,44 @@ export function libraryEntryName(entry: LibraryDraft): string {
 }
 
 /**
- * The stored HOMEBREW item at `(kind, idx)` on a character, as a draft — or `null`
- * when that row is an SRD reference (or the index is gone). The one place the four
- * arrays are mapped to their kinds, so every auto-upsert seam (the create forms, the
- * sheet-side edit handlers) mirrors exactly what is stored, never a stale copy held
- * in a prop.
+ * The stored HOMEBREW item of `kind` whose `instanceId` is `instanceId`, as a draft —
+ * or `null` when no such row exists (an SRD reference, a stale id, or the item is
+ * gone). The one place the four arrays are mapped to their kinds, so every auto-upsert
+ * seam (the create forms, the sheet-side edit handlers) mirrors exactly what is
+ * stored, never a stale copy held in a prop. Id-keyed, not index-keyed, so it survives
+ * whatever reordering happens between the read that captured the id and this lookup.
  */
-export function customDraftAt(
+export function customDraftById(
   data: CharacterData,
   kind: SheetLibraryKind,
-  idx: number
+  instanceId: string
 ): SheetLibraryDraft | null {
   switch (kind) {
     case "spell": {
-      const ref = data.spells[idx];
-      return ref && "custom" in ref ? { kind: "spell", item: ref } : null;
+      const ref = data.spells.find(
+        (r): r is CustomSpell => "custom" in r && r.instanceId === instanceId
+      );
+      return ref ? { kind: "spell", item: ref } : null;
     }
     case "feature": {
-      const ref = data.features[idx];
-      return ref && "custom" in ref ? { kind: "feature", item: ref } : null;
+      const ref = data.features.find(
+        (r): r is CustomFeature => "custom" in r && r.instanceId === instanceId
+      );
+      return ref ? { kind: "feature", item: ref } : null;
     }
     case "equipment": {
-      const ref = data.equipment[idx];
-      return ref && "custom" in ref ? { kind: "equipment", item: ref } : null;
+      const ref = data.equipment.find(
+        (r): r is CustomEquipment => "custom" in r && r.instanceId === instanceId
+      );
+      return ref ? { kind: "equipment", item: ref } : null;
     }
     case "weapon": {
-      const ref = data.weapons[idx];
-      return ref && "custom" in ref ? { kind: "weapon", item: ref } : null;
+      const ref = data.weapons.find(
+        (r): r is CustomWeapon => "custom" in r && r.instanceId === instanceId
+      );
+      return ref ? { kind: "weapon", item: ref } : null;
     }
   }
-}
-
-/** The identity form of a name: whitespace-trimmed, case-folded. */
-function normalizeName(name: string): string {
-  return name.trim().toLowerCase();
-}
-
-/** The (kind, name) identity two entries are "the same homebrew" by. */
-function identityKey(entry: LibraryDraft): string {
-  return `${entry.kind}:${normalizeName(libraryEntryName(entry))}`;
-}
-
-/**
- * Is `entry` the homebrew `(kind, name)` denotes — the SAME identity
- * {@link upsertEntry} matches on? The rename seam reads it to find the entry a
- * renamed sheet item USED to be, so a rename MOVES its template instead of
- * stranding a ghost under the old name.
- */
-export function isEntryNamed(
-  entry: LibraryEntry,
-  kind: LibraryKind,
-  name: string
-): boolean {
-  return (
-    entry.kind === kind && normalizeName(libraryEntryName(entry)) === normalizeName(name)
-  );
 }
 
 /**
@@ -166,8 +149,9 @@ export function isEntryNamed(
  *  - feature — kept WHOLE: its contentBlocks / trackers / actions ARE the content,
  *    and its `tags` are authored by the same form that writes the feature.
  *
- * `now` is passed in (never read here) so the function stays pure; `id` is a fresh
- * UUID — {@link upsertEntry} restores the OLD id when it replaces an entry.
+ * `now` is passed in (never read here) so the function stays pure. `id` is the item's
+ * own stable `instanceId` for a sheet kind (unchanged by a rename, so re-saving the
+ * same item always produces the same id) and a fresh UUID for a monster template.
  */
 export function toLibraryEntry(draft: SheetLibraryDraft, now: number): SheetLibraryEntry;
 export function toLibraryEntry(draft: LibraryDraft, now: number): LibraryEntry;
@@ -214,29 +198,24 @@ export function toLibraryEntry(draft: LibraryDraft, now: number): LibraryEntry {
 }
 
 /**
- * Insert `entry`, or REPLACE the existing entry of the same (kind, name) in place —
- * keeping that entry's original `id` and list POSITION, so re-saving an edited
- * homebrew updates its template instead of growing a near-duplicate pile. `replaced`
- * tells the caller which happened (the UI picks its toast from it).
+ * Insert `entry`, or REPLACE the existing entry with the same `id` in place — keeping
+ * that entry's list POSITION, so re-saving an edited homebrew updates its template
+ * instead of growing a near-duplicate pile. `replaced` tells the caller which
+ * happened (the UI picks its toast from it).
  *
- * An `entry.id` MATCH is checked first: for a sheet kind, `id` is the item's own
- * stable `instanceId` (unchanged by a rename), so a renamed row upserts as the SAME
- * record even though its (kind, name) identity now differs from what's stored — the
- * name-keyed fallback below is what {@link syncFromCharacter}'s rename-move dance
- * still walks for the (kind, name) bookkeeping, but resolving id-first here keeps two
- * entries from ever sharing one id (which would make an id-keyed lookup — trash,
- * `updateEntry`, this very check next time — hit the wrong record, or both).
+ * `id` IS the identity: for a sheet kind it is the item's own stable `instanceId`
+ * (unchanged by a rename), so a renamed row upserts as the SAME record with no
+ * separate rename-move step. A monster template's id is a UUID minted once at save
+ * and carried unchanged thereafter, same rule.
  */
 export function upsertEntry(
   entries: readonly LibraryEntry[],
   entry: LibraryEntry
 ): { entries: LibraryEntry[]; replaced: boolean } {
-  const key = identityKey(entry);
-  const existing =
-    entries.find((e) => e.id === entry.id) ?? entries.find((e) => identityKey(e) === key);
+  const existing = entries.find((e) => e.id === entry.id);
   if (!existing) return { entries: [...entries, entry], replaced: false };
   return {
-    entries: entries.map((e) => (e === existing ? { ...entry, id: existing.id } : e)),
+    entries: entries.map((e) => (e === existing ? entry : e)),
     replaced: true,
   };
 }

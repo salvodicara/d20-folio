@@ -21,6 +21,7 @@ import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { stripUndefined } from "@/lib/strip-undefined";
+import { isItemInstanceId } from "@/lib/item-resources";
 import { LIBRARY_KINDS, type LibraryEntry, type LibraryKind } from "@/lib/library";
 
 /** Ref to the user's single homebrew-library document. */
@@ -38,6 +39,15 @@ function parseEntry(raw: unknown): LibraryEntry | null {
   if (typeof r.id !== "string" || r.id === "") return null;
   if (typeof r.savedAt !== "number" || !Number.isFinite(r.savedAt)) return null;
   if (typeof r.item !== "object" || r.item === null) return null;
+  // Every sheet kind's item carries its own stable `instanceId` (required, never
+  // derived from the display name); a monster template has no per-item instanceId
+  // of its own, so it alone is exempt. `id` is trusted as stored — an OLDER entry may
+  // still carry a UUID `id` distinct from its item's `instanceId` (both are stable;
+  // Task 5's migration aligns them), so no `id === item.instanceId` check here.
+  if (kind !== "monster") {
+    const item = r.item as Record<string, unknown>;
+    if (!isItemInstanceId(item.instanceId)) return null;
+  }
   // Past the `kind` tag the item shape is our own write; every renderer reads it
   // through the same optional-field types the sheet already tolerates.
   return { id: r.id, savedAt: r.savedAt, kind, item: r.item } as LibraryEntry;
