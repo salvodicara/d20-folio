@@ -15,6 +15,14 @@
  * none) so the P1 compare-and-set can advance it. That deletes the dual
  * representation the app currently has to read both ways (golden rule 10).
  *
+ * THE PLAN REPRODUCES WHAT THE CLIENT'S OWN CUTOVER WOULD WRITE. A legacy family is
+ * hydrated through the EXACT app path — `parseCharacterEnvelope` (which applies the
+ * tracker-id remap, the race-trait id conformance and the log concentration
+ * normalization), then `effectiveMaxHp` over the hydrated character+session, then
+ * `applyCombatToSession` — and the projected child is finally PROVEN to satisfy the
+ * strict v1 `parseCombatState` the app reads it back with. Nothing is written that
+ * the app could not then load.
+ *
  * What this migration deliberately does NOT touch:
  *   • the character `build` and `updatedAt` — so the anonymous share projection
  *     (`public/sheet`, which requires `sheet.build == character.build` and
@@ -24,31 +32,25 @@
  *   • character snapshots (`snapshots/*`) — they are independent stored copies of a
  *     past envelope, not a live play owner.
  *
+ * DETERMINISM. `normalizeLogEntry` mints `crypto.randomUUID()` for a stored log row
+ * that carries no id, which would make two dry-runs disagree and would leave the id
+ * to chance. The planner therefore stamps such a row with a DETERMINISTIC id derived
+ * from the family path and the row's ordinal BEFORE the codec sees it (counted as
+ * `logIdsStamped`), so the whole plan is a pure function of the corpus.
+ *
  * Read-only by default; `--check` proves the corpus migrated; `--fixtures <dir>` plans
  * over portable exports with no Firebase at all; `--apply --backup <dir>` is the only
  * write mode (preflight → backup → one guarded batch → reread/global/idempotency).
  *
  * Output: counts, hashes and issue CODES. Never a payload, never a raw path.
  *
- * SRD-ONLY BY NECESSITY. Unlike every earlier migration this one reuses the app's play
- * codec (golden rule 17), and that chain reaches `@/data/spells` → the `@pack` barrel →
- * `src/i18n/loaders.ts`, whose `import.meta.glob` exists only under Vite — so plain node
- * cannot evaluate the composed pack at all. Every run therefore sets
- * `VITE_CONTENT_PACK=0` (the documented opt-out in `scripts/content-pack-mode.ts`). That
- * is SAFE, not a compromise: the only SRD-dependent step in the chain is the stored
- * concentration ref, and the planner REFUSES (`unresolved-concentration`) any family
- * whose concentration would not survive canonicalization unchanged, so a plan is
- * identical in either composition.
- *
  * Run with:
- *   VITE_CONTENT_PACK=0 node --import ./scripts/alias-loader.mjs \
- *     scripts/migrate-character-parents.ts
- *   VITE_CONTENT_PACK=0 node --import ./scripts/alias-loader.mjs \
- *     scripts/migrate-character-parents.ts --check
- *   VITE_CONTENT_PACK=0 node --import ./scripts/alias-loader.mjs \
- *     scripts/migrate-character-parents.ts --fixtures /absolute/fixtures/directory
- *   VITE_CONTENT_PACK=0 node --import ./scripts/alias-loader.mjs \
- *     scripts/migrate-character-parents.ts --apply --backup /absolute/fresh/private/dir
+ *   node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts
+ *   node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts --check
+ *   node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts \
+ *     --fixtures /absolute/fixtures/directory
+ *   node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts \
+ *     --apply --backup /absolute/fresh/private/directory
  */
 
 /// <reference types="node" />
@@ -57,8 +59,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import process, { argv as processArgv } from "node:process";
 import { pathToFileURL } from "node:url";
-import { Timestamp } from "firebase-admin/firestore";
-import { contentPackEnabled } from "./content-pack-mode.ts";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import {
   discoverDocuments,
   hashFirestoreDocument,
@@ -67,6 +68,7 @@ import {
   pathHash,
   readTargetConfiguration,
   runGuardedMigration,
+  sha256,
   type GuardedDocumentPlan,
   type GuardedPlan,
   type GuardedWrite,
@@ -77,19 +79,41 @@ import {
 
 const PARENT = /^users\/([^/]+)\/characters\/([^/]+)$/;
 const CHILD = /^users\/([^/]+)\/characters\/([^/]+)\/combat\/state$/;
-const ENVELOPE_SCHEMA = 3;
 
 /** The exact parent fields this migration owns. */
 const PARENT_FIELDS = ["playStateVersion", "state", "revision"] as const;
-/** The exact child fields this migration owns on an UPDATE (a create writes the
- *  complete document). The trio and every peer-owned field stay as stored. */
-const CHILD_FIELDS = ["playState", "updatedAt"] as const;
+/**
+ * The exact child fields this migration owns. `playState`/`updatedAt` are the
+ * cutover itself; the five peer collections are owned only in the sense that the
+ * projected child must PARSE STRICTLY — a stored non-canonical form is rewritten to
+ * (or deleted down to) exactly what the client's own next save would persist.
+ */
+const CHILD_FIELDS = [
+  "playState",
+  "updatedAt",
+  "recentActions",
+  "activeEffects",
+  "turnEconomy",
+  "appliedEncounterEffects",
+  "pendingConcentrationSaves",
+] as const;
+/** The subset of {@link CHILD_FIELDS} that is canonicalized rather than authored. */
+const PEER_FIELDS = [
+  "recentActions",
+  "activeEffects",
+  "turnEconomy",
+  "appliedEncounterEffects",
+  "pendingConcentrationSaves",
+] as const;
 
 // ── The engine seam ─────────────────────────────────────────────────────────
 //
 // A non-literal direct URL keeps the Node-only scripts TS project isolated from the
 // app graph (the pattern `migrate-item-resources.ts` established); at runtime this
-// still reuses the canonical pure codec instead of replicating it (golden rule 17).
+// reuses the canonical engine modules instead of replicating them (golden rule 17).
+// `scripts/alias-loader.mjs` makes the COMPOSED graph (SRD + private pack) loadable
+// under plain node, so the ids and catalogues this migration resolves are exactly
+// the app's.
 
 /** The compact play-state envelope the `combat/state` child owns. */
 interface PersistedPlayStateV1 {
@@ -97,13 +121,9 @@ interface PersistedPlayStateV1 {
   state: RawMap;
 }
 
-type PlayStateParseResult =
-  | { ok: true; value: PersistedPlayStateV1 }
-  | { ok: false; reason: string };
-
-/** The canonical combat-state shape, as `sessionToCombatState` emits it. Structural,
+/** The canonical combat-state shape, as `parseCombatState` returns it. Structural,
  *  so the script never type-imports the app graph. */
-interface PlannedCombatState {
+interface ParsedCombatState {
   hp: { current: number; temp: number };
   conditions: string[];
   initiativeRoll: number | null;
@@ -119,40 +139,49 @@ interface PlannedCombatState {
   playState?: PersistedPlayStateV1;
 }
 
-/** The in-memory session is OPAQUE here: the script only pipes it between the
- *  codec's own functions, so it never needs the app's `SessionState` type. */
+/** The in-memory character/session pair is OPAQUE here: the script only pipes it
+ *  between the engine's own functions, so it never needs the app's types. */
+type OpaqueCharacter = { readonly __character: unique symbol };
 type OpaqueSession = { readonly __session: unique symbol };
 
-interface SessionCodecModule {
-  stateToSession: (state: RawMap) => OpaqueSession;
-  sessionToPlayStateV1: (session: OpaqueSession) => PersistedPlayStateV1;
-  parsePersistedPlayStateV1: (value: unknown) => PlayStateParseResult;
+interface CharacterCodecModule {
+  parseCharacterEnvelope: (
+    build: RawMap,
+    state: RawMap
+  ) =>
+    | { ok: true; character: OpaqueCharacter; session: OpaqueSession }
+    | { ok: false; error: string };
 }
 
-interface SanitizeSessionModule {
-  sanitizeSession: (session: OpaqueSession) => OpaqueSession;
+interface AggregateModule {
+  effectiveMaxHp: (character: OpaqueCharacter, session: OpaqueSession) => number;
+}
+
+interface SessionCodecModule {
+  sessionToPlayStateV1: (session: OpaqueSession) => PersistedPlayStateV1;
+  parsePersistedPlayStateV1: (
+    value: unknown
+  ) => { ok: true; value: PersistedPlayStateV1 } | { ok: false; reason: string };
+}
+
+interface CombatStateCodecModule {
+  parseCombatState: (
+    data: unknown
+  ) =>
+    | { ok: true; ownership: "legacy" | "v1"; state: ParsedCombatState }
+    | { ok: false; reason: string };
 }
 
 interface CombatStateModule {
   applyCombatToSession: (
     session: OpaqueSession,
-    combat: PlannedCombatState | null,
+    combat: ParsedCombatState | null,
     effectiveMax: number,
     // Task 8 drops this argument (and this script's call site with it) once the
     // unmarked-legacy representation is gone.
     ownership: "legacy" | 1
   ) => { ok: true; session: OpaqueSession } | { ok: false; reason: string };
-  sessionToCombatState: (session: OpaqueSession) => PlannedCombatState;
-}
-
-// Refuse the composed pack with an ACTIONABLE line instead of the cryptic
-// `import.meta.glob is not a function` the SRD barrel throws ten frames deep. A
-// bundler-backed run (the Vitest lanes) resolves `@pack` itself and is exempt.
-if (!process.env.VITEST && contentPackEnabled()) {
-  throw new Error(
-    "migrate-character-parents must run SRD-only: prefix the command with VITE_CONTENT_PACK=0 " +
-      "(a plain node process cannot evaluate the composed content pack; see this file's header)"
-  );
+  sessionToCombatState: (session: OpaqueSession) => ParsedCombatState;
 }
 
 /** Prove a dynamically imported engine module really exports the callables this
@@ -168,75 +197,45 @@ function assertModuleShape(
   return value;
 }
 
-const { stateToSession, sessionToPlayStateV1, parsePersistedPlayStateV1 } =
-  assertModuleShape(
-    await import(new URL("../src/lib/session-state-codec.ts", import.meta.url).href),
-    ["stateToSession", "sessionToPlayStateV1", "parsePersistedPlayStateV1"],
-    "Session codec"
-  ) as unknown as SessionCodecModule;
+async function engineModule(specifier: string, names: readonly string[], what: string) {
+  return assertModuleShape(
+    await import(new URL(`../src/lib/${specifier}`, import.meta.url).href),
+    names,
+    what
+  );
+}
 
-const { sanitizeSession } = assertModuleShape(
-  await import(new URL("../src/lib/sanitize-session.ts", import.meta.url).href),
-  ["sanitizeSession"],
-  "Session sanitizer"
-) as unknown as SanitizeSessionModule;
+const { parseCharacterEnvelope } = (await engineModule(
+  "character-codec.ts",
+  ["parseCharacterEnvelope"],
+  "Character codec"
+)) as unknown as CharacterCodecModule;
 
-const { applyCombatToSession, sessionToCombatState } = assertModuleShape(
-  await import(new URL("../src/lib/combat-state.ts", import.meta.url).href),
+const { effectiveMaxHp } = (await engineModule(
+  "aggregate-character.ts",
+  ["effectiveMaxHp"],
+  "Character aggregate"
+)) as unknown as AggregateModule;
+
+const { sessionToPlayStateV1, parsePersistedPlayStateV1 } = (await engineModule(
+  "session-state-codec.ts",
+  ["sessionToPlayStateV1", "parsePersistedPlayStateV1"],
+  "Session codec"
+)) as unknown as SessionCodecModule;
+
+const { parseCombatState } = (await engineModule(
+  "combat-state-codec.ts",
+  ["parseCombatState"],
+  "Combat state codec"
+)) as unknown as CombatStateCodecModule;
+
+const { applyCombatToSession, sessionToCombatState } = (await engineModule(
+  "combat-state.ts",
   ["applyCombatToSession", "sessionToCombatState"],
   "Combat state"
-) as unknown as CombatStateModule;
+)) as unknown as CombatStateModule;
 
-// ── The strict child parse (a local, temporary copy) ────────────────────────
-
-/**
- * The structural half of `parseCombatState` (`src/lib/combat-state-io.ts`), which a
- * script cannot import because that module pulls `@/lib/firebase`. Re-authored here
- * over the LEGACY combat core only — the fields `applyCombatToSession` reads — plus a
- * pass-through of the peer-owned collections, which this migration never rewrites.
- *
- * TASK 8 DELETES THIS: it moves the Firebase-free parse into
- * `src/lib/combat-state-codec.ts`, and this script then imports `parseCombatState`
- * from there like every other reader.
- */
-function parseLegacyCombatCore(data: unknown): PlannedCombatState | undefined {
-  if (!isRecord(data) || !isRecord(data.hp) || !isRecord(data.deathSaves))
-    return undefined;
-  const hp = data.hp;
-  const deathSaves = data.deathSaves;
-  const finite = (value: unknown): value is number =>
-    typeof value === "number" && Number.isFinite(value);
-  if (
-    !finite(hp.current) ||
-    !finite(hp.temp) ||
-    !Array.isArray(data.conditions) ||
-    !data.conditions.every((condition) => typeof condition === "string") ||
-    !(data.initiativeRoll === null || finite(data.initiativeRoll)) ||
-    !finite(deathSaves.successes) ||
-    !finite(deathSaves.failures) ||
-    (data.round !== undefined && !finite(data.round)) ||
-    (data.recentActions !== undefined && !Array.isArray(data.recentActions)) ||
-    (data.bardicInspirationDie !== undefined &&
-      typeof data.bardicInspirationDie !== "string") ||
-    (data.heroicInspiration !== undefined && typeof data.heroicInspiration !== "boolean")
-  ) {
-    return undefined;
-  }
-  return {
-    hp: { current: hp.current, temp: hp.temp },
-    conditions: data.conditions,
-    initiativeRoll: data.initiativeRoll,
-    deathSaves: { successes: deathSaves.successes, failures: deathSaves.failures },
-    ...(typeof data.bardicInspirationDie === "string"
-      ? { bardicInspirationDie: data.bardicInspirationDie }
-      : {}),
-    ...(typeof data.heroicInspiration === "boolean"
-      ? { heroicInspiration: data.heroicInspiration }
-      : {}),
-    round: finite(data.round) ? data.round : 1,
-    recentActions: Array.isArray(data.recentActions) ? data.recentActions : [],
-  };
-}
+// ── The canonical child write ───────────────────────────────────────────────
 
 /**
  * `combatStateWriteData` (`src/lib/combat-state-io.ts`) minus its client-SDK
@@ -244,8 +243,11 @@ function parseLegacyCombatCore(data: unknown): PlannedCombatState | undefined {
  * point — which the kit's reread/hash verification could never match. The migration
  * therefore stamps ONE concrete `Timestamp`, captured once per run, so the planned
  * bytes are exactly the stored bytes.
+ *
+ * Field-for-field identical to the app's writer otherwise, so a document this
+ * migration creates is byte-shaped like one the client would have written.
  */
-function combatStateCreateData(state: PlannedCombatState, updatedAt: Timestamp): RawMap {
+function combatStateWriteData(state: ParsedCombatState, updatedAt: Timestamp): RawMap {
   const playState =
     state.playState === undefined ? null : parsePersistedPlayStateV1(state.playState);
   if (playState && !playState.ok) {
@@ -305,6 +307,8 @@ export interface ParentCutoverCounts {
   childrenCreated: number;
   childrenUpdated: number;
   revisionStamped: number;
+  /** Stored log rows given a deterministic id so the plan stays reproducible. */
+  logIdsStamped: number;
 }
 
 export interface ParentCutoverPlan extends GuardedPlan<ParentCutoverDocumentPlan> {
@@ -348,25 +352,28 @@ function sameFirestoreField(left: unknown, right: unknown): boolean {
 
 /**
  * The exact fields this migration owns, per changed document — never the whole
- * envelope, so an unrelated concurrent field write survives. Derived from the
- * planned before/after pair alone: a child planned from NO stored document (an empty
- * `before`) is the one CREATE this migration can emit, every other write is a
- * field-scoped update.
+ * envelope, so an unrelated concurrent field write survives. Derived from the planned
+ * before/after pair alone: a child planned from NO stored document (an empty `before`)
+ * is the one CREATE this migration can emit; otherwise every owned field that differs
+ * is written, and an owned field the projection drops is deleted with the admin
+ * sentinel (so the stored document really does end up equal to the planned `after`,
+ * which the kit then verifies by reread and hash).
  */
 export function writesForParentCutover(document: GuardedDocumentPlan): GuardedWrite {
-  if (!PARENT.test(document.path) && Object.keys(document.before).length === 0) {
+  const isParent = PARENT.test(document.path);
+  if (!isParent && Object.keys(document.before).length === 0) {
     return { kind: "create", data: document.after };
   }
-  const owned: readonly string[] = PARENT.test(document.path)
-    ? PARENT_FIELDS
-    : CHILD_FIELDS;
+  const owned: readonly string[] = isParent ? PARENT_FIELDS : CHILD_FIELDS;
   const data: RawMap = {};
   for (const field of owned) {
-    if (!Object.hasOwn(document.after, field)) continue;
-    if (
-      Object.hasOwn(document.before, field) &&
-      sameFirestoreField(document.before[field], document.after[field])
-    ) {
+    const inBefore = Object.hasOwn(document.before, field);
+    const inAfter = Object.hasOwn(document.after, field);
+    if (!inAfter) {
+      if (inBefore) data[field] = FieldValue.delete();
+      continue;
+    }
+    if (inBefore && sameFirestoreField(document.before[field], document.after[field])) {
       continue;
     }
     data[field] = document.after[field];
@@ -385,6 +392,7 @@ interface FamilyPlan {
   childCreated: boolean;
   childUpdated: boolean;
   revisionStamped: boolean;
+  logIdsStamped: number;
 }
 
 function quarantine(path: string, code: string, detail: string): FamilyPlan {
@@ -395,30 +403,51 @@ function quarantine(path: string, code: string, detail: string): FamilyPlan {
     childCreated: false,
     childUpdated: false,
     revisionStamped: false,
+    logIdsStamped: 0,
   };
+}
+
+/**
+ * Give every stored log row that lacks a usable id a DETERMINISTIC one, derived from
+ * the family path and the row's ordinal. Without this `normalizeLogEntry` would mint a
+ * random UUID for that row and the plan would differ between two runs — and the id the
+ * user's history ends up carrying forever would be whichever run happened to write.
+ * Returns the state to hand the codec plus how many rows were stamped.
+ */
+function stampLogIds(state: RawMap, path: string): { state: RawMap; stamped: number } {
+  if (!Array.isArray(state.log)) return { state, stamped: 0 };
+  const rows: readonly unknown[] = state.log;
+  let stamped = 0;
+  const log = rows.map((row, ordinal): unknown => {
+    if (!isRecord(row) || (typeof row.id === "string" && row.id !== "")) return row;
+    stamped += 1;
+    return {
+      ...row,
+      id: `lg-${sha256(`log-id-v1\0${path}\0${ordinal}`).slice(0, 32)}`,
+    };
+  });
+  return stamped === 0 ? { state, stamped: 0 } : { state: { ...state, log }, stamped };
+}
+
+/** The app's own read gate (`parseStoredCharacter`): a missing `build`/`state` is an
+ *  empty map, and `parseCharacterEnvelope` owns every structural verdict beyond that. */
+function envelopeMap(value: unknown): RawMap {
+  return isRecord(value) ? value : {};
 }
 
 /** Plan ONE family. A family with any issue is planned as no change at all. */
 function planFamily(family: CharacterFamily, updatedAt: Timestamp): FamilyPlan {
   const path = family.parent.path;
   const parent = family.parent.data;
-  if (
-    parent.schema !== ENVELOPE_SCHEMA ||
-    !isRecord(parent.build) ||
-    !isRecord(parent.state) ||
-    !isRecord(parent.cache)
-  ) {
-    return quarantine(path, "invalid-envelope", "Not a schema-3 character parent");
-  }
   const marked = Object.hasOwn(parent, "playStateVersion");
   if (marked && parent.playStateVersion !== 1) {
     return quarantine(path, "invalid-envelope", "Unsupported playStateVersion");
   }
 
   const child = family.child;
-  const combat = child ? parseLegacyCombatCore(child.data) : undefined;
-  if (child && !combat) {
-    return quarantine(child.path, "invalid-child", "The combat/state core is malformed");
+  const storedChild = child ? parseCombatState(child.data) : undefined;
+  if (child && storedChild && !storedChild.ok) {
+    return quarantine(child.path, "invalid-child", `combat/state ${storedChild.reason}`);
   }
 
   const revisionStamped = !isNonNegativeInteger(parent.revision);
@@ -450,27 +479,30 @@ function planFamily(family: CharacterFamily, updatedAt: Timestamp): FamilyPlan {
       childCreated: false,
       childUpdated: false,
       revisionStamped,
+      logIdsStamped: 0,
     };
   }
 
-  const hpMax = parent.cache.hpMax;
-  if (typeof hpMax !== "number" || !Number.isFinite(hpMax) || hpMax < 1) {
+  // ── The legacy leg: exactly the client's own hydration path ────────────────
+  const stamped = stampLogIds(envelopeMap(parent.state), path);
+  const parsed = parseCharacterEnvelope(envelopeMap(parent.build), stamped.state);
+  if (!parsed.ok) {
     return quarantine(
       path,
-      "missing-cache-hpmax",
-      "The cached maximum HP is absent or not a positive number"
+      "invalid-envelope",
+      `Codec refused the envelope: ${parsed.error}`
     );
   }
-
-  let hydrated: { ok: true; session: OpaqueSession } | { ok: false; reason: string };
-  try {
-    const session = sanitizeSession(stateToSession(parent.state));
-    hydrated = applyCombatToSession(session, combat ?? null, hpMax, "legacy");
-  } catch {
-    // `stateToSession` is TOTAL: a structurally malformed member raises rather than
-    // trimming it. For this migration that is simply an unmigratable envelope.
-    return quarantine(path, "invalid-envelope", "The stored play session is malformed");
+  const hpMax = effectiveMaxHp(parsed.character, parsed.session);
+  if (!Number.isFinite(hpMax) || hpMax < 1) {
+    return quarantine(
+      path,
+      "invalid-envelope",
+      "The hydrated character has no usable maximum HP"
+    );
   }
+  const combat = storedChild?.ok ? storedChild.state : null;
+  const hydrated = applyCombatToSession(parsed.session, combat, hpMax, "legacy");
   if (!hydrated.ok) {
     return quarantine(
       child?.path ?? path,
@@ -478,28 +510,7 @@ function planFamily(family: CharacterFamily, updatedAt: Timestamp): FamilyPlan {
       `Hydration refused the combat/state child: ${hydrated.reason}`
     );
   }
-
   const playState = sessionToPlayStateV1(hydrated.session);
-  // COMPOSITION GUARD. The whole codec chain is SRD-free except one boundary:
-  // `normalizeStoredConcentration` marks a concentration ref the loaded spell index
-  // does not know as `custom:<value>`. That is a safe IN-MEMORY read-time net, but
-  // PERSISTING it would silently rewrite a player's held spell — and this script runs
-  // SRD-only under plain node (the `@pack` barrel reaches `src/i18n/loaders.ts`, whose
-  // `import.meta.glob` only exists under Vite). So a family whose stored concentration
-  // does not survive canonicalization UNCHANGED is refused, never rewritten: the plan
-  // is then provably identical in either composition.
-  const storedConcentration = parent.state.concentration;
-  if (
-    typeof storedConcentration === "string" &&
-    storedConcentration !== "" &&
-    playState.state.concentration !== storedConcentration
-  ) {
-    return quarantine(
-      path,
-      "unresolved-concentration",
-      "The stored concentration ref does not survive canonicalization in this composition"
-    );
-  }
 
   const parentAfter: RawMap = {
     ...parent,
@@ -509,36 +520,54 @@ function planFamily(family: CharacterFamily, updatedAt: Timestamp): FamilyPlan {
   };
   documents.push(documentPlan(path, "parent", parent, parentAfter));
 
-  if (child) {
-    documents.push(
-      documentPlan(child.path, "child", child.data, {
-        ...child.data,
-        playState,
-        updatedAt,
-      })
+  let childAfter: RawMap;
+  if (child && storedChild?.ok) {
+    // The peer collections the app re-persists in canonical form on its next save:
+    // rewrite a stored value the strict reader would reject, and drop one whose
+    // canonical form is empty (exactly what the client's overwrite would shed).
+    const canonical = combatStateWriteData(storedChild.state, updatedAt);
+    const peers: RawMap = {};
+    for (const field of PEER_FIELDS) {
+      if (!Object.hasOwn(child.data, field)) continue;
+      if (!Object.hasOwn(canonical, field)) continue;
+      peers[field] = canonical[field];
+    }
+    const dropped = PEER_FIELDS.filter(
+      (field) => Object.hasOwn(child.data, field) && !Object.hasOwn(canonical, field)
     );
-    return {
-      documents,
-      issues: [],
-      legacy: true,
-      childCreated: false,
-      childUpdated: true,
-      revisionStamped,
-    };
+    childAfter = Object.fromEntries(
+      Object.entries({ ...child.data, ...peers, playState, updatedAt }).filter(
+        ([key]) => !(dropped as readonly string[]).includes(key)
+      )
+    );
+    documents.push(documentPlan(child.path, "child", child.data, childAfter));
+  } else {
+    childAfter = combatStateWriteData(sessionToCombatState(hydrated.session), updatedAt);
+    documents.push(documentPlan(`${path}/combat/state`, "child", {}, childAfter));
   }
 
-  const created = combatStateCreateData(
-    sessionToCombatState(hydrated.session),
-    updatedAt
-  );
-  documents.push(documentPlan(`${path}/combat/state`, "child", {}, created));
+  // THE PROOF the whole migration rests on: the child this run would store must
+  // satisfy the STRICT v1 reader the app loads it back with. A `combat/state` the
+  // app cannot parse is a character the owner cannot open.
+  const reread = parseCombatState(childAfter);
+  if (!reread.ok || reread.ownership !== "v1") {
+    return quarantine(
+      child?.path ?? `${path}/combat/state`,
+      "non-canonical-child",
+      `The projected combat/state would not parse strictly: ${
+        reread.ok ? "not a v1 owner" : reread.reason
+      }`
+    );
+  }
+
   return {
     documents,
     issues: [],
     legacy: true,
-    childCreated: true,
-    childUpdated: false,
+    childCreated: !child,
+    childUpdated: Boolean(child),
     revisionStamped,
+    logIdsStamped: stamped.stamped,
   };
 }
 
@@ -565,6 +594,7 @@ export function planParentCutover(
     childrenCreated: 0,
     childrenUpdated: 0,
     revisionStamped: 0,
+    logIdsStamped: 0,
   };
   for (const family of ordered) {
     const planned = planFamily(family, updatedAt);
@@ -579,6 +609,7 @@ export function planParentCutover(
     if (planned.childCreated) counts.childrenCreated += 1;
     if (planned.childUpdated) counts.childrenUpdated += 1;
     if (planned.revisionStamped) counts.revisionStamped += 1;
+    counts.logIdsStamped += planned.logIdsStamped;
     documents.push(...planned.documents);
     const parentAfter = planned.documents.find((document) => document.role === "parent");
     const childAfter = planned.documents.find((document) => document.role === "child");
@@ -651,8 +682,9 @@ export function planParentCutoverSources(
     }
     seen.add(source.path);
     const match = parent ?? child;
-    if (match?.[1] && match[2])
+    if (match?.[1] && match[2]) {
       identity.set(parentPath, { uid: match[1], charId: match[2] });
+    }
     if (parent) parents.set(parentPath, source);
     else children.set(parentPath, source);
   }
@@ -703,15 +735,22 @@ export function verifyParentCutoverCorpus(
   ];
 }
 
-/** The one report every mode prints: counts, hashes and issue codes only. */
-export function reportForParentCutover(plan: ParentCutoverPlan): {
+export interface ParentCutoverReport {
   format: "d20-folio-parent-cutover-report-v1";
+  mode: "fixtures" | "firestore";
   counts: ParentCutoverCounts;
   writes: { path: string; kind: string; before: string; after: string }[];
   issues: { path: string; code: string }[];
-} {
+}
+
+/** The one report every mode prints: counts, hashes and issue codes only. */
+export function reportForParentCutover(
+  plan: ParentCutoverPlan,
+  mode: ParentCutoverReport["mode"] = "firestore"
+): ParentCutoverReport {
   return {
     format: "d20-folio-parent-cutover-report-v1",
+    mode,
     counts: plan.counts,
     writes: plan.changedDocuments.map((document) => ({
       path: pathHash(document.path),
@@ -732,12 +771,11 @@ export const DISCOVERY = [
 ];
 
 /**
- * Plan over portable character exports (`{schema, build, state}`) on disk. A portable
- * export carries NO `cache`, so fixtures mode synthesizes the one field the legacy
- * leg needs — `cache.hpMax` — from the exported current HP (falling back to 1). That
- * keeps the script ENGINE-FREE (no SRD aggregate, no `effectiveMaxHp`): the fixtures
- * run proves the grouping, codec and write-shaping machinery over real envelopes, and
- * makes no claim about a character's true maximum HP.
+ * Plan over portable character exports (`{schema, build, state}`) on disk, as if each
+ * were an unmarked parent with no child. The hydration is the SAME one a live family
+ * gets — `parseCharacterEnvelope` then `effectiveMaxHp` — so the exports need no
+ * synthesized metadata and the run exercises the real codec over real builds. It is a
+ * dry-run only: no Firebase, no credentials, and nothing is ever written.
  */
 async function planFixtures(
   directory: string,
@@ -760,25 +798,14 @@ async function planFixtures(
         { cause: error }
       );
     }
-    if (!isRecord(parsed))
+    if (!isRecord(parsed)) {
       throw new TypeError(`Fixture ${pathHash(name)} is not an object`);
-    const state = isRecord(parsed.state) ? parsed.state : {};
-    const storedHp = isRecord(state.hp) ? state.hp.current : undefined;
-    const hpMax =
-      typeof storedHp === "number" && Number.isFinite(storedHp) && storedHp >= 1
-        ? storedHp
-        : 1;
+    }
     const charId = name.slice(0, -".json".length);
     families.push({
       uid: "fixtures",
       charId,
-      parent: {
-        path: `users/fixtures/characters/${charId}`,
-        data: {
-          ...parsed,
-          cache: { ...(isRecord(parsed.cache) ? parsed.cache : {}), hpMax },
-        },
-      },
+      parent: { path: `users/fixtures/characters/${charId}`, data: parsed },
     });
   }
   return planParentCutover(families, updatedAt);
@@ -791,7 +818,7 @@ async function run(): Promise<void> {
   const updatedAt = Timestamp.now();
   if (options.mode === "fixtures") {
     const plan = await planFixtures(options.directory, updatedAt);
-    console.log(JSON.stringify(reportForParentCutover(plan), null, 2));
+    console.log(JSON.stringify(reportForParentCutover(plan, "fixtures"), null, 2));
     if (plan.issues.length > 0) process.exitCode = 1;
     return;
   }
@@ -814,7 +841,7 @@ async function run(): Promise<void> {
     plan: (sources) => planParentCutoverSources(sources, updatedAt),
     verify: verifyParentCutoverCorpus,
     writesFor: writesForParentCutover,
-    report: reportForParentCutover,
+    report: (plan) => reportForParentCutover(plan),
     options,
     db: getFirestore(app),
   });

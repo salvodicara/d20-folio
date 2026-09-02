@@ -96,6 +96,10 @@ const PURE_MODULES = [
   "src/features/report/error-log.ts",
   "src/features/report/collect-debug-context.ts",
   "src/features/report/screens.ts",
+  // P1 — the `combat/state` stored-shape DECODER, extracted verbatim from the
+  // Firebase-bound `combat-state-io.ts` so the one-off admin migrations parse a
+  // stored subdoc with the EXACT same rules the app reads it by.
+  "src/lib/combat-state-codec.ts",
   // ADR-0008 — the pure diagnostics core (structured logger + ring + report
   // builder + shared redaction). No Firebase; the IndexedDB adapter
   // (`idb.ts`) stays off this list, mirroring `log-persistence.ts`.

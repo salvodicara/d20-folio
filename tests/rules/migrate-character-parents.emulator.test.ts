@@ -19,6 +19,13 @@ import { env } from "node:process";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { deleteApp, initializeApp, type App } from "firebase-admin/app";
 import { getFirestore, Timestamp, type Firestore } from "firebase-admin/firestore";
+import {
+  parseCharacterEnvelope,
+  serializeCharacterEnvelope,
+} from "@/lib/character-codec";
+import { effectiveMaxHp } from "@/lib/aggregate-character";
+import { parseCombatState } from "@/lib/combat-state-codec";
+import { MOCK_CHARACTER } from "@/lib/mock";
 import { discoverDocuments, runGuardedMigration } from "../../scripts/lib/migration-kit";
 import {
   DISCOVERY,
@@ -39,16 +46,28 @@ let app: App;
 let db: Firestore;
 const temporaryParents: string[] = [];
 
+/** A REAL envelope: the migration hydrates through `parseCharacterEnvelope`, so a
+ *  synthetic build would never reach the code paths this suite exists to prove. */
+const MOCK_ENVELOPE = serializeCharacterEnvelope(MOCK_CHARACTER);
+
 function legacyParent(state: Record<string, unknown>): Record<string, unknown> {
   return {
     schema: 3,
-    build: { name: "Bo", classes: [{ classId: "monk", level: 3 }] },
+    build: structuredClone(MOCK_ENVELOPE.build),
     state,
-    cache: { name: "Bo", hpMax: 24, ac: 15 },
+    cache: { name: "Bo", ac: 15 },
     status: "active",
     shared: false,
     updatedAt: 17,
   };
+}
+
+/** The app's own effective max HP for a stored state — what the created child must
+ *  start at (hp-flat grants active in that session included). */
+function fullHpFor(state: Record<string, unknown>): number {
+  const parsed = parseCharacterEnvelope(structuredClone(MOCK_ENVELOPE.build), state);
+  if (!parsed.ok) throw new Error(`Expected a hydratable envelope: ${parsed.error}`);
+  return effectiveMaxHp(parsed.character, parsed.session);
 }
 
 /** Wipe the whole emulator project — the kit discovers by COLLECTION GROUP, so a
@@ -72,7 +91,19 @@ async function seed(): Promise<void> {
     initiativeRoll: 12,
     deathSaves: { successes: 0, failures: 1 },
     round: 3,
-    recentActions: [],
+    // NON-CANONICAL peer collections, exactly the shapes a lenient legacy reader
+    // tolerated and the strict v1 reader will not: a malformed ring row, junk that
+    // conforms to nothing, a turn budget with no key, and a stale-DC save row.
+    recentActions: [
+      { id: "1", targetIds: ["t"], outcome: "hit", round: 2, save: false, riders: [] },
+      { id: "2", outcome: "hit" },
+    ],
+    activeEffects: [{ garbage: true }],
+    turnEconomy: { selected: {}, attacksUsed: 3 },
+    pendingConcentrationSaves: [
+      { id: "p1", spell: "bless", damage: 10, difficultyClass: 99 },
+    ],
+    appliedEncounterEffects: { epoch: 2, ids: ["e1", 7] },
   });
   // (ii) a legacy parent with NO child: the child is created at full HP.
   batch.set(db.doc(FRESH), legacyParent({ usedSlots: { "1": 2 } }));
@@ -138,12 +169,28 @@ describe("legacy parent cutover apply path (emulator)", () => {
     expect(woundedChild?.deathSaves).toEqual({ successes: 0, failures: 1 });
     expect(woundedChild?.round).toBe(3);
     expect(woundedChild?.updatedAt).toBeInstanceOf(Timestamp);
+    // The peer collections are canonicalized (or shed) so the migrated document
+    // satisfies the STRICT v1 reader — a child the app could not parse is a
+    // character the owner could not open.
+    expect(woundedChild?.recentActions).toEqual([
+      { id: "1", targetIds: ["t"], outcome: "hit", round: 2 },
+    ]);
+    expect(woundedChild?.activeEffects).toBeUndefined();
+    expect(woundedChild?.turnEconomy).toBeUndefined();
+    expect(woundedChild?.pendingConcentrationSaves).toBeUndefined();
+    expect(woundedChild?.appliedEncounterEffects).toEqual({ epoch: 2, ids: ["e1"] });
+    const rereadWounded = parseCombatState(woundedChild);
+    expect(rereadWounded.ok).toBe(true);
+    expect(rereadWounded.ok && rereadWounded.ownership).toBe("v1");
 
     const fresh = (await db.doc(FRESH).get()).data();
     expect(fresh?.playStateVersion).toBe(1);
     expect(fresh?.revision).toBe(0);
     const freshChild = (await db.doc(FRESH_CHILD).get()).data();
-    expect(freshChild?.hp).toEqual({ current: 24, temp: 0 });
+    expect(freshChild?.hp).toEqual({
+      current: fullHpFor({ usedSlots: { "1": 2 } }),
+      temp: 0,
+    });
     expect(freshChild?.deathSaves).toEqual({ successes: 0, failures: 0 });
     expect(freshChild?.round).toBe(1);
     expect(freshChild?.playState).toEqual({

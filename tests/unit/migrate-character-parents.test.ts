@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { Timestamp } from "firebase-admin/firestore";
 import {
+  parseCharacterEnvelope,
+  serializeCharacterEnvelope,
+} from "@/lib/character-codec";
+import { effectiveMaxHp } from "@/lib/aggregate-character";
+import { parseCombatState } from "@/lib/combat-state-codec";
+import { MOCK_CHARACTER } from "@/lib/mock";
+import {
   planParentCutover,
   planParentCutoverSources,
   reportForParentCutover,
@@ -27,18 +34,43 @@ const childPath = `${parentPath}/combat/state`;
 /** One fixed stamp, so two plans of the same corpus stay comparable. */
 const STAMP = new Timestamp(1_760_000_000, 0);
 
+/** A REAL envelope: the migration hydrates through `parseCharacterEnvelope` exactly
+ *  as the client does, so a synthetic build would prove nothing. */
+const MOCK_ENVELOPE = serializeCharacterEnvelope(MOCK_CHARACTER);
+/** The full HP the migration must give a character with no stored combat child: the
+ *  app's own `effectiveMaxHp` over the HYDRATED build+state pair, so an hp-flat grant
+ *  that is active in the stored session counts exactly as it does in the app. */
+function fullHpFor(state: Record<string, unknown>): number {
+  const parsed = parseCharacterEnvelope(structuredClone(MOCK_ENVELOPE.build), state);
+  if (!parsed.ok) throw new Error(`Expected a hydratable envelope: ${parsed.error}`);
+  return effectiveMaxHp(parsed.character, parsed.session);
+}
+
 function legacyParent(
   state: Record<string, unknown>,
   extra: Record<string, unknown> = {}
 ): Record<string, unknown> {
   return {
     schema: 3,
-    build: { name: "Bo", classes: [{ classId: "monk", level: 3 }] },
+    build: structuredClone(MOCK_ENVELOPE.build),
     state,
-    cache: { name: "Bo", hpMax: 24, ac: 15 },
+    cache: { name: "Bo", ac: 15 },
     status: "active",
     shared: false,
     updatedAt: 17,
+    ...extra,
+  };
+}
+
+function legacyChild(extra: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    hp: { current: 9, temp: 0 },
+    conditions: ["prone"],
+    initiativeRoll: 12,
+    deathSaves: { successes: 0, failures: 1 },
+    round: 3,
+    recentActions: [],
+    bardicInspirationDie: "",
     ...extra,
   };
 }
@@ -65,27 +97,17 @@ function writeAt(
   );
 }
 
+function projectedChild(plan: ParentCutoverPlan): Record<string, unknown> {
+  return must(
+    plan.documents.find((document) => document.role === "child"),
+    "a planned child document"
+  ).after;
+}
+
 describe("legacy parent cutover", () => {
   it("moves the noncombat session into combat/state.playState, empties the parent state, marks v1 and stamps revision 0", () => {
     const plan = planParentCutover(
-      [
-        family(
-          legacyParent({
-            trackers: { "monk-focus": 1 },
-            usedSlots: { "1": 2 },
-            notes: "n",
-          }),
-          {
-            hp: { current: 9, temp: 0 },
-            conditions: ["prone"],
-            initiativeRoll: 12,
-            deathSaves: { successes: 0, failures: 1 },
-            round: 3,
-            recentActions: [],
-            bardicInspirationDie: "",
-          }
-        ),
-      ],
+      [family(legacyParent({ usedSlots: { "1": 2 }, notes: "n" }), legacyChild())],
       STAMP
     );
     expect(plan.issues).toEqual([]);
@@ -97,14 +119,16 @@ describe("legacy parent cutover", () => {
     // The parent write never touches `updatedAt` — the public share projection
     // compares its `sourceUpdatedAt` against exactly that field.
     expect(parent.data).not.toHaveProperty("updatedAt");
+    expect(parent.data).not.toHaveProperty("build");
     const child = writeAt(plan, childPath);
     expect(child.kind).toBe("update");
-    expect(child.data.playState).toEqual({
+    expect(child.data.playState).toMatchObject({
       version: 1,
-      state: { trackers: { "monk-focus": 1 }, usedSlots: { "1": 2 }, notes: "n" },
+      state: { usedSlots: { "1": 2 }, notes: "n" },
     });
-    // The trio stays exactly as stored: the child write owns `playState` + `updatedAt`.
+    // The trio stays exactly as stored: the child write never mentions it.
     expect(child.data).not.toHaveProperty("hp");
+    expect(child.data).not.toHaveProperty("conditions");
     expect(child.data.updatedAt).toBe(STAMP);
     expect(plan.counts).toEqual({
       parents: 1,
@@ -113,16 +137,19 @@ describe("legacy parent cutover", () => {
       childrenCreated: 0,
       childrenUpdated: 1,
       revisionStamped: 1,
+      logIdsStamped: 0,
     });
   });
 
-  it("creates the child with full HP when a legacy parent has none", () => {
+  it("creates the child at the app's own effective max HP when a legacy parent has none", () => {
     const plan = planParentCutover([family(legacyParent({ exhaustion: 1 }))], STAMP);
     expect(plan.issues).toEqual([]);
     const child = writeAt(plan, childPath);
     expect(child.kind).toBe("create");
+    const expected = fullHpFor({ exhaustion: 1 });
+    expect(expected).toBeGreaterThan(0);
     expect(child.data).toMatchObject({
-      hp: { current: 24, temp: 0 },
+      hp: { current: expected, temp: 0 },
       conditions: [],
       initiativeRoll: null,
       deathSaves: { successes: 0, failures: 0 },
@@ -131,6 +158,48 @@ describe("legacy parent cutover", () => {
       updatedAt: STAMP,
     });
     expect(plan.counts.childrenCreated).toBe(1);
+  });
+
+  it("proves every projected child against the strict v1 reader the app loads it with", () => {
+    for (const planned of [
+      planParentCutover([family(legacyParent({ notes: "n" }), legacyChild())], STAMP),
+      planParentCutover([family(legacyParent({ notes: "n" }))], STAMP),
+    ]) {
+      expect(planned.issues).toEqual([]);
+      const parsed = parseCombatState(projectedChild(planned));
+      expect(parsed.ok).toBe(true);
+      expect(parsed.ok && parsed.ownership).toBe("v1");
+    }
+  });
+
+  it("canonicalizes the peer collections the strict reader would reject, and drops the ones that empty out", () => {
+    const plan = planParentCutover(
+      [
+        family(
+          legacyParent({ notes: "n" }),
+          legacyChild({
+            // A malformed ring the lenient reader conforms to a shorter list.
+            recentActions: [
+              { id: "1", targetIds: ["t"], outcome: "hit", round: 2 },
+              { nope: true },
+            ],
+            // Junk that conforms to nothing at all → the field must go away.
+            activeEffects: [{ garbage: true }],
+          })
+        ),
+      ],
+      STAMP
+    );
+    expect(plan.issues).toEqual([]);
+    const child = writeAt(plan, childPath);
+    expect(child.data.recentActions).toEqual([
+      { id: "1", targetIds: ["t"], outcome: "hit", round: 2 },
+    ]);
+    // The client's next overwrite sheds an empty collection; so does the migration.
+    expect(child.data.activeEffects).toBeDefined();
+    expect(projectedChild(plan)).not.toHaveProperty("activeEffects");
+    const parsed = parseCombatState(projectedChild(plan));
+    expect(parsed.ok).toBe(true);
   });
 
   it("a marked parent only gains revision when missing; a marked parent without a child is an issue", () => {
@@ -185,12 +254,39 @@ describe("legacy parent cutover", () => {
     ).toEqual([]);
   });
 
-  it("refuses a legacy parent without cache.hpMax and never invents HP", () => {
+  it("is deterministic: a stored log row without an id gets the same id on every run", () => {
+    const withLog = (): CharacterFamily =>
+      family(
+        legacyParent({
+          notes: "n",
+          log: [
+            { event: { kind: "legacy", text: "a" }, ts: 1 },
+            { event: { kind: "legacy", text: "b" }, ts: 2, id: "keep-me" },
+          ],
+        })
+      );
+    const first = planParentCutover([withLog()], STAMP);
+    const second = planParentCutover([withLog()], STAMP);
+    expect(first.issues).toEqual([]);
+    expect(first.counts.logIdsStamped).toBe(1);
+    expect(second.changedDocuments.map((d) => d.afterHash)).toEqual(
+      first.changedDocuments.map((d) => d.afterHash)
+    );
+    const log = (
+      (projectedChild(first).playState as { state: { log?: { id: string }[] } }).state
+        .log ?? []
+    ).map((row) => row.id);
+    expect(log).toHaveLength(2);
+    expect(at(log, 0)).toMatch(/^lg-[0-9a-f]{32}$/);
+    expect(at(log, 1)).toBe("keep-me");
+  });
+
+  it("refuses an envelope the character codec will not hydrate, and never invents HP", () => {
     const plan = planParentCutover(
-      [family(legacyParent({}, { cache: { name: "Bo" } }))],
+      [family(legacyParent({}, { build: { classes: "nope" } }))],
       STAMP
     );
-    expect(plan.issues.map((issue) => issue.code)).toEqual(["missing-cache-hpmax"]);
+    expect(plan.issues.map((issue) => issue.code)).toEqual(["invalid-envelope"]);
     expect(plan.writes).toEqual([]);
   });
 });
@@ -200,15 +296,7 @@ describe("parent cutover discovery, refusals and reporting", () => {
     const plan = planParentCutoverSources(
       [
         { path: parentPath, data: legacyParent({ notes: "n" }) },
-        {
-          path: childPath,
-          data: {
-            hp: { current: 4, temp: 0 },
-            conditions: [],
-            initiativeRoll: null,
-            deathSaves: { successes: 0, failures: 0 },
-          },
-        },
+        { path: childPath, data: legacyChild() },
         { path: "users/u1/library/index", data: { entries: [] } },
         { path: parentPath, data: legacyParent({}) },
       ],
@@ -225,15 +313,7 @@ describe("parent cutover discovery, refusals and reporting", () => {
   it("groups one clean family from two discovered documents", () => {
     const plan = planParentCutoverSources(
       [
-        {
-          path: childPath,
-          data: {
-            hp: { current: 4, temp: 0 },
-            conditions: [],
-            initiativeRoll: null,
-            deathSaves: { successes: 0, failures: 0 },
-          },
-        },
+        { path: childPath, data: legacyChild() },
         { path: parentPath, data: legacyParent({ notes: "n" }) },
       ],
       STAMP
@@ -243,12 +323,18 @@ describe("parent cutover discovery, refusals and reporting", () => {
     expect(plan.counts.childrenUpdated).toBe(1);
   });
 
-  it("refuses a malformed envelope, a bad marker, a malformed child and a marked child without a play state", () => {
+  it("reports a combat child discovered without its parent", () => {
+    const plan = planParentCutoverSources(
+      [{ path: childPath, data: legacyChild() }],
+      STAMP
+    );
+    expect(plan.issues.map((issue) => issue.code)).toEqual(["orphan-child"]);
+    expect(plan.writes).toEqual([]);
+  });
+
+  it("refuses a bad marker, a malformed child and a marked child without a play state", () => {
     const codes = (families: CharacterFamily[]): string[] =>
       planParentCutover(families, STAMP).issues.map((issue) => issue.code);
-    expect(codes([family({ ...legacyParent({}), build: "nope" })])).toEqual([
-      "invalid-envelope",
-    ]);
     expect(codes([family(legacyParent({}, { playStateVersion: 2 }))])).toEqual([
       "invalid-envelope",
     ]);
@@ -267,49 +353,12 @@ describe("parent cutover discovery, refusals and reporting", () => {
     ).toEqual(["invalid-play-state"]);
   });
 
-  it("reports a combat child discovered without its parent", () => {
-    const plan = planParentCutoverSources(
-      [
-        {
-          path: childPath,
-          data: {
-            hp: { current: 4, temp: 0 },
-            conditions: [],
-            initiativeRoll: null,
-            deathSaves: { successes: 0, failures: 0 },
-          },
-        },
-      ],
-      STAMP
-    );
-    expect(plan.issues.map((issue) => issue.code)).toEqual(["orphan-child"]);
-    expect(plan.writes).toEqual([]);
-  });
-
-  it("carries a resolvable concentration ref but refuses one canonicalization would rewrite", () => {
-    const kept = planParentCutover(
-      [family(legacyParent({ concentration: "fireball" }))],
-      STAMP
-    );
-    expect(kept.issues).toEqual([]);
-    expect(writeAt(kept, childPath).data).toMatchObject({
-      playState: { version: 1, state: { concentration: "fireball" } },
-    });
-
-    const rewritten = planParentCutover(
-      [family(legacyParent({ concentration: "Palla di Fuoco" }))],
-      STAMP
-    );
-    expect(rewritten.issues.map((issue) => issue.code)).toEqual([
-      "unresolved-concentration",
-    ]);
-    expect(rewritten.writes).toEqual([]);
-  });
-
-  it("reports counts, path hashes and issue codes only — never a raw path or a payload", () => {
+  it("reports the mode, counts, path hashes and issue codes only — never a raw path or a payload", () => {
     const plan = planParentCutover([family(legacyParent({ notes: "n" }))], STAMP);
-    const report = reportForParentCutover(plan);
+    const report = reportForParentCutover(plan, "fixtures");
     expect(report.format).toBe("d20-folio-parent-cutover-report-v1");
+    expect(report.mode).toBe("fixtures");
+    expect(reportForParentCutover(plan).mode).toBe("firestore");
     expect(report.counts).toMatchObject({ parents: 1, legacy: 1, childrenCreated: 1 });
     const serialized = JSON.stringify(report);
     expect(serialized).not.toContain(parentPath);

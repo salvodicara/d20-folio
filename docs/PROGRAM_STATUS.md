@@ -85,10 +85,10 @@ green against production; a deploy with a pending migration is refused. Commands
 `docs/RELEASE.md` → "Migrate before you deploy". A row is deleted only after the script has run on
 production, been verified idempotent, and had its script + test removed (golden rule 10).
 
-| Migration                              | Persisted shape it prepares                                                                                         | State                                                              |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `scripts/migrate-custom-identity.ts`   | `instanceId` on every custom sheet entry and library id                                                             | Committed; not yet run on production.                              |
-| `scripts/migrate-character-parents.ts` | every parent v1 (`state: {}`), every character has a `combat/state` child with `playState`, every parent `revision` | Committed; not yet run on production. Needs `VITE_CONTENT_PACK=0`. |
+| Migration                              | Persisted shape it prepares                                                                                         | State                                                                                                            |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `scripts/migrate-custom-identity.ts`   | `instanceId` on every custom sheet entry and library id                                                             | Committed; not yet run on production.                                                                            |
+| `scripts/migrate-character-parents.ts` | every parent v1 (`state: {}`), every character has a `combat/state` child with `playState`, every parent `revision` | Committed; not yet run on production. At most ~250 characters per run (two documents each, one 500-write batch). |
 
 ## Active charters
 

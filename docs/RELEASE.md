@@ -88,14 +88,17 @@ with a pending migration is refused. The two currently prepared:
 
 ```sh
 node --import ./scripts/alias-loader.mjs scripts/migrate-custom-identity.ts --check
-VITE_CONTENT_PACK=0 node --import ./scripts/alias-loader.mjs \
-  scripts/migrate-character-parents.ts --check
+node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts --check
 ```
 
 Both are read-only in `--check`; each needs `GOOGLE_APPLICATION_CREDENTIALS` pointing at a
-`d20-folio` service-account key. `migrate-character-parents.ts` needs `VITE_CONTENT_PACK=0` because a
-plain `node` process cannot evaluate the composed content pack — see the migration appendix in
-`docs/CHARACTER_SCHEMA.md` for why that is safe.
+`d20-folio` service-account key. `scripts/alias-loader.mjs` composes the private content pack exactly
+as the app does, so a migration resolves the same ids and catalogues the client would.
+
+An `--apply` run commits at most 500 documents in ONE atomic batch. `migrate-character-parents.ts`
+writes up to two documents per character (the parent and its `combat/state`), so it migrates at most
+**~250 characters per run**; it refuses rather than splitting the batch, and a corpus larger than that
+needs the write ceiling revisited before the run rather than a partial apply.
 
 ## What goes in `CHANGELOG.md`
 

@@ -1,92 +1,36 @@
 /**
- * alias-loader — a tiny Node module-resolution hook that maps the Vite `@/` alias
- * to the repo's `src/` directory, so an admin SCRIPT run with plain `node` can
- * import the app's engine modules (the unified codec, the SRD) the SAME way the app
- * does — without duplicating their logic in the script (golden rule 17: one source
- * of truth, no replicated codec).
+ * alias-loader — registers the Node module-resolution/load hooks that let an admin
+ * SCRIPT run with plain `node` import the app's engine modules (the unified codec,
+ * the SRD, the composed content pack) the SAME way the app does — without
+ * duplicating their logic in the script (golden rule 17: one source of truth, no
+ * replicated codec).
  *
- * Node 24 already strips TypeScript types from `.ts` files natively; this hook only
- * adds the `@/…` → `<repo>/src/…` rewrite Node doesn't know about, and appends a
- * `.ts` extension to an extension-less alias import. Used by
- * `scripts/migrate-unified-codec.ts` via:
+ * Node 24 already strips TypeScript types from `.ts` files natively; the hooks in
+ * `scripts/alias-hooks.mjs` add what Node does not know: the `@/` and `@pack`
+ * aliases, extension-less relative imports, JSON import attributes, and the
+ * `import.meta.glob(...)` expansion that makes the composed SRD/pack graph loadable
+ * outside Vite. Used by every migration script via:
  *
- *   node --import ./scripts/alias-loader.mjs scripts/migrate-unified-codec.ts
+ *   node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts
  */
 import { register } from "node:module";
-import { pathToFileURL, fileURLToPath } from "node:url";
-import { dirname, resolve as resolvePath } from "node:path";
 import { existsSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const SRC = resolvePath(HERE, "..", "src");
+register(new URL("./alias-hooks.mjs", import.meta.url), pathToFileURL("./"));
 
-register(
-  // Inline the resolve hook as a data: URL so this single file both registers AND
-  // defines the hook (no second file to ship).
-  "data:text/javascript," +
-    encodeURIComponent(`
-      import { existsSync } from "node:fs";
-      import { fileURLToPath, pathToFileURL } from "node:url";
-      import { dirname, resolve as resolvePath } from "node:path";
-      const SRC = ${JSON.stringify(SRC)};
-      // The documented content-pack opt-out (scripts/content-pack-mode.ts — "the ONE
-      // place that decides"): presence + \`VITE_CONTENT_PACK !== "0"\`. Read on the MAIN
-      // thread at register time, because a module hook runs on its own thread with a
-      // frozen copy of the environment.
-      const PACK_DISABLED = ${JSON.stringify(process.env.VITE_CONTENT_PACK === "0")};
-      // Append a .ts/.tsx/index.ts extension to an extension-less file path.
-      function withExt(abs) {
-        if (/\\.[a-z0-9]+$/i.test(abs)) return abs;
-        if (existsSync(abs + ".ts")) return abs + ".ts";
-        if (existsSync(abs + ".tsx")) return abs + ".tsx";
-        if (existsSync(abs + "/index.ts")) return abs + "/index.ts";
-        if (existsSync(abs + "/index.tsx")) return abs + "/index.tsx";
-        return abs;
-      }
-      export async function resolve(specifier, context, next) {
-        // (0) the Vite "@pack" alias: the sibling pack when present, else the SRD-only stub.
-        if (specifier === "@pack" || specifier.startsWith("@pack/")) {
-          const packRoot = resolvePath(SRC, "..", "content-pack");
-          const sub = specifier === "@pack" ? "" : specifier.slice("@pack".length);
-          const packTarget = withExt(packRoot + (sub === "" ? "/index" : sub));
-          if (!PACK_DISABLED && existsSync(packTarget)) {
-            return next(pathToFileURL(packTarget).href, context);
-          }
-          const stub = withExt(SRC + "/data/pack-empty");
-          return next(pathToFileURL(stub).href, context);
-        }
-        // (1) the Vite "@/" alias → <repo>/src/…
-        if (specifier.startsWith("@/")) {
-          const abs = withExt(SRC + "/" + specifier.slice(2));
-          return next(pathToFileURL(abs).href, context);
-        }
-        // (2) an extension-less RELATIVE import from a TS module (the engine's own
-        //     "./foo" imports) — node ESM won't auto-add .ts, so resolve it here.
-        if (
-          (specifier.startsWith("./") || specifier.startsWith("../")) &&
-          context.parentURL &&
-          context.parentURL.startsWith("file://") &&
-          !/\\.[a-z0-9]+$/i.test(specifier)
-        ) {
-          const parentDir = dirname(fileURLToPath(context.parentURL));
-          const abs = withExt(resolvePath(parentDir, specifier));
-          if (existsSync(abs)) return next(pathToFileURL(abs).href, context);
-        }
-        return next(specifier, context);
-      }
-      // Vite imports *.json with no import attribute; Node ESM requires
-      // \`with { type: "json" }\`. Inject it on resolve so the engine's id-keyed
-      // SRD JSON catalogues load under plain node.
-      export async function load(url, context, next) {
-        if (url.endsWith(".json")) {
-          return next(url, { ...context, importAttributes: { type: "json" } });
-        }
-        return next(url, context);
-      }
-    `),
-  pathToFileURL("./")
-);
-
-// Touch the imports so linters don't flag them as unused (they document intent).
-void existsSync;
-void pathToFileURL;
+// CYCLE WARM-UP. `content-pack/index.ts` re-exports `./overlay` (line ~43) AFTER
+// `./i18n/loader`, and that loader imports back into `@/i18n/loaders` →
+// `@/i18n/srd-en`, whose module body READS `srdOverlay` at init. Under Node's ESM
+// cycle semantics the binding is still in its temporal dead zone at that moment, so
+// any script that reaches the SRD graph through `@pack` dies with
+// "Cannot access 'srdOverlay' before initialization". (A bundler is immune: Vite
+// rewrites cyclic bindings into lazily-read getters.) Evaluating the overlay module
+// FIRST initializes it before the cycle closes. Cheap — the module is a pair of typed
+// data tables with no runtime imports — and skipped entirely when the pack is absent
+// or opted out, so `--import ./scripts/alias-loader.mjs` stays the only thing a
+// script needs.
+const packOverlay = new URL("../content-pack/overlay.ts", import.meta.url);
+if (process.env.VITE_CONTENT_PACK !== "0" && existsSync(packOverlay)) {
+  await import(packOverlay.href);
+}

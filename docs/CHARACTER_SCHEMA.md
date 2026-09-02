@@ -438,8 +438,9 @@ absent.
 
 P1 cutover (`scripts/migrate-character-parents.ts`): every live parent is v1 (`state: {}`, the play
 session lives in `combat/state.playState`), every character has a `combat/state` child, every parent
-carries `revision`. `playStateVersion: 1` remains a dead stored field until the P3 `combat/state` v2
-migration deletes it; no code reads it.
+carries `revision`. After P1, `playStateVersion: 1` is still READ — by `src/lib/firestore.ts` and by
+`firestore.rules` — until Task 8 removes those reads; from then it is a dead stored field, and the P3
+`combat/state` v2 migration deletes it.
 
 Until that script has run on production, a historical schema-3 parent that does not yet carry the
 marker remains writable in its established mode: non-combat session facts such as spent spell slots
@@ -447,18 +448,24 @@ stay in the parent `state`, while the combat trio stays in `combat/state`.
 
 The script is read-only by default and follows the ADR-0009 protocol shared with
 `scripts/migrate-custom-identity.ts` (`--check` proves the corpus migrated; `--apply --backup <dir>` is
-the only write mode). Three properties are worth knowing before running it:
+the only write mode). What it guarantees:
 
-- It never touches `build` or `updatedAt`, so the anonymous share projection (`public/sheet`, which
+- **The plan is what the client would have written.** A legacy family is hydrated through the exact app
+  path — `parseCharacterEnvelope` (tracker-id remap, race-trait id conformance, log concentration
+  normalization), then `effectiveMaxHp` over the hydrated character+session, then
+  `applyCombatToSession` — and the projected `combat/state` is finally re-parsed with the strict v1
+  `parseCombatState` the app reads it back with (`non-canonical-child` when it would not). Nothing is
+  written that the app could not then load.
+- **The created child starts at the app's effective maximum HP**, so an hp-flat grant active in the
+  stored session (Aid, a Tough-style bonus) counts exactly as it does on the sheet. There is no
+  dependency on the possibly-stale `cache.hpMax`.
+- **It never touches `build` or `updatedAt`**, so the anonymous share projection (`public/sheet`, which
   requires `sheet.build == character.build` and `sourceUpdatedAt == character.updatedAt`) needs no
   write. A legacy SHARED parent that has no sheet yet simply stays without one — the owner's client
   creates it on the next autosave.
-- The child it creates for a never-wounded character starts at FULL HP, taken from `cache.hpMax`; a
-  parent without a usable `cache.hpMax` is refused (`missing-cache-hpmax`), never given invented HP.
-- It runs SRD-only (`VITE_CONTENT_PACK=0`) because a plain `node` process cannot evaluate the composed
-  content pack. That is safe by construction: the only SRD-dependent step in the codec chain is the
-  stored concentration ref, and a family whose concentration would not survive canonicalization
-  unchanged is refused (`unresolved-concentration`) rather than rewritten.
+- **It is deterministic.** A stored log row with no id would otherwise be given a random UUID by
+  `normalizeLogEntry`; the planner stamps such rows with an id derived from the family path and the
+  row's ordinal (reported as `logIdsStamped`) before the codec sees them.
 
 ## Verification (Definition of Done)
 
