@@ -16,7 +16,8 @@ export type Expr =
   | number
   | { readonly byLevel: Readonly<Record<number, number>> }
   | { readonly ability: Ability }
-  | { readonly stat: "spellSaveDc" | "spellAttack" | "proficiency" };
+  | { readonly stat: "spellSaveDc" | "spellAttack" | "proficiency" }
+  | { readonly sum: readonly Expr[] };
 
 export type Predicate =
   | { readonly outcome: "hit" | "crit" | "miss" | "save-fail" | "save-success" }
@@ -146,6 +147,7 @@ export type Step = { readonly id: string; readonly when?: Predicate } & (
       readonly condition: ConditionId;
       readonly to: Binding;
       readonly lifetime: LifetimeSpec;
+      readonly concentration?: boolean;
     }
   | { readonly kind: "move-mark"; readonly from: Binding; readonly to: Binding }
   | { readonly kind: "turn-claim"; readonly claim: "once"; readonly key: string }

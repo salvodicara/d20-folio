@@ -1,0 +1,57 @@
+/**
+ * The catalogue: every mechanic the reducer may execute, conformed once at load.
+ * Public SRD data, the private content pack and homebrew all feed it through `buildCatalogue`.
+ */
+import type { MechanicId } from "./ids";
+import {
+  conformMechanic,
+  type Conformance,
+  type Mechanic,
+  type Program,
+} from "./mechanic";
+
+export interface Catalogue {
+  readonly mechanics: ReadonlyMap<MechanicId, Mechanic>;
+}
+
+export interface CatalogueError {
+  readonly id: string;
+  readonly rule: string;
+  readonly path: string;
+}
+
+export function emptyCatalogue(): Catalogue {
+  return { mechanics: new Map() };
+}
+
+export function buildCatalogue(values: readonly unknown[]): {
+  readonly catalogue: Catalogue;
+  readonly errors: readonly CatalogueError[];
+} {
+  const mechanics = new Map<MechanicId, Mechanic>();
+  const errors: CatalogueError[] = [];
+  values.forEach((value, index) => {
+    const result: Conformance = conformMechanic(value);
+    if (result.ok) mechanics.set(result.mechanic.id, result.mechanic);
+    else errors.push({ id: idOf(value, index), rule: result.rule, path: result.path });
+  });
+  return { catalogue: { mechanics }, errors };
+}
+
+function idOf(value: unknown, index: number): string {
+  if (typeof value === "object" && value !== null && "id" in value) {
+    const id = value.id;
+    if (typeof id === "string") return id;
+  }
+  return `#${index}`;
+}
+
+export function programOf(
+  catalogue: Catalogue,
+  mechanic: MechanicId,
+  program: string
+): Program | null {
+  const found = catalogue.mechanics.get(mechanic);
+  if (!found?.active) return null;
+  return found.active.find((candidate) => candidate.id === program) ?? null;
+}
