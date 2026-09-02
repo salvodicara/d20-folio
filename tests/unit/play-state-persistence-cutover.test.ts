@@ -135,6 +135,7 @@ function parentData(doc: CharacterDoc): Record<string, unknown> {
     state: {},
     cache: buildCharacterCache(doc.character, doc.session),
     playStateVersion: 1,
+    revision: doc.revision,
     shared: doc.shared,
     status: "active",
     portraitUrl: null,
@@ -155,7 +156,7 @@ beforeEach(() => {
 
 describe("play-state v1 persistence cutover", () => {
   it("keeps an unmarked legacy character's spell-slot edit on its parent", async () => {
-    const legacy = { ...makeCharacterDoc(), id: "c1" };
+    const legacy = { ...makeCharacterDoc(), id: "c1", revision: 4 };
     delete legacy.playStateVersion;
     legacy.session = {
       ...legacy.session,
@@ -172,9 +173,53 @@ describe("play-state v1 persistence cutover", () => {
     );
     expect(parent).toMatchObject({
       kind: "update",
-      data: { state: { usedSlots: { "1": 2 } }, updatedAt: "server-ts" },
+      // The parent writer sends the payload's generation VERBATIM — the subscription
+      // hook is the single place that advances it past the observed base.
+      data: { state: { usedSlots: { "1": 2 } }, revision: 4, updatedAt: "server-ts" },
     });
     expect(parent?.data).not.toHaveProperty("playStateVersion");
+  });
+
+  it("reports resolve, reject and cancel for the payload each outcome settles", async () => {
+    const first = { ...makeCharacterDoc(), id: "c1", playStateVersion: 1 as const };
+    const second = { ...first, revision: 1 };
+    const outcomes = {
+      onResolved: vi.fn(),
+      onRejected: vi.fn(),
+      onCancelled: vi.fn(),
+    };
+    const pending = createDebouncedSave("u1", "c1");
+
+    // A second save SUPERSEDES the first: no callback fires for the dropped payload.
+    pending.save(first, outcomes);
+    pending.save(second, outcomes);
+    await pending.flush();
+    expect(outcomes.onResolved.mock.calls).toEqual([[second]]);
+    expect(outcomes.onCancelled).not.toHaveBeenCalled();
+
+    // `cancel()` reports the payload it actually dropped.
+    pending.save(first, outcomes);
+    pending.cancel();
+    expect(outcomes.onCancelled.mock.calls).toEqual([[first]]);
+
+    harness.commits.mockRejectedValueOnce(new Error("permission-denied"));
+    pending.save(second, outcomes);
+    await pending.flush();
+    expect(outcomes.onRejected).toHaveBeenCalledTimes(1);
+    expect(outcomes.onRejected.mock.calls[0]?.[0]).toEqual(second);
+  });
+
+  it("rejects a parent write whose generation is not a non-negative integer", async () => {
+    const pending = createDebouncedSave("u1", "c1");
+    pending.save({
+      ...makeCharacterDoc(),
+      id: "c1",
+      playStateVersion: 1,
+      revision: -1,
+    });
+    await pending.flush();
+    expect(harness.commits).not.toHaveBeenCalled();
+    expect(harness.operations).toEqual([]);
   });
 
   it.each([undefined, null, 2])(
@@ -231,7 +276,13 @@ describe("play-state v1 persistence cutover", () => {
     try {
       pending.save(legacy);
 
-      await replaceCharacterState("u1", "c1", legacy.character, legacy.session);
+      await replaceCharacterState(
+        "u1",
+        "c1",
+        legacy.character,
+        legacy.session,
+        legacy.revision
+      );
       await pending.flush();
 
       expect(harness.commits).toHaveBeenCalledTimes(1);
@@ -320,7 +371,8 @@ describe("play-state v1 persistence cutover", () => {
     );
     expect(parent).toMatchObject({
       kind: "set",
-      data: { playStateVersion: 1, state: {}, shared: false },
+      // A character is born at generation 0 (the rules require exactly that on create).
+      data: { playStateVersion: 1, state: {}, shared: false, revision: 0 },
     });
     expect(child).toMatchObject({
       kind: "set",
@@ -335,14 +387,15 @@ describe("play-state v1 persistence cutover", () => {
     const full = makeCharacterDoc();
     full.session = { ...full.session, notes: "restored", hp: { current: 3, temp: 0 } };
 
-    await restoreCharacterSnapshot("u1", "c1", full);
+    await restoreCharacterSnapshot("u1", "c1", full, 7);
 
     expect(harness.commits).toHaveBeenCalledTimes(1);
     expect(harness.operations).toHaveLength(2);
     expect(harness.operations[0]).toMatchObject({
       kind: "update",
       path: "users/u1/characters/c1",
-      data: { playStateVersion: 1, state: {} },
+      // The whole-state ceremony is a build write: it advances the CAS generation.
+      data: { playStateVersion: 1, state: {}, revision: 8 },
     });
     expect(harness.operations[1]).toMatchObject({
       kind: "set",
@@ -433,6 +486,7 @@ describe("play-state v1 persistence cutover", () => {
       ...makeCharacterDoc(),
       id: "c1",
       shared: false,
+      revision: 6,
       playStateVersion: 1 as const,
     };
     harness.getDoc.mockResolvedValue(snapshot("c1", parentData(full)));
@@ -443,7 +497,13 @@ describe("play-state v1 persistence cutover", () => {
     expect(harness.operations[0]).toMatchObject({
       kind: "update",
       path: "users/u1/characters/c1",
-      data: { shared: true, updatedAt: "server-ts", schema: 3, state: {} },
+      data: {
+        shared: true,
+        updatedAt: "server-ts",
+        schema: 3,
+        state: {},
+        revision: 7,
+      },
     });
     expect(harness.operations[0]?.data).toHaveProperty("build");
     expect(harness.operations[0]?.data).toHaveProperty("cache");
@@ -463,13 +523,36 @@ describe("play-state v1 persistence cutover", () => {
     expect(harness.operations[0]).toMatchObject({
       kind: "update",
       path: "users/u1/characters/c1",
-      data: { shared: false, updatedAt: "server-ts", schema: 3, state: {} },
+      data: {
+        shared: false,
+        updatedAt: "server-ts",
+        schema: 3,
+        state: {},
+        revision: 7,
+      },
     });
     expect(harness.operations[1]).toEqual({
       kind: "delete",
       path: "users/u1/characters/c1/public/sheet",
       data: {},
     });
+  });
+
+  it("refuses to publish a share against a stale generation", async () => {
+    const full = {
+      ...makeCharacterDoc(),
+      id: "c1",
+      shared: false,
+      revision: 6,
+      playStateVersion: 1 as const,
+    };
+    // Another device advanced the parent between the read and the publish.
+    harness.getDoc.mockResolvedValue(
+      snapshot("c1", { ...parentData(full), revision: 7 })
+    );
+    await expect(setCharacterSharing("u1", full, true)).rejects.toThrow(
+      "Character changed before sharing"
+    );
   });
 
   it("rejects sharing through the generic metadata writer", async () => {
@@ -499,6 +582,7 @@ describe("play-state v1 persistence cutover", () => {
           : snapshot("c1", {
               ...envelope,
               shared: false,
+              revision: 0,
               status: "active",
               createdAt: new harness.Timestamp(new Date("2026-01-01")),
               updatedAt: new harness.Timestamp(new Date("2026-01-02")),

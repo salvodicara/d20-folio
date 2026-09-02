@@ -1266,7 +1266,14 @@ export function LevelUpWizard() {
       // (features, slots, HP, ASI), so a pre-level-up reverse-applier could restore
       // state that no longer coheres. Drop the stack on commit.
       useUndoStore.getState().clear();
-      await replaceCharacterState(user.uid, character.id, updated, updatedDoc.session);
+      await replaceCharacterState(
+        user.uid,
+        character.id,
+        updated,
+        updatedDoc.session,
+        // Compare-and-set base: the generation the wizard opened on.
+        character.revision
+      );
     } catch (e) {
       const msg = e instanceof Error ? e.message : t("common.unknownError");
       console.error("Level-up save failed", e);

@@ -82,11 +82,23 @@ function readDocMeta(
   | "portraitCrop"
   | "shared"
   | "playStateVersion"
+  | "revision"
   | "status"
 > {
   const hasPlayStateVersion = Object.hasOwn(data, "playStateVersion");
   if (hasPlayStateVersion && data.playStateVersion !== 1) {
     throw new TypeError("Invalid character play-state ownership marker");
+  }
+  // The compare-and-set generation is REQUIRED (ADR-0009: the cutover migration
+  // stamps `revision: 0` on every live parent before the deploy that needs it). A doc
+  // without it cannot be safely written back, so it quarantines like any other codec
+  // failure rather than silently defaulting into a clobbering write.
+  if (
+    typeof data.revision !== "number" ||
+    !Number.isInteger(data.revision) ||
+    data.revision < 0
+  ) {
+    throw new TypeError("Invalid character document: invalid-revision");
   }
   return {
     id,
@@ -102,6 +114,7 @@ function readDocMeta(
     portraitCrop: (data.portraitCrop as CharacterDoc["portraitCrop"]) ?? null,
     // A doc written before public share links carries no field → not shared.
     shared: data.shared === true,
+    revision: data.revision,
     ...(hasPlayStateVersion ? { playStateVersion: 1 as const } : {}),
     status:
       data.status === "retired" || data.status === "dead" || data.status === "archived"
@@ -239,6 +252,9 @@ export async function createCharacter(
     ...rest,
     shared: false,
     playStateVersion: 1,
+    // Generation 0 — the rules require it on create, so every later build write is a
+    // compare-and-set against a known base.
+    revision: 0,
   });
   // Bug fix (2026-05-28): Firestore's `addDoc()` rejects any tree containing
   // an `undefined` value with "Unsupported field value: undefined". The
@@ -289,7 +305,11 @@ export async function updateCharacter(
       "Character play state requires the ownership-aware persistence boundary"
     );
   }
-  const payload = await toStoredPayload(rest);
+  // A metadata write must leave the compare-and-set generation exactly as stored (the
+  // rules deny anything else), so it is never carried into the update.
+  const { revision: _revision, ...metadata } = rest;
+  void _revision;
+  const payload = await toStoredPayload(metadata);
   const ref = charDoc(uid, charId);
   await runTransaction(db, async (transaction) => {
     const snap = await transaction.get(ref);
@@ -314,22 +334,6 @@ export async function updateCharacter(
       transaction.delete(publicCharacterProjectionRef(uid, charId));
     }
   });
-}
-
-function timestampMillis(value: unknown): number | null {
-  if (value instanceof Date)
-    return Number.isFinite(value.getTime()) ? value.getTime() : null;
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    typeof (value as { toDate?: unknown }).toDate === "function"
-  ) {
-    const date = (value as { toDate: () => unknown }).toDate();
-    return date instanceof Date && Number.isFinite(date.getTime())
-      ? date.getTime()
-      : null;
-  }
-  return null;
 }
 
 /** Publish or revoke a share in one atomic parent + projection write. */
@@ -358,9 +362,11 @@ export async function setCharacterSharing(
     const snap = await transaction.get(parentRef);
     if (!snap.exists()) throw new TypeError("Character not found");
     const raw = snap.data();
+    // Compare-and-set on the stored generation (design §5.3): a sharing publish is a
+    // build write like any other, so it must observe the exact revision it read.
     if (
-      timestampMillis(raw.updatedAt) === null ||
-      timestampMillis(raw.updatedAt) !== timestampMillis(source.updatedAt) ||
+      typeof raw.revision !== "number" ||
+      raw.revision !== source.revision ||
       raw.playStateVersion !== 1 ||
       raw.shared !== source.shared ||
       raw.status !== source.status ||
@@ -372,6 +378,7 @@ export async function setCharacterSharing(
     transaction.update(parentRef, {
       ...(stripUndefined(parentWrite) as Record<string, unknown>),
       shared,
+      revision: source.revision + 1,
       updatedAt,
     });
     if (projection) {
@@ -407,10 +414,16 @@ async function updateCharacterParent(
   });
   const { playStateVersion: _marker, ...write } = payload;
   void _marker;
+  if (!Number.isInteger(data.revision) || data.revision < 0) {
+    throw new TypeError("Invalid character document: invalid-revision");
+  }
   const updatedAt = serverTimestamp();
   const batch = writeBatch(db);
   batch.update(charDoc(uid, charId), {
     ...(stripUndefined(write) as Record<string, unknown>),
+    // The caller (the subscription hook) already advanced the generation past the
+    // observed base; the rules verify it equals `resource.revision + 1`.
+    revision: data.revision,
     updatedAt,
   });
   // Historical shared=true parents predate the sanitized public projection and
@@ -551,24 +564,30 @@ function rosterDoc(id: string, data: Record<string, unknown>): RosterCharacterDo
 export function subscribeToCharacter(
   uid: string,
   charId: string,
-  callback: (doc: CharacterDoc | null) => void,
+  callback: (doc: CharacterDoc | null, meta: { hasPendingWrites: boolean }) => void,
   onError?: (err: Error) => void
 ): () => void {
   let token = 0;
   let cancelled = false;
   const unsub = onSnapshot(
     charDoc(uid, charId),
+    // `hasPendingWrites` distinguishes a LOCAL optimistic echo from a SERVER-confirmed
+    // value, which is what lets the per-domain reconciler keep a dirty parent's payload
+    // until the server actually acknowledges it (audit F7). The metadata-only
+    // cache→server transition must therefore re-invoke the callback.
+    { includeMetadataChanges: true },
     (snap) => {
       const my = ++token;
+      const meta = { hasPendingWrites: snap.metadata.hasPendingWrites };
       if (!snap.exists()) {
-        callback(null);
+        callback(null, meta);
         return;
       }
       void parseStoredCharacter(snap.id, snap.data())
         .then((doc) => {
           // Drop a superseded / post-unsubscribe result.
           if (cancelled || my !== token) return;
-          callback(doc);
+          callback(doc, meta);
         })
         .catch((err: unknown) => {
           if (cancelled || my !== token) return;
@@ -727,8 +746,22 @@ async function parseStoredCharacter(
  * debounce window, the pending write was silently lost. The hook now flushes
  * on unmount.
  */
+/**
+ * Per-write outcome callbacks (audit F7). The caller uses them to settle the payload it
+ * marked pending in the snapshot reconciler: `onResolved` acknowledges it, `onRejected`
+ * (a rules revision conflict, a permission error) drops it and republishes the remote,
+ * `onCancelled` reports the payload a `cancel()` discarded. A later `save()` silently
+ * SUPERSEDES the queued payload — no callback fires for it, because the newer payload is
+ * the one the reconciler now tracks.
+ */
+export interface DebouncedSaveCallbacks {
+  onResolved?: (data: CharacterDoc) => void;
+  onRejected?: (data: CharacterDoc, error: unknown) => void;
+  onCancelled?: (data: CharacterDoc) => void;
+}
+
 export interface DebouncedSaveHandle {
-  save: (data: CharacterDoc) => void;
+  save: (data: CharacterDoc, callbacks?: DebouncedSaveCallbacks) => void;
   flush: () => Promise<void>;
   cancel: () => void;
 }
@@ -753,7 +786,8 @@ export function createDebouncedSave(
 ): DebouncedSaveHandle {
   const key = pendingParentSaveKey(uid, charId);
   let timer: ReturnType<typeof setTimeout> | null = null;
-  let pendingPayload: CharacterDoc | null = null;
+  let pendingWrite: { data: CharacterDoc; callbacks?: DebouncedSaveCallbacks } | null =
+    null;
   let inflight: Promise<void> = Promise.resolve();
 
   function clearPendingRegistration(): void {
@@ -762,38 +796,54 @@ export function createDebouncedSave(
     }
   }
 
+  function takePending(): {
+    data: CharacterDoc;
+    callbacks?: DebouncedSaveCallbacks;
+  } | null {
+    const write = pendingWrite;
+    pendingWrite = null;
+    return write;
+  }
+
   function cancel(): void {
     if (timer) clearTimeout(timer);
     timer = null;
-    pendingPayload = null;
+    const dropped = takePending();
     clearPendingRegistration();
+    if (dropped) dropped.callbacks?.onCancelled?.(dropped.data);
   }
 
-  function runWrite(data: CharacterDoc): Promise<void> {
+  function runWrite(
+    data: CharacterDoc,
+    callbacks?: DebouncedSaveCallbacks
+  ): Promise<void> {
     saveStatusCallbacks.onSaving();
     return updateCharacterParent(uid, charId, data)
       .then(() => {
         saveStatusCallbacks.onSaved();
+        callbacks?.onResolved?.(data);
       })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : "Save failed";
         diagnosticsLog("error", "character.save-rejected", { message: msg });
         saveStatusCallbacks.onError(msg);
+        callbacks?.onRejected?.(data, err);
       });
   }
 
   return {
-    save(data) {
+    save(data, callbacks) {
       if (timer) clearTimeout(timer);
-      pendingPayload = data;
+      // A queued payload is SUPERSEDED, not cancelled: the caller already replaced it
+      // with this newer one, so reporting it back would settle the wrong write.
+      pendingWrite = { data, callbacks };
       pendingParentSaveCancellers.set(key, cancel);
       saveStatusCallbacks.onPending();
       timer = setTimeout(() => {
-        const payload = pendingPayload;
-        pendingPayload = null;
+        const write = takePending();
         timer = null;
         clearPendingRegistration();
-        if (payload) inflight = runWrite(payload);
+        if (write) inflight = runWrite(write.data, write.callbacks);
       }, delayMs);
     },
     flush() {
@@ -801,11 +851,10 @@ export function createDebouncedSave(
         clearTimeout(timer);
         timer = null;
       }
-      const payload = pendingPayload;
-      pendingPayload = null;
+      const write = takePending();
       clearPendingRegistration();
-      if (payload) {
-        inflight = runWrite(payload);
+      if (write) {
+        inflight = runWrite(write.data, write.callbacks);
       }
       return inflight;
     },
@@ -952,9 +1001,13 @@ export async function listCharacterSnapshots(
 export async function restoreCharacterSnapshot(
   uid: string,
   charId: string,
-  snapshot: { character: CharacterData; session: SessionState }
+  snapshot: { character: CharacterData; session: SessionState },
+  baseRevision: number
 ): Promise<void> {
   if (DEV_BYPASS_AUTH) return;
+  if (!Number.isInteger(baseRevision) || baseRevision < 0) {
+    throw new TypeError("Invalid character document: invalid-revision");
+  }
   const parent = await toStoredPayload({
     character: snapshot.character,
     session: snapshot.session,
@@ -963,6 +1016,9 @@ export async function restoreCharacterSnapshot(
   const batch = writeBatch(db);
   batch.update(charDoc(uid, charId), {
     ...(stripUndefined(parent) as Record<string, unknown>),
+    // A whole-state ceremony is a build write: it advances the generation past the
+    // document the caller observed, so a concurrent stale write is denied.
+    revision: baseRevision + 1,
     updatedAt: serverTimestamp(),
   });
   // A snapshot contains SessionState only; combat-only ledgers/history are
@@ -984,9 +1040,10 @@ export async function replaceCharacterState(
   uid: string,
   charId: string,
   character: CharacterData,
-  session: SessionState
+  session: SessionState,
+  baseRevision: number
 ): Promise<void> {
-  await restoreCharacterSnapshot(uid, charId, { character, session });
+  await restoreCharacterSnapshot(uid, charId, { character, session }, baseRevision);
 }
 
 /**

@@ -99,6 +99,12 @@ exported forms can never drift (the `state` is byte-identical):
   "portraitUrl": null,
   "portraitCrop": null,
   "shareId": null,
+  "revision": 0, // REQUIRED non-negative integer — the parent's compare-and-set
+  //   generation. Born 0; every build/state/cache write carries
+  //   exactly revision + 1 and a metadata-only write leaves it
+  //   alone (firestore.rules `revisionAdvancesWithBuild`). NOT in
+  //   the export/codec: it is a per-document write fence, not a
+  //   character fact. See ARCHITECTURE → "Per-domain reconciliation".
   "status": "active",
   "createdAt": "<ts>",
   "updatedAt": "<ts>",

@@ -28,6 +28,7 @@ function mockCharacter(overrides?: Partial<CharacterDoc>): CharacterDoc {
     portraitUrl: null,
     portraitCrop: null,
     shared: false,
+    revision: 0,
     status: "active",
     character: {
       name: assertNonEmptyString("Test Hero"),

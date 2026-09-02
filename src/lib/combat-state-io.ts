@@ -164,6 +164,9 @@ export function subscribeCombatState(
   }
   return onSnapshot(
     combatStateRef(uid, charId),
+    // The metadata-only local-echo → server-confirmed transition must re-invoke the
+    // callback: it is what acknowledges a pending child write in the reconciler.
+    { includeMetadataChanges: true },
     (snap) => {
       // `hasPendingWrites` distinguishes a LOCAL optimistic echo (true) from a
       // SERVER-originated update (false) — the own-sheet undo stack's remote fence

@@ -61,9 +61,11 @@ Why first: Incident 2's class and the 2026-08-31 outage live here, independent o
 3. **Per-domain sync.** Re-author Codex's `character-snapshot-reconciler.ts` (design: dirty domain
    keeps local until acknowledged; conflict surfaces `SaveStatus="error"`); `subscribeToCharacter`
    and `subscribeCombatState` pass `hasPendingWrites`; `createDebouncedSave` reports resolve/reject.
-   The parent write gains a precondition on `updatedAt` (transaction) and surfaces conflicts
-   instead of clobbering. Replays: the two reported losses (custom item, Focus revert) as
-   subscription tests that fail before and pass after.
+   The parent write gains a precondition on `revision` (rules compare-and-set; a
+   transaction does NOT work offline, and an offline-queued write is exactly the case that
+   must be rejected on reconnect rather than clobber) and surfaces conflicts instead of
+   clobbering. Replays: the two reported losses (custom item, Focus revert) as subscription
+   tests that fail before and pass after.
 4. **Legacy cutover.** Migrate every unmarked parent to v1 with the existing cutover machinery
    (script + protocol); then delete the unmarked-legacy branches in `firestore.ts:86-104,395-420`
    and the legacy escape hatch in the rules (`publicSheetMatchesAfter` third disjunct).

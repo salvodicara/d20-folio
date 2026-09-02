@@ -1590,6 +1590,8 @@ export function parseCharacter(jsonString: string): ImportResult | ImportError {
       portraitUrl: null,
       portraitCrop,
       shared: false,
+      // An imported document is a NEW character: `createCharacter` writes generation 0.
+      revision: 0,
     },
     portraitBase64: typeof meta.portrait === "string" ? meta.portrait : null,
     portraitCrop,

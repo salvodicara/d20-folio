@@ -71,6 +71,10 @@ const PURE_MODULES = [
   // malformed entry, never a silent per-entry drop). `library-io.ts` is the only
   // Firebase-touching consumer.
   "src/lib/library-codec.ts",
+  // P1 — the per-domain snapshot reconciler (audit F7). It holds only the two
+  // domains' remote/pending values, so the subscription hook can inject snapshots
+  // and write outcomes; the Firestore seam stays entirely in `firestore.ts`.
+  "src/lib/character-snapshot-reconciler.ts",
   // …and so does the STORE: its write seam is INJECTED by the lazy `LibraryMount`
   // (the `combatPersistence` pattern), which is why the five cockpit cards that
   // render a save affordance need no Firebase mock.

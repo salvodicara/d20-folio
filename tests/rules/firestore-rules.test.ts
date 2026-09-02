@@ -1277,12 +1277,14 @@ describe("firestore.rules — character reads: owner + admin + LIVE campaign mem
         build: { name: "Mara Quickfingers" },
         state: {},
         cache: {},
+        revision: 3,
       });
       await setDoc(doc(db, "users", "member", "characters", "char-private"), {
         status: "active",
         build: { name: "Secret" },
         state: {},
         cache: {},
+        revision: 3,
       });
       await setDoc(doc(db, "users", "member", "characters", "char-versioned"), {
         status: "active",
@@ -1290,6 +1292,7 @@ describe("firestore.rules — character reads: owner + admin + LIVE campaign mem
         build: { name: "Versioned" },
         state: {},
         cache: {},
+        revision: 3,
       });
     });
   });
@@ -1308,7 +1311,7 @@ describe("firestore.rules — character reads: owner + admin + LIVE campaign mem
 
   it("an owner may create unmarked, but a parent-only v1 marker fails closed", async () => {
     const owner = testEnv.authenticatedContext("member").firestore();
-    const character = { build: { name: "New" }, state: {}, cache: {} };
+    const character = { build: { name: "New" }, state: {}, cache: {}, revision: 0 };
     await assertSucceeds(
       setDoc(doc(owner, "users", "member", "characters", "new-unmarked"), character)
     );
@@ -1342,6 +1345,7 @@ describe("firestore.rules — character reads: owner + admin + LIVE campaign mem
       build: { name: "Atomic" },
       state: {},
       cache: {},
+      revision: 0,
     });
     batch.set(combat, {
       actionRevision: 0,
@@ -1454,6 +1458,38 @@ describe("firestore.rules — character reads: owner + admin + LIVE campaign mem
       updateDoc(doc(owner, "users", "member", "characters", "char-versioned"), {
         status: "retired",
         state: {},
+      })
+    );
+  });
+
+  it("a build write must carry revision + 1; a stale revision is denied; metadata leaves it alone", async () => {
+    const owner = testEnv.authenticatedContext("member").firestore();
+    const ref = doc(owner, "users", "member", "characters", "char-member");
+    await assertFails(updateDoc(ref, { build: { name: "Mara II" }, revision: 3 }));
+    await assertFails(updateDoc(ref, { build: { name: "Mara II" }, revision: 5 }));
+    await assertSucceeds(updateDoc(ref, { build: { name: "Mara II" }, revision: 4 }));
+    await assertFails(updateDoc(ref, { status: "retired", revision: 5 }));
+    await assertSucceeds(updateDoc(ref, { status: "retired" }));
+  });
+
+  it("a character is born at revision 0", async () => {
+    const owner = testEnv.authenticatedContext("member").firestore();
+    await assertFails(
+      setDoc(doc(owner, "users", "member", "characters", "new-1"), {
+        status: "active",
+        build: {},
+        state: {},
+        cache: {},
+        revision: 1,
+      })
+    );
+    await assertSucceeds(
+      setDoc(doc(owner, "users", "member", "characters", "new-2"), {
+        status: "active",
+        build: {},
+        state: {},
+        cache: {},
+        revision: 0,
       })
     );
   });
@@ -1696,6 +1732,7 @@ describe("firestore.rules — sanitized public character projection", () => {
       status: "active",
       shared: true,
       playStateVersion: 1,
+      revision: 3,
       portraitUrl: "https://storage.invalid/private-token",
       portraitCrop: CROP,
       attachedCampaignId: "campPublic",
@@ -1761,6 +1798,8 @@ describe("firestore.rules — sanitized public character projection", () => {
     await assertSucceeds(
       updateDoc(doc(owner, ...LEGACY_SHARED_PARENT), {
         state: { usedSlots: { "1": 2 } },
+        // A `state` change is a build write: it must advance the CAS generation.
+        revision: 4,
         updatedAt: NEXT_UPDATED_AT,
       })
     );
@@ -1980,6 +2019,7 @@ describe("firestore.rules — sanitized public character projection", () => {
       status: "retired",
       portraitUrl: null,
       portraitCrop: null,
+      revision: 4,
       updatedAt: NEXT_UPDATED_AT,
     };
     await assertFails(updateDoc(doc(owner, ...SHARED_PARENT), parentPatch));

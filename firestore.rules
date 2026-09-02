@@ -228,13 +228,27 @@ service cloud.firestore {
           && changed == ['attachedCampaignId'].toSet()
           && !request.resource.data.keys().hasAny(['attachedCampaignId']);
       }
+      // P1 — the parent build write is compare-and-set on `revision` (design §5.3):
+      // a build/state/cache change must carry exactly resource.revision + 1; a
+      // metadata-only write must leave it untouched. Offline writes queue and are
+      // rejected on reconnect when stale, which the client surfaces as a conflict.
+      function revisionAdvancesWithBuild() {
+        let changed = request.resource.data.diff(resource.data).affectedKeys();
+        return request.resource.data.revision is int
+          && (changed.hasAny(['build', 'state', 'cache'])
+              ? request.resource.data.revision == resource.data.revision + 1
+              : request.resource.data.revision == resource.data.revision);
+      }
       allow create: if isNotBlocked()
         && request.auth.uid == uid
+        && request.resource.data.revision == 0
         && validPlayStateVersionOnCreate()
         && validV1ParentStateAfter()
         && publicSheetMatchesAfter();
       allow update: if isNotBlocked()
-        && ((request.auth.uid == uid && validPlayStateVersionOnUpdate())
+        && ((request.auth.uid == uid
+             && validPlayStateVersionOnUpdate()
+             && revisionAdvancesWithBuild())
             || isCampaignDmDetach())
         && validV1ParentStateAfter()
         && publicSheetMatchesAfter();

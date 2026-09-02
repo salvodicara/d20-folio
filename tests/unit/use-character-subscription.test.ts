@@ -3,8 +3,9 @@ import { asRaceId } from "@/data/srd-names";
 import { asAlignmentId } from "@/lib/lore-utils";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { renderHook, act } from "@testing-library/react";
-import type { CharacterDoc } from "@/types/character";
+import type { CharacterDoc, CustomEquipment } from "@/types/character";
 import { omitCombatTrio, sessionToCombatState } from "@/lib/combat-state";
+import { sessionToPlayStateV1 } from "@/lib/session-state-codec";
 import { serializeCharacterEnvelope } from "@/lib/character-codec";
 
 /**
@@ -26,14 +27,29 @@ const {
   combatSubscribeMock,
   writeCombatStateMock,
 } = vi.hoisted(() => ({
-  debouncedSave: vi.fn(),
+  debouncedSave: vi.fn<
+    (
+      data: import("@/types/character").CharacterDoc,
+      callbacks?: {
+        onResolved?: (data: import("@/types/character").CharacterDoc) => void;
+        onRejected?: (
+          data: import("@/types/character").CharacterDoc,
+          error: unknown
+        ) => void;
+        onCancelled?: (data: import("@/types/character").CharacterDoc) => void;
+      }
+    ) => void
+  >(),
   debouncedFlush: vi.fn(() => Promise.resolve()),
   debouncedCancel: vi.fn(),
   subscribeMock: vi.fn<
     (
       uid: string,
       charId: string,
-      cb: (d: import("@/types/character").CharacterDoc | null) => void,
+      cb: (
+        d: import("@/types/character").CharacterDoc | null,
+        meta: { hasPendingWrites: boolean }
+      ) => void,
       onError?: (err: Error) => void
     ) => () => void
   >(() => () => {}),
@@ -102,6 +118,7 @@ vi.mock("@/lib/log-persistence", () => ({
 vi.mock("@/lib/mock", () => ({ MOCK_CHARACTER: {} }));
 
 import { useCharacterStore } from "@/stores/characterStore";
+import { useSaveStore } from "@/stores/saveStore";
 import { useCharacterSubscription } from "@/hooks/useCharacterSubscription";
 import { conc } from "./__helpers__/concentration";
 
@@ -113,6 +130,7 @@ function doc(): CharacterDoc {
     portraitUrl: null,
     portraitCrop: null,
     shared: false,
+    revision: 4,
     status: "active",
     character: {
       name: assertNonEmptyString("X"),
@@ -184,11 +202,14 @@ function doc(): CharacterDoc {
   };
 }
 
-/** Latest captured Firestore snapshot callback. */
-function snapshotCb(): (d: CharacterDoc | null) => void {
+/** Latest captured Firestore snapshot callback, wrapped to supply the snapshot
+ *  metadata (defaults to a SERVER snapshot — `hasPendingWrites: false`). */
+function snapshotCb(
+  meta: { hasPendingWrites: boolean } = { hasPendingWrites: false }
+): (d: CharacterDoc | null) => void {
   const cb = subscribeMock.mock.calls.at(-1)?.[2];
   if (!cb) throw new Error("subscription callback not captured");
-  return cb;
+  return (d) => cb(d, meta);
 }
 
 /** Latest captured combat-subdoc snapshot callback, wrapped to supply the snapshot
@@ -220,6 +241,24 @@ function parentErrorCb(): (error: Error) => void {
 
 function v1Doc(): CharacterDoc {
   return { ...doc(), playStateVersion: 1 };
+}
+
+/** REPLAY I3 fixture — a level-3 monk whose Focus pool is the tracker that reverted.
+ *  Marked v1, so the Focus spend lives in the `combat/state` child. */
+function monkFocusDoc(): CharacterDoc {
+  const base = doc();
+  return {
+    ...base,
+    playStateVersion: 1,
+    revision: 4,
+    character: {
+      ...base.character,
+      classes: [{ classId: "monk", level: 3 }],
+      hitDieType: 8,
+      features: [{ srdId: "monk-focus" }],
+    },
+    session: { ...base.session, trackers: { "monk-focus": { used: 0 } } },
+  };
 }
 
 function v1Combat(
@@ -279,7 +318,10 @@ describe("useCharacterSubscription — domain-rule-D8 sync invariants", () => {
     act(() => useCharacterStore.getState().updateSession({ notes: "scouting ahead" }));
 
     expect(debouncedSave).toHaveBeenCalledTimes(1);
-    const payload = debouncedSave.mock.calls[0]?.[0] as Record<string, unknown>;
+    const payload = debouncedSave.mock.calls[0]?.[0] as unknown as Record<
+      string,
+      unknown
+    >;
     expect(payload).toHaveProperty("session");
     expect(payload).toHaveProperty("character"); // domain rule D8: both saved together
   });
@@ -703,5 +745,159 @@ describe("useCharacterSubscription — T4 DM-sheet fan-out", () => {
     renderHook(() => useCharacterSubscription("char1"));
     act(() => snapshotCb()(doc()));
     expect(refreshAttachedSheetsMock).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * REPLAYS of the two reported losses (audit F7): the parent and the `combat/state` child
+ * are two independent listeners, and the pre-fix hook republished BOTH stored values on
+ * every snapshot of EITHER — so a sibling snapshot clobbered a still-unwritten local edit.
+ */
+describe("useCharacterSubscription — per-domain reconciliation replays (audit F7)", () => {
+  /** The live character, or a loud failure (the replays are meaningless without it). */
+  function openCharacter(): CharacterDoc {
+    const current = useCharacterStore.getState().character;
+    if (!current) throw new Error("character was not published");
+    return current;
+  }
+
+  function lastSave(): {
+    payload: CharacterDoc;
+    callbacks: NonNullable<Parameters<typeof debouncedSave>[1]>;
+  } {
+    const call = debouncedSave.mock.calls.at(-1);
+    if (!call) throw new Error("parent save not captured");
+    const [payload, callbacks] = call;
+    if (!callbacks) throw new Error("parent save callbacks not captured");
+    return { payload, callbacks };
+  }
+
+  function lastChildWrite(): import("@/types/combat-state").CombatState {
+    const call = writeCombatStateMock.mock.calls.at(-1);
+    if (!call) throw new Error("play-state write not captured");
+    return call[2];
+  }
+
+  function openTracker(trackerId: string): number | undefined {
+    return openCharacter().session.trackers[trackerId]?.used;
+  }
+
+  it("REPLAY I2 — a custom item added while a combat snapshot interleaves stays in the store and in the pending payload", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    await act(async () => {
+      snapshotCb()(doc());
+      combatCb()(sessionToCombatState(doc().session));
+      await Promise.resolve();
+    });
+    const boots: CustomEquipment = {
+      custom: true,
+      name: "Bo's shoes",
+      equipped: true,
+      instanceId: "bo-shoes",
+    };
+    act(() => {
+      const cur = openCharacter();
+      useCharacterStore.getState().setCharacter({
+        ...cur,
+        character: { ...cur.character, equipment: [...cur.character.equipment, boots] },
+      });
+    });
+    const { payload } = lastSave();
+    expect(payload.character.equipment).toContainEqual(boots);
+    // Compare-and-set: the observed parent is generation 4, so the write claims 5.
+    expect(payload.revision).toBe(5);
+    // the remote child snapshot arrives before the parent write is acknowledged
+    await act(async () => {
+      combatCb()(sessionToCombatState(doc().session));
+      await Promise.resolve();
+    });
+    expect(openCharacter().character.equipment).toContainEqual(boots);
+    // the local echo of our own write
+    await act(async () => {
+      snapshotCb({ hasPendingWrites: true })({ ...payload });
+      await Promise.resolve();
+    });
+    expect(openCharacter().character.equipment).toContainEqual(boots);
+    // the server confirms; nothing changes, nothing re-saves
+    const saves = debouncedSave.mock.calls.length;
+    await act(async () => {
+      snapshotCb()({ ...payload });
+      await Promise.resolve();
+    });
+    expect(openCharacter().character.equipment).toContainEqual(boots);
+    expect(debouncedSave.mock.calls.length).toBe(saves);
+  });
+
+  it("REPLAY I3 — a Focus spend survives an interleaving parent snapshot and lands in the pending child", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    const monk = monkFocusDoc();
+    await act(async () => {
+      snapshotCb()(monk);
+      combatCb()({
+        ...sessionToCombatState(monk.session),
+        playState: sessionToPlayStateV1(monk.session),
+      });
+      await Promise.resolve();
+    });
+    // Hold the child write open so the parent snapshot lands while it is UNacknowledged.
+    let release = (): void => {};
+    writeCombatStateMock.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        })
+    );
+    act(() => {
+      useCharacterStore.getState().useTracker("monk-focus", 1);
+    });
+    await flushPlayWrite();
+    const pendingChild = lastChildWrite();
+    const pendingTrackers = pendingChild.playState?.state.trackers as
+      | Record<string, number>
+      | undefined;
+    expect(pendingTrackers?.["monk-focus"]).toBe(1);
+    // a parent snapshot (e.g. the DM detach or another tab's metadata write) arrives now
+    await act(async () => {
+      snapshotCb()({ ...monk, revision: 5 });
+      await Promise.resolve();
+    });
+    expect(openTracker("monk-focus")).toBe(1);
+    await act(async () => {
+      release();
+      await Promise.resolve();
+      combatCb()(pendingChild);
+    });
+    expect(openTracker("monk-focus")).toBe(1);
+  });
+
+  it("a rejected parent write surfaces SaveStatus=error and republishes the remote", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    await act(async () => {
+      snapshotCb()(doc());
+      combatCb()(sessionToCombatState(doc().session));
+      await Promise.resolve();
+    });
+    act(() => {
+      const cur = openCharacter();
+      useCharacterStore
+        .getState()
+        .setCharacter({ ...cur, character: { ...cur.character, quote: "local" } });
+    });
+    const { payload, callbacks } = lastSave();
+    // Another device advanced the parent past our base — a conflict, not a clobber.
+    await act(async () => {
+      snapshotCb()({
+        ...doc(),
+        revision: 5,
+        character: { ...doc().character, quote: "other device" },
+      });
+      await Promise.resolve();
+    });
+    expect(openCharacter().character.quote).toBe("local");
+    act(() => {
+      callbacks.onRejected?.(payload, new Error("permission-denied"));
+    });
+    expect(openCharacter().character.quote).toBe("other device");
+    expect(useSaveStore.getState().status).toBe("error");
   });
 });

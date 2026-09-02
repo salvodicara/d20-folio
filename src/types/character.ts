@@ -551,6 +551,14 @@ export interface CharacterDoc {
    * v3 character codec never serializes it.
    */
   playStateVersion?: 1;
+  /**
+   * Monotonic parent-document generation (design §5.3). Every build/state/cache write
+   * carries exactly `revision + 1` and the Firestore rules enforce that compare-and-set,
+   * so a queued OFFLINE write that raced another device is rejected on reconnect
+   * instead of clobbering it (a transaction cannot run offline). Metadata-only writes
+   * leave it untouched. Firestore metadata, never part of the portable v3 codec.
+   */
+  revision: number;
   /** Character lifecycle status */
   status: "active" | "retired" | "dead" | "archived";
 

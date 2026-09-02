@@ -653,8 +653,14 @@ vi.mock("firebase/firestore", () => ({
   doc: (...segments: unknown[]) => ({ path: segments.slice(1).join("/") }),
   setDoc: (...args: unknown[]) => setDocMock(...(args as [])),
   updateDoc: (...args: unknown[]) => updateDocMock(...(args as [])),
-  onSnapshot: (ref: unknown, next: unknown, err: unknown) =>
-    onSnapshotImpl(
+  // The subscription opens with `{ includeMetadataChanges: true }` (the local-echo →
+  // server-confirmed transition is what acknowledges a pending write), so the options
+  // object sits between the ref and the handlers. Accept both arities.
+  onSnapshot: (ref: unknown, a: unknown, b: unknown, c: unknown) => {
+    const hasOptions = typeof a !== "function";
+    const next = hasOptions ? b : a;
+    const err = hasOptions ? c : b;
+    return onSnapshotImpl(
       ref,
       next as (s: {
         exists: () => boolean;
@@ -662,7 +668,8 @@ vi.mock("firebase/firestore", () => ({
         metadata: { hasPendingWrites: boolean };
       }) => void,
       err as (e: Error) => void
-    ),
+    );
+  },
   // NB: NO `runTransaction` export — the offline bug was that a transaction rejects
   // offline; the fix uses only `setDoc`. If any op still reached for a transaction it
   // would throw here (undefined), so these tests pin the offline-queueable primitive.

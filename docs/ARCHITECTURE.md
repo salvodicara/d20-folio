@@ -2131,6 +2131,45 @@ Firestore SDK handles real-time sync + offline persistence transparently. Writes
 debounced (~2-3 s) inside `useCharacterSubscription`. The service worker
 (`vite-plugin-pwa`) caches the app shell + SRD data for full offline play.
 
+### Per-domain reconciliation + the `revision` compare-and-set (P1, audit F7)
+
+A character is TWO live documents — the parent (`build`/`cache`/metadata) and the
+`combat/state` child (the whole play session) — on two independent listeners. Publishing
+BOTH stored values on every snapshot of EITHER is what lost a re-added custom item and
+reverted a spent Monk Focus: a snapshot on one listener republished the other domain's
+stale server value over a still-unwritten local edit.
+
+- **`src/lib/character-snapshot-reconciler.ts`** (pure) holds, per domain, the last
+  remote value, the unacknowledged local payload, and a conflict flag.
+  `subscribeToCharacter` and `subscribeCombatState` both open with
+  `includeMetadataChanges: true` and forward `{ hasPendingWrites }`. A domain with a
+  pending write keeps materializing THAT payload: a local echo (`hasPendingWrites:
+true`) never clears it, an equal server snapshot acknowledges it, a DIFFERING server
+  snapshot records a conflict while the local payload still shows. The hook publishes
+  `reconciler.current()` — never a mix of one domain's local edit with the other's stale
+  remote. Parent identity is the codec envelope plus `revision`/`shared`/`status`; child
+  identity is the whole play document minus its server stamp.
+- **`createDebouncedSave(...).save(payload, callbacks)`** reports the outcome of the
+  payload it settles: `onResolved` acknowledges, `onRejected` drops it, `onCancelled`
+  reports what `cancel()` discarded. A later `save()` silently SUPERSEDES the queued
+  payload (no callback — the newer one is what the reconciler now tracks).
+- **`revision`** is a required non-negative integer on every character parent
+  (`readDocMeta` quarantines a document without one; the cutover migration stamps
+  `revision: 0` — ADR-0009). `createCharacter` writes 0; every build/state/cache write
+  carries exactly `base + 1` where `base = max(observed parent revision, the highest
+revision this client already sent)`; a metadata-only write leaves it untouched. The
+  Firestore rules (`revisionAdvancesWithBuild()`) enforce that compare-and-set. A
+  TRANSACTION cannot run offline, so the rules — not a client read-modify-write — are
+  what make a queued offline write safe: a stale one is rejected on reconnect.
+- **A rejection surfaces, it never clobbers**: `SaveStatus="error"` (the internal message
+  is `"conflict"`; the indicator shows the translated generic error state), the pending
+  payload is dropped, `lastSentRevision` resets so the next attempt re-bases on the
+  server, the remote value is republished, and `diagnosticsLog("error",
+"character.save-rejected", …)` records it.
+- `setCharacterSharing` compares-and-sets on `revision` in its transaction and writes
+  `revision + 1`; `restoreCharacterSnapshot`/`replaceCharacterState` take the observed
+  base revision from the caller and write `base + 1`.
+
 ### Boot data-resilience — an empty result is authoritative only when SERVER-confirmed
 
 The invariant, learned from the 2026-07-09 **"Clear site data"** incident (`PROGRESS.md`): **a

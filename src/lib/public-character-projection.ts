@@ -384,6 +384,9 @@ export async function parsePublicCharacterProjection(
     portraitCrop: crop,
     shared: true,
     playStateVersion: 1,
+    // The projection deliberately carries no private generation; an anonymous read is
+    // never a write base, so the read-only doc reports the neutral 0.
+    revision: 0,
     status: raw.status,
     character,
     session,
