@@ -48,6 +48,7 @@ import { cacheToRosterDoc, type RosterCharacterDoc } from "@/lib/character-cache
 import { deletePortrait, deleteBugReportScreenshot } from "@/lib/storage";
 import { stripUndefined } from "@/lib/strip-undefined";
 import { clearLogFromIDB } from "@/lib/log-persistence";
+import { diagnosticsLog } from "@/lib/diagnostics";
 import {
   applyCombatToSession,
   omitCombatTrio,
@@ -773,6 +774,7 @@ export function createDebouncedSave(
       })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : "Save failed";
+        diagnosticsLog("error", "character.save-rejected", { message: msg });
         saveStatusCallbacks.onError(msg);
       });
   }

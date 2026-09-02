@@ -70,6 +70,11 @@
     "loadExample": "Carica personaggio di esempio",
     "examplePreviewBlocked": "Il caricamento dell'esempio non è disponibile nell'anteprima locale",
     "exampleLoaded": "Personaggio di esempio caricato",
-    "exampleFailed": "Impossibile caricare il personaggio di esempio"
+    "exampleFailed": "Impossibile caricare il personaggio di esempio",
+    "diagnostics": "Diagnostica",
+    "noDiagnostics": "Nessun report diagnostico.",
+    "diagnosticEvent": "Evento",
+    "diagnosticBreadcrumbs": "Ultimi eventi",
+    "diagnosticPurge": "Elimina report"
   }
 }

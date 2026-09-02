@@ -1006,6 +1006,27 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Diagnostics (ADR-0008): automatic client error reports. Create-only for the
+    // reporting uid with a bounded shape; the admin inbox reads and purges them.
+    match /diagnostics/{id} {
+      allow read, delete: if isAdmin();
+      allow create: if isNotBlocked()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.schema == 1
+        && request.resource.data.level == "error"
+        && request.resource.data.event is string
+        && request.resource.data.event.size() > 0
+        && request.resource.data.message is string
+        && request.resource.data.message.size() <= 2000
+        && request.resource.data.context is map
+        && request.resource.data.breadcrumbs is list
+        && request.resource.data.breadcrumbs.size() <= 500
+        && request.resource.data.keys().hasOnly([
+          'schema','uid','level','event','message','createdAtMs','context','breadcrumbs','createdAt'
+        ]);
+      allow update: if false;
+    }
+
     // Admin audit log — the `deleteUser` callable (Admin SDK, bypasses these rules)
     // writes one immutable record per destructive admin action (who deleted whom,
     // when, + the cascade counts). Admin-READABLE only; NO client may write it (the

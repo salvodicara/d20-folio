@@ -16,6 +16,10 @@ logger with correlation ids and an IndexedDB breadcrumb ring buffer writes autom
 (fold rejection, quarantine, denied write, unhandled rejection) to `users/{uid}/diagnostics/{id}` (bounded, create-only),
 read from the existing admin inbox.
 
+**Amendment 2026-09-02 (P1)**: reports are written to the top-level `diagnostics/{id}` collection with a `uid`
+field (create-only for that uid, admin read/delete). Evidence: the inbox needs one ordered query; `users/{uid}/diagnostics`
+would require a collection-group single-field index that `firebase.json`/`deploy.yml` do not manage.
+
 ## Alternatives Considered
 
 ### Alternative 1: Sentry (free tier)

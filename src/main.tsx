@@ -33,6 +33,7 @@ import "./stores/saveStore";
 import { installDomResilience } from "./lib/dom-resilience";
 import { recoverFromChunkPreloadError, CHUNK_RELOAD_FLAG } from "./lib/chunk-recovery";
 import { installErrorLog } from "./features/report/error-log";
+import { installDiagnostics } from "./lib/diagnostics-io";
 import { App } from "./App";
 import { DEV_BYPASS_AUTH as IMPORTED_DEV_BYPASS_AUTH } from "./lib/dev-bypass";
 
@@ -79,6 +80,11 @@ window.addEventListener("vite:preloadError", (event) => {
 // bug report filed later can attach the recent console/window errors. Pure (no
 // network); chains the original console.error so devtools behavior is unchanged.
 installErrorLog();
+
+// The diagnostics reporter (ADR-0008): correlation-id context + the IndexedDB
+// breadcrumb ring + the bounded automatic Firestore reporter on error-level
+// events. Never throws (private-mode crypto/localStorage denials fall back).
+installDiagnostics();
 
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("Root element not found");

@@ -13,10 +13,10 @@ export function redact(text: string): string {
  */
 export function redactIdentifiers(text: string): string {
   return text
-    .replace(/users\/[^/\s]+/g, "users/[uid]")
-    .replace(/\/characters\/(?!new\b)[^/\s]+/g, "/characters/[id]")
-    .replace(/\/campaigns\/(?!new\b)[^/\s]+/g, "/campaigns/[id]")
-    .replace(/\/join\/(?!new\b)[^/\s]+/g, "/join/[code]");
+    .replace(/users\/[^\s/?#"'`)]+/g, "users/[uid]")
+    .replace(/\/characters\/(?!new\b)[^\s/?#"'`)]+/g, "/characters/[id]")
+    .replace(/\/campaigns\/(?!new\b)[^\s/?#"'`)]+/g, "/campaigns/[id]")
+    .replace(/\/join\/(?!new\b)[^\s/?#"'`)]+/g, "/join/[code]");
 }
 
 export function redactAll(text: string): string {

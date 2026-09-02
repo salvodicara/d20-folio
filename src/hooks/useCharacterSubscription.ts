@@ -40,6 +40,7 @@ import {
   sessionToCombatState,
 } from "@/lib/combat-state";
 import { loadLogFromIDB } from "@/lib/log-persistence";
+import { diagnosticsLog, setDiagnosticsContext } from "@/lib/diagnostics";
 import { normalizeLogEntry } from "@/lib/sanitize-session";
 import { normalizeLogEntryConcentration } from "@/lib/concentration";
 import { sessionToPlayStateV1 } from "@/lib/session-state-codec";
@@ -126,6 +127,9 @@ export function useCharacterSubscription(characterId: string | undefined): void 
 
   // Set up subscription (or load mock in dev bypass mode)
   useEffect(() => {
+    // Correlation id (ADR-0008): every breadcrumb/report logged while this character
+    // is open is stamped with its id; cleared (both branches below) on unmount/switch.
+    setDiagnosticsContext({ characterId });
     // Dev bypass: fixtures are only the initial seed. The same parent + combat/state
     // document split then runs through the local replica, including optimistic echoes,
     // reload survival, and cross-tab updates.
@@ -270,6 +274,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         useCharacterStore.getState().setCombatPersistence(null);
         useCharacterStore.getState().setParentPersistenceFlush(null);
         setCharacter(null);
+        setDiagnosticsContext({ characterId: undefined });
       };
 
       // A `team-<kebab>` id loads one of the 6 real team fixtures (async — the
@@ -364,6 +369,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
 
     const quarantine = (message: string): void => {
       if (quarantined) return;
+      diagnosticsLog("error", "character.quarantine", { message });
       quarantined = true;
       persistenceEnabled = false;
       pendingPlayWrite = null;
@@ -515,6 +521,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       useCharacterStore.getState().setParentPersistenceFlush(null);
       attachedCampaignsRef.current = null;
       setCharacter(null);
+      setDiagnosticsContext({ characterId: undefined });
     };
   }, [user, characterId, setCharacter, setLoading, setError]);
 

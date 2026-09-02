@@ -75,6 +75,11 @@ import {
   type AdminUserCharacter,
   type AdminBugReport,
 } from "@/lib/firestore";
+import {
+  listDiagnostics,
+  purgeDiagnostics,
+  type AdminDiagnostic,
+} from "@/lib/diagnostics-io";
 import { getClosedIssueNumbers } from "@/lib/github-issue-state";
 import { reconcileBugReports } from "@/lib/bug-report-reconcile";
 import { useLoadExample } from "./use-load-example";
@@ -130,6 +135,10 @@ export function AdminPage() {
   // rate-limit) — the inbox then shows all with a quiet note and deletes nothing.
   const [bugReports, setBugReports] = useState<AdminBugReport[] | null>(null);
   const [bugClosureUnknown, setBugClosureUnknown] = useState(false);
+  // The diagnostics inbox — automatic error reports (ADR-0008), loaded alongside
+  // the bug inbox. null until resolved; an empty array on a load failure so the
+  // section shows its empty state rather than spinning forever.
+  const [diagnostics, setDiagnostics] = useState<AdminDiagnostic[] | null>(null);
   // Row expansion (the campaigns-style disclosure): which row is open + the
   // per-user roster cache its detail lazy-loads.
   const [expandedUid, setExpandedUid] = useState<string | null>(null);
@@ -198,6 +207,9 @@ export function AdminPage() {
             setBugReports([]);
             setBugClosureUnknown(false);
           });
+        listDiagnostics()
+          .then((list) => alive && setDiagnostics(list))
+          .catch(() => alive && setDiagnostics([]));
       } catch (e) {
         if (alive) setError(e instanceof Error ? e.message : t("admin.failedLoad"));
       } finally {
@@ -265,6 +277,13 @@ export function AdminPage() {
     } finally {
       setToggling(null);
     }
+  }
+
+  // Purge one diagnostics report (fire-and-forget — a failed delete just
+  // retries on the next load since the row would still be listed then).
+  function handlePurgeDiagnostic(id: string) {
+    setDiagnostics((prev) => (prev ? prev.filter((r) => r.id !== id) : prev));
+    void purgeDiagnostics([id]);
   }
 
   // Toggle a row's disclosure; lazy-load that user's roster on first open.
@@ -523,6 +542,11 @@ export function AdminPage() {
       {/* ── Bug inbox ─────────────────────────────────────────────────────── */}
       <Section title={t("admin.bugInbox")}>
         <BugInbox reports={bugReports} closureUnknown={bugClosureUnknown} users={users} />
+      </Section>
+
+      {/* ── Diagnostics inbox (ADR-0008) ─────────────────────────────────── */}
+      <Section title={t("admin.diagnostics")}>
+        <DiagnosticsInbox reports={diagnostics} onPurge={handlePurgeDiagnostic} />
       </Section>
     </main>
   );
@@ -1227,5 +1251,149 @@ function BugReportDetail({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * The DIAGNOSTICS INBOX (ADR-0008) — automatic error-level reports (quarantine,
+ * rejected saves, invalid combat state, runtime errors) written by the client's
+ * bounded reporter. Mirrors `BugInbox`'s shell (same primitives, empty state, and
+ * expandable-row idiom): each row is always an error, so it wears the same danger
+ * tint at rest. Expanding a row shows the event name, the sanitized correlation
+ * context (`formatDebugValue` line-by-line, same as the bug inbox), and the last
+ * 20 breadcrumbs leading up to it. A per-row purge deletes the report and drops it
+ * from the list optimistically.
+ */
+function DiagnosticsInbox({
+  reports,
+  onPurge,
+}: {
+  reports: AdminDiagnostic[] | null;
+  onPurge: (id: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  if (reports === null) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Spinner size="md" />
+      </div>
+    );
+  }
+  if (reports.length === 0) {
+    return (
+      <p className="py-6 text-center text-sm text-text-muted">
+        {t("admin.noDiagnostics")}
+      </p>
+    );
+  }
+
+  const sorted = [...reports].sort(
+    (a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0)
+  );
+
+  return (
+    <ul className="flex flex-col gap-2">
+      {sorted.map((r) => (
+        <li key={r.id}>
+          <InfoCard className="flex flex-col gap-2 border-danger/40 bg-danger/5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Icon as={AlertTriangle} size="sm" decorative className="text-danger" />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="break-words font-medium text-text-primary">
+                    {r.message}
+                  </span>
+                  <Badge
+                    size="sm"
+                    color="var(--semantic-danger)"
+                    ink="var(--semantic-danger-ink)"
+                  >
+                    {r.event}
+                  </Badge>
+                </div>
+                <div className="mt-0.5 font-mono text-xs text-text-muted">
+                  {formatDate(r.createdAt)} · {r.uid}
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
+                  aria-expanded={expandedId === r.id}
+                  className="justify-center"
+                >
+                  {t("admin.bugDetails")}
+                  <Icon
+                    as={ChevronDown}
+                    size="sm"
+                    decorative
+                    className={cn(
+                      "transition-transform",
+                      expandedId === r.id && "rotate-180"
+                    )}
+                  />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onPurge(r.id)}
+                  className="justify-center text-danger hover:text-danger"
+                >
+                  <Icon as={Trash2} size="sm" decorative />
+                  {t("admin.diagnosticPurge")}
+                </Button>
+              </div>
+            </div>
+            {expandedId === r.id && (
+              <div className="flex flex-col gap-3 rounded-md border border-hairline bg-surface-2/40 p-3">
+                <div>
+                  <p className="text-xs font-medium text-text-secondary">
+                    {t("admin.diagnosticEvent")}
+                  </p>
+                  <p className="mt-1 font-mono text-xs text-text-primary">{r.event}</p>
+                </div>
+                {Object.keys(r.context).length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-text-secondary">
+                      {t("admin.bugContext")}
+                    </p>
+                    <div className="mt-1 flex flex-col gap-0.5 overflow-x-auto">
+                      {Object.entries(r.context).map(([key, value]) => (
+                        <div
+                          key={key}
+                          className="font-mono text-xs whitespace-pre-wrap break-words"
+                        >
+                          <span className="text-text-muted">{key}:</span>{" "}
+                          <span className="text-text-primary">
+                            {formatDebugValue(value)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {r.breadcrumbs.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-text-secondary">
+                      {t("admin.diagnosticBreadcrumbs")}
+                    </p>
+                    <div className="mt-1 flex flex-col gap-0.5 overflow-x-auto font-mono text-xs text-text-primary">
+                      {r.breadcrumbs.slice(-20).map((b, i) => (
+                        <div key={i}>
+                          {new Date(b.t).toISOString()} · {b.level} · {b.event}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </InfoCard>
+        </li>
+      ))}
+    </ul>
   );
 }

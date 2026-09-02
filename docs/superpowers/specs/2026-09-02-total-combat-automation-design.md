@@ -343,7 +343,7 @@ union is deleted with the legacy grants that carry it.
 | `…/public/sheet`                                                   | owner (same batch)                                                                                                                | anonymous when exact              | projection (unchanged)                                                                                     |
 | `…/combat/state`                                                   | owner; admin                                                                                                                      | owner, admin, campaign co-members | the personal `Encounter` (schema 1)                                                                        |
 | `…/library/index`                                                  | owner                                                                                                                             | owner                             | homebrew library; entries carry ids                                                                        |
-| `users/{uid}/diagnostics/{id}`                                     | self (create only); admin                                                                                                         | admin                             | bounded error reports (§9)                                                                                 |
+| `diagnostics/{id}`                                                 | self (create only); admin                                                                                                         | admin                             | bounded error reports (§9)                                                                                 |
 | `campaigns/{id}`                                                   | DM/admin (settings, membership, `dmUid` transfer, `joinsLocked`); member self-join; member own `memberDetails` presentation entry | members, admin                    | identity, settings, treasury, `members[]`, `memberDetails[uid]` = `{ displayName, photoURL, characterId }` |
 | `campaigns/{id}/encounters/{eid}`                                  | **any member** (append to `log`, `arrayUnion` only); DM/admin (checkpoint, settings, delete)                                      | members, admin                    | the shared `Encounter`                                                                                     |
 | `campaigns/{id}/dmNotes/*`, `notes/*`, `chronicle/*`, `sessions/*` | as today, enumerated explicitly                                                                                                   |                                   | no `{subcol}` wildcard                                                                                     |
@@ -549,9 +549,9 @@ Two layers. The **domain log** (§3) is the forensic record of play: replayable,
 ids: session, uid, characterId, campaignId, encounterId, actionId, buildSha), an IndexedDB ring
 buffer of the last 500 breadcrumbs, and an automatic report on `error`-level events (fold
 rejection, quarantine, denied write, unhandled rejection, console error) written to
-`users/{uid}/diagnostics/{id}` (≤ 32 KiB, client caps at 50 per user, create-only rule), surfaced
-in the existing admin inbox. No user report is needed. Sentry remains a possible sink swap;
-not adopted (third party, cost, friends' data).
+`diagnostics/{id}` (≤ 32 KiB, client caps at 50 per user per build + 10 per session, create-only
+rule), surfaced in the existing admin inbox. No user report is needed. Sentry remains a possible
+sink swap; not adopted (third party, cost, friends' data).
 
 ## 10. Coverage, machine-derived
 

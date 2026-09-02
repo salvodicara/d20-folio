@@ -70,6 +70,11 @@
     "loadExample": "Load example character",
     "examplePreviewBlocked": "Loading the example isn't available in the local preview",
     "exampleLoaded": "Loaded the example character",
-    "exampleFailed": "Couldn't load the example character"
+    "exampleFailed": "Couldn't load the example character",
+    "diagnostics": "Diagnostics",
+    "noDiagnostics": "No diagnostics reports.",
+    "diagnosticEvent": "Event",
+    "diagnosticBreadcrumbs": "Recent breadcrumbs",
+    "diagnosticPurge": "Delete report"
   }
 }

@@ -7,6 +7,7 @@ import {
   onErrorReport,
   REPORT_MAX_BYTES,
   resetDiagnostics,
+  seedBreadcrumbs,
   setDiagnosticsContext,
   type DiagnosticsReport,
 } from "@/lib/diagnostics";
@@ -96,6 +97,23 @@ describe("diagnostics logger", () => {
     );
     expect(report.breadcrumbs.at(-1)?.event).toBe("big.499");
     expect(report.breadcrumbs.length).toBeGreaterThan(10);
+  });
+
+  it("seedBreadcrumbs restores a persisted ring in order, oldest first", () => {
+    resetDiagnostics();
+    setDiagnosticsContext({ sessionId: "s1", buildSha: "abc", appVersion: "1.0.0" });
+    seedBreadcrumbs([
+      { t: 1, level: "info", event: "seed.one" },
+      { t: 2, level: "info", event: "seed.two" },
+      { t: 3, level: "info", event: "seed.three" },
+    ]);
+    diagnosticsLog("debug", "live.four");
+    expect(breadcrumbSnapshot().map((b) => b.event)).toEqual([
+      "seed.one",
+      "seed.two",
+      "seed.three",
+      "live.four",
+    ]);
   });
 
   it("redacts emails, long tokens and document identifiers in messages and data", () => {

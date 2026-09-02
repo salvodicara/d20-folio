@@ -65,6 +65,7 @@ import { normalizeConcentrationRef } from "@/lib/concentration";
 import { conformActiveCombatEffects } from "@/lib/combat-effect-io";
 import { parseCombatOutcomeReceipt } from "@/lib/combat-outcomes";
 import { parsePersistedPlayStateV1 } from "@/lib/session-state-codec";
+import { diagnosticsLog } from "@/lib/diagnostics";
 
 const DEV_COMBAT_COLLECTION = "combat-state";
 const STRICT_V1_FIELDS = [
@@ -611,6 +612,7 @@ export function subscribeCombatState(
         }
         const parsed = parseCombatState(state);
         if (!parsed.ok) {
+          diagnosticsLog("error", "combat-state.invalid", { reason: parsed.reason });
           onError?.(new TypeError(`Invalid combat state: ${parsed.reason}`));
           return;
         }
@@ -630,6 +632,7 @@ export function subscribeCombatState(
       }
       const parsed = parseCombatState(snap.data());
       if (!parsed.ok) {
+        diagnosticsLog("error", "combat-state.invalid", { reason: parsed.reason });
         onError?.(new TypeError(`Invalid combat state: ${parsed.reason}`));
         return;
       }

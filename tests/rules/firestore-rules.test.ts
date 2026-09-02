@@ -3004,6 +3004,68 @@ describe("firestore.rules — /bug_reports access (OWN-37)", () => {
   });
 });
 
+/** A well-formed diagnostics-report document for the given uid (ADR-0008). */
+function diagnosticDoc(uid: string, overrides: Record<string, unknown> = {}) {
+  return {
+    schema: 1,
+    uid,
+    level: "error",
+    event: "character.quarantine",
+    message: "malformed-entry at build.spells[0]",
+    createdAtMs: 1_720_000_000_000,
+    context: { sessionId: "s", buildSha: "abc", appVersion: "1" },
+    breadcrumbs: [{ t: 1, level: "error", event: "character.quarantine" }],
+    createdAt: Timestamp.now(),
+    ...overrides,
+  };
+}
+
+describe("firestore.rules — /diagnostics (ADR-0008 create-only reports)", () => {
+  it("a signed-in user creates a well-formed report for themselves; a blocked user cannot", async () => {
+    const member = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(
+      setDoc(doc(member, "diagnostics", "d1"), diagnosticDoc("member"))
+    );
+    const blocked = testEnv.authenticatedContext("blocked").firestore();
+    await assertFails(
+      setDoc(doc(blocked, "diagnostics", "d2"), diagnosticDoc("blocked"))
+    );
+  });
+
+  it("rejects a spoofed uid, a non-error level, an oversized message and unknown keys", async () => {
+    const member = testEnv.authenticatedContext("member").firestore();
+    await assertFails(
+      setDoc(doc(member, "diagnostics", "d3"), diagnosticDoc("outsider"))
+    );
+    await assertFails(
+      setDoc(doc(member, "diagnostics", "d4"), diagnosticDoc("member", { level: "info" }))
+    );
+    await assertFails(
+      setDoc(
+        doc(member, "diagnostics", "d5"),
+        diagnosticDoc("member", { message: "x".repeat(2001) })
+      )
+    );
+    await assertFails(
+      setDoc(doc(member, "diagnostics", "d6"), diagnosticDoc("member", { extra: true }))
+    );
+  });
+
+  it("only the admin reads and deletes; nobody updates", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "diagnostics", "d7"), diagnosticDoc("member"));
+    });
+    const member = testEnv.authenticatedContext("member").firestore();
+    await assertFails(getDoc(doc(member, "diagnostics", "d7")));
+    await assertFails(updateDoc(doc(member, "diagnostics", "d7"), { message: "edited" }));
+    await assertFails(deleteDoc(doc(member, "diagnostics", "d7")));
+    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertSucceeds(getDoc(doc(admin, "diagnostics", "d7")));
+    await assertFails(updateDoc(doc(admin, "diagnostics", "d7"), { message: "edited" }));
+    await assertSucceeds(deleteDoc(doc(admin, "diagnostics", "d7")));
+  });
+});
+
 /** One library entry, shaped like the client's own write (src/lib/library.ts). */
 function libraryEntry(name: string) {
   return {

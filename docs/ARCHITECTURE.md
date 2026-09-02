@@ -2989,6 +2989,38 @@ full sheet" under **App structure** below (the single home for that contract).
 Action logs persist to **IndexedDB** locally — never sent to Firestore until session-recap
 time (cost-minimisation rule).
 
+### Diagnostics (zero cost)
+
+Two layers (ADR-0008, amended 2026-09-02 for the top-level collection). The **domain log** (the
+combat action log above) is the forensic record of play: replayable, attributed, never sent to
+Firestore until session-recap time. The **technical layer** is `src/lib/diagnostics` — a pure,
+Firebase-free structured logger with correlation ids (`sessionId`, `uid`, `characterId`,
+`campaignId`, `encounterId`, `actionId`, `buildSha`, `appVersion`) stamped on every breadcrumb, and
+a fixed 500-entry ring buffer. An `error`-level `diagnosticsLog` call additionally builds a
+`DiagnosticsReport` (capped at 32 KiB by trimming the oldest breadcrumbs) and fans it out to any
+registered `onErrorReport` listener — but only once a `uid` is in context, so nothing is ever built
+for a signed-out session.
+
+`src/lib/diagnostics-io.ts` is the Firebase seam: `installDiagnosticsReporter` subscribes to error
+reports and enforces the bounded-write contract — at most `MAX_REPORTS_PER_USER_BUILD` (50, tracked
+in `localStorage` under `d20-folio-diagnostics:{uid}:{buildSha}`) and `MAX_REPORTS_PER_SESSION` (10,
+in-memory), deduping identical `event`+`message` pairs within a session; a failed write is swallowed
+(a report about a failure must never become a second failure). `installDiagnostics()` is the
+production installer called once from `main.tsx`: it seeds the correlation context, subscribes to
+`authStore` to keep `uid` current, lazy-loads `src/lib/diagnostics/idb.ts` to restore the previous
+session's breadcrumb ring from IndexedDB, and persists the ring back to IndexedDB at most once a
+second — and only when the ring actually changed since the last flush, so an idle sheet never wakes
+the CPU. It never throws: a `crypto.randomUUID`/`localStorage` denial (private browsing) falls back
+to a `Math.random()` session id and an in-memory storage shim rather than breaking boot.
+
+Reports land in the top-level `diagnostics/{id}` collection (create-only for the reporting uid, a
+bounded shape enforced by `firestore.rules`; admin read/delete) and are read back by an admin-only
+inbox section in `AdminPage.tsx` (`listDiagnostics`/`purgeDiagnostics`), mirroring the existing bug
+inbox's list/expand/purge idiom. Error-producing call sites across the app (`character.quarantine`,
+`character.save-rejected`, `combat-state.invalid`, and every `console.error`/window error/unhandled
+rejection the existing `error-log.ts` ring already captures) feed `diagnosticsLog` directly, so an
+incident is visible in the admin inbox without the player having to file a bug report.
+
 ---
 
 ## Performance budget (P3)

@@ -13,6 +13,7 @@
  */
 
 import { create } from "zustand";
+import { setDiagnosticsContext } from "@/lib/diagnostics";
 import type {
   CampaignDoc,
   CampaignTreasury,
@@ -92,7 +93,10 @@ export const useCampaignStore = create<CampaignState>()((set, get) => ({
   notesLoading: false,
   notesError: null,
 
-  setCampaign: (doc) => set({ campaign: doc, error: null }),
+  setCampaign: (doc) => {
+    setDiagnosticsContext({ campaignId: doc?.id });
+    set({ campaign: doc, error: null });
+  },
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
   setNotes: (notes) => set({ notes, notesError: null, notesLoading: false }),

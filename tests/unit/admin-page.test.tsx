@@ -28,6 +28,8 @@ const {
   purgeBugReportsMock,
   getClosedIssueNumbersMock,
   loadExampleMock,
+  listDiagnosticsMock,
+  purgeDiagnosticsMock,
 } = vi.hoisted(() => ({
   navigateMock: vi.fn(),
   isAdminState: { value: true },
@@ -52,6 +54,12 @@ const {
     Promise.resolve(new Set<number>())
   ),
   loadExampleMock: vi.fn(() => Promise.resolve()),
+  listDiagnosticsMock: vi.fn<
+    () => Promise<import("@/lib/diagnostics-io").AdminDiagnostic[]>
+  >(() => Promise.resolve([])),
+  purgeDiagnosticsMock: vi.fn<(ids: readonly string[]) => Promise<number>>(() =>
+    Promise.resolve(0)
+  ),
 }));
 
 vi.mock("react-router", async (importOriginal) => {
@@ -69,6 +77,10 @@ vi.mock("@/lib/firestore", () => ({
 }));
 vi.mock("@/lib/github-issue-state", () => ({
   getClosedIssueNumbers: getClosedIssueNumbersMock,
+}));
+vi.mock("@/lib/diagnostics-io", () => ({
+  listDiagnostics: listDiagnosticsMock,
+  purgeDiagnostics: purgeDiagnosticsMock,
 }));
 vi.mock("@/hooks/useIsAdmin", () => ({ useIsAdmin: () => isAdminState.value }));
 vi.mock("@/stores/authStore", () => ({
@@ -149,6 +161,8 @@ beforeEach(() => {
   listAllUsersMock.mockReset().mockResolvedValue(seedUsers());
   listBugReportsMock.mockReset().mockResolvedValue([]);
   getClosedIssueNumbersMock.mockReset().mockResolvedValue(new Set<number>());
+  listDiagnosticsMock.mockReset().mockResolvedValue([]);
+  purgeDiagnosticsMock.mockReset().mockResolvedValue(0);
   isAdminState.value = true;
   authState.user = { uid: "admin-uid", email: "admin@example.com" };
   loadExampleMock.mockClear();
@@ -371,5 +385,26 @@ describe("AdminPage — bug inbox mirrors the open GitHub issues", () => {
     // A failed image load surfaces the explicit unavailable state, never a blank.
     fireEvent.error(img);
     expect(screen.getByText(/could not be loaded/i)).toBeInTheDocument();
+  });
+});
+
+describe("AdminPage — diagnostics inbox (ADR-0008)", () => {
+  it("renders the diagnostics section title and a report's message", async () => {
+    listDiagnosticsMock.mockResolvedValue([
+      {
+        id: "d1",
+        uid: "u",
+        event: "character.quarantine",
+        message: "malformed-entry at build.spells[0]",
+        createdAt: new Date(),
+        context: {},
+        breadcrumbs: [],
+      },
+    ]);
+    renderPage();
+    expect(screen.getByRole("heading", { name: /^diagnostics$/i })).toBeInTheDocument();
+    expect(
+      await screen.findByText("malformed-entry at build.spells[0]")
+    ).toBeInTheDocument();
   });
 });

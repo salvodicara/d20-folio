@@ -23,6 +23,7 @@
  */
 
 import { redact } from "@/lib/diagnostics/redact";
+import { diagnosticsLog } from "@/lib/diagnostics";
 
 /** A single captured error: when it happened + a truncated, redacted message. */
 export interface ErrorLogEntry {
@@ -72,6 +73,9 @@ function record(source: ErrorLogEntry["source"], args: unknown[]): void {
   // during render. `Date.now()` here is intentional (we want the real clock).
   buffer.push({ t: Date.now(), source, message });
   if (buffer.length > capacity) buffer.shift();
+  // Also feed the structured diagnostics breadcrumb ring (ADR-0008) — a report
+  // that fires later carries the same runtime errors this ring already holds.
+  diagnosticsLog("error", `runtime.${source}`, { message });
 }
 
 /**
