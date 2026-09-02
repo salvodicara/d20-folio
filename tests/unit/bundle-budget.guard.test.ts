@@ -149,7 +149,12 @@ const ENTRY_CEILING_KB = 65; // baseline 53.7 → +17% (2026-07-10: +1 for the g
 // the convergence adds only main's already-recorded compendium editorial weight
 // (+3.3 KB). Merged build measured 840.89 KB gz (JS 761.6 + CSS 79.3); 844
 // leaves ~3 KB deterministic never-exact-fit headroom.
-const EAGER_CEILING_KB = 844; // baseline 727.1 → ~+16% (over budget — see ARCHITECTURE P3 frontier #1)
+// 2026-09-02 (combat P1 data safety): raised 844 → 850. Fresh origin/main measured
+// 843.1 KB gz (17 families) — exact-fit against the 844 ceiling, an under-recording
+// (the 2026-08-20 note says 840.89). P1 adds the eager diagnostics layer (logger +
+// reporter, ADR-0008) and the total codec (typed failures, unknown buckets): +1.6 KB
+// gz → 844.7 KB across 16 families. 850 restores ~5 KB never-exact-fit headroom.
+const EAGER_CEILING_KB = 850; // baseline 727.1 → ~+17% (over budget — see ARCHITECTURE P3 frontier #1)
 // 2026-06-11: raised from 6480 → 7150 for the lazy PDF-export renderer chunk
 // (character-pdf-*.js, ~428 KB raw / ~178 KB gz). The chunk is LAZY (loaded only
 // on demand from the PDF export flow) and correctly precached for offline-first.
@@ -462,7 +467,10 @@ const EAGER_CEILING_KB = 844; // baseline 727.1 → ~+16% (over budget — see A
 // convergence adds main's recorded UI/UX-closure + item-art lazy weight
 // (+129 KiB, +8 entries). Merged composed build measured 9488.66 KiB / 334
 // entries; +~12 KiB never-exact-fit headroom → 9501.
-const PRECACHE_CEILING_KIB = 9501;
+// 2026-09-02 (combat P1): raised 9501 → 9525. Fresh origin/main measured 9497 KiB
+// (334 entries); P1 adds +14 KiB of eager diagnostics/codec JS → 9511 KiB / 334 entries;
+// 9525 keeps ~14 KiB never-exact-fit headroom.
+const PRECACHE_CEILING_KIB = 9525;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**
