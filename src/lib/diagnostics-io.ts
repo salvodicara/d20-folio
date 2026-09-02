@@ -106,8 +106,8 @@ export function installDiagnostics(): void {
       storage: safeLocalStorage(),
       write: writeDiagnosticsReport,
     });
-    void import("@/lib/diagnostics/idb").then(
-      async ({ loadBreadcrumbs, persistBreadcrumbs }) => {
+    void import("@/lib/diagnostics/idb")
+      .then(async ({ loadBreadcrumbs, persistBreadcrumbs }) => {
         const previous = await loadBreadcrumbs();
         if (previous) seedBreadcrumbs(previous);
         let scheduled = false;
@@ -121,12 +121,24 @@ export function installDiagnostics(): void {
           lastSize = snapshot.length;
           lastNewest = newest;
           scheduled = true;
-          void persistBreadcrumbs(snapshot).finally(() => {
-            scheduled = false;
-          });
+          // Guarded independently of idb.ts's own internal try/catch — a
+          // diagnostics failure must never surface as an unhandled rejection
+          // (error-log.ts would otherwise re-report it as a runtime error,
+          // making a diagnostics failure cascade into a diagnostics report
+          // about itself).
+          persistBreadcrumbs(snapshot)
+            .catch(() => {
+              // IndexedDB write failed — breadcrumbs stay in memory only.
+            })
+            .finally(() => {
+              scheduled = false;
+            });
         }, 1000);
-      }
-    );
+      })
+      .catch(() => {
+        // The lazy idb chunk failed to load (offline, chunk 404, IndexedDB
+        // unavailable) — breadcrumbs simply never seed/persist this session.
+      });
   } catch {
     // A diagnostics failure must never break boot.
   }
