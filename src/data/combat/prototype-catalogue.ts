@@ -161,7 +161,7 @@ export const shield: Mechanic = {
 };
 
 /**
- * A save-gated concentration spell shaped like Tasha's Hideous Laughter: WIS save negates;
+ * A save-gated concentration spell shaped like Hideous Laughter: WIS save negates;
  * on a failed save the target is prone and incapacitated while the caster concentrates.
  */
 export const giggle: Mechanic = {

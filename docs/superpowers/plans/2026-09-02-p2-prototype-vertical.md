@@ -34,7 +34,7 @@
 | `src/lib/combat/coverage.ts`                                      | `coverageFor(catalogue)` → JSON rows                                                                                                                |
 | `src/lib/combat/index.ts`                                         | public surface                                                                                                                                      |
 | `src/lib/combat-io.ts`                                            | `appendAction`, `subscribeEncounter` (Firestore; not unit-tested here)                                                                              |
-| `src/data/combat/prototype-catalogue.ts`                          | Hunter's Mark, Shield, Tasha's-like save spell, longbow, goblin scimitar, goblin stat block adapter sample — data only                              |
+| `src/data/combat/prototype-catalogue.ts`                          | Hunter's Mark, Shield, Hideous-Laughter-like save spell, longbow, goblin scimitar, goblin stat block adapter sample — data only                     |
 | `tests/unit/combat/*.test.ts`, `tests/unit/combat/replays/*.json` | replays, properties, guards                                                                                                                         |
 | `firestore.rules`                                                 | additive `match /campaigns/{campId}/encounters/{eid}`                                                                                               |
 | `tests/rules/firestore-rules.test.ts`                             | 4 cases for the encounter block                                                                                                                     |
@@ -108,7 +108,7 @@ describe("compareSeq", () => {
 - [ ] Tests (each an explicit action list folded by hand-calling `resolve`):
   1. Longbow attack by the ranger on `monster-1`: hit when d20+bonus ≥ AC; damage applied; receipt lists `paid: [turn:attack]`.
   2. Hunter's Mark cast: slot spent, concentration set, mark effect on `monster-1`; the next longbow hit requests the `1d6` rider input and adds it.
-  3. A save-gated spell (Tasha's-like): every target succeeds → applied with `outcome: "negated"`, slot spent, **no** concentration, **no** effect.
+  3. A save-gated spell (Hideous-Laughter-like): every target succeeds → applied with `outcome: "negated"`, slot spent, **no** concentration, **no** effect.
   4. Unpaid intent (no slot left) → `rejected: { reason: "unaffordable" }`; state unchanged.
   5. Concentration check: goblin hits the ranger; `damage-taken` opens a pending check DC 10; `core:concentration-check` with d20 face 3 → concentration ends, mark effect ends, the rider no longer applies (cascade in one action).
 - [ ] Implement; PASS; commit `feat(combat): intents, costs, outcomes, concentration cascade`.

@@ -3174,7 +3174,7 @@ describe("firestore.rules — campaign encounter documents (append-only log)", (
   it("no encounter writer gains any access to another user's character subtree", async () => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), "users", "member", "characters", "char-m"), {
-        name: "Mandorlino",
+        name: "a member's PC",
         build: {},
         state: {},
       });
