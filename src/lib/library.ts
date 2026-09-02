@@ -27,6 +27,7 @@ import type {
   CustomWeapon,
 } from "@/types/character";
 import type { CustomMonster } from "@/types/campaign";
+import { createItemInstanceId } from "@/lib/item-resources";
 
 /**
  * The homebrew kinds, in display order — the union below derives from it. The first
@@ -171,7 +172,11 @@ export function isEntryNamed(
 export function toLibraryEntry(draft: SheetLibraryDraft, now: number): SheetLibraryEntry;
 export function toLibraryEntry(draft: LibraryDraft, now: number): LibraryEntry;
 export function toLibraryEntry(draft: LibraryDraft, now: number): LibraryEntry {
-  const id = crypto.randomUUID();
+  // A sheet entry's id IS the item's own stable instanceId (so the library entry
+  // and every character's copy of it share one identity); a monster template has
+  // no per-item instanceId (that identity belongs to `CustomEquipment` et al, not
+  // `CustomMonster`), so it alone still mints a fresh UUID.
+  const id = draft.kind === "monster" ? crypto.randomUUID() : draft.item.instanceId;
   switch (draft.kind) {
     case "spell": {
       const item = structuredClone(draft.item);
@@ -213,13 +218,22 @@ export function toLibraryEntry(draft: LibraryDraft, now: number): LibraryEntry {
  * keeping that entry's original `id` and list POSITION, so re-saving an edited
  * homebrew updates its template instead of growing a near-duplicate pile. `replaced`
  * tells the caller which happened (the UI picks its toast from it).
+ *
+ * An `entry.id` MATCH is checked first: for a sheet kind, `id` is the item's own
+ * stable `instanceId` (unchanged by a rename), so a renamed row upserts as the SAME
+ * record even though its (kind, name) identity now differs from what's stored — the
+ * name-keyed fallback below is what {@link syncFromCharacter}'s rename-move dance
+ * still walks for the (kind, name) bookkeeping, but resolving id-first here keeps two
+ * entries from ever sharing one id (which would make an id-keyed lookup — trash,
+ * `updateEntry`, this very check next time — hit the wrong record, or both).
  */
 export function upsertEntry(
   entries: readonly LibraryEntry[],
   entry: LibraryEntry
 ): { entries: LibraryEntry[]; replaced: boolean } {
   const key = identityKey(entry);
-  const existing = entries.find((e) => identityKey(e) === key);
+  const existing =
+    entries.find((e) => e.id === entry.id) ?? entries.find((e) => identityKey(e) === key);
   if (!existing) return { entries: [...entries, entry], replaced: false };
   return {
     entries: entries.map((e) => (e === existing ? { ...entry, id: existing.id } : e)),
@@ -241,25 +255,39 @@ export function upsertEntry(
  * Returns the kind-tagged {@link LibraryDraft} rather than a bare item so the
  * caller's `switch` narrows `item` to the exact type of the array it appends to —
  * one call site, zero casts.
+ *
+ * The entry's `id` (the library item's own `instanceId`) lands UNCHANGED, so
+ * every character that keeps its own untouched copy shares one identity with
+ * the template — UNLESS `takenIds` already holds it (this character already
+ * carries that instance, e.g. adding the same library entry a second time),
+ * in which case a fresh id is minted so the two copies stay independently
+ * addressable (session play-state, resource ledgers, …).
  */
 export function entryToCharacterItem(
   entry: SheetLibraryEntry,
-  quantity = 1
+  quantity = 1,
+  takenIds: ReadonlySet<string> = new Set()
 ): SheetLibraryDraft {
   switch (entry.kind) {
-    case "spell":
-      return { kind: "spell", item: { ...structuredClone(entry.item), prepared: true } };
-    case "equipment":
-      return {
-        kind: "equipment",
-        item: { ...structuredClone(entry.item), equipped: true, quantity },
-      };
-    case "weapon":
-      return {
-        kind: "weapon",
-        item: { ...structuredClone(entry.item), quantity },
-      };
-    case "feature":
-      return { kind: "feature", item: structuredClone(entry.item) };
+    case "spell": {
+      const item = structuredClone(entry.item);
+      if (takenIds.has(item.instanceId)) item.instanceId = createItemInstanceId();
+      return { kind: "spell", item: { ...item, prepared: true } };
+    }
+    case "equipment": {
+      const item = structuredClone(entry.item);
+      if (takenIds.has(item.instanceId)) item.instanceId = createItemInstanceId();
+      return { kind: "equipment", item: { ...item, equipped: true, quantity } };
+    }
+    case "weapon": {
+      const item = structuredClone(entry.item);
+      if (takenIds.has(item.instanceId)) item.instanceId = createItemInstanceId();
+      return { kind: "weapon", item: { ...item, quantity } };
+    }
+    case "feature": {
+      const item = structuredClone(entry.item);
+      if (takenIds.has(item.instanceId)) item.instanceId = createItemInstanceId();
+      return { kind: "feature", item };
+    }
   }
 }

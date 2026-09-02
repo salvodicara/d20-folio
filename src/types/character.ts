@@ -126,6 +126,8 @@ export interface CustomSpell {
   tags?: CharacterTag[];
   /** Per-spell casting-ability override (see SrdSpellRef.spellAbilityOverride). */
   spellAbilityOverride?: AbilityCode;
+  /** Stable identity of this custom entry — never keyed by name. */
+  instanceId: string;
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
   unknown?: Record<string, unknown>;
 }
@@ -161,6 +163,8 @@ export interface CustomFeature {
   contentBlocks: ContentBlockData[];
   trackers?: TrackerData[];
   actions?: ActionData[];
+  /** Stable identity of this custom entry — never keyed by name. */
+  instanceId: string;
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
   unknown?: Record<string, unknown>;
 }
@@ -252,6 +256,8 @@ export interface CustomEquipment {
   };
   /** MAGIC-ITEMS — true when the player has attuned to this item. */
   attuned?: boolean;
+  /** Stable identity of this custom entry — never keyed by name. */
+  instanceId: string;
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
   unknown?: Record<string, unknown>;
 }
@@ -302,6 +308,8 @@ export interface CustomWeapon {
   description?: string;
   notes?: string;
   tags?: CharacterTag[];
+  /** Stable identity of this custom entry — never keyed by name. */
+  instanceId: string;
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
   unknown?: Record<string, unknown>;
 }

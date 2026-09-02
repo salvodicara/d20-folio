@@ -2300,13 +2300,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!character) return;
     const newEquipment = character.character.equipment
       .map((ref) => {
-        const key = "custom" in ref ? `custom-${ref.name}` : ref.srdId;
+        const key = "custom" in ref ? `custom-${ref.instanceId}` : ref.srdId;
         if (key !== equipmentKey) return ref;
         return { ...ref, quantity: Math.max(0, (ref.quantity ?? 1) - 1) };
       })
       .filter((ref) => {
         // Remove tracked items that have reached 0
-        const key = "custom" in ref ? `custom-${ref.name}` : ref.srdId;
+        const key = "custom" in ref ? `custom-${ref.instanceId}` : ref.srdId;
         if (key !== equipmentKey) return true;
         return (ref.quantity ?? 1) > 0;
       });

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { addEquipmentRef, addWeaponRef } from "@/lib/equipment-add";
 import { GEAR_BY_ID } from "@/data/gear";
 import type { SrdEquipmentRef, CustomEquipment, SrdWeaponRef } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 describe("addEquipmentRef — stacking on add", () => {
   it("stacks a plain consumable onto an existing entry (the Potion of Healing bug)", () => {
@@ -60,7 +61,12 @@ describe("addEquipmentRef — stacking on add", () => {
   });
 
   it("never stacks homebrew (custom) items", () => {
-    const custom: CustomEquipment = { custom: true, name: "Heirloom", quantity: 1 };
+    const custom: CustomEquipment = {
+      custom: true,
+      name: "Heirloom",
+      quantity: 1,
+      instanceId: customInstanceId("Heirloom"),
+    };
     expect(addEquipmentRef([custom], { srdId: "torch", quantity: 1 })).toHaveLength(2);
   });
 });

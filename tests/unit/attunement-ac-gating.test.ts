@@ -12,6 +12,7 @@
 import { describe, expect, it } from "vitest";
 import { computeAC } from "@/lib/compute";
 import type { CustomEquipment, SrdEquipmentRef } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 const SCORES = { STR: 10, DEX: 14, CON: 10, INT: 10, WIS: 10, CHA: 10 };
 const NO_SRD = () => undefined;
@@ -24,6 +25,7 @@ function ringOfProtection(opts: { attuned?: boolean }): CustomEquipment {
     quantity: 1,
     equipped: true,
     acBonus: 1,
+    instanceId: customInstanceId("Ring of Protection"),
     ...(opts.attuned !== undefined ? { attuned: opts.attuned } : {}),
   };
 }
@@ -89,6 +91,7 @@ describe("computeAC — magic item attunement gating", () => {
       ac: { base: 18, dexBonus: false },
       acBonus: 1, // the +1
       attuned: false, // requires but not attuned
+      instanceId: customInstanceId("+1 Plate"),
     };
     // Base 18 + 0 magical (gated) = 18 (NOT 19)
     expect(computeAC([plate], SCORES, NO_SRD)).toBe(18);

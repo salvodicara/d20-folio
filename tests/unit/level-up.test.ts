@@ -12,6 +12,7 @@ import { emptySwapChoice, isSwapIncomplete, applySpellSwap } from "@/lib/spell-s
 import { getClassTable } from "@/data/classes";
 import { totalLevel } from "@/lib/classes";
 import type { CharacterData, SrdSpellRef } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 /**
  * Creates a minimal CharacterData for testing level-up logic. R4 — accepts the
@@ -670,6 +671,7 @@ describe("spell swap application logic", () => {
         duration: "Instantaneous",
         concentration: false,
         description: "Custom spell.",
+        instanceId: customInstanceId("Homebrew Bolt"),
       },
     ];
     const result = applySpellSwap(spells, "cure-wounds", "healing-word");

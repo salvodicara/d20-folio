@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { resolveItemConsumable, consumableActionSlot } from "@/lib/srd-resolve";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 // ============================================================
 // resolveItemConsumable — SRD-derived potion/consumable classification
@@ -26,6 +27,7 @@ describe("resolveItemConsumable", () => {
       quantity: 1,
       isPotion: true,
       potionFormula: "2d4+2",
+      instanceId: customInstanceId("Mystery Brew"),
     });
     expect(r.isPotion).toBe(true);
     expect(r.isConsumable).toBe(true);

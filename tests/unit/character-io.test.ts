@@ -27,6 +27,7 @@ import type {
   CustomEquipment,
   CustomFeature,
 } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 /**
  * The export's ONE portrait reader (`portraitToDataUrl` in `@/lib/storage`,
@@ -225,6 +226,7 @@ describe("character-io — custom-item pass-through", () => {
       properties: "Versatile (1d10)",
       description: "A +1 longsword",
       attackBonusOverride: 1,
+      instanceId: customInstanceId("Talon"),
     };
     doc.character.weapons = [talon];
     const back = reimport(doc).doc.character;
@@ -240,6 +242,7 @@ describe("character-io — custom-item pass-through", () => {
       emoji: "🎒",
       tracked: true,
       quantity: 3,
+      instanceId: customInstanceId("Bag of Tricks"),
     };
     doc.character.equipment = [item];
     const back = reimport(doc).doc.character;
@@ -257,6 +260,7 @@ describe("character-io — custom-item pass-through", () => {
       source: "Homebrew",
       tags: [],
       contentBlocks: [{ type: "text", text: "Reroll a 1." }],
+      instanceId: customInstanceId("Lucky Streak"),
     };
     doc.character.features = [feat];
     const env = JSON.parse(serializeCharacter(doc)) as {

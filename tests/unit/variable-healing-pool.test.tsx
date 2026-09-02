@@ -17,6 +17,7 @@ import { useConfirmStore } from "@/stores/confirmStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { makeCharacterDoc } from "./_helpers";
+import { customInstanceId } from "./__helpers__/custom-items";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import { localizeActions } from "@/lib/views/combat-action-view";
 
@@ -92,11 +93,12 @@ describe("variable healing pools", () => {
               targeting: { affinity: "self", maxTargets: 1 },
             },
           ],
+          instanceId: customInstanceId("Recover Vitality"),
         },
       ],
     });
     const resolved = localizeActions(doc, "en").find(
-      (action) => action.id === "custom-Recover Vitality-bonus"
+      (action) => action.id === `custom-${customInstanceId("Recover Vitality")}-bonus`
     );
     if (!resolved) throw new Error("custom healing-pool action did not resolve");
     vitalityAction = resolved;
@@ -143,7 +145,9 @@ describe("variable healing pools", () => {
     await waitFor(() => expect(used()).toBe(3));
     const committed = useCombatStore
       .getState()
-      .selected.bonus.find((entry) => entry.id === "custom-Recover Vitality-bonus");
+      .selected.bonus.find(
+        (entry) => entry.id === `custom-${customInstanceId("Recover Vitality")}-bonus`
+      );
     expect(committed?.cost).toMatchObject({ type: "tracker", trackerAmount: 3 });
 
     act(() => {

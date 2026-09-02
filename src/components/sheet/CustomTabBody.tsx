@@ -85,7 +85,15 @@ function addEntryToCharacter(entry: SheetLibraryEntry, quantity: number): void {
   const doc = store.character;
   if (!doc) return;
   const data = doc.character;
-  const landed = entryToCharacterItem(entry, quantity);
+  // The instanceIds already on THIS character — entryToCharacterItem mints a
+  // fresh one only when the library item's own id collides with one of these
+  // (e.g. the same library entry added to this sheet a second time).
+  const takenIds = new Set(
+    [...data.spells, ...data.weapons, ...data.equipment, ...data.features].flatMap((r) =>
+      "custom" in r ? [r.instanceId] : []
+    )
+  );
+  const landed = entryToCharacterItem(entry, quantity, takenIds);
   // The switch narrows `landed.item` to the exact type of the array it joins.
   switch (landed.kind) {
     case "spell":

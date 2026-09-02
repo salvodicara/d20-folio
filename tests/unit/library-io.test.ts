@@ -46,7 +46,7 @@ const ENTRY: LibraryEntry = {
   id: "e1",
   savedAt: 1_700_000_000_000,
   kind: "equipment",
-  item: { custom: true, name: "Ember Wand", description: undefined },
+  item: { custom: true, name: "Ember Wand", description: undefined, instanceId: "e1" },
 };
 
 function emit(data: unknown, exists = true): LibraryEntry[] {

@@ -7,6 +7,7 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import { conc } from "./__helpers__/concentration";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 function mk(
   char: Partial<CharacterDoc["character"]> & {
@@ -231,6 +232,7 @@ describe("long-rest tracker recovery", () => {
                   recordedRolls: { min: 1, max: 20 },
                 },
               ],
+              instanceId: customInstanceId("Foretelling"),
             },
           ],
         },

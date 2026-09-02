@@ -21,6 +21,7 @@ import {
   type LibraryEntry,
 } from "@/lib/library";
 import { FREE_TIER_LIMITS } from "@/lib/limits";
+import { isItemInstanceId } from "@/lib/item-resources";
 import type {
   CustomEquipment,
   CustomFeature,
@@ -28,6 +29,7 @@ import type {
   CustomWeapon,
 } from "@/types/character";
 import type { CustomMonster } from "@/types/campaign";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 const NOW = 1_700_000_000_000;
 
@@ -45,6 +47,7 @@ const SPELL: CustomSpell = {
   prepared: true,
   notes: "Lyra's favourite opener",
   tags: [{ label: "signature", color: "#c9a227" }],
+  instanceId: customInstanceId("Hearthfire Bolt"),
 };
 
 const FEATURE: CustomFeature = {
@@ -56,6 +59,7 @@ const FEATURE: CustomFeature = {
   contentBlocks: [{ type: "text", text: "Once per long rest, ignore exhaustion." }],
   trackers: [{ id: "custom-oath", label: "Oath", total: "1", recovery: "long-rest" }],
   actions: [{ type: "bonus", label: "Invoke", description: "Shrug off the road." }],
+  instanceId: customInstanceId("Oath of the Long Road"),
 };
 
 const EQUIPMENT: CustomEquipment = {
@@ -68,6 +72,7 @@ const EQUIPMENT: CustomEquipment = {
   attuned: true,
   notes: "found in the barrow",
   charges: { current: 1, max: 7, recovery: "long-rest", recoveryFormula: "1d6+1" },
+  instanceId: customInstanceId("Ember Wand"),
 };
 
 const WEAPON: CustomWeapon = {
@@ -82,6 +87,7 @@ const WEAPON: CustomWeapon = {
   tags: [{ label: "loaned", color: "#8a8a8a" }],
   attackBonusOverride: 7,
   damageOverride: "1d8+5",
+  instanceId: customInstanceId("Bramble Spear"),
 };
 
 const MONSTER: CustomMonster = {
@@ -106,7 +112,7 @@ const STRIP_CASES: ReadonlyArray<{
     draft: { kind: "spell", item: SPELL },
     name: "Hearthfire Bolt",
     stripped: ["prepared", "notes", "tags"],
-    kept: ["name", "level", "school", "description", "components"],
+    kept: ["name", "level", "school", "description", "components", "instanceId"],
   },
   {
     draft: { kind: "equipment", item: EQUIPMENT },
@@ -115,20 +121,28 @@ const STRIP_CASES: ReadonlyArray<{
     // `tracked` is the authored tracking MODE (the tier of isConsumable / isPotion),
     // not play state — the play value is the `quantity` it counts, which IS stripped.
     // Keeping it is what makes the pencil's edit round-trip lossless.
-    kept: ["name", "description", "charges", "tracked"],
+    kept: ["name", "description", "charges", "tracked", "instanceId"],
   },
   {
     draft: { kind: "weapon", item: WEAPON },
     name: "Bramble Spear",
     stripped: ["notes", "tags", "attackBonusOverride", "damageOverride"],
-    kept: ["name", "damageDie", "damageType", "attackStat", "properties"],
+    kept: ["name", "damageDie", "damageType", "attackStat", "properties", "instanceId"],
   },
   {
     draft: { kind: "feature", item: FEATURE },
     name: "Oath of the Long Road",
     // A feature's contentBlocks / trackers / actions / tags ARE its content.
     stripped: [],
-    kept: ["title", "source", "tags", "contentBlocks", "trackers", "actions"],
+    kept: [
+      "title",
+      "source",
+      "tags",
+      "contentBlocks",
+      "trackers",
+      "actions",
+      "instanceId",
+    ],
   },
   {
     draft: { kind: "monster", item: MONSTER },
@@ -146,7 +160,14 @@ describe("toLibraryEntry — a saved entry is a template, not a sheet row", () =
       const entry = toLibraryEntry(draft, NOW);
       expect(entry.kind).toBe(draft.kind);
       expect(entry.savedAt).toBe(NOW);
-      expect(entry.id).toMatch(/[0-9a-f-]{36}/);
+      // A sheet entry's id IS the item's own instanceId (shared identity between
+      // the template and every character's copy); a monster has no instanceId of
+      // its own, so it alone still mints a fresh UUID.
+      if (draft.kind === "monster") {
+        expect(entry.id).toMatch(/[0-9a-f-]{36}/);
+      } else {
+        expect(entry.id).toBe(draft.item.instanceId);
+      }
       expect(libraryEntryName(entry)).toBe(name);
       const item: Record<string, unknown> = { ...entry.item };
       for (const field of stripped) expect(item).not.toHaveProperty(field);
@@ -255,7 +276,14 @@ describe("upsertEntry — same (kind, name) replaces in place", () => {
   it("the cap counts the post-upsert list, so a replace never overflows it", () => {
     const full: LibraryEntry[] = Array.from(
       { length: FREE_TIER_LIMITS.libraryEntries },
-      (_, i) => toLibraryEntry({ kind: "spell", item: { ...SPELL, name: `S${i}` } }, NOW)
+      (_, i) =>
+        toLibraryEntry(
+          {
+            kind: "spell",
+            item: { ...SPELL, name: `S${i}`, instanceId: customInstanceId(`S${i}`) },
+          },
+          NOW
+        )
     );
     const appended = upsertEntry(full, other);
     expect(appended.replaced).toBe(false);
@@ -328,5 +356,19 @@ describe("entryToCharacterItem — landing re-seeds the create-form defaults", (
     expect(landed.item).toEqual(entry.item);
     landed.item.title = "edited on the sheet";
     expect(entry.item.title).toBe("Oath of the Long Road");
+  });
+
+  it("a library entry keeps the item's instanceId and lands with a fresh one only on collision", () => {
+    const item: CustomEquipment = {
+      custom: true,
+      name: "Boots",
+      instanceId: "boots-1",
+    };
+    const entry = toLibraryEntry({ kind: "equipment", item }, 1);
+    expect(entry.id).toBe("boots-1");
+    expect(entryToCharacterItem(entry, 1).item.instanceId).toBe("boots-1");
+    const landed = entryToCharacterItem(entry, 1, new Set(["boots-1"]));
+    expect(landed.item.instanceId).not.toBe("boots-1");
+    expect(isItemInstanceId(landed.item.instanceId)).toBe(true);
   });
 });

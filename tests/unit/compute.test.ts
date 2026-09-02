@@ -47,6 +47,7 @@ import { litText } from "@/lib/loc-text";
 import type { AcFormula, AdvantageClause } from "@/lib/grants";
 import type { SrdEquipmentData } from "@/data/types";
 import type { SrdEquipmentRef, CustomEquipment } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 describe("abilityModifier", () => {
   it("calculates correct modifier for score 10", () => {
@@ -514,6 +515,7 @@ describe("characterHasFeat", () => {
             source: "",
             tags: [],
             contentBlocks: [],
+            instanceId: customInstanceId("Homebrew"),
           },
         ],
       })
@@ -1120,6 +1122,7 @@ describe("computeAC", () => {
         equipped: true,
         ac: { base: 12, dexBonus: true },
         armorCategory: "light",
+        instanceId: customInstanceId("+1 Leather Armor"),
       },
     ];
     expect(computeAC(eq, scores(14), resolve)).toBe(14);
@@ -1133,6 +1136,7 @@ describe("computeAC", () => {
         equipped: true,
         ac: { base: 3, dexBonus: false },
         armorCategory: "shield",
+        instanceId: customInstanceId("+1 Shield"),
       },
     ];
     expect(computeAC(eq, scores(14), resolve)).toBe(15); // 10+2+3
@@ -1141,7 +1145,13 @@ describe("computeAC", () => {
   it("acBonus from Ring of Protection stacks", () => {
     const eq: Array<SrdEquipmentRef | CustomEquipment> = [
       { srdId: "leather-armor", equipped: true },
-      { custom: true, name: "Ring of Protection", equipped: true, acBonus: 1 },
+      {
+        custom: true,
+        name: "Ring of Protection",
+        equipped: true,
+        acBonus: 1,
+        instanceId: customInstanceId("Ring of Protection"),
+      },
     ];
     expect(computeAC(eq, scores(14), resolve)).toBe(14); // 11+2+1
   });
@@ -1150,8 +1160,20 @@ describe("computeAC", () => {
     const eq: Array<SrdEquipmentRef | CustomEquipment> = [
       { srdId: "leather-armor", equipped: true },
       { srdId: "shield", equipped: true },
-      { custom: true, name: "Ring of Protection", equipped: true, acBonus: 1 },
-      { custom: true, name: "Cloak of Protection", equipped: true, acBonus: 1 },
+      {
+        custom: true,
+        name: "Ring of Protection",
+        equipped: true,
+        acBonus: 1,
+        instanceId: customInstanceId("Ring of Protection"),
+      },
+      {
+        custom: true,
+        name: "Cloak of Protection",
+        equipped: true,
+        acBonus: 1,
+        instanceId: customInstanceId("Cloak of Protection"),
+      },
     ];
     // 11 + 2(DEX) + 2(shield) + 1 + 1 = 17
     expect(computeAC(eq, scores(14), resolve)).toBe(17);
@@ -1161,7 +1183,12 @@ describe("computeAC", () => {
     const eq: Array<SrdEquipmentRef | CustomEquipment> = [
       { srdId: "chain-mail", equipped: false },
       { srdId: "shield" }, // no equipped field = not equipped
-      { custom: true, name: "Ring of Protection", acBonus: 1 },
+      {
+        custom: true,
+        name: "Ring of Protection",
+        acBonus: 1,
+        instanceId: customInstanceId("Ring of Protection unequipped"),
+      },
     ];
     expect(computeAC(eq, scores(14), resolve)).toBe(12); // 10 + 2 (no armor)
   });
@@ -1190,9 +1217,24 @@ describe("computeAC", () => {
     const eq: Array<SrdEquipmentRef | CustomEquipment> = [
       { srdId: "plate-armor", equipped: true },
       { srdId: "shield", equipped: true },
-      { custom: true, name: "Explorer's Pack", equipped: true },
-      { custom: true, name: "Holy Symbol", equipped: true },
-      { custom: true, name: "Rope (50 ft)", equipped: true },
+      {
+        custom: true,
+        name: "Explorer's Pack",
+        equipped: true,
+        instanceId: customInstanceId("Explorer's Pack"),
+      },
+      {
+        custom: true,
+        name: "Holy Symbol",
+        equipped: true,
+        instanceId: customInstanceId("Holy Symbol"),
+      },
+      {
+        custom: true,
+        name: "Rope (50 ft)",
+        equipped: true,
+        instanceId: customInstanceId("Rope (50 ft)"),
+      },
     ];
     expect(computeAC(eq, scores(10), resolve)).toBe(20);
   });
@@ -1206,8 +1248,18 @@ describe("computeAC", () => {
   it("Coralino: leather + misc gear equipped doesn't break AC", () => {
     const eq: Array<SrdEquipmentRef | CustomEquipment> = [
       { srdId: "leather-armor", equipped: true },
-      { custom: true, name: "Lute", equipped: true },
-      { custom: true, name: "Diplomat's Pack", equipped: true },
+      {
+        custom: true,
+        name: "Lute",
+        equipped: true,
+        instanceId: customInstanceId("Lute"),
+      },
+      {
+        custom: true,
+        name: "Diplomat's Pack",
+        equipped: true,
+        instanceId: customInstanceId("Diplomat's Pack"),
+      },
     ];
     expect(computeAC(eq, scores(16), resolve)).toBe(14);
   });
@@ -1249,8 +1301,20 @@ describe("computeAC", () => {
     const eq: Array<SrdEquipmentRef | CustomEquipment> = [
       { srdId: "plate-armor", equipped: true },
       { srdId: "shield", equipped: true },
-      { custom: true, name: "Ring of Protection", equipped: true, acBonus: 1 },
-      { custom: true, name: "Cloak of Protection", equipped: true, acBonus: 1 },
+      {
+        custom: true,
+        name: "Ring of Protection",
+        equipped: true,
+        acBonus: 1,
+        instanceId: customInstanceId("Ring of Protection"),
+      },
+      {
+        custom: true,
+        name: "Cloak of Protection",
+        equipped: true,
+        acBonus: 1,
+        instanceId: customInstanceId("Cloak of Protection"),
+      },
     ];
     // 18 + 2(shield) + 1 + 1 = 22
     expect(computeAC(eq, scores(10), resolve)).toBe(22);
@@ -1266,6 +1330,7 @@ describe("computeAC", () => {
         equipped: true,
         ac: { base: 3, dexBonus: false },
         armorCategory: "shield",
+        instanceId: customInstanceId("+1 Shield 2"),
       }, // +3
     ];
     // leather: 11+2=13, shield: max(2,3)=3 → 13+3=16
@@ -1296,6 +1361,7 @@ describe("computeAC", () => {
         equipped: true,
         armorCategory: "shield",
         ac: { base: 2, dexBonus: false },
+        instanceId: customInstanceId("Shield"),
       },
     ];
     // 10 + 2 + 3 = 15, + shield 2 = 17

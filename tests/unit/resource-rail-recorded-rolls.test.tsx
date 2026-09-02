@@ -10,6 +10,7 @@ import { ResourceRail } from "@/features/character/molecules/ResourceRail";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useUndoStore } from "@/stores/undoStore";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 function loadRecordedTracker() {
   const character = structuredClone(MOCK_CHARACTER);
@@ -30,6 +31,7 @@ function loadRecordedTracker() {
           recordedRolls: { min: 1, max: 20 },
         },
       ],
+      instanceId: customInstanceId("Foretelling"),
     },
   ];
   character.session.trackers = {};

@@ -28,6 +28,7 @@ import type {
   SrdFeatureRef,
   SrdSpellRef,
 } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 const BARBARIAN: ClassEntry[] = [{ classId: "barbarian", level: 3 }];
 const custom: CustomFeature = {
@@ -37,6 +38,7 @@ const custom: CustomFeature = {
   source: "homebrew",
   tags: [],
   contentBlocks: [],
+  instanceId: customInstanceId("Homebrew"),
 };
 
 describe("conformStoredFeatures — folds auto-granted duplicates", () => {

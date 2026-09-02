@@ -24,6 +24,7 @@ import { effectiveAC } from "@/lib/aggregate-character";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { getEquipment } from "@/data/equipment";
 import type { SrdEquipmentRef, CustomEquipment } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 const SCORES = { STR: 10, DEX: 14, CON: 12, INT: 10, WIS: 10, CHA: 8 };
 const DEX_MOD = 2; // DEX 14
@@ -92,6 +93,7 @@ describe("computeAC — aggregateAcBonus (flat feature/species AC)", () => {
         name: "Bracers of Defense",
         acBonus: 2,
         equipped: true,
+        instanceId: customInstanceId("Bracers of Defense"),
       },
     ];
     const ac = computeAC(equipment, SCORES, getEquipment, [], 0, 0);

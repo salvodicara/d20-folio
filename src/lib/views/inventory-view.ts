@@ -614,7 +614,7 @@ function buildWeaponVM(
   );
 
   return {
-    id: isCustom ? `custom-${ref.name}` : ref.srdId,
+    id: isCustom ? ref.instanceId : ref.srdId,
     idx,
     isCustom,
     name,
@@ -732,9 +732,10 @@ function buildItemVM(
           : null;
 
   return {
-    id: isCustom ? `custom-${ref.name}` : ref.srdId,
-    rowId:
-      !isCustom && ref.instanceId !== undefined
+    id: isCustom ? ref.instanceId : ref.srdId,
+    rowId: isCustom
+      ? `equipment-instance:${ref.instanceId}`
+      : ref.instanceId !== undefined
         ? `equipment-instance:${ref.instanceId}`
         : `equipment-legacy:${idx}`,
     idx,

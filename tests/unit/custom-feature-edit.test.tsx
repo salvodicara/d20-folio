@@ -14,6 +14,7 @@ import { CustomFeatureForm } from "@/components/sheet/CustomCreationForms";
 import { useCharacterStore } from "@/stores/characterStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { CharacterDoc, CustomFeature } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 const HOMEBREW: CustomFeature = {
   custom: true,
@@ -27,6 +28,7 @@ const HOMEBREW: CustomFeature = {
   ],
   // A field the form does NOT expose — must survive an edit untouched.
   actions: [{ type: "bonus", label: "Surge", description: "A burst of raw magic." }],
+  instanceId: customInstanceId("Wild Surge"),
 };
 
 function loadWithHomebrewAt(index: number): CharacterDoc {

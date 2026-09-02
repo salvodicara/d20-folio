@@ -38,6 +38,7 @@ import type { BackgroundEquipmentItem, BackgroundEquipmentOption } from "./types
 import type { SrdEquipmentRef, SrdWeaponRef, CustomEquipment } from "@/types/character";
 import { getEquipment } from "./equipment";
 import { ARTISAN_TOOL_IDS, type ToolCategory } from "@/lib/tools";
+import { createItemInstanceId } from "@/lib/item-resources";
 import { mergePackRecord } from "@/lib/pack-merge";
 import { packBackgroundEquipment } from "@pack";
 
@@ -349,7 +350,7 @@ export function resolveStartingEquipment(
     } else {
       // Unresolvable SRD id — keep a labelled custom row instead of dropping it
       // (mirrors the wizard's STARTEQ-LOSS handling), surfacing it for manual fix.
-      equipment.push({ custom: true, name: srdId });
+      equipment.push({ custom: true, name: srdId, instanceId: createItemInstanceId() });
     }
   };
 
@@ -382,6 +383,7 @@ export function resolveStartingEquipment(
       equipment.push({
         custom: true,
         name: item.srdId,
+        instanceId: createItemInstanceId(),
         ...(quantity > 1 ? { quantity } : {}),
       });
     }

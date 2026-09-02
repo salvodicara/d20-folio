@@ -2729,18 +2729,38 @@ custom row — UPSERTS that homebrew into the library by (kind, name), silently 
 creation is its own feedback). The only curation is the Custom tab's per-row trash, and a
 deletion STICKS — nothing re-adds an entry but a real create/edit.
 
-Two consequences of that identity being (kind, name) rather than an id (the sheet item
-carries none, and adding one would be a live-data schema change):
+Every custom spell/weapon/equipment/feature now carries a REQUIRED, stable `instanceId`
+(minted once at creation, never re-derived from the display name — the combat-P1
+data-safety identity work). A library entry's `id` IS that item's `instanceId` — the
+SAME identity a character's own copy carries — except a `monster` template, which has no
+per-item `instanceId` of its own and still mints a fresh UUID. `entryToCharacterItem`
+lands a picked entry's `instanceId` UNCHANGED (so the library template and every
+character's still-untouched copy share one identity) and mints a fresh one only on
+collision — `takenIds`, the set of instanceIds already on the landing character.
+
+`upsertEntry` checks an **id match first** (a rename never changes an item's
+`instanceId`, so the SAME record upserts in place even though its display name no longer
+matches what was stored) and falls back to the (kind, name) match below only when no id
+match exists. This is a safety net inside the still name-keyed model below, not yet the
+model itself — that migration (id-based `upsertEntry`/`customDraftAt`/`syncFromCharacter`,
+deleting `identityKey`/`isEntryNamed`/the rename-move dance) is a separate increment.
+
+Two consequences of the (kind, name) layer this id-match sits in front of:
 
 - a RENAME must MOVE the entry — each SHEET-side edit seam passes the PRE-edit name to
   `syncFromCharacter`, which removes the old-named entry once the new one lands, so a
-  rename can never strand a ghost. It only moves after a SUCCESSFUL upsert: at the cap
-  the append is refused, and dropping the old entry would lose the template outright.
-  The Custom tab's own pencil needs none of that: it knows WHICH entry it opened, so it
-  commits through `updateEntry(id, draft)` — id-keyed, position-preserving, and it
-  absorbs a rename onto another kept entry's name (two rows under one identity would
-  leave the second unreachable by every name-keyed upsert).
-- the free-tier CAP can refuse a keep. A CREATE says so (`keepInLibrary` in
+  rename can never strand a ghost. In practice the id-match above already resolves a
+  same-item rename as an in-place update (the (kind, name) removal step then finds
+  nothing stale to drop) — the append-then-remove path only still applies to a genuine
+  (kind, name) COLLISION between two different items. It only moves after a SUCCESSFUL
+  upsert: at the cap the append is refused, and dropping the old entry would lose the
+  template outright. The Custom tab's own pencil needs none of that: it knows WHICH
+  entry it opened, so it commits through `updateEntry(id, draft)` — id-keyed,
+  position-preserving, and it absorbs a rename onto another kept entry's name (two rows
+  under one identity would leave the second unreachable by every name-keyed upsert).
+- the free-tier CAP can refuse a keep — but only a genuinely NEW entry (id-match found
+  none, name-match found none): renaming your own already-kept homebrew is an in-place
+  update, so it can never be refused by the cap. A CREATE says so (`keepInLibrary` in
   `CustomCreationForms` — the item still lands on the sheet, only the reusable template
   is lost); the per-keystroke EDIT seam deliberately ignores the outcome, because a
   notice there would fire on every character typed.
@@ -2752,8 +2772,9 @@ The layering mirrors combat-state exactly:
   `id`/`savedAt`), `toLibraryEntry` (deep-copy + per-kind strip of every PLAY value —
   prepared/equipped/quantity/attuned/notes/tags/overrides, charges wound back to full;
   an item's authored tracking MODE — `tracked`/`isConsumable`/`isPotion` — is content and
-  stays, or the pencil's round-trip would silently drop it), `upsertEntry` (same (kind, name) replaces IN PLACE, keeping the original id +
-  position), `entryToCharacterItem` (a deep copy re-seeded with the SAME defaults the
+  stays, or the pencil's round-trip would silently drop it), `upsertEntry` (an id match
+  replaces IN PLACE first, then falls back to the same (kind, name) match — see above —
+  keeping the original id + position either way), `entryToCharacterItem` (a deep copy re-seeded with the SAME defaults the
   Custom creation forms produce) and `customDraftAt` (the ONE map from the four character
   arrays to their kinds, so an edit seam mirrors what is stored). An entry is a TEMPLATE,
   never a copy of one character's row.

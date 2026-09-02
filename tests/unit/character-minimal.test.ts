@@ -15,6 +15,7 @@ import { buildScenario, DEV_SCENARIOS } from "@/lib/dev-scenarios";
 import { totalLevel } from "@/lib/classes";
 import { deriveSpellSlots, applySlotMaxOverrides } from "@/lib/multiclass-slots";
 import type { CharacterData } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 const mock = MOCK_CHARACTER.character;
 
@@ -418,6 +419,7 @@ describe("character-minimal — HAND-AUTHORED content is irreducible (always exp
         concentration: false,
         description: "A crackling bolt of borrowed luck.",
         prepared: true,
+        instanceId: customInstanceId("Homebrew Hex Bolt"),
       },
     ],
     features: [
@@ -429,6 +431,7 @@ describe("character-minimal — HAND-AUTHORED content is irreducible (always exp
         source: "Homebrew",
         tags: [],
         contentBlocks: [],
+        instanceId: customInstanceId("Pact of the Wandering Star"),
       },
     ],
     weapons: [
@@ -441,6 +444,7 @@ describe("character-minimal — HAND-AUTHORED content is irreducible (always exp
         damageType: "slashing",
         attackStat: "DEX",
         properties: "finesse",
+        instanceId: customInstanceId("Grandfather's Saber"),
       },
     ],
     equipment: [
@@ -450,6 +454,7 @@ describe("character-minimal — HAND-AUTHORED content is irreducible (always exp
         name: "Locket of the Lost Sister",
         description: "A tarnished silver locket; holds a faded portrait.",
         quantity: 1,
+        instanceId: customInstanceId("Locket of the Lost Sister"),
       },
     ],
   };

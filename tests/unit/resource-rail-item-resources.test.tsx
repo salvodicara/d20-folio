@@ -16,6 +16,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { useUndoStore } from "@/stores/undoStore";
 import type { ItemResourceVM } from "@/lib/views/item-resource-view";
 import type { CharacterDoc, ItemResourceState } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 const ITEM_ID = "wand-of-magic-missiles";
 const COPY_A = "rail-wand-a";
@@ -58,6 +59,7 @@ function character(): CharacterDoc {
           isPool: true,
         },
       ],
+      instanceId: customInstanceId("Legacy duplicate fixture"),
     },
   ];
   doc.character.equipment = [

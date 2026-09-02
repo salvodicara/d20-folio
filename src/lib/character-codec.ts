@@ -501,6 +501,7 @@ const CUSTOM_SPELL_KEYS = [
   "notes",
   "tags",
   "spellAbilityOverride",
+  "instanceId",
 ] as const;
 
 function parseCustomSpell(obj: Record<string, unknown>, path: string): CustomSpell {
@@ -517,7 +518,13 @@ function parseCustomSpell(obj: Record<string, unknown>, path: string): CustomSpe
   if (typeof obj.duration !== "string") fail("malformed-entry", path);
   if (typeof obj.concentration !== "boolean") fail("malformed-entry", path);
   if (typeof obj.description !== "string") fail("malformed-entry", path);
-  const spell: CustomSpell = {
+  // `instanceId` is REQUIRED on `CustomSpell`, so a variable typed as the full
+  // interface could not be built incrementally (every field would have to be
+  // present in the initial literal). Built as the interface minus that one field
+  // instead, then the final `return` appends `instanceId` — and, after it, the
+  // `unknown` bucket — as an object-literal spread, so BOTH the compile-time
+  // requirement and the "instanceId serializes last" contract hold.
+  const spell: Omit<CustomSpell, "instanceId"> = {
     custom: true,
     name: obj.name,
     level: obj.level,
@@ -548,9 +555,9 @@ function parseCustomSpell(obj: Record<string, unknown>, path: string): CustomSpe
       isAbilityCode,
       `${path}.spellAbilityOverride`
     );
+  if (!isItemInstanceId(obj.instanceId)) fail("malformed-entry", `${path}.instanceId`);
   const unknown = leftover(obj, CUSTOM_SPELL_KEYS);
-  if (unknown) spell.unknown = unknown;
-  return spell;
+  return { ...spell, instanceId: obj.instanceId, ...(unknown ? { unknown } : {}) };
 }
 
 const CUSTOM_WEAPON_KEYS = [
@@ -567,6 +574,7 @@ const CUSTOM_WEAPON_KEYS = [
   "description",
   "notes",
   "tags",
+  "instanceId",
 ] as const;
 
 function parseCustomWeapon(obj: Record<string, unknown>, path: string): CustomWeapon {
@@ -576,7 +584,9 @@ function parseCustomWeapon(obj: Record<string, unknown>, path: string): CustomWe
   if (!isDamageType(obj.damageType)) fail("malformed-entry", path);
   if (obj.attackStat !== "STR" && obj.attackStat !== "DEX") fail("malformed-entry", path);
   if (typeof obj.properties !== "string") fail("malformed-entry", path);
-  const weapon: CustomWeapon = {
+  // See parseCustomSpell's comment — `instanceId` is required, so the built-up
+  // variable omits it; the final `return` appends it (then `unknown`) last.
+  const weapon: Omit<CustomWeapon, "instanceId"> = {
     custom: true,
     name: obj.name,
     quantity:
@@ -603,9 +613,9 @@ function parseCustomWeapon(obj: Record<string, unknown>, path: string): CustomWe
     weapon.description = opt(obj.description, isString, `${path}.description`);
   if (obj.notes !== undefined) weapon.notes = opt(obj.notes, isString, `${path}.notes`);
   if (obj.tags !== undefined) weapon.tags = opt(obj.tags, isTagArray, `${path}.tags`);
+  if (!isItemInstanceId(obj.instanceId)) fail("malformed-entry", `${path}.instanceId`);
   const unknown = leftover(obj, CUSTOM_WEAPON_KEYS);
-  if (unknown) weapon.unknown = unknown;
-  return weapon;
+  return { ...weapon, instanceId: obj.instanceId, ...(unknown ? { unknown } : {}) };
 }
 
 const CUSTOM_EQUIPMENT_KEYS = [
@@ -628,6 +638,7 @@ const CUSTOM_EQUIPMENT_KEYS = [
   "unit",
   "attuned",
   "charges",
+  "instanceId",
 ] as const;
 
 function parseCustomEquipment(
@@ -636,7 +647,9 @@ function parseCustomEquipment(
 ): CustomEquipment {
   if (obj.custom !== true) fail("malformed-entry", path);
   if (typeof obj.name !== "string") fail("malformed-entry", path);
-  const equip: CustomEquipment = { custom: true, name: obj.name };
+  // See parseCustomSpell's comment — `instanceId` is required, so the built-up
+  // variable omits it; the final `return` appends it (then `unknown`) last.
+  const equip: Omit<CustomEquipment, "instanceId"> = { custom: true, name: obj.name };
   if (obj.description !== undefined)
     equip.description = opt(obj.description, isString, `${path}.description`);
   if (obj.emoji !== undefined) equip.emoji = opt(obj.emoji, isString, `${path}.emoji`);
@@ -671,9 +684,9 @@ function parseCustomEquipment(
     equip.attuned = opt(obj.attuned, isBool, `${path}.attuned`);
   if (obj.charges !== undefined)
     equip.charges = parseEquipmentCharges(obj.charges, `${path}.charges`);
+  if (!isItemInstanceId(obj.instanceId)) fail("malformed-entry", `${path}.instanceId`);
   const unknown = leftover(obj, CUSTOM_EQUIPMENT_KEYS);
-  if (unknown) equip.unknown = unknown;
-  return equip;
+  return { ...equip, instanceId: obj.instanceId, ...(unknown ? { unknown } : {}) };
 }
 
 const CUSTOM_FEATURE_KEYS = [
@@ -686,6 +699,7 @@ const CUSTOM_FEATURE_KEYS = [
   "trackers",
   "actions",
   "subtitle",
+  "instanceId",
 ] as const;
 
 function parseCustomFeature(obj: Record<string, unknown>, path: string): CustomFeature {
@@ -693,6 +707,7 @@ function parseCustomFeature(obj: Record<string, unknown>, path: string): CustomF
   if (typeof obj.title !== "string") fail("malformed-entry", path);
   if (typeof obj.emoji !== "string") fail("malformed-entry", path);
   if (typeof obj.source !== "string") fail("malformed-entry", path);
+  if (!isItemInstanceId(obj.instanceId)) fail("malformed-entry", `${path}.instanceId`);
   const unknown = leftover(obj, CUSTOM_FEATURE_KEYS);
   return {
     custom: true,
@@ -728,6 +743,7 @@ function parseCustomFeature(obj: Record<string, unknown>, path: string): CustomF
     ...(obj.subtitle !== undefined
       ? { subtitle: opt(obj.subtitle, isString, `${path}.subtitle`) }
       : {}),
+    instanceId: obj.instanceId,
     ...(unknown ? { unknown } : {}),
   };
 }

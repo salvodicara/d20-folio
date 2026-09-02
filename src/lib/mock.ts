@@ -222,6 +222,7 @@ export const MOCK_CHARACTER: CharacterDoc = {
         tracked: true,
         quantity: 2,
         recovery: "manual",
+        instanceId: "mock-cael-antidote-vial",
       },
       // Custom non-tracked flavour item
       {
@@ -231,6 +232,7 @@ export const MOCK_CHARACTER: CharacterDoc = {
           "A water-damaged letter in her brother's handwriting, half-legible. The last word is clearly 'run'.",
         emoji: "📜",
         tracked: false,
+        instanceId: "mock-cael-last-letter",
       },
     ],
 

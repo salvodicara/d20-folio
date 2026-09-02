@@ -43,6 +43,7 @@ import { buildSpellsViewModel } from "@/lib/views/spells-view";
 import type { CharacterDoc } from "@/types/character";
 
 import { makeCharacterDoc } from "./_helpers";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 const UID = "test-uid";
 
@@ -112,6 +113,7 @@ function vitalsDoc(): CharacterDoc {
           trackers: [
             { id: "test-pool", label: "Test Pool", total: "3", recovery: "long-rest" },
           ],
+          instanceId: customInstanceId("Test Pool"),
         },
       ],
     },

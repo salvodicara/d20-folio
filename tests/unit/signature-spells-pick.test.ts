@@ -16,6 +16,7 @@ import {
 import { classFeatureIndex } from "@/data/classes";
 import { isSpellCombatCastable } from "@/lib/spell-combat-castable";
 import type { SrdSpellRef, CustomSpell } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 describe("Signature Spells — single source of truth (no duplicate choice-spell picker)", () => {
   const feature = classFeatureIndex.get("wizard-signature-spells");
@@ -96,6 +97,7 @@ describe("eligibleSignatureSpells", () => {
         duration: "Instantaneous",
         concentration: false,
         description: "",
+        instanceId: customInstanceId("Homebrew Boom"),
       },
     ];
     expect(eligibleSignatureSpells(spells).map((o) => o.id)).toEqual(["fireball"]);
@@ -174,6 +176,7 @@ describe("applySignatureSpellsPicks", () => {
       duration: "Instantaneous",
       concentration: false,
       description: "",
+      instanceId: customInstanceId("Homebrew"),
     };
     const spells: (SrdSpellRef | CustomSpell)[] = [custom, { srdId: "fireball" }];
     const after = applySignatureSpellsPicks(spells, { first: "fireball" });

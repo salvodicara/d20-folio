@@ -523,7 +523,7 @@ export function FeaturesTab() {
         // Derive action type from the first custom action (if any)
         const actionType: ActionType | "neutral" = ref.actions?.[0]?.type ?? "neutral";
         return {
-          id: `custom-${ref.title}`,
+          id: `custom-${ref.instanceId}`,
           idx,
           name: ref.title,
           nameEn: ref.title,

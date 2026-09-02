@@ -9,6 +9,7 @@ import {
   injectExpandedSpells,
 } from "@/lib/expanded-spells";
 import type { SrdSpellRef, CustomSpell } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 describe("getExpandedSpellsAtLevel", () => {
   it("returns the Life Domain L3 expansion exactly (2024)", () => {
@@ -97,6 +98,7 @@ describe("injectExpandedSpells", () => {
     duration: "Instant",
     concentration: false,
     description: "",
+    instanceId: customInstanceId("Heal Friend"),
   };
 
   it("appends new SRD refs flagged prepared", () => {

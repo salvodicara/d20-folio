@@ -12,6 +12,7 @@ import { asRaceId } from "@/data/srd-names";
 import { asAlignmentId } from "@/lib/lore-utils";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { foldLegacyClass } from "./_helpers";
+import { customInstanceId } from "./__helpers__/custom-items";
 import {
   resolveSpellAbility,
   SPECIES_SPELL_ABILITY_DEFAULT,
@@ -181,6 +182,7 @@ describe("resolveSpellAbility", () => {
       concentration: false,
       description: "",
       spellAbilityOverride: "CHA" as const,
+      instanceId: customInstanceId("Test"),
     };
     const wizard = baseChar({
       spellcasting: {

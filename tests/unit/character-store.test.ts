@@ -10,6 +10,7 @@ import type { CharacterDoc } from "@/types/character";
 import type { CombatPersistence, CombatState } from "@/types/combat-state";
 import { makeCharacterDoc } from "./_helpers";
 import { conc } from "./__helpers__/concentration";
+import { customInstanceId } from "./__helpers__/custom-items";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 import { nonCombatSessionChanged, sessionToCombatState } from "@/lib/combat-state";
 import { serializeCharacter } from "@/lib/character-codec";
@@ -1473,6 +1474,7 @@ describe("characterStore — death saves & session state", () => {
               recordedRolls: { min: 1, max: 20 },
             },
           ],
+          instanceId: customInstanceId("Foretelling"),
         },
       ];
       return char;
@@ -1674,12 +1676,20 @@ describe("useEquipmentItem", () => {
         character: {
           ...base.character,
           equipment: [
-            { custom: true, name: "Magic Salve", quantity: 2, tracked: true } as never,
+            {
+              custom: true,
+              name: "Magic Salve",
+              quantity: 2,
+              tracked: true,
+              instanceId: customInstanceId("Magic Salve"),
+            } as never,
           ],
         },
       },
     });
-    useCharacterStore.getState().useEquipmentItem("custom-Magic Salve");
+    useCharacterStore
+      .getState()
+      .useEquipmentItem(`custom-${customInstanceId("Magic Salve")}`);
     const eq = useCharacterStore.getState().character?.character.equipment;
     expect((eq?.[0] as { quantity: number }).quantity).toBe(1);
   });

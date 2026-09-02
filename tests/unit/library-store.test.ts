@@ -14,6 +14,7 @@ import { useLibraryStore, type LibraryPersistence } from "@/stores/libraryStore"
 import { toLibraryEntry } from "@/lib/library";
 import type { CustomMonster } from "@/types/campaign";
 import type { CustomSpell } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 const MONSTER: CustomMonster = { name: "Ashmaw Hound", ac: 14, maxHp: 33 };
 const SPELL: CustomSpell = {
@@ -27,6 +28,7 @@ const SPELL: CustomSpell = {
   duration: "Instantaneous",
   concentration: false,
   description: "",
+  instanceId: customInstanceId("Spark"),
 };
 
 function hydrate(): ReturnType<typeof vi.fn<LibraryPersistence>> {
