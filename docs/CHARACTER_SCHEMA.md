@@ -246,6 +246,14 @@ not yet run against production, so the runtime still accepts legacy migration in
 as a second typed owner; once the owner-gated apply/check closes, those inputs and the spent script are
 deleted rather than retained as a read shim.
 
+The REQUIRED `instanceId` on a custom spell, weapon, equipment entry and `customs.features` entry has its
+own prepared one-off, `scripts/migrate-custom-identity.ts`: it stamps a deterministic id on every custom
+entry of a character parent, a saved snapshot (scoped by its own snapshot id, so a snapshot never reuses a
+parent identity) and a library index entry, whose `id` and `item.instanceId` it aligns to one identity.
+Both one-offs run the same protocol from `scripts/lib/migration-kit.ts` — read-only by default, `--check`
+proves the corpus migrated, `--fixtures <dir>` plans over portable exports with no Firebase, and
+`--apply --backup <dir>` is the only write mode. Reports carry counts, hashes and issue codes only.
+
 Play-state also carries several **additive-only optional** keys, each absent on a doc that never
 uses it (so the envelope stays byte-identical): `activeFeatures`, `effectTimers`, `effectBoundaries`
 (`{ activeKey: { round, phase: "turn-start"|"turn-end" } }` for exact self-effect expiry), `grantBundleChoices`,
