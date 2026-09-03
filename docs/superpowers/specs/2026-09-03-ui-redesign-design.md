@@ -406,3 +406,135 @@ keeps its provenance (`declared | derived`).
 - Product documents reconciled in this branch: constitution §2.2/§2.9, golden rule 21,
   `PRODUCT.md`, `CLAUDE.md`. `docs/POSITIONING.md` and `DESIGN.md` follow with the first
   approved surface.
+
+## 8. Stage U — screen map and app table (2026-09-03)
+
+Stage U of the stage-1 plan (`docs/superpowers/plans/2026-09-03-new-app-stage-1.md`) asks for the
+whole new app to be agreed from images before any product code. This section is the owner of the
+screen set: every screen of the milestone, the product it copies, its dossier, and its approval
+status. Approval dates are written here, one row at a time, as the owner gives verdicts from the
+delivered images (golden rules 25 and 30). Until a row carries a date it is a proposal.
+
+### 8a. Navigation frame
+
+- Desktop: top bar with the brand at left (or the campaign name with a gold "DM" tag inside a
+  campaign), three text sections in the centre (Campagne · Personaggi · Compendio), the user's
+  avatar at right. The play screen has no top bar: full-screen map, an exit chip top-left.
+- Phone: bottom bar Campagna · Personaggio · Compendio · Altro. "Gioca dal telefono" (second
+  screen) replaces the bottom bar with the turn bar and is entered from the campaign's session
+  card.
+- Roles: one app for everyone. DM-only blocks carry a small gold "DM" tag; the DM drawer and the
+  DM map tools exist only for the DM on the play screen; the DM sees the same pages, with more.
+
+### 8b. Flows
+
+```mermaid
+flowchart LR
+  Login[Accesso] --> FirstRun[Primo avvio]
+  FirstRun --> Camp[Campagna · home]
+  Invite[Link di invito] --> Camp
+  Camp --> Session[Sessione]
+  Camp --> Calendar[Calendario]
+  Camp --> Notes[Note e riassunto]
+  Camp --> Chronicle[Cronaca]
+  Camp --> Party[Party]
+  Camp --> DMPrep[Preparazione DM]
+  Session -->|Gioca| Play[Gioca · mappa + HUD]
+  Session -->|Gioca dal telefono| Phone[Telefono · secondo schermo]
+  Play --> Drawer[Cassetto DM]
+  Play -->|scheda| Char[Personaggio]
+  Party --> Char
+  Roster[Personaggi] --> Char
+  Roster --> Create[Creazione]
+  Char --> Overview[Panoramica]
+  Char --> Spells[Incantesimi]
+  Char --> Inv[Inventario]
+  Inv --> Give[Passaggio oggetti]
+  Char --> Feats[Privilegi]
+  Char --> Prog[Progressione]
+  Prog --> LevelUp[Salita di livello]
+  Char --> Print[Scheda stampabile]
+  Char --> Share[Vista condivisa]
+  Comp[Compendio · elenco] --> Entry[Voce]
+  Entry --> Explain[Spiegazione a richiesta]
+  Play --> Explain
+  Char --> Explain
+  DMPrep --> Comp
+  Entry --> Homebrew[Homebrew · modulo tipizzato]
+  Settings[Impostazioni]
+```
+
+### 8c. App table
+
+Dossier numbers are the component-dossier series (1–15 earlier in this document). Files live
+outside the repository with the reference captures (`~/.agents/state/d20-folio/design-2026-09/`):
+`mockups/dossier8*` = 16, `dossier9*` = 17, `dossier10*` = 18, `dossier11*` = 19, `dossier12*` = 20;
+screens are `mockups/v8-*.png`, delivered to the owner as JPEGs on 2026-09-03.
+
+| Area        | Screen                      | Model copied (evidence in the dossier)                              | Desktop | Phone | Dossier | Status                                |
+| ----------- | --------------------------- | ------------------------------------------------------------------- | ------- | ----- | ------- | ------------------------------------- |
+| Campagna    | Home                        | D&D Beyond campaign page, Kanka dashboard, BG3 Camp                 | ✓       | ✓     | 16      | delivered 2026-09-03, verdict pending |
+| Campagna    | Sessione                    | Discord scheduling bots (Apollo), D&D Beyond                        | ✓       | ✓     | 16      | delivered, pending                    |
+| Campagna    | Calendario                  | Kanka calendars, Fantasy Calendar, Doodle-style availability        | ✓       | ✓     | 16      | delivered, pending                    |
+| Campagna    | Note e riassunto            | Kanka journals, Foundry journal, D&D Beyond game log                | ✓       | ✓     | 16      | delivered, pending                    |
+| Campagna    | Cronaca                     | Kanka and LegendKeeper timelines, Kanka entity page, BG3 Journal    | ✓       | ✓     | 16      | delivered, pending                    |
+| Campagna    | Party                       | D&D Beyond party inventory, Kanka party lists, Owlbear permissions  | ✓       | ✓     | 16      | delivered, pending                    |
+| Campagna    | Preparazione DM             | Kobold+ Fight Club, D&D Beyond encounters, Owlbear scenes, Foundry  | ✓       | list  | 16      | delivered, pending                    |
+| Personaggio | Panoramica                  | BG3 character window, D&D Beyond                                    | ✓       | ✓     | 15      | direction approved 2026-09-03         |
+| Personaggio | Incantesimi                 | BG3 spellbook and tooltips, D&D Beyond spells                       | ✓       | ✓     | 17      | delivered, pending                    |
+| Personaggio | Inventario                  | BG3 inventory, D&D Beyond rows                                      | ✓       | ✓     | 17      | delivered, pending                    |
+| Personaggio | Passaggio oggetti           | BG3 party inventory, D&D Beyond party inventory                     | ✓       | ✓     | 17      | delivered, pending                    |
+| Personaggio | Privilegi                   | BG3 features and tooltips, D&D Beyond features                      | ✓       | ✓     | 17      | delivered, pending                    |
+| Personaggio | Progressione                | BG3 level-up summary, D&D Beyond builder, Pathbuilder               | ✓       | ✓     | 17      | delivered, pending                    |
+| Personaggio | Scheda stampabile           | Official 2024 sheet, D&D Beyond PDF                                 | A4 ×2   | —     | 17      | delivered, pending                    |
+| Gioca       | Giocatore desktop           | BG3 HUD over an Owlbear-level map                                   | ✓       | —     | 14      | direction approved 2026-09-03         |
+| Gioca       | DM desktop                  | BG3 party switch, Owlbear DM tools, D&D Beyond Maps drawer          | ✓       | —     | 14      | direction approved 2026-09-03         |
+| Gioca       | Dadi 3D condivisi           | BG3 dice check, Dice So Nice, D&D Beyond dice, TaleSpire            | ✓       | ✓     | 18      | delivered, pending                    |
+| Gioca       | Dadi fisici e tiro nascosto | Foundry roll modes and blind rolls, Fantasy Grounds tray            | ✓       | ✓     | 18      | delivered, pending                    |
+| Gioca       | Strumenti mappa             | Owlbear rail and sub-toolbars, Foundry drag ruler, D&D Beyond pill  | ✓       | view  | 18      | delivered, pending                    |
+| Gioca       | Cassetto DM                 | D&D Beyond initiative list, Foundry tracker, Owlbear scenes/permits | ✓       | —     | 18      | delivered, pending                    |
+| Gioca       | Telefono secondo schermo    | BG3 controller HUD, Lumen three-screen, Owlbear mobile              | —       | ✓     | 18      | delivered, pending                    |
+| Compendio   | Elenco                      | D&D Beyond listings, Demiplane filters                              | ✓       | ✓     | 19      | delivered, pending                    |
+| Compendio   | Voce (mostro, incantesimo)  | Universal stat-block order (D&D Beyond, open5e), BG3 tooltips       | ✓       | ✓     | 19      | delivered, pending                    |
+| Compendio   | Homebrew (modulo tipizzato) | Foundry rules as data, LegendKeeper stat-block form                 | ✓       | —     | 19      | delivered, pending                    |
+| Compendio   | Spiegazione a richiesta     | BG3 tooltips, Foundry rule tips (component 8)                       | ✓       | ✓     | 8, 19   | approved 2026-09-03 (form)            |
+| Costruttore | Creazione                   | BG3 character creation, D&D Beyond method and class cards           | ✓       | ✓     | 19      | delivered, pending                    |
+| Costruttore | Salita di livello           | BG3 level-up, D&D Beyond "What's next", PrismScroll                 | ✓       | ✓     | 19      | delivered, pending                    |
+| Accesso     | Accesso e primo avvio       | Owlbear home, Foundry join, D&D Beyond method cards                 | ✓       | ✓     | 20      | delivered, pending                    |
+| Accesso     | Invito e primo personaggio  | D&D Beyond campaign invite, Kanka invites, premade quick pick       | ✓       | ✓     | 20      | delivered, pending                    |
+| Accesso     | Impostazioni                | D&D Beyond settings rows, Foundry player config                     | ✓       | ✓     | 20      | delivered, pending                    |
+| Accesso     | Vista condivisa e OG        | D&D Beyond public sheet, Demiplane, Kanka public campaign           | ✓       | ✓     | 20      | delivered, pending                    |
+| Accesso     | Personaggi (roster)         | D&D Beyond app rows and web cards, PrismScroll ghost card           | ✓       | ✓     | 20      | delivered, pending                    |
+
+### 8d. Cross-cutting rules recorded by stage U
+
+35. **Namespace and frame.** Every screen sits in the frame of §8a; the DM never gets a different
+    app, only tagged blocks. One solid primary button per screen; everything else is a ghost
+    button. Empty, loading, error, DM and EN states ship with every screen (each dossier ends with
+    a states board).
+36. **Compendium as the single model.** A creature, spell, item or rule is one component rendered
+    in three surfaces (compendium entry, sheet detail, explain panel); homebrew is a typed form of
+    the same fields with a live preview, never free text.
+37. **Rolls.** The roll panel follows BG3's dice-check anatomy (DC or AC on top, d20 in the middle,
+    bonuses as tiles with their source), the dice tumble over the shared map, physical dice are
+    entered in the same panel, hidden DM rolls show "?" faces to players, and the campaign's
+    automation level only changes what happens after the verdict (apply · propose · log).
+38. **Campaign is home.** The session card with one "Gioca" is the first thing on the home; the
+    recap is assembled from the encounter log; the chronicle is a per-session timeline whose
+    entities (NPCs, places) have their own sheet; party inventory and gold are shared state with
+    an author on every movement.
+
+## 9. Stage U delivery record (2026-09-03)
+
+- Delivered to the owner as chat images: 80 screens across five areas plus the screen map, and
+  ten dossier parts (16 in 2, 17 in 2, 18 in 4, 19 in 2, 20 in 2) with real reference crops beside
+  our renditions and one verdict question per screen. Verdicts are recorded in §8c as they arrive.
+- Reference captures gathered for stage U (never committed): Apollo and Fantasy Calendar, Kanka
+  calendars/journals/timelines, World Anvil campaign manager, Foundry journal and scene config,
+  D&D Beyond game log, help-centre and App Store material, Owlbear, Foundry, Roll20 and D&D Beyond
+  Maps play-screen crops (refs5), BG3 non-combat screens (refs6); all under the design state
+  folder with their `observations.md` and `sources.md`.
+- Consistency pass before delivery (impeccable critique checklist, craft floor): six layout
+  collisions between screens built in parallel were fixed (CSS class collisions across the shared
+  kit: `.tools`, `.rrow`, `.who`, `.react`, `.fld`, `.pg`); the rule for future kits is one class
+  prefix per area.
