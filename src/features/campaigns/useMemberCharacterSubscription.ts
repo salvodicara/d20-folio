@@ -80,7 +80,7 @@ export function useMemberCharacterSubscription(
               .getState()
               .loadCharacterWithCombat(doc, lastCombat, true);
             if (!loaded) {
-              quarantine("Invalid play state");
+              quarantine("Invalid character document");
               return;
             }
             setLoading(false);
@@ -149,14 +149,14 @@ export function useMemberCharacterSubscription(
       }
       if (lastCombat === undefined) return;
       if (lastCombat === null) {
-        quarantine("Invalid play state: missing-v1-combat-state");
+        quarantine("Invalid character document: missing-combat-state");
         return;
       }
       const loaded = useCharacterStore
         .getState()
         .loadCharacterWithCombat(lastParent, lastCombat, true);
       if (!loaded) {
-        quarantine("Invalid play state");
+        quarantine("Invalid character document");
         return;
       }
       setLoading(false);

@@ -14,8 +14,11 @@
  *
  * The `combat/state` subdoc is the SOLE persisted home of the whole mutable play
  * session: the Firestore parent character doc carries an EMPTY `state` (the
- * serialization boundary `toStoredPayload` writes `{}`), and readers hydrate the subdoc,
- * falling to {@link defaultCombatState} (full HP) only when it is absent.
+ * serialization boundary `toStoredPayload` writes `{}`). On the FIRESTORE path an absent
+ * child is therefore an integrity failure (`missing-combat-state`), never a fresh
+ * character. The full-HP fallback below is for the subdoc-less callers ONLY — the
+ * portable export, the dev fixtures, and the roster shell whose HP stays gated until the
+ * live child lands. {@link defaultCombatState} is the seed a first write reduces over.
  *
  * Kept out of `combat-state-io.ts` (which imports `firebase/firestore`) so the
  * store + tests can use it without pulling Firebase — and so it can sit on the
@@ -237,10 +240,10 @@ function mergeCombatTrio(
   return merged;
 }
 
-/** The full-HP default for an ABSENT subdoc (a genuinely fresh/undamaged character):
- *  current HP at `max`, no temp, no conditions, unrolled initiative, zero death saves.
- *  The seed a writer reduces over when no `combat/state` subdoc exists yet, so the FIRST
- *  offline write lands a complete shape — see `combat-state-io.ts`. */
+/** The full-HP seed a writer reduces over when no `combat/state` subdoc exists yet, so
+ *  the FIRST offline write lands a COMPLETE shape the reader accepts — see
+ *  `combat-state-io.ts`. Current HP at `max`, no temp, no conditions, unrolled
+ *  initiative, zero death saves, and the empty v1 play owner. */
 export function defaultCombatState(max: number): CombatState {
   return {
     hp: { current: max, temp: 0 },
@@ -249,6 +252,10 @@ export function defaultCombatState(max: number): CombatState {
     deathSaves: { successes: 0, failures: 0 },
     round: 1,
     recentActions: [],
+    // The child is the sole play owner, so even the seed carries one: an empty v1
+    // envelope decodes to the default session. Without it the write seam refuses the
+    // document (`combat-state-io.combatStateWriteData`).
+    playState: { version: 1, state: {} },
   };
 }
 

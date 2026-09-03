@@ -296,7 +296,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
             isFromServerRef.current = false;
           }
           if (!loaded) {
-            quarantine("Invalid play state");
+            quarantine("Invalid character document");
             return;
           }
           setLoading(false);
@@ -529,7 +529,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       }
       if (lastCombat === undefined) return;
       if (lastCombat === null) {
-        quarantine("Invalid play state: missing-v1-combat-state");
+        quarantine("Invalid character document: missing-combat-state");
         return;
       }
 
@@ -548,7 +548,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         isFromServerRef.current = false;
       }
       if (!loaded) {
-        quarantine("Invalid play state");
+        quarantine("Invalid character document");
         return;
       }
       const current = useCharacterStore.getState().character;

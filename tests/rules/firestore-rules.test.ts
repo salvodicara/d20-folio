@@ -1661,6 +1661,10 @@ describe("firestore.rules — sanitized public character projection", () => {
     const owner = testEnv.authenticatedContext("member").firestore();
     await assertFails(updateDoc(doc(owner, ...SHARED_PARENT), { shared: false }));
     await assertFails(deleteDoc(doc(owner, ...PUBLIC_SHEET)));
+    // A shared parent may not be deleted while its projection still exists: the delete
+    // rule requires `!existsAfter(public/sheet)`, so an orphaned anonymous sheet is
+    // structurally impossible.
+    await assertFails(deleteDoc(doc(owner, ...SHARED_PARENT)));
 
     const batch = writeBatch(owner);
     batch.update(doc(owner, ...SHARED_PARENT), {

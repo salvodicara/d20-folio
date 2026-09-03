@@ -91,11 +91,19 @@ function combatStateForDevWrite(state: CombatState): CombatState {
 }
 
 /** The COMPLETE persisted shape, stamped server-side. One source so the two write
- *  paths can't drift. */
+ *  paths can't drift.
+ *
+ *  The write seam is as CLOSED as the read seam: the child is the sole play owner, so a
+ *  payload without a valid v1 `playState` is refused HERE rather than persisted into a
+ *  document {@link parseCombatState} would then refuse forever (the character could not
+ *  be opened again). Seed a fresh child from {@link defaultCombatState}, which carries
+ *  the empty v1 owner. */
 export function combatStateWriteData(state: CombatState): Record<string, unknown> {
-  const playState =
-    state.playState === undefined ? null : parsePersistedPlayStateV1(state.playState);
-  if (playState && !playState.ok) {
+  if (state.playState === undefined) {
+    throw new TypeError("Invalid combat play state: missing");
+  }
+  const playState = parsePersistedPlayStateV1(state.playState);
+  if (!playState.ok) {
     throw new TypeError(`Invalid combat play state: ${playState.reason}`);
   }
   return {
@@ -120,7 +128,7 @@ export function combatStateWriteData(state: CombatState): Record<string, unknown
     ...(state.pendingConcentrationSaves?.length
       ? { pendingConcentrationSaves: state.pendingConcentrationSaves }
       : {}),
-    ...(playState?.ok ? { playState: playState.value } : {}),
+    playState: playState.value,
     updatedAt: serverTimestamp(),
   };
 }
@@ -132,9 +140,10 @@ function parsedCombatState(data: unknown): CombatState {
 }
 
 /**
- * Subscribe to the live `combat/state` subdoc. `cb(null)` when the doc is ABSENT
- * (a fresh / not-yet-migrated character) — the caller defaults to full HP. Returns
- * an unsubscribe. Dev bypass uses the local document replica.
+ * Subscribe to the live `combat/state` subdoc. `cb(null)` when the doc is ABSENT — the
+ * child is the SOLE play owner, so every caller on the Firestore path treats that as an
+ * integrity failure (`missing-combat-state`) rather than a fresh character. Returns an
+ * unsubscribe. Dev bypass uses the local document replica.
  */
 export function subscribeCombatState(
   uid: string,

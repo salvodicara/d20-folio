@@ -156,9 +156,9 @@ async function queuePublicProjection(
  * portrait, sharing) pass through; a partial session write is rejected because it
  * cannot recreate either the retired flat shape or an incomplete v1 play owner.
  *
- * Legacy parents omit the combat trio. Marked v1 parents emit an empty `state`: every
- * mutable session fact lives in the complete `combat/state` play owner. The portable
- * export codec remains self-contained and still carries the full session.
+ * The stored `state` is ALWAYS the empty envelope: every mutable session fact lives in
+ * the complete `combat/state` play owner (`firestore.rules` denies anything else). The
+ * portable export codec remains self-contained and still carries the full session.
  *
  * Lazy-imports `character-codec` + `character-cache` so the class tables stay OFF
  * the always-eager persistence bundle (the bundle-budget guard pins this; the

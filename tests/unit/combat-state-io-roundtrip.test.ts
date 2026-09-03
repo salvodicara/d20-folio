@@ -293,9 +293,16 @@ describe("combat-state IO — full persistence contract", () => {
       state: { playState: { version: 1 } },
     });
 
-    // A PRE-CUTOVER child (combat core, no `playState`): the app refuses it; the
-    // migration's own reader still accepts it. Both die in P3 with the script.
-    const legacy = combatStateWriteData({ ...state, playState: undefined });
+    // A PRE-CUTOVER child (combat core, no `playState`) can no longer even be WRITTEN —
+    // the write seam is as closed as the read seam, so a stored document the reader
+    // would refuse forever cannot be created.
+    expect(() => combatStateWriteData({ ...state, playState: undefined })).toThrow(
+      "Invalid combat play state: missing"
+    );
+    // Reading one that predates the cutover: the app refuses it; the migration's own
+    // reader still accepts it. Both die in P3 with the script.
+    const { playState: _playState, ...legacy } = combatStateWriteData(state);
+    void _playState;
     expect(parseCombatState(legacy)).toEqual({
       ok: false,
       reason: "invalid-v1-play-state",

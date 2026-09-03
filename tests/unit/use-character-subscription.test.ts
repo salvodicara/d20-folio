@@ -531,7 +531,7 @@ describe("useCharacterSubscription — combat/state subdoc hydration", () => {
     act(() => combatCb()(null));
 
     expect(useCharacterStore.getState().character).toBeNull();
-    expect(useCharacterStore.getState().error).toContain("missing-v1-combat-state");
+    expect(useCharacterStore.getState().error).toContain("missing-combat-state");
     expect(writeCombatStateMock).not.toHaveBeenCalled();
   });
 
@@ -588,13 +588,13 @@ describe("useCharacterSubscription — v1 play ownership gate", () => {
     act(() => snapshotCb()(v1Doc()));
     act(() => combatCb()(null));
     expect(useCharacterStore.getState().character).toBeNull();
-    expect(useCharacterStore.getState().error).toContain("missing-v1-combat-state");
+    expect(useCharacterStore.getState().error).toContain("missing-combat-state");
     expect(writeCombatStateMock).not.toHaveBeenCalled();
     expect(debouncedSave).not.toHaveBeenCalled();
 
     act(() => combatErrorCb()(new Error("invalid-v1-play-state")));
     expect(useCharacterStore.getState().character).toBeNull();
-    expect(useCharacterStore.getState().error).toContain("missing-v1-combat-state");
+    expect(useCharacterStore.getState().error).toContain("missing-combat-state");
     expect(writeCombatStateMock).not.toHaveBeenCalled();
   });
 
@@ -622,7 +622,7 @@ describe("useCharacterSubscription — v1 play ownership gate", () => {
 
     const state = useCharacterStore.getState();
     expect(state.character).toBeNull();
-    expect(state.error).toContain("missing-v1-combat-state");
+    expect(state.error).toContain("missing-combat-state");
     expect(state.combatPersistence).toBeNull();
     expect(state.parentPersistenceFlush).toBeNull();
     expect(debouncedSave).toHaveBeenCalledTimes(1);

@@ -2332,13 +2332,14 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
 - **Held dice** — a reviewed `granted-die` effect writes the recipient's one held Bardic Inspiration die
   through the same peer transaction, so an offline teammate still receives it. The recipient spends it
   from the ordinary resource rail; short/long rest clears it because its 2024 duration is one hour. The
-  optional subdoc field falls back to a legacy parent value only when absent; an explicit empty string is
-  a real clear, so old characters migrate additively without creating two writable homes.
+  subdoc is its ONE writable home: when the optional field is absent the base is the child's OWN
+  `playState` session, never a parent value (the parent carries none), and an explicit empty string is a
+  real clear.
 - **Heroic Inspiration** — a reviewed `heroic-inspiration` effect uses the same peer transaction and
   non-stacking state rule. Musician's Encouraging Song is a generic 1/Short-or-Long-Rest action capped at
   the actor's resolved PB allies; an offline PC or encounter-owned NPC receives the token and Chronicle
-  provenance atomically. The optional subdoc boolean falls back to a legacy parent value only until the
-  first explicit write, after which receive/spend/correction all use this one home.
+  provenance atomically. As with the held die, an absent optional boolean reads from the child's own
+  `playState` session; receive, spend and correction all use this one home.
 - **Entered D20 Tests** — `types/d20-test.ts` + `lib/d20-test.ts` are the locale-free universal kernel:
   callers provide the physical d20 face(s), optional replacement/adjustment dice and consumed-resource
   ids; the kernel validates JSON-plain input, nets Advantage/Disadvantage, selects one natural face and

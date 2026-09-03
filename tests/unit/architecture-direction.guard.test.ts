@@ -38,7 +38,7 @@
  * Both checks resolve every import (alias OR relative) so they can't be spelled around.
  */
 import { describe, expect, it } from "vitest";
-import { statSync, existsSync } from "node:fs";
+import { statSync, existsSync, readFileSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { SRC_ROOT as SRC, srcFiles, readSrc } from "./__helpers__/src-files";
 const ENGINE_DIRS = ["lib", "stores", "data", "types"] as const;
@@ -329,5 +329,49 @@ describe("R6 — engine-core reads no active locale (the [locale]-index HARD PIN
         `(SLICE 7 closed the frontier — the allowlist is empty): carry BiText as data ` +
         `+ localize in lib/views/ or a UI hook (docs/ARCHITECTURE.md).`
     ).toEqual([]);
+  });
+});
+
+/**
+ * P1 script-only fence. `parseLegacyCombatChild` (combat-state-codec) and
+ * `applyLegacyCombatToSession` (combat-state) are the PRE-CUTOVER readers: they accept a
+ * `combat/state` child with no v1 `playState`, which the app must never do again. They
+ * exist for `scripts/migrate-character-parents.ts` alone and die with it in P3. An app
+ * import would silently re-admit the unmarked-legacy shape this phase deleted.
+ */
+describe("P1 — the pre-cutover legacy readers are script-only", () => {
+  const LEGACY_ONLY = ["parseLegacyCombatChild", "applyLegacyCombatToSession"] as const;
+  const DECLARING = new Set([
+    resolve(SRC, "lib", "combat-state-codec.ts"),
+    resolve(SRC, "lib", "combat-state.ts"),
+  ]);
+
+  it("no src/** module imports parseLegacyCombatChild or applyLegacyCombatToSession", () => {
+    const offenders: string[] = [];
+    for (const file of srcFiles({ exts: [".ts", ".tsx"] })) {
+      if (DECLARING.has(file)) continue;
+      const source = readSrc(file);
+      for (const name of LEGACY_ONLY) {
+        if (new RegExp(`\\b${name}\\b`).test(source)) {
+          offenders.push(`${file.replace(SRC + "/", "src/")}: ${name}`);
+        }
+      }
+    }
+    expect(
+      offenders,
+      `The pre-cutover readers belong to scripts/migrate-character-parents.ts alone ` +
+        `(they accept a combat/state child with no v1 playState). An app path must use ` +
+        `parseCombatState / applyCombatToSession, which fail closed.`
+    ).toEqual([]);
+  });
+
+  it("the migration script is the one consumer, and it still uses the strict readers too", () => {
+    const script = readFileSync(
+      resolve(SRC, "..", "scripts", "migrate-character-parents.ts"),
+      "utf8"
+    );
+    for (const name of LEGACY_ONLY) expect(script).toContain(name);
+    // The projected child is re-proved with the STRICT reader the app uses.
+    expect(script).toContain("parseCombatState");
   });
 });

@@ -513,7 +513,7 @@ describe("combat-state — absolute setters (one field, clamped)", () => {
 });
 
 describe("combat-state — defaultCombatState (the absent-subdoc full-HP seed)", () => {
-  it("seeds full current HP at max, no temp / conditions / roll / death saves", () => {
+  it("seeds full HP, no temp / conditions / roll / death saves, and the empty v1 owner", () => {
     expect(defaultCombatState(30)).toEqual<CombatState>({
       hp: { current: 30, temp: 0 },
       conditions: [],
@@ -521,6 +521,8 @@ describe("combat-state — defaultCombatState (the absent-subdoc full-HP seed)",
       deathSaves: { successes: 0, failures: 0 },
       round: 1,
       recentActions: [],
+      // A complete shape: the write seam refuses a child with no play owner.
+      playState: { version: 1, state: {} },
     });
   });
 });
@@ -637,6 +639,8 @@ const COMBAT: CombatState = {
   deathSaves: { successes: 1, failures: 0 },
   round: 1,
   recentActions: [],
+  // Every persisted child is a v1 play owner; the write seam refuses anything else.
+  playState: { version: 1, state: {} },
 };
 
 beforeEach(() => {
@@ -647,6 +651,27 @@ beforeEach(() => {
 });
 
 describe("combat-state-io — write (last-write-wins overwrite)", () => {
+  it("REFUSES a payload with no v1 play owner instead of persisting an unreadable child", async () => {
+    // The write seam is as closed as the read seam: a child without `playState` is one
+    // `parseCombatState` would refuse forever, so the character could never be opened.
+    const { playState: _playState, ...noOwner } = COMBAT;
+    void _playState;
+    await expect(writeCombatState("u1", "c1", noOwner)).rejects.toThrow(
+      "Invalid combat play state: missing"
+    );
+    await expect(
+      writeCombatState("u1", "c1", {
+        ...COMBAT,
+        playState: { version: 2, state: {} } as unknown as CombatState["playState"],
+      })
+    ).rejects.toThrow("Invalid combat play state: unsupported-play-state-version");
+    expect(setDocMock).not.toHaveBeenCalled();
+    // The seed a first write reduces over already carries the empty v1 owner.
+    expect(defaultCombatState(12).playState).toEqual({ version: 1, state: {} });
+    await writeCombatState("u1", "c1", defaultCombatState(12));
+    expect(setDocMock).toHaveBeenCalledTimes(1);
+  });
+
   it("writes the trio + a server timestamp, OVERWRITING the subdoc", async () => {
     await writeCombatState("u1", "c1", COMBAT);
     expect(setDocMock).toHaveBeenCalledTimes(1);

@@ -352,7 +352,7 @@ describe("character parent persistence (v1: the child owns the play session)", (
     }
   });
 
-  it("creates the marked parent and complete child in exactly one batch", async () => {
+  it("creates the parent and its complete play child in exactly one batch", async () => {
     const full = makeCharacterDoc();
     full.session = { ...full.session, notes: "fresh", hp: { current: 7, temp: 2 } };
 

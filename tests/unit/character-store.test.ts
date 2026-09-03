@@ -2156,7 +2156,7 @@ describe("characterStore — hydrateCombatState (combat/state subdoc → session
     // The last PROVEN store state is left untouched so auto-save cannot write a
     // fabricated replacement over the character's real play document.
     const state = useCharacterStore.getState();
-    expect(state.error).toContain("missing-v1-combat-state");
+    expect(state.error).toContain("missing-combat-state");
     expect(state.character?.session.hp).toEqual({ current: 7, temp: 0 });
     expect(state.character?.session.conditions).toEqual(["stunned"]);
   });

@@ -1242,8 +1242,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!projection) {
       set({
         error: combat
-          ? "Invalid play state: invalid-v1-play-state"
-          : "Invalid play state: missing-v1-combat-state",
+          ? "Invalid character document: invalid-v1-play-state"
+          : "Invalid character document: missing-combat-state",
       });
       return false;
     }
@@ -1274,8 +1274,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!projection) {
       set({
         error: combat
-          ? "Invalid play state: invalid-v1-play-state"
-          : "Invalid play state: missing-v1-combat-state",
+          ? "Invalid character document: invalid-v1-play-state"
+          : "Invalid character document: missing-combat-state",
       });
       return;
     }
