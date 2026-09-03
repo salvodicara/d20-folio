@@ -134,3 +134,95 @@ describe("conformMechanic — the authoring contract", () => {
     });
   });
 });
+
+describe("conformMechanic — area targeting", () => {
+  const base = {
+    schema: 1 as const,
+    id: "test:area",
+    source: "homebrew" as const,
+  };
+
+  it("accepts count: 'area' with an area shape", () => {
+    const result = conformMechanic({
+      ...base,
+      active: [
+        {
+          id: "cast",
+          trigger: { kind: "invocation", economy: "action" },
+          targets: {
+            count: "area",
+            eligibility: { all: [] },
+            area: { kind: "sphere", origin: "origin", radiusFt: 20 },
+          },
+          inputs: [{ id: "origin", kind: "position" }],
+          steps: [],
+        },
+      ],
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects count: 'area' without an area shape", () => {
+    const result = conformMechanic({
+      ...base,
+      active: [
+        {
+          id: "cast",
+          trigger: { kind: "invocation", economy: "action" },
+          targets: { count: "area", eligibility: { all: [] } },
+          inputs: [],
+          steps: [],
+        },
+      ],
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.rule).toBe("area-required-by-count");
+  });
+
+  it("rejects a numeric count carrying a stray area shape", () => {
+    const result = conformMechanic({
+      ...base,
+      active: [
+        {
+          id: "cast",
+          trigger: { kind: "invocation", economy: "action" },
+          targets: {
+            count: 1,
+            eligibility: { all: [] },
+            area: { kind: "sphere", origin: "origin", radiusFt: 20 },
+          },
+          inputs: [],
+          steps: [],
+        },
+      ],
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.rule).toBe("area-requires-area-count");
+  });
+
+  it("rejects an area shape whose origin names an input the program never declares", () => {
+    const result = conformMechanic({
+      ...base,
+      active: [
+        {
+          id: "cast",
+          trigger: { kind: "invocation", economy: "action" },
+          targets: {
+            count: "area",
+            eligibility: { all: [] },
+            area: { kind: "sphere", origin: "origin", radiusFt: 20 },
+          },
+          inputs: [],
+          steps: [],
+        },
+      ],
+    });
+    expect(result).toEqual({
+      ok: false,
+      rule: "area-input-declared",
+      path: "active[0].targets.area",
+    });
+  });
+});

@@ -89,9 +89,33 @@ export type Input =
   | { readonly id: string; readonly kind: "table"; readonly label: LabelId }
   | { readonly id: string; readonly kind: "position" };
 
+/** An area of effect, authored against `position` inputs: the reducer binds `origin` (and `aim`
+ *  for a cone/line) to the caster's answers, then derives the affected entities itself. */
+export type AreaShapeSpec =
+  | {
+      readonly kind: "sphere" | "cylinder";
+      readonly origin: string;
+      readonly radiusFt: number;
+    }
+  | { readonly kind: "cube"; readonly origin: string; readonly sizeFt: number }
+  | {
+      readonly kind: "cone";
+      readonly origin: string;
+      readonly aim: string;
+      readonly lengthFt: number;
+    }
+  | {
+      readonly kind: "line";
+      readonly origin: string;
+      readonly aim: string;
+      readonly lengthFt: number;
+      readonly widthFt: number;
+    };
+
 export interface TargetSpec {
-  readonly count: number;
+  readonly count: number | "area";
   readonly eligibility: Predicate;
+  readonly area?: AreaShapeSpec;
 }
 
 export type LifetimeSpec =
@@ -234,6 +258,30 @@ function checkProgram(program: Program, path: string): Conformance | null {
   for (const [i, cost] of (program.cost ?? []).entries()) {
     if (cost.kind === "turn" && cost.claim === "reaction" && !isReaction) {
       return fail("cost-claim-matches-trigger", `${path}.cost[${i}]`);
+    }
+  }
+  if (program.targets) {
+    const area = program.targets.area;
+    if (program.targets.count === "area" && area === undefined) {
+      return fail("area-required-by-count", `${path}.targets`);
+    }
+    if (program.targets.count !== "area" && area !== undefined) {
+      return fail("area-requires-area-count", `${path}.targets`);
+    }
+    if (area) {
+      const positionIds = new Set(
+        (program.inputs ?? [])
+          .filter((input) => input.kind === "position")
+          .map((input) => input.id)
+      );
+      const named =
+        area.kind === "cone" || area.kind === "line"
+          ? [area.origin, area.aim]
+          : [area.origin];
+      for (const id of named) {
+        if (!positionIds.has(id))
+          return fail("area-input-declared", `${path}.targets.area`);
+      }
     }
   }
   for (const [i, step] of program.steps.entries()) {

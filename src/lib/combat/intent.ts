@@ -12,8 +12,14 @@ import { endEffects } from "./effects";
 import { assertNever, type EffectId, type EntityId } from "./ids";
 import type { Catalogue } from "./catalogue";
 import { programOf } from "./catalogue";
-import type { LifetimeSpec, Program, Step } from "./mechanic";
-import { distanceFt, rangeBand, REACH_FT } from "./position";
+import type { AreaShapeSpec, LifetimeSpec, Program, Step } from "./mechanic";
+import {
+  areaMembership,
+  distanceFt,
+  rangeBand,
+  REACH_FT,
+  type AreaShape,
+} from "./position";
 import { bind, evalExpr, evalPredicate, type EvalContext } from "./predicates";
 import { mustEntity } from "./state";
 import type {
@@ -27,6 +33,7 @@ import type {
   Outcome,
   PaymentChoice,
   PendingCheck,
+  Position,
   ReactionWindow,
   Receipt,
   Rejection,
@@ -291,6 +298,66 @@ function answerNumber(
     return state.rolls[value.roll]?.total ?? null;
   }
   return null;
+}
+
+/** A `position`-kind answer, given directly as `{x,y}` (never as a roll reference). */
+function answerPosition(answers: IntentAction["answers"], key: string): Position | null {
+  // `unknown`, not `Answer`: a persisted log may carry a malformed answer, and this helper
+  // rejects it rather than throwing (the shape the `move` step has always checked).
+  const value: unknown = answers[key];
+  return typeof value === "object" &&
+    value !== null &&
+    "x" in value &&
+    "y" in value &&
+    typeof value.x === "number" &&
+    typeof value.y === "number" &&
+    Number.isFinite(value.x) &&
+    Number.isFinite(value.y)
+    ? { x: value.x, y: value.y }
+    : null;
+}
+
+type AreaResolution =
+  | { readonly kind: "shape"; readonly shape: AreaShape }
+  | { readonly kind: "missing"; readonly input: string };
+
+/** An authored `AreaShapeSpec` bound to the caster's `position` answers. */
+function areaShapeFrom(
+  spec: AreaShapeSpec,
+  answers: IntentAction["answers"]
+): AreaResolution {
+  const origin = answerPosition(answers, spec.origin);
+  if (origin === null) return { kind: "missing", input: spec.origin };
+  switch (spec.kind) {
+    case "sphere":
+    case "cylinder":
+      return {
+        kind: "shape",
+        shape: { kind: spec.kind, origin, radiusFt: spec.radiusFt },
+      };
+    case "cube":
+      return { kind: "shape", shape: { kind: "cube", origin, sizeFt: spec.sizeFt } };
+    case "cone":
+    case "line": {
+      const aim = answerPosition(answers, spec.aim);
+      if (aim === null) return { kind: "missing", input: spec.aim };
+      return {
+        kind: "shape",
+        shape:
+          spec.kind === "cone"
+            ? { kind: "cone", origin, aim, lengthFt: spec.lengthFt }
+            : {
+                kind: "line",
+                origin,
+                aim,
+                lengthFt: spec.lengthFt,
+                widthFt: spec.widthFt,
+              },
+      };
+    }
+    default:
+      return assertNever(spec, "area shape spec");
+  }
 }
 
 // ── The program runner ──────────────────────────────────────────────────────
@@ -569,18 +636,7 @@ function runSteps(
         return { stop: false };
       }
       case "move": {
-        const raw: unknown = action.answers[step.to];
-        const to =
-          typeof raw === "object" &&
-          raw !== null &&
-          "x" in raw &&
-          "y" in raw &&
-          typeof raw.x === "number" &&
-          typeof raw.y === "number" &&
-          Number.isFinite(raw.x) &&
-          Number.isFinite(raw.y)
-            ? { x: raw.x, y: raw.y }
-            : null;
+        const to = answerPosition(action.answers, step.to);
         if (to === null) return { reason: "missing-answer", input: step.to };
         const mover = mustEntity(next, action.entity);
         const from = mover.position;
@@ -651,8 +707,15 @@ function runProgram(
   const created: EffectId[] = [];
   let dealt = 0;
   let tried = false;
+  // An area program runs once per derived target and not at all when its shape is empty — a
+  // blast on empty ground is legal and costs its action. Every other untargeted program (e.g.
+  // `core:move`) still runs once against a null target.
   const targets: (EntityId | null)[] =
-    action.targets.length > 0 ? [...action.targets] : [null];
+    action.targets.length > 0
+      ? [...action.targets]
+      : program.targets?.count === "area"
+        ? []
+        : [null];
   for (const target of targets) {
     const run = runSteps(next, program, action, target, castLevel, events, options);
     if ("reason" in run) return run;
@@ -763,25 +826,53 @@ export function applyIntent(
     }
   }
 
+  let effectiveTargets = action.targets;
   if (program.targets) {
-    if (action.targets.length !== program.targets.count) {
-      return rejected({ reason: "invalid-target", entity: "" });
-    }
-    for (const target of action.targets) {
-      if (!state.entities[target])
-        return rejected({ reason: "unknown-entity", entity: target });
-      const ctx: EvalContext = {
-        self: action.entity,
-        target,
-        eventEntity: windowEvent,
-        outcome: null,
-        answers: action.answers,
-      };
-      if (!evalPredicate(program.targets.eligibility, state, ctx)) {
-        return rejected({ reason: "invalid-target", entity: target });
+    if (program.targets.count === "area") {
+      const spec = program.targets.area;
+      // Conformance forbids an area count without a shape; the type still needs narrowing.
+      if (!spec)
+        return rejected({ reason: "unknown-mechanic", mechanic: action.mechanic });
+      const resolved = areaShapeFrom(spec, action.answers);
+      if (resolved.kind === "missing") {
+        return rejected({ reason: "missing-answer", input: resolved.input });
+      }
+      const candidates = Object.values(state.entities).map((e) => ({
+        id: e.id,
+        position: e.position,
+      }));
+      const targets = program.targets;
+      effectiveTargets = areaMembership(resolved.shape, candidates).filter((target) => {
+        const ctx: EvalContext = {
+          self: action.entity,
+          target,
+          eventEntity: windowEvent,
+          outcome: null,
+          answers: action.answers,
+        };
+        return evalPredicate(targets.eligibility, state, ctx);
+      });
+    } else {
+      if (action.targets.length !== program.targets.count) {
+        return rejected({ reason: "invalid-target", entity: "" });
+      }
+      for (const target of action.targets) {
+        if (!state.entities[target])
+          return rejected({ reason: "unknown-entity", entity: target });
+        const ctx: EvalContext = {
+          self: action.entity,
+          target,
+          eventEntity: windowEvent,
+          outcome: null,
+          answers: action.answers,
+        };
+        if (!evalPredicate(program.targets.eligibility, state, ctx)) {
+          return rejected({ reason: "invalid-target", entity: target });
+        }
       }
     }
   }
+  const effectiveAction: IntentAction = { ...action, targets: effectiveTargets };
 
   const payment = payCosts(entity, program, action);
   if ("reason" in payment) return rejected(payment);
@@ -794,7 +885,7 @@ export function applyIntent(
       [action.entity]: { ...entity, turn: payment.ledger, resources: payment.resources },
     },
   };
-  const run = runProgram(paidState, program, action, payment.castLevel, events, {
+  const run = runProgram(paidState, program, effectiveAction, payment.castLevel, events, {
     catalogue,
     hold: action.window === null,
     eventEntity: windowEvent,
@@ -808,7 +899,7 @@ export function applyIntent(
       eligible: run.eligible,
       declared: action.id,
     };
-    const declaredEntry = { ...action, payment: [] };
+    const declaredEntry = { ...effectiveAction, payment: [] };
     // Opening a window is bookkeeping, not a verdict, so it always lands; only the cost
     // (ledger/resources, carried by `paidState` vs the original `state`) is gated (ADR-0011).
     const withheld: FoldedState = {
