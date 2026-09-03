@@ -61,24 +61,31 @@ and saved to the shared calendar, the chronicle holds everything that happened, 
 are looked up, loot and gold are split, a handout is shown — nobody opens another tool. A feature
 that serves none of the four is superfluous.
 
-**Jobs the app must cover (evidence-ranked; extended from community research, 2026-09).**
+**Jobs the app must cover** (ranked from community evidence, 90 sources, 2026-09-03; full
+report in `docs/superpowers/research/2026-09-03-self-contained-jobs.md`; non-goals: voice/video,
+text chat, music, map authoring, art generation, AI recaps).
 
-| Job                                                                            | Who         | When                  | Today                       |
-| ------------------------------------------------------------------------------ | ----------- | --------------------- | --------------------------- |
-| Play a turn: move, act, roll, consequences, undo                               | players, DM | during                | app + Owlbear + mental math |
-| Run the table: map, tokens, fog, initiative, monsters, hidden rolls, overrides | DM          | during                | Owlbear + app + paper       |
-| Sheet, level-up, spell preparation, inventory                                  | players     | between               | app                         |
-| Read the sheet as a sheet; print it (PDF)                                      | players     | between, at the table | app (PDF export exists)     |
-| Give an item, loot or gold to another character; party inventory               | players, DM | during, after         | chat + manual edits         |
-| Rules and content lookup with plain explanations                               | everyone    | always                | app + D&D Beyond            |
-| Session notes and recap                                                        | DM, players | during, after         | external notes              |
-| Chronicle of everything that happened                                          | everyone    | across                | app (partial)               |
-| Next session date, attendance, shared calendar                                 | everyone    | across                | chat + calendar             |
-| NPCs, places, factions, lore                                                   | DM, players | across                | external wiki               |
-| Loot, party gold, party inventory                                              | players, DM | after, between        | sheet + chat                |
-| Handouts and images                                                            | DM          | during                | chat                        |
-| Homebrew: monsters, items, spells, rules                                       | DM          | between               | external editors            |
-| Encounter building and difficulty                                              | DM          | between               | app                         |
+| #   | Job                                                                                                           | Who          | When           | Today (external)                    |
+| --- | ------------------------------------------------------------------------------------------------------------- | ------------ | -------------- | ----------------------------------- |
+| 1   | Run combat: initiative, HP, conditions, stat blocks, player-facing turn order, automatic resolution with undo | DM, players  | during         | app + Owlbear + trackers            |
+| 2   | Session notes and recap, "what happened last time" — a play log that is the recap                             | DM, players  | during, after  | Docs, Notion, paper, AI recap tools |
+| 3   | Schedule the next session, availability, RSVPs, cancellations, shared calendar                                | everyone     | across         | Discord bots, Doodle                |
+| 4   | Party loot, shared inventory, gold split, item transfer between characters                                    | players, DM  | during, after  | Sheets, Discord pins                |
+| 5   | Battle map with fog, tokens and player view (remote and table TV)                                             | DM, players  | during         | Owlbear, Roll20, Foundry            |
+| 6   | Rules, spells, conditions, monsters lookup mid-session (2024, EN/IT, plain explanations)                      | everyone     | always         | D&D Beyond, 5etools                 |
+| 7   | One character sheet whose rolls land where play happens; readable as a sheet; printable                       | players      | always         | D&D Beyond + bridges                |
+| 8   | NPCs, places, factions, lore findable; player-curated slice                                                   | DM, players  | across         | Kanka, World Anvil, Obsidian        |
+| 9   | Build a balanced encounter with 2024 math, reuse it                                                           | DM           | before         | Kobold+ Fight Club                  |
+| 10  | Handouts, art, letters, images shown to players                                                               | DM           | during         | Discord, tablet, TV                 |
+| 11  | Author and share homebrew (items, monsters, subclasses, rules) with the group                                 | DM, players  | across         | Homebrewery, GM Binder              |
+| 12  | In-world calendar, date and time, weather                                                                     | DM           | during, across | Fantasy Calendar, spreadsheets      |
+| 13  | Downtime, travel, rations, ammunition, light, rest bookkeeping                                                | players, DM  | during, after  | logsheets, spreadsheets             |
+| 14  | XP or milestone progression and awards                                                                        | DM, players  | after          | spreadsheets                        |
+| 15  | Character art and tokens                                                                                      | players, DM  | before         | HeroForge, token makers             |
+| 16  | Session zero and safety tools                                                                                 | table        | before, during | forms, docs                         |
+| 17  | Onboard a brand-new player (first character, first session)                                                   | DM, newcomer | before         | premades, cheat sheets              |
+| 18  | Dice with a shared, trusted log (in-app 3D or real dice entered)                                              | everyone     | during         | dice, bots, VTT rollers             |
+| 19  | Loot and treasure generation                                                                                  | DM           | before         | donjon, generators                  |
 
 **Open decision.** The name: "d20 Folio" says "sheet" more than "table"; keep it, decide before any
 public release.
