@@ -130,22 +130,29 @@ the new durable decision or kept explicitly one-off.
 
 ### Safety and quality
 
-29. **Steering wins.** `PRODUCT.md` §Steering is the top of the authority stack. A document, plan,
+30. **Giants' shoulders: never reinvent the wheel.** Before designing or building anything —
+    a screen, a component, a data model, a workflow — find how the leading products and the most
+    common, proven patterns already do it, copy the dominant pattern with real evidence (captures,
+    docs, source), and improve on it; never start from a blank page or from the agent's own idea.
+    Taking the initiative without this research is a defect (owner, 2026-09-03: "every time you
+    do things your own way, you make a mess"). The design spec's dossier method is the standard:
+    real reference beside our rendition, then rules.
+31. **Steering wins.** `PRODUCT.md` §Steering is the top of the authority stack. A document, plan,
     test or memory that contradicts it is fixed or deleted in the same change that notices it, never
     left to pull the next agent back to an old direction. The three acceptance stories decide scope:
     a feature that serves none of them is superfluous.
-30. **Every roll is logged and reviewable.** Dice roll in-app by default (shared 3D animation;
+32. **Every roll is logged and reviewable.** Dice roll in-app by default (shared 3D animation;
     owner-ratified 2026-09-03, reversing the original "no dice" rule) or are entered from physical
     dice; the DM may roll hidden. Every roll carries its formula, result, roller and source in the
     encounter log; deterministic and rolled effects apply automatically with undo and correction.
-31. **Deploys are owner-gated; safe migrations are autonomous.** Never deploy without explicit
+33. **Deploys are owner-gated; safe migrations are autonomous.** Never deploy without explicit
     per-change permission. Forward live-data migrations may run autonomously only under rule 10's
     snapshot/verify protocol. Destructive non-migration operations require explicit approval. Rules
     changes ship emulator tests; live-user fixtures remain green.
-32. **Dependencies are vetted; secrets stay out.** Prefer existing/platform capabilities. Before a new
+34. **Dependencies are vetted; secrets stay out.** Prefer existing/platform capabilities. Before a new
     runtime dependency, verify necessity, maintenance, size, license, and security. Keep secrets only in
     approved local/CI/Secret Manager stores and never in logs, docs, prompts, or memory.
-33. **Accessibility, performance, and cost are release bars.** Axe serious/critical findings are zero;
+35. **Accessibility, performance, and cost are release bars.** Axe serious/critical findings are zero;
     bundle/precache budgets hold; listener and write behavior respects Firebase limits; offline behavior
     remains functional.
 

@@ -138,6 +138,11 @@ adapters below override generic command examples, not the lifecycle:
   target or replaces correctness review.
 - **grill-me:** product-direction interviews and genuinely ambiguous owner intent, not technical
   choices that evidence can resolve.
+- **Giants' shoulders (golden rule 30):** research the state of the art and copy the dominant,
+  proven pattern with real evidence before designing or building anything; the dossier method
+  (reference beside our rendition, then rules) is the standard for every surface.
+- **Language:** the repository — code, comments, documents, commits, changesets, issues — is in
+  English (open source, external collaborators); the conversation with the owner is in Italian.
 - **Firebase and cloud access (agent-managed repo):** the owner does not operate consoles. Use the
   Firebase CLI (`firebase`, logged in as the owner) and `gcloud` for projects, Firestore, rules,
   indexes, hosting and functions; the project-scoped Firebase MCP server in `.mcp.json` for

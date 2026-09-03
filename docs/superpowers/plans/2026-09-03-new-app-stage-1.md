@@ -43,10 +43,21 @@ the order, the gates and what is out.
 
 ## Stages, in order
 
-0. **Safety gate (blocking).** Migration P1 items 1–3 from
-   `docs/superpowers/plans/2026-09-02-combat-p1-data-safety.md`: closed-world codec with unknown-key
-   preservation, `instanceId` on custom equipment/spells/features, per-domain sync so conflicts
-   surface. Dry-run against the six fixtures and a production export. Nothing else ships before.
+U. **UI/UX agreement (blocking, before any product code).** The owner must see and approve, from
+images, how the whole new app will look and behave for the milestone: Campagna (home, session
+card, calendar, notes and recap, chronicle, party, DM preparation), Personaggio (Panoramica ·
+Incantesimi · Inventario · Privilegi · Progressione, printable sheet, item transfer), Gioca
+(desktop player, desktop DM, phone second screen, dice tray and shared roll, map tools, DM
+drawer), Compendio (list, entry, explain-on-demand), Costruttore (creation, level-up),
+onboarding and login, settings, share view. Method: one screen at a time, dossier with real
+reference screens of the leading products (BG3, D&D Beyond, Owlbear, Foundry, Roll20, Kanka…)
+beside our rendition, the licensed icon sprite, the approved v8 visual system; verdict "va
+bene / cosa stona" per screen; a screen map (flows between screens) approved last. Output:
+the design spec updated with every approved screen and a visual bible board. 0. **Safety gate (blocking).** Migration P1 items 1–3 from
+`docs/superpowers/plans/2026-09-02-combat-p1-data-safety.md`: closed-world codec with unknown-key
+preservation, `instanceId` on custom equipment/spells/features, per-domain sync so conflicts
+surface. Dry-run against the six fixtures and a production export. Nothing else ships before.
+
 1. **Dice seam.** `roll(formula, {by, reason, hidden, mode})` persisted as a log action with
    faces, total, seed, roller, source (`app | manual`); three inputs (in-app, manual entry, hidden
    DM). Numbers and a log line first; the shared 3D animation is a later stage.

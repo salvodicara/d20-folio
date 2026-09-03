@@ -52,6 +52,11 @@ kernel and its tests, the agent program supervisor and the superseded plans, the
 and three combat executors (rebuilt as one sheet and one hotbar), and the old visual atlases as
 authority. Salvage the automation knowledge (typed data, coverage, grants).
 
+**Method.** Giants' shoulders (golden rule 30): every screen, component, model and workflow is
+copied from the state of the art with real evidence and then improved — never invented. UI/UX
+comes first: the owner judges only visuals, and no product code is written for a surface until
+its screens are agreed at 100 % from images (golden rule 25).
+
 **Acceptance stories.** (1) Marco, a beginner, plays his first turn: moves, casts Fireball on three
 goblins, everything is resolved and logged. (2) Sara the DM runs an ogre ambush: tokens, fog,
 hidden rolls, the monsters' actions, an overridden result, a homebrew sword. (3) The group between
