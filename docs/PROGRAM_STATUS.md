@@ -142,11 +142,14 @@ so they are not lost before their stage lands.
 
 - **Admin-supreme account.** Owner (2026-09-03): wants everything a DM can do to extend to his own
   account, since — at least at first — he has to guide the actual DM the way he already does
-  today. The design doc's access matrix (§5.4) already models exactly this: `users/{uid}.role ===
-"admin"` carries the same rights as `owner`/`dmUid` across every path (`users/{uid}`,
-  `characters/{id}`, `combat/state`, campaign encounters) — no new design needed. Activate at
-  stage 4 (the shared-encounter document and its Firestore rules) by setting the owner's own
-  `role` to `admin`.
+  today. The design doc already has the actor (§5.1, §5.4): `users/{uid}.role === "admin"` gets
+  owner-level access on every user path (`users/{uid}`, `characters/{id}`, `combat/state`) and
+  DM-level rights on an encounter's checkpoint and settings. What it does not say is that an admin
+  may append actions to a campaign encounter they are not a member of (encounter `update` =
+  member and the log grew). Stage 4, which writes those rules, decides between "admin is an
+  implicit member of every campaign" and "the owner's account is added as a member of his group's
+  campaign" — the second is smaller and matches how he plays today — and sets the owner's `role`
+  to `admin`.
 - **Out-of-combat mechanical freedom.** Owner (2026-09-03): players need the same freedom D&D
   2024 actually gives them — casting spells and doing other mechanically-resolved things outside
   a formal combat encounter, not only inside one. The reducer is already entity-generic and not

@@ -101,6 +101,7 @@ the acceptance stories in `PRODUCT.md` §Steering verbatim.
 - Modify: `tests/unit/combat/__helpers__/state.ts` (`emptyState()`)
 - Test: `tests/unit/combat/resolve.automation.test.ts` (new)
 - Test: `tests/unit/combat/resolve.table.test.ts` (extend: the `propose-and-confirm` rejection)
+- Test: `tests/unit/combat/resolve.intent.test.ts` (extend: a log-only concentration check)
 
 **Interfaces:**
 
@@ -165,7 +166,7 @@ function opened(): FoldedState {
   return { ...state, relations: visible };
 }
 
-function attack(extra: Partial<Extract<Action, { kind: "intent" }>> = {}): Action {
+function attack(): Action {
   return {
     kind: "intent",
     id: nextActionId("a"),
@@ -175,78 +176,100 @@ function attack(extra: Partial<Extract<Action, { kind: "intent" }>> = {}): Actio
     mechanic: "srd:weapon:longbow",
     program: "attack",
     targets: ["monster-1"],
-    answers: { roll: 15, damage: 5 },
+    answers: { roll: 15, damage: 5 }, // 15 + DEX 3 + PB 2 = 20 ≥ AC 5 → 5 damage
     payment: [],
     window: null,
     basedOn: 0,
-    ...extra,
   };
 }
 
-describe("automation — log-only applies nothing but still records the receipt", () => {
-  it("a log-only attack leaves HP, resources and the turn ledger untouched", () => {
-    let state = opened();
-    const settings = resolve(
-      state,
-      tableAction("dm", seq(), {
-        op: "settings",
-        revealMonsterHp: false,
-        automation: "log-only",
-      }),
-      catalogue
-    );
-    if (settings.kind === "rejected") throw new Error(JSON.stringify(settings.rejection));
-    state = settings.state;
+function logOnly(state: FoldedState): FoldedState {
+  const result = resolve(
+    state,
+    tableAction("dm", seq(), {
+      op: "settings",
+      revealMonsterHp: false,
+      automation: "log-only",
+    }),
+    catalogue
+  );
+  if (result.kind === "rejected") throw new Error(JSON.stringify(result.rejection));
+  return result.state;
+}
 
-    const result = resolve(state, attack(), catalogue);
+describe("automation — log-only computes the verdict but applies nothing (ADR-0011)", () => {
+  it("a log-only attack leaves HP, the turn ledger and the cost untouched, with the full receipt", () => {
+    const result = resolve(logOnly(opened()), attack(), catalogue);
     expect(result.kind).toBe("applied");
     if (result.kind !== "applied") return;
     expect(mustEntity(result.state, "monster-1").vitals.hp).toBe(10); // unchanged
     expect(mustEntity(result.state, "hero").turn.attacksUsed).toBe(0); // cost not paid
     expect(result.receipt.paid).toEqual(["turn:attack"]); // receipt still shows what would pay
     expect(result.receipt.outcome).toBe("established"); // and the full verdict
+    expect(result.state.revision).toBe(opened().revision + 2); // settings + this action still count
   });
 
-  it("a full-auto attack applies exactly as before the automation setting existed", () => {
-    const state = opened(); // settings.automation defaults to full-auto
-    const result = resolve(state, attack(), catalogue);
+  it("the same attack at full-auto applies exactly as before the setting existed", () => {
+    const result = resolve(opened(), attack(), catalogue);
     expect(result.kind).toBe("applied");
     if (result.kind !== "applied") return;
-    expect(mustEntity(result.state, "monster-1").vitals.hp).toBe(0);
+    expect(mustEntity(result.state, "monster-1").vitals.hp).toBe(5);
     expect(mustEntity(result.state, "hero").turn.attacksUsed).toBe(1);
   });
-
-  it("a roll is still consumable exactly once at log-only (the roll, not the verdict, is gated identically)", () => {
-    let state = opened();
-    const settings = resolve(
-      state,
-      tableAction("dm", seq(), {
-        op: "settings",
-        revealMonsterHp: false,
-        automation: "log-only",
-      }),
-      catalogue
-    );
-    if (settings.kind === "rejected") throw new Error(JSON.stringify(settings.rejection));
-    state = settings.state;
-    const first = resolve(state, attack(), catalogue);
-    if (first.kind !== "applied") throw new Error("expected applied");
-    const second = resolve(
-      first.state,
-      attack({ answers: { roll: 15, damage: 5 } }),
-      catalogue
-    );
-    // a second intent can still be declared (nothing was spent) — this documents the
-    // log-only contract rather than asserting a rejection: the DM tracks economy by hand.
-    expect(second.kind).toBe("applied");
-  });
 });
+```
 
-describe("automation — a log-only concentration check clears the pending check but withholds the break", () => {
-  it("clears state.checks either way; only ends concentration at full-auto", () => {
-    // covered indirectly via resolve.window.test.ts's existing concentration-check path;
-    // this suite only needs the intent-level contract above for stage 3's two stories.
-  });
+(The concentration-check half of the contract is tested in `resolve.intent.test.ts` below, where
+the fixture that opens a check already exists — no duplicated setup.)
+
+Append to `tests/unit/combat/resolve.intent.test.ts`, right after the existing
+`"damage to a concentrating caster opens a concentration check; a failed check ends the mark and its rider"`
+test (reuse its `run`/`opened`/`intent`/`tableAction`/`firstOf` helpers — all already imported there):
+
+```ts
+it("at log-only, a failed concentration check is cleared but the break is withheld (ADR-0011)", () => {
+  let state = run(opened(), [
+    intent("p1", "ranger", "srd:spell:hunters-mark", "cast", {
+      targets: ["monster-1"],
+      payment: [{ kind: "slot", level: 1, pool: "standard" }],
+    }),
+    tableAction("dm", seq(), { op: "end-turn" }),
+    intent("dm", "monster-1", "monster:goblin:scimitar", "attack", {
+      targets: ["ranger"],
+      answers: { roll: 12, damage: 6 },
+    }),
+  ]);
+  state = run(state, [
+    {
+      kind: "resolve",
+      id: nextActionId("r"),
+      seq: seq(),
+      by: "p1",
+      window: firstOf(state.windows).id,
+    },
+  ]);
+  const markId = mustEntity(state, "ranger").concentration as string;
+  expect(state.checks).toHaveLength(1);
+  state = run(state, [
+    tableAction("dm", seq(), {
+      op: "settings",
+      revealMonsterHp: false,
+      automation: "log-only",
+    }),
+  ]);
+  const after = run(state, [
+    {
+      kind: "check",
+      id: nextActionId("c"),
+      seq: seq(),
+      by: "p1",
+      check: firstOf(state.checks).id,
+      answers: { d20: 3 }, // 3 + CON 2 < DC 10 → would break at full-auto
+    },
+  ]);
+  expect(after.checks).toEqual([]); // the pending check is bookkeeping: always cleared
+  expect(mustEntity(after, "ranger").concentration).toBe(markId); // the break is the verdict: withheld
+  expect(after.effects[markId]).toBeDefined();
 });
 ```
 
@@ -289,9 +312,10 @@ describe("table — settings", () => {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `pnpm test --run tests/unit/combat/resolve.automation.test.ts tests/unit/combat/resolve.table.test.ts`
-Expected: FAIL — `op: "settings"` literals are missing the required `automation` field (TypeScript
-compile error under Vitest's esbuild transform), and `state.settings.automation` doesn't exist yet.
+Run: `pnpm test --run tests/unit/combat/resolve.automation.test.ts tests/unit/combat/resolve.table.test.ts tests/unit/combat/resolve.intent.test.ts`
+Expected: FAIL — the settings op ignores `automation` (the type check runs separately in `just ci`;
+Vitest's esbuild transform strips types, so the failure is behavioral: HP changes at "log-only",
+`state.settings.automation` is `undefined`, the concentration break is not withheld).
 
 - [ ] **Step 3: Add `Automation` and wire it through the types**
 
@@ -455,7 +479,8 @@ Expected: PASS (the boundary guard's payment test still passes — it only exerc
 ```bash
 git add src/lib/combat/types.ts src/lib/combat/table.ts src/lib/combat/fold.ts \
   src/lib/combat/intent.ts tests/unit/combat/__helpers__/state.ts \
-  tests/unit/combat/resolve.automation.test.ts tests/unit/combat/resolve.table.test.ts
+  tests/unit/combat/resolve.automation.test.ts tests/unit/combat/resolve.table.test.ts \
+  tests/unit/combat/resolve.intent.test.ts .changeset/v2-stage-3-automation-levels.md
 git commit -m "feat(combat): full-auto and log-only campaign automation levels (ADR-0011)"
 ```
 
@@ -505,10 +530,10 @@ import { nextActionId, openingActions, seqFactory } from "./__helpers__/state";
 const { catalogue } = buildCatalogue(PROTOTYPE_MECHANICS);
 const seq = seqFactory("dm");
 
-function opened(): FoldedState {
+function opened(hero: Partial<Parameters<typeof testEntity>[0]> = {}): FoldedState {
   let state = initialState();
-  const hero = testEntity({ id: "hero", kind: "pc", hp: 30, life: "alive" });
-  for (const action of openingActions("dm", seq, [hero], { hero: 10 }, ["hero"])) {
+  const entity = testEntity({ id: "hero", kind: "pc", hp: 30, ...hero });
+  for (const action of openingActions("dm", seq, [entity], { hero: 10 }, ["hero"])) {
     const result = resolve(state, action, catalogue);
     if (result.kind === "rejected") throw new Error(JSON.stringify(result.rejection));
     state = result.state;
@@ -542,12 +567,41 @@ describe("override — direct-patch paths actually change the fact, not just the
     });
   });
 
-  it("vitals.life: the DM's last word on death — dying can be overridden back to stable", () => {
-    let state = opened();
-    const dying = resolve(state, override("vitals.life", "stable"), catalogue);
-    expect(dying.kind).toBe("applied");
-    if (dying.kind !== "applied") return;
-    expect(mustEntity(dying.state, "hero").vitals.life).toBe("stable");
+  it("vitals.life: the DM's last word on death — dying can be overridden to stable", () => {
+    const state = opened({
+      hp: 0,
+      life: "dying",
+      deathSaves: { successes: 0, failures: 2 },
+    });
+    const result = resolve(state, override("vitals.life", "stable"), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(mustEntity(result.state, "hero").vitals.life).toBe("stable");
+  });
+
+  it("vitals.hp above zero on a dying or stable creature revives it, like healing does", () => {
+    const state = opened({
+      hp: 0,
+      life: "dying",
+      deathSaves: { successes: 1, failures: 2 },
+    });
+    const result = resolve(state, override("vitals.hp", 5), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(mustEntity(result.state, "hero").vitals).toMatchObject({
+      hp: 5,
+      life: "alive",
+      deathSaves: { successes: 0, failures: 0 },
+    });
+  });
+
+  it("vitals.hp on a dead creature changes HP only — death is reversed by an explicit life override", () => {
+    const state = opened({ hp: 0, life: "dead" });
+    const result = resolve(state, override("vitals.hp", 5), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(mustEntity(result.state, "hero").vitals.life).toBe("dead");
+    expect(mustEntity(result.state, "hero").vitals.hp).toBe(5);
   });
 
   it("a malformed override (wrong type) is still recorded but never corrupts the live field", () => {
@@ -575,8 +629,9 @@ describe("override — direct-patch paths actually change the fact, not just the
 - [ ] **Step 2: Run the test to verify it fails**
 
 Run: `pnpm test --run tests/unit/combat/resolve.override.test.ts`
-Expected: FAIL — `vitals.hp`/`vitals.life` stay unpatched (`toBe(18)`/`toBe("stable")` fail
-against the current always-`30`/`"alive"` values).
+Expected: FAIL — `vitals.hp`/`vitals.life` stay unpatched (`toBe(18)`/`toBe("stable")`/the revive
+case all fail against the untouched fixture values); the malformed-override and `stats.ac` tests
+already pass (they pin existing behavior so the change cannot widen).
 
 - [ ] **Step 3: Implement the direct-patch paths**
 
@@ -590,10 +645,22 @@ const LIFE_STATES = new Set<LifeState>(["alive", "dying", "stable", "dead"]);
 
 /** Paths that are persisted facts, not read-time-derived stats (like `stats.ac`): an override
  *  here directly corrects the fact, the same way a later `declare` replaces a relation, rather
- *  than layering on top of a formula consulted at read time. */
+ *  than layering on top of a formula consulted at read time. An HP override above zero revives
+ *  a dying/stable creature exactly as `applyHealing` does; `dead` stays dead until the DM
+ *  overrides `vitals.life` explicitly. */
 function patchDirectOverride(entity: Entity, path: string, value: unknown): Entity {
   if (path === "vitals.hp" && typeof value === "number" && Number.isFinite(value)) {
-    return { ...entity, vitals: { ...entity.vitals, hp: value } };
+    const { life, deathSaves } = entity.vitals;
+    const revived = value > 0 && (life === "dying" || life === "stable");
+    return {
+      ...entity,
+      vitals: {
+        ...entity.vitals,
+        hp: value,
+        life: revived ? "alive" : life,
+        deathSaves: revived ? { successes: 0, failures: 0 } : deathSaves,
+      },
+    };
   }
   if (
     path === "vitals.life" &&
@@ -639,7 +706,8 @@ still pass unchanged).
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/lib/combat/intent.ts tests/unit/combat/resolve.override.test.ts
+git add src/lib/combat/intent.ts tests/unit/combat/resolve.override.test.ts \
+  .changeset/v2-stage-3-override-vitals.md
 git commit -m "fix(combat): DM overrides on vitals.hp and vitals.life actually change the fact"
 ```
 
@@ -929,8 +997,10 @@ Expected: PASS.
 
 - [ ] **Step 5: Compute derived targets in `applyIntent`, sharing a `answerPosition` helper with `move`**
 
-In `src/lib/combat/intent.ts`, add `type Position` to the `type` import from `./types`, and add
-`areaMembership` plus `type AreaShape` to the import from `./position` (currently
+In `src/lib/combat/intent.ts`, add `type Position` to the `type` import from `./types`, add
+`AreaShapeSpec` to the `type` import from `./mechanic` (currently
+`import type { LifetimeSpec, Program, Step } from "./mechanic";`), and add `areaMembership` plus
+`type AreaShape` to the import from `./position` (currently
 `import { distanceFt, rangeBand, REACH_FT } from "./position";`):
 
 ```ts
@@ -961,28 +1031,47 @@ function answerPosition(answers: IntentAction["answers"], key: string): Position
     : null;
 }
 
+type AreaResolution =
+  | { readonly kind: "shape"; readonly shape: AreaShape }
+  | { readonly kind: "missing"; readonly input: string };
+
+/** An authored `AreaShapeSpec` bound to the caster's `position` answers. */
 function areaShapeFrom(
-  spec: NonNullable<Program["targets"]>["area"],
+  spec: AreaShapeSpec,
   answers: IntentAction["answers"]
-): { readonly shape: AreaShape; readonly missing: string | null } {
-  if (!spec) throw new Error("areaShapeFrom called without a spec"); // guarded by the caller
+): AreaResolution {
   const origin = answerPosition(answers, spec.origin);
-  if (origin === null) return { shape: null as never, missing: spec.origin };
-  if (spec.kind === "sphere" || spec.kind === "cylinder") {
-    return { shape: { kind: spec.kind, origin, radiusFt: spec.radiusFt }, missing: null };
+  if (origin === null) return { kind: "missing", input: spec.origin };
+  switch (spec.kind) {
+    case "sphere":
+    case "cylinder":
+      return {
+        kind: "shape",
+        shape: { kind: spec.kind, origin, radiusFt: spec.radiusFt },
+      };
+    case "cube":
+      return { kind: "shape", shape: { kind: "cube", origin, sizeFt: spec.sizeFt } };
+    case "cone":
+    case "line": {
+      const aim = answerPosition(answers, spec.aim);
+      if (aim === null) return { kind: "missing", input: spec.aim };
+      return {
+        kind: "shape",
+        shape:
+          spec.kind === "cone"
+            ? { kind: "cone", origin, aim, lengthFt: spec.lengthFt }
+            : {
+                kind: "line",
+                origin,
+                aim,
+                lengthFt: spec.lengthFt,
+                widthFt: spec.widthFt,
+              },
+      };
+    }
+    default:
+      return assertNever(spec, "area shape spec");
   }
-  if (spec.kind === "cube") {
-    return { shape: { kind: "cube", origin, sizeFt: spec.sizeFt }, missing: null };
-  }
-  const aim = answerPosition(answers, spec.aim);
-  if (aim === null) return { shape: null as never, missing: spec.aim };
-  return {
-    shape:
-      spec.kind === "cone"
-        ? { kind: "cone", origin, aim, lengthFt: spec.lengthFt }
-        : { kind: "line", origin, aim, lengthFt: spec.lengthFt, widthFt: spec.widthFt },
-    missing: null,
-  };
 }
 ```
 
@@ -1005,14 +1094,18 @@ currently checks `action.targets.length !== program.targets.count`) with:
 let effectiveTargets = action.targets;
 if (program.targets) {
   if (program.targets.count === "area") {
-    const { shape, missing } = areaShapeFrom(program.targets.area, action.answers);
-    if (missing !== null) return rejected({ reason: "missing-answer", input: missing });
+    const spec = program.targets.area;
+    if (!spec) return rejected({ reason: "unknown-mechanic", mechanic: action.mechanic }); // conformance forbids this; the type still needs narrowing
+    const resolved = areaShapeFrom(spec, action.answers);
+    if (resolved.kind === "missing") {
+      return rejected({ reason: "missing-answer", input: resolved.input });
+    }
     const candidates = Object.values(state.entities).map((e) => ({
       id: e.id,
       position: e.position,
     }));
     const targets = program.targets;
-    effectiveTargets = areaMembership(shape, candidates).filter((target) => {
+    effectiveTargets = areaMembership(resolved.shape, candidates).filter((target) => {
       const ctx: EvalContext = {
         self: action.entity,
         target,
@@ -1071,7 +1164,8 @@ non-area program's target validation is byte-identical to before).
 
 ```bash
 git add src/lib/combat/mechanic.ts src/lib/combat/intent.ts \
-  tests/unit/combat/mechanic.test.ts tests/unit/combat/resolve.area.test.ts
+  tests/unit/combat/mechanic.test.ts tests/unit/combat/resolve.area.test.ts \
+  .changeset/v2-stage-3-area-targeting.md
 git commit -m "feat(combat): area-targeted programs (TargetSpec.count: \"area\")"
 ```
 
@@ -1108,20 +1202,22 @@ save-and-halve spell reuses the existing `save`+`damage` step pair.
 - [ ] **Step 1: Write the failing test**
 
 Append to `tests/unit/combat/resolve.intent.test.ts` (inside the existing `describe("resolve — intents", ...)`
-block, reusing its existing `ranger`/`opened()` fixtures — but Fireball needs the ranger to have a
-3rd-level slot and to know the mechanic, so extend the shared `ranger` fixture's `mechanics` array
-with `"srd:spell:fireball"` and its `resources` with `"slot-3": { current: 1, max: 1, recharge: "long" }`,
-and add a third `monster-2`/`monster-3` alongside the existing `goblin` so the test can prove
-multiple targets):
+block, reusing its `ranger`/`goblin`/`opened()`/`intent()` fixtures). Fireball needs the ranger to
+know the mechanic and hold a 3rd-level slot, so extend the shared `ranger` fixture: add
+`"srd:spell:fireball"` to its `mechanics` array and `"slot-3": { current: 1, max: 1, recharge: "long" }`
+to its `resources`. Multiple targets are proven by Task 6's replay; this test pins the single-
+target arithmetic and the cost. The ranger stays unpositioned (`position: null`), so
+`areaMembership` skips him — a positioned caster 5 ft from the origin would be inside his own
+20 ft blast and the cast would need a `save:ranger` answer.
 
 ```ts
-it("Fireball hits every entity inside the blast, saves halve, and it costs a 3rd-level slot", () => {
+it("Fireball: a DEX save halves the blast, the caster outside it is untouched, a 3rd-level slot is spent", () => {
+  const base = opened();
   const state = {
-    ...opened(),
+    ...base,
     entities: {
-      ...opened().entities,
-      ranger: { ...opened().entities.ranger, position: { x: 0, y: 0 } },
-      "monster-1": { ...opened().entities["monster-1"], position: { x: 1, y: 0 } },
+      ...base.entities,
+      "monster-1": { ...base.entities["monster-1"], position: { x: 1, y: 0 } },
     },
   };
   const result = resolve(
@@ -1129,22 +1225,20 @@ it("Fireball hits every entity inside the blast, saves halve, and it costs a 3rd
     intent("p1", "ranger", "srd:spell:fireball", "cast", {
       answers: {
         origin: { x: 1, y: 0 },
-        "save:monster-1": 15, // 15 + WIS -1 = 14 ≥ DC 13 → half
-        damage: 20,
+        "save:monster-1": 13, // 13 + DEX save 0 = 13 ≥ DC 13 → half
+        damage: 8,
       },
-      payment: [],
     }),
     catalogue
   );
   expect(result.kind).toBe("applied");
   if (result.kind !== "applied") return;
-  expect(mustEntity(result.state, "monster-1").vitals.hp).toBe(0); // 7 - 10 (half of 20), clamped
+  expect(mustEntity(result.state, "monster-1").vitals.hp).toBe(3); // 7 − floor(8 / 2)
+  expect(mustEntity(result.state, "ranger").vitals.hp).toBe(20); // outside: no save asked, no damage
+  expect(mustEntity(result.state, "ranger").resources["slot-3"]?.current).toBe(0);
   expect(result.receipt.paid).toEqual(["turn:action", "slot:3"]);
 });
 ```
-
-(Read the existing file first — `opened()` and `intent()` already exist per the file excerpt
-above; this `it` slots into the same `describe` block, after the existing longbow test.)
 
 - [ ] **Step 2: Run the test to verify it fails**
 
@@ -1221,7 +1315,7 @@ Fireball's rows (`burn` → `physical-input`, `scorch` → `automated`, program 
 
 ```bash
 git add src/data/combat/prototype-catalogue.ts tests/unit/combat/resolve.intent.test.ts \
-  docs/automation-coverage.prototype.json
+  docs/automation-coverage.prototype.json .changeset/v2-stage-3-fireball.md
 git commit -m "feat(combat): author Fireball as a levelled area save spell"
 ```
 
@@ -1447,9 +1541,11 @@ import type {
   MonsterSaveEntry,
   MonsterStatBlock,
 } from "@/data/types";
-import type { MechanicId } from "./ids";
 import type { DamagePart, Input, Mechanic, Program, Step } from "./mechanic";
-import type { DamageType } from "./types";
+
+// `MonsterDamage.damageType` and `MonsterSaveEntry.save` are the same string-literal unions as this
+// engine's `DamageType`/`Ability` (`src/types/damage.ts`, `src/types/combat-outcome.ts`), so they
+// assign without casts.
 
 function labelFor(block: MonsterStatBlock, entry: MonsterEntry): string {
   return `${block.id}.actions.${entry.id}`;
@@ -1466,7 +1562,7 @@ function damageParts(
     if (!clause.damageType) return null;
     const id = `damage-${index}`;
     inputs.push({ id, kind: "dice", formula: clause.dice });
-    parts.push({ dice: id, type: clause.damageType as DamageType });
+    parts.push({ dice: id, type: clause.damageType });
   }
   return { inputs, parts };
 }
@@ -1550,12 +1646,7 @@ export function monsterMechanics(block: MonsterStatBlock): Mechanic {
           : null;
     return structured ?? manualProgram(entry, block);
   });
-  return {
-    schema: 1,
-    id: `monster:${block.id}` as MechanicId,
-    source: "monster",
-    active,
-  };
+  return { schema: 1, id: `monster:${block.id}`, source: "monster", active };
 }
 ```
 
@@ -1576,7 +1667,8 @@ literal string, which also isn't in the forbidden list).
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/lib/combat/monster-adapter.ts tests/unit/combat/monster-adapter.test.ts
+git add src/lib/combat/monster-adapter.ts tests/unit/combat/monster-adapter.test.ts \
+  .changeset/v2-stage-3-monster-adapter.md
 git commit -m "feat(combat): monster stat-block adapter (attack, save, manual-table fallback)"
 ```
 
@@ -1769,12 +1861,17 @@ Create `tests/unit/combat/replays/marco-first-turn.json`:
 }
 ```
 
-(Distances, 5 ft/cell, Chebyshev: origin (7,1) to goblin-1 (6,0) = 1 cell = 5 ft; to goblin-2
-(7,1) = 0 ft; to goblin-3 (6,2) = 1 cell = 5 ft — all ≤ 20 ft, all inside. Origin to marco's post-
-move position (2,0) = 5 cells = 25 ft — outside the 20 ft blast, marco isn't caught by his own
-spell. Goblin-1/3 fail their DEX save (5+2=7 and 8+2=10, both < DC 13) and take the full 8 fire
-damage — 7 HP, hp clamps to 0, non-PC life resolves to `"dead"`. Goblin-2 succeeds (15+2=17 ≥ 13)
-and takes half — `Math.floor(8/2)=4` — 7-4=3 HP, stays `"alive"`.)
+(Sphere membership is Euclidean in feet (`position.ts` `inShape`: `Math.hypot`), 5 ft/cell:
+origin (7,1) to goblin-1 (6,0) = √(5²+5²) ≈ 7.1 ft; to goblin-2 (7,1) = 0 ft; to goblin-3 (6,2)
+≈ 7.1 ft — all ≤ 20 ft, all inside. Origin to marco's post-move position (2,0) = √(25²+5²) ≈
+25.5 ft — outside the 20 ft blast, marco isn't caught by his own spell (the `move` uses Chebyshev
+for the movement budget: (0,0)→(2,0) is 10 ft of 30). Goblin-1/3 fail their DEX save (5+2=7 and
+8+2=10, both < DC 13) and take the full 8 fire damage — 7 HP, hp clamps to 0, non-PC life resolves
+to `"dead"`. Goblin-2 succeeds (15+2=17 ≥ 13) and takes half — `Math.floor(8/2)=4` — 7−4=3 HP,
+stays `"alive"`. The save rolls carry `roller: null`: `rollsUsable` (resolve.ts) binds a roll to
+the intent's entity, and a per-target save is rolled for the target inside the caster's intent —
+attributing those rolls to each goblin is a known seam for the shared-document stage, recorded in
+Task 8's "Out of stage 3".)
 
 - [ ] **Step 2: Run the replay to verify it passes**
 
@@ -1785,7 +1882,7 @@ needed.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add tests/unit/combat/replays/marco-first-turn.json
+git add tests/unit/combat/replays/marco-first-turn.json .changeset/v2-stage-3-marco-replay.md
 git commit -m "test(combat): golden replay — Marco's first turn (move, Fireball, three goblins)"
 ```
 
@@ -2035,6 +2132,7 @@ Create `tests/unit/combat/replays/sara-ogre-ambush.json`:
       "kind": "table",
       "table": { "op": "settings", "revealMonsterHp": false, "automation": "full-auto" }
     },
+    { "id": "end-ogre-turn", "by": "dm", "kind": "table", "table": { "op": "end-turn" } },
     {
       "id": "r-hero-atk",
       "by": "p-hero",
@@ -2082,21 +2180,26 @@ Create `tests/unit/combat/replays/sara-ogre-ambush.json`:
     }
   ],
   "expect": {
-    "applied": 12,
+    "applied": 13,
     "rejections": [],
     "state": {
       "settings.automation": "full-auto",
+      "clock.current": "hero",
       "entities.hero.vitals.hp": 18,
-      "entities.ogre.vitals.hp": 64
+      "entities.ogre.vitals.hp": 64,
+      "entities.ogre.turn.attacksUsed": 0
     }
   }
 }
 ```
 
 (Ogre's greatclub: 14 + 6 = 20 ≥ AC 16, hits — but automation is `log-only` at that point, so the
-reducer computes the full 12-damage verdict yet applies nothing; `hero.vitals.hp` only changes
-once the DM's `override` directly patches it to 18, per Task 2. Hero's blade: DEX 2 + PB 2 = 4;
-16 + 4 = 20 ≥ AC 11, hits for 4 slashing — full-auto by then, applies immediately: 68 − 4 = 64.
+reducer computes the full 12-damage verdict yet applies nothing, not even the attack claim
+(`ogre.turn.attacksUsed` stays 0 — the DM keeps the economy by hand at a log-only table);
+`hero.vitals.hp` only changes once the DM's `override` directly patches it to 18, per Task 2. The
+`end-turn` is required: `applyIntent` rejects an invocation off the actor's turn (`not-your-turn`),
+and the order is `[ogre, hero]`. Hero's blade: DEX 2 + PB 2 = 4; 16 + 4 = 20 ≥ AC 11, hits for 4
+slashing — full-auto by then, applies immediately: 68 − 4 = 64.
 Literal fog/tokens-on-a-map aren't reducer concepts yet — stage 5's minimum map — so this replay
 demonstrates every _reducer_-level element of the story: hidden rolls, the monsters' own action
 via the adapter, an overridden result, a homebrew weapon, and the automation level changing
@@ -2116,7 +2219,7 @@ Expected: PASS, every file.
 
 ```bash
 git add src/data/combat/prototype-catalogue.ts docs/automation-coverage.prototype.json \
-  tests/unit/combat/replays/sara-ogre-ambush.json
+  tests/unit/combat/replays/sara-ogre-ambush.json .changeset/v2-stage-3-sara-replay.md
 git commit -m "test(combat): golden replay — Sara's ogre ambush (log-only, override, homebrew sword)"
 ```
 
@@ -2140,7 +2243,7 @@ proving automation levels, the adapter, and the override fix end to end.
 
 - Modify: `docs/superpowers/specs/2026-09-02-mechanics-authoring-spec.md` (§6 table)
 - Modify: `docs/PROGRAM_STATUS.md` (close stage 3)
-- Create: `docs/superpowers/plans/2026-09-0X-v2-next-session-handoff.md` (stage 4 handoff — use the
+- Create: `docs/superpowers/plans/2026-09-04-v2-next-session-handoff.md` (stage 4 handoff — use the
   actual date this task runs)
 
 **Interfaces:** none (documentation only).
@@ -2200,12 +2303,14 @@ stage 1/2 sections (Design/Plan pointers, **Done**, **Gates on \`v2\` at the clo
 stage 3**, **Next\*\*). "Out of stage 3" should name explicitly: `propose-and-confirm` (stage 6),
 upcast Fireball (needs `Input.dice.formula` to grow a `byLevel` variant), monster `traits`/
 `reactions`/`legendaryActions`/`recharge`/`legendary` costs, death saves at turn start, fog/tokens-
-on-a-map (stage 5). Move the "Next: stage 3..." line at the end of the stage 2 section to instead
-point at stage 4.
+on-a-map (stage 5), and the per-target save-roll attribution seam (`rollsUsable` binds a roll to
+the intent's entity, so a target's save inside a caster's intent is logged with `roller: null` —
+stage 4 decides whether the shared document attributes it to the target). Move the "Next: stage
+3..." line at the end of the stage 2 section to instead point at stage 4.
 
 - [ ] **Step 4: Write the stage 4 handoff**
 
-Create `docs/superpowers/plans/2026-09-0X-v2-next-session-handoff.md` (use the actual date),
+Create `docs/superpowers/plans/2026-09-04-v2-next-session-handoff.md` (use the actual date),
 following the exact structure of the existing
 `docs/superpowers/plans/2026-09-03-v2-next-session-handoff.md` (this file becomes historical —
 leave it in place, git history is the record; do not delete it). The new handoff's "Read first"
@@ -2222,7 +2327,7 @@ this stage builds), so the handoff must not let it be missed.
 
 ```bash
 git add docs/superpowers/specs/2026-09-02-mechanics-authoring-spec.md docs/PROGRAM_STATUS.md \
-  docs/superpowers/plans/2026-09-0X-v2-next-session-handoff.md
+  docs/superpowers/plans/2026-09-04-v2-next-session-handoff.md .changeset/v2-stage-3-close.md
 git commit -m "docs(combat): close stage 3 on v2 and hand off to stage 4"
 ```
 
