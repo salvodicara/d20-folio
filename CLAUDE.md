@@ -34,7 +34,7 @@ code, configuration, tests, git, and deployed behavior provide evidence about re
 | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
 | Constitution | [Product Constitution](docs/PRODUCT_CONSTITUTION.md), [Golden Rules](docs/GOLDEN_RULES.md)                                                                                       | Durable product, safety, and repository invariants       |
 | Map          | [Architecture](docs/ARCHITECTURE.md), [Mechanics](docs/MECHANICS.md), [Character schema](docs/CHARACTER_SCHEMA.md), [Design](DESIGN.md), [IT registry](docs/IT_NAME_REGISTRY.md) | How the current system is intended to work               |
-| Status       | [Program status](docs/PROGRAM_STATUS.md)                                                                                                                                         | active agent-program execution control                   |
+| Status       | [Program status](docs/PROGRAM_STATUS.md), [Stage plan](docs/superpowers/plans/2026-09-03-new-app-stage-1.md)                                                                     | the `v2` program ledger and its stages                   |
 | Status       | [Progress](PROGRESS.md), [Test portfolio](docs/TEST_PORTFOLIO.md), [Automation coverage](docs/AUTOMATION_COVERAGE.md), [Automation audit record](docs/AUTOMATION_BACKLOG.md)     | Current and remaining work; verify claims before acting  |
 | History      | [Changelog](CHANGELOG.md), changesets, git history                                                                                                                               | What changed and why; not current operating instructions |
 | Operations   | [Contributing](docs/CONTRIBUTING.md), [Worktrees](docs/WORKTREES.md), [Release](docs/RELEASE.md), [Bug reporting](docs/BUG_REPORTING.md)                                         | Task runbooks                                            |
@@ -51,8 +51,8 @@ proposal until integrated.
 
 - **Every roll is logged:** dice roll in-app by default or are entered from physical dice; every
   roll records formula, result, roller and source in the encounter log, and every consequence
-  applies automatically with undo. Shipped code still enforces the older "no dice" rule until the
-  play screen lands; do not add RNG outside the dice seam.
+  applies automatically with undo. `main` still ships the no-dice surfaces; on `v2` the only
+  roller is the dice seam `src/lib/dice.ts` (ADR-0010), pinned by a guard.
 - **Bilingual by construction:** every user-visible string ships in EN and IT through i18n; never
   branch on display text or persist translated labels.
 - **Licensing partition:** public `src/data` and `src/i18n/*/srd` contain only SRD 5.2.1 content.
@@ -69,12 +69,16 @@ proposal until integrated.
 
 ## Architecture in one breath
 
-> **Direction (2026-09-02):** the combat runtime is being re-architected. The target — one
-> entity-generic reducer over an append-only Encounter log, one mechanics authoring format, rules as
-> access policy — is owned by
+> **Direction (2026-09-03):** the new app grows on the long-lived branch `v2` under
+> [`PRODUCT.md`](PRODUCT.md) §Steering. The engine target — one entity-generic reducer over an
+> append-only Encounter log, rolls as log actions with provenance, three campaign automation
+> levels, the DM's last word, rules as access policy — is owned by the reconciled
 > [`docs/superpowers/specs/2026-09-02-total-combat-automation-design.md`](docs/superpowers/specs/2026-09-02-total-combat-automation-design.md)
-> and its [migration program](docs/superpowers/plans/2026-09-02-total-combat-automation-migration.md).
-> The paragraph below describes the code as it is today; `src/lib/combat` is the P2 prototype.
+> and executed by the [stage-1 program plan](docs/superpowers/plans/2026-09-03-new-app-stage-1.md)
+> ("Module fates" names what is kept, rebuilt or already deleted). `src/lib/combat` is the engine
+> base; the mechanics kernel and the old play surfaces are legacy that dies at stage 6 (frozen by
+> a guard); randomness for dice exists only in `src/lib/dice.ts`. The paragraph below describes
+> the code that still runs on `main`.
 
 Mechanics are typed data, never prose parsing: a mechanic-bearing source declares a `Grant`;
 `evaluateGrants` aggregates it; pure engine/presenter seams expose it; UI consumes the result.

@@ -22,9 +22,12 @@ the order, the gates and what is out.
   suites cost almost an hour per run and that is not acceptable. `v2` keeps the unit and rules
   tests that guard live data, the golden replays of the four acceptance stories, one
   accessibility sweep, and the screenshot suite that serves the visual gate — nothing else in
-  the gate. Target for the `v2` gate: under 15 minutes end to end; end-to-end journeys run on
-  one browser and one viewport per story. The old e2e directory is deleted in the cuts of stage 7
-  once the new surfaces replace the old ones; until then the old suites run only on `main`.
+  the gate. Target for the `v2` gate: under 15 minutes end to end. The old end-to-end suites
+  were deleted on `v2` on 2026-09-03 (architecture reset); the accessibility sweep and the
+  screenshot lane are the only browser suites, rebuilt screen by screen from stage 6.
+- **No dead weight (owner, 2026-09-03).** Everything on `v2` has a reason and a named fate
+  (see "Module fates" below): keep, rebuild in stage N, or delete now when nothing reads it.
+  Dead code dies when it is dead, never "at stage 7".
 
 ## Staging setup (once, before stage 0 is played)
 
@@ -80,14 +83,19 @@ carrying pre-migration shapes or obsolete residue. Plan and receipt:
 
 1. **Dice seam.** `roll(formula, {by, reason, hidden, mode})` persisted as a log action with
    faces, total, seed, roller, source (`app | manual`); three inputs (in-app, manual entry, hidden
-   DM). Numbers and a log line first; the shared 3D animation is a later stage.
+   DM). Numbers and a log line first; the shared 3D animation is a later stage. Opened on
+   2026-09-03 with the architecture reset
+   (`2026-09-03-v2-architecture-reset.md`, done) and the seam plan
+   (`2026-09-03-v2-stage-1-dice-seam.md`; ADR-0010).
 2. **Positions and areas in the aggregate.** `position` on entities, `area` in the mechanic
    vocabulary (sphere, cone, line, cube, cylinder); reach, range band, area membership and
    "who left reach" derived with provenance `derived`, declared facts as the fallback.
 3. **Reducer for the two story encounters.** From `src/lib/combat`: move, weapon attack,
    cantrip and levelled area save spell, monster multiattack via an adapter over the typed stat
    blocks, conditions, concentration, damage and 0 HP, opportunity-attack window, `override`,
-   `undo`, the three campaign automation levels. Golden replays for Marco's turn and Sara's ambush.
+   `undo`, the three campaign automation levels (ADR-0011). Vocabulary and hard cases: exactly
+   the stage-3 tier of the target spec (§4, §7) and of the authoring spec (§6); a `later` kind
+   conforms as `unsupported`, never half-built. Golden replays for Marco's turn and Sara's ambush.
 4. **Shared encounter document.** `campaigns/{id}/encounters/{eid}` append-only log, one
    listener per client, rules reduced to identity, membership, ownership and shape for that
    collection.
@@ -97,14 +105,39 @@ carrying pre-migration shapes or obsolete residue. Plan and receipt:
 6. **One play surface.** Dossier 14 as approved in direction: initiative strip, map, hotbar of
    the selected entity, log with undo, DM drawer with hidden/fog/HP editor. Old `PlayTab`,
    `CombatResolver`, `TurnEconomyProvider` stay unreferenced until the surface works, then die.
-7. **Cuts.** Delete the mechanics kernel and its tests, the old end-to-end suites and their
-   fixtures (the test portfolio is rebuilt per the ground rules), the command kernel, the program
-   supervisor, the dev scaffolding routes, POSITIONING.md and the superseded plans, the atlas
-   authority — once nothing reads them (rule 10). Salvage typed data and coverage knowledge.
+7. **Cuts.** What still reads something at stage 6 dies here: the mechanics kernel and its 47
+   test files, the old play surfaces and their render tests, `cost-engine`, `dice-formula` /
+   `integer-expression` / `d20-test`, the dev scaffolding routes, `POSITIONING.md`, the atlas
+   authority — once nothing reads them (rule 10). Done on 2026-09-03 already: K1, the program
+   supervisor, the old end-to-end suites, the P1/P3 migration scripts, the superseded plans.
+   Salvage typed data and coverage knowledge.
 8. **The rest of the session.** Character screen in the BG3 grammar (dossier 15), campaign home
    with session card and calendar, notes and recap, chronicle from the log, loot and gold,
    handouts, typed homebrew forms, 3D dice, compendium explain-on-demand, phone second screen.
    Ordered by the jobs table in `PRODUCT.md` once the community research lands.
+
+## Module fates (architecture reset, 2026-09-03)
+
+Evidence: the reverse import graph and document inventory recorded in
+`2026-09-03-v2-architecture-reset.md`. A fate is named for every module the merge carried onto
+`v2`; "delete now" means nothing read it.
+
+| Module                                                                                                  | Fate                                                                                                                                                           |
+| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/combat/**`, `src/data/combat/prototype-catalogue.ts`                                           | **keep** — base of the dice seam (stage 1) and of the story reducer (stage 3); the prototype catalogue is the test catalogue until stage 3                     |
+| `src/lib/combat-io.ts`                                                                                  | deleted 2026-09-03 (no reader); stage 4 writes the append/subscribe/checkpoint adapter                                                                         |
+| mechanics kernel (`mechanics-*`, `mechanic-occurrence*`, 31 files)                                      | **dies at stage 6** with the old play surfaces that read it; frozen by `mechanics-kernel-freeze.guard` (37 readers); `mechanics-trigger.ts` deleted 2026-09-03 |
+| K1 `src/lib/command/**`, Functions bundle, orphan types                                                 | deleted 2026-09-03                                                                                                                                             |
+| program supervisor (`state`/`runtime`/`cli`), operating model, its plans                                | deleted 2026-09-03; the worktree helpers live in `scripts/worktree/`                                                                                           |
+| P1/P3 migration scripts, `parseLegacyCombatChild`, `applyLegacyCombatToSession`                         | deleted 2026-09-03 on `v2` (they run from `main`); `mergeCombatTrio` stays as the live trio merge                                                              |
+| older one-off scripts (`migrate-shared-notes`, `backfill-*`, `drop-playerhandle`)                       | keep until `main` proves them spent, then deleted on `main` and cherry-picked                                                                                  |
+| `scripts/lib/migration-kit.ts`                                                                          | keep — read by `audit-codec-loss`; the apply path is re-proven by the emulator test of `v2`'s first release migration                                          |
+| `dice-formula`, `integer-expression`, `d20-test`                                                        | replaced by the dice seam (stage 1); die at stage 6 with their readers                                                                                         |
+| `automation-corpus`, `automation-compiler`, `docs/AUTOMATION_COVERAGE.md`                               | replaced at stage 3 by the derived coverage (spec §10); the knowledge they guard is salvaged as typed data                                                     |
+| `cost-engine.ts`                                                                                        | dies at stage 6 with the kernel; `CostSpec` stays as data                                                                                                      |
+| old end-to-end specs                                                                                    | deleted 2026-09-03; the a11y sweep and `tests/visual` stay and are rebuilt from stage 6                                                                        |
+| Wayfinder/K1/supervisor/P2-prototype plans and status records, Phase-2 handoff, `AUTOMATION_HANDOFF.md` | deleted 2026-09-03 (git history is the history role)                                                                                                           |
+| migration program (`2026-09-02-total-combat-automation-migration.md`)                                   | kept as history; P2–P5 marked superseded                                                                                                                       |
 
 ## Gates
 

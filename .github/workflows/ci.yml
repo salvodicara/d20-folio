@@ -1,6 +1,6 @@
 name: CI
 
-# The SRD-only ambient gate: every push to main and every pull request runs
+# The SRD-only ambient gate: every push to main or v2 and every pull request runs
 # typecheck + lint, the unit suite, the production build, and independent Functions lint/test/build
 # jobs — as PARALLEL jobs so the wall clock is the slowest lane (the unit suite), not the sum.
 #
@@ -15,7 +15,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, v2]
   pull_request:
 
 permissions:
