@@ -26,6 +26,8 @@ const FORBIDDEN = [
   /\bDate\.now\b/,
   /\bnew Date\b/,
   /\bMath\.random\b/,
+  /\bcrypto\.getRandomValues\b/,
+  /\bcrypto\.randomUUID\b/,
 ];
 
 describe("boundary — src/lib/combat is pure", () => {

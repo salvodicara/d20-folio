@@ -38,6 +38,7 @@ export function initialState(): FoldedState {
     windows: [],
     checks: [],
     declared: {},
+    rolls: {},
     nextOrdinal: 1,
     revision: 0,
     settings: { revealMonsterHp: false },
@@ -55,9 +56,15 @@ function undoneIds(log: readonly Action[]): Set<ActionId> {
   return new Set(undos.filter((u) => !undoneUndos.has(u.id)).map((u) => u.of));
 }
 
-export function fold(encounter: Encounter, catalogue: Catalogue): FoldResult {
+/** `start` is the state before the log when there is no checkpoint (tests and replays seed
+ *  declared relations there until stage 2 makes them log actions). */
+export function fold(
+  encounter: Encounter,
+  catalogue: Catalogue,
+  start: FoldedState = initialState()
+): FoldResult {
   const from = encounter.checkpoint;
-  let state = from ? from.state : initialState();
+  let state = from ? from.state : start;
   const skip = undoneIds(encounter.log);
   const rejections: { action: ActionId; rejection: Rejection }[] = [];
   let applied = 0;

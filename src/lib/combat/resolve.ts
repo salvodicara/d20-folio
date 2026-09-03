@@ -5,6 +5,7 @@
  * Design: docs/superpowers/specs/2026-09-02-total-combat-automation-design.md §3.
  */
 import type { Catalogue } from "./catalogue";
+import { verifyRoll } from "./dice";
 import { assertNever } from "./ids";
 import {
   applyCheck,
@@ -61,6 +62,32 @@ export function resolve(
       const result = applyResolve(state, action, catalogue);
       if (result.kind === "rejected") return result;
       return applied(result.state, result.receipt);
+    }
+    case "roll": {
+      const error = verifyRoll(action.roll);
+      if (error) {
+        return {
+          kind: "rejected",
+          rejection: { reason: "invalid-roll", code: error.code },
+        };
+      }
+      const roller = action.roll.roller;
+      if (roller !== null && !state.entities[roller]) {
+        return {
+          kind: "rejected",
+          rejection: { reason: "unknown-entity", entity: roller },
+        };
+      }
+      return applied(
+        { ...state, rolls: { ...state.rolls, [action.id]: action.roll } },
+        {
+          action: action.id,
+          outcome: "applied",
+          paid: [],
+          events: [],
+          summary: ["roll", `roll:${action.roll.purpose}`],
+        }
+      );
     }
     case "undo":
       // Undo is a fold-level operation: the fold skips the undone action and its dependents.

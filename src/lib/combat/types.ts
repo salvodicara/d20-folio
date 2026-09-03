@@ -4,6 +4,7 @@
  * Design: docs/superpowers/specs/2026-09-02-total-combat-automation-design.md §2–3.
  * Every union here is closed; the reducer handles each member and ends in `assertNever`.
  */
+import type { RollErrorCode, RollRecord } from "./dice";
 import type {
   ActionId,
   EffectId,
@@ -293,9 +294,14 @@ export interface PendingCheck {
 
 // ── Actions (the only persisted mutation) ───────────────────────────────────
 
-export type Answers = Readonly<
-  Record<string, number | string | boolean | readonly number[]>
->;
+/** A `d20`/`dice` input is answered by the id of a `roll` action already in the log. */
+export type Answer =
+  | number
+  | string
+  | boolean
+  | readonly number[]
+  | { readonly roll: ActionId };
+export type Answers = Readonly<Record<string, Answer>>;
 
 export type PaymentChoice =
   | { readonly kind: "slot"; readonly level: number; readonly pool: "standard" | "pact" }
@@ -354,7 +360,8 @@ export type Action =
       readonly of: ActionId;
       readonly reason: string | null;
     })
-  | (ActionBase & { readonly kind: "table"; readonly table: TableOp });
+  | (ActionBase & { readonly kind: "table"; readonly table: TableOp })
+  | (ActionBase & { readonly kind: "roll"; readonly roll: RollRecord });
 
 // ── Folded state, receipts, rejections ──────────────────────────────────────
 
@@ -367,6 +374,7 @@ export interface FoldedState {
   readonly windows: readonly ReactionWindow[];
   readonly checks: readonly PendingCheck[];
   readonly declared: Readonly<Record<ActionId, Action>>; // intents held open by a window
+  readonly rolls: Readonly<Record<ActionId, RollRecord>>; // accepted rolls, by action id
   readonly nextOrdinal: number; // monotonic allocator for entity/effect ids
   readonly revision: number; // applied actions
   readonly settings: { readonly revealMonsterHp: boolean };
@@ -399,7 +407,8 @@ export type Rejection =
   | { readonly reason: "invalid-table-op"; readonly detail: string }
   | { readonly reason: "already-undone"; readonly action: ActionId }
   | { readonly reason: "unknown-action"; readonly action: ActionId }
-  | { readonly reason: "invalid-target"; readonly entity: EntityId };
+  | { readonly reason: "invalid-target"; readonly entity: EntityId }
+  | { readonly reason: "invalid-roll"; readonly code: RollErrorCode };
 
 export interface Receipt {
   readonly action: ActionId;

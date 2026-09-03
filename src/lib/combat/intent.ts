@@ -276,9 +276,18 @@ function deliverDamage(
   return next;
 }
 
-function answerNumber(answers: IntentAction["answers"], key: string): number | null {
+/** A numeric answer, given directly or as the total of an accepted `roll` action. */
+function answerNumber(
+  state: FoldedState,
+  answers: IntentAction["answers"],
+  key: string
+): number | null {
   const value = answers[key];
-  return typeof value === "number" ? value : null;
+  if (typeof value === "number") return value;
+  if (typeof value === "object" && "roll" in value) {
+    return state.rolls[value.roll]?.total ?? null;
+  }
+  return null;
 }
 
 // ── The program runner ──────────────────────────────────────────────────────
@@ -339,7 +348,7 @@ function runSteps(
     switch (step.kind) {
       case "attack": {
         if (target === null) return { reason: "invalid-target", entity: "" };
-        const face = answerNumber(action.answers, step.roll);
+        const face = answerNumber(state, action.answers, step.roll);
         if (face === null) return { reason: "missing-answer", input: step.roll };
         const declared: CombatEvent = {
           kind: "attack-declared",
@@ -375,7 +384,7 @@ function runSteps(
         if (outcome === "miss") return { stop: true };
         const packets: DamagePacket[] = [];
         for (const part of step.damage) {
-          const amount = answerNumber(action.answers, part.dice);
+          const amount = answerNumber(state, action.answers, part.dice);
           if (amount === null) return { reason: "missing-answer", input: part.dice };
           packets.push({ amount, type: part.type });
         }
@@ -392,7 +401,7 @@ function runSteps(
           for (const rider of mark.payload.riders) {
             if (rider.on !== "weapon-hit" && rider.on !== "any-hit") continue;
             const key = `rider:${mark.id}`;
-            const amount = answerNumber(action.answers, key);
+            const amount = answerNumber(state, action.answers, key);
             if (amount === null) return { reason: "missing-answer", input: key };
             packets.push({ amount, type: rider.type });
           }
@@ -408,7 +417,7 @@ function runSteps(
           (i) => i.id === step.roll && i.kind === "d20" && i.perTarget === true
         );
         const key = perTarget ? `${step.roll}:${target}` : step.roll;
-        const face = answerNumber(action.answers, key);
+        const face = answerNumber(state, action.answers, key);
         if (face === null) return { reason: "missing-answer", input: key };
         const dc =
           step.dc === "spell"
@@ -428,7 +437,7 @@ function runSteps(
         if (to === null) return { reason: "invalid-target", entity: "" };
         const packets: DamagePacket[] = [];
         for (const part of step.parts) {
-          const amount = answerNumber(action.answers, part.dice);
+          const amount = answerNumber(state, action.answers, part.dice);
           if (amount === null) return { reason: "missing-answer", input: part.dice };
           packets.push({
             amount: halve ? Math.floor(amount / 2) : amount,
@@ -904,7 +913,7 @@ export function applyOverride(state: FoldedState, action: OverrideAction): StepR
 export function applyCheck(state: FoldedState, action: CheckAction): StepResult {
   const check = state.checks.find((c) => c.id === action.check);
   if (!check) return rejected({ reason: "no-such-check", check: action.check });
-  const face = answerNumber(action.answers, "d20");
+  const face = answerNumber(state, action.answers, "d20");
   if (face === null) return rejected({ reason: "missing-answer", input: "d20" });
   const entity = mustEntity(state, check.entity);
   const events: CombatEvent[] = [];
