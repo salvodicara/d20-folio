@@ -39,7 +39,7 @@ export function emptyState(): FoldedState {
     spent: {},
     nextOrdinal: 1,
     revision: 0,
-    settings: { revealMonsterHp: false },
+    settings: { revealMonsterHp: false, automation: "full-auto" },
   };
 }
 

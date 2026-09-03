@@ -248,11 +248,16 @@ export function applyTable(state: FoldedState, op: TableOp): TableResult {
       return { kind: "applied", state: ended.state, events };
     }
     case "settings": {
+      if (op.automation === "propose-and-confirm") {
+        return reject(
+          "settings: propose-and-confirm is not built until stage 6 (ADR-0011)"
+        );
+      }
       return {
         kind: "applied",
         state: {
           ...state,
-          settings: { ...state.settings, revealMonsterHp: op.revealMonsterHp },
+          settings: { revealMonsterHp: op.revealMonsterHp, automation: op.automation },
         },
         events,
       };

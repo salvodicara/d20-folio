@@ -124,4 +124,48 @@ describe("resolve — table operations and the clock", () => {
     expect(state.effects["effect-3"]).toBeUndefined();
     expect(state.effects["effect-2"]).toBeDefined();
   });
+
+  describe("table — settings", () => {
+    const seq5 = seqFactory("dm");
+
+    function opened(): FoldedState {
+      return applyAll(emptyState(), [
+        tableAction("dm", seq5(), { op: "start", epoch: 1 }),
+      ]);
+    }
+
+    it("rejects automation: propose-and-confirm (stage 6, not built yet)", () => {
+      const state = opened();
+      const result = resolve(
+        state,
+        tableAction("dm", seq5(), {
+          op: "settings",
+          revealMonsterHp: false,
+          automation: "propose-and-confirm",
+        }),
+        catalogue
+      );
+      expect(result.kind).toBe("rejected");
+      if (result.kind !== "rejected") return;
+      expect(result.rejection.reason).toBe("invalid-table-op");
+    });
+
+    it("accepts log-only and full-auto, and can switch back mid-session", () => {
+      let state = opened();
+      for (const automation of ["log-only", "full-auto"] as const) {
+        const result = resolve(
+          state,
+          tableAction("dm", seq5(), {
+            op: "settings",
+            revealMonsterHp: false,
+            automation,
+          }),
+          catalogue
+        );
+        if (result.kind === "rejected") throw new Error(JSON.stringify(result.rejection));
+        state = result.state;
+        expect(state.settings.automation).toBe(automation);
+      }
+    });
+  });
 });

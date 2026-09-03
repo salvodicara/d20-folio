@@ -316,6 +316,8 @@ export type PaymentChoice =
   | { readonly kind: "slot"; readonly level: number; readonly pool: "standard" | "pact" }
   | { readonly kind: "resource"; readonly id: string };
 
+export type Automation = "full-auto" | "propose-and-confirm" | "log-only";
+
 export type TableOp =
   | { readonly op: "start"; readonly epoch: number }
   | { readonly op: "add-entity"; readonly entity: Entity }
@@ -325,7 +327,11 @@ export type TableOp =
   | { readonly op: "end-turn" }
   | { readonly op: "end" }
   | { readonly op: "rest"; readonly rest: "short" | "long" }
-  | { readonly op: "settings"; readonly revealMonsterHp: boolean };
+  | {
+      readonly op: "settings";
+      readonly revealMonsterHp: boolean;
+      readonly automation: Automation;
+    };
 
 interface ActionBase {
   readonly id: ActionId;
@@ -387,7 +393,10 @@ export interface FoldedState {
   readonly spent: Readonly<Record<ActionId, ActionId>>; // roll id → the action that consumed it
   readonly nextOrdinal: number; // monotonic allocator for entity/effect ids
   readonly revision: number; // applied actions
-  readonly settings: { readonly revealMonsterHp: boolean };
+  readonly settings: {
+    readonly revealMonsterHp: boolean;
+    readonly automation: Automation;
+  };
 }
 
 export interface Encounter {

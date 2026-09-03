@@ -310,4 +310,49 @@ describe("resolve — intents", () => {
     expect(failed.relations.some((r) => r.kind === "mark")).toBe(false);
     expect(failed.checks).toEqual([]);
   });
+
+  it("at log-only, a failed concentration check is cleared but the break is withheld (ADR-0011)", () => {
+    let state = run(opened(), [
+      intent("p1", "ranger", "srd:spell:hunters-mark", "cast", {
+        targets: ["monster-1"],
+        payment: [{ kind: "slot", level: 1, pool: "standard" }],
+      }),
+      tableAction("dm", seq(), { op: "end-turn" }),
+      intent("dm", "monster-1", "monster:goblin:scimitar", "attack", {
+        targets: ["ranger"],
+        answers: { roll: 12, damage: 6 },
+      }),
+    ]);
+    state = run(state, [
+      {
+        kind: "resolve",
+        id: nextActionId("r"),
+        seq: seq(),
+        by: "p1",
+        window: firstOf(state.windows).id,
+      },
+    ]);
+    const markId = mustEntity(state, "ranger").concentration as string;
+    expect(state.checks).toHaveLength(1);
+    state = run(state, [
+      tableAction("dm", seq(), {
+        op: "settings",
+        revealMonsterHp: false,
+        automation: "log-only",
+      }),
+    ]);
+    const after = run(state, [
+      {
+        kind: "check",
+        id: nextActionId("c"),
+        seq: seq(),
+        by: "p1",
+        check: firstOf(state.checks).id,
+        answers: { d20: 3 }, // 3 + CON 2 < DC 10 → would break at full-auto
+      },
+    ]);
+    expect(after.checks).toEqual([]); // the pending check is bookkeeping: always cleared
+    expect(mustEntity(after, "ranger").concentration).toBe(markId); // the break is the verdict: withheld
+    expect(after.effects[markId]).toBeDefined();
+  });
 });

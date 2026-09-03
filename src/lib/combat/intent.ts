@@ -814,17 +814,17 @@ export function applyIntent(
     payment.concentration,
     events
   );
-  return {
-    kind: "applied",
-    state: next,
-    receipt: {
-      action: action.id,
-      outcome: receiptOutcome(run.created.length, run.dealt, run.tried),
-      paid: payment.paid,
-      events,
-      summary: [action.mechanic],
-    },
+  const receipt: Receipt = {
+    action: action.id,
+    outcome: receiptOutcome(run.created.length, run.dealt, run.tried),
+    paid: payment.paid,
+    events,
+    summary: [action.mechanic],
   };
+  if (state.settings.automation === "log-only") {
+    return { kind: "applied", state, receipt };
+  }
+  return { kind: "applied", state: next, receipt };
 }
 
 /** Closes a window: a held attack is resolved against the state the reactions produced. */
@@ -874,17 +874,18 @@ export function applyResolve(
   );
   if ("reason" in run) return rejected(run);
   if (run.kind === "held") return rejected({ reason: "no-window", window: window.id });
-  return {
-    kind: "applied",
-    state: run.state,
-    receipt: {
-      action: action.id,
-      outcome: receiptOutcome(run.created.length, run.dealt, run.tried),
-      paid: [],
-      events,
-      summary: [declared.mechanic, "window:resolved"],
-    },
+  const base: FoldedState = { ...closed, declared: remaining };
+  const receipt: Receipt = {
+    action: action.id,
+    outcome: receiptOutcome(run.created.length, run.dealt, run.tried),
+    paid: [],
+    events,
+    summary: [declared.mechanic, "window:resolved"],
   };
+  if (base.settings.automation === "log-only") {
+    return { kind: "applied", state: base, receipt };
+  }
+  return { kind: "applied", state: run.state, receipt };
 }
 
 /** Opens an opportunity-attack window when `mover` has just left `from`'s reach; a no-op if
@@ -1024,26 +1025,27 @@ export function applyCheck(state: FoldedState, action: CheckAction): StepResult 
   const face = answerNumber(state, action.answers, "d20");
   if (face === null) return rejected({ reason: "missing-answer", input: "d20" });
   const entity = mustEntity(state, check.entity);
-  const events: CombatEvent[] = [];
-  let next: FoldedState = {
+  const withoutCheck: FoldedState = {
     ...state,
     checks: state.checks.filter((c) => c.id !== check.id),
   };
   const passed = face + entity.stats.saves.CON >= check.dc;
+  const events: CombatEvent[] = [];
+  let next = withoutCheck;
   if (!passed && entity.concentration !== null) {
-    const ended = endEffects(next, [entity.concentration]);
+    const ended = endEffects(withoutCheck, [entity.concentration]);
     next = ended.state;
     events.push(...ended.events);
   }
-  return {
-    kind: "applied",
-    state: next,
-    receipt: {
-      action: action.id,
-      outcome: passed ? "applied" : "negated",
-      paid: [],
-      events,
-      summary: ["check:concentration"],
-    },
+  const receipt: Receipt = {
+    action: action.id,
+    outcome: passed ? "applied" : "negated",
+    paid: [],
+    events,
+    summary: ["check:concentration"],
   };
+  if (withoutCheck.settings.automation === "log-only") {
+    return { kind: "applied", state: withoutCheck, receipt };
+  }
+  return { kind: "applied", state: next, receipt };
 }
