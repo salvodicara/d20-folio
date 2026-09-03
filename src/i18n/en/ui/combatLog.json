@@ -13,6 +13,19 @@
     "shortRest": "Took a Short Rest",
     "longRest": "Took a Long Rest",
     "riderUse": "Spent {{rider}} on {{name}}",
-    "effectExpired": "{{name}} ended (duration elapsed)"
+    "effectExpired": "{{name}} ended (duration elapsed)",
+    "rollApp": "{{who}} rolls {{formula}} for {{purpose}}: [{{faces}}] = {{total}}",
+    "rollManual": "{{who}} enters {{formula}} for {{purpose}} from real dice: [{{faces}}] = {{total}}",
+    "rollHidden": "{{who}} rolls hidden dice for {{purpose}}",
+    "rollPurpose": {
+      "attack": "an attack",
+      "damage": "damage",
+      "save": "a saving throw",
+      "check": "a check",
+      "initiative": "initiative",
+      "death-save": "a death save",
+      "concentration": "concentration",
+      "free": "a free roll"
+    }
   }
 }

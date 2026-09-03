@@ -13,6 +13,19 @@
     "shortRest": "Fatto un Riposo Breve",
     "longRest": "Fatto un Riposo Lungo",
     "riderUse": "{{rider}} speso su {{name}}",
-    "effectExpired": "{{name}} terminato (durata esaurita)"
+    "effectExpired": "{{name}} terminato (durata esaurita)",
+    "rollApp": "{{who}} tira {{formula}} per {{purpose}}: [{{faces}}] = {{total}}",
+    "rollManual": "{{who}} inserisce {{formula}} per {{purpose}} dai dadi fisici: [{{faces}}] = {{total}}",
+    "rollHidden": "{{who}} tira dadi nascosti per {{purpose}}",
+    "rollPurpose": {
+      "attack": "un attacco",
+      "damage": "i danni",
+      "save": "un tiro salvezza",
+      "check": "una prova",
+      "initiative": "l'iniziativa",
+      "death-save": "un tiro salvezza contro morte",
+      "concentration": "la concentrazione",
+      "free": "un tiro libero"
+    }
   }
 }
