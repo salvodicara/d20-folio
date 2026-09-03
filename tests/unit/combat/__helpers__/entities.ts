@@ -5,6 +5,7 @@ import type {
   Entity,
   EntityKind,
   LifeState,
+  Position,
 } from "@/lib/combat/types";
 
 const ZERO: Record<Ability, number> = { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 };
@@ -28,6 +29,7 @@ export function testEntity(opts: {
   controllerUid?: string;
   mechanics?: string[];
   resources?: Entity["resources"];
+  position?: Position | null;
 }): Entity {
   const maxHp = opts.maxHp ?? (opts.hp !== undefined && opts.hp > 0 ? opts.hp : 10);
   return {
@@ -71,6 +73,7 @@ export function testEntity(opts: {
     },
     overrides: {},
     reveal: { block: false, hp: false },
+    position: opts.position ?? null,
     mechanics: opts.mechanics ?? [],
   };
 }

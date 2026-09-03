@@ -62,6 +62,12 @@ export type ConditionId =
 
 export type LifeState = "alive" | "dying" | "stable" | "dead";
 
+/** A grid cell; distance is Chebyshev (chessboard) × 5 ft/cell (`position.ts`). */
+export interface Position {
+  readonly x: number;
+  readonly y: number;
+}
+
 export interface DerivedStats {
   readonly ac: number;
   readonly maxHp: number;
@@ -129,6 +135,7 @@ export interface Entity {
     >
   >;
   readonly reveal: { readonly block: boolean; readonly hp: boolean };
+  readonly position: Position | null; // null = no map; relations stay purely declared
   readonly mechanics: readonly MechanicId[]; // what this entity can invoke (weapons, spells, features, monster actions)
 }
 
