@@ -83,10 +83,12 @@ carrying pre-migration shapes or obsolete residue. Plan and receipt:
 
 1. **Dice seam.** `roll(formula, {by, reason, hidden, mode})` persisted as a log action with
    faces, total, seed, roller, source (`app | manual`); three inputs (in-app, manual entry, hidden
-   DM). Numbers and a log line first; the shared 3D animation is a later stage. Opened on
-   2026-09-03 with the architecture reset
-   (`2026-09-03-v2-architecture-reset.md`, done) and the seam plan
-   (`2026-09-03-v2-stage-1-dice-seam.md`; ADR-0010).
+   DM). Numbers and a log line first; the shared 3D animation is a later stage.
+   **Status (2026-09-03): closed on `v2`.** The architecture reset
+   (`2026-09-03-v2-architecture-reset.md`) and the seam (`2026-09-03-v2-stage-1-dice-seam.md`,
+   ADR-0010) landed the same day: `src/lib/combat/dice.ts`, the `roll` action with single-use
+   provenance in the fold, `src/lib/dice.ts`, the EN/IT log line, the randomness guard and the
+   golden-replay runner with `dice-provenance.json`. Receipt: `docs/PROGRAM_STATUS.md`.
 2. **Positions and areas in the aggregate.** `position` on entities, `area` in the mechanic
    vocabulary (sphere, cone, line, cube, cylinder); reach, range band, area membership and
    "who left reach" derived with provenance `derived`, declared facts as the fallback.

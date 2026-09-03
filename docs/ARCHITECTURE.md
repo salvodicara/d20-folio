@@ -12,8 +12,8 @@
 ## What the app is
 
 A free, modern PWA for **D&D 2024** players to create, manage, and play characters
-digitally. Bilingual (EN + IT), offline-first, Firebase-backed. **Dice today:** the shipped
-engine rolls nothing — it shows formulas and accepts entered results. **Direction (owner,
+digitally. Bilingual (EN + IT), offline-first, Firebase-backed. **Dice:** `main` still ships the
+no-dice surfaces (formulas shown, faces entered); on `v2` every roll goes through the dice seam below. **Direction (owner,
 2026-09-03):** in-app dice by default with logged provenance, a built-in Owlbear-level map and a
 BG3-style play screen (constitution §2.2/§2.9; design authority
 `docs/superpowers/specs/2026-09-03-ui-redesign-design.md`), delivered in stages.
@@ -460,6 +460,21 @@ character holds, every race trait, every known invocation, plus spells, plus wea
 
 > This section is the durable contract for the combat model. (The original standalone design
 > doc has been folded in here; the exploratory history lives in git.)
+
+### The dice seam (`v2`, stage 1)
+
+Two modules (ADR-0010). `src/lib/combat/dice.ts` is pure: the formula grammar (`NdS`, `kh`/`kl`,
+signed integers; sides 2–100; at most 100 dice), `facesFromSeed` (mulberry32 over a 32-bit seed,
+pinned by a snapshot so stored seeds keep reproducing), `evaluate` (kept and dropped dice, totals)
+and `verifyRoll`. `src/lib/dice.ts` is the only module in the app that draws randomness for a
+roll of the game: `roll(formula, { by, roller, reason, hidden, mode })` builds a `roll` action
+body — an `app` roll from one seed, a `manual` roll from the faces a person read off real dice.
+The reducer (`src/lib/combat/resolve.ts`) verifies every roll in the fold, records it in
+`state.rolls`, lets an intent answer a `d20`/`dice` input with `{ roll: id }`, and lets a roll be
+consumed once and only by the entity it was rolled for; undoing a roll re-validates the intent
+as `missing-answer`. `src/lib/views/roll-view.ts` renders the log line in EN and IT and conceals
+hidden faces from everyone but the DM and the roller. Golden replays
+(`tests/unit/combat/replays`) feed recorded faces or seeds through the same path.
 
 ### Mechanics kernel (legacy runtime of the old play surfaces; dies at stage 6)
 
@@ -3599,7 +3614,7 @@ Two contracts keep this fast and leak-free under the free-tier NFR:
 ## What this app deliberately doesn't do
 
 - **Roll dice outside the dice seam.** Randomness for a roll of the game exists only in
-  `src/lib/dice.ts` (ADR-0010, golden rule 32; stage 1 adds the seam and its guard); everything else is deterministic formulas over
+  `src/lib/dice.ts` (ADR-0010, golden rule 32; `tests/unit/dice-randomness.guard.test.ts` pins every other random source); everything else is deterministic formulas over
   logged rolls. `main` still ships the no-dice surfaces until the play screen lands.
 - **Magic-fix migration of SRD references.** When the SRD changes, the app shows a clear
   "this feature was removed/renamed" warning rather than silently rewriting the character.

@@ -20,16 +20,16 @@ screen by the screenshot gate, a live-data invariant by unit and rules tests.
 
 ## Lanes and counts (2026-09-03, after the architecture reset)
 
-| Lane                 | Files                             | Notes                                                                                               |
-| -------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------- |
-| unit fast (`node`)   | 445 root `.test.ts` (58 guards)   | pure logic, codecs, guards; `tests/lanes.ts` lists the 13 DOM-bound `.ts` that run in the slow lane |
-| unit slow (`jsdom`)  | 194 root `.test.tsx` + 13 `.ts`   | render tests of the old surfaces; shrink as the new surfaces replace them                           |
-| combat engine        | 9 files under `tests/unit/combat` | the prototype's proofs; the golden replays join them in stage 1                                     |
-| pack unit (composed) | 177                               | `content-pack/tests/unit`, pack branch `v2`                                                         |
-| rules (emulator)     | 2 files, 113 cases                | `firestore-rules` 101, `storage-rules` 12                                                           |
-| Functions            | 7                                 | standalone npm package                                                                              |
-| accessibility sweep  | 2 specs, 432 registrations        | `tests/e2e/a11y*.spec.ts` over `tests/e2e/surfaces.ts`                                              |
-| screenshot lane      | 2 specs                           | `tests/visual`, own config, artifacts under `artifacts/visual-review/`                              |
+| Lane                 | Files                              | Notes                                                                                               |
+| -------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------- |
+| unit fast (`node`)   | 445 root `.test.ts` (58 guards)    | pure logic, codecs, guards; `tests/lanes.ts` lists the 13 DOM-bound `.ts` that run in the slow lane |
+| unit slow (`jsdom`)  | 194 root `.test.tsx` + 13 `.ts`    | render tests of the old surfaces; shrink as the new surfaces replace them                           |
+| combat engine        | 12 files under `tests/unit/combat` | the engine's proofs, the dice module and the golden replays (`replays/*.json`)                      |
+| pack unit (composed) | 177                                | `content-pack/tests/unit`, pack branch `v2`                                                         |
+| rules (emulator)     | 2 files, 113 cases                 | `firestore-rules` 101, `storage-rules` 12                                                           |
+| Functions            | 7                                  | standalone npm package                                                                              |
+| accessibility sweep  | 2 specs, 432 registrations         | `tests/e2e/a11y*.spec.ts` over `tests/e2e/surfaces.ts`                                              |
+| screenshot lane      | 2 specs                            | `tests/visual`, own config, artifacts under `artifacts/visual-review/`                              |
 
 Count them with `find tests/unit -name '*.test.ts' | wc -l` (445), `find tests/unit -name '*.test.tsx' | wc -l`
 (194), `find tests/unit -name '*.guard.test.ts*' | wc -l` (58), `grep -c "^\s*it(" tests/rules/*.test.ts`

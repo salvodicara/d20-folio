@@ -73,7 +73,16 @@ migration kit keeps only what the audit reads (its apply path and CLI were unrea
 dropped its item-resource migration test on the pack's `v2` branch. `ci.yml` now runs on pushes to
 `v2`.
 
-**Dice seam.** _Recorded when stage 1 closes (numbers, gate wall time, commits)._
+**Dice seam (done).** `src/lib/combat/dice.ts` (grammar, seeded faces, evaluation,
+verification; 24 tests), the `roll` action in the aggregate with single-use provenance
+(`invalid-roll`, `roll-consumed`, `roll-roller-mismatch`; 8 tests), `src/lib/dice.ts` (the only
+roller; 4 tests), `src/lib/views/roll-view.ts` with EN/IT keys (4 tests),
+`tests/unit/dice-randomness.guard.test.ts` (13 pinned random sources) and the golden-replay
+runner with `dice-provenance.json`. Two reviews (reset, seam) applied. Gates on `v2` at the
+close: `just ci` 4 min 32 s (822 files / 18,621 tests, Functions 129), `pnpm test:rules` 113
+cases, `vite build && pnpm test:budget` 6 cases, `just ci-srd-only` 2 min 20 s (645 files /
+13,051 tests). Next: stage 2 (positions and areas), from
+`docs/superpowers/plans/2026-09-03-v2-next-session-handoff.md`.
 
 ## Delete zone
 

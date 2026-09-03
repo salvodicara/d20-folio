@@ -52,7 +52,7 @@ proposal until integrated.
 - **Every roll is logged:** dice roll in-app by default or are entered from physical dice; every
   roll records formula, result, roller and source in the encounter log, and every consequence
   applies automatically with undo. `main` still ships the no-dice surfaces; on `v2` the only
-  roller is the dice seam `src/lib/dice.ts` (ADR-0010; stage 1 adds it with its guard).
+  roller is the dice seam `src/lib/dice.ts` (ADR-0010), pinned by `tests/unit/dice-randomness.guard.test.ts`.
 - **Bilingual by construction:** every user-visible string ships in EN and IT through i18n; never
   branch on display text or persist translated labels.
 - **Licensing partition:** public `src/data` and `src/i18n/*/srd` contain only SRD 5.2.1 content.
@@ -77,7 +77,7 @@ proposal until integrated.
 > and executed by the [stage-1 program plan](docs/superpowers/plans/2026-09-03-new-app-stage-1.md)
 > ("Module fates" names what is kept, rebuilt or already deleted). `src/lib/combat` is the engine
 > base; the mechanics kernel and the old play surfaces are legacy that dies at stage 6 (frozen by
-> a guard); randomness for dice exists only in the dice seam `src/lib/dice.ts` (stage 1). The paragraph below describes
+> a guard); randomness for dice exists only in the dice seam `src/lib/dice.ts`. The paragraph below describes
 > the code that still runs on `main`.
 
 Mechanics are typed data, never prose parsing: a mechanic-bearing source declares a `Grant`;
