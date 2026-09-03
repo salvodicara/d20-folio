@@ -12,8 +12,11 @@
 ## What the app is
 
 A free, modern PWA for **D&D 2024** players to create, manage, and play characters
-digitally. Bilingual (EN + IT), offline-first, Firebase-backed. **No dice rolling** — the
-app shows deterministic formulas; the player rolls externally.
+digitally. Bilingual (EN + IT), offline-first, Firebase-backed. **Dice today:** the shipped
+engine rolls nothing — it shows formulas and accepts entered results. **Direction (owner,
+2026-09-03):** in-app dice by default with logged provenance, a built-in Owlbear-level map and a
+BG3-style play screen (constitution §2.2/§2.9; design authority
+`docs/superpowers/specs/2026-09-03-ui-redesign-design.md`), delivered in stages.
 
 The architectural goal: **automate every 2024 mechanic** with override always available.
 Beginner players get a self-driving sheet; expert players keep full manual control.
