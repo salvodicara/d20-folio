@@ -62,7 +62,9 @@ describe("roll — the only door to randomness for dice", () => {
       code: "die-sides",
       at: 0,
     });
-    expect(roll("1d20", { by: "p1", reason: "free", mode: "manual" }, () => 1)).toEqual({
+    expect(
+      roll("1d20", { by: "p1", reason: "free", mode: "manual", faces: [] }, () => 1)
+    ).toEqual({
       code: "faces-count",
     });
     expect(

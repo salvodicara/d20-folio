@@ -1,7 +1,8 @@
 /**
  * Randomness for dice exists only in the dice seam (golden rule 32, ADR-0010). Every other
  * call to a random source in `src/` is an id or a non-dice seed, pinned here so a new one is
- * a deliberate decision, never an accident.
+ * a deliberate decision, never an accident. It is a tripwire on call syntax, not an
+ * adversarial gate: an aliased or bracket-accessed call would pass it (reviews catch those).
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";

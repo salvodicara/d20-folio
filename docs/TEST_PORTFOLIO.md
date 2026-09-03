@@ -41,8 +41,11 @@ Count them with `find tests/unit -name '*.test.ts' | wc -l` (445), `find tests/u
 actions folds to an expected state and an expected list of rejections. One replay per hard case
 and per acceptance story; stories 1 and 2 (`marco-first-turn.json`, `sara-ogre-ambush.json`) are
 the gate of stages 1–3. Rolls in a replay carry recorded faces (manual) or a seed (app), so the
-same replay proves the dice seam and the reducer together. The format is documented in the
-stage-1 dice-seam plan.
+same replay proves the dice seam and the reducer together. Format: `{ name, dm, entities
+(testEntity options), initiative, order, relations (seeded until stage 2), log (actions
+without seq; the runner stamps `ms: 5000 + index`), expect: { applied, rejections
+[{ action, rejection }], state { "dotted.path": value } } }`; `applied` counts the replay's
+own log, skipping undone actions and undos.
 
 ## Deletion ledger
 

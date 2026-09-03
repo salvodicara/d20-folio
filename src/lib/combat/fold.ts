@@ -39,6 +39,7 @@ export function initialState(): FoldedState {
     checks: [],
     declared: {},
     rolls: {},
+    spent: {},
     nextOrdinal: 1,
     revision: 0,
     settings: { revealMonsterHp: false },
@@ -57,7 +58,7 @@ function undoneIds(log: readonly Action[]): Set<ActionId> {
 }
 
 /** `start` is the state before the log when there is no checkpoint (tests and replays seed
- *  declared relations there until stage 2 makes them log actions). */
+ *  declared relations there until stage 2 makes them log actions; it dies with that stage). */
 export function fold(
   encounter: Encounter,
   catalogue: Catalogue,

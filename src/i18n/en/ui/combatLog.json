@@ -15,7 +15,7 @@
     "riderUse": "Spent {{rider}} on {{name}}",
     "effectExpired": "{{name}} ended (duration elapsed)",
     "rollApp": "{{who}} rolls {{formula}} for {{purpose}}: [{{faces}}] = {{total}}",
-    "rollManual": "{{who}} enters {{formula}} for {{purpose}} from real dice: [{{faces}}] = {{total}}",
+    "rollManual": "{{who}} enters {{formula}} from real dice for {{purpose}}: [{{faces}}] = {{total}}",
     "rollHidden": "{{who}} rolls hidden dice for {{purpose}}",
     "rollPurpose": {
       "attack": "an attack",

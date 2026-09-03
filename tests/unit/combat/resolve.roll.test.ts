@@ -163,6 +163,47 @@ describe("intents consume rolls by id", () => {
     ]);
     expect(state.entities["monster-1"]?.vitals.hp).toBe(1);
   });
+  it("a roll is consumed by one action only: a second attack with the same roll is rejected", () => {
+    const state = run([
+      ...opening(),
+      rollAction("r1", "p1", manual("1d20", [15], 15, "attack")),
+      rollAction("r2", "p1", manual("1d8", [6], 6, "damage")),
+      attack("i1", "r1", "r2"),
+    ]);
+    const result = resolve(state, attack("i2", "r1", "r2"), catalogue);
+    expect(result.kind === "rejected" && result.rejection).toEqual({
+      reason: "roll-consumed",
+      roll: "r1",
+      by: "i1",
+    });
+  });
+  it("a roll made for another entity cannot answer this entity's intent", () => {
+    const state = run([
+      ...opening(),
+      rollAction("r1", "dm", {
+        ...manual("1d20", [15], 15, "attack"),
+        roller: "monster-1",
+      }),
+      rollAction("r2", "p1", manual("1d8", [6], 6, "damage")),
+    ]);
+    const result = resolve(state, attack("i1", "r1", "r2"), catalogue);
+    expect(result.kind === "rejected" && result.rejection).toEqual({
+      reason: "roll-roller-mismatch",
+      roll: "r1",
+      entity: "ranger",
+    });
+  });
+  it("a roll appended after the intent does not answer it", () => {
+    const state = run([
+      ...opening(),
+      rollAction("r2", "p1", manual("1d8", [6], 6, "damage")),
+    ]);
+    const result = resolve(state, attack("i1", "r1", "r2"), catalogue);
+    expect(result.kind === "rejected" && result.rejection).toEqual({
+      reason: "missing-answer",
+      input: "roll",
+    });
+  });
   it("undoing the roll makes the attack re-validate as missing-answer", () => {
     const log: Action[] = [
       ...opening(),

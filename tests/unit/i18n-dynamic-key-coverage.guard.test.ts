@@ -63,6 +63,7 @@ import {
   TRACKER_UNITS,
 } from "@/data/types";
 import { DAMAGE_TYPES } from "@/types/damage";
+import { ROLL_PURPOSES } from "@/lib/combat/dice";
 import { ALL_SKILLS } from "@/lib/skills";
 import { ALIGNMENT_IDS, alignmentIdByLabel } from "@/lib/lore-utils";
 import { castingTimeI18nKey } from "@/lib/utils";
@@ -121,6 +122,11 @@ function castingTimeTokens(): string[] {
 }
 
 const FAMILIES: readonly Family[] = [
+  {
+    label: "combatLog.rollPurpose.${purpose}",
+    source: "ROLL_PURPOSES (@/lib/combat/dice)",
+    keys: () => ROLL_PURPOSES.map((purpose) => `combatLog.rollPurpose.${purpose}`),
+  },
   // ── srd.* content tokens ───────────────────────────────────────────────────
   {
     label: "srd.damage_${dt}",

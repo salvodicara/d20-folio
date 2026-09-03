@@ -2,13 +2,15 @@
  * Dice as data: the formula grammar, reproducible faces from a seed, evaluation and
  * verification of a roll record. Pure: no randomness lives here — the seam that draws a seed
  * is `src/lib/dice.ts`. Design: ADR-0010; the grammar is the Foundry VTT / Roll20 subset the
- * table needs: `NdS`, `kh`/`kl`, signed integers.
+ * table needs: `NdS`, `kh`/`kl`, signed integers (a leading sign is allowed); a formula
+ * without dice is not a roll (`no-dice`), and `RollError.at` indexes the normalized text.
  */
 import type { EntityId, LabelId } from "./ids";
 
 export const DIE_SIDES = [2, 3, 4, 6, 8, 10, 12, 20, 100] as const;
 export type DieSides = (typeof DIE_SIDES)[number];
 export const MAX_DICE = 100;
+export const MAX_FLAT = 1000;
 
 export interface DiceTerm {
   readonly kind: "dice";
@@ -32,8 +34,11 @@ export type RollErrorCode =
   | "empty"
   | "syntax"
   | "die-sides"
+  | "dice-count"
   | "too-many-dice"
   | "keep-count"
+  | "flat-range"
+  | "no-dice"
   | "faces-count"
   | "face-range"
   | "seed-missing"
@@ -49,15 +54,17 @@ export function isRollError(value: unknown): value is RollError {
 }
 
 export type RollSource = "app" | "manual";
-export type RollPurpose =
-  | "attack"
-  | "damage"
-  | "save"
-  | "check"
-  | "initiative"
-  | "death-save"
-  | "concentration"
-  | "free";
+export const ROLL_PURPOSES = [
+  "attack",
+  "damage",
+  "save",
+  "check",
+  "initiative",
+  "death-save",
+  "concentration",
+  "free",
+] as const;
+export type RollPurpose = (typeof ROLL_PURPOSES)[number];
 
 /** What the log stores for one roll (ADR-0010); the action envelope adds id, seq and by. */
 export interface RollRecord {
@@ -85,23 +92,27 @@ export function parseFormula(text: string): Formula | RollError {
   let sign: 1 | -1 = 1;
   let dice = 0;
   while (at < source.length) {
-    if (at > 0) {
-      const op = source[at];
-      if (op !== "+" && op !== "-") return { code: "syntax", at };
+    const op = source[at];
+    if (op === "+" || op === "-") {
       sign = op === "-" ? -1 : 1;
       at += 1;
+    } else if (at > 0) {
+      return { code: "syntax", at };
     }
     const match = TERM.exec(source.slice(at));
     if (!match) return { code: "syntax", at };
     const [whole, countText, sidesText, keepMode, keepText, flatText] = match;
     if (flatText !== undefined) {
-      terms.push({ kind: "flat", sign, value: Number(flatText) });
+      const value = Number(flatText);
+      if (value > MAX_FLAT) return { code: "flat-range", at };
+      terms.push({ kind: "flat", sign, value });
     } else {
       const count = countText ? Number(countText) : 1;
       const sides = Number(sidesText);
       if (!DIE_SIDES_SET.has(sides)) return { code: "die-sides", at };
+      if (count < 1) return { code: "dice-count", at };
       dice += count;
-      if (count < 1 || dice > MAX_DICE) return { code: "too-many-dice", at };
+      if (dice > MAX_DICE) return { code: "too-many-dice", at };
       let keep: DiceTerm["keep"] = null;
       if (keepMode !== undefined) {
         const keepCount = Number(keepText);
@@ -112,6 +123,7 @@ export function parseFormula(text: string): Formula | RollError {
     }
     at += whole.length;
   }
+  if (dice === 0) return { code: "no-dice" };
   return { text: render(terms), terms };
 }
 

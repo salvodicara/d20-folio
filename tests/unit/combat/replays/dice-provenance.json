@@ -8,7 +8,9 @@
       "controllerUid": "p1",
       "hp": 20,
       "ac": 15,
-      "abilities": { "DEX": 3 },
+      "abilities": {
+        "DEX": 3
+      },
       "mechanics": ["srd:weapon:longbow"]
     },
     {
@@ -20,11 +22,24 @@
       "mechanics": ["monster:goblin:scimitar"]
     }
   ],
-  "initiative": { "ranger": 20, "monster-1": 10 },
+  "initiative": {
+    "ranger": 20,
+    "monster-1": 10
+  },
   "order": ["ranger", "monster-1"],
   "relations": [
-    { "kind": "visible", "a": "ranger", "b": "monster-1", "value": true },
-    { "kind": "visible", "a": "monster-1", "b": "ranger", "value": true }
+    {
+      "kind": "visible",
+      "a": "ranger",
+      "b": "monster-1",
+      "value": true
+    },
+    {
+      "kind": "visible",
+      "a": "monster-1",
+      "b": "ranger",
+      "value": true
+    }
   ],
   "log": [
     {
@@ -115,7 +130,14 @@
       "mechanic": "srd:weapon:longbow",
       "program": "attack",
       "targets": ["monster-1"],
-      "answers": { "roll": { "roll": "r-manual" }, "damage": { "roll": "r-damage" } },
+      "answers": {
+        "roll": {
+          "roll": "r-manual"
+        },
+        "damage": {
+          "roll": "r-damage"
+        }
+      },
       "payment": [],
       "window": null,
       "basedOn": 0
@@ -131,8 +153,20 @@
   "expect": {
     "applied": 3,
     "rejections": [
-      { "action": "r-tampered", "reason": "invalid-roll" },
-      { "action": "i-shot", "reason": "missing-answer" }
+      {
+        "action": "r-tampered",
+        "rejection": {
+          "reason": "invalid-roll",
+          "code": "faces-mismatch"
+        }
+      },
+      {
+        "action": "i-shot",
+        "rejection": {
+          "reason": "missing-answer",
+          "input": "damage"
+        }
+      }
     ],
     "state": {
       "rolls.r-app.seed": 5,

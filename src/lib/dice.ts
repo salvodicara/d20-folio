@@ -16,20 +16,22 @@ import {
   type RollError,
   type RollPurpose,
   type RollRecord,
-  type RollSource,
 } from "@/lib/combat/dice";
 import type { EntityId, LabelId } from "@/lib/combat/ids";
 
-export interface RollOptions {
+interface RollOptionsBase {
   readonly by: string;
   readonly roller?: EntityId | null;
   readonly reason: RollPurpose;
   readonly label?: LabelId | null;
   readonly hidden?: boolean;
-  readonly mode: RollSource;
-  /** Faces read off physical dice, in formula order; required when `mode` is `manual`. */
-  readonly faces?: readonly number[];
 }
+/** `app` draws a seed; `manual` takes the faces read off physical dice, in formula order. */
+export type RollOptions = RollOptionsBase &
+  (
+    | { readonly mode: "app" }
+    | { readonly mode: "manual"; readonly faces: readonly number[] }
+  );
 
 /** A `roll` action without its envelope (`id`, `seq`). */
 export interface PendingRoll {
@@ -54,7 +56,8 @@ export function roll(
   const formula = parseFormula(formulaText);
   if (isRollError(formula)) return formula;
   const seed = options.mode === "app" ? seedSource() : null;
-  const faces = seed === null ? (options.faces ?? []) : facesFromSeed(seed, formula);
+  const faces =
+    options.mode === "app" ? facesFromSeed(seed ?? 0, formula) : options.faces;
   const evaluation = evaluate(formula, faces);
   if (isRollError(evaluation)) return evaluation;
   const record: RollRecord = {

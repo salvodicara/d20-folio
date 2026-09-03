@@ -6,7 +6,7 @@
  */
 import type { Catalogue } from "./catalogue";
 import { verifyRoll } from "./dice";
-import { assertNever } from "./ids";
+import { assertNever, type EntityId } from "./ids";
 import {
   applyCheck,
   applyDeclare,
@@ -15,10 +15,58 @@ import {
   applyResolve,
 } from "./intent";
 import { applyTable } from "./table";
-import type { Action, FoldedState, Receipt, Resolution } from "./types";
+import type {
+  Action,
+  Answers,
+  FoldedState,
+  Receipt,
+  Rejection,
+  Resolution,
+} from "./types";
 
 function applied(state: FoldedState, receipt: Receipt): Resolution {
   return { kind: "applied", state: { ...state, revision: state.revision + 1 }, receipt };
+}
+
+/** The roll ids an action answers with. */
+function referencedRolls(answers: Answers): string[] {
+  return Object.values(answers).flatMap((value) =>
+    typeof value === "object" && "roll" in value ? [value.roll] : []
+  );
+}
+
+/**
+ * A roll is consumed by at most one action, and by the entity it was rolled for (ADR-0010):
+ * a second action answering with the same roll is rejected, so one natural 20 never yields
+ * two verdicts. A roll the state does not hold yet falls through to `missing-answer`.
+ */
+function rollsUsable(
+  state: FoldedState,
+  action: { readonly id: string; readonly answers: Answers },
+  entity: EntityId | null
+): Rejection | null {
+  for (const id of referencedRolls(action.answers)) {
+    const record = state.rolls[id];
+    if (!record) continue;
+    const by = state.spent[id];
+    if (by !== undefined && by !== action.id)
+      return { reason: "roll-consumed", roll: id, by };
+    if (entity !== null && record.roller !== null && record.roller !== entity) {
+      return { reason: "roll-roller-mismatch", roll: id, entity };
+    }
+  }
+  return null;
+}
+
+function spend(
+  state: FoldedState,
+  action: { readonly id: string; readonly answers: Answers }
+): FoldedState {
+  const ids = referencedRolls(action.answers);
+  if (ids.length === 0) return state;
+  const spent = { ...state.spent };
+  for (const id of ids) spent[id] = action.id;
+  return { ...state, spent };
 }
 
 export function resolve(
@@ -39,14 +87,19 @@ export function resolve(
       });
     }
     case "intent": {
+      const unusable = rollsUsable(state, action, action.entity);
+      if (unusable) return { kind: "rejected", rejection: unusable };
       const result = applyIntent(state, action, catalogue);
       if (result.kind === "rejected") return result;
-      return applied(result.state, result.receipt);
+      return applied(spend(result.state, action), result.receipt);
     }
     case "check": {
+      const pending = state.checks.find((c) => c.id === action.check);
+      const unusable = rollsUsable(state, action, pending ? pending.entity : null);
+      if (unusable) return { kind: "rejected", rejection: unusable };
       const result = applyCheck(state, action);
       if (result.kind === "rejected") return result;
-      return applied(result.state, result.receipt);
+      return applied(spend(result.state, action), result.receipt);
     }
     case "declare": {
       const result = applyDeclare(state, action, catalogue);

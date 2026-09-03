@@ -8,7 +8,13 @@ import { describe, expect, it } from "vitest";
 import { buildCatalogue } from "@/lib/combat/catalogue";
 import { fold } from "@/lib/combat/fold";
 import { resolve } from "@/lib/combat/resolve";
-import type { Action, Encounter, FoldedState, Relation } from "@/lib/combat/types";
+import type {
+  Action,
+  Encounter,
+  FoldedState,
+  Rejection,
+  Relation,
+} from "@/lib/combat/types";
 import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
 import { testEntity } from "./__helpers__/entities";
 import { emptyState, openingActions, seqFactory } from "./__helpers__/state";
@@ -25,7 +31,10 @@ interface Replay {
   readonly log: readonly LogEntry[];
   readonly expect: {
     readonly applied: number;
-    readonly rejections: readonly { readonly action: string; readonly reason: string }[];
+    readonly rejections: readonly {
+      readonly action: string;
+      readonly rejection: Rejection;
+    }[];
     readonly state: Readonly<Record<string, unknown>>;
   };
 }
@@ -46,7 +55,9 @@ describe("golden replays", () => {
   const files = readdirSync(DIR)
     .filter((file) => file.endsWith(".json"))
     .sort();
-  expect(files.length).toBeGreaterThan(0);
+  it("has at least one replay", () => {
+    expect(files.length).toBeGreaterThan(0);
+  });
   for (const file of files) {
     const replay = JSON.parse(readFileSync(join(DIR, file), "utf8")) as Replay;
     it(`${file}: ${replay.name}`, () => {
@@ -78,9 +89,7 @@ describe("golden replays", () => {
         checkpoint: null,
       };
       const result = fold(encounter, catalogue, state);
-      expect(
-        result.rejections.map((r) => ({ action: r.action, reason: r.rejection.reason }))
-      ).toEqual(replay.expect.rejections);
+      expect(result.rejections).toEqual(replay.expect.rejections);
       expect(result.applied).toBe(replay.expect.applied);
       for (const [path, expected] of Object.entries(replay.expect.state)) {
         expect(pick(result.state, path), path).toEqual(expected);

@@ -29,11 +29,24 @@ describe("parseFormula — the Foundry grammar subset", () => {
     expect(formula("8d6").text).toBe("8d6");
     expect(formula("2d20KL1+3").text).toBe("2d20kl1+3");
   });
+  it("accepts a leading sign and renders it back", () => {
+    expect(formula("-1d4+2d6").text).toBe("-1d4+2d6");
+    expect(formula("+1d20").text).toBe("1d20");
+  });
+  it("re-parses its own rendering to the same terms", () => {
+    for (const text of ["2d20kh1 + 5 - 1d4", "-1d4", "1D8+1D6-2"]) {
+      const once = formula(text);
+      expect(formula(once.text)).toEqual(once);
+    }
+  });
   it.each([
     ["", "empty"],
     ["1d7", "die-sides"],
+    ["0d6", "dice-count"],
     ["101d6", "too-many-dice"],
     ["3d6kh4", "keep-count"],
+    ["1d20+1001", "flat-range"],
+    ["5", "no-dice"],
     ["1d20+", "syntax"],
     ["d20d20", "syntax"],
     ["1d20 * 2", "syntax"],
@@ -43,7 +56,7 @@ describe("parseFormula — the Foundry grammar subset", () => {
   });
   it("counts the dice of the whole formula", () => {
     expect(diceCount(formula("2d20kh1+1d8+3"))).toBe(3);
-    expect(diceCount(formula("5"))).toBe(0);
+    expect(diceCount(formula("1d4-1d4"))).toBe(2);
   });
 });
 
@@ -87,6 +100,14 @@ describe("evaluate — totals with kept and dropped dice", () => {
     expect(result.terms[0]?.faces).toEqual([
       { value: 7, kept: false },
       { value: 18, kept: true },
+    ]);
+  });
+  it("keeps the first of tied dice, deterministically", () => {
+    const result = evaluate(formula("2d20kh1"), [18, 18]);
+    if (isRollError(result)) throw new Error(result.code);
+    expect(result.terms[0]?.faces).toEqual([
+      { value: 18, kept: true },
+      { value: 18, kept: false },
     ]);
   });
   it("keeps the lowest for disadvantage and subtracts negative dice", () => {

@@ -76,3 +76,14 @@ roller, reason, hidden, mode, faces })`); a guard test pins every other call to 
 
 - Changing the generator would invalidate stored seeds → the generator is pinned by a snapshot
   test and never changed; a new generator would be a new `source` value.
+
+## Amendment (2026-09-03, stage-1 review)
+
+- A roll is consumed by at most one action: the fold records `spent[rollId] = actionId` when an
+  intent or check applies, and a later action answering with the same roll is rejected
+  (`roll-consumed`), so one natural 20 never yields two verdicts. Undoing the consuming action
+  frees the roll.
+- A roll made for an entity (`roller`) answers only that entity's intents
+  (`roll-roller-mismatch`); a roll with `roller: null` is free.
+- The grammar accepts a leading sign; a formula without dice is not a roll (`no-dice`); flat
+  terms are capped at 1000 (`flat-range`); `0dN` is `dice-count`.

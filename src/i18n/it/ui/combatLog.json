@@ -15,7 +15,7 @@
     "riderUse": "{{rider}} speso su {{name}}",
     "effectExpired": "{{name}} terminato (durata esaurita)",
     "rollApp": "{{who}} tira {{formula}} per {{purpose}}: [{{faces}}] = {{total}}",
-    "rollManual": "{{who}} inserisce {{formula}} per {{purpose}} dai dadi fisici: [{{faces}}] = {{total}}",
+    "rollManual": "{{who}} inserisce {{formula}} dai dadi fisici per {{purpose}}: [{{faces}}] = {{total}}",
     "rollHidden": "{{who}} tira dadi nascosti per {{purpose}}",
     "rollPurpose": {
       "attack": "un attacco",

@@ -36,6 +36,7 @@ export function emptyState(): FoldedState {
     checks: [],
     declared: {},
     rolls: {},
+    spent: {},
     nextOrdinal: 1,
     revision: 0,
     settings: { revealMonsterHp: false },

@@ -375,6 +375,7 @@ export interface FoldedState {
   readonly checks: readonly PendingCheck[];
   readonly declared: Readonly<Record<ActionId, Action>>; // intents held open by a window
   readonly rolls: Readonly<Record<ActionId, RollRecord>>; // accepted rolls, by action id
+  readonly spent: Readonly<Record<ActionId, ActionId>>; // roll id → the action that consumed it
   readonly nextOrdinal: number; // monotonic allocator for entity/effect ids
   readonly revision: number; // applied actions
   readonly settings: { readonly revealMonsterHp: boolean };
@@ -408,7 +409,13 @@ export type Rejection =
   | { readonly reason: "already-undone"; readonly action: ActionId }
   | { readonly reason: "unknown-action"; readonly action: ActionId }
   | { readonly reason: "invalid-target"; readonly entity: EntityId }
-  | { readonly reason: "invalid-roll"; readonly code: RollErrorCode };
+  | { readonly reason: "invalid-roll"; readonly code: RollErrorCode }
+  | { readonly reason: "roll-consumed"; readonly roll: ActionId; readonly by: ActionId }
+  | {
+      readonly reason: "roll-roller-mismatch";
+      readonly roll: ActionId;
+      readonly entity: EntityId;
+    };
 
 export interface Receipt {
   readonly action: ActionId;

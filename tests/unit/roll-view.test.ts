@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import en from "@/i18n/en/ui/combatLog.json";
 import it_ from "@/i18n/it/ui/combatLog.json";
-import type { RollRecord } from "@/lib/combat/dice";
+import { ROLL_PURPOSES, type RollRecord } from "@/lib/combat/dice";
 import { rollLine } from "@/lib/views/roll-view";
 
 type Dict = Record<string, unknown>;
@@ -27,16 +27,6 @@ const base: RollRecord = {
   purpose: "attack",
   label: null,
 };
-const PURPOSES = [
-  "attack",
-  "damage",
-  "save",
-  "check",
-  "initiative",
-  "death-save",
-  "concentration",
-  "free",
-] as const;
 
 describe("rollLine", () => {
   it("renders an app roll with faces and total", () => {
@@ -74,7 +64,7 @@ describe("rollLine", () => {
     );
   });
   it("names every purpose in both languages", () => {
-    for (const purpose of PURPOSES) {
+    for (const purpose of ROLL_PURPOSES) {
       expect(() =>
         rollLine(tEn, { ...base, purpose }, "p1", { uid: "p1", dm: false }, "x")
       ).not.toThrow();
