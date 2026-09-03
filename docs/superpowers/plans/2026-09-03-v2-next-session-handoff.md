@@ -65,4 +65,6 @@ reconciled in the same commit; never `--no-verify`. No deploy, no release, no pu
 end-to-end spec on `v2`; the gate (`just ci`, `pnpm test:rules`, `vite build && pnpm test:budget`,
 `just ci-srd-only` when a public module changes) stays under 15 minutes. Any screen goes through
 the screenshot gate (rule 25). Ask the owner only about taste, product or cost, with an example
-and a recommended option; close with the state for the next session and rewrite this handoff.
+and a recommended option. When you finish: rewrite this handoff file for the session after
+yours, and paste its prompt block in full as the last message of the chat, so the owner can
+archive the chat and start the next one by pasting it (the owner never keeps sessions open).
