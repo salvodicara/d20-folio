@@ -45,7 +45,6 @@ import {
 } from "firebase-admin/firestore";
 
 export const TARGET_PROJECT_ID = "d20-folio";
-export const MAX_CHANGED_DOCUMENTS = 500;
 
 export type RawMap = Record<string, unknown>;
 
@@ -210,8 +209,7 @@ export interface MigrationIssue {
   detail: string;
 }
 
-/** The minimum every migration's per-document plan must expose so the guarded
- *  flow can back it up, write it, and verify it by hash. */
+/** The per-document plan the backup writer records: before/after and their hashes. */
 export interface GuardedDocumentPlan {
   path: string;
   before: RawMap;
@@ -219,29 +217,6 @@ export interface GuardedDocumentPlan {
   beforeHash: string;
   afterHash: string;
   changed: boolean;
-}
-
-export interface GuardedPlan<
-  TDocument extends GuardedDocumentPlan = GuardedDocumentPlan,
-> {
-  documents: readonly TDocument[];
-  changedDocuments: readonly TDocument[];
-  issues: readonly MigrationIssue[];
-}
-
-export function assertCleanPreflight(plan: GuardedPlan): void {
-  if (plan.issues.length > 0) {
-    throw new Error(
-      `Preflight found ${plan.issues.length} issue(s):\n${plan.issues
-        .map((issue) => `${pathHash(issue.path)} [${issue.code}] ${issue.detail}`)
-        .join("\n")}`
-    );
-  }
-  if (plan.changedDocuments.length > MAX_CHANGED_DOCUMENTS) {
-    throw new Error(
-      `Refusing ${plan.changedDocuments.length} changed docs; atomic limit is ${MAX_CHANGED_DOCUMENTS}`
-    );
-  }
 }
 
 // ── Recoverable backup writer ───────────────────────────────────────────────
@@ -329,72 +304,6 @@ export async function writeBackupDirectory(args: {
   };
   await writePrivateFile(join(args.directory, "manifest.json"), manifest);
   return manifest;
-}
-
-// ── Guarded CLI ─────────────────────────────────────────────────────────────
-
-export type CliOptions =
-  | { mode: "dry-run" }
-  | { mode: "check" }
-  | { mode: "apply"; backupDirectory: string }
-  | { mode: "fixtures"; directory: string };
-
-/** The modes that talk to Firestore — `--fixtures` plans over local portable
- *  exports instead and never opens a connection. */
-export type ConnectedCliOptions = Exclude<CliOptions, { mode: "fixtures" }>;
-
-export function parseCliOptions(args: readonly string[]): CliOptions {
-  let mode: CliOptions["mode"] = "dry-run";
-  let explicitMode = false;
-  let backupDirectory: string | undefined;
-  let fixturesDirectory: string | undefined;
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index];
-    if (arg === "--dry-run") {
-      if (explicitMode) throw new Error("Choose exactly one migration mode");
-      explicitMode = true;
-    } else if (arg === "--check") {
-      if (explicitMode) throw new Error("Choose exactly one migration mode");
-      explicitMode = true;
-      mode = "check";
-    } else if (arg === "--apply") {
-      if (explicitMode) throw new Error("Choose exactly one migration mode");
-      explicitMode = true;
-      mode = "apply";
-    } else if (arg === "--fixtures") {
-      if (explicitMode) throw new Error("Choose exactly one migration mode");
-      explicitMode = true;
-      mode = "fixtures";
-      const value = args[index + 1];
-      if (!value || value.startsWith("--")) throw new Error("--fixtures needs a path");
-      fixturesDirectory = value;
-      index += 1;
-    } else if (arg === "--backup") {
-      if (backupDirectory) throw new Error("Choose exactly one --backup directory");
-      const value = args[index + 1];
-      if (!value || value.startsWith("--")) throw new Error("--backup needs a path");
-      backupDirectory = value;
-      index += 1;
-    } else {
-      throw new Error(`Unknown argument: ${String(arg)}`);
-    }
-  }
-  if (mode === "apply") {
-    if (!backupDirectory) throw new Error("--apply requires --backup");
-    if (!isAbsolute(backupDirectory)) {
-      throw new Error("--backup must name an absolute directory");
-    }
-    return { mode, backupDirectory: resolve(backupDirectory) };
-  }
-  if (backupDirectory) throw new Error("--backup is valid only with --apply");
-  if (mode === "fixtures") {
-    if (!fixturesDirectory) throw new Error("--fixtures needs a path");
-    if (!isAbsolute(fixturesDirectory)) {
-      throw new Error("--fixtures must name an absolute directory");
-    }
-    return { mode, directory: resolve(fixturesDirectory) };
-  }
-  return { mode };
 }
 
 export interface TargetConfiguration {
@@ -505,153 +414,6 @@ export async function discoverDocuments(
   return [...byPath.values()].sort((left, right) =>
     left.source.path.localeCompare(right.source.path)
   );
-}
-
-// ── The guarded dry-run / check / apply flow ────────────────────────────────
-
-export interface GuardedWrite {
-  kind: "update" | "create";
-  data: RawMap;
-}
-
-export interface GuardedMigrationArgs<TPlan extends GuardedPlan> {
-  migration: string;
-  label: string;
-  discover: (db: Firestore) => Promise<DiscoveredDocument[]>;
-  plan: (sources: readonly MigrationSourceDocument[]) => TPlan;
-  verify: (sources: readonly MigrationSourceDocument[]) => MigrationIssue[];
-  /** The exact fields this migration owns, per changed document — never the
-   *  whole envelope, so an unrelated concurrent field write survives. */
-  writesFor: (document: GuardedDocumentPlan) => GuardedWrite;
-  report: (plan: TPlan) => unknown;
-  options: ConnectedCliOptions;
-  db: Firestore;
-}
-
-/**
- * Plan → report → (apply only) preflight → backup → ONE guarded batch → reread
- * and per-document hash verification → global verification → idempotency.
- * Every failure throws before the next stage, so a run either completes the
- * whole protocol or leaves an explicit, recoverable failure behind.
- */
-export async function runGuardedMigration<TPlan extends GuardedPlan>(
-  args: GuardedMigrationArgs<TPlan>
-): Promise<void> {
-  const discoveredDocs = await args.discover(args.db);
-  const sources = discoveredDocs.map((document) => document.source);
-  const plan = args.plan(sources);
-  console.log(JSON.stringify(args.report(plan), null, 2));
-
-  if (args.options.mode === "dry-run") return;
-
-  if (args.options.mode === "check") {
-    const corpusIssues = [...plan.issues, ...args.verify(sources)];
-    if (corpusIssues.length > 0 || plan.changedDocuments.length > 0) {
-      // The CODES are what tells the operator whether this is a corpus still waiting
-      // for its apply or a document that must be hand-fixed first — the full report is
-      // above, but the failure line must be readable on its own.
-      const codes = [...new Set(corpusIssues.map((issue) => issue.code))];
-      throw new Error(
-        `Check failed: ${corpusIssues.length} verification issue(s)${
-          codes.length > 0 ? ` [${codes.join(", ")}]` : ""
-        }, ${plan.changedDocuments.length} pending change(s)`
-      );
-    }
-    // Planning the LIVE corpus and finding zero changes IS the idempotency
-    // property; there is no second plan to run, so the line says exactly that.
-    console.log("Check passed: corpus verified, zero pending changes");
-    return;
-  }
-
-  assertCleanPreflight(plan);
-  const projectedIssues = args.verify(
-    plan.documents.map((document) => ({ path: document.path, data: document.after }))
-  );
-  if (projectedIssues.length > 0) {
-    throw new Error(
-      `Apply preflight found ${projectedIssues.length} projected corpus verification issue(s)`
-    );
-  }
-
-  const discoveredByPath = new Map(
-    discoveredDocs.map((document) => [document.source.path, document] as const)
-  );
-  await writeBackupDirectory({
-    directory: args.options.backupDirectory,
-    migration: args.migration,
-    label: args.label,
-    documents: plan.changedDocuments.flatMap((document) => {
-      const found = discoveredByPath.get(document.path);
-      return found ? [{ plan: document, updateTime: found.updateTime }] : [];
-    }),
-  });
-  console.log(`Backup complete: ${args.options.backupDirectory}`);
-
-  if (plan.changedDocuments.length > 0) {
-    const batch = args.db.batch();
-    for (const document of plan.changedDocuments) {
-      const write = args.writesFor(document);
-      const found = discoveredByPath.get(document.path);
-      if (write.kind === "create") {
-        if (found)
-          throw new Error(`Refusing to create an existing ${pathHash(document.path)}`);
-        batch.create(args.db.doc(document.path), write.data);
-      } else {
-        if (!found) throw new Error(`Preflight lost ${pathHash(document.path)}`);
-        batch.update(found.ref, write.data, { lastUpdateTime: found.updateTime });
-      }
-    }
-    try {
-      await batch.commit();
-    } catch (error) {
-      // A precondition rejection names the offending document path; report the
-      // failure by CODE only (the original stays attached as `cause`, which the CLI
-      // never prints — it logs `error.message` alone).
-      const raw = isRecord(error) ? error.code : undefined;
-      const code =
-        typeof raw === "string" || typeof raw === "number" ? String(raw) : "unknown";
-      throw new Error(
-        `Batch commit refused for ${plan.changedDocuments.length} document(s) [code ${code}]; nothing was written`,
-        { cause: error }
-      );
-    }
-  }
-
-  for (const document of plan.changedDocuments) {
-    const ref = discoveredByPath.get(document.path)?.ref ?? args.db.doc(document.path);
-    const snapshot = await ref.get();
-    const data = snapshot.data();
-    if (!data) throw new Error(`Verification read lost ${pathHash(document.path)}`);
-    const actualHash = hashFirestoreDocument(data);
-    // Per document this proves the stored bytes are EXACTLY what was planned;
-    // `verify` is a CORPUS predicate (it may compare a document against another,
-    // such as a public projection against its parent) and runs globally below.
-    if (actualHash !== document.afterHash) {
-      throw new Error(
-        `Reread/hash verification failed for ${pathHash(document.path)}: expected ${document.afterHash}, got ${actualHash}`
-      );
-    }
-  }
-  console.log("Reread/hash verification passed");
-
-  const postSources = (await args.discover(args.db)).map((document) => document.source);
-  const globalIssues = args.verify(postSources);
-  if (globalIssues.length > 0) {
-    throw new Error(
-      `Global check failed: ${globalIssues.length} issue(s) [${[
-        ...new Set(globalIssues.map((issue) => issue.code)),
-      ].join(", ")}]`
-    );
-  }
-  console.log("Global check passed");
-  const idempotency = args.plan(postSources);
-  assertCleanPreflight(idempotency);
-  if (idempotency.changedDocuments.length > 0) {
-    throw new Error(
-      `Idempotency check found ${idempotency.changedDocuments.length} pending change(s)`
-    );
-  }
-  console.log("Idempotency check passed");
 }
 
 /**

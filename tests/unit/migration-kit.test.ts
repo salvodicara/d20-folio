@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest";
 import {
   decodeFirestoreValue,
   hashFirestoreDocument,
-  parseCliOptions,
   pathHash,
   writeBackupDirectory,
   type BackupInputDocument,
@@ -29,42 +28,6 @@ function backupInput(): BackupInputDocument {
     updateTime: new Timestamp(1_723_456_789, 1),
   };
 }
-
-describe("migration kit CLI", () => {
-  it("defaults to dry-run and keeps the apply/backup contract", () => {
-    expect(parseCliOptions([])).toEqual({ mode: "dry-run" });
-    expect(parseCliOptions(["--check"])).toEqual({ mode: "check" });
-    expect(parseCliOptions(["--apply", "--backup", "/private/migration"])).toEqual({
-      mode: "apply",
-      backupDirectory: "/private/migration",
-    });
-    expect(() => parseCliOptions(["--apply"])).toThrow("requires --backup");
-    expect(() => parseCliOptions(["--apply", "--backup", "relative"])).toThrow(
-      "absolute"
-    );
-  });
-
-  it("accepts --fixtures with an absolute directory and only on its own", () => {
-    expect(parseCliOptions(["--fixtures", "/abs/dir"])).toEqual({
-      mode: "fixtures",
-      directory: "/abs/dir",
-    });
-    expect(() => parseCliOptions(["--fixtures", "relative/dir"])).toThrow("absolute");
-    expect(() => parseCliOptions(["--fixtures"])).toThrow("needs a path");
-    expect(() => parseCliOptions(["--fixtures", "/abs/dir", "--apply"])).toThrow(
-      "exactly one"
-    );
-    expect(() =>
-      parseCliOptions(["--apply", "--backup", "/private/x", "--fixtures", "/abs"])
-    ).toThrow("exactly one");
-    expect(() => parseCliOptions(["--fixtures", "/abs/dir", "--check"])).toThrow(
-      "exactly one"
-    );
-    expect(() =>
-      parseCliOptions(["--fixtures", "/abs/dir", "--backup", "/private/x"])
-    ).toThrow("--backup is valid only with --apply");
-  });
-});
 
 describe("migration kit reporting and backup", () => {
   it("hashes a path to 16 hex characters and never echoes the path", () => {

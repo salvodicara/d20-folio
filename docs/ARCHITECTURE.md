@@ -3599,7 +3599,7 @@ Two contracts keep this fast and leak-free under the free-tier NFR:
 ## What this app deliberately doesn't do
 
 - **Roll dice outside the dice seam.** Randomness for a roll of the game exists only in
-  `src/lib/dice.ts` (ADR-0010, golden rule 32); everything else is deterministic formulas over
+  `src/lib/dice.ts` (ADR-0010, golden rule 32; stage 1 adds the seam and its guard); everything else is deterministic formulas over
   logged rolls. `main` still ships the no-dice surfaces until the play screen lands.
 - **Magic-fix migration of SRD references.** When the SRD changes, the app shows a clear
   "this feature was removed/renamed" warning rather than silently rewriting the character.

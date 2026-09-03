@@ -77,13 +77,8 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      // Off by default in dev (the SW would intercept HMR + stale-cache the dev
-      // bundle). The portrait-export E2E sets VITE_PWA_DEV=true so the dev server
-      // serves the REAL Workbox SW — the only way to exercise the no-cors-img →
-      // opaque-runtime-cache → export-fetch path against the real `/src` export
-      // code (the owner's bug runs ONLY with the SW active). Scoped to that one
-      // harness; normal `pnpm dev` and every other E2E are unaffected.
-      devOptions: { enabled: process.env.VITE_PWA_DEV === "true", type: "module" },
+      // Off in dev: the SW would intercept HMR and stale-cache the dev bundle.
+      devOptions: { enabled: false },
       // The three OG cards (`public/og-card.jpg` + its `-character` / `-campaign`
       // type siblings) are deliberately NOT here and are .jpg, which `globPatterns`
       // below does not match — so no link-preview image ever enters the offline

@@ -1,7 +1,7 @@
 name: Verify
 
 # The COMPOSED behavioural verdict, once per merge to main (golden rule 14):
-# the full Playwright e2e matrix (chromium + mobile + portrait-sw) sharded
+# the full Playwright e2e matrix (chromium + mobile + portrait-sw on `main`) sharded
 # across parallel runners, plus the composed unit suite — both against the same
 # composition that deploys (the private content pack checked out and landed at
 # ./content-pack, the seam deploy.yml uses). Public-repo Actions minutes are

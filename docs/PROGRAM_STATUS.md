@@ -68,7 +68,8 @@ the reset plan): K1 and its Functions bundle, the program supervisor core and th
 operating model, the P1/P3 migration scripts with their script-only legacy readers, `combat-io.ts`,
 `mechanics-trigger.ts`, 60 end-to-end specs with the pixel harnesses and the perf probe, and the
 superseded Wayfinder/K1/P2 plans and status records. The mechanics kernel is frozen by
-`tests/unit/mechanics-kernel-freeze.guard.test.ts` (37 pinned readers) until stage 6. The pack twin
+`tests/unit/mechanics-kernel-freeze.guard.test.ts` (37 pinned readers) until stage 6; the
+migration kit keeps only what the audit reads (its apply path and CLI were unread and died too). The pack twin
 dropped its item-resource migration test on the pack's `v2` branch. `ci.yml` now runs on pushes to
 `v2`.
 
@@ -76,6 +77,8 @@ dropped its item-resource migration test on the pack's `v2` branch. `ci.yml` now
 
 ## Delete zone
 
-Nothing here may be deleted merely because it looks complete. Worktrees are listed by
-`just wt-list`; a worktree is removed only after its branch is integrated and nothing owns it.
-Currently empty.
+Nothing here may be deleted merely because it looks complete. `v2` owns two worktrees: this one
+and the pack twin `d20-folio-content-v2`; neither is a candidate. The other worktrees `just
+wt-list` shows (`Codex/*` program-control and Codex task trees, `d20-folio-tactical-codex-design-lab`,
+`combat-p1-data-safety-*`) belong to `main`-era programs and are owned by `main`'s copy of this
+ledger; `v2` neither uses nor removes them.

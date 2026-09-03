@@ -11,8 +11,25 @@ import { describe, expect, it } from "vitest";
 
 const ROOT = resolve(__dirname, "../..");
 const SRC = join(ROOT, "src");
-const KERNEL_IMPORT = /from\s+["']@\/lib\/(?:mechanics-|mechanic-occurrence)/;
 const KERNEL_FILE = /^src\/lib\/(?:mechanics-|mechanic-occurrence)/;
+// Every static import/re-export and dynamic import specifier, by any spelling.
+const SPECIFIER = /(?:from\s+|import\s*\(\s*|require\s*\(\s*)["']([^"']+)["']/g;
+
+/** Resolve a specifier from `file` to a repo-relative path, or null for packages. */
+function resolveSpecifier(file: string, spec: string): string | null {
+  if (spec.startsWith("@/")) return `src/${spec.slice(2)}`;
+  if (spec.startsWith(".")) return relative(ROOT, resolve(join(ROOT, file), "..", spec));
+  return null;
+}
+
+function importsKernel(file: string): boolean {
+  const source = readFileSync(join(ROOT, file), "utf8");
+  for (const match of source.matchAll(SPECIFIER)) {
+    const target = resolveSpecifier(file, match[1] ?? "");
+    if (target !== null && KERNEL_FILE.test(target)) return true;
+  }
+  return false;
+}
 
 /** Production readers of the kernel outside the kernel itself (sorted). Shrinks only. */
 const FROZEN_READERS: readonly string[] = [
@@ -69,7 +86,7 @@ describe("mechanics kernel — frozen until stage 6", () => {
     const readers = walk(SRC)
       .map((file) => relative(ROOT, file))
       .filter((file) => !KERNEL_FILE.test(file))
-      .filter((file) => KERNEL_IMPORT.test(readFileSync(join(ROOT, file), "utf8")))
+      .filter(importsKernel)
       .sort();
     expect(
       readers,

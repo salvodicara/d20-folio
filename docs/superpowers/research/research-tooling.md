@@ -9,7 +9,7 @@ Repo facts that shape the verdicts (checked in the worktree):
 
 - Playwright 1.60 with projects `chromium` (Desktop Chrome), `mobile` (Pixel 7), plus service-worker
   twins; `tests/e2e/visual-full.spec.ts` already asserts EVERY surface × {dark,light} × {desktop,mobile}
-  × {en,it} via `toHaveScreenshot`, gated by `VISUAL=1` / `--update-snapshots` (`tests/e2e/visual-gate.ts`).
+  × {en,it} via `toHaveScreenshot`, gated by `VISUAL=1` / `--update-snapshots` (the old `tests/e2e/visual-gate.ts`, deleted on `v2` 2026-09-03).
   Baselines are platform-specific and NOT committed — that is the one real gap in (e).
 - `@axe-core/playwright` 4.11 (a11y sweep `tests/e2e/a11y.spec.ts`), `lucide-react` 1.16 (ISC),
   `@fontsource-variable/{alegreya,cinzel}` + `@fontsource/source-serif-4` (self-hosted, offline-safe).

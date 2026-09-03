@@ -31,7 +31,7 @@ import {
   reduceMemberCombatEffects,
 } from "@/lib/combat-state";
 
-/** The trio-clamp math alone, without the v1 play-state gate (the migration path). */
+/** The trio-clamp math alone, without the v1 play-state gate. */
 const applyCombatToSession = mergeCombatTrio;
 
 function session(overrides: Partial<SessionState> = {}): SessionState {

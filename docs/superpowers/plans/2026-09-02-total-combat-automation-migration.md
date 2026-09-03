@@ -10,7 +10,7 @@
 
 > **For agentic workers:** this is the phase-level program. Each phase is executed from its own
 > bite-sized plan written with `superpowers:writing-plans` at phase start (Phase 2's prototype
-> plan is [2026-09-02-p2-prototype-vertical.md](2026-09-02-p2-prototype-vertical.md)). Every phase
+> plan, `2026-09-02-p2-prototype-vertical.md`, was deleted on 2026-09-03; git history keeps it). Every phase
 > runs in a fresh worktree from `origin/main`, lands green through `just ci` (and `just ci-srd-only`
 > when the pack seam moves, `pnpm test:rules` when rules move), and ends with its deletion list
 > executed. No phase leaves a compatibility layer alive past its exit gate.

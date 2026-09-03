@@ -629,17 +629,17 @@ rule; their past actions remain attributed and undoable.
 
 ## 8. Test strategy (owner: fewer, professional)
 
-| Class                      | What it proves                                                                                              | Where                                           |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| Golden replays             | a log folds to an expected state; every hard case is one replay                                             | `tests/unit/combat/replays/*.json` + one runner |
-| Property: fold determinism | any permutation of a concurrent log folds to the same state                                                 | seeded shuffler (no dependency), 1 test         |
-| Property: codec totality   | `parse(serialize(x)) ≡ x` for generated documents incl. unknown keys; hostile inputs quarantine, never drop | 1 test per codec                                |
-| Exhaustiveness             | every step/event/lifetime kind has a reducer handler (compile-time `assertNever`) and a coverage row        | type-level + 1 guard                            |
-| Payment guard              | every costed program in the composed catalogue produces a `paid` receipt in its replay                      | 1 guard                                         |
-| Coverage drift guard       | regenerated coverage JSON equals the committed one                                                          | 1 guard                                         |
-| Rules                      | ~20 emulator cases: owner/member/DM/admin/anonymous per path                                                | `tests/rules`                                   |
-| Accessibility sweep        | axe serious/critical zero on every surface, both themes                                                     | `tests/e2e/a11y*.spec.ts` (one sweep)           |
-| Screenshot lane            | the owner's visual gate (rule 25); no pixel assertions in CI                                                | `tests/visual/*` (by hand until stage 6)        |
+| Class                      | What it proves                                                                                              | Where                                            |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Golden replays             | a log folds to an expected state; every hard case is one replay                                             | `tests/unit/combat/replays/*.json` + one runner  |
+| Property: fold determinism | any permutation of a concurrent log folds to the same state                                                 | seeded shuffler (no dependency), 1 test          |
+| Property: codec totality   | `parse(serialize(x)) ≡ x` for generated documents incl. unknown keys; hostile inputs quarantine, never drop | 1 test per codec                                 |
+| Exhaustiveness             | every step/event/lifetime kind has a reducer handler (compile-time `assertNever`) and a coverage row        | type-level + 1 guard                             |
+| Payment guard              | every costed program in the composed catalogue produces a `paid` receipt in its replay                      | 1 guard                                          |
+| Coverage drift guard       | regenerated coverage JSON equals the committed one                                                          | 1 guard                                          |
+| Rules                      | ~20 emulator cases: owner/member/DM/admin/anonymous per path                                                | `tests/rules`                                    |
+| Accessibility sweep        | axe serious/critical zero on every surface, both themes                                                     | `tests/e2e/a11y*.spec.ts` (two specs, one sweep) |
+| Screenshot lane            | the owner's visual gate (rule 25); no pixel assertions in CI                                                | `tests/visual/*` (by hand until stage 6)         |
 
 Representation-pinning tests are deleted with their representations (the stage 6–7 cuts). No
 end-to-end journey runs on `v2` (steering, 2026-09-03): the sweep and the screenshot lane are

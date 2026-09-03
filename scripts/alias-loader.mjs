@@ -9,9 +9,9 @@
  * `scripts/alias-hooks.mjs` add what Node does not know: the `@/` and `@pack`
  * aliases, extension-less relative imports, JSON import attributes, and the
  * `import.meta.glob(...)` expansion that makes the composed SRD/pack graph loadable
- * outside Vite. Used by every migration script via:
+ * outside Vite. Used by every script that reads the composed catalogue, e.g.:
  *
- *   node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts
+ *   node --import ./scripts/alias-loader.mjs scripts/audit-codec-loss.ts --fixtures <dir>
  */
 import { register } from "node:module";
 import { existsSync } from "node:fs";

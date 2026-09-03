@@ -496,7 +496,7 @@ CHA-save → Frightened belonging to that form alone (the other two forms force 
 **`checkBonus: { dice, refundOnFail? }`** (G23 — Fighter Tactical Mind) declares a "spend the
 `costTracker` pool to add `dice` to a FAILED ability check" affordance; `refundOnFail` models the 2024
 RAW that the resource use is NOT expended if the check still fails (resolved onto `summary.checkBonus`,
-roll-entry — the app never rolls). An action's **`cureConditions: [{ condition, costHp, fromLevel? }]`**
+roll-entry on the old surfaces; on `v2` the dice seam rolls). An action's **`cureConditions: [{ condition, costHp, fromLevel? }]`**
 (G19 — Paladin Lay On Hands) declares conditions it can neutralize by expending pool HP (5 HP ends
 Poisoned; `fromLevel:14` gates Restoring Touch's six extra conditions on the owning-class level);
 condition **ids** only (golden rule 7), localized at the render edge via `conditionLabel`, resolved
@@ -540,7 +540,7 @@ A SPELL's rolled Temp HP uses the twin `SrdSpellData.tempHpRoll: { dice, bonus, 
 (False Life: `{ dice:"2d4", bonus:4, bonusPerUpcast:5 }` — "2d4 + 4 Temporary HP", +5/slot level above
 1st) for the SAME dice-free-Grant reason. The engine resolves it onto `summary.tempHpApply: { dice?,
 bonus }` — the roll-entry-then-APPLY sibling of `healApply` but for Temp HP: `dice` is what the player
-rolls (golden rule 32 — the app never rolls), `bonus` is the deterministic part it adds, applied
+rolls (golden rule 32 — a logged `roll` action, entered by hand on the old surfaces), `bonus` is the deterministic part it adds, applied
 MAX-WINS via the store `gainTempHp` seam (temp HP don't stack), undoable. When the caster casts through
 a MAXIMIZING at-will source (Warlock **Fiendish Vigor** → the invocation's `autoMaxTempHpFormula` "2d4+4"
 → `atWillCasts[].autoMaxTempHp` 12), the engine emits a dice-FREE `{ bonus:12 }` and the card one-taps

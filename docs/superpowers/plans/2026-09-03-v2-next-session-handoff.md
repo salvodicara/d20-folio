@@ -37,7 +37,7 @@ English.
 - Gates on `v2`: `just ci` (about five minutes), `pnpm test:rules`, `vite build && pnpm test:budget`;
   all green at `e6f8797`.
 
-## First task: architecture reset against the steering (before any dice code)
+## First task (done 2026-09-03, commits `0e2d8ee`…`3a6cb72`): architecture reset against the steering
 
 The owner's standing rule (2026-09-03, repeated): no dead weight in the app; everything present
 is there for a reason and is optimal; when the conditions change, the architecture changes to stay

@@ -21,9 +21,6 @@ pnpm-debug.log*
 node_modules
 dist
 dist-ssr
-# vite-plugin-pwa dev-SW output (generated when VITE_PWA_DEV=true for the
-# portrait-export E2E); never committed.
-dev-dist
 *.local
 
 # Firebase

@@ -55,29 +55,10 @@ root pnpm dependencies, standalone `functions/` npm dependencies, and pinned Jus
 > (`--shard` on isolated runners — exactly what `verify.yml` does, 8 ways), never a shared-runner
 > worker (`playwright.config.ts`).
 
-**E2E lane shape (cost-trimmed 2026-06-13, ZERO coverage loss).** The Playwright matrix that
-`verify.yml` runs is the same `playwright.config.ts`,
-trimmed of provable waste:
-
-- **The native-mobile project runs only the specs that NEED the touch profile.** The project is
-  allow-listed with `testMatch` to the two width-dependent surface sweeps (`a11y.spec.ts`,
-  `i18n-sweep.spec.ts`), the Signet suite (the mobile management chrome), the ⌘K-chip test in
-  `mobile-layout.spec.ts`, and the three touch-gate specs whose coarse-pointer halves only execute
-  under Pixel-7 emulation. Every other behavioural journey runs in chromium with pinned viewports,
-  so desktop-only mouse/keyboard journeys are never replayed under touch. **A spec that self-gates
-  on `project.name === "mobile"` MUST be in that `testMatch` list** — otherwise it silently never
-  runs anywhere while reporting green (the Signet suite shipped exactly this way for three weeks;
-  caught by the 2026-08-05 test audit).
-- **`visual-full.spec.ts` runs ONLY in the pixel lane (`VISUAL=1` / `--update-snapshots`).** Its
-  no-flag navigate-only pass was retired (2026-08-05): the a11y + i18n sweeps drive the same
-  `SURFACES` manifest (with `prepare`) across both themes, locales, and viewports, so the ambient
-  gate lost ~344 duplicate navigations and zero unique signal.
-- **The service-worker dev server (`:5175`) boots ONLY for the SW projects.** `playwright.config.ts`
-  reads the `--project` flags: the SW `webServer` is started only when `portrait-sw` /
-  `portrait-sw-mobile` are in the run (or no `--project` filter = the full matrix). The
-  `--project=chromium` / `--project=mobile` CI legs and `pnpm test:e2e` skip that second `vite` boot.
-  It fails toward booting (anything not provably SW-free still gets the server), so the SW journey is
-  never starved of its origin.
+**E2E lane shape on `v2` (2026-09-03).** `playwright.config.ts` keeps two projects, `chromium` and
+`mobile`, both running only the accessibility sweep (`tests/e2e/a11y*.spec.ts`); the old
+allow-lists, the pixel lane and the service-worker projects are gone with the old suites. The
+paragraphs below describe `main`'s lane.
 
 **Why e2e is the per-merge REMOTE lane, not the pre-push gate.** The full matrix is ~1,450 tests —
 48 min unsharded on a CI runner (measured 2026-08-03), far beyond any local critical path. A push
