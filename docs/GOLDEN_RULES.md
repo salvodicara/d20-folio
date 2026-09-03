@@ -78,7 +78,8 @@ the new durable decision or kept explicitly one-off.
 
 ### Process and delivery
 
-11. **One worktree per task; no PR flow.** Branch from fresh `origin/main` with `just wt-new`; never
+11. **One worktree per task; no PR flow.** Branch from fresh `origin/main` with `just wt-new` (or, for
+    the new app, from the long-lived new-app branch named in `PRODUCT.md` §Steering); never
     edit/commit/switch the shared checkout. After review and green gates, rebase, push explicit
     `HEAD:main`, confirm the SHA, and remove the worktree. The owner remains sole commit author; no
     co-author/footer/trailer.
@@ -129,16 +130,22 @@ the new durable decision or kept explicitly one-off.
 
 ### Safety and quality
 
-21. **No dice rolling, ever.** No RNG or virtual dice. Show formulas; deterministic effects may apply
-    with undo, while dice-dependent effects require the user's external result.
-22. **Deploys are owner-gated; safe migrations are autonomous.** Never deploy without explicit
+29. **Steering wins.** `PRODUCT.md` §Steering is the top of the authority stack. A document, plan,
+    test or memory that contradicts it is fixed or deleted in the same change that notices it, never
+    left to pull the next agent back to an old direction. The three acceptance stories decide scope:
+    a feature that serves none of them is superfluous.
+30. **Every roll is logged and reviewable.** Dice roll in-app by default (shared 3D animation;
+    owner-ratified 2026-09-03, reversing the original "no dice" rule) or are entered from physical
+    dice; the DM may roll hidden. Every roll carries its formula, result, roller and source in the
+    encounter log; deterministic and rolled effects apply automatically with undo and correction.
+31. **Deploys are owner-gated; safe migrations are autonomous.** Never deploy without explicit
     per-change permission. Forward live-data migrations may run autonomously only under rule 10's
     snapshot/verify protocol. Destructive non-migration operations require explicit approval. Rules
     changes ship emulator tests; live-user fixtures remain green.
-23. **Dependencies are vetted; secrets stay out.** Prefer existing/platform capabilities. Before a new
+32. **Dependencies are vetted; secrets stay out.** Prefer existing/platform capabilities. Before a new
     runtime dependency, verify necessity, maintenance, size, license, and security. Keep secrets only in
     approved local/CI/Secret Manager stores and never in logs, docs, prompts, or memory.
-24. **Accessibility, performance, and cost are release bars.** Axe serious/critical findings are zero;
+33. **Accessibility, performance, and cost are release bars.** Axe serious/critical findings are zero;
     bundle/precache budgets hold; listener and write behavior respects Firebase limits; offline behavior
     remains functional.
 

@@ -6,12 +6,21 @@ load the whole documentation set by default.
 
 ## Product
 
-d20 Folio is a free, bilingual EN+IT, offline-first PWA for D&D 2024 players. It combines a
-deterministic rules engine, character management, and live party/campaign play. It complements the
-physical table and external dice; it is not a VTT and has no AI/LLM product surface.
+**Steering (owner, 2026-09-03; full text in [PRODUCT.md](PRODUCT.md) §Steering, which outranks
+every other document):** d20 Folio is a digital table where the app does the math and the rules
+the way Baldur's Gate 3's engine does, the people do the story, and the DM can change anything.
+Free, bilingual EN+IT, offline-first PWA for D&D 2024, for remote groups and the physical table;
+built for the owner's group first, public later. It is not a 3D game, not an AI narrator, not a
+chat. It is self-contained: notes, recap, chronicle, calendar, NPCs, loot, handouts and homebrew
+live in the app, never in another tool. Default automation is BG3's; the DM always has the last
+word. First milestone: one whole session of the group without opening Owlbear, D&D Beyond or a
+calculator.
 
-The app has live users. Preserve stored characters and the deployed experience. `main` is the
-integration line, not proof of what is deployed; deployment is always owner-triggered.
+The app has live users and production keeps working as it is: `main` receives production fixes
+only, the new app grows in a separate long-lived branch and worktree with a mandatory staging
+environment, and is released only when the milestone is reached. Preserve stored characters and
+the deployed experience; deployment is always owner-triggered. Approved cuts for the new branch
+and the keep/rebuild inventory are recorded in the steering.
 
 For the current roadmap and release state, inspect [PROGRESS.md](PROGRESS.md), git, and the relevant
 runtime/configuration rather than copying dated status into this briefing.
@@ -40,8 +49,10 @@ proposal until integrated.
 
 ## Product and safety invariants
 
-- **No dice rolling:** never generate dice results or use RNG for dice. Show formulas; deterministic
-  effects may apply with undo, while rolled effects require user input.
+- **Every roll is logged:** dice roll in-app by default or are entered from physical dice; every
+  roll records formula, result, roller and source in the encounter log, and every consequence
+  applies automatically with undo. Shipped code still enforces the older "no dice" rule until the
+  play screen lands; do not add RNG outside the dice seam.
 - **Bilingual by construction:** every user-visible string ships in EN and IT through i18n; never
   branch on display text or persist translated labels.
 - **Licensing partition:** public `src/data` and `src/i18n/*/srd` contain only SRD 5.2.1 content.

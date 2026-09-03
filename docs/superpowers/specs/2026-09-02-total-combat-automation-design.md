@@ -29,8 +29,16 @@ document differs.
 
 ## 1. Invariants this design keeps
 
-- The app never rolls dice. Every die face is a table-entered answer; the reducer computes and
-  applies everything else.
+> **Reconciled 2026-09-03 to the steering (`PRODUCT.md` §Steering, golden rule 29).** Two
+> invariants below were reversed by the owner: the app now rolls dice by default (with manual entry
+> and hidden DM rolls) and owns an Owlbear-level map with positions, measurement and area
+> membership. The log-first, entity-generic, undoable reducer stays the target; the dice seam and
+> map-derived facts join its vocabulary (see the steering's stage 1: dice seam, positions and areas
+> in the aggregate).
+
+- Dice are a logged action: rolled in-app (shared 3D result) or entered from real dice, hidden or
+  visible, always with formula, faces, total, roller and source; the reducer computes and applies
+  everything else from that action.
 - Override-first: every derived value auto-computes and every derived value is overridable; an
   override is an action in the log, survives recomputation and is undone like any action.
 - Bilingual by construction: the engine is locale-free; every label is an id resolved in
@@ -42,8 +50,10 @@ document differs.
   never recur).
 - Offline-first, zero cost: no gameplay Cloud Functions; fewer listeners than today; Firestore
   free-tier envelope.
-- No VTT: the app owns declared relational facts and every derivable consequence; it never owns
-  position, map, measure or line of sight.
+- The map is part of the table: the app owns positions, distances, areas and simple fog on an
+  Owlbear-level map, derives reach, range bands and area membership from them (provenance
+  `derived`), and keeps declared relational facts (`declared`) for cover, most visibility, elevation
+  and map-less play. Walls, dynamic vision and lighting are out of scope.
 
 ## 2. State model
 
@@ -573,11 +583,8 @@ adapters) → `src/features`/`src/components`. Firestore adapters live in `src/l
 
 ## 12. Constitution and document conflicts (proposed wording for ratification)
 
-- `PRODUCT.md` §Product Purpose, replace the last two sentences with: "DM tools are optional: a
-  table whose DM does not use the app still plays solo with the same engine. The app owns every
-  declared relational fact of a fight and every consequence the rules derive from it, for every
-  creature at the table; it never owns position, maps, measurement or line of sight, which stay
-  with the table or a virtual tabletop such as Owlbear Rodeo."
+- `PRODUCT.md`: superseded 2026-09-03 by the steering (the app owns the map and the dice; the DM
+  has the last word). No wording from this section applies any more.
 - `docs/PRODUCT_CONSTITUTION.md` §2.9, second bullet: keep; add "The DM may run every creature's
   turn in the app; monsters are executable stat blocks, not reference text. What the app cannot
   observe (position, range, cover, who entered an area) is declared once, with a default and an
@@ -595,14 +602,14 @@ adapters) → `src/features`/`src/components`. Firestore adapters live in `src/l
 
 ## 13. Residuals (structural, never to be rediscovered)
 
-| Residual                                                                                                                    | Structural reason                             | What the app still does                                                                                 |
-| --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Every die face                                                                                                              | no RNG, by constitution                       | asks once, validates range, applies everything                                                          |
-| Position, distance, line of sight, area membership, who left reach                                                          | no geometry, by constitution                  | declared relations with defaults and overrides; consequences derived                                    |
-| DM rulings (surprise, tie order, Influence, Legendary Resistance spend, THP keep/replace, knock-out, simultaneous ordering) | the SRD delegates them                        | a typed input with a default                                                                            |
-| Lair actions                                                                                                                | not in SRD 5.2.1; 2024 uses "in Lair" bonuses | `usesInLair` modeled; homebrew may author an initiative-count trigger                                   |
-| Narrative clauses (illusions, social effects, out-of-combat utility)                                                        | no mechanical consequence to compute          | `manual-table` step with the text                                                                       |
-| Pack/homebrew mechanics that exceed the step vocabulary                                                                     | closed world                                  | conform fails with a path; the vocabulary grows by a versioned schema change, never by a content branch |
+| Residual                                                                                                                        | Structural reason                             | What the app still does                                                                                 |
+| ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Every die face (only when the roller chooses real dice)                                                                         | per-person dice mode (steering)               | asks once, validates range, applies everything                                                          |
+| Cover, most visibility, elevation (position, distance, area membership and who left reach are map-derived when a map is loaded) | no walls/vision/lighting by steering          | declared relations with defaults and overrides; consequences derived                                    |
+| DM rulings (surprise, tie order, Influence, Legendary Resistance spend, THP keep/replace, knock-out, simultaneous ordering)     | the SRD delegates them                        | a typed input with a default                                                                            |
+| Lair actions                                                                                                                    | not in SRD 5.2.1; 2024 uses "in Lair" bonuses | `usesInLair` modeled; homebrew may author an initiative-count trigger                                   |
+| Narrative clauses (illusions, social effects, out-of-combat utility)                                                            | no mechanical consequence to compute          | `manual-table` step with the text                                                                       |
+| Pack/homebrew mechanics that exceed the step vocabulary                                                                         | closed world                                  | conform fails with a path; the vocabulary grows by a versioned schema change, never by a content branch |
 
 ## 14. Risk register
 
