@@ -1,5 +1,13 @@
 # Total combat automation — migration program
 
+> **Superseded on 2026-09-03 (P2–P5).** The steering (`PRODUCT.md` §Steering, golden rule 31)
+> replaced this phase program with the stages of
+> [`2026-09-03-new-app-stage-1.md`](2026-09-03-new-app-stage-1.md) on the long-lived branch
+> `v2`. P0 and P1 are history: P1 was integrated on `main` at `7b95f24` (docs to `9b06b75`),
+> its two migrations were applied to production on 2026-09-03 and its deploy is owned by
+> `main`. P2–P5 are superseded as noted under each heading; what survived was folded into
+> stages 1–4 and 7. Nothing below is an instruction any more.
+
 > **For agentic workers:** this is the phase-level program. Each phase is executed from its own
 > bite-sized plan written with `superpowers:writing-plans` at phase start (Phase 2's prototype
 > plan is [2026-09-02-p2-prototype-vertical.md](2026-09-02-p2-prototype-vertical.md)). Every phase
@@ -29,15 +37,15 @@ stored character at risk or breaking the deployed table.
 
 ## Phase map
 
-| Phase | Outcome                                                                                              | Production risk            | Owner gate                                         |
-| ----- | ---------------------------------------------------------------------------------------------------- | -------------------------- | -------------------------------------------------- |
-| P0    | audit, specs, ADRs, this plan, prototype, doc reconciliation                                         | none (pure module + docs)  | read and approve                                   |
-| P1    | data safety: total codec, ids, per-domain sync, legacy cutover, diagnostics                          | every character read/write | live migration run                                 |
-| P2    | engine core: full vocabulary, monster adapter, coverage generator, all replays; dead kernels deleted | none                       | none                                               |
-| P3    | solo cutover, family by family, legacy branches deleted                                              | every solo play write      | live migration (`combat/state` v2, item resources) |
-| P4    | shared cutover: encounter documents, slim campaign, rules rewrite, executable monsters               | campaigns and encounters   | live migration (campaigns), rules deploy           |
-| P5    | deletion of `mechanics-*`, `session.world`, legacy executors; docs folded; test count target         | none                       | none                                               |
-| UI    | one-tap surfaces (separate round, screenshot-gated)                                                  | visual                     | screenshot approval                                |
+| Phase | Outcome                                                                                              | Production risk            | Owner gate                                                            |
+| ----- | ---------------------------------------------------------------------------------------------------- | -------------------------- | --------------------------------------------------------------------- |
+| P0    | audit, specs, ADRs, this plan, prototype, doc reconciliation                                         | none (pure module + docs)  | read and approve                                                      |
+| P1    | data safety: total codec, ids, per-domain sync, legacy cutover, diagnostics                          | every character read/write | live migration run                                                    |
+| P2    | engine core: full vocabulary, monster adapter, coverage generator, all replays; dead kernels deleted | none                       | **superseded** → stages 1, 3 (bounded tier); cuts done 2026-09-03     |
+| P3    | solo cutover, family by family, legacy branches deleted                                              | every solo play write      | **superseded** → stages 3, 6 (one play surface replaces the families) |
+| P4    | shared cutover: encounter documents, slim campaign, rules rewrite, executable monsters               | campaigns and encounters   | **superseded** → stage 4                                              |
+| P5    | deletion of `mechanics-*`, `session.world`, legacy executors; docs folded; test count target         | none                       | **superseded** → stages 6–7 (partly done 2026-09-03)                  |
+| UI    | one-tap surfaces (separate round, screenshot-gated)                                                  | visual                     | screenshot approval                                                   |
 
 ## P0 — this round
 
@@ -100,6 +108,10 @@ executed 2026-09-03 (see the execution map above).
 
 ## P2 — Engine core (pure, no production reach)
 
+> Superseded: the vocabulary is tiered to the stories (authoring spec §6) and built in stage 3;
+> the dice seam is stage 1; K1, `mechanics-trigger.ts`, the Wayfinder charters and the
+> `feat/wayfinder-*` disposition were executed on `v2` on 2026-09-03 (architecture reset).
+
 1. Complete `src/lib/combat/` to the authoring spec: every trigger, cost, input, step, predicate,
    lifetime; the monster adapter `monsterMechanics`; the coverage generator with its drift guard;
    the personal-aggregate schema (`combat/state` v2 shape, not yet written by the app).
@@ -118,6 +130,12 @@ catalogue's combat clauses; replays green in both build modes. **Blast radius:**
 **Rollback:** revert the branch.
 
 ## P3 — Solo cutover, family by family
+
+> Superseded: there is no family-by-family cutover of the old surfaces; stage 6 replaces them
+> with one play surface and stage 7 deletes them. Of the follow-ups below: the legacy readers
+> and `scripts/migrate-character-parents.ts` were deleted on `v2` on 2026-09-03 (they run from
+> `main`); the `includeMetadataChanges` measurement and the separate emulator-test budget move
+> to stage 4; the backup-manifest note stays valid for `main`'s runbook.
 
 Order (each family = one worktree, one plan, one deletion list): resources and conversions →
 casts (Spells tab and Play tab through one intent seam) → attacks and Extra Attack → conditions
@@ -158,6 +176,9 @@ the family branches, `session.world` writers (readers die in P5), `combat-transi
 
 ## P4 — Shared cutover
 
+> Superseded by stage 4 (shared encounter document, one listener, rules reduced to access) and
+> stage 8 (chronicle from the log).
+
 1. `campaigns/{id}/encounters/{eid}` documents; `combat-io.ts` append/subscribe/checkpoint.
 2. Campaign document slimmed: delete `encounter`, `encounterInit`, `encounterSkipped`,
    `memberDetails[uid].character`, `memberDetails[uid].role`; migration ends any live encounter
@@ -181,6 +202,9 @@ emulator. **Blast radius:** campaigns. **Rollback:** previous SHA + campaign bac
 rules.
 
 ## P5 — Deletion and documentation
+
+> Superseded by the stage 6–7 cuts; the reset of 2026-09-03 already deleted K1, the program
+> supervisor, the old end-to-end suites, `docs/AUTOMATION_HANDOFF.md` and the superseded plans.
 
 Delete `src/lib/mechanics-*.ts` and their tests, `session.world`, `session-state-codec.ts` v1,
 `TurnEconomyProvider` composite branches and `CombatResolver` orchestration that survived P3/P4,
