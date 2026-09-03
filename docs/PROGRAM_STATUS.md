@@ -81,7 +81,58 @@ roller; 4 tests), `src/lib/views/roll-view.ts` with EN/IT keys (4 tests),
 runner with `dice-provenance.json`. Two reviews (reset, seam) applied. Gates on `v2` at the
 close: `just ci` 4 min 32 s (822 files / 18,621 tests, Functions 129), `pnpm test:rules` 113
 cases, `vite build && pnpm test:budget` 6 cases, `just ci-srd-only` 2 min 20 s (645 files /
-13,051 tests). Next: stage 2 (positions and areas), from
+13,051 tests). Next: stage 2 (positions and areas).
+
+## `v2` — stage 2, positions and areas in the aggregate (2026-09-03)
+
+Design: `docs/superpowers/specs/2026-09-03-v2-stage-2-positions-areas-design.md`. Plan:
+`docs/superpowers/plans/2026-09-03-v2-stage-2-positions-areas.md` (8 tasks, executed inline —
+the pieces are too coupled across `types.ts`/`mechanic.ts`/`intent.ts` for independent subagent
+tasks without merge conflicts).
+
+**Done.** `Position` (a grid cell) and `Entity.position` (types.ts); `src/lib/combat/position.ts`
+— pure geometry: Chebyshev ("chessboard", the SRD 2024 default) distance × 5 ft/cell, the kept
+four-band range ladder (`reach|near|far|out`; the UI spec's unratified five-band proposal has no
+stage-3 consumer yet, so it stays a documented future decision, not adopted), and
+`areaMembership` for the five SRD area shapes (sphere, cylinder, cube, cone, line). The `move`
+Step and a `position` Input joined the mechanics authoring contract (`mechanic.ts`); its handler
+(`intent.ts`) spends the entity's movement budget (`turn.movementUsed` vs `stats.speed`, honoring
+an `overrides["stats.speed"]` override the same way `effectiveAc` already does), updates
+position, and recomputes derived `adjacent`/`range` relations against every other positioned
+entity — opening the opportunity-attack window (`entity-left-reach`) for any pair that left
+reach, through a helper (`openLeftReachWindow`) factored out of the pre-existing
+`applyDeclare` path so a real move and a manually declared departure share one mechanism. A
+universal `core:move` mechanic was added to the prototype catalogue so the step has a real
+invokable consumer. Derived-vs-declared precedence needs no new `provenance` field: a later
+action in the log wins, the same rule every other override in this engine already uses; `move`
+never touches `engaged`, which stays a purely declared, sticky fact.
+
+The golden-replay runner's pre-log `relations` fixture seed — flagged as temporary in `fold.ts`
+since stage 1 — is retired: `dice-provenance.json`'s two `visible` facts are now `declare`
+actions inside the replayed log, and a new replay, `position-and-reach.json`, proves a real
+`move` (not a `declare`) drives `entity-left-reach` and the opportunity-attack window end to end,
+closing the map-derived half of hard case 3 (cover/range/engagement/visibility).
+
+An independent review (fresh subagent, no session context) found one Important issue — a
+non-finite (`NaN`) move destination passed the answer guard and silently defeated the movement
+budget check via `NaN`'s comparison semantics, corrupting position state in the append-only log —
+fixed with a `Number.isFinite` guard and a regression test that fails without it; a Minor cost-id
+naming nit (`turn:movement`, matching every sibling cost site) was also applied. Everything else
+(relation-recompute symmetry across independently-moving entities, turn-gating, budget
+accounting, the `Answer` union's `Position` variant, area-membership math, replay arithmetic) held
+up under the reviewer's adversarial tracing.
+
+**Gates on `v2` at the close:** `just ci` 4 min 26 s (824 files / 18,659 tests all green, plus
+Functions and the build); `pnpm test:rules` 15.3 s (113 cases); `vite build` (3.1 s) +
+`pnpm test:budget` (6 cases, 1.7 s); `just ci-srd-only` 2 min 13 s (the public composition, run
+because `src/lib/combat` and `src/data/combat` are public/SRD modules). Combined `v2` gate well
+under the 15-minute target.
+
+**Out of stage 2** (unchanged from the design doc): no map, no `TargetSpec.count: "area"` wiring
+(stage 3, with Fireball), no cover/visibility/elevation derivation, no difficult terrain, forced
+movement or reach-weapon support, no fifth range band.
+
+Next: stage 3 (the reducer for Marco's first turn and Sara's ogre ambush), from
 `docs/superpowers/plans/2026-09-03-v2-next-session-handoff.md`.
 
 ## Delete zone

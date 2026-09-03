@@ -92,6 +92,16 @@ carrying pre-migration shapes or obsolete residue. Plan and receipt:
 2. **Positions and areas in the aggregate.** `position` on entities, `area` in the mechanic
    vocabulary (sphere, cone, line, cube, cylinder); reach, range band, area membership and
    "who left reach" derived with provenance `derived`, declared facts as the fallback.
+   **Status (2026-09-03): closed on `v2`.** Design:
+   `2026-09-03-v2-stage-2-positions-areas-design.md`; plan:
+   `2026-09-03-v2-stage-2-positions-areas.md`. `src/lib/combat/position.ts` (Chebyshev distance,
+   the kept four-band range ladder, area membership for the five SRD shapes); the `move` step and
+   its handler (`intent.ts`) derive `adjacent`/`range` and open the opportunity-attack window on a
+   real departure through the same helper a manually declared one already used; the golden-replay
+   runner's pre-log `relations` seed is retired in favor of `declare` log actions
+   (`dice-provenance.json`) and a new replay (`position-and-reach.json`) proves the map-derived
+   path end to end. One independent review applied (a `NaN`-destination budget bypass fixed).
+   Receipt: `docs/PROGRAM_STATUS.md`.
 3. **Reducer for the two story encounters.** From `src/lib/combat`: move, weapon attack,
    cantrip and levelled area save spell, monster multiattack via an adapter over the typed stat
    blocks, conditions, concentration, damage and 0 HP, opportunity-attack window, `override`,
