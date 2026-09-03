@@ -550,14 +550,21 @@ approved, with corrections to be applied before any row of §8c is dated as fina
    label on touch) — rule 40.
 3. Feature parity must be explicit and complete: everything D&D Beyond does around the character,
    everything Owlbear does for the DM (the group drops Owlbear), as much of Baldur's Gate 3 as a
-   table allows, with the DM always able to modify, override and correct — rule 41 and §10.
+   table allows, with the DM always able to modify, override and correct — rule 41 and §10. The
+   first correction round proposed an in-app "coming from Owlbear" guide; the owner rejected it
+   the same evening: the app never refers to other products, discoverability comes from the
+   design itself and from first-time tips. The ledgers stay internal to this document.
 4. Dense screens (Privilegi, Incantesimi and the like) must be scannable at first glance — rule 42.
 5. Wizards (creation, level-up) and the design as a whole must feel more premium, coherent and
    unique; the calendar must carry the functions of the premium products (Google Calendar sync
    and the like) — rules 43–44.
 
-The corrections were delivered the same evening as dossier 21 (`mockups/dossier13*`); their
-verdict is pending.
+The corrections were delivered the same evening as dossier 21 (`mockups/dossier13*`). Second
+verdict (2026-09-03, late): the Baldur's Gate 3 ring is approved; three details fixed the same
+night (the Rest label centred in the ring, the turn block aligned with the hotbar and kept clear
+of the log, the overflow in the spell tab's left rail); the in-app "coming from Owlbear" guide is
+rejected (rule 41). Stage U is agreed in direction for every screen; the rows of §8c are dated
+when the owner closes the last details in the next session.
 
 ### 8f. Rules added by the corrections (2026-09-03)
 
@@ -572,12 +579,13 @@ verdict is pending.
     sentence; it never covers the trigger. On touch, long-press shows the label. The first use of
     a new control gets a cyan teaching tip (once, resettable). Reference explains (component 8)
     are separate and always available.
-41. **Explicit parity.** §10 keeps three ledgers (Owlbear → here, D&D Beyond → here, Baldur's
-    Gate 3 → here with the table's limits); no capability of Owlbear may lack a row and a place
-    in the app. The in-app DM guide "Vieni da Owlbear? Dove trovo…" renders the ledgers with a
-    "Mostrami" that opens the right screen and points at the control; it opens by itself the
-    first time a DM enters the table. The DM can modify, override and correct any automatic
-    outcome in place, with undo, on every surface.
+41. **Explicit parity, discoverable by design.** §10 keeps three internal ledgers (Owlbear → here,
+    D&D Beyond → here, Baldur's Gate 3 → here with the table's limits); no capability of Owlbear
+    may lack a row and a place in the app. The app itself never names or refers to other
+    products (owner, 2026-09-03): a DM must find everything by using a product that is intuitive
+    and well made, helped at most by first-time teaching tips (rule 40) on the play screen and the
+    DM drawer. The DM can modify, override and correct any automatic outcome in place, with undo,
+    on every surface.
 42. **Scan-first rows.** A list row carries one sign (tile), one name, one muted line and one
     verb; no chips inside rows; legends never sit in lists; the description appears only on the
     selected row (D&D Beyond) and in the detail column; components, durations and rules live in
@@ -594,7 +602,8 @@ verdict is pending.
 
 ## 10. Parity ledgers (owner, 2026-09-03: "lo strumento definitivo per giocare a D&D")
 
-Evidence: the Owlbear checklist in `docs/superpowers/research/2026-09-03-vtt-play-screen-observations.md`
+Internal ledgers for design and acceptance; never rendered in the product (rule 41). Evidence: the
+Owlbear checklist in `docs/superpowers/research/2026-09-03-vtt-play-screen-observations.md`
 (refs5), the D&D Beyond surfaces in the component and surface observations (refs, refs3), the
 Baldur's Gate 3 screens in refs6. "Where" names the screen of §8c.
 

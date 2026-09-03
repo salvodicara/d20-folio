@@ -53,7 +53,12 @@ onboarding and login, settings, share view. Method: one screen at a time, dossie
 reference screens of the leading products (BG3, D&D Beyond, Owlbear, Foundry, Roll20, Kanka…)
 beside our rendition, the licensed icon sprite, the approved v8 visual system; verdict "va
 bene / cosa stona" per screen; a screen map (flows between screens) approved last. Output:
-the design spec updated with every approved screen and a visual bible board. 0. **Safety gate (blocking).** Migration P1 items 1–3 from
+the design spec updated with every approved screen and a visual bible board.
+**Status (2026-09-03):** delivered and agreed in direction — 80 screens, the screen map and
+dossiers 16–21 reviewed by the owner («più o meno ci siamo»), corrections applied (spec §8e–8f,
+rules 39–44, §10 parity ledgers); the last details are dated in spec §8c in the next session,
+which then opens stage 0. Design artifacts and reference captures stay outside the repository
+(`~/.agents/state/d20-folio/design-2026-09/`). 0. **Safety gate (blocking).** Migration P1 items 1–3 from
 `docs/superpowers/plans/2026-09-02-combat-p1-data-safety.md`: closed-world codec with unknown-key
 preservation, `instanceId` on custom equipment/spells/features, per-domain sync so conflicts
 surface. Dry-run against the six fixtures and a production export. Nothing else ships before.
