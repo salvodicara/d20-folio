@@ -1,0 +1,143 @@
+{
+  "name": "dice provenance — app, manual, hidden, tampered, consumed, undone",
+  "dm": "dm",
+  "entities": [
+    {
+      "id": "ranger",
+      "kind": "pc",
+      "controllerUid": "p1",
+      "hp": 20,
+      "ac": 15,
+      "abilities": { "DEX": 3 },
+      "mechanics": ["srd:weapon:longbow"]
+    },
+    {
+      "id": "monster-1",
+      "kind": "monster",
+      "controllerUid": "dm",
+      "hp": 7,
+      "ac": 15,
+      "mechanics": ["monster:goblin:scimitar"]
+    }
+  ],
+  "initiative": { "ranger": 20, "monster-1": 10 },
+  "order": ["ranger", "monster-1"],
+  "relations": [
+    { "kind": "visible", "a": "ranger", "b": "monster-1", "value": true },
+    { "kind": "visible", "a": "monster-1", "b": "ranger", "value": true }
+  ],
+  "log": [
+    {
+      "id": "r-app",
+      "by": "p1",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d20",
+        "faces": [14],
+        "total": 14,
+        "seed": 5,
+        "source": "app",
+        "hidden": false,
+        "roller": "ranger",
+        "purpose": "attack",
+        "label": null
+      }
+    },
+    {
+      "id": "r-tampered",
+      "by": "p1",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d20",
+        "faces": [20],
+        "total": 20,
+        "seed": 5,
+        "source": "app",
+        "hidden": false,
+        "roller": "ranger",
+        "purpose": "attack",
+        "label": null
+      }
+    },
+    {
+      "id": "r-manual",
+      "by": "p1",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d20",
+        "faces": [15],
+        "total": 15,
+        "seed": null,
+        "source": "manual",
+        "hidden": false,
+        "roller": "ranger",
+        "purpose": "attack",
+        "label": null
+      }
+    },
+    {
+      "id": "r-damage",
+      "by": "p1",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d8",
+        "faces": [6],
+        "total": 6,
+        "seed": null,
+        "source": "manual",
+        "hidden": false,
+        "roller": "ranger",
+        "purpose": "damage",
+        "label": null
+      }
+    },
+    {
+      "id": "r-hidden",
+      "by": "dm",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d20",
+        "faces": [4],
+        "total": 4,
+        "seed": 9,
+        "source": "app",
+        "hidden": true,
+        "roller": "monster-1",
+        "purpose": "attack",
+        "label": null
+      }
+    },
+    {
+      "id": "i-shot",
+      "by": "p1",
+      "kind": "intent",
+      "entity": "ranger",
+      "mechanic": "srd:weapon:longbow",
+      "program": "attack",
+      "targets": ["monster-1"],
+      "answers": { "roll": { "roll": "r-manual" }, "damage": { "roll": "r-damage" } },
+      "payment": [],
+      "window": null,
+      "basedOn": 0
+    },
+    {
+      "id": "u-damage",
+      "by": "dm",
+      "kind": "undo",
+      "of": "r-damage",
+      "reason": "DM correction"
+    }
+  ],
+  "expect": {
+    "applied": 3,
+    "rejections": [
+      { "action": "r-tampered", "reason": "invalid-roll" },
+      { "action": "i-shot", "reason": "missing-answer" }
+    ],
+    "state": {
+      "rolls.r-app.seed": 5,
+      "rolls.r-hidden.hidden": true,
+      "entities.monster-1.vitals.hp": 7
+    }
+  }
+}

@@ -37,7 +37,6 @@ Count them with `find tests/unit -name '*.test.ts' | wc -l` (445), `find tests/u
 
 ## Golden replays
 
-The contract (stage 1 adds the runner and the first replay; nothing exists before that commit):
 `tests/unit/combat/replays/*.json`, one runner (`tests/unit/combat/replays.test.ts`): a log of
 actions folds to an expected state and an expected list of rejections. One replay per hard case
 and per acceptance story; stories 1 and 2 (`marco-first-turn.json`, `sara-ogre-ambush.json`) are
