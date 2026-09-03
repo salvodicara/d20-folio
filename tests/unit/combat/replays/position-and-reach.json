@@ -1,0 +1,130 @@
+{
+  "name": "position and reach — a real move (not a declare) opens the opportunity window",
+  "dm": "dm",
+  "entities": [
+    {
+      "id": "ranger",
+      "kind": "pc",
+      "controllerUid": "p1",
+      "hp": 20,
+      "ac": 15,
+      "abilities": { "DEX": 3 },
+      "mechanics": ["srd:weapon:shortsword", "core:move"]
+    },
+    {
+      "id": "monster-1",
+      "kind": "monster",
+      "controllerUid": "dm",
+      "hp": 7,
+      "ac": 15,
+      "mechanics": ["core:move"]
+    }
+  ],
+  "initiative": { "ranger": 20, "monster-1": 10 },
+  "order": ["ranger", "monster-1"],
+  "log": [
+    {
+      "id": "place-ranger",
+      "by": "p1",
+      "kind": "intent",
+      "entity": "ranger",
+      "mechanic": "core:move",
+      "program": "move",
+      "targets": [],
+      "answers": { "to": { "x": 0, "y": 0 } },
+      "payment": [],
+      "window": null,
+      "basedOn": 0
+    },
+    { "id": "end-1", "by": "dm", "kind": "table", "table": { "op": "end-turn" } },
+    {
+      "id": "place-monster",
+      "by": "dm",
+      "kind": "intent",
+      "entity": "monster-1",
+      "mechanic": "core:move",
+      "program": "move",
+      "targets": [],
+      "answers": { "to": { "x": 1, "y": 0 } },
+      "payment": [],
+      "window": null,
+      "basedOn": 0
+    },
+    { "id": "end-2", "by": "dm", "kind": "table", "table": { "op": "end-turn" } },
+    { "id": "end-3", "by": "dm", "kind": "table", "table": { "op": "end-turn" } },
+    {
+      "id": "leave",
+      "by": "dm",
+      "kind": "intent",
+      "entity": "monster-1",
+      "mechanic": "core:move",
+      "program": "move",
+      "targets": [],
+      "answers": { "to": { "x": 5, "y": 0 } },
+      "payment": [],
+      "window": null,
+      "basedOn": 0
+    },
+    {
+      "id": "r-oa",
+      "by": "p1",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d20",
+        "faces": [15],
+        "total": 15,
+        "seed": null,
+        "source": "manual",
+        "hidden": false,
+        "roller": "ranger",
+        "purpose": "attack",
+        "label": null
+      }
+    },
+    {
+      "id": "r-oa-dmg",
+      "by": "p1",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d6",
+        "faces": [4],
+        "total": 4,
+        "seed": null,
+        "source": "manual",
+        "hidden": false,
+        "roller": "ranger",
+        "purpose": "damage",
+        "label": null
+      }
+    },
+    {
+      "id": "oa",
+      "by": "p1",
+      "kind": "intent",
+      "entity": "ranger",
+      "mechanic": "srd:weapon:shortsword",
+      "program": "opportunity",
+      "targets": ["monster-1"],
+      "answers": { "roll": { "roll": "r-oa" }, "damage": { "roll": "r-oa-dmg" } },
+      "payment": [],
+      "window": "window-1",
+      "basedOn": 0
+    },
+    {
+      "id": "resolve-oa",
+      "by": "dm",
+      "kind": "resolve",
+      "window": "window-1"
+    }
+  ],
+  "expect": {
+    "applied": 10,
+    "rejections": [],
+    "state": {
+      "entities.monster-1.position": { "x": 5, "y": 0 },
+      "entities.monster-1.vitals.hp": 3,
+      "entities.ranger.turn.reaction": 1,
+      "windows": []
+    }
+  }
+}
