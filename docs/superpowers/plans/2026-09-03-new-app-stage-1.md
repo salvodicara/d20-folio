@@ -17,6 +17,14 @@ the order, the gates and what is out.
   production project.
 - The four acceptance stories in the steering are the scope test; golden replays of stories 1 and
   2 are the engine's acceptance tests.
+- **The test portfolio and CI are rebuilt with the new app (owner, 2026-09-03, repeated).** The
+  62 end-to-end specs of the old app are not carried over and `v2` adds none of them: the old
+  suites cost almost an hour per run and that is not acceptable. `v2` keeps the unit and rules
+  tests that guard live data, the golden replays of the four acceptance stories, one
+  accessibility sweep, and the screenshot suite that serves the visual gate — nothing else in
+  the gate. Target for the `v2` gate: under 15 minutes end to end; end-to-end journeys run on
+  one browser and one viewport per story. The old e2e directory is deleted in the cuts of stage 7
+  once the new surfaces replace the old ones; until then the old suites run only on `main`.
 
 ## Staging setup (once, before stage 0 is played)
 
@@ -82,7 +90,8 @@ surface. Dry-run against the six fixtures and a production export. Nothing else 
 6. **One play surface.** Dossier 14 as approved in direction: initiative strip, map, hotbar of
    the selected entity, log with undo, DM drawer with hidden/fog/HP editor. Old `PlayTab`,
    `CombatResolver`, `TurnEconomyProvider` stay unreferenced until the surface works, then die.
-7. **Cuts.** Delete the mechanics kernel and its tests, the command kernel, the program
+7. **Cuts.** Delete the mechanics kernel and its tests, the old end-to-end suites and their
+   fixtures (the test portfolio is rebuilt per the ground rules), the command kernel, the program
    supervisor, the dev scaffolding routes, POSITIONING.md and the superseded plans, the atlas
    authority — once nothing reads them (rule 10). Salvage typed data and coverage knowledge.
 8. **The rest of the session.** Character screen in the BG3 grammar (dossier 15), campaign home

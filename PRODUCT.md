@@ -50,7 +50,10 @@ Firebase project on the free tier, staging hosting, the six team fixtures seeded
 CI) is mandatory until release. Approved cuts for the new branch: the character-only mechanics
 kernel and its tests, the agent program supervisor and the superseded plans, the five sheet modes
 and three combat executors (rebuilt as one sheet and one hotbar), and the old visual atlases as
-authority. Salvage the automation knowledge (typed data, coverage, grants).
+authority. The test portfolio and CI are rebuilt with the new app: the old end-to-end suites
+(almost an hour per run) are not carried over; the new gate keeps unit and rules tests, the golden
+replays of the acceptance stories, one accessibility sweep and the screenshot suite, and must
+stay fast (target under 15 minutes). Salvage the automation knowledge (typed data, coverage, grants).
 
 **Method.** Giants' shoulders (golden rule 30): every screen, component, model and workflow is
 copied from the state of the art with real evidence and then improved — never invented. UI/UX
