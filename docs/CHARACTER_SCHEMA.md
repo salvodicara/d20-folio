@@ -444,7 +444,7 @@ fields removed; git history preserves the script). The durable result: the subdo
 parent carries no trio, and every reader falls to the full-HP default only when the subdoc is genuinely
 absent.
 
-### Legacy parent cutover — the one-off `migrate-character-parents` (P1, prepared)
+### Legacy parent cutover — the one-off `migrate-character-parents` (P1, applied to production 2026-09-03; deleted after the deploy)
 
 P1 cutover (`scripts/migrate-character-parents.ts`): every live parent is v1 (`state: {}`, the play
 session lives in `combat/state.playState`), every character has a `combat/state` child, every parent

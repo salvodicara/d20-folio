@@ -91,7 +91,8 @@ deploy that needs them.
 
 **Exit gate:** six fixtures + production export dry-run report zero loss; replays green; rules
 tests ≤ 120 cases; `pnpm test:rules`, `just ci`, `just ci-srd-only` green; live migrations applied
-and verified by the owner before the deploy that needs them.
+and verified by the owner before the deploy that needs them — **applied and `--check`-verified on
+production 2026-09-03 (owner-authorized); deploy pending**.
 **Blast radius:** all character documents. **Rollback:** restore the tagged backup, redeploy the
 previous SHA. **Deletions:** silent-drop branches in the codec, name-keyed identity, unmarked-legacy
 readers, `peerLegacyCoreCreate`, `playStateVersion*` predicates, the rules test cases for them —

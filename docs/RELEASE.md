@@ -82,6 +82,11 @@ after it ran (a pack-only merge), re-verify first: `gh workflow run verify.yml -
 
 ### Migrate before you deploy (ADR-0009)
 
+**State (2026-09-03):** both P1 migrations are applied and `--check`-green on production; the P1 deploy is
+pending. Immediately before that deploy re-run both `--check`; if the identity check reports pending
+changes (the deployed pre-P1 client strips `instanceId`s on autosave), re-apply it — idempotent, same
+deterministic ids — then deploy, then delete both scripts in the next commit.
+
 Before deploying a SHA that reads a new persisted shape, run the migration(s) listed under
 "Pending migrations" in `docs/PROGRAM_STATUS.md` with `--check` green against production; a deploy
 with a pending migration is refused. Both prepared migrations are read-only in `--check`; each needs

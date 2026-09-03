@@ -6,8 +6,8 @@ needs nothing from the conversation that produced it. Everything it references i
 ---
 
 You are continuing the **total combat automation** re-architecture of d20 Folio. Phase 1 (data
-safety) is integrated on `main` (SHA `7b95f24`); its live migrations are prepared but **not yet
-applied** (owner gate). Your job is **Phase 2 — engine core**, pure and with no production reach,
+safety) is integrated on `main` (SHA `7b95f24`); its two live migrations were **applied to
+production on 2026-09-03** (owner-authorized, both `--check` green); the P1 **deploy is still pending** (owner gate). Your job is **Phase 2 — engine core**, pure and with no production reach,
 plus the P1 follow-ups listed below. Do not re-open the architecture: disagree with a specific
 decision only by amending its ADR, with evidence.
 
@@ -56,9 +56,12 @@ they are history and are superseded (ADR-0004).
   `scripts/migrate-character-parents.ts` — read-only by default; `--check`/`--apply --backup`
   are owner-run. `scripts/alias-loader.mjs` now expands `import.meta.glob`, so scripts run
   pack-composed under plain node.
-- **Pending owner gate (blocks the next deploy):** the production dry-run reports, then
-  `--apply --backup`, then `--check`, for both scripts — see `docs/RELEASE.md` "Migrate before you
-  deploy" and the PROGRAM_STATUS table. Do not apply them yourself.
+- **Pending owner gate: the P1 deploy.** Both migrations are applied and verified on production
+  (2026-09-03). Immediately before the deploy re-run both `--check`; if the identity check reports
+  pending changes (old-client autosaves strip `instanceId`s until the new client ships), re-apply it
+  (idempotent, same deterministic ids). After the deploy, delete both scripts, their tests and the
+  script-only legacy readers (`parseLegacyCombatChild`, `applyLegacyCombatToSession`) in one commit.
+  Never deploy yourself; ask the owner (golden rule 22).
 
 ## What you do
 
