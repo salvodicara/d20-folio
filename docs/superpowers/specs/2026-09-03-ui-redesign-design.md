@@ -471,40 +471,40 @@ outside the repository with the reference captures (`~/.agents/state/d20-folio/d
 `mockups/dossier8*` = 16, `dossier9*` = 17, `dossier10*` = 18, `dossier11*` = 19, `dossier12*` = 20;
 screens are `mockups/v8-*.png`, delivered to the owner as JPEGs on 2026-09-03.
 
-| Area        | Screen                      | Model copied (evidence in the dossier)                              | Desktop | Phone | Dossier | Status                                |
-| ----------- | --------------------------- | ------------------------------------------------------------------- | ------- | ----- | ------- | ------------------------------------- |
-| Campagna    | Home                        | D&D Beyond campaign page, Kanka dashboard, BG3 Camp                 | ✓       | ✓     | 16      | delivered 2026-09-03, verdict pending |
-| Campagna    | Sessione                    | Discord scheduling bots (Apollo), D&D Beyond                        | ✓       | ✓     | 16      | delivered, pending                    |
-| Campagna    | Calendario                  | Kanka calendars, Fantasy Calendar, Doodle-style availability        | ✓       | ✓     | 16      | delivered, pending                    |
-| Campagna    | Note e riassunto            | Kanka journals, Foundry journal, D&D Beyond game log                | ✓       | ✓     | 16      | delivered, pending                    |
-| Campagna    | Cronaca                     | Kanka and LegendKeeper timelines, Kanka entity page, BG3 Journal    | ✓       | ✓     | 16      | delivered, pending                    |
-| Campagna    | Party                       | D&D Beyond party inventory, Kanka party lists, Owlbear permissions  | ✓       | ✓     | 16      | delivered, pending                    |
-| Campagna    | Preparazione DM             | Kobold+ Fight Club, D&D Beyond encounters, Owlbear scenes, Foundry  | ✓       | list  | 16      | delivered, pending                    |
-| Personaggio | Panoramica                  | BG3 character window, D&D Beyond                                    | ✓       | ✓     | 15      | direction approved 2026-09-03         |
-| Personaggio | Incantesimi                 | BG3 spellbook and tooltips, D&D Beyond spells                       | ✓       | ✓     | 17      | delivered, pending                    |
-| Personaggio | Inventario                  | BG3 inventory, D&D Beyond rows                                      | ✓       | ✓     | 17      | delivered, pending                    |
-| Personaggio | Passaggio oggetti           | BG3 party inventory, D&D Beyond party inventory                     | ✓       | ✓     | 17      | delivered, pending                    |
-| Personaggio | Privilegi                   | BG3 features and tooltips, D&D Beyond features                      | ✓       | ✓     | 17      | delivered, pending                    |
-| Personaggio | Progressione                | BG3 level-up summary, D&D Beyond builder, Pathbuilder               | ✓       | ✓     | 17      | delivered, pending                    |
-| Personaggio | Scheda stampabile           | Official 2024 sheet, D&D Beyond PDF                                 | A4 ×2   | —     | 17      | delivered, pending                    |
-| Gioca       | Giocatore desktop           | BG3 HUD over an Owlbear-level map                                   | ✓       | —     | 14      | direction approved 2026-09-03         |
-| Gioca       | DM desktop                  | BG3 party switch, Owlbear DM tools, D&D Beyond Maps drawer          | ✓       | —     | 14      | direction approved 2026-09-03         |
-| Gioca       | Dadi 3D condivisi           | BG3 dice check, Dice So Nice, D&D Beyond dice, TaleSpire            | ✓       | ✓     | 18      | delivered, pending                    |
-| Gioca       | Dadi fisici e tiro nascosto | Foundry roll modes and blind rolls, Fantasy Grounds tray            | ✓       | ✓     | 18      | delivered, pending                    |
-| Gioca       | Strumenti mappa             | Owlbear rail and sub-toolbars, Foundry drag ruler, D&D Beyond pill  | ✓       | view  | 18      | delivered, pending                    |
-| Gioca       | Cassetto DM                 | D&D Beyond initiative list, Foundry tracker, Owlbear scenes/permits | ✓       | —     | 18      | delivered, pending                    |
-| Gioca       | Telefono secondo schermo    | BG3 controller HUD, Lumen three-screen, Owlbear mobile              | —       | ✓     | 18      | delivered, pending                    |
-| Compendio   | Elenco                      | D&D Beyond listings, Demiplane filters                              | ✓       | ✓     | 19      | delivered, pending                    |
-| Compendio   | Voce (mostro, incantesimo)  | Universal stat-block order (D&D Beyond, open5e), BG3 tooltips       | ✓       | ✓     | 19      | delivered, pending                    |
-| Compendio   | Homebrew (modulo tipizzato) | Foundry rules as data, LegendKeeper stat-block form                 | ✓       | —     | 19      | delivered, pending                    |
-| Compendio   | Spiegazione a richiesta     | BG3 tooltips, Foundry rule tips (component 8)                       | ✓       | ✓     | 8, 19   | approved 2026-09-03 (form)            |
-| Costruttore | Creazione                   | BG3 character creation, D&D Beyond method and class cards           | ✓       | ✓     | 19      | delivered, pending                    |
-| Costruttore | Salita di livello           | BG3 level-up, D&D Beyond "What's next", PrismScroll                 | ✓       | ✓     | 19      | delivered, pending                    |
-| Accesso     | Accesso e primo avvio       | Owlbear home, Foundry join, D&D Beyond method cards                 | ✓       | ✓     | 20      | delivered, pending                    |
-| Accesso     | Invito e primo personaggio  | D&D Beyond campaign invite, Kanka invites, premade quick pick       | ✓       | ✓     | 20      | delivered, pending                    |
-| Accesso     | Impostazioni                | D&D Beyond settings rows, Foundry player config                     | ✓       | ✓     | 20      | delivered, pending                    |
-| Accesso     | Vista condivisa e OG        | D&D Beyond public sheet, Demiplane, Kanka public campaign           | ✓       | ✓     | 20      | delivered, pending                    |
-| Accesso     | Personaggi (roster)         | D&D Beyond app rows and web cards, PrismScroll ghost card           | ✓       | ✓     | 20      | delivered, pending                    |
+| Area        | Screen                      | Model copied (evidence in the dossier)                              | Desktop | Phone | Dossier | Status                           |
+| ----------- | --------------------------- | ------------------------------------------------------------------- | ------- | ----- | ------- | -------------------------------- |
+| Campagna    | Home                        | D&D Beyond campaign page, Kanka dashboard, BG3 Camp                 | ✓       | ✓     | 16      | approved in direction 2026-09-03 |
+| Campagna    | Sessione                    | Discord scheduling bots (Apollo), D&D Beyond                        | ✓       | ✓     | 16      | delivered, pending               |
+| Campagna    | Calendario                  | Kanka calendars, Fantasy Calendar, Doodle-style availability        | ✓       | ✓     | 16      | delivered, pending               |
+| Campagna    | Note e riassunto            | Kanka journals, Foundry journal, D&D Beyond game log                | ✓       | ✓     | 16      | delivered, pending               |
+| Campagna    | Cronaca                     | Kanka and LegendKeeper timelines, Kanka entity page, BG3 Journal    | ✓       | ✓     | 16      | delivered, pending               |
+| Campagna    | Party                       | D&D Beyond party inventory, Kanka party lists, Owlbear permissions  | ✓       | ✓     | 16      | delivered, pending               |
+| Campagna    | Preparazione DM             | Kobold+ Fight Club, D&D Beyond encounters, Owlbear scenes, Foundry  | ✓       | list  | 16      | delivered, pending               |
+| Personaggio | Panoramica                  | BG3 character window, D&D Beyond                                    | ✓       | ✓     | 15      | direction approved 2026-09-03    |
+| Personaggio | Incantesimi                 | BG3 spellbook and tooltips, D&D Beyond spells                       | ✓       | ✓     | 17      | delivered, pending               |
+| Personaggio | Inventario                  | BG3 inventory, D&D Beyond rows                                      | ✓       | ✓     | 17      | delivered, pending               |
+| Personaggio | Passaggio oggetti           | BG3 party inventory, D&D Beyond party inventory                     | ✓       | ✓     | 17      | delivered, pending               |
+| Personaggio | Privilegi                   | BG3 features and tooltips, D&D Beyond features                      | ✓       | ✓     | 17      | delivered, pending               |
+| Personaggio | Progressione                | BG3 level-up summary, D&D Beyond builder, Pathbuilder               | ✓       | ✓     | 17      | delivered, pending               |
+| Personaggio | Scheda stampabile           | Official 2024 sheet, D&D Beyond PDF                                 | A4 ×2   | —     | 17      | delivered, pending               |
+| Gioca       | Giocatore desktop           | BG3 HUD over an Owlbear-level map                                   | ✓       | —     | 14      | direction approved 2026-09-03    |
+| Gioca       | DM desktop                  | BG3 party switch, Owlbear DM tools, D&D Beyond Maps drawer          | ✓       | —     | 14      | direction approved 2026-09-03    |
+| Gioca       | Dadi 3D condivisi           | BG3 dice check, Dice So Nice, D&D Beyond dice, TaleSpire            | ✓       | ✓     | 18      | delivered, pending               |
+| Gioca       | Dadi fisici e tiro nascosto | Foundry roll modes and blind rolls, Fantasy Grounds tray            | ✓       | ✓     | 18      | delivered, pending               |
+| Gioca       | Strumenti mappa             | Owlbear rail and sub-toolbars, Foundry drag ruler, D&D Beyond pill  | ✓       | view  | 18      | delivered, pending               |
+| Gioca       | Cassetto DM                 | D&D Beyond initiative list, Foundry tracker, Owlbear scenes/permits | ✓       | —     | 18      | delivered, pending               |
+| Gioca       | Telefono secondo schermo    | BG3 controller HUD, Lumen three-screen, Owlbear mobile              | —       | ✓     | 18      | delivered, pending               |
+| Compendio   | Elenco                      | D&D Beyond listings, Demiplane filters                              | ✓       | ✓     | 19      | delivered, pending               |
+| Compendio   | Voce (mostro, incantesimo)  | Universal stat-block order (D&D Beyond, open5e), BG3 tooltips       | ✓       | ✓     | 19      | delivered, pending               |
+| Compendio   | Homebrew (modulo tipizzato) | Foundry rules as data, LegendKeeper stat-block form                 | ✓       | —     | 19      | delivered, pending               |
+| Compendio   | Spiegazione a richiesta     | BG3 tooltips, Foundry rule tips (component 8)                       | ✓       | ✓     | 8, 19   | approved 2026-09-03 (form)       |
+| Costruttore | Creazione                   | BG3 character creation, D&D Beyond method and class cards           | ✓       | ✓     | 19      | delivered, pending               |
+| Costruttore | Salita di livello           | BG3 level-up, D&D Beyond "What's next", PrismScroll                 | ✓       | ✓     | 19      | delivered, pending               |
+| Accesso     | Accesso e primo avvio       | Owlbear home, Foundry join, D&D Beyond method cards                 | ✓       | ✓     | 20      | delivered, pending               |
+| Accesso     | Invito e primo personaggio  | D&D Beyond campaign invite, Kanka invites, premade quick pick       | ✓       | ✓     | 20      | delivered, pending               |
+| Accesso     | Impostazioni                | D&D Beyond settings rows, Foundry player config                     | ✓       | ✓     | 20      | delivered, pending               |
+| Accesso     | Vista condivisa e OG        | D&D Beyond public sheet, Demiplane, Kanka public campaign           | ✓       | ✓     | 20      | delivered, pending               |
+| Accesso     | Personaggi (roster)         | D&D Beyond app rows and web cards, PrismScroll ghost card           | ✓       | ✓     | 20      | delivered, pending               |
 
 ### 8d. Cross-cutting rules recorded by stage U
 
@@ -563,8 +563,11 @@ The corrections were delivered the same evening as dossier 21 (`mockups/dossier1
 verdict (2026-09-03, late): the Baldur's Gate 3 ring is approved; three details fixed the same
 night (the Rest label centred in the ring, the turn block aligned with the hotbar and kept clear
 of the log, the overflow in the spell tab's left rail); the in-app "coming from Owlbear" guide is
-rejected (rule 41). Stage U is agreed in direction for every screen; the rows of §8c are dated
-when the owner closes the last details in the next session.
+rejected (rule 41). Third verdict (2026-09-03, closing): the turn block sits at the HUD's bottom edge, symmetric
+with the portrait and weapon tiles at the left, and the log keeps its place. The owner closed
+stage U: every screen is approved in direction (§8c dated accordingly); the remaining small
+dislikes will be corrected on the implemented screens, behind the screenshot gate of golden
+rule 25.
 
 ### 8f. Rules added by the corrections (2026-09-03)
 
