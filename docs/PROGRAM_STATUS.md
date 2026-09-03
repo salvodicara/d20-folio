@@ -74,8 +74,19 @@ meaningful tests. Consequences for this ledger: the `automation-k1` charter and 
 K1→X1 are **superseded** (ADR-0004); `mechanics-*` is salvaged, not adopted (ADR-0003); the P2
 prototype lives in `src/lib/combat` (`docs/superpowers/status/2026-09-02-p2-prototype-report.md`).
 Codex was blocked by the owner on 2026-09-02; `fix/structural-automation-fixes` is an input, not a
-baseline. The next session starts from
-`docs/superpowers/plans/2026-09-02-next-session-handoff.md`.
+baseline.
+
+**Phase 1 (data safety) integrated 2026-09-03** at public `main` `7b95f24` (Integration A `77ea77a`
+plus 14 commits) with the private twin at `d20-folio-content` `main` `5a42896`; execution record:
+`docs/superpowers/plans/2026-09-02-combat-p1-data-safety.md` (task by task, with the reviews'
+rulings). Deliverables: total character codec with typed quarantine, `instanceId` identity, per-domain
+snapshot reconciliation with the `revision` compare-and-set, every unmarked-legacy reader deleted,
+character-path rules reduced to access policy (rules suite 118 cases), diagnostics, and the two
+migration scripts below. **Owner gate open:** the two pending migrations must be applied and
+`--check`-verified on production before the deploy that ships this `main`; the production site
+currently serves `6a2487b` (checked 2026-09-03), which predates the unknown-key codec bridge, so the
+migration→deploy window must stay short (see `docs/RELEASE.md`). The next session starts from
+`docs/superpowers/plans/2026-09-03-next-session-handoff.md` (Phase 2).
 
 ## Pending migrations
 
@@ -91,10 +102,10 @@ every character with a custom item is refused (`invalid-envelope`). **Any single
 whole apply:** preflight refuses the entire batch, there is no partial apply, so a reported document
 is hand-fixed and `--check` re-run before applying.
 
-| #   | Migration                              | Persisted shape it prepares                                                                                         | State                                                                                                                                                                                                                                        |
-| --- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `scripts/migrate-custom-identity.ts`   | `instanceId` on every custom sheet entry and library id                                                             | Committed; not yet run on production. Must run BEFORE the parent cutover.                                                                                                                                                                    |
-| 2   | `scripts/migrate-character-parents.ts` | every parent v1 (`state: {}`), every character has a `combat/state` child with `playState`, every parent `revision` | Committed; not yet run on production. **BLOCKING from P1 on:** the client is v1-only, so an unmigrated parent quarantines and a childless character fails closed. At most ~250 characters per run (two documents each, one 500-write batch). |
+| #   | Migration                              | Persisted shape it prepares                                                                                         | State                                                                                                                                                                                                                                                                                                                                                              |
+| --- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `scripts/migrate-custom-identity.ts`   | `instanceId` on every custom sheet entry and library id                                                             | Committed (`7b95f24`); six-fixture dry-run 2026-09-03: 6 parents, 0 stamps, 0 issues; not yet run on production. Must run BEFORE the parent cutover.                                                                                                                                                                                                               |
+| 2   | `scripts/migrate-character-parents.ts` | every parent v1 (`state: {}`), every character has a `combat/state` child with `playState`, every parent `revision` | Committed (`7b95f24`); six-fixture dry-run 2026-09-03 (composed): 6 legacy → 6 children created, 6 `revision` stamped, 0 issues; not yet run on production. **BLOCKING from P1 on:** the client is v1-only, so an unmigrated parent quarantines and a childless character fails closed. At most ~250 characters per run (two documents each, one 500-write batch). |
 
 ## Active charters
 
