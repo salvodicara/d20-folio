@@ -15,10 +15,10 @@
  *    path present before and absent or different after, `added` the paths the writer
  *    would materialize (an added path off any seam is also a loss — the next write would
  *    change the document — so `lost` may then be empty). A stage-0 blocker.
+ *  - `quarantine` — the reader refused the document, with its typed code.
  *
  * The readers may normalize a stored row IN PLACE (`normalizeLogEntry`), so every audit
  * parses a deep copy and diffs against the untouched original.
- *  - `quarantine` — the reader refused the document, with its typed code.
  */
 /// <reference types="vite/client" />
 import {

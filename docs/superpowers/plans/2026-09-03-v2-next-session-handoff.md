@@ -37,6 +37,37 @@ English.
 - Gates on `v2`: `just ci` (about five minutes), `pnpm test:rules`, `vite build && pnpm test:budget`;
   all green at `e6f8797`.
 
+## First task: architecture reset against the steering (before any dice code)
+
+The owner's standing rule (2026-09-03, repeated): no dead weight in the app; everything present
+is there for a reason and is optimal; when the conditions change, the architecture changes to stay
+optimal. The purpose changed on 2026-09-03 (a digital table, BG3-level automation with the DM's
+last word, three campaign automation levels, dice with provenance, a shared encounter log), and
+the automation scope changes with it. The stage-1 plan already re-scopes what gets built (stage 3
+builds the reducer for the two story encounters only; stage 7 cuts the mechanics kernel, the
+command kernel, the supervisor, the old e2e suites), but the target spec
+(`2026-09-02-total-combat-automation-design.md`) and the migration program
+(`2026-09-02-total-combat-automation-migration.md`, phases P2–P5) still describe the earlier
+total-automation scope and are not reconciled. Do this first, as a documented decision round
+(superpowers brainstorming + writing-plans, no product code):
+
+1. Reconcile the spec with `PRODUCT.md` §Steering: the three campaign automation levels (full
+   auto · propose-and-confirm · log only) as a first-class property of the reducer's outcome
+   application, dice provenance (`app | manual`, hidden) on every roll, the campaign encounter log
+   as the shared document, the DM's override and undo on every surface; bound the mechanic
+   vocabulary and the hard-case list to what the four acceptance stories need, and mark the rest
+   as later or out. Amend the ADRs that the change touches; never re-open a decision silently.
+2. Mark the migration program's P2–P5 as superseded by stages 1–4 and 7 of the stage-1 plan, or
+   fold what survives into those stages.
+3. Inventory every module the merge carried onto `v2` and name its fate now: keep, rebuild in
+   stage N, or delete now when nothing reads it (rule 10: dead code dies as soon as it is dead,
+   not at stage 7). Candidates: the P2 prototype `src/lib/combat`, the mechanics kernel, the
+   command kernel, the program supervisor, the P1 migration scripts and their legacy readers
+   (`parseLegacyCombatChild`, `applyLegacyCombatToSession`), the old e2e suites, the wayfinder
+   plans. Record the inventory in the stage-1 plan and update `CLAUDE.md`'s direction block.
+
+Only then open the dice seam below, with its own written plan.
+
 ## Stage 1 — the dice seam
 
 `roll(formula, { by, reason, hidden, mode })` persisted as a log action with faces, total, seed,
