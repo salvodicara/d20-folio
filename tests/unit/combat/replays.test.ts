@@ -8,13 +8,7 @@ import { describe, expect, it } from "vitest";
 import { buildCatalogue } from "@/lib/combat/catalogue";
 import { fold } from "@/lib/combat/fold";
 import { resolve } from "@/lib/combat/resolve";
-import type {
-  Action,
-  Encounter,
-  FoldedState,
-  Rejection,
-  Relation,
-} from "@/lib/combat/types";
+import type { Action, Encounter, FoldedState, Rejection } from "@/lib/combat/types";
 import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
 import { testEntity } from "./__helpers__/entities";
 import { emptyState, openingActions, seqFactory } from "./__helpers__/state";
@@ -27,7 +21,6 @@ interface Replay {
   readonly entities: readonly Parameters<typeof testEntity>[0][];
   readonly initiative: Readonly<Record<string, number>>;
   readonly order: readonly string[];
-  readonly relations?: readonly Relation[];
   readonly log: readonly LogEntry[];
   readonly expect: {
     readonly applied: number;
@@ -62,7 +55,7 @@ describe("golden replays", () => {
     const replay = JSON.parse(readFileSync(join(DIR, file), "utf8")) as Replay;
     it(`${file}: ${replay.name}`, () => {
       const seq = seqFactory(replay.dm);
-      let state: FoldedState = { ...emptyState(), relations: replay.relations ?? [] };
+      let state: FoldedState = emptyState();
       const opening = openingActions(
         replay.dm,
         seq,

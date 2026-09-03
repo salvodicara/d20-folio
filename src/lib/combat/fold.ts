@@ -57,8 +57,8 @@ function undoneIds(log: readonly Action[]): Set<ActionId> {
   return new Set(undos.filter((u) => !undoneUndos.has(u.id)).map((u) => u.of));
 }
 
-/** `start` is the state before the log when there is no checkpoint (tests and replays seed
- *  declared relations there until stage 2 makes them log actions; it dies with that stage). */
+/** `start` is the state to fold on top of: `initialState()` for a fresh encounter, or a
+ *  checkpoint's folded state for compaction (design doc §5.3). */
 export function fold(
   encounter: Encounter,
   catalogue: Catalogue,

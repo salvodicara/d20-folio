@@ -27,21 +27,23 @@
     "monster-1": 10
   },
   "order": ["ranger", "monster-1"],
-  "relations": [
+  "log": [
     {
-      "kind": "visible",
-      "a": "ranger",
-      "b": "monster-1",
-      "value": true
+      "id": "declare-visible-1",
+      "by": "dm",
+      "kind": "declare",
+      "relation": { "kind": "visible", "a": "ranger", "b": "monster-1", "value": true },
+      "remove": false,
+      "mover": null
     },
     {
-      "kind": "visible",
-      "a": "monster-1",
-      "b": "ranger",
-      "value": true
-    }
-  ],
-  "log": [
+      "id": "declare-visible-2",
+      "by": "dm",
+      "kind": "declare",
+      "relation": { "kind": "visible", "a": "monster-1", "b": "ranger", "value": true },
+      "remove": false,
+      "mover": null
+    },
     {
       "id": "r-app",
       "by": "p1",
@@ -151,7 +153,7 @@
     }
   ],
   "expect": {
-    "applied": 3,
+    "applied": 5,
     "rejections": [
       {
         "action": "r-tampered",

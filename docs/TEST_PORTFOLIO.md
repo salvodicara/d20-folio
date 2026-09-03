@@ -22,17 +22,17 @@ screen by the screenshot gate, a live-data invariant by unit and rules tests.
 
 | Lane                 | Files                              | Notes                                                                                               |
 | -------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------- |
-| unit fast (`node`)   | 445 root `.test.ts` (58 guards)    | pure logic, codecs, guards; `tests/lanes.ts` lists the 13 DOM-bound `.ts` that run in the slow lane |
+| unit fast (`node`)   | 453 root `.test.ts` (59 guards)    | pure logic, codecs, guards; `tests/lanes.ts` lists the 13 DOM-bound `.ts` that run in the slow lane |
 | unit slow (`jsdom`)  | 194 root `.test.tsx` + 13 `.ts`    | render tests of the old surfaces; shrink as the new surfaces replace them                           |
-| combat engine        | 12 files under `tests/unit/combat` | the engine's proofs, the dice module and the golden replays (`replays/*.json`)                      |
+| combat engine        | 14 files under `tests/unit/combat` | the engine's proofs, the dice module, positions/areas and the golden replays (`replays/*.json`)     |
 | pack unit (composed) | 177                                | `content-pack/tests/unit`, pack branch `v2`                                                         |
 | rules (emulator)     | 2 files, 113 cases                 | `firestore-rules` 101, `storage-rules` 12                                                           |
 | Functions            | 7                                  | standalone npm package                                                                              |
 | accessibility sweep  | 2 specs, 432 registrations         | `tests/e2e/a11y*.spec.ts` over `tests/e2e/surfaces.ts`                                              |
 | screenshot lane      | 2 specs                            | `tests/visual`, own config, artifacts under `artifacts/visual-review/`                              |
 
-Count them with `find tests/unit -name '*.test.ts' | wc -l` (445), `find tests/unit -name '*.test.tsx' | wc -l`
-(194), `find tests/unit -name '*.guard.test.ts*' | wc -l` (58), `grep -c "^\s*it(" tests/rules/*.test.ts`
+Count them with `find tests/unit -name '*.test.ts' | wc -l` (453), `find tests/unit -name '*.test.tsx' | wc -l`
+(194), `find tests/unit -name '*.guard.test.ts*' | wc -l` (59), `grep -c "^\s*it(" tests/rules/*.test.ts`
 (101 + 12) and `pnpm exec playwright test --list | tail -n 1` (432).
 
 ## Golden replays
@@ -41,11 +41,12 @@ Count them with `find tests/unit -name '*.test.ts' | wc -l` (445), `find tests/u
 actions folds to an expected state and an expected list of rejections. One replay per hard case
 and per acceptance story; stories 1 and 2 (`marco-first-turn.json`, `sara-ogre-ambush.json`) are
 the gate of stages 1–3. Rolls in a replay carry recorded faces (manual) or a seed (app), so the
-same replay proves the dice seam and the reducer together. Format: `{ name, dm, entities
-(testEntity options), initiative, order, relations (seeded until stage 2), log (actions
-without seq; the runner stamps `ms: 5000 + index`), expect: { applied, rejections
-[{ action, rejection }], state { "dotted.path": value } } }`; `applied` counts the replay's
-own log, skipping undone actions and undos.
+same replay proves the dice seam and the reducer together. Relations are `declare` entries inside
+the log itself, not a pre-log seed (stage 2 closed that gap). Format: `{ name, dm, entities
+(testEntity options, position included from stage 2), initiative, order, log (actions without
+seq, stamped ms 5000 plus the index), expect: { applied, rejections [{ action, rejection }],
+state { "dotted.path": value } } }`; `applied` counts the replay's own log, skipping undone
+actions and undos.
 
 ## Deletion ledger
 
