@@ -29,6 +29,18 @@ the order, the gates and what is out.
 3. Hosting deploys to staging are owner-triggered like production (`-P staging`); `v2` CI runs on
    the emulators and never needs credentials.
 
+### Staging status (2026-09-03, done by the agent with the owner's CLI login)
+
+- Project `d20-folio-staging` created (Spark), web app registered, `.env.staging.local` written
+  (gitignored; run the app against staging with `pnpm dev --mode staging`).
+- Firestore database created in `europe-west1` (same as production); rules and indexes deployed.
+- Pending: Authentication "Get started" + Google provider (console-only; needs a browser signed in
+  as the owner — the Claude in Chrome extension, or two clicks by the owner). Needed only when
+  people sign in on staging (stage 5–6); emulator tests do not need it.
+- Caveat to verify at stage 5: Firebase Storage default buckets on projects created after
+  October 2024 require the Blaze plan (still free within quota, but a billing account must be
+  linked). Production is on Blaze already; staging will need the owner's yes before linking.
+
 ## Stages, in order
 
 0. **Safety gate (blocking).** Migration P1 items 1–3 from

@@ -13,3 +13,7 @@ tests/fixtures/team-v2/
 # `npx impeccable update` (github.com/pbakaus/impeccable); reformatting it here
 # would just create diff noise against upstream on the next update.
 .claude/skills/impeccable/
+
+# vendored third-party agent skills (kept identical to upstream)
+.claude/skills/firebase-*/
+.agents/skills/firebase-*/
