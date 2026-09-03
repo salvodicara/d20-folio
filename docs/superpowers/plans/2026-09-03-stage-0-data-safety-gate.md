@@ -52,7 +52,7 @@ Vitest 4 (`fast` project), `firebase-admin` (read-only), `scripts/lib/migration-
   `src/lib/combat-state-codec.ts` (`parseCombatState`), `src/lib/character-snapshot-reconciler.ts`,
   `scripts/lib/migration-kit.ts`, both migration scripts and their tests.
 
-- [ ] **Step 1: Confirm the branch and the clean merge**
+- [x] **Step 1: Confirm the branch and the clean merge**
 
 ```bash
 git branch --show-current            # v2
@@ -60,7 +60,7 @@ git fetch origin main v2
 git merge-tree --write-tree origin/v2 origin/main   # prints a tree id, no "CONFLICT"
 ```
 
-- [ ] **Step 2: Merge**
+- [x] **Step 2: Merge**
 
 ```bash
 git merge --no-ff origin/main -m "chore(v2): merge main (P1 data safety) into v2"
@@ -68,7 +68,7 @@ git merge --no-ff origin/main -m "chore(v2): merge main (P1 data safety) into v2
 
 The merged commits carry their changesets, so the pre-commit doc-guard passes on the merge.
 
-- [ ] **Step 3: Baseline the fast lane and the rules lane on the merged tree**
+- [x] **Step 3: Baseline the fast lane and the rules lane on the merged tree**
 
 ```bash
 pnpm test --run tests/unit/character-codec-totality.test.ts tests/unit/character-codec.test.ts content-pack/tests/unit/team-fixtures-new-export.test.ts
@@ -97,7 +97,7 @@ Expected: all green; the six-fixture byte-identity test passes unchanged.
     path present in `before` whose value is absent or different in `after`.
   - `const KNOWN_COMBAT_STATE_KEYS: readonly string[]` (from `combat-state-codec.ts`).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 // tests/unit/codec-loss-audit.test.ts
@@ -265,12 +265,12 @@ describe("auditPortableExport", () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `pnpm test --run tests/unit/codec-loss-audit.test.ts`
 Expected: FAIL — `Cannot find module '../../scripts/lib/codec-loss-audit'`.
 
-- [ ] **Step 3: Export the known combat-state keys**
+- [x] **Step 3: Export the known combat-state keys**
 
 In `src/lib/combat-state-codec.ts`, next to `STRICT_V1_FIELDS`:
 
@@ -296,7 +296,7 @@ export const KNOWN_COMBAT_STATE_KEYS: readonly string[] = [
 ];
 ```
 
-- [ ] **Step 4: Write the audit core**
+- [x] **Step 4: Write the audit core**
 
 ```ts
 // scripts/lib/codec-loss-audit.ts
@@ -457,21 +457,21 @@ Check `ImportResult.doc`'s portrait field name in `src/lib/character-codec.ts` (
 `team-fixtures-new-export.test.ts` calls `serializeCharacter(docA)` with the spread `res.doc`;
 mirror exactly what makes that test byte-identical).
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `pnpm test --run tests/unit/codec-loss-audit.test.ts`
 Expected: PASS (12 tests). If the `state.round` case does not report `loss`, read
 `tests/unit/character-codec.test.ts` → "a legacy state.round imports cleanly" and use the same
 legacy field; the detector must be proven non-vacuous by a real one-way seam.
 
-- [ ] **Step 6: Typecheck and lint the new files**
+- [x] **Step 6: Typecheck and lint the new files**
 
 ```bash
 pnpm typecheck
 pnpm exec eslint scripts/lib/codec-loss-audit.ts tests/unit/codec-loss-audit.test.ts src/lib/combat-state-codec.ts --max-warnings 0
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 cat > .changeset/codec-loss-audit-core.md <<'EOF'
@@ -501,7 +501,7 @@ git commit -m "feat(scripts): pure codec-loss audit over every stored document f
 - Produces: `parseAuditOptions(args): { mode: "fixtures" | "backup" | "export"; directory: string }`,
   `buildReport(mode, rows): AuditReport`, and the CLI.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 // tests/unit/audit-codec-loss-cli.test.ts
@@ -584,12 +584,12 @@ describe("audit-codec-loss report", () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `pnpm test --run tests/unit/audit-codec-loss-cli.test.ts`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Write the CLI**
+- [x] **Step 3: Write the CLI**
 
 ```ts
 #!/usr/bin/env node
@@ -830,7 +830,7 @@ if (processArgv[1] && import.meta.url === pathToFileURL(resolve(processArgv[1]))
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `pnpm test --run tests/unit/audit-codec-loss-cli.test.ts`
 Expected: PASS. If importing the CLI module drags `firebase-admin` into the fast lane and the
@@ -838,7 +838,7 @@ existing migration tests already do the same (`tests/unit/migrate-character-pare
 imports its script), keep it; otherwise move `parseAuditOptions`/`buildReport` into
 `scripts/lib/codec-loss-audit.ts`.
 
-- [ ] **Step 5: Run the audit over the six team fixtures (composed)**
+- [x] **Step 5: Run the audit over the six team fixtures (composed)**
 
 ```bash
 node --import ./scripts/alias-loader.mjs scripts/audit-codec-loss.ts \
@@ -848,7 +848,7 @@ node --import ./scripts/alias-loader.mjs scripts/audit-codec-loss.ts \
 Expected: `counts.parent = { documents: 6, byteIdentical: 6, … }`, `ok: true`, exit 0.
 (The `__dumps__` subdirectory holds no `.json` at the top level and is not read.)
 
-- [ ] **Step 6: Run the audit over the two production backups of 2026-09-03**
+- [x] **Step 6: Run the audit over the two production backups of 2026-09-03**
 
 ```bash
 node --import ./scripts/alias-loader.mjs scripts/audit-codec-loss.ts \
@@ -864,7 +864,7 @@ cutover — a documented pre-migration shape, not a loss). Expected for the iden
 both outcomes as evidence of the readers failing closed, then take the fresh export (next step)
 as the stage-0 production proof.
 
-- [ ] **Step 7: Fresh read-only production export and audit**
+- [x] **Step 7: Fresh read-only production export and audit**
 
 ```bash
 GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/the/d20-folio/service-account-key.json \
@@ -876,7 +876,7 @@ Expected: every parent, snapshot, combat state and library `equal`, `ok: true`, 
 export directory is private (0700) and outside the repository. A `loss` finding is a stage-0
 blocker: fix the codec (preserve the key) with a failing test first, never widen the audit.
 
-- [ ] **Step 8: Typecheck, lint, commit**
+- [x] **Step 8: Typecheck, lint, commit**
 
 ```bash
 pnpm typecheck && pnpm exec eslint scripts/audit-codec-loss.ts tests/unit/audit-codec-loss-cli.test.ts --max-warnings 0
@@ -900,7 +900,7 @@ git commit -m "feat(scripts): codec-loss audit CLI over fixtures, backups and a 
 - Modify: `docs/CHARACTER_SCHEMA.md` → "Verification (Definition of Done)" item 1 (the audit)
 - Create: `.changeset/stage-0-data-safety-gate.md`
 
-- [ ] **Step 1: Write the status lines (counts only, no identifiers)**
+- [x] **Step 1: Write the status lines (counts only, no identifiers)**
 
 Stage-1 plan, under stage 0: `**Status (<date>): closed on v2.** main (9b06b75) merged into v2
 (<merge sha>); six fixtures byte-identical (6/6); production export dry-run
@@ -917,7 +917,7 @@ finding blocks the deploy.
 CHARACTER_SCHEMA item 1: "…for every v3 fixture, and zero loss over a production export
 (`scripts/audit-codec-loss.ts`)".
 
-- [ ] **Step 2: Run the `v2` gates and time them**
+- [x] **Step 2: Run the `v2` gates and time them**
 
 ```bash
 time just ci
@@ -928,7 +928,7 @@ time (pnpm exec vite build && pnpm test:budget)
 Expected: all green. Record the three wall times in PROGRAM_STATUS; a `just ci` above 15 minutes
 is flagged as a defect for stage 7 (not fixed here).
 
-- [ ] **Step 3: Commit and push to `v2`**
+- [x] **Step 3: Commit and push to `v2`**
 
 ```bash
 cat > .changeset/stage-0-data-safety-gate.md <<'EOF'
@@ -953,3 +953,25 @@ git ls-remote origin refs/heads/v2   # equals HEAD
   across Tasks 2–4.
 - Repository guards: no private fixture file name appears in this plan (the fixtures are named
   by role); no payload, uid or character id.
+
+## Execution record (2026-09-03)
+
+- Task 1: merged at `5d1e640`; baseline codec suites green (154 tests).
+- Task 2–3: `scripts/lib/codec-loss-audit.ts`, `scripts/audit-codec-loss.ts` and their tests
+  landed (`acfc35d`, `f01ed5a`); the first production run reported 25 changes that were all
+  documented one-way read seams, two of which the schema document had not enumerated — the codec
+  now exports `CODEC_READ_SEAMS` and `SHED_COMBAT_STATE_KEYS`, and the audit reports a change on
+  them as `conformed` (`da70eb0`). Six fixtures 6/6 byte-identical; production export of 53
+  documents zero loss, zero quarantine (counts in `docs/PROGRAM_STATUS.md`).
+- Task 3 step 6 outcome: the two migration backups hold pre-migration shapes and are refused as
+  designed (missing `instanceId`, missing play state); the fresh export is the gate input.
+- Review (superpowers requesting-code-review, one reviewer, range `5d1e640..3eb0795`): no critical
+  issue; three important ones fixed in `e6f8797` — the audit now parses a deep copy (the reader's
+  in-place log normalization had masked the `log-entry-normalize` seam), the tracker / log / unit
+  seams are anchored to the exact paths their functions rewrite with a negative test each, and
+  the combat-state key list is typed against `CombatState` with `hp` / `deathSaves` projected.
+  The `conformed` verdict is a recorded deviation from step 7's "never widen the audit": frozen
+  snapshots carry retired keys that no write will ever touch, and every seam is enumerated in the
+  codec (`CODEC_READ_SEAMS`) rather than in the audit. Minor items carried as follow-ups in
+  `docs/PROGRAM_STATUS.md`: a pure `combatStateWriteData` in the codec (deleting the migration
+  script's copy), a `skippedKinds` breakdown in the report.

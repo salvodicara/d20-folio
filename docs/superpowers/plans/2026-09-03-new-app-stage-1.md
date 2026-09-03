@@ -70,6 +70,13 @@ gate; the next session opens stage 0. Design artifacts and reference captures st
 `docs/superpowers/plans/2026-09-02-combat-p1-data-safety.md`: closed-world codec with unknown-key
 preservation, `instanceId` on custom equipment/spells/features, per-domain sync so conflicts
 surface. Dry-run against the six fixtures and a production export. Nothing else ships before.
+**Status (2026-09-03): closed on `v2`.** `main` `9b06b75` (P1 items 1–6 integrated) merged into
+`v2` at `5d1e640`; the dry-run tool is `scripts/audit-codec-loss.ts` (read-only, ADR-0009): six
+team fixtures 6/6 byte-identical; a fresh production export of 53 documents (12 parents, 26
+snapshots, 12 combat states, 3 libraries) — zero loss, zero quarantine; 25 documents conformed on
+documented read seams only (`CODEC_READ_SEAMS`, `SHED_COMBAT_STATE_KEYS`), all frozen snapshots
+carrying pre-migration shapes or obsolete residue. Plan and receipt:
+`docs/superpowers/plans/2026-09-03-stage-0-data-safety-gate.md`, `docs/PROGRAM_STATUS.md`.
 
 1. **Dice seam.** `roll(formula, {by, reason, hidden, mode})` persisted as a log action with
    faces, total, seed, roller, source (`app | manual`); three inputs (in-app, manual entry, hidden

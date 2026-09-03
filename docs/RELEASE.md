@@ -96,6 +96,25 @@ with a pending migration is refused. Both prepared migrations are read-only in `
 strips `instanceId` from custom entries on every autosave, so migrating in front of it would let a
 live player un-migrate their own character inside the migration→deploy window.
 
+**Prove zero codec loss first (stage 0 of the new-app program).** `scripts/audit-codec-loss.ts` is
+the read-only dry-run of the protocol: it runs every stored family (parents, snapshots,
+`combat/state`, library) through the app's own readers and writers and fails on any change that
+is not a documented read seam. Run it before every deploy that reads a stored shape, against the
+six team fixtures and against a fresh production export (a private, fresh, absolute directory;
+the same service-account key as the migrations):
+
+```sh
+node --import ./scripts/alias-loader.mjs scripts/audit-codec-loss.ts \
+  --fixtures "$PWD/content-pack/fixtures/team"          # expect 6/6 byte-identical
+node --import ./scripts/alias-loader.mjs scripts/audit-codec-loss.ts \
+  --export /absolute/fresh/private/dir                   # production read → tagged export → audit
+node --import ./scripts/alias-loader.mjs scripts/audit-codec-loss.ts \
+  --backup /absolute/fresh/private/dir                   # re-audit the same bytes later
+```
+
+A `loss` or `quarantine` finding blocks the deploy: fix the codec with a failing test first, or
+register the seam in `CODEC_READ_SEAMS` as a documented decision — never widen the audit.
+
 **Run them IN THIS ORDER — identity first, then parents:**
 
 ```sh

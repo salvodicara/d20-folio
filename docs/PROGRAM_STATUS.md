@@ -107,6 +107,35 @@ is hand-fixed and `--check` re-run before applying.
 | 1   | `scripts/migrate-custom-identity.ts`   | `instanceId` on every custom sheet entry and library id                                                             | Committed (`7b95f24`); six-fixture dry-run 2026-09-03: 6 parents, 0 stamps, 0 issues; not yet run on production. Must run BEFORE the parent cutover.                                                                                                                                                                                                               |
 | 2   | `scripts/migrate-character-parents.ts` | every parent v1 (`state: {}`), every character has a `combat/state` child with `playState`, every parent `revision` | Committed (`7b95f24`); six-fixture dry-run 2026-09-03 (composed): 6 legacy → 6 children created, 6 `revision` stamped, 0 issues; not yet run on production. **BLOCKING from P1 on:** the client is v1-only, so an unmigrated parent quarantines and a childless character fails closed. At most ~250 characters per run (two documents each, one 500-write batch). |
 
+## `v2` — stage 0, data safety gate (2026-09-03)
+
+Owner plan: `docs/superpowers/plans/2026-09-03-new-app-stage-1.md` (stage 0) and
+`docs/superpowers/plans/2026-09-03-stage-0-data-safety-gate.md`. `v2` forked from `main` at
+`77ea77a`, before the P1 data-safety commits; `origin/main` `9b06b75` was merged into `v2` at
+`5d1e640` (no conflicts), so the closed-world codec, `instanceId` identity, per-domain
+reconciliation, the legacy cutover, diagnostics and the reduced character-path rules are on the
+branch. The stage-0 proof is `scripts/audit-codec-loss.ts` (read-only in every mode; counts,
+hashed findings and codes only):
+
+| Corpus                                         | Result                                                                                                                                                 |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Six team fixtures (portable exports, composed) | 6/6 byte-identical                                                                                                                                     |
+| Production export 2026-09-03 (53 documents)    | 12 parents equal · 3 libraries equal · 12 combat states (8 equal, 4 conformed) · 26 snapshots (5 equal, 21 conformed) · **zero loss, zero quarantine** |
+| Production backups of the two P1 migrations    | pre-migration shapes refused as designed (`malformed-entry` without `instanceId`, `invalid-v1-play-state` without a play state); not a gate input      |
+
+"Conformed" means every changed path sits on a documented one-way read seam (`CODEC_READ_SEAMS`
+in `character-codec.ts`, `SHED_COMBAT_STATE_KEYS` in `combat-state-codec.ts`): the retired solo
+`state.round`, retired `build.overrides` language/tool label strings, tracker-id and
+concentration-ref conforms, one legacy boolean initiative-advantage leg, and the retired
+`initiativeEpoch` residue on four combat states. Snapshots are immutable (created, never
+re-written), so nothing is written back; the seams are enumerated so the audit fails on any
+change outside them. The export lives privately outside the repository. Gates on `v2` at
+`e6f8797`: `just ci` 5 min 8 s (typecheck, lint, unit fast+slow lanes, Functions, build), `pnpm test:rules` 24 s (118 cases on the emulator), `vite build` + `pnpm test:budget` green (6 budget cases). The first `just ci` run on `v2` failed only the public-surface partition guard on research notes committed during stage U (product-identity terms); reworded in `3eb0795`. A code review of the audit commits (2026-09-03) found no critical issue; its three important points — the reader normalizes log rows in place, three seam patterns were broad enough to absorb an undocumented drop, the combat-state key list was untied from the writer — were fixed in `e6f8797` (deep copy before parsing, seams anchored to exact paths with negative tests, key list typed against `CombatState`); the export re-audited with the same counts.
+
+Follow-ups recorded here (not stage 0): a pure `combatStateWriteData(state, updatedAt)` in `combat-state-codec.ts` so the audit diffs against the real writer and the migration script's parity copy dies (rule 10); a `skippedKinds` breakdown in the audit report; the library codec preserves `item` verbatim but drops an
+unknown ENTRY-level key (`{ id, savedAt, kind, item }` only) — production carries none; a future
+entry-level field needs an `unknown` bucket on `LibraryEntry` before an older client may write.
+
 ## Active charters
 
 ### Foundation — `foundation-f0`

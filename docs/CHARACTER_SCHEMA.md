@@ -355,9 +355,16 @@ Everything absent ⇒ its fresh/default value on import. So a brand-new characte
     1. `normalizeLogEntry` (inside `sanitizeSession`) still degrades a structurally valid but
        unrenderable log row — the documented one-way normalization that dies with the log seam in
        P5. `state.log` itself is now total: a non-record row quarantines.
-    2. The three documented one-way read-normalizations: a non-token `unit` is dropped, and
-       `build.overrides` conforms legacy proficiency keys and the boolean initiative-advantage leg.
-       `SrdEquipmentRef.instanceId` keeps its tolerant read until the identity pass owns it.
+    2. The documented one-way read-normalizations, enumerated as path patterns in
+       `CODEC_READ_SEAMS` (`character-codec.ts`): a non-token `unit` is dropped; `build.overrides`
+       conforms legacy proficiency keys and the boolean initiative-advantage leg; the retired
+       `build.overrides.languages` / `.tools` label strings are read and discarded (manual picks are
+       the `languageIds` / `toolProficiencyIds` arrays; only frozen snapshots still carry the
+       strings); tracker keys conform to ids (`remapSessionTrackerIds`,
+       `conformRaceTraitSessionIds`); a legacy concentration ref conforms. The codec-loss audit
+       (`scripts/audit-codec-loss.ts`) reports a change on one of these paths as `conformed` and
+       any other change as loss. `SrdEquipmentRef.instanceId` keeps its tolerant read until the
+       identity pass owns it.
     3. Top-level portable-envelope keys outside `{ schema, build, state, meta }` are not part of the
        format contract: they are tolerated on import (never a crash) but not preserved.
     4. The compact `state` map is "non-default values only" BY DESIGN, so its scalar readers still
@@ -493,7 +500,9 @@ the only write mode). What it guarantees:
 
 ## Verification (Definition of Done)
 
-1. `serialize(parse(json)) === json` for every v3 fixture (idempotent, byte-identical).
+1. `serialize(parse(json)) === json` for every v3 fixture (idempotent, byte-identical), and zero
+   loss over a production export (`scripts/audit-codec-loss.ts`; stage 0, 2026-09-03: 53
+   documents, zero loss, zero quarantine).
 2. A pre-v3 (schema-2) file is REJECTED with the friendly sentinel, never a crash (the only
    transitional seam at the untrusted-input boundary).
 3. `state` faithfully restores vitals/currency/spent-resources/log. The combat trio (HP/conditions/
