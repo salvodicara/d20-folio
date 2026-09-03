@@ -87,3 +87,11 @@ roller, reason, hidden, mode, faces })`); a guard test pins every other call to 
   (`roll-roller-mismatch`); a roll with `roller: null` is free.
 - The grammar accepts a leading sign; a formula without dice is not a roll (`no-dice`); flat
   terms are capped at 1000 (`flat-range`); `0dN` is `dice-count`.
+
+## Owner ratification (2026-09-03, evening)
+
+The owner confirmed the two assumptions of this decision: dice work as on Owlbear Rodeo — every
+roll is seen by everyone at the table — and a hidden roll is not shown to the players but is
+still written in the log. The pattern is the one the leading products share (Foundry's GM roll,
+Roll20's `/gmroll`, D&D Beyond's secret rolls in the Game Log): public by default, hidden means
+the DM and the roller see the faces, the record is always kept.
