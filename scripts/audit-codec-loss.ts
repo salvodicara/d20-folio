@@ -80,6 +80,7 @@ interface KindCounts {
   documents: number;
   byteIdentical: number;
   equal: number;
+  conformed: number;
   loss: number;
   quarantine: number;
 }
@@ -89,7 +90,9 @@ export interface AuditReport {
   counts: Record<DocumentKind, KindCounts>;
   /** Documents of no audited family (the share projection, campaign documents). */
   skipped: number;
+  /** Every conformed, lost or quarantined document, by path hash. */
   findings: Array<{ document: string; kind: DocumentKind } & Record<string, unknown>>;
+  /** No loss and no quarantine; conformed documents do not fail the audit. */
   ok: boolean;
 }
 
@@ -98,6 +101,7 @@ export function buildReport(mode: AuditMode, rows: readonly AuditRow[]): AuditRe
     documents: 0,
     byteIdentical: 0,
     equal: 0,
+    conformed: 0,
     loss: 0,
     quarantine: 0,
   });
@@ -109,6 +113,7 @@ export function buildReport(mode: AuditMode, rows: readonly AuditRow[]): AuditRe
   };
   const findings: AuditReport["findings"] = [];
   let skipped = 0;
+  let failures = 0;
   for (const row of rows) {
     if (!row.kind || !row.verdict) {
       skipped += 1;
@@ -120,12 +125,16 @@ export function buildReport(mode: AuditMode, rows: readonly AuditRow[]): AuditRe
     if (verdict === "byte-identical") bucket.byteIdentical += 1;
     else if (verdict === "equal") bucket.equal += 1;
     else {
-      if (verdict === "loss") bucket.loss += 1;
-      else bucket.quarantine += 1;
+      if (verdict === "conformed") bucket.conformed += 1;
+      else {
+        failures += 1;
+        if (verdict === "loss") bucket.loss += 1;
+        else bucket.quarantine += 1;
+      }
       findings.push({ document: pathHash(row.path), kind: row.kind, verdict, ...rest });
     }
   }
-  return { mode, counts, skipped, findings, ok: findings.length === 0 };
+  return { mode, counts, skipped, findings, ok: failures === 0 };
 }
 
 async function auditFixtures(directory: string): Promise<AuditRow[]> {

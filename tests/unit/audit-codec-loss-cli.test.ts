@@ -44,12 +44,23 @@ describe("audit-codec-loss report", () => {
         verdict: { verdict: "quarantine", code: "malformed-entry", path: "entries[2]" },
       },
       { path: "users/u/characters/a/public/sheet", kind: undefined, verdict: undefined },
+      {
+        path: "users/u/characters/c/snapshots/s",
+        kind: "snapshot",
+        verdict: {
+          verdict: "conformed",
+          seams: ["retired-state-round"],
+          lost: ["state.round"],
+          added: [],
+        },
+      },
     ]);
     expect(report.mode).toBe("backup");
     expect(report.counts.parent).toEqual({
       documents: 2,
       byteIdentical: 0,
       equal: 1,
+      conformed: 0,
       loss: 1,
       quarantine: 0,
     });
@@ -57,9 +68,11 @@ describe("audit-codec-loss report", () => {
       documents: 1,
       byteIdentical: 0,
       equal: 0,
+      conformed: 0,
       loss: 0,
       quarantine: 1,
     });
+    expect(report.counts.snapshot.conformed).toBe(1);
     expect(report.skipped).toBe(1);
     expect(report.findings).toEqual([
       {
@@ -76,17 +89,35 @@ describe("audit-codec-loss report", () => {
         code: "malformed-entry",
         path: "entries[2]",
       },
+      {
+        document: expect.stringMatching(/^[0-9a-f]{16}$/) as string,
+        kind: "snapshot",
+        verdict: "conformed",
+        seams: ["retired-state-round"],
+        lost: ["state.round"],
+        added: [],
+      },
     ]);
     expect(report.ok).toBe(false);
     expect(JSON.stringify(report)).not.toContain("users/u");
   });
 
-  it("a clean corpus is ok", () => {
+  it("a corpus with only byte-identical, equal and conformed documents is ok", () => {
     const report = buildReport("fixtures", [
       { path: "fixtures/a.json", kind: "parent", verdict: { verdict: "byte-identical" } },
+      {
+        path: "fixtures/b.json",
+        kind: "parent",
+        verdict: {
+          verdict: "conformed",
+          seams: ["unit-non-token"],
+          lost: ["x"],
+          added: [],
+        },
+      },
     ]);
     expect(report.ok).toBe(true);
+    expect(report.findings).toHaveLength(1);
     expect(report.counts.parent.byteIdentical).toBe(1);
-    expect(report.findings).toEqual([]);
   });
 });

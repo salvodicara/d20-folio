@@ -1604,3 +1604,40 @@ export function parseCharacter(jsonString: string): ImportResult | ImportError {
 // so a consumer that reads `ImportError.failure` needs only the codec import.
 export { sanitizeSession };
 export type { CodecFailure } from "./codec-failure";
+
+// ─── The enumerated read seams (docs/CHARACTER_SCHEMA.md → "The remaining non-total seams") ──
+
+/**
+ * Every DOCUMENTED one-way read normalization of this codec, as the path it touches.
+ * Totality is structural; these are the value-level seams the reader keeps: a retired
+ * key is read and discarded, a legacy shape is conformed to its canonical form. The
+ * codec-loss audit (`scripts/lib/codec-loss-audit.ts`) classifies a round-trip change
+ * on one of these paths as `conformed`; any other change is a loss. Adding a seam here
+ * is a documented decision, never a way to silence a finding.
+ */
+export const CODEC_READ_SEAMS: ReadonlyArray<{ seam: string; pattern: RegExp }> = [
+  // `RETIRED_STATE_KEYS` (session-state-codec.ts): the solo round moved to `combat/state`.
+  { seam: "retired-state-round", pattern: /^state\.round$/ },
+  // Manual language / tool picks are id arrays on the build (`languageIds`,
+  // `toolProficiencyIds`); the pre-migration label strings under `build.overrides`
+  // match nothing any more and are read-and-discarded. Only frozen snapshots carry them.
+  { seam: "retired-override-labels", pattern: /^build\.overrides\.(languages|tools)$/ },
+  // GR10: the boolean initiative-advantage leg conforms to the RA-25 string leg.
+  {
+    seam: "initiative-advantage-legacy-boolean",
+    pattern: /^build\.overrides\.initiativeAdvantage$/,
+  },
+  // GR10: English proficiency-override labels conform to their token; unmatched ones drop.
+  {
+    seam: "proficiency-override-key-conform",
+    pattern: /^build\.overrides\.(armorProficiencies|weaponProficiencies)(\.|$)/,
+  },
+  // `remapSessionTrackerIds` + `conformRaceTraitSessionIds`: tracker keys conform to ids.
+  { seam: "tracker-id-conform", pattern: /^state\.trackers\./ },
+  // `normalizeConcentrationRef` / `normalizeLogEntryConcentration`: legacy refs conform.
+  { seam: "concentration-ref-conform", pattern: /^state\.concentration(\.|$)/ },
+  // `normalizeLogEntry` (sanitizeSession): an unrenderable row degrades; dies in P5.
+  { seam: "log-entry-normalize", pattern: /^state\.log\[\d+\]/ },
+  // A non-token tracker `unit` is dropped.
+  { seam: "unit-non-token", pattern: /\.unit$/ },
+];

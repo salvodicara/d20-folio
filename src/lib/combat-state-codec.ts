@@ -50,6 +50,21 @@ export const KNOWN_COMBAT_STATE_KEYS: readonly string[] = [
   "updatedAt",
 ];
 
+/**
+ * Keys a stored `combat/state` may still carry from deleted writers — the retired
+ * per-encounter `initiativeEpoch` stamp and the effect-program runtime's ledgers. The
+ * reader ignores them fail-safe and the next full overwrite sheds them; the codec-loss
+ * audit classifies their drop as `conformed`, never as loss.
+ */
+export const SHED_COMBAT_STATE_KEYS: readonly string[] = [
+  "initiativeEpoch",
+  "actionRevision",
+  "actionHead",
+  "actionLifecycles",
+  "effectLifecycles",
+  "effectOps",
+];
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -210,10 +225,8 @@ function parseStoredCombatState(
   ) {
     return { ok: false, reason: "invalid-combat-state" };
   }
-  // Stored subdocs written by the deleted effect-program runtime may still carry
-  // `actionRevision` / `actionHead` / `actionLifecycles` / `effectLifecycles`,
-  // and a branch-era `effectOps` mirror ledger existed briefly with no
-  // production writer. All are ignored here fail-safe and shed by the next
+  // `SHED_COMBAT_STATE_KEYS` (the deleted effect-program runtime's ledgers, the
+  // retired `initiativeEpoch` stamp) are ignored here fail-safe and shed by the next
   // full-overwrite write.
   const applied = parseAppliedEncounterEffects(data.appliedEncounterEffects);
   const turnEconomy = parseTurnEconomy(data.turnEconomy);

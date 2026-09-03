@@ -46,6 +46,14 @@ describe("diffPaths", () => {
     ).toEqual(["b.c[1]", "b.d", "e"]);
     expect(diffPaths({ a: 1 }, { a: 1, z: 2 })).toEqual([]);
   });
+  it("expands a vanished subtree to its leaves, an empty container being a leaf", () => {
+    expect(diffPaths({ a: { b: 1, c: {}, d: [2, [3]] } }, {})).toEqual([
+      "a.b",
+      "a.c",
+      "a.d[0]",
+      "a.d[1][0]",
+    ]);
+  });
 });
 
 describe("auditDocument — parent and snapshot envelopes", () => {
@@ -62,12 +70,14 @@ describe("auditDocument — parent and snapshot envelopes", () => {
     });
   });
 
-  it("a one-way normalization is reported as loss with the exact path", () => {
+  it("a documented one-way seam is reported as conformed, with the exact path", () => {
     const env = envelope();
-    env.state.round = 5; // the documented one-way boundary (dropped on re-export)
+    env.state.round = 5; // `RETIRED_STATE_KEYS`: read and discarded
+    env.build.overrides = { ac: 17, languages: "Elvish, Dwarvish" }; // retired label string
     expect(auditDocument("parent", parentDoc(env))).toEqual({
-      verdict: "loss",
-      lost: ["state.round"],
+      verdict: "conformed",
+      seams: ["retired-override-labels", "retired-state-round"],
+      lost: ["build.overrides.languages", "state.round"],
       added: [],
     });
   });
@@ -105,10 +115,16 @@ describe("auditDocument — combat state", () => {
   it("a v1 child with only known keys is equal", () => {
     expect(auditDocument("combat-state", stored)).toEqual({ verdict: "equal" });
   });
-  it("a key the reader ignores is a loss", () => {
-    expect(auditDocument("combat-state", { ...stored, effectOps: [] })).toEqual({
+  it("a documented shed key is conformed; any other ignored key is a loss", () => {
+    expect(auditDocument("combat-state", { ...stored, initiativeEpoch: 3 })).toEqual({
+      verdict: "conformed",
+      seams: ["shed-combat-state-key"],
+      lost: ["initiativeEpoch"],
+      added: [],
+    });
+    expect(auditDocument("combat-state", { ...stored, zz_future: { a: 1 } })).toEqual({
       verdict: "loss",
-      lost: ["effectOps"],
+      lost: ["zz_future.a"],
       added: [],
     });
   });
