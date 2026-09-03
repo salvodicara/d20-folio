@@ -301,13 +301,15 @@ export interface PendingCheck {
 
 // ── Actions (the only persisted mutation) ───────────────────────────────────
 
-/** A `d20`/`dice` input is answered by the id of a `roll` action already in the log. */
+/** A `d20`/`dice` input is answered by the id of a `roll` action already in the log; a
+ *  `position` input (the `move` step's destination) is answered by a `Position` directly. */
 export type Answer =
   | number
   | string
   | boolean
   | readonly number[]
-  | { readonly roll: ActionId };
+  | { readonly roll: ActionId }
+  | Position;
 export type Answers = Readonly<Record<string, Answer>>;
 
 export type PaymentChoice =

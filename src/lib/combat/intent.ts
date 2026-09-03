@@ -13,6 +13,7 @@ import { assertNever, type EffectId, type EntityId } from "./ids";
 import type { Catalogue } from "./catalogue";
 import { programOf } from "./catalogue";
 import type { LifetimeSpec, Program, Step } from "./mechanic";
+import { distanceFt, rangeBand, REACH_FT } from "./position";
 import { bind, evalExpr, evalPredicate, type EvalContext } from "./predicates";
 import { mustEntity } from "./state";
 import type {
@@ -28,6 +29,7 @@ import type {
   ReactionWindow,
   Receipt,
   Rejection,
+  Relation,
   TurnLedger,
 } from "./types";
 import { eventEntity, subscribersFor } from "./windows";
@@ -565,6 +567,56 @@ function runSteps(
         };
         return { stop: false };
       }
+      case "move": {
+        const raw: unknown = action.answers[step.to];
+        const to =
+          typeof raw === "object" &&
+          raw !== null &&
+          "x" in raw &&
+          "y" in raw &&
+          typeof raw.x === "number" &&
+          typeof raw.y === "number"
+            ? { x: raw.x, y: raw.y }
+            : null;
+        if (to === null) return { reason: "missing-answer", input: step.to };
+        const mover = mustEntity(next, action.entity);
+        const from = mover.position;
+        if (from !== null) {
+          const distance = distanceFt(from, to);
+          const speedOverride = mover.overrides["stats.speed"];
+          const budget =
+            typeof speedOverride?.value === "number"
+              ? speedOverride.value
+              : mover.stats.speed;
+          if (mover.turn.movementUsed + distance > budget) {
+            return { reason: "unaffordable", cost: "movement" };
+          }
+          next = {
+            ...next,
+            entities: {
+              ...next.entities,
+              [action.entity]: {
+                ...mover,
+                position: to,
+                turn: { ...mover.turn, movementUsed: mover.turn.movementUsed + distance },
+              },
+            },
+          };
+        } else {
+          next = {
+            ...next,
+            entities: { ...next.entities, [action.entity]: { ...mover, position: to } },
+          };
+        }
+        next = repositionRelations(
+          next,
+          action.entity,
+          events,
+          action.id,
+          options.catalogue
+        );
+        return { stop: false };
+      }
       case "negate":
       case "manual-table":
         return { stop: false };
@@ -833,6 +885,75 @@ export function applyResolve(
   };
 }
 
+/** Opens an opportunity-attack window when `mover` has just left `from`'s reach; a no-op if
+ *  nothing subscribes. Shared by `applyDeclare` (a manual departure) and the `move` step (a real
+ *  one) — design doc §2.4 of the stage-2 addendum. */
+function openLeftReachWindow(
+  state: FoldedState,
+  events: CombatEvent[],
+  mover: EntityId,
+  from: EntityId,
+  causedBy: string,
+  catalogue: Catalogue
+): FoldedState {
+  const event: CombatEvent = { kind: "entity-left-reach", entity: mover, from };
+  events.push(event);
+  const eligible = subscribersFor(state, catalogue, event);
+  if (eligible.length === 0) return state;
+  const window: ReactionWindow = {
+    id: `window-${state.nextOrdinal}`,
+    event,
+    eligible,
+    declared: causedBy,
+  };
+  return {
+    ...state,
+    nextOrdinal: state.nextOrdinal + 1,
+    windows: [...state.windows, window],
+  };
+}
+
+/** Recomputes `adjacent`/`range` between `mover` (already repositioned in `state`) and every
+ *  other positioned entity, opening an opportunity-attack window for any pair that was
+ *  `adjacent` and no longer is. `engaged` is untouched — it stays a purely declared, sticky fact
+ *  (design doc §2.3): a table's melee lock, not a raw-distance projection. */
+function repositionRelations(
+  state: FoldedState,
+  mover: EntityId,
+  events: CombatEvent[],
+  causedBy: string,
+  catalogue: Catalogue
+): FoldedState {
+  const at = mustEntity(state, mover).position;
+  if (at === null) return state;
+  const wasAdjacentTo = new Set(
+    state.relations
+      .filter(
+        (r): r is Extract<Relation, { kind: "adjacent" }> =>
+          r.kind === "adjacent" && (r.a === mover || r.b === mover)
+      )
+      .map((r) => (r.a === mover ? r.b : r.a))
+  );
+  const relations = state.relations.filter(
+    (r) =>
+      !((r.kind === "adjacent" || r.kind === "range") && (r.a === mover || r.b === mover))
+  );
+  let next: FoldedState = { ...state, relations };
+  for (const other of Object.values(state.entities)) {
+    if (other.id === mover || other.position === null) continue;
+    const feet = distanceFt(at, other.position);
+    const added: Relation[] = [];
+    if (feet <= REACH_FT) added.push({ kind: "adjacent", a: mover, b: other.id });
+    const band = rangeBand(feet);
+    if (band !== "out") added.push({ kind: "range", a: mover, b: other.id, band });
+    next = { ...next, relations: [...next.relations, ...added] };
+    if (feet > REACH_FT && wasAdjacentTo.has(other.id)) {
+      next = openLeftReachWindow(next, events, mover, other.id, causedBy, catalogue);
+    }
+  }
+  return next;
+}
+
 /** A declared tactical fact; leaving reach may open an opportunity-attack window. */
 export function applyDeclare(
   state: FoldedState,
@@ -852,22 +973,7 @@ export function applyDeclare(
     (relation.kind === "adjacent" || relation.kind === "engaged")
   ) {
     const from = relation.a === action.mover ? relation.b : relation.a;
-    const event: CombatEvent = { kind: "entity-left-reach", entity: action.mover, from };
-    events.push(event);
-    const eligible = subscribersFor(next, catalogue, event);
-    if (eligible.length > 0) {
-      const window: ReactionWindow = {
-        id: `window-${next.nextOrdinal}`,
-        event,
-        eligible,
-        declared: action.id,
-      };
-      next = {
-        ...next,
-        nextOrdinal: next.nextOrdinal + 1,
-        windows: [...next.windows, window],
-      };
-    }
+    next = openLeftReachWindow(next, events, action.mover, from, action.id, catalogue);
   }
   return {
     kind: "applied",
