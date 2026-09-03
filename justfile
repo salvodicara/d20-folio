@@ -186,14 +186,14 @@ wt-new $slug $kind="feat":
     set -euo pipefail
     main_root="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
     project="$(basename "$main_root")"
-    scripts/program-supervisor/adapter-preflight.sh "$main_root"
+    scripts/worktree/adapter-preflight.sh "$main_root"
     home_dir="$(cd && pwd -P)"
     slug_value="$slug"
     kind_value="$kind"
     case "$kind_value" in feat|fix|chore|docs|refactor) ;; *) echo "unsafe branch kind" >&2; exit 1 ;; esac
-    candidate="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts candidate "$home_dir")"
+    candidate="$(scripts/worktree/bootstrap-worktree.sh --run node scripts/worktree/worktree.ts candidate "$home_dir")"
     mkdir -p "$candidate"
-    dest="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts path "$home_dir" "$project" "$slug_value")"
+    dest="$(scripts/worktree/bootstrap-worktree.sh --run node scripts/worktree/worktree.ts path "$home_dir" "$project" "$slug_value")"
     branch="$kind_value/$slug_value"
     if [ -e "$dest" ]; then echo "✗ $dest already exists — pick another safe slug or remove its worktree"; exit 1; fi
     if git -C "$main_root" show-ref --verify --quiet "refs/heads/$branch"; then echo "✗ branch $branch already exists"; exit 1; fi
@@ -214,7 +214,7 @@ wt-new $slug $kind="feat":
         echo "→ no content pack → SRD-only mode (external-contributor gate)"
     fi
     echo "→ installing deps + git hooks…"
-    ( cd "$dest" && scripts/program-supervisor/bootstrap-worktree.sh )
+    ( cd "$dest" && scripts/worktree/bootstrap-worktree.sh )
     echo ""
     echo "✓ worktree ready: $dest   (branch $branch)"
     echo "  next:  cd $dest  →  work + commit per step  →  converge  →  rebase + push origin HEAD:main"
@@ -225,10 +225,10 @@ wt-rm $slug:
     set -euo pipefail
     main_root="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
     project="$(basename "$main_root")"
-    scripts/program-supervisor/adapter-preflight.sh "$main_root"
+    scripts/worktree/adapter-preflight.sh "$main_root"
     home_dir="$(cd && pwd -P)"
     slug_value="$slug"
-    dest="$(scripts/program-supervisor/bootstrap-worktree.sh --run node scripts/program-supervisor/worktree.ts path "$home_dir" "$project" "$slug_value")"
+    dest="$(scripts/worktree/bootstrap-worktree.sh --run node scripts/worktree/worktree.ts path "$home_dir" "$project" "$slug_value")"
     git -C "$main_root" worktree remove "$dest"
     echo "✓ removed worktree $dest"
     echo "  branch kept — once its merge has landed on origin/main, delete it: git branch -d <branch>"

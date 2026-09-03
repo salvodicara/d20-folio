@@ -49,7 +49,7 @@ git push origin HEAD:main                           # the ff-merge; non-ff rejec
 # 6. Confirm the SHA landed, THEN tear down (removing early orphans an in-flight push):
 git ls-remote origin main                           # poll until it shows your SHA
 # Leave the task worktree. Do not invoke the stale shared checkout's recipe.
-cd ~/Workspace/Codex/d20-folio-program-control       # or another clean worktree at fresh origin/main
+cd <another clean worktree at fresh origin/main>     # never the shared checkout
 just wt-rm <slug>
 git branch -d <kind>/<slug>
 
@@ -72,7 +72,7 @@ just wt-list
 - **Agent fan-out:** each delegated track gets its OWN worktree (`isolation: "worktree"` for
   `Agent`/`agent()`), never the shared tree. When two tasks run together, split ownership along
   the data↔UI seam (below) so merges stay cheap.
-- **Pinned bootstrap:** `wt-new` runs `scripts/program-supervisor/bootstrap-worktree.sh` in the
+- **Pinned bootstrap:** `wt-new` runs `scripts/worktree/bootstrap-worktree.sh` in the
   new worktree. It resolves and verifies Node `24.16.0` plus pnpm `11.2.2`, then installs both the
   root and standalone `functions/` dependency trees and sets `core.hooksPath=.githooks`. The
   `--run` mode executes resolver and verification commands under that same pinned runtime.
@@ -95,11 +95,11 @@ just wt-list
   agent session has them with no install step.
 - **Hooks are shared.** `core.hooksPath=.githooks` lives in the common git config, so every
   worktree runs the same ref-aware pre-commit/pre-push hooks. **Never `--no-verify`.**
-- **Program Supervisor boundary:** `just wt-new` and `just wt-rm` are manual, same-thread adapters
-  for `d20-folio-program-control` (or a worktree whose HEAD has just been proved equal to fresh
-  `origin/main`). They reject the shared checkout before running the local bootstrap or resolver,
-  fetch `origin/main` in preflight, and reject a dirty or stale non-control invoker. Pushing this
-  change does not update the shared checkout: its stale worktree recipe must never be invoked.
+- **Adapter boundary:** `just wt-new` and `just wt-rm` run from a worktree whose HEAD has just
+  been proved equal to fresh `origin/main`. They reject the shared checkout before running the
+  local bootstrap or resolver, fetch `origin/main` in preflight, and reject a dirty or stale
+  invoker. Pushing a change does not update the shared checkout: its stale worktree recipe must
+  never be invoked.
 
 ## Editing the private content pack
 

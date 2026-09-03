@@ -46,10 +46,6 @@ runs MANDATORILY before code reaches a USER, each in exactly ONE lane, never twi
 
 The SRD-only and composed unit jobs provision every executable dependency their tests exercise:
 root pnpm dependencies, standalone `functions/` npm dependencies, and pinned Just `1.50.0`.
-Program Supervisor store validation checks the exact canonical HEAD and ref layout itself; on Git
-2.50+ its strict `fsck` object-graph pass therefore uses `--no-references`, avoiding a second,
-platform-dependent interpretation of the intentional non-branch event ref. Older supported Git
-versions keep the same object check and predate that reference-database mode.
 
 > **Why `workers: 1` in CI, not 2.** A 2nd Playwright worker was measured and REJECTED: on the
 > 2-vCPU `ubuntu-latest` runner one worker already saturates the cores (a full-page Chromium render

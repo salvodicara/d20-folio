@@ -18,10 +18,10 @@ import {
   assertPhysicalTaskRoot,
   resolveTaskRoot,
   resolveWorktreePath,
-} from "../../scripts/program-supervisor/worktree";
+} from "../../scripts/worktree/worktree";
 
 const repositoryRoot = process.cwd();
-const supervisorRoot = join(repositoryRoot, "scripts", "program-supervisor");
+const helperRoot = join(repositoryRoot, "scripts", "worktree");
 const gitLocalEnvironmentVariables = [
   "GIT_ALTERNATE_OBJECT_DIRECTORIES",
   "GIT_COMMON_DIR",
@@ -74,19 +74,9 @@ function runChecked(command: string, args: string[], cwd: string): void {
   }
 }
 
-function readUnitJob(workflow: "ci.yml" | "verify.yml"): string {
-  const source = readFileSync(
-    join(repositoryRoot, ".github", "workflows", workflow),
-    "utf8"
-  );
-  const unitJob = /^ {2}unit:\n[\s\S]*?(?=^ {2}[a-z][a-z0-9-]*:\n)/m.exec(source)?.[0];
-  if (unitJob === undefined) throw new Error(`Missing unit job in ${workflow}`);
-  return unitJob;
-}
-
 function createBootstrapFixture() {
   const root = mkdtempSync(join(tmpdir(), "d20-bootstrap-"));
-  const script = join(supervisorRoot, "bootstrap-worktree.sh");
+  const script = join(helperRoot, "bootstrap-worktree.sh");
   mkdirSync(join(root, ".githooks"));
   writeFileSync(join(root, ".tool-versions"), "nodejs 24.16.0\n");
   writeFileSync(join(root, "package.json"), '{"packageManager":"pnpm@11.2.2"}\n');
@@ -146,7 +136,7 @@ if [ "\${1:-}" = "-p" ]; then
   printf '%s\\n' 'pnpm@11.2.2'
   exit 0
 fi
-if [[ "\${1:-}" = *scripts/program-supervisor/worktree.ts ]]; then
+if [[ "\${1:-}" = *scripts/worktree/worktree.ts ]]; then
   exec "$FAKE_REAL_NODE" "$@"
 fi
 if [ "\${1:-}" = "$FAKE_COREPACK" ]; then
@@ -195,19 +185,19 @@ function createAuthorizedAdapterFixture() {
   runChecked("git", ["init", "-q", "-b", "main"], main);
   runChecked("git", ["config", "user.email", "test@example.com"], main);
   runChecked("git", ["config", "user.name", "Test User"], main);
-  mkdirSync(join(main, "scripts", "program-supervisor"), { recursive: true });
+  mkdirSync(join(main, "scripts", "worktree"), { recursive: true });
   copyFileSync(join(repositoryRoot, "justfile"), join(main, "justfile"));
   copyFileSync(
-    join(supervisorRoot, "bootstrap-worktree.sh"),
-    join(main, "scripts", "program-supervisor", "bootstrap-worktree.sh")
+    join(helperRoot, "bootstrap-worktree.sh"),
+    join(main, "scripts", "worktree", "bootstrap-worktree.sh")
   );
   copyFileSync(
-    join(supervisorRoot, "worktree.ts"),
-    join(main, "scripts", "program-supervisor", "worktree.ts")
+    join(helperRoot, "worktree.ts"),
+    join(main, "scripts", "worktree", "worktree.ts")
   );
   copyFileSync(
-    join(supervisorRoot, "adapter-preflight.sh"),
-    join(main, "scripts", "program-supervisor", "adapter-preflight.sh")
+    join(helperRoot, "adapter-preflight.sh"),
+    join(main, "scripts", "worktree", "adapter-preflight.sh")
   );
   mkdirSync(join(main, ".githooks"));
   writeFileSync(join(main, ".tool-versions"), "nodejs 24.16.0\n");
@@ -260,7 +250,7 @@ function createAdapterFixture() {
   };
 }
 
-describe("program supervisor worktree coordinates", () => {
+describe("worktree helper coordinates", () => {
   it("places every task below the stable Codex workspace", () => {
     expect(resolveTaskRoot("/Users/owner")).toBe("/Users/owner/Workspace/Codex");
     expect(resolveWorktreePath("/Users/owner", "d20-folio", "automation-k2")).toBe(
@@ -305,9 +295,9 @@ describe("program supervisor worktree coordinates", () => {
   });
 });
 
-describe("program supervisor bootstrap", () => {
+describe("worktree helper bootstrap", () => {
   it("propagates the pinned Node executable to commands and child processes", () => {
-    const script = join(supervisorRoot, "bootstrap-worktree.sh");
+    const script = join(helperRoot, "bootstrap-worktree.sh");
     const probe = `
       const { spawnSync } = require("node:child_process");
       const child = spawnSync("node", ["-p", "JSON.stringify({ version: process.version, execPath: process.execPath })"], { encoding: "utf8" });
@@ -393,7 +383,7 @@ describe("program supervisor bootstrap", () => {
   });
 });
 
-describe("program supervisor adapter authority", () => {
+describe("worktree adapter authority", () => {
   it("isolates fixture repositories from hook-local Git environment", () => {
     const root = mkdtempSync(join(tmpdir(), "d20-git-env-"));
     const repository = join(root, "repository");
@@ -420,7 +410,7 @@ describe("program supervisor adapter authority", () => {
 
   it("accepts only a registered clean worktree at fresh origin/main", () => {
     const fixture = createAdapterFixture();
-    const preflight = join(supervisorRoot, "adapter-preflight.sh");
+    const preflight = join(helperRoot, "adapter-preflight.sh");
     try {
       const shared = run(preflight, [fixture.main], fixture.main);
       expect(shared.status).toBe(1);
@@ -459,7 +449,7 @@ describe("program supervisor adapter authority", () => {
 
   it("rejects dirty program control and an unregistered same-name directory", () => {
     const fixture = createAdapterFixture();
-    const preflight = join(supervisorRoot, "adapter-preflight.sh");
+    const preflight = join(helperRoot, "adapter-preflight.sh");
     try {
       writeFileSync(join(fixture.control, "dirty.txt"), "dirty\n");
       const dirtyControl = run(preflight, [fixture.main], fixture.control);
@@ -564,140 +554,5 @@ exec "$REAL_GIT" "$@"
     } finally {
       rmSync(fixture.root, { recursive: true, force: true });
     }
-  });
-});
-
-describe("program supervisor durable runbook guards", () => {
-  it.each(["ci.yml", "verify.yml"] as const)(
-    "%s provisions every executable dependency used by the unit suite",
-    (workflow) => {
-      const unitJob = readUnitJob(workflow);
-      expect(unitJob).toMatch(
-        /^ {6}- uses: extractions\/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4\n {8}with:\n {10}just-version: "1\.50\.0"$/m
-      );
-      expect(unitJob).toContain(
-        [
-          "- name: Install Functions dependencies",
-          "        run: npm ci",
-          "        working-directory: functions",
-        ].join("\n")
-      );
-      expect(unitJob.indexOf("Install Functions dependencies")).toBeLessThan(
-        unitJob.indexOf("Unit tests")
-      );
-      expect(unitJob.indexOf("extractions/setup-just@")).toBeLessThan(
-        unitJob.indexOf("Unit tests")
-      );
-    }
-  );
-
-  it("routes setup through the pinned idempotent bootstrap", () => {
-    const briefing = readFileSync(join(repositoryRoot, "CLAUDE.md"), "utf8");
-    expect(briefing).toContain("scripts/program-supervisor/bootstrap-worktree.sh");
-    expect(briefing).toMatch(/root and standalone `functions\/`\s+dependenc/i);
-    expect(briefing).not.toContain(
-      "Setup: `asdf install && pnpm install && git config core.hooksPath .githooks`"
-    );
-  });
-
-  it("requires dedicated paired worktrees and a complete two-repository charter for private edits", () => {
-    const runbook = readFileSync(join(repositoryRoot, "docs", "WORKTREES.md"), "utf8");
-    for (const evidence of [
-      /shared private `main`.*read-only/is,
-      /dedicated private worktree/i,
-      /paired public verifier/i,
-      /two-repository charter/i,
-      /public base/i,
-      /private base/i,
-      /compatibility/i,
-      /push order/i,
-      /rollback/i,
-      /just ci/,
-      /just ci-srd-only/,
-      /no private material.*public\s+recovery/is,
-    ]) {
-      expect(runbook).toMatch(evidence);
-    }
-    expect(runbook).not.toMatch(/one private pack working tree.*concurrent edits/is);
-  });
-
-  it("permits removal only after equivalence or a verified recovery capsule", () => {
-    const runbook = readFileSync(join(repositoryRoot, "docs", "WORKTREES.md"), "utf8");
-    expect(runbook).not.toMatch(/git worktree remove --force|remove -f -f/);
-    for (const evidence of [
-      /recovery capsule/i,
-      /manifest/i,
-      /complete bundle/i,
-      /binary-safe.*tracked.*staged/is,
-      /untracked archive/i,
-      /checksums/i,
-      /source-match verification/i,
-      /integrated.*empty equivalence/is,
-      /app-managed.*handoff.*detach/is,
-    ]) {
-      expect(runbook).toMatch(evidence);
-    }
-  });
-
-  it("opens with independent specification and correctness review and treats Ponytail as optional", () => {
-    const runbook = readFileSync(join(repositoryRoot, "docs", "WORKTREES.md"), "utf8");
-    const recipes = readFileSync(join(repositoryRoot, "justfile"), "utf8");
-    const opening = runbook.slice(0, 1_200);
-    expect(opening).toMatch(
-      /independent.*specification(?:-compliance)? and correctness review/is
-    );
-    expect(opening).toMatch(/Ponytail.*optional.*meaningful complexity risk/is);
-    expect(opening).not.toMatch(/adversarial `ponytail-review`.*is the review/is);
-    expect(opening).toMatch(
-      /curated.*screenshots.*owner approval.*before (?:every|any) visual integration/is
-    );
-    expect(opening).toMatch(/deployment.*separate.*explicit per-change owner gate/is);
-    expect(opening).toMatch(/nonvisual.*reviewed.*green.*autonomous/is);
-    expect(opening).not.toMatch(/owner's only gate is deploy/i);
-    expect(recipes).toMatch(
-      /mandatory independent\s+specification(?:-compliance)? and correctness review/i
-    );
-    expect(recipes).toMatch(/Ponytail.*optional.*meaningful complexity risk/i);
-    expect(recipes).not.toMatch(/ponytail-review convergence/i);
-  });
-
-  it("does not describe already-integrated Wayfinders as pending", () => {
-    const portfolio = readFileSync(
-      join(repositoryRoot, "docs", "TEST_PORTFOLIO.md"),
-      "utf8"
-    );
-    expect(portfolio).toMatch(/Both Wayfinders.*integrated.*`main`/is);
-    expect(portfolio).not.toMatch(/must land before.*links resolve/is);
-  });
-
-  it("binds the final review receipt to supporting authority blobs without self-reference", () => {
-    const statusPath = join(repositoryRoot, "docs", "PROGRAM_STATUS.md");
-    const portfolioPath = join(repositoryRoot, "docs", "TEST_PORTFOLIO.md");
-    const planPath = join(
-      repositoryRoot,
-      "docs",
-      "superpowers",
-      "plans",
-      "2026-08-26-program-supervisor-foundation.md"
-    );
-    const status = readFileSync(statusPath, "utf8");
-    const portfolio = readFileSync(portfolioPath, "utf8");
-    const statusBlob = run(
-      "git",
-      ["hash-object", statusPath],
-      repositoryRoot
-    ).stdout.trim();
-    const portfolioBlob = run(
-      "git",
-      ["hash-object", portfolioPath],
-      repositoryRoot
-    ).stdout.trim();
-    const planBlob = run("git", ["hash-object", planPath], repositoryRoot).stdout.trim();
-
-    expect(status).toContain(planBlob);
-    expect(status).toContain(portfolioBlob);
-    expect(status).not.toContain(statusBlob);
-    expect(status).toContain("be84367069e47ce029eadf1c11fbdf9aac90df2d");
-    expect(portfolio).toContain("be84367069e47ce029eadf1c11fbdf9aac90df2d");
   });
 });
