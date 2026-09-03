@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "firebase": {
+      "command": "npx",
+      "args": ["-y", "firebase-tools@15", "mcp", "--dir", "."],
+      "env": {}
+    }
+  }
+}

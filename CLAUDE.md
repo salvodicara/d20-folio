@@ -138,6 +138,11 @@ adapters below override generic command examples, not the lifecycle:
   target or replaces correctness review.
 - **grill-me:** product-direction interviews and genuinely ambiguous owner intent, not technical
   choices that evidence can resolve.
+- **Firebase and cloud access (agent-managed repo):** the owner does not operate consoles. Use the
+  Firebase CLI (`firebase`, logged in as the owner) and `gcloud` for projects, Firestore, rules,
+  indexes, hosting and functions; the project-scoped Firebase MCP server in `.mcp.json` for
+  console-like queries; `gh` for GitHub. Production project `d20-folio`, staging `d20-folio-staging`
+  (alias `staging`, config in the gitignored `.env.staging.local`). Deploys stay owner-gated.
 
 Choose the smallest set of non-overlapping tools for the task. Resolve technical conflicts from
 documentation and evidence; ask the owner only about genuine product/taste, cost/privacy,
