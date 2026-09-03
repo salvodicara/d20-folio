@@ -737,19 +737,22 @@ export function useCharacterSubscription(characterId: string | undefined): void 
             onSend: (sent) => reconcilerRef.current?.markParentPending(sent),
             onResolved: (sent) => reconcilerRef.current?.acknowledgeParentWrite(sent),
             onRejected: (sent, error) => {
+              // A REJECTED write did not land — whatever the reason — so the generation
+              // it claimed was never stored. Re-base the cursor on the server's own
+              // acknowledged generation ALWAYS: keeping it would make the next write
+              // claim `acknowledged + 2`, which the rules' compare-and-set denies, and
+              // one transport hiccup would then cascade into a real conflict.
+              resetRevisionCursorRef.current();
               // A NON-conflict failure (offline/`unavailable`, an internal error) says
               // nothing about who owns the document: dropping the payload here would
-              // silently delete the user's edit. Keep it pending and keep the cursor —
-              // the generation was sent and may yet have landed, so it is never claimed
-              // twice — and let the next store change or the unmount flush resend. The
-              // save store already carries the REAL error message from `runWrite`, so
-              // the sheet stays in `SaveStatus="error"` meanwhile.
+              // silently delete the user's edit. It stays PENDING, so the next store
+              // change or the unmount flush resends it at `acknowledged + 1`. The save
+              // store already carries the REAL error message from `runWrite`, so the
+              // sheet stays in `SaveStatus="error"` meanwhile.
               if (!isCompareAndSetConflict(error)) return;
               // The rules refused this generation (a revision conflict, a permission
-              // change): drop the local payload, re-base the cursor on the server's own
-              // generation and republish what the server actually holds.
+              // change): drop the local payload and republish what the server holds.
               reconcilerRef.current?.rejectParentWrite(sent);
-              resetRevisionCursorRef.current();
               republishRef.current();
             },
             // Only the restore / level-up ceremony cancels a queued save. It publishes

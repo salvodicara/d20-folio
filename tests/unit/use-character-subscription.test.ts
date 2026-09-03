@@ -944,14 +944,9 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
     });
     const { callbacks } = lastSave();
     const sent = sendLastSave();
-    await act(async () => {
-      snapshotCb()({
-        ...doc(),
-        revision: 9,
-        character: { ...doc().character, quote: "other device" },
-      });
-      await Promise.resolve();
-    });
+    // The server is still on the generation we based this write on (4): nothing else
+    // has written, the transport simply failed.
+    expect(sent.revision).toBe(5);
     // A transport failure says nothing about who owns the document: the edit survives,
     // the sheet keeps showing it, and the error message stays on screen.
     act(() => {
@@ -965,11 +960,33 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
     });
     expect(openCharacter().character.quote).toBe("local");
     expect(useSaveStore.getState().status).toBe("error");
-    // The rules' CAS refusal IS a conflict — the same payload is dropped for the
-    // server's own value (this one carries the FirestoreError `code`, not a message).
+    // …and the RETRY re-claims that same generation, because a rejected write never
+    // landed and so never consumed one. Keeping the cursor would send 6 against a
+    // server still holding 4 — the rules' compare-and-set would deny it, turning one
+    // transport hiccup into a real conflict that DOES discard the edit.
     act(() => {
-      callbacks.onRejected?.(
-        sent,
+      const cur = openCharacter();
+      useCharacterStore
+        .getState()
+        .setCharacter({ ...cur, character: { ...cur.character, quote: "retry" } });
+    });
+    const retried = sendLastSave();
+    expect(retried.revision).toBe(5);
+    expect(retried.character.quote).toBe("retry");
+    // The rules' CAS refusal IS a conflict — that payload is dropped for the server's
+    // own value (this rejection carries the FirestoreError `code`, not a message).
+    await act(async () => {
+      snapshotCb()({
+        ...doc(),
+        revision: 9,
+        character: { ...doc().character, quote: "other device" },
+      });
+      await Promise.resolve();
+    });
+    expect(openCharacter().character.quote).toBe("retry");
+    act(() => {
+      lastSave().callbacks.onRejected?.(
+        retried,
         Object.assign(new Error("Missing or insufficient permissions."), {
           code: "permission-denied",
         })
