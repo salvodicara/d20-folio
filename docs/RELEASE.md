@@ -115,48 +115,13 @@ node --import ./scripts/alias-loader.mjs scripts/audit-codec-loss.ts \
 A `loss` or `quarantine` finding blocks the deploy: fix the codec with a failing test first, or
 register the seam in `CODEC_READ_SEAMS` as a documented decision — never widen the audit.
 
-**Run them IN THIS ORDER — identity first, then parents:**
-
-```sh
-# 1 — identity. Every custom sheet entry and library id gains a stable `instanceId`.
-node --import ./scripts/alias-loader.mjs scripts/migrate-custom-identity.ts --check
-node --import ./scripts/alias-loader.mjs scripts/migrate-custom-identity.ts \
-  --apply --backup /absolute/fresh/private/dir-1
-
-# 2 — parents. Every parent becomes v1 (`state: {}`, `revision`), every character gets a
-#     `combat/state` child carrying its play session.
-node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts --check
-node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts \
-  --apply --backup /absolute/fresh/private/dir-2
-```
-
-The order is not a preference: the cutover HYDRATES each legacy family through
-`parseCharacterEnvelope`, and that codec now REQUIRES `instanceId` on every custom entry. Run the
-parent cutover first and every character carrying a custom item is refused with `invalid-envelope`.
-Each `--backup` directory must be absolute, private and **fresh** (the script refuses an existing
-one), so use a new directory per run.
-
-**Any single issue blocks the whole apply.** `--apply` runs a complete preflight and refuses the
-entire batch if the plan reports even one issue — there is no partial apply. Hand-fix the reported
-document (identified by its path hash and issue code), re-run `--check`, then apply.
-
-**Re-run both `--check` immediately before the deploy**, not just before the apply: a player editing
-a character between the apply and the deploy can reintroduce an unmigrated document. `--check` proves
-the corpus is loadable by the client about to ship — for `migrate-character-parents.ts` that includes
-every ALREADY-marked parent (empty `state`, a `build` the codec hydrates), not only the ones it cut
-over.
-
-`scripts/alias-loader.mjs` composes the private content pack exactly as the app does, so a migration
-resolves the same ids and catalogues the client would. `migrate-character-parents.ts` hydrates
-through the SRD-aware codec and therefore PROVES the pack composed before it plans anything, in every
-mode: with the `content-pack` symlink missing or `VITE_CONTENT_PACK=0` exported it refuses with
-`Refusing: content pack not composed — the plan would rewrite pack-only references` and exits 1,
-rather than quietly rewriting a pack-only spell reference.
-
-An `--apply` run commits at most 500 documents in ONE atomic batch. `migrate-character-parents.ts`
-writes up to two documents per character (the parent and its `combat/state`), so it migrates at most
-**~250 characters per run**; it refuses rather than splitting the batch, and a corpus larger than that
-needs the write ceiling revisited before the run rather than a partial apply.
+**The P1 migration scripts live on `main`.** `migrate-custom-identity` and
+`migrate-character-parents` were applied to production on 2026-09-03 and `main` deletes them after
+its P1 deploy (golden rule 10); `v2` does not carry them (architecture reset, 2026-09-03). A `v2`
+release migration is written against `v2`'s shapes when a stage needs one, on this same protocol,
+with the kit in `scripts/lib/migration-kit.ts` and `scripts/alias-loader.mjs` composing the private
+content pack exactly as the app does. Every `--backup` directory is absolute, private and fresh; an
+`--apply` refuses the whole batch on a single issue and commits at most 500 documents atomically.
 
 **Deploy ordering — hosting and rules ship together.** `deploy.yml` deploys Hosting plus the
 Firestore/Storage rules in one run, which is what P1 requires: the new rules demand the `revision`

@@ -779,7 +779,7 @@ Table Clock exposes Dawn/Dusk as explicit story declarations rather than device-
 whose disposition becomes nonmagical, consumed or destroyed immediately stops contributing grants,
 casts, actions and intrinsic equipment bonuses. Legacy `ref.charges` and item-id session trackers are
 temporary corpus-migration inputs only; they are never fallback owners for a typed item.
-The pending owner-gated `scripts/migrate-item-resources.ts` one-off plans current documents and every
+On `main`, the pending owner-gated `migrate-item-resources` one-off plans current documents and every
 snapshot together, backs up exact tagged Firestore values, commits the whole ≤500-document plan with
 per-document update-time preconditions, and requires reread/global/idempotency verification. Until that
 production check succeeds, compatibility inputs remain isolated at migration boundaries; afterward they
@@ -1154,7 +1154,8 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   entities — gated like the condition suite on attack/save spells — so a self-selected Death
   Ward / Aid / Heroism rides the caster's world end to end. What still keeps the ledger alive is
   exactly the CROSS-DOCUMENT carrier: a buff landing on ANOTHER member's document has no canonical
-  channel; the remaining residue is itemized in `docs/AUTOMATION_HANDOFF.md`'s deletion map.
+  channel; the remaining residue dies with the old surfaces at stage 6 (git history holds the
+  2026-08-14 handoff's deletion map).
 
   A one-shot floor may be visible briefly as both a sheet `activeFeatures` key and its exact campaign
   occurrence. The damage kernel treats a shared `activeKey` as duplicate authority for one rule and returns

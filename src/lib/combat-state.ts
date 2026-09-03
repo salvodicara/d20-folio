@@ -178,23 +178,8 @@ export function applyCombatToSession(
   return { ok: true, session: mergeCombatTrio(baseSession, combat, effectiveMax) };
 }
 
-/**
- * The PRE-CUTOVER hydration: the parent `state` is still the session and the
- * `combat/state` child (when it exists at all) carries only the legacy combat core with
- * no `playState`. Used ONLY by `scripts/migrate-character-parents.ts`, which must
- * reproduce exactly what the client's own cutover would have written.
- *
- * P3 deletion: this dies with that migration script. No app path may call it.
- */
-export function applyLegacyCombatToSession(
-  session: SessionState,
-  combat: CombatState | null,
-  effectiveMax: number
-): SessionState {
-  return mergeCombatTrio(session, combat, effectiveMax);
-}
-
-function mergeCombatTrio(
+/** The trio merge alone (HP, conditions, initiative, death saves, inspiration), without the v1 play-state gate. */
+export function mergeCombatTrio(
   baseSession: SessionState,
   combat: CombatState | null,
   effectiveMax: number

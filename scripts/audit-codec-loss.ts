@@ -40,13 +40,13 @@ import {
   discoverDocuments,
   hashFirestoreDocument,
   isRecord,
+  packCompositionRefusal,
   pathHash,
   readTargetConfiguration,
   writeBackupDirectory,
   type BackupManifest,
   type TaggedFirestoreValue,
 } from "./lib/migration-kit.ts";
-import { packCompositionRefusal } from "./migrate-character-parents.ts";
 
 export type AuditMode = "fixtures" | "backup" | "export";
 export interface AuditOptions {

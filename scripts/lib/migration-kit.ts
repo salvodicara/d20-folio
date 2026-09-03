@@ -653,3 +653,20 @@ export async function runGuardedMigration<TPlan extends GuardedPlan>(
   }
   console.log("Idempotency check passed");
 }
+
+/**
+ * The refusal message when a run's module composition cannot be trusted, else
+ * `undefined`. Scripts that hydrate through the SRD-aware codec would see a pack-only
+ * id as unknown when `@pack` resolved to the typed-empty stub (absent `content-pack`
+ * symlink, `VITE_CONTENT_PACK=0`, a renamed loader warm-up target). BOTH signals are
+ * required: the documented switch saying the pack SHOULD compose, and a positive runtime
+ * count saying it DID.
+ */
+export function packCompositionRefusal(
+  enabled: boolean,
+  packSpellCount: number
+): string | undefined {
+  return enabled && packSpellCount > 0
+    ? undefined
+    : "Refusing: content pack not composed — the plan would rewrite pack-only references";
+}

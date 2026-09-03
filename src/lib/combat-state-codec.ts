@@ -169,24 +169,10 @@ export type CombatStateParseResult =
  * character.
  */
 export function parseCombatState(data: unknown): CombatStateParseResult {
-  return parseStoredCombatState(data, false);
+  return parseStoredCombatState(data);
 }
 
-/**
- * The PRE-CUTOVER read: a stored child that carries only the legacy combat core with no
- * `playState` is still accepted (the parent `state` was the session then). Used ONLY by
- * `scripts/migrate-character-parents.ts`.
- *
- * P3 deletion: this dies with that migration script. No app path may call it.
- */
-export function parseLegacyCombatChild(data: unknown): CombatStateParseResult {
-  return parseStoredCombatState(data, true);
-}
-
-function parseStoredCombatState(
-  data: unknown,
-  allowMissingPlayState: boolean
-): CombatStateParseResult {
+function parseStoredCombatState(data: unknown): CombatStateParseResult {
   if (!isRecord(data) || !isRecord(data.hp) || !isRecord(data.deathSaves)) {
     return { ok: false, reason: "invalid-combat-state" };
   }
@@ -217,17 +203,11 @@ function parseStoredCombatState(
   ) {
     return { ok: false, reason: "invalid-combat-state" };
   }
-  const playState =
-    allowMissingPlayState && data.playState === undefined
-      ? null
-      : parsePersistedPlayStateV1(data.playState);
-  if (playState && !playState.ok) {
+  const playState = parsePersistedPlayStateV1(data.playState);
+  if (!playState.ok) {
     return { ok: false, reason: "invalid-v1-play-state" };
   }
-  if (
-    playState?.ok &&
-    STRICT_V1_FIELDS.some((key) => !presentFieldIsPlainJson(data, key))
-  ) {
+  if (STRICT_V1_FIELDS.some((key) => !presentFieldIsPlainJson(data, key))) {
     return { ok: false, reason: "invalid-combat-state" };
   }
   // `SHED_COMBAT_STATE_KEYS` (the deleted effect-program runtime's ledgers, the
@@ -241,17 +221,16 @@ function parseStoredCombatState(
   );
   const recentActions = parseRecentActions(data.recentActions);
   if (
-    playState?.ok &&
-    (!presentFieldIsCanonical(data, "activeEffects", activeEffects) ||
-      new Set(activeEffects.map(({ id }) => id)).size !== activeEffects.length ||
-      !presentFieldIsCanonical(
-        data,
-        "pendingConcentrationSaves",
-        pendingConcentrationSaves
-      ) ||
-      !presentFieldIsCanonical(data, "turnEconomy", turnEconomy) ||
-      !presentFieldIsCanonical(data, "appliedEncounterEffects", applied) ||
-      !presentFieldIsCanonical(data, "recentActions", recentActions))
+    !presentFieldIsCanonical(data, "activeEffects", activeEffects) ||
+    new Set(activeEffects.map(({ id }) => id)).size !== activeEffects.length ||
+    !presentFieldIsCanonical(
+      data,
+      "pendingConcentrationSaves",
+      pendingConcentrationSaves
+    ) ||
+    !presentFieldIsCanonical(data, "turnEconomy", turnEconomy) ||
+    !presentFieldIsCanonical(data, "appliedEncounterEffects", applied) ||
+    !presentFieldIsCanonical(data, "recentActions", recentActions)
   ) {
     return { ok: false, reason: "invalid-combat-state" };
   }
@@ -274,7 +253,7 @@ function parseStoredCombatState(
     ...(applied ? { appliedEncounterEffects: applied } : {}),
     ...(turnEconomy ? { turnEconomy } : {}),
     ...(pendingConcentrationSaves.length ? { pendingConcentrationSaves } : {}),
-    ...(playState?.ok ? { playState: playState.value } : {}),
+    playState: playState.value,
   };
   return { ok: true, state };
 }

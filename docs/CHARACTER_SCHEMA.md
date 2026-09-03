@@ -249,15 +249,16 @@ a spent migration is removed COMPLETELY; git history preserves `scripts/migrate-
 
 Every mutable magic-item copy must have exactly one stable `build.equipment[].instanceId`, and its
 `itemResources` entry must agree with that copy's `itemId`; duplicate owners, orphaned state, malformed
-revisions and malformed transition fingerprints are rejected by the portable codec. The prepared one-off
-`scripts/migrate-item-resources.ts` applies this invariant to both current Firestore documents and every
+revisions and malformed transition fingerprints are rejected by the portable codec. The one-off `migrate-item-resources` (on `main`; superseded on `v2` by the stage-3 item-resource
+model of the new engine) applies this invariant to both current Firestore documents and every
 saved snapshot under a deterministic-id, backup, compare-and-swap and post-verification safety net. It has
 not yet run against production, so the runtime still accepts legacy migration inputs without treating them
 as a second typed owner; once the owner-gated apply/check closes, those inputs and the spent script are
 deleted rather than retained as a read shim.
 
 The REQUIRED `instanceId` on a custom spell, weapon, equipment entry and `customs.features` entry has its
-own prepared one-off, `scripts/migrate-custom-identity.ts`: it stamps a deterministic id on every custom
+own one-off, `migrate-custom-identity` (applied to production on 2026-09-03 from `main`; not carried on
+`v2`): it stamps a deterministic id on every custom
 entry of a character parent, its anonymous share projection at `public/sheet` (under the PARENT's scope and
 in the same atomic batch, because `firestore.rules` requires `sheet.build` to stay byte-identical to
 `character.build`), a saved snapshot (scoped by its own snapshot id, so a snapshot never reuses a parent
@@ -451,9 +452,9 @@ fields removed; git history preserves the script). The durable result: the subdo
 parent carries no trio, and every reader falls to the full-HP default only when the subdoc is genuinely
 absent.
 
-### Legacy parent cutover — the one-off `migrate-character-parents` (P1, applied to production 2026-09-03; deleted after the deploy)
+### Legacy parent cutover — the one-off `migrate-character-parents` (P1, applied to production 2026-09-03 from `main`; the script is not on `v2`)
 
-P1 cutover (`scripts/migrate-character-parents.ts`): every live parent is v1 (`state: {}`, the play
+P1 cutover (`main`'s `migrate-character-parents`): every live parent is v1 (`state: {}`, the play
 session lives in `combat/state.playState`), every character has a `combat/state` child, every parent
 carries `revision`. The client and `firestore.rules` are now v1-ONLY: nothing reads `playStateVersion`,
 so the stored field is DEAD from P1 on and the P3 `combat/state` v2 migration deletes it. The script
@@ -464,14 +465,14 @@ The script must therefore run on production BEFORE the P1 client deploys: an unm
 with no `combat/state` child fails closed (`missing-combat-state`).
 
 The script is read-only by default and follows the ADR-0009 protocol shared with
-`scripts/migrate-custom-identity.ts` (`--check` proves the corpus migrated; `--apply --backup <dir>` is
+`migrate-custom-identity` (`--check` proves the corpus migrated; `--apply --backup <dir>` is
 the only write mode). What it guarantees:
 
 - **The plan is what the client would have written.** A legacy family is hydrated through the exact app
   path — `parseCharacterEnvelope` (tracker-id remap, race-trait id conformance, log concentration
   normalization), then `effectiveMaxHp` over the hydrated character+session, then
-  `applyLegacyCombatToSession` (the pre-cutover trio merge, which — like the codec's
-  `parseLegacyCombatChild` — exists ONLY for this script and dies with it in P3) — and the projected
+  the pre-cutover trio merge (`mergeCombatTrio`; the script-only legacy readers were deleted with
+  the script on `v2`) — and the projected
   `combat/state` is finally re-parsed with the strict v1
   `parseCombatState` the app reads it back with (`non-canonical-child` when it would not). Nothing is
   written that the app could not then load.

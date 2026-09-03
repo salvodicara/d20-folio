@@ -17,7 +17,7 @@ import {
   initiativeToNumber,
   initiativeToString,
   sessionToCombatState,
-  applyLegacyCombatToSession,
+  mergeCombatTrio,
   applyCombatToSession as hydrateCombatSession,
   defaultCombatState,
   reduceHpDelta,
@@ -32,7 +32,7 @@ import {
 } from "@/lib/combat-state";
 
 /** The trio-clamp math alone, without the v1 play-state gate (the migration path). */
-const applyCombatToSession = applyLegacyCombatToSession;
+const applyCombatToSession = mergeCombatTrio;
 
 function session(overrides: Partial<SessionState> = {}): SessionState {
   return {

@@ -14,10 +14,11 @@ product/release forward plan.
 
 ## ACTIVE — Total combat automation, architecture round (2026-09-02)
 
-Audit, target architecture, ADRs, migration program and a green P2 prototype are on `main`
-(see `docs/PROGRAM_STATUS.md` → "Automation direction under re-architecture"). Phase 1 (data safety)
-integrated 2026-09-03 at `7b95f24`; its two live migrations await the owner gate. Next: Phase 2
-engine core, from `docs/superpowers/plans/2026-09-03-next-session-handoff.md`.
+The new app grows on `v2` under `PRODUCT.md` §Steering: program
+`docs/superpowers/plans/2026-09-03-new-app-stage-1.md`, ledger `docs/PROGRAM_STATUS.md`, handoff
+`docs/superpowers/plans/2026-09-03-v2-next-session-handoff.md`. On `main`: Phase 1 (data safety)
+integrated 2026-09-03 at `7b95f24`, its two migrations applied to production the same day, the P1
+deploy pending on the owner's word.
 
 ## CLOSED — UI/UX perfection: the open-source D&D Beyond alternative (owner-ratified 2026-08-04; approved 2026-08-12)
 
@@ -632,7 +633,7 @@ blocking on owner screenshots):
 
 ## Current state
 
-> **Continuation handoff (2026-08-04):** `docs/AUTOMATION_HANDOFF.md` is the exact branch-level
+> **Continuation handoff (2026-08-04):** the 2026-08-14 automation handoff (git history) was the exact branch-level
 > starting point for the next session: worktrees, pushed heads, verified behavior, known gaps,
 > architecture diagnosis and definition of done. The deterministic audit below is substantial but
 > is **not** a corpus-wide completion certificate.
@@ -905,7 +906,7 @@ fail-safe. The dispatch guard pins the 16-spell roster literally as the regressi
 coverage censuses regenerated with zero effect-program clauses.\*\* **Deletion map L2 first half
 EXECUTED (2026-08-20, the standing-effect census wave):** the persistent standing-effect family
 was censused producer-by-producer and reader-by-reader against the canonical seams; the verdict
-(charter on `src/types/combat-effect.ts`, residue in `docs/AUTOMATION_HANDOFF.md`) is that the
+(charter on `src/types/combat-effect.ts`, residue in the 2026-08-14 handoff, git history) is that the
 campaign `effectOps` ledger stays as the SMALLEST live cross-document seam (its behavior, Warding
 Bond transfer, Death Ward ally floor, Bless dice, marks, projected conditions, Aid HP arithmetic,
 lands on OTHER combatants, which single-document kernel worlds and owner-scoped
@@ -1123,7 +1124,7 @@ composed magic-item census is repairing those action clauses and migrating the r
 multi-resource and collection corpus in separate source-verified waves. Item-id trackers,
 `ref.charges`, the false Long-Rest/Dawn alias and the one-off live migration cannot be removed until the
 catalogue guard reaches zero and every live current doc + saved snapshot passes the post-migration check.
-The guarded one-off `scripts/migrate-item-resources.ts` is prepared and locally proved in composed and
+The guarded one-off `migrate-item-resources` (on `main`) is prepared and locally proved in composed and
 SRD-only modes: dry-run/check are read-only, apply requires a fresh private backup directory, every write
 uses the discovered `updateTime` precondition in one ≤500-document batch, and reread/global/idempotency
 checks follow. It has **not** been run against production; the autonomous snapshot-verified live apply

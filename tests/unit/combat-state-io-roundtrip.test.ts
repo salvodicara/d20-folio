@@ -14,7 +14,6 @@ vi.mock("@/lib/firebase", () => ({ db: { _type: "firestore" } }));
 vi.mock("@/lib/dev-bypass", () => ({ DEV_BYPASS_AUTH: false }));
 
 import { combatStateWriteData, parseCombatState } from "@/lib/combat-state-io";
-import { parseLegacyCombatChild } from "@/lib/combat-state-codec";
 import { defaultCombatState, sessionToCombatState } from "@/lib/combat-state";
 import { economyClaimsForTurn } from "@/lib/combat-economy";
 import { combatOutcomePrerequisiteMet } from "@/lib/combat-outcomes";
@@ -31,17 +30,6 @@ import { applyCombatToSession } from "@/lib/combat-state";
 
 function parseState(value: unknown): CombatState {
   const result = parseCombatState(value);
-  if (!result.ok) throw new Error(result.reason);
-  return result.state;
-}
-
-/** The PRE-CUTOVER reader over a play-state-less stored doc — the only place the
- *  defensive NORMALIZERS still run (the strict reader rejects a non-canonical field
- *  outright). Dies in P3 with `scripts/migrate-character-parents.ts`. */
-function parseLegacyState(value: Record<string, unknown>): CombatState {
-  const { playState: _playState, ...legacy } = value;
-  void _playState;
-  const result = parseLegacyCombatChild(legacy);
   if (!result.ok) throw new Error(result.reason);
   return result.state;
 }
@@ -299,23 +287,19 @@ describe("combat-state IO — full persistence contract", () => {
     expect(() => combatStateWriteData({ ...state, playState: undefined })).toThrow(
       "Invalid combat play state: missing"
     );
-    // Reading one that predates the cutover: the app refuses it; the migration's own
-    // reader still accepts it. Both die in P3 with the script.
+    // A child that predates the cutover (no play state) is refused: the app is v1-only.
     const { playState: _playState, ...legacy } = combatStateWriteData(state);
     void _playState;
     expect(parseCombatState(legacy)).toEqual({
       ok: false,
       reason: "invalid-v1-play-state",
     });
-    expect(parseLegacyCombatChild(legacy)).toMatchObject({ ok: true });
   });
 
   it.each([
     {
       name: "activeEffects",
       patch: { activeEffects: [EFFECTS[0], { id: "broken" }] },
-      assertLegacy: (state: CombatState) =>
-        expect(state.activeEffects).toEqual([EFFECTS[0]]),
     },
     {
       name: "pendingConcentrationSaves",
@@ -325,34 +309,14 @@ describe("combat-state IO — full persistence contract", () => {
           { id: "stale-dc", spell: "haste", damage: 22, difficultyClass: 10 },
         ],
       },
-      assertLegacy: (state: CombatState) =>
-        expect(state.pendingConcentrationSaves).toEqual([
-          {
-            id: "valid",
-            spell: conc("haste"),
-            damage: 20,
-            difficultyClass: 10,
-          },
-        ]),
     },
     {
       name: "turnEconomy",
       patch: { turnEconomy: { key: "solo:turn" } },
-      assertLegacy: (state: CombatState) =>
-        expect(state.turnEconomy).toMatchObject({
-          key: "solo:turn",
-          selected: { action: [], bonus: [], free: [] },
-          attacksUsed: 0,
-        }),
     },
     {
       name: "appliedEncounterEffects",
       patch: { appliedEncounterEffects: { epoch: 12, ids: ["effect-a", 7] } },
-      assertLegacy: (state: CombatState) =>
-        expect(state.appliedEncounterEffects).toEqual({
-          epoch: 12,
-          ids: ["effect-a"],
-        }),
     },
     {
       name: "recentActions",
@@ -367,17 +331,8 @@ describe("combat-state IO — full persistence contract", () => {
           { id: "broken", targetIds: [], outcome: "hit", round: 3 },
         ],
       },
-      assertLegacy: (state: CombatState) =>
-        expect(state.recentActions).toEqual([
-          {
-            id: "valid",
-            targetIds: ["monster-0"],
-            outcome: "hit",
-            round: 3,
-          },
-        ]),
     },
-  ])("rejects malformed present v1 $name but preserves legacy tolerance", (testCase) => {
+  ])("rejects malformed present v1 $name", (testCase) => {
     const { playState: _playState, ...legacyBase } =
       combatStateWriteData(completeState());
     void _playState;
@@ -387,12 +342,6 @@ describe("combat-state IO — full persistence contract", () => {
       ...testCase.patch,
     });
     expect(v1).toEqual({ ok: false, reason: "invalid-combat-state" });
-
-    // The migration's PRE-CUTOVER reader stays tolerant of the same stored shapes,
-    // which is exactly what the cutover canonicalizes. Dies in P3 with the script.
-    const legacy = parseLegacyCombatChild({ ...legacyBase, ...testCase.patch });
-    expect(legacy).toMatchObject({ ok: true });
-    if (legacy.ok) testCase.assertLegacy(legacy.state);
   });
 
   it("rejects noncanonical v1 ordering/nested shapes but tolerates future roots", () => {
@@ -496,51 +445,6 @@ describe("combat-state IO — full persistence contract", () => {
       "effectOps"
     );
     expect(defaultCombatState(20)).not.toHaveProperty("effectOps");
-  });
-
-  it("reads the Concentration FIFO defensively in the pre-cutover reader", () => {
-    const base = combatStateWriteData(completeState());
-    // The strict reader refuses a stored queue that is not already canonical…
-    expect(
-      parseCombatState({ ...base, pendingConcentrationSaves: [{ id: "bad" }] })
-    ).toMatchObject({ ok: false });
-    // …while the migration reader normalizes exactly what the cutover then rewrites.
-    expect(
-      parseLegacyState({ ...base, pendingConcentrationSaves: undefined })
-    ).not.toHaveProperty("pendingConcentrationSaves");
-    expect(
-      parseLegacyState({
-        ...base,
-        pendingConcentrationSaves: [
-          {
-            id: "valid",
-            spell: "haste",
-            damage: 60,
-            difficultyClass: 30,
-          },
-          {
-            id: "stale-dc",
-            spell: "haste",
-            damage: 22,
-            difficultyClass: 10,
-          },
-          {
-            id: "valid",
-            spell: "haste",
-            damage: 60,
-            difficultyClass: 30,
-          },
-          { id: "bad-spell", spell: "", damage: 10, difficultyClass: 10 },
-        ],
-      }).pendingConcentrationSaves
-    ).toEqual([
-      {
-        id: "valid",
-        spell: conc("haste"),
-        damage: 60,
-        difficultyClass: 30,
-      },
-    ]);
   });
 
   it.each([
@@ -686,24 +590,10 @@ describe("combat-state IO — full persistence contract", () => {
     "drops an invalid turn-economy root: %j",
     (turnEconomy) => {
       const base = combatStateWriteData(completeState());
-      expect(parseLegacyState({ ...base, turnEconomy }).turnEconomy).toBeUndefined();
       // The strict reader does not normalize a stored non-canonical root: it refuses.
       expect(parseCombatState({ ...base, turnEconomy })).toMatchObject({ ok: false });
     }
   );
-
-  it("binds a legacy non-zero slot count to its enclosing turn key", () => {
-    const state = completeState();
-    const turn = state.turnEconomy;
-    if (!turn) throw new Error("missing turn economy");
-    delete turn.spellSlotCastTurnKey;
-
-    const parsed = parseLegacyState(combatStateWriteData(state));
-    expect(parsed.turnEconomy).toMatchObject({
-      spellSlotCastsThisTurn: 1,
-      spellSlotCastTurnKey: turn.key,
-    });
-  });
 });
 
 describe("v1 play-state — arrays and the persisted engine world", () => {
