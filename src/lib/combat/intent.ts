@@ -23,6 +23,7 @@ import type {
   Entity,
   FoldedState,
   Lifetime,
+  LifeState,
   Outcome,
   PaymentChoice,
   PendingCheck,
@@ -1026,24 +1027,51 @@ export function applyDeclare(
   };
 }
 
+const LIFE_STATES = new Set<LifeState>(["alive", "dying", "stable", "dead"]);
+
+/** Paths that are persisted facts, not read-time-derived stats (like `stats.ac`): an override
+ *  here directly corrects the fact, the same way a later `declare` replaces a relation, rather
+ *  than layering on top of a formula consulted at read time. An HP override above zero revives
+ *  a dying/stable creature exactly as `applyHealing` does; `dead` stays dead until the DM
+ *  overrides `vitals.life` explicitly. */
+function patchDirectOverride(entity: Entity, path: string, value: unknown): Entity {
+  if (path === "vitals.hp" && typeof value === "number" && Number.isFinite(value)) {
+    const { life, deathSaves } = entity.vitals;
+    const revived = value > 0 && (life === "dying" || life === "stable");
+    return {
+      ...entity,
+      vitals: {
+        ...entity.vitals,
+        hp: value,
+        life: revived ? "alive" : life,
+        deathSaves: revived ? { successes: 0, failures: 0 } : deathSaves,
+      },
+    };
+  }
+  if (
+    path === "vitals.life" &&
+    typeof value === "string" &&
+    LIFE_STATES.has(value as LifeState)
+  ) {
+    return { ...entity, vitals: { ...entity.vitals, life: value as LifeState } };
+  }
+  return entity;
+}
+
 export function applyOverride(state: FoldedState, action: OverrideAction): StepResult {
   const entity = state.entities[action.entity];
   if (!entity) return rejected({ reason: "unknown-entity", entity: action.entity });
+  const recorded: Entity = {
+    ...entity,
+    overrides: {
+      ...entity.overrides,
+      [action.path]: { value: action.value, reason: action.reason, by: action.by },
+    },
+  };
+  const patched = patchDirectOverride(recorded, action.path, action.value);
   return {
     kind: "applied",
-    state: {
-      ...state,
-      entities: {
-        ...state.entities,
-        [action.entity]: {
-          ...entity,
-          overrides: {
-            ...entity.overrides,
-            [action.path]: { value: action.value, reason: action.reason, by: action.by },
-          },
-        },
-      },
-    },
+    state: { ...state, entities: { ...state.entities, [action.entity]: patched } },
     receipt: {
       action: action.id,
       outcome: "applied",
