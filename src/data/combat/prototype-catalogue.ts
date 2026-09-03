@@ -267,6 +267,22 @@ export const shortsword: Mechanic = {
   ],
 };
 
+/** Movement every creature has: no action/bonus/reaction cost, gated to your own turn, budgeted
+ *  against speed by the `move` step itself. */
+export const move: Mechanic = {
+  schema: 1,
+  id: "core:move",
+  source: "srd",
+  active: [
+    {
+      id: "move",
+      trigger: { kind: "invocation", economy: "free" },
+      inputs: [{ id: "to", kind: "position" }],
+      steps: [{ id: "step", kind: "move", to: "to" }],
+    },
+  ],
+};
+
 export const PROTOTYPE_MECHANICS: readonly Mechanic[] = [
   shortsword,
   longbow,
@@ -274,4 +290,5 @@ export const PROTOTYPE_MECHANICS: readonly Mechanic[] = [
   huntersMark,
   shield,
   giggle,
+  move,
 ];

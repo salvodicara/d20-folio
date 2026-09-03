@@ -2,6 +2,18 @@
   "schema": 1,
   "rows": [
     {
+      "mechanic": "core:move",
+      "program": "move",
+      "step": "*",
+      "status": "automated"
+    },
+    {
+      "mechanic": "core:move",
+      "program": "move",
+      "step": "step",
+      "status": "automated"
+    },
+    {
       "mechanic": "monster:goblin:scimitar",
       "program": "attack",
       "step": "*",
