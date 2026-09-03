@@ -538,3 +538,119 @@ screens are `mockups/v8-*.png`, delivered to the owner as JPEGs on 2026-09-03.
   collisions between screens built in parallel were fixed (CSS class collisions across the shared
   kit: `.tools`, `.rrow`, `.who`, `.react`, `.fld`, `.pg`); the rule for future kits is one class
   prefix per area.
+
+### 8e. Owner verdict on the stage U delivery (2026-09-03, evening)
+
+Verdict on the whole set: "più o meno ci siamo" — the direction of every delivered screen is
+approved, with corrections to be applied before any row of §8c is dated as final:
+
+1. Round and oval buttons (End turn, Rest, dice, reaction) were rejected as badly made: rebuilt
+   on Baldur's Gate 3's models (rules 39–40).
+2. Every control must make its purpose obvious (hover tooltip with label and hotkey; long-press
+   label on touch) — rule 40.
+3. Feature parity must be explicit and complete: everything D&D Beyond does around the character,
+   everything Owlbear does for the DM (the group drops Owlbear), as much of Baldur's Gate 3 as a
+   table allows, with the DM always able to modify, override and correct — rule 41 and §10.
+4. Dense screens (Privilegi, Incantesimi and the like) must be scannable at first glance — rule 42.
+5. Wizards (creation, level-up) and the design as a whole must feel more premium, coherent and
+   unique; the calendar must carry the functions of the premium products (Google Calendar sync
+   and the like) — rules 43–44.
+
+The corrections were delivered the same evening as dossier 21 (`mockups/dossier13*`); their
+verdict is pending.
+
+### 8f. Rules added by the corrections (2026-09-03)
+
+39. **Button system.** Four kinds only: the Baldur's Gate 3 ring (brass ring with ticks, glass
+    interior, serif label) for End turn and, out of combat, Rest; brass medallions for dice,
+    reaction, short and long rest; D&D Beyond pills for primary actions (one solid gold per
+    screen) and ghost pills for the rest; flat Owlbear icon buttons in tool rails. Every button
+    has five states: default, hover, pressed, disabled (desaturated, reason in the tooltip),
+    keyboard focus (cyan ring). No hotkey text inside a button.
+40. **Tooltips everywhere.** Every icon button and every non-obvious control shows, after about
+    450 ms of hover or on keyboard focus, a tooltip with the label, the hotkey chip and one plain
+    sentence; it never covers the trigger. On touch, long-press shows the label. The first use of
+    a new control gets a cyan teaching tip (once, resettable). Reference explains (component 8)
+    are separate and always available.
+41. **Explicit parity.** §10 keeps three ledgers (Owlbear → here, D&D Beyond → here, Baldur's
+    Gate 3 → here with the table's limits); no capability of Owlbear may lack a row and a place
+    in the app. The in-app DM guide "Vieni da Owlbear? Dove trovo…" renders the ledgers with a
+    "Mostrami" that opens the right screen and points at the control; it opens by itself the
+    first time a DM enters the table. The DM can modify, override and correct any automatic
+    outcome in place, with undo, on every surface.
+42. **Scan-first rows.** A list row carries one sign (tile), one name, one muted line and one
+    verb; no chips inside rows; legends never sit in lists; the description appears only on the
+    selected row (D&D Beyond) and in the detail column; components, durations and rules live in
+    the detail and in the explain panel.
+43. **Premium ornament, with meaning.** Wizard steps and summaries take the Baldur's Gate 3 hero
+    title: centred Cinzel title with the diamond knot between two fading hairlines; card icons are
+    brass medallions like the buttons; a chosen card carries a gold seal; the level is a brass
+    seal. Section titles keep the plain fading hairlines; nothing else is ornamented.
+44. **Calendar parity.** Sync to Google Calendar (linked account), Apple/iCal (subscription feed)
+    and Outlook (.ics); recurrence with per-person time zones and absence skipping; reminders
+    (one day and one hour before) through the app and Discord; a date poll (When2meet-style
+    grid) whose best date becomes the proposal; the in-world calendar with date, weather, moons
+    and events (Fantasy Calendar, Kanka).
+
+## 10. Parity ledgers (owner, 2026-09-03: "lo strumento definitivo per giocare a D&D")
+
+Evidence: the Owlbear checklist in `docs/superpowers/research/2026-09-03-vtt-play-screen-observations.md`
+(refs5), the D&D Beyond surfaces in the component and surface observations (refs, refs3), the
+Baldur's Gate 3 screens in refs6. "Where" names the screen of §8c.
+
+### 10a. Owlbear Rodeo 2 → d20 Folio (the group drops Owlbear)
+
+| Owlbear capability                                                         | Where in d20 Folio                                                                                |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Scenes: list, open, edit, per-scene grid and fog                           | Preparazione DM → Scene e mappe; in session: DM drawer → Scene; scene switch from the rail        |
+| Token context: hide, lock, layer, size, rotate, copy, attach, text, delete | Token pill under the token (ownership-scoped)                                                     |
+| Layers (map, prop, mount, character, attachment, note, text, pointer, fog) | "Aggiungi" panel and the token pill; never a global layer mode                                    |
+| Fog: fill, cut, brush, shapes, hide, preview, single/multi layer           | Fog tool (DM) → sub-toolbar under the initiative strip; preview = "player view" eye               |
+| Drawing: pen, line, shapes, fill, colour, outline                          | Draw tool → sub-toolbar                                                                           |
+| Pointer / ping                                                             | Pointer tool: ripple visible to all                                                               |
+| Ruler, measurement type, ruler attached to a drag                          | Ruler tool + Foundry-style drag ruler; measurement type from the scale badge                      |
+| Grid: size, scale, alignment, snapping                                     | Scale badge "1,5 m" → grid panel                                                                  |
+| Hidden tokens and player view                                              | Eye on the token; DM drawer → Nascosti; player-view eye top-right                                 |
+| Per-player permissions, item owner                                         | Campagna → Party → Giocatori e permessi; token pill → owner                                       |
+| Dice extension: 3D roll, bonus, advantage, shared result, hidden GM roll   | Dice medallion → tray; hidden on the roll; dice tumble over everyone's map; "?" faces when hidden |
+| Initiative extension                                                       | Initiative strip for everyone; list in the DM drawer                                              |
+| Bubbles: HP and AC on tokens                                               | Bar under the token; HP numbers only to allies and the DM; AC in the target block                 |
+| Character dock and asset manager, drag to place                            | "Aggiungi" tool: campaign PCs, compendium monsters, props; placing adds to initiative             |
+| Text labels and notes                                                      | Text tool; DM notes in the drawer → Note                                                          |
+| Rooms, invites, connected players                                          | Campagna → Party → invite link; players popover top-left                                          |
+| Image storage with quota and compression                                   | Scene upload with automatic compression and the per-campaign quota bar                            |
+| Mobile layout                                                              | The phone is the second screen (hotbar, dice, sheet); the map is view-only on the phone           |
+| Extensions not carried                                                     | Dynamic fog with walls and vision, smoke, weather effects: out of scope (constitution §2.9)       |
+
+### 10b. D&D Beyond → d20 Folio (owning the character)
+
+| D&D Beyond capability                                               | Where in d20 Folio                                                             |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Character sheet (desktop and app), all tabs                         | Personaggio → Panoramica · Incantesimi · Inventario · Privilegi · Progressione |
+| Character builder, quick build, premades, level-up, "What's next"   | Costruttore → creation wizard, Rapido, Personaggio pronto, level-up ledger     |
+| PDF export and printable sheet                                      | Personaggio → menu "⋯" → Stampa (two A4 pages)                                 |
+| Sharing a character, public sheet, campaign invite                  | Vista condivisa, OG preview, invite card                                       |
+| Campaigns: characters, DM view, game log                            | Campagna → Party, Cronaca; registro in session                                 |
+| Party inventory, shared gold, item transfer                         | Campagna → Party → Inventario del gruppo; Inventario → "Dai a…"                |
+| Encounter builder with difficulty                                   | Preparazione DM → Incontri (2024 budget math)                                  |
+| Maps (tokens, fog, initiative, hidden creatures, stat-block drawer) | Gioca (all of it, in the play screen and the DM drawer)                        |
+| Digital dice, rolling from the sheet, game log cards                | Every value rolls; dice medallion; prose log                                   |
+| Compendium: monsters, spells, items, rules, conditions, versions    | Compendio with the version pill (2024, casa)                                   |
+| Homebrew creation and sharing                                       | Compendio → "Duplica e modifica" typed forms; shared per campaign              |
+| Settings, notifications, privacy                                    | Impostazioni                                                                   |
+| Not carried                                                         | Marketplace, subscriptions, forums, video content                              |
+
+### 10c. Baldur's Gate 3 → d20 Folio (playing, within a table's limits)
+
+| Baldur's Gate 3 capability                                                | Where in d20 Folio                                                                                                       |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Hotbar, action economy pill, initiative strip, target block               | Gioca: same grammar (rules 28–33)                                                                                        |
+| Automatic resolution of attacks, saves, damage, conditions, concentration | Automation level "Completo" with the audited log; the DM undoes or corrects any line                                     |
+| Reactions with a window and Always / Ask / Never                          | Reaction window (component 10); per-reaction preference                                                                  |
+| Dice check panel (DC, d20, bonuses, verdict)                              | Roll panel (rule 37); physical dice entered in the same panel                                                            |
+| Character window, spellbook, inventory with rarity, level-up summary      | Personaggio and Costruttore                                                                                              |
+| Tooltips with keywords, layered                                           | Explain on demand (component 8)                                                                                          |
+| Rest buttons, camp                                                        | Rest ring and medallions; Campagna between sessions                                                                      |
+| Journal                                                                   | Cronaca                                                                                                                  |
+| Custom difficulty / rule toggles                                          | Campaign automation level and rule toggles in Preparazione DM and the drawer                                             |
+| Not carried (not a video game)                                            | 3D world and animation, pathing and exact line of sight, cinematic dialogue, companions' AI; the DM narrates and decides |
