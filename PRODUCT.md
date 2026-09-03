@@ -15,6 +15,11 @@ The repository stays public; the SRD public build and the private content pack s
 **The ambition.** The definitive tool for playing D&D 2024: complete, depending on nothing else,
 comfortable and free for remote groups and for the physical table, adapting to tastes (in-app 3D
 dice everyone sees, or real dice with the result entered). Time and patience are available.
+Two parities are owed at once (owner, 2026-09-03): everything Baldur's Gate 3 does at the table
+(hotbar, automatic resolution, initiative, reactions, dice, map) **and** everything D&D Beyond
+does around the character — the sheet stays readable as a sheet and printable, loot and items
+pass from one character to another, the party has a shared inventory, and the DM has everything
+a DM needs. BG3 is the model for playing; D&D Beyond is the model for owning a character.
 
 **Self-contained.** Everyone at the table, players and DM, must be able to do anything related to
 their D&D game without another tool: not only the sheet, the map, the dice and the rules, but the
@@ -35,7 +40,9 @@ mid-session; dice mode is a per-person choice.
 **First milestone.** One whole session of the group without opening Owlbear, D&D Beyond or a
 calculator.
 
-**Delivery posture.** Production keeps working as it is and the group keeps playing with it. The
+**Delivery posture.** Production keeps working as it is, exactly as it is, and the group keeps
+playing with it (plus Owlbear) until the new system is in place and ready — this is a hard rule,
+not a preference. The
 new app grows in the long-lived branch `v2` (its own worktree) and is released only when the
 milestone is reached; `main` receives production fixes only, cherry-picked into `v2` when they
 matter there. A staging environment (separate
@@ -56,20 +63,22 @@ that serves none of the four is superfluous.
 
 **Jobs the app must cover (evidence-ranked; extended from community research, 2026-09).**
 
-| Job                                                                            | Who         | When           | Today                       |
-| ------------------------------------------------------------------------------ | ----------- | -------------- | --------------------------- |
-| Play a turn: move, act, roll, consequences, undo                               | players, DM | during         | app + Owlbear + mental math |
-| Run the table: map, tokens, fog, initiative, monsters, hidden rolls, overrides | DM          | during         | Owlbear + app + paper       |
-| Sheet, level-up, spell preparation, inventory                                  | players     | between        | app                         |
-| Rules and content lookup with plain explanations                               | everyone    | always         | app + D&D Beyond            |
-| Session notes and recap                                                        | DM, players | during, after  | external notes              |
-| Chronicle of everything that happened                                          | everyone    | across         | app (partial)               |
-| Next session date, attendance, shared calendar                                 | everyone    | across         | chat + calendar             |
-| NPCs, places, factions, lore                                                   | DM, players | across         | external wiki               |
-| Loot, party gold, party inventory                                              | players, DM | after, between | sheet + chat                |
-| Handouts and images                                                            | DM          | during         | chat                        |
-| Homebrew: monsters, items, spells, rules                                       | DM          | between        | external editors            |
-| Encounter building and difficulty                                              | DM          | between        | app                         |
+| Job                                                                            | Who         | When                  | Today                       |
+| ------------------------------------------------------------------------------ | ----------- | --------------------- | --------------------------- |
+| Play a turn: move, act, roll, consequences, undo                               | players, DM | during                | app + Owlbear + mental math |
+| Run the table: map, tokens, fog, initiative, monsters, hidden rolls, overrides | DM          | during                | Owlbear + app + paper       |
+| Sheet, level-up, spell preparation, inventory                                  | players     | between               | app                         |
+| Read the sheet as a sheet; print it (PDF)                                      | players     | between, at the table | app (PDF export exists)     |
+| Give an item, loot or gold to another character; party inventory               | players, DM | during, after         | chat + manual edits         |
+| Rules and content lookup with plain explanations                               | everyone    | always                | app + D&D Beyond            |
+| Session notes and recap                                                        | DM, players | during, after         | external notes              |
+| Chronicle of everything that happened                                          | everyone    | across                | app (partial)               |
+| Next session date, attendance, shared calendar                                 | everyone    | across                | chat + calendar             |
+| NPCs, places, factions, lore                                                   | DM, players | across                | external wiki               |
+| Loot, party gold, party inventory                                              | players, DM | after, between        | sheet + chat                |
+| Handouts and images                                                            | DM          | during                | chat                        |
+| Homebrew: monsters, items, spells, rules                                       | DM          | between               | external editors            |
+| Encounter building and difficulty                                              | DM          | between               | app                         |
 
 **Open decision.** The name: "d20 Folio" says "sheet" more than "table"; keep it, decide before any
 public release.
