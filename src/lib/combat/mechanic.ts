@@ -86,7 +86,8 @@ export type Input =
       readonly perTarget?: boolean;
     }
   | { readonly id: string; readonly kind: "choice"; readonly options: readonly LabelId[] }
-  | { readonly id: string; readonly kind: "table"; readonly label: LabelId };
+  | { readonly id: string; readonly kind: "table"; readonly label: LabelId }
+  | { readonly id: string; readonly kind: "position" };
 
 export interface TargetSpec {
   readonly count: number;
@@ -154,6 +155,7 @@ export type Step = { readonly id: string; readonly when?: Predicate } & (
   | { readonly kind: "turn-claim"; readonly claim: "once"; readonly key: string }
   | { readonly kind: "negate"; readonly target: "declared-action" }
   | { readonly kind: "manual-table"; readonly label: LabelId }
+  | { readonly kind: "move"; readonly to: string }
 );
 
 export interface Program {
@@ -193,6 +195,7 @@ const STEP_KINDS = new Set([
   "turn-claim",
   "negate",
   "manual-table",
+  "move",
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -248,6 +251,9 @@ function checkProgram(program: Program, path: string): Conformance | null {
       return fail("once-per-turn-needs-key", stepPath);
     if ((step.kind === "attack" || step.kind === "save") && !inputIds.has(step.roll)) {
       return fail("roll-input-declared", `${stepPath}.roll`);
+    }
+    if (step.kind === "move" && !inputIds.has(step.to)) {
+      return fail("move-input-declared", `${stepPath}.to`);
     }
     const usesTarget =
       (step.kind === "effect-start" && step.effect.to === "$target") ||

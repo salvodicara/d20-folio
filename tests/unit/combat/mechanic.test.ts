@@ -95,4 +95,42 @@ describe("conformMechanic — the authoring contract", () => {
       path: "active[0].steps[1]",
     });
   });
+
+  it("accepts a move step whose `to` names a declared position input", () => {
+    const result = conformMechanic({
+      schema: 1,
+      id: "core:move",
+      source: "srd",
+      active: [
+        {
+          id: "move",
+          trigger: { kind: "invocation", economy: "free" },
+          inputs: [{ id: "to", kind: "position" }],
+          steps: [{ id: "step", kind: "move", to: "to" }],
+        },
+      ],
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects a move step whose `to` names an input the program never declares", () => {
+    const result = conformMechanic({
+      schema: 1,
+      id: "core:move",
+      source: "srd",
+      active: [
+        {
+          id: "move",
+          trigger: { kind: "invocation", economy: "free" },
+          inputs: [],
+          steps: [{ id: "step", kind: "move", to: "to" }],
+        },
+      ],
+    });
+    expect(result).toEqual({
+      ok: false,
+      rule: "move-input-declared",
+      path: "active[0].steps[0].to",
+    });
+  });
 });
