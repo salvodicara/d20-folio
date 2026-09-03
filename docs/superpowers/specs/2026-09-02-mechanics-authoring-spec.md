@@ -1,7 +1,7 @@
 # Mechanics authoring specification (v1)
 
-**Date:** 2026-09-02 · **Status:** proposed · **Owner of this fact:** this document until folded
-into `docs/MECHANICS.md` (Phase 5). Companion of the
+**Date:** 2026-09-02 · **Status:** v1, bounded on 2026-09-03 to the stage-3 tier (§6) ·
+**Owner of this fact:** this document until folded into `docs/MECHANICS.md` (stage 7). Companion of the
 [target architecture](2026-09-02-total-combat-automation-design.md). This is the contract that
 SRD data, the private content pack and in-app homebrew write against. It is versioned; the
 engine accepts exactly the versions it declares.
@@ -115,6 +115,11 @@ type Input =
 
 For a `table` entity (solo play), a `d20` input for the target's roll accepts either a face or a
 declared outcome (`hit`/`miss`/`fail`/`success`), because the table owns that creature.
+
+A `d20` or `dice` input is answered by the id of a `roll` action already in the log
+(`answers[input.id] = { roll: ActionId }`, ADR-0010); the reducer reads the roll's total from
+`state.rolls`. The formula of a `dice` input uses the seam's grammar (`NdS`, `kh`/`kl`, signed
+integers; `{level}` is substituted by the client before the roll).
 
 ### 1.4 Steps (closed union; every kind has a reducer handler, enforced by `assertNever`)
 
@@ -299,3 +304,18 @@ adapter is the only place that understands `MonsterEntry`; its output is ordinar
 | a costed program with a trigger that cannot pay (e.g. reaction cost on a non-window event) | `cost-claim-matches-trigger`                                          |
 | a step kind the reducer does not handle                                                    | TypeScript compile error (`assertNever`)                              |
 | a mechanic whose every step is `manual-table`                                              | coverage JSON shows it as `table`, never as automated                 |
+
+## 6. Vocabulary tiers (2026-09-03)
+
+Bounded to what the acceptance stories need (`PRODUCT.md` §Steering; design §4/§7). A `later`
+kind is declared in the closed unions, conforms as `unsupported` with a path, and gains its
+reducer handler in the stage that first needs it.
+
+| Kind family | Stage 3 (Marco's first turn, Sara's ogre ambush)                                            | Later                                                               |
+| ----------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Triggers    | `invocation` (action, bonus, reaction); `event: entity-left-reach` (opportunity attack)     | other events (`attack-declared`, `cast-declared`, `hp-zero`, …)     |
+| Costs       | `turn` claims, `slot` (with upcast), `resource`                                             | `recharge`, `legendary`                                             |
+| Inputs      | `d20` (attack, save, initiative, concentration), `dice`, `choice`, `damage-type`, `declare` | `integer`, `table` rulings                                          |
+| Steps       | `attack`, `save`, `damage`, `heal`, `effect-start`, `effect-end`, `condition`, `move`       | `summon`, `transform`, `aura`, `ready`, `move-mark`, `manual-table` |
+| Lifetimes   | `turn-edge`, `rounds`, `manual`, `source-end`                                               | `seconds`, `rest`, `day-phase`                                      |
+| Adapter     | monster stat blocks → `Mechanic[]` for Multiattack and single attacks                       | Recharge, Legendary Actions, lair bonuses                           |

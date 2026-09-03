@@ -1,9 +1,12 @@
 # Total combat automation — target architecture
 
-**Date:** 2026-09-02 · **Status:** proposed (owner approved the core direction in chat on
-2026-09-02; ratified when integrated) · **Owner of this fact:** this document until its sections
-are folded into `docs/ARCHITECTURE.md` and `docs/MECHANICS.md` in Phase 5 of the
-[migration plan](../plans/2026-09-02-total-combat-automation-migration.md).
+**Date:** 2026-09-02 · **Status:** reconciled to `PRODUCT.md` §Steering on 2026-09-03 (owner
+approved the core direction in chat on 2026-09-02; the steering of 2026-09-03 bounds it) ·
+**Owner of this fact:** this document owns the engine target for stages 1–4 of the
+[stage-1 program plan](../plans/2026-09-03-new-app-stage-1.md) until its sections are folded
+into `docs/ARCHITECTURE.md` and `docs/MECHANICS.md` in stage 7. The
+[migration program](../plans/2026-09-02-total-combat-automation-migration.md) is history: its
+phases P2–P5 are superseded by the stages.
 
 Evidence: [audit](../status/2026-09-02-combat-automation-audit.md) ·
 [rules surface](../status/2026-09-02-combat-rules-surface.md) ·
@@ -27,6 +30,14 @@ SRD, the private content pack and homebrew, and with Firestore rules reduced to 
 membership, ownership and shape. Solo and shared play use the same aggregate; only its host
 document differs.
 
+**Bounded on 2026-09-03.** The scope is what the four acceptance stories of `PRODUCT.md`
+§Steering need, in the order of the stage-1 program plan: stage 1 the dice seam, stage 2
+positions and areas, stage 3 the reducer for Marco's first turn and Sara's ogre ambush, stage 4
+the shared encounter document. Everything the earlier "total automation" phases planned beyond
+those stories is tiered `later` in §4 and §7 — built when a story or a job in the jobs table
+needs it, never early. The DM's last word, the three campaign automation levels and rolls with
+provenance are first-class here, not features added after the engine.
+
 ## 1. Invariants this design keeps
 
 > **Reconciled 2026-09-03 to the steering (`PRODUCT.md` §Steering, golden rule 29).** Two
@@ -36,9 +47,21 @@ document differs.
 > map-derived facts join its vocabulary (see the steering's stage 1: dice seam, positions and areas
 > in the aggregate).
 
-- Dice are a logged action: rolled in-app (shared 3D result) or entered from real dice, hidden or
-  visible, always with formula, faces, total, roller and source; the reducer computes and applies
-  everything else from that action.
+- Dice are a logged action (ADR-0010): a `roll` action carries formula, faces, total, `seed`,
+  roller, source (`app | manual`) and `hidden`; an `app` roll is reproducible from its seed and
+  every client verifies it in the fold, a `manual` roll carries the faces a person read off real
+  dice; a hidden roll shows its faces only to the DM and to the roller. The reducer computes and
+  applies everything else from that action; randomness for dice exists only in `src/lib/dice.ts`.
+- The DM has the last word (steering): `override` and `undo` are actions available on every
+  surface for every applied action; a DM correction is a later action in the same log, never a
+  different code path.
+- Three campaign automation levels (ADR-0011): `full-auto`, `propose-and-confirm`, `log-only`
+  are a table setting the reducer reads when it applies an action's outcome; the DM changes it
+  mid-session; the roll and the verdict are the same at every level, only what happens after the
+  verdict differs.
+- The encounter log is the shared document of play: `campaigns/{id}/encounters/{eid}` is what
+  every client folds, what the recap and the chronicle are assembled from, and what the DM
+  reviews and corrects.
 - Override-first: every derived value auto-computes and every derived value is overridable; an
   override is an action in the log, survives recomputation and is undone like any action.
 - Bilingual by construction: the engine is locale-free; every label is an id resolved in
@@ -248,10 +271,42 @@ type Action =
         | "settings";
       payload;
     }
-  | { kind: "checkpoint"; id; seq; by; folded: FoldedState; through: Seq };
+  | { kind: "checkpoint"; id; seq; by; folded: FoldedState; through: Seq }
+  | {
+      kind: "roll"; // stage 1 — ADR-0010
+      id;
+      seq;
+      by;
+      roll: {
+        formula: string; // Foundry-grammar subset: "2d20kh1+5"
+        faces: number[];
+        total: number;
+        seed: number | null; // uint32 for `app`, null for `manual`
+        source: "app" | "manual";
+        hidden: boolean;
+        roller: EntityId | null;
+        purpose:
+          | "attack"
+          | "damage"
+          | "save"
+          | "check"
+          | "initiative"
+          | "death-save"
+          | "concentration"
+          | "free";
+        label: LabelId | null;
+      };
+    };
 
 type Seq = { ms: number; counter: number; by: uid }; // hybrid logical clock; total order (ms, counter, by)
+type Answer = number | string | boolean | number[] | { roll: ActionId }; // a `d20`/`dice` input is answered by a roll's id
 ```
+
+A roll is appended before the intent that consumes it; the fold rejects a roll whose faces do
+not reproduce from its seed (`invalid-roll`), records every accepted roll in `state.rolls`, and
+an intent whose roll was undone re-validates as `missing-answer`. This is what lets a hidden DM
+roll, a physical die entered by hand and an in-app roll feed the same reducer, and what lets a
+golden replay feed recorded faces.
 
 The client never writes state. It appends actions. `seq` is a hybrid logical clock so that
 actions from different clients, arriving in any order, fold in one deterministic total order.
@@ -284,6 +339,16 @@ Properties, each enforced by a test class in §8:
 - **Re-validated in the fold.** `basedOn` is advisory. The fold recomputes every action against
   the state it actually lands on; an action that is illegal there is recorded as rejected, and
   every client agrees.
+
+**Outcome application by automation level (ADR-0011).** The table setting
+`automation: "full-auto" | "propose-and-confirm" | "log-only"` is read when an applied
+action's transitions would change state. `full-auto` applies them (stage 3). `log-only` records
+the receipt — who did what, the verdict, what would have changed — and applies nothing; the DM
+applies by hand through `override` (stage 3). `propose-and-confirm` holds the action as
+`proposed` with its computed transitions until a `confirm` action by the DM (or by the actor,
+when the campaign allows) applies them; a `reject` leaves the receipt in the log (stage 6, with
+the surface that shows the proposal). At every level the roll, the verdict and the receipt are
+identical; the level only decides whether the reducer or a person moves the state.
 
 ### 3.3 The fold
 
@@ -328,6 +393,16 @@ lease. Outside an encounter the personal aggregate advances `seconds` lifetimes 
 explicit `rest`, `day-phase` and a declared `advance-time`.
 
 ## 4. Mechanics as data
+
+**Vocabulary tiers (2026-09-03).** The authoring spec's §6 names, per trigger, cost, input,
+step and lifetime kind, whether it is **stage 3** (what Marco's first turn and Sara's ogre
+ambush need: `invocation` triggers, `turn`/`slot`/`resource` costs, `d20`/`dice`/`choice`/
+`declare` inputs, `attack`/`save`/`damage`/`effect-start`/`condition`/`move` steps,
+`turn-edge`/`rounds`/`manual`/`source-end` lifetimes, the opportunity-attack window, monster
+multiattack through the adapter) or **later** (event triggers beyond `entity-left-reach`,
+`recharge`/`legendary` costs, `summon`/`transform`/`aura`/`ready`/`move-mark` steps,
+`rest`/`day-phase`/`seconds` lifetimes). A `later` kind conforms as `unsupported` with a path,
+loudly, until its stage; it is never half-built.
 
 The contract is the [authoring spec](2026-09-02-mechanics-authoring-spec.md). In one breath: a
 `Mechanic` has `passive: Grant[]` (the existing 127 kinds, unchanged) and `active: Program[]`; a
@@ -449,6 +524,15 @@ keyed by name.
 
 ## 7. Hard-case walkthroughs (§6 of the brief)
 
+**Tiers (2026-09-03).** The walkthroughs stay as the design record; only these are built in
+stage 3, because stories 1 and 2 need them: 3 (the opportunity-attack window only; Shield and
+Counterspell are later), 5 (area effects — Fireball on three goblins), 6 (concentration), 7
+(Multiattack only; Recharge and Legendary later), 9 (conditions with sources), 11 (damage
+ordering), 12 (`hp-zero` and dying; death saves later), 15 (cover and range as map-derived
+facts, stage 2), 16 (initiative, joining, leaving), 21 (two clients, DM override, undo). Cases
+1, 2, 4, 8, 10, 13, 14, 17, 18, 19, 20 and 22 are `later`: scheduled by the story or job that
+first needs them, never built ahead of it.
+
 1. **Hunter's Mark / Hex** ★ — cast: one `intent` (bonus action, slot with upcast tier, target
    by `visible`+`range`), steps: `effect-start` `{kind:"mark", target, lifetime: minutes by cast
 level, concentration:true, grants:[damage-rider vs mark:self]}`. Every weapon attack the caster
@@ -554,10 +638,13 @@ rule; their past actions remain attributed and undoable.
 | Payment guard              | every costed program in the composed catalogue produces a `paid` receipt in its replay                      | 1 guard                                         |
 | Coverage drift guard       | regenerated coverage JSON equals the committed one                                                          | 1 guard                                         |
 | Rules                      | ~20 emulator cases: owner/member/DM/admin/anonymous per path                                                | `tests/rules`                                   |
-| E2E                        | a handful of journeys, not per-feature                                                                      | existing lane, shrunk                           |
+| Accessibility sweep        | axe serious/critical zero on every surface, both themes                                                     | `tests/e2e/a11y*.spec.ts` (one sweep)           |
+| Screenshot lane            | the owner's visual gate (rule 25); no pixel assertions in CI                                                | `tests/visual/*` (by hand until stage 6)        |
 
-Representation-pinning tests are deleted with their representations (Phase 3–5 deletion lists).
-Target order of magnitude: hundreds of tests, not eighteen thousand.
+Representation-pinning tests are deleted with their representations (the stage 6–7 cuts). No
+end-to-end journey runs on `v2` (steering, 2026-09-03): the sweep and the screenshot lane are
+the only browser suites, and the `v2` gate stays under 15 minutes. Target order of magnitude:
+hundreds of tests, not eighteen thousand.
 
 ## 9. Diagnostics (professional, zero cost)
 
@@ -589,6 +676,10 @@ adapters) → `src/features`/`src/components`. Firestore adapters live in `src/l
 `@pack` seam and the library; nothing else.
 
 ## 12. Constitution and document conflicts (proposed wording for ratification)
+
+**Done on 2026-09-03:** `PRODUCT.md` §Steering, constitution §2.2/§2.9 and golden rules 30–32
+now carry the ratified wording; `CLAUDE.md`'s direction block routes to the steering and the
+stage-1 program plan. The items below are kept as the record of what was proposed.
 
 - `PRODUCT.md`: superseded 2026-09-03 by the steering (the app owns the map and the dice; the DM
   has the last word). No wording from this section applies any more.
@@ -628,4 +719,4 @@ adapters) → `src/features`/`src/components`. Firestore adapters live in `src/l
 | Migration of live characters    | Phase 1 runs the protocol against the six fixtures and a production snapshot before any deploy; rollback = restore snapshot |
 | Authoring vocabulary too small  | the classification record enumerates every SRD clause; the vocabulary is derived from it, and `unsupported` is loud         |
 | Bundle budget                   | the reducer replaces ≈40k lines of executors; budgets re-measured per phase                                                 |
-| Two active agents               | Codex blocked (owner, 2026-09-02); one worktree per phase                                                                   |
+| Scope creep beyond the stories  | the tier lists of §4 and §7; a mechanic outside the current tier is `later` and stays unsupported, never half-built         |
