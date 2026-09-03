@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "d20-folio"
+    "default": "d20-folio",
+    "staging": "d20-folio-staging"
   }
 }

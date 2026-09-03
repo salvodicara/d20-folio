@@ -18,6 +18,17 @@ the order, the gates and what is out.
 - The four acceptance stories in the steering are the scope test; golden replays of stories 1 and
   2 are the engine's acceptance tests.
 
+## Staging setup (once, before stage 0 is played)
+
+1. Owner creates the Firebase project `d20-folio-staging` (Spark plan): Firestore, Authentication
+   with Google, Storage, Hosting; a budget alert at £1 like production. The alias is already in
+   `.firebaserc` (`firebase use staging`).
+2. Agent adds `.env.staging.local` (untracked) with the staging `VITE_FIREBASE_*` values, deploys
+   rules and indexes with `firebase deploy --only firestore,storage -P staging` on the owner's word,
+   and seeds the six team fixtures anonymised through the existing import path.
+3. Hosting deploys to staging are owner-triggered like production (`-P staging`); `v2` CI runs on
+   the emulators and never needs credentials.
+
 ## Stages, in order
 
 0. **Safety gate (blocking).** Migration P1 items 1–3 from
