@@ -4,6 +4,9 @@ Worktree audited (read-only): `/Users/salvatoredicara/Workspace/d20-folio/.claud
 (branch `claude/d20-folio-combat-arch-db1941`, HEAD `6a2487b`). Input: `rules-surface.md` (256 items).
 All `file:line` citations are relative to `src/` unless prefixed with `docs/` or `firestore.rules`.
 
+> Read on 2026-09-03: the executors this record cites (`CombatResolver`, `TurnEconomyProvider`,
+> the mechanics kernel) die at stage 6 on `v2`; this is evidence of the audited state, not a map.
+
 ## Classes (exclusive)
 
 | Class                                   | Meaning as applied                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

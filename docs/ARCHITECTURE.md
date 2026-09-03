@@ -461,9 +461,15 @@ character holds, every race trait, every known invocation, plus spells, plus wea
 > This section is the durable contract for the combat model. (The original standalone design
 > doc has been folded in here; the exploratory history lives in git.)
 
-### Canonical mechanics runtime cutover (active)
+### Mechanics kernel (legacy runtime of the old play surfaces; dies at stage 6)
 
-The destination runtime has one exact physical state model, `MechanicsWorld`, spanning the loaded
+> On `v2` this kernel is frozen: `tests/unit/mechanics-kernel-freeze.guard.test.ts` pins its 37
+> production readers and no new one may appear; it dies with `PlayTab`, the engine spell flows,
+> `CombatResolver` and `characterStore`'s combat paths at stage 6 (ADR-0003; stage-1 plan →
+> "Module fates"). New combat work builds on `src/lib/combat`. The description below is the
+> kernel as it runs on `main` today.
+
+The runtime has one exact physical state model, `MechanicsWorld`, spanning the loaded
 character and shared-combat documents. Every executable capability resolves to an immutable
 `MechanicsProgramAuthorityReceipt`; a durable program-root occurrence is the sole carrier of that
 authority, while every effect occurrence is a direct child identified by `parentId`. Roots never
@@ -913,7 +919,7 @@ controls share `useUndoActions`.
   `execute` runs the mutation and RETURNS its reverse (or `null` on a legal bail); **redo re-runs the
   SAME `execute`** and re-registers (no duplicated mutation code; every redo is itself undoable, and it
   re-validates every execute-side guard — "never trust the history", and never re-rolls/re-picks:
-  golden rule 21). Labels mirror the toast contract exactly — UI callers pass a pre-localized `message`,
+  golden rule 32). Labels mirror the toast contract exactly — UI callers pass a pre-localized `message`,
   store callers pass a structured `{ intent }` localized at render by the same `toastMessage` path.
 - **Engine commits ride the same grammar** (`src/features/character/engine-undo.ts` —
   `registerEngineCommitUndo`, the one home): every successful engine dispatch (cast, feature action,
@@ -971,7 +977,7 @@ combatant ids `pc-<uid>` / `monster-<n>`,
 condition ids, amounts; NO localized string, golden rule 7) to an **ephemeral `EncounterState.events`**
 array. Because the events live on the encounter object, they ride the SAME debounced encounter writer the
 tracker already uses — accumulating them adds **no new write cadence and never a per-action write**; the
-array is dropped when the encounter clears at end. The DM never books a **miss** by hand (no dice, no
+array is dropped when the encounter clears at end. The DM never books a **miss** by hand (no
 per-turn button — that friction the app avoids); a miss enters the record only when a PLAYER declares it
 from their sheet (the auto-narrated capture below), and drama still belongs in the DM's end-entry note.
 
@@ -1388,8 +1394,8 @@ skills, level-1 spells, languages, the Human origin feat and every follow-up pic
 pools — emitting a `QuickbuildPreset`, so a roll lands through the identical applicator and gate.
 Randomness is INJECTED (`Rng`), which makes the roller a pure, seed-reproducible function; the only
 entropy is `cryptoRng` (`crypto.getRandomValues`, the same source the campaign invite codes use) at
-the bottom of that module. This is not dice (golden rule 21) — nothing here generates a roll of the
-game. A seeded property battery (`quickbuild-random.test.ts`: every composed class × many seeds) pins
+the bottom of that module. This is not dice (golden rule 32 owns dice; the dice seam `src/lib/dice.ts` is the only roller) —
+nothing here generates a roll of the game. A seeded property battery (`quickbuild-random.test.ts`: every composed class × many seeds) pins
 every draw legal and every slot filled.
 
 **2024 multiclassing (#36).** The level-up wizard's Hit Points step carries the CLASS FORK: advance an
@@ -2347,7 +2353,8 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
 - **Entered D20 Tests** — `types/d20-test.ts` + `lib/d20-test.ts` are the locale-free universal kernel:
   callers provide the physical d20 face(s), optional replacement/adjustment dice and consumed-resource
   ids; the kernel validates JSON-plain input, nets Advantage/Disadvantage, selects one natural face and
-  resolves totals/outcomes without rolling. Table overrides are exact, attributed facts: their reviewed
+  resolves totals/outcomes without rolling. On `v2` the dice seam (stage 1) supplies the faces
+  as `roll` actions; this kernel dies at stage 6 with its readers. Table overrides are exact, attributed facts: their reviewed
   outcome is retained beside the computed outcome, and a declared two-failure Death Save is not mislabeled
   as a natural 1. `lib/character-d20-tests.ts` is the live-character adapter.
   Death Saves and Concentration maintenance are the first production consumers. Damage while a living
@@ -3591,7 +3598,9 @@ Two contracts keep this fast and leak-free under the free-tier NFR:
 
 ## What this app deliberately doesn't do
 
-- **Roll dice.** `Math.random()` is banned; deterministic formulas only.
+- **Roll dice outside the dice seam.** Randomness for a roll of the game exists only in
+  `src/lib/dice.ts` (ADR-0010, golden rule 32); everything else is deterministic formulas over
+  logged rolls. `main` still ships the no-dice surfaces until the play screen lands.
 - **Magic-fix migration of SRD references.** When the SRD changes, the app shows a clear
   "this feature was removed/renamed" warning rather than silently rewriting the character.
 - **Per-character cosmetic skinning.** One theme system, two themes (dark + light + system).
