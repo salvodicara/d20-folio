@@ -395,7 +395,7 @@ export interface FoldedState {
   readonly revision: number; // applied actions
   readonly settings: {
     readonly revealMonsterHp: boolean;
-    readonly automation: Automation;
+    readonly automation: Exclude<Automation, "propose-and-confirm">;
   };
 }
 

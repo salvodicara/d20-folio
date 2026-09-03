@@ -698,6 +698,24 @@ function receiptOutcome(
   return created > 0 || dealt > 0 ? "established" : tried ? "negated" : "applied";
 }
 
+/** The one place automation level decides which of two already-computed states lands: the
+ *  verdict always runs and the receipt always reports it, but at `log-only` only bookkeeping
+ *  (`withheld`) is kept — `applied` is discarded (ADR-0011). */
+function commitAt(
+  level: FoldedState["settings"]["automation"],
+  withheld: FoldedState,
+  applied: FoldedState
+): FoldedState {
+  switch (level) {
+    case "full-auto":
+      return applied;
+    case "log-only":
+      return withheld;
+    default:
+      return assertNever(level, "automation level");
+  }
+}
+
 // ── Entry points ────────────────────────────────────────────────────────────
 
 export function applyIntent(
@@ -789,14 +807,24 @@ export function applyIntent(
       eligible: run.eligible,
       declared: action.id,
     };
+    const declaredEntry = { ...action, payment: [] };
+    // Opening a window is bookkeeping, not a verdict, so it always lands; only the cost
+    // (ledger/resources, carried by `paidState` vs the original `state`) is gated (ADR-0011).
+    const withheld: FoldedState = {
+      ...state,
+      nextOrdinal: paidState.nextOrdinal + 1,
+      windows: [...state.windows, window],
+      declared: { ...state.declared, [action.id]: declaredEntry },
+    };
+    const appliedState: FoldedState = {
+      ...paidState,
+      nextOrdinal: paidState.nextOrdinal + 1,
+      windows: [...paidState.windows, window],
+      declared: { ...paidState.declared, [action.id]: declaredEntry },
+    };
     return {
       kind: "applied",
-      state: {
-        ...paidState,
-        nextOrdinal: paidState.nextOrdinal + 1,
-        windows: [...paidState.windows, window],
-        declared: { ...paidState.declared, [action.id]: { ...action, payment: [] } },
-      },
+      state: commitAt(state.settings.automation, withheld, appliedState),
       receipt: {
         action: action.id,
         outcome: "applied",
@@ -821,10 +849,14 @@ export function applyIntent(
     events,
     summary: [action.mechanic],
   };
-  if (state.settings.automation === "log-only") {
-    return { kind: "applied", state, receipt };
-  }
-  return { kind: "applied", state: next, receipt };
+  // At log-only, `run.state` (and any window it opened mid-run, e.g. from a `move` step leaving
+  // reach) is discarded entirely: only the pre-run `state` is kept, so a departure that never
+  // committed cannot spawn a reaction to react to (ADR-0011).
+  return {
+    kind: "applied",
+    state: commitAt(state.settings.automation, state, next),
+    receipt,
+  };
 }
 
 /** Closes a window: a held attack is resolved against the state the reactions produced. */
@@ -882,10 +914,13 @@ export function applyResolve(
     events,
     summary: [declared.mechanic, "window:resolved"],
   };
-  if (base.settings.automation === "log-only") {
-    return { kind: "applied", state: base, receipt };
-  }
-  return { kind: "applied", state: run.state, receipt };
+  // `base` clears the resolved window and its `declared` entry either way — that bookkeeping
+  // always lands; only the program's outcome is gated.
+  return {
+    kind: "applied",
+    state: commitAt(base.settings.automation, base, run.state),
+    receipt,
+  };
 }
 
 /** Opens an opportunity-attack window when `mover` has just left `from`'s reach; a no-op if
@@ -1044,8 +1079,9 @@ export function applyCheck(state: FoldedState, action: CheckAction): StepResult 
     events,
     summary: ["check:concentration"],
   };
-  if (withoutCheck.settings.automation === "log-only") {
-    return { kind: "applied", state: withoutCheck, receipt };
-  }
-  return { kind: "applied", state: next, receipt };
+  return {
+    kind: "applied",
+    state: commitAt(withoutCheck.settings.automation, withoutCheck, next),
+    receipt,
+  };
 }
