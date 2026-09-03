@@ -57,7 +57,10 @@ registrations. Future deltas compare to these exact-base measurements.
 `tests/rules/` is four files — `firestore-rules.test.ts` (101 cases),
 `storage-rules.test.ts` (12), `migrate-character-parents.emulator.test.ts` (1) and
 `migration-kit.emulator.test.ts` (4): **118 cases**, inside the ≤ 120 budget the combat P1
-data-safety plan sets. The firestore file was cut from 176 by the P1 legacy cutover: the
+data-safety plan sets. Note that **5 of the 118 are MIGRATION emulator cases**, not access-policy
+cases: they live under `tests/rules/` only because they need the Firestore emulator, and they are
+counted against the same ceiling today. P3 revisits that (see the migration program's P3
+follow-ups) so the P4 rules rewrite is not squeezed by them. The firestore file was cut from 176 by the P1 legacy cutover: the
 `playStateVersion` marker cases, the unmarked-legacy escape hatch, `peerLegacyCoreCreate`
 and every duplicate access-matrix row died with the representations they pinned, and each
 surviving predicate keeps one accept and one deny. Count them with

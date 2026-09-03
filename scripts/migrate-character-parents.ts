@@ -47,9 +47,11 @@
  * from the family path and the row's ordinal BEFORE the codec sees it (counted as
  * `logIdsStamped`), so the whole plan is a pure function of the corpus.
  *
- * Read-only by default; `--check` proves the corpus migrated; `--fixtures <dir>` plans
- * over portable exports with no Firebase at all; `--apply --backup <dir>` is the only
- * write mode (preflight → backup → one guarded batch → reread/global/idempotency).
+ * Read-only by default; `--check` proves the corpus migrated — every legacy family
+ * cut over AND every already-marked parent still LOADABLE by the deployed client
+ * (empty `state`, a build the codec hydrates); `--fixtures <dir>` plans over portable
+ * exports with no Firebase at all; `--apply --backup <dir>` is the only write mode
+ * (preflight → backup → one guarded batch → reread/global/idempotency).
  *
  * Output: counts, hashes and issue CODES. Never a payload, never a raw path.
  *
@@ -255,8 +257,13 @@ const { applyLegacyCombatToSession, sessionToCombatState } = (await engineModule
  * therefore stamps ONE concrete `Timestamp`, captured once per run, so the planned
  * bytes are exactly the stored bytes.
  *
- * Field-for-field identical to the app's writer otherwise, so a document this
- * migration creates is byte-shaped like one the client would have written.
+ * PARITY INVARIANT: this copy must stay field-for-field identical to
+ * `combatStateWriteData` in `src/lib/combat-state-io.ts` (minus that sentinel), so a
+ * document this migration writes is byte-shaped like one the client would have
+ * written. The invariant is not asserted by a shared import — the script deliberately
+ * owns its concrete stamp — but it IS covered: every projected child is re-parsed with
+ * the app's own strict `parseCombatState` before the plan is accepted
+ * (`non-canonical-child`), so a drift that changed the stored shape cannot pass.
  */
 function combatStateWriteData(state: ParsedCombatState, updatedAt: Timestamp): RawMap {
   const playState =
@@ -465,6 +472,28 @@ function planFamily(family: CharacterFamily, updatedAt: Timestamp): FamilyPlan {
   const documents: ParentCutoverDocumentPlan[] = [];
 
   if (marked) {
+    // A MARKED family is not "already migrated" merely because it carries the marker:
+    // `--check` has to prove it is LOADABLE by the deployed client. These two proofs
+    // mirror `parseStoredCharacter` (src/lib/firestore.ts) exactly — it refuses a
+    // parent whose `state` still holds a session, then hands `{build, {}}` to the
+    // codec. Both are read-only: nothing derived from them is ever written.
+    if (Object.keys(envelopeMap(parent.state)).length > 0) {
+      return quarantine(
+        path,
+        "marked-parent-state-not-empty",
+        "A v1 parent still carries a play session in state"
+      );
+    }
+    const loadable = parseCharacterEnvelope(envelopeMap(parent.build), {});
+    if (!loadable.ok) {
+      // CODE only, for the same reason as the legacy leg below: the codec's path can
+      // name a STORED MAP KEY (a tracker id, an item instanceId).
+      return quarantine(
+        path,
+        "invalid-envelope",
+        `Character codec refusal: ${loadable.error.split(":")[0] ?? "unknown"}`
+      );
+    }
     if (!child) {
       return quarantine(
         path,
@@ -870,10 +899,8 @@ async function run(): Promise<void> {
     return;
   }
   const target = await readTargetConfiguration();
-  const [{ initializeApp, applicationDefault }, { getFirestore }] = await Promise.all([
-    import("firebase-admin/app"),
-    import("firebase-admin/firestore"),
-  ]);
+  const [{ initializeApp, applicationDefault, deleteApp }, { getFirestore }] =
+    await Promise.all([import("firebase-admin/app"), import("firebase-admin/firestore")]);
   const app = initializeApp({
     projectId: target.projectId,
     ...(target.emulator ? {} : { credential: applicationDefault() }),
@@ -881,17 +908,24 @@ async function run(): Promise<void> {
   console.log(
     `Target: ${target.projectId} (${target.emulator ? "explicit emulator" : "production read"})`
   );
-  await runGuardedMigration({
-    migration: "character-parents",
-    label: "parent-cutover-v1",
-    discover: (database) => discoverDocuments(database, DISCOVERY),
-    plan: (sources) => planParentCutoverSources(sources, updatedAt),
-    verify: verifyParentCutoverCorpus,
-    writesFor: writesForParentCutover,
-    report: (plan) => reportForParentCutover(plan),
-    options,
-    db: getFirestore(app),
-  });
+  // The admin SDK keeps a gRPC channel (and its keep-alive timer) open, so a connected
+  // run would HANG after its last line instead of exiting. Disposal is in `finally`, so
+  // a refusal still propagates to the CLI catch and still sets `process.exitCode`.
+  try {
+    await runGuardedMigration({
+      migration: "character-parents",
+      label: "parent-cutover-v1",
+      discover: (database) => discoverDocuments(database, DISCOVERY),
+      plan: (sources) => planParentCutoverSources(sources, updatedAt),
+      verify: verifyParentCutoverCorpus,
+      writesFor: writesForParentCutover,
+      report: (plan) => reportForParentCutover(plan),
+      options,
+      db: getFirestore(app),
+    });
+  } finally {
+    await deleteApp(app);
+  }
 }
 
 if (processArgv[1] && import.meta.url === pathToFileURL(resolve(processArgv[1])).href) {

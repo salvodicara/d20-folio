@@ -146,6 +146,21 @@ function stampList(
   });
 }
 
+/** Reserve the identities this pass never rewrites. An SRD-referencing entry can
+ *  already carry an `instanceId` (a magic-item copy stamped by
+ *  `migrate-item-resources.ts`, whose `itemResources` state is keyed by it), so a
+ *  deterministic id must never be able to land on top of one. Same reservation
+ *  discipline as {@link stampLibrary}'s non-sheet pre-pass. */
+function reserveExistingIds(list: unknown, seen: Set<string>): void {
+  if (!Array.isArray(list)) return;
+  const items: readonly unknown[] = list;
+  for (const entry of items) {
+    if (!isRecord(entry) || entry.custom === true) continue;
+    const reserved = validId(entry.instanceId);
+    if (reserved !== undefined) seen.add(reserved);
+  }
+}
+
 /** Stamp one character envelope (a parent, or a snapshot under its own prefix).
  *  Every field this migration does not own is preserved by identity. */
 export function stampEnvelope(
@@ -161,8 +176,11 @@ export function stampEnvelope(
     issues.push({ path, code: "invalid-envelope", detail: "build is not a map" });
     return { data, stamped, issues };
   }
+  // ONE id space per envelope, so the reservations come BEFORE any stamping.
   const seen = new Set<string>();
   const build: RawMap = { ...data.build };
+  for (const collection of COLLECTIONS) reserveExistingIds(build[collection], seen);
+  if (isRecord(build.customs)) reserveExistingIds(build.customs.features, seen);
   for (const collection of COLLECTIONS) {
     const next = stampList(
       build[collection],
@@ -486,10 +504,8 @@ async function run(): Promise<void> {
     return;
   }
   const target = await readTargetConfiguration();
-  const [{ initializeApp, applicationDefault }, { getFirestore }] = await Promise.all([
-    import("firebase-admin/app"),
-    import("firebase-admin/firestore"),
-  ]);
+  const [{ initializeApp, applicationDefault, deleteApp }, { getFirestore }] =
+    await Promise.all([import("firebase-admin/app"), import("firebase-admin/firestore")]);
   const app = initializeApp({
     projectId: target.projectId,
     ...(target.emulator ? {} : { credential: applicationDefault() }),
@@ -497,17 +513,24 @@ async function run(): Promise<void> {
   console.log(
     `Target: ${target.projectId} (${target.emulator ? "explicit emulator" : "production read"})`
   );
-  await runGuardedMigration({
-    migration: "custom-identity",
-    label: "custom-identity-v1",
-    discover: (database) => discoverDocuments(database, DISCOVERY),
-    plan: planCustomIdentity,
-    verify: verifyCustomIdentityCorpus,
-    writesFor: writesForCustomIdentity,
-    report: reportFor,
-    options,
-    db: getFirestore(app),
-  });
+  // The admin SDK keeps a gRPC channel (and its keep-alive timer) open, so a connected
+  // run would HANG after its last line instead of exiting. Disposal is in `finally`, so
+  // a refusal still propagates to the CLI catch and still sets `process.exitCode`.
+  try {
+    await runGuardedMigration({
+      migration: "custom-identity",
+      label: "custom-identity-v1",
+      discover: (database) => discoverDocuments(database, DISCOVERY),
+      plan: planCustomIdentity,
+      verify: verifyCustomIdentityCorpus,
+      writesFor: writesForCustomIdentity,
+      report: reportFor,
+      options,
+      db: getFirestore(app),
+    });
+  } finally {
+    await deleteApp(app);
+  }
 }
 
 if (processArgv[1] && import.meta.url === pathToFileURL(resolve(processArgv[1])).href) {

@@ -155,6 +155,28 @@ describe("import.meta.glob expansion", () => {
     expect(filtered).toContain(`"./it/ui/`);
   });
 
+  it("leaves the token alone inside a comment — documentation is not a call site", () => {
+    const documented = [
+      "/**",
+      ' * Expands import.meta.glob("./*/ui/*.json") at load time.',
+      " */",
+      "// TODO: import.meta.glob(",
+      "export const x = 1;",
+      "",
+    ].join("\n");
+    expect(expandImportMetaGlob(documented, url)).toBe(documented);
+  });
+
+  it("expands a real call while a comment above it merely names one", () => {
+    const expanded = expandImportMetaGlob(
+      `// see import.meta.glob("./nope/*.json")\nconst G = import.meta.glob("./*/ui/*.json");`,
+      url
+    );
+    expect(expanded).toContain(`// see import.meta.glob("./nope/*.json")`);
+    expect(expanded).toContain(`"./it/ui/`);
+    expect(expanded).not.toContain('import.meta.glob("./*/ui/*.json")');
+  });
+
   it("refuses an option combination it cannot faithfully reproduce", () => {
     expect(() =>
       expandImportMetaGlob(`import.meta.glob("./*/ui/*.json", { eager: true });`, url)

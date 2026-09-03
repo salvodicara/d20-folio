@@ -130,6 +130,22 @@ release); the legacy branches in `TurnEconomyProvider`/`CombatResolver`/`charact
 `mechanics-*` mirror for that family are deleted in the same worktree; their representation tests
 are deleted; a replay pins the family.
 
+**Follow-ups carried in from P1** (recorded here so they are not rediscovered):
+
+- `parseLegacyCombatChild` (`combat-state-codec.ts`) and `applyLegacyCombatToSession`
+  (`combat-state.ts`) exist ONLY for the P1 cutover script and are deleted in the same worktree that
+  deletes `scripts/migrate-character-parents.ts` — not before, and never left as readers.
+- Revisit the `includeMetadataChanges: true` re-parse cost on `subscribeToCharacter`: the parent
+  document is re-parsed on the cache→server metadata transition too, which the per-domain reconciler
+  needs today but the append-only log may not. Measure before keeping it.
+- Budget the migration emulator tests SEPARATELY from the ≤ 120 rules-case ceiling. They live under
+  `tests/rules/` because they need the emulator, not because they are access-policy cases, and the
+  P4 rules rewrite needs its ~20 cases without evicting them.
+- The backup manifest does NOT list documents the migration CREATES (a `combat/state` child for a
+  never-wounded character): `writeBackupDirectory` records a `before` per changed document, and a
+  created child has none. A rollback therefore deletes those children by RE-PLANNING the corpus
+  (the plan names every `create`), it cannot restore them from the manifest.
+
 **Exit gate (phase):** no solo write reaches `combat-*.ts` or `mechanics-*`; `combat/state` is
 schema-2 for every live document; bundle budgets re-measured. **Blast radius:** all solo play.
 **Rollback:** previous SHA + restore of `combat/state` backups. **Deletions:** the `playStateVersion`

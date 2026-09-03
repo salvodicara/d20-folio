@@ -878,6 +878,106 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
     expect(openTracker("monk-focus")).toBe(1);
   });
 
+  it("a server snapshot shaped the way the parser produces one ACKNOWLEDGES the pending parent", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    // The live sheet carries play facts (they come from the child, in v1); the PARENT
+    // the server hands back never does — `parseStoredCharacter` refuses a parent whose
+    // `state` is non-empty, so it always hydrates an empty session.
+    const played: CharacterDoc = {
+      ...doc(),
+      session: { ...doc().session, notes: "field notes" },
+    };
+    await act(async () => {
+      snapshotCb()(doc());
+      combatCb()(sessionToCombatState(played.session));
+      await Promise.resolve();
+    });
+    expect(openCharacter().session.notes).toBe("field notes");
+    act(() => {
+      const cur = openCharacter();
+      useCharacterStore
+        .getState()
+        .setCharacter({ ...cur, character: { ...cur.character, quote: "local" } });
+    });
+    const sent = sendLastSave();
+    expect(sent.session.notes).toBe("field notes");
+    // Exactly what `subscribeToCharacter` delivers once the write lands: our build and
+    // our generation, an EMPTY parent session. Keying the parent domain on the whole
+    // codec envelope made this differ from the payload forever, so no snapshot could
+    // ever acknowledge a parent write.
+    const serverParsed: CharacterDoc = {
+      ...sent,
+      session: doc().session,
+      updatedAt: new Date(),
+    };
+    await act(async () => {
+      snapshotCb()(serverParsed);
+      await Promise.resolve();
+    });
+    expect(openCharacter().character.quote).toBe("local");
+    expect(openCharacter().session.notes).toBe("field notes");
+    // ACKNOWLEDGED — the payload is no longer pending, so the NEXT server value is
+    // published instead of being hidden behind an edit the server already stored.
+    await act(async () => {
+      snapshotCb()({
+        ...serverParsed,
+        revision: sent.revision + 1,
+        character: { ...serverParsed.character, quote: "other device" },
+      });
+      await Promise.resolve();
+    });
+    expect(openCharacter().character.quote).toBe("other device");
+  });
+
+  it("keeps a local edit pending when a rejection is NOT the compare-and-set conflict", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    await act(async () => {
+      snapshotCb()(doc());
+      combatCb()(sessionToCombatState(doc().session));
+      await Promise.resolve();
+    });
+    act(() => {
+      const cur = openCharacter();
+      useCharacterStore
+        .getState()
+        .setCharacter({ ...cur, character: { ...cur.character, quote: "local" } });
+    });
+    const { callbacks } = lastSave();
+    const sent = sendLastSave();
+    await act(async () => {
+      snapshotCb()({
+        ...doc(),
+        revision: 9,
+        character: { ...doc().character, quote: "other device" },
+      });
+      await Promise.resolve();
+    });
+    // A transport failure says nothing about who owns the document: the edit survives,
+    // the sheet keeps showing it, and the error message stays on screen.
+    act(() => {
+      useSaveStore.getState().markError("The service is currently unavailable.");
+      callbacks.onRejected?.(
+        sent,
+        Object.assign(new Error("The service is currently unavailable."), {
+          code: "unavailable",
+        })
+      );
+    });
+    expect(openCharacter().character.quote).toBe("local");
+    expect(useSaveStore.getState().status).toBe("error");
+    // The rules' CAS refusal IS a conflict — the same payload is dropped for the
+    // server's own value (this one carries the FirestoreError `code`, not a message).
+    act(() => {
+      callbacks.onRejected?.(
+        sent,
+        Object.assign(new Error("Missing or insufficient permissions."), {
+          code: "permission-denied",
+        })
+      );
+    });
+    expect(openCharacter().character.quote).toBe("other device");
+  });
+
   it("a rejected parent write surfaces SaveStatus=error and republishes the remote", async () => {
     renderHook(() => useCharacterSubscription("char1"));
     await act(async () => {

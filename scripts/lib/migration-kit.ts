@@ -547,8 +547,14 @@ export async function runGuardedMigration<TPlan extends GuardedPlan>(
   if (args.options.mode === "check") {
     const corpusIssues = [...plan.issues, ...args.verify(sources)];
     if (corpusIssues.length > 0 || plan.changedDocuments.length > 0) {
+      // The CODES are what tells the operator whether this is a corpus still waiting
+      // for its apply or a document that must be hand-fixed first — the full report is
+      // above, but the failure line must be readable on its own.
+      const codes = [...new Set(corpusIssues.map((issue) => issue.code))];
       throw new Error(
-        `Check failed: ${corpusIssues.length} verification issue(s), ${plan.changedDocuments.length} pending change(s)`
+        `Check failed: ${corpusIssues.length} verification issue(s)${
+          codes.length > 0 ? ` [${codes.join(", ")}]` : ""
+        }, ${plan.changedDocuments.length} pending change(s)`
       );
     }
     // Planning the LIVE corpus and finding zero changes IS the idempotency

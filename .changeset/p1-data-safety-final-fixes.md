@@ -1,0 +1,4 @@
+---
+---
+
+Harden the P1 data-safety seam: the parent-cutover `--check` now proves an already-marked parent is loadable (empty `state`, a build the codec hydrates) instead of trusting its marker, both migration scripts dispose their firebase-admin app so a connected run always exits, the character parent's reconciliation identity is keyed on the build the parent actually owns (a server snapshot could never acknowledge a pending parent while the key carried the session the child owns), and a parent save that fails for anything other than the rules' compare-and-set refusal keeps the local edit pending for the next retry instead of silently dropping it. The migration runbook in `docs/RELEASE.md` now states the run order and why, the apply/backup form, the pre-deploy re-check, the hosting+rules deploy ordering and the post-deploy tab reload.

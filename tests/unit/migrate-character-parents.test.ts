@@ -238,6 +238,56 @@ describe("legacy parent cutover", () => {
     expect(bad.writes).toEqual([]);
   });
 
+  it("refuses a marked parent whose state still carries a play session — and writes nothing", () => {
+    // The deployed client's read gate (`parseStoredCharacter`) throws
+    // `parent-state-not-empty` on exactly this document, so `--check` must not call a
+    // corpus containing it migrated just because the marker is there.
+    const plan = planParentCutover(
+      [
+        family(legacyParent({ notes: "n" }, { playStateVersion: 1, revision: 2 }), {
+          hp: { current: 1, temp: 0 },
+          conditions: [],
+          initiativeRoll: null,
+          deathSaves: { successes: 0, failures: 0 },
+          playState: { version: 1, state: {} },
+        }),
+      ],
+      STAMP
+    );
+    expect(plan.issues.map((issue) => issue.code)).toEqual([
+      "marked-parent-state-not-empty",
+    ]);
+    expect(plan.writes).toEqual([]);
+    expect(plan.counts.marked).toBe(0);
+  });
+
+  it("refuses a marked parent whose build the codec will not hydrate — proof only, no writes", () => {
+    const plan = planParentCutover(
+      [
+        family(
+          legacyParent(
+            {},
+            { playStateVersion: 1, revision: 2, build: { classes: "nope" } }
+          ),
+          {
+            hp: { current: 1, temp: 0 },
+            conditions: [],
+            initiativeRoll: null,
+            deathSaves: { successes: 0, failures: 0 },
+            playState: { version: 1, state: {} },
+          }
+        ),
+      ],
+      STAMP
+    );
+    const issue = at(plan.issues, 0);
+    expect(issue.code).toBe("invalid-envelope");
+    // CODE only: the codec's `<code>:<path>` can embed a stored map key.
+    expect(issue.detail).toMatch(/^Character codec refusal: [a-z-]+$/);
+    expect(issue.detail).not.toContain("classes");
+    expect(plan.writes).toEqual([]);
+  });
+
   it("is idempotent: planning the projected corpus yields no writes", () => {
     const first = planParentCutover([family(legacyParent({ notes: "n" }))], STAMP);
     expect(first.issues).toEqual([]);

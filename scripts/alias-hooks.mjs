@@ -14,7 +14,9 @@
  * script that needs the codec into an SRD-only composition. A migration that decides
  * live characters carrying private-pack content may not run SRD-only, so the hook
  * rewrites each `import.meta.glob(...)` call into the equivalent object literal at
- * load time. Only sources that actually contain the token are transformed.
+ * load time. Only sources that actually contain the token are transformed, and only
+ * where it is real CODE — an occurrence inside a `//` or block comment (this file's own
+ * documentation, for one) is masked out before the scan and left verbatim.
  *
  * Supported option shapes are exactly the ones this repository uses (every other
  * combination throws a named error rather than silently producing a wrong module):
@@ -203,20 +205,69 @@ function closingParen(source, open) {
 const GLOB_CALL = /import\.meta\.glob\s*(?:<[^(]*?>)?\s*\(/g;
 
 /**
+ * A copy of `source` with every `//` and block comment blanked to spaces (newlines
+ * kept), so DETECTION never fires on the token inside a comment — a doc block that
+ * merely NAMES `import.meta.glob(` would otherwise be rewritten into an object
+ * literal, silently corrupting the module. Character offsets are preserved exactly,
+ * so every index found in the mask addresses the same character of the original.
+ * String literals are left intact: the scanner has to see their quotes to know it is
+ * inside one, and a glob call's own arguments are string literals.
+ */
+function maskComments(source) {
+  // `split("")` (never `[...source]`): UTF-16 units, so an index into the mask is the
+  // same index into the original even with an astral character in a comment.
+  const chars = source.split("");
+  let index = 0;
+  while (index < chars.length) {
+    const char = chars[index];
+    if (char === '"' || char === "'" || char === "`") {
+      index += 1;
+      while (index < chars.length && chars[index] !== char) {
+        index += chars[index] === "\\" ? 2 : 1;
+      }
+      index += 1;
+      continue;
+    }
+    if (char === "/" && chars[index + 1] === "/") {
+      while (index < chars.length && chars[index] !== "\n") {
+        chars[index] = " ";
+        index += 1;
+      }
+      continue;
+    }
+    if (char === "/" && chars[index + 1] === "*") {
+      const end = source.indexOf("*/", index + 2);
+      const stop = end === -1 ? chars.length : end + 2;
+      for (; index < stop; index += 1) {
+        if (chars[index] !== "\n") chars[index] = " ";
+      }
+      continue;
+    }
+    index += 1;
+  }
+  return chars.join("");
+}
+
+/**
  * Rewrite every `import.meta.glob(...)` call in `source` into an object literal.
  * The argument text is a literal expression in this repository's own sources, so it
  * is evaluated with `Function` — the hook only ever sees files this repo ships.
  */
 export function expandImportMetaGlob(source, url) {
   if (!source.includes("import.meta.glob")) return source;
+  // Detection and every position below are taken from the COMMENT-MASKED copy (same
+  // length, same offsets), while the text that is evaluated and emitted comes from the
+  // original — so a comment mentioning the token is left exactly as written.
+  const masked = maskComments(source);
+  if (!masked.includes("import.meta.glob")) return source;
   const baseDirectory = dirname(fileURLToPath(url));
   let output = "";
   let cursor = 0;
   GLOB_CALL.lastIndex = 0;
   let match;
-  while ((match = GLOB_CALL.exec(source)) !== null) {
+  while ((match = GLOB_CALL.exec(masked)) !== null) {
     const open = match.index + match[0].length - 1;
-    const close = closingParen(source, open);
+    const close = closingParen(masked, open);
     const argumentText = source.slice(open + 1, close);
     // The argument list is a literal expression in this repository's own sources, and
     // the hook only ever sees files this repo ships — never third-party or user input.

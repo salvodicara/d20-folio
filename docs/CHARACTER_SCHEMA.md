@@ -483,6 +483,13 @@ the only write mode). What it guarantees:
 - **It is deterministic.** A stored log row with no id would otherwise be given a random UUID by
   `normalizeLogEntry`; the planner stamps such rows with an id derived from the family path and the
   row's ordinal (reported as `logIdsStamped`) before the codec sees them.
+- **`--check` proves LOADABILITY, not just the marker.** A green `--check` means every legacy family
+  is cut over AND every already-marked parent is one the deployed client can actually open: its
+  `state` is empty (`marked-parent-state-not-empty` otherwise — the exact refusal
+  `parseStoredCharacter` throws) and its `build` hydrates through `parseCharacterEnvelope`
+  (`invalid-envelope` otherwise). Both are proof-only calls; nothing derived from them is written.
+  Run it again immediately before the deploy: a player editing between the apply and the deploy can
+  reintroduce a document neither proof had seen.
 
 ## Verification (Definition of Done)
 

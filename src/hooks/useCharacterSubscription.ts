@@ -74,19 +74,41 @@ function devBypassEnabled(): boolean {
 }
 
 /**
- * The parent domain's IDENTITY for reconciliation (§5.3): the codec envelope — the one
- * canonical form of build + session — plus the metadata a parent write can change.
- * `updatedAt` is a server timestamp and `createdAt`/`portrait*` are written by other
- * seams, so they are deliberately excluded: the question is only "did the server come
- * back with the payload we sent?".
+ * The parent domain's IDENTITY for reconciliation (§5.3): the canonical form of exactly
+ * what the PARENT owns — the codec's `build` plus the metadata a parent write can
+ * change. `updatedAt` is a server timestamp and `createdAt`/`portrait*` are written by
+ * other seams, so they are deliberately excluded: the question is only "did the server
+ * come back with the payload we sent?".
+ *
+ * The SESSION is deliberately NOT part of this key. In v1 the play session lives in the
+ * child, the parent stores `state: {}`, and `parseStoredCharacter` refuses a parent that
+ * carries one — so a server-parsed parent ALWAYS hydrates an empty session while the
+ * pending payload carries the live one. Keying on the whole envelope therefore made a
+ * server snapshot unable to acknowledge a pending parent at all: the domain stayed
+ * pending and `parentConflict` stayed true for the whole life of a save.
  */
 function parentDomainKey(doc: CharacterDoc): unknown {
   return {
-    env: serializeCharacterEnvelope(doc),
+    build: serializeCharacterEnvelope(doc).build,
     revision: doc.revision,
     shared: doc.shared,
     status: doc.status,
   };
+}
+
+/**
+ * The rules' compare-and-set refusal — the ONLY rejection that invalidates the local
+ * payload (another writer advanced `revision`, or access changed). Firestore reports it
+ * as `code: "permission-denied"`; a transport that surfaces only a message is matched on
+ * that instead. Every OTHER failure is transient as far as this client can tell, so the
+ * edit must survive it.
+ */
+function isCompareAndSetConflict(error: unknown): boolean {
+  if (typeof error === "object" && error !== null && "code" in error) {
+    const { code } = error as { code?: unknown };
+    if (typeof code === "string") return code === "permission-denied";
+  }
+  return error instanceof Error && error.message.includes("permission-denied");
 }
 
 /** The child domain's identity: the whole play document minus its server stamp. */
@@ -714,11 +736,18 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           debouncedSaveRef.current.save(payload, {
             onSend: (sent) => reconcilerRef.current?.markParentPending(sent),
             onResolved: (sent) => reconcilerRef.current?.acknowledgeParentWrite(sent),
-            onRejected: (sent) => {
-              // The server refused this generation (a revision conflict, a permission
+            onRejected: (sent, error) => {
+              // A NON-conflict failure (offline/`unavailable`, an internal error) says
+              // nothing about who owns the document: dropping the payload here would
+              // silently delete the user's edit. Keep it pending and keep the cursor —
+              // the generation was sent and may yet have landed, so it is never claimed
+              // twice — and let the next store change or the unmount flush resend. The
+              // save store already carries the REAL error message from `runWrite`, so
+              // the sheet stays in `SaveStatus="error"` meanwhile.
+              if (!isCompareAndSetConflict(error)) return;
+              // The rules refused this generation (a revision conflict, a permission
               // change): drop the local payload, re-base the cursor on the server's own
-              // generation and republish what the server actually holds. The save store
-              // already carries the REAL Firestore error message from `runWrite`.
+              // generation and republish what the server actually holds.
               reconcilerRef.current?.rejectParentWrite(sent);
               resetRevisionCursorRef.current();
               republishRef.current();
