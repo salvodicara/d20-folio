@@ -27,6 +27,29 @@ const STRICT_V1_FIELDS = [
   "recentActions",
 ] as const;
 
+/**
+ * Every top-level key `combatStateWriteData` (combat-state-io.ts) emits — the closed
+ * world of the `combat/state` document. A stored key outside this list is ignored by
+ * the reader and shed by the next full overwrite; the codec-loss audit
+ * (`scripts/lib/codec-loss-audit.ts`) reports it as loss.
+ */
+export const KNOWN_COMBAT_STATE_KEYS: readonly string[] = [
+  "hp",
+  "conditions",
+  "bardicInspirationDie",
+  "heroicInspiration",
+  "initiativeRoll",
+  "deathSaves",
+  "round",
+  "recentActions",
+  "activeEffects",
+  "appliedEncounterEffects",
+  "turnEconomy",
+  "pendingConcentrationSaves",
+  "playState",
+  "updatedAt",
+];
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
