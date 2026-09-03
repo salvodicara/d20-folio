@@ -49,11 +49,7 @@ import { deletePortrait, deleteBugReportScreenshot } from "@/lib/storage";
 import { stripUndefined } from "@/lib/strip-undefined";
 import { clearLogFromIDB } from "@/lib/log-persistence";
 import { diagnosticsLog } from "@/lib/diagnostics";
-import {
-  applyCombatToSession,
-  omitCombatTrio,
-  sessionToCombatState,
-} from "@/lib/combat-state";
+import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
 import {
   combatStateRef,
   combatStateWriteData,
@@ -81,14 +77,9 @@ function readDocMeta(
   | "portraitUrl"
   | "portraitCrop"
   | "shared"
-  | "playStateVersion"
   | "revision"
   | "status"
 > {
-  const hasPlayStateVersion = Object.hasOwn(data, "playStateVersion");
-  if (hasPlayStateVersion && data.playStateVersion !== 1) {
-    throw new TypeError("Invalid character play-state ownership marker");
-  }
   // The compare-and-set generation is REQUIRED (ADR-0009: the cutover migration
   // stamps `revision: 0` on every live parent before the deploy that needs it). A doc
   // without it cannot be safely written back, so it quarantines like any other codec
@@ -115,7 +106,6 @@ function readDocMeta(
     // A doc written before public share links carries no field → not shared.
     shared: data.shared === true,
     revision: data.revision,
-    ...(hasPlayStateVersion ? { playStateVersion: 1 as const } : {}),
     status:
       data.status === "retired" || data.status === "dead" || data.status === "archived"
         ? data.status
@@ -177,12 +167,8 @@ async function queuePublicProjection(
 async function toStoredPayload(
   payload: Partial<CharacterDoc>
 ): Promise<Record<string, unknown>> {
-  if (Object.hasOwn(payload, "playStateVersion") && payload.playStateVersion !== 1) {
-    throw new TypeError("Invalid character play-state ownership marker");
-  }
   const ch = payload.character;
   const session = payload.session;
-  const marksPlayStateV1 = Object.hasOwn(payload, "playStateVersion");
   // Runtime guards (a partial / malformed write may carry an incomplete character):
   // read the character via a plain record so the structural checks aren't
   // "no-overlap" against the strict type. The `ch && session` presence guard
@@ -197,16 +183,6 @@ async function toStoredPayload(
   if (!ch || !session || !isFullCharacter) {
     if (session) {
       throw new TypeError("Session persistence requires a complete character payload");
-    }
-    // The marker is an ownership cutover, not ordinary metadata. Publishing it
-    // without a complete parent rewrite plus the canonical child could strand a
-    // legacy character in the fail-closed `marked parent / missing child` state.
-    // Creation and restore own that atomic two-document ceremony; an ordinary
-    // metadata update must never synthesize the marker by itself.
-    if (marksPlayStateV1) {
-      throw new TypeError(
-        "Play-state ownership marker requires a complete character payload"
-      );
     }
     // A metadata-only write (status / portrait / sharing) passes through. A build
     // fragment without its session cannot be serialized and is deliberately dropped;
@@ -225,9 +201,10 @@ async function toStoredPayload(
   // `serializeCharacterEnvelope` reads ONLY `character` + `session`; the metadata
   // fields are irrelevant to the envelope, so a minimal doc is enough.
   const envelope = serializeCharacterEnvelope({ character: ch, session } as CharacterDoc);
-  // The combat trio lives ONLY in the `combat/state` subdoc — omit it from the parent
-  // `state` so the Firestore doc never carries a second copy (golden rule 10).
-  const state = marksPlayStateV1 ? {} : omitCombatTrio(envelope.state);
+  // The `combat/state` subdoc is the SOLE play owner: the parent `state` is ALWAYS the
+  // empty envelope, so the Firestore doc never carries a second copy (golden rule 10).
+  // The self-contained portable EXPORT still carries the whole session inline.
+  const state = {};
   const cache = buildCharacterCache(ch, session);
   const { character: _character, session: _session, ...rest } = payload;
   void _character;
@@ -251,7 +228,6 @@ export async function createCharacter(
   const payload = await toStoredPayload({
     ...rest,
     shared: false,
-    playStateVersion: 1,
     // Generation 0 — the rules require it on create, so every later build write is a
     // compare-and-set against a known base.
     revision: 0,
@@ -291,14 +267,13 @@ export async function updateCharacter(
   if (DEV_BYPASS_AUTH) return;
   const { id: _id, ...rest } = data;
   void _id;
-  // This public helper is metadata-only. Complete parent autosave goes through
-  // the private ownership-aware writer below; create/restore own the only legal
-  // marker transitions. An ordinary caller therefore cannot strand a legacy
-  // parent behind a v1 marker without its canonical child.
+  // This public helper is metadata-only. Complete parent autosave goes through the
+  // private play-state-aware writer below, and sharing through `setCharacterSharing`,
+  // so no ordinary caller can write a session onto the parent or publish a share
+  // without its projection.
   if (
     Object.hasOwn(rest, "character") ||
     Object.hasOwn(rest, "session") ||
-    Object.hasOwn(rest, "playStateVersion") ||
     Object.hasOwn(rest, "shared")
   ) {
     throw new TypeError(
@@ -343,16 +318,10 @@ export async function setCharacterSharing(
   shared: boolean
 ): Promise<void> {
   if (DEV_BYPASS_AUTH) return;
-  if (source.playStateVersion !== 1) {
-    throw new TypeError("Sharing requires canonical play-state ownership");
-  }
-  const parentPayload = await toStoredPayload({
+  const parentWrite = await toStoredPayload({
     character: source.character,
     session: source.session,
-    playStateVersion: 1,
   });
-  const { playStateVersion: _marker, ...parentWrite } = parentPayload;
-  void _marker;
   const updatedAt = serverTimestamp();
   const projection = shared
     ? await buildPublicCharacterProjection({ ...source, shared }, updatedAt)
@@ -367,7 +336,6 @@ export async function setCharacterSharing(
     if (
       typeof raw.revision !== "number" ||
       raw.revision !== source.revision ||
-      raw.playStateVersion !== 1 ||
       raw.shared !== source.shared ||
       raw.status !== source.status ||
       (raw.portraitUrl ?? null) !== source.portraitUrl ||
@@ -392,28 +360,20 @@ export async function setCharacterSharing(
   });
 }
 
-/** Complete parent autosave with an already-established ownership mode. The v1
- * marker itself is omitted from the update so this path can preserve, but never
- * create/remove/change, ownership. Firestore rules mirror that invariant. */
+/** Complete parent autosave: the build/cache envelope plus the empty `state`. The play
+ * session itself never rides this write — it is the `combat/state` child's alone. */
 async function updateCharacterParent(
   uid: string,
   charId: string,
   data: CharacterDoc
 ): Promise<void> {
-  const hasPlayStateVersion = Object.hasOwn(data, "playStateVersion");
-  if (hasPlayStateVersion && data.playStateVersion !== 1) {
-    throw new TypeError("Invalid character play-state ownership marker");
-  }
   if (data.id !== charId) {
     throw new TypeError("A complete canonical character snapshot is required");
   }
-  const payload = await toStoredPayload({
+  const write = await toStoredPayload({
     character: data.character,
     session: data.session,
-    ...(hasPlayStateVersion ? { playStateVersion: 1 as const } : {}),
   });
-  const { playStateVersion: _marker, ...write } = payload;
-  void _marker;
   if (!Number.isInteger(data.revision) || data.revision < 0) {
     throw new TypeError("Invalid character document: invalid-revision");
   }
@@ -426,12 +386,7 @@ async function updateCharacterParent(
     revision: data.revision,
     updatedAt,
   });
-  // Historical shared=true parents predate the sanitized public projection and
-  // have no v1 ownership marker. Keep their private autosave working without
-  // manufacturing a projection from a non-canonical ownership generation.
-  if (data.playStateVersion === 1 || !data.shared) {
-    await queuePublicProjection(batch, uid, data, updatedAt);
-  }
+  await queuePublicProjection(batch, uid, data, updatedAt);
   await batch.commit();
 }
 
@@ -671,26 +626,20 @@ async function hydrateCompleteCharacter(
     });
   };
   attachEffects(hydrationBase);
-  let maxSession = hydrationBase;
-  if (parent.playStateVersion === 1) {
-    if (!combat?.playState) {
-      throw new TypeError("Invalid play state: missing-v1-combat-state");
-    }
-    const parsedPlayState = parsePersistedPlayStateV1(combat.playState);
-    if (!parsedPlayState.ok) {
-      throw new TypeError(`Invalid play state: ${parsedPlayState.reason}`);
-    }
-    maxSession = parsedPlayState.session;
-    attachEffects(maxSession);
+  if (!combat) {
+    throw new TypeError("Invalid character document: missing-combat-state");
   }
+  const parsedPlayState = parsePersistedPlayStateV1(combat.playState);
+  if (!parsedPlayState.ok) {
+    throw new TypeError(`Invalid character document: ${parsedPlayState.reason}`);
+  }
+  const maxSession = parsedPlayState.session;
+  attachEffects(maxSession);
   const max = effectiveMaxHp(parent.character, maxSession);
-  const hydration = applyCombatToSession(
-    hydrationBase,
-    combat,
-    max,
-    parent.playStateVersion === 1 ? 1 : "legacy"
-  );
-  if (!hydration.ok) throw new TypeError(`Invalid play state: ${hydration.reason}`);
+  const hydration = applyCombatToSession(hydrationBase, combat, max);
+  if (!hydration.ok) {
+    throw new TypeError(`Invalid character document: ${hydration.reason}`);
+  }
   return {
     ...parent,
     character: {
@@ -725,8 +674,11 @@ async function parseStoredCharacter(
     typeof data.state === "object" && data.state !== null
       ? (data.state as Record<string, unknown>)
       : {};
-  if (meta.playStateVersion === 1 && Object.keys(state).length > 0) {
-    throw new TypeError("Marked character parent contains mutable session state");
+  // The `combat/state` child owns every mutable play fact, so a parent that still
+  // carries one is a corrupt/pre-cutover document: quarantine it rather than load a
+  // second, stale copy of the session.
+  if (Object.keys(state).length > 0) {
+    throw new TypeError("Invalid character document: parent-state-not-empty");
   }
 
   const parsed = parseCharacterEnvelope(build, state);
@@ -1042,7 +994,6 @@ export async function restoreCharacterSnapshot(
   const parent = await toStoredPayload({
     character: snapshot.character,
     session: snapshot.session,
-    playStateVersion: 1,
   });
   const batch = writeBatch(db);
   batch.update(charDoc(uid, charId), {

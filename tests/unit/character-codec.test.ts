@@ -146,14 +146,6 @@ describe("codec — byte-identity round-trip", () => {
     expect(JSON.parse(serializeCharacter(MOCK_CHARACTER))).not.toHaveProperty("meta");
   });
 
-  it("never serializes Firestore play-state ownership metadata", () => {
-    const env = JSON.parse(
-      serializeCharacter({ ...MOCK_CHARACTER, playStateVersion: 1 })
-    ) as Record<string, unknown>;
-    expect(env).not.toHaveProperty("playStateVersion");
-    expect(env.state).not.toHaveProperty("playStateVersion");
-  });
-
   it("round-trips the session defense overlay through the shared compact codec", () => {
     const doc: CharacterDoc = {
       ...MOCK_CHARACTER,

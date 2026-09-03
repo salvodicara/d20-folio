@@ -860,32 +860,24 @@ function projectCombatHydration(
   combat: CombatState | null,
   encounterEffectProjection: CharacterState["encounterEffectProjection"]
 ): CombatHydrationPatch | null {
-  const legacyActiveEffects = combat?.activeEffects ?? [];
+  if (!combat) return null;
+  const legacyActiveEffects = combat.activeEffects ?? [];
   const activeEffects = effectiveCombatEffects(legacyActiveEffects);
   const projected = { ...character, session: { ...character.session } };
   attachEncounterEffects(projected, encounterEffectProjection, activeEffects);
-  let maxSession = projected.session;
-  if (projected.playStateVersion === 1) {
-    if (!combat?.playState) return null;
-    const parsed = parsePersistedPlayStateV1(combat.playState);
-    if (!parsed.ok) return null;
-    maxSession = parsed.session;
-    if (projected.session.encounterEffects) {
-      Object.defineProperty(maxSession, "encounterEffects", {
-        configurable: true,
-        enumerable: false,
-        writable: true,
-        value: projected.session.encounterEffects,
-      });
-    }
+  const parsed = parsePersistedPlayStateV1(combat.playState);
+  if (!parsed.ok) return null;
+  const maxSession = parsed.session;
+  if (projected.session.encounterEffects) {
+    Object.defineProperty(maxSession, "encounterEffects", {
+      configurable: true,
+      enumerable: false,
+      writable: true,
+      value: projected.session.encounterEffects,
+    });
   }
   const max = effectiveMaxHp(projected.character, maxSession);
-  const hydration = applyCombatToSession(
-    projected.session,
-    combat,
-    max,
-    projected.playStateVersion === 1 ? 1 : "legacy"
-  );
+  const hydration = applyCombatToSession(projected.session, combat, max);
   if (!hydration.ok) return null;
   const hydrated = {
     ...projected,
@@ -900,18 +892,18 @@ function projectCombatHydration(
     hydrated.session.hp.current > 0 &&
     isCharacterAlive(hydrated.status, hydrated.session) &&
     hydratedConcentration !== ""
-      ? (combat?.pendingConcentrationSaves ?? []).filter(
+      ? (combat.pendingConcentrationSaves ?? []).filter(
           (pending) => pending.spell === hydratedConcentration
         )
       : [];
   return {
     character: hydrated,
-    combatRound: combat?.round ?? 1,
-    combatRecentActions: combat?.recentActions ?? [],
+    combatRound: combat.round,
+    combatRecentActions: combat.recentActions,
     combatActiveEffects: activeEffects,
     combatLegacyActiveEffects: legacyActiveEffects,
-    combatAppliedEncounterEffects: combat?.appliedEncounterEffects,
-    combatTurnEconomy: combat?.turnEconomy,
+    combatAppliedEncounterEffects: combat.appliedEncounterEffects,
+    combatTurnEconomy: combat.turnEconomy,
     combatPendingConcentrationSaves: pendingConcentrationSaves,
   };
 }
@@ -1249,12 +1241,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     );
     if (!projection) {
       set({
-        error:
-          doc.playStateVersion === 1
-            ? combat
-              ? "Invalid play state: invalid-v1-play-state"
-              : "Invalid play state: missing-v1-combat-state"
-            : "Invalid combat state",
+        error: combat
+          ? "Invalid play state: invalid-v1-play-state"
+          : "Invalid play state: missing-v1-combat-state",
       });
       return false;
     }
@@ -1279,17 +1268,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       combat,
       get().encounterEffectProjection
     );
-    // Once the parent advertises v1 ownership, absence or a malformed play payload is
-    // an integrity failure—not a fresh/full-HP character. Leave the last proven store
+    // The child is the sole play owner, so absence or a malformed play payload is an
+    // integrity failure — not a fresh/full-HP character. Leave the last proven store
     // state untouched so auto-save cannot write a fabricated replacement.
     if (!projection) {
       set({
-        error:
-          character.playStateVersion === 1
-            ? combat
-              ? "Invalid play state: invalid-v1-play-state"
-              : "Invalid play state: missing-v1-combat-state"
-            : "Invalid combat state",
+        error: combat
+          ? "Invalid play state: invalid-v1-play-state"
+          : "Invalid play state: missing-v1-combat-state",
       });
       return;
     }
@@ -3127,11 +3113,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   persistCombatTurnState: (round, turnEconomy) => {
     if (get().readonly || !get().character) return;
     set({ combatRound: round, combatTurnEconomy: turnEconomy });
-    // A marked play owner is already coalesced as one complete child write; keep the
-    // update-only patch solely for legacy documents whose noncombat session remains
-    // parent-owned.
-    if (get().character?.playStateVersion === 1) persistCombat(get);
-    else get().combatPersistence?.writeTurnEconomy(round, turnEconomy);
+    // The play owner is written as ONE complete, coalesced child write; the turn
+    // economy rides it like every other play fact.
+    persistCombat(get);
   },
 
   declareAttack: (entry) => {

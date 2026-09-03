@@ -409,6 +409,13 @@ matches. What it will no longer contain: every predicate that reads a game field
 `validPeerEffectState`, `validMember*`, `validCombatEffectOpsChange`, `turnFieldsOnlyChanged`,
 `combatEffectFieldsOnlyChanged`, `encounterInit*`, `isAttachedPeer`, `peer*`, `playStateVersion*`).
 
+After P1 the character paths are already there: `users/{uid}/characters/{charId}` is owner/admin/
+co-member access plus the `revision` compare-and-set, an EMPTY parent `state`, and the exact public
+sheet — nothing else; `combat/{stateId}` is the literal `combat/state`, whose create is owner/admin
+only. `playStateVersion*`, `hasV1CombatOwnerAfter`, `peerLegacyCoreCreate` and the unmarked-legacy
+escape hatch are gone. The encounter/peer semantic predicates (and `isCampaignDmDetach`) remain
+until P4 deletes them with the encounter document and the party lease.
+
 ### 5.5 Codec totality
 
 One `exact-schema` per persisted document, versioned by `schema`. Reading: closed-world parse;

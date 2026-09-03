@@ -4,9 +4,8 @@ import { asAlignmentId } from "@/lib/lore-utils";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { renderHook, act } from "@testing-library/react";
 import type { CharacterDoc, CustomEquipment } from "@/types/character";
-import { omitCombatTrio, sessionToCombatState } from "@/lib/combat-state";
+import { sessionToCombatState } from "@/lib/combat-state";
 import { sessionToPlayStateV1 } from "@/lib/session-state-codec";
-import { serializeCharacterEnvelope } from "@/lib/character-codec";
 
 /**
  * Exercises the sync invariants behind domain rule D8 (docs/GOLDEN_RULES.md):
@@ -137,7 +136,6 @@ vi.mock("@/lib/mock", () => ({ MOCK_CHARACTER: {} }));
 import { useCharacterStore } from "@/stores/characterStore";
 import { useSaveStore } from "@/stores/saveStore";
 import { useCharacterSubscription } from "@/hooks/useCharacterSubscription";
-import { conc } from "./__helpers__/concentration";
 
 function doc(): CharacterDoc {
   return {
@@ -257,7 +255,14 @@ function parentErrorCb(): (error: Error) => void {
 }
 
 function v1Doc(): CharacterDoc {
-  return { ...doc(), playStateVersion: 1 };
+  return doc();
+}
+
+/** Seed the OPEN character the way production does: the parent snapshot AND the
+ *  `combat/state` play owner it cannot be published without. */
+function seedCharacter(d: CharacterDoc = doc()): void {
+  snapshotCb()(d);
+  combatCb()(sessionToCombatState(d.session));
 }
 
 /** REPLAY I3 fixture — a level-3 monk whose Focus pool is the tracker that reverted.
@@ -266,7 +271,6 @@ function monkFocusDoc(): CharacterDoc {
   const base = doc();
   return {
     ...base,
-    playStateVersion: 1,
     revision: 4,
     character: {
       ...base.character,
@@ -324,17 +328,23 @@ describe("useCharacterSubscription — domain-rule-D8 sync invariants", () => {
 
   it("an incoming server snapshot does NOT trigger a save (loop guard)", () => {
     renderHook(() => useCharacterSubscription("char1"));
-    act(() => snapshotCb()(doc()));
+    act(() => seedCharacter());
     expect(useCharacterStore.getState().character?.id).toBe("char1");
     expect(debouncedSave).not.toHaveBeenCalled();
   });
 
-  it("a NON-combat edit saves the parent doc with BOTH session and character", () => {
+  it("a BUILD edit saves the parent doc with BOTH session and character", () => {
     renderHook(() => useCharacterSubscription("char1"));
-    act(() => snapshotCb()(doc())); // seed from server (no save)
+    act(() => seedCharacter()); // seed from server (no save)
     debouncedSave.mockClear();
 
-    act(() => useCharacterStore.getState().updateSession({ notes: "scouting ahead" }));
+    act(() => {
+      const cur = useCharacterStore.getState().character;
+      if (!cur) throw new Error("character was not published");
+      useCharacterStore
+        .getState()
+        .setCharacter({ ...cur, character: { ...cur.character, quote: "onward" } });
+    });
 
     expect(debouncedSave).toHaveBeenCalledTimes(1);
     const payload = debouncedSave.mock.calls[0]?.[0] as unknown as Record<
@@ -345,7 +355,7 @@ describe("useCharacterSubscription — domain-rule-D8 sync invariants", () => {
     expect(payload).toHaveProperty("character"); // domain rule D8: both saved together
   });
 
-  it("the persisted parent state OMITS the combat trio (subdoc owns it now)", () => {
+  it("a session-only edit goes to the play child alone — no parent save at all", async () => {
     renderHook(() => useCharacterSubscription("char1"));
     // Seed a character that is mid-combat (damaged, conditioned, mid-death-save).
     const seeded = doc();
@@ -354,42 +364,34 @@ describe("useCharacterSubscription — domain-rule-D8 sync invariants", () => {
     seeded.session.initiative = "17";
     seeded.session.deathSucc = 1;
     seeded.session.deathFail = 2;
-    act(() => snapshotCb()(seeded));
+    act(() => seedCharacter(seeded));
     debouncedSave.mockClear();
+    writeCombatStateMock.mockClear();
 
     act(() => useCharacterStore.getState().updateSession({ notes: "x" }));
+    await flushPlayWrite();
 
-    const payload = debouncedSave.mock.calls[0]?.[0] as {
-      character: import("@/types/character").CharacterData;
-      session: import("@/types/character").SessionState;
-    };
-    // The hook hands the FULL in-memory session to the save (the trio is intact) — the
-    // combat trio is dropped downstream at the Firestore serialization boundary.
-    expect(payload.session.hp).toEqual({ current: 12, temp: 5 });
-    expect(payload.session.conditions).toEqual(["poisoned"]);
-    // Running the EXACT parent-doc boundary recipe (`toStoredPayload`: serialize →
-    // `omitCombatTrio`) yields a `state` that carries NO combat trio, non-combat intact.
-    const parentState = omitCombatTrio(
-      serializeCharacterEnvelope({
-        character: payload.character,
-        session: payload.session,
-      } as CharacterDoc).state
-    );
-    expect(parentState).not.toHaveProperty("hp");
-    expect(parentState).not.toHaveProperty("conditions");
-    expect(parentState).not.toHaveProperty("initiative");
-    expect(parentState).not.toHaveProperty("deathSucc");
-    expect(parentState).not.toHaveProperty("deathFail");
-    expect(parentState.notes).toBe("x");
+    // The whole play session — the trio AND the notes — lands in `combat/state`; the
+    // parent carries only build + cache, so nothing routes to it.
+    expect(debouncedSave).not.toHaveBeenCalled();
+    const [, , state] = writeCombatStateMock.mock.calls.at(-1) as unknown as [
+      string,
+      string,
+      import("@/types/combat-state").CombatState,
+    ];
+    expect(state.hp).toEqual({ current: 12, temp: 5 });
+    expect(state.conditions).toEqual(["poisoned"]);
+    expect(state.playState?.state.notes).toBe("x");
   });
 
-  it("a combat-trio edit (HP) writes the SUBDOC (whole-object, offline-safe), not the parent doc", () => {
+  it("a combat-trio edit (HP) writes the SUBDOC (whole-object, offline-safe), not the parent doc", async () => {
     renderHook(() => useCharacterSubscription("char1"));
-    act(() => snapshotCb()(doc()));
+    act(() => seedCharacter());
     debouncedSave.mockClear();
     writeCombatStateMock.mockClear();
 
     act(() => useCharacterStore.getState().setHP(10)); // absolute trio change
+    await flushPlayWrite();
 
     // The HP set persists ONLY to the combat subdoc — through the single offline-safe
     // `writeCombatState` (the store's optimistic whole state), never the parent doc.
@@ -405,17 +407,20 @@ describe("useCharacterSubscription — domain-rule-D8 sync invariants", () => {
     expect(state.hp.current).toBe(10);
   });
 
-  it("an HP damage/heal tap persists the resulting HP through the offline-safe writer", () => {
+  it("an HP damage/heal tap persists the resulting HP through the offline-safe writer", async () => {
     renderHook(() => useCharacterSubscription("char1"));
-    act(() => snapshotCb()(doc()));
+    act(() => seedCharacter());
     // Seed a known current HP so the resulting values are deterministic.
     act(() => useCharacterStore.getState().setHP(40));
+    await flushPlayWrite();
     writeCombatStateMock.mockClear();
 
     act(() => {
       useCharacterStore.getState().applyDamage(7);
     });
+    await flushPlayWrite();
     act(() => useCharacterStore.getState().applyHealing(3));
+    await flushPlayWrite();
 
     expect(writeCombatStateMock).toHaveBeenCalledTimes(2);
     const calls = writeCombatStateMock.mock.calls as unknown as Array<
@@ -425,13 +430,14 @@ describe("useCharacterSubscription — domain-rule-D8 sync invariants", () => {
     expect(calls[1]?.[2].hp.current).toBe(36); // 33 + 3
   });
 
-  it("a condition add persists the whole conditions list (subdoc, never parent trio)", () => {
+  it("a condition add persists the whole conditions list (subdoc, never parent trio)", async () => {
     renderHook(() => useCharacterSubscription("char1"));
-    act(() => snapshotCb()(doc()));
+    act(() => seedCharacter());
     debouncedSave.mockClear();
     writeCombatStateMock.mockClear();
 
     act(() => useCharacterStore.getState().addCondition("prone"));
+    await flushPlayWrite();
 
     expect(writeCombatStateMock).toHaveBeenCalledTimes(1);
     const [, , state] = writeCombatStateMock.mock.calls[0] as unknown as [
@@ -441,33 +447,21 @@ describe("useCharacterSubscription — domain-rule-D8 sync invariants", () => {
     ];
     expect(state.conditions).toEqual(["prone"]);
 
-    // addCondition ALSO appends a combat-log entry (a non-trio field on the parent
-    // doc), so the parent save fires for the LOG. The hook hands the full session
-    // (conditions intact); the Firestore boundary drops the trio from the persisted
-    // `state` (`omitCombatTrio`), so the parent doc never carries a second copy.
-    const lastParent = debouncedSave.mock.calls.at(-1)?.[0] as {
-      character: import("@/types/character").CharacterData;
-      session: import("@/types/character").SessionState;
-    };
-    expect(lastParent.session.conditions).toEqual(["prone"]);
-    expect(lastParent.session.logEntries.length).toBeGreaterThan(0);
-    const parentState = omitCombatTrio(
-      serializeCharacterEnvelope({
-        character: lastParent.character,
-        session: lastParent.session,
-      } as CharacterDoc).state
-    );
-    expect(parentState).not.toHaveProperty("conditions");
-    expect(Array.isArray(parentState.log)).toBe(true);
+    // addCondition ALSO appends a combat-log entry — another play fact the SAME child
+    // write carries. The parent (build + cache only) is not touched.
+    expect(Array.isArray(state.playState?.state.log)).toBe(true);
+    expect(debouncedSave).not.toHaveBeenCalled();
   });
 
-  it("a death-save change persists the whole resulting nested deathSaves through the writer", () => {
+  it("a death-save change persists the whole resulting nested deathSaves through the writer", async () => {
     renderHook(() => useCharacterSubscription("char1"));
-    act(() => snapshotCb()(doc()));
+    act(() => seedCharacter());
     writeCombatStateMock.mockClear();
 
     act(() => useCharacterStore.getState().setDeathSaves(1, 0));
+    await flushPlayWrite();
     act(() => useCharacterStore.getState().setDeathSaves(2, 1));
+    await flushPlayWrite();
     expect(writeCombatStateMock).toHaveBeenCalledTimes(2);
     const last = writeCombatStateMock.mock.calls.at(-1) as unknown as [
       string,
@@ -475,23 +469,6 @@ describe("useCharacterSubscription — domain-rule-D8 sync invariants", () => {
       import("@/types/combat-state").CombatState,
     ];
     expect(last[2].deathSaves).toEqual({ successes: 2, failures: 1 });
-  });
-
-  it("a session-only edit still includes character in the payload (anti-clobber)", () => {
-    renderHook(() => useCharacterSubscription("char1"));
-    act(() => snapshotCb()(doc()));
-    debouncedSave.mockClear();
-
-    act(() => {
-      useCharacterStore.getState().setConcentration(conc("fly"));
-    });
-
-    const payload = debouncedSave.mock.calls[0]?.[0] as {
-      session: unknown;
-      character: unknown;
-    };
-    expect(payload.session).toBeDefined();
-    expect(payload.character).toBeDefined();
   });
 
   it("flushes the debounced save on unmount (no data loss on quick close — regression)", () => {
@@ -520,18 +497,17 @@ describe("useCharacterSubscription — combat/state subdoc hydration", () => {
 
   it("hydrates the trio from a combat snapshot WITHOUT triggering any save (loop guard)", () => {
     renderHook(() => useCharacterSubscription("char1"));
-    act(() => snapshotCb()(doc())); // seed the character
+    act(() => seedCharacter()); // seed the character + its play owner
     debouncedSave.mockClear();
     writeCombatStateMock.mockClear();
 
     act(() =>
       combatCb()({
+        ...sessionToCombatState(doc().session),
         hp: { current: 7, temp: 3 },
         conditions: ["frightened"],
         initiativeRoll: 19,
         deathSaves: { successes: 1, failures: 0 },
-        round: 1,
-        recentActions: [],
       })
     );
 
@@ -546,23 +522,16 @@ describe("useCharacterSubscription — combat/state subdoc hydration", () => {
     expect(writeCombatStateMock).not.toHaveBeenCalled();
   });
 
-  it("a character with NO combat doc hydrates to FULL HP, not 0", () => {
+  it("a character with NO combat doc fails closed — the sheet is never published", () => {
     renderHook(() => useCharacterSubscription("char1"));
-    const seeded = doc();
-    // The parent doc no longer carries HP (stripped on save) — it reads back as 0/0.
-    seeded.session.hp = { current: 0, temp: 0 };
-    act(() => snapshotCb()(seeded));
-    // The combat subdoc is absent → the listener delivers null.
+    act(() => snapshotCb()(doc()));
+    // The combat subdoc is absent → the listener delivers null. The child is the SOLE
+    // play owner, so this is corruption, not a fresh character: quarantine, and never
+    // fabricate a full-HP session (which auto-save would then write back).
     act(() => combatCb()(null));
 
-    const s = useCharacterStore.getState().character?.session;
-    // effectiveMaxHp for this fixture = stored base (44) + no boons.
-    expect(s?.hp).toEqual({ current: 44, temp: 0 });
-    expect(s?.conditions).toEqual([]);
-    expect(s?.initiative).toBe("");
-    expect(s?.deathSucc).toBe(0);
-    expect(s?.deathFail).toBe(0);
-    // The absent-doc default must NOT be written back (no spurious subdoc create).
+    expect(useCharacterStore.getState().character).toBeNull();
+    expect(useCharacterStore.getState().error).toContain("missing-v1-combat-state");
     expect(writeCombatStateMock).not.toHaveBeenCalled();
   });
 
@@ -571,12 +540,8 @@ describe("useCharacterSubscription — combat/state subdoc hydration", () => {
     // Combat doc lands first (tiny JSON), before the async char parse completes.
     act(() =>
       combatCb()({
+        ...sessionToCombatState(doc().session),
         hp: { current: 5, temp: 0 },
-        conditions: [],
-        initiativeRoll: null,
-        deathSaves: { successes: 0, failures: 0 },
-        round: 1,
-        recentActions: [],
       })
     );
     // No character yet → nothing applied.
@@ -743,7 +708,7 @@ describe("useCharacterSubscription — T4 DM-sheet fan-out", () => {
 
   it("a local mutation fans the fresh sheet out to attached campaigns", () => {
     renderHook(() => useCharacterSubscription("char1"));
-    act(() => snapshotCb()(doc())); // seed from server (no fan-out)
+    act(() => seedCharacter()); // seed from server (no fan-out)
     refreshAttachedSheetsMock.mockClear();
 
     // The fan-out rides the parent-doc save, so a NON-combat edit triggers it (a

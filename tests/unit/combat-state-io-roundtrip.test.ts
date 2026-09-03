@@ -14,6 +14,7 @@ vi.mock("@/lib/firebase", () => ({ db: { _type: "firestore" } }));
 vi.mock("@/lib/dev-bypass", () => ({ DEV_BYPASS_AUTH: false }));
 
 import { combatStateWriteData, parseCombatState } from "@/lib/combat-state-io";
+import { parseLegacyCombatChild } from "@/lib/combat-state-codec";
 import { defaultCombatState, sessionToCombatState } from "@/lib/combat-state";
 import { economyClaimsForTurn } from "@/lib/combat-economy";
 import { combatOutcomePrerequisiteMet } from "@/lib/combat-outcomes";
@@ -30,6 +31,17 @@ import { applyCombatToSession } from "@/lib/combat-state";
 
 function parseState(value: unknown): CombatState {
   const result = parseCombatState(value);
+  if (!result.ok) throw new Error(result.reason);
+  return result.state;
+}
+
+/** The PRE-CUTOVER reader over a play-state-less stored doc — the only place the
+ *  defensive NORMALIZERS still run (the strict reader rejects a non-canonical field
+ *  outright). Dies in P3 with `scripts/migrate-character-parents.ts`. */
+function parseLegacyState(value: Record<string, unknown>): CombatState {
+  const { playState: _playState, ...legacy } = value;
+  void _playState;
+  const result = parseLegacyCombatChild(legacy);
   if (!result.ok) throw new Error(result.reason);
   return result.state;
 }
@@ -159,6 +171,7 @@ const APPLY_LEDGER_EFFECT_OP: CombatEffectOp = {
 
 function completeState(): CombatState {
   return {
+    playState: sessionToPlayStateV1(makeCharacterDoc().session),
     hp: { current: 37, temp: 9 },
     conditions: ["prone", "frightened"],
     bardicInspirationDie: "d10",
@@ -273,25 +286,21 @@ describe("combat-state IO — full persistence contract", () => {
     expect(parseState(combatStateWriteData(state))).toEqual(state);
   });
 
-  it("persists v1 play ownership and reads a legacy doc as legacy", () => {
+  it("the strict reader requires the v1 play owner; only the migration reader is lenient", () => {
     const state = sessionToCombatState(makeCharacterDoc().session);
-    const parsed = parseCombatState(combatStateWriteData(state));
-    expect(parsed).toMatchObject({
+    expect(parseCombatState(combatStateWriteData(state))).toMatchObject({
       ok: true,
-      ownership: "v1",
       state: { playState: { version: 1 } },
     });
 
+    // A PRE-CUTOVER child (combat core, no `playState`): the app refuses it; the
+    // migration's own reader still accepts it. Both die in P3 with the script.
     const legacy = combatStateWriteData({ ...state, playState: undefined });
-    expect(parseCombatState(legacy)).toMatchObject({ ok: true, ownership: "legacy" });
-  });
-
-  it("round-trips every present v1-owned combat field without normalization", () => {
-    const state = {
-      ...completeState(),
-      playState: sessionToPlayStateV1(makeCharacterDoc().session),
-    };
-    expect(parseState(combatStateWriteData(state))).toEqual(state);
+    expect(parseCombatState(legacy)).toEqual({
+      ok: false,
+      reason: "invalid-v1-play-state",
+    });
+    expect(parseLegacyCombatChild(legacy)).toMatchObject({ ok: true });
   });
 
   it.each([
@@ -362,7 +371,9 @@ describe("combat-state IO — full persistence contract", () => {
         ]),
     },
   ])("rejects malformed present v1 $name but preserves legacy tolerance", (testCase) => {
-    const legacyBase = combatStateWriteData(completeState());
+    const { playState: _playState, ...legacyBase } =
+      combatStateWriteData(completeState());
+    void _playState;
     const v1 = parseCombatState({
       ...legacyBase,
       playState: sessionToPlayStateV1(makeCharacterDoc().session),
@@ -370,29 +381,25 @@ describe("combat-state IO — full persistence contract", () => {
     });
     expect(v1).toEqual({ ok: false, reason: "invalid-combat-state" });
 
-    const legacy = parseCombatState({ ...legacyBase, ...testCase.patch });
-    expect(legacy).toMatchObject({ ok: true, ownership: "legacy" });
+    // The migration's PRE-CUTOVER reader stays tolerant of the same stored shapes,
+    // which is exactly what the cutover canonicalizes. Dies in P3 with the script.
+    const legacy = parseLegacyCombatChild({ ...legacyBase, ...testCase.patch });
+    expect(legacy).toMatchObject({ ok: true });
     if (legacy.ok) testCase.assertLegacy(legacy.state);
   });
 
   it("rejects noncanonical v1 ordering/nested shapes but tolerates future roots", () => {
-    const base = combatStateWriteData({
-      ...completeState(),
-      playState: sessionToPlayStateV1(makeCharacterDoc().session),
-    });
+    const base = combatStateWriteData(completeState());
     expect(
       parseCombatState({
         ...base,
         futureCombatFact: { version: 2, value: "preserved-by-newer-client" },
       })
-    ).toMatchObject({ ok: true, ownership: "v1" });
+    ).toMatchObject({ ok: true });
   });
 
   it("rejects hostile present v1 fields without invoking accessors", () => {
-    const hostile = combatStateWriteData({
-      ...completeState(),
-      playState: sessionToPlayStateV1(makeCharacterDoc().session),
-    });
+    const hostile = combatStateWriteData(completeState());
     let getterRead = false;
     Object.defineProperty(hostile, "recentActions", {
       enumerable: true,
@@ -475,12 +482,8 @@ describe("combat-state IO — full persistence contract", () => {
       })
     ).not.toHaveProperty("effectOps");
     expect(
-      parseCombatState({
-        ...base,
-        playState: sessionToPlayStateV1(makeCharacterDoc().session),
-        effectOps: [APPLY_LEDGER_EFFECT_OP],
-      })
-    ).toMatchObject({ ok: true, ownership: "v1" });
+      parseCombatState({ ...base, effectOps: [APPLY_LEDGER_EFFECT_OP] })
+    ).toMatchObject({ ok: true });
     expect(combatStateWriteData(completeState())).not.toHaveProperty("effectOps");
     expect(sessionToCombatState(makeCharacterDoc().session)).not.toHaveProperty(
       "effectOps"
@@ -488,13 +491,18 @@ describe("combat-state IO — full persistence contract", () => {
     expect(defaultCombatState(20)).not.toHaveProperty("effectOps");
   });
 
-  it("reads the Concentration FIFO defensively and treats a legacy absence as empty", () => {
+  it("reads the Concentration FIFO defensively in the pre-cutover reader", () => {
     const base = combatStateWriteData(completeState());
+    // The strict reader refuses a stored queue that is not already canonical…
     expect(
-      parseState({ ...base, pendingConcentrationSaves: undefined })
+      parseCombatState({ ...base, pendingConcentrationSaves: [{ id: "bad" }] })
+    ).toMatchObject({ ok: false });
+    // …while the migration reader normalizes exactly what the cutover then rewrites.
+    expect(
+      parseLegacyState({ ...base, pendingConcentrationSaves: undefined })
     ).not.toHaveProperty("pendingConcentrationSaves");
     expect(
-      parseState({
+      parseLegacyState({
         ...base,
         pendingConcentrationSaves: [
           {
@@ -543,6 +551,14 @@ describe("combat-state IO — full persistence contract", () => {
       if (!turn) throw new Error("missing turn economy");
       turn.selected = { action: [], bonus: [], free: [] };
       turn.selected[slot].push(only);
+      // Receipts/swings name the actions we just dropped; clear them so the stored
+      // document stays canonical for the strict reader.
+      turn.attacksUsed = 0;
+      turn.attackSwings = [];
+      turn.outcomeReceipts = [];
+      turn.reactionUsed = false;
+      turn.reactionUsedId = null;
+      turn.reactionOutcomeOccurrenceId = null;
 
       const parsed = parseState(combatStateWriteData(state));
       expect(parsed.turnEconomy?.selected[slot]).toEqual([only]);
@@ -663,8 +679,9 @@ describe("combat-state IO — full persistence contract", () => {
     "drops an invalid turn-economy root: %j",
     (turnEconomy) => {
       const base = combatStateWriteData(completeState());
-      const parsed = parseState({ ...base, turnEconomy });
-      expect(parsed.turnEconomy).toBeUndefined();
+      expect(parseLegacyState({ ...base, turnEconomy }).turnEconomy).toBeUndefined();
+      // The strict reader does not normalize a stored non-canonical root: it refuses.
+      expect(parseCombatState({ ...base, turnEconomy })).toMatchObject({ ok: false });
     }
   );
 
@@ -674,7 +691,7 @@ describe("combat-state IO — full persistence contract", () => {
     if (!turn) throw new Error("missing turn economy");
     delete turn.spellSlotCastTurnKey;
 
-    const parsed = parseState(combatStateWriteData(state));
+    const parsed = parseLegacyState(combatStateWriteData(state));
     expect(parsed.turnEconomy).toMatchObject({
       spellSlotCastsThisTurn: 1,
       spellSlotCastTurnKey: turn.key,
@@ -719,7 +736,7 @@ describe("v1 play-state — arrays and the persisted engine world", () => {
     const doc = makeCharacterDoc({}, { logEntries: [LOG_ENTRY] });
     const written = combatStateWriteData(sessionToCombatState(doc.session));
     const parsed = parseCombatState(written);
-    expect(parsed).toMatchObject({ ok: true, ownership: "v1" });
+    expect(parsed).toMatchObject({ ok: true });
   });
 
   it("still rejects accessor/non-enumerable properties on plain objects", () => {
@@ -753,11 +770,11 @@ describe("v1 play-state — arrays and the persisted engine world", () => {
     const doc = makeCharacterDoc({}, { world });
     const written = combatStateWriteData(sessionToCombatState(doc.session));
     const parsed = parseCombatState(written);
-    expect(parsed).toMatchObject({ ok: true, ownership: "v1" });
+    expect(parsed).toMatchObject({ ok: true });
     if (!parsed.ok) return;
 
     const fresh = makeCharacterDoc().session;
-    const hydrated = applyCombatToSession(fresh, parsed.state, 44, 1);
+    const hydrated = applyCombatToSession(fresh, parsed.state, 44);
     expect(hydrated.ok).toBe(true);
     if (!hydrated.ok) return;
     expect(JSON.stringify(hydrated.session.world)).toBe(JSON.stringify(world));

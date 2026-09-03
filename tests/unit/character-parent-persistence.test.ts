@@ -144,7 +144,6 @@ function parentData(doc: CharacterDoc): Record<string, unknown> {
     ...envelope,
     state: {},
     cache: buildCharacterCache(doc.character, doc.session),
-    playStateVersion: 1,
     revision: doc.revision,
     shared: doc.shared,
     status: "active",
@@ -164,17 +163,16 @@ beforeEach(() => {
   harness.deleteDoc.mockClear();
 });
 
-describe("play-state v1 persistence cutover", () => {
-  it("keeps an unmarked legacy character's spell-slot edit on its parent", async () => {
-    const legacy = { ...makeCharacterDoc(), id: "c1", revision: 4 };
-    delete legacy.playStateVersion;
-    legacy.session = {
-      ...legacy.session,
-      spellSlots: { ...legacy.session.spellSlots, "1": { used: 2 } },
+describe("character parent persistence (v1: the child owns the play session)", () => {
+  it("the parent autosave writes an EMPTY state, the cache and the payload's generation", async () => {
+    const doc = { ...makeCharacterDoc(), id: "c1", revision: 7 };
+    doc.session = {
+      ...doc.session,
+      spellSlots: { ...doc.session.spellSlots, "1": { used: 2 } },
     };
     const pending = createDebouncedSave("u1", "c1");
 
-    pending.save(legacy);
+    pending.save(doc);
     await pending.flush();
 
     expect(harness.commits).toHaveBeenCalledTimes(1);
@@ -185,13 +183,15 @@ describe("play-state v1 persistence cutover", () => {
       kind: "update",
       // The parent writer sends the payload's generation VERBATIM — the subscription
       // hook is the single place that advances it past the observed base.
-      data: { state: { usedSlots: { "1": 2 } }, revision: 4, updatedAt: "server-ts" },
+      data: { state: {}, revision: 7, updatedAt: "server-ts" },
     });
     expect(parent?.data).not.toHaveProperty("playStateVersion");
+    // The mutated play session went NOWHERE near the parent: it rides `combat/state`.
+    expect(JSON.stringify(parent?.data)).not.toContain("usedSlots");
   });
 
   it("reports resolve, reject and cancel for the payload each outcome settles", async () => {
-    const first = { ...makeCharacterDoc(), id: "c1", playStateVersion: 1 as const };
+    const first = { ...makeCharacterDoc(), id: "c1" };
     const second = { ...first, revision: 1 };
     const outcomes = {
       onResolved: vi.fn(),
@@ -225,7 +225,7 @@ describe("play-state v1 persistence cutover", () => {
       // The hook's allocator: a cursor seeded at the last acknowledged server value.
       let cursor = 4;
       const pending = createDebouncedSave("u1", "c1", 2000, () => ++cursor);
-      const base = { ...makeCharacterDoc(), id: "c1", playStateVersion: 1 as const };
+      const base = { ...makeCharacterDoc(), id: "c1" };
       const sent: number[] = [];
       const outcomes = { onSend: (d: CharacterDoc) => sent.push(d.revision) };
 
@@ -258,62 +258,17 @@ describe("play-state v1 persistence cutover", () => {
 
   it("rejects a parent write whose generation is not a non-negative integer", async () => {
     const pending = createDebouncedSave("u1", "c1");
-    pending.save({
-      ...makeCharacterDoc(),
-      id: "c1",
-      playStateVersion: 1,
-      revision: -1,
-    });
+    pending.save({ ...makeCharacterDoc(), id: "c1", revision: -1 });
     await pending.flush();
     expect(harness.commits).not.toHaveBeenCalled();
     expect(harness.operations).toEqual([]);
   });
 
-  it.each([undefined, null, 2])(
-    "rejects a present invalid play-state marker without writing (%s)",
-    async (invalidMarker) => {
-      const malformed = { ...makeCharacterDoc(), id: "c1" };
-      Object.defineProperty(malformed, "playStateVersion", {
-        enumerable: true,
-        value: invalidMarker,
-      });
-      const pending = createDebouncedSave("u1", "c1");
-
-      pending.save(malformed);
-      await pending.flush();
-
-      expect(harness.commits).not.toHaveBeenCalled();
-      expect(harness.operations).toEqual([]);
-    }
-  );
-
-  it("autosaves an already-shared legacy parent without synthesizing a public projection", async () => {
-    const legacy = { ...makeCharacterDoc(), id: "c1", shared: true };
-    delete legacy.playStateVersion;
-    legacy.session = {
-      ...legacy.session,
-      spellSlots: { ...legacy.session.spellSlots, "1": { used: 2 } },
-    };
-    const pending = createDebouncedSave("u1", "c1");
-
-    pending.save(legacy);
-    await pending.flush();
-
-    expect(harness.commits).toHaveBeenCalledTimes(1);
-    expect(harness.operations).toHaveLength(1);
-    expect(harness.operations[0]).toMatchObject({
-      kind: "update",
-      path: "users/u1/characters/c1",
-      data: { state: { usedSlots: { "1": 2 } }, updatedAt: "server-ts" },
-    });
-  });
-
-  it("drops a queued legacy autosave before the level-up whole-state cutover", async () => {
-    const legacy = { ...makeCharacterDoc(), id: "c1" };
-    delete legacy.playStateVersion;
-    legacy.session = {
-      ...legacy.session,
-      spellSlots: { ...legacy.session.spellSlots, "1": { used: 2 } },
+  it("drops a queued autosave before the level-up whole-state ceremony", async () => {
+    const queued = { ...makeCharacterDoc(), id: "c1" };
+    queued.session = {
+      ...queued.session,
+      spellSlots: { ...queued.session.spellSlots, "1": { used: 2 } },
     };
     const pending = createDebouncedSave("u1", "c1");
     const onSaved = vi.fn();
@@ -321,14 +276,14 @@ describe("play-state v1 persistence cutover", () => {
     saveStatusCallbacks.onSaved = onSaved;
 
     try {
-      pending.save(legacy);
+      pending.save(queued);
 
       await replaceCharacterState(
         "u1",
         "c1",
-        legacy.character,
-        legacy.session,
-        legacy.revision
+        queued.character,
+        queued.session,
+        queued.revision
       );
       await pending.flush();
 
@@ -337,8 +292,9 @@ describe("play-state v1 persistence cutover", () => {
       expect(harness.operations[0]).toMatchObject({
         kind: "update",
         path: "users/u1/characters/c1",
-        data: { playStateVersion: 1, state: {} },
+        data: { state: {} },
       });
+      expect(harness.operations[0]?.data).not.toHaveProperty("playStateVersion");
       expect(harness.operations[1]).toMatchObject({
         kind: "set",
         path: "users/u1/characters/c1/combat/state",
@@ -357,7 +313,7 @@ describe("play-state v1 persistence cutover", () => {
     try {
       const full = makeCharacterDoc();
       const pending = createDebouncedSave("u1", "c1");
-      pending.save({ ...full, id: "c1", playStateVersion: 1 });
+      pending.save({ ...full, id: "c1" });
 
       pending.cancel();
       await vi.advanceTimersByTimeAsync(2_000);
@@ -372,12 +328,7 @@ describe("play-state v1 persistence cutover", () => {
   it("atomically refreshes a live public projection with a shared parent autosave", async () => {
     vi.useFakeTimers();
     try {
-      const full = {
-        ...makeCharacterDoc(),
-        id: "c1",
-        shared: true,
-        playStateVersion: 1 as const,
-      };
+      const full = { ...makeCharacterDoc(), id: "c1", shared: true };
       const pending = createDebouncedSave("u1", "c1");
       pending.save(full);
 
@@ -419,8 +370,9 @@ describe("play-state v1 persistence cutover", () => {
     expect(parent).toMatchObject({
       kind: "set",
       // A character is born at generation 0 (the rules require exactly that on create).
-      data: { playStateVersion: 1, state: {}, shared: false, revision: 0 },
+      data: { state: {}, shared: false, revision: 0 },
     });
+    expect(parent?.data).not.toHaveProperty("playStateVersion");
     expect(child).toMatchObject({
       kind: "set",
       data: {
@@ -442,7 +394,7 @@ describe("play-state v1 persistence cutover", () => {
       kind: "update",
       path: "users/u1/characters/c1",
       // The whole-state ceremony is a build write: it advances the CAS generation.
-      data: { playStateVersion: 1, state: {}, revision: 8 },
+      data: { state: {}, revision: 8 },
     });
     expect(harness.operations[1]).toMatchObject({
       kind: "set",
@@ -474,12 +426,7 @@ describe("play-state v1 persistence cutover", () => {
     expect(harness.getDoc).toHaveBeenCalledTimes(2);
 
     harness.getDoc.mockClear();
-    const publicSource = {
-      ...full,
-      id: "c1",
-      shared: true,
-      playStateVersion: 1 as const,
-    };
+    const publicSource = { ...full, id: "c1", shared: true };
     const projection = await buildPublicCharacterProjection(
       publicSource,
       new harness.Timestamp(new Date("2026-01-02"))
@@ -496,10 +443,7 @@ describe("play-state v1 persistence cutover", () => {
   });
 
   it("fails closed when a private parent is stored at the public path", async () => {
-    const full = makeCharacterDoc();
-    harness.getDoc.mockResolvedValue(
-      snapshot("c1", { ...parentData(full), playStateVersion: 2 })
-    );
+    harness.getDoc.mockResolvedValue(snapshot("c1", parentData(makeCharacterDoc())));
     await expect(getPublicCharacter("u1", "c1")).rejects.toThrow("projection shape");
   });
 
@@ -529,13 +473,7 @@ describe("play-state v1 persistence cutover", () => {
   });
 
   it("publishes and revokes the projection with the parent flag atomically", async () => {
-    const full = {
-      ...makeCharacterDoc(),
-      id: "c1",
-      shared: false,
-      revision: 6,
-      playStateVersion: 1 as const,
-    };
+    const full = { ...makeCharacterDoc(), id: "c1", shared: false, revision: 6 };
     harness.getDoc.mockResolvedValue(snapshot("c1", parentData(full)));
 
     await setCharacterSharing("u1", full, true);
@@ -586,13 +524,7 @@ describe("play-state v1 persistence cutover", () => {
   });
 
   it("refuses to publish a share against a stale generation", async () => {
-    const full = {
-      ...makeCharacterDoc(),
-      id: "c1",
-      shared: false,
-      revision: 6,
-      playStateVersion: 1 as const,
-    };
+    const full = { ...makeCharacterDoc(), id: "c1", shared: false, revision: 6 };
     // Another device advanced the parent between the read and the publish.
     harness.getDoc.mockResolvedValue(
       snapshot("c1", { ...parentData(full), revision: 7 })
@@ -634,63 +566,53 @@ describe("play-state v1 persistence cutover", () => {
     ).toBe(true);
   });
 
-  it("rejects sharing through the generic metadata writer", async () => {
-    await expect(updateCharacter("u1", "c1", { shared: true })).rejects.toThrow(
-      "ownership-aware persistence boundary"
+  it("hydration fails closed on a missing child and on a child without playState", async () => {
+    const parent = parentData(makeCharacterDoc());
+    const childless = (child: Record<string, unknown> | null) =>
+      harness.getDoc.mockImplementation((ref: { path: string }) =>
+        Promise.resolve(
+          ref.path.endsWith("/combat/state")
+            ? snapshot("state", child)
+            : snapshot("c1", parent)
+        )
+      );
+
+    childless(null);
+    await expect(getFullCharacter("u1", "c1")).rejects.toThrow("missing-combat-state");
+
+    // A pre-cutover child shape (the combat core with no `playState`) is refused by
+    // the strict reader rather than loaded as a session-less character.
+    childless({
+      hp: { current: 1, temp: 0 },
+      conditions: [],
+      initiativeRoll: null,
+      deathSaves: { successes: 0, failures: 0 },
+    });
+    await expect(getFullCharacter("u1", "c1")).rejects.toThrow("invalid-v1-play-state");
+  });
+
+  it("quarantines a parent that still carries a play session", async () => {
+    const stale = { ...parentData(makeCharacterDoc()), state: { notes: "stale" } };
+    harness.getDoc.mockImplementation((ref: { path: string }) =>
+      Promise.resolve(
+        ref.path.endsWith("/combat/state")
+          ? snapshot("state", null)
+          : snapshot("c1", stale)
+      )
     );
+    await expect(getFullCharacter("u1", "c1")).rejects.toThrow("parent-state-not-empty");
+  });
+
+  it("keeps every play-state and sharing write behind the play-aware boundary", async () => {
+    for (const patch of [
+      { shared: true },
+      { session: makeCharacterDoc().session },
+      { ...makeCharacterDoc() },
+    ]) {
+      await expect(updateCharacter("u1", "c1", patch)).rejects.toThrow(
+        "ownership-aware persistence boundary"
+      );
+    }
     expect(harness.getDoc).not.toHaveBeenCalled();
-  });
-
-  it("rejects a missing marked child but retains the legacy absent/full-HP contract", async () => {
-    const full = makeCharacterDoc();
-    const marked = parentData(full);
-    harness.getDoc.mockImplementation((ref: { path: string }) =>
-      Promise.resolve(
-        ref.path.endsWith("/combat/state")
-          ? snapshot("state", null)
-          : snapshot("c1", marked)
-      )
-    );
-    await expect(getFullCharacter("u1", "c1")).rejects.toThrow("missing-v1-combat-state");
-
-    const envelope = serializeCharacterEnvelope(full);
-    harness.getDoc.mockImplementation((ref: { path: string }) =>
-      Promise.resolve(
-        ref.path.endsWith("/combat/state")
-          ? snapshot("state", null)
-          : snapshot("c1", {
-              ...envelope,
-              shared: false,
-              revision: 0,
-              status: "active",
-              createdAt: new harness.Timestamp(new Date("2026-01-01")),
-              updatedAt: new harness.Timestamp(new Date("2026-01-02")),
-            })
-      )
-    );
-    const legacy = await getFullCharacter("u1", "c1");
-    expect(legacy?.playStateVersion).toBeUndefined();
-    expect(legacy?.session.hp.current).toBeGreaterThan(0);
-  });
-
-  it("rejects an incomplete parent-session write", async () => {
-    await expect(
-      updateCharacter("u1", "c1", { session: makeCharacterDoc().session })
-    ).rejects.toThrow("ownership-aware persistence boundary");
-  });
-
-  it("cannot publish the v1 ownership marker as metadata without its child", async () => {
-    await expect(updateCharacter("u1", "c1", { playStateVersion: 1 })).rejects.toThrow(
-      "ownership-aware persistence boundary"
-    );
-  });
-
-  it("keeps complete play-state writes behind the ownership-aware autosave", async () => {
-    await expect(
-      updateCharacter("u1", "c1", {
-        ...makeCharacterDoc(),
-        playStateVersion: 1,
-      })
-    ).rejects.toThrow("ownership-aware persistence boundary");
   });
 });

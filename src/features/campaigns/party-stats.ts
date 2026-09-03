@@ -259,12 +259,7 @@ export function hydrateMemberDoc(
     activeFeatures: doc.session.activeFeatures,
     grantBundleChoices: doc.session.grantBundleChoices,
   });
-  const hydrated = applyCombatToSession(
-    doc.session,
-    combat,
-    max,
-    doc.playStateVersion === 1 ? 1 : "legacy"
-  );
+  const hydrated = applyCombatToSession(doc.session, combat, max);
   return hydrated.ok ? { ...doc, session: hydrated.session } : null;
 }
 

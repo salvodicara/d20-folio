@@ -47,16 +47,15 @@
  * replica (`dev-document-store`): optimistic echoes, reload survival, and cross-tab
  * snapshots stay testable without touching Firebase.
  */
-import { doc, onSnapshot, setDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { DEV_BYPASS_AUTH as IMPORTED_DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
-  readDevDocument,
   subscribeDevDocument,
   updateDevDocument,
   writeDevDocument,
 } from "@/lib/dev-document-store";
-import type { CombatState, PersistedTurnEconomy } from "@/types/combat-state";
+import type { CombatState } from "@/types/combat-state";
 import { parseCombatState } from "@/lib/combat-state-codec";
 import { parsePersistedPlayStateV1 } from "@/lib/session-state-codec";
 import { diagnosticsLog } from "@/lib/diagnostics";
@@ -233,37 +232,4 @@ export function updateDevCombatState(
         update(parsedCombatState(current as unknown as Record<string, unknown>))
       )
   );
-}
-
-/**
- * Persist the high-frequency turn budget without replacing peer-owned combat fields.
- * A merge write remains offline-queueable while limiting its last-write-wins surface to
- * `round + turnEconomy`, so a navigation/action update cannot resurrect HP or conditions
- * that another participant just changed through the campaign transaction.
- */
-export async function writeCombatTurnEconomy(
-  uid: string,
-  charId: string,
-  round: number,
-  turnEconomy: PersistedTurnEconomy
-): Promise<void> {
-  if (devBypassEnabled()) {
-    const id = devCombatId(uid, charId);
-    const current = readDevDocument<Record<string, unknown>>(DEV_COMBAT_COLLECTION, id);
-    if (current) {
-      writeDevDocument(
-        DEV_COMBAT_COLLECTION,
-        id,
-        combatStateForDevWrite({ ...parsedCombatState(current), round, turnEconomy })
-      );
-    }
-    return;
-  }
-  // Update-only: a partial turn payload must never CREATE a malformed play owner
-  // (historically `setDoc(..., {merge:true})` could synthesize a 0-HP document).
-  await updateDoc(combatStateRef(uid, charId), {
-    round,
-    turnEconomy,
-    updatedAt: serverTimestamp(),
-  });
 }

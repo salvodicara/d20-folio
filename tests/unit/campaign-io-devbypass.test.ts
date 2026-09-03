@@ -63,7 +63,12 @@ import {
   readDevDocument,
   writeDevDocument,
 } from "@/lib/dev-document-store";
+import { sessionToPlayStateV1 } from "@/lib/session-state-codec";
+import { sanitizeSession } from "@/lib/sanitize-session";
 import type { CombatState } from "@/types/combat-state";
+
+/** Every stored `combat/state` is a v1 play owner. */
+const PLAY_STATE = sessionToPlayStateV1(sanitizeSession({}));
 
 describe("campaign-io under dev bypass", () => {
   beforeEach(() => {
@@ -95,6 +100,7 @@ describe("campaign-io under dev bypass", () => {
       deathSaves: { successes: 0, failures: 1 },
       round: 2,
       recentActions: [],
+      playState: PLAY_STATE,
     };
     writeDevDocument("combat-state", "a/char-a", stored);
 
@@ -606,6 +612,7 @@ const defaultDevCombatState: CombatState = {
   deathSaves: { successes: 0, failures: 0 },
   round: 1,
   recentActions: [],
+  playState: PLAY_STATE,
 };
 
 describe("makeDevCampaign fixture", () => {

@@ -60,7 +60,13 @@ vi.mock("@/lib/firebase", () => ({ db: {} }));
 
 import { RosterPage } from "@/features/roster/RosterPage";
 import { CharacterCard } from "@/features/roster/CharacterCard";
-import { rosterProjectionFromDoc, cacheToRosterDoc } from "@/lib/character-cache";
+import {
+  rosterProjectionFromDoc,
+  cacheToRosterDoc,
+  applyCombatToRosterDoc,
+} from "@/lib/character-cache";
+import { sessionToCombatState } from "@/lib/combat-state";
+import { sanitizeSession } from "@/lib/sanitize-session";
 import { isCharacterDead } from "@/lib/character-status";
 
 /** Project the canonical mock down to the roster's SRD-free {@link RosterCharacterDoc}
@@ -330,14 +336,14 @@ describe("CharacterCard", () => {
     expect(screen.queryByText(/fallen in battle/i)).not.toBeInTheDocument();
   });
 
-  it("RA-21 — cacheToRosterDoc surfaces Exhaustion-6 death from the parent state (prod == dev)", () => {
-    // The prod roster projection reads ONLY `data.cache`, so without piping
-    // `state.exhaustion` the tile would show Fallen in dev/tests but not in prod.
-    // This pins the plumbing: the projected session carries the Exhaustion level,
-    // and the shared predicate fires.
+  it("RA-21 — Exhaustion-6 death reaches the tile through the live play subdoc", () => {
+    // The prod roster projection reads ONLY `data.cache`, and the parent `state` is
+    // always empty — so Exhaustion, a play fact, arrives with the `combat/state`
+    // overlay. This pins that plumbing: the hydrated session carries the level, and
+    // the shared predicate fires.
     const partial = cacheToRosterDoc(
       "ex6",
-      { cache: { name: "Ashfallen" }, state: { exhaustion: 6 } },
+      { cache: { name: "Ashfallen" }, state: {} },
       {
         createdAt: new Date(0),
         updatedAt: new Date(0),
@@ -347,8 +353,14 @@ describe("CharacterCard", () => {
       }
     );
     if (!partial) throw new Error("expected a roster doc for a valid cache");
-    expect(partial.session.exhaustion).toBe(6);
-    expect(isCharacterDead(partial.status, partial.session)).toBe(true);
+    expect(partial.session.exhaustion).toBe(0);
+
+    const live = applyCombatToRosterDoc(
+      partial,
+      sessionToCombatState(sanitizeSession({ exhaustion: 6 }))
+    );
+    expect(live.session.exhaustion).toBe(6);
+    expect(isCharacterDead(live.status, live.session)).toBe(true);
   });
 
   it("tags the portrait with the class domain pigment via data-class", () => {

@@ -19,8 +19,9 @@
  * hydrated through the EXACT app path — `parseCharacterEnvelope` (which applies the
  * tracker-id remap, the race-trait id conformance and the log concentration
  * normalization), then `effectiveMaxHp` over the hydrated character+session, then
- * `applyCombatToSession` — and the projected child is finally PROVEN to satisfy the
- * strict v1 `parseCombatState` the app reads it back with. Nothing is written that
+ * `applyLegacyCombatToSession` (the pre-cutover trio merge, which dies with this
+ * script in P3) — and the projected child is finally PROVEN to satisfy the strict v1
+ * `parseCombatState` the app reads it back with. Nothing is written that
  * the app could not then load.
  *
  * What this migration deliberately does NOT touch:
@@ -174,22 +175,23 @@ interface SessionCodecModule {
 }
 
 interface CombatStateCodecModule {
+  /** The STRICT app reader: a present child must carry a valid v1 `playState`. */
   parseCombatState: (
     data: unknown
-  ) =>
-    | { ok: true; ownership: "legacy" | "v1"; state: ParsedCombatState }
-    | { ok: false; reason: string };
+  ) => { ok: true; state: ParsedCombatState } | { ok: false; reason: string };
+  /** The PRE-CUTOVER reader; dies in P3 together with this script. */
+  parseLegacyCombatChild: (
+    data: unknown
+  ) => { ok: true; state: ParsedCombatState } | { ok: false; reason: string };
 }
 
 interface CombatStateModule {
-  applyCombatToSession: (
+  /** The PRE-CUTOVER hydration; dies in P3 together with this script. */
+  applyLegacyCombatToSession: (
     session: OpaqueSession,
     combat: ParsedCombatState | null,
-    effectiveMax: number,
-    // Task 8 drops this argument (and this script's call site with it) once the
-    // unmarked-legacy representation is gone.
-    ownership: "legacy" | 1
-  ) => { ok: true; session: OpaqueSession } | { ok: false; reason: string };
+    effectiveMax: number
+  ) => OpaqueSession;
   sessionToCombatState: (session: OpaqueSession) => ParsedCombatState;
 }
 
@@ -232,15 +234,15 @@ const { sessionToPlayStateV1, parsePersistedPlayStateV1 } = (await engineModule(
   "Session codec"
 )) as unknown as SessionCodecModule;
 
-const { parseCombatState } = (await engineModule(
+const { parseCombatState, parseLegacyCombatChild } = (await engineModule(
   "combat-state-codec.ts",
-  ["parseCombatState"],
+  ["parseCombatState", "parseLegacyCombatChild"],
   "Combat state codec"
 )) as unknown as CombatStateCodecModule;
 
-const { applyCombatToSession, sessionToCombatState } = (await engineModule(
+const { applyLegacyCombatToSession, sessionToCombatState } = (await engineModule(
   "combat-state.ts",
-  ["applyCombatToSession", "sessionToCombatState"],
+  ["applyLegacyCombatToSession", "sessionToCombatState"],
   "Combat state"
 )) as unknown as CombatStateModule;
 
@@ -454,7 +456,7 @@ function planFamily(family: CharacterFamily, updatedAt: Timestamp): FamilyPlan {
   }
 
   const child = family.child;
-  const storedChild = child ? parseCombatState(child.data) : undefined;
+  const storedChild = child ? parseLegacyCombatChild(child.data) : undefined;
   if (child && storedChild && !storedChild.ok) {
     return quarantine(child.path, "invalid-child", `combat/state ${storedChild.reason}`);
   }
@@ -514,15 +516,8 @@ function planFamily(family: CharacterFamily, updatedAt: Timestamp): FamilyPlan {
     );
   }
   const combat = storedChild?.ok ? storedChild.state : null;
-  const hydrated = applyCombatToSession(parsed.session, combat, hpMax, "legacy");
-  if (!hydrated.ok) {
-    return quarantine(
-      child?.path ?? path,
-      "invalid-child",
-      `Hydration refused the combat/state child: ${hydrated.reason}`
-    );
-  }
-  const playState = sessionToPlayStateV1(hydrated.session);
+  const hydratedSession = applyLegacyCombatToSession(parsed.session, combat, hpMax);
+  const playState = sessionToPlayStateV1(hydratedSession);
 
   // DRIFT GUARD (belt and braces behind the composition assertion in `run()`). The
   // codec chain is SRD-free except one boundary: `normalizeConcentrationRef` marks a
@@ -574,7 +569,7 @@ function planFamily(family: CharacterFamily, updatedAt: Timestamp): FamilyPlan {
     );
     documents.push(documentPlan(child.path, "child", child.data, childAfter));
   } else {
-    childAfter = combatStateWriteData(sessionToCombatState(hydrated.session), updatedAt);
+    childAfter = combatStateWriteData(sessionToCombatState(hydratedSession), updatedAt);
     documents.push(documentPlan(`${path}/combat/state`, "child", {}, childAfter));
   }
 
@@ -582,13 +577,11 @@ function planFamily(family: CharacterFamily, updatedAt: Timestamp): FamilyPlan {
   // satisfy the STRICT v1 reader the app loads it back with. A `combat/state` the
   // app cannot parse is a character the owner cannot open.
   const reread = parseCombatState(childAfter);
-  if (!reread.ok || reread.ownership !== "v1") {
+  if (!reread.ok) {
     return quarantine(
       child?.path ?? `${path}/combat/state`,
       "non-canonical-child",
-      `The projected combat/state would not parse strictly: ${
-        reread.ok ? "not a v1 owner" : reread.reason
-      }`
+      `The projected combat/state would not parse strictly: ${reread.reason}`
     );
   }
 

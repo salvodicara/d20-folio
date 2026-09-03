@@ -66,51 +66,18 @@ describe("dev document store", () => {
     expect(readDevDocument("campaigns", "c1")).toEqual({ round: 3, name: "Keep" });
   });
 
-  it("keeps combat fields out of the parent and preserves the live trio on merge", () => {
-    const seed = structuredClone(MOCK_CHARACTER);
-    seed.session.hp = { current: 7, temp: 3 };
-    seed.session.conditions = ["frightened"];
-    seed.session.notes = "persist me";
-    const parent = projectDevCharacterParent(seed);
+  it("stores no mutable session facts on a dev parent, and rejects one that does", () => {
+    const doc = structuredClone(MOCK_CHARACTER);
+    doc.session.notes = "child-owned";
+    doc.session.hp = { current: 3, temp: 4 };
 
-    expect(parent.session).not.toHaveProperty("hp");
-    expect(parent.session).not.toHaveProperty("conditions");
-    const live = structuredClone(MOCK_CHARACTER);
-    live.session.hp = { current: 19, temp: 0 };
-    live.session.conditions = ["prone"];
-    const merged = mergeDevCharacterParent(live, parent);
-    expect(merged.session.hp).toEqual({ current: 19, temp: 0 });
-    expect(merged.session.conditions).toEqual(["prone"]);
-    expect(merged.session.notes).toBe("persist me");
-  });
-
-  it("stores no mutable session facts on a marked dev parent", () => {
-    const marked = {
-      ...structuredClone(MOCK_CHARACTER),
-      playStateVersion: 1 as const,
-    };
-    marked.session.notes = "child-owned";
-    marked.session.hp = { current: 3, temp: 4 };
-
-    const parent = projectDevCharacterParent(marked);
-    expect(parent.playStateVersion).toBe(1);
-    expect(parent.session).toEqual({});
-  });
-
-  it("rejects a corrupt dev ownership marker", () => {
+    expect(projectDevCharacterParent(doc).session).toEqual({});
     expect(() =>
       mergeDevCharacterParent(structuredClone(MOCK_CHARACTER), {
         ...projectDevCharacterParent(structuredClone(MOCK_CHARACTER)),
-        playStateVersion: 2,
-      } as never)
-    ).toThrow("ownership marker");
-    expect(() =>
-      mergeDevCharacterParent(structuredClone(MOCK_CHARACTER), {
-        ...projectDevCharacterParent(structuredClone(MOCK_CHARACTER)),
-        playStateVersion: 1,
         session: { notes: "stale" },
       })
-    ).toThrow("mutable session state");
+    ).toThrow("parent-state-not-empty");
   });
 
   it("clears replica keys", () => {

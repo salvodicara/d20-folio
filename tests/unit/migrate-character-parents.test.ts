@@ -167,9 +167,8 @@ describe("legacy parent cutover", () => {
       planParentCutover([family(legacyParent({ notes: "n" }))], STAMP),
     ]) {
       expect(planned.issues).toEqual([]);
-      const parsed = parseCombatState(projectedChild(planned));
-      expect(parsed.ok).toBe(true);
-      expect(parsed.ok && parsed.ownership).toBe("v1");
+      // The STRICT reader accepts it only when it carries a valid v1 `playState`.
+      expect(parseCombatState(projectedChild(planned)).ok).toBe(true);
     }
   });
 

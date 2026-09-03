@@ -546,12 +546,6 @@ export interface CharacterDoc {
    */
   shared: boolean;
   /**
-   * Firestore ownership marker: when present, all mutable play-session facts are
-   * owned by the versioned `combat/state` subdoc. Metadata only — the portable
-   * v3 character codec never serializes it.
-   */
-  playStateVersion?: 1;
-  /**
    * Monotonic parent-document generation (design §5.3). Every build/state/cache write
    * carries exactly `revision + 1` and the Firestore rules enforce that compare-and-set,
    * so a queued OFFLINE write that raced another device is rejected on reconnect

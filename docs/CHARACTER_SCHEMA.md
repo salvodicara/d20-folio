@@ -69,7 +69,9 @@ The **stored Firestore character document is the SAME `{ schema, build, state }`
 export** (no portrait `meta` — Firestore keeps the portrait as a Storage URL), plus Firestore-only
 metadata. One codec (`serializeCharacterEnvelope`/`parseCharacterEnvelope` in `character-codec.ts`, the
 shared core of `serializeCharacter`/`parseCharacter`) serializes/parses both, so the persisted and
-exported forms can never drift (the `state` is byte-identical):
+exported forms can never drift. One P1 difference: in Firestore the parent `state` is ALWAYS `{}` —
+the whole mutable play session lives in `combat/state.playState` (design §5.3), and the self-contained
+portable export still carries it inline:
 
 ```jsonc
 {
@@ -77,9 +79,11 @@ exported forms can never drift (the `state` is byte-identical):
   "build": {
     /* … */
   },
-  "state": {
-    /* … */
-  }, // == the export core
+  "state": {}, // ALWAYS {} in Firestore: the play session is
+  //   `combat/state.playState`. The portable EXPORT still
+  //   carries the compact session here. A stored parent that
+  //   still holds one quarantines as `parent-state-not-empty`
+  //   (`firestore.rules` denies the write too).
   "attachedCampaignId": "<campId>", // The ONE-campaign claim (written atomically by the
   //   attach transaction) — ALSO the cross-user access root:
   //   firestore.rules derives every peer/DM grant LIVE from it
@@ -444,13 +448,13 @@ absent.
 
 P1 cutover (`scripts/migrate-character-parents.ts`): every live parent is v1 (`state: {}`, the play
 session lives in `combat/state.playState`), every character has a `combat/state` child, every parent
-carries `revision`. After P1, `playStateVersion: 1` is still READ — by `src/lib/firestore.ts` and by
-`firestore.rules` — until Task 8 removes those reads; from then it is a dead stored field, and the P3
-`combat/state` v2 migration deletes it.
+carries `revision`. The client and `firestore.rules` are now v1-ONLY: nothing reads `playStateVersion`,
+so the stored field is DEAD from P1 on and the P3 `combat/state` v2 migration deletes it. The script
+still stamps it while it runs, so a not-yet-upgraded client keeps working during the rollout.
 
-Until that script has run on production, a historical schema-3 parent that does not yet carry the
-marker remains writable in its established mode: non-combat session facts such as spent spell slots
-stay in the parent `state`, while the combat trio stays in `combat/state`.
+The script must therefore run on production BEFORE the P1 client deploys: an unmigrated parent (no
+`revision`, or a session still in `state`) quarantines on read rather than loading, and a character
+with no `combat/state` child fails closed (`missing-combat-state`).
 
 The script is read-only by default and follows the ADR-0009 protocol shared with
 `scripts/migrate-custom-identity.ts` (`--check` proves the corpus migrated; `--apply --backup <dir>` is
@@ -459,7 +463,9 @@ the only write mode). What it guarantees:
 - **The plan is what the client would have written.** A legacy family is hydrated through the exact app
   path — `parseCharacterEnvelope` (tracker-id remap, race-trait id conformance, log concentration
   normalization), then `effectiveMaxHp` over the hydrated character+session, then
-  `applyCombatToSession` — and the projected `combat/state` is finally re-parsed with the strict v1
+  `applyLegacyCombatToSession` (the pre-cutover trio merge, which — like the codec's
+  `parseLegacyCombatChild` — exists ONLY for this script and dies with it in P3) — and the projected
+  `combat/state` is finally re-parsed with the strict v1
   `parseCombatState` the app reads it back with (`non-canonical-child` when it would not). Nothing is
   written that the app could not then load.
 - **The created child starts at the app's effective maximum HP**, so an hp-flat grant active in the

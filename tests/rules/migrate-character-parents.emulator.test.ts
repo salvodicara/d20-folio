@@ -179,9 +179,8 @@ describe("legacy parent cutover apply path (emulator)", () => {
     expect(woundedChild?.turnEconomy).toBeUndefined();
     expect(woundedChild?.pendingConcentrationSaves).toBeUndefined();
     expect(woundedChild?.appliedEncounterEffects).toEqual({ epoch: 2, ids: ["e1"] });
-    const rereadWounded = parseCombatState(woundedChild);
-    expect(rereadWounded.ok).toBe(true);
-    expect(rereadWounded.ok && rereadWounded.ownership).toBe("v1");
+    // The STRICT reader accepts it only when it carries a valid v1 `playState`.
+    expect(parseCombatState(woundedChild).ok).toBe(true);
 
     const fresh = (await db.doc(FRESH).get()).data();
     expect(fresh?.playStateVersion).toBe(1);

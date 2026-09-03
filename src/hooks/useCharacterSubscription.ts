@@ -35,16 +35,8 @@ import {
   type CharacterSnapshotReconciler,
 } from "@/lib/character-snapshot-reconciler";
 import { serializeCharacterEnvelope } from "@/lib/character-codec";
-import {
-  subscribeCombatState,
-  writeCombatState,
-  writeCombatTurnEconomy,
-} from "@/lib/combat-state-io";
-import {
-  nonCombatSessionChanged,
-  combatTrioDiffers,
-  sessionToCombatState,
-} from "@/lib/combat-state";
+import { subscribeCombatState, writeCombatState } from "@/lib/combat-state-io";
+import { combatTrioDiffers, sessionToCombatState } from "@/lib/combat-state";
 import { loadLogFromIDB } from "@/lib/log-persistence";
 import { diagnosticsLog, setDiagnosticsContext } from "@/lib/diagnostics";
 import { normalizeLogEntry } from "@/lib/sanitize-session";
@@ -221,16 +213,10 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           storageId
         );
         // A new replica crosses the ownership boundary child-first, then exposes the
-        // marked parent. There is never an observable marked parent without its complete
-        // play document. Existing unmarked replicas remain legacy-compatible.
+        // parent. There is never an observable parent without its complete play document.
         if (!persisted) {
-          const markedSeed = { ...seed, playStateVersion: 1 as const };
-          void writeCombatState(
-            uid,
-            id,
-            sessionToCombatState(markedSeed.session, seedRound)
-          );
-          persisted = projectDevCharacterParent(markedSeed);
+          void writeCombatState(uid, id, sessionToCombatState(seed.session, seedRound));
+          persisted = projectDevCharacterParent(seed);
           writeDevDocument(DEV_CHARACTER_COLLECTION, storageId, persisted);
         }
 
@@ -257,11 +243,6 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         };
         const writeComplete = (state: CombatState): void => {
           if (!persistenceEnabled) return;
-          const marked = useCharacterStore.getState().character?.playStateVersion === 1;
-          if (!marked) {
-            persistDevChild(state);
-            return;
-          }
           pendingState = state;
           if (playWriteQueued) return;
           playWriteQueued = true;
@@ -272,11 +253,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
             if (next && persistenceEnabled) persistDevChild(next);
           });
         };
-        useCharacterStore.getState().setCombatPersistence({
-          write: writeComplete,
-          writeTurnEconomy: (round, turnEconomy) =>
-            void writeCombatTurnEconomy(uid, id, round, turnEconomy),
-        });
+        useCharacterStore.getState().setCombatPersistence({ write: writeComplete });
 
         const quarantine = (message: string): void => {
           if (quarantined) return;
@@ -305,16 +282,13 @@ export function useCharacterSubscription(characterId: string | undefined): void 
             quarantine(error instanceof Error ? error.message : String(error));
             return;
           }
-          if (parent.playStateVersion === 1 && latestCombat === undefined) return;
+          if (latestCombat === undefined) return;
           isFromServerRef.current = true;
           let loaded: boolean;
           try {
-            loaded =
-              latestCombat === undefined
-                ? (setCharacter(parent), true)
-                : useCharacterStore
-                    .getState()
-                    .loadCharacterWithCombat(parent, latestCombat, false);
+            loaded = useCharacterStore
+              .getState()
+              .loadCharacterWithCombat(parent, latestCombat, false);
           } catch (error) {
             quarantine(error instanceof Error ? error.message : String(error));
             return;
@@ -468,11 +442,6 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     };
     const writeCompletePlayState = (state: CombatState): void => {
       if (!persistenceEnabled) return;
-      const marked = useCharacterStore.getState().character?.playStateVersion === 1;
-      if (!marked) {
-        persistChild(state);
-        return;
-      }
       pendingPlayWrite = state;
       if (playWriteQueued) return;
       playWriteQueued = true;
@@ -485,8 +454,6 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     };
     const persistence: CombatPersistence = {
       write: writeCompletePlayState,
-      writeTurnEconomy: (round, turnEconomy) =>
-        void writeCombatTurnEconomy(uid, characterId, round, turnEconomy).catch(logWrite),
     };
     useCharacterStore.getState().setCombatPersistence(persistence);
     // T4 — the lazy attached-campaign resolver for the DM-sheet fan-out (one
@@ -560,9 +527,8 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         quarantine("Character not found");
         return;
       }
-      const marked = lastParent.playStateVersion === 1;
-      if (marked && lastCombat === undefined) return;
-      if (marked && lastCombat === null) {
+      if (lastCombat === undefined) return;
+      if (lastCombat === null) {
         quarantine("Invalid play state: missing-v1-combat-state");
         return;
       }
@@ -571,12 +537,9 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       isFromCombatRef.current = true;
       let loaded: boolean;
       try {
-        loaded =
-          lastCombat === undefined
-            ? (setCharacter(lastParent), true)
-            : useCharacterStore
-                .getState()
-                .loadCharacterWithCombat(lastParent, lastCombat, false);
+        loaded = useCharacterStore
+          .getState()
+          .loadCharacterWithCombat(lastParent, lastCombat, false);
       } catch (error) {
         quarantine(error instanceof Error ? error.message : String(error));
         return;
@@ -602,7 +565,6 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       const cur = useCharacterStore.getState().character;
       if (!cur || cur.id !== characterId || !combat) return false;
       if (combatTrioDiffers(cur.session, combat)) return true;
-      if (cur.playStateVersion !== 1) return false;
       if (!combat.playState) return true;
       return (
         JSON.stringify(canonicalJson(sessionToPlayStateV1(cur.session))) !==
@@ -692,26 +654,22 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         return;
       }
 
-      const marked = state.character.playStateVersion === 1;
       const sessionChanged = prevState.character.session !== state.character.session;
       const buildChanged = state.character.character !== prevState.character.character;
+      // The parent's stored `cache` is derived from build + session, so a session edit
+      // that moves a derived value still needs a parent write.
       const cacheChanged =
-        marked &&
         sessionChanged &&
         (effectiveAC(prevState.character.character, prevState.character.session) !==
           effectiveAC(state.character.character, state.character.session) ||
           effectiveMaxHp(prevState.character.character, prevState.character.session) !==
             effectiveMaxHp(state.character.character, state.character.session));
-      const parentChanged =
-        buildChanged ||
-        cacheChanged ||
-        (!marked &&
-          nonCombatSessionChanged(prevState.character.session, state.character.session));
+      const parentChanged = buildChanged || cacheChanged;
 
       // In v1 every mutable SessionState field lives in the complete child. Explicit
       // combat mutators call the same seam; its microtask coalescer collapses both
       // routes into one write for a composite command.
-      if (marked && sessionChanged) state.persistPlayState();
+      if (sessionChanged) state.persistPlayState();
 
       if (parentChanged) {
         if (devBypassEnabled()) {
@@ -774,7 +732,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       }
 
       // T4 fan-out reflects the complete live sheet and therefore follows any
-      // session/build edit even when a marked session edit correctly skips the parent.
+      // session/build edit even when a play-only session edit correctly skips the parent.
       if (sessionChanged || buildChanged) {
         const owner = useAuthStore.getState().user?.uid;
         const tracker = attachedCampaignsRef.current;

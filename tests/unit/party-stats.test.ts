@@ -19,6 +19,7 @@ import {
 } from "@/features/campaigns/party-stats";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { ALL_ABILITIES } from "@/lib/compute";
+import { sessionToPlayStateV1 } from "@/lib/session-state-codec";
 import type { CombatState } from "@/types/combat-state";
 
 describe("derivePartyMemberStats", () => {
@@ -67,6 +68,7 @@ describe("hydrateMemberDoc — combat/state subdoc is the sole source", () => {
       deathSaves: { successes: 0, failures: 1 },
       round: 1,
       recentActions: [],
+      playState: sessionToPlayStateV1(MOCK_CHARACTER.session),
     };
     const hydrated = hydrateMemberDoc(MOCK_CHARACTER, wounded);
     if (!hydrated) throw new Error("expected hydrated member");
@@ -78,7 +80,7 @@ describe("hydrateMemberDoc — combat/state subdoc is the sole source", () => {
 
   it("defaults to full HP when the subdoc is absent (a fresh/undamaged member)", () => {
     const hydrated = hydrateMemberDoc(MOCK_CHARACTER, null);
-    if (!hydrated) throw new Error("expected legacy absent-state hydration");
+    if (!hydrated) throw new Error("expected absent-state hydration");
     const stats = derivePartyMemberStats(hydrated);
     expect(stats.currentHp).toBe(stats.maxHp);
   });
@@ -93,6 +95,7 @@ describe("derivePcLive — initiative TOTAL = roll + bonus (the encounterInit ta
     deathSaves: { successes: 0, failures: 0 },
     round: 1,
     recentActions: [],
+    playState: sessionToPlayStateV1(MOCK_CHARACTER.session),
     ...over,
   });
 
@@ -121,9 +124,7 @@ describe("derivePcLive — initiative TOTAL = roll + bonus (the encounterInit ta
     expect(derivePcLive(MOCK_CHARACTER, null, null)?.initiative).toBeNull();
   });
 
-  it("does not fabricate v1 facts while play state is loading or absent", () => {
-    const marked = { ...MOCK_CHARACTER, playStateVersion: 1 as const };
-    expect(derivePcLive(marked, undefined, null)).toBeNull();
-    expect(derivePcLive(marked, null, null)).toBeNull();
+  it("does not fabricate facts while the play document is still loading", () => {
+    expect(derivePcLive(MOCK_CHARACTER, undefined, null)).toBeNull();
   });
 });

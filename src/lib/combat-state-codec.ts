@@ -6,8 +6,9 @@
  * so every reader of the stored shape uses ONE parser: the app through
  * `combat-state-io.ts`, which re-exports this module unchanged, and the one-off
  * admin migrations, which cannot import Firebase at all. Shape tolerance still lives
- * at the read edge — a present document must carry the complete legacy combat core,
- * and a malformed/partial one is never reinterpreted as a valid 0-HP character.
+ * at the read edge — a present document must carry the complete combat core AND its
+ * v1 `playState`, and a malformed/partial one is never reinterpreted as a valid 0-HP
+ * character.
  *
  * Behaviour is unchanged by the move; see `combat-state-io.ts` for the write seam,
  * the offline-first contract, and why the rules validate authorization only.
@@ -112,18 +113,37 @@ function presentFieldIsPlainJson(
 }
 
 export type CombatStateParseResult =
-  | { ok: true; ownership: "legacy" | "v1"; state: CombatState }
+  | { ok: true; state: CombatState }
   | {
       ok: false;
       reason: "invalid-combat-state" | "invalid-v1-play-state";
     };
 
 /**
- * Defensively parse a stored combat-state doc. A present document must carry the
- * complete legacy combat core; malformed/partial documents are never reinterpreted
- * as a valid 0-HP character.
+ * Defensively parse a stored `combat/state` doc — the SOLE play owner. A present
+ * document must carry the complete combat core AND a valid v1 `playState`; malformed,
+ * partial or play-state-less documents are never reinterpreted as a valid 0-HP
+ * character.
  */
 export function parseCombatState(data: unknown): CombatStateParseResult {
+  return parseStoredCombatState(data, false);
+}
+
+/**
+ * The PRE-CUTOVER read: a stored child that carries only the legacy combat core with no
+ * `playState` is still accepted (the parent `state` was the session then). Used ONLY by
+ * `scripts/migrate-character-parents.ts`.
+ *
+ * P3 deletion: this dies with that migration script. No app path may call it.
+ */
+export function parseLegacyCombatChild(data: unknown): CombatStateParseResult {
+  return parseStoredCombatState(data, true);
+}
+
+function parseStoredCombatState(
+  data: unknown,
+  allowMissingPlayState: boolean
+): CombatStateParseResult {
   if (!isRecord(data) || !isRecord(data.hp) || !isRecord(data.deathSaves)) {
     return { ok: false, reason: "invalid-combat-state" };
   }
@@ -155,7 +175,9 @@ export function parseCombatState(data: unknown): CombatStateParseResult {
     return { ok: false, reason: "invalid-combat-state" };
   }
   const playState =
-    data.playState === undefined ? null : parsePersistedPlayStateV1(data.playState);
+    allowMissingPlayState && data.playState === undefined
+      ? null
+      : parsePersistedPlayStateV1(data.playState);
   if (playState && !playState.ok) {
     return { ok: false, reason: "invalid-v1-play-state" };
   }
@@ -213,7 +235,7 @@ export function parseCombatState(data: unknown): CombatStateParseResult {
     ...(pendingConcentrationSaves.length ? { pendingConcentrationSaves } : {}),
     ...(playState?.ok ? { playState: playState.value } : {}),
   };
-  return { ok: true, ownership: playState ? "v1" : "legacy", state };
+  return { ok: true, state };
 }
 
 function parsePendingConcentrationSaves(value: unknown): PendingConcentrationSave[] {

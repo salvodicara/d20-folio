@@ -10,13 +10,12 @@
  *  - the initiative-ROLL STRING ↔ NUMBER conversion (cockpit keeps `""`/`"15"` as the
  *    raw d20 roll; the subdoc carries the canonical `null`/`15` on `initiativeRoll`);
  *  - the projection `session → CombatState` (what gets written);
- *  - the cheap change detectors the auto-save subscribers use to route a store
- *    transition to the RIGHT doc (combat slice → subdoc; everything else → parent).
+ *  - the trio-hydration math every reader folds a stored subdoc back through.
  *
- * The `combat/state` subdoc is the SOLE persisted home of the combat-mutable state:
- * the Firestore parent character doc carries NO combat slice (the serialization boundary
- * `toStoredPayload` omits {@link COMBAT_SESSION_KEYS} from `state`), and readers hydrate
- * the subdoc, falling to {@link defaultCombatState} (full HP) only when it is absent.
+ * The `combat/state` subdoc is the SOLE persisted home of the whole mutable play
+ * session: the Firestore parent character doc carries an EMPTY `state` (the
+ * serialization boundary `toStoredPayload` writes `{}`), and readers hydrate the subdoc,
+ * falling to {@link defaultCombatState} (full HP) only when it is absent.
  *
  * Kept out of `combat-state-io.ts` (which imports `firebase/firestore`) so the
  * store + tests can use it without pulling Firebase — and so it can sit on the
@@ -85,38 +84,6 @@ export function combatTrioDiffers(
   );
 }
 
-/**
- * The {@link SessionState} keys that move to the `combat/state` subdoc — identical to
- * the serialized `state` keys the Firestore parent doc must OMIT. Every OTHER session
- * field is persisted on the parent character doc. Listed once so the change detector
- * ({@link nonCombatSessionChanged}) and the parent-doc omission (`toStoredPayload`)
- * can't drift from the projection.
- */
-export const COMBAT_SESSION_KEYS = [
-  "hp",
-  "conditions",
-  "initiative",
-  "deathSucc",
-  "deathFail",
-  "bardicInspirationDie",
-  "inspiration",
-] as const satisfies ReadonlyArray<keyof SessionState>;
-
-const COMBAT_KEY_SET: ReadonlySet<string> = new Set(COMBAT_SESSION_KEYS);
-
-/**
- * Drop the combat slice from a SERIALIZED `state` map (the codec's `sessionToState`
- * output) — the Firestore parent-doc write omits it because the combat-mutable state
- * lives in the `combat/state` subdoc as its SOLE persisted home (golden rule 10). Pure;
- * reuses {@link COMBAT_SESSION_KEYS} (the serialized keys share the session names) so it
- * can't drift. The self-contained portable EXPORT keeps the trio inline (it has no subdoc).
- */
-export function omitCombatTrio(state: Record<string, unknown>): Record<string, unknown> {
-  return Object.fromEntries(
-    Object.entries(state).filter(([key]) => !COMBAT_KEY_SET.has(key))
-  );
-}
-
 /** Cockpit initiative-roll STRING → canonical NUMBER (`""`/non-numeric ⇒ `null`). */
 export function initiativeToNumber(value: string): number | null {
   if (value.trim() === "") return null;
@@ -163,14 +130,9 @@ export function sessionToCombatState(
   };
 }
 
-export type PlayStateOwnership = "legacy" | 1;
-
 export type CombatSessionHydrationResult =
   | { ok: true; session: SessionState }
-  | {
-      ok: false;
-      reason: "missing-v1-combat-state" | "invalid-v1-play-state";
-    };
+  | { ok: false; reason: "invalid-v1-play-state" };
 
 /**
  * Merge a {@link CombatState} subdoc (or its ABSENCE) onto an in-memory session — the
@@ -179,35 +141,61 @@ export type CombatSessionHydrationResult =
  * in-hub party/encounter live read. Pure: it takes `effectiveMax` as a NUMBER so it
  * never imports the SRD aggregate.
  *
- *  - With a `combat` doc: clamp current HP to `[0, effectiveMax]`, floor temp HP at 0,
- *    clamp each death-save count to `[0, 3]`, and convert the canonical numeric
- *    initiative back to the cockpit STRING.
- *  - With `combat === null` (an absent subdoc — a genuinely fresh/undamaged character):
- *    DEFAULT to FULL HP, empty conditions, blank initiative, zero death saves — never 0 HP.
+ *  - With a `combat` doc: it is the SOLE play owner, so it MUST carry a valid v1
+ *    `playState` — the whole session comes from there, then the trio is folded on top
+ *    (current HP clamped to `[0, effectiveMax]`, temp floored at 0, each death-save
+ *    count clamped to `[0, 3]`, canonical numeric initiative back to the cockpit STRING).
+ *    A doc without a parseable `playState` is an integrity failure, never a fresh char.
+ *  - With `combat === null` (an absent subdoc — the portable export, a dev fixture, the
+ *    roster baseline before the live subdoc lands): DEFAULT to FULL HP, empty conditions,
+ *    blank initiative, zero death saves — never 0 HP.
  */
 export function applyCombatToSession(
   session: SessionState,
+  combat: null,
+  effectiveMax: number
+): { ok: true; session: SessionState };
+export function applyCombatToSession(
+  session: SessionState,
   combat: CombatState | null,
-  effectiveMax: number,
-  ownership: PlayStateOwnership
+  effectiveMax: number
+): CombatSessionHydrationResult;
+export function applyCombatToSession(
+  session: SessionState,
+  combat: CombatState | null,
+  effectiveMax: number
 ): CombatSessionHydrationResult {
-  if (ownership === 1 && !combat) {
-    return { ok: false, reason: "missing-v1-combat-state" };
-  }
-  const parsedPlayState =
-    ownership === 1 && combat ? parsePersistedPlayStateV1(combat.playState) : null;
-  if (ownership === 1 && (!parsedPlayState || !parsedPlayState.ok)) {
-    return { ok: false, reason: "invalid-v1-play-state" };
-  }
-  const baseSession =
-    parsedPlayState?.ok === true
-      ? {
-          ...parsedPlayState.session,
-          ...(session.encounterEffects
-            ? { encounterEffects: session.encounterEffects }
-            : {}),
-        }
-      : session;
+  if (!combat) return { ok: true, session: mergeCombatTrio(session, null, effectiveMax) };
+  const parsedPlayState = parsePersistedPlayStateV1(combat.playState);
+  if (!parsedPlayState.ok) return { ok: false, reason: "invalid-v1-play-state" };
+  const baseSession = {
+    ...parsedPlayState.session,
+    ...(session.encounterEffects ? { encounterEffects: session.encounterEffects } : {}),
+  };
+  return { ok: true, session: mergeCombatTrio(baseSession, combat, effectiveMax) };
+}
+
+/**
+ * The PRE-CUTOVER hydration: the parent `state` is still the session and the
+ * `combat/state` child (when it exists at all) carries only the legacy combat core with
+ * no `playState`. Used ONLY by `scripts/migrate-character-parents.ts`, which must
+ * reproduce exactly what the client's own cutover would have written.
+ *
+ * P3 deletion: this dies with that migration script. No app path may call it.
+ */
+export function applyLegacyCombatToSession(
+  session: SessionState,
+  combat: CombatState | null,
+  effectiveMax: number
+): SessionState {
+  return mergeCombatTrio(session, combat, effectiveMax);
+}
+
+function mergeCombatTrio(
+  baseSession: SessionState,
+  combat: CombatState | null,
+  effectiveMax: number
+): SessionState {
   const clampDeath = (n: number): number => Math.max(0, Math.min(3, Math.round(n)));
   const trio = combat
     ? {
@@ -246,7 +234,7 @@ export function applyCombatToSession(
   // (conditions is `[]`, `invisible` is hydrated from the subdoc afterwards), so
   // a legitimately-hidden character would wrongly lose its DC.
   if (!merged.conditions.includes("invisible")) merged.hiddenDc = undefined;
-  return { ok: true, session: merged };
+  return merged;
 }
 
 /** The full-HP default for an ABSENT subdoc (a genuinely fresh/undamaged character):
@@ -396,23 +384,4 @@ export function setTempAbsolute(s: CombatState, temp: number): CombatState {
  *  table via `setEncounterInitiative`.) */
 export function setInitiativeAbsolute(s: CombatState, roll: number | null): CombatState {
   return { ...s, initiativeRoll: roll };
-}
-
-/**
- * Did any NON-combat session field change between two snapshots? Reference/value
- * compare over every key EXCEPT the combat slice. When true (or `character.character`
- * changed), the parent-doc writer persists the session (the serialization boundary
- * omits the combat slice) — so a combat-only change (an HP tap, a condition toggle) never
- * triggers a redundant parent write.
- */
-export function nonCombatSessionChanged(a: SessionState, b: SessionState): boolean {
-  const keys = new Set([
-    ...(Object.keys(a) as Array<keyof SessionState>),
-    ...(Object.keys(b) as Array<keyof SessionState>),
-  ]);
-  for (const key of keys) {
-    if (COMBAT_KEY_SET.has(key)) continue;
-    if (a[key] !== b[key]) return true;
-  }
-  return false;
 }

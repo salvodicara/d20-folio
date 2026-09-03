@@ -2308,17 +2308,21 @@ produced by `serializeCharacterEnvelope` (`src/lib/character-codec.ts`, the shar
 
 ### Combat-mutable state lives in a per-character subdoc (`combat/state`)
 
-The character's combat-mutable state — HP `{ current, temp }`, `conditions[]`, held Bardic Inspiration
-die, held Heroic Inspiration, death saves, the SOLO `round`, the SOLO `initiative` roll, and the FIFO of
-unresolved damage-triggered Concentration saves — has ONE persisted home: a
-per-character Firestore subdoc at
+The character's WHOLE mutable play session — HP `{ current, temp }`, `conditions[]`, held Bardic
+Inspiration die, held Heroic Inspiration, death saves, the SOLO `round`, the SOLO `initiative` roll, the
+FIFO of unresolved damage-triggered Concentration saves, AND every non-combat play fact (spell slots,
+trackers, notes, exhaustion, concentration, the engine world) under `playState: { version: 1, state }` —
+has ONE persisted home: a per-character Firestore subdoc at
 `users/{uid}/characters/{charId}/combat/state` (`CombatState`, `src/types/combat-state.ts`) — its SOLE
 representation (golden rule 10). A CAMPAIGN ENCOUNTER's initiative is NOT here — it lives in the
 campaign's `encounterInit` table (the initiative SSOT — see the dedicated bullet below). The subdoc is
 **physically absent from the parent character doc**: the Firestore serialization boundary
-(`toStoredPayload`) omits the trio from `state` via `omitCombatTrio`, so the parent `state` carries no
-HP/conditions/initiative/death-save/held-resource field. (The self-contained portable v3 EXPORT, which has no
-subdoc, still keeps the combat slice inline — see `docs/CHARACTER_SCHEMA.md`.) The subdoc is a tiny, SRD-free,
+(`toStoredPayload`) always writes `state: {}`, so the parent carries only `build` + `cache` + metadata,
+and `firestore.rules` denies any parent write that is not empty there. There is ONE shape: a present
+child MUST carry a valid `playState`, an ABSENT child is an integrity failure the reader quarantines
+(`missing-combat-state`) rather than a fresh full-HP character, and the pre-P1 unmarked-legacy readers
+are deleted. (The self-contained portable v3 EXPORT, which has no subdoc, still keeps the whole session
+inline — see `docs/CHARACTER_SCHEMA.md`.) The subdoc is a tiny, SRD-free,
 id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-state seam that touches
 `firebase/firestore`, kept light off the always-eager bundle.
 
@@ -2415,8 +2419,10 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
     casts and round damage flag live in optional
     `turnEconomy`. This makes a
     group↔sheet remount restore the SAME spent budget only when campaign/epoch/round/current-combatant still
-    match. Its high-frequency writer merges only `round + turnEconomy`, so navigation/action persistence
-    cannot overwrite HP or conditions another member committed concurrently. The IO contract is pinned by
+    match. It rides the ONE complete `combat/state` write like every other play fact — the separate
+    `round + turnEconomy` merge writer (`writeCombatTurnEconomy` / `CombatPersistence.writeTurnEconomy`)
+    is DELETED with the legacy parent-owned session, since the subscription's microtask coalescer already
+    collapses a burst into a single child write. The IO contract is pinned by
     a strict `parseCombatState(combatStateWriteData(state))` round-trip suite covering every slot/category,
     localized action-reference shape, cadence fact, outcome receipt, counter, flag and active-effect
     lifetime. At the untrusted read edge, malformed rows and empty identities are dropped, non-finite rolls

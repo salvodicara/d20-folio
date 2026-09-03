@@ -64,14 +64,12 @@ export function usePartyCombatStates(
             settle(uid, combat);
             return;
           }
+          // A dev replica whose play owner was never written yet: seed it from the
+          // fixture through the SAME projection production uses (v1 `playState` and
+          // all), then let the subscription deliver it like any other snapshot.
           seeded = true;
           void resolveDevDoc(characterId, uid).then((doc) => {
             if (cancelled) return;
-            if (doc.playStateVersion === 1) {
-              // A marked parent without its child is corruption, never a seed/default.
-              settle(uid, null);
-              return;
-            }
             void writeCombatState(
               uid,
               characterId,

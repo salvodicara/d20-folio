@@ -170,6 +170,9 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+/** Every stored `combat/state` is a v1 play owner. */
+const PLAY_STATE = { version: 1 as const, state: {} };
+
 describe("campaign-io — reviewed combat effects", () => {
   const encounter: EncounterState = {
     nextMonsterOrdinal: 2,
@@ -1247,6 +1250,7 @@ describe("campaign-io — reviewed combat effects", () => {
               deathSaves: { successes: 0, failures: 1 },
               round: 2,
               recentActions: [],
+              playState: PLAY_STATE,
             }),
           });
         },
@@ -1466,21 +1470,17 @@ describe("campaign-io — reviewed combat effects", () => {
   });
 
   it.each([
-    [
-      "missing",
-      { exists: (): boolean => false },
-      { status: "active", playStateVersion: 1 },
-    ],
+    ["missing", { exists: (): boolean => false }, { status: "active" }],
     [
       "malformed",
       {
         exists: (): boolean => true,
         data: () => ({ hp: {}, conditions: [], initiativeRoll: null, deathSaves: {} }),
       },
-      { status: "active", playStateVersion: 1 },
+      { status: "active" },
     ],
     [
-      "owned by an unknown marker version",
+      "present without its v1 play owner",
       {
         exists: (): boolean => true,
         data: () => ({
@@ -1490,7 +1490,7 @@ describe("campaign-io — reviewed combat effects", () => {
           deathSaves: { successes: 0, failures: 0 },
         }),
       },
-      { status: "active", playStateVersion: 2 },
+      { status: "active" },
     ],
   ])(
     "aborts a peer transaction when target play state is %s",
@@ -1592,7 +1592,7 @@ describe("campaign-io — reviewed combat effects", () => {
             if (path === "users/a/characters/char-a") {
               return Promise.resolve({
                 exists: () => true,
-                data: () => ({ status: "active", state: { concentration: "bless" } }),
+                data: () => ({ status: "active", state: {} }),
               });
             }
             return Promise.resolve({
@@ -1604,6 +1604,8 @@ describe("campaign-io — reviewed combat effects", () => {
                 deathSaves: { successes: 0, failures: 0 },
                 round: 2,
                 recentActions: [],
+                // Concentration is a PLAY fact: the child owns it, never the parent.
+                playState: { version: 1 as const, state: { concentration: "bless" } },
               }),
             });
           },
@@ -1728,6 +1730,7 @@ describe("campaign-io — reviewed combat effects", () => {
                   difficultyClass: 10,
                 },
               ],
+              playState: PLAY_STATE,
             }),
           });
         },
@@ -1913,6 +1916,7 @@ describe("campaign-io — reviewed combat effects", () => {
               round: 2,
               recentActions: [],
               appliedEffectIds: [],
+              playState: PLAY_STATE,
             }),
           });
         },
@@ -2271,6 +2275,7 @@ describe("campaign-io — persistent combat-effect operation log", () => {
                   deathSaves: { successes: 0, failures: 0 },
                   round: 1,
                   recentActions: [],
+                  playState: PLAY_STATE,
                 }),
               })
             : ref.__doc?.includes("characters")
@@ -2314,6 +2319,7 @@ describe("campaign-io — persistent combat-effect operation log", () => {
                   deathSaves: { successes: 0, failures: 0 },
                   round: 1,
                   recentActions: [],
+                  playState: PLAY_STATE,
                 }),
               })
             : ref.__doc?.includes("characters")

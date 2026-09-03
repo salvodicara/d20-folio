@@ -736,18 +736,11 @@ export async function advanceEncounterTurn(
     }
     // The mirrored `next` is the base the legacy effect-op deltas compose onto,
     // so an engine chip release and a persistent HP tick land in ONE write.
-    await applyPersistentCombatEffectOperations(
-      txn,
-      ref,
-      snap.data() as CampaignDoc,
-      next,
-      lifecycleOps,
-      {
-        "encounter.currentCombatantId": next.currentCombatantId,
-        "encounter.round": next.round,
-        ...engineFields,
-      }
-    );
+    await applyPersistentCombatEffectOperations(txn, ref, next, lifecycleOps, {
+      "encounter.currentCombatantId": next.currentCombatantId,
+      "encounter.round": next.round,
+      ...engineFields,
+    });
   });
 }
 
@@ -818,41 +811,16 @@ export interface DeclaredPcTargetSnapshot {
   defenses: DamageDefenses;
 }
 
-function storedCharacterState(data: unknown): Record<string, unknown> | null {
-  if (typeof data !== "object" || data === null) return null;
-  const record = data as Record<string, unknown>;
-  return typeof record.state === "object" && record.state !== null
-    ? (record.state as Record<string, unknown>)
-    : null;
-}
-
-function storedPlayStateOwnership(data: unknown): "legacy" | 1 {
-  if (typeof data !== "object" || data === null) {
-    throw new TypeError("Missing target character document");
-  }
-  const record = data as Record<string, unknown>;
-  if (!Object.hasOwn(record, "playStateVersion")) return "legacy";
-  if (record.playStateVersion === 1) return 1;
-  throw new TypeError("Invalid target play-state ownership marker");
-}
-
-/** Strict transaction read boundary. A marked parent may never fall back to an
- * absent or legacy-shaped combat document; a malformed present document always
+/** Strict transaction read boundary. The target's `combat/state` child is its SOLE
+ * play owner, so an absent one is corruption; a malformed present document always
  * aborts before any write is queued. */
-function storedTargetCombatState(data: unknown, parentData: unknown): CombatState | null {
+function storedTargetCombatState(data: unknown, parentData: unknown): CombatState {
   if (typeof parentData !== "object" || parentData === null) {
     throw new TypeError("Missing target character document");
   }
-  const ownership = storedPlayStateOwnership(parentData);
-  if (data === null) {
-    if (ownership === 1) throw new TypeError("Missing v1 target play state");
-    return null;
-  }
+  if (data === null) throw new TypeError("Missing v1 target play state");
   const parsed = parseCombatState(data);
   if (!parsed.ok) throw new TypeError(`Invalid target play state: ${parsed.reason}`);
-  if (ownership === 1 && parsed.ownership !== "v1") {
-    throw new TypeError("Missing v1 target play payload");
-  }
   return parsed.state;
 }
 
@@ -917,64 +885,19 @@ function peerCombatEffectPatch(
   return patch;
 }
 
-/** Commit one peer effect as a narrow compare-and-swap-visible mutation. Legacy
- * absent documents receive only the parseable core plus landed effect fields; a
- * marked-v1 absence has already failed closed at storedTargetCombatState(). */
+/** Commit one peer effect as a narrow compare-and-swap-visible mutation onto the
+ * target's existing play owner. An absent document has already failed closed at
+ * storedTargetCombatState(), and the rules deny a peer create outright. */
 function writePeerCombatEffect(
   txn: Transaction,
   ref: ReturnType<typeof combatStateRef>,
-  stored: CombatState | null,
   before: CombatState,
   after: CombatState
 ): boolean {
   const effect = peerCombatEffectPatch(before, after);
   if (Object.keys(effect).length === 0) return false;
-  if (stored) {
-    txn.set(
-      ref,
-      {
-        ...effect,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
-    return true;
-  }
-  txn.set(ref, {
-    hp: after.hp,
-    conditions: after.conditions,
-    ...(after.bardicInspirationDie !== undefined
-      ? { bardicInspirationDie: after.bardicInspirationDie }
-      : {}),
-    ...(after.heroicInspiration !== undefined
-      ? { heroicInspiration: after.heroicInspiration }
-      : {}),
-    initiativeRoll: null,
-    deathSaves: after.deathSaves,
-    ...(after.pendingConcentrationSaves?.length
-      ? { pendingConcentrationSaves: after.pendingConcentrationSaves }
-      : {}),
-    ...(after.appliedEncounterEffects
-      ? { appliedEncounterEffects: after.appliedEncounterEffects }
-      : {}),
-    updatedAt: serverTimestamp(),
-  });
+  txn.set(ref, { ...effect, updatedAt: serverTimestamp() }, { merge: true });
   return true;
-}
-
-function combatSeedForTarget(target: DeclaredPcTargetSnapshot): CombatState {
-  return {
-    ...defaultCombatState(target.maxHp),
-    hp: { current: target.currentHp, temp: target.tempHp },
-    conditions: [...target.conditions],
-    ...(target.bardicInspirationDie !== undefined
-      ? { bardicInspirationDie: target.bardicInspirationDie }
-      : {}),
-    ...(target.heroicInspiration !== undefined
-      ? { heroicInspiration: target.heroicInspiration }
-      : {}),
-    deathSaves: target.deathSaves ?? { successes: 0, failures: 0 },
-  };
 }
 
 export type CampaignCombatMutation =
@@ -1020,10 +943,9 @@ export async function writeCampaignCombatEffect(
   const fallback = preview ?? defaultCombatState(maxHp);
   if (devBypassEnabled()) {
     updateDevCombatState(uid, characterId, fallback, (current) => {
-      const localOwnership = current.playState
-        ? { status: "active", playStateVersion: 1 }
-        : { status: "active", state: {} };
-      return reduceCampaignCombatMutation(current, mutation, maxHp, localOwnership);
+      return reduceCampaignCombatMutation(current, mutation, maxHp, {
+        status: "active",
+      });
     });
     return;
   }
@@ -1035,18 +957,17 @@ export async function writeCampaignCombatEffect(
       txn.get(parentRef),
     ]);
     const parentData = parentSnap.exists() ? parentSnap.data() : null;
-    const stored = storedTargetCombatState(
+    const current = storedTargetCombatState(
       combatSnap.exists() ? combatSnap.data() : null,
       parentData
     );
-    const current = stored ?? defaultCombatState(maxHp);
     const next = reduceCampaignCombatMutation(current, mutation, maxHp, parentData);
-    writePeerCombatEffect(txn, combatRef, stored, current, next);
+    writePeerCombatEffect(txn, combatRef, current, next);
   });
 }
 
-/** Interpret lifecycle facts from their marker-selected owner. Missing parent docs
- * fail closed; omitted legacy state fields retain their canonical live defaults. */
+/** Interpret lifecycle facts from their canonical owner: `status` on the parent,
+ * exhaustion in the child's play state. A missing parent doc fails closed. */
 function storedCharacterLifecycleEligible(
   data: unknown,
   deathFailures: number,
@@ -1054,33 +975,17 @@ function storedCharacterLifecycleEligible(
 ): boolean {
   if (typeof data !== "object" || data === null) return false;
   const record = data as Record<string, unknown>;
-  const storedState = storedCharacterState(data);
   const playExhaustion = combat?.playState?.state.exhaustion;
-  const exhaustion =
-    storedPlayStateOwnership(data) === 1
-      ? typeof playExhaustion === "number"
-        ? playExhaustion
-        : 0
-      : typeof storedState?.exhaustion === "number"
-        ? storedState.exhaustion
-        : 0;
+  const exhaustion = typeof playExhaustion === "number" ? playExhaustion : 0;
   return isCharacterAlive(record.status === "dead" ? "dead" : "active", {
     deathFail: deathFailures,
     exhaustion,
   });
 }
 
-/** Concentration follows the explicit ownership marker; never infer ownership from
- * whichever copy happens to be populated during the migration window. */
-function storedCharacterConcentration(
-  data: unknown,
-  combat: CombatState | null
-): StoredConcentration {
-  return normalizeStoredConcentration(
-    storedPlayStateOwnership(data) === 1
-      ? combat?.playState?.state.concentration
-      : storedCharacterState(data)?.concentration
-  );
+/** Concentration is a play fact: the `combat/state` child owns it, never the parent. */
+function storedCharacterConcentration(combat: CombatState | null): StoredConcentration {
+  return normalizeStoredConcentration(combat?.playState?.state.concentration);
 }
 
 /** PCs that can actually receive damage in this resolution, including deterministic
@@ -1715,34 +1620,29 @@ export async function applyDeclaredCombatEffects(
         combatSnap?.exists() ? combatSnap.data() : null,
         parentData
       );
-      const deathSaves = stored?.deathSaves ?? target.deathSaves;
+      const deathSaves = stored.deathSaves;
       const lifecycleEligible = parentStateTargetIds.has(target.targetId)
-        ? storedCharacterLifecycleEligible(parentData, deathSaves?.failures ?? 0, stored)
+        ? storedCharacterLifecycleEligible(parentData, deathSaves.failures, stored)
         : target.lifecycleEligible;
       const freshTarget: DeclaredPcTargetSnapshot = {
         ...target,
         ...(lifecycleEligible !== undefined ? { lifecycleEligible } : {}),
-        ...(stored
-          ? {
-              currentHp: stored.hp.current,
-              tempHp: stored.hp.temp,
-              conditions: stored.conditions,
-              bardicInspirationDie: stored.bardicInspirationDie,
-              ...(stored.heroicInspiration !== undefined
-                ? { heroicInspiration: stored.heroicInspiration }
-                : {}),
-              deathSaves,
-            }
+        currentHp: stored.hp.current,
+        tempHp: stored.hp.temp,
+        conditions: stored.conditions,
+        bardicInspirationDie: stored.bardicInspirationDie,
+        ...(stored.heroicInspiration !== undefined
+          ? { heroicInspiration: stored.heroicInspiration }
           : {}),
+        deathSaves,
       };
       return [
         {
           target: freshTarget,
           ref: combatRef,
-          stored,
-          combat: stored ?? combatSeedForTarget(freshTarget),
-          concentration: storedCharacterConcentration(parentData, stored),
-          pendingConcentrationSaves: stored?.pendingConcentrationSaves ?? [],
+          combat: stored,
+          concentration: storedCharacterConcentration(stored),
+          pendingConcentrationSaves: stored.pendingConcentrationSaves ?? [],
         },
       ];
     });
@@ -2004,7 +1904,7 @@ export async function applyDeclaredCombatEffects(
         ...(result.deathSaves ? { deathSaves: result.deathSaves } : {}),
         pendingConcentrationSaves: result.pendingConcentrationSaves,
       };
-      writePeerCombatEffect(txn, entry.ref, entry.stored, entry.combat, nextCombat);
+      writePeerCombatEffect(txn, entry.ref, entry.combat, nextCombat);
     }
     const effectOpsChanged = nextEffectOps !== initialEffectOps;
     if (chronicle === encounter && changedTargets.size === 0 && !effectOpsChanged) return;
@@ -2091,11 +1991,10 @@ export async function deliverQueuedMemberEffects(args: {
       txn.get(characterRef),
     ]);
     const parentData = characterSnap.exists() ? characterSnap.data() : null;
-    const stored = storedTargetCombatState(
+    const beforeCombat = storedTargetCombatState(
       combatSnap.exists() ? combatSnap.data() : null,
       parentData
     );
-    const beforeCombat = stored ?? defaultCombatState(args.maxHp);
     let combat = beforeCombat;
     let chronicle = encounter;
     let changed = false;
@@ -2147,7 +2046,7 @@ export async function deliverQueuedMemberEffects(args: {
     }
 
     if (!changed) return;
-    writePeerCombatEffect(txn, combatRef, stored, beforeCombat, combat);
+    writePeerCombatEffect(txn, combatRef, beforeCombat, combat);
     if (chronicle !== encounter) {
       txn.update(campaignRef, {
         "encounter.events": chronicle.events ?? [],
@@ -2208,13 +2107,7 @@ export async function revokePersistentCombatEffect(
     if (!encounter) return;
     const operation = makeRevokeCombatEffectOp(encounter.effectOps, effectId);
     if (!operation) return;
-    await applyPersistentCombatEffectOperation(
-      txn,
-      ref,
-      snap.data() as CampaignDoc,
-      encounter,
-      operation
-    );
+    await applyPersistentCombatEffectOperation(txn, ref, encounter, operation);
   });
 }
 
@@ -2258,13 +2151,10 @@ export async function revokePersistentCombatEffectsBySource(
       const operation = makeRevokeCombatEffectOp(encounter.effectOps, effect.id);
       if (!operation) return false;
       const successor = endedEffectSuccessor(effect, encounterPosition(encounter));
-      return applyPersistentCombatEffectOperations(
-        txn,
-        ref,
-        snap.data() as CampaignDoc,
-        encounter,
-        [operation, ...(successor ? [makePersistentApplyOperation(successor)] : [])]
-      );
+      return applyPersistentCombatEffectOperations(txn, ref, encounter, [
+        operation,
+        ...(successor ? [makePersistentApplyOperation(successor)] : []),
+      ]);
     });
     if (!appended) return;
   }
@@ -2311,13 +2201,7 @@ async function appendPersistentCombatEffectOp(
     ) {
       throw new Error("Combat effect participant mismatch");
     }
-    await applyPersistentCombatEffectOperation(
-      txn,
-      ref,
-      snap.data() as CampaignDoc,
-      encounter,
-      operation
-    );
+    await applyPersistentCombatEffectOperation(txn, ref, encounter, operation);
   });
 }
 
@@ -2425,19 +2309,15 @@ function applyPersistentMonsterHpDelta(
 async function applyPersistentCombatEffectOperation(
   txn: Transaction,
   campaignRef: ReturnType<typeof campaignDoc>,
-  campaign: CampaignDoc,
   encounter: EncounterState,
   operation: CombatEffectOp
 ): Promise<boolean> {
-  return applyPersistentCombatEffectOperations(txn, campaignRef, campaign, encounter, [
-    operation,
-  ]);
+  return applyPersistentCombatEffectOperations(txn, campaignRef, encounter, [operation]);
 }
 
 async function applyPersistentCombatEffectOperations(
   txn: Transaction,
   campaignRef: ReturnType<typeof campaignDoc>,
-  campaign: CampaignDoc,
   encounter: EncounterState,
   operations: ReadonlyArray<CombatEffectOp>,
   extraCampaignFields: Record<string, unknown> = {}
@@ -2482,17 +2362,13 @@ async function applyPersistentCombatEffectOperations(
     const parentSnapshot = pcParentSnapshots[index];
     const combatRef = pcRefs[index];
     if (!snapshot || !parentSnapshot || !combatRef) continue;
-    const stored = storedTargetCombatState(
+    const current = storedTargetCombatState(
       snapshot.exists() ? snapshot.data() : null,
       parentSnapshot.exists() ? parentSnapshot.data() : null
     );
-    const current =
-      stored ??
-      defaultCombatState(memberCombatMax(campaign, mutation.target, encounter.effectOps));
     writePeerCombatEffect(
       txn,
       combatRef,
-      stored,
       current,
       applyPersistentHpDelta(current, mutation.delta)
     );

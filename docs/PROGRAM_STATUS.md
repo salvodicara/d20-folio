@@ -32,7 +32,7 @@ lease owner remain separate roles; one cannot substitute for the other.
 | `tacticalWayfinder`        | `docs/superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md` | `062ffd48783311a77e1ad5bee962ef5cd637c079`                                                            |
 | `testRoadmap`              | `docs/superpowers/plans/2026-08-25-test-portfolio-reset.md`           | `9f3e42f7e50f104a35ceab21f5469a4291407bb4`                                                            |
 | `readinessBaseline`        | `docs/superpowers/plans/2026-08-25-g0-automation-readiness.md`        | `0a7f1ec661390aa475dfbde83eab72a4fbbe8b89`                                                            |
-| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | candidate `58c3f085a1771d341c82f4dc93dffd17b45c219a`; base `7cb89ed4b26021aa46a7d4cdc8ef7888df692d52` |
+| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | candidate `9b4b49e2e390259a0e16f8bcdbe6a1cc16267ad3`; base `7cb89ed4b26021aa46a7d4cdc8ef7888df692d52` |
 | `statusOwner`              | `docs/PROGRAM_STATUS.md`                                              | base `ed43234fa7dedd065e6c809998c94568a852d41f`; candidate resolves after integration                 |
 
 The status owner cannot truthfully contain the blob produced by its own pending edit. Runtime main
@@ -85,10 +85,10 @@ green against production; a deploy with a pending migration is refused. Commands
 `docs/RELEASE.md` → "Migrate before you deploy". A row is deleted only after the script has run on
 production, been verified idempotent, and had its script + test removed (golden rule 10).
 
-| Migration                              | Persisted shape it prepares                                                                                         | State                                                                                                            |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `scripts/migrate-custom-identity.ts`   | `instanceId` on every custom sheet entry and library id                                                             | Committed; not yet run on production.                                                                            |
-| `scripts/migrate-character-parents.ts` | every parent v1 (`state: {}`), every character has a `combat/state` child with `playState`, every parent `revision` | Committed; not yet run on production. At most ~250 characters per run (two documents each, one 500-write batch). |
+| Migration                              | Persisted shape it prepares                                                                                         | State                                                                                                                                                                                                                                        |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/migrate-custom-identity.ts`   | `instanceId` on every custom sheet entry and library id                                                             | Committed; not yet run on production.                                                                                                                                                                                                        |
+| `scripts/migrate-character-parents.ts` | every parent v1 (`state: {}`), every character has a `combat/state` child with `playState`, every parent `revision` | Committed; not yet run on production. **BLOCKING from P1 on:** the client is v1-only, so an unmigrated parent quarantines and a childless character fails closed. At most ~250 characters per run (two documents each, one 500-write batch). |
 
 ## Active charters
 

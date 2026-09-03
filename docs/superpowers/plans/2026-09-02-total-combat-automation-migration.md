@@ -49,6 +49,12 @@ stored character at risk or breaking the deployed table.
 
 Why first: Incident 2's class and the 2026-08-31 outage live here, independent of the engine.
 
+**Execution (integration A + B, 2026-09-02/03).** 1 → the codec round in the P1 worktree; 2 →
+`664200b`, `cc8cca4`, `2ce550c`; 2 (scripts) → `e9109ff`, `dd6b655`; 3 → `f1b4d6c`, `50c7296`;
+4 (script) → `e38c577`, `43e212e`, `d8161e1`; 4 + 6 (code + rules cutover) → this commit; 5 →
+the diagnostics round. The live migrations are PREPARED, not run: the owner runs them before the
+deploy that needs them.
+
 1. **Total codec.** `character-codec.ts`: `parseEquipment`/`parseCustomEquipment` and every sibling
    parser become closed-world exact-schema parsers that (a) preserve unknown keys in an `unknown`
    bucket written back verbatim, (b) quarantine with a typed path on structural failure, (c) never
@@ -68,19 +74,28 @@ Why first: Incident 2's class and the 2026-08-31 outage live here, independent o
    tests that fail before and pass after.
 4. **Legacy cutover.** Migrate every unmarked parent to v1 with the existing cutover machinery
    (script + protocol); then delete the unmarked-legacy branches in `firestore.ts:86-104,395-420`
-   and the legacy escape hatch in the rules (`publicSheetMatchesAfter` third disjunct).
+   and the legacy escape hatch in the rules (`publicSheetMatchesAfter` third disjunct). **Executed:**
+   `CharacterDoc.playStateVersion`, `PlayStateOwnership`, `omitCombatTrio`,
+   `nonCombatSessionChanged`, `CombatPersistence.writeTurnEconomy`/`writeCombatTurnEconomy`,
+   `campaign-io.storedPlayStateOwnership` and the peer `combat/state` create path are deleted;
+   `applyCombatToSession`/`parseCombatState` require the v1 `playState`; the pre-cutover
+   `applyLegacyCombatToSession`/`parseLegacyCombatChild` survive for the migration script alone.
 5. **Diagnostics.** `src/lib/diagnostics/` logger + ring buffer + `users/{uid}/diagnostics/{id}`
    create-only rule + admin inbox tab (non-visual: reuses the bug inbox list).
 6. **Rules, character paths only.** Owner-only writes on `characters/{id}` and `combat/state`
    (peer effect update stays until P4, isolated in one function); delete `peerLegacyCoreCreate`,
    `playStateVersion*` predicates after step 4; `combat/{stateId}` wildcard becomes `combat/state`.
+   **Executed:** also `hasV1CombatOwnerAfter`, `validV1ParentStateAfter` (folded into
+   `parentStateEmptyAfter`), the `publicSheetMatchesAfter` third disjunct and
+   `isExactPublicCharacterSheet`'s marker line. The suite is 118 cases across `tests/rules/`.
 
 **Exit gate:** six fixtures + production export dry-run report zero loss; replays green; rules
 tests ≤ 120 cases; `pnpm test:rules`, `just ci`, `just ci-srd-only` green; live migrations applied
 and verified by the owner before the deploy that needs them.
 **Blast radius:** all character documents. **Rollback:** restore the tagged backup, redeploy the
 previous SHA. **Deletions:** silent-drop branches in the codec, name-keyed identity, unmarked-legacy
-readers, `peerLegacyCoreCreate`, `playStateVersion*` predicates, the rules test cases for them.
+readers, `peerLegacyCoreCreate`, `playStateVersion*` predicates, the rules test cases for them —
+executed 2026-09-03 (see the execution map above).
 
 ## P2 — Engine core (pure, no production reach)
 
@@ -117,8 +132,11 @@ are deleted; a replay pins the family.
 
 **Exit gate (phase):** no solo write reaches `combat-*.ts` or `mechanics-*`; `combat/state` is
 schema-2 for every live document; bundle budgets re-measured. **Blast radius:** all solo play.
-**Rollback:** previous SHA + restore of `combat/state` backups. **Deletions:** the family branches,
-`session.world` writers (readers die in P5), `combat-transition.ts`, `combat-hp.ts`,
+**Rollback:** previous SHA + restore of `combat/state` backups. **Deletions:** the `playStateVersion`
+stored field (dead since P1, still written by the P1 cutover script for the old client) together with
+`scripts/migrate-character-parents.ts`, `applyLegacyCombatToSession` and `parseLegacyCombatChild`;
+the family branches, `session.world` writers (readers die in P5), `combat-transition.ts`,
+`combat-hp.ts`,
 `combat-outcomes.ts`, `combat-resolution.ts`, `combat-test-context.ts`, `combat-economy.ts`.
 
 ## P4 — Shared cutover
@@ -133,7 +151,9 @@ schema-2 for every live document; bundle budgets re-measured. **Blast radius:** 
    reads the encounter; monsters executable through the adapter; DM runs turns headlessly through
    the existing encounter surfaces (no visual change) — the one-tap UI is the later round.
 5. Chronicle chapter generated from the log at `end`; `combat-chronicle.ts` events deleted.
-6. Delete: `campaign-io.ts` encounter/peer sections (split into thin typed clients),
+6. Delete: `isCampaignDmDetach` on the character parent (the `table:leave` lease makes the owner's
+   own client clear the attachment), `campaign-io.ts` encounter/peer sections (split into thin typed
+   clients),
    `deliver-member-effects`, `effectOps`/`memberEffects`/`world` fields and their codecs,
    `combat-effects.ts`, `combat-effect-io.ts`, `encounter-world-*.ts`, `refresh-attached-sheets.ts`,
    the 31 semantic rule predicates and their tests.

@@ -90,15 +90,13 @@ export function useCharacters(): UseCharactersResult {
     // FULL-HP placeholder `cacheToRosterDoc` seeds in prod, so the delayed real HP
     // (emitted by `useRosterCombatStates` below) visibly folds in.
     return devHpHydrateDelay()
-      ? (() => {
-          const baseline = applyCombatToSession(
-            doc.session,
-            null,
-            doc.character.hp.max,
-            "legacy"
-          );
-          return baseline.ok ? [{ ...doc, session: baseline.session }] : [];
-        })()
+      ? [
+          {
+            ...doc,
+            session: applyCombatToSession(doc.session, null, doc.character.hp.max)
+              .session,
+          },
+        ]
       : [doc];
   });
   // Tracks which uid's snapshot has arrived; used to derive loading state
@@ -203,10 +201,7 @@ export function useCharacters(): UseCharactersResult {
     const out: Record<string, boolean> = {};
     for (const c of characters) {
       const combat = combatStates[c.id];
-      out[c.id] =
-        syncReady ||
-        (combat !== undefined &&
-          (c.playStateVersion !== 1 || combat?.playState?.version === 1));
+      out[c.id] = syncReady || combat?.playState?.version === 1;
     }
     return out;
   }, [characters, combatStates, syncReady]);

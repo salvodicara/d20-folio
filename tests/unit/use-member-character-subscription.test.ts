@@ -42,7 +42,7 @@ import { useMemberCharacterSubscription } from "@/features/campaigns/useMemberCh
 import { useCharacterStore } from "@/stores/characterStore";
 
 function markedDoc(): CharacterDoc {
-  return { ...makeCharacterDoc(), id: "c2", playStateVersion: 1 };
+  return { ...makeCharacterDoc(), id: "c2" };
 }
 
 function child(): CombatState {
