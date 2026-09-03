@@ -135,6 +135,30 @@ movement or reach-weapon support, no fifth range band.
 Next: stage 3 (the reducer for Marco's first turn and Sara's ogre ambush), from
 `docs/superpowers/plans/2026-09-03-v2-next-session-handoff.md`.
 
+## Owner confirmations, recorded ahead of their stage (2026-09-03)
+
+Two product decisions the owner gave at the stage-3 handoff, not yet implemented — recorded here
+so they are not lost before their stage lands.
+
+- **Admin-supreme account.** Owner (2026-09-03): wants everything a DM can do to extend to his own
+  account, since — at least at first — he has to guide the actual DM the way he already does
+  today. The design doc's access matrix (§5.4) already models exactly this: `users/{uid}.role ===
+"admin"` carries the same rights as `owner`/`dmUid` across every path (`users/{uid}`,
+  `characters/{id}`, `combat/state`, campaign encounters) — no new design needed. Activate at
+  stage 4 (the shared-encounter document and its Firestore rules) by setting the owner's own
+  `role` to `admin`.
+- **Out-of-combat mechanical freedom.** Owner (2026-09-03): players need the same freedom D&D
+  2024 actually gives them — casting spells and doing other mechanically-resolved things outside
+  a formal combat encounter, not only inside one. The reducer is already entity-generic and not
+  combat-specific by construction (ADR-0001; `Encounter.host: {kind: "personal"} | {kind:
+"campaign"}`), so this needs no re-architecture — it needs mechanics authored against the same
+  seams for non-combat use, plus confirming whether the personal `Encounter` aggregate is meant to
+  be usable independent of any campaign lease (open question, not yet verified against §5.2). The
+  current design's `later`-tiered "narrative clauses, no mechanical consequence to compute" (§7
+  residuals) describes illusions/social effects, not a player's mechanically resolved spellcast
+  outside initiative — that distinction needs its own design pass before item 8 ("the rest of the
+  session") in the stage-1 plan.
+
 ## Delete zone
 
 Nothing here may be deleted merely because it looks complete. `v2` owns two worktrees: this one
