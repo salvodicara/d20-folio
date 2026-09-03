@@ -36,8 +36,9 @@ mid-session; dice mode is a per-person choice.
 calculator.
 
 **Delivery posture.** Production keeps working as it is and the group keeps playing with it. The
-new app grows in a separate long-lived branch and worktree and is released only when the
-milestone is reached; `main` receives production fixes only. A staging environment (separate
+new app grows in the long-lived branch `v2` (its own worktree) and is released only when the
+milestone is reached; `main` receives production fixes only, cherry-picked into `v2` when they
+matter there. A staging environment (separate
 Firebase project on the free tier, staging hosting, the six team fixtures seeded, emulators in
 CI) is mandatory until release. Approved cuts for the new branch: the character-only mechanics
 kernel and its tests, the agent program supervisor and the superseded plans, the five sheet modes
