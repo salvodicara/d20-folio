@@ -9,9 +9,9 @@
     "node": "24"
   },
   "scripts": {
-    "build": "tsc && node ../scripts/build-functions.ts",
+    "build": "tsc",
     "build:watch": "tsc --watch",
-    "gcp-build": "node -e \"const fs=require('node:fs');for(const file of ['lib/index.js','lib/command-kernel.cjs']){const stat=fs.statSync(file,{throwIfNoEntry:false});if(!stat?.isFile()||stat.size===0)throw new Error('Missing Functions runtime artifact: '+file)}\"",
+    "gcp-build": "node -e \"const fs=require('node:fs');const stat=fs.statSync('lib/index.js',{throwIfNoEntry:false});if(!stat?.isFile()||stat.size===0)throw new Error('Missing Functions runtime artifact: lib/index.js')\"",
     "lint": "eslint .",
     "test": "vitest run",
     "serve": "npm run build && firebase emulators:start --only functions",
@@ -30,7 +30,6 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/nodemailer": "^8.0.0",
-    "esbuild": "0.28.2",
     "eslint": "^10.4.1",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.60.1",

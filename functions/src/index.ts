@@ -32,7 +32,6 @@ import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 import { getStorage } from "firebase-admin/storage";
-import { createRequire } from "node:module";
 import { isDeepStrictEqual } from "node:util";
 import { CloudBillingClient } from "@google-cloud/billing";
 import { Octokit } from "@octokit/rest";
@@ -78,27 +77,6 @@ import {
   type ImageMemoEntry,
 } from "./og-image";
 import { asOgLocale, type OgLocale } from "./og-i18n";
-
-type CommandKernel = {
-  resolveCommand(input: unknown): unknown;
-  canonicalResolutionJson(outcome: unknown): string;
-};
-
-const requireCommandKernel = createRequire(__filename);
-let commandKernel: CommandKernel | undefined;
-
-function loadCommandKernel(): CommandKernel {
-  commandKernel ??= requireCommandKernel("./command-kernel.cjs") as CommandKernel;
-  return commandKernel;
-}
-
-export function resolveCommand(input: unknown): unknown {
-  return loadCommandKernel().resolveCommand(input);
-}
-
-export function canonicalResolutionJson(outcome: unknown): string {
-  return loadCommandKernel().canonicalResolutionJson(outcome);
-}
 
 initializeApp();
 
