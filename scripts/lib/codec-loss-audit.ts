@@ -13,7 +13,11 @@
  *    shape conformed. Reported with the seams it hit; not a failure.
  *  - `loss` — at least one changed path is on no documented seam: `lost` names every
  *    path present before and absent or different after, `added` the paths the writer
- *    would materialize. A stage-0 blocker.
+ *    would materialize (an added path off any seam is also a loss — the next write would
+ *    change the document — so `lost` may then be empty). A stage-0 blocker.
+ *
+ * The readers may normalize a stored row IN PLACE (`normalizeLogEntry`), so every audit
+ * parses a deep copy and diffs against the untouched original.
  *  - `quarantine` — the reader refused the document, with its typed code.
  */
 /// <reference types="vite/client" />
@@ -112,7 +116,8 @@ function auditEnvelope(data: Record<string, unknown>): AuditVerdict {
   if (!isRecord(data.build) || !isRecord(data.state)) {
     return { verdict: "quarantine", code: "invalid-envelope" };
   }
-  const parsed = parseCharacterEnvelope(data.build, data.state);
+  const copy = structuredClone({ build: data.build, state: data.state });
+  const parsed = parseCharacterEnvelope(copy.build, copy.state);
   if (!parsed.ok) {
     return {
       verdict: "quarantine",
@@ -136,18 +141,32 @@ const SHED_COMBAT_STATE_SEAMS: readonly Seam[] = SHED_COMBAT_STATE_KEYS.map((key
   pattern: new RegExp(`^${key}(\\.|\\[|$)`),
 }));
 
-/** `combat/state` has no pure writer; its closed world is the key list the writer emits. */
+/**
+ * `combat/state` has no pure writer (it stamps `serverTimestamp()`): the write-back is
+ * modelled as the stored keys the writer emits (`KNOWN_COMBAT_STATE_KEYS`, typed against
+ * `CombatState`), with the two nested shapes the writer rebuilds field by field (`hp`,
+ * `deathSaves`) projected from the parsed state; every other kept field is proven
+ * canonical by the reader itself (`presentFieldIsCanonical`, else quarantine).
+ */
 function auditCombatState(data: Record<string, unknown>): AuditVerdict {
-  const parsed = parseCombatState(data);
+  const parsed = parseCombatState(structuredClone(data));
   if (!parsed.ok) return { verdict: "quarantine", code: parsed.reason };
   const known = new Set(KNOWN_COMBAT_STATE_KEYS);
-  const kept = Object.fromEntries(Object.entries(data).filter(([key]) => known.has(key)));
-  return classify(data, kept, SHED_COMBAT_STATE_SEAMS);
+  const written = {
+    ...Object.fromEntries(Object.entries(data).filter(([key]) => known.has(key))),
+    hp: { current: parsed.state.hp.current, temp: parsed.state.hp.temp },
+    deathSaves: {
+      successes: parsed.state.deathSaves.successes,
+      failures: parsed.state.deathSaves.failures,
+    },
+  };
+  return classify(data, written, SHED_COMBAT_STATE_SEAMS);
 }
 
-/** `writeLibrary` overwrites the whole document with `{ entries }`. */
+/** `writeLibrary` overwrites the WHOLE document with `{ entries }`: a stray top-level key
+ *  and an entry-level key outside `{ id, savedAt, kind, item }` are both losses. */
 function auditLibrary(data: Record<string, unknown>): AuditVerdict {
-  const parsed = parseLibraryEntries(data);
+  const parsed = parseLibraryEntries(structuredClone(data));
   if (!parsed.ok) {
     return {
       verdict: "quarantine",
@@ -155,8 +174,11 @@ function auditLibrary(data: Record<string, unknown>): AuditVerdict {
       path: parsed.failure.path,
     };
   }
-  if (data.entries === undefined) return { verdict: "equal" };
-  return classify({ entries: data.entries }, { entries: parsed.entries }, []);
+  return classify(
+    data,
+    data.entries === undefined ? {} : { entries: parsed.entries },
+    []
+  );
 }
 
 export function auditDocument(

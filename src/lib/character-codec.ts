@@ -1613,7 +1613,9 @@ export type { CodecFailure } from "./codec-failure";
  * key is read and discarded, a legacy shape is conformed to its canonical form. The
  * codec-loss audit (`scripts/lib/codec-loss-audit.ts`) classifies a round-trip change
  * on one of these paths as `conformed`; any other change is a loss. Adding a seam here
- * is a documented decision, never a way to silence a finding.
+ * is a documented decision, never a way to silence a finding: every entry is anchored to
+ * the exact path(s) the named function rewrites, and a new entry needs a negative test
+ * (a non-documented drop under the same prefix must still be a loss).
  */
 export const CODEC_READ_SEAMS: ReadonlyArray<{ seam: string; pattern: RegExp }> = [
   // `RETIRED_STATE_KEYS` (session-state-codec.ts): the solo round moved to `combat/state`.
@@ -1632,12 +1634,19 @@ export const CODEC_READ_SEAMS: ReadonlyArray<{ seam: string; pattern: RegExp }> 
     seam: "proficiency-override-key-conform",
     pattern: /^build\.overrides\.(armorProficiencies|weaponProficiencies)(\.|$)/,
   },
-  // `remapSessionTrackerIds` + `conformRaceTraitSessionIds`: tracker keys conform to ids.
-  { seam: "tracker-id-conform", pattern: /^state\.trackers\./ },
+  // `remapSessionTrackerIds` + `conformRaceTraitSessionIds`: a tracker KEY conforms to
+  // its id (the whole entry moves); a drop inside an entry is not a seam.
+  { seam: "tracker-id-conform", pattern: /^state\.trackers\.[^.]+$/ },
   // `normalizeConcentrationRef` / `normalizeLogEntryConcentration`: legacy refs conform.
   { seam: "concentration-ref-conform", pattern: /^state\.concentration(\.|$)/ },
-  // `normalizeLogEntry` (sanitizeSession): an unrenderable row degrades; dies in P5.
-  { seam: "log-entry-normalize", pattern: /^state\.log\[\d+\]/ },
-  // A non-token tracker `unit` is dropped.
-  { seam: "unit-non-token", pattern: /\.unit$/ },
+  // `normalizeLogEntry` (sanitizeSession): a legacy `{ msg | text, t, type, slot }` row
+  // becomes a `legacy` event, a pre-LocText `actionName` / `riderName` becomes a custom
+  // LocText, a missing id / ts is filled. A dropped ROW or any other row field is a loss.
+  {
+    seam: "log-entry-normalize",
+    pattern:
+      /^state\.log\[\d+\]\.(t|text|msg|type|slot|ts|id|event\.(kind|text|legacyType|slot|actionName|riderName|(action|rider)(\.custom)?))$/,
+  },
+  // A non-token equipment `unit` is dropped (`parseEquipmentEntry`, SRD ref and custom).
+  { seam: "unit-non-token", pattern: /^build\.equipment\[\d+\]\.unit$/ },
 ];

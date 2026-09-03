@@ -13,9 +13,12 @@
  *                                            # fresh tagged directory, then audit it
  *
  * Output: one JSON report — counts per document family, hashed findings, codes and lost
- * key paths. Never a payload, never a raw path, never a uid or character id. Exit 1 on
- * any loss or quarantine, or when the content pack is not composed (a pack-only id
- * would be misread as unknown and reported as loss).
+ * key paths. Never a payload, never a raw path, never a uid or character id. A key path
+ * may embed a stored MAP KEY (a tracker id, an override token, a legacy
+ * `race:<id>:<name>` tracker key) — ids and tokens, never values. Exit 1 on any loss or
+ * quarantine, or when the content pack is not composed (a pack-only id would be misread
+ * as unknown and reported as loss). `--export` refuses an existing directory: after a
+ * failed run delete the partial directory and run again.
  */
 
 /// <reference types="node" />

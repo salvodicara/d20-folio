@@ -95,6 +95,42 @@ describe("auditDocument — parent and snapshot envelopes", () => {
     expect(verdict.path).toMatch(/^build\.equipment\[\d+\]/);
   });
 
+  it("a pre-LocText log row conforms on a COPY: the original is untouched and the seam is named", () => {
+    const env = envelope();
+    const row = { id: "row-1", ts: 1, event: { kind: "action-use", actionName: "Rage" } };
+    env.state.log = [row];
+    expect(auditDocument("parent", parentDoc(env))).toEqual({
+      verdict: "conformed",
+      seams: ["log-entry-normalize"],
+      lost: ["state.log[0].event.actionName"],
+      added: ["state.log[0].event.action.custom"],
+    });
+    expect(row.event.actionName).toBe("Rage"); // the reader's in-place normalize never reached it
+  });
+
+  it("a non-token equipment unit is conformed; a drop under a seam prefix that is not the seam is a loss", () => {
+    const withUnit = envelope();
+    const [item] = withUnit.build.equipment as Record<string, unknown>[];
+    if (!item) throw new Error("the mock character carries equipment");
+    item.unit = "bogus-unit";
+    expect(auditDocument("parent", parentDoc(withUnit))).toMatchObject({
+      verdict: "conformed",
+      seams: ["unit-non-token"],
+    });
+    const rowDrop = envelope();
+    rowDrop.state.log = [{ id: "row-1", ts: 1, event: { kind: "rest" }, zz: true }];
+    expect(auditDocument("parent", parentDoc(rowDrop))).toMatchObject({
+      verdict: "loss",
+      lost: ["state.log[0].zz"],
+    });
+    const trackerDrop = envelope();
+    trackerDrop.state.trackers = { "feat:x:y": { zz: 1 } };
+    expect(auditDocument("parent", parentDoc(trackerDrop))).toMatchObject({
+      verdict: "loss",
+      lost: ["state.trackers.feat:x:y.zz"],
+    });
+  });
+
   it("a parent without build or state is a quarantine, never a crash", () => {
     expect(auditDocument("parent", { schema: 3 }).verdict).toBe("quarantine");
   });
@@ -128,6 +164,11 @@ describe("auditDocument — combat state", () => {
       added: [],
     });
   });
+  it("a stray key inside hp or deathSaves is a loss (the writer rebuilds both)", () => {
+    expect(
+      auditDocument("combat-state", { ...stored, hp: { current: 10, temp: 0, zz: 1 } })
+    ).toEqual({ verdict: "loss", lost: ["hp.zz"], added: [] });
+  });
   it("a refused child is a quarantine with the reader's reason", () => {
     expect(auditDocument("combat-state", { hp: {} })).toEqual({
       verdict: "quarantine",
@@ -146,6 +187,13 @@ describe("auditDocument — library", () => {
   it("a stored library round-trips equal, unknown item keys included", () => {
     expect(auditDocument("library", { entries: [entry] })).toEqual({ verdict: "equal" });
     expect(auditDocument("library", {})).toEqual({ verdict: "equal" });
+  });
+  it("a stray top-level key is a loss (the writer overwrites the whole document)", () => {
+    expect(auditDocument("library", { entries: [entry], zz: 1 })).toEqual({
+      verdict: "loss",
+      lost: ["zz"],
+      added: [],
+    });
   });
   it("an entry-level key the parser drops is a loss", () => {
     expect(auditDocument("library", { entries: [{ ...entry, zz: 1 }] })).toEqual({

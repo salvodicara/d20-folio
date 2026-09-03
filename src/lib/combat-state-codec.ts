@@ -29,26 +29,31 @@ const STRICT_V1_FIELDS = [
 
 /**
  * Every top-level key `combatStateWriteData` (combat-state-io.ts) emits — the closed
- * world of the `combat/state` document. A stored key outside this list is ignored by
- * the reader and shed by the next full overwrite; the codec-loss audit
+ * world of the `combat/state` document: the `CombatState` fields plus the server
+ * `updatedAt`. Typed against `CombatState` so a field added to or removed from the type
+ * fails to compile here (the writer emits every field). A stored key outside this list
+ * is ignored by the reader and shed by the next full overwrite; the codec-loss audit
  * (`scripts/lib/codec-loss-audit.ts`) reports it as loss.
  */
-export const KNOWN_COMBAT_STATE_KEYS: readonly string[] = [
-  "hp",
-  "conditions",
-  "bardicInspirationDie",
-  "heroicInspiration",
-  "initiativeRoll",
-  "deathSaves",
-  "round",
-  "recentActions",
-  "activeEffects",
-  "appliedEncounterEffects",
-  "turnEconomy",
-  "pendingConcentrationSaves",
-  "playState",
-  "updatedAt",
-];
+const KNOWN_COMBAT_STATE_KEY_MAP: Record<keyof CombatState | "updatedAt", true> = {
+  hp: true,
+  conditions: true,
+  bardicInspirationDie: true,
+  heroicInspiration: true,
+  initiativeRoll: true,
+  deathSaves: true,
+  round: true,
+  recentActions: true,
+  activeEffects: true,
+  appliedEncounterEffects: true,
+  turnEconomy: true,
+  pendingConcentrationSaves: true,
+  playState: true,
+  updatedAt: true,
+};
+export const KNOWN_COMBAT_STATE_KEYS: readonly string[] = Object.keys(
+  KNOWN_COMBAT_STATE_KEY_MAP
+);
 
 /**
  * Keys a stored `combat/state` may still carry from deleted writers — the retired
