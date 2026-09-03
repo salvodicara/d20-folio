@@ -242,14 +242,11 @@ export type PersistedSession = Omit<
  * it on subscribe; `null` (the default, and dev/bypass) means optimistic-store-only — no
  * persistence — so dev + e2e never touch the network and the 6 fixtures stay byte-identical.
  *
- * The store computes the optimistic NEXT {@link CombatState} for combat mutations and routes
- * it through `write`. Turn economy is the deliberate exception: it changes frequently while
- * another campaign member may atomically damage/heal this PC, so `writeTurnEconomy` patches only
- * `round + turnEconomy` and cannot overwrite fresh HP/conditions from that peer transaction.
+ * The store computes the optimistic NEXT {@link CombatState} for EVERY play mutation —
+ * the turn budget included — and routes it through the ONE `write`, which the hook
+ * coalesces into a single complete child write per microtask.
  */
 export interface CombatPersistence {
   /** Persist the whole optimistically-computed next combat state (offline-safe). */
   write(state: CombatState): void;
-  /** Persist only the navigation-stable per-turn budget (offline-safe merge). */
-  writeTurnEconomy(round: number, turnEconomy: PersistedTurnEconomy): void;
 }

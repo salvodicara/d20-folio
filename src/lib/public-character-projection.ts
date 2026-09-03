@@ -153,9 +153,6 @@ export function buildPublicCharacterProjectionFromStoredParent(
   sourceUpdatedAt: unknown
 ): PublicCharacterProjection {
   if (!isRecord(raw)) throw new TypeError("Invalid character parent");
-  if (raw.playStateVersion !== 1) {
-    throw new TypeError("Public projection requires canonical play-state ownership");
-  }
   if (!isRecord(raw.state) || Object.keys(raw.state).length !== 0) {
     throw new TypeError("Canonical character parent must not contain play state");
   }
@@ -292,9 +289,6 @@ export async function buildPublicCharacterProjection(
   source: CharacterDoc,
   sourceUpdatedAt: unknown
 ): Promise<PublicCharacterProjection> {
-  if (source.playStateVersion !== 1) {
-    throw new TypeError("Public projection requires canonical play-state ownership");
-  }
   if (!isStatus(source.status)) throw new TypeError("Invalid character status");
   const [{ serializeCharacterEnvelope }, { buildCharacterCache }] = await Promise.all([
     import("@/lib/character-codec"),
@@ -383,7 +377,9 @@ export async function parsePublicCharacterProjection(
     portraitUrl: raw.hasPortrait ? publicPortraitPath(uid, charId) : null,
     portraitCrop: crop,
     shared: true,
-    playStateVersion: 1,
+    // The projection deliberately carries no private generation; an anonymous read is
+    // never a write base, so the read-only doc reports the neutral 0.
+    revision: 0,
     status: raw.status,
     character,
     session,

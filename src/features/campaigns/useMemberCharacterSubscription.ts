@@ -74,18 +74,13 @@ export function useMemberCharacterSubscription(
           let lastCombat: CombatState | null | undefined;
           const publish = (): void => {
             if (quarantined) return;
-            if (lastCombat === undefined) {
-              if (doc.playStateVersion !== 1) {
-                loadReadonly(doc);
-                setLoading(false);
-              }
-              return;
-            }
+            // The child is the sole play owner: never publish a parent-only sheet.
+            if (lastCombat === undefined) return;
             const loaded = useCharacterStore
               .getState()
               .loadCharacterWithCombat(doc, lastCombat, true);
             if (!loaded) {
-              quarantine("Invalid play state");
+              quarantine("Invalid character document");
               return;
             }
             setLoading(false);
@@ -96,7 +91,7 @@ export function useMemberCharacterSubscription(
             id,
             (combat) => {
               if (cancelled || quarantined) return;
-              if (!combat && !seeded && doc.playStateVersion !== 1) {
+              if (!combat && !seeded) {
                 seeded = true;
                 void writeCombatState(uid, id, sessionToCombatState(doc.session));
                 return;
@@ -152,19 +147,16 @@ export function useMemberCharacterSubscription(
         quarantine("Member character not found");
         return;
       }
-      if (lastParent.playStateVersion === 1 && lastCombat === undefined) return;
-      if (lastParent.playStateVersion === 1 && lastCombat === null) {
-        quarantine("Invalid play state: missing-v1-combat-state");
+      if (lastCombat === undefined) return;
+      if (lastCombat === null) {
+        quarantine("Invalid character document: missing-combat-state");
         return;
       }
-      const loaded =
-        lastCombat === undefined
-          ? (loadReadonly(lastParent), true)
-          : useCharacterStore
-              .getState()
-              .loadCharacterWithCombat(lastParent, lastCombat, true);
+      const loaded = useCharacterStore
+        .getState()
+        .loadCharacterWithCombat(lastParent, lastCombat, true);
       if (!loaded) {
-        quarantine("Invalid play state");
+        quarantine("Invalid character document");
         return;
       }
       setLoading(false);

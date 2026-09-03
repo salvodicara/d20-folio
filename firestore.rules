@@ -56,7 +56,6 @@ service cloud.firestore {
         && sheet.publicSchema == 1
         && sheet.schema == 3
         && character.schema == 3
-        && character.playStateVersion == 1
         && character.state is map
         && character.state.size() == 0
         && sheet.build == character.build
@@ -159,59 +158,20 @@ service cloud.firestore {
                      request.resource.data
                    ))
           || (request.resource.data.get('shared', false) != true
-              && !existsAfter(sheetPath))
-          // Historical schema-3 parents may already carry shared=true while
-          // predating both the v1 ownership marker and public/sheet. Preserve
-          // that exact non-public generation so ordinary private autosaves work;
-          // no new legacy publication or marker transition is admitted here.
-          || (resource.data.get('shared', false) == true
-              && !resource.data.keys().hasAny(['playStateVersion'])
-              && request.resource.data.get('shared', false) == true
-              && !request.resource.data.keys().hasAny(['playStateVersion'])
               && !existsAfter(sheetPath));
       }
-      // A v1 marker may be born only when the post-write combat owner exists and
-      // carries the v1 envelope. Existing marker presence/value is otherwise
-      // immutable. This admits the atomic legacy cutover/restore transaction while
-      // denying a parent-only marker that would strand mutable state between homes.
-      function hasV1CombatOwnerAfter() {
-        return existsAfter(/databases/$(database)/documents/users/$(uid)/characters/$(charId)/combat/state)
-          && getAfter(/databases/$(database)/documents/users/$(uid)/characters/$(charId)/combat/state)
-               .data.playState is map
-          && getAfter(/databases/$(database)/documents/users/$(uid)/characters/$(charId)/combat/state)
-               .data.playState.version == 1
-          && getAfter(/databases/$(database)/documents/users/$(uid)/characters/$(charId)/combat/state)
-               .data.playState.state is map;
+      // The parent never carries a play session: the play owner is combat/state (P1).
+      function parentStateEmptyAfter() {
+        return request.resource.data.state is map
+          && request.resource.data.state.size() == 0;
       }
-      function validPlayStateVersionOnCreate() {
-        return !request.resource.data.keys().hasAny(['playStateVersion'])
-          || (request.resource.data.playStateVersion == 1
-              && hasV1CombatOwnerAfter());
-      }
-      function playStateVersionUnchanged() {
-        return request.resource.data.keys().hasAny(['playStateVersion'])
-               == resource.data.keys().hasAny(['playStateVersion'])
-          && request.resource.data.get('playStateVersion', null)
-               == resource.data.get('playStateVersion', null);
-      }
-      function validPlayStateVersionOnUpdate() {
-        return playStateVersionUnchanged()
-          || (!resource.data.keys().hasAny(['playStateVersion'])
-              && request.resource.data.playStateVersion == 1
-              && hasV1CombatOwnerAfter());
-      }
-      // Once v1 moves all session facts into combat/state, the parent `state`
-      // must remain an empty envelope. This also makes an atomic legacy cutover
-      // fail closed if a stale autosave tries to retain its old session payload.
-      function validV1ParentStateAfter() {
-        return request.resource.data.get('playStateVersion', null) != 1
-          || (request.resource.data.state is map
-              && request.resource.data.state.size() == 0);
-      }
-      // The campaign DM may clear only a departing target's stale claim, and only
-      // in the SAME atomic operation that removes the target from both roster
-      // projections. Reading the old campaign proves this is a transition, not a
-      // standalone edit against an already-stale roster.
+      // Membership, not gameplay: the campaign DM may clear only a departing target's
+      // stale claim, and only in the SAME atomic operation that removes the target from
+      // both roster projections. Reading the old campaign proves this is a transition,
+      // not a standalone edit against an already-stale roster.
+      //
+      // P4 deletion: this dies with the `table:leave` lease, which makes the owner's own
+      // client clear the attachment.
       function isCampaignDmDetach() {
         let changed = request.resource.data.diff(resource.data).affectedKeys();
         let campaign = attachedCampaign();
@@ -228,15 +188,29 @@ service cloud.firestore {
           && changed == ['attachedCampaignId'].toSet()
           && !request.resource.data.keys().hasAny(['attachedCampaignId']);
       }
+      // P1 — the parent build write is compare-and-set on `revision` (design §5.3).
+      // A build/state/cache change REQUIRES exactly resource.revision + 1. Anything
+      // else may leave `revision` untouched OR advance it by exactly one: the sharing
+      // publish and the snapshot restore rewrite the WHOLE parent with values that
+      // often diff to nothing, yet are ordinary generation-advancing writes. `+2` and
+      // any stale value are always denied. Offline writes queue and are rejected on
+      // reconnect when stale, which the client surfaces as a save error.
+      function revisionAdvancesWithBuild() {
+        let changed = request.resource.data.diff(resource.data).affectedKeys();
+        return request.resource.data.revision is int
+          && (request.resource.data.revision == resource.data.revision + 1
+              || (!changed.hasAny(['build', 'state', 'cache'])
+                  && request.resource.data.revision == resource.data.revision));
+      }
       allow create: if isNotBlocked()
         && request.auth.uid == uid
-        && validPlayStateVersionOnCreate()
-        && validV1ParentStateAfter()
+        && request.resource.data.revision == 0
+        && parentStateEmptyAfter()
         && publicSheetMatchesAfter();
       allow update: if isNotBlocked()
-        && ((request.auth.uid == uid && validPlayStateVersionOnUpdate())
+        && ((request.auth.uid == uid && revisionAdvancesWithBuild())
             || isCampaignDmDetach())
-        && validV1ParentStateAfter()
+        && parentStateEmptyAfter()
         && publicSheetMatchesAfter();
       allow delete: if isNotBlocked()
         && request.auth.uid == uid
@@ -296,14 +270,14 @@ service cloud.firestore {
     // the exact runtime roots while protecting playState, action history, round,
     // recent actions, turn economy, and every future private root byte-for-byte.
     //
-    // A legacy parent without `playStateVersion: 1` may still need its first combat
-    // document created while the target is offline. That one create is restricted to
-    // the parseable core plus the same effect roots and a neutral initiative value.
-    // Once the parent marks v1 ownership, a missing combat document fails closed.
-    // Cross-user access still derives live from the reciprocal parent attachment +
-    // campaign roster; requester removal, target removal, or a target character swap
-    // revokes it immediately.
-    match /users/{uid}/characters/{charId}/combat/{stateId} {
+    // A missing combat document fails closed: only the owner (or an admin) creates the
+    // play owner, never a peer. Cross-user access derives live from the reciprocal
+    // parent attachment + campaign roster; requester removal, target removal, or a
+    // target character swap revokes it immediately.
+    //
+    // P4 deletion: `isAttachedPeer`, `peerEffectUpdate` and its validators die with the
+    // encounter document.
+    match /users/{uid}/characters/{charId}/combat/state {
       function parentChar() {
         return get(/databases/$(database)/documents/users/$(uid)/characters/$(charId)).data;
       }
@@ -437,42 +411,12 @@ service cloud.firestore {
             'appliedEncounterEffects'
           ]);
       }
-      function peerLegacyCoreCreate() {
-        let data = request.resource.data;
-        return !parentChar().keys().hasAny(['playStateVersion'])
-          && data.keys().hasAll([
-            'hp',
-            'conditions',
-            'initiativeRoll',
-            'deathSaves'
-          ])
-          && data.keys().hasOnly([
-            'hp',
-            'conditions',
-            'bardicInspirationDie',
-            'heroicInspiration',
-            'initiativeRoll',
-            'deathSaves',
-            'pendingConcentrationSaves',
-            'appliedEncounterEffects',
-            'updatedAt'
-          ])
-          && data.initiativeRoll == null
-          && validPeerConditions([], data.conditions)
-          && (!data.keys().hasAny(['appliedEncounterEffects'])
-              || validPeerEncounterReceipt(data.appliedEncounterEffects))
-          && validPeerEffectState(data);
-      }
       allow read: if isNotBlocked() && (
         request.auth.uid == uid
         || isAdmin()
         || (hasAttachedCampaign() && isAttachedPeer())
       );
-      allow create: if isNotBlocked() && (
-        request.auth.uid == uid
-        || isAdmin()
-        || (isAttachedPeer() && peerLegacyCoreCreate())
-      );
+      allow create: if isNotBlocked() && (request.auth.uid == uid || isAdmin());
       allow update: if isNotBlocked() && (
         request.auth.uid == uid
         || isAdmin()

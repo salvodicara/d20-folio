@@ -21,6 +21,7 @@ import {
 } from "@/lib/resolve-grant-sources";
 import { evaluateGrants } from "@/lib/grants";
 import type { SrdEquipmentRef, CustomEquipment } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 describe("resolveGrantSourcesForEquipment — activity gate", () => {
   it("includes an equipped, non-attunement magic item", () => {
@@ -66,6 +67,7 @@ describe("resolveGrantSourcesForEquipment — activity gate", () => {
       custom: true,
       name: "Homebrew Cloak",
       equipped: true,
+      instanceId: customInstanceId("Homebrew Cloak"),
     };
     expect(resolveGrantSourcesForEquipment([custom])).toEqual([]);
   });

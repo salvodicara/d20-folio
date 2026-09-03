@@ -3,8 +3,7 @@
  * (the `combat/state` subdoc). Two layers under test:
  *
  *  1. the PURE seam (`src/lib/combat-state.ts`): the initiative string↔number
- *     conversion, the session→CombatState projection, the parent-doc trio strip,
- *     and the two cheap change detectors the auto-save subscribers route on;
+ *     conversion, the session→CombatState projection, and the trio-hydration merge;
  *  2. the Firestore IO (`src/lib/combat-state-io.ts`) with Firebase fully mocked
  *     (no real rules — those ship in a later chunk): DEV_BYPASS no-ops, the
  *     merge write shape, and the absent-doc → `null` listener contract.
@@ -18,8 +17,7 @@ import {
   initiativeToNumber,
   initiativeToString,
   sessionToCombatState,
-  omitCombatTrio,
-  nonCombatSessionChanged,
+  applyLegacyCombatToSession,
   applyCombatToSession as hydrateCombatSession,
   defaultCombatState,
   reduceHpDelta,
@@ -33,15 +31,8 @@ import {
   reduceMemberCombatEffects,
 } from "@/lib/combat-state";
 
-function applyCombatToSession(
-  value: SessionState,
-  combat: CombatState | null,
-  effectiveMax: number
-): SessionState {
-  const result = hydrateCombatSession(value, combat, effectiveMax, "legacy");
-  if (!result.ok) throw new Error(result.reason);
-  return result.session;
-}
+/** The trio-clamp math alone, without the v1 play-state gate (the migration path). */
+const applyCombatToSession = applyLegacyCombatToSession;
 
 function session(overrides: Partial<SessionState> = {}): SessionState {
   return {
@@ -209,35 +200,6 @@ describe("combat-state — session → CombatState projection", () => {
   });
 });
 
-describe("combat-state — omitCombatTrio (the parent-doc serialization boundary)", () => {
-  it("drops every combat-trio key, keeping every other serialized field", () => {
-    const state = {
-      hp: { current: 12, temp: 5 },
-      conditions: ["poisoned"],
-      initiative: "17",
-      deathSucc: 1,
-      deathFail: 2,
-      bardicInspirationDie: "d6",
-      inspiration: true,
-      currency: { gp: 5 },
-      round: 3,
-      notes: "keep me",
-    };
-    expect(omitCombatTrio(state)).toEqual({
-      currency: { gp: 5 },
-      round: 3,
-      notes: "keep me",
-    });
-  });
-
-  it("is a no-op on a state that already carries no combat trio (does not mutate input)", () => {
-    const state = { currency: { gp: 5 }, round: 2 };
-    const out = omitCombatTrio(state);
-    expect(out).toEqual(state);
-    expect(out).not.toBe(state); // returns a copy
-  });
-});
-
 describe("combat-state — applyCombatToSession (the ONE trio-hydration merge)", () => {
   it("merges a combat subdoc's trio, clamping HP to the effective max + converting init", () => {
     const merged = applyCombatToSession(
@@ -341,8 +303,7 @@ describe("combat-state — applyCombatToSession (the ONE trio-hydration merge)",
     const result = hydrateCombatSession(
       session({ notes: "stale", trackers: {} }),
       combat,
-      30,
-      1
+      30
     );
     expect(result).toMatchObject({
       ok: true,
@@ -350,14 +311,16 @@ describe("combat-state — applyCombatToSession (the ONE trio-hydration merge)",
     });
   });
 
-  it("v1 fails closed when its combat document or nested owner is absent", () => {
-    expect(hydrateCombatSession(session(), null, 30, 1)).toEqual({
-      ok: false,
-      reason: "missing-v1-combat-state",
-    });
-    expect(hydrateCombatSession(session(), baseCombat, 30, 1)).toEqual({
+  it("fails closed on a present child whose nested play owner is absent/invalid", () => {
+    expect(hydrateCombatSession(session(), baseCombat, 30)).toEqual({
       ok: false,
       reason: "invalid-v1-play-state",
+    });
+    // An ABSENT child is the fresh/undamaged default (export, fixture, roster shell),
+    // never an integrity failure.
+    expect(hydrateCombatSession(session(), null, 30)).toMatchObject({
+      ok: true,
+      session: { hp: { current: 30, temp: 0 }, conditions: [], initiative: "" },
     });
   });
 });
@@ -550,7 +513,7 @@ describe("combat-state — absolute setters (one field, clamped)", () => {
 });
 
 describe("combat-state — defaultCombatState (the absent-subdoc full-HP seed)", () => {
-  it("seeds full current HP at max, no temp / conditions / roll / death saves", () => {
+  it("seeds full HP, no temp / conditions / roll / death saves, and the empty v1 owner", () => {
     expect(defaultCombatState(30)).toEqual<CombatState>({
       hp: { current: 30, temp: 0 },
       conditions: [],
@@ -558,6 +521,8 @@ describe("combat-state — defaultCombatState (the absent-subdoc full-HP seed)",
       deathSaves: { successes: 0, failures: 0 },
       round: 1,
       recentActions: [],
+      // A complete shape: the write seam refuses a child with no play owner.
+      playState: { version: 1, state: {} },
     });
   });
 });
@@ -604,26 +569,6 @@ describe("combat-state — pushRecentAttack (the declared-attack ring)", () => {
   });
 });
 
-describe("combat-state — nonCombatSessionChanged routes a transition to the right doc", () => {
-  it("nonCombatSessionChanged: true iff a NON-trio field changed", () => {
-    const a = session();
-    expect(nonCombatSessionChanged(a, a)).toBe(false);
-    expect(nonCombatSessionChanged(a, { ...a, notes: "x" })).toBe(true);
-    expect(nonCombatSessionChanged(a, { ...a, trackers: { x: { used: 1 } } })).toBe(true);
-    // A trio-ONLY change must NOT trigger a parent-doc save.
-    expect(nonCombatSessionChanged(a, { ...a, hp: { current: 1, temp: 0 } })).toBe(false);
-    expect(nonCombatSessionChanged(a, { ...a, conditions: ["prone"] })).toBe(false);
-    expect(nonCombatSessionChanged(a, { ...a, initiative: "9" })).toBe(false);
-    expect(nonCombatSessionChanged(a, { ...a, deathSucc: 3 })).toBe(false);
-    expect(
-      nonCombatSessionChanged(a, {
-        ...a,
-        concentrationConditions: ["invisible"],
-      })
-    ).toBe(true);
-  });
-});
-
 // ── IO layer (Firebase mocked) ───────────────────────────────────────────────
 //
 // Every combat op persists through the OFFLINE-SAFE `setDoc(merge)` (NO transaction —
@@ -631,7 +576,6 @@ describe("combat-state — nonCombatSessionChanged routes a transition to the ri
 // captures the payload so tests assert the field-locked whole-object shape.
 
 const setDocMock = vi.fn(() => Promise.resolve());
-const updateDocMock = vi.fn(() => Promise.resolve());
 let onSnapshotImpl: (
   ref: unknown,
   next: (snap: {
@@ -652,9 +596,14 @@ function lastSetPayload(): Record<string, unknown> {
 vi.mock("firebase/firestore", () => ({
   doc: (...segments: unknown[]) => ({ path: segments.slice(1).join("/") }),
   setDoc: (...args: unknown[]) => setDocMock(...(args as [])),
-  updateDoc: (...args: unknown[]) => updateDocMock(...(args as [])),
-  onSnapshot: (ref: unknown, next: unknown, err: unknown) =>
-    onSnapshotImpl(
+  // The subscription opens with `{ includeMetadataChanges: true }` (the local-echo →
+  // server-confirmed transition is what acknowledges a pending write), so the options
+  // object sits between the ref and the handlers. Accept both arities.
+  onSnapshot: (ref: unknown, a: unknown, b: unknown, c: unknown) => {
+    const hasOptions = typeof a !== "function";
+    const next = hasOptions ? b : a;
+    const err = hasOptions ? c : b;
+    return onSnapshotImpl(
       ref,
       next as (s: {
         exists: () => boolean;
@@ -662,7 +611,8 @@ vi.mock("firebase/firestore", () => ({
         metadata: { hasPendingWrites: boolean };
       }) => void,
       err as (e: Error) => void
-    ),
+    );
+  },
   // NB: NO `runTransaction` export — the offline bug was that a transaction rejects
   // offline; the fix uses only `setDoc`. If any op still reached for a transaction it
   // would throw here (undefined), so these tests pin the offline-queueable primitive.
@@ -678,7 +628,6 @@ vi.mock("@/lib/dev-bypass", () => ({
 
 import {
   writeCombatState,
-  writeCombatTurnEconomy,
   subscribeCombatState,
   combatStateRef,
 } from "@/lib/combat-state-io";
@@ -690,17 +639,39 @@ const COMBAT: CombatState = {
   deathSaves: { successes: 1, failures: 0 },
   round: 1,
   recentActions: [],
+  // Every persisted child is a v1 play owner; the write seam refuses anything else.
+  playState: { version: 1, state: {} },
 };
 
 beforeEach(() => {
   setDocMock.mockClear();
   setDocMock.mockImplementation(() => Promise.resolve());
-  updateDocMock.mockClear();
   devBypass.value = false;
   onSnapshotImpl = () => () => {};
 });
 
 describe("combat-state-io — write (last-write-wins overwrite)", () => {
+  it("REFUSES a payload with no v1 play owner instead of persisting an unreadable child", async () => {
+    // The write seam is as closed as the read seam: a child without `playState` is one
+    // `parseCombatState` would refuse forever, so the character could never be opened.
+    const { playState: _playState, ...noOwner } = COMBAT;
+    void _playState;
+    await expect(writeCombatState("u1", "c1", noOwner)).rejects.toThrow(
+      "Invalid combat play state: missing"
+    );
+    await expect(
+      writeCombatState("u1", "c1", {
+        ...COMBAT,
+        playState: { version: 2, state: {} } as unknown as CombatState["playState"],
+      })
+    ).rejects.toThrow("Invalid combat play state: unsupported-play-state-version");
+    expect(setDocMock).not.toHaveBeenCalled();
+    // The seed a first write reduces over already carries the empty v1 owner.
+    expect(defaultCombatState(12).playState).toEqual({ version: 1, state: {} });
+    await writeCombatState("u1", "c1", defaultCombatState(12));
+    expect(setDocMock).toHaveBeenCalledTimes(1);
+  });
+
   it("writes the trio + a server timestamp, OVERWRITING the subdoc", async () => {
     await writeCombatState("u1", "c1", COMBAT);
     expect(setDocMock).toHaveBeenCalledTimes(1);
@@ -733,60 +704,6 @@ describe("combat-state-io — write (last-write-wins overwrite)", () => {
     });
     expect(lastSetPayload()).toMatchObject({ activeEffects: [localEffect()] });
   });
-
-  it("updates only round + turn economy without creating a partial document", async () => {
-    await writeCombatTurnEconomy("u1", "c1", 3, {
-      key: "encounter:c1:3",
-      selected: { action: [], bonus: [], free: [] },
-      attacksUsed: 1,
-      attackSwings: [{ actionId: "swing-1" }],
-      outcomeReceipts: [],
-      outcomeOrdinal: 0,
-      reactionUsed: false,
-      reactionUsedId: null,
-      reactionOutcomeOccurrenceId: null,
-      movementUsedFt: 4,
-      dashesThisTurn: 0,
-      spellSlotCastsThisTurn: 0,
-      spellSlotCastTurnKey: null,
-      damageTakenThisRound: false,
-    });
-
-    const [ref, payload] = updateDocMock.mock.calls[0] as unknown as [
-      { path: string },
-      Record<string, unknown>,
-    ];
-    expect(ref).toEqual({ path: "users/u1/characters/c1/combat/state" });
-    expect(payload).toMatchObject({
-      round: 3,
-      turnEconomy: { attacksUsed: 1, movementUsedFt: 4 },
-      updatedAt: "server-ts",
-    });
-    expect(setDocMock).not.toHaveBeenCalled();
-  });
-
-  it("fails safely when turn economy targets a missing document", async () => {
-    updateDocMock.mockRejectedValueOnce(new Error("not-found"));
-    await expect(
-      writeCombatTurnEconomy("u1", "missing", 1, {
-        key: "solo:1",
-        selected: { action: [], bonus: [], free: [] },
-        attacksUsed: 0,
-        attackSwings: [],
-        outcomeReceipts: [],
-        outcomeOrdinal: 0,
-        reactionUsed: false,
-        reactionUsedId: null,
-        reactionOutcomeOccurrenceId: null,
-        movementUsedFt: 0,
-        dashesThisTurn: 0,
-        spellSlotCastsThisTurn: 0,
-        spellSlotCastTurnKey: null,
-        damageTakenThisRound: false,
-      })
-    ).rejects.toThrow("not-found");
-    expect(setDocMock).not.toHaveBeenCalled();
-  });
 });
 
 describe("combat-state-io — subscribe", () => {
@@ -800,6 +717,11 @@ describe("combat-state-io — subscribe", () => {
           conditions: ["stunned"],
           initiativeRoll: 11,
           deathSaves: { successes: 2, failures: 1 },
+          recentActions: [
+            { id: "1", targetIds: ["monster-0"], outcome: "hit", round: 1 },
+          ],
+          activeEffects: [localEffect()],
+          playState: { version: 1, state: {} },
         }),
         // Real Firestore snapshots always carry `metadata` (the remote-fence reads
         // `hasPendingWrites`); the fake mirrors that shape.
@@ -813,78 +735,47 @@ describe("combat-state-io — subscribe", () => {
       conditions: ["stunned"],
       initiativeRoll: 11,
       deathSaves: { successes: 2, failures: 1 },
+      // Absence-safe: a subdoc written before `round` moved here reads as round 1.
       round: 1,
-      recentActions: [],
+      recentActions: [{ id: "1", targetIds: ["monster-0"], outcome: "hit", round: 1 }],
+      activeEffects: [localEffect()],
+      playState: { version: 1, state: {} },
     });
   });
 
-  it("parses recentActions defensively (keeps valid entries, drops malformed ones)", () => {
-    const received: Array<CombatState | null> = [];
-    onSnapshotImpl = (_ref, next) => {
-      next({
-        exists: () => true,
-        data: () => ({
-          hp: { current: 5, temp: 0 },
-          conditions: [],
-          initiativeRoll: null,
-          deathSaves: { successes: 0, failures: 0 },
-          round: 2,
-          recentActions: [
-            { id: "1", targetIds: ["monster-0"], outcome: "hit", round: 2 },
-            { id: "2", targetIds: [], outcome: "hit", round: 2 }, // no target → dropped
-            { id: "3", targetIds: ["monster-1"], outcome: "nonsense", round: 2 }, // bad outcome
-            { targetIds: ["monster-2"], outcome: "miss", round: 2 }, // no id → dropped
-            "garbage",
-          ],
-        }),
-        metadata: { hasPendingWrites: false },
-      });
-      return () => {};
-    };
-    subscribeCombatState("u1", "c1", (s) => received.push(s));
-    expect(received[0]?.recentActions).toEqual([
-      { id: "1", targetIds: ["monster-0"], outcome: "hit", round: 2 },
-    ]);
-  });
-
-  it("defaults recentActions to [] when the field is absent (a pre-Phase-1 subdoc)", () => {
-    const received: Array<CombatState | null> = [];
-    onSnapshotImpl = (_ref, next) => {
-      next({
-        exists: () => true,
-        data: () => ({
-          hp: { current: 5, temp: 0 },
-          conditions: [],
-          initiativeRoll: null,
-          deathSaves: { successes: 0, failures: 0 },
-          round: 1,
-        }),
-        metadata: { hasPendingWrites: false },
-      });
-      return () => {};
-    };
-    subscribeCombatState("u1", "c1", (s) => received.push(s));
-    expect(received[0]?.recentActions).toEqual([]);
-  });
-
-  it("parses valid local effects and drops malformed occurrences", () => {
-    const received: Array<CombatState | null> = [];
-    onSnapshotImpl = (_ref, next) => {
-      next({
-        exists: () => true,
-        data: () => ({
-          hp: { current: 5, temp: 0 },
-          conditions: [],
-          initiativeRoll: null,
-          deathSaves: { successes: 0, failures: 0 },
-          activeEffects: [localEffect(), { id: "broken" }],
-        }),
-        metadata: { hasPendingWrites: false },
-      });
-      return () => {};
-    };
-    subscribeCombatState("u1", "c1", (s) => received.push(s));
-    expect(received[0]?.activeEffects).toEqual([localEffect()]);
+  it("fails closed — never half-parsed — on a malformed or play-state-less document", () => {
+    for (const data of [
+      // A non-canonical stored ring: the strict reader refuses rather than dropping
+      // the bad rows and delivering a doc the owner never wrote.
+      {
+        hp: { current: 5, temp: 0 },
+        conditions: [],
+        initiativeRoll: null,
+        deathSaves: { successes: 0, failures: 0 },
+        recentActions: [{ id: "2", targetIds: [], outcome: "hit", round: 2 }],
+        playState: { version: 1, state: {} },
+      },
+      { ...COMBAT, playState: undefined },
+    ]) {
+      const received: Array<CombatState | null> = [];
+      const errors: Error[] = [];
+      onSnapshotImpl = (_ref, next) => {
+        next({
+          exists: () => true,
+          data: () => data,
+          metadata: { hasPendingWrites: false },
+        });
+        return () => {};
+      };
+      subscribeCombatState(
+        "u1",
+        "c1",
+        (state) => received.push(state),
+        (error) => errors.push(error)
+      );
+      expect(received).toEqual([]);
+      expect(errors[0]?.message).toContain("Invalid combat state");
+    }
   });
 
   it("delivers null for an ABSENT doc (caller defaults to full HP)", () => {

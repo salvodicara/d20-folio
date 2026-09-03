@@ -32,7 +32,7 @@ lease owner remain separate roles; one cannot substitute for the other.
 | `tacticalWayfinder`        | `docs/superpowers/plans/2026-08-25-tactical-codex-ui-ux-wayfinder.md` | `062ffd48783311a77e1ad5bee962ef5cd637c079`                                                            |
 | `testRoadmap`              | `docs/superpowers/plans/2026-08-25-test-portfolio-reset.md`           | `9f3e42f7e50f104a35ceab21f5469a4291407bb4`                                                            |
 | `readinessBaseline`        | `docs/superpowers/plans/2026-08-25-g0-automation-readiness.md`        | `0a7f1ec661390aa475dfbde83eab72a4fbbe8b89`                                                            |
-| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | candidate `58c3f085a1771d341c82f4dc93dffd17b45c219a`; base `7cb89ed4b26021aa46a7d4cdc8ef7888df692d52` |
+| `repositoryLeaseOwners[0]` | `docs/TEST_PORTFOLIO.md`                                              | candidate `78f91c8b082d5965bf6a273f2cef915f4b258555`; base `7cb89ed4b26021aa46a7d4cdc8ef7888df692d52` |
 | `statusOwner`              | `docs/PROGRAM_STATUS.md`                                              | base `ed43234fa7dedd065e6c809998c94568a852d41f`; candidate resolves after integration                 |
 
 The status owner cannot truthfully contain the blob produced by its own pending edit. Runtime main
@@ -74,8 +74,38 @@ meaningful tests. Consequences for this ledger: the `automation-k1` charter and 
 K1→X1 are **superseded** (ADR-0004); `mechanics-*` is salvaged, not adopted (ADR-0003); the P2
 prototype lives in `src/lib/combat` (`docs/superpowers/status/2026-09-02-p2-prototype-report.md`).
 Codex was blocked by the owner on 2026-09-02; `fix/structural-automation-fixes` is an input, not a
-baseline. The next session starts from
-`docs/superpowers/plans/2026-09-02-next-session-handoff.md`.
+baseline.
+
+**Phase 1 (data safety) integrated 2026-09-03** at public `main` `7b95f24` (Integration A `77ea77a`
+plus 14 commits) with the private twin at `d20-folio-content` `main` `5a42896`; execution record:
+`docs/superpowers/plans/2026-09-02-combat-p1-data-safety.md` (task by task, with the reviews'
+rulings). Deliverables: total character codec with typed quarantine, `instanceId` identity, per-domain
+snapshot reconciliation with the `revision` compare-and-set, every unmarked-legacy reader deleted,
+character-path rules reduced to access policy (rules suite 118 cases), diagnostics, and the two
+migration scripts below. **Owner gate open:** the two pending migrations must be applied and
+`--check`-verified on production before the deploy that ships this `main`; the production site
+currently serves `6a2487b` (checked 2026-09-03), which predates the unknown-key codec bridge, so the
+migration→deploy window must stay short (see `docs/RELEASE.md`). The next session starts from
+`docs/superpowers/plans/2026-09-03-next-session-handoff.md` (Phase 2).
+
+## Pending migrations
+
+One-off data migrations that are committed and verified locally but have NOT yet run on production.
+ADR-0009: before deploying a SHA that reads a new persisted shape, every row here must be `--check`
+green against production; a deploy with a pending migration is refused. Commands and credentials:
+`docs/RELEASE.md` → "Migrate before you deploy". A row is deleted only after the script has run on
+production, been verified idempotent, and had its script + test removed (golden rule 10).
+
+**Run order is fixed: 1 then 2.** The parent cutover hydrates every legacy family through
+`parseCharacterEnvelope`, which now REQUIRES `instanceId` on custom entries — run out of order and
+every character with a custom item is refused (`invalid-envelope`). **Any single issue blocks the
+whole apply:** preflight refuses the entire batch, there is no partial apply, so a reported document
+is hand-fixed and `--check` re-run before applying.
+
+| #   | Migration                              | Persisted shape it prepares                                                                                         | State                                                                                                                                                                                                                                                                                                                                                              |
+| --- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `scripts/migrate-custom-identity.ts`   | `instanceId` on every custom sheet entry and library id                                                             | Committed (`7b95f24`); six-fixture dry-run 2026-09-03: 6 parents, 0 stamps, 0 issues; not yet run on production. Must run BEFORE the parent cutover.                                                                                                                                                                                                               |
+| 2   | `scripts/migrate-character-parents.ts` | every parent v1 (`state: {}`), every character has a `combat/state` child with `playState`, every parent `revision` | Committed (`7b95f24`); six-fixture dry-run 2026-09-03 (composed): 6 legacy → 6 children created, 6 `revision` stamped, 0 issues; not yet run on production. **BLOCKING from P1 on:** the client is v1-only, so an unmigrated parent quarantines and a childless character fails closed. At most ~250 characters per run (two documents each, one 500-write batch). |
 
 ## Active charters
 

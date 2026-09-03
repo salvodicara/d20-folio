@@ -52,6 +52,20 @@ files / 49,189 LOC; two Rules files / 3,239 LOC; seven Functions files /
 All tracked test source is therefore 232,475 LOC. Playwright lists 2,331
 registrations. Future deltas compare to these exact-base measurements.
 
+### Rules suite (P1, 2026-09-03)
+
+`tests/rules/` is four files — `firestore-rules.test.ts` (101 cases),
+`storage-rules.test.ts` (12), `migrate-character-parents.emulator.test.ts` (1) and
+`migration-kit.emulator.test.ts` (4): **118 cases**, inside the ≤ 120 budget the combat P1
+data-safety plan sets. Note that **5 of the 118 are MIGRATION emulator cases**, not access-policy
+cases: they live under `tests/rules/` only because they need the Firestore emulator, and they are
+counted against the same ceiling today. P3 revisits that (see the migration program's P3
+follow-ups) so the P4 rules rewrite is not squeezed by them. The firestore file was cut from 176 by the P1 legacy cutover: the
+`playStateVersion` marker cases, the unmarked-legacy escape hatch, `peerLegacyCoreCreate`
+and every duplicate access-matrix row died with the representations they pinned, and each
+surviving predicate keeps one accept and one deny. Count them with
+`grep -c "^\s*it(" tests/rules/*.test.ts`.
+
 The composed `pnpm test` baseline observed 19,022 of 19,024 passing under
 portfolio load, with two five-second timeouts; each passed three isolated
 executions. This is a reliability signal, not a semantic failure. Do not add a

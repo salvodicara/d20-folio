@@ -14,6 +14,7 @@ import { KNOWN_STATE_KEYS } from "@/lib/session-state-codec";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { buildScenario, DEV_SCENARIOS } from "@/lib/dev-scenarios";
 import type { CharacterDoc } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
@@ -191,7 +192,14 @@ describe("codec totality", () => {
     const env = structuredClone(BASES[0] as Envelope);
     env.build.customs = {
       features: [
-        { custom: true, title: "T", emoji: "x", source: "s", contentBlocks: [1] },
+        {
+          custom: true,
+          title: "T",
+          emoji: "x",
+          source: "s",
+          contentBlocks: [1],
+          instanceId: customInstanceId("hostile-feature"),
+        },
       ],
     };
     const parsed = parseCharacterEnvelope(env.build, env.state);
@@ -277,5 +285,40 @@ describe("codec totality", () => {
       ok: false,
       failure: { code: "invalid-build", path: "build.equipment" },
     });
+  });
+
+  it("a custom entry without a valid instanceId is a malformed entry", () => {
+    const env = structuredClone(BASES[0] as Envelope);
+    (env.build.equipment as unknown[]).push({ custom: true, name: "Boots of Bo" });
+    const at = (env.build.equipment as unknown[]).length - 1;
+    const parsed = parseCharacterEnvelope(env.build, env.state);
+    expect(parsed).toMatchObject({
+      ok: false,
+      failure: { code: "malformed-entry", path: `build.equipment[${at}].instanceId` },
+    });
+  });
+
+  it("instanceId is serialized as the last key of a custom entry (fixture byte-identity)", () => {
+    const env = structuredClone(BASES[0] as Envelope);
+    (env.build.weapons as unknown[]).push({
+      custom: true,
+      name: "Talon",
+      quantity: 1,
+      damageDie: "1d8",
+      damageType: "slashing",
+      attackStat: "STR",
+      properties: "",
+      instanceId: "talon-1",
+    });
+    const parsed = parseCharacterEnvelope(env.build, env.state);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const again = serializeCharacterEnvelope({
+      ...MOCK_CHARACTER,
+      character: parsed.character,
+      session: parsed.session,
+    });
+    const talon = (again.build.weapons as Record<string, unknown>[]).at(-1);
+    expect(talon && Object.keys(talon).at(-1)).toBe("instanceId");
   });
 });

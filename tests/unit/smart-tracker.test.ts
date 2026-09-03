@@ -17,6 +17,7 @@ import { combatVerdict } from "@/features/character/center/tabs/combat-card-help
 import { spellInstanceCount } from "@/lib/utils";
 import { concentrationValue } from "@/lib/concentration";
 import type { CharacterDoc } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 import type { AggregatedGrants } from "@/lib/grants";
 
 // ─── Minimal character fixture ────────────────────────────────────────────────
@@ -37,6 +38,7 @@ function makeChar(
     portraitUrl: null,
     portraitCrop: null,
     shared: false,
+    revision: 0,
     status: "active",
     character: {
       name: assertNonEmptyString("Fighter"),
@@ -482,7 +484,14 @@ describe("RA-14 — equipmentQuantityOf", () => {
   it("ignores custom (homebrew) rows — only SRD rows are tracked", () => {
     expect(
       equipmentQuantityOf(
-        [{ custom: true, name: "Special Arrows", quantity: 99 }],
+        [
+          {
+            custom: true,
+            name: "Special Arrows",
+            quantity: 99,
+            instanceId: customInstanceId("Special Arrows"),
+          },
+        ],
         "arrows"
       )
     ).toBeNull();
@@ -791,6 +800,7 @@ describe("resolveActions — potions", () => {
           quantity: 2,
           isPotion: true,
           potionFormula: "2d4+2",
+          instanceId: customInstanceId("Pozione di Guarigione"),
         },
       ],
     });
@@ -801,7 +811,9 @@ describe("resolveActions — potions", () => {
     expect(potion?.summary.healing).toBe("2d4+2");
     expect(potion?.summary.uses).toEqual({ current: 2, total: 2 });
     expect(potion?.name).toBe("Pozione di Guarigione");
-    expect(potion?.costEquipment).toBe("custom-Pozione di Guarigione");
+    expect(potion?.costEquipment).toBe(
+      `custom-${customInstanceId("Pozione di Guarigione")}`
+    );
   });
 
   // REGRESSION (owner 2026-06-08): "a Potion of Healing in the inventory doesn't show
@@ -855,6 +867,7 @@ describe("resolveActions — potions", () => {
           quantity: 0,
           isPotion: true,
           potionFormula: "2d4+2",
+          instanceId: customInstanceId("Healing Potion"),
         },
       ],
     });
@@ -872,6 +885,7 @@ describe("resolveActions — potions", () => {
           quantity: 5,
           isPotion: false,
           potionFormula: undefined,
+          instanceId: customInstanceId("Torch"),
         },
       ],
     });
@@ -888,6 +902,7 @@ describe("resolveActions — potions", () => {
           quantity: 3,
           isPotion: true,
           potionFormula: "2d4+2",
+          instanceId: customInstanceId("Potion of Healing"),
         },
       ],
     });
@@ -905,6 +920,7 @@ describe("resolveActions — potions", () => {
           quantity: 1,
           isPotion: true,
           potionFormula: "2d4+2",
+          instanceId: customInstanceId("Potion of Healing"),
         },
       ],
     });
@@ -922,6 +938,7 @@ describe("resolveActions — potions", () => {
           quantity: 2,
           isPotion: true,
           potionFormula: "2d4+2",
+          instanceId: customInstanceId("Potion of Healing"),
         },
         {
           custom: true,
@@ -929,6 +946,7 @@ describe("resolveActions — potions", () => {
           quantity: 1,
           isPotion: true,
           potionFormula: "4d4+4",
+          instanceId: customInstanceId("Potion of Greater Healing"),
         },
       ],
     });
@@ -960,12 +978,13 @@ describe("resolveActions — potions", () => {
           quantity: 1,
           isPotion: true,
           potionFormula: "8d4+8",
+          instanceId: customInstanceId("Elixir of Life"),
         },
       ],
     });
     const actions = localizeActions(char, "en");
     const potion = actions.find((a) => a.id.startsWith("item-custom-"));
-    expect(potion?.costEquipment).toBe("custom-Elixir of Life");
+    expect(potion?.costEquipment).toBe(`custom-${customInstanceId("Elixir of Life")}`);
   });
 });
 
@@ -1083,10 +1102,13 @@ describe("resolveActions — custom spells", () => {
         duration: "1 minute",
         concentration: false,
         description: "Breathe fire.",
+        instanceId: customInstanceId("Dragon Breath"),
       },
     ];
     const actions = localizeActions(char, "en");
-    const spell = actions.find((a) => a.id === "custom-spell-dragon-breath");
+    const spell = actions.find(
+      (a) => a.id === `custom-spell-${customInstanceId("Dragon Breath")}`
+    );
     expect(spell).toBeDefined();
     expect(spell?.type).toBe("action");
     expect(spell?.source).toBe("spell");
@@ -1111,10 +1133,13 @@ describe("resolveActions — custom spells", () => {
         duration: "Instantaneous",
         concentration: false,
         description: "Quick heal.",
+        instanceId: customInstanceId("Swift Mend"),
       },
     ];
     const actions = localizeActions(char, "en");
-    const spell = actions.find((a) => a.id === "custom-spell-swift-mend");
+    const spell = actions.find(
+      (a) => a.id === `custom-spell-${customInstanceId("Swift Mend")}`
+    );
     expect(spell).toBeDefined();
     expect(spell?.type).toBe("bonus");
     expect(spell?.costsSlot).toBe(true);
@@ -1134,10 +1159,13 @@ describe("resolveActions — custom spells", () => {
         duration: "Instantaneous",
         concentration: false,
         description: "Counter a spell.",
+        instanceId: customInstanceId("Counter Ward"),
       },
     ];
     const actions = localizeActions(char, "en");
-    const spell = actions.find((a) => a.id === "custom-spell-counter-ward");
+    const spell = actions.find(
+      (a) => a.id === `custom-spell-${customInstanceId("Counter Ward")}`
+    );
     expect(spell).toBeDefined();
     expect(spell?.type).toBe("reaction");
   });
@@ -1156,10 +1184,13 @@ describe("resolveActions — custom spells", () => {
         duration: "Instantaneous",
         concentration: false,
         description: "A spark of chaos.",
+        instanceId: customInstanceId("Chaos Spark"),
       },
     ];
     const actions = localizeActions(char, "en");
-    const spell = actions.find((a) => a.id === "custom-spell-chaos-spark");
+    const spell = actions.find(
+      (a) => a.id === `custom-spell-${customInstanceId("Chaos Spark")}`
+    );
     expect(spell).toBeDefined();
     expect(spell?.costsSlot).toBe(false);
     expect(spell?.slotLevel).toBeUndefined();
@@ -1180,10 +1211,13 @@ describe("resolveActions — custom spells", () => {
         duration: "Up to 1 minute",
         concentration: true,
         description: "A veil of arcane energy.",
+        instanceId: customInstanceId("Arcane Veil"),
       },
     ];
     const actions = localizeActions(char, "en");
-    const spell = actions.find((a) => a.id === "custom-spell-arcane-veil");
+    const spell = actions.find(
+      (a) => a.id === `custom-spell-${customInstanceId("Arcane Veil")}`
+    );
     expect(spell).toBeDefined();
     expect(spell?.concentration).toBe(true);
   });
@@ -1202,10 +1236,13 @@ describe("resolveActions — custom spells", () => {
         duration: "1 hour",
         concentration: false,
         description: "An illusory flame.",
+        instanceId: customInstanceId("Phantom Flame"),
       },
     ];
     const actions = localizeActions(char, "en");
-    const spell = actions.find((a) => a.id === "custom-spell-phantom-flame");
+    const spell = actions.find(
+      (a) => a.id === `custom-spell-${customInstanceId("Phantom Flame")}`
+    );
     expect(spell?.summary.range).toBe("30 feet");
     expect(spell?.summary.duration).toBe("1 hour");
   });
@@ -1224,10 +1261,13 @@ describe("resolveActions — custom spells", () => {
         duration: "Instantaneous",
         concentration: false,
         description: "A bolt of magic.",
+        instanceId: customInstanceId("Magic Bolt"),
       },
     ];
     const actions = localizeActions(char, "en");
-    const spell = actions.find((a) => a.id === "custom-spell-magic-bolt");
+    const spell = actions.find(
+      (a) => a.id === `custom-spell-${customInstanceId("Magic Bolt")}`
+    );
     expect(spell?.summary.duration).toBeUndefined();
   });
 
@@ -1245,10 +1285,13 @@ describe("resolveActions — custom spells", () => {
         duration: "Instantaneous",
         concentration: false,
         description: "Uses all components.",
+        instanceId: customInstanceId("All Components"),
       },
     ];
     const actions = localizeActions(char, "en");
-    const spell = actions.find((a) => a.id === "custom-spell-all-components");
+    const spell = actions.find(
+      (a) => a.id === `custom-spell-${customInstanceId("All Components")}`
+    );
     expect(spell?.summary.components).toEqual({ v: true, s: true, m: true });
   });
 
@@ -1267,10 +1310,13 @@ describe("resolveActions — custom spells", () => {
         duration: "Instantaneous",
         concentration: false,
         description: desc,
+        instanceId: customInstanceId("Test Spell"),
       },
     ];
     const actions = localizeActions(char, "en");
-    const spell = actions.find((a) => a.id === "custom-spell-test-spell");
+    const spell = actions.find(
+      (a) => a.id === `custom-spell-${customInstanceId("Test Spell")}`
+    );
     expect(spell?.description).toBe(desc);
   });
 
@@ -1288,6 +1334,7 @@ describe("resolveActions — custom spells", () => {
         duration: "Instantaneous",
         concentration: false,
         description: "Zap.",
+        instanceId: customInstanceId("Zap & Blast!"),
       },
     ];
     const actions = localizeActions(char, "en");
@@ -1312,11 +1359,14 @@ describe("resolveActions — custom spells", () => {
         duration: "Instantaneous",
         concentration: false,
         description: "A custom blast.",
+        instanceId: customInstanceId("Custom Blast"),
       },
     ];
     const actions = localizeActions(char, "en");
     const fireball = actions.find((a) => a.id === "spell-fireball");
-    const custom = actions.find((a) => a.id === "custom-spell-custom-blast");
+    const custom = actions.find(
+      (a) => a.id === `custom-spell-${customInstanceId("Custom Blast")}`
+    );
     expect(fireball).toBeDefined();
     expect(custom).toBeDefined();
   });
@@ -1335,15 +1385,18 @@ describe("resolveActions — custom spells", () => {
         duration: "1 hour",
         concentration: false,
         description: "A deliberately slow ward.",
+        instanceId: customInstanceId("Patient Ward"),
       },
     ];
 
     expect(localizeActions(char, "en")).not.toContainEqual(
-      expect.objectContaining({ id: "custom-spell-patient-ward" })
+      expect.objectContaining({
+        id: `custom-spell-${customInstanceId("Patient Ward")}`,
+      })
     );
     expect(localizeActions(char, "en", "spellbook")).toContainEqual(
       expect.objectContaining({
-        id: "custom-spell-patient-ward",
+        id: `custom-spell-${customInstanceId("Patient Ward")}`,
         type: "free",
         castTiming: "extended",
         customSpellIndex: 0,
@@ -1365,7 +1418,14 @@ describe("resolveActions — custom spells", () => {
       concentration: false,
       description: "One of two same-named homebrew cantrips.",
     };
-    char.character.spells = [spell, { ...spell }];
+    // Two independently-created homebrew spells that happen to share a display
+    // name still get their OWN instanceId (minted at creation) — never derived
+    // from the (colliding) name, so the two stay addressable without an
+    // index-suffix fallback.
+    char.character.spells = [
+      { ...spell, instanceId: customInstanceId("Twin Spark 1") },
+      { ...spell, instanceId: customInstanceId("Twin Spark 2") },
+    ];
 
     const twins = localizeActions(char, "en", "spellbook").filter(
       (action) => action.name === "Twin Spark"

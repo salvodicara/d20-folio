@@ -5,8 +5,9 @@
  * that don't exist in the SRD. Used within the Add modals' Custom tab.
  *
  * CUSTOM IS THE LIBRARY: every commit here lands on the character AND upserts the
- * same homebrew into the account-level library ({@link keepInLibrary}, keyed by kind +
- * name), so it is offerable to every other character with no save gesture. A SUCCESSFUL
+ * same homebrew into the account-level library ({@link keepInLibrary}, keyed by the
+ * item's own stable `instanceId`), so it is offerable to every other character with
+ * no save gesture. A SUCCESSFUL
  * keep is silent — the creation itself is the feedback; a second toast would just
  * narrate bookkeeping — but a keep REFUSED by the free-tier cap says so, since the
  * player would otherwise believe their homebrew was filed away. An unhydrated library
@@ -30,6 +31,7 @@ import { Select } from "@/components/shared/Select";
 import { IconPicker } from "@/components/shared/icon-picker";
 import { DEFAULT_ALGO_ICON } from "@/components/shared/icon-registry";
 import type { TFunction } from "i18next";
+import { createItemInstanceId } from "@/lib/item-resources";
 import type { LibraryDraft } from "@/lib/library";
 import type {
   CustomSpell,
@@ -60,7 +62,7 @@ export interface LibraryEditProps<TItem> {
 }
 
 function keepInLibrary(draft: LibraryDraft, t: TFunction): void {
-  const outcome = useLibraryStore.getState().saveToLibrary(draft);
+  const { outcome } = useLibraryStore.getState().saveToLibrary(draft);
   if (outcome !== "full") return;
   useToastStore.getState().showToast({
     message: t("custom.libraryFull", { max: FREE_TIER_LIMITS.libraryEntries }),
@@ -117,6 +119,7 @@ export function CustomSpellForm({ onCreated, libraryEdit }: CustomSpellFormProps
       concentration,
       description,
       prepared: true,
+      instanceId: seed?.instanceId ?? createItemInstanceId(),
     };
 
     if (libraryEdit) {
@@ -332,6 +335,7 @@ export function CustomEquipmentForm({
         attackStat,
         properties,
         description: description.trim() || undefined,
+        instanceId: seedWeapon?.instanceId ?? createItemInstanceId(),
       };
       if (libraryEdit) {
         libraryEdit.onSave({ kind: "weapon", item: weapon });
@@ -356,6 +360,7 @@ export function CustomEquipmentForm({
         quantity,
         armorCategory,
         acBonus: Number.isNaN(parsedAc) ? undefined : parsedAc,
+        instanceId: seedGear?.instanceId ?? createItemInstanceId(),
       };
       if (libraryEdit) {
         libraryEdit.onSave({ kind: "equipment", item: armor });
@@ -382,6 +387,7 @@ export function CustomEquipmentForm({
         isPotion: trackingMode === "consumable" && isPotion,
         potionFormula:
           trackingMode === "consumable" && isPotion ? potionFormula : undefined,
+        instanceId: seedGear?.instanceId ?? createItemInstanceId(),
       };
       if (libraryEdit) {
         libraryEdit.onSave({ kind: "equipment", item: equipment });
@@ -654,6 +660,7 @@ export function CustomFeatureForm({
     const parsedMaximum = Number.parseInt(rollMaximum, 10);
     const firstBound = Number.isFinite(parsedMinimum) ? parsedMinimum : 1;
     const secondBound = Number.isFinite(parsedMaximum) ? parsedMaximum : 20;
+    const instanceId = seed?.instanceId ?? createItemInstanceId();
 
     const built: CustomFeature = {
       // Preserve any fields the form doesn't edit (e.g. custom actions) on edit.
@@ -668,9 +675,7 @@ export function CustomFeatureForm({
         ? [
             {
               // Keep the existing tracker id on edit so its spent-uses survive.
-              id:
-                initTracker?.id ??
-                `custom-${title.trim().toLowerCase().replace(/\s+/g, "-")}`,
+              id: initTracker?.id ?? `custom-${instanceId}`,
               label: title.trim(),
               total: trackerTotal,
               recovery: trackerRecovery as "long-rest" | "short-rest" | "manual",
@@ -684,6 +689,7 @@ export function CustomFeatureForm({
           ]
         : [],
       actions: seed?.actions ?? [],
+      instanceId,
     };
 
     if (libraryEdit) {
@@ -699,11 +705,9 @@ export function CustomFeatureForm({
     const nextData = { ...character.character, features };
     store.setCharacter({ ...character, character: nextData });
     if (isEditing) {
-      // The EDIT leg goes through the rename-aware seam: a retitled feature MOVES its
-      // library entry (identity is (kind, title)) instead of stranding the old one.
-      useLibraryStore
-        .getState()
-        .syncFromCharacter(nextData, "feature", editIndex, editFeature.title);
+      // The EDIT leg mirrors the retitled feature into its library entry, found by
+      // the feature's own stable instanceId (unchanged by a rename).
+      useLibraryStore.getState().syncFromCharacter(nextData, "feature", built.instanceId);
     } else {
       keepInLibrary({ kind: "feature", item: built }, t);
     }

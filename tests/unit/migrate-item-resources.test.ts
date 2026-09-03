@@ -426,9 +426,15 @@ describe("tagged recoverable backup", () => {
       if (!migration) return;
       const manifest = await writeBackupDirectory({
         directory,
-        catalogueFingerprint: catalogueFingerprint(CATALOGUE),
+        migration: "item-resources",
+        label: catalogueFingerprint(CATALOGUE),
         documents: [{ plan: migration, updateTime: new Timestamp(1_723_456_789, 1) }],
       });
+      // The manifest is migration-agnostic since the shared kit owns the backup
+      // writer: the catalogue lock travels as this migration's `label`.
+      expect(manifest.format).toBe("d20-folio-migration-backup-v1");
+      expect(manifest.migration).toBe("item-resources");
+      expect(manifest.label).toBe(catalogueFingerprint(CATALOGUE));
       expect(manifest.documents).toHaveLength(1);
       expect((await stat(directory)).mode & 0o777).toBe(0o700);
       const files = await readdir(directory);
@@ -444,7 +450,8 @@ describe("tagged recoverable backup", () => {
       await expect(
         writeBackupDirectory({
           directory,
-          catalogueFingerprint: catalogueFingerprint(CATALOGUE),
+          migration: "item-resources",
+          label: catalogueFingerprint(CATALOGUE),
           documents: [],
         })
       ).rejects.toThrow("fresh");

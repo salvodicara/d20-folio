@@ -725,7 +725,7 @@ export interface ResolvedAction {
   description?: string;
   /**
    * Equipment lookup key consumed on End Turn (potions only).
-   * Format: srdId for SRD items, `custom-${name}` for custom.
+   * Format: srdId for SRD items, `custom-${instanceId}` for custom.
    * Distinct from `id` which has an `item-` prefix.
    */
   costEquipment?: string;
@@ -5124,7 +5124,7 @@ function resolveFeatureActions(
     if ("custom" in featureRef) {
       if (featureRef.actions) {
         for (const a of featureRef.actions) {
-          const id = `custom-${featureRef.title}-${a.id ?? a.type}`;
+          const id = `custom-${featureRef.instanceId}-${a.id ?? a.type}`;
           // Build summary from custom feature data. Custom content carries a
           // single user string (no translation); surface it in both locales so
           // the BiText contract holds.
@@ -5151,7 +5151,7 @@ function resolveFeatureActions(
           applyActionEffectSummary(
             summary,
             a,
-            `custom-${featureRef.title}`,
+            `custom-${featureRef.instanceId}`,
             character,
             ctx,
             ctx.level
@@ -5735,7 +5735,6 @@ function resolveSpellActions(
   // expanded spells, species legacy spells like Tiefling Fire Bolt, etc.) — so a
   // granted/inferred spell is castable even when it was never written into
   // `spells[]` (minimal representation; imported docs). Deduped by srd id.
-  const customActionIds = new Set<string>();
   for (const [spellIndexInBook, spellRef] of resolveEffectiveSpells(
     charData,
     character.session
@@ -5787,13 +5786,10 @@ function resolveSpellActions(
         }
       }
 
-      const customBaseId = `custom-spell-${customSpell.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")}`;
-      const customSpellId = customActionIds.has(customBaseId)
-        ? `${customBaseId}--${spellIndexInBook}`
-        : customBaseId;
-      customActionIds.add(customSpellId);
+      // Keyed on the spell's own stable identity — never its (possibly
+      // duplicated) display name — so two homebrew spells sharing a name stay
+      // distinct without an index-suffix fallback (an index shifts on reorder).
+      const customSpellId = `custom-spell-${customSpell.instanceId}`;
       actions.push({
         id: customSpellId,
         name: customText(customSpell.name),
@@ -7180,7 +7176,7 @@ function resolveWeaponActions(
 
     const isCustomItem = "custom" in itemRef;
     const id = isCustomItem
-      ? `item-custom-${itemRef.name.toLowerCase().replace(/\s+/g, "-")}`
+      ? `item-custom-${itemRef.instanceId}`
       : `item-${itemRef.srdId}`;
     // Resolve the name through the MAGIC-ITEM index too (Potion of Healing is a
     // magic item, not gear) so the action localizes off the catalogue. Custom
@@ -7198,7 +7194,7 @@ function resolveWeaponActions(
       );
     }
 
-    const equipmentKey = isCustomItem ? `custom-${itemRef.name}` : itemRef.srdId;
+    const equipmentKey = isCustomItem ? `custom-${itemRef.instanceId}` : itemRef.srdId;
 
     // A healing potion shows its heal verdict; any other potion (Giant Strength,
     // Fire Breath, …) shows a short effect from its SRD description (BiText data).

@@ -4,7 +4,10 @@
  * Pins the facts the portrait + custom-monster persistence rests on:
  *  1. every mutation flushes the whole entry list through the injected persist seam;
  *  2. `setEntryPortrait` attaches / removes a custom monster's portrait in place, by id,
- *     and is inert for a non-monster (or unknown) id.
+ *     and is inert for a non-monster (or unknown) id;
+ *  3. an UNHYDRATED store (a quarantined document never calls `hydrate`) refuses every
+ *     write outright — `saveToLibrary` returns `"unavailable"` and `persist` is never
+ *     called, so a bad read can never clobber the last-known-good document.
  *
  * Pure store, no Firebase — the persist seam is a plain mock (mirrors how `LibraryMount`
  * injects the debounced writer in production).
@@ -12,8 +15,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useLibraryStore, type LibraryPersistence } from "@/stores/libraryStore";
 import { toLibraryEntry } from "@/lib/library";
+import { MOCK_CHARACTER } from "@/lib/mock";
 import type { CustomMonster } from "@/types/campaign";
-import type { CustomSpell } from "@/types/character";
+import type { CustomEquipment, CustomSpell } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 const MONSTER: CustomMonster = { name: "Ashmaw Hound", ac: 14, maxHp: 33 };
 const SPELL: CustomSpell = {
@@ -27,6 +32,7 @@ const SPELL: CustomSpell = {
   duration: "Instantaneous",
   concentration: false,
   description: "",
+  instanceId: customInstanceId("Spark"),
 };
 
 function hydrate(): ReturnType<typeof vi.fn<LibraryPersistence>> {
@@ -80,5 +86,47 @@ describe("libraryStore — custom-monster portrait persistence", () => {
     // Neither a missing id nor a spell entry is a monster → no write, no mutation.
     expect(persist).not.toHaveBeenCalled();
     expect(useLibraryStore.getState().entries).toEqual([spellEntry]);
+  });
+});
+
+describe("libraryStore — a quarantined library (never hydrated) refuses every write", () => {
+  it("saveToLibrary returns unavailable and never calls persist", () => {
+    // A quarantined document (library-io's `subscribeLibrary` refused to `cb`) never
+    // calls `hydrate`, so `loaded` stays false — `persist` may still be wired (the
+    // writer is created regardless), but a write must never reach it: overwriting the
+    // last-known-good doc with a stripped-down "we couldn't read it" payload would be
+    // exactly the data loss the quarantine exists to prevent.
+    const persist = vi.fn<LibraryPersistence>();
+    useLibraryStore.setState({ persist, loaded: false });
+    expect(useLibraryStore.getState().loaded).toBe(false);
+
+    const result = useLibraryStore
+      .getState()
+      .saveToLibrary({ kind: "monster", item: MONSTER });
+
+    expect(result).toEqual({ outcome: "unavailable", id: null });
+    expect(persist).not.toHaveBeenCalled();
+    expect(useLibraryStore.getState().entries).toEqual([]);
+  });
+});
+
+describe("libraryStore — syncFromCharacter is instanceId-keyed", () => {
+  it("a rename keeps exactly one entry, found by instanceId", () => {
+    useLibraryStore.getState().hydrate([], vi.fn<LibraryPersistence>());
+    const item: CustomEquipment = {
+      custom: true,
+      name: "Boots",
+      instanceId: "boots-1",
+    };
+    const data = { ...MOCK_CHARACTER.character, equipment: [item] };
+    useLibraryStore.getState().syncFromCharacter(data, "equipment", "boots-1");
+    const renamed = {
+      ...data,
+      equipment: [{ ...item, name: "Boots of Bo" }],
+    };
+    useLibraryStore.getState().syncFromCharacter(renamed, "equipment", "boots-1");
+    const entries = useLibraryStore.getState().entries;
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({ id: "boots-1", item: { name: "Boots of Bo" } });
   });
 });

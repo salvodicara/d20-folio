@@ -31,6 +31,7 @@ export const MOCK_CHARACTER: CharacterDoc = {
   portraitUrl: null,
   portraitCrop: null,
   shared: false,
+  revision: 0,
   status: "active",
 
   character: {
@@ -222,6 +223,7 @@ export const MOCK_CHARACTER: CharacterDoc = {
         tracked: true,
         quantity: 2,
         recovery: "manual",
+        instanceId: "mock-cael-antidote-vial",
       },
       // Custom non-tracked flavour item
       {
@@ -231,6 +233,7 @@ export const MOCK_CHARACTER: CharacterDoc = {
           "A water-damaged letter in her brother's handwriting, half-legible. The last word is clearly 'run'.",
         emoji: "📜",
         tracked: false,
+        instanceId: "mock-cael-last-letter",
       },
     ],
 

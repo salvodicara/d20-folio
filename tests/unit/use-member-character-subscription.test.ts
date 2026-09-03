@@ -42,7 +42,7 @@ import { useMemberCharacterSubscription } from "@/features/campaigns/useMemberCh
 import { useCharacterStore } from "@/stores/characterStore";
 
 function markedDoc(): CharacterDoc {
-  return { ...makeCharacterDoc(), id: "c2", playStateVersion: 1 };
+  return { ...makeCharacterDoc(), id: "c2" };
 }
 
 function child(): CombatState {
@@ -118,7 +118,7 @@ describe("useMemberCharacterSubscription — v1 ownership gate", () => {
     act(() => combatCb()(null));
 
     expect(useCharacterStore.getState().character).toBeNull();
-    expect(useCharacterStore.getState().error).toContain("missing-v1-combat-state");
+    expect(useCharacterStore.getState().error).toContain("missing-combat-state");
     expect(useCharacterStore.getState().loading).toBe(false);
   });
 
@@ -133,7 +133,7 @@ describe("useMemberCharacterSubscription — v1 ownership gate", () => {
       readonly: true,
       loading: false,
     });
-    expect(useCharacterStore.getState().error).toContain("missing-v1-combat-state");
+    expect(useCharacterStore.getState().error).toContain("missing-combat-state");
   });
 
   it("clears a previously loaded marked member when its child becomes malformed", () => {

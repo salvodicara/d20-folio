@@ -83,6 +83,7 @@ export function makeCharacterDoc(
     portraitUrl: null,
     portraitCrop: null,
     shared: false,
+    revision: 0,
     status: "active",
     character: {
       quote: "",

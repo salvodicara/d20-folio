@@ -30,7 +30,7 @@ import {
   setHp,
   toggleCondition,
 } from "@/features/campaigns/encounter";
-import { sessionToCombatState, applyCombatToSession } from "@/lib/combat-state";
+import { sessionToCombatState, applyLegacyCombatToSession } from "@/lib/combat-state";
 import { timestampsToDates } from "@/lib/timestamps-to-dates";
 import type { EncounterState } from "@/types/campaign";
 import type { CombatState } from "@/types/combat-state";
@@ -71,9 +71,7 @@ function hydrateLegacy(
   combat: CombatState | null,
   maxHp: number
 ): SessionState {
-  const result = applyCombatToSession(base, combat, maxHp, "legacy");
-  if (!result.ok) throw new Error(result.reason);
-  return result.session;
+  return applyLegacyCombatToSession(base, combat, maxHp);
 }
 
 /**

@@ -404,7 +404,7 @@ function buildCustomCardVM(args: {
   const { ref, idx, session } = args;
   const isCantrip = ref.level === 0;
   return {
-    key: `custom-${idx}`,
+    key: `custom-${ref.instanceId}`,
     idx,
     kind: "custom",
     data: null,

@@ -13,7 +13,6 @@ function source() {
     ...doc,
     id: "hero one",
     shared: true,
-    playStateVersion: 1 as const,
     portraitUrl: "https://storage.example/private-token",
     portraitCrop: { x: 10, y: 12, width: 60, height: 70 },
     session: {
@@ -58,7 +57,6 @@ describe("public character projection", () => {
       projection
     );
     expect(parsed.shared).toBe(true);
-    expect(parsed.playStateVersion).toBe(1);
     expect(parsed.session.notes).toBe("");
     expect(parsed.session.initiative).toBe("");
     expect(parsed.session.conditions).toEqual([]);
@@ -136,7 +134,6 @@ describe("public character projection", () => {
         build: projection.build,
         state: {},
         cache: storedCache,
-        playStateVersion: 1,
         status: "active",
         portraitUrl: "https://private.example/token",
         portraitCrop: projection.portraitCrop,
@@ -154,7 +151,7 @@ describe("public character projection", () => {
   it("rejects a non-canonical stored parent", () => {
     expect(() =>
       buildPublicCharacterProjectionFromStoredParent(
-        { schema: 2, build: {}, state: {}, playStateVersion: 1, cache: {} },
+        { schema: 2, build: {}, state: {}, cache: {} },
         {},
         new Date()
       )

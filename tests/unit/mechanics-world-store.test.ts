@@ -46,6 +46,7 @@ import type { MechanicsCoordinationResult } from "@/types/mechanics-coordinator"
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
 import type { MechanicsAnswer, MechanicsRequirement } from "@/types/mechanics-program";
 import type { ResolvedActionFact } from "@/types/action-journal";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 function authorityDefinition(
   authority: Readonly<MechanicsProgramAuthorityReceipt>
@@ -1354,6 +1355,7 @@ describe("mechanics world store", () => {
               name: "Test Blade",
               properties: "Versatile (1d10)",
               quantity: 1,
+              instanceId: customInstanceId("Test Blade"),
             },
           ],
         },

@@ -10,8 +10,10 @@ import type { CharacterDoc } from "@/types/character";
 import type { CombatPersistence, CombatState } from "@/types/combat-state";
 import { makeCharacterDoc } from "./_helpers";
 import { conc } from "./__helpers__/concentration";
+import { customInstanceId } from "./__helpers__/custom-items";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
-import { nonCombatSessionChanged, sessionToCombatState } from "@/lib/combat-state";
+import { sessionToCombatState } from "@/lib/combat-state";
+import { sessionToPlayStateV1 } from "@/lib/session-state-codec";
 import { serializeCharacter } from "@/lib/character-codec";
 import { castSourceActiveKey } from "@/lib/smart-tracker";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
@@ -27,6 +29,7 @@ function mockCharacter(overrides?: Partial<CharacterDoc>): CharacterDoc {
     portraitUrl: null,
     portraitCrop: null,
     shared: false,
+    revision: 0,
     status: "active",
     character: {
       name: assertNonEmptyString("Test Hero"),
@@ -129,6 +132,12 @@ function projectedEffect(targetId = "pc-u1"): ActiveCombatEffect {
   };
 }
 
+/** Every stored `combat/state` is a v1 play owner; the fixture's own session is the
+ *  neutral payload, so a hydration asserts the TRIO without moving anything else. */
+function mockPlayState(): ReturnType<typeof sessionToPlayStateV1> {
+  return sessionToPlayStateV1(mockCharacter().session);
+}
+
 describe("characterStore — campaign effect projection", () => {
   beforeEach(() => {
     useCharacterStore.setState({ encounterEffectProjection: null });
@@ -170,10 +179,12 @@ describe("characterStore — campaign effect projection", () => {
     useCharacterStore.getState().setCharacter(mockCharacter());
     let parentDiffs = 0;
     const unsubscribe = useCharacterStore.subscribe((state, previous) => {
+      // The hook routes a parent write on a build change alone: the whole session
+      // (encounter effects included) is the child's.
       if (
         state.character &&
         previous.character &&
-        nonCombatSessionChanged(previous.character.session, state.character.session)
+        state.character.character !== previous.character.character
       ) {
         parentDiffs += 1;
       }
@@ -192,10 +203,7 @@ describe("characterStore — campaign effect projection", () => {
   it("persists and undo-restores character-owned effects through combat state", () => {
     const write = vi.fn();
     useCharacterStore.getState().setCharacter(mockCharacter());
-    useCharacterStore.getState().setCombatPersistence({
-      write,
-      writeTurnEconomy: vi.fn(),
-    });
+    useCharacterStore.getState().setCombatPersistence({ write });
     const effect = projectedEffect();
     const undo = useCharacterStore.getState().applySoloCombatEffects([effect]);
 
@@ -229,6 +237,7 @@ describe("characterStore — campaign effect projection", () => {
       round: 2,
       recentActions: [],
       activeEffects: [local],
+      playState: mockPlayState(),
     });
 
     expect(useCharacterStore.getState().character?.session.encounterEffects).toEqual([
@@ -241,10 +250,7 @@ describe("characterStore — campaign effect projection", () => {
     const write = vi.fn<CombatPersistence["write"]>();
     const legacy = projectedEffect();
     useCharacterStore.getState().setCharacter(mockCharacter());
-    useCharacterStore.getState().setCombatPersistence({
-      write,
-      writeTurnEconomy: vi.fn(),
-    });
+    useCharacterStore.getState().setCombatPersistence({ write });
     useCharacterStore.getState().hydrateCombatState({
       hp: { current: 20, temp: 0 },
       conditions: [],
@@ -253,6 +259,7 @@ describe("characterStore — campaign effect projection", () => {
       round: 2,
       recentActions: [],
       activeEffects: [legacy],
+      playState: mockPlayState(),
     });
 
     const state = useCharacterStore.getState();
@@ -1473,6 +1480,7 @@ describe("characterStore — death saves & session state", () => {
               recordedRolls: { min: 1, max: 20 },
             },
           ],
+          instanceId: customInstanceId("Foretelling"),
         },
       ];
       return char;
@@ -1674,12 +1682,20 @@ describe("useEquipmentItem", () => {
         character: {
           ...base.character,
           equipment: [
-            { custom: true, name: "Magic Salve", quantity: 2, tracked: true } as never,
+            {
+              custom: true,
+              name: "Magic Salve",
+              quantity: 2,
+              tracked: true,
+              instanceId: customInstanceId("Magic Salve"),
+            } as never,
           ],
         },
       },
     });
-    useCharacterStore.getState().useEquipmentItem("custom-Magic Salve");
+    useCharacterStore
+      .getState()
+      .useEquipmentItem(`custom-${customInstanceId("Magic Salve")}`);
     const eq = useCharacterStore.getState().character?.character.equipment;
     expect((eq?.[0] as { quantity: number }).quantity).toBe(1);
   });
@@ -2119,6 +2135,7 @@ describe("characterStore — hydrateCombatState (combat/state subdoc → session
       deathSaves: { successes: 1, failures: 2 },
       round: 1,
       recentActions: [],
+      playState: mockPlayState(),
     });
     const s = useCharacterStore.getState().character?.session;
     expect(s?.hp).toEqual({ current: 12, temp: 4 });
@@ -2128,21 +2145,20 @@ describe("characterStore — hydrateCombatState (combat/state subdoc → session
     expect(s?.deathFail).toBe(2);
   });
 
-  it("an ABSENT subdoc (null) defaults to FULL effective HP, not 0", () => {
+  it("an ABSENT subdoc is an integrity failure, never a fabricated fresh session", () => {
     const char = mockCharacter();
-    char.session.hp = { current: 0, temp: 0 }; // parent doc reads back stripped
+    char.session.hp = { current: 7, temp: 0 };
     char.session.conditions = ["stunned"];
-    char.session.deathSucc = 3;
     useCharacterStore.getState().setCharacter(char);
 
     useCharacterStore.getState().hydrateCombatState(null);
 
-    const s = useCharacterStore.getState().character?.session;
-    expect(s?.hp).toEqual({ current: 44, temp: 0 }); // effective max for the fixture
-    expect(s?.conditions).toEqual([]);
-    expect(s?.initiative).toBe("");
-    expect(s?.deathSucc).toBe(0);
-    expect(s?.deathFail).toBe(0);
+    // The last PROVEN store state is left untouched so auto-save cannot write a
+    // fabricated replacement over the character's real play document.
+    const state = useCharacterStore.getState();
+    expect(state.error).toContain("missing-combat-state");
+    expect(state.character?.session.hp).toEqual({ current: 7, temp: 0 });
+    expect(state.character?.session.conditions).toEqual(["stunned"]);
   });
 
   it("clamps a hydrated HP above the effective max and below 0", () => {
@@ -2154,6 +2170,7 @@ describe("characterStore — hydrateCombatState (combat/state subdoc → session
       deathSaves: { successes: 0, failures: 0 },
       round: 1,
       recentActions: [],
+      playState: mockPlayState(),
     });
     const s = useCharacterStore.getState().character?.session;
     expect(s?.hp).toEqual({ current: 44, temp: 0 });
@@ -2737,7 +2754,6 @@ describe("characterStore — combat-state persistence (C7 offline-safe write sea
   function spyPersistence() {
     return {
       write: vi.fn<CombatPersistence["write"]>(),
-      writeTurnEconomy: vi.fn<CombatPersistence["writeTurnEconomy"]>(),
     };
   }
   let persistence: ReturnType<typeof spyPersistence>;
@@ -2829,7 +2845,7 @@ describe("characterStore — combat-state persistence (C7 offline-safe write sea
     expect(lastWrite().round).toBe(4);
   });
 
-  it("hydrateCombatState mirrors the subdoc round onto combatRound (absent subdoc → 1)", () => {
+  it("hydrateCombatState mirrors the subdoc round onto combatRound", () => {
     useCharacterStore.getState().hydrateCombatState({
       hp: { current: 10, temp: 0 },
       conditions: [],
@@ -2837,10 +2853,9 @@ describe("characterStore — combat-state persistence (C7 offline-safe write sea
       deathSaves: { successes: 0, failures: 0 },
       round: 6,
       recentActions: [],
+      playState: mockPlayState(),
     });
     expect(useCharacterStore.getState().combatRound).toBe(6);
-    useCharacterStore.getState().hydrateCombatState(null);
-    expect(useCharacterStore.getState().combatRound).toBe(1);
   });
 
   it("declareAttack appends to the ring, persists, and later writes preserve it", () => {
@@ -2867,6 +2882,7 @@ describe("characterStore — combat-state persistence (C7 offline-safe write sea
       deathSaves: { successes: 0, failures: 0 },
       round: 1,
       recentActions: [{ id: "7", targetIds: ["monster-2"], outcome: "miss", round: 3 }],
+      playState: mockPlayState(),
     });
     expect(useCharacterStore.getState().combatRecentActions).toEqual([
       { id: "7", targetIds: ["monster-2"], outcome: "miss", round: 3 },
@@ -2922,6 +2938,7 @@ describe("characterStore — combat-state persistence (C7 offline-safe write sea
       deathSaves: { successes: 0, failures: 0 },
       round: 1,
       recentActions: [],
+      playState: mockPlayState(),
     });
     persistence.write.mockClear();
     useCharacterStore.getState().applyDamage(3);
@@ -3112,19 +3129,16 @@ describe("characterStore — engine world across subscription echoes", () => {
   it("keeps session.world when a v1 subscription echo rehydrates from the play owner", () => {
     // An engine commit mirrors the world into session.world and persists the
     // play state; the subscription echo then rebuilds the session from the v1
-    // play owner (a marked parent carries NO mutable session). The engine's
+    // play owner (the parent carries NO mutable session). The engine's
     // source of truth must survive that round byte-identical.
     const world = {
       clockBinding: { timeline: { material: { kind: "character-play", uid: "u1" } } },
       inventory: { instances: [] as unknown[] },
     };
-    const doc: CharacterDoc = {
-      ...makeCharacterDoc({}, { world }),
-      playStateVersion: 1,
-    };
+    const doc: CharacterDoc = makeCharacterDoc({}, { world });
     useCharacterStore.getState().setCharacter(doc);
 
-    // The simulated echo pair: an empty-session marked parent + the combat
+    // The simulated echo pair: an empty-session parent + the combat
     // child the store itself would have written for this session.
     const combat = sessionToCombatState(doc.session);
     const parent: CharacterDoc = { ...doc, session: makeCharacterDoc().session };

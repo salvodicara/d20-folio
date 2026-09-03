@@ -36,6 +36,7 @@ import { MOCK_CHARACTER } from "@/lib/mock";
 import { asRaceId } from "@/data/srd-names";
 import { effectiveAC } from "@/lib/aggregate-character";
 import type { CharacterDoc } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 import { makeCharacterDoc } from "./_helpers";
 
 function load(doc: CharacterDoc = structuredClone(MOCK_CHARACTER)): void {
@@ -352,6 +353,7 @@ describe("SpellsTab", () => {
         duration: "1 hour",
         concentration: false,
         description: "A deliberately slow ward.",
+        instanceId: customInstanceId("Patient Ward"),
       },
     ];
     doc.character.spellSlots = [{ level: 1, total: 1 }];

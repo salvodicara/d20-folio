@@ -67,6 +67,14 @@ const PURE_MODULES = [
   // The homebrew-library MODEL (strip / upsert / landing rules). Its IO twin
   // `library-io.ts` owns the Firestore seam, so the model stays CI-pure.
   "src/lib/library.ts",
+  // The homebrew-library document's TOTAL parser (fail-closed quarantine on a
+  // malformed entry, never a silent per-entry drop). `library-io.ts` is the only
+  // Firebase-touching consumer.
+  "src/lib/library-codec.ts",
+  // P1 — the per-domain snapshot reconciler (audit F7). It holds only the two
+  // domains' remote/pending values, so the subscription hook can inject snapshots
+  // and write outcomes; the Firestore seam stays entirely in `firestore.ts`.
+  "src/lib/character-snapshot-reconciler.ts",
   // …and so does the STORE: its write seam is INJECTED by the lazy `LibraryMount`
   // (the `combatPersistence` pattern), which is why the five cockpit cards that
   // render a save affordance need no Firebase mock.
@@ -92,6 +100,10 @@ const PURE_MODULES = [
   "src/features/report/error-log.ts",
   "src/features/report/collect-debug-context.ts",
   "src/features/report/screens.ts",
+  // P1 — the `combat/state` stored-shape DECODER, extracted verbatim from the
+  // Firebase-bound `combat-state-io.ts` so the one-off admin migrations parse a
+  // stored subdoc with the EXACT same rules the app reads it by.
+  "src/lib/combat-state-codec.ts",
   // ADR-0008 — the pure diagnostics core (structured logger + ring + report
   // builder + shared redaction). No Firebase; the IndexedDB adapter
   // (`idb.ts`) stays off this list, mirroring `log-persistence.ts`.

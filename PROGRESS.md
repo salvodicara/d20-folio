@@ -15,8 +15,9 @@ product/release forward plan.
 ## ACTIVE — Total combat automation, architecture round (2026-09-02)
 
 Audit, target architecture, ADRs, migration program and a green P2 prototype are on `main`
-(see `docs/PROGRAM_STATUS.md` → "Automation direction under re-architecture"). Next: Phase 1 data
-safety, from `docs/superpowers/plans/2026-09-02-next-session-handoff.md`.
+(see `docs/PROGRAM_STATUS.md` → "Automation direction under re-architecture"). Phase 1 (data safety)
+integrated 2026-09-03 at `7b95f24`; its two live migrations await the owner gate. Next: Phase 2
+engine core, from `docs/superpowers/plans/2026-09-03-next-session-handoff.md`.
 
 ## CLOSED — UI/UX perfection: the open-source D&D Beyond alternative (owner-ratified 2026-08-04; approved 2026-08-12)
 

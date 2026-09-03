@@ -53,7 +53,7 @@ function loadSharedCharacter(uid: string, charId: string): Promise<CharacterDoc 
   if (!DEV_BYPASS_AUTH) return getPublicCharacter(uid, charId);
   if (charId === DEV_REVOKED_ID) return Promise.resolve(null);
   return resolveDevDoc(charId).then(async (doc) => {
-    const source = { ...doc, playStateVersion: 1 as const, shared: true };
+    const source = { ...doc, shared: true };
     const projection = await buildPublicCharacterProjection(source, source.updatedAt);
     return parsePublicCharacterProjection(uid, charId, projection);
   });

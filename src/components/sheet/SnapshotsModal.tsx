@@ -103,10 +103,13 @@ export function SnapshotsModal({
     setRestoring(id);
     setError(null);
     try {
-      await restoreCharacterSnapshot(user.uid, char.id, {
-        character: snap.character,
-        session: snap.session,
-      });
+      await restoreCharacterSnapshot(
+        user.uid,
+        char.id,
+        { character: snap.character, session: snap.session },
+        // Compare-and-set base: the generation of the document this modal is showing.
+        char.revision
+      );
       // Undo-stack FENCE (§5.4): restoring a snapshot rewrites the whole sheet, so a
       // pre-restore reverse-applier would clobber the restored state. Drop the stack.
       useUndoStore.getState().clear();

@@ -18,9 +18,10 @@
  *  4. SEARCH — filters the rows.
  *
  * Plus the AUTO-UPSERT seams that fill the library in the first place: a create form
- * commit, a sheet-side edit of an existing homebrew row, the RENAME that must MOVE an
- * entry rather than strand a ghost under the old name, and the at-cap outcomes (a
- * refused CREATE says so; a refused per-keystroke EDIT stays silent).
+ * commit, a sheet-side edit of an existing homebrew row, the RENAME that upserts the
+ * SAME entry (found by the item's own stable instanceId, never by name), and the
+ * at-cap outcomes (a refused CREATE says so; a refused per-keystroke EDIT stays
+ * silent).
  *
  * The store's write seam is injected, so a spy stands in for `library-io`: these tests
  * exercise the surface, never Firestore.
@@ -51,6 +52,7 @@ import type {
   CustomSpell,
   CustomWeapon,
 } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 const NOW = 1_700_000_000_000;
 
@@ -61,6 +63,7 @@ const CUSTOM_GEAR: CustomEquipment = {
   equipped: true,
   quantity: 2,
   notes: "found in the barrow",
+  instanceId: customInstanceId("Ember Wand"),
 };
 
 const CUSTOM_WEAPON: CustomWeapon = {
@@ -72,6 +75,7 @@ const CUSTOM_WEAPON: CustomWeapon = {
   attackStat: "STR",
   properties: "Thrown (20/60)",
   description: "A blackthorn haft, iron-shod.",
+  instanceId: customInstanceId("Bramble Spear"),
 };
 
 const CUSTOM_SPELL: CustomSpell = {
@@ -85,6 +89,7 @@ const CUSTOM_SPELL: CustomSpell = {
   duration: "Instantaneous",
   concentration: false,
   description: "A dart of banked embers.",
+  instanceId: customInstanceId("Hearthfire Bolt"),
 };
 
 function entry(draft: LibraryDraft): LibraryEntry {
@@ -155,7 +160,14 @@ describe("the Custom tab — the list half", () => {
     loadCharacter();
     seedLibrary([
       entry({ kind: "equipment", item: CUSTOM_GEAR }),
-      entry({ kind: "equipment", item: { ...CUSTOM_GEAR, name: "Bramble Cloak" } }),
+      entry({
+        kind: "equipment",
+        item: {
+          ...CUSTOM_GEAR,
+          name: "Bramble Cloak",
+          instanceId: customInstanceId("Bramble Cloak"),
+        },
+      }),
     ]);
     const dialog = openCustomTab();
     const search = within(dialog).getAllByRole("searchbox").at(-1);
@@ -302,7 +314,14 @@ describe("the Custom tab — delete", () => {
     loadCharacter();
     seedLibrary([
       entry({ kind: "equipment", item: CUSTOM_GEAR }),
-      entry({ kind: "equipment", item: { ...CUSTOM_GEAR, name: "Bramble Cloak" } }),
+      entry({
+        kind: "equipment",
+        item: {
+          ...CUSTOM_GEAR,
+          name: "Bramble Cloak",
+          instanceId: customInstanceId("Bramble Cloak"),
+        },
+      }),
     ]);
     const dialog = openCustomTab();
 
@@ -419,12 +438,13 @@ describe("custom IS the library — the auto-upsert seams", () => {
   });
 });
 
-describe("a rename MOVES the entry, never duplicates it", () => {
-  it("drops the old-named entry when a homebrew row is renamed on the sheet", () => {
+describe("a rename updates the single entry in place, found by instanceId", () => {
+  it("renames the same entry rather than growing a second one", () => {
     const doc = structuredClone(MOCK_CHARACTER);
     doc.character.equipment = [{ ...CUSTOM_GEAR }];
     loadCharacter(doc);
     seedLibrary([entry({ kind: "equipment", item: CUSTOM_GEAR })]);
+    const originalId = useLibraryStore.getState().entries[0]?.id;
     useUIStore.setState({ sheetMode: "edit" });
 
     render(<InventoryTab />);
@@ -435,10 +455,11 @@ describe("a rename MOVES the entry, never duplicates it", () => {
     const nameField = within(card).getByPlaceholderText("Name");
     fireEvent.blur(nameField, { target: { value: "Cinder Wand" } });
 
-    // ONE entry, under the NEW name: the ghost under the old name is gone.
-    expect(useLibraryStore.getState().entries.map(libraryEntryName)).toEqual([
-      "Cinder Wand",
-    ]);
+    // ONE entry, the SAME id, now under the new name — found by instanceId, not name.
+    const entries = useLibraryStore.getState().entries;
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.id).toBe(originalId);
+    expect(entries.map(libraryEntryName)).toEqual(["Cinder Wand"]);
   });
 
   it("leaves the entry alone when an edit does NOT touch the name", () => {
@@ -470,7 +491,14 @@ describe("at the free-tier cap", () => {
   function seedFullLibrary(): void {
     seedLibrary(
       Array.from({ length: FREE_TIER_LIMITS.libraryEntries }, (_, i) =>
-        entry({ kind: "equipment", item: { ...CUSTOM_GEAR, name: `Kept ${i}` } })
+        entry({
+          kind: "equipment",
+          item: {
+            ...CUSTOM_GEAR,
+            name: `Kept ${i}`,
+            instanceId: customInstanceId(`Kept ${i}`),
+          },
+        })
       )
     );
   }
@@ -504,9 +532,15 @@ describe("at the free-tier cap", () => {
     );
   });
 
-  it("a refused per-keystroke EDIT stays silent and keeps the old entry", () => {
+  it("renaming an ALREADY-KEPT entry at the cap still updates it in place (never refused)", () => {
+    // Identity is the item's own stable `instanceId` (unchanged by a rename), so
+    // `upsertEntry` recognizes this as the SAME record and updates it in place:
+    // renaming your own kept homebrew never grows the list, so the cap has nothing
+    // to refuse.
     const doc = structuredClone(MOCK_CHARACTER);
-    doc.character.equipment = [{ ...CUSTOM_GEAR, name: "Kept 0" }];
+    doc.character.equipment = [
+      { ...CUSTOM_GEAR, name: "Kept 0", instanceId: customInstanceId("Kept 0") },
+    ];
     loadCharacter(doc);
     seedFullLibrary();
     useUIStore.setState({ sheetMode: "edit" });
@@ -516,16 +550,15 @@ describe("at the free-tier cap", () => {
     const card = screen.getByText("Kept 0").closest("article");
     expect(card).not.toBeNull();
     if (!card) return;
-    // A RENAME at the cap is an APPEND the cap refuses…
     fireEvent.blur(within(card).getByPlaceholderText("Name"), {
       target: { value: "Kept Nowhere" },
     });
 
     const names = useLibraryStore.getState().entries.map(libraryEntryName);
     expect(names).toHaveLength(FREE_TIER_LIMITS.libraryEntries);
-    // …so the OLD entry must survive — dropping it would lose the template outright.
-    expect(names).toContain("Kept 0");
-    expect(names).not.toContain("Kept Nowhere");
+    // The SAME record, just renamed in place — no ghost under the old name, no drop.
+    expect(names).not.toContain("Kept 0");
+    expect(names).toContain("Kept Nowhere");
     // No toast on a per-keystroke seam.
     expect(useToastStore.getState().toasts).toHaveLength(0);
   });
@@ -618,7 +651,13 @@ describe("edit-in-place — the pencil completes CRUD", () => {
     seedLibrary([
       entry({
         kind: "equipment",
-        item: { ...CUSTOM_GEAR, name: "Healer's Kit", tracked: true, quantity: 7 },
+        item: {
+          ...CUSTOM_GEAR,
+          name: "Healer's Kit",
+          tracked: true,
+          quantity: 7,
+          instanceId: customInstanceId("Healer's Kit"),
+        },
       }),
     ]);
     const dialog = openCustomTab();

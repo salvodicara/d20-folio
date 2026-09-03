@@ -30,15 +30,13 @@ import {
   type DebouncedSaveHandle,
 } from "@/lib/firestore";
 import {
-  subscribeCombatState,
-  writeCombatState,
-  writeCombatTurnEconomy,
-} from "@/lib/combat-state-io";
-import {
-  nonCombatSessionChanged,
-  combatTrioDiffers,
-  sessionToCombatState,
-} from "@/lib/combat-state";
+  canonicalJsonEquals,
+  createCharacterSnapshotReconciler,
+  type CharacterSnapshotReconciler,
+} from "@/lib/character-snapshot-reconciler";
+import { serializeCharacterEnvelope } from "@/lib/character-codec";
+import { subscribeCombatState, writeCombatState } from "@/lib/combat-state-io";
+import { combatTrioDiffers, sessionToCombatState } from "@/lib/combat-state";
 import { loadLogFromIDB } from "@/lib/log-persistence";
 import { diagnosticsLog, setDiagnosticsContext } from "@/lib/diagnostics";
 import { normalizeLogEntry } from "@/lib/sanitize-session";
@@ -75,6 +73,76 @@ function devBypassEnabled(): boolean {
   return import.meta.env.PROD ? false : IMPORTED_DEV_BYPASS_AUTH;
 }
 
+/**
+ * The parent domain's IDENTITY for reconciliation (§5.3): the canonical form of exactly
+ * what the PARENT owns — the codec's `build` plus the metadata a parent write can
+ * change. `updatedAt` is a server timestamp and `createdAt`/`portrait*` are written by
+ * other seams, so they are deliberately excluded: the question is only "did the server
+ * come back with the payload we sent?".
+ *
+ * The SESSION is deliberately NOT part of this key. In v1 the play session lives in the
+ * child, the parent stores `state: {}`, and `parseStoredCharacter` refuses a parent that
+ * carries one — so a server-parsed parent ALWAYS hydrates an empty session while the
+ * pending payload carries the live one. Keying on the whole envelope therefore made a
+ * server snapshot unable to acknowledge a pending parent at all: the domain stayed
+ * pending and `parentConflict` stayed true for the whole life of a save.
+ */
+function parentDomainKey(doc: CharacterDoc): unknown {
+  return {
+    build: serializeCharacterEnvelope(doc).build,
+    revision: doc.revision,
+    shared: doc.shared,
+    status: doc.status,
+  };
+}
+
+/**
+ * The rules' compare-and-set refusal — the ONLY rejection that invalidates the local
+ * payload (another writer advanced `revision`, or access changed). Firestore reports it
+ * as `code: "permission-denied"`; a transport that surfaces only a message is matched on
+ * that instead. Every OTHER failure is transient as far as this client can tell, so the
+ * edit must survive it.
+ */
+function isCompareAndSetConflict(error: unknown): boolean {
+  if (typeof error === "object" && error !== null && "code" in error) {
+    const { code } = error as { code?: unknown };
+    if (typeof code === "string") return code === "permission-denied";
+  }
+  return error instanceof Error && error.message.includes("permission-denied");
+}
+
+/** The child domain's identity: the whole play document minus its server stamp. */
+function childDomainKey(state: CombatState): unknown {
+  const rest: Record<string, unknown> = { ...state };
+  delete rest.updatedAt;
+  return rest;
+}
+
+function isCharacterDocValue(value: unknown): value is CharacterDoc {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "character" in value &&
+    "session" in value
+  );
+}
+
+/**
+ * The single equality the reconciler uses for BOTH domains — it dispatches on the shape
+ * because a parent and a child are never compared against each other (the reconciler
+ * only ever asks "does this domain's pending payload equal this domain's value?").
+ */
+function reconciledDomainEquals(a: unknown, b: unknown): boolean {
+  if (isCharacterDocValue(a) && isCharacterDocValue(b)) {
+    return canonicalJsonEquals(parentDomainKey(a), parentDomainKey(b));
+  }
+  if (a === null || b === null || a === undefined || b === undefined) return a === b;
+  return canonicalJsonEquals(
+    childDomainKey(a as CombatState),
+    childDomainKey(b as CombatState)
+  );
+}
+
 function canonicalJson(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonicalJson);
   if (typeof value === "object" && value !== null) {
@@ -107,6 +175,24 @@ export function useCharacterSubscription(characterId: string | undefined): void 
    * campaigns. Null when there is no signed-in owner (dev-bypass / unauthed).
    */
   const attachedCampaignsRef = useRef<AttachedCampaignTracker | null>(null);
+
+  /**
+   * PER-DOMAIN RECONCILER (audit F7). The parent and the `combat/state` child arrive on
+   * two independent listeners; republishing BOTH stored values on every snapshot of
+   * EITHER is what clobbered a pending local edit (a re-added custom item, a spent
+   * Focus). A domain with an unacknowledged local write keeps materializing that
+   * payload, so a sibling snapshot can no longer overwrite it. Lives in a ref because
+   * the autosave subscriber (a separate, mount-stable effect) settles the writes it
+   * arms. `republishRef` re-publishes the resolved pair from that subscriber.
+   */
+  const reconcilerRef = useRef<CharacterSnapshotReconciler<
+    CharacterDoc,
+    CombatState
+  > | null>(null);
+  /** Re-base the compare-and-set cursor on the server's own generation (after a
+   *  rejection). Owned by the subscription effect; a no-op while none is active. */
+  const resetRevisionCursorRef = useRef<() => void>(() => {});
+  const republishRef = useRef<() => void>(() => {});
 
   /**
    * True while setCharacter() is being called from an incoming Firestore
@@ -149,16 +235,10 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           storageId
         );
         // A new replica crosses the ownership boundary child-first, then exposes the
-        // marked parent. There is never an observable marked parent without its complete
-        // play document. Existing unmarked replicas remain legacy-compatible.
+        // parent. There is never an observable parent without its complete play document.
         if (!persisted) {
-          const markedSeed = { ...seed, playStateVersion: 1 as const };
-          void writeCombatState(
-            uid,
-            id,
-            sessionToCombatState(markedSeed.session, seedRound)
-          );
-          persisted = projectDevCharacterParent(markedSeed);
+          void writeCombatState(uid, id, sessionToCombatState(seed.session, seedRound));
+          persisted = projectDevCharacterParent(seed);
           writeDevDocument(DEV_CHARACTER_COLLECTION, storageId, persisted);
         }
 
@@ -166,13 +246,25 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         let persistenceEnabled = true;
         let pendingState: CombatState | null = null;
         let playWriteQueued = false;
+        // Same per-domain reconciliation as production, over the replica's own parent
+        // projection: the dev replica has the SAME microtask-coalesced child write, so a
+        // parent echo landing inside that window would revert the play state here too.
+        const devReconciler = createCharacterSnapshotReconciler<
+          DevCharacterParent,
+          CombatState
+        >();
+        const persistDevChild = (state: CombatState): void => {
+          devReconciler.markChildPending(state);
+          void writeCombatState(uid, id, state).then(
+            () => devReconciler.acknowledgeChildWrite(state),
+            () => {
+              devReconciler.rejectChildWrite(state);
+              publish();
+            }
+          );
+        };
         const writeComplete = (state: CombatState): void => {
           if (!persistenceEnabled) return;
-          const marked = useCharacterStore.getState().character?.playStateVersion === 1;
-          if (!marked) {
-            void writeCombatState(uid, id, state);
-            return;
-          }
           pendingState = state;
           if (playWriteQueued) return;
           playWriteQueued = true;
@@ -180,22 +272,17 @@ export function useCharacterSubscription(characterId: string | undefined): void 
             playWriteQueued = false;
             const next = pendingState;
             pendingState = null;
-            if (next && persistenceEnabled) void writeCombatState(uid, id, next);
+            if (next && persistenceEnabled) persistDevChild(next);
           });
         };
-        useCharacterStore.getState().setCombatPersistence({
-          write: writeComplete,
-          writeTurnEconomy: (round, turnEconomy) =>
-            void writeCombatTurnEconomy(uid, id, round, turnEconomy),
-        });
+        useCharacterStore.getState().setCombatPersistence({ write: writeComplete });
 
-        let latestParent: DevCharacterParent | undefined;
-        let latestCombat: CombatState | null | undefined;
         const quarantine = (message: string): void => {
           if (quarantined) return;
           quarantined = true;
           persistenceEnabled = false;
           pendingState = null;
+          devReconciler.reset();
           useCharacterStore.getState().setCombatPersistence(null);
           useCharacterStore.getState().setParentPersistenceFlush(null);
           setCharacter(null);
@@ -203,7 +290,9 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           setLoading(false);
         };
         const publish = (): void => {
-          if (quarantined || !latestParent) return;
+          if (quarantined) return;
+          const { parent: latestParent, child: latestCombat } = devReconciler.current();
+          if (!latestParent) return;
           const current = useCharacterStore.getState().character;
           let parent: CharacterDoc;
           try {
@@ -215,16 +304,13 @@ export function useCharacterSubscription(characterId: string | undefined): void 
             quarantine(error instanceof Error ? error.message : String(error));
             return;
           }
-          if (parent.playStateVersion === 1 && latestCombat === undefined) return;
+          if (latestCombat === undefined) return;
           isFromServerRef.current = true;
           let loaded: boolean;
           try {
-            loaded =
-              latestCombat === undefined
-                ? (setCharacter(parent), true)
-                : useCharacterStore
-                    .getState()
-                    .loadCharacterWithCombat(parent, latestCombat, false);
+            loaded = useCharacterStore
+              .getState()
+              .loadCharacterWithCombat(parent, latestCombat, false);
           } catch (error) {
             quarantine(error instanceof Error ? error.message : String(error));
             return;
@@ -232,7 +318,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
             isFromServerRef.current = false;
           }
           if (!loaded) {
-            quarantine("Invalid play state");
+            quarantine("Invalid character document");
             return;
           }
           setLoading(false);
@@ -247,21 +333,20 @@ export function useCharacterSubscription(characterId: string | undefined): void 
               quarantine("Character not found");
               return;
             }
-            latestParent = parent;
+            devReconciler.receiveParent(parent, { hasPendingWrites: false });
             publish();
           }
         );
         unsubscribeCombat = subscribeCombatState(
           uid,
           id,
-          (combat) => {
+          (combat, meta) => {
             if (quarantined) return;
-            latestCombat = combat;
+            devReconciler.receiveChild(combat, meta);
             publish();
           },
           (err) => {
             if (quarantined) return;
-            latestCombat = undefined;
             quarantine(err.message);
           }
         );
@@ -313,8 +398,37 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     setLoading(true);
     setError(null);
 
+    const reconciler = createCharacterSnapshotReconciler<CharacterDoc, CombatState>(
+      reconciledDomainEquals
+    );
+    reconcilerRef.current = reconciler;
+
+    /**
+     * The highest generation this client has SENT. It is allocated AT SEND TIME (see
+     * `createDebouncedSave`): a payload superseded inside the debounce window consumes
+     * nothing, so consecutive writes carry consecutive generations and the rules' CAS
+     * accepts them in queue order — offline included. It never runs ahead of the server:
+     * a snapshot from another device pulls the cursor forward through the `max` below.
+     */
+    let sentRevisionCursor = 0;
+    const acknowledgedRevision = (): number =>
+      reconciler.current().parentRemote?.revision ?? 0;
+    const nextRevision = (): number => {
+      sentRevisionCursor = Math.max(sentRevisionCursor, acknowledgedRevision());
+      return ++sentRevisionCursor;
+    };
+    const resetRevisionCursor = (): void => {
+      sentRevisionCursor = acknowledgedRevision();
+    };
+    resetRevisionCursorRef.current = resetRevisionCursor;
+
     // Create debounced save for auto-persistence
-    debouncedSaveRef.current = createDebouncedSave(user.uid, characterId);
+    debouncedSaveRef.current = createDebouncedSave(
+      user.uid,
+      characterId,
+      undefined,
+      nextRevision
+    );
     // Slot/tracker mutators request this AFTER their synchronous composite action.
     // The microtask in characterStore lets the autosave subscriber arm the latest
     // full payload first, then this flush makes the play resource durable immediately.
@@ -333,13 +447,23 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     let persistenceEnabled = true;
     let pendingPlayWrite: CombatState | null = null;
     let playWriteQueued = false;
+    // The child write is armed in the reconciler BEFORE it leaves, so an interleaving
+    // parent snapshot re-publishes THIS play state rather than the last stored one
+    // (REPLAY I3 — the reverting Focus). Resolution acknowledges it; a failure drops it
+    // and republishes whatever the server actually holds.
+    const persistChild = (state: CombatState): void => {
+      reconciler.markChildPending(state);
+      void writeCombatState(uid, characterId, state).then(
+        () => reconciler.acknowledgeChildWrite(state),
+        (err: unknown) => {
+          reconciler.rejectChildWrite(state);
+          publishResolvedPair();
+          logWrite(err);
+        }
+      );
+    };
     const writeCompletePlayState = (state: CombatState): void => {
       if (!persistenceEnabled) return;
-      const marked = useCharacterStore.getState().character?.playStateVersion === 1;
-      if (!marked) {
-        void writeCombatState(uid, characterId, state).catch(logWrite);
-        return;
-      }
       pendingPlayWrite = state;
       if (playWriteQueued) return;
       playWriteQueued = true;
@@ -347,23 +471,17 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         playWriteQueued = false;
         const next = pendingPlayWrite;
         pendingPlayWrite = null;
-        if (next && persistenceEnabled) {
-          void writeCombatState(uid, characterId, next).catch(logWrite);
-        }
+        if (next && persistenceEnabled) persistChild(next);
       });
     };
     const persistence: CombatPersistence = {
       write: writeCompletePlayState,
-      writeTurnEconomy: (round, turnEconomy) =>
-        void writeCombatTurnEconomy(uid, characterId, round, turnEconomy).catch(logWrite),
     };
     useCharacterStore.getState().setCombatPersistence(persistence);
     // T4 — the lazy attached-campaign resolver for the DM-sheet fan-out (one
     // membership-scoped read on the first save; nothing until the owner edits).
     attachedCampaignsRef.current = createAttachedCampaignTracker(user.uid, characterId);
 
-    let lastParent: CharacterDoc | null | undefined = undefined;
-    let lastCombat: CombatState | null | undefined = undefined;
     let idbRestoreStarted = false;
     let quarantined = false;
 
@@ -371,6 +489,8 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       if (quarantined) return;
       diagnosticsLog("error", "character.quarantine", { message });
       quarantined = true;
+      reconciler.reset();
+      resetRevisionCursor();
       persistenceEnabled = false;
       pendingPlayWrite = null;
       debouncedSaveRef.current?.cancel();
@@ -406,15 +526,32 @@ export function useCharacterSubscription(characterId: string | undefined): void 
 
     const publishResolvedPair = (): void => {
       if (quarantined) return;
+      // The RESOLVED pair: each domain's unacknowledged local payload when it has one,
+      // otherwise the last server value. Never a mix of one domain's local edit with
+      // the other domain's stale remote.
+      const {
+        parent: resolvedParent,
+        parentRemote,
+        child: lastCombat,
+      } = reconciler.current();
+      // The store doc's `revision` ALWAYS means "the last generation the server
+      // acknowledged", never the optimistic one riding an in-flight write. Every
+      // whole-document ceremony (snapshot restore, level-up, sharing) reads its
+      // compare-and-set base from this doc, so it must be a base the server holds. A
+      // ceremony that races an already-sent autosave is denied by the CAS and surfaces
+      // the ordinary save error — correct, and preferable to a silent overwrite.
+      const lastParent =
+        resolvedParent && parentRemote
+          ? { ...resolvedParent, revision: parentRemote.revision }
+          : resolvedParent;
       if (lastParent === undefined) return;
       if (lastParent === null) {
         quarantine("Character not found");
         return;
       }
-      const marked = lastParent.playStateVersion === 1;
-      if (marked && lastCombat === undefined) return;
-      if (marked && lastCombat === null) {
-        quarantine("Invalid play state: missing-v1-combat-state");
+      if (lastCombat === undefined) return;
+      if (lastCombat === null) {
+        quarantine("Invalid character document: missing-combat-state");
         return;
       }
 
@@ -422,12 +559,9 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       isFromCombatRef.current = true;
       let loaded: boolean;
       try {
-        loaded =
-          lastCombat === undefined
-            ? (setCharacter(lastParent), true)
-            : useCharacterStore
-                .getState()
-                .loadCharacterWithCombat(lastParent, lastCombat, false);
+        loaded = useCharacterStore
+          .getState()
+          .loadCharacterWithCombat(lastParent, lastCombat, false);
       } catch (error) {
         quarantine(error instanceof Error ? error.message : String(error));
         return;
@@ -436,13 +570,14 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         isFromServerRef.current = false;
       }
       if (!loaded) {
-        quarantine("Invalid play state");
+        quarantine("Invalid character document");
         return;
       }
       const current = useCharacterStore.getState().character;
       if (current) restoreLocalLog(current);
       setLoading(false);
     };
+    republishRef.current = publishResolvedPair;
 
     // REMOTE-CHANGE FENCE (§5.4) — whether an incoming combat snapshot materially
     // differs from the OPEN character's live trio (the state a snapshot-leg undo
@@ -452,7 +587,6 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       const cur = useCharacterStore.getState().character;
       if (!cur || cur.id !== characterId || !combat) return false;
       if (combatTrioDiffers(cur.session, combat)) return true;
-      if (cur.playStateVersion !== 1) return false;
       if (!combat.playState) return true;
       return (
         JSON.stringify(canonicalJson(sessionToPlayStateV1(cur.session))) !==
@@ -463,9 +597,9 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     const unsubscribe = subscribeToCharacter(
       user.uid,
       characterId,
-      (doc) => {
+      (doc, meta) => {
         if (quarantined) return;
-        lastParent = doc;
+        reconciler.receiveParent(doc, meta);
         publishResolvedPair();
       },
       (err) => {
@@ -473,7 +607,6 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         // A12 — surface subscription errors (permission denied, network) instead
         // of silently leaving the sheet stuck on "loading".
         console.error("Character subscription error", err);
-        lastParent = undefined;
         quarantine(err.message);
       }
     );
@@ -495,13 +628,12 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         if (!meta.hasPendingWrites && combatMateriallyDiffers(combat)) {
           useUndoStore.getState().clear();
         }
-        lastCombat = combat;
+        reconciler.receiveChild(combat, meta);
         publishResolvedPair();
       },
       (err) => {
         if (quarantined) return;
         console.error("Combat-state subscription error", err);
-        lastCombat = undefined;
         quarantine(err.message);
       }
     );
@@ -520,6 +652,10 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       useCharacterStore.getState().setCombatPersistence(null);
       useCharacterStore.getState().setParentPersistenceFlush(null);
       attachedCampaignsRef.current = null;
+      reconciler.reset();
+      reconcilerRef.current = null;
+      republishRef.current = () => {};
+      resetRevisionCursorRef.current = () => {};
       setCharacter(null);
       setDiagnosticsContext({ characterId: undefined });
     };
@@ -540,26 +676,22 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         return;
       }
 
-      const marked = state.character.playStateVersion === 1;
       const sessionChanged = prevState.character.session !== state.character.session;
       const buildChanged = state.character.character !== prevState.character.character;
+      // The parent's stored `cache` is derived from build + session, so a session edit
+      // that moves a derived value still needs a parent write.
       const cacheChanged =
-        marked &&
         sessionChanged &&
         (effectiveAC(prevState.character.character, prevState.character.session) !==
           effectiveAC(state.character.character, state.character.session) ||
           effectiveMaxHp(prevState.character.character, prevState.character.session) !==
             effectiveMaxHp(state.character.character, state.character.session));
-      const parentChanged =
-        buildChanged ||
-        cacheChanged ||
-        (!marked &&
-          nonCombatSessionChanged(prevState.character.session, state.character.session));
+      const parentChanged = buildChanged || cacheChanged;
 
       // In v1 every mutable SessionState field lives in the complete child. Explicit
       // combat mutators call the same seam; its microtask coalescer collapses both
       // routes into one write for a composite command.
-      if (marked && sessionChanged) state.persistPlayState();
+      if (sessionChanged) state.persistPlayState();
 
       if (parentChanged) {
         if (devBypassEnabled()) {
@@ -590,16 +722,49 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           // combat slice (HP/conditions/held dice/initiative/death saves) is omitted from the parent doc at
           // the Firestore serialization boundary (`toStoredPayload`) — it lives ONLY in
           // the `combat/state` subdoc (the writer below).
-          debouncedSaveRef.current.save({
+          // COMPARE-AND-SET (design §5.3). The payload is QUEUED carrying the store
+          // doc's acknowledged generation; the real one is allocated when the write
+          // actually leaves (`onSend`), so a payload superseded inside the debounce
+          // window burns no generation. `onSend` re-marks the SENT object pending so the
+          // later acknowledge/reject still matches it by equality.
+          const payload: CharacterDoc = {
             ...state.character,
             character:
               charData.ac === stampedAc ? charData : { ...charData, ac: stampedAc },
+          };
+          reconcilerRef.current?.markParentPending(payload);
+          debouncedSaveRef.current.save(payload, {
+            onSend: (sent) => reconcilerRef.current?.markParentPending(sent),
+            onResolved: (sent) => reconcilerRef.current?.acknowledgeParentWrite(sent),
+            onRejected: (sent, error) => {
+              // A REJECTED write did not land — whatever the reason — so the generation
+              // it claimed was never stored. Re-base the cursor on the server's own
+              // acknowledged generation ALWAYS: keeping it would make the next write
+              // claim `acknowledged + 2`, which the rules' compare-and-set denies, and
+              // one transport hiccup would then cascade into a real conflict.
+              resetRevisionCursorRef.current();
+              // A NON-conflict failure (offline/`unavailable`, an internal error) says
+              // nothing about who owns the document: dropping the payload here would
+              // silently delete the user's edit. It stays PENDING, so the next store
+              // change or the unmount flush resends it at `acknowledged + 1`. The save
+              // store already carries the REAL error message from `runWrite`, so the
+              // sheet stays in `SaveStatus="error"` meanwhile.
+              if (!isCompareAndSetConflict(error)) return;
+              // The rules refused this generation (a revision conflict, a permission
+              // change): drop the local payload and republish what the server holds.
+              reconcilerRef.current?.rejectParentWrite(sent);
+              republishRef.current();
+            },
+            // Only the restore / level-up ceremony cancels a queued save. It publishes
+            // its own whole-document state and its batch echoes back, so republishing the
+            // PRE-ceremony remote here would briefly flash the superseded sheet.
+            onCancelled: (queued) => reconcilerRef.current?.rejectParentWrite(queued),
           });
         }
       }
 
       // T4 fan-out reflects the complete live sheet and therefore follows any
-      // session/build edit even when a marked session edit correctly skips the parent.
+      // session/build edit even when a play-only session edit correctly skips the parent.
       if (sessionChanged || buildChanged) {
         const owner = useAuthStore.getState().user?.uid;
         const tracker = attachedCampaignsRef.current;

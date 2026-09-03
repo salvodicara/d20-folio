@@ -349,15 +349,14 @@ export function InventoryTab() {
       const weaponsCopy = [...char.character.weapons];
       const ref = weaponsCopy[idx];
       if (!ref) return;
-      // Identity is (kind, name), so a RENAME must move the library entry rather than
-      // strand the old-named one — capture the name as it read before this edit.
-      const previousName = "custom" in ref ? ref.name : undefined;
       weaponsCopy[idx] = { ...ref, [field]: value === "" ? undefined : value };
       const next = { ...char.character, weapons: weaponsCopy };
       store.setCharacter({ ...char, character: next });
       // Custom IS the library: an edited homebrew weapon updates its entry (no-op for
       // an SRD ref). The library write itself is debounced in the persistence seam.
-      useLibraryStore.getState().syncFromCharacter(next, "weapon", idx, previousName);
+      if ("custom" in ref) {
+        useLibraryStore.getState().syncFromCharacter(next, "weapon", ref.instanceId);
+      }
     },
     []
   );
@@ -370,11 +369,12 @@ export function InventoryTab() {
       const equipCopy = [...char.character.equipment];
       const ref = equipCopy[idx];
       if (!ref) return;
-      const previousName = "custom" in ref ? ref.name : undefined;
       equipCopy[idx] = { ...ref, [field]: value === "" ? undefined : value };
       const next = { ...char.character, equipment: equipCopy };
       store.setCharacter({ ...char, character: next });
-      useLibraryStore.getState().syncFromCharacter(next, "equipment", idx, previousName);
+      if ("custom" in ref) {
+        useLibraryStore.getState().syncFromCharacter(next, "equipment", ref.instanceId);
+      }
     },
     []
   );

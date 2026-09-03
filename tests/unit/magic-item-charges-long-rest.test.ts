@@ -11,6 +11,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useCharacterStore } from "@/stores/characterStore";
 import { makeCharacterDoc } from "./_helpers";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 describe("longRest — magic-item charges recovery", () => {
   beforeEach(() => {
@@ -28,6 +29,7 @@ describe("longRest — magic-item charges recovery", () => {
         quantity: 1,
         equipped: false,
         charges: { current: 0, max: 7, recovery: "long-rest" },
+        instanceId: customInstanceId("Wand of Magic Missiles"),
       },
     ];
     useCharacterStore.getState().setCharacter(char);
@@ -50,6 +52,7 @@ describe("longRest — magic-item charges recovery", () => {
         quantity: 1,
         equipped: true,
         charges: { current: 1, max: 7, recovery: "dawn" },
+        instanceId: customInstanceId("Dawn Wand"),
       },
     ];
     useCharacterStore.getState().setCharacter(char);
@@ -72,6 +75,7 @@ describe("longRest — magic-item charges recovery", () => {
         quantity: 1,
         equipped: false,
         charges: { current: 5, max: 5, recovery: "long-rest" },
+        instanceId: customInstanceId("Staff of Power"),
       },
     ];
     useCharacterStore.getState().setCharacter(char);
@@ -100,6 +104,7 @@ describe("longRest — magic-item charges recovery", () => {
           max: 3,
           recovery: "manual" as unknown as "long-rest",
         },
+        instanceId: customInstanceId("Daily Cooldown Trinket"),
       },
     ];
     useCharacterStore.getState().setCharacter(char);

@@ -52,6 +52,6 @@ export async function loadDevFixture(id: string): Promise<CharacterDoc | null> {
   // (cockpit, member sheet, party card via `resolveDevDoc`) shows full HP, never 0.
   const { effectiveMaxHp } = await import("@/lib/aggregate-character");
   const max = effectiveMaxHp(doc.character, doc.session);
-  const hydrated = applyCombatToSession(doc.session, null, max, "legacy");
-  return hydrated.ok ? { ...doc, session: hydrated.session } : null;
+  const { session } = applyCombatToSession(doc.session, null, max);
+  return { ...doc, session };
 }

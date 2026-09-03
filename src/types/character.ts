@@ -126,6 +126,8 @@ export interface CustomSpell {
   tags?: CharacterTag[];
   /** Per-spell casting-ability override (see SrdSpellRef.spellAbilityOverride). */
   spellAbilityOverride?: AbilityCode;
+  /** Stable identity of this custom entry — never keyed by name. */
+  instanceId: string;
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
   unknown?: Record<string, unknown>;
 }
@@ -161,6 +163,8 @@ export interface CustomFeature {
   contentBlocks: ContentBlockData[];
   trackers?: TrackerData[];
   actions?: ActionData[];
+  /** Stable identity of this custom entry — never keyed by name. */
+  instanceId: string;
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
   unknown?: Record<string, unknown>;
 }
@@ -252,6 +256,8 @@ export interface CustomEquipment {
   };
   /** MAGIC-ITEMS — true when the player has attuned to this item. */
   attuned?: boolean;
+  /** Stable identity of this custom entry — never keyed by name. */
+  instanceId: string;
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
   unknown?: Record<string, unknown>;
 }
@@ -302,6 +308,8 @@ export interface CustomWeapon {
   description?: string;
   notes?: string;
   tags?: CharacterTag[];
+  /** Stable identity of this custom entry — never keyed by name. */
+  instanceId: string;
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
   unknown?: Record<string, unknown>;
 }
@@ -538,11 +546,13 @@ export interface CharacterDoc {
    */
   shared: boolean;
   /**
-   * Firestore ownership marker: when present, all mutable play-session facts are
-   * owned by the versioned `combat/state` subdoc. Metadata only — the portable
-   * v3 character codec never serializes it.
+   * Monotonic parent-document generation (design §5.3). Every build/state/cache write
+   * carries exactly `revision + 1` and the Firestore rules enforce that compare-and-set,
+   * so a queued OFFLINE write that raced another device is rejected on reconnect
+   * instead of clobbering it (a transaction cannot run offline). Metadata-only writes
+   * leave it untouched. Firestore metadata, never part of the portable v3 codec.
    */
-  playStateVersion?: 1;
+  revision: number;
   /** Character lifecycle status */
   status: "active" | "retired" | "dead" | "archived";
 

@@ -31,6 +31,7 @@ function mk(level: number, opts: MkOpts = {}): CharacterDoc {
     portraitUrl: null,
     portraitCrop: null,
     shared: false,
+    revision: 0,
     status: "active",
     character: {
       name: assertNonEmptyString("B"),

@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useCharacterStore } from "@/stores/characterStore";
 import { makeCharacterDoc } from "./_helpers";
 import { conc } from "./__helpers__/concentration";
+import { sessionToPlayStateV1 } from "@/lib/session-state-codec";
+import type { CharacterDoc } from "@/types/character";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 function concentratingCharacter() {
@@ -276,7 +278,7 @@ describe("characterStore — entered D20 lifecycle", () => {
       damage: 10,
       difficultyClass: 10,
     };
-    const combat = {
+    const combatWith = (session: CharacterDoc["session"]) => ({
       hp: { current: 90, temp: 0 },
       conditions: [],
       initiativeRoll: null,
@@ -284,15 +286,19 @@ describe("characterStore — entered D20 lifecycle", () => {
       round: 1,
       recentActions: [],
       pendingConcentrationSaves: [matching, stale],
-    };
+      // The child owns the whole play session, concentration included.
+      playState: sessionToPlayStateV1(session),
+    });
 
-    useCharacterStore.getState().hydrateCombatState(combat);
+    const concentrating = concentratingCharacter().session;
+    useCharacterStore.getState().hydrateCombatState(combatWith(concentrating));
     expect(useCharacterStore.getState().combatPendingConcentrationSaves).toEqual([
       matching,
     ]);
 
-    useCharacterStore.getState().updateSession({ concentration: "" });
-    useCharacterStore.getState().hydrateCombatState(combat);
+    useCharacterStore
+      .getState()
+      .hydrateCombatState(combatWith({ ...concentrating, concentration: "" }));
     expect(useCharacterStore.getState().combatPendingConcentrationSaves).toEqual([]);
   });
 
@@ -301,7 +307,6 @@ describe("characterStore — entered D20 lifecycle", () => {
     useCharacterStore.getState().setCharacter(concentratingCharacter());
     useCharacterStore.getState().setCombatPersistence({
       write,
-      writeTurnEconomy: vi.fn(),
     });
     useCharacterStore.getState().applyDamage(22);
     expect(write).toHaveBeenLastCalledWith(

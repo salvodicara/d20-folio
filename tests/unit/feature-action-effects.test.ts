@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { serializeCharacter, parseCharacter } from "@/lib/character-io";
 import { resolveActions } from "@/lib/smart-tracker";
 import { makeCharacterDoc } from "./_helpers";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 describe("feature action effect contract", () => {
   it("projects Bardic Inspiration as a one-target held-die grant", () => {
@@ -112,6 +113,7 @@ describe("feature action effect contract", () => {
                 targeting: { affinity: "any", maxTargets: 1 },
               },
             ],
+            instanceId: customInstanceId("Table Blessing"),
           },
         ],
       })

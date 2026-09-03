@@ -80,6 +80,75 @@ initiative.
 If the SHA's Verify run was superseded (cancelled by a newer merge) or the content pack moved
 after it ran (a pack-only merge), re-verify first: `gh workflow run verify.yml --ref main`.
 
+### Migrate before you deploy (ADR-0009)
+
+**State (2026-09-03):** both P1 migrations are applied and `--check`-green on production; the P1 deploy is
+pending. Immediately before that deploy re-run both `--check`; if the identity check reports pending
+changes (the deployed pre-P1 client strips `instanceId`s on autosave), re-apply it — idempotent, same
+deterministic ids — then deploy, then delete both scripts in the next commit.
+
+Before deploying a SHA that reads a new persisted shape, run the migration(s) listed under
+"Pending migrations" in `docs/PROGRAM_STATUS.md` with `--check` green against production; a deploy
+with a pending migration is refused. Both prepared migrations are read-only in `--check`; each needs
+`GOOGLE_APPLICATION_CREDENTIALS` pointing at a `d20-folio` service-account key.
+
+**Before the first apply, confirm the deployed SHA is at or after `77ea77a`.** An older client
+strips `instanceId` from custom entries on every autosave, so migrating in front of it would let a
+live player un-migrate their own character inside the migration→deploy window.
+
+**Run them IN THIS ORDER — identity first, then parents:**
+
+```sh
+# 1 — identity. Every custom sheet entry and library id gains a stable `instanceId`.
+node --import ./scripts/alias-loader.mjs scripts/migrate-custom-identity.ts --check
+node --import ./scripts/alias-loader.mjs scripts/migrate-custom-identity.ts \
+  --apply --backup /absolute/fresh/private/dir-1
+
+# 2 — parents. Every parent becomes v1 (`state: {}`, `revision`), every character gets a
+#     `combat/state` child carrying its play session.
+node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts --check
+node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts \
+  --apply --backup /absolute/fresh/private/dir-2
+```
+
+The order is not a preference: the cutover HYDRATES each legacy family through
+`parseCharacterEnvelope`, and that codec now REQUIRES `instanceId` on every custom entry. Run the
+parent cutover first and every character carrying a custom item is refused with `invalid-envelope`.
+Each `--backup` directory must be absolute, private and **fresh** (the script refuses an existing
+one), so use a new directory per run.
+
+**Any single issue blocks the whole apply.** `--apply` runs a complete preflight and refuses the
+entire batch if the plan reports even one issue — there is no partial apply. Hand-fix the reported
+document (identified by its path hash and issue code), re-run `--check`, then apply.
+
+**Re-run both `--check` immediately before the deploy**, not just before the apply: a player editing
+a character between the apply and the deploy can reintroduce an unmigrated document. `--check` proves
+the corpus is loadable by the client about to ship — for `migrate-character-parents.ts` that includes
+every ALREADY-marked parent (empty `state`, a `build` the codec hydrates), not only the ones it cut
+over.
+
+`scripts/alias-loader.mjs` composes the private content pack exactly as the app does, so a migration
+resolves the same ids and catalogues the client would. `migrate-character-parents.ts` hydrates
+through the SRD-aware codec and therefore PROVES the pack composed before it plans anything, in every
+mode: with the `content-pack` symlink missing or `VITE_CONTENT_PACK=0` exported it refuses with
+`Refusing: content pack not composed — the plan would rewrite pack-only references` and exits 1,
+rather than quietly rewriting a pack-only spell reference.
+
+An `--apply` run commits at most 500 documents in ONE atomic batch. `migrate-character-parents.ts`
+writes up to two documents per character (the parent and its `combat/state`), so it migrates at most
+**~250 characters per run**; it refuses rather than splitting the batch, and a corpus larger than that
+needs the write ceiling revisited before the run rather than a partial apply.
+
+**Deploy ordering — hosting and rules ship together.** `deploy.yml` deploys Hosting plus the
+Firestore/Storage rules in one run, which is what P1 requires: the new rules demand the `revision`
+compare-and-set on every build write, so deploying them AHEAD of the client would deny every save
+from the still-running old client. Never split them into two runs.
+
+**After the deploy, tell open tabs to reload.** An installed PWA tab keeps its old JavaScript until
+it is reloaded; its build writes carry no `revision` and are simply denied by the new rules (the
+sheet shows a save error). That is refused, not destructive — the fix is a reload, and no stored
+document is harmed in the meantime.
+
 ## What goes in `CHANGELOG.md`
 
 **Yes:** owner-visible behaviour changes, new automations, new SRD batches, schema changes (with

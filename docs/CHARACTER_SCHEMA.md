@@ -69,7 +69,9 @@ The **stored Firestore character document is the SAME `{ schema, build, state }`
 export** (no portrait `meta` — Firestore keeps the portrait as a Storage URL), plus Firestore-only
 metadata. One codec (`serializeCharacterEnvelope`/`parseCharacterEnvelope` in `character-codec.ts`, the
 shared core of `serializeCharacter`/`parseCharacter`) serializes/parses both, so the persisted and
-exported forms can never drift (the `state` is byte-identical):
+exported forms can never drift. One P1 difference: in Firestore the parent `state` is ALWAYS `{}` —
+the whole mutable play session lives in `combat/state.playState` (design §5.3), and the self-contained
+portable export still carries it inline:
 
 ```jsonc
 {
@@ -77,9 +79,11 @@ exported forms can never drift (the `state` is byte-identical):
   "build": {
     /* … */
   },
-  "state": {
-    /* … */
-  }, // == the export core
+  "state": {}, // ALWAYS {} in Firestore: the play session is
+  //   `combat/state.playState`. The portable EXPORT still
+  //   carries the compact session here. A stored parent that
+  //   still holds one quarantines as `parent-state-not-empty`
+  //   (`firestore.rules` denies the write too).
   "attachedCampaignId": "<campId>", // The ONE-campaign claim (written atomically by the
   //   attach transaction) — ALSO the cross-user access root:
   //   firestore.rules derives every peer/DM grant LIVE from it
@@ -99,6 +103,12 @@ exported forms can never drift (the `state` is byte-identical):
   "portraitUrl": null,
   "portraitCrop": null,
   "shareId": null,
+  "revision": 0, // REQUIRED non-negative integer — the parent's compare-and-set
+  //   generation. Born 0; every build/state/cache write carries
+  //   exactly revision + 1 and a metadata-only write leaves it
+  //   alone (firestore.rules `revisionAdvancesWithBuild`). NOT in
+  //   the export/codec: it is a per-document write fence, not a
+  //   character fact. See ARCHITECTURE → "Per-domain reconciliation".
   "status": "active",
   "createdAt": "<ts>",
   "updatedAt": "<ts>",
@@ -112,31 +122,31 @@ read-shim (the migration converted every live main doc + snapshot; golden rule 1
 
 ## `build` — the character definition
 
-| Key                       | Type                                            | Notes                                                                                                                              |
-| ------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `name`                    | string                                          | the character's name (a choice)                                                                                                    |
-| `player`                  | string?                                         | player name; omit when empty                                                                                                       |
-| `race`                    | id                                              | e.g. `"human"` (not `"Human"`)                                                                                                     |
-| `classes`                 | `ClassEntry[]`                                  | **R4** — one entry per class (single-class = length 1); see below                                                                  |
-| `background`              | id                                              | e.g. `"wayfarer"`                                                                                                                  |
-| `alignment`               | id?                                             | e.g. `"true-neutral"`; omit when unset                                                                                             |
-| `abilities`               | `{STR,DEX,CON,INT,WIS,CHA}`                     | the chosen base scores                                                                                                             |
-| `asi`                     | `{ background?: {AB:n} }`                       | the 2024 background ability increases                                                                                              |
-| `originFeats`             | `{ background?: id, species?: id }`             | only the CHOSEN ones (a fixed-background feat is inferred)                                                                         |
-| `skills`                  | `{ id: "proficient"\|"expertise" }`             | chosen proficiencies; JoaT half-profs are NEVER stored                                                                             |
-| `toolChoices`             | `{ "<src>::tool-slot-N": id[] }`?               | tool-CHOICE picks as STABLE TOOL IDS (see below); omit when none                                                                   |
-| `languageIds`             | `id[]`?                                         | MANUAL language picks as STABLE SRD ids (see below); omit empty                                                                    |
-| `customLanguages`         | `string[]`?                                     | homebrew languages, VERBATIM label; omit empty                                                                                     |
-| `toolProficiencyIds`      | `id[]`?                                         | MANUAL tool picks as STABLE tool ids (see below); omit empty                                                                       |
-| `customToolProficiencies` | `string[]`?                                     | homebrew tool profs, VERBATIM label; omit empty                                                                                    |
-| `spells`                  | `[ id \| custom ]`                              | only player-chosen / non-inferred spells                                                                                           |
-| `weapons`                 | `[ {id, qty, …} \| custom ]`                    | owned weapons (Talon is the one custom)                                                                                            |
-| `equipment`               | `[ {id, instanceId?, …} \| custom ]`            | owned gear / armor / magic items; every independently mutable physical magic-item copy carries a stable opaque `instanceId`        |
-| `features`                | `[ { srdId, notes?, actionOverrides?, … } ]`?   | chosen SRD refs and inferred-feature overrides; a bare inferred ref is omitted, but user data is preserved and merged on rehydrate |
-| `customs`                 | `{ features?: [...], conditions?: [...] }`      | genuine homebrew only; custom actions may carry stable ids, dynamic targeting, healing, Temporary HP and condition removal         |
-| `overrides`               | `{ ac?, speed?, proficiencyBonus?, saves?, … }` | manual deltas; only when set (`speed` = the effective-walking-Speed override; NO `languages`/`tools` strings)                      |
-| `lore`                    | `{ traits?, ideals?, … }`                       | flavor; only non-empty fields                                                                                                      |
-| `quote`                   | string?                                         | omit when empty                                                                                                                    |
+| Key                       | Type                                            | Notes                                                                                                                                                                                                     |
+| ------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                    | string                                          | the character's name (a choice)                                                                                                                                                                           |
+| `player`                  | string?                                         | player name; omit when empty                                                                                                                                                                              |
+| `race`                    | id                                              | e.g. `"human"` (not `"Human"`)                                                                                                                                                                            |
+| `classes`                 | `ClassEntry[]`                                  | **R4** — one entry per class (single-class = length 1); see below                                                                                                                                         |
+| `background`              | id                                              | e.g. `"wayfarer"`                                                                                                                                                                                         |
+| `alignment`               | id?                                             | e.g. `"true-neutral"`; omit when unset                                                                                                                                                                    |
+| `abilities`               | `{STR,DEX,CON,INT,WIS,CHA}`                     | the chosen base scores                                                                                                                                                                                    |
+| `asi`                     | `{ background?: {AB:n} }`                       | the 2024 background ability increases                                                                                                                                                                     |
+| `originFeats`             | `{ background?: id, species?: id }`             | only the CHOSEN ones (a fixed-background feat is inferred)                                                                                                                                                |
+| `skills`                  | `{ id: "proficient"\|"expertise" }`             | chosen proficiencies; JoaT half-profs are NEVER stored                                                                                                                                                    |
+| `toolChoices`             | `{ "<src>::tool-slot-N": id[] }`?               | tool-CHOICE picks as STABLE TOOL IDS (see below); omit when none                                                                                                                                          |
+| `languageIds`             | `id[]`?                                         | MANUAL language picks as STABLE SRD ids (see below); omit empty                                                                                                                                           |
+| `customLanguages`         | `string[]`?                                     | homebrew languages, VERBATIM label; omit empty                                                                                                                                                            |
+| `toolProficiencyIds`      | `id[]`?                                         | MANUAL tool picks as STABLE tool ids (see below); omit empty                                                                                                                                              |
+| `customToolProficiencies` | `string[]`?                                     | homebrew tool profs, VERBATIM label; omit empty                                                                                                                                                           |
+| `spells`                  | `[ id \| custom ]`                              | only player-chosen / non-inferred spells; custom entries carry a required stable `instanceId`                                                                                                             |
+| `weapons`                 | `[ {id, qty, …} \| custom ]`                    | owned weapons (Talon is the one custom); custom entries carry a required stable `instanceId`                                                                                                              |
+| `equipment`               | `[ {id, instanceId?, …} \| custom ]`            | owned gear / armor / magic items; every independently mutable physical magic-item copy carries a stable opaque `instanceId` (optional on an SRD ref); custom entries carry a REQUIRED stable `instanceId` |
+| `features`                | `[ { srdId, notes?, actionOverrides?, … } ]`?   | chosen SRD refs and inferred-feature overrides; a bare inferred ref is omitted, but user data is preserved and merged on rehydrate                                                                        |
+| `customs`                 | `{ features?: [...], conditions?: [...] }`      | genuine homebrew only; custom actions may carry stable ids, dynamic targeting, healing, Temporary HP and condition removal; `customs.features` entries carry a required stable `instanceId`               |
+| `overrides`               | `{ ac?, speed?, proficiencyBonus?, saves?, … }` | manual deltas; only when set (`speed` = the effective-walking-Speed override; NO `languages`/`tools` strings)                                                                                             |
+| `lore`                    | `{ traits?, ideals?, … }`                       | flavor; only non-empty fields                                                                                                                                                                             |
+| `quote`                   | string?                                         | omit when empty                                                                                                                                                                                           |
 
 ### `ClassEntry` (R4 — the multiclass breakdown)
 
@@ -245,6 +255,16 @@ saved snapshot under a deterministic-id, backup, compare-and-swap and post-verif
 not yet run against production, so the runtime still accepts legacy migration inputs without treating them
 as a second typed owner; once the owner-gated apply/check closes, those inputs and the spent script are
 deleted rather than retained as a read shim.
+
+The REQUIRED `instanceId` on a custom spell, weapon, equipment entry and `customs.features` entry has its
+own prepared one-off, `scripts/migrate-custom-identity.ts`: it stamps a deterministic id on every custom
+entry of a character parent, its anonymous share projection at `public/sheet` (under the PARENT's scope and
+in the same atomic batch, because `firestore.rules` requires `sheet.build` to stay byte-identical to
+`character.build`), a saved snapshot (scoped by its own snapshot id, so a snapshot never reuses a parent
+identity) and a library index entry, whose `id` and `item.instanceId` it aligns to one identity.
+Both one-offs run the same protocol from `scripts/lib/migration-kit.ts` — read-only by default, `--check`
+proves the corpus migrated, `--fixtures <dir>` plans over portable exports with no Firebase, and
+`--apply --backup <dir>` is the only write mode. Reports carry counts, hashes and issue codes only.
 
 Play-state also carries several **additive-only optional** keys, each absent on a doc that never
 uses it (so the envelope stays byte-identical): `activeFeatures`, `effectTimers`, `effectBoundaries`
@@ -424,11 +444,52 @@ fields removed; git history preserves the script). The durable result: the subdo
 parent carries no trio, and every reader falls to the full-HP default only when the subdoc is genuinely
 absent.
 
-`playStateVersion: 1` is a storage-ownership marker, not a character-schema version. A historical
-schema-3 parent that does not yet carry the marker remains writable in its established mode: non-combat
-session facts such as spent spell slots stay in the parent `state`, while the combat trio stays in
-`combat/state`. Parent autosave must preserve that mode until an atomic parent+child cutover adds the
-marker; it must never reject the complete snapshot merely because that cutover has not happened yet.
+### Legacy parent cutover — the one-off `migrate-character-parents` (P1, applied to production 2026-09-03; deleted after the deploy)
+
+P1 cutover (`scripts/migrate-character-parents.ts`): every live parent is v1 (`state: {}`, the play
+session lives in `combat/state.playState`), every character has a `combat/state` child, every parent
+carries `revision`. The client and `firestore.rules` are now v1-ONLY: nothing reads `playStateVersion`,
+so the stored field is DEAD from P1 on and the P3 `combat/state` v2 migration deletes it. The script
+still stamps it while it runs, so a not-yet-upgraded client keeps working during the rollout.
+
+The script must therefore run on production BEFORE the P1 client deploys: an unmigrated parent (no
+`revision`, or a session still in `state`) quarantines on read rather than loading, and a character
+with no `combat/state` child fails closed (`missing-combat-state`).
+
+The script is read-only by default and follows the ADR-0009 protocol shared with
+`scripts/migrate-custom-identity.ts` (`--check` proves the corpus migrated; `--apply --backup <dir>` is
+the only write mode). What it guarantees:
+
+- **The plan is what the client would have written.** A legacy family is hydrated through the exact app
+  path — `parseCharacterEnvelope` (tracker-id remap, race-trait id conformance, log concentration
+  normalization), then `effectiveMaxHp` over the hydrated character+session, then
+  `applyLegacyCombatToSession` (the pre-cutover trio merge, which — like the codec's
+  `parseLegacyCombatChild` — exists ONLY for this script and dies with it in P3) — and the projected
+  `combat/state` is finally re-parsed with the strict v1
+  `parseCombatState` the app reads it back with (`non-canonical-child` when it would not). Nothing is
+  written that the app could not then load.
+- **The created child starts at the app's effective maximum HP**, so an hp-flat grant active in the
+  stored session (Aid, a Tough-style bonus) counts exactly as it does on the sheet. There is no
+  dependency on the possibly-stale `cache.hpMax`.
+- **It never touches `build` or `updatedAt`**, so the anonymous share projection (`public/sheet`, which
+  requires `sheet.build == character.build` and `sourceUpdatedAt == character.updatedAt`) needs no
+  write. A legacy SHARED parent that has no sheet yet simply stays without one — the owner's client
+  creates it on the next autosave.
+- **It refuses to run uncomposed.** The hydration is SRD-aware, so the script proves the private
+  content pack actually composed before it plans anything; a pack-only concentration reference could
+  otherwise be rewritten to `custom:<id>`. Behind that assertion a per-family guard refuses
+  (`unresolved-concentration`) any stored concentration reference that does not survive
+  canonicalization unchanged, so no plan can depend on which catalogue happened to load.
+- **It is deterministic.** A stored log row with no id would otherwise be given a random UUID by
+  `normalizeLogEntry`; the planner stamps such rows with an id derived from the family path and the
+  row's ordinal (reported as `logIdsStamped`) before the codec sees them.
+- **`--check` proves LOADABILITY, not just the marker.** A green `--check` means every legacy family
+  is cut over AND every already-marked parent is one the deployed client can actually open: its
+  `state` is empty (`marked-parent-state-not-empty` otherwise — the exact refusal
+  `parseStoredCharacter` throws) and its `build` hydrates through `parseCharacterEnvelope`
+  (`invalid-envelope` otherwise). Both are proof-only calls; nothing derived from them is written.
+  Run it again immediately before the deploy: a player editing between the apply and the deploy can
+  reintroduce a document neither proof had seen.
 
 ## Verification (Definition of Done)
 

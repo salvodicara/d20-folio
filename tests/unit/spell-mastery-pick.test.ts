@@ -15,6 +15,7 @@ import {
   isSpellMasteryComplete,
 } from "@/lib/spell-mastery-pick";
 import type { SrdSpellRef, CustomSpell } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 describe("isSpellMasteryComplete", () => {
   it("requires both level1 AND level2 to be set", () => {
@@ -56,6 +57,7 @@ describe("eligibleSpellMasteryPicks", () => {
         duration: "Instantaneous",
         concentration: false,
         description: "",
+        instanceId: customInstanceId("Homebrew Bolt"),
       },
     ];
     const l1 = eligibleSpellMasteryPicks(spells, 1);
@@ -141,6 +143,7 @@ describe("applySpellMasteryPicks", () => {
       duration: "Instantaneous",
       concentration: false,
       description: "",
+      instanceId: customInstanceId("Homebrew"),
     };
     const spells: (SrdSpellRef | CustomSpell)[] = [custom, { srdId: "magic-missile" }];
     const after = applySpellMasteryPicks(spells, { level1: "magic-missile" });

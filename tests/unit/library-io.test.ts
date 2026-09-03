@@ -1,12 +1,17 @@
 /**
  * library-io — the homebrew-library Firestore seam (`users/{uid}/library/index`).
  *
- * Two facts, both bug classes this seam exists to prevent:
+ * Three facts, all bug classes this seam exists to prevent:
  *  1. WRITE — the payload goes through `stripUndefined` (domain rule D1). A homebrew
  *     item is almost all optional fields, so an `undefined` reaching Firestore would
  *     throw and silently lose the save.
- *  2. READ — a malformed stored entry is DROPPED, never crashes the surfaces: the
- *     rules validate only authorization + the cap, so shape tolerance lives here.
+ *  2. READ — a malformed document QUARANTINES (never a per-entry drop): `writeLibrary`
+ *     is a full-doc overwrite, so silently dropping a bad element would have the very
+ *     next unrelated library write permanently erase it. The parse itself is the pure,
+ *     total `parseLibraryEntries` (`library-codec.test.ts` pins its per-path cases);
+ *     this file pins that the Firebase seam ACTS on a quarantine correctly — `cb` never
+ *     fires (so the store never hydrates and every write path stays refused) and
+ *     `onError` fires with the typed reason.
  *  3. DEBOUNCE — custom IS the library, so per-keystroke sheet edits upsert; the
  *     writer must coalesce a burst into ONE whole-doc write (and flush on teardown).
  *
@@ -46,7 +51,7 @@ const ENTRY: LibraryEntry = {
   id: "e1",
   savedAt: 1_700_000_000_000,
   kind: "equipment",
-  item: { custom: true, name: "Ember Wand", description: undefined },
+  item: { custom: true, name: "Ember Wand", description: undefined, instanceId: "e1" },
 };
 
 function emit(data: unknown, exists = true): LibraryEntry[] {
@@ -57,6 +62,27 @@ function emit(data: unknown, exists = true): LibraryEntry[] {
   handler?.({ exists: () => exists, data: () => data });
   unsubscribe();
   return seen.at(-1) ?? [];
+}
+
+/** Like {@link emit}, but for a document expected to QUARANTINE: returns whether `cb`
+ *  ever fired (it must not) and the error `onError` was handed (it must be). */
+function emitInvalid(data: unknown): { cbCalled: boolean; error: Error | undefined } {
+  let cbCalled = false;
+  let error: Error | undefined;
+  const unsubscribe = subscribeLibrary(
+    "u1",
+    () => {
+      cbCalled = true;
+    },
+    (err) => {
+      error = err;
+    }
+  );
+  const handler = snapshotHandlers.at(-1);
+  expect(handler).toBeDefined();
+  handler?.({ exists: () => true, data: () => data });
+  unsubscribe();
+  return { cbCalled, error };
 }
 
 describe("library-io", () => {
@@ -78,19 +104,21 @@ describe("library-io", () => {
     expect(emit(undefined, false)).toEqual([]);
   });
 
-  it("drops malformed entries and keeps the good ones", () => {
-    const kept = emit({
+  it("quarantines the WHOLE document when ANY entry is malformed — never a partial drop", () => {
+    const { cbCalled, error } = emitInvalid({
       entries: [
         ENTRY,
-        null,
-        "nope",
-        { ...ENTRY, id: "" }, // no id
-        { ...ENTRY, kind: "potion" }, // unknown kind
-        { ...ENTRY, savedAt: "yesterday" }, // non-numeric stamp
-        { id: "x", savedAt: 1, kind: "spell" }, // no item
+        { ...ENTRY, id: "e2", kind: "potion" }, // unknown kind, mixed in among good ones
       ],
     });
-    expect(kept.map((e) => e.id)).toEqual(["e1"]);
+    // The good entry (e1) is NEVER handed to the store: a drop-and-continue read would
+    // let the very next unrelated write erase e2 for good, so the whole document is
+    // quarantined instead — `cb` doesn't fire at all.
+    expect(cbCalled).toBe(false);
+    expect(error).toBeInstanceOf(TypeError);
+    expect(error?.message).toBe(
+      "Invalid library document: malformed-entry:entries[1].kind"
+    );
   });
 
   it("reads a doc with no `entries` field as empty", () => {

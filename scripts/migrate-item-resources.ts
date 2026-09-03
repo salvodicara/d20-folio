@@ -16,36 +16,50 @@
 
 /// <reference types="node" />
 
-import { createHash } from "node:crypto";
-import { constants as fsConstants } from "node:fs";
-import {
-  access,
-  chmod,
-  lstat,
-  mkdir,
-  open,
-  readFile,
-  realpath,
-  stat,
-} from "node:fs/promises";
-import { dirname, isAbsolute, join, resolve } from "node:path";
-import { argv as processArgv, env, exit } from "node:process";
+import { resolve } from "node:path";
+import { argv as processArgv, exit } from "node:process";
 import { pathToFileURL } from "node:url";
-import {
-  DocumentReference,
-  GeoPoint,
-  Timestamp,
-  type DocumentReference as FirestoreDocumentReference,
-  type Firestore,
-  type QueryDocumentSnapshot,
-} from "firebase-admin/firestore";
 import { contentPackEnabled } from "./content-pack-mode.ts";
+import {
+  assertCleanPreflight,
+  discoverDocuments,
+  hashFirestoreDocument,
+  isRecord,
+  parseCliOptions,
+  pathHash,
+  readTargetConfiguration,
+  sha256,
+  stableJson,
+  writeBackupDirectory,
+  type MigrationSourceDocument,
+  type RawMap,
+} from "./lib/migration-kit.ts";
 
-export const TARGET_PROJECT_ID = "d20-folio";
-export const MAX_CHANGED_DOCUMENTS = 500;
+// The migration-agnostic protocol halves (target assertion, CLI, tagged backup
+// codec, hashed reporting, discovery) live in the shared kit; they are
+// re-exported here so this migration keeps ONE import surface.
+export {
+  assertCleanPreflight,
+  assertTargetProject,
+  decodeFirestoreValue,
+  encodeFirestoreValue,
+  hashFirestoreDocument,
+  MAX_CHANGED_DOCUMENTS,
+  parseCliOptions,
+  pathHash,
+  TARGET_PROJECT_ID,
+  writeBackupDirectory,
+  type BackupInputDocument,
+  type BackupManifest,
+  type BackupManifestEntry,
+  type CliOptions,
+  type FirestoreDecodeAdapters,
+  type MigrationSourceDocument,
+  type TaggedFirestoreValue,
+  type TargetConfiguration,
+} from "./lib/migration-kit.ts";
+
 const ENVELOPE_SCHEMA = 3;
-
-type RawMap = Record<string, unknown>;
 export interface MigrationCatalogueItem extends RawMap {
   id: string;
   resources?: readonly RawMap[];
@@ -126,29 +140,6 @@ const COMBAT_SESSION_KEYS = [
 
 const MAIN_PATH = /^users\/([^/]+)\/characters\/([^/]+)$/;
 const SNAPSHOT_PATH = /^users\/([^/]+)\/characters\/([^/]+)\/snapshots\/([^/]+)$/;
-
-function isRecord(value: unknown): value is RawMap {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function sha256(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
-}
-
-function sortedJsonValue(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(sortedJsonValue);
-  if (!isRecord(value)) return value;
-  return Object.fromEntries(
-    Object.entries(value)
-      .filter(([, child]) => child !== undefined)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, child]) => [key, sortedJsonValue(child)])
-  );
-}
-
-function stableJson(value: unknown): string {
-  return JSON.stringify(sortedJsonValue(value));
-}
 
 /** Exact, stable identity for a generated physical copy. Ordinals are zero-based
  * per catalogue item in equipment order, including copies expanded from quantity. */
@@ -242,130 +233,7 @@ export async function loadMigrationCatalogue(): Promise<{
   return { items, mode, fingerprint: assertCatalogueFingerprint(items, mode) };
 }
 
-// ── Tagged Firestore backup codec ───────────────────────────────────────────
-
-export type TaggedFirestoreValue =
-  | { tag: "null" }
-  | { tag: "boolean"; value: boolean }
-  | { tag: "string"; value: string }
-  | { tag: "number"; value: string }
-  | { tag: "timestamp"; seconds: number; nanoseconds: number }
-  | { tag: "date"; value: string }
-  | { tag: "geopoint"; latitude: number; longitude: number }
-  | { tag: "bytes"; base64: string }
-  | { tag: "reference"; path: string }
-  | { tag: "array"; value: TaggedFirestoreValue[] }
-  | { tag: "map"; value: Record<string, TaggedFirestoreValue> };
-
-function encodedNumber(value: number): string {
-  if (Number.isNaN(value)) return "NaN";
-  if (value === Number.POSITIVE_INFINITY) return "Infinity";
-  if (value === Number.NEGATIVE_INFINITY) return "-Infinity";
-  if (Object.is(value, -0)) return "-0";
-  return String(value);
-}
-
-function decodedNumber(value: string): number {
-  if (value === "NaN") return Number.NaN;
-  if (value === "Infinity") return Number.POSITIVE_INFINITY;
-  if (value === "-Infinity") return Number.NEGATIVE_INFINITY;
-  if (value === "-0") return -0;
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || String(parsed) !== value) {
-    throw new TypeError(`Invalid tagged number: ${value}`);
-  }
-  return parsed;
-}
-
-export function encodeFirestoreValue(value: unknown): TaggedFirestoreValue {
-  if (value === null) return { tag: "null" };
-  if (typeof value === "boolean") return { tag: "boolean", value };
-  if (typeof value === "string") return { tag: "string", value };
-  if (typeof value === "number") return { tag: "number", value: encodedNumber(value) };
-  if (value instanceof Timestamp) {
-    return {
-      tag: "timestamp",
-      seconds: value.seconds,
-      nanoseconds: value.nanoseconds,
-    };
-  }
-  if (value instanceof Date) return { tag: "date", value: value.toISOString() };
-  if (value instanceof GeoPoint) {
-    return {
-      tag: "geopoint",
-      latitude: value.latitude,
-      longitude: value.longitude,
-    };
-  }
-  if (Buffer.isBuffer(value) || value instanceof Uint8Array) {
-    return { tag: "bytes", base64: Buffer.from(value).toString("base64") };
-  }
-  if (value instanceof DocumentReference) {
-    return { tag: "reference", path: value.path };
-  }
-  if (Array.isArray(value)) {
-    return { tag: "array", value: value.map(encodeFirestoreValue) };
-  }
-  if (isRecord(value)) {
-    return {
-      tag: "map",
-      value: Object.fromEntries(
-        Object.entries(value).map(([key, child]) => [key, encodeFirestoreValue(child)])
-      ),
-    };
-  }
-  throw new TypeError(`Unsupported Firestore backup value: ${typeof value}`);
-}
-
-export interface FirestoreDecodeAdapters {
-  reference: (path: string) => unknown;
-}
-
-export function decodeFirestoreValue(
-  value: TaggedFirestoreValue,
-  adapters?: FirestoreDecodeAdapters
-): unknown {
-  switch (value.tag) {
-    case "null":
-      return null;
-    case "boolean":
-    case "string":
-      return value.value;
-    case "number":
-      return decodedNumber(value.value);
-    case "timestamp":
-      return new Timestamp(value.seconds, value.nanoseconds);
-    case "date":
-      return new Date(value.value);
-    case "geopoint":
-      return new GeoPoint(value.latitude, value.longitude);
-    case "bytes":
-      return Buffer.from(value.base64, "base64");
-    case "reference":
-      if (!adapters) throw new TypeError("A reference adapter is required");
-      return adapters.reference(value.path);
-    case "array":
-      return value.value.map((child) => decodeFirestoreValue(child, adapters));
-    case "map":
-      return Object.fromEntries(
-        Object.entries(value.value).map(([key, child]) => [
-          key,
-          decodeFirestoreValue(child, adapters),
-        ])
-      );
-  }
-}
-
-export function hashFirestoreDocument(data: RawMap): string {
-  return sha256(stableJson(encodeFirestoreValue(data)));
-}
-
 // ── Pure planner ────────────────────────────────────────────────────────────
-
-export interface MigrationSourceDocument {
-  path: string;
-  data: RawMap;
-}
 
 export interface MigrationIssue {
   path: string;
@@ -972,200 +840,14 @@ export function verifyPlannedDocument(
   return issues;
 }
 
-// ── Recoverable backup writer ───────────────────────────────────────────────
-
-export interface BackupManifestEntry {
-  path: string;
-  file: string;
-  beforeHash: string;
-  afterHash: string;
-  updateTime: TaggedFirestoreValue;
-}
-
-export interface BackupManifest {
-  format: "d20-folio-item-resource-backup-v1";
-  projectId: typeof TARGET_PROJECT_ID;
-  catalogueFingerprint: string;
-  documents: BackupManifestEntry[];
-}
-
-export interface BackupInputDocument {
-  plan: MigrationDocumentPlan;
-  updateTime: Timestamp;
-}
-
-async function writePrivateFile(path: string, value: unknown): Promise<void> {
-  const handle = await open(path, "wx", 0o600);
-  try {
-    await handle.writeFile(`${JSON.stringify(value, null, 2)}\n`, "utf8");
-    await handle.chmod(0o600);
-  } finally {
-    await handle.close();
-  }
-}
-
-export async function writeBackupDirectory(args: {
-  directory: string;
-  catalogueFingerprint: string;
-  documents: readonly BackupInputDocument[];
-}): Promise<BackupManifest> {
-  if (!isAbsolute(args.directory) || resolve(args.directory) !== args.directory) {
-    throw new Error("Backup directory must be an absolute normalized path");
-  }
-  try {
-    await lstat(args.directory);
-    throw new Error("Backup directory must be fresh (it already exists)");
-  } catch (error) {
-    if (!(isRecord(error) && error.code === "ENOENT")) throw error;
-  }
-  const parent = dirname(args.directory);
-  const resolvedParent = await realpath(parent);
-  const parentStat = await stat(resolvedParent);
-  if (!parentStat.isDirectory()) throw new Error("Backup parent is not a directory");
-  await access(resolvedParent, fsConstants.W_OK);
-  await mkdir(args.directory, { mode: 0o700 });
-  await chmod(args.directory, 0o700);
-
-  const entries: BackupManifestEntry[] = [];
-  for (const [index, document] of [...args.documents]
-    .sort((left, right) => left.plan.path.localeCompare(right.plan.path))
-    .entries()) {
-    const file = `${String(index + 1).padStart(4, "0")}-${sha256(
-      document.plan.path
-    ).slice(0, 16)}.json`;
-    const entry: BackupManifestEntry = {
-      path: document.plan.path,
-      file,
-      beforeHash: document.plan.beforeHash,
-      afterHash: document.plan.afterHash,
-      updateTime: encodeFirestoreValue(document.updateTime),
-    };
-    await writePrivateFile(join(args.directory, file), {
-      format: "d20-folio-firestore-document-v1",
-      projectId: TARGET_PROJECT_ID,
-      ...entry,
-      data: encodeFirestoreValue(document.plan.before),
-    });
-    entries.push(entry);
-  }
-  const manifest: BackupManifest = {
-    format: "d20-folio-item-resource-backup-v1",
-    projectId: TARGET_PROJECT_ID,
-    catalogueFingerprint: args.catalogueFingerprint,
-    documents: entries,
-  };
-  await writePrivateFile(join(args.directory, "manifest.json"), manifest);
-  return manifest;
-}
-
 // ── Guarded Firebase CLI ────────────────────────────────────────────────────
 
-export type CliOptions =
-  | { mode: "dry-run" }
-  | { mode: "check" }
-  | { mode: "apply"; backupDirectory: string };
-
-export function parseCliOptions(args: readonly string[]): CliOptions {
-  let mode: CliOptions["mode"] = "dry-run";
-  let explicitMode = false;
-  let backupDirectory: string | undefined;
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index];
-    if (arg === "--dry-run") {
-      if (explicitMode) throw new Error("Choose exactly one migration mode");
-      explicitMode = true;
-    } else if (arg === "--check") {
-      if (explicitMode) throw new Error("Choose exactly one migration mode");
-      explicitMode = true;
-      mode = "check";
-    } else if (arg === "--apply") {
-      if (explicitMode) throw new Error("Choose exactly one migration mode");
-      explicitMode = true;
-      mode = "apply";
-    } else if (arg === "--backup") {
-      if (backupDirectory) throw new Error("Choose exactly one --backup directory");
-      const value = args[index + 1];
-      if (!value || value.startsWith("--")) throw new Error("--backup needs a path");
-      backupDirectory = value;
-      index += 1;
-    } else {
-      throw new Error(`Unknown argument: ${String(arg)}`);
-    }
-  }
-  if (mode === "apply") {
-    if (!backupDirectory) throw new Error("--apply requires --backup");
-    if (!isAbsolute(backupDirectory)) {
-      throw new Error("--backup must name an absolute directory");
-    }
-    return { mode, backupDirectory: resolve(backupDirectory) };
-  }
-  if (backupDirectory) throw new Error("--backup is valid only with --apply");
-  return { mode };
-}
-
-export interface TargetConfiguration {
-  emulatorHost?: string;
-  credentialProjectId?: string;
-  configuredProjectIds: readonly string[];
-}
-
-export function assertTargetProject(configuration: TargetConfiguration): {
-  projectId: typeof TARGET_PROJECT_ID;
-  emulator: boolean;
-} {
-  const emulator = configuration.emulatorHost !== undefined;
-  if (emulator && configuration.emulatorHost?.trim() === "") {
-    throw new Error("FIRESTORE_EMULATOR_HOST must not be blank");
-  }
-  const asserted = [
-    ...configuration.configuredProjectIds,
-    ...(configuration.credentialProjectId ? [configuration.credentialProjectId] : []),
-  ];
-  if (!emulator && !configuration.credentialProjectId) {
-    throw new Error(
-      "Production reads require an explicit service-account credential file"
-    );
-  }
-  if (asserted.some((projectId) => projectId !== TARGET_PROJECT_ID)) {
-    throw new Error(
-      `Refusing project configuration: expected exactly ${TARGET_PROJECT_ID}`
-    );
-  }
-  if (emulator && !asserted.includes(TARGET_PROJECT_ID)) {
-    throw new Error(
-      `Emulator mode requires an explicit ${TARGET_PROJECT_ID} project configuration`
-    );
-  }
-  return { projectId: TARGET_PROJECT_ID, emulator };
-}
-
-interface DiscoveredDocument {
-  source: MigrationSourceDocument;
-  ref: FirestoreDocumentReference;
-  updateTime: Timestamp;
-}
-
-function discovered(snapshot: QueryDocumentSnapshot): DiscoveredDocument {
-  return {
-    source: { path: snapshot.ref.path, data: snapshot.data() },
-    ref: snapshot.ref,
-    updateTime: snapshot.updateTime,
-  };
-}
-
-async function discoverDocuments(db: Firestore): Promise<DiscoveredDocument[]> {
-  const [characters, allSnapshots] = await Promise.all([
-    db.collectionGroup("characters").get(),
-    db.collectionGroup("snapshots").get(),
-  ]);
-  const mains = characters.docs.filter((snapshot) => MAIN_PATH.test(snapshot.ref.path));
-  const snapshots = allSnapshots.docs.filter((snapshot) =>
-    SNAPSHOT_PATH.test(snapshot.ref.path)
-  );
-  return [...mains.map(discovered), ...snapshots.map(discovered)].sort((left, right) =>
-    left.source.path.localeCompare(right.source.path)
-  );
-}
+/** The exact document families this migration owns (kit discovery runs one
+ *  collection-group query per matcher and keeps only exact path matches). */
+const DISCOVERY = [
+  { collectionGroup: "characters", pattern: MAIN_PATH },
+  { collectionGroup: "snapshots", pattern: SNAPSHOT_PATH },
+];
 
 function planSummary(plan: ItemResourceMigrationPlan): string {
   const stamped = plan.changedDocuments.reduce(
@@ -1179,54 +861,11 @@ function planSummary(plan: ItemResourceMigrationPlan): string {
   return `${plan.documents.length} docs; ${plan.changedDocuments.length} changed; ${stamped} identities; ${owners} legacy owners`;
 }
 
-export function assertCleanPreflight(plan: ItemResourceMigrationPlan): void {
-  if (plan.issues.length > 0) {
-    throw new Error(
-      `Preflight found ${plan.issues.length} issue(s):\n${plan.issues
-        .map((issue) => `${issue.path} [${issue.code}] ${issue.detail}`)
-        .join("\n")}`
-    );
-  }
-  if (plan.changedDocuments.length > MAX_CHANGED_DOCUMENTS) {
-    throw new Error(
-      `Refusing ${plan.changedDocuments.length} changed docs; atomic limit is ${MAX_CHANGED_DOCUMENTS}`
-    );
-  }
-}
-
-async function readTargetConfiguration(): Promise<{
-  projectId: typeof TARGET_PROJECT_ID;
-  emulator: boolean;
-}> {
-  const emulatorHost = env.FIRESTORE_EMULATOR_HOST;
-  let credentialProjectId: string | undefined;
-  if (env.GOOGLE_APPLICATION_CREDENTIALS) {
-    const credential = JSON.parse(
-      await readFile(env.GOOGLE_APPLICATION_CREDENTIALS, "utf8")
-    ) as unknown;
-    if (!isRecord(credential) || typeof credential.project_id !== "string") {
-      throw new Error("Credential file has no project_id");
-    }
-    credentialProjectId = credential.project_id;
-  }
-  const configuredProjectIds = [env.GCLOUD_PROJECT, env.GOOGLE_CLOUD_PROJECT].filter(
-    (value): value is string => typeof value === "string" && value.length > 0
-  );
-  if (env.FIREBASE_CONFIG?.trim().startsWith("{")) {
-    const firebaseConfig = JSON.parse(env.FIREBASE_CONFIG) as unknown;
-    if (isRecord(firebaseConfig) && typeof firebaseConfig.projectId === "string") {
-      configuredProjectIds.push(firebaseConfig.projectId);
-    }
-  }
-  return assertTargetProject({
-    ...(emulatorHost !== undefined ? { emulatorHost } : {}),
-    ...(credentialProjectId ? { credentialProjectId } : {}),
-    configuredProjectIds,
-  });
-}
-
 async function run(): Promise<void> {
   const options = parseCliOptions(processArgv.slice(2));
+  if (options.mode === "fixtures") {
+    throw new Error("--fixtures is not a mode of the item-resource migration");
+  }
   const target = await readTargetConfiguration();
   const [{ initializeApp, applicationDefault }, { getFirestore }] = await Promise.all([
     import("firebase-admin/app"),
@@ -1242,7 +881,7 @@ async function run(): Promise<void> {
   );
   const catalogue = await loadMigrationCatalogue();
   console.log(`Catalogue: ${catalogue.mode} ${catalogue.fingerprint}`);
-  const discoveredDocs = await discoverDocuments(db);
+  const discoveredDocs = await discoverDocuments(db, DISCOVERY);
   const sources = discoveredDocs.map((document) => document.source);
   const plan = planItemResourceMigration(sources, catalogue.items);
   assertCleanPreflight(plan);
@@ -1251,7 +890,7 @@ async function run(): Promise<void> {
   if (options.mode === "dry-run") {
     for (const document of plan.changedDocuments) {
       console.log(
-        `would update ${document.path} ${document.beforeHash} -> ${document.afterHash}`
+        `would update ${pathHash(document.path)} ${document.beforeHash} -> ${document.afterHash}`
       );
     }
     return;
@@ -1286,12 +925,13 @@ async function run(): Promise<void> {
   );
   const backupInputs = plan.changedDocuments.map((document) => {
     const found = discoveredByPath.get(document.path);
-    if (!found) throw new Error(`Preflight lost ${document.path}`);
+    if (!found) throw new Error(`Preflight lost ${pathHash(document.path)}`);
     return { plan: document, updateTime: found.updateTime };
   });
   await writeBackupDirectory({
     directory: options.backupDirectory,
-    catalogueFingerprint: catalogue.fingerprint,
+    migration: "item-resources",
+    label: catalogue.fingerprint,
     documents: backupInputs,
   });
   console.log(`Backup complete: ${options.backupDirectory}`);
@@ -1300,7 +940,7 @@ async function run(): Promise<void> {
     const batch = db.batch();
     for (const document of plan.changedDocuments) {
       const found = discoveredByPath.get(document.path);
-      if (!found) throw new Error(`Preflight lost ${document.path}`);
+      if (!found) throw new Error(`Preflight lost ${pathHash(document.path)}`);
       const update: RawMap = {
         build: document.after.build,
         state: document.after.state,
@@ -1312,24 +952,30 @@ async function run(): Promise<void> {
 
   for (const document of plan.changedDocuments) {
     const found = discoveredByPath.get(document.path);
-    if (!found) throw new Error(`Verification lost ${document.path}`);
+    if (!found) throw new Error(`Verification lost ${pathHash(document.path)}`);
     const snapshot = await found.ref.get();
     const data = snapshot.data();
-    if (!data) throw new Error(`Verification read lost ${document.path}`);
+    if (!data) throw new Error(`Verification read lost ${pathHash(document.path)}`);
     const verification = verifyPlannedDocument(document, data, catalogue.items);
     if (verification.length > 0) {
       throw new Error(
-        `Reread/hash verification failed for ${document.path}: ${stableJson(verification)}`
+        `Reread/hash verification failed for ${pathHash(document.path)}: ${verification
+          .map((issue) => issue.code)
+          .join(", ")}`
       );
     }
   }
   console.log("Reread/hash verification passed");
 
-  const postDocs = await discoverDocuments(db);
+  const postDocs = await discoverDocuments(db, DISCOVERY);
   const postSources = postDocs.map((document) => document.source);
   const globalIssues = verifyItemResourceCorpus(postSources, catalogue.items);
   if (globalIssues.length > 0) {
-    throw new Error(`Global check failed: ${stableJson(globalIssues)}`);
+    throw new Error(
+      `Global check failed: ${globalIssues.length} issue(s) [${[
+        ...new Set(globalIssues.map((issue) => issue.code)),
+      ].join(", ")}]`
+    );
   }
   console.log("Global check passed");
   const idempotency = planItemResourceMigration(postSources, catalogue.items);

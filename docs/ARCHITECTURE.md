@@ -2134,6 +2134,69 @@ Firestore SDK handles real-time sync + offline persistence transparently. Writes
 debounced (~2-3 s) inside `useCharacterSubscription`. The service worker
 (`vite-plugin-pwa`) caches the app shell + SRD data for full offline play.
 
+### Per-domain reconciliation + the `revision` compare-and-set (P1, audit F7)
+
+A character is TWO live documents — the parent (`build`/`cache`/metadata) and the
+`combat/state` child (the whole play session) — on two independent listeners. Publishing
+BOTH stored values on every snapshot of EITHER is what lost a re-added custom item and
+reverted a spent Monk Focus: a snapshot on one listener republished the other domain's
+stale server value over a still-unwritten local edit.
+
+- **`src/lib/character-snapshot-reconciler.ts`** (pure) holds, per domain, the last
+  remote value, the unacknowledged local payload, and a conflict flag.
+  `subscribeToCharacter` and `subscribeCombatState` both open with
+  `includeMetadataChanges: true` and forward `{ hasPendingWrites }`. A domain with a
+  pending write keeps materializing THAT payload: a local echo (`hasPendingWrites:
+true`) never clears it, an equal server snapshot acknowledges it, a DIFFERING server
+  snapshot records a conflict while the local payload still shows. The hook publishes
+  `reconciler.current()` — never a mix of one domain's local edit with the other's stale
+  remote. Parent identity is the codec envelope plus `revision`/`shared`/`status`; child
+  identity is the whole play document minus its server stamp.
+  `current()` also exposes `parentRemote`/`childRemote` — the last SERVER-acknowledged
+  value, independent of any pending payload. `parentConflict`/`childConflict` are
+  informational; the write's own rejection callback drives the error state.
+- **`createDebouncedSave(uid, charId, delayMs, allocateRevision)`**: `save(payload,
+callbacks)` reports the outcome of the payload it settles — `onSend` (synchronously,
+  with the payload AS SENT), `onResolved`, `onRejected`, and `onCancelled` (the queued
+  payload a `cancel()` dropped). A later `save()` silently SUPERSEDES the queued payload
+  (no callback — the newer one is what the reconciler now tracks).
+- **`revision`** is a required non-negative integer on every character parent
+  (`readDocMeta` quarantines a document without one; the cutover migration stamps
+  `revision: 0` — ADR-0009). `createCharacter` writes 0. The rules
+  (`revisionAdvancesWithBuild()`) require a **build/state/cache change to carry exactly
+  `resource.revision + 1`**; any other write may leave `revision` untouched OR advance it
+  by exactly one — a whole-document ceremony (sharing publish, snapshot restore) re-sends
+  build/state/cache with unchanged VALUES, so it diffs to nothing yet must still advance.
+  `+2` and any stale value are always denied. A TRANSACTION cannot run offline, so the
+  rules — not a client read-modify-write — are what make a queued offline write safe: a
+  stale one is rejected on reconnect.
+- **The generation is allocated AT SEND, never at queue time.** The subscription hook owns
+  a cursor seeded at the last acknowledged server generation; `createDebouncedSave`'s
+  `allocateRevision` stamps `++cursor` onto the payload the moment the write leaves, and
+  `onSend` re-marks that exact object pending so acknowledge/reject still match. A payload
+  superseded inside the debounce window therefore consumes NOTHING — stamping at queue
+  time burned a number the server never saw, so the next write claimed `+2`, the rules
+  denied it, and the user's edits were silently discarded on the ordinary burst path.
+- **The store doc's `revision` always means "last server-acknowledged"** —
+  `publishResolvedPair` publishes the pending payload's build/session but with
+  `parentRemote`'s generation, never an optimistic one. Every ceremony (`SnapshotsModal`,
+  `LevelUpWizard` → `replaceCharacterState`, `setCharacterSharing`) therefore reads a base
+  the server holds. A ceremony racing an already-sent autosave is denied by the CAS and
+  surfaces the ordinary save error — correct, and preferable to a silent overwrite.
+- **A rejection surfaces, it never clobbers**: `SaveStatus="error"` carrying the REAL
+  Firestore message, the pending payload is dropped, the send cursor re-bases on the
+  server's own generation, the remote value is republished, and `diagnosticsLog("error",
+"character.save-rejected", …)` records it. `onCancelled` (only the restore/level-up
+  ceremony's `cancelPendingParentSave`) drops the pending payload WITHOUT republishing —
+  the ceremony publishes its own whole-document state.
+- **Roster fault isolation**: `subscribeToCharacters` projects each document inside its own
+  `try`/`catch`; a row that cannot be read (a corrupt cache, or a pre-migration parent the
+  metadata reader quarantines) is skipped and logged as `roster.quarantine`. One bad
+  document can never blank the roster.
+- `setCharacterSharing` compares-and-sets on `revision` in its transaction and writes
+  `revision + 1`; `restoreCharacterSnapshot`/`replaceCharacterState` take the observed
+  base revision from the caller and write `base + 1`.
+
 ### Boot data-resilience — an empty result is authoritative only when SERVER-confirmed
 
 The invariant, learned from the 2026-07-09 **"Clear site data"** incident (`PROGRESS.md`): **a
@@ -2248,17 +2311,21 @@ produced by `serializeCharacterEnvelope` (`src/lib/character-codec.ts`, the shar
 
 ### Combat-mutable state lives in a per-character subdoc (`combat/state`)
 
-The character's combat-mutable state — HP `{ current, temp }`, `conditions[]`, held Bardic Inspiration
-die, held Heroic Inspiration, death saves, the SOLO `round`, the SOLO `initiative` roll, and the FIFO of
-unresolved damage-triggered Concentration saves — has ONE persisted home: a
-per-character Firestore subdoc at
+The character's WHOLE mutable play session — HP `{ current, temp }`, `conditions[]`, held Bardic
+Inspiration die, held Heroic Inspiration, death saves, the SOLO `round`, the SOLO `initiative` roll, the
+FIFO of unresolved damage-triggered Concentration saves, AND every non-combat play fact (spell slots,
+trackers, notes, exhaustion, concentration, the engine world) under `playState: { version: 1, state }` —
+has ONE persisted home: a per-character Firestore subdoc at
 `users/{uid}/characters/{charId}/combat/state` (`CombatState`, `src/types/combat-state.ts`) — its SOLE
 representation (golden rule 10). A CAMPAIGN ENCOUNTER's initiative is NOT here — it lives in the
 campaign's `encounterInit` table (the initiative SSOT — see the dedicated bullet below). The subdoc is
 **physically absent from the parent character doc**: the Firestore serialization boundary
-(`toStoredPayload`) omits the trio from `state` via `omitCombatTrio`, so the parent `state` carries no
-HP/conditions/initiative/death-save/held-resource field. (The self-contained portable v3 EXPORT, which has no
-subdoc, still keeps the combat slice inline — see `docs/CHARACTER_SCHEMA.md`.) The subdoc is a tiny, SRD-free,
+(`toStoredPayload`) always writes `state: {}`, so the parent carries only `build` + `cache` + metadata,
+and `firestore.rules` denies any parent write that is not empty there. There is ONE shape: a present
+child MUST carry a valid `playState`, an ABSENT child is an integrity failure the reader quarantines
+(`missing-combat-state`) rather than a fresh full-HP character, and the pre-P1 unmarked-legacy readers
+are deleted. (The self-contained portable v3 EXPORT, which has no subdoc, still keeps the whole session
+inline — see `docs/CHARACTER_SCHEMA.md`.) The subdoc is a tiny, SRD-free,
 id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-state seam that touches
 `firebase/firestore`, kept light off the always-eager bundle.
 
@@ -2268,13 +2335,14 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
 - **Held dice** — a reviewed `granted-die` effect writes the recipient's one held Bardic Inspiration die
   through the same peer transaction, so an offline teammate still receives it. The recipient spends it
   from the ordinary resource rail; short/long rest clears it because its 2024 duration is one hour. The
-  optional subdoc field falls back to a legacy parent value only when absent; an explicit empty string is
-  a real clear, so old characters migrate additively without creating two writable homes.
+  subdoc is its ONE writable home: when the optional field is absent the base is the child's OWN
+  `playState` session, never a parent value (the parent carries none), and an explicit empty string is a
+  real clear.
 - **Heroic Inspiration** — a reviewed `heroic-inspiration` effect uses the same peer transaction and
   non-stacking state rule. Musician's Encouraging Song is a generic 1/Short-or-Long-Rest action capped at
   the actor's resolved PB allies; an offline PC or encounter-owned NPC receives the token and Chronicle
-  provenance atomically. The optional subdoc boolean falls back to a legacy parent value only until the
-  first explicit write, after which receive/spend/correction all use this one home.
+  provenance atomically. As with the held die, an absent optional boolean reads from the child's own
+  `playState` session; receive, spend and correction all use this one home.
 - **Entered D20 Tests** — `types/d20-test.ts` + `lib/d20-test.ts` are the locale-free universal kernel:
   callers provide the physical d20 face(s), optional replacement/adjustment dice and consumed-resource
   ids; the kernel validates JSON-plain input, nets Advantage/Disadvantage, selects one natural face and
@@ -2355,8 +2423,10 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
     casts and round damage flag live in optional
     `turnEconomy`. This makes a
     group↔sheet remount restore the SAME spent budget only when campaign/epoch/round/current-combatant still
-    match. Its high-frequency writer merges only `round + turnEconomy`, so navigation/action persistence
-    cannot overwrite HP or conditions another member committed concurrently. The IO contract is pinned by
+    match. It rides the ONE complete `combat/state` write like every other play fact — the separate
+    `round + turnEconomy` merge writer (`writeCombatTurnEconomy` / `CombatPersistence.writeTurnEconomy`)
+    is DELETED with the legacy parent-owned session, since the subscription's microtask coalescer already
+    collapses a burst into a single child write. The IO contract is pinned by
     a strict `parseCombatState(combatStateWriteData(state))` round-trip suite covering every slot/category,
     localized action-reference shape, cadence fact, outcome receipt, counter, flag and active-effect
     lifetime. At the untrusted read edge, malformed rows and empty identities are dropped, non-finite rolls
@@ -2728,22 +2798,45 @@ read/write): one listener, one write, zero queries.
 
 **CUSTOM IS THE LIBRARY (owner-ratified 2026-07-30).** There is no "save to library"
 gesture and no manager surface: every Custom form commit — and every sheet-side edit of a
-custom row — UPSERTS that homebrew into the library by (kind, name), silently (the
+custom row — UPSERTS that homebrew into the library by **id**, silently (the
 creation is its own feedback). The only curation is the Custom tab's per-row trash, and a
 deletion STICKS — nothing re-adds an entry but a real create/edit.
 
-Two consequences of that identity being (kind, name) rather than an id (the sheet item
-carries none, and adding one would be a live-data schema change):
+Every custom spell/weapon/equipment/feature carries a REQUIRED, stable `instanceId`
+(minted once at creation, never re-derived from the display name — the combat-P1
+data-safety identity work). A library entry's `id` IS that item's `instanceId` — the
+SAME identity a character's own copy carries — except a `monster` template, which has no
+per-item `instanceId` of its own and still mints a fresh UUID. `entryToCharacterItem`
+lands a picked entry's `instanceId` UNCHANGED (so the library template and every
+character's still-untouched copy share one identity) and mints a fresh one only on
+collision — `takenIds`, the set of instanceIds already on the landing character.
 
-- a RENAME must MOVE the entry — each SHEET-side edit seam passes the PRE-edit name to
-  `syncFromCharacter`, which removes the old-named entry once the new one lands, so a
-  rename can never strand a ghost. It only moves after a SUCCESSFUL upsert: at the cap
-  the append is refused, and dropping the old entry would lose the template outright.
-  The Custom tab's own pencil needs none of that: it knows WHICH entry it opened, so it
-  commits through `updateEntry(id, draft)` — id-keyed, position-preserving, and it
-  absorbs a rename onto another kept entry's name (two rows under one identity would
-  leave the second unreachable by every name-keyed upsert).
-- the free-tier CAP can refuse a keep. A CREATE says so (`keepInLibrary` in
+The read side is FAIL-CLOSED, not tolerant: `subscribeLibrary`'s parse (the pure, total
+`parseLibraryEntries`) requires every sheet-kind entry's item to carry a valid
+`instanceId`, and a document that fails to parse QUARANTINES whole — with a typed
+`CodecFailure` and a diagnostics report — rather than silently dropping the offending
+entry, because `writeLibrary` is a full-doc overwrite that would otherwise bake a
+partial drop in permanently on the very next unrelated save. The Task 5 migration
+stamps a stable `instanceId` onto every pre-existing library entry (aligning `id` and
+`item.instanceId` where they'd drifted) BEFORE the deploy that starts requiring one —
+see ADR-0009.
+
+`upsertEntry` matches on `id` ALONE — the display name never enters the comparison.
+Because an item's `instanceId` never changes on a rename, a renamed row upserts as the
+SAME record with no separate rename-detection step: there is no name-keyed identity
+layer underneath, and no "move" to perform — the record was never anywhere else. Two
+consequences:
+
+- a RENAME just re-saves in place — each SHEET-side edit seam passes the item's own
+  `instanceId` to `syncFromCharacter`, which looks the row up by that id
+  (`customDraftById`) and upserts; the id is unaffected by the field that changed, so
+  the SAME entry updates whatever the rename. The Custom tab's own pencil commits
+  through `updateEntry(id, draft)` instead — id-keyed, position-preserving, and it
+  never has to reconcile against another entry, since two entries sharing one id is
+  not a state `upsertEntry`/`updateEntry` can produce.
+- the free-tier CAP can refuse a keep — but only a genuinely NEW id: renaming your own
+  already-kept homebrew is an in-place update (same id, `replaced: true`), so it can
+  never be refused by the cap. A CREATE says so (`keepInLibrary` in
   `CustomCreationForms` — the item still lands on the sheet, only the reusable template
   is lost); the per-keystroke EDIT seam deliberately ignores the outcome, because a
   notice there would fire on every character typed.
@@ -2755,21 +2848,29 @@ The layering mirrors combat-state exactly:
   `id`/`savedAt`), `toLibraryEntry` (deep-copy + per-kind strip of every PLAY value —
   prepared/equipped/quantity/attuned/notes/tags/overrides, charges wound back to full;
   an item's authored tracking MODE — `tracked`/`isConsumable`/`isPotion` — is content and
-  stays, or the pencil's round-trip would silently drop it), `upsertEntry` (same (kind, name) replaces IN PLACE, keeping the original id +
-  position), `entryToCharacterItem` (a deep copy re-seeded with the SAME defaults the
-  Custom creation forms produce) and `customDraftAt` (the ONE map from the four character
-  arrays to their kinds, so an edit seam mirrors what is stored). An entry is a TEMPLATE,
-  never a copy of one character's row.
+  stays, or the pencil's round-trip would silently drop it), `upsertEntry` (an id match
+  replaces IN PLACE, keeping the original position; no match appends), `entryToCharacterItem`
+  (a deep copy re-seeded with the SAME defaults the Custom creation forms produce) and
+  `customDraftById` (the ONE map from the four character arrays, by kind + instanceId,
+  to their kinds, so an edit seam mirrors what is stored). An entry is a TEMPLATE, never
+  a copy of one character's row.
 - **IO** — `src/lib/library-io.ts`: the only library seam touching `firebase/firestore` —
-  defensive read (`parseEntries` drops anything malformed), full-doc `setDoc` OVERWRITE
-  through `stripUndefined` (offline-queueable), no-op under `DEV_BYPASS_AUTH`, and
-  `createLibraryWriter` — the DEBOUNCED writer (`LIBRARY_WRITE_DEBOUNCE_MS` = 2 s, the
-  character auto-save cadence) that coalesces a per-keystroke edit burst into ONE
-  whole-doc write and is flushed on teardown.
+  FAIL-CLOSED read through the pure, total `parseLibraryEntries` (`src/lib/library-codec.ts`):
+  a malformed document QUARANTINES with a typed `CodecFailure` (never a silent per-entry
+  drop — `writeLibrary` is a full-doc overwrite, so a dropped entry would be permanently
+  erased by the very next unrelated write) — `subscribeLibrary` skips `cb` entirely on a
+  quarantine (the store never hydrates, so `loaded` stays false and `saveToLibrary` keeps
+  refusing with `"unavailable"`) and reports it via `diagnosticsLog("error", "library.quarantine", …)`
+  plus `onError`. Also: full-doc `setDoc` OVERWRITE through `stripUndefined`
+  (offline-queueable), no-op under `DEV_BYPASS_AUTH`, and `createLibraryWriter` — the
+  DEBOUNCED writer (`LIBRARY_WRITE_DEBOUNCE_MS` = 2 s, the character auto-save cadence)
+  that coalesces a per-keystroke edit burst into ONE whole-doc write and is flushed on
+  teardown.
 - **State** — `src/stores/libraryStore.ts` holds the live list and its mutations
-  (`saveToLibrary` / its `(kind, idx)` convenience `syncFromCharacter` /
-  `removeFromLibrary`), emitting OUTCOMES (`saved`/`updated`/`full`/`unavailable`) rather
-  than strings. Its write seam is **injected** (`LibraryPersistence`), the
+  (`saveToLibrary`, returning the saved/updated entry's `id` alongside the outcome; its
+  `(kind, instanceId)` convenience `syncFromCharacter`; `removeFromLibrary`), emitting
+  OUTCOMES (`saved`/`updated`/`full`/`unavailable`) rather than strings. Its write seam
+  is **injected** (`LibraryPersistence`), the
   `characterStore.combatPersistence` pattern — that is what keeps the store, and therefore
   every create form and edit handler that upserts through it, Firebase-free (pinned by the
   pure-modules guard). A mutation refuses to run until `loaded`, because the write is a
