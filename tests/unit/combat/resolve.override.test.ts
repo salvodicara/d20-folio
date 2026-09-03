@@ -48,6 +48,15 @@ describe("override — direct-patch paths actually change the fact, not just the
     });
   });
 
+  it("vitals.hp: a negative override clamps to 0 instead of going negative", () => {
+    const result = resolve(opened(), override("vitals.hp", -5), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(mustEntity(result.state, "hero").vitals.hp).toBe(0);
+    expect(mustEntity(result.state, "hero").vitals.life).toBe("alive");
+    expect(mustEntity(result.state, "hero").overrides["vitals.hp"]?.value).toBe(-5);
+  });
+
   it("vitals.life: the DM's last word on death — dying can be overridden to stable", () => {
     const state = opened({
       hp: 0,

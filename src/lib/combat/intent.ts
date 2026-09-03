@@ -1033,16 +1033,17 @@ const LIFE_STATES = new Set<LifeState>(["alive", "dying", "stable", "dead"]);
  *  here directly corrects the fact, the same way a later `declare` replaces a relation, rather
  *  than layering on top of a formula consulted at read time. An HP override above zero revives
  *  a dying/stable creature exactly as `applyHealing` does; `dead` stays dead until the DM
- *  overrides `vitals.life` explicitly. */
+ *  overrides `vitals.life` explicitly. HP is clamped at 0; no upper bound. */
 function patchDirectOverride(entity: Entity, path: string, value: unknown): Entity {
   if (path === "vitals.hp" && typeof value === "number" && Number.isFinite(value)) {
     const { life, deathSaves } = entity.vitals;
-    const revived = value > 0 && (life === "dying" || life === "stable");
+    const hp = Math.max(0, value);
+    const revived = hp > 0 && (life === "dying" || life === "stable");
     return {
       ...entity,
       vitals: {
         ...entity.vitals,
-        hp: value,
+        hp,
         life: revived ? "alive" : life,
         deathSaves: revived ? { successes: 0, failures: 0 } : deathSaves,
       },
