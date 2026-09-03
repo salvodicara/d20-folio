@@ -1,7 +1,7 @@
 # ADR-0001: One entity-generic combat reducer over an Encounter aggregate
 
 **Date**: 2026-09-02
-**Status**: proposed
+**Status**: accepted (owner steering, 2026-09-03)
 **Deciders**: owner (rulings 2026-09-02), architecture round
 
 ## Context
@@ -47,3 +47,11 @@ document differs.
 ### Risks
 
 - Vocabulary too small for some SRD clause → loud `unsupported` in the coverage artefact, never a content branch.
+
+## Amendment (2026-09-03, `v2` architecture reset)
+
+The scope is bounded to the four acceptance stories of `PRODUCT.md` §Steering (stage 3 builds the
+reducer for Marco's first turn and Sara's ogre ambush; the rest of the vocabulary is tiered
+`later`, design §4/§7). The reducer applies an action's outcome according to the campaign's
+automation level (ADR-0011), and `override`/`undo` exist for every action so the DM always has
+the last word. Status accepted with the steering.

@@ -1,7 +1,7 @@
 # ADR-0006: One versioned mechanics authoring format for SRD, pack and homebrew
 
 **Date**: 2026-09-02
-**Status**: proposed
+**Status**: accepted (owner steering, 2026-09-03)
 **Deciders**: owner (licensing partition is legal, not scope), architecture round
 
 ## Context
@@ -38,3 +38,9 @@ content ids.
 ### Negative
 
 - Every existing dialect must be migrated (Phase 3), including the 21 hand-written programs.
+
+## Amendment (2026-09-03, `v2` architecture reset)
+
+The format is bounded to the stage-3 tier (authoring spec §6): the closed unions declare every
+kind, `later` kinds conform as `unsupported` with a path until their stage. A `d20`/`dice` input
+is answered by a roll id. Status accepted.

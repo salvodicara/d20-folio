@@ -1,7 +1,7 @@
 # ADR-0008: Diagnostics — the domain log plus in-house error reports; no third-party sink
 
 **Date**: 2026-09-02
-**Status**: proposed
+**Status**: accepted (owner steering, 2026-09-03)
 **Deciders**: owner ("debug without user reports, professional"), architecture round
 
 ## Context
@@ -41,3 +41,7 @@ would require a collection-group single-field index that `firebase.json`/`deploy
 ### Negative
 
 - Retention is client-capped (last 50 per user); no alerting beyond the inbox.
+
+## Amendment (2026-09-03, `v2` architecture reset)
+
+Unchanged; status accepted with the steering.

@@ -1,7 +1,7 @@
 # ADR-0004: K1 and the Wayfinder S1 are retired; the A1 topology direction is kept
 
 **Date**: 2026-09-02
-**Status**: proposed
+**Status**: accepted (owner steering, 2026-09-03)
 **Deciders**: owner ("no ratified destination", cost ruling), architecture round
 
 ## Context
@@ -35,3 +35,11 @@ the migration plan. Mark the Wayfinder superseded by the target architecture; re
 ### Negative
 
 - The Wayfinder's slice bureaucracy is abandoned; its G0 ledgers stay as history.
+
+## Amendment (2026-09-03, `v2` architecture reset)
+
+Executed on `v2` on 2026-09-03: `src/lib/command/**`, its Functions bundle and wrappers, the
+orphan command types and the two K1 tests are deleted; the Wayfinder plans, the G0 ledgers, the
+agent-first operating model and the program supervisor (`state`/`runtime`/`cli`, its tests and
+`package.json` scripts) are deleted the same day — the owner's approved cuts in the steering. The
+worktree helpers the `justfile` uses survive under `scripts/worktree/`. Status accepted.

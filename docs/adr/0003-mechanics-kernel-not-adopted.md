@@ -1,7 +1,7 @@
 # ADR-0003: The `mechanics-*` kernel is salvaged, not adopted
 
 **Date**: 2026-09-02
-**Status**: proposed
+**Status**: accepted (owner steering, 2026-09-03)
 **Deciders**: owner (D3 free review), architecture round
 
 ## Context
@@ -46,3 +46,12 @@ in `mechanics-transcription.guard.test.ts`, and its tests as specifications. Del
 ### Risks
 
 - Losing hard-won edge cases → every kernel test is triaged into a golden replay or deleted with a reason.
+
+## Amendment (2026-09-03, `v2` architecture reset)
+
+On `v2` the kernel is read only by the old play surfaces (`PlayTab`, the engine spell flows,
+`characterStore`, the rest boundary) through seven entry modules; it dies at stage 6 together with
+those surfaces (`docs/superpowers/plans/2026-09-03-new-app-stage-1.md`, "Module fates"). Until
+then it is frozen: `tests/unit/mechanics-kernel-freeze.guard.test.ts` pins its importer set so no
+new reader appears; `mechanics-trigger.ts`, which nothing read, was deleted on 2026-09-03. The
+salvage list stands. Status accepted.

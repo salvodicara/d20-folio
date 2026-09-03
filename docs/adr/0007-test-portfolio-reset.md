@@ -1,7 +1,7 @@
 # ADR-0007: Test portfolio — golden replays, properties, exhaustiveness, few rules and e2e tests
 
 **Date**: 2026-09-02
-**Status**: proposed
+**Status**: accepted (owner steering, 2026-09-03)
 **Deciders**: owner ("far fewer tests, professional patterns; real regressions still slip"), architecture round
 
 ## Context
@@ -31,3 +31,11 @@ handful of e2e journeys. Representation tests are deleted with their representat
 ### Negative
 
 - Deleting tests needs discipline: each deletion names the representation it dies with.
+
+## Amendment (2026-09-03, `v2` architecture reset)
+
+The `v2` gate (steering, 2026-09-03): unit and rules tests that guard live data, the golden
+replays of the acceptance stories (`tests/unit/combat/replays`), one accessibility sweep and the
+owner's screenshot lane; no end-to-end journeys on `v2` and none added; the gate stays under 15
+minutes. The 60 old end-to-end specs were deleted on `v2` on 2026-09-03 (they ran only on
+`main`'s `verify.yml`). Status accepted.

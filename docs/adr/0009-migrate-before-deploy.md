@@ -1,7 +1,7 @@
 # ADR-0009: Every persisted-shape change migrates live data before the deploy that needs it
 
 **Date**: 2026-09-02
-**Status**: proposed
+**Status**: accepted (owner steering, 2026-09-03)
 **Deciders**: owner ("never again a live hotfix during play"), architecture round
 
 ## Context
@@ -32,3 +32,9 @@ checklist (`docs/RELEASE.md`) gains this gate.
 ### Negative
 
 - Each shape change costs a script and an owner-gated run; the plan names them.
+
+## Amendment (2026-09-03, `v2` architecture reset)
+
+Unchanged; status accepted. On `v2` the P1 migration scripts and their legacy readers were
+deleted on 2026-09-03 because `v2` never runs them: the migrations run from `main` before `main`'s
+deploy, and `main` deletes its own copies afterwards (golden rule 10).

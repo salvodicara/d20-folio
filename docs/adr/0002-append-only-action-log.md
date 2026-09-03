@@ -1,7 +1,7 @@
 # ADR-0002: The append-only action log is the only persisted mutation
 
 **Date**: 2026-09-02
-**Status**: proposed
+**Status**: accepted (owner steering, 2026-09-03)
 **Deciders**: owner (offline-first, minimum cost), architecture round
 
 ## Context
@@ -51,3 +51,10 @@ everywhere. Undo is an action. Checkpoints compact the log.
 ### Risks
 
 - Two concurrent checkpoints → precondition on the previous checkpoint seq; DM-only by rule.
+
+## Amendment (2026-09-03, `v2` architecture reset)
+
+A `roll` is an action of the same log (ADR-0010): appended before the intent that consumes it,
+verified by every client in the fold, undone like any action. Hidden rolls live in the same
+document; their faces are concealed by presenters, not by rules (ADR-0005's trust model). Status
+accepted with the steering.

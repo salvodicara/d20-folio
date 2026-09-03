@@ -1,7 +1,7 @@
 # ADR-0005: Firestore rules enforce identity, membership, ownership and shape; trust at the table
 
 **Date**: 2026-09-02
-**Status**: proposed
+**Status**: accepted (owner steering, 2026-09-03)
 **Deciders**: owner (rulings 4, 9, 10 of 2026-09-02), architecture round
 
 ## Context
@@ -42,3 +42,11 @@ attributes them, anyone can undo them, the DM removes the member. This is accept
 ### Negative
 
 - Manners, not mechanisms, protect a table from a prankster.
+
+## Amendment (2026-09-03, `v2` architecture reset)
+
+The threat model explicitly includes hidden rolls: a hidden roll's faces are in the shared
+encounter document, readable by any member through the raw API; the app conceals them by
+presenter (ADR-0010). A DM-private document was rejected because every client must fold the
+same log to the same state and there is no server to filter it. Trust at the table covers it, as
+it covers forged actions. Status accepted.
