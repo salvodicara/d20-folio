@@ -5,7 +5,9 @@ combat **procedure** (rules of play, not per-entry spell/feature content) that a
 engine must model for every combatant (PCs, monsters, NPCs, summons, companions, mounts), under the
 product constraints:
 
-- **(a) No dice generation** — every die result is a table-entered input.
+- **(a) Dice** — _reversed on 2026-09-03_ (constitution §2.2, ADR-0010): every die result is a
+  `roll` action, rolled in-app through the dice seam or entered from real dice. The audit below
+  was written under the original "no dice generation" constraint.
 - **(b) No geometry** — no coordinates, grids, maps, line-of-sight computation. The app owns
   **declared relational facts** only (adjacency, range band, DM-declared cover, marks, aura
   membership, engagement, visibility) with derivable consequences computed automatically.

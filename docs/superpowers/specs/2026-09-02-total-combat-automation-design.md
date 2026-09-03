@@ -671,8 +671,8 @@ one. Per-kind exposure is exhaustiveness, not a token search.
 
 `src/data` + `src/types` → `src/lib/combat` (pure: no React, Firebase, i18n, Zustand, clock,
 RNG — enforced by an import guard) → `src/lib/views` (labels) → `src/stores` (fold + append
-adapters) → `src/features`/`src/components`. Firestore adapters live in `src/lib/combat-io.ts`
-(append, subscribe, checkpoint). The pack and homebrew supply `Mechanic[]` through the existing
+adapters) → `src/features`/`src/components`. Firestore adapters (append, subscribe, checkpoint) are
+written in stage 4 as `src/lib/combat-io.ts`. The pack and homebrew supply `Mechanic[]` through the existing
 `@pack` seam and the library; nothing else.
 
 ## 12. Constitution and document conflicts (proposed wording for ratification)

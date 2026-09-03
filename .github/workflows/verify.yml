@@ -8,6 +8,9 @@ name: Verify
 # free, so every main SHA carries a full verdict AMBIENTLY; `deploy.yml` then
 # PROMOTES a verified SHA instead of re-running a ~48-minute unsharded matrix.
 #
+# `v2` runs no browser suite in CI until its new surfaces land (stage 6); the
+# accessibility sweep runs by hand there (`pnpm test:e2e`), see docs/CONTRIBUTING.md.
+#
 # ci.yml is the SRD-only twin (the public tree's own composition, push + PR);
 # this workflow is the composed one. Both must stay green (golden rule 28).
 #

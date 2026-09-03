@@ -3320,9 +3320,8 @@ eagerly importing the IT SRD blob or a heavy lib into the app shell trips the gu
 named — it can't sneak in. The allowlist legitimately lists `firebase` / `react-vendor` (framework)
 and the `spells` / `magic-items` / `class-features` corpora (frontier finding #1 below).
 
-A runtime probe (`tests/e2e/_perf-probe.spec.ts`, gated on `PERF=1`, never in CI) navigates the key
-routes under a mobile throttle and prints Navigation-Timing + web-vitals — CLS is excellent (≤ 0.003)
-and FCP is fast; the cold-transfer weight from `dist/` (the guard) is the authoritative figure.
+The cold-transfer weight from `dist/` (the guard) is the authoritative performance figure; the old
+runtime web-vitals probe was deleted with the end-to-end suites on 2026-09-03.
 
 ### Frontier findings (deferred — the highest-value future wins)
 

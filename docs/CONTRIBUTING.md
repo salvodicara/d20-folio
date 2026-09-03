@@ -502,25 +502,14 @@ parallel production mock; production never loads them.
 > **The `_*` capture-harness convention (env-gated, never a CI gate).** A leading-underscore spec in
 > `tests/e2e/` (`_*-shots.spec.ts`, `_*-probe.spec.ts`) is a **capture/measurement harness, not a
 > test**: it is `test.skip`-gated on its own output-dir / mode env var (`SHOT_DIR`, `PERF=1`, …), so it
-> is SKIPPED in every lane — it asserts nothing the gate reads and adds zero coverage. A harness built
-> to preview ONE shipped mission (owner rule-25 shots for a specific fix — cropped to the changed
-> region, before/after where a prior state exists, per golden rule 15) is a **worktree-local tool**:
-> `git rm` it before merge, exactly like a spent one-off migration script (golden rule 10 — git history
-> is the archive; a mission-specific capture must not accumulate on `main`). The repo keeps only the
-> **standing, general, non-mission-bound** harnesses — today exactly four: `_polish-shots` (the
-> manifest-driven full-surface polish sweep), `_identity-shots` (the identity/theme surface sweep),
-> `_scenario-shots` (the mechanic-injection capture above), and `_perf-probe` (the runtime web-vitals
-> probe). Add a new standing harness only when it is genuinely reusable and generic; never fork a
-> per-mission copy of one that exists.
+> is a worktree-local tool: `git rm` it before merge, exactly like a spent one-off (golden rule 10
+> — git history is the archive). The repo keeps no standing capture harness besides `tests/visual`.
 
-**Visual baselines are platform-specific** (macOS and Linux render fonts differently), and
-**no baselines are committed** — the pixel lane is on-demand, never a gate. The
-`toHaveScreenshot` assertions fire only under `--update-snapshots` or with `VISUAL=1`
-(`tests/e2e/visual-gate.ts`); on a plain `pnpm test:e2e` the specs still navigate + assert
-their ready anchors, so they're a real behavioural smoke — just no pixel diff. To pixel-diff
-locally, generate a baseline set once (`pnpm exec playwright test visual --update-snapshots`),
-make your change, then run the visual lane (`pnpm test:e2e:all:visual`) and review the diffs —
-don't commit the generated `*.png`.
+**Browser suites on `v2`.** The steering keeps two: the accessibility sweep
+(`tests/e2e/a11y*.spec.ts`, `pnpm test:e2e`, both profiles) and the owner's screenshot lane
+(`tests/visual`, `pnpm visual:review` / `pnpm visual:motion`, its own config on port 5194). No
+end-to-end journey and no pixel assertion runs in a gate; the old suites were deleted on
+2026-09-03 and are rebuilt screen by screen as the new surfaces land (stage 6).
 
 ### I want to VERIFY a whole character end-to-end (engine + minimal round-trip)
 
