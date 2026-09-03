@@ -575,7 +575,9 @@ function runSteps(
           "x" in raw &&
           "y" in raw &&
           typeof raw.x === "number" &&
-          typeof raw.y === "number"
+          typeof raw.y === "number" &&
+          Number.isFinite(raw.x) &&
+          Number.isFinite(raw.y)
             ? { x: raw.x, y: raw.y }
             : null;
         if (to === null) return { reason: "missing-answer", input: step.to };
@@ -589,7 +591,7 @@ function runSteps(
               ? speedOverride.value
               : mover.stats.speed;
           if (mover.turn.movementUsed + distance > budget) {
-            return { reason: "unaffordable", cost: "movement" };
+            return { reason: "unaffordable", cost: "turn:movement" };
           }
           next = {
             ...next,

@@ -103,7 +103,20 @@ describe("resolve — the move step", () => {
     const result = resolve(state, move("p1", "ranger", { x: 7, y: 0 }), catalogue); // 35 ft > 30
     expect(result).toEqual({
       kind: "rejected",
-      rejection: { reason: "unaffordable", cost: "movement" },
+      rejection: { reason: "unaffordable", cost: "turn:movement" },
+    });
+  });
+
+  it("rejects a non-finite destination instead of silently defeating the budget check", () => {
+    const state = run(opened(), [move("p1", "ranger", { x: 0, y: 0 })]);
+    const result = resolve(
+      state,
+      move("p1", "ranger", { x: Number.NaN, y: 0 }),
+      catalogue
+    );
+    expect(result).toEqual({
+      kind: "rejected",
+      rejection: { reason: "missing-answer", input: "to" },
     });
   });
 
@@ -115,7 +128,7 @@ describe("resolve — the move step", () => {
     const result = resolve(state, move("p1", "ranger", { x: 7, y: 0 }), catalogue); // one more cell
     expect(result).toEqual({
       kind: "rejected",
-      rejection: { reason: "unaffordable", cost: "movement" },
+      rejection: { reason: "unaffordable", cost: "turn:movement" },
     });
   });
 
