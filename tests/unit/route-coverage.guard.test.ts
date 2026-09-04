@@ -71,6 +71,24 @@ const EXEMPT_ROUTES: { route: string; reason: string }[] = [
       "visual baseline.",
   },
   {
+    route: "/_play",
+    reason:
+      "DEV-only harness of the play surface (src/app/routes/play-dev.tsx): PlayScreen over an " +
+      "in-memory fixture, DEV-gated like the crash probes. It is not a product surface — and " +
+      "it is the SUBJECT of its own screenshot lane (tests/visual/play.spec.ts), which " +
+      "captures the whole theme x locale x viewport x role matrix plus the interaction " +
+      "states, so a census baseline here would be a second, thinner copy of that gate.",
+  },
+  {
+    route: "/campaigns/:campaignId/play",
+    reason:
+      "The live play surface (features/play/PlayRoute). Its baseline is the /_play lane " +
+      "(tests/visual/play.spec.ts): the census cannot reach this route's rendered state, " +
+      "which needs a campaign encounter document with seated entities, a turn order and fog " +
+      "— facts that live in Firestore, not in the mock character the census seeds. The route " +
+      "renders the SAME PlayScreen the lane captures; only its props come from the live table.",
+  },
+  {
     route: "/join/:code",
     reason:
       "Shareable-invite landing (features/campaigns/JoinCampaignRoute): a transient " +

@@ -14,6 +14,10 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import "@/i18n";
 import i18next from "@/i18n";
+
+// The screen itself never touches Firestore — the table store is injected — but the app's
+// i18n bootstrap pulls the singleton in transitively, and CI has no Firebase env.
+vi.mock("@/lib/firebase", () => ({}));
 import { PlayScreen } from "@/features/play/PlayScreen";
 import { buildCatalogue } from "@/lib/combat/catalogue";
 import { CORE_MECHANICS } from "@/data/combat/core-catalogue";

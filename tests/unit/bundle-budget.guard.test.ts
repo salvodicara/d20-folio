@@ -470,7 +470,18 @@ const EAGER_CEILING_KB = 850; // baseline 727.1 → ~+17% (over budget — see A
 // 2026-09-02 (combat P1): raised 9501 → 9525. Fresh origin/main measured 9497 KiB
 // (334 entries); P1 adds +14 KiB of eager diagnostics/codec JS → 9511 KiB / 334 entries;
 // 9525 keeps ~14 KiB never-exact-fit headroom.
-const PRECACHE_CEILING_KIB = 9525;
+// 2026-09-04 (stage 6, the play surface): raised 9525 -> 9781. The whole play screen is ONE
+// new lazy chunk pair, precached because offline-first is a constitution invariant and a table
+// that stops working when the wifi drops is a table nobody trusts: PlayRoute-*.js 196 KiB
+// (the screen, the log presenter, the tile model and the 61 KiB licensed glyph sprite it
+// inlines so one symbol can take the tone of whatever it sits on) + PlayRoute-*.css 30 KiB.
+// The bestiary stays behind its own dynamic import (a player's client never pays for the
+// monster corpus) and the DEV harness is stripped from the production bundle, so the ENTRY and
+// EAGER-CLOSURE ceilings are untouched — only the precache, which counts every chunk. Measured
+// 9768.88 KiB / 346 entries on the composed lane; +~12 KiB never-exact-fit headroom.
+// FOLLOW-UP for the integrating commit: `docs/ARCHITECTURE.md` -> "Performance budget (P3)"
+// carries this ceiling in its table and narrative and must be moved to 9781 with this reason.
+const PRECACHE_CEILING_KIB = 9781;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

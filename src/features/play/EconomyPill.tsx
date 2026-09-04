@@ -18,10 +18,12 @@ import type { Entity } from "@/lib/combat/types";
 import { movementBudget, remainingMovement } from "@/lib/combat/map";
 import { feetToMetres } from "./map/geometry";
 
+/** The three signs, each with its glyph and the canonical word for it — "Action" and "Reaction"
+ *  are the app's own vocabulary, not this screen's, so they resolve through the shared keys. */
 const SIGNS = [
-  { id: "action", icon: "e-action" },
-  { id: "bonus", icon: "e-bonus" },
-  { id: "reaction", icon: "e-reaction" },
+  { id: "action", icon: "e-action", label: "combat.action" },
+  { id: "bonus", icon: "e-bonus", label: "play.economy.bonus" },
+  { id: "reaction", icon: "e-reaction", label: "combat.reaction" },
 ] as const;
 
 const ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
@@ -46,7 +48,7 @@ export function EconomyPill({ entity, acting }: EconomyPillProps) {
           return (
             <PlayTip
               key={sign.id}
-              label={t(`play.economy.${sign.id}`)}
+              label={t(sign.label)}
               hint={t(spent ? "play.economy.spent" : `play.economy.${sign.id}Tip`)}
             >
               <span
@@ -58,7 +60,7 @@ export function EconomyPill({ entity, acting }: EconomyPillProps) {
                 role="img"
                 aria-label={t(
                   spent ? "play.economy.signSpent" : "play.economy.signLeft",
-                  { sign: t(`play.economy.${sign.id}`) }
+                  { sign: t(sign.label) }
                 )}
               >
                 <PlayIcon id={sign.icon} />

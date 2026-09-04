@@ -13,8 +13,8 @@
  * so the classification is stated here once, from the data that does exist:
  *
  *   - a `slot` cost, or an `srd:spell:` label → a spell (its level is the slot's; a cantrip 0);
- *   - an `srd:magic-item:` / `srd:equipment:` label, or a `resource` cost whose id is an item
- *     resource → an item;
+ *   - an `srd:magic-item:` label, or a `resource` cost whose id is an item resource → an item
+ *     (NOT `srd:equipment:`, which is also where weapons live);
  *   - everything else — weapons, class features, the `core:*` set → common.
  *
  * A better rule needs a field on the mechanic; when the authoring format grows one, this
@@ -123,9 +123,9 @@ function damageOf(program: Program): DamageType | null {
 function groupOf(mechanic: Mechanic, program: Program): TileGroup {
   const label = mechanic.label ?? "";
   if (slotCost(program.cost) !== null || label.startsWith("srd:spell:")) return "spell";
-  if (label.startsWith("srd:magic-item:") || label.startsWith("srd:equipment:")) {
-    return "item";
-  }
+  // NOT `srd:equipment:`: a weapon is equipment too, and a longsword belongs beside the
+  // common actions (the rendition's first group), not in the item pouch.
+  if (label.startsWith("srd:magic-item:")) return "item";
   const resource = resourceCost(program.cost);
   if (resource !== null && resource.startsWith("item:")) return "item";
   return "common";

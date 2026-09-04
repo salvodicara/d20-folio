@@ -45,7 +45,7 @@ export function TargetBlock({ target }: TargetBlockProps) {
               {target.type ? " · " : null}
               <PlayExplain
                 term={t("play.explain.cr.abbr")}
-                label={t("play.explain.cr.label")}
+                label={t("monster.crRubric")}
                 hint={t("play.explain.cr.hint")}
               />{" "}
               {target.cr}
@@ -56,7 +56,7 @@ export function TargetBlock({ target }: TargetBlockProps) {
               {" · "}
               <PlayIcon id="i-armor-class" />{" "}
               <PlayExplain
-                term={t("play.explain.ac.abbr")}
+                term={t("stats.ac")}
                 label={t("play.explain.ac.label")}
                 hint={t("play.explain.ac.hint")}
               />{" "}

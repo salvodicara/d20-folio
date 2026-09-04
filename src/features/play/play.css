@@ -183,6 +183,12 @@
   border-color: var(--play-gold-line);
 }
 
+.pl-panel--framed > .pl-brackets {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 .pl-panel--framed::before,
 .pl-panel--framed::after,
 .pl-panel--framed > .pl-brackets::before,
@@ -199,28 +205,40 @@
 .pl-panel--framed::before {
   top: -1px;
   left: -1px;
-  border-width: 1.5px 0 0 1.5px;
+  border-top-width: 1.5px;
+  border-right-width: 0;
+  border-bottom-width: 0;
+  border-left-width: 1.5px;
   border-radius: 6px 0 0;
 }
 
 .pl-panel--framed::after {
   top: -1px;
   right: -1px;
-  border-width: 1.5px 1.5px 0 0;
+  border-top-width: 1.5px;
+  border-right-width: 1.5px;
+  border-bottom-width: 0;
+  border-left-width: 0;
   border-radius: 0 6px 0 0;
 }
 
 .pl-panel--framed > .pl-brackets::before {
   bottom: -1px;
   left: -1px;
-  border-width: 0 0 1.5px 1.5px;
+  border-top-width: 0;
+  border-right-width: 0;
+  border-bottom-width: 1.5px;
+  border-left-width: 1.5px;
   border-radius: 0 0 0 6px;
 }
 
 .pl-panel--framed > .pl-brackets::after {
   bottom: -1px;
   right: -1px;
-  border-width: 0 1.5px 1.5px;
+  border-top-width: 0;
+  border-right-width: 1.5px;
+  border-bottom-width: 1.5px;
+  border-left-width: 0;
   border-radius: 0 0 6px;
 }
 
@@ -1100,6 +1118,14 @@
 
 /* ── The bottom HUD (rule 29) ─────────────────────────────────────────────── */
 
+/**
+ * The HUD is one row with the bar in the middle and a cluster at each end: identity on the
+ * left, the turn on the right. The two clusters are MIRRORED about the bar — same gap, same
+ * vertical centre — so the portrait's centre and the End turn ring's centre sit on one
+ * horizontal line (owner, standing correction). That is why the row centres its items instead
+ * of resting them on a common floor, and why the width leaves room for the ring's outer
+ * brass, which paints outside its own box.
+ */
 .pl-hud {
   left: 50%;
   /* The tabs hang below the bar (rule 29), so the HUD's own floor leaves room for them. */
@@ -1107,16 +1133,16 @@
   transform: translateX(-50%);
   display: flex;
   gap: 14px;
-  align-items: flex-end;
-  width: min(1180px, calc(100% - 48px));
+  align-items: center;
+  width: min(1180px, calc(100% - 80px));
 }
 
 .pl-hud__identity {
   position: relative;
   display: flex;
+  flex: none;
   gap: 10px;
-  align-items: flex-end;
-  padding-bottom: 6px;
+  align-items: center;
 }
 
 .pl-portrait {
@@ -1443,9 +1469,11 @@
 
 .pl-turn {
   display: flex;
-  gap: 12px;
-  align-items: flex-end;
-  align-self: flex-end;
+  flex: none;
+  /* Mirrored: the medallions sit between the bar and the ring exactly as the weapon tiles sit
+     between the portrait and the bar, so `row-reverse` is the mirror of the identity row. */
+  gap: 10px;
+  align-items: center;
 }
 
 .pl-sidebtns {

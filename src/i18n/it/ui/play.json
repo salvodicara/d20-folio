@@ -93,12 +93,10 @@
     },
     "scene": {
       "notStarted": "Il combattimento non è iniziato",
-      "roundLabel": "Round",
       "turnOf": "{{name}} di turno",
       "untitled": "Il tavolo"
     },
     "initiative": {
-      "aria": "Ordine di turno",
       "roundMark": "R{{round}}",
       "cellTitle": "{{name}} · iniziativa {{value}}"
     },
@@ -120,7 +118,7 @@
     },
     "tools": {
       "aria": "Strumenti mappa",
-      "select": "Seleziona",
+      "select": "Seleziona e muovi",
       "selectTip": "Scegli una creatura, o trascina la tua pedina per muoverla.",
       "pan": "Sposta",
       "panTip": "Trascina la mappa.",
@@ -129,7 +127,6 @@
       "rulerHint": "Trascina da un punto all'altro.",
       "add": "Aggiungi una creatura",
       "addTip": "Metti sulla mappa una creatura del bestiario.",
-      "fog-reveal": "Nebbia",
       "fog-revealTip": "Trascina un rettangolo per scoprirlo; tocca di nuovo per passare a coprire.",
       "fog-hide": "Copri",
       "fog-hideTip": "Trascina un rettangolo per nasconderlo ai giocatori."
@@ -147,13 +144,11 @@
     },
     "economy": {
       "aria": "Cosa resta in questo turno",
-      "action": "Azione",
       "actionTip": "Un'azione per turno: un attacco, un incantesimo, una spinta.",
       "actionCost": "Costa l'azione.",
       "bonus": "Azione bonus",
       "bonusTip": "Solo alcune cose ne costano una, e una sola per turno.",
       "bonusCost": "Costa l'azione bonus.",
-      "reaction": "Reazione",
       "reactionTip": "Una per round, spesa fuori dal tuo turno.",
       "reactionCost": "Costa la reazione.",
       "movement": "{{left}} / {{total}} m",
@@ -173,8 +168,6 @@
       "tabs": "Cosa posso fare",
       "tab": {
         "common": "Comuni",
-        "spells": "Incantesimi",
-        "items": "Oggetti",
         "passive": "Passive",
         "mine": "Mie"
       },
@@ -196,7 +189,7 @@
       "tip": "Passa dal lancio dell'app all'inserimento dei tuoi dadi veri."
     },
     "reaction": {
-      "title": "Reazione",
+      "title": "Reazioni aperte",
       "canReact": "{{name}} può reagire",
       "openTip": "{{count}} reazione in attesa di risposta.",
       "noneTip": "Nessuna reazione in attesa.",
@@ -207,16 +200,11 @@
     "aim": {
       "targets": "{{name}} · scegli ancora {{left}}",
       "area": "{{name}} · tocca dove cade",
-      "cancel": "Annulla",
-      "areaCaption": "{{name}} · raggio {{metres}} m · {{count}} nemici",
-      "confirm": "Lancia"
+      "areaCaption": "{{name}} · raggio {{metres}} m · {{count}} nemici"
     },
     "roll": {
       "waiting": "in attesa",
       "hidden": "nascosto ai giocatori",
-      "undo": "Annulla",
-      "cancel": "Annulla",
-      "apply": "Applica",
       "manualHint": "Scrivi quanto mostrano i tuoi dadi",
       "faceAria": "Faccia di {{formula}}",
       "error": {
@@ -248,17 +236,15 @@
     },
     "drawer": {
       "title": "Tabellone DM",
-      "openTip": "Registro, cose nascoste, nebbia e regole: un pannello che sposta lo schermo invece di coprirlo.",
-      "close": "Chiudi",
+      "openTip": "Registro, cose nascoste, nebbia e regole, in un pannello che sposta lo schermo invece di coprirlo.",
       "closeTip": "Ridai allo schermo tutta la sua larghezza.",
-      "tabs": "Tabellone DM",
+      "tabs": "Sezioni del tabellone",
       "tab": {
         "log": "Registro",
         "hidden": "Nascosti",
-        "fog": "Nebbia",
         "scene": "Scene",
         "rules": "Regole",
-        "notes": "Note"
+        "notes": "Note DM"
       },
       "filters": "Filtra il registro",
       "filter": {
@@ -269,7 +255,6 @@
         "rejected": "Rifiutate"
       },
       "logEmpty": "Qui non è ancora successo nulla.",
-      "undo": "Annulla",
       "edit": "Modifica",
       "foot": "Round {{round}} · {{count}} righe",
       "hiddenTokens": "Nascosti ai giocatori",
@@ -294,42 +279,30 @@
       "note": "Puoi cambiarlo durante la sessione, e correggere qualunque esito dopo."
     },
     "hp": {
-      "damage": "Danno",
-      "heal": "Cura",
-      "amount": "Quantità",
       "temp": "temp",
       "max": "max",
       "condition": "Condizione",
       "noCondition": "nessuna condizione",
       "clearCondition": "Togli {{name}}",
-      "unit": "PF",
       "reason": "Correzione del DM",
-      "hint": "Correggi il numero e il registro cambia con te.",
-      "apply": "Applica",
-      "close": "Chiudi"
+      "hint": "Correggi il numero e il registro cambia con te."
     },
     "pill": {
-      "initiative": "Iniziativa",
       "initiativeShort": "INIZ",
       "initiativeTip": "Il numero su cui agisce questa creatura. Scrivilo per metterla nell'ordine.",
-      "hide": "Nascondi",
-      "show": "Mostra",
+      "show": "Mostra ai giocatori",
       "hideTip": "I giocatori smettono di vedere questa pedina; tu la vedi tratteggiata.",
-      "remove": "Rimuovi",
       "removeTip": "Togli {{name}} dal tavolo.",
       "leave": "Alzati dal tavolo",
       "leaveTip": "Togli il tuo personaggio dal combattimento; l'esito torna sulla scheda."
     },
     "add": {
       "search": "Cerca nel bestiario",
-      "close": "Chiudi",
       "loading": "Carico il bestiario…",
       "none": "Nessun risultato per «{{query}}».",
-      "cr": "GS {{cr}}",
       "hint": "Scegliere una creatura la siede al tavolo e la mette nell'ordine."
     },
     "table": {
-      "beginTurns": "Inizia i turni",
       "readyHint": "Tutti hanno un'iniziativa.",
       "notReadyHint": "Qualcuno non ha ancora un'iniziativa.",
       "sit": "Siediti al tavolo",
@@ -338,7 +311,7 @@
     "standby": {
       "open": "Apri il tavolo",
       "loading": {
-        "title": "Il tavolo",
+        "title": "Un momento",
         "body": "Leggo il tavolo…"
       },
       "missing": {
@@ -383,38 +356,15 @@
       "hide": "Nascondersi",
       "opportunity": "Attacco di opportunità"
     },
-    "grip": {
-      "one-handed": "A una mano",
-      "two-handed": "A due mani"
-    },
     "label": {
       "unknownCharacter": "Un personaggio"
-    },
-    "condition": {
-      "blinded": "Accecato",
-      "charmed": "Affascinato",
-      "deafened": "Assordato",
-      "exhaustion": "Sfinimento",
-      "frightened": "Spaventato",
-      "grappled": "Afferrato",
-      "incapacitated": "Incapacitato",
-      "invisible": "Invisibile",
-      "paralyzed": "Paralizzato",
-      "petrified": "Pietrificato",
-      "poisoned": "Avvelenato",
-      "prone": "Prono",
-      "restrained": "Trattenuto",
-      "stunned": "Stordito",
-      "unconscious": "Privo di sensi"
     },
     "explain": {
       "cr": {
         "abbr": "GS",
-        "label": "Grado di Sfida (GS)",
         "hint": "Quanto è pericolosa una creatura, da 0 in su. È il numero da cui si costruisce la difficoltà di uno scontro."
       },
       "ac": {
-        "abbr": "CA",
         "label": "Classe Armatura (CA)",
         "hint": "Il numero che un tiro per colpire deve raggiungere per colpire questa creatura."
       },

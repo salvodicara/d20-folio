@@ -48,7 +48,7 @@ import { TargetBlock, type TargetView } from "./TargetBlock";
 import { TokenPill } from "./TokenPill";
 import { ToolRail } from "./ToolRail";
 import { ViewControls } from "./ViewControls";
-import { createPlayLabels } from "./labels";
+import { conditionName, createPlayLabels } from "./labels";
 import {
   CONDITION_ICON,
   DICE_MODE_KEY,
@@ -482,7 +482,7 @@ export function PlayScreen(props: PlayScreenProps) {
             return {
               id: effect.id,
               icon: CONDITION_ICON[condition],
-              label: t(`play.condition.${condition}`),
+              label: conditionName(condition, language),
             };
           })
           .concat(
@@ -769,7 +769,7 @@ export function PlayScreen(props: PlayScreenProps) {
                     );
                   }}
                 >
-                  {t("play.aim.confirm")}
+                  {t("combat.cast")}
                 </button>
               ) : null}
               <button
@@ -778,7 +778,7 @@ export function PlayScreen(props: PlayScreenProps) {
                 onClick={() => setAiming({ kind: "none" })}
                 data-testid="pl-aim-cancel"
               >
-                {t("play.aim.cancel")}
+                {t("common.cancel")}
               </button>
             </div>
           ) : null}
@@ -871,7 +871,7 @@ export function PlayScreen(props: PlayScreenProps) {
                 onClick={beginTurns}
                 data-testid="pl-begin-turns"
               >
-                {t("play.table.beginTurns")}
+                {t("campaignHub.encounterBeginTurns")}
               </button>
               <span className="pl-note">
                 {readyForTurns(state)
@@ -974,6 +974,7 @@ export function PlayScreen(props: PlayScreenProps) {
             }}
             editName={editEntity ? nameOf(editEntity.id) : ""}
             editConditions={editConditions}
+            conditionName={(id) => conditionName(id, language)}
             onHpApply={(edits) => {
               if (editEntity) applyHp(editEntity.id, edits);
             }}

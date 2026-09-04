@@ -57,7 +57,7 @@ export function InitiativeStrip({
   return (
     <div className="pl-initbar pl-panel pl-panel--framed" data-testid="pl-initiative">
       <span className="pl-brackets" />
-      <ol className="pl-strip" aria-label={t("play.initiative.aria")}>
+      <ol className="pl-strip" aria-label={t("campaignHub.encounterTurnOrder")}>
         {cells.map((cell, index) => (
           <li key={cell.id} style={{ display: "contents" }}>
             {index === wrapAt && index > 0 ? (

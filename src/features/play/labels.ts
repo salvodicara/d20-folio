@@ -74,6 +74,16 @@ export function monsterLabelId(srdId: string, ordinal: number): LabelId {
   return `monster:${srdId}#${ordinal}`;
 }
 
+/** A condition's name has ONE home: the SRD catalogue. The play surface never re-declares it,
+ *  which is also why the retired Italian lexeme can never come back through this screen. */
+export function conditionName(id: string, locale: Locale): string {
+  try {
+    return localizeSrd("condition", id, "name", locale);
+  } catch {
+    return id;
+  }
+}
+
 export function createPlayLabels(args: PlayLabelArgs): (label: LabelId) => string {
   const { t, locale, mechanics, characters } = args;
 

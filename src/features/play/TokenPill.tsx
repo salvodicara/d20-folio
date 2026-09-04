@@ -54,14 +54,14 @@ export function TokenPill(props: TokenPillProps) {
   return (
     <div className="pl-tokenpill pl-panel" data-testid="pl-token-pill">
       {dm ? (
-        <PlayTip label={t("play.pill.initiative")} hint={t("play.pill.initiativeTip")}>
+        <PlayTip label={t("monster.initiative")} hint={t("play.pill.initiativeTip")}>
           <input
             className="pl-tokenpill__init"
             type="number"
             inputMode="numeric"
             value={draft}
             placeholder={t("play.pill.initiativeShort")}
-            aria-label={t("play.pill.initiative")}
+            aria-label={t("monster.initiative")}
             data-testid="pl-pill-initiative"
             onChange={(event) => setDraft(event.target.value)}
             onBlur={commit}
@@ -75,28 +75,25 @@ export function TokenPill(props: TokenPillProps) {
         <>
           <span className="pl-tokenpill__sep" />
           <PlayTip
-            label={hidden ? t("play.pill.show") : t("play.pill.hide")}
+            label={hidden ? t("play.pill.show") : t("campaignHub.hideNote")}
             hint={t("play.pill.hideTip")}
           >
             <button
               type="button"
               className="pl-icon-btn pl-icon-btn--dm"
               aria-pressed={hidden}
-              aria-label={hidden ? t("play.pill.show") : t("play.pill.hide")}
+              aria-label={hidden ? t("play.pill.show") : t("campaignHub.hideNote")}
               data-testid="pl-pill-hide"
               onClick={() => onHidden(entity, !hidden)}
             >
               <PlayIcon id={hidden ? "i-eye-off" : "i-eye"} />
             </button>
           </PlayTip>
-          <PlayTip
-            label={t("play.pill.remove")}
-            hint={t("play.pill.removeTip", { name })}
-          >
+          <PlayTip label={t("common.remove")} hint={t("play.pill.removeTip", { name })}>
             <button
               type="button"
               className="pl-icon-btn"
-              aria-label={t("play.pill.remove")}
+              aria-label={t("common.remove")}
               data-testid="pl-pill-remove"
               onClick={() => onRemove(entity)}
             >

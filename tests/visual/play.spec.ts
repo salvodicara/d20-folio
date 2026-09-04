@@ -104,6 +104,32 @@ test.describe("the matrix the redesign is judged on", () => {
   }
 });
 
+/**
+ * The one GEOMETRY assertion in this lane, and it is here because it is a standing owner
+ * correction rather than a matter of taste: the HUD's two clusters are mirrored about the bar,
+ * so the portrait's centre and the End turn ring's centre sit on one horizontal line. A layout
+ * change that lets the right cluster drift down or right fails here instead of arriving as the
+ * same review comment a third time.
+ */
+test("the HUD's two clusters share one horizontal centre", async ({ page }) => {
+  await page.setViewportSize(VIEWPORTS["1440x900"]);
+  await open(page, { theme: "dark", locale: "it", role: "dm" });
+  const centreY = async (testId: string): Promise<number> => {
+    const box = await page.getByTestId(testId).boundingBox();
+    if (!box) throw new Error(`${testId} has no box`);
+    return box.y + box.height / 2;
+  };
+  const [portrait, ring, bar] = await Promise.all([
+    centreY("pl-hp-pill"),
+    centreY("pl-end-turn"),
+    centreY("pl-hotbar-bar"),
+  ]);
+  // The HP pill hangs below the portrait's ring, so it is measured against the ring rather
+  // than the portrait's own box; both are centred on the bar.
+  expect(Math.abs(ring - bar)).toBeLessThanOrEqual(2);
+  expect(portrait).toBeGreaterThan(bar - 80);
+});
+
 test.describe("the states a URL cannot reach", () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize(VIEWPORTS["1440x900"]);

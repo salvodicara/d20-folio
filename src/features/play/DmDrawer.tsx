@@ -32,6 +32,17 @@ import type { ActionId, EntityId } from "@/lib/combat/ids";
 import type { Automation, ConditionId, Entity } from "@/lib/combat/types";
 import type { LogLine } from "@/lib/views/encounter-log-view";
 
+/** The drawer's tab labels; "Fog" is the app's word for the thing, so it resolves through the
+ *  one key the tool rail and the sub-toolbar also use. */
+const DRAWER_TAB_LABEL: Readonly<Record<DrawerTab, string>> = {
+  log: "play.drawer.tab.log",
+  hidden: "play.drawer.tab.hidden",
+  fog: "play.fog.title",
+  scene: "play.drawer.tab.scene",
+  rules: "play.drawer.tab.rules",
+  notes: "play.drawer.tab.notes",
+};
+
 /** One creature the DM may hide from the players. */
 export interface HiddenRow {
   readonly id: EntityId;
@@ -55,6 +66,7 @@ export interface DmDrawerProps {
   readonly onEditClose: () => void;
   readonly editName: string;
   readonly editConditions: readonly ConditionId[];
+  readonly conditionName: (id: ConditionId) => string;
   readonly onHpApply: (edits: readonly HpEdit[]) => void;
 
   readonly tokens: readonly HiddenRow[];
@@ -117,6 +129,7 @@ export function DmDrawer(props: DmDrawerProps) {
     onEditClose,
     editName,
     editConditions,
+    conditionName,
     onHpApply,
     tokens,
     onTokenHidden,
@@ -145,12 +158,12 @@ export function DmDrawer(props: DmDrawerProps) {
     >
       <div className="pl-drawer__head">
         <b>{t("play.drawer.title")}</b>
-        <PlayTip label={t("play.drawer.close")} hint={t("play.drawer.closeTip")}>
+        <PlayTip label={t("common.close")} hint={t("play.drawer.closeTip")}>
           <button
             type="button"
             className="pl-icon-btn"
             onClick={onClose}
-            aria-label={t("play.drawer.close")}
+            aria-label={t("common.close")}
             data-testid="pl-drawer-close"
           >
             <PlayIcon id="i-chevron-right" />
@@ -168,7 +181,7 @@ export function DmDrawer(props: DmDrawerProps) {
             onClick={() => onTab(id)}
             data-testid={`pl-dtab-${id}`}
           >
-            {t(`play.drawer.tab.${id}`)}
+            {t(DRAWER_TAB_LABEL[id])}
           </button>
         ))}
       </div>
@@ -201,6 +214,7 @@ export function DmDrawer(props: DmDrawerProps) {
                 entity={editing.entity}
                 name={editName}
                 conditions={editConditions}
+                conditionName={conditionName}
                 onApply={onHpApply}
                 onClose={onEditClose}
               />
@@ -224,7 +238,7 @@ export function DmDrawer(props: DmDrawerProps) {
                         onClick={() => onUndo(line.id)}
                         data-testid={`pl-undo-${line.id}`}
                       >
-                        {t("play.drawer.undo")}
+                        {t("common.undo")}
                       </button>
                     ) : null}
                   </li>
@@ -370,7 +384,7 @@ export function DmDrawer(props: DmDrawerProps) {
         {tab === "scene" ? (
           <>
             <div className="pl-sec">
-              <span>{t("play.drawer.tab.scene")}</span>
+              <span>{t(DRAWER_TAB_LABEL.scene)}</span>
             </div>
             <p className="pl-note">{t("play.drawer.sceneEmpty")}</p>
           </>
@@ -379,7 +393,7 @@ export function DmDrawer(props: DmDrawerProps) {
         {tab === "notes" ? (
           <>
             <div className="pl-sec">
-              <span>{t("play.drawer.tab.notes")}</span>
+              <span>{t(DRAWER_TAB_LABEL.notes)}</span>
             </div>
             <p className="pl-note">{t("play.drawer.notesEmpty")}</p>
           </>

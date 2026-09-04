@@ -136,7 +136,7 @@ export function RollPanel({ roll, prompt, onManual, onCancel, onUndo }: RollPane
         </div>
         <div className="pl-roll__foot">
           <button type="button" className="pl-ghost" onClick={onCancel}>
-            {t("play.roll.cancel")}
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -154,7 +154,7 @@ export function RollPanel({ roll, prompt, onManual, onCancel, onUndo }: RollPane
               )
             }
           >
-            {t("play.roll.apply")}
+            {t("combat.apply")}
           </button>
         </div>
       </section>
@@ -218,7 +218,7 @@ export function RollPanel({ roll, prompt, onManual, onCancel, onUndo }: RollPane
               onClick={() => onUndo(roll.id)}
               data-testid="pl-roll-undo"
             >
-              {t("play.roll.undo")}
+              {t("common.undo")}
             </button>
           ) : null}
         </span>

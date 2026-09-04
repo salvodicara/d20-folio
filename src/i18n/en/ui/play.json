@@ -93,12 +93,10 @@
     },
     "scene": {
       "notStarted": "The fight has not started",
-      "roundLabel": "Round",
       "turnOf": "{{name}}'s turn",
       "untitled": "The table"
     },
     "initiative": {
-      "aria": "Turn order",
       "roundMark": "R{{round}}",
       "cellTitle": "{{name}} · initiative {{value}}"
     },
@@ -120,7 +118,7 @@
     },
     "tools": {
       "aria": "Map tools",
-      "select": "Select",
+      "select": "Select and move",
       "selectTip": "Pick a creature, or drag your own token to move it.",
       "pan": "Pan",
       "panTip": "Drag the map itself.",
@@ -129,7 +127,6 @@
       "rulerHint": "Drag from one point to another.",
       "add": "Add a creature",
       "addTip": "Put a creature from the bestiary on the map.",
-      "fog-reveal": "Fog",
       "fog-revealTip": "Drag a rectangle to reveal it; tap again to switch to covering.",
       "fog-hide": "Cover",
       "fog-hideTip": "Drag a rectangle to hide it from the players."
@@ -147,13 +144,11 @@
     },
     "economy": {
       "aria": "What is left this turn",
-      "action": "Action",
       "actionTip": "One action per turn: an attack, a spell, a shove.",
       "actionCost": "Costs the action.",
       "bonus": "Bonus action",
       "bonusTip": "Only some things cost one, and only one per turn.",
       "bonusCost": "Costs the bonus action.",
-      "reaction": "Reaction",
       "reactionTip": "One per round, spent outside your own turn.",
       "reactionCost": "Costs the reaction.",
       "movement": "{{left}} / {{total}} m",
@@ -173,8 +168,6 @@
       "tabs": "What I can do",
       "tab": {
         "common": "Common",
-        "spells": "Spells",
-        "items": "Items",
         "passive": "Passive",
         "mine": "Mine"
       },
@@ -196,7 +189,7 @@
       "tip": "Switch between the app rolling and typing the faces of your own dice."
     },
     "reaction": {
-      "title": "Reaction",
+      "title": "Open reactions",
       "canReact": "{{name}} can react",
       "openTip": "{{count}} reaction waiting for an answer.",
       "noneTip": "Nothing is waiting on a reaction.",
@@ -207,16 +200,11 @@
     "aim": {
       "targets": "{{name}} · pick {{left}} more",
       "area": "{{name}} · tap where it lands",
-      "cancel": "Cancel",
-      "areaCaption": "{{name}} · radius {{metres}} m · {{count}} enemies",
-      "confirm": "Cast"
+      "areaCaption": "{{name}} · radius {{metres}} m · {{count}} enemies"
     },
     "roll": {
       "waiting": "waiting",
       "hidden": "hidden from the players",
-      "undo": "Undo",
-      "cancel": "Cancel",
-      "apply": "Apply",
       "manualHint": "Type what your dice show",
       "faceAria": "Face of {{formula}}",
       "error": {
@@ -248,17 +236,15 @@
     },
     "drawer": {
       "title": "DM board",
-      "openTip": "Log, hidden things, fog and rules — in one panel that shifts the screen rather than covering it.",
-      "close": "Close",
+      "openTip": "Log, hidden things, fog and rules, in one panel that shifts the screen instead of covering it.",
       "closeTip": "Give the screen its full width back.",
-      "tabs": "DM board",
+      "tabs": "Board sections",
       "tab": {
         "log": "Log",
         "hidden": "Hidden",
-        "fog": "Fog",
         "scene": "Scenes",
         "rules": "Rules",
-        "notes": "Notes"
+        "notes": "DM notes"
       },
       "filters": "Filter the log",
       "filter": {
@@ -269,7 +255,6 @@
         "rejected": "Refused"
       },
       "logEmpty": "Nothing has happened here yet.",
-      "undo": "Undo",
       "edit": "Correct",
       "foot": "Round {{round}} · {{count}} lines",
       "hiddenTokens": "Hidden from the players",
@@ -294,42 +279,30 @@
       "note": "You can change this mid-session, and you can correct any outcome afterwards."
     },
     "hp": {
-      "damage": "Damage",
-      "heal": "Heal",
-      "amount": "Amount",
       "temp": "temp",
       "max": "max",
       "condition": "Condition",
       "noCondition": "no condition",
       "clearCondition": "Clear {{name}}",
-      "unit": "HP",
       "reason": "DM correction",
-      "hint": "Correct the number and the log follows you.",
-      "apply": "Apply",
-      "close": "Close"
+      "hint": "Correct the number and the log follows you."
     },
     "pill": {
-      "initiative": "Initiative",
       "initiativeShort": "INIT",
       "initiativeTip": "The number this creature acts on. Enter it to place it in the order.",
-      "hide": "Hide",
-      "show": "Show",
+      "show": "Show to players",
       "hideTip": "The players stop seeing this token; you keep it dashed.",
-      "remove": "Remove",
       "removeTip": "Take {{name}} off the table.",
       "leave": "Leave the table",
       "leaveTip": "Take your character out of the fight; the outcome is written back to the sheet."
     },
     "add": {
       "search": "Search the bestiary",
-      "close": "Close",
       "loading": "Loading the bestiary…",
       "none": "Nothing matches “{{query}}”.",
-      "cr": "CR {{cr}}",
       "hint": "Picking a creature seats it at the table and puts it in the order."
     },
     "table": {
-      "beginTurns": "Begin turns",
       "readyHint": "Everyone has an initiative.",
       "notReadyHint": "Someone still has no initiative.",
       "sit": "Take a seat",
@@ -338,7 +311,7 @@
     "standby": {
       "open": "Open the table",
       "loading": {
-        "title": "The table",
+        "title": "One moment",
         "body": "Reading the table…"
       },
       "missing": {
@@ -383,38 +356,15 @@
       "hide": "Hide",
       "opportunity": "Opportunity attack"
     },
-    "grip": {
-      "one-handed": "One-handed",
-      "two-handed": "Two-handed"
-    },
     "label": {
       "unknownCharacter": "A character"
-    },
-    "condition": {
-      "blinded": "Blinded",
-      "charmed": "Charmed",
-      "deafened": "Deafened",
-      "exhaustion": "Exhaustion",
-      "frightened": "Frightened",
-      "grappled": "Grappled",
-      "incapacitated": "Incapacitated",
-      "invisible": "Invisible",
-      "paralyzed": "Paralysed",
-      "petrified": "Petrified",
-      "poisoned": "Poisoned",
-      "prone": "Prone",
-      "restrained": "Restrained",
-      "stunned": "Stunned",
-      "unconscious": "Unconscious"
     },
     "explain": {
       "cr": {
         "abbr": "CR",
-        "label": "Challenge Rating (CR)",
         "hint": "How dangerous a creature is, from 0 upward. It is what an encounter's difficulty is built from."
       },
       "ac": {
-        "abbr": "AC",
         "label": "Armour Class (AC)",
         "hint": "The number an attack roll has to reach to hit this creature."
       },

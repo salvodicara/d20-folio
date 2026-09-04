@@ -52,11 +52,20 @@ export interface HpEditorProps {
   readonly name: string;
   /** The conditions already on the creature, so the picker can end one too. */
   readonly conditions: readonly ConditionId[];
+  /** A condition's name, resolved from the SRD catalogue — never re-declared here. */
+  readonly conditionName: (id: ConditionId) => string;
   readonly onApply: (edits: readonly HpEdit[]) => void;
   readonly onClose: () => void;
 }
 
-export function HpEditor({ entity, name, conditions, onApply, onClose }: HpEditorProps) {
+export function HpEditor({
+  entity,
+  name,
+  conditions,
+  conditionName,
+  onApply,
+  onClose,
+}: HpEditorProps) {
   const { t } = useTranslation();
   const [verb, setVerb] = useState<"damage" | "heal">("damage");
   const [amount, setAmount] = useState("");
@@ -100,13 +109,13 @@ export function HpEditor({ entity, name, conditions, onApply, onClose }: HpEdito
     <div className="pl-hpedit" data-testid="pl-hp-editor">
       <div className="pl-hpedit__title">
         <span>
-          <b>{name}</b> · {entity.vitals.hp} → {next} {t("play.hp.unit")}
+          <b>{name}</b> · {entity.vitals.hp} → {next} {t("units.hp")}
         </span>
         <button
           type="button"
           className="pl-icon-btn"
           onClick={onClose}
-          aria-label={t("play.hp.close")}
+          aria-label={t("common.close")}
         >
           <PlayIcon id="i-x" />
         </button>
@@ -120,7 +129,7 @@ export function HpEditor({ entity, name, conditions, onApply, onClose }: HpEdito
           aria-pressed={verb === "damage"}
           onClick={() => setVerb("damage")}
         >
-          {t("play.hp.damage")}
+          {t("combat.damage")}
         </button>
         <input
           className="pl-hpedit__amount"
@@ -129,7 +138,7 @@ export function HpEditor({ entity, name, conditions, onApply, onClose }: HpEdito
           inputMode="numeric"
           value={amount}
           placeholder="0"
-          aria-label={t("play.hp.amount")}
+          aria-label={t("campaignHub.amount")}
           data-testid="pl-hp-amount"
           onChange={(event) => setAmount(event.target.value)}
         />
@@ -140,7 +149,7 @@ export function HpEditor({ entity, name, conditions, onApply, onClose }: HpEdito
           aria-pressed={verb === "heal"}
           onClick={() => setVerb("heal")}
         >
-          {t("play.hp.heal")}
+          {t("combat.heal")}
         </button>
       </div>
 
@@ -180,8 +189,8 @@ export function HpEditor({ entity, name, conditions, onApply, onClose }: HpEdito
               return (
                 <option key={id} value={`${id}:${on ? "off" : "on"}`}>
                   {on
-                    ? t("play.hp.clearCondition", { name: t(`play.condition.${id}`) })
-                    : t(`play.condition.${id}`)}
+                    ? t("play.hp.clearCondition", { name: conditionName(id) })
+                    : conditionName(id)}
                 </option>
               );
             })}
@@ -197,7 +206,7 @@ export function HpEditor({ entity, name, conditions, onApply, onClose }: HpEdito
           onClick={apply}
           data-testid="pl-hp-apply"
         >
-          {t("play.hp.apply")}
+          {t("combat.apply")}
         </button>
       </div>
     </div>

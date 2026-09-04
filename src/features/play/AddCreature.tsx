@@ -72,7 +72,7 @@ export function AddCreature({ options, loading, onPick, onClose }: AddCreaturePr
           type="button"
           className="pl-icon-btn"
           onClick={onClose}
-          aria-label={t("play.add.close")}
+          aria-label={t("common.close")}
         >
           <PlayIcon id="i-x" />
         </button>
@@ -94,7 +94,7 @@ export function AddCreature({ options, loading, onPick, onClose }: AddCreaturePr
             >
               <span className="pl-dock__face">{initials(option.name)}</span>
               <b>{option.name}</b>
-              <small>{t("play.add.cr", { cr: option.cr })}</small>
+              <small>{t("polymorph.crShort", { cr: option.cr })}</small>
             </button>
           ))}
         </div>

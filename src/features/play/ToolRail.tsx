@@ -25,15 +25,51 @@ interface RailItem {
   readonly id: PlayTool;
   readonly icon: string;
   readonly hotkey: string;
+  /** The tool's own word. "Fog" is the app's word for the thing, not this rail's, so it
+   *  resolves through the one key the drawer's tab and the sub-toolbar also use. */
+  readonly label: string;
+  readonly hint: string;
   readonly dmOnly?: boolean;
 }
 
 const RAIL: readonly RailItem[] = [
-  { id: "select", icon: "i-pointer", hotkey: "V" },
-  { id: "pan", icon: "i-hand", hotkey: "H" },
-  { id: "ruler", icon: "i-ruler", hotkey: "R" },
-  { id: "add", icon: "i-user-plus", hotkey: "A", dmOnly: true },
-  { id: "fog-reveal", icon: "i-fog", hotkey: "F", dmOnly: true },
+  {
+    id: "select",
+    icon: "i-pointer",
+    hotkey: "V",
+    label: "play.tools.select",
+    hint: "play.tools.selectTip",
+  },
+  {
+    id: "pan",
+    icon: "i-hand",
+    hotkey: "H",
+    label: "play.tools.pan",
+    hint: "play.tools.panTip",
+  },
+  {
+    id: "ruler",
+    icon: "i-ruler",
+    hotkey: "R",
+    label: "play.tools.ruler",
+    hint: "play.tools.rulerTip",
+  },
+  {
+    id: "add",
+    icon: "i-user-plus",
+    hotkey: "A",
+    label: "play.tools.add",
+    hint: "play.tools.addTip",
+    dmOnly: true,
+  },
+  {
+    id: "fog-reveal",
+    icon: "i-fog",
+    hotkey: "F",
+    label: "play.fog.title",
+    hint: "play.tools.fog-revealTip",
+    dmOnly: true,
+  },
 ];
 
 export function ToolRail({ tool, onTool, dm, onCoverAll, onFogOff }: ToolRailProps) {
@@ -52,8 +88,8 @@ export function ToolRail({ tool, onTool, dm, onCoverAll, onFogOff }: ToolRailPro
           <span key={item.id}>
             {index === 3 ? <span className="pl-tools__sep" /> : null}
             <PlayTip
-              label={t(`play.tools.${item.id}`)}
-              hint={t(`play.tools.${item.id}Tip`)}
+              label={t(item.label)}
+              hint={t(item.hint)}
               hotkey={item.hotkey}
               side="right"
             >
@@ -61,7 +97,7 @@ export function ToolRail({ tool, onTool, dm, onCoverAll, onFogOff }: ToolRailPro
                 type="button"
                 className="pl-icon-btn"
                 aria-pressed={item.id === "fog-reveal" ? fogging : tool === item.id}
-                aria-label={t(`play.tools.${item.id}`)}
+                aria-label={t(item.label)}
                 onClick={() => onTool(item.id)}
                 data-testid={`pl-tool-${item.id}`}
               >

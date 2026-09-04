@@ -1,7 +1,7 @@
 /**
  * The hotbar — the bottom edge: what I can do (UI spec rules 28–29).
  *
- * Baldur's Gate 3's grammar exactly: the portrait in its gold ring with the HP pill and the
+ * The approved rendition's grammar exactly: the portrait in its gold ring with the HP pill and
  * level roundel, the weapon-set tiles beside it, the economy pill and the slot diamonds above
  * the bar, 44px tiles in groups split by red dividers, the pill tabs beneath, and — the one
  * solid button on the screen — the End turn ring in cyan, with the dice and reaction medallions
@@ -22,6 +22,19 @@ import { EconomyPill } from "./EconomyPill";
 import { PlayIcon } from "./PlayIcon";
 import { PlayTip } from "./PlayTip";
 import { HOTBAR_TABS, type HotbarTab } from "./model";
+
+/**
+ * The tabs' labels. Two of them are the app's own canonical words — a spellbook tab and an
+ * inventory tab say the same thing everywhere — so they resolve through those keys rather than
+ * through a second copy of the same string (the i18n dedup guard's rule).
+ */
+const TAB_LABEL: Readonly<Record<HotbarTab, string>> = {
+  common: "play.hotbar.tab.common",
+  spells: "nav.spells",
+  items: "items.tab",
+  passive: "play.hotbar.tab.passive",
+  mine: "play.hotbar.tab.mine",
+};
 import type { HotbarTile } from "./tiles";
 import type { Entity } from "@/lib/combat/types";
 
@@ -193,6 +206,7 @@ export function Hotbar(props: HotbarProps) {
 
       <div
         className={cn("pl-bar pl-panel pl-panel--framed", dmControlled && "pl-bar--dm")}
+        data-testid="pl-hotbar-bar"
       >
         <span className="pl-brackets" />
         <EconomyPill entity={entity} acting={acting} />
@@ -244,7 +258,7 @@ export function Hotbar(props: HotbarProps) {
               onClick={() => onTab(id)}
               data-testid={`pl-tab-${id}`}
             >
-              {t(`play.hotbar.tab.${id}`)}
+              {t(TAB_LABEL[id])}
             </button>
           ))}
         </div>

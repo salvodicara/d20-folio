@@ -25,7 +25,7 @@ export function SceneHeader({ title, round, current, currentIsDm }: SceneHeaderP
           t("play.scene.notStarted")
         ) : (
           <>
-            {t("play.scene.roundLabel")} <b>{round}</b>
+            {t("combat.round")} <b>{round}</b>
             {" · "}
             {t("play.scene.turnOf", { name: current })}
           </>
