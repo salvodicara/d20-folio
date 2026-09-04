@@ -43,16 +43,16 @@ function withEntity(state: FoldedState, entity: Entity): FoldedState {
   return { ...state, entities: { ...state.entities, [entity.id]: entity } };
 }
 
+type Carried =
+  | { readonly ok: true; readonly mechanics: Readonly<Record<MechanicId, Mechanic>> }
+  | { readonly ok: false; readonly rejected: TableResult };
+
 /**
  * The definitions a seat op carried, conformed. A malformed one rejects the WHOLE op rather
  * than being skipped: an entity seated with half its actions would fold differently on a
  * client whose build happens to have the missing one in its static catalogue, which is exactly
  * the divergence carrying them was meant to end (design §2 D2).
  */
-type Carried =
-  | { readonly ok: true; readonly mechanics: Readonly<Record<MechanicId, Mechanic>> }
-  | { readonly ok: false; readonly rejected: TableResult };
-
 function conformCarried(op: string, mechanics: readonly Mechanic[]): Carried {
   const out: Record<MechanicId, Mechanic> = {};
   for (const value of mechanics) {

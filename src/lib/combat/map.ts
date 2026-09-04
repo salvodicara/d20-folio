@@ -208,7 +208,7 @@ export type DropPlan =
       readonly reason: "unknown" | "control" | "turn" | "movement";
     };
 
-/** The mechanic the `move` step belongs to (`src/data/combat/prototype-catalogue.ts`). */
+/** The mechanic the `move` step belongs to (`src/data/combat/core-catalogue.ts`). */
 export const MOVE_MECHANIC = "core:move";
 
 /** The entity's speed: `stats.speed`, or its `stats.speed` override — the one override-aware
