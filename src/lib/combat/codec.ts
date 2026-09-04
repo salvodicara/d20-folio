@@ -9,7 +9,10 @@
  * the whole document rather than silently truncating the log.
  *
  * `schema !== 1` is reported as `reason: "schema"`; every other structural problem is
- * `reason: "malformed"`; a non-record top-level value is `reason: "not-a-record"`.
+ * `reason: "malformed"`; a non-record top-level value is `reason: "not-a-record"`. A `log`
+ * longer than 2,048 actions (the `exact-schema` collection ceiling, enforced by the pre-check
+ * every `exactConformer` call makes) also quarantines the document as `malformed` — far above
+ * the design §5.3 compaction budget of 200, so it is a hard backstop, never an expected path.
  */
 import {
   arraySchema,
@@ -40,6 +43,13 @@ import type { Encounter } from "./types";
 
 const JSON_INVALID = Symbol("codec-json-invalid");
 
+/** Matches `exact-schema`'s own `UNSAFE_KEYS`: never let a key silently repoint a prototype. */
+const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
+/** Matches `exact-schema`'s own `MAX_DEPTH`: a hard backstop against a pathologically deep
+ *  unknown-key value blowing the call stack — quarantine it as `malformed` instead. */
+const MAX_DEPTH = 64;
+
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return (
     typeof value === "object" &&
@@ -49,8 +59,10 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
   );
 }
 
-/** Validate and structurally clone a plain-JSON value; `JSON_INVALID` on anything else. */
-function cloneJson(value: unknown): unknown {
+/** Validate and structurally clone a plain-JSON value; `JSON_INVALID` on anything else,
+ *  including an unsafe key anywhere in the tree or nesting past `MAX_DEPTH`. */
+function cloneJson(value: unknown, depth = 0): unknown {
+  if (depth > MAX_DEPTH) return JSON_INVALID;
   if (value === null) return null;
   const type = typeof value;
   if (type === "boolean" || type === "string") return value;
@@ -58,7 +70,7 @@ function cloneJson(value: unknown): unknown {
   if (Array.isArray(value)) {
     const result: unknown[] = [];
     for (const item of value) {
-      const cloned = cloneJson(item);
+      const cloned = cloneJson(item, depth + 1);
       if (cloned === JSON_INVALID) return JSON_INVALID;
       result.push(cloned);
     }
@@ -67,7 +79,8 @@ function cloneJson(value: unknown): unknown {
   if (isPlainRecord(value)) {
     const result: Record<string, unknown> = {};
     for (const [key, item] of Object.entries(value)) {
-      const cloned = cloneJson(item);
+      if (UNSAFE_KEYS.has(key)) return JSON_INVALID;
+      const cloned = cloneJson(item, depth + 1);
       if (cloned === JSON_INVALID) return JSON_INVALID;
       result[key] = cloned;
     }
@@ -81,9 +94,9 @@ function conformJson(value: unknown): unknown {
   return cloned === JSON_INVALID ? null : cloned;
 }
 
-function freezeDeep(value: unknown): void {
-  if (typeof value !== "object" || value === null) return;
-  for (const child of Object.values(value)) freezeDeep(child);
+function freezeDeep(value: unknown, depth = 0): void {
+  if (depth > MAX_DEPTH || typeof value !== "object" || value === null) return;
+  for (const child of Object.values(value)) freezeDeep(child, depth + 1);
   if (!Object.isFrozen(value)) Object.freeze(value);
 }
 
@@ -716,6 +729,7 @@ export function parseEncounter(value: unknown): EncounterParse {
   const known: Record<string, unknown> = {};
   const rest: Record<string, unknown> = {};
   for (const [key, entry] of Object.entries(record)) {
+    if (UNSAFE_KEYS.has(key)) return { ok: false, reason: "malformed" };
     if (KNOWN_KEYS.has(key)) known[key] = entry;
     else rest[key] = entry;
   }
