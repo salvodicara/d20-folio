@@ -101,10 +101,12 @@ const SharedCharacterView = lazy(() =>
 // DEV-ONLY living type specimen of the Gilded Plate system (BG3-identity
 // epic) — lazy like every route; the prod branch is a stub so Rolldown drops
 // the chunk from production builds entirely.
-// DEV-ONLY harness of the minimum map (stage 5): MapCanvas on a folded fixture encounter, so
-// the owner's screenshot gate can see the map before stage 6 mounts it under the HUD.
-const MapDevPage = import.meta.env.DEV
-  ? lazy(() => import("./routes/map-dev").then((m) => ({ default: m.MapDevPage })))
+// DEV-ONLY harness of the whole play surface (stage 6): PlayScreen on a folded fixture
+// encounter over a fake table store, so the owner's screenshot gate and the screenshot lane can
+// drive the screen across theme, locale, viewport and role without Firestore. It replaces
+// stage 5's `/_map`, whose map is this screen's ground.
+const PlayDevPage = import.meta.env.DEV
+  ? lazy(() => import("./routes/play-dev").then((m) => ({ default: m.PlayDevPage })))
   : null;
 
 const SpecimensPage = import.meta.env.DEV
@@ -169,8 +171,8 @@ const router = createBrowserRouter(
           auth guard) so it can be captured without a session; stripped from
           the prod bundle by the same DEV fold as the crash probes. */}
       {import.meta.env.DEV && <Route path="/_specimens" element={<SpecimensPage />} />}
-      {import.meta.env.DEV && MapDevPage && (
-        <Route path="/_map" element={<MapDevPage />} />
+      {import.meta.env.DEV && PlayDevPage && (
+        <Route path="/_play" element={<PlayDevPage />} />
       )}
 
       {/* Protected — the new flat-hub shell */}

@@ -2044,3 +2044,60 @@
   color: var(--play-ink);
   font: inherit;
 }
+
+/* The explain trigger (component 8): a dotted gold underline on the term itself. */
+.pl-explain {
+  border-bottom: 1px dotted var(--play-gold);
+  text-decoration: none;
+  cursor: help;
+}
+
+/* The aiming caption: what is being aimed and how many targets are still owed (rule 33). */
+.pl-aim {
+  top: 196px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 8px 6px 14px;
+  font-size: 13px;
+  color: var(--play-ink);
+}
+
+/* One refused action, said once. Never a modal (design §2 D7). */
+.pl-notice {
+  bottom: 172px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 16px;
+  border-color: rgb(216 99 90 / 55%);
+  font-size: 13px;
+  color: var(--play-danger);
+}
+
+/* The table's own bar: opening turns, or taking a seat. */
+.pl-tablebar {
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 16px;
+}
+
+/* The token pill, under the strip so it never sits on top of a token it describes. */
+.pl-pill-slot {
+  top: 250px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.pl-subbar__sep {
+  width: 1px;
+  height: 24px;
+  margin: 0 4px;
+  background: var(--play-hair-2);
+}

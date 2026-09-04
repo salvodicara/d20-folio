@@ -112,7 +112,7 @@ function mount(overrides: Partial<Parameters<typeof MapCanvas>[0]> = {}) {
     onPlace: vi.fn(),
     onRefused: vi.fn(),
     onFog: vi.fn(),
-    onHidden: vi.fn(),
+    onSelect: vi.fn(),
   };
   const utils = render(
     <MapCanvas
@@ -231,16 +231,27 @@ describe("MapCanvas — fog rectangles and hidden tokens (DM)", () => {
     expect(onFog).not.toHaveBeenCalled();
   });
 
-  it("selecting a token shows the DM the hide/show control, which emits the flag", () => {
-    const { onHidden } = mount({ actor: { uid: "dm", dm: true } });
+  // Stage 6 moved everything the DM does TO a selected token into the play screen's token
+  // pill (rule 34); the canvas only reports the selection.
+  it("selecting a token reports it to the host", () => {
+    const { onSelect } = mount({ actor: { uid: "dm", dm: true } });
     const wolf = screen.getByTestId("map-token-wolf");
     fireEvent.pointerDown(wolf, { ...centreOf({ x: 8, y: 8 }), button: 0, pointerId: 3 });
     const svg = screen.getByRole("application");
     fireEvent.pointerUp(svg, { ...centreOf({ x: 8, y: 8 }), pointerId: 3 });
-    const control = screen.getByTestId("map-token-controls").querySelector("button");
-    expect(control).toBeTruthy();
-    fireEvent.click(control as Element);
-    expect(onHidden).toHaveBeenCalledWith("wolf", false);
+    expect(onSelect).toHaveBeenCalledWith("wolf");
+  });
+
+  it("the ruler tool measures across the ground without moving anything", () => {
+    const { onMove, onPlace } = mount({ tool: "ruler" });
+    const svg = screen.getByRole("application");
+    fireEvent.pointerDown(svg, { ...centreOf({ x: 2, y: 2 }), button: 0, pointerId: 9 });
+    fireEvent.pointerMove(svg, { ...centreOf({ x: 6, y: 2 }), pointerId: 9 });
+    expect(screen.getByTestId("map-ruler")).toBeTruthy();
+    fireEvent.pointerUp(svg, { ...centreOf({ x: 6, y: 2 }), pointerId: 9 });
+    expect(screen.queryByTestId("map-ruler")).toBeNull();
+    expect(onMove).not.toHaveBeenCalled();
+    expect(onPlace).not.toHaveBeenCalled();
   });
 });
 

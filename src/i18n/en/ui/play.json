@@ -82,6 +82,341 @@
         "hpZero": "{{entity}} drops to 0 hit points",
         "effectEnded": "An effect ends",
         "concentrationEnded": "{{entity}} stops concentrating"
+      },
+      "aria": "The story so far"
+    },
+    "role": {
+      "dm": "DM",
+      "you": "you",
+      "auto": "auto",
+      "someone": "someone"
+    },
+    "scene": {
+      "notStarted": "The fight has not started",
+      "roundLabel": "Round",
+      "turnOf": "{{name}}'s turn"
+    },
+    "initiative": {
+      "aria": "Turn order",
+      "roundMark": "R{{round}}",
+      "cellTitle": "{{name}} · initiative {{value}}"
+    },
+    "target": {
+      "hpAria": "{{name}}'s hit points",
+      "hpHidden": "hidden"
+    },
+    "view": {
+      "aria": "View",
+      "zoomIn": "Zoom in",
+      "zoomInTip": "Bring the map closer.",
+      "zoomOut": "Zoom out",
+      "zoomOutTip": "Take in more of the map.",
+      "fit": "Recentre",
+      "fitTip": "Fit the whole map in the window again.",
+      "player": "Player view",
+      "playerTip": "See the map exactly as the players see it, fog and hidden tokens included."
+    },
+    "tools": {
+      "aria": "Map tools",
+      "select": "Select",
+      "selectTip": "Pick a creature, or drag your own token to move it.",
+      "pan": "Pan",
+      "panTip": "Drag the map itself.",
+      "ruler": "Measure",
+      "rulerTip": "Drag across the map to measure a distance.",
+      "rulerHint": "Drag from one point to another.",
+      "add": "Add a creature",
+      "addTip": "Put a creature from the bestiary on the map.",
+      "fog-reveal": "Fog",
+      "fog-revealTip": "Drag a rectangle to reveal it; tap again to switch to covering.",
+      "fog-hide": "Cover",
+      "fog-hideTip": "Drag a rectangle to hide it from the players."
+    },
+    "fog": {
+      "title": "Fog",
+      "reveal": "Reveal",
+      "hide": "Cover",
+      "coverAll": "Cover everything",
+      "off": "Lift the fog",
+      "onNote": "The map is covered; the players see only what you have revealed.",
+      "offNote": "There is no fog: the players see the whole map.",
+      "opacity": "Preview opacity",
+      "opacityTip": "How dark the fog looks to you. It changes nothing for the players."
+    },
+    "economy": {
+      "aria": "What is left this turn",
+      "action": "Action",
+      "actionTip": "One action per turn: an attack, a spell, a shove.",
+      "actionCost": "Costs the action.",
+      "bonus": "Bonus action",
+      "bonusTip": "Only some things cost one, and only one per turn.",
+      "bonusCost": "Costs the bonus action.",
+      "reaction": "Reaction",
+      "reactionTip": "One per round, spent outside your own turn.",
+      "reactionCost": "Costs the reaction.",
+      "movement": "{{left}} / {{total}} m",
+      "movementCost": "Costs movement.",
+      "freeCost": "Costs nothing.",
+      "spent": "Already spent this turn.",
+      "signLeft": "{{sign}}: still available",
+      "signSpent": "{{sign}}: spent"
+    },
+    "slots": {
+      "pact": "P"
+    },
+    "hotbar": {
+      "hp": "Hit points",
+      "hpTip": "Open the editor to apply damage, healing, temporary hit points or a condition.",
+      "dmControlled": "run by the DM",
+      "tabs": "What I can do",
+      "tab": {
+        "common": "Common",
+        "spells": "Spells",
+        "items": "Items",
+        "passive": "Passive",
+        "mine": "Mine"
+      },
+      "empty": {
+        "common": "Nothing to use from here yet.",
+        "spells": "This creature has no spell the table can resolve.",
+        "items": "No item on this creature does anything by itself.",
+        "passive": "Passive traits are always on; they live on the character sheet.",
+        "mine": "Pinned actions arrive with the sheet."
+      }
+    },
+    "turn": {
+      "end": "End turn",
+      "endTip": "Pass the turn to the next creature in the order.",
+      "notYours": "It is not this creature's turn."
+    },
+    "dice": {
+      "title": "Dice",
+      "tip": "Switch between the app rolling and typing the faces of your own dice."
+    },
+    "reaction": {
+      "title": "Reaction",
+      "canReact": "{{name}} can react",
+      "openTip": "{{count}} reaction waiting for an answer.",
+      "noneTip": "Nothing is waiting on a reaction.",
+      "none": "No reaction to spend",
+      "pass": "Let it go",
+      "waiting": "Waiting on {{who}}."
+    },
+    "aim": {
+      "targets": "{{name}} · pick {{left}} more",
+      "area": "{{name}} · tap where it lands",
+      "cancel": "Cancel"
+    },
+    "roll": {
+      "waiting": "waiting",
+      "hidden": "hidden from the players",
+      "undo": "Undo",
+      "cancel": "Cancel",
+      "apply": "Apply",
+      "manualHint": "Type what your dice show",
+      "faceAria": "Face of {{formula}}",
+      "error": {
+        "empty": "There is no formula to roll.",
+        "syntax": "That formula does not read as dice.",
+        "die-sides": "That is not a die this game uses.",
+        "dice-count": "That is not a number of dice.",
+        "too-many-dice": "That is more dice than one roll can hold.",
+        "keep-count": "Keeping that many dice is not possible.",
+        "flat-range": "That flat number is out of range.",
+        "no-dice": "The formula rolls no dice.",
+        "faces-count": "The number of faces does not match the formula.",
+        "face-range": "One of those faces is impossible on that die.",
+        "seed-missing": "The roll is missing its seed.",
+        "seed-on-manual": "A hand-entered roll carries no seed."
+      }
+    },
+    "verdict": {
+      "hit": "Hits",
+      "hitTip": "The total reached the target's Armour Class.",
+      "crit": "Critical",
+      "critTip": "A natural 20: the damage dice are rolled twice.",
+      "miss": "Misses",
+      "missTip": "The total fell short of the target's Armour Class.",
+      "save-fail": "Fails",
+      "save-failTip": "The saving throw did not reach the DC: the effect lands in full.",
+      "save-success": "Succeeds",
+      "save-successTip": "The saving throw reached the DC: half damage, or no effect."
+    },
+    "drawer": {
+      "title": "DM board",
+      "openTip": "Log, hidden things, fog and rules — in one panel that shifts the screen rather than covering it.",
+      "close": "Close",
+      "closeTip": "Give the screen its full width back.",
+      "tabs": "DM board",
+      "tab": {
+        "log": "Log",
+        "hidden": "Hidden",
+        "fog": "Fog",
+        "scene": "Scenes",
+        "rules": "Rules",
+        "notes": "Notes"
+      },
+      "filters": "Filter the log",
+      "filter": {
+        "all": "Everything",
+        "rolls": "Rolls",
+        "wounds": "Wounds",
+        "dm": "DM only",
+        "rejected": "Refused"
+      },
+      "logEmpty": "Nothing has happened here yet.",
+      "undo": "Undo",
+      "edit": "Correct",
+      "foot": "Round {{round}} · {{count}} lines",
+      "hiddenTokens": "Hidden from the players",
+      "noTokens": "Nobody is at the table yet.",
+      "hideToken": "Hide {{name}}",
+      "tokenHidden": "hidden token",
+      "tokenVisible": "the players see it",
+      "secrets": "What stays yours",
+      "monsterHp": "Monsters' hit points",
+      "monsterHpTip": "Off, the players see only the bar.",
+      "hiddenRolls": "Hidden rolls",
+      "hiddenRollsTip": "On, your rolls reach the table as dice with no faces.",
+      "sceneEmpty": "Scenes and maps arrive with the DM's preparation screen; this table has one map.",
+      "notesEmpty": "DM notes arrive with the campaign journal."
+    },
+    "rules": {
+      "title": "Automation",
+      "full-auto": "Full auto",
+      "full-autoTip": "The app resolves everything and logs who did what.",
+      "log-only": "Log only",
+      "log-onlyTip": "The app records what you tell it and applies nothing by itself.",
+      "note": "You can change this mid-session, and you can correct any outcome afterwards."
+    },
+    "hp": {
+      "damage": "Damage",
+      "heal": "Heal",
+      "amount": "Amount",
+      "temp": "temp",
+      "max": "max",
+      "condition": "Condition",
+      "noCondition": "no condition",
+      "clearCondition": "Clear {{name}}",
+      "unit": "HP",
+      "reason": "DM correction",
+      "hint": "Correct the number and the log follows you.",
+      "apply": "Apply",
+      "close": "Close"
+    },
+    "pill": {
+      "initiative": "Initiative",
+      "initiativeShort": "INIT",
+      "initiativeTip": "The number this creature acts on. Enter it to place it in the order.",
+      "hide": "Hide",
+      "show": "Show",
+      "hideTip": "The players stop seeing this token; you keep it dashed.",
+      "remove": "Remove",
+      "removeTip": "Take {{name}} off the table.",
+      "leave": "Leave the table",
+      "leaveTip": "Take your character out of the fight; the outcome is written back to the sheet."
+    },
+    "add": {
+      "search": "Search the bestiary",
+      "close": "Close",
+      "loading": "Loading the bestiary…",
+      "none": "Nothing matches “{{query}}”.",
+      "cr": "CR {{cr}}",
+      "hint": "Picking a creature seats it at the table and puts it in the order."
+    },
+    "table": {
+      "beginTurns": "Begin turns",
+      "readyHint": "Everyone has an initiative.",
+      "notReadyHint": "Someone still has no initiative.",
+      "sit": "Take a seat",
+      "sitHint": "Bring your character to the table."
+    },
+    "standby": {
+      "open": "Open the table",
+      "loading": {
+        "title": "The table",
+        "body": "Reading the table…"
+      },
+      "missing": {
+        "title": "No table yet",
+        "body": "The DM has not opened this campaign's table."
+      },
+      "quarantined": {
+        "title": "The table cannot be read",
+        "body": "This table was written by a newer version of the app. Nothing has been changed."
+      },
+      "error": {
+        "title": "The table is out of reach",
+        "body": "The connection dropped. The last thing you saw is still what the table held."
+      }
+    },
+    "map": {
+      "refused": {
+        "control": "That creature is not yours to move.",
+        "turn": "It is not that creature's turn.",
+        "movement": "That is further than the creature can still move."
+      }
+    },
+    "window": {
+      "turn-start": "{{name}}'s turn begins",
+      "turn-end": "{{name}}'s turn ends",
+      "round-start": "A new round begins",
+      "attack-declared": "An attack is declared",
+      "attack-resolved": "An attack resolves",
+      "damage-taken": "{{name}} takes damage",
+      "hp-zero": "{{name}} drops to 0 hit points",
+      "effect-ended": "An effect ends",
+      "concentration-ended": "{{name}} stops concentrating",
+      "entity-left-reach": "{{name}} leaves reach",
+      "rest-completed": "The party rests"
+    },
+    "core": {
+      "move": "Move",
+      "dash": "Dash",
+      "dodge": "Dodge",
+      "disengage": "Disengage",
+      "help": "Help",
+      "hide": "Hide"
+    },
+    "grip": {
+      "one-handed": "One-handed",
+      "two-handed": "Two-handed"
+    },
+    "label": {
+      "unknownCharacter": "A character"
+    },
+    "condition": {
+      "blinded": "Blinded",
+      "charmed": "Charmed",
+      "deafened": "Deafened",
+      "exhaustion": "Exhaustion",
+      "frightened": "Frightened",
+      "grappled": "Grappled",
+      "incapacitated": "Incapacitated",
+      "invisible": "Invisible",
+      "paralyzed": "Paralysed",
+      "petrified": "Petrified",
+      "poisoned": "Poisoned",
+      "prone": "Prone",
+      "restrained": "Restrained",
+      "stunned": "Stunned",
+      "unconscious": "Unconscious"
+    },
+    "explain": {
+      "cr": {
+        "abbr": "CR",
+        "label": "Challenge Rating (CR)",
+        "hint": "How dangerous a creature is, from 0 upward. It is what an encounter's difficulty is built from."
+      },
+      "ac": {
+        "abbr": "AC",
+        "label": "Armour Class (AC)",
+        "hint": "The number an attack roll has to reach to hit this creature."
+      },
+      "slots": {
+        "abbr": "Slots",
+        "label": "Spell slots",
+        "hint": "One diamond per slot, by level. A filled diamond is still yours to spend; a hollow one is gone until you rest."
       }
     }
   }

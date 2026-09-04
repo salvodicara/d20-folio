@@ -32,6 +32,7 @@ import type {
   CombatEvent,
   Encounter,
   FoldedState,
+  Outcome,
   Receipt,
   Rejection,
   TableOp,
@@ -50,6 +51,15 @@ export interface LogLine {
   readonly undoable: boolean;
   /** The roll was rolled hidden (rule 34). Its faces are masked for everyone but the DM. */
   readonly hidden: boolean;
+  /**
+   * The one-word verdict this action's receipt settled on (`attack-resolved`), when it settled
+   * on one: what the roll panel prints under the total (rule 31). `null` for every action that
+   * resolves nothing — a move, a table op, a roll on its own.
+   *
+   * It is derived HERE rather than by the caller because the receipt exists only during the
+   * fold this presenter already performs; asking a component for it would mean folding twice.
+   */
+  readonly verdict: Outcome | null;
 }
 
 export interface LogViewArgs {
@@ -194,6 +204,17 @@ export function buildLogLines(args: LogViewArgs): LogLine[] {
     }
   };
 
+  /** The receipt's own verdict: the last attack or save it resolved. A program that resolves
+   *  several targets settles several; the last is the one the panel is looking at, because it
+   *  is the one whose roll was just entered. */
+  const verdictOf = (receipt: Receipt): Outcome | null => {
+    let outcome: Outcome | null = null;
+    for (const event of receipt.events) {
+      if (event.kind === "attack-resolved") outcome = event.outcome;
+    }
+    return outcome;
+  };
+
   /** The three engine consequences worth a sentence of their own; every other event is
    *  already implied by the action's own line. */
   const consequenceText = (event: CombatEvent): string | null => {
@@ -224,6 +245,7 @@ export function buildLogLines(args: LogViewArgs): LogLine[] {
               text,
               undoable: false,
               hidden: false,
+              verdict: null,
             },
           ];
     });
@@ -234,7 +256,7 @@ export function buildLogLines(args: LogViewArgs): LogLine[] {
     if (skip.has(action.id)) continue;
     const author = authorOf(action.by);
     const undoable = (viewer.dm || action.by === viewer.uid) && !skip.has(action.id);
-    const base = { id: action.id, at: action.seq, author, undoable };
+    const base = { id: action.id, at: action.seq, author, undoable, verdict: null };
 
     if (action.kind === "undo") {
       lines.push({
@@ -292,6 +314,7 @@ export function buildLogLines(args: LogViewArgs): LogLine[] {
       kind: "action",
       hidden: false,
       text: summaryText(action, receipt),
+      verdict: verdictOf(receipt),
     });
     lines.push(...consequences(action, receipt));
   }

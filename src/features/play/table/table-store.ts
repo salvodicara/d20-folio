@@ -71,8 +71,15 @@ export interface TableState {
   /** The fold of the newest READABLE encounter; `null` until one arrives, or once it is gone. */
   readonly fold: FoldResult | null;
   readonly role: TableRole;
-  /** Stamp `body` with an identity and an ordering, and append it to the table's log. */
-  dispatch(body: ActionBody): Promise<void>;
+  /**
+   * Stamp `body` with an identity and an ordering, append it to the table's log, and return
+   * the id it was stamped with.
+   *
+   * The id is not a convenience: an `intent` answers each of its inputs with the id of the
+   * `roll` action that settled it, so the caller that appends the rolls has to learn those ids
+   * to build the intent that spends them.
+   */
+  dispatch(body: ActionBody): Promise<ActionId>;
   /** Append `{ kind: "undo" }` — undo is a log-level fact, never a rewrite (design §3). */
   undo(of: ActionId, reason: string | null): Promise<void>;
   /**
@@ -113,9 +120,10 @@ export function createTableStore(deps: TableStoreDeps): StoreApi<TableState> {
   let live = false;
   let release: (() => void) | null = null;
 
-  async function append(body: ActionBody): Promise<void> {
+  async function append(body: ActionBody): Promise<ActionId> {
     const action = { ...body, id: newActionId(), seq: seq(), by: role.uid } as Action;
     await appendAction(ref, action);
+    return action.id;
   }
 
   function connect(): () => void {
@@ -135,7 +143,9 @@ export function createTableStore(deps: TableStoreDeps): StoreApi<TableState> {
     fold: null,
     role,
     dispatch: append,
-    undo: (of, reason) => append({ kind: "undo", of, reason }),
+    undo: async (of, reason) => {
+      await append({ kind: "undo", of, reason });
+    },
     connect,
   }));
 

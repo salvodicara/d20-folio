@@ -5,8 +5,10 @@
  *
  * SVG, no dependency: a table of a dozen tokens needs masks and hit-testing, not a WebGL
  * renderer. Everything persisted comes in as a `FoldedState`; everything the component decides
- * goes out as a semantic event (`onMove`, `onPlace`, `onFog`, `onHidden`) the host turns into a
- * log action — the component never builds an `Action`, never knows Firestore, never rolls.
+ * goes out as a semantic event (`onSelect`, `onMove`, `onPlace`, `onFog`) the host turns into a
+ * log action — the component never builds an `Action`, never knows Firestore, never rolls. What
+ * a DM does to the SELECTED token (hide, remove, set initiative) is the host's token pill
+ * (rule 34), not the canvas's: one selection, one place that acts on it.
  *
  * What is ephemeral stays here: the viewport, the token being dragged and its ruler, the fog
  * rectangle being drawn. The reducer's own projections decide the rest: `mapView` says who sees
@@ -50,7 +52,15 @@ import {
   type Viewport,
 } from "./geometry";
 
-export type MapTool = "select" | "pan" | "fog-reveal" | "fog-hide";
+export type MapTool = "select" | "pan" | "ruler" | "fog-reveal" | "fog-hide";
+
+/** The viewport verbs the play screen's view controls drive (rule 28). The canvas owns the
+ *  viewport as local state — it is ephemeral, never persisted — so it hands the host these two
+ *  rather than lifting the state up and re-rendering the map on every wheel tick. */
+export interface MapViewportApi {
+  zoomBy(factor: number): void;
+  fit(): void;
+}
 
 export interface MapCanvasProps {
   readonly state: FoldedState;
@@ -60,6 +70,15 @@ export interface MapCanvasProps {
   readonly tool: MapTool;
   /** Resolves an entity's label id to text (the engine is locale-free). */
   readonly labelOf: (token: MapToken) => string;
+  /** The creature's portrait URL, when the table knows one — tokens are round portraits
+   *  (rule 33); a creature without one keeps stage 5's tinted initial. */
+  readonly portraitOf?: (token: MapToken) => string | null;
+  /** The selected creature, owned by the HOST: the target block, the hotbar and the token pill
+   *  all read the same selection, so the canvas cannot keep its own. */
+  readonly selected?: EntityId | null;
+  readonly onSelect?: (entity: EntityId | null) => void;
+  /** Called with the viewport verbs once the canvas is mounted. */
+  readonly onViewport?: (api: MapViewportApi) => void;
   readonly onMove: (entity: EntityId, to: Position) => void;
   readonly onPlace: (entity: EntityId, to: Position) => void;
   readonly onRefused?: (
@@ -67,7 +86,6 @@ export interface MapCanvasProps {
     reason: "control" | "turn" | "movement"
   ) => void;
   readonly onFog: (change: FogChange) => void;
-  readonly onHidden: (entity: EntityId, hidden: boolean) => void;
   readonly className?: string;
 }
 
@@ -82,6 +100,15 @@ interface Drag {
 interface FogDraw {
   readonly from: Position;
   readonly to: Position;
+  readonly pointerId: number;
+}
+
+/** A free measurement: the ruler tool dragged across the ground, measuring nothing that is
+ *  persisted. It ends when the pointer lifts (Owlbear's ruler, ledger §10a). */
+interface Measure {
+  readonly from: Position;
+  readonly to: Position;
+  readonly ruler: Ruler;
   readonly pointerId: number;
 }
 
@@ -114,11 +141,14 @@ export function MapCanvas({
   playerView = false,
   tool,
   labelOf,
+  portraitOf,
+  selected: selectedProp,
+  onSelect,
+  onViewport,
   onMove,
   onPlace,
   onRefused,
   onFog,
-  onHidden,
   className,
 }: MapCanvasProps) {
   const { t } = useTranslation();
@@ -138,7 +168,18 @@ export function MapCanvas({
   const [drag, setDrag] = useState<Drag | null>(null);
   const [fogDraw, setFogDraw] = useState<FogDraw | null>(null);
   const [pan, setPan] = useState<Pan | null>(null);
-  const [selected, setSelected] = useState<EntityId | null>(null);
+  const [measure, setMeasure] = useState<Measure | null>(null);
+  const [ownSelected, setOwnSelected] = useState<EntityId | null>(null);
+  // The host owns the selection when it says so; otherwise the canvas keeps its own, so the
+  // stage-5 harness and the unit tests still work without a controlling parent.
+  const selected = selectedProp === undefined ? ownSelected : selectedProp;
+  const select = useCallback(
+    (id: EntityId | null) => {
+      if (selectedProp === undefined) setOwnSelected(id);
+      onSelect?.(id);
+    },
+    [selectedProp, onSelect]
+  );
 
   // Measure the host and fit the ground once; the viewport is local state after that.
   useEffect(() => {
@@ -157,6 +198,29 @@ export function MapCanvas({
   const vp =
     viewport ??
     fitViewport(ground, size.width || ground.width, size.height || ground.height);
+
+  // Hand the host the two viewport verbs the view controls drive. The anchor is the centre of
+  // the visible area, so a button zooms where the eye already is.
+  const vpRef = useRef(vp);
+  const sizeRef = useRef(size);
+  useEffect(() => {
+    vpRef.current = vp;
+    sizeRef.current = size;
+  });
+  useEffect(() => {
+    onViewport?.({
+      zoomBy: (factor) =>
+        setViewport(
+          zoomAt(
+            vpRef.current,
+            { x: sizeRef.current.width / 2, y: sizeRef.current.height / 2 },
+            factor
+          )
+        ),
+      fit: () =>
+        setViewport(fitViewport(ground, sizeRef.current.width, sizeRef.current.height)),
+    });
+  }, [onViewport, ground]);
 
   const toImage = useCallback(
     (event: { clientX: number; clientY: number }): Px => {
@@ -189,20 +253,31 @@ export function MapCanvas({
       return;
     }
     if (event.button !== 0) return;
+    if (tool === "ruler") {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      const cell = cellAt(event);
+      setMeasure({
+        from: cell,
+        to: cell,
+        ruler: rulerFor(cell, cell, null),
+        pointerId: event.pointerId,
+      });
+      return;
+    }
     if ((tool === "fog-reveal" || tool === "fog-hide") && dmSees) {
       event.currentTarget.setPointerCapture(event.pointerId);
       const cell = cellAt(event);
       setFogDraw({ from: cell, to: cell, pointerId: event.pointerId });
       return;
     }
-    setSelected(null);
+    select(null);
   }
 
   function onTokenPointerDown(token: MapToken, event: ReactPointerEvent<SVGGElement>) {
     if (event.button !== 0 || tool !== "select") return;
     event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
-    setSelected(token.id);
+    select(token.id);
     const entity = mustEntity(state, token.id);
     setDrag({
       entity: token.id,
@@ -222,6 +297,11 @@ export function MapCanvas({
           y: pan.offset.y + (event.clientY - pan.start.y),
         },
       });
+      return;
+    }
+    if (measure && event.pointerId === measure.pointerId) {
+      const to = cellAt(event);
+      setMeasure({ ...measure, to, ruler: rulerFor(measure.from, to, null) });
       return;
     }
     if (fogDraw && event.pointerId === fogDraw.pointerId) {
@@ -244,6 +324,10 @@ export function MapCanvas({
   function onPointerUp(event: ReactPointerEvent<SVGElement>) {
     if (pan && event.pointerId === pan.pointerId) {
       setPan(null);
+      return;
+    }
+    if (measure && event.pointerId === measure.pointerId) {
+      setMeasure(null);
       return;
     }
     if (fogDraw && event.pointerId === fogDraw.pointerId) {
@@ -291,6 +375,7 @@ export function MapCanvas({
     const at =
       drag !== null && drag.entity === token.id ? cellCenterPx(ground, drag.to) : centre;
     const label = labelOf(token);
+    const portrait = portraitOf?.(token) ?? null;
     const isSelected = selected === token.id;
     return (
       <g
@@ -314,15 +399,27 @@ export function MapCanvas({
         style={{ cursor: tool === "select" ? "grab" : "default" }}
       >
         <circle r={tokenRadius} fill="var(--map-token-fill)" />
-        <text
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontSize={fontSize * 1.4}
-          fill="var(--map-token-ink)"
-          fontFamily="var(--font-title)"
-        >
-          {initials(label)}
-        </text>
+        {portrait ? (
+          <image
+            href={portrait}
+            x={-tokenRadius}
+            y={-tokenRadius}
+            width={tokenRadius * 2}
+            height={tokenRadius * 2}
+            preserveAspectRatio="xMidYMid slice"
+            clipPath="url(#map-token-clip)"
+          />
+        ) : (
+          <text
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize={fontSize * 1.4}
+            fill="var(--map-token-ink)"
+            fontFamily="var(--font-title)"
+          >
+            {initials(label)}
+          </text>
+        )}
         <circle
           r={tokenRadius}
           fill="none"
@@ -508,6 +605,16 @@ export function MapCanvas({
           />
         ) : null}
 
+        {/* The free measurement of the ruler tool — nothing is persisted by it. */}
+        {measure ? (
+          <RulerOverlay
+            ground={ground}
+            from={measure.from}
+            to={measure.to}
+            ruler={measure.ruler}
+          />
+        ) : null}
+
         {/* The fog rectangle being drawn. */}
         {fogPreview ? (
           <rect
@@ -525,15 +632,6 @@ export function MapCanvas({
           />
         ) : null}
       </g>
-
-      {/* The selected token's minimal pill (DM only): hide / show. Stage 6 grows it into the
-          token pill of rule 34. */}
-      {selected && dmSees ? (
-        <SelectedTokenControls
-          token={view.tokens.find((token) => token.id === selected) ?? null}
-          onHidden={onHidden}
-        />
-      ) : null}
     </svg>
   );
 }
@@ -609,29 +707,5 @@ function RulerOverlay({
         </text>
       </g>
     </g>
-  );
-}
-
-function SelectedTokenControls({
-  token,
-  onHidden,
-}: {
-  token: MapToken | null;
-  onHidden: (entity: EntityId, hidden: boolean) => void;
-}) {
-  const { t } = useTranslation();
-  if (!token) return null;
-  const label = token.hidden ? t("map.token.show") : t("map.token.hide");
-  return (
-    <foreignObject x={8} y={8} width={220} height={40} data-testid="map-token-controls">
-      <button
-        type="button"
-        className="map-token-control"
-        onClick={() => onHidden(token.id, !token.hidden)}
-        title={t("map.token.hideTip")}
-      >
-        {label}
-      </button>
-    </foreignObject>
   );
 }

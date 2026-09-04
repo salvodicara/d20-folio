@@ -82,6 +82,341 @@
         "hpZero": "{{entity}} scende a 0 punti ferita",
         "effectEnded": "Un effetto termina",
         "concentrationEnded": "{{entity}} smette di concentrarsi"
+      },
+      "aria": "Cosa è successo"
+    },
+    "role": {
+      "dm": "DM",
+      "you": "tu",
+      "auto": "auto",
+      "someone": "qualcuno"
+    },
+    "scene": {
+      "notStarted": "Il combattimento non è iniziato",
+      "roundLabel": "Round",
+      "turnOf": "{{name}} di turno"
+    },
+    "initiative": {
+      "aria": "Ordine di turno",
+      "roundMark": "R{{round}}",
+      "cellTitle": "{{name}} · iniziativa {{value}}"
+    },
+    "target": {
+      "hpAria": "Punti ferita di {{name}}",
+      "hpHidden": "nascosti"
+    },
+    "view": {
+      "aria": "Vista",
+      "zoomIn": "Avvicina",
+      "zoomInTip": "Avvicina la mappa.",
+      "zoomOut": "Allontana",
+      "zoomOutTip": "Mostra più mappa.",
+      "fit": "Ricentra",
+      "fitTip": "Rimetti tutta la mappa nella finestra.",
+      "player": "Vista giocatori",
+      "playerTip": "Guarda la mappa esattamente come la vedono i giocatori, nebbia e pedine nascoste comprese."
+    },
+    "tools": {
+      "aria": "Strumenti mappa",
+      "select": "Seleziona",
+      "selectTip": "Scegli una creatura, o trascina la tua pedina per muoverla.",
+      "pan": "Sposta",
+      "panTip": "Trascina la mappa.",
+      "ruler": "Misura",
+      "rulerTip": "Trascina sulla mappa per misurare una distanza.",
+      "rulerHint": "Trascina da un punto all'altro.",
+      "add": "Aggiungi una creatura",
+      "addTip": "Metti sulla mappa una creatura del bestiario.",
+      "fog-reveal": "Nebbia",
+      "fog-revealTip": "Trascina un rettangolo per scoprirlo; tocca di nuovo per passare a coprire.",
+      "fog-hide": "Copri",
+      "fog-hideTip": "Trascina un rettangolo per nasconderlo ai giocatori."
+    },
+    "fog": {
+      "title": "Nebbia",
+      "reveal": "Scopri",
+      "hide": "Nascondi",
+      "coverAll": "Copri tutto",
+      "off": "Nebbia via",
+      "onNote": "La mappa è coperta: i giocatori vedono solo ciò che hai scoperto.",
+      "offNote": "Non c'è nebbia: i giocatori vedono tutta la mappa.",
+      "opacity": "Opacità dell'anteprima",
+      "opacityTip": "Quanto scura appare la nebbia a te. Per i giocatori non cambia nulla."
+    },
+    "economy": {
+      "aria": "Cosa resta in questo turno",
+      "action": "Azione",
+      "actionTip": "Un'azione per turno: un attacco, un incantesimo, una spinta.",
+      "actionCost": "Costa l'azione.",
+      "bonus": "Azione bonus",
+      "bonusTip": "Solo alcune cose ne costano una, e una sola per turno.",
+      "bonusCost": "Costa l'azione bonus.",
+      "reaction": "Reazione",
+      "reactionTip": "Una per round, spesa fuori dal tuo turno.",
+      "reactionCost": "Costa la reazione.",
+      "movement": "{{left}} / {{total}} m",
+      "movementCost": "Costa movimento.",
+      "freeCost": "Non costa nulla.",
+      "spent": "Già spesa in questo turno.",
+      "signLeft": "{{sign}}: ancora disponibile",
+      "signSpent": "{{sign}}: spesa"
+    },
+    "slots": {
+      "pact": "P"
+    },
+    "hotbar": {
+      "hp": "Punti ferita",
+      "hpTip": "Apri l'editor per applicare danni, cure, PF temporanei o una condizione.",
+      "dmControlled": "gestita dal DM",
+      "tabs": "Cosa posso fare",
+      "tab": {
+        "common": "Comuni",
+        "spells": "Incantesimi",
+        "items": "Oggetti",
+        "passive": "Passive",
+        "mine": "Mie"
+      },
+      "empty": {
+        "common": "Qui non c'è ancora nulla da usare.",
+        "spells": "Questa creatura non ha incantesimi che il tavolo sappia risolvere.",
+        "items": "Nessun oggetto di questa creatura fa qualcosa da solo.",
+        "passive": "I tratti passivi sono sempre attivi: vivono sulla scheda.",
+        "mine": "Le azioni appuntate arrivano con la scheda."
+      }
+    },
+    "turn": {
+      "end": "Fine turno",
+      "endTip": "Passa il turno alla creatura successiva.",
+      "notYours": "Non è il turno di questa creatura."
+    },
+    "dice": {
+      "title": "Dadi",
+      "tip": "Passa dal lancio dell'app all'inserimento dei tuoi dadi veri."
+    },
+    "reaction": {
+      "title": "Reazione",
+      "canReact": "{{name}} può reagire",
+      "openTip": "{{count}} reazione in attesa di risposta.",
+      "noneTip": "Nessuna reazione in attesa.",
+      "none": "Nessuna reazione da spendere",
+      "pass": "Lascia andare",
+      "waiting": "In attesa di {{who}}."
+    },
+    "aim": {
+      "targets": "{{name}} · scegli ancora {{left}}",
+      "area": "{{name}} · tocca dove cade",
+      "cancel": "Annulla"
+    },
+    "roll": {
+      "waiting": "in attesa",
+      "hidden": "nascosto ai giocatori",
+      "undo": "Annulla",
+      "cancel": "Annulla",
+      "apply": "Applica",
+      "manualHint": "Scrivi quanto mostrano i tuoi dadi",
+      "faceAria": "Faccia di {{formula}}",
+      "error": {
+        "empty": "Non c'è nessuna formula da tirare.",
+        "syntax": "Quella formula non si legge come dadi.",
+        "die-sides": "Non è un dado usato in questo gioco.",
+        "dice-count": "Non è un numero di dadi.",
+        "too-many-dice": "Sono più dadi di quanti ne stiano in un tiro.",
+        "keep-count": "Non è possibile tenere così tanti dadi.",
+        "flat-range": "Quel numero fisso è fuori intervallo.",
+        "no-dice": "La formula non tira nessun dado.",
+        "faces-count": "Il numero di facce non corrisponde alla formula.",
+        "face-range": "Una di quelle facce è impossibile su quel dado.",
+        "seed-missing": "Al tiro manca il seme.",
+        "seed-on-manual": "Un tiro inserito a mano non porta seme."
+      }
+    },
+    "verdict": {
+      "hit": "Colpisce",
+      "hitTip": "Il totale ha raggiunto la Classe Armatura del bersaglio.",
+      "crit": "Critico",
+      "critTip": "Un 20 naturale: i dadi del danno si tirano due volte.",
+      "miss": "Manca",
+      "missTip": "Il totale non ha raggiunto la Classe Armatura del bersaglio.",
+      "save-fail": "Fallisce",
+      "save-failTip": "Il tiro salvezza non ha raggiunto la CD: l'effetto arriva pieno.",
+      "save-success": "Riesce",
+      "save-successTip": "Il tiro salvezza ha raggiunto la CD: metà danno, o nessun effetto."
+    },
+    "drawer": {
+      "title": "Tabellone DM",
+      "openTip": "Registro, cose nascoste, nebbia e regole: un pannello che sposta lo schermo invece di coprirlo.",
+      "close": "Chiudi",
+      "closeTip": "Ridai allo schermo tutta la sua larghezza.",
+      "tabs": "Tabellone DM",
+      "tab": {
+        "log": "Registro",
+        "hidden": "Nascosti",
+        "fog": "Nebbia",
+        "scene": "Scene",
+        "rules": "Regole",
+        "notes": "Note"
+      },
+      "filters": "Filtra il registro",
+      "filter": {
+        "all": "Tutto",
+        "rolls": "Tiri",
+        "wounds": "Ferite",
+        "dm": "Solo DM",
+        "rejected": "Rifiutate"
+      },
+      "logEmpty": "Qui non è ancora successo nulla.",
+      "undo": "Annulla",
+      "edit": "Modifica",
+      "foot": "Round {{round}} · {{count}} righe",
+      "hiddenTokens": "Nascosti ai giocatori",
+      "noTokens": "Al tavolo non c'è ancora nessuno.",
+      "hideToken": "Nascondi {{name}}",
+      "tokenHidden": "pedina nascosta",
+      "tokenVisible": "i giocatori la vedono",
+      "secrets": "Cosa resta tuo",
+      "monsterHp": "PF dei mostri",
+      "monsterHpTip": "Spento, i giocatori vedono solo la barra.",
+      "hiddenRolls": "Tiri nascosti",
+      "hiddenRollsTip": "Acceso, i tuoi tiri arrivano al tavolo come dadi senza facce.",
+      "sceneEmpty": "Scene e mappe arrivano con la schermata di preparazione del DM; questo tavolo ha una mappa.",
+      "notesEmpty": "Le note del DM arrivano con il diario di campagna."
+    },
+    "rules": {
+      "title": "Automazione",
+      "full-auto": "Tutto automatico",
+      "full-autoTip": "L'app risolve tutto e registra chi ha fatto cosa.",
+      "log-only": "Solo registro",
+      "log-onlyTip": "L'app annota quello che le dici e non applica nulla da sola.",
+      "note": "Puoi cambiarlo durante la sessione, e correggere qualunque esito dopo."
+    },
+    "hp": {
+      "damage": "Danno",
+      "heal": "Cura",
+      "amount": "Quantità",
+      "temp": "temp",
+      "max": "max",
+      "condition": "Condizione",
+      "noCondition": "nessuna condizione",
+      "clearCondition": "Togli {{name}}",
+      "unit": "PF",
+      "reason": "Correzione del DM",
+      "hint": "Correggi il numero e il registro cambia con te.",
+      "apply": "Applica",
+      "close": "Chiudi"
+    },
+    "pill": {
+      "initiative": "Iniziativa",
+      "initiativeShort": "INIZ",
+      "initiativeTip": "Il numero su cui agisce questa creatura. Scrivilo per metterla nell'ordine.",
+      "hide": "Nascondi",
+      "show": "Mostra",
+      "hideTip": "I giocatori smettono di vedere questa pedina; tu la vedi tratteggiata.",
+      "remove": "Rimuovi",
+      "removeTip": "Togli {{name}} dal tavolo.",
+      "leave": "Alzati dal tavolo",
+      "leaveTip": "Togli il tuo personaggio dal combattimento; l'esito torna sulla scheda."
+    },
+    "add": {
+      "search": "Cerca nel bestiario",
+      "close": "Chiudi",
+      "loading": "Carico il bestiario…",
+      "none": "Nessun risultato per «{{query}}».",
+      "cr": "GS {{cr}}",
+      "hint": "Scegliere una creatura la siede al tavolo e la mette nell'ordine."
+    },
+    "table": {
+      "beginTurns": "Inizia i turni",
+      "readyHint": "Tutti hanno un'iniziativa.",
+      "notReadyHint": "Qualcuno non ha ancora un'iniziativa.",
+      "sit": "Siediti al tavolo",
+      "sitHint": "Porta il tuo personaggio al tavolo."
+    },
+    "standby": {
+      "open": "Apri il tavolo",
+      "loading": {
+        "title": "Il tavolo",
+        "body": "Leggo il tavolo…"
+      },
+      "missing": {
+        "title": "Nessun tavolo",
+        "body": "Il DM non ha ancora aperto il tavolo di questa campagna."
+      },
+      "quarantined": {
+        "title": "Il tavolo non si legge",
+        "body": "Questo tavolo è stato scritto da una versione più recente dell'app. Non è stato cambiato nulla."
+      },
+      "error": {
+        "title": "Il tavolo non si raggiunge",
+        "body": "La connessione è caduta. Quello che vedi è l'ultimo stato letto."
+      }
+    },
+    "map": {
+      "refused": {
+        "control": "Quella creatura non è tua da muovere.",
+        "turn": "Non è il turno di quella creatura.",
+        "movement": "È più lontano di quanto la creatura possa ancora muoversi."
+      }
+    },
+    "window": {
+      "turn-start": "Inizia il turno di {{name}}",
+      "turn-end": "Finisce il turno di {{name}}",
+      "round-start": "Comincia un nuovo round",
+      "attack-declared": "Viene dichiarato un attacco",
+      "attack-resolved": "Un attacco si risolve",
+      "damage-taken": "{{name}} subisce danni",
+      "hp-zero": "{{name}} scende a 0 punti ferita",
+      "effect-ended": "Un effetto finisce",
+      "concentration-ended": "{{name}} smette di concentrarsi",
+      "entity-left-reach": "{{name}} esce dalla portata",
+      "rest-completed": "Il gruppo riposa"
+    },
+    "core": {
+      "move": "Muovi",
+      "dash": "Scatto",
+      "dodge": "Schivare",
+      "disengage": "Disimpegno",
+      "help": "Aiuto",
+      "hide": "Nascondersi"
+    },
+    "grip": {
+      "one-handed": "A una mano",
+      "two-handed": "A due mani"
+    },
+    "label": {
+      "unknownCharacter": "Un personaggio"
+    },
+    "condition": {
+      "blinded": "Accecato",
+      "charmed": "Affascinato",
+      "deafened": "Assordato",
+      "exhaustion": "Sfinimento",
+      "frightened": "Spaventato",
+      "grappled": "Afferrato",
+      "incapacitated": "Incapacitato",
+      "invisible": "Invisibile",
+      "paralyzed": "Paralizzato",
+      "petrified": "Pietrificato",
+      "poisoned": "Avvelenato",
+      "prone": "Prono",
+      "restrained": "Trattenuto",
+      "stunned": "Stordito",
+      "unconscious": "Privo di sensi"
+    },
+    "explain": {
+      "cr": {
+        "abbr": "GS",
+        "label": "Grado di Sfida (GS)",
+        "hint": "Quanto è pericolosa una creatura, da 0 in su. È il numero da cui si costruisce la difficoltà di uno scontro."
+      },
+      "ac": {
+        "abbr": "CA",
+        "label": "Classe Armatura (CA)",
+        "hint": "Il numero che un tiro per colpire deve raggiungere per colpire questa creatura."
+      },
+      "slots": {
+        "abbr": "Slot",
+        "label": "Slot incantesimo",
+        "hint": "Un rombo per slot, per livello. Un rombo pieno è ancora tuo; uno vuoto torna solo con un riposo."
       }
     }
   }
