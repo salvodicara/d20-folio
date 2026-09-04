@@ -469,10 +469,20 @@ service cloud.firestore {
       // silent rewrite of the DM's and the peers' history that the fold would trust.
       // The stored log must remain a PREFIX of the written one, so existing rows are
       // byte-frozen (lists compare by deep equality) and only the tail may grow.
+      // The empty stored log is guarded EXPLICITLY, not for elegance: `l[0:0]` is an
+      // EVALUATION ERROR in the rules language ("Index out of bound … Index: [-1]"),
+      // not an empty list, so without the guard a member's append is denied outright
+      // whenever the log is empty — which is precisely the state a checkpoint leaves
+      // behind once the grace window has passed (a quiet table, then the next player
+      // action), and the state a DM's freshly opened empty encounter starts in. An
+      // empty stored log is trivially a prefix of anything, so the guard weakens the
+      // fence by nothing. Proven by tests/rules/encounter-two-clients.emulator.test.ts
+      // (the leased PC leaves the table across the compaction boundary).
       function logOnlyGrew() {
         return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['log'])
           && request.resource.data.log.size() > resource.data.log.size()
-          && request.resource.data.log[0:resource.data.log.size()] == resource.data.log;
+          && (resource.data.log.size() == 0
+              || request.resource.data.log[0:resource.data.log.size()] == resource.data.log);
       }
       allow read: if isAdmin() || encounterMember();
       allow create: if (isAdmin() || encounterDm()) && validEncounterShape();
