@@ -1,4 +1,5 @@
 ---
+"d20-folio": patch
 ---
 
 Close the last reducer holes found by the stage-3 whole-branch review: a `log-only` table now

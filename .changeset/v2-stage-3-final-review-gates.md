@@ -1,4 +1,5 @@
 ---
+"d20-folio": patch
 ---
 
 Record the four `v2` gate wall-clock times measured after the stage-3 final fix wave: `just ci`

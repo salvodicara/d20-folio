@@ -197,9 +197,9 @@ describe("area targeting — the reducer derives targets from positions, never t
     expect(mustEntity(result.state, "inside").vitals.hp).toBe(3); // still burned
   });
 
-  // Each pair differs only in the property its shape is supposed to test: the cube's boundary
-  // (both probes at the same y), the cone's angle (both probes 10 ft from the origin), the line's
-  // width (both probes 15 ft along the aim).
+  // The cone pair differs only in angle (both probes 10 ft from the origin) and the line pair only
+  // in width (both probes 15 ft along the aim), so each catches a distance-only regression; the cube
+  // pair proves membership on both sides of its edge (a sphere of the same size would agree).
   it.each<{
     mechanic: string;
     within: Position;

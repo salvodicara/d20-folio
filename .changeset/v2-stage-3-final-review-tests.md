@@ -1,4 +1,5 @@
 ---
+"d20-folio": patch
 ---
 
 Pin the stage-3 reducer behaviour the branch review found unobserved: a roll answered by a

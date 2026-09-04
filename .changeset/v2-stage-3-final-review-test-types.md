@@ -1,4 +1,5 @@
 ---
+"d20-folio": patch
 ---
 
 Type the new stage-3 tests against the strict build: the parametrized area cases declare

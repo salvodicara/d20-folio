@@ -1,9 +1,9 @@
 # Next-session handoff — `v2`, stage 4 (the shared encounter document)
 
 Paste the block below as the first message of the next session. It is self-contained; everything it
-references is on the `v2` branch in the worktree named below, whose tip is the stage-3 close commit
-(`git log --oneline -1`). `origin/v2` was last pushed at `acc01e2` (the stage-2 close); push the
-stage-3 commits and verify with `git ls-remote origin refs/heads/v2` before relying on the remote.
+references is on `origin/v2`, pushed at the stage-3 close on 2026-09-04 (the tip is the commit that
+carries this file: `git log --oneline -1`; confirm the remote matches it with
+`git ls-remote origin refs/heads/v2` before relying on it).
 
 ---
 

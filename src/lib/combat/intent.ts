@@ -1126,8 +1126,8 @@ function isLifeState(value: string): value is LifeState {
 /** Paths that are persisted facts, not read-time-derived stats (like `stats.ac`): an override
  *  here directly corrects the fact, the same way a later `declare` replaces a relation, rather
  *  than layering on top of a formula consulted at read time. An HP override above zero revives
- *  a dying/stable creature exactly as `applyHealing` does; `dead` stays dead until the DM
- *  overrides `vitals.life` explicitly. HP is clamped at 0; no upper bound. Dropping a creature
+ *  a dying/stable creature exactly as `applyHealing` does; a `dead` creature is not revived by
+ *  HP alone — the DM overrides `vitals.life` for that. HP is clamped at 0; no upper bound. Dropping a creature
  *  to 0 by hand means the same thing as dropping it there by damage, so it takes `applyDamage`'s
  *  0-HP rule — `dying` for a PC, `dead` for everything else — and leaves the death saves alone;
  *  a creature already at 0 is not re-downed. */
