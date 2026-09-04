@@ -21,10 +21,9 @@ import {
   deriveSensesAndSpeeds,
   resolveNonWalkingSpeed,
   deriveAdvantageChips,
-  applySetOverride,
-  deriveDefenseKind,
   deriveFlatDamageReductions,
 } from "@/lib/views/sheet-view";
+import { applySetOverride, deriveDefenseKind } from "@/lib/defense-sets";
 
 function aggregateWith(partial: Partial<AggregatedGrants>): AggregatedGrants {
   return { ...emptyAggregate(), ...partial };

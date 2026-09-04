@@ -41,12 +41,12 @@ import type { PcLive } from "@/features/campaigns/encounter-view";
 import {
   deriveSensesAndSpeeds,
   deriveDamageDefenses,
-  deriveDefenseKind,
   mergeSaveProficiencies,
   mergeSkillProficiencies,
   type SenseEntry,
   type SpeedEntry,
 } from "@/lib/views/sheet-view";
+import { deriveDefenseKind } from "@/lib/defense-sets";
 import { effectiveWalkingSpeedFt } from "@/lib/smart-tracker";
 import { getEquipment } from "@/data/equipment";
 import type { CharacterDoc } from "@/types/character";

@@ -804,7 +804,7 @@ export interface CharacterData {
    * granted by a class/feat/item). The effective set the sheet renders =
    * `(computed ∪ {ids set true}) \ {ids set false}`; an absent / empty map = the
    * pure computed set. Applied through the single `applySetOverride` seam in
-   * `derive-sheet-views.ts` so every consumer (rail display + combat damage math)
+   * `lib/defense-sets.ts` so every consumer (rail display + combat damage math)
    * reads the same effective set. Keys: `damage*` = DamageType, `conditionImmunity`
    * = ConditionId, `*Proficiency` = the stable {@link ProficiencyToken} id
    * (`light-armor`, `longswords`) — never an English label; a legacy doc's

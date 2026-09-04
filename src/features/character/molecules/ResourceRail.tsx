@@ -50,15 +50,17 @@ import {
 import type { AggregatedGrants } from "@/lib/grants";
 import { localizeText } from "@/lib/views/srd-i18n";
 import {
-  applySetOverride,
   deriveAdvantageChips,
   deriveDamageSourceResistances,
-  deriveDefenseKind,
   deriveFlatDamageReductions,
   displayLanguages,
   displayToolProficiencies,
-  type DefenseKindView,
 } from "@/lib/views/sheet-view";
+import {
+  applySetOverride,
+  deriveDefenseKind,
+  type DefenseKindView,
+} from "@/lib/defense-sets";
 import {
   activatableToggles,
   advantageChipVMs,

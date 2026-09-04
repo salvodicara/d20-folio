@@ -87,7 +87,8 @@ import {
 import { maximizeDiceFormula, type SourceConditionImmunity } from "@/lib/grants";
 import { localeDistance } from "@/lib/utils";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
-import { deriveDamageDefenses, deriveDefenseKind } from "@/lib/views/sheet-view";
+import { deriveDamageDefenses } from "@/lib/views/sheet-view";
+import { deriveDefenseKind } from "@/lib/defense-sets";
 import { effectiveProficiencyBonus, isHeavyArmorEquipped } from "@/lib/compute";
 import { totalLevel } from "@/lib/classes";
 import { getEquipment } from "@/data/equipment";
