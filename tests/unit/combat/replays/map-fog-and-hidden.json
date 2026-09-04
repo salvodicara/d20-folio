@@ -1,0 +1,172 @@
+{
+  "name": "the minimum map — a background, rectangle fog, a hidden wolf placed by the DM, revealed, then moving in its turn (stage 5)",
+  "dm": "dm",
+  "entities": [
+    {
+      "id": "hero",
+      "kind": "pc",
+      "controllerUid": "p1",
+      "hp": 30,
+      "ac": 16,
+      "mechanics": ["core:move"],
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "id": "ogre",
+      "kind": "monster",
+      "controllerUid": "dm",
+      "hp": 68,
+      "ac": 11,
+      "mechanics": ["core:move"],
+      "position": { "x": 1, "y": 0 }
+    },
+    {
+      "id": "wolf",
+      "kind": "monster",
+      "controllerUid": "dm",
+      "hp": 11,
+      "ac": 12,
+      "mechanics": ["core:move"]
+    }
+  ],
+  "initiative": { "hero": 15, "ogre": 10, "wolf": 5 },
+  "order": ["hero", "ogre", "wolf"],
+  "log": [
+    {
+      "id": "f-early",
+      "by": "dm",
+      "kind": "table",
+      "table": {
+        "op": "fog",
+        "change": { "kind": "reveal", "rect": { "x": 0, "y": 0, "w": 4, "h": 4 } }
+      }
+    },
+    {
+      "id": "m-bg",
+      "by": "dm",
+      "kind": "table",
+      "table": {
+        "op": "map",
+        "background": {
+          "path": "campaigns/replay/maps/ford.jpeg",
+          "url": "https://example.test/ford.jpeg?token=replay",
+          "width": 2400,
+          "height": 1600,
+          "cellPx": 80,
+          "origin": { "x": 0, "y": 0 },
+          "bytes": 900000
+        }
+      }
+    },
+    {
+      "id": "f-cover",
+      "by": "dm",
+      "kind": "table",
+      "table": { "op": "fog", "change": { "kind": "cover", "covered": true } }
+    },
+    {
+      "id": "f-r1",
+      "by": "dm",
+      "kind": "table",
+      "table": {
+        "op": "fog",
+        "change": { "kind": "reveal", "rect": { "x": 0, "y": 0, "w": 4, "h": 4 } }
+      }
+    },
+    {
+      "id": "f-r2",
+      "by": "dm",
+      "kind": "table",
+      "table": {
+        "op": "fog",
+        "change": { "kind": "reveal", "rect": { "x": 6, "y": 0, "w": 2, "h": 2 } }
+      }
+    },
+    {
+      "id": "f-hide",
+      "by": "dm",
+      "kind": "table",
+      "table": {
+        "op": "fog",
+        "change": { "kind": "hide", "rect": { "x": 1, "y": 1, "w": 2, "h": 2 } }
+      }
+    },
+    {
+      "id": "o-wolf-pos",
+      "by": "dm",
+      "kind": "override",
+      "entity": "wolf",
+      "path": "position",
+      "value": { "x": 7, "y": 0 },
+      "reason": "placed in the reeds"
+    },
+    {
+      "id": "o-wolf-hide",
+      "by": "dm",
+      "kind": "override",
+      "entity": "wolf",
+      "path": "reveal.token",
+      "value": false,
+      "reason": "lurking"
+    },
+    {
+      "id": "o-wolf-show",
+      "by": "dm",
+      "kind": "override",
+      "entity": "wolf",
+      "path": "reveal.token",
+      "value": true,
+      "reason": "it leaps out"
+    },
+    { "id": "end-1", "by": "dm", "kind": "table", "table": { "op": "end-turn" } },
+    { "id": "end-2", "by": "dm", "kind": "table", "table": { "op": "end-turn" } },
+    {
+      "id": "i-wolf-move",
+      "by": "dm",
+      "kind": "intent",
+      "entity": "wolf",
+      "mechanic": "core:move",
+      "program": "move",
+      "targets": [],
+      "answers": { "to": { "x": 5, "y": 0 } },
+      "payment": [],
+      "window": null,
+      "basedOn": 0
+    }
+  ],
+  "expect": {
+    "applied": 11,
+    "rejections": [
+      {
+        "action": "f-early",
+        "rejection": {
+          "reason": "invalid-table-op",
+          "detail": "fog: reveal while fog is off"
+        }
+      }
+    ],
+    "state": {
+      "map.background.cellPx": 80,
+      "map.fog": {
+        "covered": true,
+        "revealed": [
+          { "x": 0, "y": 0, "w": 4, "h": 1 },
+          { "x": 0, "y": 3, "w": 4, "h": 1 },
+          { "x": 0, "y": 1, "w": 1, "h": 2 },
+          { "x": 3, "y": 1, "w": 1, "h": 2 },
+          { "x": 6, "y": 0, "w": 2, "h": 2 }
+        ]
+      },
+      "entities.wolf.position": { "x": 5, "y": 0 },
+      "entities.wolf.reveal.token": true,
+      "entities.wolf.turn.movementUsed": 10,
+      "entities.wolf.overrides.position.value": { "x": 7, "y": 0 },
+      "clock.current": "wolf",
+      "relations": [
+        { "kind": "range", "a": "wolf", "b": "hero", "band": "near" },
+        { "kind": "range", "a": "wolf", "b": "ogre", "band": "near" }
+      ],
+      "windows": []
+    }
+  }
+}
