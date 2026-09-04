@@ -180,6 +180,9 @@ export type Step = { readonly id: string; readonly when?: Predicate } & (
   | { readonly kind: "negate"; readonly target: "declared-action" }
   | { readonly kind: "manual-table"; readonly label: LabelId }
   | { readonly kind: "move"; readonly to: string }
+  /** A Dash: adds the acting entity's speed to this turn's movement budget
+   *  (`TurnLedger.movementExtra`). No inputs, no targets — the whole step is the grant. */
+  | { readonly kind: "dash" }
 );
 
 export interface Program {
@@ -220,6 +223,7 @@ const STEP_KINDS = new Set([
   "negate",
   "manual-table",
   "move",
+  "dash",
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -11,6 +11,7 @@ import { answerNumber, answerPosition, areaShapeFrom } from "./answers";
 import { applyDamage, applyHealing, type DamagePacket } from "./damage";
 import { endEffects } from "./effects";
 import { assertNever, type EffectId, type EntityId } from "./ids";
+import { movementBudget, speedOf } from "./map";
 import type { Catalogue } from "./catalogue";
 import { programOf } from "./catalogue";
 import type { LifetimeSpec, Program, Step } from "./mechanic";
@@ -544,6 +545,24 @@ function runSteps(
         };
         return { stop: false };
       }
+      case "dash": {
+        // A Dash grants a second helping of speed for THIS turn; `startTurn` resets it.
+        const dasher = mustEntity(next, action.entity);
+        next = {
+          ...next,
+          entities: {
+            ...next.entities,
+            [action.entity]: {
+              ...dasher,
+              turn: {
+                ...dasher.turn,
+                movementExtra: dasher.turn.movementExtra + speedOf(dasher),
+              },
+            },
+          },
+        };
+        return { stop: false };
+      }
       case "move": {
         const to = answerPosition(action.answers, step.to);
         if (to === null) return { reason: "missing-answer", input: step.to };
@@ -551,12 +570,7 @@ function runSteps(
         const from = mover.position;
         if (from !== null) {
           const distance = distanceFt(from, to);
-          const speedOverride = mover.overrides["stats.speed"];
-          const budget =
-            typeof speedOverride?.value === "number"
-              ? speedOverride.value
-              : mover.stats.speed;
-          if (mover.turn.movementUsed + distance > budget) {
+          if (mover.turn.movementUsed + distance > movementBudget(mover)) {
             return { reason: "unaffordable", cost: "turn:movement" };
           }
           next = {

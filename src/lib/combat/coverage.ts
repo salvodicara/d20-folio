@@ -45,6 +45,7 @@ function stepStatus(program: Program, step: Step): CoverageStatus {
     case "turn-claim":
     case "negate":
     case "move":
+    case "dash":
       return "automated";
     default: {
       const exhaustive: never = step;

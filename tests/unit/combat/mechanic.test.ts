@@ -53,6 +53,17 @@ describe("conformMechanic — the authoring contract", () => {
     if (result.ok) expect(result.mechanic.id).toBe("srd:spell:hunters-mark");
   });
 
+  it("accepts a `dash` step and still rejects an unknown step kind", () => {
+    expect(conformMechanic(withCast({ steps: [{ id: "dash", kind: "dash" }] })).ok).toBe(
+      true
+    );
+    expect(
+      conformMechanic(
+        withCast({ steps: [{ id: "x", kind: "teleport" } as unknown as Step] })
+      )
+    ).toEqual({ ok: false, rule: "unknown-step-kind", path: "active[0].steps[0].kind" });
+  });
+
   it("rejects a `when` that references an input the program never asks, with a path", () => {
     const mark = castProgram.steps[0] as Step;
     const broken = { ...mark, when: { answer: "roll", equals: 20 } } as Step;

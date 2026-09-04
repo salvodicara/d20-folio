@@ -300,6 +300,7 @@ const turnLedgerSchema = objectSchema({
   reaction: numberSchema,
   attacksUsed: numberSchema,
   movementUsed: numberSchema,
+  movementExtra: numberSchema,
   claims: arraySchema(stringSchema),
 });
 

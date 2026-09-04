@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mustEntity } from "@/lib/combat/state";
+import { remainingMovement } from "@/lib/combat/map";
 import { buildCatalogue } from "@/lib/combat/catalogue";
 import { resolve } from "@/lib/combat/resolve";
 import type { Action, FoldedState } from "@/lib/combat/types";
@@ -44,6 +45,23 @@ function move(by: string, entity: string, to: { x: number; y: number }): Action 
   };
 }
 
+function dash(by: string, entity: string): Action {
+  return {
+    kind: "intent",
+    id: nextActionId("i"),
+    seq: seq(),
+    by,
+    entity,
+    mechanic: "core:dash",
+    program: "dash",
+    targets: [],
+    answers: {},
+    payment: [],
+    window: null,
+    basedOn: 0,
+  };
+}
+
 const ranger = testEntity({
   id: "ranger",
   kind: "pc",
@@ -51,7 +69,7 @@ const ranger = testEntity({
   hp: 20,
   ac: 15,
   abilities: { DEX: 3 },
-  mechanics: ["srd:weapon:shortsword", "core:move"],
+  mechanics: ["srd:weapon:shortsword", "core:move", "core:dash"],
 });
 
 function goblinAt(position: { x: number; y: number } | null) {
@@ -167,5 +185,62 @@ describe("resolve — the move step", () => {
       from: "ranger",
     });
     expect(firstOf(state.windows).eligible).toEqual(["ranger"]);
+  });
+});
+
+describe("resolve — the dash step", () => {
+  it("adds the entity's speed to this turn's movement budget", () => {
+    const state = run(opened(), [dash("p1", "ranger")]);
+    const ranger2 = mustEntity(state, "ranger");
+    expect(ranger2.turn.movementExtra).toBe(30);
+    expect(ranger2.turn.action).toBe(1);
+    expect(remainingMovement(ranger2)).toBe(60);
+  });
+
+  it("a Dash lets a move go past the base speed", () => {
+    const state = run(opened(), [
+      move("p1", "ranger", { x: 0, y: 0 }),
+      dash("p1", "ranger"),
+      move("p1", "ranger", { x: 11, y: 0 }), // 55 ft, over the 30 ft base speed
+    ]);
+    expect(mustEntity(state, "ranger").position).toEqual({ x: 11, y: 0 });
+    expect(mustEntity(state, "ranger").turn.movementUsed).toBe(55);
+  });
+
+  it("still rejects a move past the dashed budget", () => {
+    const state = run(opened(), [
+      move("p1", "ranger", { x: 0, y: 0 }),
+      dash("p1", "ranger"),
+    ]);
+    const result = resolve(state, move("p1", "ranger", { x: 13, y: 0 }), catalogue); // 65 ft > 60
+    expect(result).toEqual({
+      kind: "rejected",
+      rejection: { reason: "unaffordable", cost: "turn:movement" },
+    });
+  });
+
+  it("reads the `stats.speed` override the move step reads", () => {
+    const state = run(opened(), [
+      {
+        kind: "override",
+        id: nextActionId("o"),
+        seq: seq(),
+        by: "dm",
+        entity: "ranger",
+        path: "stats.speed",
+        value: 20,
+        reason: "difficult ground",
+      },
+      dash("p1", "ranger"),
+    ]);
+    expect(mustEntity(state, "ranger").turn.movementExtra).toBe(20);
+    expect(remainingMovement(mustEntity(state, "ranger"))).toBe(40);
+  });
+
+  it("the extra movement is reset at the start of the next turn", () => {
+    let state = run(opened(), [dash("p1", "ranger")]);
+    expect(mustEntity(state, "ranger").turn.movementExtra).toBe(30);
+    state = run(state, [endTurn(), endTurn()]); // round 2, the ranger again
+    expect(mustEntity(state, "ranger").turn.movementExtra).toBe(0);
   });
 });

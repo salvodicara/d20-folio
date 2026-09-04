@@ -135,6 +135,9 @@ export interface TurnLedger {
   readonly reaction: number;
   readonly attacksUsed: number;
   readonly movementUsed: number;
+  /** Movement granted on top of `stats.speed` this turn — what a Dash buys (`dash` step).
+   *  Reset to 0 at the start of every turn; `movementBudget` (`map.ts`) is speed + this. */
+  readonly movementExtra: number;
   readonly claims: readonly string[]; // once-per-turn keys already claimed this turn
 }
 

@@ -1,11 +1,14 @@
 /**
- * Prototype catalogue — mechanics authored purely as data for the P2 vertical.
+ * Prototype catalogue — the test-only mechanics authored purely as data for the P2 vertical.
+ * The ordinary actions every creature has live in `core-catalogue.ts` and are re-exported here
+ * through `PROTOTYPE_MECHANICS` so a test catalogue always resolves `core:move` and friends.
  * Nothing in `src/lib/combat` names any of these ids; they reach the engine only through
  * `buildCatalogue`. Spec: docs/superpowers/specs/2026-09-02-mechanics-authoring-spec.md.
  */
 import type { Mechanic } from "@/lib/combat/mechanic";
 import type { MonsterStatBlock } from "@/data/types";
 import { monsterMechanics } from "@/lib/combat/monster-adapter";
+import { CORE_MECHANICS } from "./core-catalogue";
 
 /** A ranger's longbow: Attack action, one visible target, d20 + DEX + PB vs AC, 1d8 piercing. */
 export const longbow: Mechanic = {
@@ -315,22 +318,6 @@ export const shortsword: Mechanic = {
   ],
 };
 
-/** Movement every creature has: no action/bonus/reaction cost, gated to your own turn, budgeted
- *  against speed by the `move` step itself. */
-export const move: Mechanic = {
-  schema: 1,
-  id: "core:move",
-  source: "srd",
-  active: [
-    {
-      id: "move",
-      trigger: { kind: "invocation", economy: "free" },
-      inputs: [{ id: "to", kind: "position" }],
-      steps: [{ id: "step", kind: "move", to: "to" }],
-    },
-  ],
-};
-
 /** The real 2024 SRD Ogre (AC 11, HP 68, CR 2) — hand-copied from `src/data/monsters/n-p.ts`
  *  rather than imported, because that corpus is bundle-budget-guarded as lazy-only (its own
  *  header: "Nothing eager may import this module") and this catalogue is loaded eagerly by
@@ -407,6 +394,8 @@ export const homebrewBlade: Mechanic = {
   ],
 };
 
+/** The test-only mechanics PLUS the `core:*` set every creature has (`core-catalogue.ts`) —
+ *  one definition of `core:move`, so a test catalogue and a real table agree. */
 export const PROTOTYPE_MECHANICS: readonly Mechanic[] = [
   shortsword,
   longbow,
@@ -415,7 +404,7 @@ export const PROTOTYPE_MECHANICS: readonly Mechanic[] = [
   shield,
   giggle,
   fireball,
-  move,
   ogre,
   homebrewBlade,
+  ...CORE_MECHANICS,
 ];

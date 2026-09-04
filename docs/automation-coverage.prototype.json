@@ -2,6 +2,66 @@
   "schema": 1,
   "rows": [
     {
+      "mechanic": "core:dash",
+      "program": "dash",
+      "step": "*",
+      "status": "automated"
+    },
+    {
+      "mechanic": "core:dash",
+      "program": "dash",
+      "step": "dash",
+      "status": "automated"
+    },
+    {
+      "mechanic": "core:disengage",
+      "program": "use",
+      "step": "*",
+      "status": "automated"
+    },
+    {
+      "mechanic": "core:disengage",
+      "program": "use",
+      "step": "use",
+      "status": "table"
+    },
+    {
+      "mechanic": "core:dodge",
+      "program": "use",
+      "step": "*",
+      "status": "automated"
+    },
+    {
+      "mechanic": "core:dodge",
+      "program": "use",
+      "step": "use",
+      "status": "table"
+    },
+    {
+      "mechanic": "core:help",
+      "program": "use",
+      "step": "*",
+      "status": "automated"
+    },
+    {
+      "mechanic": "core:help",
+      "program": "use",
+      "step": "use",
+      "status": "table"
+    },
+    {
+      "mechanic": "core:hide",
+      "program": "use",
+      "step": "*",
+      "status": "automated"
+    },
+    {
+      "mechanic": "core:hide",
+      "program": "use",
+      "step": "use",
+      "status": "table"
+    },
+    {
       "mechanic": "core:move",
       "program": "move",
       "step": "*",

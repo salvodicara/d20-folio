@@ -211,13 +211,19 @@ export type DropPlan =
 /** The mechanic the `move` step belongs to (`src/data/combat/prototype-catalogue.ts`). */
 export const MOVE_MECHANIC = "core:move";
 
-/** This turn's movement budget: `stats.speed`, or its `stats.speed` override — the same seam the
- *  `move` step reads. */
-export function movementBudget(entity: Entity): number {
+/** The entity's speed: `stats.speed`, or its `stats.speed` override — the one override-aware
+ *  read the `move` step, the `dash` step and the ruler all share. */
+export function speedOf(entity: Entity): number {
   const speedOverride = entity.overrides["stats.speed"];
   return typeof speedOverride?.value === "number"
     ? speedOverride.value
     : entity.stats.speed;
+}
+
+/** This turn's movement budget: the entity's speed plus whatever a Dash granted this turn
+ *  (`TurnLedger.movementExtra`, reset at turn start). */
+export function movementBudget(entity: Entity): number {
+  return speedOf(entity) + entity.turn.movementExtra;
 }
 
 /** Movement left this turn (the ruler's number). Never negative. */

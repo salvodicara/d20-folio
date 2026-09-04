@@ -113,6 +113,7 @@ function genEntity(g: Gen, id: string): Entity {
       reaction: g.int(0, 1),
       attacksUsed: g.int(0, 2),
       movementUsed: g.int(0, 30),
+      movementExtra: g.bool() ? g.int(0, 30) : 0,
       claims: g.bool() ? ["attack"] : [],
     },
     overrides,

@@ -30,6 +30,7 @@ const FRESH_LEDGER: TurnLedger = {
   reaction: 0,
   attacksUsed: 0,
   movementUsed: 0,
+  movementExtra: 0,
   claims: [],
 };
 

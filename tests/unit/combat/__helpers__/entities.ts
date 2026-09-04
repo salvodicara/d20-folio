@@ -71,6 +71,7 @@ export function testEntity(opts: {
       reaction: 0,
       attacksUsed: 0,
       movementUsed: 0,
+      movementExtra: 0,
       claims: [],
     },
     overrides: {},
