@@ -68,16 +68,18 @@ function conformCarried(op: string, mechanics: readonly Mechanic[]): Carried {
   return { ok: true, mechanics: out };
 }
 
-/** Drop `ids` from `state.mechanics`, keeping any an entity still seated lists as its own. */
-function dropMechanics(
-  state: FoldedState,
-  ids: readonly MechanicId[],
-  options: { readonly keepIfListed: boolean }
-): FoldedState {
+/**
+ * Drop `ids` from `state.mechanics`, keeping any an entity still seated lists as its own.
+ *
+ * Both callers want that guard. Mechanic ids are not always instance-scoped — the monster
+ * adapter keys by block id, so every ogre at the table shares `monster:ogre` — and a definition
+ * only the departing (or re-projected) entity held is the only one safe to forget.
+ */
+function dropMechanics(state: FoldedState, ids: readonly MechanicId[]): FoldedState {
   if (ids.length === 0) return state;
-  const listed = options.keepIfListed
-    ? new Set(Object.values(state.entities).flatMap((entity) => entity.mechanics))
-    : new Set<MechanicId>();
+  const listed = new Set(
+    Object.values(state.entities).flatMap((entity) => entity.mechanics)
+  );
   const doomed = ids.filter((id) => !listed.has(id));
   if (doomed.length === 0) return state;
   return {
@@ -131,9 +133,7 @@ function removeEntity(
     (relation) => !Object.values(relation).includes(id)
   );
   const departing = state.entities[id]?.mechanics ?? [];
-  return dropMechanics({ ...ended.state, entities, clock, relations }, departing, {
-    keepIfListed: true,
-  });
+  return dropMechanics({ ...ended.state, entities, clock, relations }, departing);
 }
 
 /** The start of `entity`'s turn: ledger reset and turn-edge(start) expiries. */
@@ -264,14 +264,19 @@ export function applyTable(state: FoldedState, op: TableOp): TableResult {
       // The carried definitions are REPLACED the same way `stats` is: what this entity listed
       // before and no longer carries is dropped, so a rebuilt character cannot leave a stale
       // programme behind in the fold.
+      //
+      // …but only what THIS entity alone held. Mechanic ids are not always instance-scoped —
+      // `monster-adapter.ts` keys a monster's mechanic by its block id, so two ogres share
+      // `monster:ogre` — and dropping a definition another seated entity still lists would
+      // disarm that creature on any client without a static fallback for it (design §2 D2's
+      // "the definitions whose ids the departing entity ALONE lists", read for `sync` too).
+      // `withEntity` runs first, so the synced entity's NEW list is the one consulted.
       const carried = conformCarried("sync", op.mechanics);
       if (!carried.ok) return carried.rejected;
       const stale = (state.entities[op.entity.id]?.mechanics ?? []).filter(
         (id) => carried.mechanics[id] === undefined
       );
-      const next = dropMechanics(withEntity(state, op.entity), stale, {
-        keepIfListed: false,
-      });
+      const next = dropMechanics(withEntity(state, op.entity), stale);
       return {
         kind: "applied",
         state: { ...next, mechanics: { ...next.mechanics, ...carried.mechanics } },

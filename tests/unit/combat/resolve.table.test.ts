@@ -536,6 +536,72 @@ describe("resolve — the mechanics an entity carries into the log (stage 6 §2 
     expect(Object.keys(state.mechanics)).toEqual(["pack:shared"]);
   });
 
+  it("sync keeps a definition another seated entity still lists (two ogres, one id)", () => {
+    // `monster-adapter.ts` keys a monster's mechanic by its BLOCK id (`monster:ogre`), so two
+    // ogres at the same table share one definition. A `sync` on one of them that no longer
+    // carries it must not disarm the other — on an SRD-only client there is no static fallback.
+    const shared = carried("monster:ogre");
+    const ogreOne = testEntity({
+      id: "ogre-1",
+      kind: "monster",
+      hp: 68,
+      mechanics: [shared.id],
+    });
+    const ogreTwo = testEntity({
+      id: "ogre-2",
+      kind: "monster",
+      hp: 68,
+      mechanics: [shared.id],
+    });
+    let state = applyAll(emptyState(), [
+      tableAction("dm", seq(), { op: "start", epoch: 1 }),
+      tableAction("dm", seq(), {
+        op: "add-entity",
+        entity: ogreOne,
+        mechanics: [shared],
+      }),
+      tableAction("dm", seq(), {
+        op: "add-entity",
+        entity: ogreTwo,
+        mechanics: [shared],
+      }),
+      tableAction("dm", seq(), { op: "set-initiative", entity: "ogre-1", value: 8 }),
+      tableAction("dm", seq(), { op: "set-initiative", entity: "ogre-2", value: 12 }),
+      tableAction("dm", seq(), { op: "begin-turns", order: ["ogre-2", "ogre-1"] }),
+      // The first ogre is re-projected without the shared action.
+      tableAction("dm", seq(), {
+        op: "sync",
+        entity: { ...ogreOne, mechanics: [] },
+        mechanics: [],
+      }),
+    ]);
+    expect(state.mechanics[shared.id]).toBeDefined();
+
+    // …and the second ogre can still act on it.
+    const result = resolve(
+      state,
+      {
+        kind: "intent",
+        id: "i-ogre-2",
+        seq: seq(),
+        by: "dm",
+        entity: "ogre-2",
+        mechanic: shared.id,
+        program: "use",
+        targets: [],
+        answers: {},
+        payment: [],
+        window: null,
+        basedOn: 0,
+      },
+      catalogue
+    );
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    state = result.state;
+    expect(mustEntity(state, "ogre-2").turn.action).toBe(1);
+  });
+
   it("a carried definition wins over the same id in the static catalogue", () => {
     const stat = buildCatalogue([
       { ...carried("pack:ogre:club"), source: "srd" },
