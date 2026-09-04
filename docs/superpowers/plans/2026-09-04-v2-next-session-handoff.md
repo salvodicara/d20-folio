@@ -39,8 +39,9 @@ Speak Italian with the owner; everything in the repository is English.
 
 ## The map surface (stage 5, task 7) — where it stands
 
-Built on the proposal branch `v2-stage5-map-surface` (pushed at `0a2c9031`, one commit on top of
-`v2`'s `c2bb130d`): `src/features/play/map/{MapCanvas.tsx,geometry.ts,map.css}`, the `map` i18n
+Built on the proposal branch `v2-stage5-map-surface` (pushed at `f160eecf`, two commits on top of
+`v2`'s `c2bb130d`: the surface, then a fix found by the player-role captures — the dragged token
+now rides above the fog and the ruler's metres follow the locale): `src/features/play/map/{MapCanvas.tsx,geometry.ts,map.css}`, the `map` i18n
 shard (EN + IT, tooltips on every control), the DEV-only route `/_map`
 (`src/app/routes/map-dev.tsx`, mounted behind `import.meta.env.DEV` in `router.tsx`), the
 fast-lane geometry tests and the jsdom `MapCanvas` tests (who sees what; which event a drop emits).
