@@ -387,7 +387,7 @@ export const homebrewBlade: Mechanic = {
       cost: [{ kind: "turn", claim: "attack" }],
       targets: {
         count: 1,
-        eligibility: { relation: "visible", between: ["$self", "$target"], value: true },
+        eligibility: { relation: "adjacent", between: ["$self", "$target"] },
       },
       inputs: [
         { id: "roll", kind: "d20", for: "attack" },

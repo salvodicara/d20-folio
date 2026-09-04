@@ -109,8 +109,8 @@
       "kind": "override",
       "entity": "hero",
       "path": "vitals.hp",
-      "value": 18,
-      "reason": "ogre's greatclub — table plays log-only, applying the receipt by hand"
+      "value": 17,
+      "reason": "ogre's greatclub — table plays log-only, applying the receipt by hand, rounding the DM's own way"
     },
     {
       "id": "s-full-auto",
@@ -171,9 +171,10 @@
     "state": {
       "settings.automation": "full-auto",
       "clock.current": "hero",
-      "entities.hero.vitals.hp": 18,
+      "entities.hero.vitals.hp": 17,
       "entities.ogre.vitals.hp": 64,
-      "entities.ogre.turn.attacksUsed": 0
+      "entities.ogre.turn.attacksUsed": 0,
+      "rolls.r-ogre-atk.hidden": true
     }
   }
 }
