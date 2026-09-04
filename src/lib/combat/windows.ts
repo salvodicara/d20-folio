@@ -67,5 +67,9 @@ export function subscribersFor(
     );
     if (subscribed) out.push(entity.id);
   }
-  return out;
+  // Sorted, not enumeration-ordered: this list is persisted as `windows[].eligible`, and
+  // compaction rewrites the document through the codec, which re-sorts every record's keys.
+  // Sorting here keeps a pre- and a post-compaction fold deep-equal, not merely equal up to
+  // this array's order.
+  return out.sort();
 }

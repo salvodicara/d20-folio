@@ -12,7 +12,9 @@
  * client that has not folded it yet can no longer see it. Hence the grace window — the newest
  * `CHECKPOINT_GRACE_MS` of the log is never compacted, so a client that reconnects inside the
  * window still receives the raw actions. `checkpointThrough` picks the newest action outside the
- * window, and returns `null` when there is nothing safe to compact.
+ * window, and returns `null` when there is nothing safe to compact. The window's upper bound is
+ * the caller's clock capped against the newest stamp, so one client with a skewed wall clock
+ * cannot collapse it — see `checkpointThrough`.
  *
  * Undo is a LOG-level fact, not an action that resolves, so it does not respect the boundary the
  * way ordinary actions do: an `undo` may sit after `through` and target an action before it.
@@ -55,19 +57,28 @@ export function shouldCompact(encounter: Encounter): boolean {
 }
 
 /**
- * The seq to compact through: the newest action whose `ms` is at least `graceMs` behind the
- * newest action's, and which sorts strictly after the current checkpoint. `null` when nothing
- * qualifies — an empty log, a log entirely inside the grace window, or a log whose old actions
- * the current checkpoint already covers.
+ * The seq to compact through: the newest action at least `graceMs` behind the window's upper
+ * bound, and which sorts strictly after the current checkpoint. `null` when nothing qualifies —
+ * an empty log, a log entirely inside the grace window, or a log whose old actions the current
+ * checkpoint already covers.
+ *
+ * The bound is `min(newest.seq.ms, nowMs)`, NOT `newest.seq.ms` alone. `seq.ms` is stamped by
+ * whichever client appended the action, so one member whose device runs fast pushes the newest
+ * stamp into the future and collapses the window to nothing — and the next checkpoint then
+ * swallows appends other clients have queued but not yet landed, which the fold skips forever.
+ * `nowMs` is the compacting caller's own wall clock, and it is REQUIRED: this module is pure by
+ * design (no clock of its own — the boundary guard greps for one), so the caller,
+ * `src/lib/combat-io.ts`, must supply the reading rather than let a default hide the decision.
  */
 export function checkpointThrough(
   encounter: Encounter,
-  graceMs: number = CHECKPOINT_GRACE_MS
+  graceMs: number,
+  nowMs: number
 ): Seq | null {
   const sorted = sortBySeq(encounter.log);
   const newest = sorted[sorted.length - 1];
   if (newest === undefined) return null;
-  const cutoff = newest.seq.ms - graceMs;
+  const cutoff = Math.min(newest.seq.ms, nowMs) - graceMs;
   const current = encounter.checkpoint?.through ?? null;
   let candidate: Seq | null = null;
   for (const action of sorted) {

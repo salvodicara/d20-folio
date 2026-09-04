@@ -493,8 +493,12 @@ an offline PC appends to the encounter log; the PC's owner folds it on reconnect
   the same head twice. It merges every stored action after the new checkpoint that the caller did
   not fold (matched by id), and merges unknown top-level keys with the stored value winning, so
   neither an interleaved append nor a newer build's key is erased by the rewrite. Fights above the
-  1 MiB document budget are a measured non-goal (a 300-action fight is ≈ 100 KB); the codec's own
-  ceiling is 2,048 actions.
+  1 MiB document budget are a measured non-goal (a 300-action fight is ≈ 100 KB). The codec's
+  binding ceiling is not its 2,048-entry collection limit but `exact-schema`'s 50,000-node budget
+  counted over the log AND the checkpoint together, so `firestore.rules` caps the stored log at
+  1,000 entries — a document past the node budget quarantines on every client, and
+  `checkpointEncounter` refuses to rewrite a quarantined document, so compaction (the only
+  repair) is exactly what would stop working.
 - Personal aggregate: the same shape, single writer; the debounced writer is replaced by the
   append (each action is one small `updateDoc`); the parent build write keeps its debounce but
   gains a `revision` precondition and per-domain reconciliation (Codex's reconciler, reused).

@@ -104,8 +104,14 @@ export async function joinTable(args: {
  * `table:leave`: append the leave action to the campaign encounter, fold the entity back into
  * the owner's personal aggregate as a `table:sync` action, and clear the lease — in one batch.
  *
- * `personal === null` means the owner has no personal `combat/state` document yet, so the sync
- * is written as the first action of a fresh personal `Encounter` (`set`, not `update`).
+ * `personal === null` means the personal document DOES NOT EXIST, so the sync is written as the
+ * first action of a fresh personal `Encounter` (`set`, not `update`). That is the whole
+ * contract, and it is narrow on purpose: the path aliases the live `CombatState` document
+ * today's cockpit owns (see `personalEncounterRef` in `combat-io.ts`), so a document that did
+ * NOT parse is not `null` — it is a legacy `CombatState`, and passing `null` for it would
+ * overwrite a live play session. A quarantined or legacy document goes through the stage-6
+ * cutover (snapshot → dry-run → idempotent apply → verify) instead; a caller must never pass
+ * `null` for one.
  */
 export async function leaveTable(args: {
   readonly db: Firestore;

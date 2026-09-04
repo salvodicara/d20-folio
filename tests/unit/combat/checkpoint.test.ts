@@ -33,6 +33,18 @@ import {
 
 const { catalogue } = buildCatalogue(PROTOTYPE_MECHANICS);
 
+/** `checkpointThrough` with the caller's clock reading the newest stamp — the ordinary case,
+ *  where the window's upper bound `min(newest.seq.ms, nowMs)` IS the newest stamp. The skew
+ *  case below passes `nowMs` explicitly. */
+function throughNow(
+  encounter: Encounter,
+  graceMs: number = CHECKPOINT_GRACE_MS
+): Seq | null {
+  const sorted = sortBySeq(encounter.log);
+  const newest = sorted[sorted.length - 1];
+  return checkpointThrough(encounter, graceMs, newest?.seq.ms ?? 0);
+}
+
 /** `items[index]`, asserted present (test-only invariant). */
 function at<T>(items: readonly T[], index: number): T {
   const item = items[index];
@@ -133,22 +145,22 @@ describe("combat/checkpoint — the grace window", () => {
   it("picks the newest action outside the grace window", () => {
     // ms 0, 100_000, 200_000, 300_000 with a 5-minute grace: only ms 0 is old enough.
     const encounter = timedEncounter(4, 100_000);
-    expect(checkpointThrough(encounter)).toEqual({ ms: 0, counter: 0, by: "dm" });
+    expect(throughNow(encounter)).toEqual({ ms: 0, counter: 0, by: "dm" });
   });
 
   it("returns null when every action is inside the window", () => {
-    expect(checkpointThrough(timedEncounter(5, 1_000))).toBeNull();
-    expect(checkpointThrough(timedEncounter(0, 1_000))).toBeNull();
+    expect(throughNow(timedEncounter(5, 1_000))).toBeNull();
+    expect(throughNow(timedEncounter(0, 1_000))).toBeNull();
   });
 
   it("honours a caller-supplied grace", () => {
     const encounter = timedEncounter(4, 100_000);
-    expect(checkpointThrough(encounter, 50_000)).toEqual({
+    expect(throughNow(encounter, 50_000)).toEqual({
       ms: 200_000,
       counter: 0,
       by: "dm",
     });
-    expect(checkpointThrough(encounter, 0)).toEqual({
+    expect(throughNow(encounter, 0)).toEqual({
       ms: 300_000,
       counter: 0,
       by: "dm",
@@ -174,7 +186,35 @@ describe("combat/checkpoint — the grace window", () => {
       ],
       checkpoint: null,
     };
-    expect(checkpointThrough(encounter)).toEqual({ ms: cutoff, counter: 1, by: "bob" });
+    expect(throughNow(encounter)).toEqual({ ms: cutoff, counter: 1, by: "bob" });
+  });
+
+  it("a newest action from a clock skewed forward cannot collapse the window", () => {
+    // One member's device is a couple of hours fast, so its append stamps ms 10_000_000.
+    // Measured off `newest.seq.ms` alone the cutoff would be 9_700_000 — every other
+    // action in the log, plus anything a peer has queued but not yet landed. Bounded by
+    // the caller's own clock (1_300_000) the cutoff is 1_000_000, exactly as if the
+    // skewed stamp had never arrived.
+    const encounter: Encounter = {
+      schema: 1,
+      id: "skew",
+      host: { kind: "campaign", campaignId: "camp" },
+      log: [
+        tableAction("dm", { ms: 1_000_000, counter: 0, by: "dm" }, { op: "end-turn" }),
+        tableAction("dm", { ms: 1_200_000, counter: 0, by: "dm" }, { op: "end-turn" }),
+        tableAction(
+          "fast",
+          { ms: 10_000_000, counter: 0, by: "fast" },
+          { op: "end-turn" }
+        ),
+      ],
+      checkpoint: null,
+    };
+    expect(checkpointThrough(encounter, CHECKPOINT_GRACE_MS, 1_300_000)).toEqual({
+      ms: 1_000_000,
+      counter: 0,
+      by: "dm",
+    });
   });
 
   it("never proposes a seq at or before the current checkpoint", () => {
@@ -185,9 +225,9 @@ describe("combat/checkpoint — the grace window", () => {
       checkpoint: { through, state: emptyState() },
     };
     // ms 0 is already covered and the rest are inside the window → nothing to do.
-    expect(checkpointThrough(already)).toBeNull();
+    expect(throughNow(already)).toBeNull();
     // With a shorter grace the next candidate is the first action AFTER the checkpoint.
-    expect(checkpointThrough(already, 150_000)).toEqual({
+    expect(throughNow(already, 150_000)).toEqual({
       ms: 100_000,
       counter: 0,
       by: "dm",
@@ -359,7 +399,7 @@ describe("combat/checkpoint — undo across the compaction boundary", () => {
       tableAction("dm", { ms: 1_300_000, counter: 0, by: "dm" }, { op: "end-turn" }),
     ]);
     // Grace 5 min: cutoff = 1_300_000 - 300_000 = 1_000_000 — exactly the undo's TARGET.
-    const through = checkpointThrough(encounter);
+    const through = throughNow(encounter);
     expect(through).toEqual(endTurn.seq);
     if (through === null) throw new Error("unreachable");
     expect(fold(compact(encounter, catalogue, through), catalogue).state).toEqual(

@@ -45,7 +45,17 @@ export function encounterRef(
   return doc(db, "campaigns", campaignId, "encounters", encounterId);
 }
 
-/** The solo-play encounter: `users/{uid}/characters/{characterId}/combat/state`. */
+/**
+ * The solo-play encounter: `users/{uid}/characters/{characterId}/combat/state`.
+ *
+ * This path ALIASES a live document. Today's cockpit owns it as a `CombatState`
+ * (`src/lib/combat-state-io.ts` writes exactly this path), so every existing character already
+ * has one in the legacy shape. Writing an `Encounter` over it is the stage-6 cutover, and it
+ * goes through the migration protocol (snapshot → dry-run → idempotent apply → verify), never
+ * an opportunistic overwrite. A caller that reads the document and fails to parse it has found
+ * a LEGACY document, not a missing one — see `leaveTable`'s `personal` contract in
+ * `combat-lease.ts`.
+ */
 export function personalEncounterRef(
   db: Firestore,
   uid: string,
@@ -57,8 +67,14 @@ export function personalEncounterRef(
 /**
  * A monotonic `Seq` stamper for one client. The wall clock can run backwards (NTP, a sleeping
  * laptop), so the clock never emits a `ms` below the last one it emitted; within one millisecond
- * the counter increments. Two stamps from the same client are therefore always strictly ordered,
- * and `by` breaks the tie between clients.
+ * the counter increments. Two stamps from the same CLOCK are therefore always strictly ordered,
+ * and `by` breaks the tie between users.
+ *
+ * `by` is the uid, not a session id, so one user on two devices runs two clocks and can emit an
+ * identical `{ ms, counter, by }`. Those two stamps are not ordered by `Seq` at all: `sortBySeq`
+ * is stable over the stored array, so they keep the stored order — the same on every client, so
+ * the fold still converges. The guarantee is a total order over DISTINCT stamps, not that every
+ * pair of stamps is strictly ordered.
  */
 export function createSeqClock(by: string, now: () => number = Date.now): () => Seq {
   let last: Seq | null = null;

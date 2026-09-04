@@ -411,7 +411,9 @@ async function compactAndVerify(table: Table): Promise<void> {
 
   const before = new Map(table.clients.map((c) => [c.uid, c.view().state]));
   const source = table.latest();
-  const through = checkpointThrough(source, 0);
+  // Grace 0: the gate compacts everything the clients already hold. `nowMs` is the
+  // compacting caller's own clock, which `checkpointThrough` caps the window against.
+  const through = checkpointThrough(source, 0, Date.now());
   expect(through).not.toBeNull();
   expect(
     await checkpointEncounter(

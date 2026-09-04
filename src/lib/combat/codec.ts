@@ -9,10 +9,23 @@
  * the whole document rather than silently truncating the log.
  *
  * `schema !== 1` is reported as `reason: "schema"`; every other structural problem is
- * `reason: "malformed"`; a non-record top-level value is `reason: "not-a-record"`. A `log`
- * longer than 2,048 actions (the `exact-schema` collection ceiling, enforced by the pre-check
- * every `exactConformer` call makes) also quarantines the document as `malformed` — far above
- * the design §5.3 compaction budget of 200, so it is a hard backstop, never an expected path.
+ * `reason: "malformed"`; a non-record top-level value is `reason: "not-a-record"`.
+ *
+ * TWO `exact-schema` ceilings quarantine a document as `malformed`, both enforced by the
+ * pre-check every `exactConformer` call makes:
+ *
+ * - `MAX_COLLECTION` (2,048 entries): the length of any one array — a `log` of 2,049 actions.
+ * - `MAX_VALUES` (50,000 JSON nodes): counted over the WHOLE known-keys object, `log` AND
+ *   `checkpoint.state` together. This is the BINDING one. A realistic action is ~21 nodes
+ *   (Marco's Fireball intent, the fattest shape the prototype writes, is ~34), so the node
+ *   budget runs out long before 2,048 entries do. `firestore.rules` therefore caps the stored
+ *   log at 1,000 entries (~21,000-34,000 nodes, still 5x the design §5.3 compaction budget of
+ *   200) rather than at the collection ceiling: a document past `MAX_VALUES` quarantines on
+ *   EVERY client, and `checkpointEncounter` refuses to rewrite a quarantined document, so
+ *   compaction — the one repair — is exactly what would stop working.
+ *
+ * Both are hard backstops, never an expected path; `tests/unit/combat/codec.test.ts` pins the
+ * cap from both sides.
  */
 import {
   arraySchema,

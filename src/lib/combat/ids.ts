@@ -3,9 +3,15 @@
  *
  * `Seq` is a hybrid logical clock stamped by the client that appends an action: physical
  * milliseconds, a per-client counter for same-millisecond appends, and the author uid as the
- * final tie-break. Its total order is what every client folds the encounter log in, so two
- * clients holding the same set of actions always fold to the same state regardless of the
- * order the actions arrived in.
+ * final tie-break. It is a total order over DISTINCT stamps, and that order is what every
+ * client folds the encounter log in, so two clients holding the same set of actions always
+ * fold to the same state regardless of the order the actions arrived in.
+ *
+ * The tie-break is the uid, not a session id, so two devices signed in as the SAME user can
+ * emit an identical `{ ms, counter, by }`. Such stamps do not order against each other;
+ * `sortBySeq` is a stable sort over the stored array, so they keep the array's own order —
+ * identical on every client, since every client folds the same stored array. Ties are
+ * therefore harmless to convergence; they are simply not ordered by `Seq`.
  */
 
 export type EntityId = string;

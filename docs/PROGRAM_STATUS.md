@@ -359,7 +359,9 @@ the same document to the same state.
 - **The codec** (`src/lib/combat/codec.ts`): one closed-world `exact-schema` for the persisted
   `Encounter` (schema 1), `parseEncounter` / `encounterWriteData`, unknown top-level keys preserved
   in `Encounter.unknown` and written back verbatim, hostile or oversized documents quarantined with
-  a typed reason instead of dropped (`__proto__`, unbounded depth, the 2,048-action ceiling).
+  a typed reason instead of dropped (`__proto__`, unbounded depth, the 2,048-entry collection
+  ceiling and — the binding one — `exact-schema`'s 50,000-node budget over the log and the
+  checkpoint together, which is why the rules cap the stored log at 1,000 entries).
 - **Compaction, pure** (`src/lib/combat/checkpoint.ts`): `shouldCompact` (200 actions or 512 KiB),
   `checkpointThrough` (the newest action outside a five-minute grace window), and `compact`, which
   folds the head **together with every `undo` in the log** so an undo that sits after the boundary

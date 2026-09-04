@@ -62,8 +62,9 @@ Decide this before writing code, and record the decision in the plan. **Does the
 campaign encounter document, or on a sibling document?** The evidence to weigh:
 
 - **The encounter document's budget.** A Firestore document is capped at 1 MiB. Compaction already
-  fires at 200 actions or 512 KiB (`src/lib/combat/checkpoint.ts`), and the codec refuses a log
-  longer than 2,048 actions (`src/lib/combat/codec.ts` — the `exact-schema` collection ceiling).
+  fires at 200 actions or 512 KiB (`src/lib/combat/checkpoint.ts`), the rules cap the stored log at
+  1,000 entries, and the codec quarantines any document past `exact-schema`'s 50,000-node budget
+  counted over the log and the checkpoint together (`src/lib/combat/codec.ts`).
   Fog rectangles and token positions expressed as `declare` / `move` actions consume that same
   budget, and unlike combat actions they are produced by dragging, which is a high-frequency
   gesture.

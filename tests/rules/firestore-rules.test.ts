@@ -323,6 +323,24 @@ describe("firestore.rules — /campaigns access", () => {
     );
   });
 
+  it("self-join cannot smuggle a banner change", async () => {
+    // `touchesOnlyModelFields()` bounds a self-join to the model's key set, which INCLUDES
+    // the banner — so without an explicit equality clause a joining non-member could
+    // repaint the campaign on the way in.
+    const db = testEnv.authenticatedContext("outsider").firestore();
+    await assertFails(
+      updateDoc(doc(db, "campaigns", "camp1"), {
+        members: arrayUnion("outsider"),
+        "memberDetails.outsider": {
+          displayName: "Outsider",
+          characterId: null,
+          role: "player",
+        },
+        bannerUrl: "https://example.invalid/banner.png",
+      })
+    );
+  });
+
   // ── own-entry guard (the campaign-member data-loss hardening) ────────────────
   // rosterAndOwnerUnchanged() pins only the memberDetails KEY SET, not which value
   // changed — so before memberEditsOnlyOwnEntry() a member could overwrite a PEER's
@@ -1826,5 +1844,33 @@ describe("firestore.rules — campaign encounter documents (append-only log)", (
   it("a member may NOT delete the encounter", async () => {
     const db = testEnv.authenticatedContext("member").firestore();
     await assertFails(deleteDoc(doc(db, ...encounterPath)));
+  });
+
+  // `validEncounterShape()` fences EVERY write, the DM's whole-document rewrite included —
+  // it is the only shape check binding that branch. The log cap is 1,000, not the codec's
+  // 2,048-entry collection ceiling: the binding codec limit is `exact-schema`'s 50,000-node
+  // budget over the log AND the checkpoint together, and a document past it quarantines on
+  // every client while `checkpointEncounter` refuses to repair a quarantined document.
+  it("the DM cannot write a document the codec would reject: schema != 1", async () => {
+    const db = testEnv.authenticatedContext("dm").firestore();
+    await assertFails(updateDoc(doc(db, ...encounterPath), { schema: 2 }));
+    await assertFails(setDoc(doc(db, ...encounterPath), { ...seedEncounter, schema: 2 }));
+  });
+
+  it("the DM may write a 1,000-entry log, never 1,001", async () => {
+    const db = testEnv.authenticatedContext("dm").firestore();
+    const log = (length: number) =>
+      Array.from({ length }, (_, index) => ({
+        ...memberAction,
+        id: `d-${index}`,
+        seq: { ms: 2 + index, counter: 0, by: "dm" },
+        by: "dm",
+      }));
+    await assertSucceeds(
+      setDoc(doc(db, ...encounterPath), { ...seedEncounter, log: log(1_000) })
+    );
+    await assertFails(
+      setDoc(doc(db, ...encounterPath), { ...seedEncounter, log: log(1_001) })
+    );
   });
 });

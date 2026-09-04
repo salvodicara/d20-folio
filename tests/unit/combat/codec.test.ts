@@ -132,125 +132,127 @@ describe("parseEncounter — malformed checkpoint (e)", () => {
   });
 });
 
-describe("parseEncounter / encounterWriteData — a populated checkpoint round-trips (Important)", () => {
-  it("a checkpoint with a full FoldedState round-trips and its state folds further", () => {
-    const entity = testEntity({ id: "goblin-1" });
-    const populatedState: FoldedState = {
-      epoch: 3,
-      clock: {
-        phase: "turns",
-        round: 2,
-        order: ["goblin-1", "hero-1"],
-        current: "hero-1",
-        initiative: { "goblin-1": 12, "hero-1": 18 },
-        restOrdinal: 0,
-        dayPhaseOrdinal: 0,
-      },
-      entities: { "goblin-1": entity },
-      relations: [
-        { kind: "cover", target: "goblin-1", from: null, degree: "half" },
-        { kind: "adjacent", a: "goblin-1", b: "hero-1" },
-      ],
-      effects: {
-        "effect-standing": {
-          id: "effect-standing",
-          source: {
-            entity: "hero-1",
-            mechanic: "core:move",
-            action: "a1",
-            castLevel: null,
-          },
-          target: "hero-1",
-          payload: {
-            kind: "standing",
-            facts: {
-              acBonus: 2,
-              advantageOnAttacks: true,
-              resistances: ["fire"],
-              riders: [],
-            },
-          },
-          lifetime: { kind: "turn-edge", entity: "hero-1", edge: "start", round: 2 },
-          concentration: false,
-        },
-        "effect-condition": {
-          id: "effect-condition",
-          source: {
-            entity: "goblin-1",
-            mechanic: "monster:goblin:scimitar",
-            action: "a2",
-            castLevel: null,
-          },
-          target: "hero-1",
-          payload: { kind: "condition", condition: "poisoned" },
-          lifetime: { kind: "rounds", remaining: 3 },
-          concentration: false,
-        },
-        "effect-mark": {
-          id: "effect-mark",
-          source: { entity: "hero-1", mechanic: "core:move", action: "a3", castLevel: 1 },
-          target: "goblin-1",
-          payload: {
-            kind: "mark",
-            riders: [
-              { dice: "1d6", type: "fire", on: "weapon-hit", vs: { mark: "self" } },
-            ],
-            advantage: false,
-          },
-          lifetime: { kind: "rest", rest: "short", minimumOrdinal: 1 },
-          concentration: true,
-        },
-      },
-      windows: [
-        {
-          id: "w1",
-          event: {
-            kind: "attack-declared",
-            attacker: "goblin-1",
-            target: "hero-1",
-            action: "a2",
-          },
-          eligible: ["hero-1"],
-          declared: "a2",
-        },
-      ],
-      checks: [
-        { id: "c1", entity: "hero-1", kind: "concentration", dc: 12, cause: "a3" },
-      ],
-      declared: {
-        a4: {
-          id: "a4",
-          seq: { ms: 100, counter: 0, by: "dm" },
-          by: "dm",
-          kind: "intent",
+/** A `FoldedState` with every field populated — the checkpoint fixture shared by the
+ *  round-trip test and the node-ceiling test. */
+function populatedFoldedState(): FoldedState {
+  const entity = testEntity({ id: "goblin-1" });
+  return {
+    epoch: 3,
+    clock: {
+      phase: "turns",
+      round: 2,
+      order: ["goblin-1", "hero-1"],
+      current: "hero-1",
+      initiative: { "goblin-1": 12, "hero-1": 18 },
+      restOrdinal: 0,
+      dayPhaseOrdinal: 0,
+    },
+    entities: { "goblin-1": entity },
+    relations: [
+      { kind: "cover", target: "goblin-1", from: null, degree: "half" },
+      { kind: "adjacent", a: "goblin-1", b: "hero-1" },
+    ],
+    effects: {
+      "effect-standing": {
+        id: "effect-standing",
+        source: {
           entity: "hero-1",
           mechanic: "core:move",
-          program: "move",
-          targets: [],
-          answers: { to: { x: 1, y: 1 } },
-          payment: [],
-          window: "w1",
-          basedOn: 0,
+          action: "a1",
+          castLevel: null,
         },
-      },
-      rolls: {
-        r1: {
-          formula: "1d20",
-          faces: [10],
-          total: 10,
-          seed: null,
-          source: "manual",
-          hidden: false,
-          roller: "hero-1",
-          purpose: "attack",
-          label: null,
+        target: "hero-1",
+        payload: {
+          kind: "standing",
+          facts: {
+            acBonus: 2,
+            advantageOnAttacks: true,
+            resistances: ["fire"],
+            riders: [],
+          },
         },
+        lifetime: { kind: "turn-edge", entity: "hero-1", edge: "start", round: 2 },
+        concentration: false,
       },
-      spent: { r1: "a4" },
-      nextOrdinal: 5,
-      revision: 7,
-      settings: { revealMonsterHp: false, automation: "log-only" },
-    };
+      "effect-condition": {
+        id: "effect-condition",
+        source: {
+          entity: "goblin-1",
+          mechanic: "monster:goblin:scimitar",
+          action: "a2",
+          castLevel: null,
+        },
+        target: "hero-1",
+        payload: { kind: "condition", condition: "poisoned" },
+        lifetime: { kind: "rounds", remaining: 3 },
+        concentration: false,
+      },
+      "effect-mark": {
+        id: "effect-mark",
+        source: { entity: "hero-1", mechanic: "core:move", action: "a3", castLevel: 1 },
+        target: "goblin-1",
+        payload: {
+          kind: "mark",
+          riders: [{ dice: "1d6", type: "fire", on: "weapon-hit", vs: { mark: "self" } }],
+          advantage: false,
+        },
+        lifetime: { kind: "rest", rest: "short", minimumOrdinal: 1 },
+        concentration: true,
+      },
+    },
+    windows: [
+      {
+        id: "w1",
+        event: {
+          kind: "attack-declared",
+          attacker: "goblin-1",
+          target: "hero-1",
+          action: "a2",
+        },
+        eligible: ["hero-1"],
+        declared: "a2",
+      },
+    ],
+    checks: [{ id: "c1", entity: "hero-1", kind: "concentration", dc: 12, cause: "a3" }],
+    declared: {
+      a4: {
+        id: "a4",
+        seq: { ms: 100, counter: 0, by: "dm" },
+        by: "dm",
+        kind: "intent",
+        entity: "hero-1",
+        mechanic: "core:move",
+        program: "move",
+        targets: [],
+        answers: { to: { x: 1, y: 1 } },
+        payment: [],
+        window: "w1",
+        basedOn: 0,
+      },
+    },
+    rolls: {
+      r1: {
+        formula: "1d20",
+        faces: [10],
+        total: 10,
+        seed: null,
+        source: "manual",
+        hidden: false,
+        roller: "hero-1",
+        purpose: "attack",
+        label: null,
+      },
+    },
+    spent: { r1: "a4" },
+    nextOrdinal: 5,
+    revision: 7,
+    settings: { revealMonsterHp: false, automation: "log-only" },
+  };
+}
+
+describe("parseEncounter / encounterWriteData — a populated checkpoint round-trips (Important)", () => {
+  it("a checkpoint with a full FoldedState round-trips and its state folds further", () => {
+    const populatedState = populatedFoldedState();
     const raw = minimalEncounter({
       checkpoint: { through: { ms: 99, counter: 0, by: "dm" }, state: populatedState },
     });
@@ -447,6 +449,61 @@ describe("parseEncounter — the log length ceiling", () => {
   it("2,049 actions are rejected as malformed", () => {
     const raw = minimalEncounter({
       log: Array.from({ length: 2_049 }, (_, index) => declareAction(index)),
+    });
+    expect(parseEncounter(raw)).toEqual({ ok: false, reason: "malformed" });
+  });
+});
+
+// The BINDING ceiling is not the 2,048-entry collection cap but `exact-schema`'s
+// `MAX_VALUES` = 50,000 JSON nodes counted over the WHOLE known-keys object — log and
+// checkpoint together. A document past it quarantines on every client, and
+// `checkpointEncounter` refuses to rewrite a quarantined document, so compaction — the only
+// repair — is exactly what stops working. `firestore.rules` therefore caps the log at 1,000
+// entries; this pins that a full 1,000-entry log of REALISTIC actions (Marco's Fireball
+// intent, the fattest shape the prototype produces) plus a fully populated checkpoint stays
+// inside the node budget.
+describe("parseEncounter — the node budget at the rules' log cap", () => {
+  /** Marco's Fireball intent (`replays/marco-first-turn.json`), with an explicit target list
+   *  and a slot payment: ~34 JSON nodes, well above the 21-node log average. */
+  function fireballIntent(index: number): Record<string, unknown> {
+    return {
+      id: `i-${index}`,
+      seq: { ms: 1_000 + index, counter: 0, by: "p-marco" },
+      by: "p-marco",
+      kind: "intent",
+      entity: "marco",
+      mechanic: "srd:spell:fireball",
+      program: "cast",
+      targets: ["goblin-1", "goblin-2", "goblin-3"],
+      answers: {
+        origin: { x: 7, y: 1 },
+        "save:goblin-1": { roll: `r-save-1-${index}` },
+        "save:goblin-2": { roll: `r-save-2-${index}` },
+        "save:goblin-3": { roll: `r-save-3-${index}` },
+        damage: { roll: `r-damage-${index}` },
+      },
+      payment: [{ kind: "slot", level: 3, pool: "standard" }],
+      window: null,
+      basedOn: 0,
+    };
+  }
+
+  it("1,000 realistic intents plus a populated checkpoint parse", () => {
+    const raw = minimalEncounter({
+      log: Array.from({ length: 1_000 }, (_, index) => fireballIntent(index)),
+      checkpoint: {
+        through: { ms: 999, counter: 0, by: "dm" },
+        state: populatedFoldedState(),
+      },
+    });
+    expect(parseEncounter(raw).ok).toBe(true);
+  });
+
+  it("2,000 of the same actions quarantine — what the old rules cap admitted", () => {
+    // 2,000 x 34 nodes = 68,000, past `MAX_VALUES`. The document would fail to parse on
+    // every client and `checkpointEncounter` would refuse to repair it.
+    const raw = minimalEncounter({
+      log: Array.from({ length: 2_000 }, (_, index) => fireballIntent(index)),
     });
     expect(parseEncounter(raw)).toEqual({ ok: false, reason: "malformed" });
   });

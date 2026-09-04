@@ -5,6 +5,12 @@
  * (an intent answering a window it opened) is recorded as rejected rather than silently
  * dropped. Every client with the same set of actions computes the same state and the same
  * rejections.
+ *
+ * A checkpoint bounds how far back undo reaches (`checkpoint.ts`): an undo whose target sits at
+ * or before `checkpoint.through` is honoured only if that undo was already in the log when the
+ * checkpoint was cut — compaction folds the head together with every undo in the whole log. An
+ * undo appended AFTER the cut targets an action the log no longer holds, so it is a no-op, and
+ * redo across a checkpoint is impossible for the same reason: the target is gone.
  */
 import type { Catalogue } from "./catalogue";
 import { compareSeq, sortBySeq, type ActionId } from "./ids";

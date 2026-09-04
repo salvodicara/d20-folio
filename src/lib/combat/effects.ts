@@ -71,12 +71,17 @@ export function endEffects(state: FoldedState, ids: readonly EffectId[]): EndRes
   return { state: { ...state, effects, relations, entities }, events };
 }
 
-/** Effects whose lifetime is due at the given boundary. */
+/** Effects whose lifetime is due at the given boundary, by id.
+ *
+ *  Sorted, not enumeration-ordered: this list decides the order of the `effect-ended` events
+ *  the reducer emits, and compaction rewrites the document through the codec, which re-sorts
+ *  every record's keys. Sorting here keeps a pre- and a post-compaction fold deep-equal. */
 export function dueAt(
   state: FoldedState,
   predicate: (lifetime: Lifetime, effect: Effect) => boolean
 ): EffectId[] {
   return Object.values(state.effects)
     .filter((effect) => predicate(effect.lifetime, effect))
-    .map((effect) => effect.id);
+    .map((effect) => effect.id)
+    .sort();
 }
