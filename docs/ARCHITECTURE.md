@@ -2465,26 +2465,36 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
   silent swallow, and never a retry: with the live-derived grants below, a denial is a real, terminal
   authorization fact (e.g. removed from the campaign mid-fight), not a stale cache to reconverge. (The
   old stale-`dmReaders` self-heal toast + eager-recompute retry machinery is DELETED with the ACLs.)
-- **Security — cross-user grants are DERIVED LIVE (the single source of truth is the campaign doc).**
-  There is NO stored reader list anywhere. The character doc carries ONE pointer,
-  `attachedCampaignId` — written ATOMICALLY with the campaign's `memberDetails` by the attach
-  transaction (B07) — and `firestore.rules` derives every cross-user grant from it + the LIVE campaign
-  doc at request time:
-  - char-doc **READ**: `owner || isAdmin || (notBlocked && requester ∈ get(campaigns/{attachedCampaignId}).members)`;
-  - combat-subdoc **READ**: owner / admin / any CURRENT member of the attached campaign (read-superset);
-  - combat-subdoc **WRITE**: owner / admin / any CURRENT member of the attached campaign; this is the tiny
-    table-effect surface only — the parent char-doc WRITE stays owner-only, untouched.
-    A DM transfer or roster change is effective IMMEDIATELY on the next request — there is no
-    client-maintained ACL to recompute, so the whole class of "stale grant" convergence failures (the old
-    `dmReaders`/`campaignReaders` machinery, its attach-time recomputes, self-reconcile listeners, and
-    retry toasts — all deleted) is structurally impossible. The owner check short-circuits before any
-    `get()`; a cross-user request costs at most two extra gets (parent char + campaign, deduped), under the
-    10-get cap. The subdoc rule validates ONLY AUTHORIZATION — **never the shape**: the old
-    `isValidCombatState()` field-lock rejected EVERY combat write whenever the DEPLOYED rules lagged the
-    client payload by one field (the "initiative never saves" production outage: the client gained `round`
-    on 2026-07-09 while prod rules were still v0.18.0's), and every writer here is already trusted while
-    the client parses defensively on read (`parseCombatState`). A rules test pins that a payload with an
-    unknown future field is ACCEPTED (the version-skew class guard).
+- **Security (`v2`, stage 4) — `firestore.rules` is identity, membership, ownership and shape;
+  nothing else.** Every predicate that read a game field is gone: the embedded `encounter`, its turn
+  pointer and effect-op grants, `encounterInit`, `encounterSkipped`, `memberEffects`/`effectOps`/`world`,
+  the peer write fence on `combat/state`, and the DM's cross-user detach of another user's character. The
+  campaign model's fields are ENUMERATED, so those retired fields are un-writable by anyone without a
+  migration. Cross-user READ is still DERIVED LIVE from the campaign doc: the character carries ONE
+  pointer, `attachedCampaignId`, and the roster row naming that exact character is the grant, so a DM
+  transfer or a roster change is effective on the very next request. ADMIN-SUPREME (owner decision,
+  2026-09-03): `users/{uid}.role == "admin"` carries owner-level rights on every user path and DM-level
+  rights on every encounter, member or not. The enforced matrix (§5.4):
+
+  | Path                                       | Owner / self                                                            | Campaign member                                                          | Campaign DM                        | Admin                          | Anonymous  |
+  | ------------------------------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------- | ------------------------------ | ---------- |
+  | `users/{uid}`                              | read; create (never `role`); own `lastActiveAt`                         | —                                                                        | —                                  | read, update, list             | —          |
+  | `users/{uid}/characters/{id}`              | read/write under the revision CAS, empty parent state, exact projection | read when the roster names this character                                | same as a member                   | owner-level                    | —          |
+  | `users/{uid}/characters/{id}/public/sheet` | write only as the exact projection of an atomic parent write            | —                                                                        | —                                  | —                              | `get` only |
+  | `users/{uid}/characters/{id}/combat/state` | read/write, no shape                                                    | read when the roster names this character                                | same as a member                   | owner-level                    | —          |
+  | `users/{uid}/characters/{id}/snapshots/*`  | create (codec envelope + reason), read, delete; never update            | —                                                                        | —                                  | owner-level                    | —          |
+  | `users/{uid}/library/*`                    | read/write under the free-tier cap                                      | —                                                                        | —                                  | owner-level                    | —          |
+  | `campaigns/{id}`                           | —                                                                       | get/list; edit shared artifacts + only their own roster entry; self-join | full model write; delete           | full model write; delete       | —          |
+  | `campaigns/{id}/notes,chronicle,sessions`  | —                                                                       | read/write                                                               | read/write                         | —                              | —          |
+  | `campaigns/{id}/dmNotes/*`                 | —                                                                       | —                                                                        | read/write                         | read/write                     | —          |
+  | `campaigns/{id}/encounters/{eid}`          | —                                                                       | read; append to `log` (it only grows, nothing else changes)              | create, rewrite/checkpoint, delete | DM-level                       | —          |
+  | `bug_reports`, `diagnostics`               | create own, bounded shape                                               | —                                                                        | —                                  | read/update/delete             | —          |
+  | `admin_audit/*`                            | —                                                                       | —                                                                        | —                                  | read (the Admin SDK writes it) | —          |
+
+  THREAT MODEL: a malicious member can append any well-formed action to an encounter they belong to and
+  the fold trusts it — but the receipt names them, anyone can undo it, and the DM can remove them from
+  the table; nobody, member or DM, can touch another user's documents at all.
+
 - **The encounter is a pure-REFERENCE read model (no PC stat copy).** `campaign.encounter` carries PC
   combatants as bare references — `EncounterPc = { kind, id, memberUid, characterId, hidden? }` (no
   AC/HP/name/conditions/initiative on the doc; monsters keep their own state since they have no char

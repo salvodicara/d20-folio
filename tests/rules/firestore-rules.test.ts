@@ -206,41 +206,6 @@ describe("firestore.rules — /campaigns access", () => {
     );
   });
 
-  it("a member may opt only themselves out of encounter participation", async () => {
-    const member = testEnv.authenticatedContext("member").firestore();
-    await assertSucceeds(
-      updateDoc(doc(member, "campaigns", "camp1"), {
-        "encounterSkipped.member": true,
-      })
-    );
-    await assertSucceeds(
-      updateDoc(doc(member, "campaigns", "camp1"), {
-        "encounterSkipped.member": deleteField(),
-      })
-    );
-    await assertFails(
-      updateDoc(doc(member, "campaigns", "camp1"), {
-        "encounterSkipped.dm": true,
-      })
-    );
-  });
-
-  it("encounter participation stays member-scoped; the DM may correct anyone", async () => {
-    const outsider = testEnv.authenticatedContext("outsider").firestore();
-    await assertFails(
-      updateDoc(doc(outsider, "campaigns", "camp1"), {
-        "encounterSkipped.outsider": true,
-      })
-    );
-
-    const dm = testEnv.authenticatedContext("dm").firestore();
-    await assertSucceeds(
-      updateDoc(doc(dm, "campaigns", "camp1"), {
-        "encounterSkipped.member": true,
-      })
-    );
-  });
-
   it("a blocked user is denied", async () => {
     const db = testEnv.authenticatedContext("blocked").firestore();
     await assertFails(getDoc(doc(db, "campaigns", "camp1")));
@@ -424,50 +389,36 @@ describe("firestore.rules — /campaigns access", () => {
     });
   });
 
-  // ── encounter tracker (DM tool) ──────────────────────────────────────────────
-  // The `encounter` field is a DM tool: the DM (and the admin) may write it; a
-  // regular member may not. A member's normal shared-artifact writes are unaffected.
-  const encounter = {
-    combatants: [
-      {
-        kind: "monster",
-        id: "monster-1",
-        name: "Goblin",
-        // The picker's bestiary reference + per-creature XP —
-        // pinned here so the existing DM/admin/member assertions exercise the
-        // encounter blob WITH the new nested keys end-to-end (opaque DM-owned map:
-        // zero rules diff by construction).
-        srdId: "goblin-warrior",
-        xp: 50,
-        ac: 13,
-        initiative: 12,
-        conditions: [],
-        hp: { current: 7, temp: 0, max: 7 },
-      },
-    ],
-    nextMonsterOrdinal: 2,
-    round: 1,
-    currentCombatantId: "monster-1",
-    epoch: 1,
-    status: "active",
-  };
-
-  it("the DM may write the encounter field", async () => {
-    const dm = testEnv.authenticatedContext("dm").firestore();
-    await assertSucceeds(updateDoc(doc(dm, "campaigns", "camp1"), { encounter }));
+  // ── the deleted play fields (§5.4) ───────────────────────────────────────────
+  // Play LEFT the campaign document. `encounter`, `encounterInit`, `encounterSkipped`
+  // and `memberEffects` are not model fields any more, so NO writer — member, DM or
+  // admin — may create or change them; the shared fight lives in `encounters/{eid}`.
+  it("no writer may touch the deleted play fields", async () => {
+    const patches: ReadonlyArray<Record<string, unknown>> = [
+      { encounter: { round: 1, combatants: [], status: "active" } },
+      { "encounterInit.member": 17 },
+      { "encounterSkipped.member": true },
+      { memberEffects: [] },
+    ];
+    for (const uid of ["member", "dm", ADMIN_UID]) {
+      const db = testEnv.authenticatedContext(uid).firestore();
+      for (const patch of patches) {
+        await assertFails(updateDoc(doc(db, "campaigns", "camp1"), patch));
+      }
+    }
   });
 
-  it("the admin may write the encounter field (DM-tool override)", async () => {
-    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
-    await assertSucceeds(updateDoc(doc(admin, "campaigns", "camp1"), { encounter }));
+  it("a create carrying an `encounter` key is denied (the model is closed)", async () => {
+    const db = testEnv.authenticatedContext("outsider").firestore();
+    await assertFails(
+      setDoc(doc(db, "campaigns", "own-enc"), {
+        ...campaignDoc(["outsider"], "outsider"),
+        encounter: { round: 1, combatants: [] },
+      })
+    );
   });
 
-  it("a non-DM member may NOT write the encounter field", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
-    await assertFails(updateDoc(doc(db, "campaigns", "camp1"), { encounter }));
-  });
-
-  it("a member's shared-artifact write still succeeds (encounter guard doesn't block it)", async () => {
+  it("a member's shared-artifact write still succeeds", async () => {
     const db = testEnv.authenticatedContext("member").firestore();
     await assertSucceeds(
       updateDoc(doc(db, "campaigns", "camp1"), {
@@ -476,518 +427,23 @@ describe("firestore.rules — /campaigns access", () => {
     );
   });
 
-  // ── P2 turn-advance: the shared turn pointer (diff-scoped member grant) ────────
-  // A running encounter's {currentCombatantId, round} is the ONE source of truth,
-  // advanceable from the campaign OR a player's sheet. A regular member may write
-  // ONLY those two fields (the `turnFieldsOnlyChanged()` diff grant); any other
-  // encounter edit (status / combatants / add-monster) stays DM-only; a non-member
-  // is denied entirely. Seed the encounter first (camp1 is seeded encounter-less).
-  describe("the turn pointer is a diff-scoped member grant", () => {
-    beforeEach(async () => {
-      await testEnv.withSecurityRulesDisabled(async (ctx) => {
-        await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), { encounter });
-      });
-    });
-
-    it("a member MAY advance the turn (writes only currentCombatantId + round)", async () => {
-      const db = testEnv.authenticatedContext("member").firestore();
-      await assertSucceeds(
-        updateDoc(doc(db, "campaigns", "camp1"), {
-          "encounter.currentCombatantId": "pc-member",
-          "encounter.round": 2,
-        })
-      );
-    });
-
-    // ── C3: the FROZEN turn order (`encounter.order`) is DM-only STRUCTURAL state ──
-    // Begin-turns FREEZES it and the DM drag-reorder rewrites it; a regular member may
-    // advance the turn pointer but must NEVER touch `order`, the encounter status, or
-    // the combatants array (all outside the `turnFieldsOnlyChanged()` allow-set) —
-    // alone or smuggled alongside a legitimate advance.
-    it("a member may change NOTHING else on the encounter, alone or smuggled", async () => {
-      const db = testEnv.authenticatedContext("member").firestore();
-      const denied: ReadonlyArray<Record<string, unknown>> = [
-        { "encounter.status": "ended" },
-        { "encounter.order": ["monster-1", "pc-member"] },
-        {
-          "encounter.combatants": [
-            ...encounter.combatants,
-            {
-              kind: "monster",
-              id: "monster-2",
-              name: "Worg",
-              ac: 13,
-              initiative: 8,
-              conditions: [],
-              hp: { current: 26, temp: 0, max: 26 },
-            },
-          ],
-        },
-        { "encounter.round": 2, "encounter.status": "ended" },
-        {
-          "encounter.currentCombatantId": "pc-member",
-          "encounter.round": 2,
-          "encounter.order": ["pc-member", "monster-1"],
-        },
-      ];
-      for (const patch of denied) {
-        await assertFails(updateDoc(doc(db, "campaigns", "camp1"), patch));
-      }
-    });
-
-    it("a non-member is denied a turn-only write", async () => {
-      const db = testEnv.authenticatedContext("outsider").firestore();
-      await assertFails(
-        updateDoc(doc(db, "campaigns", "camp1"), {
-          "encounter.currentCombatantId": "pc-member",
-          "encounter.round": 2,
-        })
-      );
-    });
-
-    it("the DM writes the WHOLE encounter, order included (structure unconstrained)", async () => {
-      const dm = testEnv.authenticatedContext("dm").firestore();
-      await assertSucceeds(
-        updateDoc(doc(dm, "campaigns", "camp1"), {
-          encounter: { ...encounter, round: 3, currentCombatantId: null },
-        })
-      );
-      await assertSucceeds(
-        updateDoc(doc(dm, "campaigns", "camp1"), {
-          "encounter.order": ["monster-1", "pc-member"],
-        })
-      );
-    });
-
-    it("the admin may write the order (DM-tool override)", async () => {
-      const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
-      await assertSucceeds(
-        updateDoc(doc(admin, "campaigns", "camp1"), {
-          "encounter.order": ["pc-member", "monster-1"],
-        })
-      );
-    });
+  it("the DM may hand the table to a member, never to a stranger", async () => {
+    const dm = testEnv.authenticatedContext("dm").firestore();
+    await assertFails(updateDoc(doc(dm, "campaigns", "camp1"), { dmUid: "outsider" }));
+    await assertSucceeds(
+      updateDoc(doc(dm, "campaigns", "camp1"), {
+        dmUid: "member",
+        "memberDetails.member.role": "dm",
+        "memberDetails.dm.role": "player",
+      })
+    );
   });
 
-  // ── COMBAT RESOLUTION: a player auto-applies reviewed monster effects ──
-  // The source-of-truth flip (owner 2026-08-02): a player who types the damage they
-  // rolled writes the target MONSTER's HP + the appended chronicle events on the
-  // CAMPAIGN doc the DM owns. The two-user topology is exactly DM (owns camp1) + a
-  // MEMBER-owned PC applying to it. A member may write ONLY `encounter.{combatants,
-  // events, world}` for new actions (the `combatEffectFieldsOnlyChanged()` grant):
-  // monster HP plus chronicle events plus the engine layer the adversary world seam
-  // commits in the same transaction. Legacy `memberEffects` remains append-only solely for
-  // transition draining. The combatants COUNT is unchanged (no add/remove) while events
-  // only GROW (no deleting the DM's lines). Any other encounter edit, a combatant add/remove,
-  // or an events shrink stays DM-only; a non-member is denied outright.
-  describe("a player applies reviewed combat effects (diff-scoped member grant)", () => {
-    beforeEach(async () => {
-      await testEnv.withSecurityRulesDisabled(async (ctx) => {
-        await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), { encounter });
-      });
-    });
-
-    // The monster after the player's declared 1 damage lands on its scalar HP record.
-    const damaged = [{ ...encounter.combatants[0], hp: { current: 6, temp: 0, max: 7 } }];
-    const appliedEvent = {
-      id: "0",
-      round: 1,
-      kind: "hp-damage",
-      targetId: "monster-1",
-      amount: 1,
-      current: 6,
-      max: 7,
-    };
-    const persistentApply = {
-      id: "apply:heroism:1",
-      kind: "apply",
-      effect: {
-        id: "heroism:1",
-        actor: {
-          kind: "pc",
-          combatantId: "pc-member",
-          memberUid: "member",
-          characterId: "char-member",
-        },
-        target: { kind: "monster", combatantId: "monster-1" },
-        source: { kind: "spell", id: "heroism", actionId: "cast-1" },
-        payload: { kind: "grant-group", activeKey: "heroism-active" },
-        duration: {
-          kind: "concentration",
-          actorId: "pc-member",
-          sourceId: "heroism",
-        },
-      },
-    };
-
-    it("a member MAY apply damage, healing, a condition and the engine world", async () => {
-      const db = testEnv.authenticatedContext("member").firestore();
-      await assertSucceeds(
-        updateDoc(doc(db, "campaigns", "camp1"), {
-          "encounter.combatants": damaged,
-          "encounter.events": [appliedEvent],
-        })
-      );
-      // The resolver's monster damage/healing commits through the deterministic
-      // engine's journal; the committed `encounter.world` rides the SAME member
-      // transaction as the mirrored combatants + chronicle beats. A corrupt world
-      // fails CLOSED at read time (`encounterWorldState` rejects; the boundary
-      // degrades to legacy arithmetic), so this stays inside the coarse-grant,
-      // DM-remediable posture the grant already accepts for combatants.
-      const affected = [
-        {
-          ...encounter.combatants[0],
-          hp: { current: 7, temp: 0, max: 7 },
-          conditions: ["prone"],
-        },
-      ];
-      await assertSucceeds(
-        updateDoc(doc(db, "campaigns", "camp1"), {
-          "encounter.combatants": affected,
-          "encounter.events": [
-            appliedEvent,
-            {
-              id: "1",
-              round: 1,
-              kind: "hp-heal",
-              targetId: "monster-1",
-              amount: 1,
-              current: 7,
-              max: 7,
-            },
-            {
-              id: "2",
-              round: 1,
-              kind: "condition-gain",
-              targetId: "monster-1",
-              conditionId: "prone",
-            },
-          ],
-          "encounter.world": { schema: 1, revision: 1 },
-        })
-      );
-    });
-
-    it("a member MAY append a PC effect delivery but cannot remove one", async () => {
-      const db = testEnv.authenticatedContext("member").firestore();
-      const effect = {
-        id: "1:0",
-        targetId: "pc-member",
-        kind: "healing",
-        amount: 5,
-      };
-      await assertSucceeds(
-        updateDoc(doc(db, "campaigns", "camp1"), {
-          "encounter.memberEffects": [effect],
-        })
-      );
-      await assertFails(
-        updateDoc(doc(db, "campaigns", "camp1"), {
-          "encounter.memberEffects": [],
-        })
-      );
-    });
-
-    it("the effect-op ledger is append-only: apply, revoke and a bounded batch land", async () => {
-      const db = testEnv.authenticatedContext("member").firestore();
-      await assertSucceeds(
-        updateDoc(doc(db, "campaigns", "camp1"), {
-          "encounter.effectOps": [persistentApply],
-        })
-      );
-      const revoke = {
-        id: "revoke:heroism:1",
-        kind: "revoke",
-        effectId: "heroism:1",
-        actorId: "pc-member",
-        targetId: "monster-1",
-      };
-      // Malformed provenance on the appended operation is refused…
-      await assertFails(
-        updateDoc(doc(db, "campaigns", "camp1"), {
-          "encounter.effectOps": [persistentApply, { ...revoke, actorId: "" }],
-        })
-      );
-      // …while a revoke plus its aftereffect successor lands in ONE append.
-      await assertSucceeds(
-        updateDoc(doc(db, "campaigns", "camp1"), {
-          "encounter.effectOps": [
-            persistentApply,
-            revoke,
-            {
-              ...persistentApply,
-              id: "apply:heroism:aftereffect",
-              effect: {
-                ...persistentApply.effect,
-                id: "heroism:aftereffect",
-                payload: { ...persistentApply.effect.payload, phase: "aftereffect" },
-              },
-            },
-          ],
-        })
-      );
-
-      // A whole batch of one-shot consumptions commits atomically — unless ONE row
-      // in it is malformed, which fails the entire write.
-      const applied = Array.from({ length: 8 }, (_, index) => ({
-        ...persistentApply,
-        id: `apply:ward:${index}`,
-        effect: { ...persistentApply.effect, id: `ward:${index}` },
-      }));
-      await testEnv.withSecurityRulesDisabled(async (ctx) => {
-        await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
-          "encounter.effectOps": applied,
-        });
-      });
-      const revokes = applied.map((operation, index) => ({
-        id: `revoke:ward:${index}`,
-        kind: "revoke",
-        effectId: operation.effect.id,
-        actorId: "pc-member",
-        targetId: "monster-1",
-      }));
-      await assertFails(
-        updateDoc(doc(db, "campaigns", "camp1"), {
-          "encounter.effectOps": [
-            ...applied,
-            ...revokes.slice(0, -1),
-            { ...revokes.at(-1), actorId: 42 },
-          ],
-        })
-      );
-      await assertSucceeds(
-        updateDoc(doc(db, "campaigns", "camp1"), {
-          "encounter.effectOps": [...applied, ...revokes],
-        })
-      );
-    });
-
-    it("the ledger accepts every caster/feature-owned payload with bounded deltas", async () => {
-      const db = testEnv.authenticatedContext("member").firestore();
-      const aid = {
-        ...persistentApply,
-        effect: {
-          ...persistentApply.effect,
-          id: "aid:1",
-          source: { kind: "spell", id: "aid", actionId: "cast-aid", castLevel: 4 },
-          payload: {
-            kind: "grant-group",
-            activeKey: "spell-aid",
-            phase: "active",
-          },
-          bindings: { spellcastingModifier: 4 },
-          applied: { currentHpDelta: 15 },
-        },
-      };
-      const markedTarget = {
-        ...persistentApply,
-        effect: {
-          ...persistentApply.effect,
-          payload: {
-            kind: "target-mark",
-            activeKey: "spell-hunters-mark",
-            scope: "marked",
-          },
-        },
-      };
-      const conditionOccurrence = {
-        ...persistentApply,
-        effect: {
-          ...persistentApply.effect,
-          payload: { kind: "condition", conditionId: "paralyzed" },
-        },
-      };
-      const vowedTarget = {
-        ...persistentApply,
-        effect: {
-          ...persistentApply.effect,
-          source: {
-            kind: "feature",
-            id: "paladin-vengeance-vow-of-enmity",
-            actionId: "paladin-vengeance-vow-of-enmity-free",
-          },
-          payload: {
-            kind: "target-mark",
-            activeKey: "paladin-vengeance-vow-of-enmity",
-            scope: "vowed",
-          },
-        },
-      };
-      for (const operation of [aid, markedTarget, conditionOccurrence, vowedTarget]) {
-        await testEnv.withSecurityRulesDisabled(async (ctx) => {
-          await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
-            "encounter.effectOps": [],
-          });
-        });
-        await assertSucceeds(
-          updateDoc(doc(db, "campaigns", "camp1"), {
-            "encounter.effectOps": [operation],
-          })
-        );
-      }
-
-      await testEnv.withSecurityRulesDisabled(async (ctx) => {
-        await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
-          "encounter.effectOps": [],
-        });
-      });
-      // An amplified HP delta and a condition occurrence with no stable id are both
-      // outside what the grant can express.
-      await assertFails(
-        updateDoc(doc(db, "campaigns", "camp1"), {
-          "encounter.effectOps": [
-            { ...aid, effect: { ...aid.effect, applied: { currentHpDelta: 10001 } } },
-          ],
-        })
-      );
-      await assertFails(
-        updateDoc(doc(db, "campaigns", "camp1"), {
-          "encounter.effectOps": [
-            {
-              ...conditionOccurrence,
-              effect: {
-                ...conditionOccurrence.effect,
-                payload: { kind: "condition", conditionId: "" },
-              },
-            },
-          ],
-        })
-      );
-    });
-
-    it("a member CANNOT append a malformed, actor-spoofed or non-canonical application", async () => {
-      const db = testEnv.authenticatedContext("member").firestore();
-      const denied = [
-        { ...persistentApply, effect: { id: "missing-required-nested-fields" } },
-        {
-          ...persistentApply,
-          effect: {
-            ...persistentApply.effect,
-            actor: {
-              ...persistentApply.effect.actor,
-              memberUid: "peer",
-              combatantId: "pc-peer",
-            },
-          },
-        },
-        {
-          ...persistentApply,
-          effect: {
-            ...persistentApply.effect,
-            actor: { kind: "monster", combatantId: "monster-1" },
-          },
-        },
-        {
-          ...persistentApply,
-          effect: {
-            ...persistentApply.effect,
-            target: {
-              kind: "monster",
-              combatantId: "monster-1",
-              unexpectedIdentityPart: 1,
-            },
-          },
-        },
-      ];
-      for (const operation of denied) {
-        await assertFails(
-          updateDoc(doc(db, "campaigns", "camp1"), {
-            "encounter.effectOps": [operation],
-          })
-        );
-      }
-    });
-
-    it("a member CANNOT reorder, replace, remove or overgrow prior operations", async () => {
-      const first = persistentApply;
-      const second = {
-        ...persistentApply,
-        id: "apply:heroism:2",
-        effect: { ...persistentApply.effect, id: "heroism:2" },
-      };
-      await testEnv.withSecurityRulesDisabled(async (ctx) => {
-        await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
-          "encounter.effectOps": [first, second],
-        });
-      });
-      const db = testEnv.authenticatedContext("member").firestore();
-      const third = {
-        ...persistentApply,
-        id: "apply:heroism:3",
-        effect: { ...persistentApply.effect, id: "heroism:3" },
-      };
-      const denied: ReadonlyArray<ReadonlyArray<unknown>> = [
-        [second, first, third],
-        [{ id: "apply:bless:1", kind: "apply", effect: { id: "bless:1" } }],
-        [],
-        Array.from({ length: 513 }, (_, index) => ({
-          id: `apply:${index}`,
-          kind: "apply",
-          effect: { id: String(index) },
-        })),
-      ];
-      for (const effectOps of denied) {
-        await assertFails(
-          updateDoc(doc(db, "campaigns", "camp1"), { "encounter.effectOps": effectOps })
-        );
-      }
-    });
-
-    it("the damage path cannot add a combatant, shrink the chronicle or move the turn", async () => {
-      await testEnv.withSecurityRulesDisabled(async (ctx) => {
-        await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
-          "encounter.events": [appliedEvent, { ...appliedEvent, id: "1" }],
-        });
-      });
-      const db = testEnv.authenticatedContext("member").firestore();
-      const denied: ReadonlyArray<Record<string, unknown>> = [
-        {
-          "encounter.combatants": [
-            ...damaged,
-            {
-              kind: "monster",
-              id: "monster-2",
-              name: "Worg",
-              ac: 13,
-              initiative: 8,
-              conditions: [],
-              hp: { current: 26, temp: 0, max: 26 },
-            },
-          ],
-          "encounter.events": [appliedEvent],
-        },
-        // Events only GROW: the DM's chronicle lines are never dropped.
-        { "encounter.combatants": damaged, "encounter.events": [appliedEvent] },
-        {
-          "encounter.combatants": damaged,
-          "encounter.events": [appliedEvent, { ...appliedEvent, id: "1" }],
-          "encounter.status": "ended",
-        },
-      ];
-      for (const patch of denied) {
-        await assertFails(updateDoc(doc(db, "campaigns", "camp1"), patch));
-      }
-    });
-
-    it("a non-member is denied a damage write", async () => {
-      const db = testEnv.authenticatedContext("outsider").firestore();
-      await assertFails(
-        updateDoc(doc(db, "campaigns", "camp1"), {
-          "encounter.combatants": damaged,
-          "encounter.events": [appliedEvent],
-        })
-      );
-    });
-
-    it("the DM may still write the applied damage (unconstrained)", async () => {
-      const dm = testEnv.authenticatedContext("dm").firestore();
-      await assertSucceeds(
-        updateDoc(doc(dm, "campaigns", "camp1"), {
-          "encounter.combatants": damaged,
-          "encounter.events": [appliedEvent],
-        })
-      );
-    });
+  it("the admin may update a campaign he is not a member of", async () => {
+    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertSucceeds(
+      updateDoc(doc(admin, "campaigns", "camp1"), { status: "archived" })
+    );
   });
 
   // ── invite management: remove member + lock joins (DM tools) ──────────────────
@@ -1221,7 +677,9 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
     );
   });
 
-  it("the campaign DM may atomically remove a member and clear only that target's claim", async () => {
+  it("the DM's removal batch may no longer clear a departing character's claim", async () => {
+    // §5.2 — membership stops writing another user's documents. The roster half is
+    // legal on its own; the cross-user character write is not, so the batch fails.
     const dm = testEnv.authenticatedContext("dm").firestore();
     const batch = writeBatch(dm);
     batch.update(doc(dm, "campaigns", "campA"), {
@@ -1231,94 +689,31 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
     batch.update(doc(dm, "users", "member", "characters", "char-member"), {
       attachedCampaignId: deleteField(),
     });
-    await assertSucceeds(batch.commit());
-  });
-
-  it("the detach exception denies a standalone write, a non-DM, a wrong row and a bundled edit", async () => {
-    const parentPath = ["users", "member", "characters", "char-member"] as const;
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), "users", "member", "characters", "other"), {
-        attachedCampaignId: "campA",
-        build: { name: "Other" },
-        state: {},
-        cache: {},
-      });
-    });
-    const dm = testEnv.authenticatedContext("dm").firestore();
-    // Standalone: no roster transition proves it.
-    await assertFails(
-      updateDoc(doc(dm, ...parentPath), { attachedCampaignId: deleteField() })
-    );
-    // A non-DM member cannot drive the transition, batched or not.
-    const peer = testEnv.authenticatedContext("peer").firestore();
-    await assertFails(updateDoc(doc(peer, ...parentPath), { status: "retired" }));
-    const peerBatch = writeBatch(peer);
-    peerBatch.update(doc(peer, "campaigns", "campA"), {
-      members: arrayRemove("member"),
-      "memberDetails.member": deleteField(),
-    });
-    peerBatch.update(doc(peer, ...parentPath), { attachedCampaignId: deleteField() });
-    await assertFails(peerBatch.commit());
-    // The exception is row-exact and edit-free.
-    for (const [characterId, parentPatch] of [
-      ["other", { attachedCampaignId: deleteField() }],
-      ["char-member", { attachedCampaignId: deleteField(), status: "retired" }],
-    ] as const) {
-      const batch = writeBatch(dm);
-      batch.update(doc(dm, "campaigns", "campA"), {
+    await assertFails(batch.commit());
+    await assertSucceeds(
+      updateDoc(doc(dm, "campaigns", "campA"), {
         members: arrayRemove("member"),
         "memberDetails.member": deleteField(),
-      });
-      batch.update(doc(dm, "users", "member", "characters", characterId), parentPatch);
-      await assertFails(batch.commit());
-    }
+      })
+    );
   });
 
-  it("campaign deletion clears every referenced claim — and only those, only by the DM", async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      const db = ctx.firestore();
-      await updateDoc(doc(db, "campaigns", "campA"), {
-        "memberDetails.peer.characterId": "char-peer",
-      });
-      await setDoc(doc(db, "users", "peer", "characters", "char-peer"), {
-        attachedCampaignId: "campA",
-        build: { name: "Peer" },
-        state: {},
-        cache: {},
-      });
-      await setDoc(doc(db, "users", "member", "characters", "other"), {
-        attachedCampaignId: "campA",
-        build: { name: "Other" },
-        state: {},
-        cache: {},
-      });
-    });
-    const dm = testEnv.authenticatedContext("dm").firestore();
-    // A character the roster never referenced may not ride the deletion.
-    const wrongBatch = writeBatch(dm);
-    wrongBatch.update(doc(dm, "users", "member", "characters", "other"), {
-      attachedCampaignId: deleteField(),
-    });
-    wrongBatch.delete(doc(dm, "campaigns", "campA"));
-    await assertFails(wrongBatch.commit());
+  it("the owner clears their OWN claim (the §5.2 replacement path)", async () => {
+    const owner = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(
+      updateDoc(doc(owner, "users", "member", "characters", "char-member"), {
+        attachedCampaignId: deleteField(),
+      })
+    );
+  });
 
-    const peer = testEnv.authenticatedContext("peer").firestore();
-    const peerBatch = writeBatch(peer);
-    peerBatch.update(doc(peer, "users", "member", "characters", "char-member"), {
-      attachedCampaignId: deleteField(),
-    });
-    peerBatch.delete(doc(peer, "campaigns", "campA"));
-    await assertFails(peerBatch.commit());
-
-    const batch = writeBatch(dm);
-    batch.update(doc(dm, "users", "member", "characters", "char-member"), {
-      attachedCampaignId: deleteField(),
-    });
-    batch.update(doc(dm, "users", "peer", "characters", "char-peer"), {
-      attachedCampaignId: deleteField(),
-    });
-    batch.delete(doc(dm, "campaigns", "campA"));
-    await assertSucceeds(batch.commit());
+  it("the admin writes another user's character under the SAME revision CAS", async () => {
+    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    const ref = doc(admin, "users", "member", "characters", "char-private");
+    await assertFails(updateDoc(ref, { build: { name: "Broken" }, revision: 9 }));
+    await assertFails(updateDoc(ref, { state: { usedSlots: { "1": 1 } }, revision: 4 }));
+    await assertSucceeds(updateDoc(ref, { build: { name: "Fixed" }, revision: 4 }));
+    await assertSucceeds(deleteDoc(ref));
   });
 
   it("the owner may delete an unshared character", async () => {
@@ -1683,34 +1078,32 @@ describe("firestore.rules — sanitized public character projection", () => {
     await assertSucceeds(deleteDoc(doc(owner, ...SHARED_PARENT)));
   });
 
-  it("a DM's attachment-only removal keeps an unchanged public projection valid", async () => {
+  it("the OWNER's attachment-only removal keeps an unchanged public projection valid", async () => {
+    // §5.2 — the departing player's OWN client clears the claim (the DM's cross-user
+    // detach is gone), and that write must still satisfy the projection invariant.
+    const owner = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(
+      updateDoc(doc(owner, ...SHARED_PARENT), { attachedCampaignId: deleteField() })
+    );
     const dm = testEnv.authenticatedContext("dm").firestore();
-    const batch = writeBatch(dm);
-    batch.update(doc(dm, "campaigns", "campPublic"), {
-      members: arrayRemove("member"),
-      "memberDetails.member": deleteField(),
-    });
-    batch.update(doc(dm, ...SHARED_PARENT), {
-      attachedCampaignId: deleteField(),
-    });
-    await assertSucceeds(batch.commit());
+    await assertFails(
+      updateDoc(doc(dm, ...SHARED_PARENT), { attachedCampaignId: "campPublic" })
+    );
 
     const anon = testEnv.unauthenticatedContext().firestore();
     await assertSucceeds(getDoc(doc(anon, ...PUBLIC_SHEET)));
-    const owner = testEnv.authenticatedContext("member").firestore();
     const parent = await assertSucceeds(getDoc(doc(owner, ...SHARED_PARENT)));
     expect(parent.data()).not.toHaveProperty("attachedCampaignId");
     expect(parent.data()?.updatedAt).toEqual(SOURCE_UPDATED_AT);
   });
 });
 
-describe("firestore.rules — combat/state: the play owner and its peer effect fence", () => {
-  // BLIND SPOT: rules can constrain changed top-level roots and the monotonic CAS
-  // revision, but cannot prove the table's arithmetic. The campaign transaction's
-  // fresh-read reducers own HP/DC math; campaign-io unit tests pin that layer.
-  //
-  // P4 deletion: the peer fence (`isAttachedPeer`, `peerEffectUpdate` and its
-  // validators) dies with the encounter document.
+describe("firestore.rules — combat/state: the owner's document", () => {
+  // §5.4 — the personal encounter is an OWNER document: the owner (and the admin)
+  // write it, a current co-member reads it, nobody else touches it. The peer effect
+  // fence died with the embedded campaign encounter: a table effect is now an ACTION
+  // appended to `campaigns/{id}/encounters/{eid}` and folded by the reducer, so no
+  // client ever writes another player's document to deliver damage.
   const COMBAT_PATH = [
     "users",
     "member",
@@ -1720,44 +1113,13 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
     "state",
   ] as const;
   const PARENT_PATH = ["users", "member", "characters", "char-cbt"] as const;
-  const COMBAT_UPDATED_AT = Timestamp.fromMillis(1_720_000_000_000);
 
   function combatState(overrides: Record<string, unknown> = {}) {
     return {
-      actionRevision: 7,
-      actionHead: "owner-command",
-      actionLifecycles: {
-        "owner-command": actionLifecycle({
-          payloadIdentity: "payload:owner-command",
-        }),
-      },
       hp: { current: 10, temp: 0 },
       conditions: [] as string[],
-      bardicInspirationDie: "",
-      heroicInspiration: false,
-      initiativeRoll: 15,
       deathSaves: { successes: 0, failures: 0 },
-      round: 1,
-      recentActions: [{ id: "attack-1", targetIds: ["monster-1"], outcome: "hit" }],
-      playState: { version: 1, state: { exhaustion: 2 } },
-      updatedAt: COMBAT_UPDATED_AT,
-      ...overrides,
-    };
-  }
-
-  function actionLifecycle(overrides: Record<string, unknown> = {}) {
-    return {
-      payloadIdentity: "payload:attack-2",
-      actor: {
-        kind: "pc",
-        surface: "local",
-        uid: "member",
-        characterId: "char-cbt",
-        combatantId: "pc-member",
-      },
-      state: "committed",
-      generation: 1,
-      predecessor: null,
+      updatedAt: Timestamp.fromMillis(1_720_000_000_000),
       ...overrides,
     };
   }
@@ -1767,9 +1129,7 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
       const db = ctx.firestore();
       await setDoc(
         doc(db, "campaigns", "campA"),
-        campaignDoc(["dm", "member", "peer"], "dm", {
-          member: "char-cbt",
-        })
+        campaignDoc(["dm", "member", "peer"], "dm", { member: "char-cbt" })
       );
       await setDoc(doc(db, ...PARENT_PATH), {
         status: "active",
@@ -1783,7 +1143,7 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
     });
   });
 
-  it("the read matrix: owner, admin and a current attached peer in; everyone else out", async () => {
+  it("the read matrix: owner, admin and a current co-member in; everyone else out", async () => {
     for (const uid of ["member", ADMIN_UID, "peer", "dm"]) {
       await assertSucceeds(
         getDoc(doc(testEnv.authenticatedContext(uid).firestore(), ...COMBAT_PATH))
@@ -1794,207 +1154,40 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
       testEnv.unauthenticatedContext().firestore(),
     ]) {
       await assertFails(getDoc(doc(db, ...COMBAT_PATH)));
-      await assertFails(
-        updateDoc(doc(db, ...COMBAT_PATH), { hp: { current: 9, temp: 0 } })
-      );
     }
-    // A BLOCKED attached member is denied by the isNotBlocked gate.
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await updateDoc(doc(ctx.firestore(), "campaigns", "campA"), {
-        members: arrayUnion("blocked"),
-        "memberDetails.blocked": {
-          displayName: "blocked",
-          characterId: null,
-          role: "player",
-        },
-      });
-    });
-    const blocked = testEnv.authenticatedContext("blocked").firestore();
-    await assertFails(getDoc(doc(blocked, ...COMBAT_PATH)));
-    await assertFails(
-      updateDoc(doc(blocked, ...COMBAT_PATH), { hp: { current: 9, temp: 0 } })
-    );
   });
 
-  it("owner and admin own the whole document: additive fields in, obsolete metadata shed", async () => {
+  it("the owner owns the whole document — no shape, additive fields included", async () => {
     const owner = testEnv.authenticatedContext("member").firestore();
-    const ref = doc(owner, ...COMBAT_PATH);
-    // The seeded fixture is exact and parser-canonical by construction.
-    expect((await getDoc(ref)).data()).toEqual(combatState());
     await assertSucceeds(
-      setDoc(ref, combatState({ hp: { current: 5, temp: 2 }, ownerFutureField: 42 }))
-    );
-    // The production overwrite (no `merge`) sheds the retired effect-program roots.
-    await assertSucceeds(
-      setDoc(ref, {
-        hp: { current: 9, temp: 0 },
-        conditions: [],
-        bardicInspirationDie: "",
-        heroicInspiration: false,
-        initiativeRoll: 15,
-        deathSaves: { successes: 0, failures: 0 },
-        round: 1,
-        recentActions: [],
-        playState: { version: 1, state: { usedSlots: { "1": 1 } } },
-        updatedAt: Timestamp.now(),
+      updateDoc(doc(owner, ...COMBAT_PATH), {
+        hp: { current: 9, temp: 2 },
+        someFutureRoot: { version: 2 },
       })
     );
-    const stored = await getDoc(ref);
-    expect(stored.data()).not.toHaveProperty("actionRevision");
-    expect(stored.data()).not.toHaveProperty("actionLifecycles");
-    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
-    await assertSucceeds(
-      updateDoc(doc(admin, ...COMBAT_PATH), {
-        playState: { version: 1, state: { exhaustion: 5 } },
-        adminFutureField: true,
-      })
-    );
+    await assertSucceeds(setDoc(doc(owner, ...COMBAT_PATH), combatState()));
+    await assertSucceeds(deleteDoc(doc(owner, ...COMBAT_PATH)));
   });
 
-  it("an attached peer may write every legitimate effect root", async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await updateDoc(doc(ctx.firestore(), "campaigns", "campA"), {
-        encounter: { epoch: 4 },
-      });
-    });
-    const peer = testEnv.authenticatedContext("peer").firestore();
-    const mutations: ReadonlyArray<Record<string, unknown>> = [
-      { hp: { current: 8, temp: 1 } },
-      { conditions: ["prone"] },
-      { bardicInspirationDie: "d8" },
-      { heroicInspiration: true },
-      { deathSaves: { successes: 1, failures: 0 } },
-      {
-        pendingConcentrationSaves: [
-          { id: "hit-1", spell: "bless", damage: 12, difficultyClass: 10 },
-        ],
-        appliedEncounterEffects: { epoch: 4, ids: ["effect-1"] },
-      },
-    ];
-    for (const mutation of mutations) {
-      await assertSucceeds(
-        updateDoc(doc(peer, ...COMBAT_PATH), { ...mutation, updatedAt: Timestamp.now() })
-      );
-    }
-  });
-
-  it("a peer cannot touch an owner-private root, action metadata, or stamp a bare timestamp", async () => {
-    const peer = testEnv.authenticatedContext("peer").firestore();
-    const forbidden: ReadonlyArray<Record<string, unknown>> = [
-      { playState: { version: 1, state: { exhaustion: 6 } } },
-      { playState: deleteField() },
-      { actionRevision: 8 },
-      { actionHead: "peer-command" },
-      { "actionLifecycles.attack-2": actionLifecycle() },
-      { round: 99 },
-      { recentActions: [] },
-      { turnEconomy: { key: "stolen-turn" } },
-      { initiativeRoll: 20 },
-      { effectOps: [] },
-      { activeEffects: [] },
-      { someFutureOwnerField: true },
-    ];
-    for (const smuggled of forbidden) {
+  it("the admin writes it; a co-member, the DM and an outsider never do", async () => {
+    for (const uid of ["peer", "dm", "outsider"]) {
       await assertFails(
-        updateDoc(doc(peer, ...COMBAT_PATH), {
+        updateDoc(doc(testEnv.authenticatedContext(uid).firestore(), ...COMBAT_PATH), {
           hp: { current: 9, temp: 0 },
-          ...smuggled,
         })
       );
     }
-    // A timestamp with no landed effect is not a delivery.
-    await assertFails(
-      updateDoc(doc(peer, ...COMBAT_PATH), { updatedAt: Timestamp.now() })
-    );
-    // An ABSENT play owner may not be manufactured by a peer either.
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await updateDoc(doc(ctx.firestore(), ...COMBAT_PATH), { playState: deleteField() });
-    });
-    await assertFails(
-      updateDoc(doc(peer, ...COMBAT_PATH), {
-        hp: { current: 9, temp: 0 },
-        playState: { version: 1, state: { exhaustion: 0 } },
-      })
-    );
-  });
-
-  it("a peer payload must keep the parseable core and every effect value canonical", async () => {
-    const peer = testEnv.authenticatedContext("peer").firestore();
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await updateDoc(doc(ctx.firestore(), "campaigns", "campA"), {
-        encounter: { epoch: 4 },
-      });
-    });
-    const malformed: ReadonlyArray<Record<string, unknown>> = [
-      { hp: deleteField() },
-      { hp: { current: "all", temp: 0 } },
-      { hp: { current: -1, temp: 0 } },
-      { hp: { current: Number.NaN, temp: 0 } },
-      { conditions: {} },
-      { conditions: ["prone", 7] },
-      { conditions: ["prone", "prone"] },
-      { conditions: ["not-a-condition"] },
-      { deathSaves: deleteField() },
-      { updatedAt: "eventually" },
-      { pendingConcentrationSaves: {} },
-      { appliedEncounterEffects: { epoch: 3, ids: ["effect-1"] } },
-      { appliedEncounterEffects: { epoch: 4, ids: ["effect-1", "effect-1"] } },
-      { appliedEncounterEffects: { epoch: 4, ids: [], extra: true } },
-    ];
-    for (const mutation of malformed) {
-      await assertFails(updateDoc(doc(peer, ...COMBAT_PATH), { ...mutation }));
-    }
-
-    // A pre-existing custom/legacy condition string is PRESERVED, never a blocker: a
-    // peer may add and remove core conditions around it, but not author or drop it.
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await updateDoc(doc(ctx.firestore(), ...COMBAT_PATH), {
-        conditions: ["custom:bleeding"],
-      });
-    });
+    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
     await assertSucceeds(
-      updateDoc(doc(peer, ...COMBAT_PATH), { conditions: ["custom:bleeding", "prone"] })
+      updateDoc(doc(admin, ...COMBAT_PATH), { conditions: ["prone"] })
     );
-    await assertSucceeds(
-      updateDoc(doc(peer, ...COMBAT_PATH), { conditions: ["custom:bleeding"] })
-    );
-    await assertFails(
-      updateDoc(doc(peer, ...COMBAT_PATH), {
-        conditions: ["custom:bleeding", "custom:burning"],
-      })
-    );
-    await assertFails(updateDoc(doc(peer, ...COMBAT_PATH), { conditions: [] }));
   });
 
-  it("only the owner (or an admin) creates the play owner — never a peer or the DM", async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await deleteDoc(doc(ctx.firestore(), ...COMBAT_PATH));
-    });
-    const firstWrite = {
-      hp: { current: 7, temp: 0 },
-      conditions: ["prone"],
-      initiativeRoll: null,
-      deathSaves: { successes: 0, failures: 0 },
-      updatedAt: Timestamp.now(),
-    };
-    for (const uid of ["peer", "dm", "outsider"]) {
-      await assertFails(
-        setDoc(
-          doc(testEnv.authenticatedContext(uid).firestore(), ...COMBAT_PATH),
-          firstWrite
-        )
-      );
-    }
-    const owner = testEnv.authenticatedContext("member").firestore();
-    await assertSucceeds(setDoc(doc(owner, ...COMBAT_PATH), combatState()));
-  });
-
-  it("the peer grant dies live with either reciprocal half of the attachment", async () => {
+  it("the co-member read dies live with either half of the attachment", async () => {
     const revocations: ReadonlyArray<Record<string, unknown>> = [
       // The requester leaves the table.
       { members: ["dm", "member"], "memberDetails.peer": deleteField() },
-      // The TARGET's owner leaves — deliberately leaving the stale memberDetails row
-      // behind, since either half must fail closed independently.
+      // The TARGET's owner leaves — the stale memberDetails row must not keep granting.
       { members: ["dm", "peer"] },
       // The target swaps to another character.
       { "memberDetails.member.characterId": "char-replacement" },
@@ -2011,181 +1204,68 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
       const peer = testEnv.authenticatedContext("peer").firestore();
       await assertFails(getDoc(doc(peer, ...PARENT_PATH)));
       await assertFails(getDoc(doc(peer, ...COMBAT_PATH)));
-      await assertFails(
-        updateDoc(doc(peer, ...COMBAT_PATH), { hp: { current: 9, temp: 0 } })
-      );
     }
-    // Reciprocal peer fencing never weakens the direct owner path.
+    // Reciprocal fencing never weakens the direct owner path.
     const owner = testEnv.authenticatedContext("member").firestore();
     await assertSucceeds(getDoc(doc(owner, ...PARENT_PATH)));
     await assertSucceeds(getDoc(doc(owner, ...COMBAT_PATH)));
   });
 
-  it("the DM is effect-fenced too, and an UNATTACHED char has no cross-user grant", async () => {
-    const dm = testEnv.authenticatedContext("dm").firestore();
-    await assertSucceeds(updateDoc(doc(dm, ...COMBAT_PATH), { conditions: ["prone"] }));
-    await assertFails(
-      updateDoc(doc(dm, ...COMBAT_PATH), {
-        hp: { current: 8, temp: 0 },
-        anotherFutureField: true,
-      })
-    );
-    // …and the DM never writes the parent character doc.
-    await assertFails(updateDoc(doc(dm, ...PARENT_PATH), { status: "dead" }));
-
+  it("an UNATTACHED character has no cross-user grant at all", async () => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await updateDoc(doc(ctx.firestore(), ...PARENT_PATH), {
         attachedCampaignId: deleteField(),
       });
     });
-    await assertFails(getDoc(doc(dm, ...COMBAT_PATH)));
-    await assertFails(
-      updateDoc(doc(dm, ...COMBAT_PATH), { hp: { current: 9, temp: 0 } })
-    );
-    const owner = testEnv.authenticatedContext("member").firestore();
-    await assertSucceeds(setDoc(doc(owner, ...COMBAT_PATH), combatState()));
+    for (const uid of ["dm", "peer"]) {
+      const db = testEnv.authenticatedContext(uid).firestore();
+      await assertFails(getDoc(doc(db, ...COMBAT_PATH)));
+      await assertFails(
+        updateDoc(doc(db, ...COMBAT_PATH), { hp: { current: 9, temp: 0 } })
+      );
+    }
   });
 });
 
-describe("firestore.rules — encounterInit: the four-direction initiative matrix (INIT-SSOT)", () => {
-  // THE PERMANENT REGRESSION for the owner's "none of us can set initiative" bug:
-  // PC initiative lives in the campaign's `encounterInit` table (`uid → raw d20
-  // roll`), so BOTH writers edit the ONE doc they are already authorized on. The
-  // owner-mandated matrix: the DM writes ANY row; a member writes their OWN row; a
-  // member may NOT touch a peer's row; a non-member writes nothing.
-  beforeEach(async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
-        encounter: {
-          combatants: [
-            { kind: "pc", id: "pc-member", memberUid: "member", characterId: "char-1" },
-          ],
-          round: 1,
-          currentCombatantId: null,
-          epoch: 1720000000000,
-          status: "active",
-        },
-        encounterInit: {},
-      });
-    });
+describe("firestore.rules — character snapshots (immutable envelopes)", () => {
+  // A snapshot is the unified codec envelope plus its reason: created and deleted by
+  // the owner (or the admin), never updated, never readable by anyone else.
+  const SNAPSHOTS = ["users", "member", "characters", "char-snap", "snapshots"] as const;
+  const envelope = {
+    schema: 3,
+    build: { name: "Mara Quickfingers" },
+    state: {},
+    reason: "level-up",
+    createdAt: Timestamp.fromMillis(1_720_000_000_000),
+  };
+
+  it("the owner creates, reads and deletes an envelope — but never updates one", async () => {
+    const owner = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(setDoc(doc(owner, ...SNAPSHOTS, "s1"), envelope));
+    await assertSucceeds(getDoc(doc(owner, ...SNAPSHOTS, "s1")));
+    await assertFails(updateDoc(doc(owner, ...SNAPSHOTS, "s1"), { reason: "edited" }));
+    await assertSucceeds(deleteDoc(doc(owner, ...SNAPSHOTS, "s1")));
   });
 
-  it("the DM (and the admin) may set ANY member's initiative", async () => {
-    // The owner's exact failing action: rolling for a player.
-    const dm = testEnv.authenticatedContext("dm").firestore();
-    await assertSucceeds(
-      updateDoc(doc(dm, "campaigns", "camp1"), { "encounterInit.member": 14 })
+  it("an envelope missing the reason or the codec shape is denied", async () => {
+    const owner = testEnv.authenticatedContext("member").firestore();
+    await assertFails(
+      setDoc(doc(owner, ...SNAPSHOTS, "s2"), { schema: 3, build: {}, state: {} })
     );
-    await assertSucceeds(
-      updateDoc(doc(dm, "campaigns", "camp1"), { "encounterInit.dm": 9 })
+    await assertFails(setDoc(doc(owner, ...SNAPSHOTS, "s3"), { ...envelope, schema: 2 }));
+    await assertFails(
+      setDoc(doc(owner, ...SNAPSHOTS, "s4"), { ...envelope, state: "not-a-map" })
     );
+  });
+
+  it("the admin may create and delete another user's snapshot; a stranger neither", async () => {
     const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
-    await assertSucceeds(
-      updateDoc(doc(admin, "campaigns", "camp1"), { "encounterInit.member": 8 })
-    );
-  });
-
-  it("a member may set / re-roll / clear their OWN initiative", async () => {
-    const member = testEnv.authenticatedContext("member").firestore();
-    await assertSucceeds(
-      updateDoc(doc(member, "campaigns", "camp1"), { "encounterInit.member": 17 })
-    );
-    await assertSucceeds(
-      updateDoc(doc(member, "campaigns", "camp1"), { "encounterInit.member": 3 })
-    );
-    await assertSucceeds(
-      updateDoc(doc(member, "campaigns", "camp1"), {
-        "encounterInit.member": deleteField(),
-      })
-    );
-    // get(..., {}) on both diff sides: an absent table reads as empty, so the first
-    // roll on a PRE-FEATURE doc validates too.
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
-        encounterInit: deleteField(),
-      });
-    });
-    await assertSucceeds(
-      updateDoc(doc(member, "campaigns", "camp1"), { "encounterInit.member": 17 })
-    );
-  });
-
-  it("a member's row scope holds against a peer write, a smuggle and a whole-table replace", async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
-        "encounterInit.dm": 11,
-      });
-    });
-    const member = testEnv.authenticatedContext("member").firestore();
-    for (const patch of [
-      { "encounterInit.dm": 20 },
-      { "encounterInit.member": 12, "encounterInit.dm": 20 },
-      { encounterInit: { member: 12 } },
-      // Only the DM starts/ends a fight, so only the DM resets the table.
-      { encounterInit: {} },
-    ]) {
-      await assertFails(updateDoc(doc(member, "campaigns", "camp1"), patch));
-    }
-  });
-
-  it("a NON-MEMBER and a BLOCKED member may not write any row", async () => {
+    await assertSucceeds(setDoc(doc(admin, ...SNAPSHOTS, "s5"), envelope));
+    await assertSucceeds(getDoc(doc(admin, ...SNAPSHOTS, "s5")));
+    await assertSucceeds(deleteDoc(doc(admin, ...SNAPSHOTS, "s5")));
     const outsider = testEnv.authenticatedContext("outsider").firestore();
-    await assertFails(
-      updateDoc(doc(outsider, "campaigns", "camp1"), { "encounterInit.outsider": 15 })
-    );
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
-        members: arrayUnion("blocked"),
-        "memberDetails.blocked": {
-          displayName: "blocked",
-          characterId: null,
-          role: "player",
-        },
-      });
-    });
-    const blocked = testEnv.authenticatedContext("blocked").firestore();
-    await assertFails(
-      updateDoc(doc(blocked, "campaigns", "camp1"), { "encounterInit.blocked": 15 })
-    );
-  });
-
-  it("the DM may START a fight with the atomic table reset (encounter + encounterInit: {})", async () => {
-    const dm = testEnv.authenticatedContext("dm").firestore();
-    await assertSucceeds(
-      updateDoc(doc(dm, "campaigns", "camp1"), {
-        encounter: {
-          combatants: [
-            { kind: "pc", id: "pc-member", memberUid: "member", characterId: "char-1" },
-          ],
-          round: 1,
-          currentCombatantId: null,
-          epoch: 1720000000001,
-          status: "active",
-        },
-        encounterInit: {},
-      })
-    );
-  });
-
-  it("the init guard diffs to the empty set for a member's other writes", async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
-        "encounter.currentCombatantId": "pc-member",
-        "encounter.order": ["pc-member"],
-      });
-    });
-    const member = testEnv.authenticatedContext("member").firestore();
-    await assertSucceeds(
-      updateDoc(doc(member, "campaigns", "camp1"), {
-        treasury: { pp: 0, gp: 7, ep: 0, sp: 0, cp: 0 },
-      })
-    );
-    await assertSucceeds(
-      updateDoc(doc(member, "campaigns", "camp1"), {
-        "encounter.currentCombatantId": "pc-member",
-        "encounter.round": 2,
-      })
-    );
+    await assertFails(setDoc(doc(outsider, ...SNAPSHOTS, "s6"), envelope));
+    await assertFails(getDoc(doc(outsider, ...SNAPSHOTS, "s5")));
   });
 });
 
@@ -2503,6 +1583,16 @@ describe("firestore.rules — the account-level homebrew library (users/{uid}/li
       setDoc(doc(db, "users", "member", "library", "index"), { entries: "nope" })
     );
   });
+
+  it("the ADMIN may read and write another user's library (admin-supreme)", async () => {
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertSucceeds(
+      setDoc(doc(db, "users", "member", "library", "index"), {
+        entries: [libraryEntry("Ember Bolt")],
+      })
+    );
+    await assertSucceeds(getDoc(doc(db, "users", "member", "library", "index")));
+  });
 });
 
 // ── The encounter document (combat re-architecture, P2 prototype) ────────────
@@ -2606,5 +1696,28 @@ describe("firestore.rules — campaign encounter documents (append-only log)", (
     await assertFails(
       updateDoc(doc(dm, "users", "member", "characters", "char-m"), { name: "Renamed" })
     );
+  });
+
+  it("the admin, not a member, may append, checkpoint and delete", async () => {
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertSucceeds(
+      updateDoc(doc(db, ...encounterPath), { log: arrayUnion(memberAction) })
+    );
+    await assertSucceeds(
+      setDoc(doc(db, ...encounterPath), {
+        ...seedEncounter,
+        log: [],
+        checkpoint: {
+          through: { ms: 4, counter: 0, by: ADMIN_UID },
+          state: { revision: 4 },
+        },
+      })
+    );
+    await assertSucceeds(deleteDoc(doc(db, ...encounterPath)));
+  });
+
+  it("a member may NOT delete the encounter", async () => {
+    const db = testEnv.authenticatedContext("member").firestore();
+    await assertFails(deleteDoc(doc(db, ...encounterPath)));
   });
 });
