@@ -17,7 +17,7 @@ portfolio (`docs/TEST_PORTFOLIO.md`); those owners are linked, never copied. Pro
   `/Users/salvatoredicara/Workspace/d20-folio-content-v2`, forked from its `main` `5a428960`);
   this worktree's `content-pack` symlink points at it. Rule 28: every pack seam moves on both `v2`
   branches in the same motion.
-- Next session: `docs/superpowers/plans/2026-09-03-v2-next-session-handoff.md`.
+- Next session: `docs/superpowers/plans/2026-09-04-v2-next-session-handoff.md`.
 
 ## Pending on `main`
 
@@ -132,8 +132,133 @@ under the 15-minute target.
 (stage 3, with Fireball), no cover/visibility/elevation derivation, no difficult terrain, forced
 movement or reach-weapon support, no fifth range band.
 
-Next: stage 3 (the reducer for Marco's first turn and Sara's ogre ambush), from
-`docs/superpowers/plans/2026-09-03-v2-next-session-handoff.md`.
+Next: stage 4 (the shared encounter document), from
+`docs/superpowers/plans/2026-09-04-v2-next-session-handoff.md`.
+
+## `v2` — stage 3, the reducer for the two story encounters (2026-09-04)
+
+Plan: `docs/superpowers/plans/2026-09-03-v2-stage-3-reducer.md` (8 tasks, dispatched sequentially —
+`types.ts`, `intent.ts` and `mechanic.ts` are shared by several tasks). Design:
+`docs/superpowers/specs/2026-09-02-total-combat-automation-design.md` §3 (execution model and
+outcome application by automation level), §4 (mechanics as data), §7 (the stage-3 tier of the
+hard cases), `docs/adr/0011-campaign-automation-levels.md`, and the authoring spec's §6 vocabulary
+tiers (reconciled in this same commit).
+
+**Done.** The stage opened with a code-level gap analysis against the two acceptance stories
+(`PRODUCT.md` §Steering) rather than a from-scratch build: the kept P2 prototype already executed
+most step kinds, so only five gaps were real, and the fifth — 0 HP, dying and death — turned out
+to be already correct in `damage.ts` and needed no task at all.
+
+- **Campaign automation levels** (`intent.ts`, `table.ts`, `types.ts`): `full-auto` and `log-only`
+  gate outcome application through one `commitAt` helper with an exhaustive switch;
+  `FoldedState.settings.automation` is typed `Exclude<Automation, "propose-and-confirm">` while the
+  table op keeps the full union and rejects the third level until stage 6. At `log-only` the
+  reducer computes the same verdict and withholds the transition — including the cost — so the DM
+  applies it by hand through `override`.
+- **Overrides that change the fact** (`intent.ts`): an `override` on `vitals.hp` or `vitals.life`
+  now patches the entity instead of only landing in the audit trail; HP clamps at 0 and, above
+  zero, revives a downed entity.
+- **Area targeting** (`mechanic.ts`, `intent.ts`): `TargetSpec.count: "area"` with an
+  `AreaShapeSpec` parametrized by `position`-kind inputs, resolved against stage 2's
+  `areaMembership` — the reducer derives the affected entities itself, never from a client-supplied
+  list. A new `area-input-declared` conformance rule proves `origin`/`aim` name declared inputs at
+  load, mirroring `move-input-declared`.
+- **Fireball** (`src/data/combat/prototype-catalogue.ts`): a levelled area save-and-halve spell
+  authored with no new step vocabulary — `save` + `damage` over the derived targets.
+- **The monster adapter** (`src/lib/combat/monster-adapter.ts`, `monsterMechanics(block)`): the
+  only module that understands `MonsterEntry`; its output is ordinary `Mechanic[]`. `attack`
+  entries and `save` entries with damage automate; everything else degrades to `manual-table`.
+  The real SRD Ogre and a homebrew blade joined the prototype catalogue as its consumers.
+- **Both golden replays**: `tests/unit/combat/replays/marco-first-turn.json` (move within a
+  budgeted 10 of 30 feet, Fireball on three goblins, one saves for half and lives, two die) and
+  `tests/unit/combat/replays/sara-ogre-ambush.json` (`log-only`, a hidden DM roll, an `override`,
+  the homebrew blade, the adapted ogre). They are the stage's acceptance gate and both pass
+  against the pure reducer.
+
+**Reviews.** Every task had an independent review before the next one started (opus or sonnet, no
+session context); five needed one fix round each and all closed clean at round 1. Task 1 fixed the
+log-only gate on the held-reaction-window path (payment was still being taken) plus a missing
+`applyResolve` test; task 2 clamped a `vitals.hp` override at zero (a negative HP inflated
+`applyDamage`'s massive-damage overflow and could fire an instant kill early); task 5 degraded an
+effect-only monster save to `manual-table` instead of a save step that spends the action and
+applies nothing; task 6 re-based Marco's replay fixture at (0,0) so the move exercises the
+Chebyshev movement budget instead of being a free first placement; task 7 made Sara's homebrew
+blade gate on `adjacent` like every other melee attack, raised the override value so a leaked hit
+could not read as the expected result, and asserted the hidden roll's `hidden: true`. Tasks 3 and
+4 were approved with no Important findings.
+
+**Rulings during execution.** Decisions taken by the controller while the plan ran, each with the
+reason it outranked the plan text:
+
+- An area program whose shape contains no entity applies with no per-target steps — cost paid,
+  receipt `applied`, nothing tried — rather than running once against a `null` target. Casting
+  Fireball on empty ground is legal in the rules, and the cost is visible in the receipt and
+  undoable.
+- `boundary.guard.test.ts`'s payment test stays a full enumeration of the catalogue (its purpose
+  is "no costed program applies unpaid" for _every_ mechanic); Fireball and the ogre widened its
+  fixture instead of being excluded from it.
+- Area shapes get their own `area-input-declared` conformance rule, matching the existing
+  `move-input-declared`: the authoring spec promises authoring mistakes surface at load, not at
+  the table.
+- A held reaction window at `log-only` withholds its payment too — the plan's contract "applies
+  nothing" outranks its own "held branch unchanged" parenthetical.
+- Windows opened _inside_ a withheld run (a `log-only` `move` leaving reach) are withheld with the
+  run: the departure never committed, so a reaction to it would be incoherent. Only the held
+  branch's own window opens at `log-only`.
+- `FoldedState.settings.automation` is narrowed to the two implemented levels so stage 6 widens it
+  by compile error rather than by discovery.
+- A `vitals.hp` override clamps at 0 with no upper clamp, overruling the plan's "no clamping, like
+  AC": nothing in the rules needs negative HP, while a DM raising HP above max is intent.
+- A monster `save` entry with no damage parts degrades to `manual-table`, overruling the task
+  brief's "harm only when there are damage parts" — the spec's "a later kind conforms as
+  unsupported, never half-built" wins. Roughly 30 corpus save entries (paralysing rays and the
+  like) stay DM-adjudicated, which is the honest state until conditions-on-save are authored.
+- Marco's replay fixture was moved rather than the plan's prose corrected: the story says he
+  moves, so the fixture makes it a real budgeted move.
+- Sara's blade gates on `adjacent`, not `visible`: the plan's predicate contradicted its own
+  comment and every other melee attack.
+
+**Deferred minors** (raised by task reviews, triaged as non-blocking and recorded rather than
+fixed): the table settings op replaces the settings object instead of spreading it; a duplicated
+`{ ...closed, declared: remaining }` in `applyResolve`; a test that calls `opened()` inside an
+assertion; no test pinning that a roll answered by a `log-only` intent still lands in `state.spent`;
+an HP override to 0 on an alive creature leaves `life: "alive"` (hp-0-but-alive) — document or
+couple; no test for the `LIFE_STATES` whitelist rejecting a bad string, and its `as LifeState`
+cast; `intent.ts` is past 1,000 lines and trending toward a catch-all (`areaShapeFrom` is a
+candidate for `position.ts`); the impossible-state guard for an area count without a shape reports
+`unknown-mechanic`, and conformance checks `=== undefined` where the runtime checks truthiness (a
+discriminated `TargetSpec` would remove both); missing area tests (a caster inside their own blast,
+the eligibility filter actually excluding someone, cone/line without `aim`); area tests call
+`cast()` before `opened()`; the boundary guard derives the slot level from the first `slot` cost
+only; the adapter's degrade paths (damage choice, `onSuccess: "special"`, melee-or-ranged,
+spellcasting) are untested beyond `narrative`; duplicate monster entry ids yield shadowed programs
+with no uniqueness rule in `conformMechanic`; and the adapter's end-to-end test injects `relations`
+directly instead of through the log.
+
+**Gates on `v2` at the close:** `just ci` 4 min 38 s (828 files / 18,695 tests, Functions 129, plus
+typecheck, lint and the build); `pnpm test:rules` 15.2 s (113 cases on the emulator); `vite build` +
+`pnpm test:budget` 4.8 s (6 budget cases); `just ci-srd-only` 2 min 24 s (651 files / 13,125 tests,
+2 skipped — run because `src/lib/combat` and `src/data/combat` are public/SRD modules, and green
+with the pack pinned to the empty stub). Stage 2's baseline was 4 min 26 s / 15.3 s / ~2 s /
+2 min 13 s; the combined `v2` gate is 7 min 22 s, well under the 15-minute target.
+
+**Out of stage 3.** `propose-and-confirm` automation (stage 6); upcast Fireball damage scaling
+(needs `Input.dice.formula` to grow a `byLevel` variant); monster `traits`, `reactions`,
+`legendaryActions` and `recharge`/`legendary` costs; death saves at turn start; any literal
+map, fog or token UI (stage 5). Plus four seams this stage deliberately left open:
+
+- **Per-target save-roll attribution.** `rollsUsable` binds a roll to the intent's entity, so a
+  target's save inside a caster's intent is logged with `roller: null`. Stage 4 decides whether the
+  shared document attributes it to the target.
+- **`log-only` withholds `move` and run-internal reaction windows**, so a `log-only` table cannot
+  move tokens through the reducer until position becomes a direct-patch override path — a stage-6
+  concern, recorded here so it is not rediscovered.
+- **Effect-only monster saves are DM-adjudicated** until conditions-on-save are authored.
+- **`recharge` on structured monster entries is dropped** by the adapter, so such an entry is
+  currently invokable every turn; the recharge task owns this.
+
+Next: stage 4 (the shared encounter document), from
+`docs/superpowers/plans/2026-09-04-v2-next-session-handoff.md`.
 
 ## Owner confirmations, recorded ahead of their stage (2026-09-03)
 
