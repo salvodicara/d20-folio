@@ -31,6 +31,7 @@ const ALLOWED: Readonly<Record<string, string>> = {
   "src/lib/sanitize-session.ts": "replacement ids",
   "src/lib/item-resources.ts": "item instance ids",
   "src/lib/library.ts": "monster instance ids",
+  "src/lib/combat-io.ts": "encounter action ids (newActionId), never a roll of the game",
 };
 
 function walk(dir: string, out: string[] = []): string[] {

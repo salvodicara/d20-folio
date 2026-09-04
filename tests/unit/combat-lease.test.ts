@@ -1,9 +1,25 @@
 /**
  * `readLease` — shape-tolerant reader of the character parent doc's `lease` field
- * (design §5.2). Pure: no Firebase mock needed. `joinTable`/`leaveTable` are batch writers
- * proven end to end by the emulator suite (task 8); this file covers only the pure reader.
+ * (design §5.2). `readLease` itself is pure, but `@/lib/combat-lease` also exports the
+ * `joinTable`/`leaveTable` batch writers (proven end to end by the emulator suite, task 8) and
+ * transitively imports `./combat-io`, so the module graph reaches `firebase/firestore` at
+ * import time. Mock it here — never move `readLease` to another module to dodge this — so this
+ * file stays Firebase-free in CI (tests/unit/pure-modules-guard.test.ts).
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("firebase/firestore", () => ({
+  arrayUnion: vi.fn(),
+  deleteField: vi.fn(),
+  deleteDoc: vi.fn(),
+  doc: vi.fn(),
+  onSnapshot: vi.fn(),
+  runTransaction: vi.fn(),
+  setDoc: vi.fn(),
+  updateDoc: vi.fn(),
+  writeBatch: vi.fn(),
+}));
+
 import { readLease } from "@/lib/combat-lease";
 
 describe("readLease", () => {
