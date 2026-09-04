@@ -290,7 +290,7 @@ export function PlayScreen(props: PlayScreenProps) {
         if (key === undefined) continue;
         ids[key] = await dispatch({ kind: "roll", roll: pending.roll });
       }
-      await dispatch(intentBody(state, args, ids));
+      await dispatch(intentBody(state, catalogue, args, ids));
       setAiming({ kind: "none" });
     },
     [state, catalogue, dispatch, fail, viewer.uid, viewer.dm, hiddenRolls, t]
@@ -337,7 +337,6 @@ export function PlayScreen(props: PlayScreenProps) {
         program: tile.program,
         targets: [],
         answersSoFar: {},
-        ...(tile.level !== null && tile.level > 0 ? { castLevel: tile.level } : {}),
       };
       if (count === "area") {
         setAiming({ kind: "area", tile, origin: null });
@@ -370,9 +369,6 @@ export function PlayScreen(props: PlayScreenProps) {
             program: aiming.tile.program,
             targets: picked,
             answersSoFar: {},
-            ...(aiming.tile.level !== null && aiming.tile.level > 0
-              ? { castLevel: aiming.tile.level }
-              : {}),
           },
           aiming.tile
         );

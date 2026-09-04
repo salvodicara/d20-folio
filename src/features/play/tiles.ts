@@ -180,7 +180,9 @@ export function hotbarTiles(
         // rejection (`invalid-target`) belongs to the target step, not to the tile.
         targets: [],
         answersSoFar: {},
-        ...(level === null ? {} : { castLevel: level }),
+        // No `castLevel`: a tile that says nothing means "cast it at its own level", and
+        // `paymentOf` derives the pool from the entity's own resources — which is what makes a
+        // Warlock's tile castable without the bar knowing about Pact Magic.
       };
       const planned = planIntent(state, catalogue, args);
       const rejection = "reason" in planned ? planned : null;
