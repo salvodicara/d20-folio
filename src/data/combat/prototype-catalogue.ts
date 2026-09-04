@@ -4,6 +4,8 @@
  * `buildCatalogue`. Spec: docs/superpowers/specs/2026-09-02-mechanics-authoring-spec.md.
  */
 import type { Mechanic } from "@/lib/combat/mechanic";
+import type { MonsterStatBlock } from "@/data/types";
+import { monsterMechanics } from "@/lib/combat/monster-adapter";
 
 /** A ranger's longbow: Attack action, one visible target, d20 + DEX + PB vs AC, 1d8 piercing. */
 export const longbow: Mechanic = {
@@ -329,6 +331,81 @@ export const move: Mechanic = {
   ],
 };
 
+/** The real 2024 SRD Ogre (AC 11, HP 68, CR 2) — hand-copied from `src/data/monsters/n-p.ts`
+ *  rather than imported, because that corpus is bundle-budget-guarded as lazy-only (its own
+ *  header: "Nothing eager may import this module") and this catalogue is loaded eagerly by
+ *  every combat test. Adapted through `monsterMechanics`, not hand-authored, so this is exactly
+ *  what the real bestiary entry produces. */
+const ogreStatBlock: MonsterStatBlock = {
+  id: "ogre",
+  cr: 2,
+  sizes: ["Large"],
+  type: "giant",
+  alignment: "chaotic-evil",
+  ac: 11,
+  hp: { average: 68, formula: "8d10+24" },
+  speeds: { walk: 40 },
+  abilityScores: { STR: 19, DEX: 8, CON: 16, INT: 5, WIS: 7, CHA: 7 },
+  senses: { darkvisionFt: 60 },
+  languages: { ids: ["common", "giant"] },
+  gear: [{ id: "greatclub" }, { id: "javelin", qty: 3 }],
+  actions: [
+    {
+      id: "greatclub",
+      kind: "attack",
+      attack: "melee",
+      toHit: 6,
+      reachFt: 5,
+      damage: [{ dice: "2d8+4", damageType: "bludgeoning" }],
+    },
+    {
+      id: "javelin",
+      kind: "attack",
+      attack: "melee-or-ranged",
+      toHit: 6,
+      reachFt: 5,
+      rangeFt: { near: 30, far: 120 },
+      damage: [{ dice: "2d6+4", damageType: "piercing" }],
+    },
+  ],
+  source: "SRD",
+};
+
+export const ogre: Mechanic = monsterMechanics(ogreStatBlock);
+
+/** A homebrew shortsword reskin for the golden replay's "the group's own custom weapon" case —
+ *  a table-authored mechanic, not SRD; shape mirrors `shortsword` minus the opportunity-attack
+ *  program (out of scope for this replay). */
+export const homebrewBlade: Mechanic = {
+  schema: 1,
+  id: "homebrew:weapon:saras-blade",
+  source: "homebrew",
+  active: [
+    {
+      id: "attack",
+      trigger: { kind: "invocation", economy: "action" },
+      cost: [{ kind: "turn", claim: "attack" }],
+      targets: {
+        count: 1,
+        eligibility: { relation: "visible", between: ["$self", "$target"], value: true },
+      },
+      inputs: [
+        { id: "roll", kind: "d20", for: "attack" },
+        { id: "damage", kind: "dice", formula: "1d6" },
+      ],
+      steps: [
+        {
+          id: "stab",
+          kind: "attack",
+          roll: "roll",
+          bonus: { sum: [{ ability: "DEX" }, { stat: "proficiency" }] },
+          damage: [{ dice: "damage", type: "slashing" }],
+        },
+      ],
+    },
+  ],
+};
+
 export const PROTOTYPE_MECHANICS: readonly Mechanic[] = [
   shortsword,
   longbow,
@@ -338,4 +415,6 @@ export const PROTOTYPE_MECHANICS: readonly Mechanic[] = [
   giggle,
   fireball,
   move,
+  ogre,
+  homebrewBlade,
 ];

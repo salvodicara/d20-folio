@@ -1,0 +1,179 @@
+{
+  "name": "Sara's ogre ambush — log-only, a hidden roll, an overridden result, a homebrew sword (PRODUCT.md acceptance story 2)",
+  "dm": "dm",
+  "entities": [
+    {
+      "id": "hero",
+      "kind": "pc",
+      "controllerUid": "p-hero",
+      "hp": 30,
+      "ac": 16,
+      "abilities": { "DEX": 2 },
+      "mechanics": ["homebrew:weapon:saras-blade"],
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "id": "ogre",
+      "kind": "monster",
+      "controllerUid": "dm",
+      "hp": 68,
+      "ac": 11,
+      "mechanics": ["monster:ogre"],
+      "position": { "x": 1, "y": 0 }
+    }
+  ],
+  "initiative": { "ogre": 18, "hero": 10 },
+  "order": ["ogre", "hero"],
+  "log": [
+    {
+      "id": "d-adjacent",
+      "by": "dm",
+      "kind": "declare",
+      "relation": { "kind": "adjacent", "a": "hero", "b": "ogre" },
+      "remove": false,
+      "mover": null
+    },
+    {
+      "id": "d-visible-1",
+      "by": "dm",
+      "kind": "declare",
+      "relation": { "kind": "visible", "a": "hero", "b": "ogre", "value": true },
+      "remove": false,
+      "mover": null
+    },
+    {
+      "id": "d-visible-2",
+      "by": "dm",
+      "kind": "declare",
+      "relation": { "kind": "visible", "a": "ogre", "b": "hero", "value": true },
+      "remove": false,
+      "mover": null
+    },
+    {
+      "id": "s-log-only",
+      "by": "dm",
+      "kind": "table",
+      "table": { "op": "settings", "revealMonsterHp": false, "automation": "log-only" }
+    },
+    {
+      "id": "r-ogre-atk",
+      "by": "dm",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d20",
+        "faces": [14],
+        "total": 14,
+        "seed": null,
+        "source": "manual",
+        "hidden": true,
+        "roller": "ogre",
+        "purpose": "attack",
+        "label": null
+      }
+    },
+    {
+      "id": "r-ogre-dmg",
+      "by": "dm",
+      "kind": "roll",
+      "roll": {
+        "formula": "2d8+4",
+        "faces": [5, 3],
+        "total": 12,
+        "seed": null,
+        "source": "manual",
+        "hidden": true,
+        "roller": "ogre",
+        "purpose": "damage",
+        "label": null
+      }
+    },
+    {
+      "id": "ogre-attacks",
+      "by": "dm",
+      "kind": "intent",
+      "entity": "ogre",
+      "mechanic": "monster:ogre",
+      "program": "greatclub",
+      "targets": ["hero"],
+      "answers": {
+        "roll": { "roll": "r-ogre-atk" },
+        "damage-0": { "roll": "r-ogre-dmg" }
+      },
+      "payment": [],
+      "window": null,
+      "basedOn": 0
+    },
+    {
+      "id": "dm-applies-by-hand",
+      "by": "dm",
+      "kind": "override",
+      "entity": "hero",
+      "path": "vitals.hp",
+      "value": 18,
+      "reason": "ogre's greatclub — table plays log-only, applying the receipt by hand"
+    },
+    {
+      "id": "s-full-auto",
+      "by": "dm",
+      "kind": "table",
+      "table": { "op": "settings", "revealMonsterHp": false, "automation": "full-auto" }
+    },
+    { "id": "end-ogre-turn", "by": "dm", "kind": "table", "table": { "op": "end-turn" } },
+    {
+      "id": "r-hero-atk",
+      "by": "p-hero",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d20",
+        "faces": [16],
+        "total": 16,
+        "seed": null,
+        "source": "manual",
+        "hidden": false,
+        "roller": "hero",
+        "purpose": "attack",
+        "label": null
+      }
+    },
+    {
+      "id": "r-hero-dmg",
+      "by": "p-hero",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d6",
+        "faces": [4],
+        "total": 4,
+        "seed": null,
+        "source": "manual",
+        "hidden": false,
+        "roller": "hero",
+        "purpose": "damage",
+        "label": null
+      }
+    },
+    {
+      "id": "hero-attacks",
+      "by": "p-hero",
+      "kind": "intent",
+      "entity": "hero",
+      "mechanic": "homebrew:weapon:saras-blade",
+      "program": "attack",
+      "targets": ["ogre"],
+      "answers": { "roll": { "roll": "r-hero-atk" }, "damage": { "roll": "r-hero-dmg" } },
+      "payment": [],
+      "window": null,
+      "basedOn": 0
+    }
+  ],
+  "expect": {
+    "applied": 13,
+    "rejections": [],
+    "state": {
+      "settings.automation": "full-auto",
+      "clock.current": "hero",
+      "entities.hero.vitals.hp": 18,
+      "entities.ogre.vitals.hp": 64,
+      "entities.ogre.turn.attacksUsed": 0
+    }
+  }
+}

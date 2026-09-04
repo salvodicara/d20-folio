@@ -112,7 +112,13 @@ describe("payment — a costed program cannot apply without paying", () => {
           mechanic: mechanic.id,
           program: program.id,
           targets: program.targets ? ["monster-1"] : [],
-          answers: { roll: 15, damage: 3, "save:monster-1": 1, origin: { x: 0, y: 0 } },
+          answers: {
+            roll: 15,
+            damage: 3,
+            "damage-0": 3,
+            "save:monster-1": 1,
+            origin: { x: 0, y: 0 },
+          },
           payment: [
             { kind: "slot", level: slotCost ? slotCost.level : 1, pool: "standard" },
           ],
