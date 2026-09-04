@@ -37,13 +37,16 @@ import {
   numberSchema,
   objectSchema,
   recordSchema,
+  refSchema,
   stringSchema,
+  tupleSchema,
   unionSchema,
   type ExactSchema,
   type ExactSchemaContext,
 } from "@/lib/exact-schema";
 import { stripUndefined } from "@/lib/strip-undefined";
 import { ROLL_PURPOSES } from "./dice";
+import type { Expr, Predicate } from "./mechanic";
 import type { Encounter } from "./types";
 
 // ── The `json` custom conformer ─────────────────────────────────────────────
@@ -604,18 +607,419 @@ const fogChangeSchema = discriminatedUnionSchema("kind", {
   hide: objectSchema({ kind: literalSchema("hide"), rect: mapRectSchema }),
 });
 
+// ── Mechanics carried in the log (stage 6 §2 D2) ─────────────────────────────
+//
+// A CLOSED-WORLD mirror of `mechanic.ts`, field for field: an unknown step kind, trigger kind
+// or predicate shape quarantines the document exactly as an unknown action kind does, rather
+// than reaching the reducer as a half-understood programme. `Predicate` and `Expr` recurse, so
+// they go through named refs (`exact-schema`'s `refSchema`), closed in `ENCOUNTER_CONTEXT`.
+
+const abilitySchema = unionSchema([
+  literalSchema("STR"),
+  literalSchema("DEX"),
+  literalSchema("CON"),
+  literalSchema("INT"),
+  literalSchema("WIS"),
+  literalSchema("CHA"),
+]);
+
+const bindingSchema = unionSchema([
+  literalSchema("$self"),
+  literalSchema("$target"),
+  literalSchema("$event.entity"),
+]);
+
+/** `byLevel` is authored with numeric keys; JSON turns them into numeric-looking strings. */
+const byLevelSchema = objectSchema({ byLevel: recordSchema("number", numberSchema) });
+
+const exprRef = refSchema<"expr", Expr>("expr");
+
+const exprSchema = unionSchema([
+  numberSchema,
+  byLevelSchema,
+  objectSchema({ ability: abilitySchema }),
+  objectSchema({
+    stat: unionSchema([
+      literalSchema("spellSaveDc"),
+      literalSchema("spellAttack"),
+      literalSchema("proficiency"),
+    ]),
+  }),
+  objectSchema({ sum: arraySchema(exprRef) }),
+]);
+
+const predicateRef = refSchema<"predicate", Predicate>("predicate");
+
+const predicateSchema = unionSchema([
+  objectSchema({ outcome: outcomeSchema }),
+  objectSchema({
+    answer: stringSchema,
+    equals: unionSchema([stringSchema, numberSchema, booleanSchema]),
+  }),
+  objectSchema(
+    {
+      relation: unionSchema([
+        literalSchema("adjacent"),
+        literalSchema("visible"),
+        literalSchema("engaged"),
+        literalSchema("mark"),
+      ]),
+      between: tupleSchema([bindingSchema, bindingSchema]),
+    },
+    { value: booleanSchema }
+  ),
+  objectSchema({
+    condition: conditionIdSchema,
+    on: bindingSchema,
+    present: booleanSchema,
+  }),
+  objectSchema({ is: tupleSchema([bindingSchema, bindingSchema]) }),
+  objectSchema({
+    hp: bindingSchema,
+    op: unionSchema([
+      literalSchema("<="),
+      literalSchema("<"),
+      literalSchema(">="),
+      literalSchema(">"),
+    ]),
+    value: unionSchema([numberSchema, literalSchema("half-max")]),
+  }),
+  objectSchema({ all: arraySchema(predicateRef) }),
+  objectSchema({ any: arraySchema(predicateRef) }),
+  objectSchema({ not: predicateRef }),
+]);
+
+const eventSelectorSchema = discriminatedUnionSchema("kind", {
+  "turn-start": objectSchema({ kind: literalSchema("turn-start") }),
+  "turn-end": objectSchema({ kind: literalSchema("turn-end") }),
+  "round-start": objectSchema({ kind: literalSchema("round-start") }),
+  "attack-declared": objectSchema({
+    kind: literalSchema("attack-declared"),
+    target: unionSchema([literalSchema("self"), literalSchema("any")]),
+  }),
+  "damage-taken": objectSchema({
+    kind: literalSchema("damage-taken"),
+    of: unionSchema([literalSchema("self"), literalSchema("controlled")]),
+  }),
+  "hp-zero": objectSchema({
+    kind: literalSchema("hp-zero"),
+    of: unionSchema([
+      literalSchema("self"),
+      literalSchema("controlled"),
+      literalSchema("any"),
+      objectSchema({ markedBy: literalSchema("self") }),
+    ]),
+  }),
+  "entity-left-reach": objectSchema({
+    kind: literalSchema("entity-left-reach"),
+    of: literalSchema("self"),
+  }),
+  "concentration-ended": objectSchema({
+    kind: literalSchema("concentration-ended"),
+    source: literalSchema("self"),
+  }),
+  "rest-completed": objectSchema({
+    kind: literalSchema("rest-completed"),
+    rest: restKindSchema,
+  }),
+});
+
+const triggerSchema = discriminatedUnionSchema("kind", {
+  invocation: objectSchema({
+    kind: literalSchema("invocation"),
+    economy: unionSchema([
+      literalSchema("action"),
+      literalSchema("bonus"),
+      literalSchema("reaction"),
+      literalSchema("free"),
+      literalSchema("none"),
+    ]),
+  }),
+  event: objectSchema({
+    kind: literalSchema("event"),
+    event: eventSelectorSchema,
+    scope: unionSchema([
+      literalSchema("self"),
+      literalSchema("controlled"),
+      literalSchema("others"),
+      literalSchema("any"),
+    ]),
+    window: booleanSchema,
+  }),
+});
+
+const costSchema = discriminatedUnionSchema("kind", {
+  slot: objectSchema(
+    { kind: literalSchema("slot"), level: numberSchema },
+    { upcast: booleanSchema }
+  ),
+  resource: objectSchema({
+    kind: literalSchema("resource"),
+    id: stringSchema,
+    amount: numberSchema,
+  }),
+  turn: objectSchema({
+    kind: literalSchema("turn"),
+    claim: unionSchema([
+      literalSchema("action"),
+      literalSchema("bonus"),
+      literalSchema("reaction"),
+      literalSchema("attack"),
+      literalSchema("free"),
+    ]),
+  }),
+  concentration: objectSchema({ kind: literalSchema("concentration") }),
+});
+
+const inputSchema = discriminatedUnionSchema("kind", {
+  d20: objectSchema(
+    {
+      id: stringSchema,
+      kind: literalSchema("d20"),
+      for: unionSchema([
+        literalSchema("attack"),
+        literalSchema("save"),
+        literalSchema("check"),
+        literalSchema("concentration"),
+      ]),
+    },
+    { ability: abilitySchema, perTarget: booleanSchema }
+  ),
+  dice: objectSchema(
+    { id: stringSchema, kind: literalSchema("dice"), formula: stringSchema },
+    { perTarget: booleanSchema }
+  ),
+  choice: objectSchema({
+    id: stringSchema,
+    kind: literalSchema("choice"),
+    options: arraySchema(stringSchema),
+  }),
+  table: objectSchema({
+    id: stringSchema,
+    kind: literalSchema("table"),
+    label: stringSchema,
+  }),
+  position: objectSchema({ id: stringSchema, kind: literalSchema("position") }),
+});
+
+const areaShapeSchema = discriminatedUnionSchema("kind", {
+  sphere: objectSchema({
+    kind: literalSchema("sphere"),
+    origin: stringSchema,
+    radiusFt: numberSchema,
+  }),
+  cylinder: objectSchema({
+    kind: literalSchema("cylinder"),
+    origin: stringSchema,
+    radiusFt: numberSchema,
+  }),
+  cube: objectSchema({
+    kind: literalSchema("cube"),
+    origin: stringSchema,
+    sizeFt: numberSchema,
+  }),
+  cone: objectSchema({
+    kind: literalSchema("cone"),
+    origin: stringSchema,
+    aim: stringSchema,
+    lengthFt: numberSchema,
+  }),
+  line: objectSchema({
+    kind: literalSchema("line"),
+    origin: stringSchema,
+    aim: stringSchema,
+    lengthFt: numberSchema,
+    widthFt: numberSchema,
+  }),
+});
+
+const targetSpecSchema = objectSchema(
+  {
+    count: unionSchema([numberSchema, literalSchema("area")]),
+    eligibility: predicateRef,
+  },
+  { area: areaShapeSchema }
+);
+
+const lifetimeSpecSchema = discriminatedUnionSchema("kind", {
+  manual: objectSchema({ kind: literalSchema("manual") }),
+  "turn-edge": objectSchema({
+    kind: literalSchema("turn-edge"),
+    entity: bindingSchema,
+    edge: turnEdgeSchema,
+  }),
+  rounds: objectSchema({ kind: literalSchema("rounds"), remaining: numberSchema }),
+  seconds: objectSchema({
+    kind: literalSchema("seconds"),
+    remaining: unionSchema([numberSchema, byLevelSchema]),
+  }),
+  rest: objectSchema({ kind: literalSchema("rest"), rest: restKindSchema }),
+});
+
+const effectTemplateSchema = objectSchema(
+  {
+    kind: unionSchema([literalSchema("standing"), literalSchema("mark")]),
+    to: bindingSchema,
+    lifetime: lifetimeSpecSchema,
+  },
+  {
+    concentration: booleanSchema,
+    acBonus: numberSchema,
+    riders: arraySchema(riderSchema),
+    advantage: booleanSchema,
+  }
+);
+
+const damagePartSchema = objectSchema({ dice: stringSchema, type: damageTypeSchema });
+
+/** Every step kind, with the `id`/`when` every step carries. An unknown `kind` quarantines. */
+const stepSchema = discriminatedUnionSchema("kind", {
+  attack: objectSchema(
+    {
+      id: stringSchema,
+      kind: literalSchema("attack"),
+      roll: stringSchema,
+      bonus: exprRef,
+      damage: arraySchema(damagePartSchema),
+    },
+    { when: predicateRef }
+  ),
+  save: objectSchema(
+    {
+      id: stringSchema,
+      kind: literalSchema("save"),
+      roll: stringSchema,
+      ability: abilitySchema,
+      dc: unionSchema([exprRef, literalSchema("spell")]),
+      onSuccess: unionSchema([literalSchema("half"), literalSchema("negate")]),
+    },
+    { when: predicateRef }
+  ),
+  damage: objectSchema(
+    {
+      id: stringSchema,
+      kind: literalSchema("damage"),
+      parts: arraySchema(damagePartSchema),
+      to: bindingSchema,
+    },
+    { when: predicateRef }
+  ),
+  heal: objectSchema(
+    {
+      id: stringSchema,
+      kind: literalSchema("heal"),
+      amount: exprRef,
+      to: bindingSchema,
+    },
+    { when: predicateRef }
+  ),
+  "effect-start": objectSchema(
+    {
+      id: stringSchema,
+      kind: literalSchema("effect-start"),
+      effect: effectTemplateSchema,
+    },
+    { when: predicateRef }
+  ),
+  condition: objectSchema(
+    {
+      id: stringSchema,
+      kind: literalSchema("condition"),
+      condition: conditionIdSchema,
+      to: bindingSchema,
+      lifetime: lifetimeSpecSchema,
+    },
+    { when: predicateRef, concentration: booleanSchema }
+  ),
+  "move-mark": objectSchema(
+    {
+      id: stringSchema,
+      kind: literalSchema("move-mark"),
+      from: bindingSchema,
+      to: bindingSchema,
+    },
+    { when: predicateRef }
+  ),
+  "turn-claim": objectSchema(
+    {
+      id: stringSchema,
+      kind: literalSchema("turn-claim"),
+      claim: literalSchema("once"),
+      key: stringSchema,
+    },
+    { when: predicateRef }
+  ),
+  negate: objectSchema(
+    {
+      id: stringSchema,
+      kind: literalSchema("negate"),
+      target: literalSchema("declared-action"),
+    },
+    { when: predicateRef }
+  ),
+  "manual-table": objectSchema(
+    { id: stringSchema, kind: literalSchema("manual-table"), label: stringSchema },
+    { when: predicateRef }
+  ),
+  move: objectSchema(
+    { id: stringSchema, kind: literalSchema("move"), to: stringSchema },
+    { when: predicateRef }
+  ),
+  dash: objectSchema(
+    { id: stringSchema, kind: literalSchema("dash") },
+    { when: predicateRef }
+  ),
+});
+
+const programSchema = objectSchema(
+  { id: stringSchema, trigger: triggerSchema, steps: arraySchema(stepSchema) },
+  {
+    cost: arraySchema(costSchema),
+    targets: targetSpecSchema,
+    inputs: arraySchema(inputSchema),
+  }
+);
+
+const mechanicSchema = objectSchema(
+  {
+    schema: literalSchema(1),
+    id: stringSchema,
+    source: unionSchema([
+      literalSchema("srd"),
+      literalSchema("pack"),
+      literalSchema("homebrew"),
+      literalSchema("monster"),
+    ]),
+  },
+  { label: stringSchema, active: arraySchema(programSchema) }
+);
+
+const mechanicsSchema = arraySchema(mechanicSchema);
+
 // ── Table ops ────────────────────────────────────────────────────────────────
 
 const tableOpSchema = discriminatedUnionSchema("op", {
   start: objectSchema({ op: literalSchema("start"), epoch: numberSchema }),
-  "add-entity": objectSchema({ op: literalSchema("add-entity"), entity: entitySchema }),
+  "add-entity": objectSchema({
+    op: literalSchema("add-entity"),
+    entity: entitySchema,
+    mechanics: mechanicsSchema,
+  }),
   "remove-entity": objectSchema({
     op: literalSchema("remove-entity"),
     entity: stringSchema,
   }),
-  join: objectSchema({ op: literalSchema("join"), entity: entitySchema }),
+  join: objectSchema({
+    op: literalSchema("join"),
+    entity: entitySchema,
+    mechanics: mechanicsSchema,
+  }),
   leave: objectSchema({ op: literalSchema("leave"), entity: stringSchema }),
-  sync: objectSchema({ op: literalSchema("sync"), entity: entitySchema }),
+  sync: objectSchema({
+    op: literalSchema("sync"),
+    entity: entitySchema,
+    mechanics: mechanicsSchema,
+  }),
   "set-initiative": objectSchema({
     op: literalSchema("set-initiative"),
     entity: stringSchema,
@@ -711,6 +1115,7 @@ const foldedStateSchema = objectSchema({
   epoch: numberSchema,
   clock: clockSchema,
   entities: recordSchema("string", entitySchema),
+  mechanics: recordSchema("string", mechanicSchema),
   relations: arraySchema(relationSchema),
   effects: recordSchema("string", effectSchema),
   windows: arraySchema(reactionWindowSchema),
@@ -752,10 +1157,10 @@ const ENCOUNTER_SCHEMA = objectSchema({
 
 const ENCOUNTER_CONTEXT: ExactSchemaContext<
   { readonly json: unknown },
-  Record<never, never>
+  { readonly expr: Expr; readonly predicate: Predicate }
 > = {
   customs: { json: conformJson },
-  refs: {},
+  refs: { expr: exprSchema, predicate: predicateSchema },
 };
 
 const conformEncounterKnown = exactConformer(ENCOUNTER_SCHEMA, ENCOUNTER_CONTEXT);

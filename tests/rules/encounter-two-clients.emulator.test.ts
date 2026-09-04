@@ -62,6 +62,7 @@ import type {
   Rejection,
 } from "@/lib/combat/types";
 import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
+import type { Mechanic } from "@/lib/combat/mechanic";
 import {
   appendAction,
   checkpointEncounter,
@@ -260,6 +261,10 @@ interface Table {
 
 /** The lease join, appended by `p-marco`'s own client before the replay's log. */
 const LEASE_ENTITY = testEntity({ id: "marco-pc", kind: "pc", controllerUid: "p-marco" });
+/** The definitions the join carries — the same seam the opening uses (stage 6 §2 D2). */
+const LEASE_MECHANICS: readonly Mechanic[] = PROTOTYPE_MECHANICS.filter((mechanic) =>
+  LEASE_ENTITY.mechanics.includes(mechanic.id)
+);
 const LEASE_EPOCH = 7;
 
 /**
@@ -305,6 +310,7 @@ async function stage(replay: Replay, options: { lease: boolean }): Promise<Table
       encounterId: ENCOUNTER,
       epoch: LEASE_EPOCH,
       entity: LEASE_ENTITY,
+      mechanics: LEASE_MECHANICS,
       action: { id: "lease-join", seq: { ms: 3_000, counter: 0, by: "p-marco" } },
     });
   }
@@ -600,6 +606,7 @@ describe("the stage gate — Marco's first turn on two clients", () => {
       campaignId: CAMPAIGN,
       encounterId: ENCOUNTER,
       entity: folded,
+      mechanics: LEASE_MECHANICS,
       leave: { id: "lease-leave", seq: { ms: 90_000, counter: 0, by: "p-marco" } },
       sync: { id: "lease-sync", seq: { ms: 90_001, counter: 0, by: "p-marco" } },
       personal: null,

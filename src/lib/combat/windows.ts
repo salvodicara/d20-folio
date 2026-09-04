@@ -6,6 +6,7 @@
  * when at least one subscriber exists, so the common case stays one tap.
  */
 import type { Catalogue } from "./catalogue";
+import { mechanicOf } from "./catalogue";
 import type { EntityId } from "./ids";
 import type { EventSelector } from "./mechanic";
 import type { CombatEvent, FoldedState } from "./types";
@@ -58,7 +59,7 @@ export function subscribersFor(
     if (entity.id === actor) continue;
     if (entity.vitals.life !== "alive" || entity.turn.reaction >= 1) continue;
     const subscribed = entity.mechanics.some((id) =>
-      (catalogue.mechanics.get(id)?.active ?? []).some(
+      (mechanicOf(state, catalogue, id)?.active ?? []).some(
         (program) =>
           program.trigger.kind === "event" &&
           program.trigger.window &&

@@ -3,9 +3,10 @@
  * qualitative boundaries (rest, day phase). Pure; returns the next state plus the events
  * the boundary emitted so triggered programs can react.
  */
-import { assertNever, type EntityId } from "./ids";
+import { assertNever, type EntityId, type MechanicId } from "./ids";
 import { dueAt, endEffects } from "./effects";
 import { hideRect, isMapBackground, isMapRect, revealRect } from "./map";
+import { conformMechanic, type Mechanic } from "./mechanic";
 import { mustEntity } from "./state";
 import type {
   CombatEvent,
@@ -42,10 +43,62 @@ function withEntity(state: FoldedState, entity: Entity): FoldedState {
   return { ...state, entities: { ...state.entities, [entity.id]: entity } };
 }
 
+/**
+ * The definitions a seat op carried, conformed. A malformed one rejects the WHOLE op rather
+ * than being skipped: an entity seated with half its actions would fold differently on a
+ * client whose build happens to have the missing one in its static catalogue, which is exactly
+ * the divergence carrying them was meant to end (design §2 D2).
+ */
+type Carried =
+  | { readonly ok: true; readonly mechanics: Readonly<Record<MechanicId, Mechanic>> }
+  | { readonly ok: false; readonly rejected: TableResult };
+
+function conformCarried(op: string, mechanics: readonly Mechanic[]): Carried {
+  const out: Record<MechanicId, Mechanic> = {};
+  for (const value of mechanics) {
+    const result = conformMechanic(value);
+    if (!result.ok) {
+      return {
+        ok: false,
+        rejected: reject(`${op}: mechanic ${value.id} ${result.rule} at ${result.path}`),
+      };
+    }
+    out[result.mechanic.id] = result.mechanic;
+  }
+  return { ok: true, mechanics: out };
+}
+
+/** Drop `ids` from `state.mechanics`, keeping any an entity still seated lists as its own. */
+function dropMechanics(
+  state: FoldedState,
+  ids: readonly MechanicId[],
+  options: { readonly keepIfListed: boolean }
+): FoldedState {
+  if (ids.length === 0) return state;
+  const listed = options.keepIfListed
+    ? new Set(Object.values(state.entities).flatMap((entity) => entity.mechanics))
+    : new Set<MechanicId>();
+  const doomed = ids.filter((id) => !listed.has(id));
+  if (doomed.length === 0) return state;
+  return {
+    ...state,
+    mechanics: Object.fromEntries(
+      Object.entries(state.mechanics).filter(([id]) => !doomed.includes(id))
+    ),
+  };
+}
+
 /** `add-entity`/`join` body: registers the entity, and appends it to the turn order while
  *  turns are running (a lease-joining PC seats itself at the foot of the current order). */
-function addEntity(state: FoldedState, entity: Entity): FoldedState {
-  const next = withEntity(state, entity);
+function addEntity(
+  state: FoldedState,
+  entity: Entity,
+  carried: Readonly<Record<MechanicId, Mechanic>>
+): FoldedState {
+  const next = {
+    ...withEntity(state, entity),
+    mechanics: { ...state.mechanics, ...carried },
+  };
   if (next.clock.phase === "turns") {
     return { ...next, clock: { ...next.clock, order: [...next.clock.order, entity.id] } };
   }
@@ -77,7 +130,10 @@ function removeEntity(
   const relations = ended.state.relations.filter(
     (relation) => !Object.values(relation).includes(id)
   );
-  return { ...ended.state, entities, clock, relations };
+  const departing = state.entities[id]?.mechanics ?? [];
+  return dropMechanics({ ...ended.state, entities, clock, relations }, departing, {
+    keepIfListed: true,
+  });
 }
 
 /** The start of `entity`'s turn: ledger reset and turn-edge(start) expiries. */
@@ -167,7 +223,13 @@ export function applyTable(state: FoldedState, op: TableOp): TableResult {
     case "add-entity": {
       if (state.entities[op.entity.id])
         return reject(`add-entity: duplicate id ${op.entity.id}`);
-      return { kind: "applied", state: addEntity(state, op.entity), events };
+      const carried = conformCarried("add-entity", op.mechanics);
+      if (!carried.ok) return carried.rejected;
+      return {
+        kind: "applied",
+        state: addEntity(state, op.entity, carried.mechanics),
+        events,
+      };
     }
     case "remove-entity": {
       if (!state.entities[op.entity])
@@ -180,7 +242,13 @@ export function applyTable(state: FoldedState, op: TableOp): TableResult {
       // the turn order while turns are running.
       if (state.entities[op.entity.id])
         return reject(`join: duplicate id ${op.entity.id}`);
-      return { kind: "applied", state: addEntity(state, op.entity), events };
+      const carried = conformCarried("join", op.mechanics);
+      if (!carried.ok) return carried.rejected;
+      return {
+        kind: "applied",
+        state: addEntity(state, op.entity, carried.mechanics),
+        events,
+      };
     }
     case "leave": {
       // `remove-entity` semantics: effects it sourced or received end, relations are pruned,
@@ -192,7 +260,23 @@ export function applyTable(state: FoldedState, op: TableOp): TableResult {
       // The owner's client writes the folded entity back into the personal aggregate: an
       // upsert — replaces an existing entity of the same id wholesale, inserts otherwise. The
       // turn order is untouched (sync never changes who is seated or in what order).
-      return { kind: "applied", state: withEntity(state, op.entity), events };
+      //
+      // The carried definitions are REPLACED the same way `stats` is: what this entity listed
+      // before and no longer carries is dropped, so a rebuilt character cannot leave a stale
+      // programme behind in the fold.
+      const carried = conformCarried("sync", op.mechanics);
+      if (!carried.ok) return carried.rejected;
+      const stale = (state.entities[op.entity.id]?.mechanics ?? []).filter(
+        (id) => carried.mechanics[id] === undefined
+      );
+      const next = dropMechanics(withEntity(state, op.entity), stale, {
+        keepIfListed: false,
+      });
+      return {
+        kind: "applied",
+        state: { ...next, mechanics: { ...next.mechanics, ...carried.mechanics } },
+        events,
+      };
     }
     case "set-initiative": {
       if (!state.entities[op.entity])

@@ -297,7 +297,7 @@ describe("mapView — what each viewer sees (design addendum §6)", () => {
       position: { x: 2, y: 0 },
     });
     return run(state, [
-      tableAction("dm", seq(), { op: "add-entity", entity: wolf }),
+      tableAction("dm", seq(), { op: "add-entity", entity: wolf, mechanics: [] }),
       hide("wolf"),
       tableAction("dm", seq(), { op: "fog", change: { kind: "cover", covered: true } }),
       tableAction("dm", seq(), {

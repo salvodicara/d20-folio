@@ -1,12 +1,49 @@
 import { describe, expect, it } from "vitest";
 import { mustEntity } from "@/lib/combat/state";
 import { resolve } from "@/lib/combat/resolve";
-import { emptyCatalogue } from "@/lib/combat/catalogue";
+import {
+  buildCatalogue,
+  emptyCatalogue,
+  mechanicOf,
+  programOf,
+} from "@/lib/combat/catalogue";
 import type { Action, Effect, FoldedState } from "@/lib/combat/types";
 import { testEntity } from "./__helpers__/entities";
 import { emptyState, openingActions, seqFactory, tableAction } from "./__helpers__/state";
+import type { Mechanic } from "@/lib/combat/mechanic";
 
 const catalogue = emptyCatalogue();
+
+/** A minimal well-formed carried mechanic; `broken` fails a SEMANTIC rule of `conformMechanic`
+ *  (an `attack` step whose roll input the program never declares). */
+function carried(id: string): Mechanic {
+  return {
+    schema: 1,
+    id,
+    source: "pack",
+    active: [
+      {
+        id: "use",
+        trigger: { kind: "invocation", economy: "action" },
+        cost: [{ kind: "turn", claim: "action" }],
+        steps: [{ id: "use", kind: "manual-table", label: id }],
+      },
+    ],
+  };
+}
+
+const broken = {
+  schema: 1,
+  id: "pack:broken",
+  source: "pack",
+  active: [
+    {
+      id: "use",
+      trigger: { kind: "invocation", economy: "action" },
+      steps: [{ id: "swing", kind: "attack", roll: "roll", bonus: 3, damage: [] }],
+    },
+  ],
+} as unknown as Mechanic;
 
 function applyAll(state: FoldedState, actions: readonly Action[]): FoldedState {
   let current = state;
@@ -43,7 +80,7 @@ describe("resolve — table operations and the clock", () => {
     const seq2 = seqFactory("dm");
     const state = applyAll(emptyState(), [
       tableAction("dm", seq2(), { op: "start", epoch: 1 }),
-      tableAction("dm", seq2(), { op: "add-entity", entity: ranger }),
+      tableAction("dm", seq2(), { op: "add-entity", entity: ranger, mechanics: [] }),
     ]);
     const result = resolve(
       state,
@@ -103,7 +140,7 @@ describe("resolve — table operations and the clock", () => {
     const seq4 = seqFactory("p1");
     let state = applyAll(emptyState(), [
       tableAction("p1", seq4(), { op: "start", epoch: 1 }),
-      tableAction("p1", seq4(), { op: "add-entity", entity: ranger }),
+      tableAction("p1", seq4(), { op: "add-entity", entity: ranger, mechanics: [] }),
     ]);
     const survives: Effect = {
       id: "effect-2",
@@ -188,7 +225,7 @@ describe("resolve — table operations and the clock", () => {
       });
       const result = resolve(
         state,
-        tableAction("p2", seq6(), { op: "join", entity: newcomer }),
+        tableAction("p2", seq6(), { op: "join", entity: newcomer, mechanics: [] }),
         catalogue
       );
       expect(result.kind).toBe("applied");
@@ -201,11 +238,11 @@ describe("resolve — table operations and the clock", () => {
     it("rejects a second join with the same id as invalid-table-op", () => {
       const state = applyAll(emptyState(), [
         tableAction("dm", seq6(), { op: "start", epoch: 1 }),
-        tableAction("dm", seq6(), { op: "join", entity: ranger }),
+        tableAction("dm", seq6(), { op: "join", entity: ranger, mechanics: [] }),
       ]);
       const result = resolve(
         state,
-        tableAction("dm", seq6(), { op: "join", entity: ranger }),
+        tableAction("dm", seq6(), { op: "join", entity: ranger, mechanics: [] }),
         catalogue
       );
       expect(result.kind).toBe("rejected");
@@ -216,7 +253,7 @@ describe("resolve — table operations and the clock", () => {
     it("leave removes the entity and ends an effect it sourced", () => {
       let state = applyAll(emptyState(), [
         tableAction("dm", seq6(), { op: "start", epoch: 1 }),
-        tableAction("dm", seq6(), { op: "join", entity: ranger }),
+        tableAction("dm", seq6(), { op: "join", entity: ranger, mechanics: [] }),
       ]);
       const effect: Effect = {
         id: "effect-4",
@@ -250,7 +287,7 @@ describe("resolve — table operations and the clock", () => {
       const synced = { ...ranger, vitals: { ...ranger.vitals, hp: 3 } };
       const result = resolve(
         state,
-        tableAction("p1", seq6(), { op: "sync", entity: synced }),
+        tableAction("p1", seq6(), { op: "sync", entity: synced, mechanics: [] }),
         catalogue
       );
       expect(result.kind).toBe("applied");
@@ -267,7 +304,7 @@ describe("resolve — table operations and the clock", () => {
       const newcomer = testEntity({ id: "pc-3", kind: "pc", hp: 8 });
       const result = resolve(
         state,
-        tableAction("p3", seq6(), { op: "sync", entity: newcomer }),
+        tableAction("p3", seq6(), { op: "sync", entity: newcomer, mechanics: [] }),
         catalogue
       );
       expect(result.kind).toBe("applied");
@@ -301,7 +338,7 @@ describe("resolve — the map and fog table ops (stage 5)", () => {
     const ranger = testEntity({ id: "ranger", kind: "pc", position: { x: 2, y: 2 } });
     let state = applyAll(emptyState(), [
       tableAction("dm", seqM(), { op: "start", epoch: 1 }),
-      tableAction("dm", seqM(), { op: "add-entity", entity: ranger }),
+      tableAction("dm", seqM(), { op: "add-entity", entity: ranger, mechanics: [] }),
       tableAction("dm", seqM(), { op: "fog", change: { kind: "cover", covered: true } }),
       tableAction("dm", seqM(), {
         op: "fog",
@@ -393,5 +430,138 @@ describe("resolve — the map and fog table ops (stage 5)", () => {
         detail: "fog: rectangle budget exhausted",
       },
     });
+  });
+});
+
+describe("resolve — the mechanics an entity carries into the log (stage 6 §2 D2)", () => {
+  const seq = seqFactory("dm");
+  const ogre = testEntity({
+    id: "ogre",
+    kind: "monster",
+    hp: 68,
+    mechanics: ["pack:ogre:club"],
+  });
+  const pc = testEntity({
+    id: "pc-1",
+    kind: "pc",
+    controllerUid: "p1",
+    hp: 12,
+    mechanics: ["pack:ogre:club"],
+  });
+
+  function started(): FoldedState {
+    return applyAll(emptyState(), [tableAction("dm", seq(), { op: "start", epoch: 1 })]);
+  }
+
+  it("add-entity folds the carried definitions into state.mechanics", () => {
+    const state = applyAll(started(), [
+      tableAction("dm", seq(), {
+        op: "add-entity",
+        entity: ogre,
+        mechanics: [carried("pack:ogre:club")],
+      }),
+    ]);
+    expect(state.mechanics["pack:ogre:club"]).toEqual(carried("pack:ogre:club"));
+  });
+
+  it("join folds them too, and an entity seated with none changes nothing", () => {
+    let state = applyAll(started(), [
+      tableAction("p1", seq(), {
+        op: "join",
+        entity: pc,
+        mechanics: [carried("pack:ogre:club")],
+      }),
+    ]);
+    expect(Object.keys(state.mechanics)).toEqual(["pack:ogre:club"]);
+    state = applyAll(state, [
+      tableAction("dm", seq(), { op: "add-entity", entity: ogre, mechanics: [] }),
+    ]);
+    expect(Object.keys(state.mechanics)).toEqual(["pack:ogre:club"]);
+  });
+
+  it("a carried mechanic that fails conformance rejects the whole op", () => {
+    const result = resolve(
+      started(),
+      tableAction("dm", seq(), { op: "add-entity", entity: ogre, mechanics: [broken] }),
+      catalogue
+    );
+    expect(result).toEqual({
+      kind: "rejected",
+      rejection: {
+        reason: "invalid-table-op",
+        detail:
+          "add-entity: mechanic pack:broken roll-input-declared at active[0].steps[0].roll",
+      },
+    });
+  });
+
+  it("sync replaces the entity's carried ids, dropping one it no longer carries", () => {
+    let state = applyAll(started(), [
+      tableAction("dm", seq(), {
+        op: "add-entity",
+        entity: { ...ogre, mechanics: ["pack:ogre:club", "pack:ogre:javelin"] },
+        mechanics: [carried("pack:ogre:club"), carried("pack:ogre:javelin")],
+      }),
+    ]);
+    expect(Object.keys(state.mechanics).sort()).toEqual([
+      "pack:ogre:club",
+      "pack:ogre:javelin",
+    ]);
+    state = applyAll(state, [
+      tableAction("dm", seq(), {
+        op: "sync",
+        entity: { ...ogre, mechanics: ["pack:ogre:club"] },
+        mechanics: [carried("pack:ogre:club")],
+      }),
+    ]);
+    expect(Object.keys(state.mechanics)).toEqual(["pack:ogre:club"]);
+  });
+
+  it("remove-entity drops the departing entity's ids, but keeps one another entity lists", () => {
+    let state = applyAll(started(), [
+      tableAction("dm", seq(), {
+        op: "add-entity",
+        entity: { ...ogre, mechanics: ["pack:ogre:club", "pack:shared"] },
+        mechanics: [carried("pack:ogre:club"), carried("pack:shared")],
+      }),
+      tableAction("p1", seq(), {
+        op: "join",
+        entity: { ...pc, mechanics: ["pack:shared"] },
+        mechanics: [carried("pack:shared")],
+      }),
+    ]);
+    state = applyAll(state, [
+      tableAction("dm", seq(), { op: "remove-entity", entity: "ogre" }),
+    ]);
+    expect(Object.keys(state.mechanics)).toEqual(["pack:shared"]);
+  });
+
+  it("a carried definition wins over the same id in the static catalogue", () => {
+    const stat = buildCatalogue([
+      { ...carried("pack:ogre:club"), source: "srd" },
+    ]).catalogue;
+    const state = applyAll(started(), [
+      tableAction("dm", seq(), {
+        op: "add-entity",
+        entity: ogre,
+        mechanics: [carried("pack:ogre:club")],
+      }),
+    ]);
+    expect(mechanicOf(state, stat, "pack:ogre:club")?.source).toBe("pack");
+    expect(mechanicOf(emptyState(), stat, "pack:ogre:club")?.source).toBe("srd");
+    expect(programOf(state, stat, "pack:ogre:club", "use")?.id).toBe("use");
+    expect(programOf(state, stat, "pack:missing", "use")).toBeNull();
+  });
+
+  it("leave drops the leaving entity's ids", () => {
+    let state = applyAll(started(), [
+      tableAction("p1", seq(), {
+        op: "join",
+        entity: pc,
+        mechanics: [carried("pack:ogre:club")],
+      }),
+    ]);
+    state = applyAll(state, [tableAction("p1", seq(), { op: "leave", entity: "pc-1" })]);
+    expect(state.mechanics).toEqual({});
   });
 });

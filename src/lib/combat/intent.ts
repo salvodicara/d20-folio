@@ -712,7 +712,7 @@ export function applyIntent(
 ): StepResult {
   const entity = state.entities[action.entity];
   if (!entity) return rejected({ reason: "unknown-entity", entity: action.entity });
-  const program = programOf(catalogue, action.mechanic, action.program);
+  const program = programOf(state, catalogue, action.mechanic, action.program);
   if (!program || !entity.mechanics.includes(action.mechanic)) {
     return rejected({ reason: "unknown-mechanic", mechanic: action.mechanic });
   }
@@ -899,7 +899,7 @@ export function applyResolve(
       },
     };
   }
-  const program = programOf(catalogue, declared.mechanic, declared.program);
+  const program = programOf(state, catalogue, declared.mechanic, declared.program);
   if (!program)
     return rejected({ reason: "unknown-mechanic", mechanic: declared.mechanic });
   const events: CombatEvent[] = [];

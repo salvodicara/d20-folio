@@ -3,6 +3,7 @@
  * Public SRD data, the private content pack and homebrew all feed it through `buildCatalogue`.
  */
 import type { MechanicId } from "./ids";
+import type { FoldedState } from "./types";
 import {
   conformMechanic,
   type Conformance,
@@ -46,12 +47,28 @@ function idOf(value: unknown, index: number): string {
   return `#${index}`;
 }
 
+/**
+ * One mechanic, resolved the way the reducer resolves it: the definitions the seated entities
+ * CARRIED into the log first (`FoldedState.mechanics`, design §2 D2), the static catalogue —
+ * the `core:*` set every creature has — second. The order is the whole point: the fold must be
+ * the same on a client that never loaded the bestiary and on the DM's, so a table's own data
+ * can never lose to whatever a particular build happens to ship.
+ */
+export function mechanicOf(
+  state: FoldedState,
+  catalogue: Catalogue,
+  id: MechanicId
+): Mechanic | null {
+  return state.mechanics[id] ?? catalogue.mechanics.get(id) ?? null;
+}
+
 export function programOf(
+  state: FoldedState,
   catalogue: Catalogue,
   mechanic: MechanicId,
   program: string
 ): Program | null {
-  const found = catalogue.mechanics.get(mechanic);
+  const found = mechanicOf(state, catalogue, mechanic);
   if (!found?.active) return null;
   return found.active.find((candidate) => candidate.id === program) ?? null;
 }

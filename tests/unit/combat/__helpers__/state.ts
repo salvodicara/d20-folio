@@ -1,5 +1,7 @@
 import type { Action, Entity, FoldedState, TableOp } from "@/lib/combat/types";
 import type { Seq } from "@/lib/combat/ids";
+import type { Mechanic } from "@/lib/combat/mechanic";
+import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
 
 /** A deterministic sequence stamper for tests: every call is strictly later. */
 export function seqFactory(by: string, startMs = 1_000): () => Seq {
@@ -30,6 +32,7 @@ export function emptyState(): FoldedState {
       dayPhaseOrdinal: 0,
     },
     entities: {},
+    mechanics: {},
     relations: [],
     effects: {},
     windows: [],
@@ -44,17 +47,29 @@ export function emptyState(): FoldedState {
   };
 }
 
-/** Build the standard opening: start, add entities, set initiative, begin turns. */
+/**
+ * Build the standard opening: start, add entities, set initiative, begin turns.
+ *
+ * Every `add-entity` carries the definitions of the mechanics that entity lists (stage 6
+ * §2 D2). `available` defaults to the prototype catalogue, which is what a test's own
+ * `buildCatalogue(PROTOTYPE_MECHANICS)` resolves, so the fold sees each definition twice —
+ * once carried, once static — exactly as a real table does for the `core:*` set.
+ */
 export function openingActions(
   by: string,
   seq: () => Seq,
   entities: readonly Entity[],
   initiative: Readonly<Record<string, number>>,
-  order: readonly string[]
+  order: readonly string[],
+  available: readonly Mechanic[] = PROTOTYPE_MECHANICS
 ): Action[] {
+  const carried = (entity: Entity): Mechanic[] =>
+    available.filter((mechanic) => entity.mechanics.includes(mechanic.id));
   return [
     tableAction(by, seq(), { op: "start", epoch: 7 }),
-    ...entities.map((entity) => tableAction(by, seq(), { op: "add-entity", entity })),
+    ...entities.map((entity) =>
+      tableAction(by, seq(), { op: "add-entity", entity, mechanics: carried(entity) })
+    ),
     ...Object.entries(initiative).map(([entity, value]) =>
       tableAction(by, seq(), { op: "set-initiative", entity, value })
     ),

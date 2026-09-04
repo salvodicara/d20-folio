@@ -10,8 +10,9 @@ import { buildCatalogue } from "@/lib/combat/catalogue";
 import { encounterWriteData, parseEncounter } from "@/lib/combat/codec";
 import { fold } from "@/lib/combat/fold";
 import type { Action, Encounter, FoldedState } from "@/lib/combat/types";
+import type { Mechanic } from "@/lib/combat/mechanic";
 import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
-import { emptyState, openingActions, seqFactory } from "./__helpers__/state";
+import { emptyState, firstOf, openingActions, seqFactory } from "./__helpers__/state";
 import { testEntity } from "./__helpers__/entities";
 
 const REPLAY_DIR = join(__dirname, "replays");
@@ -132,6 +133,93 @@ describe("parseEncounter — malformed checkpoint (e)", () => {
   });
 });
 
+/** A carried mechanic exercising the fat end of the authoring vocabulary: an area save spell
+ *  with a nested predicate, an upcast slot cost, every input kind and a `dash` step. */
+const CARRIED: Mechanic = {
+  schema: 1,
+  id: "pc:marco:spell-fireball",
+  source: "pack",
+  label: "label:fireball",
+  active: [
+    {
+      id: "cast",
+      trigger: { kind: "invocation", economy: "action" },
+      cost: [
+        { kind: "turn", claim: "action" },
+        { kind: "slot", level: 3, upcast: true },
+        { kind: "concentration" },
+        { kind: "resource", id: "ki", amount: 1 },
+      ],
+      targets: {
+        count: "area",
+        eligibility: {
+          all: [
+            { not: { is: ["$self", "$target"] } },
+            { any: [{ hp: "$target", op: ">", value: "half-max" }] },
+          ],
+        },
+        area: { kind: "cone", origin: "origin", aim: "aim", lengthFt: 30 },
+      },
+      inputs: [
+        { id: "save", kind: "d20", for: "save", ability: "DEX", perTarget: true },
+        { id: "damage", kind: "dice", formula: "8d6" },
+        { id: "pick", kind: "choice", options: ["label:a", "label:b"] },
+        { id: "ruling", kind: "table", label: "label:ruling" },
+        { id: "origin", kind: "position" },
+      ],
+      steps: [
+        {
+          id: "burn",
+          kind: "save",
+          roll: "save",
+          ability: "DEX",
+          dc: "spell",
+          onSuccess: "half",
+        },
+        {
+          id: "scorch",
+          kind: "damage",
+          parts: [{ dice: "damage", type: "fire" }],
+          to: "$target",
+          when: { outcome: "save-fail" },
+        },
+        {
+          id: "ward",
+          kind: "effect-start",
+          effect: {
+            kind: "standing",
+            to: "$self",
+            lifetime: { kind: "seconds", remaining: { byLevel: { 1: 60, 3: 600 } } },
+            acBonus: 2,
+            concentration: true,
+            advantage: false,
+            riders: [{ dice: "1d4", type: "force", on: "any-hit", vs: { mark: "self" } }],
+          },
+        },
+        { id: "sprint", kind: "dash" },
+      ],
+    },
+    {
+      id: "react",
+      trigger: {
+        kind: "event",
+        event: { kind: "hp-zero", of: { markedBy: "self" } },
+        scope: "controlled",
+        window: true,
+      },
+      steps: [
+        { id: "note", kind: "manual-table", label: "label:note" },
+        {
+          id: "heal",
+          kind: "heal",
+          amount: { sum: [3, { ability: "WIS" }] },
+          to: "$self",
+        },
+      ],
+    },
+  ],
+};
+
 /** A `FoldedState` with every field populated — the checkpoint fixture shared by the
  *  round-trip test and the node-ceiling test. */
 function populatedFoldedState(): FoldedState {
@@ -148,6 +236,7 @@ function populatedFoldedState(): FoldedState {
       dayPhaseOrdinal: 0,
     },
     entities: { "goblin-1": entity },
+    mechanics: { [CARRIED.id]: CARRIED },
     relations: [
       { kind: "cover", target: "goblin-1", from: null, degree: "half" },
       { kind: "adjacent", a: "goblin-1", b: "hero-1" },
@@ -372,11 +461,11 @@ describe("parseEncounter / encounterWriteData — every table op kind round-trip
   const entity = testEntity({ id: "goblin-1" });
   const ops: readonly Record<string, unknown>[] = [
     { op: "start", epoch: 7 },
-    { op: "add-entity", entity },
+    { op: "add-entity", entity, mechanics: [CARRIED] },
     { op: "remove-entity", entity: "goblin-1" },
-    { op: "join", entity },
+    { op: "join", entity, mechanics: [] },
     { op: "leave", entity: "goblin-1" },
-    { op: "sync", entity },
+    { op: "sync", entity, mechanics: [CARRIED] },
     { op: "set-initiative", entity: "goblin-1", value: 12 },
     { op: "begin-turns", order: ["goblin-1"] },
     { op: "end-turn" },
@@ -417,6 +506,79 @@ describe("parseEncounter / encounterWriteData — every table op kind round-trip
       roundTrip(raw);
     }
   );
+});
+
+describe("parseEncounter — carried mechanics are closed-world (stage 6 §2 D2)", () => {
+  const seq = seqFactory("dm");
+  const entity = testEntity({ id: "goblin-1" });
+
+  function documentWith(mechanics: readonly unknown[]): Record<string, unknown> {
+    return encounterWriteData({
+      schema: 1,
+      id: "enc-1",
+      host: { kind: "campaign", campaignId: "camp-1" },
+      log: [
+        {
+          kind: "table",
+          id: "t-1",
+          seq: seq(),
+          by: "dm",
+          table: {
+            op: "add-entity",
+            entity,
+            mechanics: mechanics as readonly Mechanic[],
+          },
+        },
+      ],
+      checkpoint: null,
+    });
+  }
+
+  it("round-trips a carried mechanic verbatim", () => {
+    const parsed = parseEncounter(documentWith([CARRIED]));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const action = firstOf(parsed.encounter.log);
+    if (action.kind !== "table" || action.table.op !== "add-entity") {
+      throw new Error("expected the add-entity op back");
+    }
+    expect(action.table.mechanics).toEqual([CARRIED]);
+  });
+
+  it("quarantines the document for an unknown step kind, as an unknown action kind does", () => {
+    const alien = {
+      ...CARRIED,
+      active: [
+        {
+          id: "cast",
+          trigger: { kind: "invocation", economy: "action" },
+          steps: [{ id: "warp", kind: "teleport", to: "$target" }],
+        },
+      ],
+    };
+    expect(parseEncounter(documentWith([alien]))).toEqual({
+      ok: false,
+      reason: "malformed",
+    });
+  });
+
+  it("quarantines the document for an unknown key inside a program", () => {
+    const alien = {
+      ...CARRIED,
+      active: [
+        {
+          id: "cast",
+          trigger: { kind: "invocation", economy: "action" },
+          steps: [{ id: "note", kind: "manual-table", label: "l" }],
+          nonsense: true,
+        },
+      ],
+    };
+    expect(parseEncounter(documentWith([alien]))).toEqual({
+      ok: false,
+      reason: "malformed",
+    });
+  });
 });
 
 describe("parseEncounter — non-record input (i)", () => {

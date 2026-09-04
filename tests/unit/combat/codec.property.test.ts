@@ -20,6 +20,19 @@ import type {
   Relation,
   TableOp,
 } from "@/lib/combat/types";
+import type {
+  AreaShapeSpec,
+  Cost,
+  EventSelector,
+  Expr,
+  Input,
+  LifetimeSpec,
+  Mechanic,
+  Predicate,
+  Program,
+  Step,
+  Trigger,
+} from "@/lib/combat/mechanic";
 import { testEntity } from "./__helpers__/entities";
 import { emptyState } from "./__helpers__/state";
 
@@ -228,15 +241,243 @@ function genRoll(g: Gen): RollRecord {
   };
 }
 
+const ABILITIES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"] as const;
+const BINDINGS = ["$self", "$target", "$event.entity"] as const;
+
+function genExpr(g: Gen, depth = 0): Expr {
+  const leaves: Expr[] = [
+    g.int(0, 12),
+    { byLevel: { 1: g.int(1, 9), 3: g.int(1, 30), 5: g.int(1, 90) } },
+    { ability: g.pick(ABILITIES) },
+    { stat: g.pick(["spellSaveDc", "spellAttack", "proficiency"] as const) },
+  ];
+  if (depth >= 2 || g.bool()) return g.pick(leaves);
+  return { sum: [genExpr(g, depth + 1), genExpr(g, depth + 1)] };
+}
+
+function genPredicate(g: Gen, depth = 0): Predicate {
+  const leaves: Predicate[] = [
+    { outcome: g.pick(["hit", "crit", "miss", "save-fail", "save-success"] as const) },
+    { answer: g.str("input"), equals: g.pick([g.int(1, 20), "yes", true]) },
+    g.bool()
+      ? {
+          relation: g.pick(["adjacent", "visible", "engaged", "mark"] as const),
+          between: [g.pick(BINDINGS), g.pick(BINDINGS)],
+          value: g.bool(),
+        }
+      : {
+          relation: g.pick(["adjacent", "visible", "engaged", "mark"] as const),
+          between: [g.pick(BINDINGS), g.pick(BINDINGS)],
+        },
+    {
+      condition: g.pick(["prone", "poisoned", "frightened"] as const),
+      on: g.pick(BINDINGS),
+      present: g.bool(),
+    },
+    { is: [g.pick(BINDINGS), g.pick(BINDINGS)] },
+    {
+      hp: g.pick(BINDINGS),
+      op: g.pick(["<=", "<", ">=", ">"] as const),
+      value: g.bool() ? g.int(1, 40) : ("half-max" as const),
+    },
+  ];
+  if (depth >= 2 || g.next() < 0.6) return g.pick(leaves);
+  switch (g.int(0, 2)) {
+    case 0:
+      return { all: [genPredicate(g, depth + 1), genPredicate(g, depth + 1)] };
+    case 1:
+      return { any: [genPredicate(g, depth + 1)] };
+    default:
+      return { not: genPredicate(g, depth + 1) };
+  }
+}
+
+function genLifetimeSpec(g: Gen): LifetimeSpec {
+  return g.pick([
+    { kind: "manual" },
+    { kind: "turn-edge", entity: g.pick(BINDINGS), edge: g.pick(["start", "end"]) },
+    { kind: "rounds", remaining: g.int(1, 10) },
+    {
+      kind: "seconds",
+      remaining: g.bool() ? g.int(1, 600) : { byLevel: { 1: 60, 3: 600 } },
+    },
+    { kind: "rest", rest: g.pick(["short", "long"]) },
+  ] as const satisfies readonly LifetimeSpec[]);
+}
+
+function genStep(g: Gen, id: string): Step {
+  const damage = [{ dice: g.str("die"), type: g.pick(DAMAGE) }];
+  const steps: Step[] = [
+    { id, kind: "attack", roll: g.str("in"), bonus: genExpr(g), damage },
+    {
+      id,
+      kind: "save",
+      roll: g.str("in"),
+      ability: g.pick(ABILITIES),
+      dc: g.bool() ? genExpr(g) : "spell",
+      onSuccess: g.pick(["half", "negate"] as const),
+    },
+    { id, kind: "damage", parts: damage, to: g.pick(BINDINGS) },
+    { id, kind: "heal", amount: genExpr(g), to: g.pick(BINDINGS) },
+    {
+      id,
+      kind: "effect-start",
+      effect: {
+        kind: g.pick(["standing", "mark"] as const),
+        to: g.pick(BINDINGS),
+        lifetime: genLifetimeSpec(g),
+        ...(g.bool() ? { concentration: g.bool() } : {}),
+        ...(g.bool() ? { acBonus: g.int(1, 5) } : {}),
+        ...(g.bool()
+          ? {
+              riders: [
+                {
+                  dice: "1d6",
+                  type: g.pick(DAMAGE),
+                  on: g.pick(["weapon-hit", "spell-hit", "any-hit"] as const),
+                  vs: { mark: "self" },
+                },
+              ],
+            }
+          : {}),
+        ...(g.bool() ? { advantage: g.bool() } : {}),
+      },
+    },
+    {
+      id,
+      kind: "condition",
+      condition: g.pick(["prone", "poisoned", "frightened"] as const),
+      to: g.pick(BINDINGS),
+      lifetime: genLifetimeSpec(g),
+      ...(g.bool() ? { concentration: true } : {}),
+    },
+    { id, kind: "move-mark", from: g.pick(BINDINGS), to: g.pick(BINDINGS) },
+    { id, kind: "turn-claim", claim: "once", key: g.str("key") },
+    { id, kind: "negate", target: "declared-action" },
+    { id, kind: "manual-table", label: g.str("label") },
+    { id, kind: "move", to: g.str("in") },
+    { id, kind: "dash" },
+  ];
+  const step = g.pick(steps);
+  return g.bool() ? { ...step, when: genPredicate(g) } : step;
+}
+
+function genProgram(g: Gen, id: string): Program {
+  const trigger: Trigger = g.bool()
+    ? {
+        kind: "invocation",
+        economy: g.pick(["action", "bonus", "reaction", "free", "none"] as const),
+      }
+    : {
+        kind: "event",
+        event: g.pick([
+          { kind: "turn-start" },
+          { kind: "turn-end" },
+          { kind: "round-start" },
+          { kind: "attack-declared", target: g.pick(["self", "any"]) },
+          { kind: "damage-taken", of: g.pick(["self", "controlled"]) },
+          {
+            kind: "hp-zero",
+            of: g.bool() ? g.pick(["self", "controlled", "any"]) : { markedBy: "self" },
+          },
+          { kind: "entity-left-reach", of: "self" },
+          { kind: "concentration-ended", source: "self" },
+          { kind: "rest-completed", rest: g.pick(["short", "long"]) },
+        ] as const satisfies readonly EventSelector[]),
+        scope: g.pick(["self", "controlled", "others", "any"] as const),
+        window: g.bool(),
+      };
+  const area: AreaShapeSpec = g.pick([
+    { kind: "sphere", origin: "origin", radiusFt: g.int(5, 60) },
+    { kind: "cylinder", origin: "origin", radiusFt: g.int(5, 60) },
+    { kind: "cube", origin: "origin", sizeFt: g.int(5, 30) },
+    { kind: "cone", origin: "origin", aim: "aim", lengthFt: g.int(15, 60) },
+    {
+      kind: "line",
+      origin: "origin",
+      aim: "aim",
+      lengthFt: g.int(30, 100),
+      widthFt: g.int(5, 10),
+    },
+  ] as const satisfies readonly AreaShapeSpec[]);
+  return {
+    id,
+    trigger,
+    ...(g.bool()
+      ? {
+          cost: [
+            g.pick([
+              g.bool()
+                ? { kind: "slot", level: g.int(1, 9), upcast: g.bool() }
+                : { kind: "slot", level: g.int(1, 9) },
+              { kind: "resource", id: g.str("res"), amount: g.int(1, 3) },
+              {
+                kind: "turn",
+                claim: g.pick(["action", "bonus", "reaction", "attack", "free"] as const),
+              },
+              { kind: "concentration" },
+            ] as const satisfies readonly Cost[]),
+          ],
+        }
+      : {}),
+    ...(g.bool()
+      ? {
+          targets: g.bool()
+            ? { count: g.int(1, 3), eligibility: genPredicate(g) }
+            : { count: "area" as const, eligibility: genPredicate(g), area },
+        }
+      : {}),
+    ...(g.bool()
+      ? {
+          inputs: [
+            g.bool()
+              ? { id: "roll", kind: "d20", for: "save", ability: "DEX", perTarget: true }
+              : { id: "roll", kind: "d20", for: "attack" },
+            g.bool()
+              ? { id: "dmg", kind: "dice", formula: "2d6", perTarget: false }
+              : { id: "dmg", kind: "dice", formula: "2d6" },
+            { id: "pick", kind: "choice", options: [g.str("opt"), g.str("opt")] },
+            { id: "ruling", kind: "table", label: g.str("label") },
+            { id: "origin", kind: "position" },
+          ] satisfies readonly Input[],
+        }
+      : {}),
+    steps: Array.from({ length: g.int(1, 3) }, (_, i) => genStep(g, `step-${i}`)),
+  };
+}
+
+function genMechanic(g: Gen, id: string): Mechanic {
+  return {
+    schema: 1,
+    id,
+    source: g.pick(["srd", "pack", "homebrew", "monster"] as const),
+    ...(g.bool() ? { label: g.str("label") } : {}),
+    ...(g.bool()
+      ? {
+          active: Array.from({ length: g.int(1, 2) }, (_, i) =>
+            genProgram(g, `program-${i}`)
+          ),
+        }
+      : {}),
+  };
+}
+
+function genCarried(g: Gen): Mechanic[] {
+  return Array.from({ length: g.int(0, 2) }, (_, i) =>
+    genMechanic(g, `${g.pick(["pc", "monster"])}:${g.str("e")}:${i}`)
+  );
+}
+
 function genTableOp(g: Gen): TableOp {
   const entity = genEntity(g, g.pick(ENTITY_IDS));
+  const mechanics = genCarried(g);
   const ops: TableOp[] = [
     { op: "start", epoch: g.int(1, 99) },
-    { op: "add-entity", entity },
+    { op: "add-entity", entity, mechanics },
     { op: "remove-entity", entity: entity.id },
-    { op: "join", entity },
+    { op: "join", entity, mechanics },
     { op: "leave", entity: entity.id },
-    { op: "sync", entity },
+    { op: "sync", entity, mechanics },
     { op: "set-initiative", entity: entity.id, value: g.int(1, 30) },
     { op: "begin-turns", order: [...ENTITY_IDS].slice(0, g.int(1, 5)) },
     { op: "end-turn" },
@@ -372,6 +613,9 @@ function genFoldedState(g: Gen, actions: readonly Action[]): FoldedState {
     })
   );
   const declaredIntents = actions.filter((a) => a.kind === "intent").slice(0, 2);
+  const carried = Object.fromEntries(
+    genCarried(g).map((mechanic) => [mechanic.id, mechanic])
+  );
   const rolls = Object.fromEntries(
     Array.from({ length: g.int(0, 3) }, (_, i) => [`roll-${i}`, genRoll(g)])
   );
@@ -388,6 +632,7 @@ function genFoldedState(g: Gen, actions: readonly Action[]): FoldedState {
       dayPhaseOrdinal: g.int(0, 3),
     },
     entities,
+    mechanics: carried,
     relations: Array.from({ length: g.int(0, 4) }, () => genRelation(g)),
     effects,
     windows: Array.from({ length: g.int(0, 2) }, (_, i) => ({

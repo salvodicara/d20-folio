@@ -5,6 +5,7 @@
  * Every union here is closed; the reducer handles each member and ends in `assertNever`.
  */
 import type { RollErrorCode, RollRecord } from "./dice";
+import type { Mechanic } from "./mechanic";
 import type {
   ActionId,
   EffectId,
@@ -363,11 +364,27 @@ export type Automation = "full-auto" | "propose-and-confirm" | "log-only";
 
 export type TableOp =
   | { readonly op: "start"; readonly epoch: number }
-  | { readonly op: "add-entity"; readonly entity: Entity }
+  // The three seat ops carry the entity's EXECUTABLE definitions, not just their ids (stage 6
+  // design §2 D2): the fold must be identical on a client that never loaded the bestiary, or
+  // that runs the SRD-only build while the DM runs a content-pack monster. `[]` for an entity
+  // with nothing of its own; there is no optional field to forget.
+  | {
+      readonly op: "add-entity";
+      readonly entity: Entity;
+      readonly mechanics: readonly Mechanic[];
+    }
   | { readonly op: "remove-entity"; readonly entity: EntityId }
-  | { readonly op: "join"; readonly entity: Entity }
+  | {
+      readonly op: "join";
+      readonly entity: Entity;
+      readonly mechanics: readonly Mechanic[];
+    }
   | { readonly op: "leave"; readonly entity: EntityId }
-  | { readonly op: "sync"; readonly entity: Entity }
+  | {
+      readonly op: "sync";
+      readonly entity: Entity;
+      readonly mechanics: readonly Mechanic[];
+    }
   | { readonly op: "set-initiative"; readonly entity: EntityId; readonly value: number }
   | { readonly op: "begin-turns"; readonly order: readonly EntityId[] }
   | { readonly op: "end-turn" }
@@ -440,6 +457,9 @@ export interface FoldedState {
   readonly epoch: number;
   readonly clock: Clock;
   readonly entities: Readonly<Record<EntityId, Entity>>;
+  /** The executable definitions the seated entities carried in (design §2 D2). Read BEFORE the
+   *  static catalogue, so a table's own data always beats whatever a client happens to ship. */
+  readonly mechanics: Readonly<Record<MechanicId, Mechanic>>;
   readonly relations: readonly Relation[];
   readonly effects: Readonly<Record<EffectId, Effect>>;
   readonly windows: readonly ReactionWindow[];

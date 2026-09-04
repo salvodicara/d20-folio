@@ -33,6 +33,7 @@ import {
 import { encounterRef, personalEncounterRef } from "./combat-io";
 import { encounterWriteData } from "./combat/codec";
 import type { Seq } from "./combat/ids";
+import type { Mechanic } from "./combat/mechanic";
 import type { Action, Encounter, Entity } from "./combat/types";
 import { stripUndefined } from "./strip-undefined";
 
@@ -80,15 +81,28 @@ export async function joinTable(args: {
   readonly encounterId: string;
   readonly epoch: number;
   readonly entity: Entity;
+  /** The entity's EXECUTABLE definitions, carried into the log so every client folds the same
+   *  table (stage 6 design §2 D2). `[]` for an entity with nothing of its own. */
+  readonly mechanics: readonly Mechanic[];
   readonly action: { readonly id: string; readonly seq: Seq };
 }): Promise<void> {
-  const { db, uid, characterId, campaignId, encounterId, epoch, entity, action } = args;
+  const {
+    db,
+    uid,
+    characterId,
+    campaignId,
+    encounterId,
+    epoch,
+    entity,
+    mechanics,
+    action,
+  } = args;
   const joinAction: Action = {
     kind: "table",
     id: action.id,
     seq: action.seq,
     by: uid,
-    table: { op: "join", entity },
+    table: { op: "join", entity, mechanics },
   };
   const lease: EncounterLease = { campaignId, encounterId, epoch };
 
@@ -120,12 +134,25 @@ export async function leaveTable(args: {
   readonly campaignId: string;
   readonly encounterId: string;
   readonly entity: Entity;
+  /** The definitions the `sync` carries back into the personal aggregate — same contract as
+   *  `joinTable`'s. */
+  readonly mechanics: readonly Mechanic[];
   readonly leave: { readonly id: string; readonly seq: Seq };
   readonly sync: { readonly id: string; readonly seq: Seq };
   readonly personal: Encounter | null;
 }): Promise<void> {
-  const { db, uid, characterId, campaignId, encounterId, entity, leave, sync, personal } =
-    args;
+  const {
+    db,
+    uid,
+    characterId,
+    campaignId,
+    encounterId,
+    entity,
+    mechanics,
+    leave,
+    sync,
+    personal,
+  } = args;
 
   const leaveAction: Action = {
     kind: "table",
@@ -139,7 +166,7 @@ export async function leaveTable(args: {
     id: sync.id,
     seq: sync.seq,
     by: uid,
-    table: { op: "sync", entity },
+    table: { op: "sync", entity, mechanics },
   };
 
   const batch = writeBatch(db);

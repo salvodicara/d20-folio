@@ -39,6 +39,7 @@ export function initialState(): FoldedState {
       dayPhaseOrdinal: 0,
     },
     entities: {},
+    mechanics: {},
     relations: [],
     effects: {},
     windows: [],
