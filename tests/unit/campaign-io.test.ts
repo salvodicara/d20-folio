@@ -3108,121 +3108,44 @@ describe("campaign-io — write shapes", () => {
 });
 
 describe("campaign-io — roster management (remove member + lock joins)", () => {
-  /** Drive removeMember's transaction with a snapshot whose `encounter` is `seed`,
-   *  capturing the single `txn.update(...)` payload (B03). */
-  function runRemoveWith(seed: EncounterState | undefined): {
-    update: ReturnType<typeof vi.fn>;
-  } {
-    const update = vi.fn();
-    runTransactionMock.mockImplementation(async (_db, fn) =>
-      fn({
-        get: () =>
-          Promise.resolve({ data: () => ({ memberDetails: {}, encounter: seed }) }),
-        update,
-      })
-    );
-    return { update };
-  }
-
-  it("removeMember drops the uid from members (arrayRemove) + deletes their memberDetails entry (deleteField)", async () => {
-    const { update } = runRemoveWith(undefined); // no encounter running
+  it("removeMember writes the ROSTER KEYS ONLY — arrayRemove + deleteField + updatedAt", async () => {
+    // §5.2/§5.4 — a membership operation touches no other user's documents AND no field
+    // outside the campaign model. The old B03 `pc-<uid>` combatant prune wrote
+    // `encounter.*` dot-paths; that field left the model, so the prune would now be
+    // denied by `touchesOnlyModelFields()` and take the whole removal down with it.
     await removeMember("c1", "u2");
 
-    expect(update).toHaveBeenCalledTimes(1);
-    const data = update.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(updateDocMock).toHaveBeenCalledTimes(1);
+    expect(updateDocMock.mock.calls[0]?.[0]).toEqual({
+      __doc: [{ __db: true }, "campaigns", "c1"],
+    });
+    const data = updateDocMock.mock.calls[0]?.[1] as Record<string, unknown>;
     // members: arrayRemove(uid) — a targeted roster drop, never a whole-array set.
     expect(arrayRemoveMock).toHaveBeenCalledWith("u2");
-    expect(data.members).toEqual({ __arrayRemove: ["u2"] });
     // memberDetails.<uid>: deleteField() — the entry is removed, not nulled.
-    expect(data["memberDetails.u2"]).toEqual({ __deleteField: true });
-    expect(data.updatedAt).toEqual({ __serverTimestamp: true });
-    // No encounter → the write never touches encounter fields.
-    expect(Object.keys(data).some((k) => k.startsWith("encounter."))).toBe(false);
+    expect(data).toEqual({
+      members: { __arrayRemove: ["u2"] },
+      "memberDetails.u2": { __deleteField: true },
+      updatedAt: { __serverTimestamp: true },
+    });
     expect(docMock).toHaveBeenCalledWith({ __db: true }, "campaigns", "c1");
   });
 
-  it("NEVER writes the removed hero's character document (§5.2)", async () => {
-    // The DM's cross-user detach is gone: removing a member writes the CAMPAIGN doc
-    // and nothing else. The departing hero's `attachedCampaignId` is left behind as a
-    // pointer whose roster row no longer exists — the attach seam proves it stale.
-    const update = vi.fn();
-    runTransactionMock.mockImplementation(async (_db, fn) =>
-      fn({
-        get: () =>
-          Promise.resolve({
-            data: () => ({
-              memberDetails: { u2: { characterId: "char-2" } },
-            }),
-          }),
-        update,
-      })
-    );
-
+  it("NEVER writes the removed hero's character document, and never runs a transaction", async () => {
+    // The DM's cross-user detach is gone: the departing hero's `attachedCampaignId` is
+    // left behind as a pointer whose roster row no longer exists — the attach seam
+    // proves it stale. With no field left to derive from a fresh read, the transaction
+    // goes too: composing field transforms are offline-queueable, a transaction is not.
     await removeMember("c1", "u2");
 
-    expect(update).toHaveBeenCalledTimes(1);
-    expect(update.mock.calls[0]?.[0]).toEqual({
-      __doc: [{ __db: true }, "campaigns", "c1"],
-    });
-    expect(update.mock.calls[0]?.[1]).toMatchObject({
-      members: { __arrayRemove: ["u2"] },
-      "memberDetails.u2": { __deleteField: true },
-    });
+    expect(runTransactionMock).not.toHaveBeenCalled();
     expect(
-      update.mock.calls.some((call) => {
+      updateDocMock.mock.calls.some((call) => {
         const ref = call[0] as { __doc?: unknown[] };
         return ref.__doc?.[1] === "users";
       })
     ).toBe(false);
-  });
-
-  it("B03 — removeMember PRUNES the removed member's pc-<uid> combatant from a running encounter", async () => {
-    // A gathering encounter seeded with two PCs; the DM removes u2 mid-fight. BEFORE the
-    // fix removeMember never touched the encounter, so pc-u2 orphaned in combatants/order
-    // (counting toward the Begin-turns total forever). Now it is spliced out at the seam.
-    const encounter: EncounterState = {
-      nextMonsterOrdinal: 1,
-      round: 1,
-      currentCombatantId: null, // gathering
-      order: ["pc-u1", "pc-u2"],
-      epoch: 1,
-      status: "active",
-      combatants: [
-        { kind: "pc", id: "pc-u1", memberUid: "u1", characterId: "char-1" },
-        { kind: "pc", id: "pc-u2", memberUid: "u2", characterId: "char-2" },
-      ],
-    };
-    const { update } = runRemoveWith(encounter);
-    await removeMember("c1", "u2");
-
-    const data = update.mock.calls[0]?.[1] as Record<string, unknown>;
-    // The roster drop still happens…
-    expect(data["memberDetails.u2"]).toEqual({ __deleteField: true });
-    // …AND the encounter is pruned via dot-paths (never the whole map): pc-u2 gone from
-    // combatants + order, so it no longer counts toward the Begin-turns total.
-    const combatants = data["encounter.combatants"] as { id: string }[];
-    expect(combatants.map((c) => c.id)).toEqual(["pc-u1"]);
-    expect(data["encounter.order"]).toEqual(["pc-u1"]);
-    // Narrow write — only the touched encounter dot-paths, never `encounter` wholesale.
-    expect(Object.keys(data)).not.toContain("encounter");
-  });
-
-  it("B03 — removeMember leaves the encounter alone when the member has no pc combatant", async () => {
-    const encounter: EncounterState = {
-      nextMonsterOrdinal: 1,
-      round: 1,
-      currentCombatantId: null,
-      order: ["pc-u1"],
-      epoch: 1,
-      status: "active",
-      combatants: [{ kind: "pc", id: "pc-u1", memberUid: "u1", characterId: "char-1" }],
-    };
-    const { update } = runRemoveWith(encounter);
-    await removeMember("c1", "u2"); // u2 has no pc combatant here
-
-    const data = update.mock.calls[0]?.[1] as Record<string, unknown>;
-    expect(data["memberDetails.u2"]).toEqual({ __deleteField: true });
-    expect(Object.keys(data).some((k) => k.startsWith("encounter."))).toBe(false);
+    expect(setDocMock).not.toHaveBeenCalled();
   });
 
   it("setJoinsLocked writes the boolean flag + a server updatedAt (lock then re-open)", async () => {
@@ -3304,8 +3227,15 @@ describe("campaign-io — attachMemberCharacter atomic D9 claim (B07)", () => {
     // proceeds; the D9 conflict is reserved for a LIVE roster row.
     type Snap = { exists: () => boolean; data?: () => unknown };
     const claimedCampaigns: Array<() => Promise<Snap>> = [
-      // The player was removed from campB: the read is denied.
-      () => Promise.reject(new Error("permission-denied")),
+      // The player was removed from campB: the read is DENIED. The proof is the
+      // Firestore error CODE, never the message — an `unavailable`/offline failure
+      // must not read as staleness (see the fail-closed case below).
+      () =>
+        Promise.reject(
+          Object.assign(new Error("Missing or insufficient permissions."), {
+            code: "permission-denied",
+          })
+        ),
       // campB was deleted outright.
       () => Promise.resolve({ exists: () => false }),
       // campB is readable, but its roster no longer names this hero.
@@ -3326,6 +3256,27 @@ describe("campaign-io — attachMemberCharacter atomic D9 claim (B07)", () => {
       const outcome = await attachMemberCharacter("campA", "u1", null, "char-1", null);
       expect(outcome).toBe("attached");
       expect(updates.find(charWrite)?.data.attachedCampaignId).toBe("campA");
+    }
+  });
+
+  it("KEEPS the conflict when the probe FAILS for any reason other than a denial", async () => {
+    // The offline-first hazard: `unavailable` / `deadline-exceeded` / a cache miss is
+    // the ordinary weather of this app and proves NOTHING about the claim. Reading it
+    // as staleness would silently re-claim a hero who really is attached elsewhere —
+    // the exact D9 double-attach. The probe therefore fails CLOSED.
+    for (const code of ["unavailable", "deadline-exceeded", undefined]) {
+      getDocMock
+        .mockResolvedValueOnce({
+          exists: () => true,
+          data: () => ({ attachedCampaignId: "campB" }),
+        })
+        .mockImplementationOnce(() =>
+          Promise.reject(Object.assign(new Error("offline"), code ? { code } : {}))
+        );
+      const { updates } = runAttachWith({ attachedCampaignId: "campB" });
+      const outcome = await attachMemberCharacter("campA", "u1", null, "char-1", null);
+      expect(outcome).toBe("conflict");
+      expect(updates).toHaveLength(0);
     }
   });
 

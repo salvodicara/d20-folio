@@ -44,7 +44,6 @@ import {
 import { db } from "@/lib/firebase";
 import { DEV_BYPASS_AUTH as IMPORTED_DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
-  removeCombatant,
   parseEncounterState,
   setMonsterCondition,
   setMonsterBardicInspirationDie,
@@ -433,15 +432,30 @@ export async function setMemberCharacter(
  *  claimed by a DIFFERENT campaign (D9 — the caller reverts + tells the player). */
 export type AttachOutcome = "attached" | "conflict";
 
+/** A Firestore rejection that is an AUTHORIZATION verdict, not a transport failure. */
+function isPermissionDenied(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === "permission-denied"
+  );
+}
+
 /**
  * §5.2 — probe a character's FOREIGN `attachedCampaignId` claim and return it when it is
  * provably STALE (so {@link attachMemberCharacter} may overwrite it), else `null`.
  *
  * A claim naming this campaign, or no claim at all, is not foreign and is never probed.
- * A foreign claim is dead when the campaign it names cannot be read (`permission-denied`
- * — the player is no longer a member) or does not exist (deleted), and equally when the
- * campaign IS readable but its roster does not name this exact character. Only a live
- * roster row keeps the one-campaign conflict.
+ * A foreign claim is dead on exactly three PROOFS: the campaign it names denies the read
+ * (`permission-denied` — the player is no longer a member), the campaign does not exist
+ * (deleted), or the campaign IS readable but its roster does not name this exact
+ * character. Only a live roster row keeps the one-campaign conflict.
+ *
+ * EVERY OTHER FAILURE PROVES NOTHING and returns `null` (the conflict stands): an
+ * `unavailable`, a `deadline-exceeded` or an offline cache miss is the ordinary weather
+ * of an offline-first PWA, and treating it as staleness would silently re-claim a hero
+ * who really is attached elsewhere — the exact D9 double-attach this seam exists to
+ * prevent. The same fail-closed rule governs the character read above it.
  */
 async function proveClaimStale(
   uid: string,
@@ -452,9 +466,13 @@ async function proveClaimStale(
   if (character === null || !character.exists()) return null;
   const claimed = nonEmptyString(character.data().attachedCampaignId);
   if (claimed === null || claimed === campaignId) return null;
-  const claimedCampaign = await getDoc(campaignDoc(claimed)).catch(() => null);
-  if (claimedCampaign === null || !claimedCampaign.exists()) return claimed;
-  const details = (claimedCampaign.data() as Partial<CampaignDoc>).memberDetails;
+  const probe = await getDoc(campaignDoc(claimed)).then(
+    (snapshot) => ({ denied: false, snapshot }),
+    (error: unknown) => ({ denied: isPermissionDenied(error), snapshot: null })
+  );
+  if (probe.snapshot === null) return probe.denied ? claimed : null;
+  if (!probe.snapshot.exists()) return claimed;
+  const details = (probe.snapshot.data() as Partial<CampaignDoc>).memberDetails;
   const rosterCharacterId = nonEmptyString(details?.[uid]?.characterId);
   return rosterCharacterId === characterId ? null : claimed;
 }
@@ -485,12 +503,13 @@ async function proveClaimStale(
  * STALE CLAIMS (§5.2). Now that no membership operation writes another user's documents,
  * a claim can outlive its campaign: the player was removed, or the campaign was deleted,
  * and nobody but the owner may clear the pointer. So a claim naming a DIFFERENT campaign
- * is PROBED before the transaction ({@link claimedCampaignIsStale}) — a `permission-denied`
- * or a missing campaign, or a readable campaign whose roster does not name this exact
- * character, proves the claim dead and the attach overwrites it. Only a live roster row
- * keeps the D9 conflict. The probe runs OUTSIDE the transaction because a transaction may
- * not read a document the caller cannot read, and its verdict is applied only when the
- * transaction's FRESH claim is still the very value the probe examined.
+ * is PROBED before the transaction ({@link proveClaimStale}) — a DENIED read, a missing
+ * campaign, or a readable campaign whose roster does not name this exact character proves
+ * the claim dead and the attach overwrites it; any other read failure (offline,
+ * `unavailable`) proves nothing and the D9 conflict stands. Only a live roster row keeps
+ * the conflict on a successful read. The probe runs OUTSIDE the transaction because a
+ * transaction may not read a document the caller cannot read, and its verdict is applied
+ * only when the transaction's FRESH claim is still the very value the probe examined.
  */
 export async function attachMemberCharacter(
   campaignId: string,
@@ -557,48 +576,30 @@ export async function yieldDmRole(
 
 /**
  * Remove a member from the campaign (DM-only — `firestore.rules` gives the DM/admin a
- * roster write): drop the uid from `members` (`arrayRemove`), delete their whole
- * `memberDetails` entry (`deleteField`), AND — B03 — splice their `pc-<uid>` combatant
- * out of any RUNNING encounter. It writes the CAMPAIGN DOCUMENT ONLY: §5.2 — a
- * membership operation never writes another user's documents, so the departing hero's
- * reciprocal `attachedCampaignId` is NOT cleared here. That claim is a pointer, not a
- * grant: the roster row that made it meaningful is gone, so the attach seam proves it
- * stale and overwrites it, and the owner's own client clears it.
+ * roster write): drop the uid from `members` (`arrayRemove`) and delete their whole
+ * `memberDetails` entry (`deleteField`). THE ROSTER KEYS AND NOTHING ELSE.
  *
- * A removed member's PC combatant is NOT harmless: while gathering it counts toward the
- * Begin-turns total forever (an orphan that can never roll → the gate locks with no UI to
- * remove it); once turns begin it renders as an invisible, un-highlightable turn slot
- * `advanceTurn` still steps onto. So this runs in a `runTransaction` that reads the
- * encounter FRESH and prunes the combatant through the SAME {@link removeCombatant}
- * reducer, writing ONLY the touched encounter fields via dot-paths (never the whole map —
- * mirroring {@link advanceEncounterTurn}). Reading fresh means a concurrent turn advance
- * is preserved: `removeCombatant` only re-points `currentCombatantId` when the removed PC
- * WAS current, so writing it back is otherwise a no-op on the value we just read, and
- * Firestore retries the txn if an advance commits in between. When no encounter (or no
- * such combatant) exists the txn writes only the roster drop. No-op under dev bypass (the
- * caller prunes the store optimistically).
+ * §5.2 — a membership operation never writes another user's documents, so the departing
+ * hero's reciprocal `attachedCampaignId` is NOT cleared here. That claim is a pointer,
+ * not a grant: the roster row that made it meaningful is gone, so the attach seam proves
+ * it stale and overwrites it, and the owner's own client clears it.
+ *
+ * §5.4 — nor does it touch the embedded `encounter`: that field left the campaign model
+ * (play lives in `campaigns/{id}/encounters/{eid}`), so the old B03 `pc-<uid>` combatant
+ * prune would now be DENIED by `touchesOnlyModelFields()` and take the whole removal down
+ * with it. In the shared encounter a departed player's entity is a log fact the DM
+ * removes with an action, not a field a membership write reaches into. With no field left
+ * to derive from a fresh read, the transaction goes too: `arrayRemove` + `deleteField` are
+ * composing, offline-queueable field transforms, so a plain `updateDoc` is both smaller
+ * and strictly better behaved than a read-nothing transaction. No-op under dev bypass
+ * (the caller prunes the store optimistically).
  */
 export async function removeMember(campaignId: string, uid: string): Promise<void> {
   if (devBypassEnabled()) return;
-  const ref = campaignDoc(campaignId);
-  const combatantId = `pc-${uid}`;
-  await runTransaction(db, async (txn) => {
-    const snap = await txn.get(ref);
-    const campaign = snap.data() as CampaignDoc | undefined;
-    const encounter = storedEncounter(campaign?.encounter);
-    const update: Record<string, unknown> = {
-      members: arrayRemove(uid),
-      [`memberDetails.${uid}`]: deleteField(),
-      updatedAt: serverTimestamp(),
-    };
-    if (encounter?.combatants.some((c) => c.id === combatantId)) {
-      const pruned = removeCombatant(encounter, combatantId);
-      update["encounter.combatants"] = pruned.combatants;
-      update["encounter.currentCombatantId"] = pruned.currentCombatantId;
-      update["encounter.round"] = pruned.round;
-      update["encounter.order"] = pruned.order ?? [];
-    }
-    txn.update(ref, update);
+  await updateDoc(campaignDoc(campaignId), {
+    members: arrayRemove(uid),
+    [`memberDetails.${uid}`]: deleteField(),
+    updatedAt: serverTimestamp(),
   });
 }
 
