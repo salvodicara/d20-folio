@@ -284,6 +284,102 @@ export function MapCanvas({
   const tokenRadius = ground.cellPx * 0.42;
   const fontSize = Math.max(10, ground.cellPx * 0.22);
 
+  // One token. The token being dragged is drawn AFTER the fog (below), so a player's own
+  // token never disappears under the opaque overlay while they drag it across covered cells.
+  const renderToken = (token: MapToken) => {
+    const centre = cellCenterPx(ground, token.position);
+    const at =
+      drag !== null && drag.entity === token.id ? cellCenterPx(ground, drag.to) : centre;
+    const label = labelOf(token);
+    const isSelected = selected === token.id;
+    return (
+      <g
+        key={token.id}
+        className={cn(
+          "map-token",
+          token.hidden && "is-hidden",
+          token.current && "is-current"
+        )}
+        data-testid={`map-token-${token.id}`}
+        data-hidden={token.hidden ? "true" : undefined}
+        transform={`translate(${at.x} ${at.y})`}
+        onPointerDown={(event) => onTokenPointerDown(token, event)}
+        role="button"
+        tabIndex={0}
+        aria-label={
+          token.hidden
+            ? t("map.aria.tokenHidden", { name: label })
+            : t("map.aria.token", { name: label })
+        }
+        style={{ cursor: tool === "select" ? "grab" : "default" }}
+      >
+        <circle r={tokenRadius} fill="var(--map-token-fill)" />
+        <text
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={fontSize * 1.4}
+          fill="var(--map-token-ink)"
+          fontFamily="var(--font-title)"
+        >
+          {initials(label)}
+        </text>
+        <circle
+          r={tokenRadius}
+          fill="none"
+          stroke={ringColour(token)}
+          strokeWidth={isSelected ? TOKEN_RING * 1.6 : TOKEN_RING}
+          strokeDasharray={token.hidden ? "5 4" : undefined}
+          style={
+            token.current
+              ? { filter: "drop-shadow(0 0 6px var(--map-ring-turn))" }
+              : undefined
+          }
+        />
+        {/* HP bar beneath (rule 33): everyone sees the bar; the number only where revealed. */}
+        <rect
+          x={-tokenRadius}
+          y={tokenRadius + 4}
+          width={tokenRadius * 2}
+          height={4}
+          rx={2}
+          fill="var(--map-hp-track)"
+        />
+        <rect
+          x={-tokenRadius}
+          y={tokenRadius + 4}
+          width={tokenRadius * 2 * token.hpRatio}
+          height={4}
+          rx={2}
+          fill={ALLY_KINDS.has(token.kind) ? "var(--map-hp-ally)" : "var(--map-hp-enemy)"}
+          data-testid={`map-hp-${token.id}`}
+        />
+        <text
+          y={tokenRadius + 12 + fontSize}
+          textAnchor="middle"
+          fontSize={fontSize}
+          fill="var(--map-label-ink)"
+          fontFamily="var(--font-body)"
+          fontWeight={600}
+          paintOrder="stroke"
+          stroke="var(--map-label-halo)"
+          strokeWidth={3}
+        >
+          {label}
+          {token.hp !== null && token.maxHp !== null ? (
+            <tspan fill="var(--map-label-muted)" fontWeight={400}>
+              {` ${token.hp} / ${token.maxHp}`}
+            </tspan>
+          ) : null}
+          {token.hidden ? (
+            <tspan fill="var(--map-label-muted)" fontWeight={400}>
+              {` (${t("map.token.hidden")})`}
+            </tspan>
+          ) : null}
+        </text>
+      </g>
+    );
+  };
+
   return (
     <svg
       ref={svgRef}
@@ -379,105 +475,7 @@ export function MapCanvas({
         ) : null}
 
         {/* Tokens — bound to entity ids; one cell each in this stage. */}
-        {view.tokens.map((token) => {
-          const centre = cellCenterPx(ground, token.position);
-          const at =
-            drag !== null && drag.entity === token.id
-              ? cellCenterPx(ground, drag.to)
-              : centre;
-          const label = labelOf(token);
-          const isSelected = selected === token.id;
-          return (
-            <g
-              key={token.id}
-              className={cn(
-                "map-token",
-                token.hidden && "is-hidden",
-                token.current && "is-current"
-              )}
-              data-testid={`map-token-${token.id}`}
-              data-hidden={token.hidden ? "true" : undefined}
-              transform={`translate(${at.x} ${at.y})`}
-              onPointerDown={(event) => onTokenPointerDown(token, event)}
-              role="button"
-              tabIndex={0}
-              aria-label={
-                token.hidden
-                  ? t("map.aria.tokenHidden", { name: label })
-                  : t("map.aria.token", { name: label })
-              }
-              style={{ cursor: tool === "select" ? "grab" : "default" }}
-            >
-              <circle r={tokenRadius} fill="var(--map-token-fill)" />
-              <text
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize={fontSize * 1.4}
-                fill="var(--map-token-ink)"
-                fontFamily="var(--font-title)"
-              >
-                {initials(label)}
-              </text>
-              <circle
-                r={tokenRadius}
-                fill="none"
-                stroke={ringColour(token)}
-                strokeWidth={isSelected ? TOKEN_RING * 1.6 : TOKEN_RING}
-                strokeDasharray={token.hidden ? "5 4" : undefined}
-                style={
-                  token.current
-                    ? { filter: "drop-shadow(0 0 6px var(--map-ring-turn))" }
-                    : undefined
-                }
-              />
-              {/* HP bar beneath (rule 33): everyone sees the bar; the number only where revealed. */}
-              <rect
-                x={-tokenRadius}
-                y={tokenRadius + 4}
-                width={tokenRadius * 2}
-                height={4}
-                rx={2}
-                fill="var(--map-hp-track)"
-              />
-              <rect
-                x={-tokenRadius}
-                y={tokenRadius + 4}
-                width={tokenRadius * 2 * token.hpRatio}
-                height={4}
-                rx={2}
-                fill={
-                  ALLY_KINDS.has(token.kind)
-                    ? "var(--map-hp-ally)"
-                    : "var(--map-hp-enemy)"
-                }
-                data-testid={`map-hp-${token.id}`}
-              />
-              <text
-                y={tokenRadius + 12 + fontSize}
-                textAnchor="middle"
-                fontSize={fontSize}
-                fill="var(--map-label-ink)"
-                fontFamily="var(--font-body)"
-                fontWeight={600}
-                paintOrder="stroke"
-                stroke="var(--map-label-halo)"
-                strokeWidth={3}
-              >
-                {label}
-                {token.hp !== null && token.maxHp !== null ? (
-                  <tspan fill="var(--map-label-muted)" fontWeight={400}>
-                    {` ${token.hp} / ${token.maxHp}`}
-                  </tspan>
-                ) : null}
-                {token.hidden ? (
-                  <tspan fill="var(--map-label-muted)" fontWeight={400}>
-                    {` (${t("map.token.hidden")})`}
-                  </tspan>
-                ) : null}
-              </text>
-            </g>
-          );
-        })}
+        {view.tokens.filter((token) => drag?.entity !== token.id).map(renderToken)}
 
         {/* Fog: white in the mask shows the overlay, revealed rectangles are cut out. */}
         {fog.covered ? (
@@ -494,6 +492,11 @@ export function MapCanvas({
             pointerEvents="none"
           />
         ) : null}
+
+        {/* The dragged token rides above the fog. */}
+        {drag
+          ? view.tokens.filter((token) => token.id === drag.entity).map(renderToken)
+          : null}
 
         {/* The drag ruler: origin → hovered cell, a distance pill, tone by budget. */}
         {drag && drag.from !== null && drag.ruler ? (
@@ -546,7 +549,7 @@ function RulerOverlay({
   to: Position;
   ruler: Ruler;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const a = cellCenterPx(ground, from);
   const b = cellCenterPx(ground, to);
   const tone =
@@ -556,7 +559,7 @@ function RulerOverlay({
         ? "var(--map-ruler-dash)"
         : "var(--map-ruler-over)";
   const label = t("map.ruler.label", {
-    metres: feetToMetres(ruler.feet).toLocaleString(undefined, {
+    metres: feetToMetres(ruler.feet).toLocaleString(i18n.language, {
       maximumFractionDigits: 1,
     }),
     feet: ruler.feet,
