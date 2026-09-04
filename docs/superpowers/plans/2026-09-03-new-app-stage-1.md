@@ -108,9 +108,27 @@ carrying pre-migration shapes or obsolete residue. Plan and receipt:
    `undo`, the three campaign automation levels (ADR-0011). Vocabulary and hard cases: exactly
    the stage-3 tier of the target spec (§4, §7) and of the authoring spec (§6); a `later` kind
    conforms as `unsupported`, never half-built. Golden replays for Marco's turn and Sara's ambush.
+   **Status (2026-09-04): closed on `v2`.** Plan: `2026-09-03-v2-stage-3-reducer.md`. The three
+   automation levels (two implemented, `propose-and-confirm` deferred to stage 6), overrides that
+   change the fact, area targeting with Fireball, the monster adapter, and both golden replays
+   (`marco-first-turn.json`, `sara-ogre-ambush.json`) against the pure reducer. Receipt:
+   `docs/PROGRAM_STATUS.md` → "`v2` — stage 3".
 4. **Shared encounter document.** `campaigns/{id}/encounters/{eid}` append-only log, one
    listener per client, rules reduced to identity, membership, ownership and shape for that
    collection.
+   **Status (2026-09-04): closed on `v2`.** Plan:
+   `2026-09-04-v2-stage-4-shared-encounter.md` (9 tasks). `src/lib/combat/codec.ts` (the
+   closed-world schema-1 codec, unknown top-level keys preserved, hostile input quarantined),
+   `src/lib/combat/checkpoint.ts` (pure compaction with a 5-minute grace window),
+   `src/lib/combat-io.ts` (refs, create, append by `arrayUnion`, subscribe with
+   `includeMetadataChanges`, the checkpoint transaction, delete, the hybrid seq clock),
+   `src/lib/combat-lease.ts` (`joinTable`/`leaveTable`/`readLease`), the three lease table ops
+   (`join`/`leave`/`sync`), per-target roll attribution, an HP override that carries damage's
+   0-HP tail, and `firestore.rules` reduced from 984 to 548 lines with the append-only prefix
+   fence. `intent.ts` was split first (`answers.ts`, `override.ts`, `reposition.ts`). The gate
+   for stages 1–4 is **met**: both golden replays fold identically through two authenticated
+   emulator clients, with an override and an undo from each side. Receipt:
+   `docs/PROGRAM_STATUS.md` → "`v2` — stage 4".
 5. **Minimum map.** Background upload (compressed, per-campaign quota), square grid with scale,
    tokens bound to entity ids, drag with a Foundry-style ruler, rectangle fog, hidden tokens.
    No scenes, layers, drawing, pointer, walls, vision or lighting yet.
@@ -137,7 +155,7 @@ Evidence: the reverse import graph and document inventory recorded in
 | Module                                                                                                  | Fate                                                                                                                                                           |
 | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/lib/combat/**`, `src/data/combat/prototype-catalogue.ts`                                           | **keep** — base of the dice seam (stage 1) and of the story reducer (stage 3); the prototype catalogue is the test catalogue until stage 3                     |
-| `src/lib/combat-io.ts`                                                                                  | deleted 2026-09-03 (no reader); stage 4 writes the append/subscribe/checkpoint adapter                                                                         |
+| `src/lib/combat-io.ts`                                                                                  | written in stage 4 (append/subscribe/checkpoint), with `combat-lease.ts` and the pure `checkpoint.ts`/`codec.ts`                                               |
 | mechanics kernel (`mechanics-*`, `mechanic-occurrence*`, 31 files)                                      | **dies at stage 6** with the old play surfaces that read it; frozen by `mechanics-kernel-freeze.guard` (37 readers); `mechanics-trigger.ts` deleted 2026-09-03 |
 | K1 `src/lib/command/**`, Functions bundle, orphan types                                                 | deleted 2026-09-03                                                                                                                                             |
 | program supervisor (`state`/`runtime`/`cli`), operating model, its plans                                | deleted 2026-09-03; the worktree helpers live in `scripts/worktree/`                                                                                           |

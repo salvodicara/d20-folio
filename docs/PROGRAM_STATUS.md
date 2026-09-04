@@ -17,7 +17,8 @@ portfolio (`docs/TEST_PORTFOLIO.md`); those owners are linked, never copied. Pro
   `/Users/salvatoredicara/Workspace/d20-folio-content-v2`, forked from its `main` `5a428960`);
   this worktree's `content-pack` symlink points at it. Rule 28: every pack seam moves on both `v2`
   branches in the same motion.
-- Next session: `docs/superpowers/plans/2026-09-04-v2-next-session-handoff.md`.
+- Next session: `docs/superpowers/plans/2026-09-04-v2-next-session-handoff.md` (stage 5, the
+  minimum map).
 
 ## Pending on `main`
 
@@ -131,9 +132,6 @@ under the 15-minute target.
 **Out of stage 2** (unchanged from the design doc): no map, no `TargetSpec.count: "area"` wiring
 (stage 3, with Fireball), no cover/visibility/elevation derivation, no difficult terrain, forced
 movement or reach-weapon support, no fifth range band.
-
-Next: stage 4 (the shared encounter document), from
-`docs/superpowers/plans/2026-09-04-v2-next-session-handoff.md`.
 
 ## `v2` — stage 3, the reducer for the two story encounters (2026-09-04)
 
@@ -329,14 +327,198 @@ map, fog or token UI (stage 5). Plus six seams this stage deliberately left open
   new capability touches. Splitting it (`answers.ts`, `override.ts`, `reposition.ts`) is stage 4's
   first task, before stage 4's own code lands on top of it.
 
-Next: stage 4 (the shared encounter document), from
+Next: stage 4 (the shared encounter document) — closed; see the section below.
+
+## `v2` — stage 4, the shared encounter document (2026-09-04)
+
+Plan: `docs/superpowers/plans/2026-09-04-v2-stage-4-shared-encounter.md` (9 tasks, dispatched
+sequentially — `types.ts`, `override.ts` and `firestore.rules` are touched by several of them).
+Design: `docs/superpowers/specs/2026-09-02-total-combat-automation-design.md` §5 (all four
+subsections: documents and owners, the lease, write mechanics, authorization) and §3.1 (the
+`table` op vocabulary), `docs/adr/0005-rules-enforce-access-not-gameplay.md`,
+`docs/adr/0010-dice-seam-rolls-are-log-actions.md`, `docs/adr/0011-campaign-automation-levels.md`.
+All four spec sections, both ADR amendments and the access matrix in `docs/ARCHITECTURE.md` are
+reconciled in this commit.
+
+**Done.** The stage put stage 3's pure log in Firestore and made two authenticated clients fold
+the same document to the same state.
+
+- **`intent.ts` split first** (`answers.ts`, `override.ts`, `reposition.ts`), behaviour-preserving,
+  before any stage-4 code landed on it: 1,216 → 955 lines, the same 722 tests green either side.
+- **Per-target roll attribution** (`resolve.ts`): a roll answered under a per-target key
+  `${input}:${entityId}` may carry `roller: entityId` — a target's save is the target's fact even
+  inside the caster's intent. A plain key still binds to the acting entity. Marco's replay now
+  attributes the three goblin saves. ADR-0010 amendment.
+- **An HP override to zero has damage's tail** (`override.ts`): `settleZeroHp` is shared with
+  `deliverDamage`, so an override that drops a creature from above 0 to 0 emits `hp-zero` and ends
+  its concentration. An override of `vitals.life` to `dead` runs the same tail without `hp-zero`.
+  The asymmetry stage 3 recorded as an open seam does not survive.
+- **The lease table ops** (`table.ts`): `join`, `leave` and `sync` — `join`/`leave` reuse the
+  extracted `addEntity`/`removeEntity` bodies with the same guards `add-entity`/`remove-entity`
+  have; `sync` is an unconditional upsert that never touches the turn order.
+- **The codec** (`src/lib/combat/codec.ts`): one closed-world `exact-schema` for the persisted
+  `Encounter` (schema 1), `parseEncounter` / `encounterWriteData`, unknown top-level keys preserved
+  in `Encounter.unknown` and written back verbatim, hostile or oversized documents quarantined with
+  a typed reason instead of dropped (`__proto__`, unbounded depth, the 2,048-action ceiling).
+- **Compaction, pure** (`src/lib/combat/checkpoint.ts`): `shouldCompact` (200 actions or 512 KiB),
+  `checkpointThrough` (the newest action outside a five-minute grace window), and `compact`, which
+  folds the head **together with every `undo` in the log** so an undo that sits after the boundary
+  and targets an action before it is honoured rather than reverted.
+- **The Firestore adapter** (`src/lib/combat-io.ts`): refs for both hosts, `createEncounter`,
+  `appendAction` (`updateDoc` + `arrayUnion`), `subscribeEncounter` (one `onSnapshot` with
+  `includeMetadataChanges`, quarantine surfaced rather than thrown), `checkpointEncounter` (a
+  transaction preconditioned on the stored `checkpoint.through`, merging interleaved appends and
+  unknown keys), `deleteEncounter`, and the hybrid `seq` clock. It takes the `Firestore` instance
+  explicitly, which is what lets the same functions run under two emulator identities.
+- **The lease, owner-side** (`src/lib/combat-lease.ts`): `joinTable`, `leaveTable`, `readLease` —
+  the character's `lease: { campaignId, encounterId, epoch }` marker is written and cleared by its
+  own owner's client only, and it is named `lease` (not the spec's old `attached`) because the
+  parent already carries `attachedCampaignId`.
+- **`firestore.rules` reduced** from 984 to 548 lines: identity, membership, ownership and shape,
+  and nothing that reads a game field. A member's encounter `update` is append-only **by prefix**
+  (the stored log must be a byte-identical prefix of the written one), the admin is DM-level on
+  every encounter and owner-level on every user path except `public/sheet`, and the membership
+  paths (`removeMember`, `deleteCampaign`, `attachMemberCharacter`) stopped writing other users'
+  documents.
+- **The stage gate** (`tests/rules/encounter-two-clients.emulator.test.ts`): both golden replays
+  driven action-by-action through two authenticated clients against the emulator, plus an override
+  and an undo appended from each side, plus compaction across a leased PC's departure.
+
+**Reviews.** Every task had an independent review before the next one started (no session
+context). Tasks 1, 2, 3 and 6 were approved with no Important findings; tasks 4, 5, 7 and 8 each
+needed exactly one fix round and closed clean at round 1.
+
+- **Task 4** — Important: the codec had no _positive_ checkpoint round-trip case, so a checkpoint
+  that failed to survive write → parse → write would not have been caught. Minors fixed in the
+  same round: a top-level `__proto__` key was silently dropped instead of preserved, the recursive
+  clone and freeze had no depth cap and could throw on a hostile document, and the 2,048-action
+  ceiling was undocumented.
+- **Task 5** — **Critical**: `compact` reverted an undo that crossed the checkpoint boundary. The
+  head was folded with only its own actions, so an `undo` sitting in the tail and targeting a head
+  action was lost and the compacted document folded to a _different_ state than the uncompacted
+  one — the invariant compaction exists to preserve. The fix folds the head with every undo in the
+  whole log. Also fixed: stored unknown top-level keys were lost on the rewrite, the subscribe
+  contract did not state that a pending-only flip must not trigger a re-fold, and the grace-window
+  horizon was undocumented.
+- **Task 7** — Important twice: `proveClaimStale` treated _any_ read error as proof of a stale
+  claim, so an offline client could talk itself into discarding a live claim (it now requires
+  `permission-denied` specifically); and `removeMember`'s prune of the embedded encounter
+  combatant still wrote `encounter.*`, a field the new rules deny, which would have failed the
+  whole removal — `removeMember` became a plain `updateDoc` of the roster. The same round turned
+  `logOnlyGrew` from "the log got longer" into a genuine append-only **prefix** fence and added an
+  admin-stops-at-`public/sheet` test.
+- **Task 8** — the gate did what a gate is for: it exposed a defect in task 7's rules. A Firestore
+  rules slice `log[0:0]` **errors** instead of yielding an empty list, so the prefix fence denied
+  every member append to an encounter whose stored log was empty — a freshly created one, or one
+  just compacted to an empty tail. Fixed with a `resource.data.log.size() == 0 ||` guard; the
+  review then required the dedicated rules test that pins it, rather than leaving the two-client
+  gate as its only proof.
+- Out of band, one guard commit (`6c91b0c`) repaired two repository guards the focused per-task
+  gates had missed since tasks 5/6: `dice-randomness.guard` did not know `src/lib/combat-io.ts` is
+  a legitimate id source, and `pure-modules-guard` saw `tests/unit/combat-lease.test.ts` pull
+  Firebase in transitively.
+
+**Rulings during execution.** Decisions taken by the controller while the plan ran, each with the
+reason it outranked the plan text:
+
+- The plan was executed **autonomously** under the owner-approved handoff scope; owner-facing
+  questions were deferred to the closing message rather than blocking a task. Cost if wrong:
+  rework the owner can see.
+- An override of `vitals.life` to `dead` from a non-dead state **also** runs `settleZeroHp`: a
+  dead creature holds no concentration whatever its HP. Carried into task 3 with its own test
+  rather than left as an inconsistency between the two override paths.
+- **Compaction bounding undo to the actions after the checkpoint is inherent to §5.3**, not a
+  defect of the implementation: a checkpoint declares the past closed, and truncation is the point.
+  The five-minute grace window is the knob, not a wider fold.
+- **Redo across a checkpoint is impossible** and is accepted (owner-visible): an undo-of-undo
+  appended after compaction cannot restore a target the checkpoint already skipped, because the
+  target is no longer in the log to re-apply. Documented in `checkpoint.ts`; `CHECKPOINT_GRACE_MS`
+  is what decides how long a table keeps the right to change its mind.
+- **The campaign's `allow delete` stays `isDm() || isAdmin()`**: admin-supreme means DM-level
+  everywhere, and carving deletion out of it would make the rule say something the owner did not
+  decide.
+- **`removeMember`'s prune of the embedded encounter combatant was stripped**, not repaired: it
+  targets a field the new rules deny, so keeping it would deny the entire removal whenever a stale
+  embedded encounter names the member. Removing a member is a membership path, not play.
+- **The encounter log is append-only by prefix, not merely longer.** The spec says "`arrayUnion`
+  only"; "the log grew" would have let a member rewrite history as long as the list got longer,
+  and the honest fence costs one list comparison.
+- **The rules hunk inside the test-only task 8 was accepted** rather than deferred to a new task:
+  the gate exists to find exactly that class of defect, `firestore.rules` is not `src/**`, and the
+  hunk was reviewed as part of task 8.
+
+**Deferred minors still open** (triaged as non-blocking and recorded rather than fixed):
+`override.ts` carries a private two-line `rejected` helper duplicating `intent.ts`'s (a shared
+`StepResult` module would remove it); `intent.ts` is still 955 lines with the ~300-line `runSteps`
+switch intact; `resolve.ts`'s `referencedRolls` and `rollsUsable` each re-implement "is this a
+`{roll}` reference" (an `isRollAnswer` type guard would share it); there is no test for an HP
+override to 0 on an entity already at 0, nor for a non-finite override value (both safe by
+inspection); `resolve.table.test.ts`'s "sync inserts when absent" case does not assert the receipt
+summary and its `leave` case asserts folded state but not the `effect-ended` events; `freezeDeep`
+is duplicated from `exact-schema` (private there) and the codec's schema-constant naming style
+differs from `character-build-schema`; **the §8 codec round-trip property test over generated
+encounters is still not written** (the codec has example-based round-trips only); `compact` does
+not assert that `through` is after the existing checkpoint (`checkpointThrough` never produces one
+that is not); `appendAction` treats a duplicate `arrayUnion` as a silent local no-op while the
+rules reject it as a log that did not grow; there is no contended-retry test for
+`checkpointEncounter` and no **concurrent-append** test for the same-round-trip race of the hybrid
+clock (a rules-lane addition for stage 5); the two-client test helper carries a
+`@firebase/rules-unit-testing` compatibility type cast; and a `v2` campaign that still carries a
+legacy embedded encounter keeps an orphan `pc-<uid>` combatant row after `removeMember` until
+stage 6, because the field is deliberately un-writable. Closed by this commit: the task-6 note
+that `docs/CHARACTER_SCHEMA.md` described the lease without reconciling the spec's old `attached`
+name, and stage 3's note that the stage-2 and stage-3 sections ended with the same `Next` line.
+
+**Gates on `v2` at the close** (run sequentially from the `v2` worktree — they share `dist/` and
+the emulator port — all green): `just ci` 4 min 41 s (831 files / 18,787 tests, Functions 7 files
+/ 129 tests, plus typecheck, lint and the production build); `pnpm test:rules` 20 s wall clock,
+15.0 s inside vitest (4 files / 116 cases on the Firestore and Storage emulators); `pnpm build` +
+`pnpm test:budget` 29 s (6 budget cases); `just ci-srd-only` 2 min 23 s (654 files / 13,217 tests,
+2 skipped — run because `src/lib/combat` and `src/data/combat` are public/SRD modules, and green
+with the pack pinned to the empty stub). Stage 3's baseline was 4 min 36 s / 15.1 s / 5 s /
+2 min 19 s; the third number is not comparable, because stage 3 timed `vite build` alone while
+this close timed `pnpm build`. The combined `v2` gate is 7 min 53 s, inside the 15-minute
+target.
+
+**What the gate proves, exactly.** `tests/rules/encounter-two-clients.emulator.test.ts` is the
+stage-1 plan's gate for stages 1–4: both golden replays are appended action by action to a real
+`campaigns/{id}/encounters/{eid}` document through **two separately authenticated emulator
+clients** (the DM and a player), each folding the document it reads back, and both reach the same
+`FoldedState` as the pure in-memory replay — with an override and an undo appended from each side,
+and a compaction in the middle. What it does **not** prove: any surface. There is still no screen,
+no map, no token and no fog; the two clients are test code, not the app. It also does not prove
+behaviour under a genuine same-round-trip race between two appends — the hybrid clock orders them
+deterministically by construction, but no test contends for the document yet.
+
+**Out of stage 4.** `propose-and-confirm` automation (stage 6, and `FoldedState.settings.automation`
+stays narrowed to the two implemented levels so it widens by compile error). The cutover of the
+live `users/{uid}/characters/{id}/combat/state` from `CombatState` to the personal `Encounter`
+(stage 6, with the old cockpit that reads it, under the snapshot → dry-run → idempotent apply →
+verify protocol) — stage 4 wrote the personal ref and the codec, not the migration. The old
+campaign hub's encounter writers, which are now rule-denied and die at stage 6 with the surfaces
+that host them; unplugging them first would be work on code that is being deleted. The campaign
+`memberDetails[uid].character` / `.role` snapshot fields, which the spec deletes but which live
+data still carries — stage 8, with `v2`'s first release migration. The `reorder` and `day-phase`
+table ops, named in §3.1 and not built. And position as a direct-patch override path: `log-only`
+still withholds `move` whole, so a `log-only` table cannot move tokens through the reducer — a
+seam stage 5's map must design around rather than inherit.
+
+Next: stage 5 (the minimum map), from
 `docs/superpowers/plans/2026-09-04-v2-next-session-handoff.md`.
 
 ## Owner confirmations, recorded ahead of their stage (2026-09-03)
 
-Two product decisions the owner gave at the stage-3 handoff, not yet implemented — recorded here
-so they are not lost before their stage lands.
+Two product decisions the owner gave at the stage-3 handoff — the first is now decided and built,
+the second is still open and recorded here so it is not lost before its stage lands.
 
+- **DECIDED IN STAGE 4 — Admin-supreme account.** Stage 4 wrote the access matrix and chose the
+  smaller of the two options: the admin is **not** an implicit member of every campaign; the
+  owner's account is added as a member of his group's campaign, while `users/{uid}.role == "admin"`
+  carries DM-level rights on every encounter document and owner-level rights on every user path
+  except `public/sheet`. See "`v2` — stage 4" above, `docs/adr/0005-rules-enforce-access-not-gameplay.md`
+  (2026-09-04 amendment) and design §5.4. Setting the owner's `role` to `admin` remains a console
+  action on the user document (production already grants it; staging gets it when Auth is enabled).
+  The original wording follows.
 - **Admin-supreme account.** Owner (2026-09-03): wants everything a DM can do to extend to his own
   account, since — at least at first — he has to guide the actual DM the way he already does
   today. The design doc already has the actor (§5.1, §5.4): `users/{uid}.role === "admin"` gets
@@ -347,7 +529,10 @@ so they are not lost before their stage lands.
   implicit member of every campaign" and "the owner's account is added as a member of his group's
   campaign" — the second is smaller and matches how he plays today — and sets the owner's `role`
   to `admin`.
-- **Out-of-combat mechanical freedom.** Owner (2026-09-03): players need the same freedom D&D
+- **STILL OPEN — Out-of-combat mechanical freedom.** It needs its own design pass before item 8
+  of the stage-1 plan; stage 4 neither answered it nor foreclosed it (the personal `Encounter` ref
+  and codec exist, but whether the personal aggregate is usable independent of any campaign lease
+  is still unverified against §5.2). Owner (2026-09-03): players need the same freedom D&D
   2024 actually gives them — casting spells and doing other mechanically-resolved things outside
   a formal combat encounter, not only inside one. The reducer is already entity-generic and not
   combat-specific by construction (ADR-0001; `Encounter.host: {kind: "personal"} | {kind:

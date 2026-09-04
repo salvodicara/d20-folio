@@ -1,7 +1,7 @@
-# Next-session handoff — `v2`, stage 4 (the shared encounter document)
+# Next-session handoff — `v2`, stage 5 (the minimum map)
 
 Paste the block below as the first message of the next session. It is self-contained; everything it
-references is on `origin/v2`, pushed at the stage-3 close on 2026-09-04 (the tip is the commit that
+references is on `origin/v2`, pushed at the stage-4 close on 2026-09-04 (the tip is the commit that
 carries this file: `git log --oneline -1`; confirm the remote matches it with
 `git ls-remote origin refs/heads/v2` before relying on it).
 
@@ -14,149 +14,137 @@ worktree can end up detached at `v2`'s tip after a push, so re-point it with
 `git ls-remote origin refs/heads/v2`). The private content pack has its own `v2` branch: worktree
 `/Users/salvatoredicara/Workspace/d20-folio-content-v2`, and this worktree's `content-pack`
 symlink points at it (rule 28: both `v2` branches move in the same motion; push the pack with
-`git -C /Users/salvatoredicara/Workspace/d20-folio-content-v2 push origin v2` — stage 3 touched
+`git -C /Users/salvatoredicara/Workspace/d20-folio-content-v2 push origin v2` — stage 4 touched
 nothing pack-related, so nothing is pending there). `main` is production and is never touched.
 Speak Italian with the owner; everything in the repository is English.
 
 ## Read first, in this order
 
 1. `PRODUCT.md` §Steering (golden rules 30–32), `CLAUDE.md` (the Direction block).
-2. `docs/superpowers/plans/2026-09-03-new-app-stage-1.md` — stages U, 0, 1, 2 and 3 are closed; you
-   execute **stage 4, the shared encounter document** (item 4): `campaigns/{id}/encounters/{eid}`
-   as an append-only log, one listener per client, and `firestore.rules` reduced to identity,
-   membership, ownership and shape for that collection.
-3. `docs/superpowers/specs/2026-09-02-total-combat-automation-design.md` §5 — this is stage 4's
-   actual scope, and all four subsections matter:
-   - **§5.1 Documents and owners** — the full path/owner/reader matrix. `campaigns/{id}/encounters/{eid}`
-     is written by **any member** (append to `log`, `arrayUnion` only) and by DM/admin (checkpoint,
-     settings, delete); read by members and admin. `campaigns/{id}` itself carries identity,
-     settings, treasury, `members[]` and `memberDetails[uid]` = `{ displayName, photoURL,
-characterId }`. The personal aggregate stays at `users/{uid}/characters/{id}/combat/state`.
-     The list of **deleted** fields is part of the spec: `memberDetails[uid].character`, `.role`,
-     the embedded `encounter`, `encounterInit`, `encounterSkipped`, `memberEffects`, `effectOps`,
-     `world`, `playStateVersion`, `session.world`, `ref.charges`, item-id session trackers, the
-     `snapshots` shape laxity, and every peer-write path into another user's subtree. The DM's
-     party stats come from live reads, never a cache; during an encounter one listener replaces N.
-   - **§5.2 The lease** — solo and shared use one schema. A PC joins by a `table:join` action
-     appended by its own owner's client, carrying the entity projected from the personal aggregate;
-     that client also sets `attached: { campaignId, encounterId, epoch }` on the character doc.
-     While attached the campaign encounter owns the PC's combat facts. `table:leave`, `table:end`
-     or an observed end makes the owner's client fold, write back as `table:sync`, and clear
-     `attached`. Nobody else ever writes the owner's documents; a DM acting on an offline PC
-     appends to the encounter log and the PC's owner folds it on reconnect.
-   - **§5.3 Write mechanics and cost** — appending is `updateDoc(encounterRef, { log:
-arrayUnion(action) })`: commutative, offline-queueable, latency-compensated, one write per
-     action, one listener per client. Compaction at `log.length > 200` or 512 KiB: append a
-     `checkpoint`, then the DM's client rewrites the document truncated to actions after it, under
-     a precondition on the previous checkpoint seq. The personal aggregate keeps the same shape with
-     a single writer; the parent build write keeps its debounce and gains a `revision` precondition.
-   - **§5.4 Authorization model** — the actors are **owner**, **member**, **DM** (`dmUid`), **admin**
-     (`users/{uid}.role`) and **anonymous reader**; "controller" is a data fact inside the encounter,
-     not a role, and a spectator is a member without an attached character. Rules enforce identity,
-     membership, ownership and shape; the reducer enforces game legality; the table enforces manners
-     (attributed log + undo). The owner's stated threat model (2026-09-02) is that a malicious member
-     can append any well-formed action to an encounter they belong to — the fold trusts it, the
-     receipt names them, anyone can undo it, the DM can remove them — and that is what keeps the
-     rules at ≈150 lines. Read the list of predicates that must **disappear** (`coreConditions`,
-     `validPeerEffectState`, `validMember*`, `validCombatEffectOpsChange`, `turnFieldsOnlyChanged`,
-     `combatEffectFieldsOnlyChanged`, `encounterInit*`, `isAttachedPeer`, `peer*`,
-     `playStateVersion*`) before touching `firestore.rules`.
-4. `docs/adr/0010-dice-seam-rolls-are-log-actions.md` and
-   `docs/adr/0011-campaign-automation-levels.md` — the two accepted decisions the shared document
-   has to carry across clients (roll provenance and hidden rolls; the automation level as a
-   campaign setting).
-5. `docs/PROGRAM_STATUS.md` → "`v2` — stage 3" for what the reducer now does, the rulings taken
-   during its execution, the deferred minors, and the gate numbers to beat.
-6. `docs/superpowers/plans/2026-09-03-v2-stage-3-reducer.md` and the two golden replays
-   (`tests/unit/combat/replays/marco-first-turn.json`, `sara-ogre-ambush.json`) — they are the
-   fixtures stage 4 has to make pass through two clients on the emulator.
+2. `docs/superpowers/plans/2026-09-03-new-app-stage-1.md` — stages U, 0, 1, 2, 3 and 4 are closed;
+   you execute **stage 5, the minimum map** (item 5): background upload (compressed, per-campaign
+   quota), square grid with scale, tokens bound to entity ids, drag with a Foundry-style ruler,
+   rectangle fog, hidden tokens. **No scenes, no layers, no drawing, no pointer, no walls, no
+   vision, no lighting.** Read its "Staging setup" section too — including the Storage caveat
+   under "Staging status": Firebase Storage default buckets on projects created after October 2024
+   require the Blaze plan (free within quota, but a billing account must be linked). Production is
+   on Blaze; staging is not, and linking it needs the owner's yes.
+3. `docs/superpowers/specs/2026-09-02-total-combat-automation-design.md` — the map paragraphs:
+   - **§1, "The map is part of the table"** — the app owns positions, distances, areas and simple
+     fog on an Owlbear-level map, derives reach, range bands and area membership from them
+     (provenance `derived`), and keeps declared relational facts (`declared`) for cover, most
+     visibility, elevation and map-less play. Walls, dynamic vision and lighting are out of scope.
+     That sentence is the whole scope boundary of this stage; do not widen it.
+   - **§2.3 Relations** — the seven declared tactical facts (`adjacent`, `range`, `visible`,
+     `cover`, `engaged`, `aura-member`, `mark`). The map does not replace them: it derives some of
+     them and leaves the rest declared.
+   - **§5** — the shared document the map's facts will have to live in or beside (see the design
+     question below).
+4. `docs/superpowers/specs/2026-09-03-v2-stage-2-positions-areas-design.md` — stage 2's design:
+   `position` on entities, Chebyshev distance, the four-band range ladder, area membership for the
+   five SRD shapes. The map is the surface over exactly this data; the geometry already exists and
+   must not be re-derived in a view layer.
+5. `docs/PROGRAM_STATUS.md` → "`v2` — stage 4" — what the shared document now does, the rulings
+   taken during its execution, the deferred minors, the gate numbers to beat, and the "Out of
+   stage 4" list (several of its items are stage 5's context).
 
-## Stage 4 — the shared encounter document
+## Stage 5 — the minimum map
 
-Stage 3 closed the pure reducer: both story replays pass against it in-memory. Stage 4 puts that
-log in Firestore and makes two clients fold the same one. Concretely: the append/subscribe/
-checkpoint adapter (the deleted `src/lib/combat-io.ts` was explicitly left for this stage — module
-fates in `2026-09-03-v2-architecture-reset.md`), the `campaigns/{id}/encounters/{eid}` document and
-its codec (§5.5 totality rules apply: one `exact-schema`, unknown top-level keys preserved), the
-lease actions (`table:join`, `table:leave`, `table:sync`, `table:end`), compaction, and the reduced
-`firestore.rules` with `pnpm test:rules` proving them.
+Stage 4 closed the shared encounter document: two authenticated clients append to
+`campaigns/{id}/encounters/{eid}` and fold it to the same state, with a codec, compaction and
+`firestore.rules` reduced to identity, membership, ownership and shape. Stage 5 gives the table
+something to look at: a background image, a square grid with a scale, tokens bound to entity ids,
+drag with a Foundry-style ruler, rectangle fog, and hidden tokens.
 
-**Open with the `intent.ts` split, before any stage-4 code lands on top of it.** That file is now
-~1,200 lines and is the meeting point of payment, lifetimes, AC derivation, damage delivery, answer
-reading, area binding, the step runner, concentration, the automation gate, repositioning,
-overrides and checks — every new capability touches it. Split it into `answers.ts`, `override.ts`
-and `reposition.ts` (behaviour-preserving, the existing tests are the proof) as task one; the
-stage-4 adapter then has somewhere to attach.
+### The first design question: where the map's data lives
 
-The stage-1 plan's gate for stages 1–4 is the bar: **both golden replays pass on the emulator with
-two clients (DM and player) folding the same log; an override and an undo from each side.** Stage 3
-met only the pure-reducer half of it.
+Decide this before writing code, and record the decision in the plan. **Does the map live on the
+campaign encounter document, or on a sibling document?** The evidence to weigh:
 
-### Seams stage 3 left open that stage 4 must decide
+- **The encounter document's budget.** A Firestore document is capped at 1 MiB. Compaction already
+  fires at 200 actions or 512 KiB (`src/lib/combat/checkpoint.ts`), and the codec refuses a log
+  longer than 2,048 actions (`src/lib/combat/codec.ts` — the `exact-schema` collection ceiling).
+  Fog rectangles and token positions expressed as `declare` / `move` actions consume that same
+  budget, and unlike combat actions they are produced by dragging, which is a high-frequency
+  gesture.
+- **Against that: one document is one listener and one fold.** Positions are already
+  `Entity.position` inside the folded state, and a `move` action is already how a position changes.
+  Fog as a `declare`d fact would inherit undo, attribution and the two-client determinism proof for
+  free. A sibling map document would need its own codec, its own rules, its own listener and its own
+  answer to "what does undo mean here".
+- **A middle option exists** and should be considered explicitly: the _ephemeral_ part of dragging
+  (the in-flight ruler, the cursor) is not persisted at all, and only the committed destination is
+  an action — which is how the reducer already works. The question is then only about fog and the
+  background reference.
+- **The background image goes to Firebase Storage**, not Firestore, with a per-campaign quota and
+  client-side compression before upload. That is a new seam (`storage.rules` exists; see
+  `tests/rules/storage-rules` in the rules lane) and it is the one part of this stage that needs
+  the staging Blaze caveat above resolved before anyone can play on staging.
 
-- **Per-target save-roll attribution.** `rollsUsable` binds a roll to the intent's entity, so a
-  target's save rolled inside a caster's intent is logged with `roller: null`. In a shared document
-  that is a real question: does the target's own client roll and append it, or does the caster's
-  intent carry it? Decide it here, because the answer changes the action shape.
-- **Who may read a hidden roll's faces.** Hidden rolls are stored, not suppressed
-  (Sara's replay asserts `rolls.r-ogre-atk.hidden: true`). Design §1 says a hidden roll shows its
-  faces only to the DM and to the roller — in a shared document readable by every member, that is
-  either a rules-level read restriction (a subdocument), or a client-side convention, or the faces
-  are not stored in the shared log at all. This must be decided, not inherited.
-- **`log-only` withholds `move`** and every reaction window opened inside a withheld run, so a
-  `log-only` table cannot move tokens through the reducer until position becomes a direct-patch
-  override path. That is a stage-6 concern, but stage 4 should not design around the current
-  behaviour as if it were permanent.
-- **At `log-only`, nothing about a declaration commits.** The final branch review reversed the
-  earlier ruling here: a held attack at `log-only` now leaves no window, no `declared` entry, no
-  ordinal and no payment — only the receipt reports what would have happened. A declaration is the
-  first half of an outcome, so it is withheld whole; otherwise a switch back to `full-auto` would
-  resolve an unpaid window into a paid outcome, and the reaction the window invites would itself be
-  withheld. In a shared document this matters twice over: the other clients see the same log and
-  must reach the same conclusion about whether a window exists.
-- **An `override` emits no `CombatEvent`**, so a DM-inflicted death fires no `hp-zero` subscriber,
-  ends no concentration and clears no marks — unlike the identical outcome reached through damage.
-  Stage 4 puts overrides in front of other people's clients; decide there whether that asymmetry
-  survives.
+Bring the owner a recommendation with the trade-off in one paragraph, not the question raw.
 
-## Owner confirmations to honour in this stage (verbatim from `docs/PROGRAM_STATUS.md`, 2026-09-03)
+### Seams stage 4 left open that stage 5 must consider
 
-- **Admin-supreme account.** Owner (2026-09-03): wants everything a DM can do to extend to his own
-  account, since — at least at first — he has to guide the actual DM the way he already does
-  today. The design doc already has the actor (§5.1, §5.4): `users/{uid}.role === "admin"` gets
-  owner-level access on every user path (`users/{uid}`, `characters/{id}`, `combat/state`) and
-  DM-level rights on an encounter's checkpoint and settings. What it does not say is that an admin
-  may append actions to a campaign encounter they are not a member of (encounter `update` =
-  member and the log grew). Stage 4, which writes those rules, decides between "admin is an
-  implicit member of every campaign" and "the owner's account is added as a member of his group's
-  campaign" — the second is smaller and matches how he plays today — and sets the owner's `role`
-  to `admin`.
-- **Out-of-combat mechanical freedom.** Owner (2026-09-03): players need the same freedom D&D
-  2024 actually gives them — casting spells and doing other mechanically-resolved things outside
-  a formal combat encounter, not only inside one. The reducer is already entity-generic and not
-  combat-specific by construction (ADR-0001; `Encounter.host: {kind: "personal"} | {kind:
-"campaign"}`), so this needs no re-architecture — it needs mechanics authored against the same
-  seams for non-combat use, plus confirming whether the personal `Encounter` aggregate is meant to
-  be usable independent of any campaign lease (open question, not yet verified against §5.2). The
-  current design's `later`-tiered "narrative clauses, no mechanical consequence to compute" (§7
-  residuals) describes illusions/social effects, not a player's mechanically resolved spellcast
-  outside initiative — that distinction needs its own design pass before item 8 ("the rest of the
-  session") in the stage-1 plan.
+- **`log-only` withholds `move` whole.** At the `log-only` automation level the reducer computes
+  the verdict and withholds the transition, `move` included — so a `log-only` table cannot move a
+  token through the reducer at all. Position becomes a direct-patch override path (the way
+  `vitals.hp` already is) at stage 6. A map built as if `move` always applies will be wrong for
+  half the automation levels; design for both from the start.
+- **No concurrent-append test exists.** The hybrid `seq` clock orders two clients' appends
+  deterministically by construction, but nothing contends for the document in a test. Dragging two
+  tokens at once is exactly the gesture that produces a same-round-trip race, so a contended-append
+  case in the rules lane (`tests/rules/`) is a cheap, well-placed addition for this stage.
+- **The personal `combat/state` is still `CombatState`, not an `Encounter`.** The cutover of
+  `users/{uid}/characters/{id}/combat/state` to the personal `Encounter` aggregate belongs to
+  stage 6, together with the old cockpit that reads it, under the snapshot → dry-run → idempotent
+  apply → verify protocol. Stage 5 must not start it as a side effect of needing positions.
+- **The old campaign hub's encounter writers are rule-denied and still present.** They die at
+  stage 6 with the surfaces that host them. Do not repair them; do not build the map on top of
+  them.
+- **`memberDetails[uid].character` and `.role` are still in live data.** The spec deletes them and
+  the rules no longer let them be written, but existing campaign documents carry them; they are
+  cleared by `v2`'s first release migration at stage 8, not now.
+- **The §8 codec round-trip PROPERTY test is still unwritten.** The codec has example-based
+  round-trips only. If stage 5 adds a persisted map shape, it inherits that gap — write the
+  property test for whatever new codec it introduces rather than repeating the omission.
 
-The admin-supreme decision activates **exactly here** — this is the stage that writes the access
-matrix and `firestore.rules`. Do not let it pass unresolved.
+## Owner confirmations to honour
+
+- **Admin-supreme — decided and built in stage 4.** `users/{uid}.role == "admin"` carries DM-level
+  rights on every encounter document and owner-level rights on every user path except
+  `characters/{id}/public/sheet`; membership stays explicit (the owner's account is a member of his
+  group's campaign). Nothing to decide; just do not regress it — any new map path gets the same
+  admin treatment. See `docs/adr/0005-rules-enforce-access-not-gameplay.md` (2026-09-04 amendment).
+- **Out-of-combat mechanical freedom — still open.** Owner (2026-09-03): players need the same
+  freedom D&D 2024 actually gives them — casting spells and doing other mechanically-resolved
+  things outside a formal combat encounter, not only inside one. The reducer is already
+  entity-generic (ADR-0001; `Encounter.host: {kind:"personal"} | {kind:"campaign"}`), so this needs
+  no re-architecture — it needs mechanics authored against the same seams for non-combat use, plus
+  confirming whether the personal `Encounter` aggregate is meant to be usable independent of any
+  campaign lease (§5.2). It needs its own design pass before item 8 of the stage-1 plan. Stage 5
+  does not answer it and must not foreclose it.
 
 ## Rules that bind you
 
 Superpowers lifecycle (brainstorm briefly → written plan → worktree → TDD → review → verify).
 Small Conventional Commits, owner sole author, one `.changeset/*.md` per commit, owning document
 reconciled in the same commit; never `--no-verify`. No deploy, no release, no push to `main`. No
-end-to-end spec on `v2`; the gate (`just ci`, `pnpm test:rules`, `vite build && pnpm test:budget`,
+end-to-end spec on `v2`; the gate (`just ci`, `pnpm test:rules`, `pnpm build && pnpm test:budget`,
 `just ci-srd-only` when a public module changes) stays under 15 minutes — the numbers at the close
-of stage 3 are in `docs/PROGRAM_STATUS.md` → "Gates on `v2` at the close". Stage 4 changes
-`firestore.rules`, so `pnpm test:rules` is mandatory, not conditional. Any screen goes through the
-screenshot gate (rule 25) — stage 4 has no screen either. Ask the owner only about taste, product
-or cost, with an example and a recommended option. When you finish: rewrite this handoff file for
-the session after yours, and paste its prompt block in full as the last message of the chat, so the
-owner can archive the chat and start the next one by pasting it (the owner never keeps sessions
-open).
+of stage 4 are in `docs/PROGRAM_STATUS.md` → "`v2` — stage 4" → "Gates on `v2` at the close". If
+stage 5 changes `firestore.rules` or `storage.rules` — the background upload almost certainly does
+— `pnpm test:rules` is mandatory, not conditional.
+
+**Stage 5 has no screen either, unless the map surface itself is what you build.** If any screen is
+built, it goes through the owner's screenshot approval gate (rule 25) before integration: curated
+before/after captures across the affected theme, locale and viewport matrix, delivered as actual
+chat images, never as local file paths. Do not integrate a visual change on your own judgement.
+
+**The staging deploy of rules and indexes is owner-gated** (`firebase deploy --only
+firestore,storage -P staging`) and is recommended before anyone plays on staging — stage 4's rules
+have not been deployed anywhere. Ask for it; never run it unasked.
+
+Ask the owner only about taste, product or cost, with an example and a recommended option. When you
+finish: rewrite this handoff file for the session after yours, and paste its prompt block in full
+as the last message of the chat, so the owner can archive the chat and start the next one by
+pasting it (the owner never keeps sessions open).

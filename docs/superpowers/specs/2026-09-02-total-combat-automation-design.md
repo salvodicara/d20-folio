@@ -97,7 +97,7 @@ interface Encounter {
   effects: Record<EffectId, Effect>;
   windows: ReactionWindow[]; // open interrupt windows (§3.4)
   log: Action[]; // THE persisted mutation surface (append-only)
-  checkpoint: { seq: Seq; folded: FoldedState } | null; // compaction (§5.3)
+  checkpoint: { through: Seq; state: FoldedState } | null; // compaction (§5.3)
 }
 ```
 
@@ -260,18 +260,18 @@ type Action =
         | "begin-turns"
         | "end-turn"
         | "end"
-        | "join"
-        | "leave"
+        | "join" // the lease (§5.2) — built in stage 4
+        | "leave" // the lease (§5.2) — built in stage 4
+        | "sync" // the lease (§5.2) — built in stage 4: write the entity back
         | "add-entity"
         | "remove-entity"
         | "rest"
-        | "day-phase"
+        | "day-phase" // later
         | "set-initiative"
-        | "reorder"
+        | "reorder" // later
         | "settings";
       payload;
     }
-  | { kind: "checkpoint"; id; seq; by; folded: FoldedState; through: Seq }
   | {
       kind: "roll"; // stage 1 — ADR-0010
       id;
@@ -310,6 +310,10 @@ golden replay feed recorded faces.
 
 The client never writes state. It appends actions. `seq` is a hybrid logical clock so that
 actions from different clients, arriving in any order, fold in one deterministic total order.
+
+There is no `checkpoint` **action** (decision 9 of stage 4). A checkpoint is the document field
+`Encounter.checkpoint` the fold already consumes; a log-level marker would carry the same
+`through` twice, and the two could disagree.
 
 ### 3.2 The reducer
 
@@ -424,10 +428,10 @@ union is deleted with the legacy grants that carry it.
 | Path                                                               | Owner / writers                                                                                                                   | Readers                           | Content                                                                                                    |
 | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `users/{uid}`                                                      | self (create, telemetry); admin                                                                                                   | self, admin                       | status, role                                                                                               |
-| `users/{uid}/characters/{id}`                                      | owner; admin                                                                                                                      | owner, admin, campaign co-members | build, custom content (every custom item has an `instanceId`), sharing, `attached` lease marker            |
+| `users/{uid}/characters/{id}`                                      | owner; admin                                                                                                                      | owner, admin, campaign co-members | build, custom content (every custom item has an `instanceId`), sharing, `lease` marker (§5.2)              |
 | `…/public/sheet`                                                   | owner (same batch)                                                                                                                | anonymous when exact              | projection (unchanged)                                                                                     |
 | `…/combat/state`                                                   | owner; admin                                                                                                                      | owner, admin, campaign co-members | the personal `Encounter` (schema 1)                                                                        |
-| `…/library/index`                                                  | owner                                                                                                                             | owner                             | homebrew library; entries carry ids                                                                        |
+| `…/library/index`                                                  | owner; admin                                                                                                                      | owner, admin                      | homebrew library; entries carry ids                                                                        |
 | `diagnostics/{id}`                                                 | self (create only); admin                                                                                                         | admin                             | bounded error reports (§9)                                                                                 |
 | `campaigns/{id}`                                                   | DM/admin (settings, membership, `dmUid` transfer, `joinsLocked`); member self-join; member own `memberDetails` presentation entry | members, admin                    | identity, settings, treasury, `members[]`, `memberDetails[uid]` = `{ displayName, photoURL, characterId }` |
 | `campaigns/{id}/encounters/{eid}`                                  | **any member** (append to `log`, `arrayUnion` only); DM/admin (checkpoint, settings, delete)                                      | members, admin                    | the shared `Encounter`                                                                                     |
@@ -447,23 +451,50 @@ encounter they come from the encounter itself (one listener replaces N).
 
 A PC joins a campaign encounter by a `table:join` action appended by its owner's client carrying
 the entity projected from its personal aggregate (stats, vitals, resources, effects, concentration).
-The owner's client also sets `attached: { campaignId, encounterId, epoch }` on its own character
-doc. While attached: the campaign encounter owns the PC's combat facts; the personal aggregate is
-read-only for those facts and the UI shows the encounter's. On `table:leave`, `table:end`, or when
-the owner's client observes the encounter ended, the owner's client folds the encounter, writes the
-entity back into its personal aggregate as a `table:sync` action, and clears `attached`. An
-offline owner simply syncs later; nobody else ever writes the owner's documents. A DM acting on
+The owner's client also sets `lease: { campaignId, encounterId, epoch }` on its own character
+doc — named `lease`, not `attached`, because the parent already carries `attachedCampaignId` (the
+one-campaign claim the rules read for co-member access) and a sibling called `attached` would read
+as the same fact. While leased: the campaign encounter owns the PC's combat facts; the personal
+aggregate is read-only for those facts and the UI shows the encounter's. On `table:leave`,
+`table:end`, or when the owner's client observes the encounter ended, the owner's client folds the
+encounter, writes the entity back into its personal aggregate as a `table:sync` action, and clears
+`lease`. An offline owner simply syncs later; nobody else ever writes the owner's documents. A DM acting on
 an offline PC appends to the encounter log; the PC's owner folds it on reconnect (§7 hard cases).
 
 ### 5.3 Write mechanics and cost
 
+**Built in stage 4** as `src/lib/combat-io.ts` (the adapter) and `src/lib/combat/checkpoint.ts`
+(the pure compaction), exactly as follows.
+
 - Appending an action: `updateDoc(encounterRef, { log: arrayUnion(action) })`. Commutative,
   offline-queueable, latency-compensated; concurrent appends compose server-side. One write per
   action, one listener per client.
-- Compaction: when `log.length > 200` or the document exceeds 512 KiB, the DM's (or any) client
-  appends a `checkpoint` and the DM's client rewrites the document with `log` truncated to actions
-  after the checkpoint, under a precondition on the previous checkpoint seq. Fights above the
-  1 MiB document budget are a measured non-goal (a 300-action fight is ≈ 100 KB).
+- Subscribing: one `onSnapshot` per client, with `includeMetadataChanges: true` — required, not
+  decorative. A local append raises a snapshot with `hasPendingWrites: true` and then, once the
+  server acknowledges it, an otherwise identical one with `false`; without the flag the appender
+  never sees its own write settle. The cost is that the appending client receives the same
+  encounter twice with only `pending` flipped, so a consumer treats `pending` as presentation
+  state and skips re-folding when nothing else changed. A document that does not parse is
+  surfaced as `quarantined` (§5.5), never thrown and never silently overwritten.
+- Choosing the checkpoint: `checkpointThrough` picks the newest action at least `graceMs`
+  (`CHECKPOINT_GRACE_MS`, 5 minutes) older than the newest action in the log, and returns `null`
+  when nothing qualifies. The grace window is what keeps an offline client's queued appends —
+  which carry older `seq`s — from being swallowed by a checkpoint that landed while it was away.
+  An append older than the checkpoint is still skipped by the fold; the window makes that rare,
+  not impossible. Accepted limit.
+- Compacting: when `log.length > 200` or the document exceeds 512 KiB (`shouldCompact`), `compact`
+  folds the head of the log into `checkpoint: { through, state }` and keeps only the tail. The head
+  is folded together with **every** `undo` in the log, the tail's included, so an undo that sits
+  after the boundary and targets an action before it is honoured rather than reverted. The residue
+  is that redo across a checkpoint is impossible — an undo-of-undo appended after compaction cannot
+  restore a target the checkpoint already skipped. Accepted; the grace window is the knob.
+- Writing the compaction: `checkpointEncounter` is a Firestore transaction whose precondition is
+  the **stored** `checkpoint.through` (`null` when there is none), so two clients cannot compact
+  the same head twice. It merges every stored action after the new checkpoint that the caller did
+  not fold (matched by id), and merges unknown top-level keys with the stored value winning, so
+  neither an interleaved append nor a newer build's key is erased by the rewrite. Fights above the
+  1 MiB document budget are a measured non-goal (a 300-action fight is ≈ 100 KB); the codec's own
+  ceiling is 2,048 actions.
 - Personal aggregate: the same shape, single writer; the debounced writer is replaced by the
   append (each action is one small `updateDoc`); the parent build write keeps its debounce but
   gains a `revision` precondition and per-domain reconciliation (Codex's reconciler, reused).
@@ -477,6 +508,16 @@ Actors: **owner** (of a user subtree), **member** (uid in `campaigns/{id}.member
 (`dmUid`), **admin** (`users/{uid}.role`), **anonymous reader** (share links). "Controller" is a
 data fact inside the encounter, not a role. Spectator = member without an attached character.
 
+**Admin-supreme** (owner decision, ratified in stage 4): the admin has DM-level rights on **every**
+encounter document — create, append, checkpoint, settings, delete — whether or not they are a
+member of that campaign, and owner-level rights on **every** user path (`users/{uid}`,
+`characters/{id}`, `combat/state`, `snapshots/*`, `library/*`). The one exclusion is
+`characters/{id}/public/sheet`: it is an anonymous projection whose exactness invariant is atomic
+with the owner's parent write, so a published character's build change and its deletion still
+require the owner. Membership is **not** implicit: for the party board and the hub the owner's
+account is added as a member of his group's campaign — the smaller of the two options and the way
+he already plays. Setting the owner's `users/{uid}.role` to `admin` is a console action, not code.
+
 Principle: rules enforce identity, membership, ownership and shape; the reducer enforces game
 legality; the table enforces manners (attributed log + undo). Threat model, stated plainly: a
 malicious campaign member can append any well-formed action to an encounter they are a member of,
@@ -486,20 +527,34 @@ user's documents at all. A leaked invite link admits a stranger until `joinsLock
 them and their actions are undoable. This is the owner's ruling (2026-09-02) and it is what makes
 the rules small.
 
-What `firestore.rules` will contain (≈150 lines): `isAuth`, `isNotBlocked`, `isAdmin`, `isMember`,
+**Done in stage 4.** `firestore.rules` is now `isAuth`, `isNotBlocked`, `isAdmin`, `isMember`,
 `isDm`, owner checks per user path, the public projection exactness (shape), campaign create/join/
-membership/`dmUid` transfer shape, encounter `update` = member and `log` grew by ≥1 and size
-limits (or DM/admin for checkpoint/settings), diagnostics create-only, explicit subcollection
-matches. What it will no longer contain: every predicate that reads a game field (`coreConditions`,
-`validPeerEffectState`, `validMember*`, `validCombatEffectOpsChange`, `turnFieldsOnlyChanged`,
-`combatEffectFieldsOnlyChanged`, `encounterInit*`, `isAttachedPeer`, `peer*`, `playStateVersion*`).
+membership/`dmUid` transfer shape, encounter access, diagnostics create-only and explicit
+subcollection matches — 548 lines, comments included, down from 984. Every predicate that read a
+game field is **gone**: `coreConditions`, `validPeerEffectState`, `validMember*`,
+`validCombatEffectOpsChange`, `turnFieldsOnlyChanged`, `combatEffectFieldsOnlyChanged`,
+`encounterInit*`, `isAttachedPeer`, `peer*`, `playStateVersion*`. The campaign model's fields are
+enumerated, so the retired fields of §5.1 are un-writable by anyone without a migration.
 
-After P1 the character paths are already there: `users/{uid}/characters/{charId}` is owner/admin/
-co-member access plus the `revision` compare-and-set, an EMPTY parent `state`, and the exact public
-sheet — nothing else; `combat/{stateId}` is the literal `combat/state`, whose create is owner/admin
-only. `playStateVersion*`, `hasV1CombatOwnerAfter`, `peerLegacyCoreCreate` and the unmarked-legacy
-escape hatch are gone. The encounter/peer semantic predicates (and `isCampaignDmDetach`) remain
-until P4 deletes them with the encounter document and the party lease.
+A member's encounter `update` is **append-only by prefix**, not merely "the log grew": the stored
+log must be a byte-identical prefix of the written one, so existing entries are frozen and only
+the tail may grow. The one carve-out is an **empty** stored log — the state a freshly created
+encounter is in, and the state a compacted one can be in — because a Firestore rules slice
+`log[0:0]` errors instead of yielding an empty list; an empty stored log is trivially a prefix of
+anything, so the guard weakens the fence by nothing. Threat-model note, stated plainly: an empty
+stored log has nothing to protect, and any member may append to it in any case.
+
+The character paths are owner/admin/co-member access plus the `revision` compare-and-set, an
+EMPTY parent `state`, and the exact public sheet — nothing else; `combat/{stateId}` is the literal
+`combat/state`, whose create is owner/admin only. `playStateVersion*`, `hasV1CombatOwnerAfter`,
+`peerLegacyCoreCreate`, the unmarked-legacy escape hatch, the encounter/peer semantic predicates
+and `isCampaignDmDetach` are all gone as of stage 4. Two membership paths were rewritten in the
+same motion because they are not play: `removeMember` and `deleteCampaign` no longer write another
+user's character documents (the roster alone is written; the leaving owner's client clears its own
+claim), and `attachMemberCharacter` treats a claim on a campaign it can no longer **read** — a
+`permission-denied`, never any error — as stale. The old campaign play surfaces are therefore
+rule-denied on `v2`; the client code that writes those fields dies at stage 6 with the surfaces
+that host it.
 
 ### 5.5 Codec totality
 
@@ -637,7 +692,7 @@ rule; their past actions remain attributed and undoable.
 | Exhaustiveness             | every step/event/lifetime kind has a reducer handler (compile-time `assertNever`) and a coverage row        | type-level + 1 guard                             |
 | Payment guard              | every costed program in the composed catalogue produces a `paid` receipt in its replay                      | 1 guard                                          |
 | Coverage drift guard       | regenerated coverage JSON equals the committed one                                                          | 1 guard                                          |
-| Rules                      | ~20 emulator cases: owner/member/DM/admin/anonymous per path                                                | `tests/rules`                                    |
+| Rules                      | 4 emulator files, 116 cases: owner/member/DM/admin/anonymous per path, the adapter, the two-client gate     | `tests/rules`                                    |
 | Accessibility sweep        | axe serious/critical zero on every surface, both themes                                                     | `tests/e2e/a11y*.spec.ts` (two specs, one sweep) |
 | Screenshot lane            | the owner's visual gate (rule 25); no pixel assertions in CI                                                | `tests/visual/*` (by hand until stage 6)         |
 
@@ -671,9 +726,13 @@ one. Per-kind exposure is exhaustiveness, not a token search.
 
 `src/data` + `src/types` → `src/lib/combat` (pure: no React, Firebase, i18n, Zustand, clock,
 RNG — enforced by an import guard) → `src/lib/views` (labels) → `src/stores` (fold + append
-adapters) → `src/features`/`src/components`. Firestore adapters (append, subscribe, checkpoint) are
-written in stage 4 as `src/lib/combat-io.ts`. The pack and homebrew supply `Mechanic[]` through the existing
-`@pack` seam and the library; nothing else.
+adapters) → `src/features`/`src/components`. The Firestore adapters were written in stage 4:
+`src/lib/combat-io.ts` (refs, create, append, subscribe, checkpoint, delete, the seq clock) and
+`src/lib/combat-lease.ts` (`joinTable`, `leaveTable`, `readLease` — the owner's client's two
+motions of §5.2); the compaction itself stays pure in `src/lib/combat/checkpoint.ts` and the codec
+in `src/lib/combat/codec.ts`. Those two modules are the only writers of the encounter document and
+of the lease. The pack and homebrew supply `Mechanic[]` through the existing `@pack` seam and the
+library; nothing else.
 
 ## 12. Constitution and document conflicts (proposed wording for ratification)
 
