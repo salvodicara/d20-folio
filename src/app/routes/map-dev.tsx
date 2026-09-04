@@ -83,6 +83,7 @@ function entity(opts: {
       reaction: 0,
       attacksUsed: 0,
       movementUsed: 0,
+      movementExtra: 0,
       claims: [],
     },
     overrides: {},
@@ -257,7 +258,7 @@ function openingLog(background: MapBackground, seq: () => Action["seq"]): Action
   const all = [lyra, thorin, mira, ogre, archer1, archer2, shaman, wolf];
   return [
     table({ op: "start", epoch: 1 }),
-    ...all.map((e) => table({ op: "add-entity", entity: e })),
+    ...all.map((e) => table({ op: "add-entity", entity: e, mechanics: [] })),
     table({ op: "set-initiative", entity: "lyra", value: 15 }),
     table({ op: "set-initiative", entity: "ogre", value: 12 }),
     table({ op: "set-initiative", entity: "thorin", value: 11 }),
