@@ -522,15 +522,15 @@ against `publicSheetMatchesAfter()`, and it passes by inspection only); `overrid
 property test.
 
 **Gates on `v2` at the close** (run sequentially from the `v2` worktree — they share `dist/` and
-the emulator port — all green): `just ci` 4 min 41 s (831 files / 18,787 tests, Functions 7 files
-/ 129 tests, plus typecheck, lint and the production build); `pnpm test:rules` 20 s wall clock,
-15.0 s inside vitest (4 files / 116 cases on the Firestore and Storage emulators); `pnpm build` +
-`pnpm test:budget` 29 s (6 budget cases); `just ci-srd-only` 2 min 23 s (654 files / 13,217 tests,
-2 skipped — run because `src/lib/combat` and `src/data/combat` are public/SRD modules, and green
-with the pack pinned to the empty stub). Stage 3's baseline was 4 min 36 s / 15.1 s / 5 s /
-2 min 19 s; the third number is not comparable, because stage 3 timed `vite build` alone while
-this close timed `pnpm build`. The combined `v2` gate is 7 min 53 s, inside the 15-minute
-target.
+the emulator port — all green): the controller's first run on the pre-closing tree caught one
+false positive of the raw-text Firebase-import scan on the new adapter guard test, fixed in
+`b6af71c`; the numbers below are the re-run after that fix. `just ci` 4 min 38 s (833 files /
+18,796 tests, Functions 7 files / 129 tests, plus typecheck, lint and the build); `pnpm test:rules`
+20 s (4 files / 119 cases on the emulator); `pnpm build` + `pnpm test:budget` 30 s (6 budget
+cases); `just ci-srd-only` 2 min 20 s (656 files / 13,226 tests, 2 skipped — run because
+`src/lib/combat` and `src/data/combat` are public/SRD modules, and green with the pack pinned to
+the empty stub). Stage 3's baseline was 4 min 36 s / 15.1 s / 5 s / 2 min 19 s; the combined `v2`
+gate is 7 min 48 s, under the 15-minute target.
 
 **What the gate proves, exactly.** `tests/rules/encounter-two-clients.emulator.test.ts` is the
 stage-1 plan's gate for stages 1–4: both golden replays are appended action by action to a real
