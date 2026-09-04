@@ -1,0 +1,88 @@
+{
+  "play": {
+    "log": {
+      "roll": "{{purpose}}: {{formula}} → {{total}} ({{faces}})",
+      "hiddenRoll": "{{purpose}}: hidden",
+      "rejected": "Not applied: {{reason}}",
+      "undo": "Undone",
+      "undoWithReason": "Undone: {{reason}}",
+      "override": "{{entity}}: {{path}} set to {{value}} ({{reason}})",
+      "declare": "Table fact: {{relation}}",
+      "declareRemoved": "Table fact cleared: {{relation}}",
+      "windowHeld": "{{mechanic}}, waiting on a reaction",
+      "windowResolved": "{{mechanic}} resolves",
+      "windowClosed": "The reaction window closes",
+      "purpose": {
+        "attack": "Attack roll",
+        "damage": "Damage roll",
+        "save": "Saving throw",
+        "check": "Ability check",
+        "initiative": "Initiative roll",
+        "death-save": "Death save",
+        "concentration": "Concentration check",
+        "free": "Roll"
+      },
+      "outcome": {
+        "applied": "{{mechanic}}",
+        "established": "{{mechanic}}: takes effect",
+        "negated": "{{mechanic}}: no effect"
+      },
+      "concentration": {
+        "held": "Concentration holds",
+        "lost": "Concentration is broken"
+      },
+      "relation": {
+        "adjacent": "adjacent",
+        "range": "range",
+        "visible": "line of sight",
+        "cover": "cover",
+        "engaged": "engaged",
+        "aura-member": "inside an aura",
+        "mark": "marked"
+      },
+      "rest": {
+        "short": "short rest",
+        "long": "long rest"
+      },
+      "table": {
+        "start": "The fight begins",
+        "add-entity": "{{entity}} joins the fight",
+        "remove-entity": "{{entity}} leaves the fight",
+        "join": "{{entity}} takes a seat at the table",
+        "leave": "{{entity}} leaves the table",
+        "sync": "{{entity}} is brought up to date",
+        "set-initiative": "{{entity}} rolls initiative {{value}}",
+        "begin-turns": "Turn order is set",
+        "end-turn": "End of turn",
+        "end": "The fight ends",
+        "rest": "The party takes a {{rest}}",
+        "settings": "Table settings changed",
+        "map": "The map changes",
+        "fog": "The fog changes"
+      },
+      "reason": {
+        "unknown-entity": "that creature is not at the table",
+        "unknown-mechanic": "that action is not available to this creature",
+        "not-in-turns": "the fight has not started",
+        "not-your-turn": "it is not that creature's turn",
+        "unaffordable": "there is nothing left to spend on it",
+        "missing-answer": "something still had to be chosen or rolled",
+        "no-window": "that reaction window is closed",
+        "not-eligible": "that creature cannot react here",
+        "no-such-check": "that check is no longer pending",
+        "invalid-table-op": "the table could not do that",
+        "already-undone": "it was already undone",
+        "unknown-action": "the action it refers to is gone",
+        "invalid-target": "that target is not a legal one",
+        "invalid-roll": "the roll does not add up",
+        "roll-consumed": "that roll was already spent",
+        "roll-roller-mismatch": "that roll belongs to another creature"
+      },
+      "event": {
+        "hpZero": "{{entity}} drops to 0 hit points",
+        "effectEnded": "An effect ends",
+        "concentrationEnded": "{{entity}} stops concentrating"
+      }
+    }
+  }
+}

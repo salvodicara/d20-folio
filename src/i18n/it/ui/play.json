@@ -1,0 +1,88 @@
+{
+  "play": {
+    "log": {
+      "roll": "{{purpose}}: {{formula}} → {{total}} ({{faces}})",
+      "hiddenRoll": "{{purpose}}: nascosto",
+      "rejected": "Non applicata: {{reason}}",
+      "undo": "Annullata",
+      "undoWithReason": "Annullata: {{reason}}",
+      "override": "{{entity}}: {{path}} impostato a {{value}} ({{reason}})",
+      "declare": "Fatto del tavolo: {{relation}}",
+      "declareRemoved": "Fatto del tavolo rimosso: {{relation}}",
+      "windowHeld": "{{mechanic}}, in attesa di una reazione",
+      "windowResolved": "{{mechanic}} si risolve",
+      "windowClosed": "La finestra di reazione si chiude",
+      "purpose": {
+        "attack": "Tiro di attacco",
+        "damage": "Tiro di danno",
+        "save": "Tiro salvezza",
+        "check": "Prova di caratteristica",
+        "initiative": "Tiro di iniziativa",
+        "death-save": "Tiro salvezza contro morte",
+        "concentration": "Prova di concentrazione",
+        "free": "Tiro"
+      },
+      "outcome": {
+        "applied": "{{mechanic}}",
+        "established": "{{mechanic}}: ha effetto",
+        "negated": "{{mechanic}}: nessun effetto"
+      },
+      "concentration": {
+        "held": "La concentrazione regge",
+        "lost": "La concentrazione si spezza"
+      },
+      "relation": {
+        "adjacent": "adiacenza",
+        "range": "distanza",
+        "visible": "linea di vista",
+        "cover": "copertura",
+        "engaged": "ingaggio",
+        "aura-member": "dentro un'aura",
+        "mark": "marchio"
+      },
+      "rest": {
+        "short": "riposo breve",
+        "long": "riposo lungo"
+      },
+      "table": {
+        "start": "Il combattimento inizia",
+        "add-entity": "{{entity}} entra nel combattimento",
+        "remove-entity": "{{entity}} esce dal combattimento",
+        "join": "{{entity}} prende posto al tavolo",
+        "leave": "{{entity}} lascia il tavolo",
+        "sync": "{{entity}} viene aggiornato",
+        "set-initiative": "{{entity}} tira iniziativa {{value}}",
+        "begin-turns": "L'ordine di turno è deciso",
+        "end-turn": "Fine del turno",
+        "end": "Il combattimento finisce",
+        "rest": "Il gruppo fa un {{rest}}",
+        "settings": "Impostazioni del tavolo cambiate",
+        "map": "La mappa cambia",
+        "fog": "La nebbia cambia"
+      },
+      "reason": {
+        "unknown-entity": "quella creatura non è al tavolo",
+        "unknown-mechanic": "quell'azione non è disponibile per questa creatura",
+        "not-in-turns": "il combattimento non è iniziato",
+        "not-your-turn": "non è il turno di quella creatura",
+        "unaffordable": "non resta nulla da spendere per farlo",
+        "missing-answer": "qualcosa doveva ancora essere scelto o tirato",
+        "no-window": "quella finestra di reazione è chiusa",
+        "not-eligible": "quella creatura non può reagire qui",
+        "no-such-check": "quella prova non è più in sospeso",
+        "invalid-table-op": "il tavolo non ha potuto farlo",
+        "already-undone": "era già stata annullata",
+        "unknown-action": "l'azione a cui si riferisce non esiste più",
+        "invalid-target": "quel bersaglio non è legale",
+        "invalid-roll": "il tiro non torna",
+        "roll-consumed": "quel tiro è già stato speso",
+        "roll-roller-mismatch": "quel tiro appartiene a un'altra creatura"
+      },
+      "event": {
+        "hpZero": "{{entity}} scende a 0 punti ferita",
+        "effectEnded": "Un effetto termina",
+        "concentrationEnded": "{{entity}} smette di concentrarsi"
+      }
+    }
+  }
+}
