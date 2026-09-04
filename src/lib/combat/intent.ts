@@ -49,7 +49,7 @@ function rejected(rejection: Rejection): StepResult {
 
 // ── Costs ───────────────────────────────────────────────────────────────────
 
-interface Payment {
+export interface Payment {
   readonly ledger: TurnLedger;
   readonly resources: Entity["resources"];
   readonly paid: string[];
@@ -705,35 +705,50 @@ function commitAt(
 
 // ── Entry points ────────────────────────────────────────────────────────────
 
-export function applyIntent(
+/**
+ * Everything `applyIntent` decides BEFORE it runs a single step: which program this is, whether
+ * the trigger admits it here and now, which entities it actually affects, and what it costs.
+ *
+ * It is factored out because the CLIENT needs exactly these verdicts and must not spend a die to
+ * learn them: `src/features/play/table/dispatch.ts` calls this to list the inputs a tile has to
+ * roll, and reports the rejection instead when there is nothing to roll for. One definition, so
+ * a preflight verdict and the fold's verdict can never disagree — the reducer's own rejections
+ * ARE the client's.
+ *
+ * Pure and total: no rolls are read, nothing is applied. The order of the checks is part of the
+ * contract (an unknown mechanic outranks a wrong turn, which outranks an unaffordable cost), so
+ * a caller that shows the first rejection shows the same one the log would record.
+ */
+export interface IntentPreflight {
+  readonly program: Program;
+  /** The entities the program actually runs against — an area's derived, eligible members. */
+  readonly targets: readonly EntityId[];
+  /** The entity the window's event is about, bound to `$event.entity`; `null` off a window. */
+  readonly eventEntity: EntityId | null;
+  readonly payment: Payment;
+}
+
+export function preflightIntent(
   state: FoldedState,
   action: IntentAction,
   catalogue: Catalogue
-): StepResult {
+): IntentPreflight | Rejection {
   const entity = state.entities[action.entity];
-  if (!entity) return rejected({ reason: "unknown-entity", entity: action.entity });
+  if (!entity) return { reason: "unknown-entity", entity: action.entity };
   const program = programOf(state, catalogue, action.mechanic, action.program);
   if (!program || !entity.mechanics.includes(action.mechanic)) {
-    return rejected({ reason: "unknown-mechanic", mechanic: action.mechanic });
+    return { reason: "unknown-mechanic", mechanic: action.mechanic };
   }
 
   let windowEvent: EntityId | null = null;
   if (action.window !== null) {
     const window = state.windows.find((w) => w.id === action.window);
-    if (!window) return rejected({ reason: "no-window", window: action.window });
+    if (!window) return { reason: "no-window", window: action.window };
     if (!window.eligible.includes(action.entity)) {
-      return rejected({
-        reason: "not-eligible",
-        window: action.window,
-        entity: action.entity,
-      });
+      return { reason: "not-eligible", window: action.window, entity: action.entity };
     }
     if (program.trigger.kind !== "event" || !program.trigger.window) {
-      return rejected({
-        reason: "not-eligible",
-        window: action.window,
-        entity: action.entity,
-      });
+      return { reason: "not-eligible", window: action.window, entity: action.entity };
     }
     windowEvent = eventEntity(window.event);
   } else {
@@ -742,9 +757,9 @@ export function applyIntent(
       program.trigger.economy !== "none" &&
       program.trigger.economy !== "reaction";
     if (claimsTurn) {
-      if (state.clock.phase !== "turns") return rejected({ reason: "not-in-turns" });
+      if (state.clock.phase !== "turns") return { reason: "not-in-turns" };
       if (state.clock.current !== action.entity) {
-        return rejected({ reason: "not-your-turn", entity: action.entity });
+        return { reason: "not-your-turn", entity: action.entity };
       }
     }
   }
@@ -754,11 +769,10 @@ export function applyIntent(
     if (program.targets.count === "area") {
       const spec = program.targets.area;
       // Conformance forbids an area count without a shape; the type still needs narrowing.
-      if (!spec)
-        return rejected({ reason: "unknown-mechanic", mechanic: action.mechanic });
+      if (!spec) return { reason: "unknown-mechanic", mechanic: action.mechanic };
       const resolved = areaShapeFrom(spec, action.answers);
       if (resolved.kind === "missing") {
-        return rejected({ reason: "missing-answer", input: resolved.input });
+        return { reason: "missing-answer", input: resolved.input };
       }
       const candidates = Object.values(state.entities).map((e) => ({
         id: e.id,
@@ -781,11 +795,10 @@ export function applyIntent(
       });
     } else {
       if (action.targets.length !== program.targets.count) {
-        return rejected({ reason: "invalid-target", entity: "" });
+        return { reason: "invalid-target", entity: "" };
       }
       for (const target of action.targets) {
-        if (!state.entities[target])
-          return rejected({ reason: "unknown-entity", entity: target });
+        if (!state.entities[target]) return { reason: "unknown-entity", entity: target };
         const ctx: EvalContext = {
           self: action.entity,
           target,
@@ -794,15 +807,28 @@ export function applyIntent(
           answers: action.answers,
         };
         if (!evalPredicate(program.targets.eligibility, state, ctx)) {
-          return rejected({ reason: "invalid-target", entity: target });
+          return { reason: "invalid-target", entity: target };
         }
       }
     }
   }
-  const effectiveAction: IntentAction = { ...action, targets: effectiveTargets };
 
   const payment = payCosts(entity, program, action);
-  if ("reason" in payment) return rejected(payment);
+  if ("reason" in payment) return payment;
+  return { program, targets: effectiveTargets, eventEntity: windowEvent, payment };
+}
+
+export function applyIntent(
+  state: FoldedState,
+  action: IntentAction,
+  catalogue: Catalogue
+): StepResult {
+  const preflight = preflightIntent(state, action, catalogue);
+  if ("reason" in preflight) return rejected(preflight);
+  const { program, payment } = preflight;
+  const windowEvent = preflight.eventEntity;
+  const entity = mustEntity(state, action.entity);
+  const effectiveAction: IntentAction = { ...action, targets: preflight.targets };
 
   const events: CombatEvent[] = [];
   const paidState: FoldedState = {
