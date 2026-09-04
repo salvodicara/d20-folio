@@ -35,8 +35,8 @@ death saves, initiative, round) but the character's WHOLE play session under `pl
 (spell slots, trackers, item resources, currency, pinned actions, active features, companions,
 the engine world — `docs/ARCHITECTURE.md` → "Combat-mutable state lives in a per-character
 subdoc"). The old sheet (`CharacterCockpit` and its HP header, rest, spells, inventory) reads and
-writes all of it and stays the character screen until item 8 rebuilds the sheet in the Baldur's
-Gate 3 grammar (dossier 15). Writing a personal `Encounter` over that document now would (a)
+writes all of it and stays the character screen until item 8 rebuilds the sheet in the
+Baldur's Gate 3 grammar (dossier 15). Writing a personal `Encounter` over that document now would (a)
 quarantine the sheet on `v2` (`missing-combat-state`), and (b) force the session model of a screen
 whose design does not exist yet (UI first, golden rule 25).
 
