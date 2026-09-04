@@ -26,14 +26,12 @@ import type { Ability, ConditionId, Entity } from "./types";
 import type { Mechanic } from "./mechanic";
 import { monsterMechanics } from "./monster-adapter";
 
-/** Where a monster sits: the id and label the DM's "Add" minted for THIS creature. */
+/** Where a monster sits: the id and label the DM's "Add" minted for THIS creature (from
+ *  `FoldedState.nextOrdinal`, which the caller allocates and the projection never reads). */
 export interface MonsterSeat {
   readonly id: EntityId;
   readonly label: LabelId;
   readonly controllerUid: string;
-  /** The allocation the id and label were minted from (`FoldedState.nextOrdinal`) — the
-   *  "Goblin 3" the DM sees, carried so the seat is self-describing to its caller. */
-  readonly ordinal: number;
 }
 
 const ABILITIES: readonly Ability[] = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];

@@ -9,12 +9,7 @@ import { projectMonster } from "@/lib/combat/monster-entity";
 import { CORE_MECHANIC_IDS } from "@/data/combat/core-catalogue";
 import { ogreStatBlock } from "@/data/combat/prototype-catalogue";
 
-const seat = {
-  id: "monster-3",
-  label: "monster:ogre",
-  controllerUid: "dm",
-  ordinal: 3,
-} as const;
+const seat = { id: "monster-3", label: "monster:ogre", controllerUid: "dm" } as const;
 
 /** A goblin-shaped block exercising what the ogre does not: save proficiencies,
  *  a deviating save override, typed defenses and a condition immunity. */
