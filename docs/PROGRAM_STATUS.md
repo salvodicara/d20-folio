@@ -555,7 +555,123 @@ table ops, named in §3.1 and not built. And position as a direct-patch override
 still withholds `move` whole, so a `log-only` table cannot move tokens through the reducer — a
 seam stage 5's map must design around rather than inherit.
 
-Next: stage 5 (the minimum map), from
+Next: stage 5 (the minimum map) — closed below.
+
+## `v2` — stage 5, the minimum map (2026-09-04)
+
+Plan: `docs/superpowers/plans/2026-09-04-v2-stage-5-minimum-map.md` (8 tasks; 1–6 executed by the
+controller in sequence, 7 on the proposal branch, 8 the handoff). Design:
+`docs/superpowers/specs/2026-09-04-v2-stage-5-minimum-map-design.md`, reconciled into the target
+spec (§2.1, §2.2, §3.1, §5.1, §5.4), `docs/ARCHITECTURE.md`, `docs/TEST_PORTFOLIO.md` and the
+stage-1 plan in the same motion.
+
+**Done (engine, integrated on `v2`).** The map's persisted facts are log actions folded into
+`FoldedState.map`; nothing ephemeral is persisted.
+
+- **`map` and `fog` table ops** (`table.ts`, `map.ts`): the background reference (Storage path,
+  token URL, image size, grid cell side and origin, bytes) replaced or cleared without touching
+  fog or positions; fog with ONE representation — covered except `revealed` rectangles in grid
+  cells — `cover` on/off, `reveal` (normalised against containment), `hide` (rectangle difference,
+  at most four pieces each), both rejected while fog is off, and a 256-rectangle cap that bounds
+  the checkpoint by construction. Malformed numbers (NaN, fractions, out-of-range) are rejected,
+  never folded.
+- **`override position`** (`override.ts`, `reposition.ts`): a placement sets or clears the cell,
+  recomputes `adjacent`/`range` through the recompute half of `repositionRelations` (split so only
+  the `move` step opens opportunity-attack windows), spends no movement. Overrides apply at every
+  automation level, so this closes the stage-4 seam: a `log-only` table moves its tokens through
+  placements. `reveal.token` / `reveal.block` / `reveal.hp` are direct-patch paths too;
+  `Entity.reveal.token === false` is a hidden token.
+- **`planDrop`** (`map.ts`): the one place the surface asks which action a dropped token becomes —
+  the controller on its turn within the budget moves (`core:move`); the DM places in every other
+  case; the controller places while turns are not running or on a `log-only` table; out of turn or
+  over budget is refused so the surface snaps the token back. **`mapView`**: the viewer projection —
+  hidden tokens only for the DM and the controller, tokens under fog invisible to a player except
+  their own, HP numbers only where the table reveals them, tokens sorted by id.
+- **The codec** carries the new shapes closed-world, and the **§8 round-trip property test** is
+  finally written (`codec.property.test.ts`: a seeded generator over every action kind and table
+  op, populated checkpoints with a map, unknown keys; 300 cases; two negative properties).
+- **A golden replay** (`map-fog-and-hidden.json`) folds the minimum map end to end.
+- **The Storage seam** (`storage.rules`, `src/lib/map-io.ts`): `campaigns/{campaignId}/maps/
+{mapId}.jpeg`, DM/admin write, member read and list, cross-service membership lookup, 8 MiB and
+  `image/*` ceilings; the adapter uploads and returns the `MapBackground` reference, sums usage from
+  Storage metadata against a 100 MiB per-campaign courtesy quota, refuses before sending a byte,
+  deletes idempotently; `compressImage` moved to the pure `image-compress.ts`. Pinned by the adapter
+  boundary guard and the randomness guard.
+- **The contended-append proof** the stage-4 handoff asked for: two clients appending in the same
+  round-trip and one client's burst of ten all land, and both clients fold the same state.
+
+**Review.** One independent whole-diff review (no session context) after task 5: no Critical,
+three Important, six Minor — all taken in one fix wave (`fix(combat): take the stage-5 review's
+findings`). Important: (1) the Storage map rule evaluated `isAdmin()` first — a rules evaluation
+may touch two Firestore documents and `isAdmin()` ERRORS for a uid without a `users/{uid}`
+document, so a DM whose profile document was missing would have been locked out of the maps; the
+campaign predicate now comes first, pinned by a test that deletes the DM's users document. (2)
+`uploadMapBackground` sent the bytes before anything validated the grid, so a `map` op the reducer
+then rejected would have left an orphan in Storage; `isMapGrid` now refuses before the upload.
+(3) `planDrop` could plan a `move` the reducer rejects — its budget test was "distance ≤
+remainder" (wrong once a speed override drops the budget below what the turn already spent) and
+it ignored whether the entity has `core:move`; it now applies the step's own test and requires
+the mechanic. Minor, taken: relations recomputed in sorted entity order (a compacted and an
+uncompacted fold agree on `relations` order), an upper bound on image and cell sizes, the
+check-then-act quota and the `mapId`/immutable-cache consequence stated in `map-io`, deletion
+named as the surface's, nested-key quarantine in the property test, an undo in the map replay,
+the DM of another campaign and a member's `getDownloadURL` in the rules lane, a 2,000-case
+seeded oracle sweep over `subtractRect`. Recorded, not taken: `reveal.token` has no production
+default yet — stage 6's PC/monster projections must set `token: true` or every token starts
+hidden (carried into the handoff); the rules language's wildcard binding for `list` is proved by
+the emulator only (the documentation is silent).
+
+**Rulings during execution.**
+
+- **The map lives on the encounter document** (design §2): ~15 nodes per fog rectangle, ~14 per
+  placement, ~270 nodes for a realistic table against the 50,000-node budget; a sibling document
+  earns its place only if fog becomes brush-painted.
+- **One fog representation.** `reveal`/`hide` on an uncovered map are rejected rather than
+  inverted into a "hidden rectangles" list; the surface never offers them while fog is off.
+- **A placement is forced movement**: relations recomputed, no opportunity-attack window (UI spec
+  §5c), no budget consulted. The `overrides.position` record is kept like every other override —
+  attribution — and goes stale the moment the entity `move`s, exactly as `overrides["vitals.hp"]`
+  does after damage.
+- **`FEET_PER_CELL` stays 5 ft, chessboard only, no token footprint** (design §10): a per-map
+  scale would have to flow into distance, budget and area membership, and no acceptance story
+  needs it; the grid panel's "Lato di una casella" reads 1,5 m read-only at stage 6.
+- **The quota is a client-side courtesy**, stated as such in the rule, the adapter and the spec.
+- **Per-test Storage prefixes** in `map-io.emulator.test.ts`: `clearStorage()` did not remove the
+  previous test's objects on this emulator, and a usage sum is per-campaign by contract.
+- The plan was executed **autonomously** under the owner-approved handoff scope; owner-facing
+  questions (Blaze on staging, the surface's verdict) went to the closing message.
+
+**Deferred, with the measurement.** Bounded `rolls` in the checkpoint (stage 6, with the
+compaction wiring; the safe pruning — drop at compaction every roll whose spender is not a
+still-open `declared` intent — is known); a per-map scale and measurement type; token footprints
+(Large = 2 × 2) once stage 6's projection puts a size on the entity; fog shapes beyond rectangles,
+multi-layer fog and "remember explored"; a personal-host map (the upload path needs a campaign).
+The stage-4 minors not taken here stay open: `override.ts`'s duplicated `rejected` helper, the
+`runSteps` split, `resolve.table.test.ts`'s missing sync-receipt and `leave` assertions, the
+duplicated `freezeDeep`, `checkpointThrough`'s single-client liveness cliff, the adapters' import
+guard's regex scope, and the lease write against a shared character untested on the emulator.
+
+**Gates on `v2` at the close** (sequential from the `v2` worktree): `just ci` 4 min 47 s (836 files / 18,854 tests, Functions 7 files / 129 tests, plus typecheck, lint and the build); `pnpm test:rules` 23 s (5 files / 133 cases on the emulator); `pnpm build` + `pnpm test:budget` 33 s (6 budget cases); `just ci-srd-only` 2 min 6 s (13,287 tests, 6 skipped — run because `src/lib/combat`, `src/lib/map-io.ts` and `storage.rules` are public modules, and green with the pack pinned to the empty stub). Stage 4 closed at 4 min 38 s / 20 s / 30 s / 2 min 20 s; the combined `v2` gate is about 7 min 50 s, under the 15-minute target. All four ran once more on the final tree after the review's fix wave.
+
+**What the gate proves, exactly.** The engine folds a map: the golden replay and the property test
+in the unit lane, the Storage matrix and the adapter on the emulator, and the contended-append
+case. It does **not** prove a surface: no screen is integrated on `v2`. The surface exists on the
+proposal branch and is proved by the owner's eyes (golden rule 25), not by a test.
+
+**Out of stage 5.** The surface's integration (after the screenshot verdict); the play screen's
+chrome around the map (stage 6: rail, sub-toolbars, grid panel, token pill, drawer); the
+`propose-and-confirm` level; the `combat/state` cutover; the old campaign hub's encounter writers;
+`memberDetails[uid].character` / `.role`; the `reorder` and `day-phase` ops.
+
+**Staging.** `firestore.rules` did not change in this stage, so nothing is pending on staging's
+Firestore. `storage.rules` did, and the staging project has NO Storage bucket
+(`gcloud storage buckets list --project d20-folio-staging` lists none; billing is not enabled):
+Firebase Storage default buckets on projects created after October 2024 need the Blaze plan. The
+map plays on the emulator (`pnpm dev:emulators`) until the owner links a billing account to
+`d20-folio-staging` with a £1 budget alert like production; then
+`firebase deploy --only storage -P staging`. Production is untouched.
+
+Next: the surface's screenshot verdict, then stage 6 (one play surface), from
 `docs/superpowers/plans/2026-09-04-v2-next-session-handoff.md`.
 
 ## Owner confirmations, recorded ahead of their stage (2026-09-03)
