@@ -3,10 +3,16 @@
  * place that understands `MonsterEntry`; everything downstream sees ordinary mechanic data.
  * Spec: docs/superpowers/specs/2026-09-02-mechanics-authoring-spec.md §4.
  *
- * Stage 3 scope: `block.actions` only — a structured `attack`/`save` entry becomes an `attack`/
- * `save`+`damage` program; every prose-only entry (Multiattack included: the corpus carries no
- * structured attack count for it yet) becomes `manual-table`, per §4's own rule. `traits`,
- * `reactions`, `legendaryActions` and `recharge`/`legendary` costs are `later` (authoring spec §6).
+ * Stage 3 scope: `block.actions` only — a structured `attack` entry becomes an `attack` program, and
+ * a `save` entry automates ONLY when it carries damage, becoming `save`+`damage`. An effect-only
+ * save (a paralyzing gaze, a frightening roar) is DM-adjudicated until conditions-on-save are
+ * authored: automating just its roll would spend the action and apply nothing.
+ *
+ * Everything else becomes `manual-table`, per §4's own rule — never a half-built kind. That fallback
+ * covers prose-only entries (Multiattack included: the corpus carries no structured attack count for
+ * it yet), spellcasting, effect-only saves, `onSuccess: "special"` outcomes, and clauses whose
+ * damage type is a use-time choice. `traits`, `reactions`, `legendaryActions` and
+ * `recharge`/`legendary` costs are `later` (authoring spec §6).
  */
 import type {
   MonsterAttackEntry,
@@ -71,7 +77,10 @@ function saveProgram(entry: MonsterSaveEntry): Program | null {
   if (entry.onSuccess === "special") return null; // prose-only outcome
   const compiled = damageParts(entry.damage ?? []);
   if (!compiled) return null;
-  const steps: Step[] = [
+  // An effect-only save carries no automatable outcome: the condition it prints lives in prose, so
+  // a save step alone would burn the action and apply nothing. The DM adjudicates it instead.
+  if (compiled.parts.length === 0) return null;
+  const steps: readonly Step[] = [
     {
       id: "resist",
       kind: "save",
@@ -80,10 +89,8 @@ function saveProgram(entry: MonsterSaveEntry): Program | null {
       dc: entry.dc,
       onSuccess: entry.onSuccess === "half" ? "half" : "negate",
     },
+    { id: "harm", kind: "damage", parts: compiled.parts, to: "$target" },
   ];
-  if (compiled.parts.length > 0) {
-    steps.push({ id: "harm", kind: "damage", parts: compiled.parts, to: "$target" });
-  }
   return {
     id: entry.id,
     trigger: { kind: "invocation", economy: "action" },

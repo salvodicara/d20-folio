@@ -45,6 +45,7 @@ const block: MonsterStatBlock = {
       damage: [{ dice: "2d6", damageType: "thunder" }],
       onSuccess: "half",
     },
+    { id: "paralyzing-gaze", kind: "save", save: "CON", dc: 13, onSuccess: "none" },
     { id: "multiattack", kind: "narrative" },
   ],
   source: "SRD",
@@ -105,6 +106,19 @@ describe("monsterMechanics — the adapter", () => {
         to: "$target",
       },
     ]);
+  });
+
+  it("degrades an effect-only save (no damage) to manual-table rather than a save that applies nothing", () => {
+    const mechanic = monsterMechanics(block);
+    const gaze = mechanic.active?.find((p) => p.id === "paralyzing-gaze");
+    expect(gaze?.steps).toEqual([
+      {
+        id: "resolve",
+        kind: "manual-table",
+        label: "test-brute.actions.paralyzing-gaze",
+      },
+    ]);
+    expect(gaze?.cost).toEqual([{ kind: "turn", claim: "action" }]);
   });
 
   it("degrades a prose-only entry (Multiattack) to manual-table, never drops or half-builds it", () => {
