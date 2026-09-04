@@ -46,6 +46,24 @@ const block: MonsterStatBlock = {
       onSuccess: "half",
     },
     { id: "paralyzing-gaze", kind: "save", save: "CON", dc: 13, onSuccess: "none" },
+    {
+      // A use-time damage-type choice: no fixed `damageType` to compile a part from.
+      id: "elemental-lash",
+      kind: "attack",
+      attack: "melee",
+      toHit: 5,
+      reachFt: 5,
+      damage: [{ dice: "1d8", damageChoice: ["fire", "cold"] }],
+    },
+    {
+      // A printed "Success:" outcome that lives in prose, damage clauses or not.
+      id: "withering-word",
+      kind: "save",
+      save: "CHA",
+      dc: 13,
+      damage: [{ dice: "2d8", damageType: "necrotic" }],
+      onSuccess: "special",
+    },
     { id: "multiattack", kind: "narrative" },
   ],
   source: "SRD",
@@ -121,12 +139,43 @@ describe("monsterMechanics — the adapter", () => {
     expect(gaze?.cost).toEqual([{ kind: "turn", claim: "action" }]);
   });
 
+  it("degrades an attack whose damage type is a use-time choice to manual-table", () => {
+    const mechanic = monsterMechanics(block);
+    const lash = mechanic.active?.find((p) => p.id === "elemental-lash");
+    expect(lash?.steps).toEqual([
+      { id: "resolve", kind: "manual-table", label: "test-brute.actions.elemental-lash" },
+    ]);
+  });
+
+  it("degrades a save with onSuccess: special to manual-table, damage clauses notwithstanding", () => {
+    const mechanic = monsterMechanics(block);
+    const word = mechanic.active?.find((p) => p.id === "withering-word");
+    expect(word?.steps).toEqual([
+      {
+        id: "resolve",
+        kind: "manual-table",
+        label: "test-brute.actions.withering-word",
+      },
+    ]);
+  });
+
   it("degrades a prose-only entry (Multiattack) to manual-table, never drops or half-builds it", () => {
     const mechanic = monsterMechanics(block);
     const multi = mechanic.active?.find((p) => p.id === "multiattack");
     expect(multi?.steps).toEqual([
       { id: "resolve", kind: "manual-table", label: "test-brute.actions.multiattack" },
     ]);
+  });
+
+  it("the prototype catalogue's hand-copied Ogre still equals the real corpus entry", async () => {
+    // Dynamic on purpose: `src/data/monsters/n-p.ts` is lazy-only under the bundle budget, and
+    // the per-range file is imported directly because the `index.ts` barrel pulls the private
+    // pack. An import inside a test body is not an eager import, so both guards stay green.
+    const { SRD_MONSTERS_N_P } = await import("@/data/monsters/n-p");
+    const { ogreStatBlock } = await import("@/data/combat/prototype-catalogue");
+    const real = SRD_MONSTERS_N_P.find((entry) => entry.id === "ogre");
+    expect(real).toBeDefined();
+    expect(ogreStatBlock).toEqual(real);
   });
 
   it("an adapted attack actually resolves through the reducer", () => {

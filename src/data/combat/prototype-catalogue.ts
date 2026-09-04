@@ -335,8 +335,9 @@ export const move: Mechanic = {
  *  rather than imported, because that corpus is bundle-budget-guarded as lazy-only (its own
  *  header: "Nothing eager may import this module") and this catalogue is loaded eagerly by
  *  every combat test. Adapted through `monsterMechanics`, not hand-authored, so this is exactly
- *  what the real bestiary entry produces. */
-const ogreStatBlock: MonsterStatBlock = {
+ *  what the real bestiary entry produces. Exported so `monster-adapter.test.ts` can prove the
+ *  copy still equals the corpus entry — a test may import the corpus lazily; this module may not. */
+export const ogreStatBlock: MonsterStatBlock = {
   id: "ogre",
   cr: 2,
   sizes: ["Large"],

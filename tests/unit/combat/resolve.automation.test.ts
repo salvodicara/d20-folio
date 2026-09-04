@@ -68,6 +68,27 @@ function attack(): Action {
   };
 }
 
+/** A manually-entered d20 for `hero`, appended as its own log action (ADR-0010). */
+function manualRoll(id: string, face: number): Action {
+  return {
+    kind: "roll",
+    id,
+    seq: seq(),
+    by: "p1",
+    roll: {
+      formula: "1d20",
+      faces: [face],
+      total: face,
+      seed: null,
+      source: "manual",
+      hidden: false,
+      roller: "hero",
+      purpose: "attack",
+      label: null,
+    },
+  };
+}
+
 function logOnly(state: FoldedState): FoldedState {
   const result = resolve(
     state,
@@ -140,6 +161,37 @@ describe("automation — log-only computes the verdict but applies nothing (ADR-
     expect(result.receipt.events).toEqual([
       { kind: "attack-declared", attacker: "hero", target: "monster-1", action: held.id },
     ]);
+  });
+
+  it("a roll answered by a log-only intent is still consumed: the withheld verdict spends it once", () => {
+    // ADR-0010 (one roll, one verdict) × ADR-0011 (log-only withholds the outcome): the roll's
+    // consumption is bookkeeping about the log, not an outcome, so it lands at either level —
+    // otherwise a log-only table could re-use the same natural 20 for a second attack.
+    let state = logOnly(opened());
+    const rolled = resolve(state, manualRoll("roll-1", 15), catalogue);
+    if (rolled.kind === "rejected") throw new Error(JSON.stringify(rolled.rejection));
+    state = rolled.state;
+    const first: Action = {
+      ...attack(),
+      answers: { roll: { roll: "roll-1" }, damage: 5 },
+    };
+    const applied = resolve(state, first, catalogue);
+    expect(applied.kind).toBe("applied");
+    if (applied.kind !== "applied") return;
+    expect(mustEntity(applied.state, "monster-1").vitals.hp).toBe(10); // still withheld
+    expect(applied.state.spent["roll-1"]).toBe(first.id);
+    const second: Action = {
+      ...attack(),
+      answers: { roll: { roll: "roll-1" }, damage: 5 },
+    };
+    const reused = resolve(applied.state, second, catalogue);
+    expect(reused.kind).toBe("rejected");
+    if (reused.kind !== "rejected") return;
+    expect(reused.rejection).toEqual({
+      reason: "roll-consumed",
+      roll: "roll-1",
+      by: first.id,
+    });
   });
 
   it("at log-only, a real departure from reach does not open the run-internal opportunity window", () => {
