@@ -108,12 +108,21 @@ export interface PlayScreenProps {
   ) => { readonly type: string | null; readonly cr: string | null } | null;
   readonly creatures?: readonly CreatureOption[];
   readonly creaturesLoading?: boolean;
-  readonly onAddCreature?: (option: CreatureOption, at: Position | null) => void;
+  /**
+   * The verbs that write OUTSIDE the encounter log — the lease, the personal document, the
+   * table document. They return a promise so this screen can say when one does not go through:
+   * a seat verb that fails silently is the worst kind of dead control, because the person
+   * believes they have left the table when they have not.
+   */
+  readonly onAddCreature?: (
+    option: CreatureOption,
+    at: Position | null
+  ) => Promise<void> | void;
   /** The player's seat verbs; absent when this viewer cannot take a seat. */
-  readonly onSit?: () => void;
-  readonly onStand?: (entity: EntityId) => void;
+  readonly onSit?: () => Promise<void> | void;
+  readonly onStand?: (entity: EntityId) => Promise<void> | void;
   /** The DM opening the table when the document does not exist yet. */
-  readonly onOpenTable?: () => void;
+  readonly onOpenTable?: () => Promise<void> | void;
 }
 
 /** What the surface is waiting for the person to answer before an intent can be appended. */
@@ -292,6 +301,26 @@ export function PlayScreen(props: PlayScreenProps) {
   }, [notice]);
 
   /**
+   * Run one of the verbs that write outside the log, and SAY SO when it does not go through.
+   *
+   * The write-back a player's "Alzati" performs needs the server (it overwrites their whole
+   * personal document), so offline it does not happen — and the honest outcome is that they
+   * keep their seat and read why, not that the button quietly does nothing.
+   */
+  const attempt = useCallback(
+    (run: (() => Promise<void> | void) | undefined, key: string): void => {
+      if (!run) return;
+      try {
+        const result = run();
+        if (result instanceof Promise) result.catch(() => setNotice(t(key)));
+      } catch {
+        setNotice(t(key));
+      }
+    },
+    [t]
+  );
+
+  /**
    * The last leg of every tile: roll what the plan owes, then append the intent that spends
    * those rolls. In `app` mode the dice seam draws them here; in `manual` mode the faces come
    * from the roll panel and this is called again with them.
@@ -365,17 +394,34 @@ export function PlayScreen(props: PlayScreenProps) {
    *
    * Bound on `window` rather than on the root element because the play surface has no single
    * focused owner: a person who has just clicked the map, a tile or nothing at all still
-   * expects Space to end their turn. A key that arrives while a field has focus belongs to the
-   * field, so those are let through untouched.
+   * expects Space to end their turn.
+   *
+   * A key that arrives on a CONTROL belongs to the control, and Space is the sharpest case: a
+   * native button activates on Space, so stealing it would mean a keyboard user who tabs to a
+   * hotbar tile and presses Space ends their turn instead of using the tile. So every focusable
+   * thing — a field, a button, a link, anything with a `role` that behaves like one, anything
+   * carrying a tabindex — keeps its own keys, and the shortcut fires only when the key lands on
+   * the screen itself: the root, the map, a label, a panel.
    */
   useEffect(() => {
-    const typing = (target: EventTarget | null): boolean =>
-      target instanceof HTMLElement &&
-      (target.isContentEditable ||
-        ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+    /** Whether the key belongs to the thing under it rather than to the screen. */
+    const isControl = (target: EventTarget | null): boolean => {
+      if (!(target instanceof HTMLElement)) return false;
+      if (target.isContentEditable) return true;
+      if (target.closest("input, textarea, select, button, a[href], [tabindex]")) {
+        return true;
+      }
+      // Radix triggers and our own switches are buttons already, but a future one may be a
+      // div with a role; the role is what says "this activates".
+      return (
+        target.closest(
+          '[role="button"], [role="switch"], [role="tab"], [role="radio"], [role="menuitem"], [role="option"], [role="link"]'
+        ) !== null
+      );
+    };
     const onKey = (event: KeyboardEvent): void => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
-      if (typing(event.target)) return;
+      if (isControl(event.target)) return;
       const tool = TOOL_KEYS[event.key.toLowerCase()];
       if (tool !== undefined) {
         if (tool === "add" || tool === "fog-reveal" ? dmRef.current : true) {
@@ -512,7 +558,9 @@ export function PlayScreen(props: PlayScreenProps) {
                 : "error"
         }
         dm={viewer.dm}
-        onOpenTable={onOpenTable}
+        onOpenTable={
+          onOpenTable ? () => attempt(onOpenTable, "play.notice.openFailed") : undefined
+        }
       />
     );
   }
@@ -818,7 +866,7 @@ export function PlayScreen(props: PlayScreenProps) {
               options={creatures}
               loading={creaturesLoading}
               onPick={(option) => {
-                onAddCreature?.(option, null);
+                attempt(() => onAddCreature?.(option, null), "play.notice.addFailed");
                 setTool("select");
               }}
               onClose={() => setTool("select")}
@@ -986,7 +1034,9 @@ export function PlayScreen(props: PlayScreenProps) {
                   });
                   setSelected(null);
                 }}
-                onLeave={(entity) => onStand?.(entity)}
+                onLeave={(entity) =>
+                  attempt(() => onStand?.(entity), "play.notice.standFailed")
+                }
               />
             </div>
           ) : null}
@@ -1059,7 +1109,7 @@ export function PlayScreen(props: PlayScreenProps) {
               <button
                 type="button"
                 className="pl-ghost"
-                onClick={onSit}
+                onClick={() => attempt(onSit, "play.notice.sitFailed")}
                 data-testid="pl-sit"
               >
                 {t("play.table.sit")}

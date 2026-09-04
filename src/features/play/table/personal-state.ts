@@ -12,6 +12,12 @@
  * and free of local echoes (`hasPendingWrites === false`), and on nothing else. The subscription
  * is injected rather than imported so the rule can be driven by a fake in a test — the whole
  * point of the module is a race nobody can reproduce by hand.
+ *
+ * Waiting for the server means it can wait FOREVER — a table played on a train has no server to
+ * hear from — so the wait is bounded and the failure is loud. It rejects rather than falling
+ * back to the cache: the caller keeps the seat and says the write-back needs a connection, which
+ * is honest, whereas a cached base would overwrite the document with stale numbers and say
+ * nothing. Offline-first means the surface keeps working, not that a write invents its own base.
  */
 import type { CombatState } from "@/types/combat-state";
 import type { CombatStateMeta } from "@/lib/combat-state-io";
@@ -23,6 +29,17 @@ export type SubscribeCombatState = (
   cb: (state: CombatState | null, meta: CombatStateMeta) => void,
   onError?: (error: Error) => void
 ) => () => void;
+
+/** How long the write-back waits for the server before giving up and saying so. */
+export const SERVER_READ_TIMEOUT_MS = 8_000;
+
+/** Thrown when no server snapshot arrives in time — the caller keeps the seat. */
+export class ServerReadTimeout extends Error {
+  constructor() {
+    super("combat-state: no server snapshot within the timeout");
+    this.name = "ServerReadTimeout";
+  }
+}
 
 /** True only for a snapshot the server has confirmed and no local write is still riding. */
 export function isServerConfirmed(meta: CombatStateMeta): boolean {
@@ -38,22 +55,31 @@ export function isServerConfirmed(meta: CombatStateMeta): boolean {
 export function readServerCombatState(
   subscribe: SubscribeCombatState,
   uid: string,
-  characterId: string
+  characterId: string,
+  timeoutMs: number = SERVER_READ_TIMEOUT_MS
 ): Promise<CombatState | null> {
   return new Promise((resolve, reject) => {
     // A record, not two locals: the listener can answer SYNCHRONOUSLY, before `subscribe`
     // has returned its teardown, so "settled" and "how to close it" have to be readable from
     // both sides of that return without either shadowing the other.
-    const listener: { stop: (() => void) | null; settled: boolean } = {
-      stop: null,
-      settled: false,
-    };
+    const listener: {
+      stop: (() => void) | null;
+      settled: boolean;
+      timer: ReturnType<typeof setTimeout> | null;
+    } = { stop: null, settled: false, timer: null };
     const finish = (run: () => void): void => {
       if (listener.settled) return;
       listener.settled = true;
+      // On the record, not in a local: the listener can answer SYNCHRONOUSLY, before the
+      // timer below has even been created.
+      if (listener.timer !== null) clearTimeout(listener.timer);
       listener.stop?.();
       run();
     };
+    listener.timer = setTimeout(
+      () => finish(() => reject(new ServerReadTimeout())),
+      timeoutMs
+    );
     listener.stop = subscribe(
       uid,
       characterId,

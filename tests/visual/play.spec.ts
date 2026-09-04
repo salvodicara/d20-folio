@@ -38,19 +38,25 @@ type Role = "dm" | "player" | "spectator";
 
 /** Seed theme and language BEFORE boot so the first paint is already right (no flash, no race)
  *  — the same discipline `tests/e2e/surfaces.ts` uses for the census lane. */
-async function seed(page: Page, theme: Theme, locale: Locale): Promise<void> {
+async function seed(
+  page: Page,
+  theme: Theme,
+  locale: Locale,
+  dice: "app" | "manual" = "app"
+): Promise<void> {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.addInitScript(
-    ([t, lng]) => {
+    ([t, lng, mode]) => {
       window.localStorage.setItem(
         "d20-folio-ui",
         JSON.stringify({ state: { theme: t, sheetMode: "play" }, version: 0 })
       );
       window.localStorage.setItem("i18nextLng", lng);
-      // The person's dice mode: the app rolls, so a capture never waits on a form.
-      window.localStorage.setItem("d20-dice-mode", "app");
+      // The person's dice mode: the app rolls, so a capture never waits on a form — except
+      // where the capture is OF a landed blow, which needs chosen faces to be deterministic.
+      window.localStorage.setItem("d20-dice-mode", mode);
     },
-    [theme, locale] as const
+    [theme, locale, dice] as const
   );
 }
 
@@ -58,9 +64,15 @@ async function seed(page: Page, theme: Theme, locale: Locale): Promise<void> {
  *  frame the owner reviews as product. */
 async function open(
   page: Page,
-  opts: { theme: Theme; locale: Locale; role: Role; scene?: "ambush" | "reaction" }
+  opts: {
+    theme: Theme;
+    locale: Locale;
+    role: Role;
+    scene?: "ambush" | "reaction";
+    dice?: "app" | "manual";
+  }
 ): Promise<void> {
-  await seed(page, opts.theme, opts.locale);
+  await seed(page, opts.theme, opts.locale, opts.dice);
   await page.goto(opts.scene === "reaction" ? "/_play?scene=reaction" : "/_play");
   await expect(page.getByTestId("play-screen")).toBeVisible({ timeout: 30_000 });
   if (opts.role !== "dm") {
@@ -147,6 +159,24 @@ test.describe("the states a URL cannot reach", () => {
     await shot(page, "state-drawer-nebbia");
     await page.getByTestId("pl-dtab-rules").click();
     await shot(page, "state-drawer-regole");
+  });
+
+  test("the drawer's Modifica, on a line that wounded somebody", async ({ page }) => {
+    // Manual dice so the blow LANDS: the control exists only on a line that moved somebody's
+    // hit points, and a random miss would cut a capture of an absent button.
+    await open(page, { theme: "dark", locale: "it", role: "dm", dice: "manual" });
+    await page.getByTestId("pl-tile-pc:lyra:weapon-rapier#attack").click();
+    await page.getByTestId("pl-cell-ogre").click();
+    const faces = page.getByTestId("pl-roll-manual").locator('input[type="number"]');
+    await faces.nth(0).fill("20");
+    await faces.nth(1).fill("8");
+    await page.getByTestId("pl-roll-apply").click();
+    await page.getByTestId("pl-drawer-open").click();
+    const edit = page.locator('[data-testid^="pl-edit-"]').first();
+    await expect(edit).toBeVisible();
+    await edit.click();
+    await expect(page.getByTestId("pl-hp-editor")).toBeVisible();
+    await shot(page, "state-drawer-modifica");
   });
 
   test("a settled roll, with its verdict", async ({ page }) => {

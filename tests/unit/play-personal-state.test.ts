@@ -16,6 +16,7 @@ vi.mock("@/lib/firebase", () => ({}));
 import {
   isServerConfirmed,
   readServerCombatState,
+  ServerReadTimeout,
   type SubscribeCombatState,
 } from "@/features/play/table/personal-state";
 import type { CombatState } from "@/types/combat-state";
@@ -70,6 +71,32 @@ describe("readServerCombatState", () => {
     };
     await expect(readServerCombatState(subscribe, "u", "c")).rejects.toThrow(
       "permission-denied"
+    );
+  });
+
+  it("gives up when no server snapshot arrives, and closes its listener", async () => {
+    const stop = vi.fn();
+    // Offline: the cache answers and the server never does. The old code would have waited
+    // for ever, so "Alzati" did nothing and said nothing.
+    const subscribe: SubscribeCombatState = (_uid, _id, cb) => {
+      cb(state(11), { fromCache: true, hasPendingWrites: false });
+      return stop;
+    };
+    await expect(readServerCombatState(subscribe, "u", "c", 10)).rejects.toBeInstanceOf(
+      ServerReadTimeout
+    );
+    expect(stop).toHaveBeenCalledTimes(1);
+  });
+
+  it("never falls back to the cached document it was offered", async () => {
+    const subscribe: SubscribeCombatState = (_uid, _id, cb) => {
+      cb(state(11), { fromCache: true, hasPendingWrites: false });
+      return () => undefined;
+    };
+    // Resolving with 11 would overwrite the server's document with stale numbers and say
+    // nothing; rejecting keeps the seat and lets the surface explain.
+    await expect(readServerCombatState(subscribe, "u", "c", 10)).rejects.toBeInstanceOf(
+      ServerReadTimeout
     );
   });
 

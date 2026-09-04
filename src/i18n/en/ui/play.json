@@ -379,6 +379,12 @@
         "label": "Spell slots",
         "hint": "One diamond per slot, by level. A filled diamond is still yours to spend; a hollow one is gone until you rest."
       }
+    },
+    "notice": {
+      "standFailed": "You are still at the table: leaving writes the fight back to your sheet, and that needs a connection.",
+      "sitFailed": "You could not be seated. Check the connection and try again.",
+      "addFailed": "That creature could not be added. Check the connection and try again.",
+      "openFailed": "The table could not be opened. Check the connection and try again."
     }
   }
 }

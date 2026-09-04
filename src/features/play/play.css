@@ -2183,3 +2183,16 @@
   padding: 0;
   background: none;
 }
+
+/* Why a creature cannot be taken off the table, printed where the control would have been: a
+   disabled button opens no tooltip, so a hidden explanation is no explanation. */
+.pl-tokenpill__reason {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  max-width: 320px;
+  padding: 0 8px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--play-mute);
+}

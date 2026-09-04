@@ -96,25 +96,27 @@ export function TokenPill(props: TokenPillProps) {
               <PlayIcon id={hidden ? "i-eye-off" : "i-eye"} />
             </button>
           </PlayTip>
-          <PlayTip
-            label={t("common.remove")}
-            hint={
-              seatedCharacter
-                ? t("play.pill.removeSeated", { name })
-                : t("play.pill.removeTip", { name })
-            }
-          >
-            <button
-              type="button"
-              className="pl-icon-btn"
-              aria-label={t("common.remove")}
-              data-testid="pl-pill-remove"
-              disabled={seatedCharacter}
-              onClick={() => onRemove(entity)}
-            >
-              <PlayIcon id="i-trash" />
-            </button>
-          </PlayTip>
+          {/* A disabled button opens no tooltip — it takes no focus and emits no pointer
+              events — so the reason a character cannot be removed is PRINTED in the pill
+              instead of hidden behind a hover that can never happen. */}
+          {seatedCharacter ? (
+            <span className="pl-tokenpill__reason" data-testid="pl-pill-remove-reason">
+              <PlayIcon id="i-info" />
+              {t("play.pill.removeSeated", { name })}
+            </span>
+          ) : (
+            <PlayTip label={t("common.remove")} hint={t("play.pill.removeTip", { name })}>
+              <button
+                type="button"
+                className="pl-icon-btn"
+                aria-label={t("common.remove")}
+                data-testid="pl-pill-remove"
+                onClick={() => onRemove(entity)}
+              >
+                <PlayIcon id="i-trash" />
+              </button>
+            </PlayTip>
+          )}
         </>
       ) : null}
       {mine ? (

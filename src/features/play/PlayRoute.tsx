@@ -179,7 +179,7 @@ export function PlayRoute() {
   /** The one live table per campaign (D5): no pointer field, no encounter list — the DM
    *  simply writes the document `useTable` is already listening to. */
   const openTable = useCallback(() => {
-    void createEncounter(liveTableRef(db, campaignId), {
+    return createEncounter(liveTableRef(db, campaignId), {
       schema: 1,
       id: LIVE_ENCOUNTER_ID,
       host: { kind: "campaign", campaignId },
@@ -188,7 +188,7 @@ export function PlayRoute() {
     });
   }, [campaignId]);
 
-  const sit = useCallback(() => {
+  const sit = useCallback((): Promise<void> | void => {
     // The store still holds the PREVIOUS character while a new subscription lands, so arriving
     // from another sheet would seat A's numbers under B's id. The seat is refused — and not
     // even offered — until the hydrated document is the one this member is entitled to.
@@ -199,7 +199,7 @@ export function PlayRoute() {
       characterId,
       buildRevision: characterDoc.revision,
     });
-    void joinTable({
+    return joinTable({
       db,
       uid,
       characterId,
@@ -213,11 +213,13 @@ export function PlayRoute() {
   }, [characterDoc, characterId, state, uid, campaignId, seq]);
 
   const stand = useCallback(
-    (entityId: EntityId) => {
+    (entityId: EntityId): Promise<void> | void => {
       if (!characterId || !state) return;
       const entity = state.entities[entityId];
       if (!entity) return;
-      void readServerCombatState(subscribeCombatState, uid, characterId).then(
+      // The promise is RETURNED, not swallowed: offline the server read times out, the seat
+      // stays where it is, and the screen says the write-back needs a connection.
+      return readServerCombatState(subscribeCombatState, uid, characterId).then(
         (previous) => {
           // No live document means the sheet's own integrity failure, not a fresh character:
           // leaving would overwrite nothing with something. The table op is skipped rather
@@ -243,7 +245,7 @@ export function PlayRoute() {
   );
 
   const addCreature = useCallback(
-    (option: CreatureOption) => {
+    (option: CreatureOption): Promise<void> | void => {
       if (!state) return;
       const block = blocks.find((one) => one.id === option.id);
       if (!block) return;
@@ -256,10 +258,9 @@ export function PlayRoute() {
         label: monsterLabelId(block.id, ordinal),
         controllerUid: campaign?.dmUid ?? uid,
       });
-      void table.dispatch({
-        kind: "table",
-        table: { op: "add-entity", entity, mechanics },
-      });
+      return table
+        .dispatch({ kind: "table", table: { op: "add-entity", entity, mechanics } })
+        .then(() => undefined);
     },
     [state, blocks, campaign, uid, table]
   );

@@ -379,6 +379,12 @@
         "label": "Slot incantesimo",
         "hint": "Un rombo per slot, per livello. Un rombo pieno è ancora tuo; uno vuoto torna solo con un riposo."
       }
+    },
+    "notice": {
+      "standFailed": "Sei ancora al tavolo: alzarti riporta l'esito del combattimento sulla scheda, e per questo serve la connessione.",
+      "sitFailed": "Non è stato possibile sederti. Controlla la connessione e riprova.",
+      "addFailed": "Non è stato possibile aggiungere la creatura. Controlla la connessione e riprova.",
+      "openFailed": "Non è stato possibile aprire il tavolo. Controlla la connessione e riprova."
     }
   }
 }

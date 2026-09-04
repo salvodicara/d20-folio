@@ -350,6 +350,20 @@ describe("the keyboard the tooltips promise", () => {
     expect(ended?.kind === "table" && ended.table.op).toBe("end-turn");
   });
 
+  it("Space on a focused button belongs to the button, not to the turn", () => {
+    const fake = mount({ uid: PLAYER, dm: false, characterId: "lyra" });
+    const before = fake.log.length;
+    // A keyboard user tabs to a hotbar tile and presses Space: that activates the TILE. Ending
+    // their turn instead would take the action away from them without asking.
+    fireEvent.keyDown(screen.getByTestId(`pl-tile-${RAPIER.id}#attack`), {
+      code: "Space",
+    });
+    expect(fake.log.length).toBe(before);
+    // The pill tabs and the drawer's controls are buttons too.
+    fireEvent.keyDown(screen.getByTestId("pl-tab-items"), { code: "Space" });
+    expect(fake.log.length).toBe(before);
+  });
+
   it("Space in a text field belongs to the field", () => {
     const fake = mount({ uid: DM, dm: true, characterId: null });
     fireEvent.click(screen.getByTestId("pl-drawer-open"));
@@ -581,12 +595,16 @@ describe("the Registro's filters", () => {
 });
 
 describe("the token pill's ownership scope", () => {
-  it("refuses to remove a seated character, and says why", () => {
+  it("refuses to remove a seated character, and PRINTS why", () => {
     mount({ uid: DM, dm: true, characterId: null });
     fireEvent.click(screen.getByTestId("pl-cell-lyra"));
-    const remove = screen.getByTestId("pl-pill-remove");
-    // Lyra is a player's own character: only their "Alzati" carries the fight home.
-    expect(remove.hasAttribute("disabled")).toBe(true);
+    // Lyra is a player's own character: only their "Alzati" carries the fight home. The
+    // control is gone and the reason is in the document — a disabled button's tooltip never
+    // opens, so hiding the sentence there would be hiding it entirely.
+    expect(screen.queryByTestId("pl-pill-remove")).toBeNull();
+    const reason = screen.getByTestId("pl-pill-remove-reason");
+    expect(reason.textContent).toContain("Lyra");
+    expect(reason.textContent).toMatch(/only its player|leave the table/i);
   });
 
   it("removes a monster, which has nothing to write back", () => {
@@ -595,6 +613,35 @@ describe("the token pill's ownership scope", () => {
     fireEvent.click(screen.getByTestId("pl-pill-remove"));
     const last = fake.log.at(-1);
     expect(last?.kind === "table" && last.table.op).toBe("remove-entity");
+  });
+});
+
+describe("a seat verb that cannot reach the server", () => {
+  it("keeps the seat and says the write-back needs a connection", async () => {
+    const log = fixtureLog();
+    render(
+      <PlayScreen
+        table={fakeTable(PLAYER, false, log, seqFactory(PLAYER, 9_000))}
+        catalogue={catalogue}
+        viewer={{ uid: PLAYER, dm: false, characterId: "lyra", dmUid: DM }}
+        title="t"
+        members={{}}
+        characters={{}}
+        // What `PlayRoute` does offline: the server read times out and the promise rejects.
+        onStand={() => Promise.reject(new Error("no server"))}
+      />
+    );
+    const before = log.length;
+    fireEvent.click(screen.getByTestId("pl-cell-lyra"));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("pl-pill-leave"));
+      await Promise.resolve();
+    });
+    // The seat is untouched — nothing was appended — and the person is told why.
+    expect(log.length).toBe(before);
+    expect(screen.getByTestId("pl-notice").textContent).toMatch(
+      /connection|still at the table/i
+    );
   });
 });
 
