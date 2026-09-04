@@ -77,8 +77,20 @@ export function monsterLabelId(srdId: string, ordinal: number): LabelId {
 export function createPlayLabels(args: PlayLabelArgs): (label: LabelId) => string {
   const { t, locale, mechanics, characters } = args;
 
-  const srd = (kind: string, key: string, field: string): string | null =>
-    SRD_KINDS.has(kind) ? localizeSrd(kind as SrdKind, key, field, locale) : null;
+  /**
+   * `localizeSrd` THROWS on a missing entry in development (it is a build-time defect there)
+   * and returns a sentinel in production. Neither is acceptable in the middle of a fight: a
+   * label nobody authored must degrade to its id on the screen, not take the screen down with
+   * it. So the miss is caught here and the caller falls back.
+   */
+  const srd = (kind: string, key: string, field: string): string | null => {
+    if (!SRD_KINDS.has(kind)) return null;
+    try {
+      return localizeSrd(kind as SrdKind, key, field, locale);
+    } catch {
+      return null;
+    }
+  };
 
   const resolve = (label: LabelId, depth: number): string => {
     // A mechanic id: the log presenter hands them in directly. One hop only — a mechanic's

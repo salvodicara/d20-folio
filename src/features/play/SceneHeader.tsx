@@ -17,10 +17,7 @@ export interface SceneHeaderProps {
 export function SceneHeader({ title, round, current, currentIsDm }: SceneHeaderProps) {
   const { t } = useTranslation();
   return (
-    <header
-      className="pl-float pl-scene pl-panel pl-panel--framed"
-      data-testid="pl-scene"
-    >
+    <header className="pl-scene pl-panel pl-panel--framed" data-testid="pl-scene">
       <span className="pl-brackets" />
       <span className="pl-scene__title">{title}</span>
       <span className="pl-scene__round">

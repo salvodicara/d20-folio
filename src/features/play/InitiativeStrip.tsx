@@ -55,10 +55,7 @@ export function InitiativeStrip({
   // The divider sits before the creature that opens the round — the top of the order.
   const wrapAt = cells.findIndex((cell) => cell.current);
   return (
-    <div
-      className="pl-float pl-initbar pl-panel pl-panel--framed"
-      data-testid="pl-initiative"
-    >
+    <div className="pl-initbar pl-panel pl-panel--framed" data-testid="pl-initiative">
       <span className="pl-brackets" />
       <ol className="pl-strip" aria-label={t("play.initiative.aria")}>
         {cells.map((cell, index) => (

@@ -207,7 +207,9 @@
     "aim": {
       "targets": "{{name}} · pick {{left}} more",
       "area": "{{name}} · tap where it lands",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "areaCaption": "{{name}} · radius {{metres}} m · {{count}} enemies",
+      "confirm": "Cast"
     },
     "roll": {
       "waiting": "waiting",
@@ -378,7 +380,8 @@
       "dodge": "Dodge",
       "disengage": "Disengage",
       "help": "Help",
-      "hide": "Hide"
+      "hide": "Hide",
+      "opportunity": "Opportunity attack"
     },
     "grip": {
       "one-handed": "One-handed",

@@ -193,10 +193,22 @@ export function DmDrawer(props: DmDrawerProps) {
                 </button>
               ))}
             </div>
+            {editing ? (
+              <HpEditor
+                // A different creature is a different editor: the fields start from it and are
+                // never re-synced while the DM is typing into them.
+                key={editing.entity.id}
+                entity={editing.entity}
+                name={editName}
+                conditions={editConditions}
+                onApply={onHpApply}
+                onClose={onEditClose}
+              />
+            ) : null}
             {shown.length === 0 ? (
               <p className="pl-note">{t("play.drawer.logEmpty")}</p>
             ) : (
-              <ul className="pl-register">
+              <ul className="pl-register pl-drawer__scroll">
                 {shown.map((line) => (
                   <li key={line.id} data-kind={line.kind}>
                     <span className="pl-register__who">{authorOf(line.author)}</span>
@@ -219,18 +231,6 @@ export function DmDrawer(props: DmDrawerProps) {
                 ))}
               </ul>
             )}
-            {editing ? (
-              <HpEditor
-                // A different creature is a different editor: the fields start from it and are
-                // never re-synced while the DM is typing into them.
-                key={editing.entity.id}
-                entity={editing.entity}
-                name={editName}
-                conditions={editConditions}
-                onApply={onHpApply}
-                onClose={onEditClose}
-              />
-            ) : null}
             <div className="pl-drawer__foot">
               {t("play.drawer.foot", { round, count: lineCount })}
             </div>

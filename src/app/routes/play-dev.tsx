@@ -175,7 +175,7 @@ function drawGround(width: number, height: number, cellPx: number): string {
  * cost for a levelled spell — so the hotbar, the target flow and the roll panel are exercised
  * against the real authoring format rather than against a convenience of the harness.
  */
-const LYRA_MECHANICS: readonly Mechanic[] = [
+const LYRA_WEAPONS: readonly Mechanic[] = [
   {
     schema: 1,
     id: "pc:lyra:weapon-rapier",
@@ -272,12 +272,97 @@ const LYRA_MECHANICS: readonly Mechanic[] = [
   },
 ];
 
+/** An area spell shaped exactly as the adapter emits one (design §2 D4): a `position` input
+ *  bound by the target spec's `area`, a save, and typed damage. */
+const FIREBALL: Mechanic = {
+  schema: 1,
+  id: "pc:lyra:spell-fireball",
+  source: "srd",
+  label: "srd:spell:fireball:name",
+  active: [
+    {
+      id: "cast",
+      trigger: { kind: "invocation", economy: "action" },
+      cost: [
+        { kind: "turn", claim: "action" },
+        { kind: "slot", level: 3, upcast: true },
+      ],
+      targets: {
+        count: "area",
+        eligibility: { relation: "visible", between: ["$self", "$target"], value: true },
+        area: { kind: "sphere", origin: "origin", radiusFt: 20 },
+      },
+      inputs: [
+        { id: "origin", kind: "position" },
+        { id: "save", kind: "d20", for: "save", ability: "DEX", perTarget: true },
+        { id: "damage", kind: "dice", formula: "8d6" },
+      ],
+      steps: [
+        {
+          id: "dodge",
+          kind: "save",
+          roll: "save",
+          ability: "DEX",
+          dc: "spell",
+          onSuccess: "half",
+        },
+        {
+          id: "burn",
+          kind: "damage",
+          parts: [{ dice: "damage", type: "fire" }],
+          to: "$target",
+        },
+      ],
+    },
+  ],
+};
+
+/** The opportunity attack — the reaction every creature at a table has, and the one this
+ *  harness needs to show the reaction card (component 10). */
+const OPPORTUNITY: Mechanic = {
+  schema: 1,
+  id: "pc:thorin:opportunity",
+  source: "srd",
+  label: "ui:play.core.opportunity",
+  active: [
+    {
+      id: "strike",
+      trigger: {
+        kind: "event",
+        event: { kind: "entity-left-reach", of: "self" },
+        scope: "self",
+        window: true,
+      },
+      cost: [{ kind: "turn", claim: "reaction" }],
+      targets: {
+        count: 1,
+        eligibility: { relation: "visible", between: ["$self", "$target"], value: true },
+      },
+      inputs: [
+        { id: "roll", kind: "d20", for: "attack" },
+        { id: "damage", kind: "dice", formula: "1d8+4" },
+      ],
+      steps: [
+        {
+          id: "hit",
+          kind: "attack",
+          roll: "roll",
+          bonus: 7,
+          damage: [{ dice: "damage", type: "slashing" }],
+        },
+      ],
+    },
+  ],
+};
+
+const LYRA_MECHANICS: readonly Mechanic[] = [...LYRA_WEAPONS, FIREBALL];
+
 const OGRE_MECHANICS: readonly Mechanic[] = [
   {
     schema: 1,
     id: "monster:ogre:club",
     source: "monster",
-    label: "ogre.actions.club",
+    label: "custom:Randello",
     active: [
       {
         id: "club",
@@ -313,7 +398,14 @@ const CELL_PX = 80;
 const COLUMNS = 24;
 const ROWS = 15;
 
-function openingLog(background: MapBackground, seq: () => Action["seq"]): Action[] {
+/** The scenes this harness can open. Each is a whole opening log, so a capture is one URL. */
+export type DevScene = "ambush" | "reaction";
+
+function openingLog(
+  background: MapBackground,
+  seq: () => Action["seq"],
+  scene: DevScene
+): Action[] {
   const table = (op: Extract<Action, { kind: "table" }>["table"]): Action => ({
     kind: "table",
     id: newActionId(),
@@ -340,7 +432,10 @@ function openingLog(background: MapBackground, seq: () => Action["seq"]): Action
     hp: 44,
     ac: 18,
     speed: 25,
-    position: { x: 4, y: 8 },
+    // The reaction scene starts Thorin locked in with the ogre, so the ogre stepping away
+    // opens the opportunity-attack window the reaction card renders (component 10).
+    position: scene === "reaction" ? { x: 8, y: 4 } : { x: 4, y: 8 },
+    mechanics: [OPPORTUNITY.id],
   });
   const mira = entity({
     id: "mira",
@@ -410,7 +505,13 @@ function openingLog(background: MapBackground, seq: () => Action["seq"]): Action
         op: "add-entity",
         entity: e,
         mechanics:
-          e.id === "lyra" ? LYRA_MECHANICS : e.id === "ogre" ? OGRE_MECHANICS : [],
+          e.id === "lyra"
+            ? LYRA_MECHANICS
+            : e.id === "ogre"
+              ? OGRE_MECHANICS
+              : e.id === "thorin"
+                ? [OPPORTUNITY]
+                : [],
       })
     ),
     table({ op: "set-initiative", entity: "lyra", value: 15 }),
@@ -423,12 +524,47 @@ function openingLog(background: MapBackground, seq: () => Action["seq"]): Action
     table({ op: "set-initiative", entity: "wolf", value: 4 }),
     table({
       op: "begin-turns",
-      order: ["lyra", "ogre", "thorin", "goblin-1", "goblin-2", "shaman", "mira", "wolf"],
+      // The reaction scene puts the ogre on its feet first: it is the ogre's step away that
+      // opens the window.
+      order:
+        scene === "reaction"
+          ? ["ogre", "lyra", "thorin", "goblin-1", "goblin-2", "shaman", "mira", "wolf"]
+          : ["lyra", "ogre", "thorin", "goblin-1", "goblin-2", "shaman", "mira", "wolf"],
     }),
     table({ op: "map", background }),
     table({ op: "fog", change: { kind: "cover", covered: true } }),
     table({ op: "fog", change: { kind: "reveal", rect: { x: 2, y: 2, w: 14, h: 11 } } }),
     table({ op: "fog", change: { kind: "hide", rect: { x: 12, y: 2, w: 4, h: 3 } } }),
+    // The ogre steps out of Thorin's reach: the move the reaction card is a response to.
+    // The lock has to be DECLARED first — `add-entity` seats a creature, it does not derive
+    // the tactical facts between seats, and "left reach" is measured against what was declared.
+    ...(scene === "reaction"
+      ? [
+          {
+            kind: "declare" as const,
+            id: newActionId(),
+            seq: seq(),
+            by: DM,
+            relation: { kind: "adjacent" as const, a: "ogre", b: "thorin" },
+            remove: false,
+            mover: null,
+          },
+          {
+            kind: "intent" as const,
+            id: newActionId(),
+            seq: seq(),
+            by: DM,
+            entity: "ogre",
+            mechanic: "core:move",
+            program: "move",
+            targets: [],
+            answers: { to: { x: 13, y: 3 } },
+            payment: [],
+            window: null,
+            basedOn: 0,
+          },
+        ]
+      : []),
   ];
 }
 
@@ -463,7 +599,7 @@ const SEATS: Record<Role, { uid: string; dm: boolean; characterId: string | null
  * `appendAction` replaced by a `setState`. The point is that `PlayScreen` cannot tell the
  * difference — if the harness needed a different screen, the harness would be proving nothing.
  */
-function useFakeTable(role: Role): TableState {
+function useFakeTable(role: Role, scene: DevScene): TableState {
   const [seq] = useState(() => createSeqClock(DM));
   const [log, setLog] = useState<Action[]>(() => {
     const url = drawGround(COLUMNS * CELL_PX, ROWS * CELL_PX, CELL_PX);
@@ -476,7 +612,7 @@ function useFakeTable(role: Role): TableState {
       origin: { x: 0, y: 0 },
       bytes: url.length,
     };
-    return openingLog(background, seq);
+    return openingLog(background, seq, scene);
   });
   const seat = SEATS[role];
 
@@ -520,7 +656,14 @@ function useFakeTable(role: Role): TableState {
 export function PlayDevPage(): ReactNode {
   const { i18n } = useTranslation();
   const [role, setRole] = useState<Role>("dm");
-  const table = useFakeTable(role);
+  // The scene is a URL fact, not state: the screenshot lane opens each capture with one
+  // navigation, and a capture that needed a click sequence would be a capture that can drift.
+  const [scene] = useState<DevScene>(() =>
+    new URLSearchParams(window.location.search).get("scene") === "reaction"
+      ? "reaction"
+      : "ambush"
+  );
+  const table = useFakeTable(role, scene);
   const seat = SEATS[role];
 
   return (

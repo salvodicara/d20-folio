@@ -120,3 +120,11 @@
 .map-dev__canvas {
   min-height: 0;
 }
+
+/* The area under consideration (UI spec rule 33): a tinted circle with a caption naming the
+   spell, its radius and how many creatures are inside. Fixed tones in both themes — like every
+   mark on the map, it sits on the ground image, not on a themed surface. */
+:root {
+  --map-area-fill: rgba(239, 107, 74, 0.22);
+  --map-area-line: #ef6b4a;
+}

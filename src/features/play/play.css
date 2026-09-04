@@ -466,12 +466,29 @@
   color: var(--play-gold-2);
 }
 
-/* ── Scene header (top-left) ──────────────────────────────────────────────── */
+/* ── The top band: who acts, and who is targeted (rule 28) ────────────────── */
 
-.pl-scene {
+/* One row across the top, so the scene header, the initiative strip and the view controls can
+   never overlap at any width — they share a band and the strip takes what is left of it. The
+   band itself is transparent to the pointer; its children take it back. */
+.pl-topband {
   top: 14px;
+  right: 16px;
   left: 16px;
   display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.pl-topband > * {
+  pointer-events: auto;
+}
+
+.pl-scene {
+  display: flex;
+  flex: none;
   gap: 10px;
   align-items: center;
   padding: 8px 14px;
@@ -499,11 +516,12 @@
 
 /* ── Initiative strip (top-centre) ────────────────────────────────────────── */
 
+/* The strip takes the band's leftover width and scrolls inside it: the table can grow to
+   twelve creatures without pushing anything off the screen. */
 .pl-initbar {
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: min(760px, calc(100% - 420px));
+  flex: 1;
+  min-width: 0;
+  max-width: 760px;
   padding: 6px 14px 8px;
 }
 
@@ -511,8 +529,14 @@
   display: flex;
   gap: 8px;
   align-items: flex-end;
-  overflow: hidden;
+  justify-content: center;
+  overflow-x: auto;
+  scrollbar-width: none;
   padding: 6px 0 2px;
+}
+
+.pl-strip::-webkit-scrollbar {
+  display: none;
 }
 
 .pl-cell {
@@ -717,9 +741,8 @@
 /* ── View controls (top-right) and the tool rail (left) ───────────────────── */
 
 .pl-view {
-  top: 14px;
-  right: 16px;
   display: flex;
+  flex: none;
   gap: 4px;
   padding: 4px;
 }
@@ -1021,7 +1044,7 @@
 
 .pl-reaction {
   top: 236px;
-  left: 24px;
+  left: 76px;
   width: 340px;
   padding: 12px 14px;
   border-color: var(--play-dm-line);
@@ -1079,7 +1102,8 @@
 
 .pl-hud {
   left: 50%;
-  bottom: 16px;
+  /* The tabs hang below the bar (rule 29), so the HUD's own floor leaves room for them. */
+  bottom: 28px;
   transform: translateX(-50%);
   display: flex;
   gap: 14px;
@@ -1516,6 +1540,14 @@
   flex-direction: column;
   min-height: 0;
   padding: 12px 14px;
+  overflow-y: auto;
+}
+
+/* The log is the only part of the drawer that grows without bound, so it is the only part
+   that scrolls: the filters and the HP editor stay where the DM's hand left them. */
+.pl-drawer__scroll {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 

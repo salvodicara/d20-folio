@@ -26,7 +26,7 @@ export function ViewControls({
   const { t } = useTranslation();
   return (
     <div
-      className="pl-float pl-view pl-panel"
+      className="pl-view pl-panel"
       role="toolbar"
       aria-label={t("play.view.aria")}
       data-testid="pl-view"

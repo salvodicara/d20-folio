@@ -24,11 +24,14 @@ import { useTranslation } from "react-i18next";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { buildLogLines, type LogLine } from "@/lib/views/encounter-log-view";
 import { mapView } from "@/lib/combat/map";
+import { areaShapeFrom } from "@/lib/combat/answers";
+import { areaMembership } from "@/lib/combat/position";
 import { sortBySeq } from "@/lib/combat/ids";
 import type { ActionId, EntityId } from "@/lib/combat/ids";
 import type { Catalogue } from "@/lib/combat/catalogue";
 import type { ConditionId, Entity, Position, Rejection } from "@/lib/combat/types";
 import { useLocale } from "@/hooks/useLocale";
+import { feetToMetres } from "./map/geometry";
 
 import { MapCanvas, type MapViewportApi } from "./map/MapCanvas";
 import { AddCreature, type CreatureOption } from "./AddCreature";
@@ -56,7 +59,7 @@ import {
   type HotbarTab,
   type LogFilter,
 } from "./model";
-import { groupTiles, hotbarTiles, type HotbarTile } from "./tiles";
+import { groupTiles, hotbarTiles, reactionTiles, type HotbarTile } from "./tiles";
 import { mapToolFor, type PlayTool } from "./tools";
 import { intentBody, planIntent, rollsFor, type IntentArgs } from "./table/dispatch";
 import type { HpEdit } from "./HpEditor";
@@ -544,9 +547,7 @@ export function PlayScreen(props: PlayScreenProps) {
     : null;
   const eligibleEntity = eligible ? (state.entities[eligible] ?? null) : null;
   const reactionTile = eligibleEntity
-    ? (hotbarTiles(state, catalogue, eligibleEntity).find(
-        (tile) => tile.economy === "reaction"
-      ) ?? null)
+    ? (reactionTiles(state, catalogue, eligibleEntity)[0] ?? null)
     : null;
   const offer: ReactionOffer | null =
     reactionWindow && eligible && eligibleEntity
@@ -584,6 +585,41 @@ export function PlayScreen(props: PlayScreenProps) {
   const acting = seated !== null && state.clock.current === seated.id;
   const inTurns = state.clock.phase === "turns";
 
+  /**
+   * The tinted circle and its caption while an area spell is being aimed (rule 33). The shape
+   * is bound by the reducer's OWN binder (`areaShapeFrom`) and its members counted by the
+   * reducer's own membership test, so the preview cannot promise a different set of creatures
+   * from the one the fold will hit.
+   */
+  const areaPreview = (() => {
+    if (aiming.kind !== "area" || aiming.origin === null) return null;
+    const spec = aiming.tile.targets?.area;
+    if (!spec) return null;
+    const resolved = areaShapeFrom(spec, { [spec.origin]: aiming.origin });
+    if (resolved.kind !== "shape") return null;
+    const inside = areaMembership(resolved.shape, Object.values(state.entities));
+    const enemies = inside.filter(
+      (id) => !ALLY_KINDS.has(state.entities[id]?.kind ?? "monster")
+    ).length;
+    const radiusFt =
+      "radiusFt" in resolved.shape
+        ? resolved.shape.radiusFt
+        : "sizeFt" in resolved.shape
+          ? resolved.shape.sizeFt
+          : resolved.shape.lengthFt;
+    return {
+      origin: aiming.origin,
+      radiusFt,
+      caption: t("play.aim.areaCaption", {
+        name: labels(aiming.tile.label),
+        metres: feetToMetres(radiusFt).toLocaleString(language, {
+          maximumFractionDigits: 1,
+        }),
+        count: enemies,
+      }).toLocaleUpperCase(language),
+    };
+  })();
+
   return (
     <TooltipProvider>
       <div
@@ -604,6 +640,12 @@ export function PlayScreen(props: PlayScreenProps) {
               selected={selected}
               onSelect={pickEntity}
               onViewport={onViewport}
+              onCell={
+                aiming.kind === "area"
+                  ? (at) => setAiming({ ...aiming, origin: at })
+                  : null
+              }
+              area={areaPreview}
               onMove={(entity, to) =>
                 void dispatch({
                   kind: "intent",
@@ -634,31 +676,33 @@ export function PlayScreen(props: PlayScreenProps) {
           </div>
           <div className="pl-vignette" />
 
-          <SceneHeader
-            title={title}
-            round={state.clock.round}
-            current={state.clock.current === null ? null : nameOf(state.clock.current)}
-            currentIsDm={
-              state.clock.current !== null &&
-              state.entities[state.clock.current]?.controllerUid === viewer.dmUid
-            }
-          />
+          <div className="pl-float pl-topband">
+            <SceneHeader
+              title={title}
+              round={state.clock.round}
+              current={state.clock.current === null ? null : nameOf(state.clock.current)}
+              currentIsDm={
+                state.clock.current !== null &&
+                state.entities[state.clock.current]?.controllerUid === viewer.dmUid
+              }
+            />
 
-          <InitiativeStrip
-            cells={cells}
-            round={state.clock.round}
-            selected={selected}
-            onSelect={pickEntity}
-          />
+            <InitiativeStrip
+              cells={cells}
+              round={state.clock.round}
+              selected={selected}
+              onSelect={pickEntity}
+            />
+
+            <ViewControls
+              onZoom={(factor) => viewportRef.current?.zoomBy(factor)}
+              onFit={() => viewportRef.current?.fit()}
+              playerView={viewer.dm ? playerView : null}
+              onPlayerView={setPlayerView}
+            />
+          </div>
 
           <TargetBlock target={target} />
-
-          <ViewControls
-            onZoom={(factor) => viewportRef.current?.zoomBy(factor)}
-            onFit={() => viewportRef.current?.fit()}
-            playerView={viewer.dm ? playerView : null}
-            onPlayerView={setPlayerView}
-          />
 
           <ToolRail
             tool={tool}
@@ -704,6 +748,30 @@ export function PlayScreen(props: PlayScreenProps) {
                       left: aiming.need - aiming.picked.length,
                     })}
               </span>
+              {aiming.kind === "area" && aiming.origin !== null && seated ? (
+                <button
+                  type="button"
+                  className="pl-ghost"
+                  data-testid="pl-aim-confirm"
+                  onClick={() => {
+                    const spec = aiming.tile.targets?.area;
+                    const origin = aiming.origin;
+                    if (!spec || origin === null) return;
+                    void aimed(
+                      {
+                        entity: seated.id,
+                        mechanic: aiming.tile.mechanic,
+                        program: aiming.tile.program,
+                        targets: [],
+                        answersSoFar: { [spec.origin]: origin },
+                      },
+                      aiming.tile
+                    );
+                  }}
+                >
+                  {t("play.aim.confirm")}
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="pl-ghost"

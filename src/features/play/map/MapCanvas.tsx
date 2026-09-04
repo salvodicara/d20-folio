@@ -79,6 +79,18 @@ export interface MapCanvasProps {
   readonly onSelect?: (entity: EntityId | null) => void;
   /** Called with the viewport verbs once the canvas is mounted. */
   readonly onViewport?: (api: MapViewportApi) => void;
+  /**
+   * The screen is asking for a CELL, not a creature: an area spell's origin (design §2 D7).
+   * While it is set, a click on the ground answers it instead of clearing the selection.
+   */
+  readonly onCell?: ((at: Position) => void) | null;
+  /** The tinted area under consideration, with the caption rule 33 asks for: what, how far,
+   *  and how many creatures are inside. */
+  readonly area?: {
+    readonly origin: Position;
+    readonly radiusFt: number;
+    readonly caption: string;
+  } | null;
   readonly onMove: (entity: EntityId, to: Position) => void;
   readonly onPlace: (entity: EntityId, to: Position) => void;
   readonly onRefused?: (
@@ -145,6 +157,8 @@ export function MapCanvas({
   selected: selectedProp,
   onSelect,
   onViewport,
+  onCell,
+  area = null,
   onMove,
   onPlace,
   onRefused,
@@ -268,6 +282,10 @@ export function MapCanvas({
       event.currentTarget.setPointerCapture(event.pointerId);
       const cell = cellAt(event);
       setFogDraw({ from: cell, to: cell, pointerId: event.pointerId });
+      return;
+    }
+    if (onCell) {
+      onCell(cellAt(event));
       return;
     }
     select(null);
@@ -603,6 +621,39 @@ export function MapCanvas({
             to={drag.to}
             ruler={drag.ruler}
           />
+        ) : null}
+
+        {/* The area under consideration: a tinted circle with its caption (rule 33). */}
+        {area ? (
+          <g className="map-area" data-testid="map-area" pointerEvents="none">
+            <circle
+              cx={cellCenterPx(ground, area.origin).x}
+              cy={cellCenterPx(ground, area.origin).y}
+              r={(area.radiusFt / 5) * ground.cellPx}
+              fill="var(--map-area-fill)"
+              stroke="var(--map-area-line)"
+              strokeWidth={2}
+            />
+            <text
+              x={cellCenterPx(ground, area.origin).x}
+              y={
+                cellCenterPx(ground, area.origin).y +
+                (area.radiusFt / 5) * ground.cellPx +
+                fontSize * 1.8
+              }
+              textAnchor="middle"
+              fontSize={fontSize}
+              fontFamily="var(--font-body)"
+              fontWeight={700}
+              letterSpacing="0.08em"
+              fill="var(--map-area-line)"
+              paintOrder="stroke"
+              stroke="var(--map-label-halo)"
+              strokeWidth={3}
+            >
+              {area.caption}
+            </text>
+          </g>
         ) : null}
 
         {/* The free measurement of the ruler tool — nothing is persisted by it. */}

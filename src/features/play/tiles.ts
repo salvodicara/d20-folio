@@ -152,17 +152,18 @@ function iconOf(
  * reaction card when its window opens (`state.windows`), and a tile that could never be tapped
  * would be a lie on the bar.
  */
-export function hotbarTiles(
+function collectTiles(
   state: FoldedState,
   catalogue: Catalogue,
-  entity: Entity
+  entity: Entity,
+  keep: (program: Program) => boolean
 ): HotbarTile[] {
   const tiles: HotbarTile[] = [];
   for (const id of entity.mechanics) {
     const mechanic = mechanicOf(state, catalogue, id);
     if (!mechanic) continue;
     for (const program of mechanic.active ?? []) {
-      if (program.trigger.kind === "event" && program.trigger.window) continue;
+      if (!keep(program)) continue;
       // `core:move` is the map's own verb (drag a token), never a tile.
       if (program.steps.some((step) => step.kind === "move")) continue;
       if (programOf(state, catalogue, id, program.id) === null) continue;
@@ -213,6 +214,41 @@ export function hotbarTiles(
     }
   }
   return tiles;
+}
+
+export function hotbarTiles(
+  state: FoldedState,
+  catalogue: Catalogue,
+  entity: Entity
+): HotbarTile[] {
+  return collectTiles(
+    state,
+    catalogue,
+    entity,
+    (program) => !(program.trigger.kind === "event" && program.trigger.window)
+  );
+}
+
+/**
+ * The reactions a creature could spend on an open window — the OTHER half of the same set.
+ *
+ * They are deliberately not tiles on the bar: a reaction is offered by the reaction card when
+ * its window opens (`state.windows`), and a tile that could never be tapped would be a lie on
+ * the hotbar. The reducer has already decided WHICH creature is eligible for a given window
+ * (`subscribersFor`), so what is left here is which of its reactions to offer. A creature with
+ * more than one gets the first; a picker is a later stage, recorded rather than half-built.
+ */
+export function reactionTiles(
+  state: FoldedState,
+  catalogue: Catalogue,
+  entity: Entity
+): HotbarTile[] {
+  return collectTiles(
+    state,
+    catalogue,
+    entity,
+    (program) => program.trigger.kind === "event" && program.trigger.window
+  );
 }
 
 /** The three groups, in the bar's order, each already sorted the way it is read. */

@@ -207,7 +207,9 @@
     "aim": {
       "targets": "{{name}} · scegli ancora {{left}}",
       "area": "{{name}} · tocca dove cade",
-      "cancel": "Annulla"
+      "cancel": "Annulla",
+      "areaCaption": "{{name}} · raggio {{metres}} m · {{count}} nemici",
+      "confirm": "Lancia"
     },
     "roll": {
       "waiting": "in attesa",
@@ -378,7 +380,8 @@
       "dodge": "Schivare",
       "disengage": "Disimpegno",
       "help": "Aiuto",
-      "hide": "Nascondersi"
+      "hide": "Nascondersi",
+      "opportunity": "Attacco di opportunità"
     },
     "grip": {
       "one-handed": "A una mano",
