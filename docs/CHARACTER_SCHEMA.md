@@ -89,6 +89,14 @@ portable export still carries it inline:
   //   firestore.rules derives every peer/DM grant LIVE from it
   //   + the campaign roster. NOT in the export/codec; absent =
   //   unattached (owner/admin-only access).
+  "lease": { "campaignId": "<campId>", "encounterId": "<encId>", "epoch": 0 }, // v2 §5.2:
+  //   which campaign ENCOUNTER (if any) currently owns this PC's
+  //   live combat facts — distinct from `attachedCampaignId` (the
+  //   standing one-campaign claim). Owner-written only: set by the
+  //   owner's client on `table:join`, cleared on `table:leave`/
+  //   `table:sync` (`src/lib/combat-lease.ts`). NOT in the
+  //   export/codec; absent = not leased, the personal aggregate is
+  //   authoritative for this PC's combat facts.
   "cache": {
     // SRD-FREE roster/party projection (a derived snapshot the
     "name": "…",
