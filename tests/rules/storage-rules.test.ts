@@ -23,7 +23,7 @@ import {
   type RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
 import { doc, setDoc } from "firebase/firestore";
-import { deleteObject, getBytes, ref, uploadBytes } from "firebase/storage";
+import { deleteObject, getBytes, listAll, ref, uploadBytes } from "firebase/storage";
 
 const PROJECT_ID = "demo-d20folio";
 // Admin is DATA-DRIVEN: an ordinary test uid whose seeded `/users` doc carries
@@ -167,5 +167,113 @@ describe("storage rules — shared monster art (users/{uid}/portraits/monster-*.
     await assertFails(deleteObject(ref(peer, MONSTER_ART_PATH)));
     const owner = testEnv.authenticatedContext(REPORTER_UID).storage();
     await assertSucceeds(deleteObject(ref(owner, MONSTER_ART_PATH)));
+  });
+});
+
+// Map backgrounds (stage 5): `campaigns/{campaignId}/maps/{fileName}`. Membership and the DM
+// come from the campaign document through the cross-service lookup, so the matrix is: DM
+// create/read/delete · member read + list only · non-member denied · admin everything ·
+// size and image-type ceilings.
+describe("storage rules — map backgrounds (campaigns/{campaignId}/maps/*)", () => {
+  const CAMPAIGN = "camp-maps";
+  const DM_UID = "map-dm";
+  const MEMBER_UID = "map-member";
+  const OUTSIDER_UID = "map-outsider";
+  const MAP_PATH = `campaigns/${CAMPAIGN}/maps/m1.jpeg`;
+  const JPEG = { contentType: "image/jpeg" };
+
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, "users", DM_UID), { status: "active" });
+      await setDoc(doc(db, "users", MEMBER_UID), { status: "active" });
+      await setDoc(doc(db, "users", OUTSIDER_UID), { status: "active" });
+      await setDoc(doc(db, "campaigns", CAMPAIGN), {
+        name: "Maps",
+        createdBy: DM_UID,
+        dmUid: DM_UID,
+        members: [DM_UID, MEMBER_UID],
+        memberDetails: {},
+        status: "active",
+        inviteCode: CAMPAIGN,
+        treasury: { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 },
+        treasuryLog: [],
+      });
+      await uploadBytes(ref(ctx.storage(), MAP_PATH), PNG_BYTES, JPEG);
+    });
+  });
+
+  it("the DM can upload a background", async () => {
+    const storage = testEnv.authenticatedContext(DM_UID).storage();
+    await assertSucceeds(
+      uploadBytes(ref(storage, `campaigns/${CAMPAIGN}/maps/m2.jpeg`), PNG_BYTES, JPEG)
+    );
+  });
+
+  it("a member cannot upload, a non-member cannot upload", async () => {
+    for (const uid of [MEMBER_UID, OUTSIDER_UID]) {
+      const storage = testEnv.authenticatedContext(uid).storage();
+      await assertFails(
+        uploadBytes(ref(storage, `campaigns/${CAMPAIGN}/maps/m3.jpeg`), PNG_BYTES, JPEG)
+      );
+    }
+  });
+
+  it("a member can read and list the campaign's maps; a non-member and a visitor cannot", async () => {
+    const member = testEnv.authenticatedContext(MEMBER_UID).storage();
+    await assertSucceeds(getBytes(ref(member, MAP_PATH)));
+    await assertSucceeds(listAll(ref(member, `campaigns/${CAMPAIGN}/maps`)));
+    const outsider = testEnv.authenticatedContext(OUTSIDER_UID).storage();
+    await assertFails(getBytes(ref(outsider, MAP_PATH)));
+    await assertFails(listAll(ref(outsider, `campaigns/${CAMPAIGN}/maps`)));
+    await assertFails(
+      getBytes(ref(testEnv.unauthenticatedContext().storage(), MAP_PATH))
+    );
+  });
+
+  it("the DM and the admin can delete; a member cannot", async () => {
+    await assertFails(
+      deleteObject(ref(testEnv.authenticatedContext(MEMBER_UID).storage(), MAP_PATH))
+    );
+    await assertSucceeds(
+      deleteObject(ref(testEnv.authenticatedContext(DM_UID).storage(), MAP_PATH))
+    );
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await uploadBytes(ref(ctx.storage(), MAP_PATH), PNG_BYTES, JPEG);
+    });
+    await assertSucceeds(
+      deleteObject(ref(testEnv.authenticatedContext(ADMIN_UID).storage(), MAP_PATH))
+    );
+  });
+
+  it('a user whose doc carries role:"admin" can upload and read without being a member', async () => {
+    const admin = testEnv.authenticatedContext(ADMIN_UID).storage();
+    await assertSucceeds(
+      uploadBytes(ref(admin, `campaigns/${CAMPAIGN}/maps/admin.jpeg`), PNG_BYTES, JPEG)
+    );
+    await assertSucceeds(getBytes(ref(admin, MAP_PATH)));
+  });
+
+  it("an upload over 8 MiB or of a non-image type is denied even to the DM", async () => {
+    const storage = testEnv.authenticatedContext(DM_UID).storage();
+    await assertFails(
+      uploadBytes(
+        ref(storage, `campaigns/${CAMPAIGN}/maps/huge.jpeg`),
+        new Uint8Array(8 * 1024 * 1024 + 1),
+        JPEG
+      )
+    );
+    await assertFails(
+      uploadBytes(ref(storage, `campaigns/${CAMPAIGN}/maps/notes.txt`), PNG_BYTES, {
+        contentType: "text/plain",
+      })
+    );
+  });
+
+  it("a map under a campaign that does not exist is unreachable", async () => {
+    const storage = testEnv.authenticatedContext(DM_UID).storage();
+    await assertFails(
+      uploadBytes(ref(storage, "campaigns/nowhere/maps/m1.jpeg"), PNG_BYTES, JPEG)
+    );
   });
 });

@@ -2,8 +2,9 @@
  * Boundary guard for the encounter's Firestore adapters.
  *
  * `src/lib/combat-io.ts` and `src/lib/combat-lease.ts` are the only modules that know the
- * encounter lives in a document, and their import boundary is load-bearing: they take a
- * `Firestore` instance from the caller and NEVER reach for the app's singleton
+ * encounter lives in a document (and `src/lib/map-io.ts` the only one that knows a map
+ * background lives in Storage), and their import boundary is load-bearing: they take a
+ * `Firestore` (or `FirebaseStorage`) instance from the caller and NEVER reach for the app's singleton
  * (`@/lib/firebase`). That is what lets the emulator suites run this exact code, unmocked,
  * under two authenticated contexts at once — the two-client gate would be impossible
  * otherwise. They are equally not UI: no React, no Zustand, no feature, store, component or
@@ -15,15 +16,20 @@ import { readFileSync } from "node:fs";
 import { resolve as resolvePath } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const FILES = ["src/lib/combat-io.ts", "src/lib/combat-lease.ts"];
+const FILES = ["src/lib/combat-io.ts", "src/lib/combat-lease.ts", "src/lib/map-io.ts"];
 
-/** Every specifier these two modules are allowed to import from. */
+/** Every specifier these modules are allowed to import from. */
 const ALLOWED = [
   /^firebase\/firestore$/,
   /^(?:\.\/combat|@\/lib\/combat)\/[\w-]+$/,
   /^(?:\.|@\/lib)\/strip-undefined$/,
   /^(?:\.|@\/lib)\/combat-io$/,
 ];
+
+/** The map adapter (stage 5) is the Storage twin of `combat-io`: same boundary, its own SDK. */
+const EXTRA: Readonly<Record<string, readonly RegExp[]>> = {
+  "src/lib/map-io.ts": [/^firebase\/storage$/],
+};
 
 /** Named for the error message: these are the imports the boundary exists to keep out. */
 const FORBIDDEN: readonly [string, RegExp][] = [
@@ -48,7 +54,9 @@ describe("boundary — the encounter Firestore adapters", () => {
       for (const specifier of specifiers(text)) {
         const named = FORBIDDEN.find(([, pattern]) => pattern.test(specifier));
         if (named) offenders.push(`${file}: ${specifier} (${named[0]})`);
-        else if (!ALLOWED.some((pattern) => pattern.test(specifier))) {
+        else if (
+          ![...ALLOWED, ...(EXTRA[file] ?? [])].some((pattern) => pattern.test(specifier))
+        ) {
           offenders.push(`${file}: ${specifier} (not on the allowlist)`);
         }
       }

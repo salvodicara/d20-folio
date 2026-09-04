@@ -30,11 +30,8 @@ import type { Area } from "react-easy-crop";
 import { useAuthStore } from "@/stores/authStore";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { useToastStore } from "@/stores/toastStore";
-import {
-  uploadMonsterPortrait,
-  deleteMonsterPortrait,
-  compressImage,
-} from "@/lib/storage";
+import { compressImage } from "@/lib/image-compress";
+import { uploadMonsterPortrait, deleteMonsterPortrait } from "@/lib/storage";
 import { readFileAsDataUrl } from "@/lib/image-crop";
 import { normalizePortraitCrop } from "@/lib/portrait-crop";
 import type { PortraitCrop } from "@/types/character";

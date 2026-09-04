@@ -33,6 +33,30 @@ service firebase.storage {
       allow delete: if request.auth != null;
     }
 
+    // Map backgrounds (stage 5, docs/superpowers/specs/2026-09-04-v2-stage-5-minimum-map-design.md
+    // §7): `campaigns/{campaignId}/maps/{mapId}.jpeg`. Membership and the DM are read from
+    // the campaign document through the same cross-service lookup `isAdmin()` uses. The DM
+    // (or the admin) uploads and deletes; every member may read — which also covers `list`,
+    // the per-campaign quota's source of truth. Display goes through the token URL stored in
+    // the encounter log, so a member's <img> never evaluates this rule. Size and type are
+    // ceilings the adapter (`src/lib/map-io.ts`) already enforces after compression.
+    match /campaigns/{campaignId}/maps/{fileName} {
+      function campaign() {
+        return firestore.get(/databases/(default)/documents/campaigns/$(campaignId)).data;
+      }
+      function isCampaignMember() {
+        return request.auth != null && request.auth.uid in campaign().members;
+      }
+      function isCampaignDm() {
+        return request.auth != null && request.auth.uid == campaign().dmUid;
+      }
+      allow read: if isAdmin() || isCampaignMember();
+      allow create, update: if (isAdmin() || isCampaignDm())
+        && request.resource.size <= 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isAdmin() || isCampaignDm();
+    }
+
     // Bug-report screenshots (OWN-37). The owner of the report uploads its own
     // screenshot to a uid-scoped path; only the admin may read them (the Cloud
     // Function resolves a signed URL via the Admin SDK, bypassing these rules).

@@ -30,6 +30,7 @@ import {
 import { buildCatalogue } from "@/lib/combat/catalogue";
 import { compact } from "@/lib/combat/checkpoint";
 import { parseEncounter } from "@/lib/combat/codec";
+import { fold } from "@/lib/combat/fold";
 import { sortBySeq, type Seq } from "@/lib/combat/ids";
 import type { Action, Encounter } from "@/lib/combat/types";
 import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
@@ -313,6 +314,47 @@ describe("combat-io — append and subscribe", () => {
       "the quarantined document"
     );
     expect(quarantined).toEqual({ kind: "quarantined", reason: "schema" });
+  });
+});
+
+describe("combat-io — contended appends (the same-round-trip race)", () => {
+  it("two clients appending at once both land, one client's burst of ten lands whole, and every client folds the same state", async () => {
+    const dm = sessionFor("dm");
+    await createEncounter(dm.ref, encounterOf(openingLog()));
+    const member = refFor("member");
+    const fromDm = tableAction(
+      "dm",
+      { ms: 2_000, counter: 0, by: "dm" },
+      { op: "end-turn" }
+    );
+    const fromMember = memberAction(2_000); // the SAME millisecond: only `by` orders them
+    await Promise.all([appendAction(dm.ref, fromDm), appendAction(member, fromMember)]);
+    // A drag burst: ten placements from one client without waiting for any acknowledgement.
+    const burst = Array.from({ length: 10 }, (_, i) => memberAction(3_000 + i));
+    await Promise.all(burst.map((action) => appendAction(member, action)));
+
+    const stored = await storedEncounter();
+    const ids = new Set(stored.log.map((action) => action.id));
+    for (const action of [fromDm, fromMember, ...burst])
+      expect(ids.has(action.id)).toBe(true);
+    expect(stored.log).toHaveLength(openingLog().length + 12);
+
+    // Each client reads the document through its own context and folds it; the fold must not
+    // depend on the order Firestore stored the union in.
+    const folds = await Promise.all(
+      ["dm", "member"].map(async (uid) => {
+        const snapshot = await getDoc(refFor(uid));
+        const parsed = parseEncounter(snapshot.data());
+        if (!parsed.ok) throw new Error(`${uid}: ${parsed.reason}`);
+        return fold(parsed.encounter, catalogue);
+      })
+    );
+    expect(folds[0]?.state).toEqual(folds[1]?.state);
+    expect(folds[0]?.applied).toBe(openingLog().length + 12);
+    expect(folds[0]?.rejections).toEqual([]);
+    // The DM's and the member's same-millisecond stamps order by uid, deterministically.
+    const ordered = sortBySeq(stored.log).map((action) => action.id);
+    expect(ordered.indexOf(fromDm.id)).toBeLessThan(ordered.indexOf(fromMember.id));
   });
 });
 

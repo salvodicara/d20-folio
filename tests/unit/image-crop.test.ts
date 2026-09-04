@@ -14,7 +14,7 @@ vi.mock("@/lib/firebase", () => ({
 }));
 
 import { loadImage, readFileAsDataUrl } from "@/lib/image-crop";
-import { compressImage } from "@/lib/storage";
+import { compressImage } from "@/lib/image-compress";
 import { cropToCssStyle } from "@/lib/portrait-crop";
 import type { PortraitCrop } from "@/types/character";
 
