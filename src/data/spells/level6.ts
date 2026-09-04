@@ -68,6 +68,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     damageDicePerUpcast: "2d8",
     saveAbility: "CON",
     area: true,
+    areaShape: { kind: "sphere", sizeFt: 60 },
     damageOnSave: "half",
     source: "SRD",
   },
@@ -304,6 +305,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       lifetime: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
     },
     area: true,
+    areaShape: { kind: "line", sizeFt: 60, widthFt: 5 },
     damageOnSave: "half",
     recurrence: "action-retrigger",
     grants: [
@@ -493,6 +495,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     damageDicePerUpcast: "1d6",
     saveAbility: "CON",
     area: true,
+    areaShape: { kind: "sphere", sizeFt: 60 },
     damageOnSave: "half",
     source: "SRD",
   },

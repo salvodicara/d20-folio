@@ -6,9 +6,20 @@
  * `buildCatalogue`. Spec: docs/superpowers/specs/2026-09-02-mechanics-authoring-spec.md.
  */
 import type { Mechanic } from "@/lib/combat/mechanic";
-import type { MonsterStatBlock } from "@/data/types";
+import type { MonsterStatBlock, SrdSpellData } from "@/data/types";
 import { monsterMechanics } from "@/lib/combat/monster-adapter";
+import { SRD_SPELLS_LEVEL3 } from "@/data/spells/level3";
 import { CORE_MECHANICS } from "./core-catalogue";
+
+/** The spell's PRINTED area, read from the SRD row rather than copied into this
+ *  file: `SrdSpellData.areaShape` is the one home of "how big is a Fireball"
+ *  (`tests/unit/spell-area-shape.guard.test.ts` pins it), and the projection
+ *  compiles the same datum, so the prototype and a real cast can never drift. */
+function srdAreaShape(id: string): NonNullable<SrdSpellData["areaShape"]> {
+  const shape = SRD_SPELLS_LEVEL3.find((spell) => spell.id === id)?.areaShape;
+  if (!shape) throw new Error(`prototype-catalogue: ${id} declares no areaShape`);
+  return shape;
+}
 
 /** A ranger's longbow: Attack action, one visible target, d20 + DEX + PB vs AC, 1d8 piercing. */
 export const longbow: Mechanic = {
@@ -217,7 +228,7 @@ export const giggle: Mechanic = {
   ],
 };
 
-/** Fireball, at its base 3rd-level cast: a 20-ft-radius sphere, DEX save for half, 8d6 fire.
+/** Fireball, at its base 3rd-level cast: the SRD sphere, DEX save for half, 8d6 fire.
  *  No upcast scaling for stage 3 (Marco's story is a beginner's first, base-level cast) — an
  *  upcast Fireball needs `Input.dice.formula` to grow a `byLevel` variant, deliberately out of
  *  scope until a story needs it. */
@@ -236,7 +247,11 @@ export const fireball: Mechanic = {
       targets: {
         count: "area",
         eligibility: { all: [] },
-        area: { kind: "sphere", origin: "origin", radiusFt: 20 },
+        area: {
+          kind: "sphere",
+          origin: "origin",
+          radiusFt: srdAreaShape("fireball").sizeFt,
+        },
       },
       inputs: [
         { id: "origin", kind: "position" },

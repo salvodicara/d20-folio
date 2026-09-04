@@ -495,6 +495,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     saveAbility: "DEX",
     damageOnSave: "half",
     area: true,
+    areaShape: { kind: "cylinder", sizeFt: 20 },
     source: "SRD",
   },
   {
@@ -1397,6 +1398,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     damageDicePerUpcast: "2d4",
     saveAbility: "DEX",
     area: true,
+    areaShape: { kind: "sphere", sizeFt: 20 },
     damageOnSave: "half",
     source: "SRD",
   },

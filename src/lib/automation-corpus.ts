@@ -165,6 +165,7 @@ const SPELL_FIELDS: Readonly<Record<string, FieldRule>> = {
   instances: compiled("action"),
   instancesPerUpcast: compiled("action"),
   area: compiled("action"),
+  areaShape: compiled("action"),
   damageOnSave: compiled("action"),
   damageOnMiss: compiled("action"),
   damageResolution: compiled("action"),

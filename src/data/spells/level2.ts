@@ -523,6 +523,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     damageDicePerUpcast: "1d10",
     saveAbility: "CON",
     area: true,
+    areaShape: { kind: "cylinder", sizeFt: 5 },
     damageOnSave: "half",
     // G24 — a creature saves when it enters the area or ENDS its turn there
     // (2024); the beam is moved up to 60 ft with a Magic action on later turns.
@@ -617,6 +618,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     saveAbility: "CON",
     damageOnSave: "half",
     area: true,
+    areaShape: { kind: "sphere", sizeFt: 10 },
     source: "SRD",
   },
   {

@@ -2255,6 +2255,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
       lifetime: { kind: "source" },
     },
     area: true,
+    areaShape: { kind: "sphere", sizeFt: 30 },
     grants: [
       {
         type: "while-active",

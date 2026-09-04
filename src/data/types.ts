@@ -1038,6 +1038,32 @@ export interface SrdSpellData {
    * shape only; never infer its save consequence from this flag. Persistent
    * zones use {@link recurrence} instead. */
   area?: boolean;
+  /**
+   * The PRINTED area of effect as typed data — the shape word and its one
+   * dimension, straight from the SRD 5.2.1 text ("a 20-foot-radius Sphere", "a
+   * 100-foot-long, 5-foot-wide Line"). {@link area} says only "more than one
+   * creature"; this says WHICH cells, so the combat engine can derive the
+   * affected entities itself instead of leaving the whole spell to the table
+   * (`src/lib/combat-projection.ts` compiles it into the mechanic's
+   * `TargetSpec.area`).
+   *
+   * `sizeFt` is the shape's ONE dimension: the radius of a Sphere or Cylinder,
+   * the side of a Cube, the length of a Cone or Line. `widthFt` is set only for
+   * a Line. A Cylinder's height and a zone's duration are prose — the grid is
+   * two-dimensional, and the recurrence rides {@link recurrence}.
+   *
+   * Omitted when the printed area is NOT one of these five shapes: a 2024
+   * Emanation (it originates from a creature, not a point the caster picks), a
+   * Wall, a Square, several shapes at once (Meteor Swarm's four Spheres), or an
+   * area another creature produces later (Dragon's Breath). Such a spell
+   * degrades to a `manual-table` program — loudly, in the coverage report.
+   * Pinned by `tests/unit/spell-area-shape.guard.test.ts`.
+   */
+  areaShape?: {
+    kind: "sphere" | "cube" | "cone" | "line" | "cylinder";
+    sizeFt: number;
+    widthFt?: number;
+  };
   /** Damage suffered after a successful saving throw. Omitted means none. Kept
    * independent from `area`: single-target spells can deal half damage, while an
    * area can have a different success outcome. */
