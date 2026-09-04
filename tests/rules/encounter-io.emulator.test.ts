@@ -23,6 +23,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
   type DocumentReference,
   type Firestore,
 } from "firebase/firestore";
@@ -354,6 +355,27 @@ describe("combat-io — checkpointEncounter", () => {
     ]);
     // The compacted document still folds to the same revision as the uncompacted one.
     expect(stored.checkpoint?.state.revision).toBe(next.checkpoint?.state.revision);
+  });
+
+  it("preserves a top-level key the document gained after the caller's fold", async () => {
+    const { db, ref: dmRef } = sessionFor("dm");
+    const original = encounterOf(openingLog());
+    await createEncounter(dmRef, original);
+    const through = at(sortBySeq(original.log), 1).seq;
+    // The caller folds here…
+    const next = compact(original, catalogue, through);
+    // …and a NEWER build writes a top-level key this build does not know.
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(
+        doc(ctx.firestore(), "campaigns", CAMPAIGN, "encounters", ENCOUNTER),
+        { tableNote: { from: "a future schema" } }
+      );
+    });
+
+    expect(await checkpointEncounter(db, dmRef, next, null)).toBe("written");
+    const stored = await storedEncounter();
+    expect(stored.unknown).toEqual({ tableNote: { from: "a future schema" } });
+    expect(stored.checkpoint?.through).toEqual(through);
   });
 
   it("refuses a second rewrite that still expects no checkpoint", async () => {

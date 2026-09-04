@@ -23,7 +23,13 @@ import { sortBySeq, type Seq } from "@/lib/combat/ids";
 import type { Action, Encounter } from "@/lib/combat/types";
 import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
 import { testEntity } from "./__helpers__/entities";
-import { emptyState, openingActions, seqFactory, tableAction } from "./__helpers__/state";
+import {
+  emptyState,
+  nextActionId,
+  openingActions,
+  seqFactory,
+  tableAction,
+} from "./__helpers__/state";
 
 const { catalogue } = buildCatalogue(PROTOTYPE_MECHANICS);
 
@@ -149,6 +155,28 @@ describe("combat/checkpoint — the grace window", () => {
     });
   });
 
+  it("breaks a tie on the cutoff millisecond by counter, then by author", () => {
+    // Three actions share ms === cutoff; `compareSeq` orders them counter-then-`by`, so the
+    // LAST of the three is the one compaction may safely swallow.
+    const cutoff = 0;
+    const contenders: Seq[] = [
+      { ms: cutoff, counter: 0, by: "zoe" },
+      { ms: cutoff, counter: 1, by: "amy" },
+      { ms: cutoff, counter: 1, by: "bob" },
+    ];
+    const encounter: Encounter = {
+      schema: 1,
+      id: "ties",
+      host: { kind: "campaign", campaignId: "camp" },
+      log: [
+        ...contenders.map((seq) => tableAction(seq.by, seq, { op: "end-turn" })),
+        tableAction("dm", { ms: 300_000, counter: 0, by: "dm" }, { op: "end-turn" }),
+      ],
+      checkpoint: null,
+    };
+    expect(checkpointThrough(encounter)).toEqual({ ms: cutoff, counter: 1, by: "bob" });
+  });
+
   it("never proposes a seq at or before the current checkpoint", () => {
     const base = timedEncounter(4, 100_000);
     const through: Seq = { ms: 0, counter: 0, by: "dm" };
@@ -166,6 +194,32 @@ describe("combat/checkpoint — the grace window", () => {
     });
   });
 });
+
+/** A two-creature table plus whatever the caller appends, as ONE self-contained log. */
+function tableEncounter(extra: (stamp: (ms: number) => Seq) => Action[]): Encounter {
+  const opening = openingActions(
+    "dm",
+    seqFactory("dm", 1_000),
+    [
+      testEntity({ id: "sara", kind: "pc", controllerUid: "p1" }),
+      testEntity({ id: "ogre" }),
+    ],
+    { sara: 20, ogre: 10 },
+    ["sara", "ogre"]
+  );
+  const stamp = (ms: number): Seq => ({ ms, counter: 0, by: "dm" });
+  return {
+    schema: 1,
+    id: "table",
+    host: { kind: "campaign", campaignId: "camp" },
+    log: [...opening, ...extra(stamp)],
+    checkpoint: null,
+  };
+}
+
+function undoAction(seq: Seq, of: string): Action {
+  return { kind: "undo", id: nextActionId("u"), seq, by: "dm", of, reason: null };
+}
 
 describe("combat/checkpoint — compact", () => {
   const encounter = replayEncounter("sara-ogre-ambush.json");
@@ -197,5 +251,119 @@ describe("combat/checkpoint — compact", () => {
     const twice = compact(once, catalogue, later);
     expect(fold(twice, catalogue).state).toEqual(fold(encounter, catalogue).state);
     expect(twice.checkpoint?.through).toEqual(later);
+  });
+});
+
+describe("combat/checkpoint — undo across the compaction boundary", () => {
+  it("keeps an undo that lands AFTER `through` but targets an action before it", () => {
+    const endTurn = tableAction(
+      "dm",
+      { ms: 2_000, counter: 0, by: "dm" },
+      {
+        op: "end-turn",
+      }
+    );
+    const encounter = tableEncounter(() => [
+      endTurn,
+      undoAction({ ms: 2_001, counter: 0, by: "dm" }, endTurn.id),
+    ]);
+    const before = fold(encounter, catalogue);
+    // Sanity: the undo really did negate the end-turn in the uncompacted fold.
+    expect(before.state.clock.current).toBe("sara");
+
+    const compacted = compact(encounter, catalogue, endTurn.seq);
+    const after = fold(compacted, catalogue);
+    expect(after.state).toEqual(before.state);
+    expect(after.state.clock.current).toBe("sara");
+    expect(after.state.revision).toBe(before.state.revision);
+  });
+
+  it("resolves an undo-of-undo whose members straddle `through`", () => {
+    const endTurn = tableAction(
+      "dm",
+      { ms: 2_000, counter: 0, by: "dm" },
+      {
+        op: "end-turn",
+      }
+    );
+    const undo = undoAction({ ms: 2_001, counter: 0, by: "dm" }, endTurn.id);
+    const undoOfUndo = undoAction({ ms: 2_002, counter: 0, by: "dm" }, undo.id);
+    const encounter = tableEncounter(() => [endTurn, undo, undoOfUndo]);
+    const before = fold(encounter, catalogue);
+    // The undo is itself undone, so the end-turn stands.
+    expect(before.state.clock.current).toBe("ogre");
+
+    // `through` between the undo and the undo-of-undo: the pair straddles the boundary.
+    const compacted = compact(encounter, catalogue, undo.seq);
+    expect(fold(compacted, catalogue).state).toEqual(before.state);
+  });
+
+  it("resolves an undo-of-undo entirely inside the head", () => {
+    const endTurn = tableAction(
+      "dm",
+      { ms: 2_000, counter: 0, by: "dm" },
+      {
+        op: "end-turn",
+      }
+    );
+    const undo = undoAction({ ms: 2_001, counter: 0, by: "dm" }, endTurn.id);
+    const undoOfUndo = undoAction({ ms: 2_002, counter: 0, by: "dm" }, undo.id);
+    const later = tableAction(
+      "dm",
+      { ms: 3_000, counter: 0, by: "dm" },
+      {
+        op: "end-turn",
+      }
+    );
+    const encounter = tableEncounter(() => [endTurn, undo, undoOfUndo, later]);
+    const before = fold(encounter, catalogue);
+    const compacted = compact(encounter, catalogue, undoOfUndo.seq);
+    expect(fold(compacted, catalogue).state).toEqual(before.state);
+    expect(fold(compacted, catalogue).state.clock.current).toBe("sara");
+  });
+
+  it("keeps an undo whose target is also inside the head (the already-correct case)", () => {
+    const endTurn = tableAction(
+      "dm",
+      { ms: 2_000, counter: 0, by: "dm" },
+      {
+        op: "end-turn",
+      }
+    );
+    const undo = undoAction({ ms: 2_001, counter: 0, by: "dm" }, endTurn.id);
+    const later = tableAction(
+      "dm",
+      { ms: 3_000, counter: 0, by: "dm" },
+      {
+        op: "end-turn",
+      }
+    );
+    const encounter = tableEncounter(() => [endTurn, undo, later]);
+    const before = fold(encounter, catalogue);
+    const compacted = compact(encounter, catalogue, undo.seq);
+    expect(compacted.log.map((action) => action.id)).toEqual([later.id]);
+    expect(fold(compacted, catalogue).state).toEqual(before.state);
+  });
+
+  it("survives the boundary `checkpointThrough` itself picks for a crossing undo", () => {
+    const endTurn = tableAction(
+      "dm",
+      { ms: 1_000_000, counter: 0, by: "dm" },
+      {
+        op: "end-turn",
+      }
+    );
+    const encounter = tableEncounter(() => [
+      endTurn,
+      undoAction({ ms: 1_000_001, counter: 0, by: "dm" }, endTurn.id),
+      tableAction("dm", { ms: 1_300_000, counter: 0, by: "dm" }, { op: "end-turn" }),
+    ]);
+    // Grace 5 min: cutoff = 1_300_000 - 300_000 = 1_000_000 — exactly the undo's TARGET.
+    const through = checkpointThrough(encounter);
+    expect(through).toEqual(endTurn.seq);
+    if (through === null) throw new Error("unreachable");
+    expect(fold(compact(encounter, catalogue, through), catalogue).state).toEqual(
+      fold(encounter, catalogue).state
+    );
   });
 });

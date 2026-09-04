@@ -111,6 +111,12 @@ export type EncounterSnapshot =
  * acknowledges it, an otherwise identical snapshot with `false`. Without the flag the second
  * one never fires and the UI can never stop showing the action as in flight.
  *
+ * The cost is that the APPENDING client sees the same encounter twice — once pending, once
+ * acknowledged — with byte-identical content and only `pending` flipped, and the same happens on
+ * cache/online transitions. A consumer must therefore treat `pending` as presentation state and
+ * skip re-folding when nothing but `pending` changed; re-folding on every snapshot would double
+ * the work of every local append for no new information.
+ *
  * A document that does not parse is surfaced as `quarantined` rather than thrown: a future
  * build's schema must never crash this one, and it must never be silently overwritten either.
  */
@@ -148,7 +154,15 @@ export function subscribeEncounter(
  * The written log is `next.log` plus every stored action after the new checkpoint that `next`
  * does not already carry, matched by id: an append that landed between the caller's fold and the
  * transaction is preserved instead of being erased by the rewrite. Actions at or before the new
- * checkpoint are already folded into `next.checkpoint.state`, so they are dropped on purpose.
+ * checkpoint are already folded into `next.checkpoint.state`, so they are dropped on purpose —
+ * INCLUDING one the caller never saw, which the rewrite therefore discards without folding it in.
+ * That is deliberate and matches `fold`, which skips anything at or before `checkpoint.through`
+ * whether or not it contributed to the state: a checkpoint declares the past closed. The grace
+ * window is what keeps that horizon far enough behind the newest append for it not to bite.
+ *
+ * Top-level keys this build does not understand (`Encounter.unknown`) are merged rather than
+ * overwritten, with the STORED value winning: a newer build may have added a key between the
+ * caller's fold and this transaction, and compaction must never be the thing that drops it.
  *
  * Firestore re-runs a contended transaction callback. That is safe here because the callback
  * derives EVERYTHING it writes from the read it just made — it keeps no state across attempts —
@@ -180,7 +194,10 @@ export async function checkpointEncounter(
         !known.has(action.id) && (through === null || compareSeq(action.seq, through) > 0)
     );
     const log = raced.length === 0 ? next.log : sortBySeq([...next.log, ...raced]);
-    transaction.set(ref, encounterWriteData({ ...next, log }));
+    const unknown = { ...next.unknown, ...parsed.encounter.unknown };
+    const merged: Encounter =
+      Object.keys(unknown).length === 0 ? { ...next, log } : { ...next, log, unknown };
+    transaction.set(ref, encounterWriteData(merged));
     return "written";
   });
 }

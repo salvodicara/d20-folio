@@ -14,6 +14,14 @@
  * window still receives the raw actions. `checkpointThrough` picks the newest action outside the
  * window, and returns `null` when there is nothing safe to compact.
  *
+ * Undo is a LOG-level fact, not an action that resolves, so it does not respect the boundary the
+ * way ordinary actions do: an `undo` may sit after `through` and target an action before it.
+ * `compact` therefore folds the head together with EVERY undo in the log, not just the head's
+ * own — see the note on `compact`. The residue is that redo across a checkpoint is impossible: an
+ * undo-of-undo appended AFTER compaction cannot restore a target the checkpoint already skipped,
+ * because that target is no longer in the log to re-apply. This is accepted; the grace window is
+ * the knob that decides how long a table keeps the right to change its mind.
+ *
  * This module is inside the pure combat kernel: no clock, no randomness, no Firebase. The caller
  * (`src/lib/combat-io.ts`) supplies the document and writes the result.
  */
@@ -21,7 +29,7 @@ import { encounterWriteData } from "./codec";
 import { fold } from "./fold";
 import { compareSeq, sortBySeq, type Seq } from "./ids";
 import type { Catalogue } from "./catalogue";
-import type { Encounter } from "./types";
+import type { Action, Encounter } from "./types";
 
 /** Compact past this many actions in the log. */
 export const COMPACT_ACTIONS = 200;
@@ -75,14 +83,32 @@ export function checkpointThrough(
  * Fold the log up to and including `through` into a checkpoint, keeping only the actions after
  * it. The head is folded through `fold` itself — including the document's existing checkpoint —
  * so a second compaction stacks on the first rather than replaying from zero.
+ *
+ * The head is folded together with every `undo` in the WHOLE log, the tail's included. An undo
+ * never changes state by itself (`fold` skips it and only reads it through `undoneIds`), so
+ * adding the tail's undos to the head fold cannot apply anything extra — it can only negate a
+ * head action an undo after the boundary targets, which is exactly the fact that would otherwise
+ * be lost. A chain of undo-of-undo resolves for the same reason: both members are present, so
+ * the undone undo stops counting.
+ *
+ * The tail is kept EXACTLY as it was, crossing undo included. On a later fold that undo targets
+ * an id the log no longer holds, which is a harmless no-op: its effect is already baked into
+ * `checkpoint.state`.
  */
 export function compact(
   encounter: Encounter,
   catalogue: Catalogue,
   through: Seq
 ): Encounter {
-  const head = encounter.log.filter((action) => compareSeq(action.seq, through) <= 0);
-  const tail = encounter.log.filter((action) => compareSeq(action.seq, through) > 0);
+  const head: Action[] = [];
+  const tail: Action[] = [];
+  for (const action of encounter.log) {
+    if (compareSeq(action.seq, through) <= 0) head.push(action);
+    else {
+      tail.push(action);
+      if (action.kind === "undo") head.push(action);
+    }
+  }
   const { state } = fold({ ...encounter, log: head }, catalogue);
   return { ...encounter, log: tail, checkpoint: { through, state } };
 }
