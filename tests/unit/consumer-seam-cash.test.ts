@@ -18,11 +18,8 @@ import { describe, it, expect } from "vitest";
 import { classFeatureIndex } from "@/data/classes";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
 import { evaluateGrants } from "@/lib/grants";
-import {
-  mergeSaveProficiencies,
-  deriveImmunities,
-  deriveAdvantageChips,
-} from "@/lib/views/sheet-view";
+import { deriveImmunities, deriveAdvantageChips } from "@/lib/views/sheet-view";
+import { mergeSaveProficiencies } from "@/lib/compute";
 import type { Grant } from "@/lib/grants";
 
 function grantsOf(id: string): ReadonlyArray<Grant> {

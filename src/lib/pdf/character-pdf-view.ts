@@ -38,6 +38,7 @@ import {
   computeInitiative,
   characterHasFeat,
   flatSaveBonus,
+  mergeSaveProficiencies,
 } from "@/lib/compute";
 import { evaluateGrants } from "@/lib/grants";
 import { aggregateCharacterGrants, effectiveAC } from "@/lib/aggregate-character";
@@ -46,7 +47,6 @@ import { effectiveWalkingSpeedFt } from "@/lib/smart-tracker";
 import { getEquipment } from "@/data/equipment";
 import {
   mergeSkillProficiencies,
-  mergeSaveProficiencies,
   deriveSensesAndSpeeds,
   deriveImmunities,
   displayLanguages,

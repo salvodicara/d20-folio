@@ -918,6 +918,27 @@ export function buildSpellAttackBreakdown(args: {
 }
 
 /**
+ * Union the character's own saving-throw proficiencies with grant-granted
+ * ones. Returns a de-duplicated array preserving the character's own order,
+ * with granted saves appended.
+ *
+ * Engine-core, beside {@link savingThrowBonus}: the cockpit rail, the PDF, the
+ * DM's party card and the combat projection all resolve "which saves is this
+ * character proficient in" here, and engine-core may not reach up into
+ * `lib/views` (`tests/unit/architecture-direction.guard.test.ts`).
+ */
+export function mergeSaveProficiencies(
+  own: ReadonlyArray<AbilityCode>,
+  granted: ReadonlySet<AbilityCode>
+): AbilityCode[] {
+  const result = [...own];
+  for (const ability of granted) {
+    if (!result.includes(ability)) result.push(ability);
+  }
+  return result;
+}
+
+/**
  * Calculate weapon attack bonus.
  * Formula: proficiency bonus + ability modifier (+ magic bonus if any)
  */

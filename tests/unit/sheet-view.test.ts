@@ -12,7 +12,6 @@ import { litText } from "@/lib/loc-text";
 import { emptyAggregate, type AggregatedGrants } from "@/lib/grants";
 import {
   mergeSkillProficiencies,
-  mergeSaveProficiencies,
   displayLanguages,
   displayToolProficiencies,
   effectiveLanguageTokens,
@@ -24,6 +23,7 @@ import {
   deriveFlatDamageReductions,
 } from "@/lib/views/sheet-view";
 import { applySetOverride, deriveDefenseKind } from "@/lib/defense-sets";
+import { mergeSaveProficiencies } from "@/lib/compute";
 
 function aggregateWith(partial: Partial<AggregatedGrants>): AggregatedGrants {
   return { ...emptyAggregate(), ...partial };

@@ -36,6 +36,7 @@ import {
   carryingCapacity,
   characterHasFeat,
   resolveSaveBonus,
+  mergeSaveProficiencies,
 } from "@/lib/compute";
 import { aggregateCharacterGrants, effectiveAC } from "@/lib/aggregate-character";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
@@ -44,7 +45,6 @@ import { resolveActions } from "@/lib/smart-tracker";
 import { localizeTrackers } from "@/lib/views/tracker-view";
 import { resolveEffectiveSpells } from "@/lib/expanded-spells";
 import {
-  mergeSaveProficiencies,
   mergeSkillProficiencies,
   deriveSensesAndSpeeds,
   deriveImmunities,

@@ -29,6 +29,7 @@ import {
   resolveAbilityCheckBonus,
   savingThrowBonus,
   isHeavyArmorEquipped,
+  mergeSaveProficiencies,
 } from "@/lib/compute";
 import {
   aggregateCharacterGrants,
@@ -41,7 +42,6 @@ import type { PcLive } from "@/features/campaigns/encounter-view";
 import {
   deriveSensesAndSpeeds,
   deriveDamageDefenses,
-  mergeSaveProficiencies,
   mergeSkillProficiencies,
   type SenseEntry,
   type SpeedEntry,

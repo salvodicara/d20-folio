@@ -22,7 +22,7 @@ import type {
 } from "@/lib/grants";
 import type { DamageDefenses } from "@/lib/damage-intake";
 import { deriveDefenseKind } from "@/lib/defense-sets";
-import type { AbilityCode, ConditionId, DamageSource } from "@/data/types";
+import type { ConditionId, DamageSource } from "@/data/types";
 import type { DamageType } from "@/types/damage";
 import { SRD_LANGUAGE_IDS } from "@/lib/feat-language-choices";
 import { SRD_TOOLS_2024 } from "@/lib/feat-skill-tool-choices";
@@ -111,22 +111,6 @@ export function mergeSkillProficiencies(
     }
   }
   return merged;
-}
-
-/**
- * Union the character's own saving-throw proficiencies with grant-granted
- * ones. Returns a de-duplicated array preserving the character's own order,
- * with granted saves appended.
- */
-export function mergeSaveProficiencies(
-  own: ReadonlyArray<AbilityCode>,
-  granted: ReadonlySet<AbilityCode>
-): AbilityCode[] {
-  const result = [...own];
-  for (const ability of granted) {
-    if (!result.includes(ability)) result.push(ability);
-  }
-  return result;
 }
 
 // ─── Single-source effective tokens (id-first: resolve → dedup → tag → localize) ──

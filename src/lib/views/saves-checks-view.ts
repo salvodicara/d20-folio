@@ -38,12 +38,13 @@ import {
   resolveAbilityCheckBonus,
   flatSaveBonus,
   type ProficiencyTier,
+  mergeSaveProficiencies,
 } from "@/lib/compute";
 import { totalLevel } from "@/lib/classes";
 import { evaluateGrants } from "@/lib/grants";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
-import { mergeSkillProficiencies, mergeSaveProficiencies } from "@/lib/views/sheet-view";
+import { mergeSkillProficiencies } from "@/lib/views/sheet-view";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 
