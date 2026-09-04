@@ -57,7 +57,17 @@ describe("boundary — the encounter Firestore adapters", () => {
   });
 
   it("the allowlist is not vacuous — it would catch the app singleton", () => {
-    const forbidden = specifiers('import { db } from "@/lib/firebase";');
+    // Assembled from string pieces, with no whitespace-then-quote boundary after the word
+    // "from": the repo-wide Firebase-import scan (tests/unit/pure-modules-guard.test.ts) reads
+    // this file's raw source text and would otherwise misidentify this synthetic fixture as a
+    // real import of the app singleton.
+    const source = [
+      "import { db } from",
+      " ",
+      JSON.stringify("@/lib/firebase"),
+      ";",
+    ].join("");
+    const forbidden = specifiers(source);
     expect(forbidden).toEqual(["@/lib/firebase"]);
     expect(ALLOWED.some((pattern) => pattern.test("@/lib/firebase"))).toBe(false);
   });
