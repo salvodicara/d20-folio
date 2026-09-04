@@ -208,6 +208,31 @@ describe("projectCharacter — the action adapter", () => {
     }
   });
 
+  it("records where each row's content came from", () => {
+    const { mechanics } = projected();
+    // Lyra's rows are all catalogue content.
+    expect(mechanics.every((m) => m.source === "srd")).toBe(true);
+    const doc = makeCharacterDoc({
+      weapons: [
+        {
+          custom: true,
+          name: "Nonna's cleaver",
+          quantity: 1,
+          damageDie: "1d6",
+          damageType: "slashing",
+          attackStat: "STR",
+          properties: "",
+          instanceId: "cleaver-1",
+        },
+      ],
+    });
+    const homebrew = projectCharacter(doc, seat).mechanics.filter(
+      (m) => m.source === "homebrew"
+    );
+    expect(homebrew).toHaveLength(1);
+    expect(homebrew[0]?.label).toBe("custom:Nonna's cleaver");
+  });
+
   it("never emits an id in the `core:` namespace, and lists the core set on the entity", () => {
     const { entity, mechanics } = projected();
     expect(mechanics.filter((m) => m.id.startsWith("core:"))).toEqual([]);

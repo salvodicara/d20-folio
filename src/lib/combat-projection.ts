@@ -370,6 +370,13 @@ function manualProgram(row: RawResolvedAction, costs: Cost[]): Program {
   };
 }
 
+/** Where the row's content came from: a player's own homebrew carries its name verbatim
+ *  (a `custom` `LocText`), everything else is catalogue content. Provenance only — the
+ *  reducer executes a mechanic the same way whatever wrote it. */
+function sourceOf(row: RawResolvedAction): Mechanic["source"] {
+  return "custom" in row.name ? "homebrew" : "srd";
+}
+
 function mechanicFor(row: RawResolvedAction, characterId: string): Mechanic {
   const spell = row.spellId ? (getSpellById(row.spellId) ?? null) : null;
   const costs = costsFor(row, spell);
@@ -382,7 +389,7 @@ function mechanicFor(row: RawResolvedAction, characterId: string): Mechanic {
   return {
     schema: 1,
     id: `pc:${characterId}:${row.id}`,
-    source: "srd",
+    source: sourceOf(row),
     label: labelFor(row.name, row.id),
     active: [program],
   };
