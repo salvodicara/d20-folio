@@ -45,7 +45,12 @@ import {
   type Firestore,
 } from "firebase/firestore";
 import { buildCatalogue } from "@/lib/combat/catalogue";
-import { checkpointThrough, compact, shouldCompact } from "@/lib/combat/checkpoint";
+import {
+  checkpointThrough,
+  compact,
+  COMPACT_ACTIONS,
+  shouldCompact,
+} from "@/lib/combat/checkpoint";
 import { parseEncounter } from "@/lib/combat/codec";
 import { fold, type FoldResult } from "@/lib/combat/fold";
 import type { Seq } from "@/lib/combat/ids";
@@ -124,6 +129,12 @@ function authorsOf(replay: Replay): string[] {
   return [...new Set([replay.dm, ...replay.log.map((entry) => entry.by)])];
 }
 
+/** `start` + one `add-entity` and one `set-initiative` per entity + `begin-turns`. Derived, not
+ *  a literal, so a fixture that gains an entity fails on the FOLD rather than on arithmetic. */
+function openingCount(replay: Replay): number {
+  return 2 + 2 * replay.entities.length;
+}
+
 function pick(state: FoldedState, path: string): unknown {
   return path
     .split(".")
@@ -156,11 +167,14 @@ function clientFor(uid: string): Firestore {
  * One participant: their own authenticated Firestore instance, their own listener on the shared
  * document, and their own fold of whatever that listener last delivered.
  *
- * The fold is LAZY and memoised on the delivered `Encounter` object. That is not an optimisation
- * detail — it is the consumer contract `subscribeEncounter` documents: the appending client sees
- * the same encounter twice (pending, then acknowledged) and must not re-fold when only `pending`
- * flipped. Folding on demand also keeps the two-hundred-append compaction phase from folding a
- * growing log two hundred times per client.
+ * The fold is LAZY and memoised on the delivered `Encounter` object, so the polling assertions
+ * below fold once per snapshot rather than once per poll, and the two-hundred-append compaction
+ * phase — which never asks for a fold — folds nothing at all. The memo is keyed on OBJECT
+ * IDENTITY, which is deliberately weaker than the consumer contract a real client wants:
+ * `parseEncounter` mints a fresh object per snapshot, so the appending client's pending →
+ * acknowledged pair still folds twice here. That costs one extra fold and is not worth a
+ * content hash in a test; skipping a pending-only flip is proved where it belongs, on the
+ * adapter, by `encounter-io.emulator.test.ts`.
  */
 interface Client {
   readonly uid: string;
@@ -370,8 +384,17 @@ async function compactAndVerify(table: Table): Promise<void> {
   const [a, b] = table.replay.entities;
   if (a === undefined || b === undefined) throw new Error("expected two entities");
 
+  // A bound, not a belt: if `shouldCompact` ever stops agreeing with `COMPACT_ACTIONS` this
+  // must fail with a sentence, not hang until the lane's timeout kills it.
+  const ceiling = COMPACT_ACTIONS + 50;
   let index = 0;
   while (!shouldCompact(table.latest())) {
+    if (index >= ceiling) {
+      throw new Error(
+        `appended ${index} filler actions (log ${table.latest().log.length}) without ` +
+          `shouldCompact() turning true — COMPACT_ACTIONS is ${COMPACT_ACTIONS}`
+      );
+    }
     // Ten at a time: two hundred sequential emulator round-trips would eat the lane's budget,
     // and `arrayUnion` is exactly the write that does not need them serialised.
     const batch: Promise<void>[] = [];
@@ -535,8 +558,7 @@ describe("the stage gate — Marco's first turn on two clients", () => {
   });
 
   it("folds identically on the DM's and the player's clients, through an override and an undo from each side", async () => {
-    // 1 start + 4 add-entity + 4 set-initiative + 1 begin-turns, the lease join, the replay.
-    expect(table.baseApplied).toBe(10 + 1 + replay.expect.applied);
+    expect(table.baseApplied).toBe(openingCount(replay) + 1 + replay.expect.applied);
     expectTheReplay(table);
 
     // The lease: the joined PC is in the fold and the character parent carries the marker.
@@ -624,8 +646,8 @@ describe("the stage gate — Sara's ogre ambush on two clients", () => {
   });
 
   it("folds identically on the DM's and the player's clients, through an override and an undo from each side", async () => {
-    // 1 start + 2 add-entity + 2 set-initiative + 1 begin-turns, then the replay. No lease.
-    expect(table.baseApplied).toBe(6 + replay.expect.applied);
+    // No lease here: the opening plus the replay's own applied actions, nothing else.
+    expect(table.baseApplied).toBe(openingCount(replay) + replay.expect.applied);
     expectTheReplay(table);
     await overrideAndUndoFromEachSide(table);
   });

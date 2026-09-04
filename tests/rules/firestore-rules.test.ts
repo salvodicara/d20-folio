@@ -1720,6 +1720,33 @@ describe("firestore.rules — campaign encounter documents (append-only log)", (
     );
   });
 
+  it("a member may append onto an EMPTY log — the state a checkpoint leaves behind", async () => {
+    // `l[0:0]` is an EVALUATION ERROR in the rules language, not an empty list, so the
+    // prefix fence must guard the empty stored log explicitly or it denies every member
+    // append the moment a checkpoint has swallowed the whole log (a table that idles past
+    // the grace window, or a DM's freshly opened encounter). An empty stored log is
+    // trivially a prefix of anything, so the append must land.
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), ...encounterPath), { ...seedEncounter, log: [] });
+    });
+    const db = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(
+      updateDoc(doc(db, ...encounterPath), { log: arrayUnion(memberAction) })
+    );
+  });
+
+  it("an EMPTY log is not an open door: a non-member still may not append", async () => {
+    // The guard above must widen NOTHING but the empty-list arithmetic — membership still
+    // decides, so the same append from an outsider stays denied.
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), ...encounterPath), { ...seedEncounter, log: [] });
+    });
+    const db = testEnv.authenticatedContext("outsider").firestore();
+    await assertFails(
+      updateDoc(doc(db, ...encounterPath), { log: arrayUnion(memberAction) })
+    );
+  });
+
   it("a member may NOT create an encounter document; the DM may", async () => {
     const fresh = ["campaigns", "camp1", "encounters", "enc-new"] as const;
     const member = testEnv.authenticatedContext("member").firestore();

@@ -26,14 +26,14 @@ screen by the screenshot gate, a live-data invariant by unit and rules tests.
 | unit slow (`jsdom`)  | 194 root `.test.tsx` + 13 `.ts`    | render tests of the old surfaces; shrink as the new surfaces replace them                                             |
 | combat engine        | 20 files under `tests/unit/combat` | the engine's proofs, the dice module, positions/areas and the golden replays (`replays/*.json`)                       |
 | pack unit (composed) | 177                                | `content-pack/tests/unit`, pack branch `v2`                                                                           |
-| rules (emulator)     | 4 files, 114 cases                 | `firestore-rules` 86, `storage-rules` 12, `encounter-io` 12 (the adapter), `encounter-two-clients` 4 (the stage gate) |
+| rules (emulator)     | 4 files, 116 cases                 | `firestore-rules` 88, `storage-rules` 12, `encounter-io` 12 (the adapter), `encounter-two-clients` 4 (the stage gate) |
 | Functions            | 7                                  | standalone npm package                                                                                                |
 | accessibility sweep  | 2 specs, 432 registrations         | `tests/e2e/a11y*.spec.ts` over `tests/e2e/surfaces.ts`                                                                |
 | screenshot lane      | 2 specs                            | `tests/visual`, own config, artifacts under `artifacts/visual-review/`                                                |
 
 Count them with `find tests/unit -name '*.test.ts' | wc -l` (453), `find tests/unit -name '*.test.tsx' | wc -l`
 (194), `find tests/unit -name '*.guard.test.ts*' | wc -l` (59), `grep -c "^\s*it(" tests/rules/*.test.ts`
-(86 + 12 + 12 + 4) and `pnpm exec playwright test --list | tail -n 1` (432).
+(88 + 12 + 12 + 4) and `pnpm exec playwright test --list | tail -n 1` (432).
 
 ## Golden replays
 
