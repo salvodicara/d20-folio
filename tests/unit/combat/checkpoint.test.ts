@@ -20,7 +20,7 @@ import {
 } from "@/lib/combat/checkpoint";
 import { fold } from "@/lib/combat/fold";
 import { sortBySeq, type Seq } from "@/lib/combat/ids";
-import type { Action, Encounter } from "@/lib/combat/types";
+import type { Action, Encounter, Relation } from "@/lib/combat/types";
 import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
 import { testEntity } from "./__helpers__/entities";
 import {
@@ -405,5 +405,164 @@ describe("combat/checkpoint — undo across the compaction boundary", () => {
     expect(fold(compact(encounter, catalogue, through), catalogue).state).toEqual(
       fold(encounter, catalogue).state
     );
+  });
+});
+
+describe("combat/checkpoint — bounded rolls (stage 6 §2 D8)", () => {
+  const seq = seqFactory("dm", 100_000);
+  const ranger = testEntity({
+    id: "ranger",
+    kind: "pc",
+    controllerUid: "p1",
+    hp: 20,
+    ac: 15,
+    abilities: { DEX: 3 },
+    mechanics: ["srd:weapon:shortsword", "srd:spell:shield"],
+    resources: { "slot-1": { current: 2, max: 2, recharge: "long" } },
+  });
+  const goblin = testEntity({
+    id: "monster-1",
+    kind: "monster",
+    controllerUid: "dm",
+    hp: 30,
+    ac: 12,
+    mechanics: ["monster:goblin:scimitar"],
+  });
+
+  function rollAction(id: string, roller: string, total: number): Action {
+    return {
+      kind: "roll",
+      id,
+      seq: seq(),
+      by: "dm",
+      roll: {
+        formula: "1d20+3",
+        faces: [total - 3],
+        total,
+        seed: null,
+        source: "manual",
+        hidden: false,
+        roller,
+        purpose: "attack",
+        label: null,
+      },
+    };
+  }
+
+  function intentAction(
+    id: string,
+    by: string,
+    entity: string,
+    mechanic: string,
+    program: string,
+    answers: Record<string, unknown>,
+    targets: readonly string[]
+  ): Action {
+    return {
+      kind: "intent",
+      id,
+      seq: seq(),
+      by,
+      entity,
+      mechanic,
+      program,
+      targets: [...targets],
+      answers: answers as Action extends { answers: infer A } ? A : never,
+      payment: [],
+      window: null,
+      basedOn: 0,
+    };
+  }
+
+  function declareAction(id: string, relation: Relation): Action {
+    return {
+      kind: "declare",
+      id,
+      seq: seq(),
+      by: "dm",
+      relation,
+      remove: false,
+      mover: null,
+    };
+  }
+
+  /**
+   * One encounter holding all three cases at the moment of compaction:
+   * `roll-settled` was spent by an intent that has already resolved, `roll-held` was spent by
+   * the goblin's attack which a Shield window still holds open in `declared`, and
+   * `roll-ahead` was rolled but never answered with.
+   */
+  function encounter(): Encounter {
+    const log: Action[] = [
+      ...openingActions("dm", seq, [ranger, goblin], { ranger: 20, "monster-1": 10 }, [
+        "ranger",
+        "monster-1",
+      ]),
+      declareAction("d-1", { kind: "visible", a: "ranger", b: "monster-1", value: true }),
+      declareAction("d-2", { kind: "visible", a: "monster-1", b: "ranger", value: true }),
+      declareAction("d-3", { kind: "adjacent", a: "ranger", b: "monster-1" }),
+      rollAction("roll-settled", "ranger", 18),
+      intentAction(
+        "i-settled",
+        "p1",
+        "ranger",
+        "srd:weapon:shortsword",
+        "attack",
+        { roll: { roll: "roll-settled" }, damage: 4 },
+        ["monster-1"]
+      ),
+      tableAction("dm", seq(), { op: "end-turn" }),
+      rollAction("roll-held", "monster-1", 16),
+      intentAction(
+        "i-held",
+        "dm",
+        "monster-1",
+        "monster:goblin:scimitar",
+        "attack",
+        { roll: { roll: "roll-held" }, damage: 5 },
+        ["ranger"]
+      ),
+      rollAction("roll-ahead", "ranger", 11),
+    ];
+    return {
+      schema: 1,
+      id: "bounded-rolls",
+      host: { kind: "campaign", campaignId: "camp" },
+      log,
+      checkpoint: null,
+    };
+  }
+
+  it("the fixture really holds a settled roll, a held one and an unspent one", () => {
+    const { state } = fold(encounter(), catalogue);
+    expect(Object.keys(state.rolls).sort()).toEqual([
+      "roll-ahead",
+      "roll-held",
+      "roll-settled",
+    ]);
+    expect(state.spent["roll-settled"]).toBe("i-settled");
+    expect(state.declared["i-settled"]).toBeUndefined();
+    expect(state.declared["i-held"]).toBeDefined();
+  });
+
+  it("compaction keeps only the unspent rolls and those a held intent still needs", () => {
+    const e = encounter();
+    const through = at(sortBySeq(e.log), e.log.length - 1).seq;
+    const compacted = compact(e, catalogue, through);
+    const state = compacted.checkpoint?.state;
+    if (state === undefined) throw new Error("expected a checkpoint");
+    expect(Object.keys(state.rolls).sort()).toEqual(["roll-ahead", "roll-held"]);
+    expect(Object.keys(state.spent)).toEqual(["roll-held"]);
+  });
+
+  it("pruning never changes what the document folds to", () => {
+    const e = encounter();
+    const through = at(sortBySeq(e.log), e.log.length - 1).seq;
+    const compacted = compact(e, catalogue, through);
+    const before = fold(e, catalogue).state;
+    const after = fold(compacted, catalogue).state;
+    for (const key of ["entities", "clock", "effects", "windows", "declared"] as const) {
+      expect(after[key]).toEqual(before[key]);
+    }
   });
 });

@@ -31,7 +31,7 @@ import { encounterWriteData } from "./codec";
 import { fold } from "./fold";
 import { compareSeq, sortBySeq, type Seq } from "./ids";
 import type { Catalogue } from "./catalogue";
-import type { Action, Encounter } from "./types";
+import type { Action, Encounter, FoldedState } from "./types";
 
 /** Compact past this many actions in the log. */
 export const COMPACT_ACTIONS = 200;
@@ -121,5 +121,38 @@ export function compact(
     }
   }
   const { state } = fold({ ...encounter, log: head }, catalogue);
-  return { ...encounter, log: tail, checkpoint: { through, state } };
+  return { ...encounter, log: tail, checkpoint: { through, state: pruneRolls(state) } };
+}
+
+/**
+ * The checkpoint's `rolls`/`spent` are bounded here (stage 6 design §2 D8).
+ *
+ * `rolls` grows for as long as the table plays and nothing ever removed an entry, so a long
+ * session's checkpoint carried every die anyone had ever rolled. A roll is still LOAD-BEARING in
+ * exactly two cases: nobody has answered with it yet (a player who rolled ahead must still be
+ * able to spend it), or the action that spent it is an intent a reaction window still holds open
+ * in `declared` — resolving that window re-runs the programme over the same answers. Everything
+ * else has already been folded into the state the checkpoint carries, and the log entry that
+ * recorded it is what the presenter reads for history.
+ *
+ * `spent` is pruned with `rolls`, so the pair stays consistent: an id no longer in `rolls`
+ * cannot be re-spent (`rollsUsable` skips a roll the state does not hold), and one still in
+ * `rolls` keeps its guard.
+ */
+function pruneRolls(state: FoldedState): FoldedState {
+  const doomed = Object.keys(state.rolls).filter((id) => {
+    const by = state.spent[id];
+    return by !== undefined && state.declared[by] === undefined;
+  });
+  if (doomed.length === 0) return state;
+  const gone = new Set(doomed);
+  return {
+    ...state,
+    rolls: Object.fromEntries(
+      Object.entries(state.rolls).filter(([id]) => !gone.has(id))
+    ),
+    spent: Object.fromEntries(
+      Object.entries(state.spent).filter(([id]) => !gone.has(id))
+    ),
+  };
 }

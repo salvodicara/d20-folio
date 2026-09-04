@@ -33,8 +33,13 @@ import type {
   Step,
   Trigger,
 } from "@/lib/combat/mechanic";
+import { buildCatalogue } from "@/lib/combat/catalogue";
+import { compact } from "@/lib/combat/checkpoint";
+import { fold } from "@/lib/combat/fold";
+import { compareSeq, sortBySeq, type Seq } from "@/lib/combat/ids";
+import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
 import { testEntity } from "./__helpers__/entities";
-import { emptyState } from "./__helpers__/state";
+import { emptyState, openingActions, seqFactory, tableAction } from "./__helpers__/state";
 
 const CASES = 300;
 
@@ -781,5 +786,226 @@ describe("codec — round-trip property over generated encounters (§8)", () => 
       checked += 1;
     }
     expect(checked).toBeGreaterThan(0);
+  });
+});
+
+// ── Compaction is fold-preserving, including the roll pruning (stage 6 §2 D8) ─
+
+const { catalogue } = buildCatalogue(PROTOTYPE_MECHANICS);
+
+const PLAY_RANGER = testEntity({
+  id: "ranger",
+  kind: "pc",
+  controllerUid: "p1",
+  hp: 40,
+  ac: 15,
+  abilities: { DEX: 3 },
+  mechanics: ["srd:weapon:shortsword", "srd:spell:shield", "core:move", "core:dash"],
+  resources: { "slot-1": { current: 4, max: 4, recharge: "long" } },
+  position: { x: 0, y: 0 },
+});
+
+const PLAY_GOBLIN = testEntity({
+  id: "monster-1",
+  kind: "monster",
+  controllerUid: "dm",
+  hp: 40,
+  ac: 12,
+  mechanics: ["monster:goblin:scimitar", "core:move", "core:dash"],
+  position: { x: 1, y: 0 },
+});
+
+const PLAY_ORDER = ["ranger", "monster-1"] as const;
+const CONTROLLER: Readonly<Record<string, string>> = { ranger: "p1", "monster-1": "dm" };
+const WEAPON: Readonly<Record<string, string>> = {
+  ranger: "srd:weapon:shortsword",
+  "monster-1": "monster:goblin:scimitar",
+};
+
+/**
+ * A PLAYABLE encounter: the standard opening, the relations an attack needs, then a few rounds
+ * of rolls answered by intents, moves, Dashes and turn ends. Unlike the adversarial generator
+ * above (which exists to stress the codec), this one mostly APPLIES, so compacting it at a
+ * random cut point actually exercises the checkpoint's state — the rolls included.
+ */
+function genPlayable(g: Gen): Encounter {
+  const seq = seqFactory("dm", 200_000);
+  const log: Action[] = [
+    ...openingActions(
+      "dm",
+      seq,
+      [PLAY_RANGER, PLAY_GOBLIN],
+      { ranger: 20, "monster-1": 10 },
+      [...PLAY_ORDER]
+    ),
+  ];
+  const declare = (relation: Relation, id: string): Action => ({
+    kind: "declare",
+    id,
+    seq: seq(),
+    by: "dm",
+    relation,
+    remove: false,
+    mover: null,
+  });
+  log.push(
+    declare({ kind: "visible", a: "ranger", b: "monster-1", value: true }, "pd-1"),
+    declare({ kind: "visible", a: "monster-1", b: "ranger", value: true }, "pd-2"),
+    declare({ kind: "adjacent", a: "ranger", b: "monster-1" }, "pd-3")
+  );
+
+  let n = 0;
+  const fresh = (prefix: string): string => `${prefix}-${(n += 1)}`;
+  for (let round = 0; round < 4; round += 1) {
+    for (const entity of PLAY_ORDER) {
+      const by = CONTROLLER[entity] ?? "dm";
+      for (let step = g.int(1, 3); step > 0; step -= 1) {
+        switch (g.int(0, 3)) {
+          case 0: {
+            const roll = fresh("r");
+            const face = g.int(1, 20);
+            log.push({
+              kind: "roll",
+              id: roll,
+              seq: seq(),
+              by,
+              roll: {
+                formula: "1d20+3",
+                faces: [face],
+                total: face + 3,
+                seed: null,
+                source: "manual",
+                hidden: false,
+                roller: entity,
+                purpose: "attack",
+                label: null,
+              },
+            });
+            log.push({
+              kind: "intent",
+              id: fresh("i"),
+              seq: seq(),
+              by,
+              entity,
+              mechanic: WEAPON[entity] ?? "core:move",
+              program: "attack",
+              targets: [entity === "ranger" ? "monster-1" : "ranger"],
+              answers: { roll: { roll }, damage: g.int(1, 6) },
+              payment: [],
+              window: null,
+              basedOn: 0,
+            });
+            break;
+          }
+          case 1:
+            log.push({
+              kind: "intent",
+              id: fresh("i"),
+              seq: seq(),
+              by,
+              entity,
+              mechanic: "core:move",
+              program: "move",
+              targets: [],
+              answers: { to: { x: g.int(-3, 3), y: g.int(-3, 3) } },
+              payment: [],
+              window: null,
+              basedOn: 0,
+            });
+            break;
+          case 2:
+            log.push({
+              kind: "intent",
+              id: fresh("i"),
+              seq: seq(),
+              by,
+              entity,
+              mechanic: "core:dash",
+              program: "dash",
+              targets: [],
+              answers: {},
+              payment: [],
+              window: null,
+              basedOn: 0,
+            });
+            break;
+          default: {
+            const ahead = g.int(1, 20);
+            // A roll nobody answers with — the player who rolled ahead.
+            log.push({
+              kind: "roll",
+              id: fresh("r"),
+              seq: seq(),
+              by,
+              roll: {
+                formula: "1d20",
+                faces: [ahead],
+                total: ahead,
+                seed: null,
+                source: "manual",
+                hidden: false,
+                roller: entity,
+                purpose: "attack",
+                label: null,
+              },
+            });
+          }
+        }
+      }
+      log.push(tableAction("dm", seq(), { op: "end-turn" }));
+    }
+  }
+  return {
+    schema: 1,
+    id: "playable",
+    host: { kind: "campaign", campaignId: "camp" },
+    log,
+    checkpoint: null,
+  };
+}
+
+/** The actions `compact` folds into the checkpoint, so the test can measure what it dropped. */
+function headOf(encounter: Encounter, through: Seq): Action[] {
+  return sortBySeq(encounter.log).filter(
+    (action) => compareSeq(action.seq, through) <= 0
+  );
+}
+
+describe("compaction — the fold is unchanged by the checkpoint, rolls pruned (§2 D8)", () => {
+  it("fold(compact(e)) equals fold(e) at every cut point, for 60 generated tables", () => {
+    let pruned = 0;
+    let kept = 0;
+    for (let seed = 1; seed <= 60; seed += 1) {
+      const g = gen(seed);
+      const encounter = genPlayable(g);
+      const sorted = sortBySeq(encounter.log);
+      const cut = sorted[g.int(0, sorted.length - 1)];
+      if (cut === undefined) throw new Error(`seed ${seed}: an empty log`);
+      const compacted = compact(encounter, catalogue, cut.seq);
+      const before = fold(encounter, catalogue).state;
+      const after = fold(compacted, catalogue).state;
+      for (const key of [
+        "entities",
+        "clock",
+        "effects",
+        "windows",
+        "mechanics",
+      ] as const) {
+        expect(after[key], `seed ${seed}: ${key}`).toEqual(before[key]);
+      }
+      // The pruning is real: a checkpoint never keeps a roll whose consumer has settled.
+      const state = compacted.checkpoint?.state;
+      if (state === undefined) throw new Error(`seed ${seed}: no checkpoint`);
+      for (const [id, by] of Object.entries(state.spent)) {
+        expect(state.declared[by], `seed ${seed}: roll ${id}`).toBeDefined();
+      }
+      const head = fold({ ...encounter, log: headOf(encounter, cut.seq) }, catalogue);
+      pruned += Object.keys(head.state.rolls).length - Object.keys(state.rolls).length;
+      kept += Object.keys(state.rolls).length;
+    }
+    // The corpus is not trivially empty on either side: rolls really are dropped, and rolls
+    // really do survive — otherwise the property above would hold vacuously.
+    expect(pruned).toBeGreaterThan(0);
+    expect(kept).toBeGreaterThan(0);
   });
 });
