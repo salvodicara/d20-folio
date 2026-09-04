@@ -1,7 +1,7 @@
 /**
  * `readLease` — shape-tolerant reader of the character parent doc's `lease` field
- * (design §5.2) — and `leaveTable`'s WRITE-BACK routing (stage 6 design §5): which of the two
- * personal shapes the batch writes, and with which verb.
+ * (design §5.2) — and `leaveTable`'s personal WRITE-BACK (stage 6 design §5): which document the
+ * batch writes, with which verb, and with which payload.
  *
  * `readLease` itself is pure, but `@/lib/combat-lease` also exports the `joinTable`/`leaveTable`
  * batch writers (proven end to end by the emulator suite) and transitively imports
@@ -47,7 +47,6 @@ vi.mock("firebase/firestore", () => ({
 
 import { leaveTable, readLease, type PersonalWriteBack } from "@/lib/combat-lease";
 import { encodeLegacyWriteBack } from "@/lib/combat-state-writeback";
-import type { Encounter } from "@/lib/combat/types";
 import type { CombatState } from "@/types/combat-state";
 import { testEntity } from "@tests/unit/combat/__helpers__/entities";
 
@@ -136,7 +135,7 @@ const PREVIOUS: CombatState = {
   playState: { version: 1, state: { exhaustion: 2 } },
 };
 
-/** The only way to build a `document` write-back: project, then encode. */
+/** The only way to build a write-back at all: project, then encode. */
 function writeBack(previous: CombatState = PREVIOUS): PersonalWriteBack {
   return { kind: "document", data: encodeLegacyWriteBack(previous, ENTITY, []) };
 }
@@ -151,9 +150,7 @@ async function leave(personal: PersonalWriteBack): Promise<void> {
     campaignId: "camp-1",
     encounterId: "enc-1",
     entity: ENTITY,
-    mechanics: [],
     leave: { id: "leave-1", seq: { ms: 1, counter: 0, by: "u1" } },
-    sync: { id: "sync-1", seq: { ms: 2, counter: 0, by: "u1" } },
     personal,
   });
 }
@@ -171,19 +168,19 @@ function writeTo(path: string): Write {
 }
 
 describe("leaveTable's personal write-back", () => {
-  it("always appends the leave action and clears the lease, whichever shape is written back", async () => {
+  it("appends the leave action and clears the lease", async () => {
     await leave(writeBack());
     expect(writeTo(ENCOUNTER).verb).toBe("update");
     expect(writeTo(CHARACTER).data).toEqual({ lease: { deleteField: true } });
     expect(committed).toBe(1);
   });
 
-  it("sets the ENCODED document VERBATIM for the `document` variant", async () => {
+  it("sets the ENCODED document VERBATIM", async () => {
     const personal = writeBack();
     await leave(personal);
     const write = writeTo(PERSONAL);
     expect(write.verb).toBe("set");
-    expect(write.data).toBe(personal.kind === "document" ? personal.data : null);
+    expect(write.data).toBe(personal.data);
     // What the encoder guarantees and a hand-rolled object would not: the fight's trio, the
     // play session preserved, and the stamp every other writer emits.
     expect(write.data).toMatchObject({
@@ -204,33 +201,18 @@ describe("leaveTable's personal write-back", () => {
     );
   });
 
-  it("never writes a sync action for the `document` variant", async () => {
+  /**
+   * The personal path ALIASES the live `CombatState` the old sheet owns, so there is no shape
+   * here that could write an `Encounter` onto it — a document `parseCombatState` would refuse
+   * forever. The `encounter` variant, and the `table:sync` action it would append, arrive with
+   * the personal aggregate at item 8.
+   */
+  it("writes nothing but the encoded legacy document — never an Encounter envelope", async () => {
     await leave(writeBack());
-    expect(JSON.stringify(writeTo(PERSONAL).data)).not.toContain("sync-1");
-  });
-
-  it("sets a fresh personal Encounter when the `encounter` variant carries none", async () => {
-    await leave({ kind: "encounter", encounter: null });
-    const write = writeTo(PERSONAL);
-    expect(write.verb).toBe("set");
-    const data = write.data as { host: unknown; log: { id: string }[] };
-    expect(data.host).toEqual({ kind: "personal", uid: "u1", characterId: "c1" });
-    expect(data.log.map((action) => action.id)).toEqual(["sync-1"]);
-  });
-
-  it("appends the sync action to an existing personal Encounter", async () => {
-    const existing: Encounter = {
-      schema: 1,
-      id: "personal",
-      host: { kind: "personal", uid: "u1", characterId: "c1" },
-      log: [],
-      checkpoint: null,
-    };
-    await leave({ kind: "encounter", encounter: existing });
-    const write = writeTo(PERSONAL);
-    expect(write.verb).toBe("update");
-    expect(write.data).toEqual({
-      log: { arrayUnion: [expect.objectContaining({ id: "sync-1" })] },
-    });
+    const written = JSON.stringify(writeTo(PERSONAL).data);
+    expect(written).not.toContain("sync");
+    expect(written).not.toContain("schema");
+    expect(written).not.toContain("host");
+    expect(writes.filter((write) => write.path === PERSONAL)).toHaveLength(1);
   });
 });

@@ -285,6 +285,24 @@ const PREVIOUS_COMBAT_STATE: CombatState = {
   playState: { version: 1, state: { exhaustion: 1 } },
 };
 
+/** Put that legacy document under the PC, past the rules, the way the old sheet left it. */
+async function seedLegacyCombatState(): Promise<void> {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(
+      doc(
+        ctx.firestore(),
+        "users",
+        "p-marco",
+        "characters",
+        CHARACTER,
+        "combat",
+        "state"
+      ),
+      PREVIOUS_COMBAT_STATE
+    );
+  });
+}
+
 /**
  * Seat every author at the table, open the encounter as the DM, optionally lease a PC in, then
  * replay the log — every action appended by the client of the uid that authored it.
@@ -642,11 +660,13 @@ describe("the stage gate — Marco's first turn on two clients", () => {
   it("compacts to a checkpoint every client folds identically, then returns the leased PC", async () => {
     await compactAndVerify(table);
 
-    // The lease is handed back: the entity leaves the table and lands in the owner's personal
-    // aggregate as a `table:sync`, with the lease marker cleared. This is also the one member
-    // append in the suite that lands on a log the checkpoint has just emptied.
+    // The lease is handed back: the entity leaves the table and its fight lands on the owner's
+    // OWN personal document, with the lease marker cleared. This is also the one member append
+    // in the suite that lands on a log the checkpoint has just emptied.
     const marco = table.client("p-marco");
-    const folded = entityOf(table.dm.view().state, LEASE_ENTITY.id);
+    await seedLegacyCombatState();
+    const state = table.dm.view().state;
+    const folded = entityOf(state, LEASE_ENTITY.id);
     await leaveTable({
       db: marco.db,
       uid: "p-marco",
@@ -654,10 +674,15 @@ describe("the stage gate — Marco's first turn on two clients", () => {
       campaignId: CAMPAIGN,
       encounterId: ENCOUNTER,
       entity: folded,
-      mechanics: LEASE_MECHANICS,
       leave: { id: "lease-leave", seq: { ms: 90_000, counter: 0, by: "p-marco" } },
-      sync: { id: "lease-sync", seq: { ms: 90_001, counter: 0, by: "p-marco" } },
-      personal: { kind: "encounter", encounter: null },
+      personal: {
+        kind: "document",
+        data: encodeLegacyWriteBack(
+          PREVIOUS_COMBAT_STATE,
+          folded,
+          Object.values(state.effects)
+        ),
+      },
     });
     await waitFor(
       () =>
@@ -668,22 +693,17 @@ describe("the stage gate — Marco's first turn on two clients", () => {
       "the leased PC to leave every client's fold"
     );
 
+    // The personal document is STILL the legacy `CombatState` the old sheet owns (D1): the
+    // write-back has no shape that could put an `Encounter` on this path, which is exactly the
+    // document `parseCombatState` would then refuse forever.
     const personal = await getDoc(personalEncounterRef(marco.db, "p-marco", CHARACTER));
-    const parsed = parseEncounter(personal.data());
-    if (!parsed.ok) {
-      throw new Error(`the personal aggregate did not parse: ${parsed.reason}`);
-    }
-    expect(parsed.encounter.host).toEqual({
-      kind: "personal",
-      uid: "p-marco",
-      characterId: CHARACTER,
+    const stored = personal.data();
+    expect(parseCombatState(stored).ok).toBe(true);
+    expect(parseEncounter(stored).ok).toBe(false);
+    expect(stored).toMatchObject({
+      hp: { current: folded.vitals.hp },
+      playState: PREVIOUS_COMBAT_STATE.playState,
     });
-    expect(parsed.encounter.log).toHaveLength(1);
-    const sync = firstOf(parsed.encounter.log);
-    if (sync.kind !== "table" || sync.table.op !== "sync") {
-      throw new Error(`expected a table:sync, got ${JSON.stringify(sync)}`);
-    }
-    expect(sync.table.entity).toEqual(folded);
 
     const character = await getDoc(
       doc(marco.db, "users", "p-marco", "characters", CHARACTER)
@@ -695,24 +715,11 @@ describe("the stage gate — Marco's first turn on two clients", () => {
    * Stage 6's write-back while D1 holds: the personal document is a LEGACY `CombatState`
    * carrying the character's whole play session, so leaving the table writes the projected
    * document over it — the fight's HP, temp HP, conditions and death saves, and not one field
-   * of `playState` lost. This whole variant dies with the old sheet at item 8.
+   * of `playState` lost. This whole shape dies with the old sheet at item 8.
    */
-  it("writes the fight's outcome onto a legacy CombatState document when the write-back is a document", async () => {
+  it("writes the fight's outcome, and the DM's last word, onto the legacy CombatState document", async () => {
     const marco = table.client("p-marco");
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(
-        doc(
-          ctx.firestore(),
-          "users",
-          "p-marco",
-          "characters",
-          CHARACTER,
-          "combat",
-          "state"
-        ),
-        PREVIOUS_COMBAT_STATE
-      );
-    });
+    await seedLegacyCombatState();
 
     // The DM's last word lands on the leased PC before it goes home, so the document under test
     // carries a number the fight produced rather than the one the join carried in.
@@ -732,11 +739,9 @@ describe("the stage gate — Marco's first turn on two clients", () => {
       campaignId: CAMPAIGN,
       encounterId: ENCOUNTER,
       entity: folded,
-      mechanics: LEASE_MECHANICS,
       leave: { id: "lease-leave", seq: { ms: 90_000, counter: 0, by: "p-marco" } },
-      sync: { id: "lease-sync", seq: { ms: 90_001, counter: 0, by: "p-marco" } },
       // The ONE sanctioned encoder — no cast, no hand-rolled payload: the type of
-      // `PersonalWriteBack.document.data` admits nothing else.
+      // `PersonalWriteBack.data` admits nothing else.
       personal: {
         kind: "document",
         data: encodeLegacyWriteBack(
