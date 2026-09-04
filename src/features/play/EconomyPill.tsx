@@ -79,6 +79,7 @@ export function EconomyPill({ entity, acting }: EconomyPillProps) {
 
       {pools.length > 0 ? (
         <div className="pl-slots" data-testid="pl-slots">
+          <PlayIcon id="i-spell-slot" />
           <PlayExplain
             term={t("play.explain.slots.abbr")}
             label={t("play.explain.slots.label")}

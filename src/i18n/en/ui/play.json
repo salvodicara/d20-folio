@@ -104,7 +104,8 @@
     },
     "target": {
       "hpAria": "{{name}}'s hit points",
-      "hpHidden": "hidden"
+      "hpHidden": "hidden",
+      "concentrating": "Concentrating"
     },
     "view": {
       "aria": "View",

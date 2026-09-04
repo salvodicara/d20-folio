@@ -69,12 +69,16 @@ function TileButton({
   reason,
   selected,
   onTile,
+  slot = "tile",
 }: {
   tile: HotbarTile;
   label: string;
   reason: string | null;
   selected: boolean;
   onTile: (tile: HotbarTile) => void;
+  /** The weapon set beside the portrait shows the SAME tiles as the bar; they are told apart
+   *  by where they are, so their test ids are too. */
+  slot?: "tile" | "weapon";
 }) {
   const { t } = useTranslation();
   return (
@@ -88,7 +92,7 @@ function TileButton({
         className="pl-tile"
         data-usable={tile.usable ? "true" : "false"}
         data-spell={tile.group === "spell" ? "true" : "false"}
-        data-testid={`pl-tile-${tile.key}`}
+        data-testid={`pl-${slot}-${tile.key}`}
         aria-pressed={selected}
         aria-label={label}
         onClick={() => onTile(tile)}
@@ -158,7 +162,13 @@ export function Hotbar(props: HotbarProps) {
           </div>
           {level === null ? null : <span className="pl-portrait__level">{level}</span>}
           <PlayTip label={t("play.hotbar.hp")} hint={t("play.hotbar.hpTip")}>
-            <button type="button" className="pl-portrait__hp" onClick={onHp}>
+            <button
+              type="button"
+              className="pl-portrait__hp"
+              onClick={onHp}
+              data-testid="pl-hp-pill"
+            >
+              <PlayIcon id="i-hit-points" />
               {entity.vitals.hp} / {entity.stats.maxHp}
               {entity.vitals.tempHp ? ` +${entity.vitals.tempHp.amount}` : ""}
             </button>
@@ -174,6 +184,7 @@ export function Hotbar(props: HotbarProps) {
                 reason={reasonOf(tile)}
                 selected={selectedTile === tile.key}
                 onTile={onTile}
+                slot="weapon"
               />
             ))}
           </div>

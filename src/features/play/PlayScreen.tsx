@@ -47,6 +47,7 @@ import { ToolRail } from "./ToolRail";
 import { ViewControls } from "./ViewControls";
 import { createPlayLabels } from "./labels";
 import {
+  CONDITION_ICON,
   DICE_MODE_KEY,
   initiativeOrder,
   readyForTurns,
@@ -472,14 +473,26 @@ export function PlayScreen(props: PlayScreenProps) {
             (effect) =>
               effect.target === selectedEntity.id && effect.payload.kind === "condition"
           )
-          .map((effect) => ({
-            id: effect.id,
-            label: t(
-              `play.condition.${
-                effect.payload.kind === "condition" ? effect.payload.condition : "prone"
-              }`
-            ),
-          })),
+          .map((effect) => {
+            const condition =
+              effect.payload.kind === "condition" ? effect.payload.condition : "prone";
+            return {
+              id: effect.id,
+              icon: CONDITION_ICON[condition],
+              label: t(`play.condition.${condition}`),
+            };
+          })
+          .concat(
+            selectedEntity.concentration === null
+              ? []
+              : [
+                  {
+                    id: "concentration",
+                    icon: "i-concentration",
+                    label: t("play.target.concentrating"),
+                  },
+                ]
+          ),
       }
     : null;
 

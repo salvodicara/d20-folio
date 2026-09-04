@@ -7,7 +7,7 @@
  * which order the DM's "begin turns" commits, whether the table is ready for it.
  */
 import type { EntityId } from "@/lib/combat/ids";
-import type { Entity, FoldedState } from "@/lib/combat/types";
+import type { ConditionId, Entity, FoldedState } from "@/lib/combat/types";
 import type { LogLine } from "@/lib/views/encounter-log-view";
 
 /** Where a person's dice mode lives until settings land at item 8 (design §2 D7). */
@@ -121,3 +121,28 @@ export function readyForTurns(state: FoldedState): boolean {
     seated.every((entity) => state.clock.initiative[entity.id] !== undefined)
   );
 }
+
+/**
+ * One glyph per condition (information code §4: shape AND colour, never colour alone).
+ *
+ * A condition chip that carried the same warning triangle for every condition would be a
+ * colour-only code with extra steps: the whole point of the medallion is that "prone" and
+ * "poisoned" are told apart at a glance, across the table, on a phone.
+ */
+export const CONDITION_ICON: Readonly<Record<ConditionId, string>> = {
+  blinded: "i-blinded",
+  charmed: "i-charmed",
+  deafened: "i-deafened",
+  exhaustion: "i-exhaustion",
+  frightened: "i-frightened",
+  grappled: "i-grappled",
+  incapacitated: "i-incapacitated",
+  invisible: "i-invisible",
+  paralyzed: "i-paralyzed",
+  petrified: "i-petrified",
+  poisoned: "i-poisoned",
+  prone: "i-prone",
+  restrained: "i-restrained",
+  stunned: "i-stunned",
+  unconscious: "i-unconscious",
+};

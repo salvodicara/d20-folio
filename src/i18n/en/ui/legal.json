@@ -17,7 +17,7 @@
       "appTerm": "d20 Folio source code",
       "appDesc": "The application itself, its code and its design, is released under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).",
       "iconsDesc": "Selected Game Icons glyphs are used under CC BY 3.0: Diamond Ring, Sickle, Bo, Wood Club, Flail, War Pick, Slingshot, Hatchet, 3D Hammer, Crowbar, Dice Six Faces Five, Lockpicks, Scroll Quill, Camping Tent, Spell Book, Backpack, Ribbon Medal, Warlock Eye, Lunar Wand, Spiked Dragon Head, Barbarian, Oak Leaf, and Checklist by Delapouite; Wizard Staff, Broadsword, Pocket Bow, Spiked Mace, Whip, Manacles, Breastplate, Compass, Potion Ball, Campfire, Open Book, Crossed Swords, Cut Diamond, Lyre, Prayer, Meditation, Winged Shield, Rogue, Magic Swirl, Anvil Impact, Music Spell, Heart Bottle, Bordered Shield, Heavy Lightning, Windy Stripes, On Target, and Dread Skull by Lorc; Crossbow by Carl Olsen; Musket by Skoll; and Pistol Gun by John Colburn. The simplified Spear glyph derives from SVG Repo's CC0 Spear.",
-      "iconsPlay": "The play screen draws its glyphs from one normalised sprite: 63 game glyphs from game-icons.net by Carl-olsen, Delapouite, Lorc, Sbed, Skoll and Willdabeast, used under CC BY 3.0; and 39 interface glyphs from Lucide, used under the ISC license. The five action-economy marks are our own."
+      "iconsPlay": "The play screen draws its glyphs from one normalised sprite: 37 game glyphs from game-icons.net by Carl-olsen, Delapouite, Lorc, Sbed, Skoll and Willdabeast, used under CC BY 3.0; and 20 interface glyphs from Lucide, used under the ISC license. The action-economy marks are our own."
     },
     "trademarks": {
       "heading": "Trademarks",

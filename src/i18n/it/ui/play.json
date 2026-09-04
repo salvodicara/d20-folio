@@ -104,7 +104,8 @@
     },
     "target": {
       "hpAria": "Punti ferita di {{name}}",
-      "hpHidden": "nascosti"
+      "hpHidden": "nascosti",
+      "concentrating": "Sta concentrando"
     },
     "view": {
       "aria": "Vista",

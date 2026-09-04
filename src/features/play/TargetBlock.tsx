@@ -20,7 +20,11 @@ export interface TargetView {
   readonly hp: number | null;
   readonly maxHp: number;
   readonly hpRatio: number;
-  readonly conditions: readonly { readonly id: string; readonly label: string }[];
+  readonly conditions: readonly {
+    readonly id: string;
+    readonly icon: string;
+    readonly label: string;
+  }[];
 }
 
 export interface TargetBlockProps {
@@ -50,6 +54,7 @@ export function TargetBlock({ target }: TargetBlockProps) {
           {target.ac === null ? null : (
             <>
               {" · "}
+              <PlayIcon id="i-armor-class" />{" "}
               <PlayExplain
                 term={t("play.explain.ac.abbr")}
                 label={t("play.explain.ac.label")}
@@ -80,7 +85,7 @@ export function TargetBlock({ target }: TargetBlockProps) {
           {target.conditions.map((condition) => (
             <span key={condition.id} className="pl-chip">
               <i>
-                <PlayIcon id="i-circle-alert" />
+                <PlayIcon id={condition.icon} />
               </i>
               {condition.label}
             </span>
