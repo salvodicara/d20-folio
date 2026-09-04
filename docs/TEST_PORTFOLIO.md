@@ -76,6 +76,11 @@ Every deletion names the representation it died with (golden rule 10). Reset of 
 | the e2e-helper key drift case of `content-pack/tests/unit/chronicle-dev-fixture.test.ts` (pack `v2`)                                                                                    | `tests/e2e/ready.ts`                                                                    |
 | the CLI cases of `tests/unit/migration-kit.test.ts`                                                                                                                                     | the kit's apply path and CLI (`runGuardedMigration`, `parseCliOptions`), unread on `v2` |
 
+The legacy `campaign-io` unit suites (the turn pointer of `advanceEncounterTurn`, the effect ops,
+the peer combat effects) prove writes the reduced `firestore.rules` now DENY: they are pinned
+behaviour of code that dies with the old hub at stage 6, not live coverage of what production
+allows. Read their counts that way.
+
 Still to die, with their representations: the 36 root and 3 pack test files that import the
 mechanics kernel (stage 6, with the kernel and the old play surfaces), `automation-corpus`/`automation-compiler` and the coverage
 guards (stage 3, with the derived coverage), the render tests of the old surfaces (as each new

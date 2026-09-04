@@ -419,10 +419,38 @@ needed exactly one fix round and closed clean at round 1.
   gates had missed since tasks 5/6: `dice-randomness.guard` did not know `src/lib/combat-io.ts` is
   a legitimate id source, and `pure-modules-guard` saw `tests/unit/combat-lease.test.ts` pull
   Firebase in transitively.
+- **The whole-branch review** (976807f → 32a447a, after task 9) returned no Critical finding and
+  three Important ones, all fixed in the final wave: (1) the codec's binding ceiling is
+  `exact-schema`'s 50,000-node `MAX_VALUES` over the log and the checkpoint together, not the
+  2,048-entry collection cap, so the rules' 2,000-entry log cap could admit a document that
+  quarantines on every client — and `checkpointEncounter` refuses to rewrite a quarantined
+  document, so compaction, the only repair, is what stops working (the cap is now 1,000);
+  (2) `checkpointThrough` measured the grace window off `newest.seq.ms`, a client-asserted wall
+  clock, so one member's fast device could collapse the window and let the next checkpoint swallow
+  appends other clients had queued (it now takes a required `nowMs` and uses
+  `min(newest.seq.ms, nowMs)`); (3) `personalEncounterRef` aliases the live `CombatState` document
+  of every existing character, and `leaveTable`'s `personal: null` contract did not say that a
+  document which failed to parse is NOT `null` (both are now stated at the seam). The same wave
+  took six Minors: the `fold.ts` cross-reference to the checkpoint's undo horizon, the corrected
+  `Seq` comments, sorted `subscribersFor`/`dueAt` outputs, `isSelfJoin()` pinning the banner, the
+  first `validEncounterShape` tests, and the adapters' import guard.
 
 **Rulings during execution.** Decisions taken by the controller while the plan ran, each with the
-reason it outranked the plan text:
+reason it outranked the plan text. The first three are the plan's own decisions 2, 9 and 3,
+recorded here by name because nothing else in this section carries them:
 
+- **Hidden faces stay in the shared log, concealed by presenters** (plan decision 2). ADR-0010
+  alternative 2 (a DM-private document) was rejected because the fold would diverge; the owner
+  ratified "written in the log, not shown to players" on 2026-09-03. Stage 4 keeps the faces in
+  the document and restates the accepted risk: a member who reads the raw document sees them,
+  like forged actions. The codec stores `hidden` verbatim; nothing else changes.
+- **The `checkpoint` action kind of §3.1 is not built** (plan decision 9). The checkpoint is the
+  document field `Encounter.checkpoint` the fold already consumes; a log-level marker would carry
+  the same `through` twice. §3.1 is reconciled.
+- **An override that revives emits nothing** (plan decision 3's other half). An HP override to 0
+  runs `deliverDamage`'s tail — the `hp-zero` event and the concentration effect ended — but no
+  `damage-taken` event and no concentration check, because no damage was taken; and an override
+  that lifts a creature back above 0 emits no event at all.
 - The plan was executed **autonomously** under the owner-approved handoff scope; owner-facing
   questions were deferred to the closing message rather than blocking a task. Cost if wrong:
   rework the owner can see.
@@ -470,6 +498,17 @@ legacy embedded encounter keeps an orphan `pc-<uid>` combatant row after `remove
 stage 6, because the field is deliberately un-writable. Closed by this commit: the task-6 note
 that `docs/CHARACTER_SCHEMA.md` described the lease without reconciling the spec's old `attached`
 name, and stage 3's note that the stage-2 and stage-3 sections ended with the same `Next` line.
+
+The whole-branch review's final wave deliberately did **not** take these, which stay open for
+stage 5/6: `rollsUsable`'s per-target relaxation keying off any colon — **rejected**, not
+deferred, because an area intent carries an EMPTY `targets` (the derived membership is the target
+list), so `action.targets.includes(perTarget)` would reject Marco's Fireball saves; the lease
+write against a **shared** character is still untested on the emulator (the gate seeds an
+owner-only parent, so `joinTable`'s `batch.update(characterRef, { lease })` is never exercised
+against `publicSheetMatchesAfter()`, and it passes by inspection only); `override.ts`'s duplicated
+`rejected` helper; the `runSteps` split; `resolve.table.test.ts`'s missing sync-receipt and
+`leave` `effect-ended` assertions; the duplicated `freezeDeep`; and the §8 codec round-trip
+property test.
 
 **Gates on `v2` at the close** (run sequentially from the `v2` worktree — they share `dist/` and
 the emulator port — all green): `just ci` 4 min 41 s (831 files / 18,787 tests, Functions 7 files

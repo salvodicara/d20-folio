@@ -99,6 +99,11 @@ Bring the owner a recommendation with the trade-off in one paragraph, not the qu
   `users/{uid}/characters/{id}/combat/state` to the personal `Encounter` aggregate belongs to
   stage 6, together with the old cockpit that reads it, under the snapshot → dry-run → idempotent
   apply → verify protocol. Stage 5 must not start it as a side effect of needing positions.
+- **`personalEncounterRef` aliases a LIVE document, and `personal: null` means "it does not
+  exist".** `users/{uid}/characters/{id}/combat/state` is the `CombatState` today's cockpit owns,
+  so a read that fails to parse has found a legacy document, never a missing one — a caller must
+  never pass `null` for it to `leaveTable`, which would `set` an `Encounter` over a live play
+  session; that conversion is the stage-6 cutover under the migration protocol.
 - **The old campaign hub's encounter writers are rule-denied and still present.** They die at
   stage 6 with the surfaces that host them. Do not repair them; do not build the map on top of
   them.

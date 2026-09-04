@@ -461,6 +461,13 @@ encounter, writes the entity back into its personal aggregate as a `table:sync` 
 `lease`. An offline owner simply syncs later; nobody else ever writes the owner's documents. A DM acting on
 an offline PC appends to the encounter log; the PC's owner folds it on reconnect (§7 hard cases).
 
+The personal write-back is `table:sync`'s only intended use, but the fold accepts a `table:sync`
+in ANY host — `FoldedState` carries no `host`, so the reducer cannot tell a campaign encounter
+from a personal one — and it is an unconditional whole-entity upsert. That is deliberate under the
+forged-action threat model of §5.4: a member who can append at all can already append anything the
+rules do not shape, and the fence is the roster, not the action kind. It is also why the op cannot
+be narrowed later without a signature change.
+
 ### 5.3 Write mechanics and cost
 
 **Built in stage 4** as `src/lib/combat-io.ts` (the adapter) and `src/lib/combat/checkpoint.ts`
