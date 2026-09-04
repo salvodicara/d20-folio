@@ -1,0 +1,122 @@
+/* The map's own tokens (stage 5). Derived from the approved v8 system: gold for allies, red for
+   enemies, cyan for the acting creature (UI spec rule 33), a dark fog. Light theme keeps the same
+   hues; only the label halo and the pill ground flip. */
+:root {
+  --map-ring-ally: var(--gold-leaf-300);
+  --map-ring-enemy: #d9534f;
+  --map-ring-turn: #4fd1e0;
+  --map-grid: rgba(212, 172, 77, 0.22);
+  --map-ground: #2a2620;
+  --map-fog: #0b0a09;
+  --map-reveal-preview: #f5e6b8;
+  --map-token-fill: #4a3f33;
+  --map-token-ink: #f5e6b8;
+  --map-hp-track: rgba(0, 0, 0, 0.55);
+  --map-hp-ally: #3ec9a7;
+  --map-hp-enemy: #d9534f;
+  --map-label-ink: #f3ead6;
+  --map-label-muted: #c9bda3;
+  --map-label-halo: rgba(0, 0, 0, 0.75);
+  --map-ruler-ok: #4fd1e0;
+  --map-ruler-dash: var(--gold-leaf-300);
+  --map-ruler-over: #d9534f;
+  --map-pill-bg: rgba(14, 12, 10, 0.92);
+  --map-pill-ink: #f3ead6;
+}
+
+[data-theme="light"] {
+  --map-grid: rgba(74, 56, 12, 0.25);
+  --map-ground: #d9d1bf;
+  --map-label-ink: #f3ead6;
+  --map-label-halo: rgba(20, 16, 10, 0.85);
+}
+
+.map-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  user-select: none;
+  background: var(--bg-recessed);
+}
+
+.map-canvas[data-tool="pan"] {
+  cursor: grab;
+}
+
+.map-canvas[data-tool="fog-reveal"],
+.map-canvas[data-tool="fog-hide"] {
+  cursor: crosshair;
+}
+
+.map-token:focus-visible circle:last-of-type {
+  stroke: var(--map-ring-turn);
+}
+
+.map-token-control {
+  font: inherit;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-accent);
+  background: var(--bg-surface-2);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+/* The DEV harness chrome (`/_map`), not a product surface. */
+.map-dev {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+  background: var(--bg-page);
+  color: var(--color-text-primary);
+}
+
+.map-dev__strip {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--bg-surface-1);
+  font-size: 13px;
+}
+
+.map-dev__strip button {
+  font: inherit;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-medium);
+  background: var(--bg-surface-2);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.map-dev__strip button.is-active {
+  border-color: var(--border-accent);
+  background: var(--bg-surface-3);
+  color: var(--accent-primary-bright);
+}
+
+.map-dev__strip label {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--color-text-secondary);
+}
+
+.map-dev__spacer {
+  flex: 1;
+}
+
+.map-scale-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-accent);
+  font-family: var(--font-numeric);
+  color: var(--accent-primary-bright);
+}
+
+.map-dev__canvas {
+  min-height: 0;
+}

@@ -1,0 +1,43 @@
+{
+  "map": {
+    "aria": {
+      "canvas": "Battle map",
+      "token": "{{name}}",
+      "tokenHidden": "{{name}} (hidden from players)"
+    },
+    "token": {
+      "hidden": "hidden",
+      "hide": "Hide from players",
+      "show": "Show to players",
+      "hideTip": "A hidden token is seen by the DM and its owner only; players do not see it on the map or in the initiative."
+    },
+    "ruler": {
+      "label_one": "{{metres}} m · {{count}} square",
+      "label_other": "{{metres}} m · {{count}} squares"
+    },
+    "tool": {
+      "select": "Select",
+      "selectTip": "Select and drag tokens. Drop within your movement to move; the DM can place anywhere.",
+      "pan": "Pan",
+      "panTip": "Drag the map. Wheel to zoom, double-click to fit.",
+      "fogReveal": "Reveal",
+      "fogRevealTip": "Draw a rectangle to reveal it to the players.",
+      "fogHide": "Hide",
+      "fogHideTip": "Draw a rectangle to cover it again."
+    },
+    "fog": {
+      "coverAll": "Cover all",
+      "coverAllTip": "Covers the whole map again; players see only their own tokens. Undoable.",
+      "off": "Fog off",
+      "offTip": "Removes the fog: the players see the whole map."
+    },
+    "view": {
+      "player": "Player view",
+      "playerTip": "See the map as the players see it: no hidden tokens, fog fully opaque."
+    },
+    "scale": {
+      "badge": "5 ft · square",
+      "tip": "Each square is 5 feet; distance counts every step the same, diagonals included (D&D 2024)."
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "map": {
+    "aria": {
+      "canvas": "Mappa di battaglia",
+      "token": "{{name}}",
+      "tokenHidden": "{{name}} (nascosto ai giocatori)"
+    },
+    "token": {
+      "hidden": "nascosto",
+      "hide": "Nascondi ai giocatori",
+      "show": "Mostra ai giocatori",
+      "hideTip": "Una pedina nascosta la vedono solo il DM e chi la controlla; i giocatori non la vedono né sulla mappa né nell'iniziativa."
+    },
+    "ruler": {
+      "label_one": "{{metres}} m · {{count}} casella",
+      "label_other": "{{metres}} m · {{count}} caselle"
+    },
+    "tool": {
+      "select": "Seleziona",
+      "selectTip": "Seleziona e trascina le pedine. Lascia entro il tuo movimento per muoverti; il DM può piazzare ovunque.",
+      "pan": "Trascina",
+      "panTip": "Trascina la mappa. Rotella per lo zoom, doppio clic per centrare.",
+      "fogReveal": "Scopri",
+      "fogRevealTip": "Disegna un rettangolo per scoprirlo ai giocatori.",
+      "fogHide": "Copri",
+      "fogHideTip": "Disegna un rettangolo per coprirlo di nuovo."
+    },
+    "fog": {
+      "coverAll": "Copri tutto",
+      "coverAllTip": "Ricopre l'intera mappa; i giocatori vedono solo le proprie pedine. Annullabile.",
+      "off": "Senza nebbia",
+      "offTip": "Toglie la nebbia: i giocatori vedono tutta la mappa."
+    },
+    "view": {
+      "player": "Vista giocatori",
+      "playerTip": "Guarda la mappa come la vedono i giocatori: niente pedine nascoste, nebbia piena."
+    },
+    "scale": {
+      "badge": "1,5 m · casella",
+      "tip": "Ogni casella vale 1,5 metri; la distanza conta ogni passo allo stesso modo, diagonali comprese (D&D 2024)."
+    }
+  }
+}
