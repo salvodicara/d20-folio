@@ -418,6 +418,8 @@ export interface Encounter {
     | { readonly kind: "campaign"; readonly campaignId: string };
   readonly log: readonly Action[];
   readonly checkpoint: { readonly through: Seq; readonly state: FoldedState } | null;
+  /** Top-level document keys this build does not know, preserved verbatim (design §5.5). */
+  readonly unknown?: Readonly<Record<string, unknown>>;
 }
 
 export type Rejection =
