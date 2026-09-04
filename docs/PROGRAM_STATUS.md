@@ -17,8 +17,9 @@ portfolio (`docs/TEST_PORTFOLIO.md`); those owners are linked, never copied. Pro
   `/Users/salvatoredicara/Workspace/d20-folio-content-v2`, forked from its `main` `5a428960`);
   this worktree's `content-pack` symlink points at it. Rule 28: every pack seam moves on both `v2`
   branches in the same motion.
-- Next session: `docs/superpowers/plans/2026-09-04-v2-next-session-handoff.md` (stage 5, the
-  minimum map).
+- Next session: the owner's screenshot verdict on `v2-stage6-play-surface` (stage 5's map and
+  stage 6's play chrome, one verdict), then task 4's integration;
+  `docs/superpowers/plans/2026-09-04-v2-stage-6-play-surface.md`.
 
 ## Pending on `main`
 
@@ -669,10 +670,221 @@ Firestore. `storage.rules` did, and the staging project has NO Storage bucket
 Firebase Storage default buckets on projects created after October 2024 need the Blaze plan. The
 map plays on the emulator (`pnpm dev:emulators`) until the owner links a billing account to
 `d20-folio-staging` with a £1 budget alert like production; then
-`firebase deploy --only storage -P staging`. Production is untouched.
+`firebase deploy --only storage -P staging`. Production is untouched. **Done in stage 6** — see
+its Staging paragraph below: the plan is linked, the bucket exists and both rule sets are
+deployed.
 
-Next: the surface's screenshot verdict, then stage 6 (one play surface), from
-`docs/superpowers/plans/2026-09-04-v2-next-session-handoff.md`.
+Next: the surface's screenshot verdict — which stage 6 folded into its own proposal branch, so the
+map and the play chrome are one verdict — then stage 6, closed below.
+
+## `v2` — stage 6, one play surface (2026-09-04)
+
+Plan: `docs/superpowers/plans/2026-09-04-v2-stage-6-play-surface.md` (5 tasks; 1 executed in this
+worktree, 2 and 3 in their own worktrees off `v2`, 4 on the proposal branch, 5 this
+reconciliation). Design: `docs/superpowers/specs/2026-09-04-v2-stage-6-play-surface-design.md`,
+reconciled in the same motion into the target spec (§2.1, §2.2, §3.1, §4, §5.2, §5.3), the
+authoring spec (§6), `docs/ARCHITECTURE.md`, `docs/MECHANICS.md`, `docs/CHARACTER_SCHEMA.md`,
+`docs/TEST_PORTFOLIO.md` and the stage-1 plan. Tasks 1–3 reached `v2` at `5519c5b9` (30 commits
+since `39212349`); the whole-branch review's cross-task fix wave lands on top of that before the
+push, so the integrated head is later than the range this section names.
+
+**Done (integrated on `v2`).** Everything a client needs to play the table, and nothing the owner
+has not yet seen.
+
+- **Task 1 — every executable mechanic rides the log.** `add-entity`, `join` and `sync` each carry
+  `mechanics: readonly Mechanic[]` (required, `[]` for an entity with nothing of its own); the
+  fold conforms each definition and rejects the WHOLE op if any is malformed, keeps them in
+  `FoldedState.mechanics`, and `programOf` reads the state first and the static catalogue second.
+  `sync` replaces an entity's set and `remove-entity` / `leave` / `sync` drop an id no other
+  seated entity still lists (two ogres share one definition). The static catalogue shrinks to
+  `core:*` (`src/data/combat/core-catalogue.ts`): `core:move`, the new `core:dash` — a `dash` step
+  adding the entity's speed to `TurnLedger.movementExtra`, so the budget, the ruler and the drop
+  policy follow a Dash for free — and `core:dodge` / `core:disengage` / `core:help` / `core:hide`
+  as `manual-table`, because advantage, disadvantage and stealth are not in the stage-3
+  vocabulary. The codec gained a closed-world `mechanicSchema` mirroring the authoring vocabulary
+  field for field, and `conformMechanic` now runs it FIRST, so the codec and the fold share ONE
+  structural vocabulary. `compact` prunes the checkpoint's roll RECORDS.
+- **Task 2 — projections and the PC mechanics adapter.** `projectMonster`
+  (`src/lib/combat/monster-entity.ts`, inside the kernel, pure over a stat block: AC, average HP,
+  speed, PB from CR, saves with overrides, typed defenses, condition immunities, hidden block and
+  HP but a visible token) and `projectCharacter` (`src/lib/combat-projection.ts`, deliberately
+  OUTSIDE the kernel so it never imports the sheet's engine, pinned by the boundary guard). The
+  adapter emits one mechanic per `resolveActions(doc, "combat")` row with the sheet's own numbers
+  fixed at projection; what the tier cannot express degrades to `manual-table`, which still spends
+  the economy and reaches the log. `SrdSpellData.areaShape` types the printed area of every
+  damage-dealing SRD area spell whose shape is one of the five, with a guard test and the private
+  twin in the same motion (rule 28). Two pure helpers moved down out of `lib/views`
+  (`src/lib/defense-sets.ts`, `mergeSaveProficiencies` into `compute.ts`) rather than forking the
+  sheet's formulas.
+- **Task 3 — the client.** `src/features/play/table/`: the table store over
+  `campaigns/{campaignId}/encounters/live` (fold memoised on a fingerprint of the log and the
+  checkpoint so a pending-only snapshot re-uses the same object; `dispatch` stamps `id`/`seq`/`by`;
+  the DM's client alone compacts, single-flight; `connect()` opens the one listener and returns its
+  teardown), the tile's three pure builders (`planIntent` — which also picks the slot pool from
+  the entity's resources and plans a damage die only for a step that can actually run, so a
+  versatile swing rolls one — `rollsFor` through the dice seam and `intentBody`), `leaveTable`'s
+  `document` write-back for the legacy `combat/state`, now its ONLY shape, and the log
+  presenter `src/lib/views/encounter-log-view.ts` over a new `play` i18n shard in EN and IT. No
+  reducer rule was re-implemented client-side: `preflightIntent`, `riderAnswers`,
+  `isPerTargetAnswer` and `answerKeyFor` were EXTRACTED from the reducer and are shared, which is
+  why the 888 pre-existing kernel tests passed unchanged through both edits.
+- **Not integrated: task 4, the screen.** It is built on the proposal branch
+  `v2-stage6-play-surface` (`origin/v2-stage5-map-surface` rebased onto `v2` at `5519c5b9`), so
+  the owner gives ONE screenshot verdict on the map and the play chrome together.
+
+**Review.** Each task got an independent review of its own diff, and each needed one fix round:
+task 1 four Important and five Minor, task 2 two Critical and four Important, task 3 three
+Important and seven Minor. All were closed in a single round each and re-reviewed clean. The two
+Criticals are worth naming because both were silent-wrong-number defects a type could not catch:
+the Pact Magic pool was read under the wrong session key (a Warlock would have seated phantom
+slots), and every projected save step hard-coded the caster's primary DC (a multiclass caster's
+second class and a feat-granted cantrip both print a different one; on a character with no
+spellcasting DC the symbolic value would have resolved to 0 and auto-succeeded every target).
+
+A **whole-branch review** (the most capable model, read-only over the full 30-commit diff, the
+ledger, the six task reviews and the head of every seam) then found what a task-scoped review
+structurally cannot: **four Important CROSS-TASK seam defects**, where task 2's projected data and
+task 3's client planner disagreed. Two made ordinary casts impossible — a Pact Magic caster's slot
+pool was never chosen, and a slot cost was upcastable only when the spell's dice scale, so any
+caster paying with a higher slot was refused before a die was rolled. One was a live-data hazard:
+the write-back's unused `encounter` variant could have written an `Encounter` over a real
+character's `combat/state`, which `parseCombatState` would then refuse forever. The fourth was
+visible on every swing — a versatile weapon planned two damage rolls, one of which was never read,
+was still marked spent and still appeared in the shared log. All four were closed in ONE fix wave
+before the push, and each is now recorded on the seam it belongs to (design D4, §4 and §5; target
+spec §5.2). The review's own minor finding is in the deferred list below; it confirmed the fold's
+determinism across builds and across the checkpoint boundary, that the rules files are untouched,
+and that no client write in the range reaches another user's document.
+
+**Rulings during execution.**
+
+- **Tasks 1–3 integrate on `v2`; the surface waits.** With no verdict yet on the stage-5 map
+  surface, the non-visual half of stage 6 goes onto `v2` behind review and gates while task 4 goes
+  to a proposal branch built on the map's, so the owner sees map and chrome as one screen (rule
+  25). Cost if wrong: a rebase of the proposal branch.
+- **One writer per worktree.** Task 1 ran in the `v2` worktree itself; tasks 2 and 3 got their own
+  worktrees off `v2` once it landed, and were rebased back in that order. The hazard the stage
+  found: all worktrees share ONE content-pack checkout through the symlink, so task 2's pack-side
+  test made full-mode typecheck red in the other trees until its public half landed — transient
+  by construction, and a reason to read a gate result knowing which worktrees are live.
+- **A carried definition may never use the `core:` namespace.** `state.mechanics` shadows the
+  static catalogue completely, so a projection emitting `core:*` could silently disable an
+  ordinary action for that entity. Carried by both projections.
+- **A roll stays consumed across a checkpoint.** Compaction prunes the roll RECORD and keeps the
+  `spent` verdict, and `rollsUsable` consults `spent` before the record — otherwise an offline
+  client's re-sent intent would be accepted after the checkpoint and rejected before it, and two
+  clients would diverge on one log. Cost: about four nodes per settled roll, forever.
+- **One structural vocabulary, not two.** `conformMechanic` runs the codec's `mechanicSchema`
+  first; the hand-rolled structural pass it used to carry was a weaker duplicate that could accept
+  what the codec would quarantine. Cost: a codec import inside the conform path (both pure), and a
+  structural rejection that no longer carries a JSON path.
+- **The node budget is accepted, with its number recorded.** A six-PC party seated and
+  checkpointed alongside 1,000 intents measures 44,032 of the codec's 50,000 nodes. It fits, and
+  compaction fires at 200 actions, so the realistic document is far smaller; the dominant term is
+  the rules' 1,000-entry log cap, not the mechanics. "Compact on node count, or lower the log cap"
+  is recorded as the remedy if either half grows.
+- **The lease's write-back payload is branded.** `PersonalWriteBack`'s `document` variant carries a
+  value only `encodeLegacyWriteBack` can mint, so a hand-rolled object that skipped the play-state
+  encoder — on a write that replaces the whole document — is a compile error. Cost: one module
+  move.
+- **Coverage stays catalogue-only in the kernel**; the projection builds a temporary catalogue from
+  what it emitted to report the per-character split, rather than the kernel gaining a second entry
+  point.
+- **The projected numbers are the sheet's printed numbers.** The row's own save DC as a number
+  (the symbolic caster DC only when they are equal), the reducer's own slot keys `slot-<n>` /
+  `pact-<n>` through `slotUsageKey`, the weapon's structured range for melee versus ranged, and a
+  row that promises more than the vocabulary expresses degrading whole — never half-built. A
+  versatile weapon is the one shape expressed rather than degraded: a grip choice with the
+  one-handed step ungated, so an unanswered swing is still correct.
+- **`MonsterSeat.ordinal` dropped**, unread: the caller mints the id and the label from it.
+- **Every projected slot cost is upcastable, and the planner picks the pool.** The SRD lets any
+  spell be cast from a higher slot; a projected programme's numbers are fixed, so the cast level
+  feeds only provenance. Gating `upcast` on "does the damage scale" refused ordinary play, and a
+  Pact Magic pool — one level, always — refused it hardest. The slot pool is chosen from the
+  entity's own resources rather than by every caller of every tile: one home, and the reducer
+  still judges the payment.
+- **The lease's `encounter` write-back variant is deleted, not deprecated.** Nothing calls it,
+  D1 forbids what it does, and the personal ref aliases the live `CombatState` — so keeping it
+  would leave one mistaken argument between a live character and a permanently unreadable
+  document. It returns at item 8 with the sheet (rule 10; the owner's "no dead weight").
+- The plan ran **autonomously** under the owner's standing `v2` mandate; owner-facing questions
+  (the staging sign-in provider, the screenshot verdict) go to the closing message.
+- Process, recorded: a reviewer wrote a temporary probe test inside an implementer's worktree and
+  aborted one of its gate runs. Reviewers are read-only; a gate result taken while a tree is being
+  written to is not evidence.
+
+**Deferred, with the measurement.**
+
+- **Budget and diagnostics (task 1).** `spent` is monotonic for an encounter's lifetime (about one
+  node per settled roll against the ~12 % headroom the ceiling test measures), which is the second
+  half of the "compact on node count" deferral. A structural mechanic rejection reports
+  `invalid-mechanic-shape` with an empty path; re-conforming one program at a time would localise
+  it, at the cost of a second conformance pass.
+- **Vocabulary and data (task 2).** Recharge is still typed as an ordinary recovery rule rather
+  than a cost; defense casts are unchecked; a projected item action's instance-bound resource
+  payment does not become a cost, so those rows adjudicate; two label namespaces now coexist (the
+  monster's block-scoped keys and the character's `srd:` / `ui:` / `custom:` / `action:`
+  references) and the DM drawer must resolve both; the spellcasting DC and attack bonus are
+  assembled a third time from the same shared seams, where one exported helper is the real fix.
+  The measurement that matters: a wizard fixture automates 2 of 25 steps, because nearly all of
+  its damage spells name a target shape or establish a standing state — the vocabulary needs a
+  grant-bearing effect start and a target spec richer than one-or-area before the group's wizard
+  plays automated.
+- **Surface wiring (tasks 2 and 3).** The versatile grip needs chrome i18n keys and a tile choice
+  in task 4, or every versatile swing silently takes the one-handed default; `join` and `leave`
+  are task 4's to wire; exhaustion is not projected back by the write-back, and the decision
+  belongs in that module's header.
+- **Client refinements (task 3), all minor:** export the fold fingerprint for the presenter's own
+  memo; a dead re-test in the skip set; `undoneIds` duplicated from the fold; a `connect()`
+  teardown shared across owners; the roll context's author versus the store's stamp; a synthetic
+  action id for engine-consequence lines. Two guard tightenings are recorded rather than done: the
+  boundary guard's type-only allowlist should forbid a VALUE import of the same specifier, and the
+  emulator's shape assertion must stay paired with the strict re-parse.
+- **Reducer totality (whole-branch review).** `removeEntity` prunes an entity's effects, relations
+  and place in the order, but not `checks`, `windows` or `declared`: a later `check` for the
+  departed entity, or a `resolve` whose declared target has gone, would reach `mustEntity` and
+  THROW — a fold exception on every client, which `checkpointEncounter` cannot repair.
+  Unreachable with the projected vocabulary, and that is the measurement: projected programmes
+  open no reaction windows and establish no concentration, so neither a window nor a check for a
+  removed entity can exist today. Prune the three in `removeEntity` when the vocabulary grows an
+  `effect-start` or an event trigger. Recorded alongside it, as the shape the surface now relies
+  on: `planIntent` plans a `dice` input only when a step that reads it can run (no gate, or a gate
+  of answer predicates that holds), which is what keeps a versatile weapon to one damage die.
+- **Carried forward unchanged** from stage 5: `override.ts`'s duplicated `rejected` helper, the
+  `runSteps` split, the missing sync-receipt and `leave` assertions, the duplicated `freezeDeep`,
+  `checkpointThrough`'s single-client liveness cliff, the adapters' import-guard regex scope, and
+  the lease write against a shared character untested on the emulator.
+
+**Staging.** The stage-5 blocker is cleared. The owner's billing account is linked to
+`d20-folio-staging` (Blaze); the default bucket `d20-folio-staging.firebasestorage.app` exists in
+`europe-west1`, created through the Firebase Storage API because `gcloud` cannot create a bucket
+with that name; a £1 budget with 50 % and 100 % alerts mirrors production's; and
+`firebase deploy --only firestore:rules,storage -P staging` released both rule sets. Identity
+Platform is initialised, but the Google sign-in provider needs an OAuth client only the console
+creates (the API refuses with an empty client id). **Owner action pending:** Firebase console →
+`d20-folio-staging` → Authentication → Sign-in method → Google → Enable → Save. Production was
+never touched.
+
+**Gates on `v2` at the close.** Gates: filled by the controller.
+
+**What the gate proves, exactly.** The table folds identically on every client from the log alone:
+carried mechanics resolved with no local catalogue, the compaction property (fold unchanged by
+pruning, on a generator of tables that actually apply), the six-PC node ceiling as a number, a
+character projected and folded end to end through a generated replay, and — on the emulator — the
+lease's write-back landing on a real `combat/state` that the app's own strict reader still
+accepts. It does **not** prove a screen: no play surface is integrated on `v2`, the component and
+screenshot lanes of design §6 belong to task 4, and the surface is proved by the owner's eyes
+(rule 25), not by a test.
+
+**Out of stage 6.** Everything design §7 lists — solo play and the personal `Encounter` (item 8,
+with the sheet), `propose-and-confirm`, scenes and the drawing/pointer/text/layer tools, structured
+Multiattack, Recharge and Legendary Actions, token footprints (`Entity` still carries no size),
+monster token portraits beyond the tinted initial, the phone second screen, the old surfaces'
+deletion (stage 7), `memberDetails[uid].character` / `.role` — plus the surface's own integration,
+which happens after the owner's screenshot verdict and not before.
+
+Next: the owner's screenshot verdict on `v2-stage6-play-surface` (map and play chrome together),
+the whole-branch review's findings, then stage 7's cuts.
 
 ## Owner confirmations, recorded ahead of their stage (2026-09-03)
 
@@ -719,3 +931,11 @@ and the pack twin `d20-folio-content-v2`; neither is a candidate. The other work
 wt-list` shows (`Codex/*` program-control and Codex task trees, `d20-folio-tactical-codex-design-lab`,
 `combat-p1-data-safety-*`) belong to `main`-era programs and are owned by `main`'s copy of this
 ledger; `v2` neither uses nor removes them.
+
+Stage 6's two task worktrees, `v2-stage6-t2-projections` and `v2-stage6-t3-client`, ARE
+candidates: both were rebased onto `v2` and fast-forwarded, so their branches hold nothing `v2`
+does not. The controller removes them — worktree and branch — once the whole-branch review's fix
+wave is integrated and the gates are green on the pushed head, and not before: a worktree whose
+work has not yet survived review is the cheapest place to fix it. The stage-6 surface worktree
+`v2-stage6-t4-surface` and its branch `v2-stage6-play-surface` are NOT candidates; they hold the
+unintegrated surface and live until the owner's screenshot verdict.

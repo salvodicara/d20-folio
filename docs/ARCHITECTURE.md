@@ -71,7 +71,12 @@ dependency rules is under **Architecture invariants** below.)
    (`srdId`). Session defenses (`sessionDefenses`) are the play-time defense overlay (resistances /
    immunities / vulnerabilities / condition immunities gained DURING play, layered additively over the
    build's permanent sets via `deriveDefenseKind`, added/removed in the rail without edit mode —
-   Constitution §2.8).
+   Constitution §2.8). `deriveDefenseKind` and its `applySetOverride` seam live in the pure
+   `src/lib/defense-sets.ts` (moved down out of `lib/views/sheet-view.ts` on `v2`, stage 6, so the
+   combat projection could reuse the sheet's formula instead of forking it: engine-core outside
+   `lib/views` may not import `lib/views`, and the guard's own remedy is to move the shared code
+   down). `sheet-view.ts` keeps `deriveDamageDefenses`, the localized intake bundle, and imports
+   from there.
 
 3. **Aggregated view** (`AggregatedGrants`) — computed by `evaluateGrants(sources)`; the shared input to
    the sheet renderers. Never persisted; recomputed every render.
@@ -2511,6 +2516,55 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
   `MapBackground` reference the `map` table op carries, usage is summed from Storage metadata
   against a 100 MiB per-campaign courtesy quota, delete is idempotent. Client-side compression is
   the pure `src/lib/image-compress.ts` (shared with portraits and banners).
+
+- **The play surface's client (`v2`, stage 6) — one live table per campaign, seated by
+  projections, read as prose.** The campaign's table is the single document
+  `campaigns/{campaignId}/encounters/live` (`LIVE_ENCOUNTER_ID` / `liveTableRef` in
+  `src/features/play/table/table-store.ts`): no pointer field on the campaign document (its fields
+  are enumerated by the rules, and a pointer would be a second listener) and no encounter list —
+  `start` begins a fight with a new epoch, `end` ends it, compaction keeps the document small.
+  - **The store** (`table-store.ts`, vanilla Zustand, one per mounted screen) memoises the fold on
+    a fingerprint of the log's ids and stamps plus the checkpoint's `through`, so the second
+    snapshot of a local append — the one where only `pending` flipped — reuses the same
+    `FoldResult` object; `dispatch(body)` stamps `id`/`seq`/`by` and appends; the DM's client
+    alone attempts compaction, single-flight, on settled snapshots. `TableState.connect()` opens
+    the one listener and RETURNS its teardown (subscribing on creation made a StrictMode remount
+    unrecoverable). The store imports Firestore TYPES only; `use-table.ts` is the single file that
+    binds the app's singletons.
+  - **The tile's builders** (`dispatch.ts`) are pure: `planIntent` (which inputs this tile needs,
+    or the reducer's own rejection — so no roll is spent to learn a tile is illegal), `rollsFor`
+    (through `src/lib/dice.ts`, the one randomness seam) and `intentBody`. They re-implement no
+    reducer rule: `preflightIntent`, `riderAnswers`, `isPerTargetAnswer` and `answerKeyFor` were
+    EXTRACTED from `src/lib/combat/intent.ts` and are shared, so a rule has one home.
+  - **The projections** seat an entity with its executable mechanics: `projectMonster`
+    (`src/lib/combat/monster-entity.ts`, inside the kernel, pure over a stat block) and
+    `projectCharacter` (`src/lib/combat-projection.ts`, deliberately OUTSIDE `src/lib/combat` so
+    the kernel never imports the sheet's engine — pinned by the boundary guard, which asserts both
+    the file's location and that no kernel file so much as names it). The character projection
+    reads the sheet's own seams for every number and `resolveActions(doc, "combat")` for the
+    rows; what the stage-3 vocabulary cannot express degrades to `manual-table`, which still
+    spends the economy and reaches the log.
+  - **The log presenter** `src/lib/views/encounter-log-view.ts` re-folds the document from the
+    checkpoint (receipts are not persisted) and returns structured `LogLine[]` — author as data
+    (`dm` / `you` / a uid / `auto` for the engine's own consequences), kind, undoability, hidden
+    rolls masked for non-DM viewers — over the new `play` i18n shard in EN and IT. It resolves no
+    display name: that fact belongs to the UI.
+  - **The legacy write-back, with a named fate.** While the old sheet lives, the character's
+    `combat/state` stays a `CombatState`, so `leaveTable`'s `personal` argument has ONE shape —
+    `{ kind: "document"; data }` — which writes the fight's outcome back into that document.
+    Stage 4's `encounter` variant is deleted until item 8 rather than left unused: the personal
+    ref aliases the live `CombatState`, and writing an `Encounter` there would leave a real
+    character's document permanently unreadable to `parseCombatState`. The payload is the
+    branded `LegacyCombatStateWrite`, mintable only by `encodeLegacyWriteBack`
+    (`src/lib/combat-state-writeback.ts`, which also became the home of `combatStateWriteData`),
+    so a hand-rolled object that skipped the play-state codec is a compile error rather than a
+    whole-document overwrite that destroys `playState`. The caller must pass a FRESH parse of the
+    live document. The variant, the brand and the module die together with the old sheet at item 8
+    of the stage-1 plan.
+  - **The static catalogue is `core:*` only** (`src/data/combat/core-catalogue.ts`: move, dash,
+    and dodge / disengage / help / hide as `manual-table`); every other executable mechanic
+    travels in the log on the seat op, so every client folds the same table whichever build it is
+    running. See the target spec §4.
 
 - **The encounter is a pure-REFERENCE read model (no PC stat copy).** `campaign.encounter` carries PC
   combatants as bare references — `EncounterPc = { kind, id, memberUid, characterId, hidden? }` (no

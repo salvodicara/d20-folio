@@ -128,6 +128,29 @@ state }` through the codec (lazy SRD). See `docs/ARCHITECTURE.md` → "Unified p
 read/write seams. The persistence layer reads ONLY the unified shape — there is no transitional
 read-shim (the migration converted every live main doc + snapshot; golden rule 10).
 
+**Stage 6 of `v2` changes NO stored character shape.** The per-character `combat/state` subdoc is
+still a `CombatState` (the trio plus the whole `playState` session), because the old sheet still
+reads and writes all of it; the personal `Encounter` and its migration wait for the sheet's rebuild
+(target spec §5.2, stage-6 design D1). What stage 6 adds is a WRITE PATH, not a field: when a PC
+leaves a campaign table, `leaveTable` writes the fight's outcome back into that same document — HP
+current and temp, conditions and death saves projected from the entity, every other field of the
+previous document (`playState` above all) preserved. Two invariants make that overwrite safe and
+are enforced by the type, not by convention: the payload is a branded value only
+`encodeLegacyWriteBack` (`src/lib/combat-state-writeback.ts`) can produce, so it always goes
+through the same `combatStateWriteData` encoder every other writer of this document uses; and the
+`previous` state it is built from MUST be a fresh parse of the live document, because the write
+replaces the document whole. Writing this document as an `Encounter` instead is not merely unused
+in this stage but unrepresentable — that variant of the lease's write-back is deleted until item 8
+— because the alternative left one mistaken argument between a live character and a document
+`parseCombatState` would refuse forever, with no repair path. The rules lane proves the result
+still parses with the strict `parseCombatState` the app reads it back with. The write path dies
+with the old sheet.
+
+The one data-shape addition of the stage is on SRD CONTENT, not on the character:
+`SrdSpellData.areaShape` (`src/data/types.ts`) types a damage-dealing area spell's printed shape.
+Spells are stored by reference (`srdId`), so no stored or exported character document changes;
+see `docs/MECHANICS.md` → "Printed area shape".
+
 ## `build` — the character definition
 
 | Key                       | Type                                            | Notes                                                                                                                                                                                                     |

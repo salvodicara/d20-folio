@@ -723,7 +723,20 @@ combat-math (the save + damage already do); its sole job is to finally distingui
 single-target save cantrip (both are just `saveAbility` + `damageDice`) so the auto-narrated combat capture
 opens an unbounded multi-target SAVE declaration + `attack-save` reconciliation (`combatResolutionSpec`;
 docs/ARCHITECTURE.md → "The Combat Chronicle event seam"). Never set without a save; never on a persistent
-concentration zone (those use `recurrence`). **Upcast dice scaling**
+concentration zone (those use `recurrence`). **Printed area shape**
+(`areaShape?: { kind: "sphere" | "cube" | "cone" | "line" | "cylinder"; sizeFt; widthFt? }`, `v2`
+stage 6) — the same burst's GEOMETRY as typed data, the sibling `area` boolean's structured half:
+`sizeFt` is the shape's one dimension (radius for sphere/cylinder, side for cube, length for
+cone/line) and `widthFt` exists only for a line. It is what lets the combat projection emit a real
+area target spec instead of adjudicating the spell (`targets: { count: "area", area }`); no legacy
+surface reads it. Declared on every public SRD row that is both `area: true` and damage-dealing
+AND whose printed shape is one of the five, pinned by `tests/unit/spell-area-shape.guard.test.ts`
+(a row is shaped or allowlisted with a one-line reason, never neither and never both, and no
+allowlist entry may go stale); the private pack carries the same field and the twin guard in the
+same motion (rule 28). A row whose printed area is NOT one of the five — a wall, a bounded volume,
+a re-aimed or re-fired hazard, a summoned group — declares none on purpose and degrades to
+`manual-table` in the projection: the geometry is the DM's, and a half-modelled shape would teach
+a wrong area. **Upcast dice scaling**
 (`damageDicePerUpcast`, S12c) — a leveled DAMAGE spell's per-slot-level dice increment (Fireball `"1d6"`
 above 3rd, Inflict Wounds `"1d10"` above 1st, Vitriolic Sphere `"2d4"` above 4th). The shared pure
 `scaleUpcastDice(spell, castLevel)` resolves the slot total (base count + increment × steps above base,
@@ -1093,6 +1106,69 @@ declare the same shape.
 
 Steps 1-4 are usually one commit. `docs/AUTOMATION_COVERAGE.md` tracks per-entity coverage; the
 override always remains (golden rule 8).
+
+---
+
+## The combat projection (`v2`, stage 6) — the sheet's action rows as executable mechanics
+
+> The `v2` play surface resolves nothing from a character document: an entity is SEATED on the
+> encounter log with its executable mechanics carried as data (target spec §4). The adapter that
+> produces them is `projectCharacter` (`src/lib/combat-projection.ts`, outside the combat kernel);
+> the monster twin is `projectMonster` (`src/lib/combat/monster-entity.ts`). This section owns the
+> mechanical contract of the PC adapter; the vocabulary it targets is the stage-3 tier of
+> `docs/superpowers/specs/2026-09-02-mechanics-authoring-spec.md` §6.
+
+**One mechanic per action row, one source of numbers.** The adapter reads the character's combat
+action rows through `resolveActions` — the rows the sheet's combat panel prints, override-first,
+so the projection and the sheet can never disagree about a number — and emits one
+`Mechanic` per row, id `pc:<characterId>:<rowId>`, labelled by a stable reference derived from the
+row's `LocText`, never an English display string. Numbers are FIXED at projection time (a bonus of
+7, not an expression over the entity's stats): the sheet's engine has already folded fighting
+styles, magic bonuses and overrides into them, and the lease's `sync` refreshes them when the build
+changes. The consequence is stated rather than hidden — an ability override made INSIDE the
+encounter does not move a projected attack bonus; the DM overrides the outcome instead.
+
+**Automated shapes** (the tier's whole reach): a weapon attack, melee or ranged by the weapon's own
+structured range; a spell attack with damage; a single-target save spell with damage; a save spell
+with damage and a printed `areaShape`; a flat heal. A versatile weapon is EXPRESSED, not degraded —
+a `grip:one-handed` / `grip:two-handed` choice input and a second attack step gated on it, with
+one-handed as the default so an unanswered swing still deals the printed damage. A save step
+carries the ROW's own printed DC as a number and the symbolic "caster's DC" only when the two are
+equal, because a multiclass caster's second class and a feat-granted cantrip both print a DC the
+character's primary one is not. Every projected slot cost is UPCASTABLE, whether or not the spell
+scales: the SRD lets any spell be cast from a higher slot, a caster out of low slots spending a
+higher one is playing correctly, and a Pact Magic pool sits at one level only — so gating it on
+"does the damage scale" would have made ordinary casts unaffordable. Nothing is lost, because a
+projected programme's numbers are already fixed and the cast level feeds only provenance (the
+effect's by-level lifetime and the log line), never a damage figure; the surface need not even name
+the pool, which the intent planner reads off the entity's own resources.
+
+**Degrade classes — the honest "the table adjudicates this".** Anything else becomes a
+`manual-table` mechanic that still spends its economy and lands in the log, never a half-built
+automation. The classes, enumerated on the module and pinned by tests: a damage amount the kernel's
+dice grammar cannot roll (a flat amount, a multiplied formula); more than one damage instance, more
+than one simultaneous type, or a secondary damage component; an area whose printed shape is not one
+of the five; a rolled heal; a row that also activates or maintains a keyed effect, carries a
+standing effect, deals damage on a miss, adds a one-roll damage bonus, gates its damage behind its
+own resolution rule, re-applies on a cadence, or does not resolve at cast; and a targeting shape
+richer than one enemy-or-any target (ally or self affinity, several targets, self-exclusion, a
+creature-type limit, per-upcast growth). Two deliberate NON-degrades, for the same reason the
+residuals below are residuals: a player-elected on-hit rider (the marked-target die, a smite) is
+not folded into the emitted attack, because the vocabulary cannot gate on "once per turn, if the
+player chooses" — it stays the scoped statement this document already prescribes; and a condition
+the caster ENDS does not block automation (the heal applies, the cure is the DM's), while a
+condition the save INFLICTS does, because the damage would land and the condition would silently
+not. The five base rows the static `core:*` catalogue already covers (Dash, Dodge, Disengage, Help,
+Hide) are not projected again; every other base row reaches the table as `manual-table`.
+
+**Coverage is REPORTED, never pinned.** `projectCharacter` returns the coverage rows of the
+mechanics it emitted, and the fixture suites print the automated / total step split per character
+per run rather than asserting a number: the split moves with every rule the vocabulary grows, so a
+pinned figure would only be a test to update. Measured at the close of stage 6 it ranges from about
+a quarter to about a third of steps automated per sheet, and the lowest — a wizard fixture at 2 of
+25 — is the clearest signal of where the vocabulary must grow next (a grant-bearing effect start,
+and a target spec richer than one-or-area). The public suite reports the same split for the public
+mock character, so the SRD-only composition proves the same adapter.
 
 ---
 
