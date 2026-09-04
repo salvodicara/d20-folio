@@ -10,7 +10,8 @@
       "ac": 15,
       "abilities": { "DEX": 2 },
       "mechanics": ["core:move", "srd:spell:fireball"],
-      "resources": { "slot-3": { "current": 1, "max": 1, "recharge": "long" } }
+      "resources": { "slot-3": { "current": 1, "max": 1, "recharge": "long" } },
+      "position": { "x": 0, "y": 0 }
     },
     {
       "id": "goblin-1",
@@ -147,6 +148,7 @@
       "entities.marco.position": { "x": 2, "y": 0 },
       "entities.marco.resources.slot-3.current": 0,
       "entities.marco.turn.action": 1,
+      "entities.marco.turn.movementUsed": 10,
       "entities.goblin-1.vitals.hp": 0,
       "entities.goblin-1.vitals.life": "dead",
       "entities.goblin-2.vitals.hp": 3,
