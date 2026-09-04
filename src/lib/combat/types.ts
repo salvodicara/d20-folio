@@ -378,6 +378,14 @@ export type Action =
   | (ActionBase & { readonly kind: "table"; readonly table: TableOp })
   | (ActionBase & { readonly kind: "roll"; readonly roll: RollRecord });
 
+// ── Action views ────────────────────────────────────────────────────────────
+
+export type IntentAction = Extract<Action, { kind: "intent" }>;
+export type CheckAction = Extract<Action, { kind: "check" }>;
+export type DeclareAction = Extract<Action, { kind: "declare" }>;
+export type OverrideAction = Extract<Action, { kind: "override" }>;
+export type ResolveAction = Extract<Action, { kind: "resolve" }>;
+
 // ── Folded state, receipts, rejections ──────────────────────────────────────
 
 export interface FoldedState {

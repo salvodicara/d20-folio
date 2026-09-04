@@ -7,46 +7,35 @@
  * A declared attack that another creature may react to is held in a reaction window and
  * resolved later against the state the reactions produced.
  */
+import { answerNumber, answerPosition, areaShapeFrom } from "./answers";
 import { applyDamage, applyHealing, type DamagePacket } from "./damage";
 import { endEffects } from "./effects";
 import { assertNever, type EffectId, type EntityId } from "./ids";
 import type { Catalogue } from "./catalogue";
 import { programOf } from "./catalogue";
-import type { AreaShapeSpec, LifetimeSpec, Program, Step } from "./mechanic";
-import {
-  areaMembership,
-  distanceFt,
-  rangeBand,
-  REACH_FT,
-  type AreaShape,
-} from "./position";
+import type { LifetimeSpec, Program, Step } from "./mechanic";
+import { areaMembership, distanceFt } from "./position";
 import { bind, evalExpr, evalPredicate, type EvalContext } from "./predicates";
+import { repositionRelations } from "./reposition";
 import { mustEntity } from "./state";
 import type {
-  Action,
+  CheckAction,
   CombatEvent,
   Effect,
   Entity,
   FoldedState,
+  IntentAction,
   Lifetime,
-  LifeState,
   Outcome,
   PaymentChoice,
   PendingCheck,
-  Position,
   ReactionWindow,
   Receipt,
   Rejection,
-  Relation,
+  ResolveAction,
   TurnLedger,
 } from "./types";
 import { eventEntity, subscribersFor } from "./windows";
-
-export type IntentAction = Extract<Action, { kind: "intent" }>;
-export type CheckAction = Extract<Action, { kind: "check" }>;
-export type DeclareAction = Extract<Action, { kind: "declare" }>;
-export type OverrideAction = Extract<Action, { kind: "override" }>;
-export type ResolveAction = Extract<Action, { kind: "resolve" }>;
 
 export type StepResult =
   | { readonly kind: "applied"; readonly state: FoldedState; readonly receipt: Receipt }
@@ -284,85 +273,6 @@ function deliverDamage(
     }
   }
   return next;
-}
-
-/** A numeric answer, given directly or as the total of an accepted `roll` action. Total like
- *  `answerPosition`: a persisted log may carry a malformed answer (`null` included, whose
- *  `typeof` is `"object"`), and this helper reports it missing rather than throwing. */
-function answerNumber(
-  state: FoldedState,
-  answers: IntentAction["answers"],
-  key: string
-): number | null {
-  // `unknown`, not `Answer`: a persisted log may carry an answer the union does not describe.
-  const value: unknown = answers[key];
-  if (typeof value === "number") return value;
-  if (typeof value === "object" && value !== null && "roll" in value) {
-    return typeof value.roll === "string"
-      ? (state.rolls[value.roll]?.total ?? null)
-      : null;
-  }
-  return null;
-}
-
-/** A `position`-kind answer, given directly as `{x,y}` (never as a roll reference). */
-function answerPosition(answers: IntentAction["answers"], key: string): Position | null {
-  // `unknown`, not `Answer`: a persisted log may carry a malformed answer, and this helper
-  // rejects it rather than throwing (the shape the `move` step has always checked).
-  const value: unknown = answers[key];
-  return typeof value === "object" &&
-    value !== null &&
-    "x" in value &&
-    "y" in value &&
-    typeof value.x === "number" &&
-    typeof value.y === "number" &&
-    Number.isFinite(value.x) &&
-    Number.isFinite(value.y)
-    ? { x: value.x, y: value.y }
-    : null;
-}
-
-type AreaResolution =
-  | { readonly kind: "shape"; readonly shape: AreaShape }
-  | { readonly kind: "missing"; readonly input: string };
-
-/** An authored `AreaShapeSpec` bound to the caster's `position` answers. */
-function areaShapeFrom(
-  spec: AreaShapeSpec,
-  answers: IntentAction["answers"]
-): AreaResolution {
-  const origin = answerPosition(answers, spec.origin);
-  if (origin === null) return { kind: "missing", input: spec.origin };
-  switch (spec.kind) {
-    case "sphere":
-    case "cylinder":
-      return {
-        kind: "shape",
-        shape: { kind: spec.kind, origin, radiusFt: spec.radiusFt },
-      };
-    case "cube":
-      return { kind: "shape", shape: { kind: "cube", origin, sizeFt: spec.sizeFt } };
-    case "cone":
-    case "line": {
-      const aim = answerPosition(answers, spec.aim);
-      if (aim === null) return { kind: "missing", input: spec.aim };
-      return {
-        kind: "shape",
-        shape:
-          spec.kind === "cone"
-            ? { kind: "cone", origin, aim, lengthFt: spec.lengthFt }
-            : {
-                kind: "line",
-                origin,
-                aim,
-                lengthFt: spec.lengthFt,
-                widthFt: spec.widthFt,
-              },
-      };
-    }
-    default:
-      return assertNever(spec, "area shape spec");
-  }
 }
 
 // ── The program runner ──────────────────────────────────────────────────────
@@ -1009,177 +919,6 @@ export function applyResolve(
     kind: "applied",
     state: commitAt(base.settings.automation, base, run.state),
     receipt,
-  };
-}
-
-/** Opens an opportunity-attack window when `mover` has just left `from`'s reach; a no-op if
- *  nothing subscribes. Shared by `applyDeclare` (a manual departure) and the `move` step (a real
- *  one) — design doc §2.4 of the stage-2 addendum. */
-function openLeftReachWindow(
-  state: FoldedState,
-  events: CombatEvent[],
-  mover: EntityId,
-  from: EntityId,
-  causedBy: string,
-  catalogue: Catalogue
-): FoldedState {
-  const event: CombatEvent = { kind: "entity-left-reach", entity: mover, from };
-  events.push(event);
-  const eligible = subscribersFor(state, catalogue, event);
-  if (eligible.length === 0) return state;
-  const window: ReactionWindow = {
-    id: `window-${state.nextOrdinal}`,
-    event,
-    eligible,
-    declared: causedBy,
-  };
-  return {
-    ...state,
-    nextOrdinal: state.nextOrdinal + 1,
-    windows: [...state.windows, window],
-  };
-}
-
-/** Recomputes `adjacent`/`range` between `mover` (already repositioned in `state`) and every
- *  other positioned entity, opening an opportunity-attack window for any pair that was
- *  `adjacent` and no longer is. `engaged` is untouched — it stays a purely declared, sticky fact
- *  (design doc §2.3): a table's melee lock, not a raw-distance projection. */
-function repositionRelations(
-  state: FoldedState,
-  mover: EntityId,
-  events: CombatEvent[],
-  causedBy: string,
-  catalogue: Catalogue
-): FoldedState {
-  const at = mustEntity(state, mover).position;
-  if (at === null) return state;
-  const wasAdjacentTo = new Set(
-    state.relations
-      .filter(
-        (r): r is Extract<Relation, { kind: "adjacent" }> =>
-          r.kind === "adjacent" && (r.a === mover || r.b === mover)
-      )
-      .map((r) => (r.a === mover ? r.b : r.a))
-  );
-  const relations = state.relations.filter(
-    (r) =>
-      !((r.kind === "adjacent" || r.kind === "range") && (r.a === mover || r.b === mover))
-  );
-  let next: FoldedState = { ...state, relations };
-  for (const other of Object.values(state.entities)) {
-    if (other.id === mover || other.position === null) continue;
-    const feet = distanceFt(at, other.position);
-    const added: Relation[] = [];
-    if (feet <= REACH_FT) added.push({ kind: "adjacent", a: mover, b: other.id });
-    const band = rangeBand(feet);
-    if (band !== "out") added.push({ kind: "range", a: mover, b: other.id, band });
-    next = { ...next, relations: [...next.relations, ...added] };
-    if (feet > REACH_FT && wasAdjacentTo.has(other.id)) {
-      next = openLeftReachWindow(next, events, mover, other.id, causedBy, catalogue);
-    }
-  }
-  return next;
-}
-
-/** A declared tactical fact; leaving reach may open an opportunity-attack window. */
-export function applyDeclare(
-  state: FoldedState,
-  action: DeclareAction,
-  catalogue: Catalogue
-): StepResult {
-  const same = (a: unknown, b: unknown): boolean =>
-    JSON.stringify(a) === JSON.stringify(b);
-  const kept = state.relations.filter((r) => !same(r, action.relation));
-  const relations = action.remove ? kept : [...kept, action.relation];
-  let next: FoldedState = { ...state, relations };
-  const events: CombatEvent[] = [];
-  const relation = action.relation;
-  if (
-    action.remove &&
-    action.mover !== null &&
-    (relation.kind === "adjacent" || relation.kind === "engaged")
-  ) {
-    const from = relation.a === action.mover ? relation.b : relation.a;
-    next = openLeftReachWindow(next, events, action.mover, from, action.id, catalogue);
-  }
-  return {
-    kind: "applied",
-    state: next,
-    receipt: {
-      action: action.id,
-      outcome: "applied",
-      paid: [],
-      events,
-      summary: ["declare"],
-    },
-  };
-}
-
-const LIFE_STATES = new Set<LifeState>(["alive", "dying", "stable", "dead"]);
-
-/** Widened to `ReadonlySet<string>` so an arbitrary persisted string is *tested*, not asserted
- *  into the union before the test; the predicate is the only narrowing. */
-function isLifeState(value: string): value is LifeState {
-  return (LIFE_STATES as ReadonlySet<string>).has(value);
-}
-
-/** Paths that are persisted facts, not read-time-derived stats (like `stats.ac`): an override
- *  here directly corrects the fact, the same way a later `declare` replaces a relation, rather
- *  than layering on top of a formula consulted at read time. An HP override above zero revives
- *  a dying/stable creature exactly as `applyHealing` does; a `dead` creature is not revived by
- *  HP alone — the DM overrides `vitals.life` for that. HP is clamped at 0; no upper bound. Dropping a creature
- *  to 0 by hand means the same thing as dropping it there by damage, so it takes `applyDamage`'s
- *  0-HP rule — `dying` for a PC, `dead` for everything else — and leaves the death saves alone;
- *  a creature already at 0 is not re-downed. */
-function patchDirectOverride(entity: Entity, path: string, value: unknown): Entity {
-  if (path === "vitals.hp" && typeof value === "number" && Number.isFinite(value)) {
-    const { life, deathSaves } = entity.vitals;
-    const hp = Math.max(0, value);
-    const revived = hp > 0 && (life === "dying" || life === "stable");
-    const downed = hp === 0 && entity.vitals.hp > 0;
-    return {
-      ...entity,
-      vitals: {
-        ...entity.vitals,
-        hp,
-        life: revived
-          ? "alive"
-          : downed
-            ? entity.kind === "pc"
-              ? "dying"
-              : "dead"
-            : life,
-        deathSaves: revived ? { successes: 0, failures: 0 } : deathSaves,
-      },
-    };
-  }
-  if (path === "vitals.life" && typeof value === "string" && isLifeState(value)) {
-    return { ...entity, vitals: { ...entity.vitals, life: value } };
-  }
-  return entity;
-}
-
-export function applyOverride(state: FoldedState, action: OverrideAction): StepResult {
-  const entity = state.entities[action.entity];
-  if (!entity) return rejected({ reason: "unknown-entity", entity: action.entity });
-  const recorded: Entity = {
-    ...entity,
-    overrides: {
-      ...entity.overrides,
-      [action.path]: { value: action.value, reason: action.reason, by: action.by },
-    },
-  };
-  const patched = patchDirectOverride(recorded, action.path, action.value);
-  return {
-    kind: "applied",
-    state: { ...state, entities: { ...state.entities, [action.entity]: patched } },
-    receipt: {
-      action: action.id,
-      outcome: "applied",
-      paid: [],
-      events: [],
-      summary: ["override"],
-    },
   };
 }
 

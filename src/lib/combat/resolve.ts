@@ -7,13 +7,9 @@
 import type { Catalogue } from "./catalogue";
 import { verifyRoll } from "./dice";
 import { assertNever, type EntityId } from "./ids";
-import {
-  applyCheck,
-  applyDeclare,
-  applyIntent,
-  applyOverride,
-  applyResolve,
-} from "./intent";
+import { applyCheck, applyIntent, applyResolve } from "./intent";
+import { applyOverride } from "./override";
+import { applyDeclare } from "./reposition";
 import { applyTable } from "./table";
 import type {
   Action,
