@@ -1,0 +1,158 @@
+{
+  "name": "Marco's first turn — move, then Fireball on three goblins (PRODUCT.md acceptance story 1)",
+  "dm": "dm",
+  "entities": [
+    {
+      "id": "marco",
+      "kind": "pc",
+      "controllerUid": "p-marco",
+      "hp": 25,
+      "ac": 15,
+      "abilities": { "DEX": 2 },
+      "mechanics": ["core:move", "srd:spell:fireball"],
+      "resources": { "slot-3": { "current": 1, "max": 1, "recharge": "long" } }
+    },
+    {
+      "id": "goblin-1",
+      "kind": "monster",
+      "controllerUid": "dm",
+      "hp": 7,
+      "ac": 15,
+      "saves": { "DEX": 2 },
+      "position": { "x": 6, "y": 0 }
+    },
+    {
+      "id": "goblin-2",
+      "kind": "monster",
+      "controllerUid": "dm",
+      "hp": 7,
+      "ac": 15,
+      "saves": { "DEX": 2 },
+      "position": { "x": 7, "y": 1 }
+    },
+    {
+      "id": "goblin-3",
+      "kind": "monster",
+      "controllerUid": "dm",
+      "hp": 7,
+      "ac": 15,
+      "saves": { "DEX": 2 },
+      "position": { "x": 6, "y": 2 }
+    }
+  ],
+  "initiative": { "marco": 18, "goblin-1": 12, "goblin-2": 11, "goblin-3": 10 },
+  "order": ["marco", "goblin-1", "goblin-2", "goblin-3"],
+  "log": [
+    {
+      "id": "move",
+      "by": "p-marco",
+      "kind": "intent",
+      "entity": "marco",
+      "mechanic": "core:move",
+      "program": "move",
+      "targets": [],
+      "answers": { "to": { "x": 2, "y": 0 } },
+      "payment": [],
+      "window": null,
+      "basedOn": 0
+    },
+    {
+      "id": "r-save-1",
+      "by": "dm",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d20",
+        "faces": [5],
+        "total": 5,
+        "seed": null,
+        "source": "manual",
+        "hidden": false,
+        "roller": null,
+        "purpose": "save",
+        "label": null
+      }
+    },
+    {
+      "id": "r-save-2",
+      "by": "dm",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d20",
+        "faces": [15],
+        "total": 15,
+        "seed": null,
+        "source": "manual",
+        "hidden": false,
+        "roller": null,
+        "purpose": "save",
+        "label": null
+      }
+    },
+    {
+      "id": "r-save-3",
+      "by": "dm",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d20",
+        "faces": [8],
+        "total": 8,
+        "seed": null,
+        "source": "manual",
+        "hidden": false,
+        "roller": null,
+        "purpose": "save",
+        "label": null
+      }
+    },
+    {
+      "id": "r-damage",
+      "by": "p-marco",
+      "kind": "roll",
+      "roll": {
+        "formula": "8d6",
+        "faces": [1, 1, 1, 1, 1, 1, 1, 1],
+        "total": 8,
+        "seed": null,
+        "source": "manual",
+        "hidden": false,
+        "roller": "marco",
+        "purpose": "damage",
+        "label": null
+      }
+    },
+    {
+      "id": "cast-fireball",
+      "by": "p-marco",
+      "kind": "intent",
+      "entity": "marco",
+      "mechanic": "srd:spell:fireball",
+      "program": "cast",
+      "targets": [],
+      "answers": {
+        "origin": { "x": 7, "y": 1 },
+        "save:goblin-1": { "roll": "r-save-1" },
+        "save:goblin-2": { "roll": "r-save-2" },
+        "save:goblin-3": { "roll": "r-save-3" },
+        "damage": { "roll": "r-damage" }
+      },
+      "payment": [],
+      "window": null,
+      "basedOn": 0
+    }
+  ],
+  "expect": {
+    "applied": 6,
+    "rejections": [],
+    "state": {
+      "entities.marco.position": { "x": 2, "y": 0 },
+      "entities.marco.resources.slot-3.current": 0,
+      "entities.marco.turn.action": 1,
+      "entities.goblin-1.vitals.hp": 0,
+      "entities.goblin-1.vitals.life": "dead",
+      "entities.goblin-2.vitals.hp": 3,
+      "entities.goblin-2.vitals.life": "alive",
+      "entities.goblin-3.vitals.hp": 0,
+      "entities.goblin-3.vitals.life": "dead"
+    }
+  }
+}
