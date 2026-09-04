@@ -1,0 +1,2046 @@
+/**
+ * The play surface's own stylesheet — the approved rendition (dossier 14, `v8-play*`) ported
+ * onto this repository's token system.
+ *
+ * Two things live here and nowhere else:
+ *
+ * 1. **The play palette.** The rendition's values become `--play-*` / `--eco-*` custom
+ *    properties, defined once on `:root` (the dark register the HUD was designed in) and
+ *    re-struck under `[data-theme="light"]` as the SAME grammar on parchment. This follows
+ *    `map.css`'s precedent — a surface's tokens sit beside the surface, derived from
+ *    `src/index.css` where an equivalent already exists — so `index.css` stays the app-wide
+ *    system and this file stays reviewable as one screen.
+ * 2. **The component recipes**, namespaced `pl-` per component. The rendition's class names
+ *    (`.panel`, `.tile`, `.tabs`, `.init`) are generic enough to collide with `folio.css` and
+ *    with Tailwind's utilities, so every one of them is prefixed here.
+ *
+ * The layout rule of the screen (UI spec rule 28): the map is the ground and every panel floats
+ * on it at a fixed edge — top = who acts and who is targeted, left = map tools, bottom = what I
+ * can do, right = what happened. The DM drawer is the only DOCKED panel (rule 32): it is a flex
+ * sibling of the stage, so opening it SHIFTS the HUD and the map instead of covering them.
+ *
+ * One border weight (1px). Depth by tone, never by shadow — except the portrait ring, the
+ * medallions and the End turn ring, which are the rendition's three struck-metal objects.
+ */
+
+:root {
+  /* Surfaces */
+  --play-canvas: #0d0b08;
+  --play-panel: rgba(22, 18, 12, 0.94);
+  --play-raised: #1c1711;
+  --play-well: #0a0806;
+  /* Ink */
+  --play-ink: #efe6d3;
+  --play-ink-2: #c8bda6;
+  --play-mute: #93887a;
+  --play-dim: #5f584d;
+  /* Hairlines */
+  --play-hair: rgba(240, 225, 190, 0.09);
+  --play-hair-2: rgba(240, 225, 190, 0.15);
+  --play-gold-line: rgba(201, 163, 90, 0.42);
+  --play-gold-dim: rgba(201, 163, 90, 0.22);
+  /* Accents */
+  --play-gold: #c9a35a;
+  --play-gold-2: #e6cc8a;
+  --play-cyan: #62d4e8;
+  --play-danger: #d8635a;
+  --play-vital: #5fb08a;
+  /* The DM's own tone: everything only the DM sees carries it (rule 32). */
+  --play-dm: #f3b6d6;
+  --play-dm-line: rgba(243, 182, 214, 0.45);
+  /* Action economy — shape AND colour, never colour alone (UI spec §4). */
+  --eco-action: #3ec5a5;
+  --eco-bonus: #f0a33a;
+  --eco-reaction: #e05fa0;
+  --eco-move: #4aa8e0;
+  --eco-free: #a89e8c;
+  /* The two metals the rendition strikes. */
+  --play-ring-metal: linear-gradient(160deg, #e6cc8a, #8a6a2a 55%, #c9a35a);
+  --play-medal: radial-gradient(circle at 45% 32%, #3a2d18 0%, #1c150c 70%);
+  --play-endturn: radial-gradient(
+    circle at 50% 32%,
+    #2a8ba3 0%,
+    #124a5c 48%,
+    #082630 78%,
+    #04161d 100%
+  );
+  --play-endturn-ink: #eaf7f9;
+}
+
+/* The same screen on parchment: the panel becomes pressed vellum, the ink flips, and every
+   accent is re-struck deep enough to keep its AA contrast on a light ground. The GRAMMAR is
+   unchanged — bracket corners, one hairline, the economy shapes, the cyan ring. */
+[data-theme="light"] {
+  --play-canvas: #e6dcc3;
+  --play-panel: rgba(250, 245, 233, 0.95);
+  --play-raised: #f3ecd9;
+  --play-well: #ded2b6;
+  --play-ink: #241c11;
+  --play-ink-2: #4a3f2e;
+  --play-mute: #6b5f4a;
+  --play-dim: #8b7f68;
+  --play-hair: rgba(60, 44, 16, 0.14);
+  --play-hair-2: rgba(60, 44, 16, 0.24);
+  --play-gold-line: rgba(122, 92, 30, 0.55);
+  --play-gold-dim: rgba(122, 92, 30, 0.3);
+  --play-gold: #8a6a2a;
+  --play-gold-2: #4a380c;
+  --play-cyan: #0f6d7d;
+  --play-danger: #a3322a;
+  --play-vital: #2c6f51;
+  --play-dm: #8c2a60;
+  --play-dm-line: rgba(140, 42, 96, 0.45);
+  --eco-action: #10775d;
+  --eco-bonus: #855405;
+  --eco-reaction: #9c2f6f;
+  --eco-move: #145f8c;
+  --eco-free: #6b5f4a;
+  --play-ring-metal: linear-gradient(160deg, #c9a35a, #7a5c1e 55%, #a8873c);
+  --play-medal: radial-gradient(circle at 45% 32%, #f2e7cb 0%, #d9c89c 70%);
+  --play-endturn: radial-gradient(
+    circle at 50% 32%,
+    #2fa0b8 0%,
+    #10627a 48%,
+    #0a3a49 78%,
+    #06232c 100%
+  );
+}
+
+/* The sprite's own sizing contract: 16px by default, sized by the recipe that uses it. */
+.pl-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  stroke: currentcolor;
+  fill: none;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pl-icon-btn .pl-icon,
+.pl-medal .pl-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.pl-medal .pl-icon {
+  width: 22px;
+  height: 22px;
+}
+
+/* ── The frame ────────────────────────────────────────────────────────────── */
+
+.pl-root {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  overflow: hidden;
+  background: var(--play-canvas);
+  color: var(--play-ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.4;
+  font-feature-settings:
+    "tnum" 1,
+    "lnum" 1;
+}
+
+.pl-stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pl-ground {
+  position: absolute;
+  inset: 0;
+}
+
+.pl-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(90% 80% at 50% 45%, transparent 60%, rgb(0 0 0 / 45%));
+}
+
+[data-theme="light"] .pl-vignette {
+  background: radial-gradient(90% 80% at 50% 45%, transparent 60%, rgb(80 60 20 / 18%));
+}
+
+/* Every floating panel sits above the ground and never catches a pointer meant for the map,
+   except on its own controls (which re-enable it). */
+.pl-float {
+  position: absolute;
+  z-index: 2;
+}
+
+/* ── The panel: gold hairline + 12px bracket corners (component rule 7) ───── */
+
+.pl-panel {
+  position: relative;
+  border: 1px solid var(--play-gold-dim);
+  border-radius: 6px;
+  background: var(--play-panel);
+  backdrop-filter: blur(2px);
+}
+
+.pl-panel--framed {
+  border-color: var(--play-gold-line);
+}
+
+.pl-panel--framed::before,
+.pl-panel--framed::after,
+.pl-panel--framed > .pl-brackets::before,
+.pl-panel--framed > .pl-brackets::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--play-gold);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.pl-panel--framed::before {
+  top: -1px;
+  left: -1px;
+  border-width: 1.5px 0 0 1.5px;
+  border-radius: 6px 0 0;
+}
+
+.pl-panel--framed::after {
+  top: -1px;
+  right: -1px;
+  border-width: 1.5px 1.5px 0 0;
+  border-radius: 0 6px 0 0;
+}
+
+.pl-panel--framed > .pl-brackets::before {
+  bottom: -1px;
+  left: -1px;
+  border-width: 0 0 1.5px 1.5px;
+  border-radius: 0 0 0 6px;
+}
+
+.pl-panel--framed > .pl-brackets::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 1.5px 1.5px;
+  border-radius: 0 0 6px;
+}
+
+/* Section title: centred between two fading hairlines (component rule 7). */
+.pl-sec {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 8px;
+}
+
+.pl-sec::before,
+.pl-sec::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--play-gold-dim));
+}
+
+.pl-sec::after {
+  background: linear-gradient(90deg, var(--play-gold-dim), transparent);
+}
+
+.pl-sec > span {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--play-gold-2);
+  letter-spacing: 0.02em;
+}
+
+.pl-sec > span small {
+  margin-left: 6px;
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--play-mute);
+}
+
+/* ── The four button kinds (rule 39) ──────────────────────────────────────── */
+
+.pl-icon-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: none;
+  color: var(--play-ink-2);
+  cursor: pointer;
+}
+
+.pl-icon-btn:hover:not(:disabled) {
+  color: var(--play-gold-2);
+  background: rgb(201 163 90 / 12%);
+}
+
+.pl-icon-btn[aria-pressed="true"],
+.pl-icon-btn.is-on {
+  border-color: var(--play-gold-dim);
+  background: rgb(201 163 90 / 18%);
+  color: var(--play-gold-2);
+}
+
+.pl-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pl-icon-btn--dm {
+  color: var(--play-dm);
+}
+
+/* Ghost pill — every secondary verb. */
+.pl-ghost {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--play-gold-line);
+  border-radius: 16px;
+  background: rgb(201 163 90 / 10%);
+  color: var(--play-gold-2);
+  font: 600 13.5px/1 var(--font-body);
+  cursor: pointer;
+}
+
+.pl-ghost:hover:not(:disabled) {
+  background: rgb(201 163 90 / 20%);
+}
+
+.pl-ghost:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pl-ghost--danger {
+  border-color: rgb(216 99 90 / 60%);
+  color: var(--play-danger);
+  background: rgb(216 99 90 / 10%);
+}
+
+/* Brass medallion — dice and reaction (rule 39). */
+.pl-medal {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 2px solid #a8873c;
+  border-radius: 50%;
+  background: var(--play-medal);
+  color: var(--play-gold-2);
+  cursor: pointer;
+  box-shadow:
+    0 0 0 2px var(--play-canvas),
+    0 0 0 3px #6e5520,
+    0 5px 10px rgb(0 0 0 / 45%),
+    inset 0 1px 2px rgb(255 255 255 / 30%),
+    inset 0 -4px 8px rgb(0 0 0 / 40%);
+}
+
+.pl-medal:hover:not(:disabled) {
+  box-shadow:
+    0 0 0 2px var(--play-canvas),
+    0 0 0 3px var(--play-gold-2),
+    0 0 18px rgb(230 204 138 / 35%),
+    0 5px 10px rgb(0 0 0 / 45%),
+    inset 0 1px 2px rgb(255 255 255 / 35%);
+}
+
+.pl-medal:disabled {
+  filter: saturate(0.3) brightness(0.6);
+  cursor: default;
+}
+
+.pl-medal--reaction {
+  background: radial-gradient(circle at 45% 32%, #5a2542 0%, #2a1220 70%);
+  color: var(--play-dm);
+}
+
+[data-theme="light"] .pl-medal--reaction {
+  background: radial-gradient(circle at 45% 32%, #f7dcea 0%, #e2b5cd 70%);
+}
+
+/* The ONE solid button of the screen: the End turn ring (rules 28, 39). */
+.pl-endturn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  padding: 0 10px;
+  border: 3px solid #9a7a36;
+  border-radius: 50%;
+  background: var(--play-endturn);
+  color: var(--play-endturn-ink);
+  font: 700 13px/1.15 var(--font-title);
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
+  cursor: pointer;
+  box-shadow:
+    0 0 0 3px #1a1408,
+    0 0 0 5px #c9a35a,
+    0 0 0 8px #2a2014,
+    0 10px 22px rgb(0 0 0 / 60%),
+    inset 0 2px 5px rgb(255 255 255 / 28%),
+    inset 0 -8px 14px rgb(0 0 0 / 45%);
+}
+
+/* The ticked brass ring — a conic gradient masked to a thin annulus. */
+.pl-endturn::before {
+  content: "";
+  position: absolute;
+  inset: -13px;
+  border-radius: 50%;
+  opacity: 0.9;
+  pointer-events: none;
+  background: repeating-conic-gradient(
+    from 0deg,
+    #e6cc8a 0deg 1.6deg,
+    transparent 1.6deg 8deg
+  );
+  mask: radial-gradient(circle, transparent 58%, #000 60%, #000 67%, transparent 69%);
+}
+
+.pl-endturn:hover:not(:disabled) {
+  filter: brightness(1.25);
+}
+
+.pl-endturn:disabled {
+  filter: saturate(0.35) brightness(0.7);
+  color: #a9bcc0;
+  cursor: default;
+}
+
+.pl-endturn small {
+  display: block;
+  font: 600 10.5px/1 var(--font-body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+/* Focus, everywhere: the cyan ring the button system names (rule 39). */
+.pl-root :focus-visible {
+  outline: 2px solid var(--play-cyan);
+  outline-offset: 2px;
+}
+
+/* ── Pill tabs ────────────────────────────────────────────────────────────── */
+
+.pl-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.pl-tabs button {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 14px;
+  border: 1px solid var(--play-gold-dim);
+  border-radius: 13px;
+  background: var(--play-panel);
+  color: var(--play-ink-2);
+  font: 600 12.5px/1 var(--font-body);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pl-tabs button[aria-selected="true"] {
+  border-color: var(--play-gold-line);
+  background: rgb(201 163 90 / 14%);
+  color: var(--play-gold-2);
+}
+
+/* ── Scene header (top-left) ──────────────────────────────────────────────── */
+
+.pl-scene {
+  top: 14px;
+  left: 16px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 14px;
+}
+
+.pl-scene__title {
+  font: 700 15px/1 var(--font-title);
+  color: var(--play-gold-2);
+}
+
+.pl-scene__round {
+  font-size: 12.5px;
+  color: var(--play-mute);
+}
+
+.pl-scene__round b {
+  color: var(--play-ink);
+  font-weight: 700;
+}
+
+.pl-scene__dm {
+  color: var(--play-dm);
+  font-weight: 700;
+}
+
+/* ── Initiative strip (top-centre) ────────────────────────────────────────── */
+
+.pl-initbar {
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(760px, calc(100% - 420px));
+  padding: 6px 14px 8px;
+}
+
+.pl-strip {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  overflow: hidden;
+  padding: 6px 0 2px;
+}
+
+.pl-cell {
+  position: relative;
+  flex: none;
+  width: 48px;
+  border: 0;
+  padding: 0;
+  background: none;
+  text-align: center;
+  cursor: pointer;
+}
+
+.pl-cell__pic {
+  position: relative;
+  width: 48px;
+  height: 58px;
+  overflow: hidden;
+  border: 1.5px solid var(--play-gold-dim);
+  border-radius: 5px;
+  background: var(--play-well);
+  display: grid;
+  place-items: center;
+}
+
+.pl-cell__pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.75) brightness(0.9);
+}
+
+.pl-cell__initial {
+  font: 700 20px/1 var(--font-title);
+  color: var(--play-gold-2);
+}
+
+.pl-cell--foe .pl-cell__pic {
+  border-color: rgb(216 99 90 / 70%);
+}
+
+.pl-cell--current {
+  width: 60px;
+}
+
+.pl-cell--current .pl-cell__pic {
+  width: 60px;
+  height: 72px;
+  border: 2px solid var(--play-cyan);
+  box-shadow: 0 0 14px rgb(98 212 232 / 45%);
+}
+
+.pl-cell--done .pl-cell__pic {
+  opacity: 0.45;
+}
+
+.pl-cell__hp {
+  height: 4px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgb(42 28 28 / 90%);
+}
+
+.pl-cell__hp i {
+  display: block;
+  height: 100%;
+  background: var(--play-vital);
+}
+
+.pl-cell--foe .pl-cell__hp i {
+  background: var(--play-danger);
+}
+
+.pl-cell__name {
+  margin-top: 4px;
+  font: 600 11px/1.1 var(--font-body);
+  color: var(--play-cyan);
+  white-space: nowrap;
+}
+
+.pl-cell__badges {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  display: flex;
+  gap: 2px;
+}
+
+.pl-cell__badges i {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--play-canvas);
+  border-radius: 2px;
+  background: var(--play-danger);
+}
+
+.pl-round-divider {
+  position: relative;
+  flex: none;
+  width: 1px;
+  height: 58px;
+  margin: 0 2px 8px;
+  background: linear-gradient(transparent, var(--play-gold), transparent);
+}
+
+.pl-round-divider b {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font: 700 10px/1 var(--font-body);
+  color: var(--play-gold-2);
+  white-space: nowrap;
+}
+
+/* ── Target block (rule 30) ───────────────────────────────────────────────── */
+
+.pl-target {
+  top: 158px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 360px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.pl-target__name {
+  font: 700 16px/1.2 var(--font-title);
+  color: var(--play-ink);
+  text-shadow:
+    0 1px 3px #000,
+    0 0 10px #000;
+}
+
+[data-theme="light"] .pl-target__name,
+[data-theme="light"] .pl-target__bar b {
+  text-shadow: 0 1px 3px rgb(255 255 255 / 90%);
+}
+
+.pl-target__name small {
+  margin-left: 6px;
+  font: 400 12px/1 var(--font-body);
+  color: var(--play-ink-2);
+}
+
+.pl-target__bar {
+  position: relative;
+  width: 300px;
+  height: 12px;
+  margin: 5px auto 0;
+  overflow: hidden;
+  border: 1px solid rgb(216 99 90 / 60%);
+  border-radius: 6px;
+  background: rgb(20 10 10 / 85%);
+}
+
+.pl-target__bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(#e07a72, #b7443c);
+}
+
+.pl-target__bar b {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: 600 11px/1 var(--font-body);
+  color: #fff;
+  text-shadow: 0 1px 2px #000;
+}
+
+.pl-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.pl-chip {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px 0 4px;
+  border: 1px solid var(--play-hair-2);
+  border-radius: 12px;
+  background: var(--play-panel);
+  color: var(--play-ink);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.pl-chip i {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgb(216 99 90 / 55%);
+  border-radius: 50%;
+  background: rgb(216 99 90 / 22%);
+  color: var(--play-danger);
+}
+
+/* ── View controls (top-right) and the tool rail (left) ───────────────────── */
+
+.pl-view {
+  top: 14px;
+  right: 16px;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+}
+
+.pl-tools {
+  top: 70px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+}
+
+.pl-tools__sep {
+  height: 1px;
+  margin: 3px 4px;
+  background: var(--play-hair-2);
+}
+
+.pl-subbar {
+  top: 74px;
+  left: 80px;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  height: 44px;
+  padding: 4px;
+}
+
+.pl-subbar__name {
+  padding: 0 10px 0 8px;
+  font: 700 12.5px/1 var(--font-body);
+  color: var(--play-gold-2);
+  white-space: nowrap;
+}
+
+.pl-subbar__hint {
+  padding: 0 10px 0 4px;
+  font-size: 12px;
+  color: var(--play-mute);
+  white-space: nowrap;
+}
+
+.pl-dmtag {
+  padding: 2px 6px;
+  border: 1px solid var(--play-dm-line);
+  border-radius: 9px;
+  font: 700 10px/1 var(--font-body);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--play-dm);
+  white-space: nowrap;
+}
+
+.pl-scale {
+  right: 16px;
+  bottom: 16px;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  height: 32px;
+  padding: 0 14px;
+  font: 700 13px/1 var(--font-body);
+  color: var(--play-gold-2);
+}
+
+/* ── The prose log (bottom-right, rule 31) ────────────────────────────────── */
+
+.pl-log {
+  right: 16px;
+  bottom: 156px;
+  width: 380px;
+  max-height: 190px;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--play-ink-2);
+  text-shadow:
+    0 1px 3px #000,
+    0 0 6px #000;
+  pointer-events: none;
+}
+
+[data-theme="light"] .pl-log {
+  text-shadow:
+    0 1px 3px rgb(255 255 255 / 95%),
+    0 0 6px rgb(255 255 255 / 80%);
+}
+
+.pl-log p {
+  margin: 0 0 4px;
+}
+
+.pl-log p:last-child {
+  color: var(--play-ink);
+}
+
+.pl-log__author {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--play-mute);
+}
+
+.pl-log p[data-kind="rejected"] {
+  color: var(--play-danger);
+}
+
+/* ── The roll panel (rule 31) ─────────────────────────────────────────────── */
+
+.pl-roll {
+  top: 236px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(600px, calc(100% - 200px));
+  padding: 14px 20px 12px;
+  text-align: center;
+}
+
+.pl-roll__head {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.pl-roll__title {
+  font: 700 15px/1 var(--font-title);
+  color: var(--play-gold-2);
+  white-space: nowrap;
+}
+
+.pl-roll__who {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12.5px;
+  color: var(--play-mute);
+}
+
+.pl-roll__dc {
+  margin-top: 8px;
+}
+
+.pl-roll__dc .pl-cap {
+  color: var(--play-ink-2);
+}
+
+.pl-roll__dc b {
+  display: block;
+  margin-top: 4px;
+  font: 400 38px/1 var(--font-title);
+  color: var(--play-ink);
+}
+
+.pl-roll__orn {
+  height: 1px;
+  margin: 10px 80px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--play-gold) 30%,
+    var(--play-gold) 70%,
+    transparent
+  );
+}
+
+.pl-roll__dice {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+}
+
+.pl-die {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 88px;
+  height: 88px;
+}
+
+.pl-die svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--play-well);
+  stroke: var(--play-gold-2);
+  stroke-width: 1.5;
+}
+
+.pl-die b {
+  position: relative;
+  font: 700 30px/1 var(--font-title);
+  color: var(--play-gold-2);
+}
+
+.pl-die--hidden b {
+  color: var(--play-dim);
+}
+
+.pl-roll__total {
+  min-width: 150px;
+  text-align: left;
+}
+
+.pl-roll__total b {
+  font: 400 34px/1 var(--font-title);
+  color: var(--play-ink);
+}
+
+.pl-roll__total small {
+  margin-left: 6px;
+  font: 400 13px/1 var(--font-body);
+  color: var(--play-mute);
+}
+
+.pl-verdict {
+  margin-top: 6px;
+  font: 700 20px/1 var(--font-title);
+  letter-spacing: 0.06em;
+}
+
+.pl-verdict[data-tone="ok"] {
+  color: var(--play-gold-2);
+}
+
+.pl-verdict[data-tone="ko"] {
+  color: var(--play-danger);
+}
+
+.pl-verdict[data-tone="crit"] {
+  color: #f7e59a;
+  text-shadow: 0 0 12px rgb(247 229 154 / 55%);
+}
+
+[data-theme="light"] .pl-verdict[data-tone="crit"] {
+  color: #8a6a10;
+  text-shadow: none;
+}
+
+.pl-roll__foot {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--play-hair);
+  font-size: 12.5px;
+  color: var(--play-mute);
+}
+
+/* Manual entry: one carved box per die, the faces read off the table. */
+.pl-faces {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.pl-face {
+  text-align: center;
+}
+
+.pl-face input {
+  width: 88px;
+  height: 64px;
+  border: 2px solid var(--play-gold);
+  border-radius: 6px;
+  background: var(--play-well);
+  color: var(--play-ink);
+  font: 400 28px/1 var(--font-title);
+  text-align: center;
+}
+
+.pl-face input:invalid,
+.pl-face input[data-invalid="true"] {
+  border-color: var(--play-danger);
+  color: var(--play-danger);
+}
+
+.pl-face span {
+  display: block;
+  margin-top: 6px;
+  font: 600 11.5px/1 var(--font-body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--play-mute);
+}
+
+.pl-cap {
+  font: 600 11px/1 var(--font-body);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--play-mute);
+}
+
+/* ── The reaction card (component 10) ─────────────────────────────────────── */
+
+.pl-reaction {
+  top: 236px;
+  left: 24px;
+  width: 340px;
+  padding: 12px 14px;
+  border-color: var(--play-dm-line);
+  background:
+    linear-gradient(rgb(224 95 160 / 10%), rgb(224 95 160 / 3%)), var(--play-panel);
+}
+
+.pl-reaction__head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pl-reaction__head b {
+  flex: 1;
+  font: 700 13.5px/1 var(--font-title);
+  color: var(--play-dm);
+}
+
+.pl-reaction__head span {
+  font-size: 11.5px;
+  color: var(--play-mute);
+}
+
+.pl-reaction p {
+  margin: 6px 0 0;
+  font-size: 13.5px;
+  color: var(--play-ink-2);
+}
+
+.pl-reaction p b {
+  color: var(--play-ink);
+}
+
+.pl-reaction__opts {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pl-typed {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid rgb(0 0 0 / 35%);
+  border-radius: 16px;
+  background: var(--eco-reaction);
+  color: #0d0b08;
+  font: 700 13.5px/1 var(--font-body);
+  cursor: pointer;
+}
+
+/* ── The bottom HUD (rule 29) ─────────────────────────────────────────────── */
+
+.pl-hud {
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  width: min(1180px, calc(100% - 48px));
+}
+
+.pl-hud__identity {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  padding-bottom: 6px;
+}
+
+.pl-portrait {
+  position: relative;
+  flex: none;
+  width: 104px;
+  height: 104px;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--play-ring-metal);
+  box-shadow: 0 6px 16px rgb(0 0 0 / 50%);
+}
+
+.pl-portrait--foe {
+  background: linear-gradient(160deg, #e07a72, #7a2f2a 55%, #d8635a);
+}
+
+.pl-portrait__face {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 2px solid var(--play-canvas);
+  border-radius: 50%;
+  background: var(--play-well);
+  font: 700 30px/1 var(--font-title);
+  color: var(--play-gold-2);
+}
+
+.pl-portrait__face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pl-portrait__level {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--play-canvas);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f0dc9c, #b8923d 60%, #7a5f24);
+  font: 700 12px/1 var(--font-title);
+  color: #1a1408;
+}
+
+.pl-portrait__hp {
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 8px;
+  border: 1px solid var(--play-gold-dim);
+  border-radius: 9px;
+  background: var(--play-panel);
+  font: 700 12px/1.5 var(--font-body);
+  color: var(--play-ink);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pl-portrait__tag {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font: 700 10.5px/1 var(--font-body);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--play-danger);
+  white-space: nowrap;
+}
+
+.pl-weapons {
+  display: grid;
+  grid-template-columns: 44px 44px;
+  gap: 4px;
+}
+
+/* The bar itself: the economy line above, the tile groups, the tabs below. */
+.pl-bar {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px 10px;
+}
+
+.pl-bar--dm {
+  border-color: rgb(216 99 90 / 45%);
+}
+
+.pl-ecoline {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.pl-ecopill {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--play-gold-dim);
+  border-radius: 15px;
+  background: var(--play-panel);
+}
+
+.pl-eco {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--eco-free);
+}
+
+.pl-eco svg {
+  width: 14px;
+  height: 14px;
+  fill: currentcolor;
+  stroke: none;
+}
+
+.pl-eco[data-eco="action"] {
+  color: var(--eco-action);
+}
+
+.pl-eco[data-eco="bonus"] {
+  color: var(--eco-bonus);
+}
+
+.pl-eco[data-eco="reaction"] {
+  color: var(--eco-reaction);
+}
+
+.pl-eco[data-eco="movement"] {
+  color: var(--eco-move);
+}
+
+.pl-eco[data-spent="true"] svg {
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.5;
+  opacity: 0.55;
+}
+
+.pl-ecopill__move {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  font: 600 13px/1 var(--font-body);
+  color: var(--eco-move);
+  white-space: nowrap;
+}
+
+.pl-slots {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--play-gold-dim);
+  border-radius: 15px;
+  background: var(--play-panel);
+}
+
+.pl-slots__level {
+  margin: 0 2px 0 6px;
+  font: 700 10px/1 var(--font-body);
+  color: var(--play-gold-2);
+}
+
+.pl-slots__level:first-child {
+  margin-left: 0;
+}
+
+.pl-slots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 1px;
+  transform: rotate(45deg);
+  background: var(--play-gold);
+}
+
+.pl-slots i[data-spent="true"] {
+  border: 1px solid var(--play-gold-dim);
+  background: transparent;
+}
+
+/* Tile groups, split by the red dividers. */
+.pl-cells {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  overflow-x: auto;
+}
+
+.pl-group {
+  display: grid;
+  grid-auto-rows: 44px;
+  grid-template-columns: repeat(var(--pl-cols, 7), 44px);
+  gap: 4px;
+}
+
+.pl-divider {
+  flex: none;
+  width: 2px;
+  height: 92px;
+  margin: 0 4px;
+  background: linear-gradient(
+    transparent,
+    var(--play-danger) 20%,
+    var(--play-danger) 80%,
+    transparent
+  );
+}
+
+.pl-tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--play-gold-dim);
+  border-radius: 4px;
+  background: linear-gradient(#1e1912, #110e09);
+  color: var(--play-ink-2);
+  cursor: pointer;
+}
+
+[data-theme="light"] .pl-tile {
+  background: linear-gradient(#f6efdd, #e3d8bd);
+}
+
+.pl-tile svg {
+  width: 22px;
+  height: 22px;
+}
+
+.pl-tile[data-usable="false"] {
+  opacity: 0.4;
+}
+
+.pl-tile[aria-pressed="true"] {
+  border-color: #fff;
+  box-shadow:
+    0 0 0 1px #fff,
+    0 0 12px rgb(255 255 255 / 35%);
+}
+
+.pl-tile__eco {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--eco-free);
+}
+
+.pl-tile__eco[data-eco="action"] {
+  background: var(--eco-action);
+}
+
+.pl-tile__eco[data-eco="bonus"] {
+  background: var(--eco-bonus);
+}
+
+.pl-tile__eco[data-eco="reaction"] {
+  background: var(--eco-reaction);
+}
+
+.pl-tile__eco[data-eco="movement"] {
+  background: var(--eco-move);
+}
+
+/* A spell's economy mark is a RING, not a disc (rule 29). */
+.pl-tile[data-spell="true"] .pl-tile__eco {
+  border: 1.5px solid currentcolor;
+  background: none;
+  color: var(--eco-action);
+}
+
+.pl-tile__level,
+.pl-tile__uses {
+  position: absolute;
+  right: 3px;
+  bottom: 1px;
+  font: 700 10px/1 var(--font-body);
+  color: var(--play-gold-2);
+}
+
+.pl-tile__uses {
+  color: var(--play-ink-2);
+}
+
+.pl-bartabs {
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.pl-empty-line {
+  display: grid;
+  place-items: center;
+  min-height: 92px;
+  padding: 0 16px;
+  font-size: 13px;
+  color: var(--play-mute);
+  text-align: center;
+}
+
+.pl-turn {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  align-self: flex-end;
+}
+
+.pl-sidebtns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ── The DM drawer: the only docked panel (rule 32) ───────────────────────── */
+
+.pl-dmtab {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 0;
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+}
+
+.pl-dmtab .pl-cap {
+  margin: 6px 0;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  color: var(--play-dm);
+}
+
+.pl-dmtab .pl-icon-btn {
+  width: 32px;
+  height: 32px;
+}
+
+.pl-drawer {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 380px;
+  border-left: 1px solid var(--play-gold-line);
+  background: var(--play-panel);
+}
+
+.pl-drawer__head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--play-hair-2);
+}
+
+.pl-drawer__head b {
+  flex: 1;
+  font: 700 15px/1 var(--font-title);
+  color: var(--play-dm);
+}
+
+.pl-drawer__head .pl-icon-btn {
+  width: 30px;
+  height: 30px;
+}
+
+.pl-dtabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px 0;
+  border-bottom: 1px solid var(--play-hair);
+}
+
+.pl-dtabs button {
+  flex: 1;
+  padding: 8px 0 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--play-mute);
+  font: 600 12px/1 var(--font-body);
+  cursor: pointer;
+}
+
+.pl-dtabs button[aria-selected="true"] {
+  border-bottom-color: var(--play-gold);
+  color: var(--play-gold-2);
+}
+
+.pl-drawer__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 12px 14px;
+  overflow-y: auto;
+}
+
+.pl-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+}
+
+.pl-filters button {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--play-gold-dim);
+  border-radius: 13px;
+  background: none;
+  color: var(--play-mute);
+  font: 600 12px/1 var(--font-body);
+  cursor: pointer;
+}
+
+.pl-filters button[aria-pressed="true"] {
+  border-color: var(--play-gold-line);
+  background: rgb(201 163 90 / 12%);
+  color: var(--play-gold-2);
+}
+
+.pl-register li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 7px 0;
+  border-top: 1px solid var(--play-hair);
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.pl-register li:first-child {
+  border-top: 0;
+}
+
+.pl-register__who {
+  flex: none;
+  width: 42px;
+  padding-top: 2px;
+  font-size: 10.5px;
+  color: var(--play-mute);
+}
+
+.pl-register__text {
+  flex: 1;
+  color: var(--play-ink-2);
+}
+
+.pl-register li[data-kind="rejected"] .pl-register__text {
+  color: var(--play-danger);
+}
+
+.pl-register button {
+  flex: none;
+  border: 0;
+  background: none;
+  color: var(--play-gold-2);
+  font: 600 11.5px/1 var(--font-body);
+  cursor: pointer;
+}
+
+.pl-drawer__foot {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--play-hair);
+  font-size: 12.5px;
+  color: var(--play-mute);
+}
+
+/* Switch rows: what the DM hides, each with a sentence beneath (rule 32). */
+.pl-switch-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid var(--play-hair);
+  font-size: 13.5px;
+}
+
+.pl-switch-row:first-of-type {
+  border-top: 0;
+}
+
+.pl-switch-row__name {
+  flex: 1;
+  color: var(--play-ink);
+}
+
+.pl-switch-row__name small {
+  display: block;
+  font-size: 11px;
+  color: var(--play-mute);
+}
+
+.pl-switch {
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 20px;
+  border: 1px solid var(--play-gold-dim);
+  border-radius: 10px;
+  background: var(--play-well);
+  cursor: pointer;
+}
+
+.pl-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--play-mute);
+  transition: left 120ms ease;
+}
+
+.pl-switch[aria-checked="true"] {
+  border-color: var(--play-gold);
+  background: rgb(201 163 90 / 30%);
+}
+
+.pl-switch[aria-checked="true"]::after {
+  left: 18px;
+  background: var(--play-gold-2);
+}
+
+[data-motion="reduced"] .pl-switch::after {
+  transition: none;
+}
+
+/* Radio option rows (Regole tab). */
+.pl-option {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 0;
+  border: 0;
+  border-top: 1px solid var(--play-hair);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
+.pl-option:first-of-type {
+  border-top: 0;
+}
+
+.pl-option__radio {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  border: 1.5px solid var(--play-gold-dim);
+  border-radius: 50%;
+}
+
+.pl-option[aria-checked="true"] .pl-option__radio {
+  border-color: var(--play-gold);
+}
+
+.pl-option[aria-checked="true"] .pl-option__radio::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--play-gold-2);
+}
+
+.pl-option__name {
+  font: 600 14px/1.3 var(--font-body);
+  color: var(--play-ink);
+}
+
+.pl-option[aria-checked="true"] .pl-option__name {
+  color: var(--play-gold-2);
+}
+
+.pl-option__name small {
+  display: block;
+  margin-top: 2px;
+  font: 400 12px/1.35 var(--font-body);
+  color: var(--play-mute);
+}
+
+.pl-note {
+  padding: 6px 0 2px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--play-mute);
+}
+
+/* ── The HP editor (component 18) ─────────────────────────────────────────── */
+
+.pl-hpedit {
+  margin: 6px 0 4px;
+  padding: 10px;
+  border: 1px solid var(--play-gold-line);
+  border-radius: 6px;
+  background: var(--play-well);
+}
+
+.pl-hpedit__title {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--play-ink-2);
+}
+
+.pl-hpedit__title b {
+  font-size: 14px;
+  color: var(--play-ink);
+}
+
+.pl-hpedit__row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.pl-hpedit__row + .pl-hpedit__row {
+  margin-top: 8px;
+}
+
+.pl-hpedit__verb {
+  flex: 1;
+  height: 34px;
+  border: 1px solid var(--play-gold-dim);
+  border-radius: 4px;
+  background: none;
+  font: 700 13.5px/1 var(--font-body);
+  color: var(--play-mute);
+  cursor: pointer;
+}
+
+.pl-hpedit__verb[aria-pressed="true"][data-verb="damage"] {
+  border-color: rgb(216 99 90 / 55%);
+  color: var(--play-danger);
+}
+
+.pl-hpedit__verb[aria-pressed="true"][data-verb="heal"] {
+  border-color: rgb(95 176 138 / 55%);
+  color: var(--play-vital);
+}
+
+.pl-hpedit__amount {
+  width: 64px;
+  height: 34px;
+  border: 1px solid var(--play-gold-dim);
+  border-radius: 4px;
+  background: var(--play-panel);
+  color: var(--play-ink);
+  font: 400 20px/1 var(--font-title);
+  text-align: center;
+}
+
+.pl-field {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  height: 30px;
+  min-width: 64px;
+  flex: 1;
+  padding: 0 8px;
+  border: 1px solid var(--play-gold-dim);
+  border-radius: 4px;
+  background: var(--play-panel);
+  color: var(--play-ink);
+  font: 400 12.5px/1 var(--font-body);
+}
+
+.pl-field input,
+.pl-field select {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+.pl-field span {
+  color: var(--play-mute);
+}
+
+.pl-hpedit__foot {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--play-mute);
+}
+
+/* ── The token pill (rule 34) ─────────────────────────────────────────────── */
+
+.pl-tokenpill {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  padding: 4px;
+}
+
+.pl-tokenpill .pl-icon-btn {
+  width: 34px;
+  height: 34px;
+}
+
+.pl-tokenpill__init {
+  width: 46px;
+  height: 30px;
+  border: 1px solid var(--play-gold-dim);
+  border-radius: 4px;
+  background: var(--play-well);
+  color: var(--play-gold-2);
+  font: 400 15px/1 var(--font-title);
+  text-align: center;
+}
+
+.pl-tokenpill__sep {
+  width: 1px;
+  height: 22px;
+  margin: 0 3px;
+  background: var(--play-hair-2);
+}
+
+/* ── "Aggiungi": the creature dock beside the rail ────────────────────────── */
+
+.pl-dock {
+  top: 70px;
+  left: 80px;
+  width: min(560px, calc(100% - 120px));
+  max-height: calc(100% - 260px);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px 14px;
+}
+
+.pl-search {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--play-gold-dim);
+  border-radius: 18px;
+  background: var(--play-well);
+  color: var(--play-ink);
+}
+
+.pl-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: 400 13.5px/1 var(--font-body);
+}
+
+.pl-dock__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+  overflow-y: auto;
+}
+
+.pl-dock__card {
+  position: relative;
+  padding: 10px 6px 8px;
+  border: 1px solid var(--play-hair-2);
+  border-radius: 6px;
+  background: var(--play-well);
+  color: var(--play-ink);
+  text-align: center;
+  cursor: pointer;
+}
+
+.pl-dock__card:hover {
+  border-color: var(--play-gold-line);
+}
+
+.pl-dock__card b {
+  display: block;
+  overflow: hidden;
+  margin-top: 6px;
+  font: 600 12.5px/1.2 var(--font-body);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pl-dock__card small {
+  display: block;
+  margin-top: 1px;
+  font-size: 10.5px;
+  color: var(--play-mute);
+}
+
+.pl-dock__face {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto;
+  border: 2px solid rgb(216 99 90 / 70%);
+  border-radius: 50%;
+  background: var(--play-panel);
+  font: 700 16px/1 var(--font-title);
+  color: var(--play-danger);
+}
+
+.pl-dock__hint {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--play-mute);
+}
+
+/* ── Empty and waiting states ─────────────────────────────────────────────── */
+
+.pl-standby {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(460px, calc(100% - 48px));
+  padding: 28px 24px;
+  text-align: center;
+}
+
+.pl-standby h1 {
+  margin: 0 0 8px;
+  font: 700 20px/1.2 var(--font-title);
+  color: var(--play-gold-2);
+}
+
+.pl-standby p {
+  margin: 0 0 16px;
+  font-size: 13.5px;
+  color: var(--play-ink-2);
+}
+
+/* ── The tooltip body (rule 40): label · hotkey · one sentence ─────────────── */
+
+.pl-tip {
+  display: block;
+  max-width: 240px;
+}
+
+.pl-tip b {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  font: 700 13.5px/1.2 var(--font-body);
+}
+
+.pl-tip kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--play-gold-dim);
+  border-radius: 3px;
+  font: 700 10.5px/1.4 var(--font-body);
+  letter-spacing: 0.06em;
+  color: var(--play-gold-2);
+}
+
+.pl-tip span {
+  display: block;
+  margin-top: 4px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--play-ink-2);
+}
+
+/* ── The DEV harness chrome (`/_play`) — never a product surface ───────────── */
+
+.pl-dev {
+  position: fixed;
+  z-index: 10;
+  top: 0;
+  left: 0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 10px;
+  border-bottom-right-radius: 6px;
+  border: 1px solid var(--play-hair-2);
+  border-top: 0;
+  border-left: 0;
+  background: var(--play-well);
+  font: 400 12px/1 var(--font-body);
+  color: var(--play-ink-2);
+}
+
+.pl-dev label {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.pl-dev select {
+  border: 1px solid var(--play-hair-2);
+  border-radius: 3px;
+  background: var(--play-panel);
+  color: var(--play-ink);
+  font: inherit;
+}

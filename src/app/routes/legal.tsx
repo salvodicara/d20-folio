@@ -48,6 +48,7 @@ const CCBY_URL = "https://creativecommons.org/licenses/by/4.0/legalcode";
 const CCBY3_URL = "https://creativecommons.org/licenses/by/3.0/";
 const AGPL_URL = "https://www.gnu.org/licenses/agpl-3.0.html";
 const GAME_ICONS_URL = "https://game-icons.net";
+const LUCIDE_URL = "https://lucide.dev";
 
 /** A gilt outbound link with the shared trailing external-link glyph. */
 function OutLink({ href, label }: { href: string; label: string }) {
@@ -134,6 +135,13 @@ export function LegalPage() {
             {t("legal.licenses.iconsDesc")}{" "}
             <OutLink href={GAME_ICONS_URL} label={t("legal.links.gameIcons")} /> ·{" "}
             <OutLink href={CCBY3_URL} label={t("legal.links.ccby3")} />
+          </p>
+          {/* The play surface ships its own normalised sprite (UI spec §3b): the CC BY 3.0
+              attribution its game glyphs require, and the ISC notice Lucide's carry. */}
+          <p className="colophon-body">
+            {t("legal.licenses.iconsPlay")}{" "}
+            <OutLink href={GAME_ICONS_URL} label={t("legal.links.gameIcons")} /> ·{" "}
+            <OutLink href={LUCIDE_URL} label={t("legal.links.lucide")} />
           </p>
         </section>
 

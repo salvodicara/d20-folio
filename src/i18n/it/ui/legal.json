@@ -16,7 +16,8 @@
       "srdDesc": "Le regole, gli incantesimi, le classi e gli altri dati di gioco provengono dai System Reference Document 5.2.1 e 5.1, ciascuno usato secondo la licenza di attribuzione 4.0 Internazionale di Creative Commons.",
       "appTerm": "Codice sorgente di d20 Folio",
       "appDesc": "L'applicazione stessa, il suo codice e il suo design, è rilasciata sotto la GNU Affero General Public License v3.0 (AGPL-3.0-or-later).",
-      "iconsDesc": "Alcuni glifi di Game Icons sono usati con licenza CC BY 3.0: Diamond Ring, Sickle, Bo, Wood Club, Flail, War Pick, Slingshot, Hatchet, 3D Hammer, Crowbar, Dice Six Faces Five, Lockpicks, Scroll Quill, Camping Tent, Spell Book, Backpack, Ribbon Medal, Warlock Eye, Lunar Wand, Spiked Dragon Head, Barbarian, Oak Leaf e Checklist di Delapouite; Wizard Staff, Broadsword, Pocket Bow, Spiked Mace, Whip, Manacles, Breastplate, Compass, Potion Ball, Campfire, Open Book, Crossed Swords, Cut Diamond, Lyre, Prayer, Meditation, Winged Shield, Rogue, Magic Swirl, Anvil Impact, Music Spell, Heart Bottle, Bordered Shield, Heavy Lightning, Windy Stripes, On Target e Dread Skull di Lorc; Crossbow di Carl Olsen; Musket di Skoll; e Pistol Gun di John Colburn. Il glifo semplificato della Lancia deriva dalla Spear CC0 di SVG Repo."
+      "iconsDesc": "Alcuni glifi di Game Icons sono usati con licenza CC BY 3.0: Diamond Ring, Sickle, Bo, Wood Club, Flail, War Pick, Slingshot, Hatchet, 3D Hammer, Crowbar, Dice Six Faces Five, Lockpicks, Scroll Quill, Camping Tent, Spell Book, Backpack, Ribbon Medal, Warlock Eye, Lunar Wand, Spiked Dragon Head, Barbarian, Oak Leaf e Checklist di Delapouite; Wizard Staff, Broadsword, Pocket Bow, Spiked Mace, Whip, Manacles, Breastplate, Compass, Potion Ball, Campfire, Open Book, Crossed Swords, Cut Diamond, Lyre, Prayer, Meditation, Winged Shield, Rogue, Magic Swirl, Anvil Impact, Music Spell, Heart Bottle, Bordered Shield, Heavy Lightning, Windy Stripes, On Target e Dread Skull di Lorc; Crossbow di Carl Olsen; Musket di Skoll; e Pistol Gun di John Colburn. Il glifo semplificato della Lancia deriva dalla Spear CC0 di SVG Repo.",
+      "iconsPlay": "La schermata di gioco usa un unico foglio di simboli: 63 glifi di gioco da game-icons.net di Carl-olsen, Delapouite, Lorc, Sbed, Skoll e Willdabeast, con licenza CC BY 3.0; e 39 glifi di interfaccia da Lucide, con licenza ISC. I cinque segni dell'economia delle azioni sono nostri."
     },
     "trademarks": {
       "heading": "Marchi",
@@ -35,7 +36,8 @@
       "srd51": "System Reference Document 5.1",
       "agpl": "GNU Affero General Public License v3.0",
       "gameIcons": "Game Icons",
-      "ccby3": "Creative Commons Attribuzione 3.0"
+      "ccby3": "Creative Commons Attribuzione 3.0",
+      "lucide": "Lucide"
     },
     "privacy": {
       "heading": "Informativa sulla privacy",
