@@ -705,6 +705,16 @@ function commitAt(
 
 // ── Entry points ────────────────────────────────────────────────────────────
 
+/** What an intent resolves to before a single step runs. */
+export interface IntentPreflight {
+  readonly program: Program;
+  /** The entities the program actually runs against — an area's derived, eligible members. */
+  readonly targets: readonly EntityId[];
+  /** The entity the window's event is about, bound to `$event.entity`; `null` off a window. */
+  readonly eventEntity: EntityId | null;
+  readonly payment: Payment;
+}
+
 /**
  * Everything `applyIntent` decides BEFORE it runs a single step: which program this is, whether
  * the trigger admits it here and now, which entities it actually affects, and what it costs.
@@ -719,15 +729,6 @@ function commitAt(
  * contract (an unknown mechanic outranks a wrong turn, which outranks an unaffordable cost), so
  * a caller that shows the first rejection shows the same one the log would record.
  */
-export interface IntentPreflight {
-  readonly program: Program;
-  /** The entities the program actually runs against — an area's derived, eligible members. */
-  readonly targets: readonly EntityId[];
-  /** The entity the window's event is about, bound to `$event.entity`; `null` off a window. */
-  readonly eventEntity: EntityId | null;
-  readonly payment: Payment;
-}
-
 export function preflightIntent(
   state: FoldedState,
   action: IntentAction,
