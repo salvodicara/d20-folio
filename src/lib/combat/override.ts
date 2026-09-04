@@ -3,12 +3,14 @@
  * for the paths that are persisted facts rather than read-time-derived stats.
  */
 import { endEffects } from "./effects";
-import type { EntityId } from "./ids";
+import type { EffectId, EntityId } from "./ids";
 import type { StepResult } from "./intent";
 import { isMapCell } from "./map";
 import { recomputeRelations } from "./reposition";
 import type {
   CombatEvent,
+  ConditionId,
+  Effect,
   Entity,
   FoldedState,
   LifeState,
@@ -84,6 +86,27 @@ export function patchDirectOverride(
   if (path === "vitals.life" && typeof value === "string" && isLifeState(value)) {
     return { ...entity, vitals: { ...entity.vitals, life: value } };
   }
+  // Temporary HP the DM grants or takes away by hand: a pool with NO source effect, so
+  // nothing ending later takes it back. 0 (or null) clears the pool rather than leaving an
+  // empty one, which is what "temp 0" means everywhere else in the engine.
+  if (path === "vitals.tempHp" && (value === null || value === 0)) {
+    return { ...entity, vitals: { ...entity.vitals, tempHp: null } };
+  }
+  if (path === "vitals.tempHp" && typeof value === "number" && Number.isFinite(value)) {
+    return {
+      ...entity,
+      vitals: { ...entity.vitals, tempHp: { amount: Math.max(0, value), source: null } },
+    };
+  }
+  // The maximum is a PROJECTED stat, and `sync` refreshes it — but between syncs it is the
+  // number every bar is drawn against, so the DM's correction has to move it. Floored at 1:
+  // a maximum of 0 would make every HP ratio meaningless.
+  if (path === "stats.maxHp" && typeof value === "number" && Number.isFinite(value)) {
+    return {
+      ...entity,
+      stats: { ...entity.stats, maxHp: Math.max(1, Math.floor(value)) },
+    };
+  }
   // A placement (stage 5): the DM putting a token on the map, a controller placing their own
   // before turns begin, or any move on a `log-only` table. `null` takes the token off the map.
   // The movement budget is neither consulted nor spent — this is not the `move` step.
@@ -102,6 +125,101 @@ export function patchDirectOverride(
   return entity;
 }
 
+const CONDITIONS = new Set<ConditionId>([
+  "blinded",
+  "charmed",
+  "deafened",
+  "exhaustion",
+  "frightened",
+  "grappled",
+  "incapacitated",
+  "invisible",
+  "paralyzed",
+  "petrified",
+  "poisoned",
+  "prone",
+  "restrained",
+  "stunned",
+  "unconscious",
+]);
+
+/** The `condition` override's value: which condition, and whether it is on or off. Anything
+ *  else — an unknown id, a malformed record — reads as "no instruction". */
+interface ConditionPatch {
+  readonly condition: ConditionId;
+  readonly active: boolean;
+}
+
+function readConditionPatch(value: unknown): ConditionPatch | null {
+  if (typeof value !== "object" || value === null) return null;
+  const { condition, active } = value as Record<string, unknown>;
+  if (typeof condition !== "string" || typeof active !== "boolean") return null;
+  if (!(CONDITIONS as ReadonlySet<string>).has(condition)) return null;
+  return { condition: condition as ConditionId, active };
+}
+
+function conditionEffectsOn(
+  state: FoldedState,
+  entity: EntityId,
+  condition: ConditionId
+): EffectId[] {
+  return Object.values(state.effects)
+    .filter(
+      (effect) =>
+        effect.target === entity &&
+        effect.payload.kind === "condition" &&
+        effect.payload.condition === condition
+    )
+    .map((effect) => effect.id);
+}
+
+/**
+ * The DM conditioning a creature by hand (component 18). A condition is not a field — it is an
+ * `Effect` — so this path starts one with a `manual` lifetime, or ends every effect of that
+ * condition on the entity. Starting one that is already there is a no-op rather than a second
+ * stacked effect, and a creature immune to the condition is left alone exactly as the
+ * `condition` STEP leaves it (`intent.ts`): the DM's last word is over outcomes, and an
+ * immunity is a fact of the creature, not an outcome.
+ */
+function applyConditionOverride(
+  state: FoldedState,
+  action: OverrideAction,
+  patch: ConditionPatch,
+  events: CombatEvent[]
+): FoldedState {
+  const existing = conditionEffectsOn(state, action.entity, patch.condition);
+  if (!patch.active) {
+    if (existing.length === 0) return state;
+    const ended = endEffects(state, existing);
+    events.push(...ended.events);
+    return ended.state;
+  }
+  if (existing.length > 0) return state;
+  const entity = state.entities[action.entity];
+  if (!entity || entity.stats.conditionImmunities.includes(patch.condition)) return state;
+  const id: EffectId = `effect-${state.nextOrdinal}`;
+  const effect: Effect = {
+    id,
+    source: {
+      entity: action.entity,
+      // The DM's hand, not a mechanic: the path itself is the provenance, and the
+      // override's own audit record carries the reason and the author.
+      mechanic: "override:condition",
+      action: action.id,
+      castLevel: null,
+    },
+    target: action.entity,
+    payload: { kind: "condition", condition: patch.condition },
+    lifetime: { kind: "manual" },
+    concentration: false,
+  };
+  return {
+    ...state,
+    effects: { ...state.effects, [id]: effect },
+    nextOrdinal: state.nextOrdinal + 1,
+  };
+}
+
 export function applyOverride(state: FoldedState, action: OverrideAction): StepResult {
   const entity = state.entities[action.entity];
   if (!entity) return rejected({ reason: "unknown-entity", entity: action.entity });
@@ -118,6 +236,10 @@ export function applyOverride(state: FoldedState, action: OverrideAction): StepR
     entities: { ...state.entities, [action.entity]: patched },
   };
   const events: CombatEvent[] = [];
+  if (action.path === "condition") {
+    const patch = readConditionPatch(action.value);
+    if (patch) next = applyConditionOverride(next, action, patch, events);
+  }
   // A placement recomputes the derived `adjacent`/`range` facts and opens NO opportunity-attack
   // window: forced movement, not a departure (design addendum §4).
   if (action.path === "position") next = recomputeRelations(next, action.entity).state;

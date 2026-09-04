@@ -378,3 +378,132 @@ describe("override — position and reveal.* are direct-patch paths (stage 5)", 
     expect(mustEntity(bad.state, "goblin").reveal.token).toBe(false);
   });
 });
+
+/**
+ * The three paths the DM's HP editor writes (component 18, stage 6 §D9). Temp HP and max HP are
+ * persisted facts like `vitals.hp` — the projection sets them and `sync` refreshes them, so a
+ * correction has to move the fact, not only the audit record. A condition is not a field at all:
+ * it is an `Effect`, so the `condition` path starts or ends one with a `manual` lifetime, which
+ * is the same thing the DM does by hand at the table.
+ */
+describe("override — the HP editor's paths", () => {
+  it("vitals.tempHp: a number becomes the temporary-HP pool, sourced by no effect", () => {
+    const result = resolve(opened(), override("vitals.tempHp", 7), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(mustEntity(result.state, "hero").vitals.tempHp).toEqual({
+      amount: 7,
+      source: null,
+    });
+  });
+
+  it("vitals.tempHp: zero or null clears the pool rather than leaving an empty one", () => {
+    const seeded = resolve(opened(), override("vitals.tempHp", 7), catalogue);
+    if (seeded.kind !== "applied") throw new Error("temp override failed");
+    for (const value of [0, null]) {
+      const cleared = resolve(seeded.state, override("vitals.tempHp", value), catalogue);
+      expect(cleared.kind).toBe("applied");
+      if (cleared.kind !== "applied") return;
+      expect(mustEntity(cleared.state, "hero").vitals.tempHp).toBeNull();
+    }
+  });
+
+  it("vitals.tempHp: a non-number is recorded but never corrupts the pool", () => {
+    const result = resolve(opened(), override("vitals.tempHp", "lots"), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(mustEntity(result.state, "hero").vitals.tempHp).toBeNull();
+    expect(mustEntity(result.state, "hero").overrides["vitals.tempHp"]?.value).toBe(
+      "lots"
+    );
+  });
+
+  it("stats.maxHp: the DM's correction moves the maximum, floored at 1", () => {
+    const raised = resolve(opened(), override("stats.maxHp", 45), catalogue);
+    expect(raised.kind).toBe("applied");
+    if (raised.kind !== "applied") return;
+    expect(mustEntity(raised.state, "hero").stats.maxHp).toBe(45);
+    const floored = resolve(opened(), override("stats.maxHp", 0), catalogue);
+    if (floored.kind !== "applied") throw new Error("max override failed");
+    expect(mustEntity(floored.state, "hero").stats.maxHp).toBe(1);
+  });
+
+  it("condition: the DM starts one as a manual effect on the entity", () => {
+    const result = resolve(
+      opened(),
+      override("condition", { condition: "prone", active: true }),
+      catalogue
+    );
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    const effects = Object.values(result.state.effects);
+    expect(effects).toHaveLength(1);
+    expect(effects[0]).toMatchObject({
+      target: "hero",
+      payload: { kind: "condition", condition: "prone" },
+      lifetime: { kind: "manual" },
+      concentration: false,
+    });
+  });
+
+  it("condition: starting the same one twice does not stack a second effect", () => {
+    const first = resolve(
+      opened(),
+      override("condition", { condition: "prone", active: true }),
+      catalogue
+    );
+    if (first.kind !== "applied") throw new Error("condition override failed");
+    const second = resolve(
+      first.state,
+      override("condition", { condition: "prone", active: true }),
+      catalogue
+    );
+    expect(second.kind).toBe("applied");
+    if (second.kind !== "applied") return;
+    expect(Object.keys(second.state.effects)).toHaveLength(1);
+  });
+
+  it("condition: clearing one ends every condition effect of that id on the entity", () => {
+    const started = resolve(
+      opened(),
+      override("condition", { condition: "prone", active: true }),
+      catalogue
+    );
+    if (started.kind !== "applied") throw new Error("condition override failed");
+    const cleared = resolve(
+      started.state,
+      override("condition", { condition: "prone", active: false }),
+      catalogue
+    );
+    expect(cleared.kind).toBe("applied");
+    if (cleared.kind !== "applied") return;
+    expect(Object.keys(cleared.state.effects)).toHaveLength(0);
+    expect(cleared.receipt.events).toContainEqual({
+      kind: "effect-ended",
+      effect: Object.keys(started.state.effects)[0],
+    });
+  });
+
+  it("condition: an id outside the closed set is recorded and changes nothing", () => {
+    const result = resolve(
+      opened(),
+      override("condition", { condition: "hangry", active: true }),
+      catalogue
+    );
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(Object.keys(result.state.effects)).toHaveLength(0);
+  });
+
+  it("condition: a creature immune to it is not conditioned by the path either", () => {
+    const state = opened({ conditionImmunities: ["prone"] });
+    const result = resolve(
+      state,
+      override("condition", { condition: "prone", active: true }),
+      catalogue
+    );
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(Object.keys(result.state.effects)).toHaveLength(0);
+  });
+});
