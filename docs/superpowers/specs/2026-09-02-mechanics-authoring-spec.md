@@ -311,14 +311,14 @@ Bounded to what the acceptance stories need (`PRODUCT.md` §Steering; design §4
 kind is declared in the closed unions, conforms as `unsupported` with a path, and gains its
 reducer handler in the stage that first needs it.
 
-| Kind family | Stage 3 (Marco's first turn, Sara's ogre ambush)                                                                             | Later                                                           |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Triggers    | `invocation` (action, bonus, reaction); `event: entity-left-reach` (opportunity attack)                                      | other events (`attack-declared`, `cast-declared`, `hp-zero`, …) |
-| Costs       | `turn` claims, `slot` (with upcast), `resource`                                                                              | `recharge`, `legendary`                                         |
-| Inputs      | `d20` (attack, save, initiative, concentration), `dice`, `choice`, `damage-type`, `declare`                                  | `integer`, `table` rulings                                      |
-| Steps       | `attack`, `save`, `damage`, `heal`, `effect-start`, `condition`, `move-mark`, `turn-claim`, `negate`, `manual-table`, `move` | `summon`, `transform`, `aura`, `ready`                          |
-| Lifetimes   | `manual`, `turn-edge`, `rounds`, `seconds`, `rest`                                                                           | `day-phase`                                                     |
-| Adapter     | monster stat blocks → `Mechanic[]` for Multiattack and single attacks                                                        | Recharge, Legendary Actions, lair bonuses                       |
+| Kind family | Stage 3 (Marco's first turn, Sara's ogre ambush)                                                                                                    | Later                                                             |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Triggers    | `invocation` (action, bonus, reaction); `event: entity-left-reach` (opportunity attack)                                                             | other events (`attack-declared`, `cast-declared`, `hp-zero`, …)   |
+| Costs       | `turn` claims, `slot` (with upcast), `resource`                                                                                                     | `recharge`, `legendary`                                           |
+| Inputs      | `d20` (attack, save, initiative, concentration), `dice`, `choice`, `damage-type`, `declare`                                                         | `integer`, `table` rulings                                        |
+| Steps       | `attack`, `save`, `damage`, `heal`, `effect-start`, `condition`, `move-mark`, `turn-claim`, `negate`, `manual-table`, `move`                        | `summon`, `transform`, `aura`, `ready`                            |
+| Lifetimes   | `manual`, `turn-edge`, `rounds`, `seconds`, `rest`                                                                                                  | `day-phase`                                                       |
+| Adapter     | monster stat blocks → `Mechanic` for `attack` entries and damage-carrying `save` entries; every other entry (Multiattack included) → `manual-table` | structured Multiattack, Recharge, Legendary Actions, lair bonuses |
 
 Stage 3 also added area targeting (`TargetSpec.count: "area"`, an `AreaShapeSpec` parametrized by
 `position`-kind inputs, resolved against stage 2's `areaMembership`) and the monster adapter

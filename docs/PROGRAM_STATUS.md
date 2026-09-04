@@ -217,6 +217,10 @@ reason it outranked the plan text:
   moves, so the fixture makes it a real budgeted move.
 - Sara's blade gates on `adjacent`, not `visible`: the plan's predicate contradicted its own
   comment and every other melee attack.
+- Two minors in Sara's replay were plan defects in the acceptance proof itself and were fixed in
+  the same round rather than deferred: the override value became 17, so a leaked `log-only` hit
+  (30 − 12 = 18) could not be mistaken for the expected result, and `rolls.r-ogre-atk.hidden: true`
+  is now asserted.
 
 **Deferred minors** (raised by task reviews, triaged as non-blocking and recorded rather than
 fixed): the table settings op replaces the settings object instead of spreading it; a duplicated
@@ -224,16 +228,22 @@ fixed): the table settings op replaces the settings object instead of spreading 
 assertion; no test pinning that a roll answered by a `log-only` intent still lands in `state.spent`;
 an HP override to 0 on an alive creature leaves `life: "alive"` (hp-0-but-alive) — document or
 couple; no test for the `LIFE_STATES` whitelist rejecting a bad string, and its `as LifeState`
-cast; `intent.ts` is past 1,000 lines and trending toward a catch-all (`areaShapeFrom` is a
-candidate for `position.ts`); the impossible-state guard for an area count without a shape reports
-`unknown-mechanic`, and conformance checks `=== undefined` where the runtime checks truthiness (a
-discriminated `TargetSpec` would remove both); missing area tests (a caster inside their own blast,
-the eligibility filter actually excluding someone, cone/line without `aim`); area tests call
-`cast()` before `opened()`; the boundary guard derives the slot level from the first `slot` cost
-only; the adapter's degrade paths (damage choice, `onSuccess: "special"`, melee-or-ranged,
-spellcasting) are untested beyond `narrative`; duplicate monster entry ids yield shadowed programs
-with no uniqueness rule in `conformMechanic`; and the adapter's end-to-end test injects `relations`
-directly instead of through the log.
+cast; the impossible-state guard for an area count without a shape reports `unknown-mechanic`, and
+conformance checks `=== undefined` where the runtime checks truthiness (a discriminated
+`TargetSpec` would remove both); missing area tests (a caster inside their own blast, the
+eligibility filter actually excluding someone, cone/line without `aim`); area tests call `cast()`
+before `opened()`; the `const targets = program.targets` narrowing alias would read better as
+`targetSpec`, and area targeting added ~120 lines to `intent.ts`, which is now past 1,000 and
+trending toward a catch-all (`areaShapeFrom` is a candidate for `position.ts`); the boundary guard
+derives the slot level from the first `slot` cost only; the adapter's degrade paths (damage choice,
+`onSuccess: "special"`, melee-or-ranged, spellcasting) are untested beyond `narrative`; duplicate
+monster entry ids yield shadowed programs with no uniqueness rule in `conformMechanic`; the
+adapter's `damageParts` parameter is typed through `MonsterAttackEntry["damage"]` although it also
+serves save entries (`readonly MonsterDamage[]` would say what it means), and `labelFor(block,
+entry)` / `manualProgram(entry, block)` take the same pair in opposite order; and the adapter's
+end-to-end test injects `relations` directly instead of through the log. One further minor — the
+adapter silently dropping `recharge` on structured entries — is not listed here because it changes
+behaviour at the table and is recorded under "Out of stage 3" instead.
 
 **Gates on `v2` at the close:** `just ci` 4 min 38 s (828 files / 18,695 tests, Functions 129, plus
 typecheck, lint and the build); `pnpm test:rules` 15.2 s (113 cases on the emulator); `vite build` +
