@@ -1,10 +1,11 @@
 /**
  * Boundary guards for the pure combat engine and the data it executes (`src/lib/combat`,
  * `src/data/combat`): no React, Firebase, Zustand, i18n, feature or component imports; no
- * clock; no RNG. Payment cannot be bypassed: every costed program that applies reports what it
- * paid.
+ * clock; no RNG; and no reach into the character engine — the PC projection lives OUTSIDE the
+ * kernel and the kernel never imports it. Payment cannot be bypassed: every costed program that
+ * applies reports what it paid.
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { resolve as resolvePath } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildCatalogue } from "@/lib/combat/catalogue";
@@ -20,10 +21,8 @@ import { nextActionId, openingActions, seqFactory } from "./__helpers__/state";
  * DATA — a mechanic is typed values, never behaviour — so a React, Firebase or clock import
  * there would smuggle exactly what the kernel forbids in through the catalogue.
  */
-const MODULE_DIRS = [
-  resolvePath(process.cwd(), "src/lib/combat"),
-  resolvePath(process.cwd(), "src/data/combat"),
-];
+const KERNEL_DIR = resolvePath(process.cwd(), "src/lib/combat");
+const MODULE_DIRS = [KERNEL_DIR, resolvePath(process.cwd(), "src/data/combat")];
 const FORBIDDEN = [
   /from\s+["']react/,
   /from\s+["']firebase/,
@@ -37,10 +36,20 @@ const FORBIDDEN = [
   /\bMath\.random\b/,
   /\bcrypto\.getRandomValues\b/,
   /\bcrypto\.randomUUID\b/,
+  // `projectCharacter` reads the sheet's engine (`smart-tracker`, `aggregate-character`).
+  // It is the ADAPTER onto the kernel, so the arrow points one way only.
+  /combat-projection/,
 ];
 
 describe("boundary — src/lib/combat is pure", () => {
-  it("imports nothing from the UI, persistence, i18n, clock or RNG", () => {
+  it("keeps the PC projection outside the kernel", () => {
+    expect(existsSync(resolvePath(process.cwd(), "src/lib/combat-projection.ts"))).toBe(
+      true
+    );
+    expect(existsSync(resolvePath(KERNEL_DIR, "combat-projection.ts"))).toBe(false);
+  });
+
+  it("imports nothing from the UI, persistence, i18n, clock, RNG or the sheet's engine", () => {
     const offenders: string[] = [];
     let scanned = 0;
     for (const dir of MODULE_DIRS) {
