@@ -727,6 +727,154 @@ describe("parseEncounter — the node budget at the rules' log cap", () => {
     expect(parseEncounter(raw).ok).toBe(true);
   });
 
+  /** A PC's weapon row as `projectCharacter` will emit it (spec §2 D4): fixed bonus, typed
+   *  damage, one visible target. 42 JSON nodes. */
+  function weaponMechanic(pc: string, n: number): Mechanic {
+    return {
+      schema: 1,
+      id: `pc:${pc}:weapon-${n}`,
+      source: "pack",
+      label: `label:weapon-${n}`,
+      active: [
+        {
+          id: "attack",
+          trigger: { kind: "invocation", economy: "action" },
+          cost: [{ kind: "turn", claim: "attack" }],
+          targets: {
+            count: 1,
+            eligibility: {
+              relation: "visible",
+              between: ["$self", "$target"],
+              value: true,
+            },
+          },
+          inputs: [
+            { id: "roll", kind: "d20", for: "attack" },
+            { id: "damage", kind: "dice", formula: "1d8+4" },
+          ],
+          steps: [
+            {
+              id: "swing",
+              kind: "attack",
+              roll: "roll",
+              bonus: 7,
+              damage: [{ dice: "damage", type: "slashing" }],
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  /** The fattest shape D4 emits: a typed area, a per-target save and damage. 60 JSON nodes. */
+  function areaSpellMechanic(pc: string, n: number): Mechanic {
+    return {
+      schema: 1,
+      id: `pc:${pc}:spell-${n}`,
+      source: "pack",
+      label: `label:spell-${n}`,
+      active: [
+        {
+          id: "cast",
+          trigger: { kind: "invocation", economy: "action" },
+          cost: [
+            { kind: "turn", claim: "action" },
+            { kind: "slot", level: 3, upcast: true },
+          ],
+          targets: {
+            count: "area",
+            eligibility: { not: { is: ["$self", "$target"] } },
+            area: { kind: "sphere", origin: "origin", radiusFt: 20 },
+          },
+          inputs: [
+            { id: "origin", kind: "position" },
+            { id: "save", kind: "d20", for: "save", ability: "DEX", perTarget: true },
+            { id: "damage", kind: "dice", formula: "8d6" },
+          ],
+          steps: [
+            {
+              id: "burn",
+              kind: "save",
+              roll: "save",
+              ability: "DEX",
+              dc: "spell",
+              onSuccess: "half",
+            },
+            {
+              id: "scorch",
+              kind: "damage",
+              parts: [{ dice: "damage", type: "fire" }],
+              to: "$target",
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  const PARTY = ["marco", "sara", "luca", "anna", "gio", "eva"] as const;
+
+  /** 15 automated actions per PC — seven weapon rows, eight spells. */
+  function mechanicsOf(pc: string): Mechanic[] {
+    return [
+      ...Array.from({ length: 7 }, (_, i) => weaponMechanic(pc, i)),
+      ...Array.from({ length: 8 }, (_, i) => areaSpellMechanic(pc, i)),
+    ];
+  }
+
+  /** `plainJson`'s own accounting: one node per scalar, array and object. */
+  function nodes(value: unknown): number {
+    if (value === null || typeof value !== "object") return 1;
+    const children: unknown[] = Array.isArray(value) ? value : Object.values(value);
+    return children.reduce<number>((total, child) => total + nodes(child), 1);
+  }
+
+  it("a six-PC party, seated and checkpointed, parses alongside 1,000 intents", () => {
+    // The budget that matters is `MAX_VALUES` (50,000) counted over log AND checkpoint
+    // TOGETHER, and a document past it quarantines on every client with `checkpointEncounter`
+    // refusing to repair it. Carried mechanics (stage 6 §2 D2) put a party's whole action list
+    // in BOTH halves — once in the seat ops that seated them, once in `checkpoint.state
+    // .mechanics` — so the realistic worst case belongs here rather than at a live table.
+    const carried = PARTY.flatMap((pc) => mechanicsOf(pc));
+    const seats = PARTY.map((pc, index) => ({
+      kind: "table",
+      id: `t-${index}`,
+      seq: { ms: 100 + index, counter: 0, by: "dm" },
+      by: "dm",
+      table: {
+        op: "add-entity",
+        entity: testEntity({
+          id: pc,
+          kind: "pc",
+          controllerUid: `p-${pc}`,
+          mechanics: mechanicsOf(pc).map((mechanic) => mechanic.id),
+        }),
+        mechanics: mechanicsOf(pc),
+      },
+    }));
+    const raw = minimalEncounter({
+      log: [...seats, ...Array.from({ length: 1_000 }, (_, i) => fireballIntent(i))],
+      checkpoint: {
+        through: { ms: 999, counter: 0, by: "dm" },
+        state: {
+          ...populatedFoldedState(),
+          mechanics: Object.fromEntries(carried.map((m) => [m.id, m])),
+        },
+      },
+    });
+    const measured = nodes(raw);
+    expect(
+      parseEncounter(raw).ok,
+      `measured ${measured} JSON nodes against MAX_VALUES 50,000`
+    ).toBe(true);
+    // MEASURED 44,032 of the 50,000 ceiling — 88%, and only ~12% headroom. The 1,000 intents
+    // are 34,000 of it; the party's 90 carried definitions are ~9,700, counted twice because
+    // they ride in the seat ops AND in the checkpoint. Pinned so a fatter projection (a longer
+    // action list, structured Multiattack, per-target riders) fails HERE with the number rather
+    // than quarantining a live table's document.
+    expect(measured, "the realistic party's node count").toBeLessThan(50_000);
+  });
+
   it("2,000 of the same actions quarantine — what the old rules cap admitted", () => {
     // 2,000 x 34 nodes = 68,000, past `MAX_VALUES`. The document would fail to parse on
     // every client and `checkpointEncounter` would refuse to repair it.
