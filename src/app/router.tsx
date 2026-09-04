@@ -109,6 +109,14 @@ const PlayDevPage = import.meta.env.DEV
   ? lazy(() => import("./routes/play-dev").then((m) => ({ default: m.PlayDevPage })))
   : null;
 
+// The live play surface (stage 6): full-window by design — the map is the ground, so it is
+// mounted as a SIBLING of the shell's layout route rather than inside it. Lazy like every
+// heavy route: it carries the map, the HUD, the log presenter and the sprite, and a player
+// who never opens a table must not pay for any of it.
+const PlayRoute = lazy(() =>
+  import("@/features/play/PlayRoute").then((m) => ({ default: m.PlayRoute }))
+);
+
 const SpecimensPage = import.meta.env.DEV
   ? lazy(() => import("./routes/specimens").then((m) => ({ default: m.SpecimensPage })))
   : () => null;
@@ -177,6 +185,10 @@ const router = createBrowserRouter(
 
       {/* Protected — the new flat-hub shell */}
       <Route element={<AuthGuard />}>
+        {/* The play surface is INSIDE the auth guard and OUTSIDE the shell: no topbar, no
+            realm nav, no footer. It is the one full-window surface of the app (UI spec rule
+            28: "the map is the ground"), and its own error net is the root one. */}
+        <Route path="/campaigns/:campaignId/play" element={<PlayRoute />} />
         <Route element={<AppShell />}>
           {/* In-shell error net — a render crash on any surface (e.g. a malformed
               character doc) shows a recoverable panel in the content area while the

@@ -94,7 +94,8 @@
     "scene": {
       "notStarted": "Il combattimento non è iniziato",
       "roundLabel": "Round",
-      "turnOf": "{{name}} di turno"
+      "turnOf": "{{name}} di turno",
+      "untitled": "Il tavolo"
     },
     "initiative": {
       "aria": "Ordine di turno",

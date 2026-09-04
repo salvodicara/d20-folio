@@ -94,7 +94,8 @@
     "scene": {
       "notStarted": "The fight has not started",
       "roundLabel": "Round",
-      "turnOf": "{{name}}'s turn"
+      "turnOf": "{{name}}'s turn",
+      "untitled": "The table"
     },
     "initiative": {
       "aria": "Turn order",
