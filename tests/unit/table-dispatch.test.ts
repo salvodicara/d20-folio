@@ -13,6 +13,7 @@ import { describe, expect, it } from "vitest";
 import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
 import { buildCatalogue } from "@/lib/combat/catalogue";
 import { fold } from "@/lib/combat/fold";
+import type { Mechanic } from "@/lib/combat/mechanic";
 import { resolve } from "@/lib/combat/resolve";
 import type { Seq } from "@/lib/combat/ids";
 import type {
@@ -441,5 +442,247 @@ describe("intentBody", () => {
       catalogue
     );
     expect(result.kind).toBe("applied");
+  });
+});
+
+// ── The two answer families that are NOT declared by `program.inputs` ────────
+
+describe("planIntent plans the answers the reducer requires but no input declares", () => {
+  const marked = testEntity({
+    id: "marco",
+    kind: "pc",
+    controllerUid: "p-marco",
+    hp: 25,
+    abilities: { DEX: 2 },
+    mechanics: ["srd:weapon:longbow", "srd:spell:hunters-mark"],
+    resources: { "slot-1": { current: 2, max: 2, recharge: "long" } },
+    position: { x: 0, y: 0 },
+  });
+
+  /** Tough enough that both dice stay visible in the arithmetic below. */
+  const tough = testEntity({ id: "goblin-1", hp: 30, position: { x: 6, y: 0 } });
+
+  /** Marco marks the goblin, so his next attack owes the mark's rider its own die. */
+  function markedTable(): { state: FoldedState; rider: string } {
+    const seqOf = seqFactory("dm", 1_000);
+    const log: Action[] = [
+      ...openingActions("dm", seqOf, [marked, tough], { marco: 18, "goblin-1": 9 }, [
+        "marco",
+        "goblin-1",
+      ]),
+      sight(seqOf(), "goblin-1", true),
+      {
+        kind: "intent",
+        id: "mark-1",
+        seq: seqOf(),
+        by: "p-marco",
+        entity: "marco",
+        mechanic: "srd:spell:hunters-mark",
+        program: "cast",
+        targets: ["goblin-1"],
+        answers: {},
+        payment: [{ kind: "slot", level: 1, pool: "standard" }],
+        window: null,
+        basedOn: 0,
+      },
+    ];
+    const folded = fold(
+      {
+        schema: 1,
+        id: "live",
+        host: { kind: "campaign", campaignId: "camp-1" },
+        log,
+        checkpoint: null,
+      },
+      catalogue
+    );
+    expect(folded.rejections).toEqual([]);
+    const mark = Object.values(folded.state.effects).find(
+      (effect) => effect.payload.kind === "mark"
+    );
+    if (mark === undefined) throw new Error("expected Hunter's Mark in the fold");
+    return { state: folded.state, rider: `rider:${mark.id}` };
+  }
+
+  it("lists a mark's rider die alongside the program's own inputs", () => {
+    const { state, rider } = markedTable();
+    const inputs = plannedInputs(state, SHOT);
+    expect(inputs.map((pending) => pending.key)).toEqual(["roll", "damage", rider]);
+    // The rider is the ATTACKER's extra damage, so the attacker rolls it.
+    expect(inputs.at(-1)).toEqual({
+      key: rider,
+      target: null,
+      input: { id: rider, kind: "dice", formula: "1d6" },
+    });
+  });
+
+  it("builds an intent the reducer APPLIES — no die is spent to learn a missing-answer", () => {
+    const { state, rider } = markedTable();
+    const inputs = plannedInputs(state, SHOT);
+    const rolls = rollsFor(inputs, "manual", {
+      by: "p-marco",
+      entity: "marco",
+      faces: { roll: [19], damage: [6], [rider]: [4] },
+    });
+    if (!Array.isArray(rolls)) throw new Error(`unexpected roll error: ${rolls.code}`);
+    expect(rolls.map((pending) => pending.roll.roller)).toEqual([
+      "marco",
+      "marco",
+      "marco",
+    ]);
+
+    let next = state;
+    const ids = inputs.map((_pending, index) => `r-${index}`);
+    rolls.forEach((pending, index) => {
+      const result = resolve(
+        next,
+        {
+          ...pending,
+          id: ids[index] as string,
+          seq: { ms: 9_000 + index, counter: 0, by: "p-marco" },
+        },
+        catalogue
+      );
+      if (result.kind !== "applied") throw new Error("the roll was rejected");
+      next = result.state;
+    });
+
+    const rollIds = Object.fromEntries(
+      inputs.map((pending, index) => [pending.key, ids[index] as string])
+    );
+    const result = resolve(
+      next,
+      {
+        ...intentBody(next, SHOT, rollIds),
+        id: "i-1",
+        seq: { ms: 9_100, counter: 0, by: "p-marco" },
+        by: "p-marco",
+      },
+      catalogue
+    );
+    expect(result.kind).toBe("applied");
+    // 6 from the bow plus 4 from the mark: the rider's die actually landed.
+    if (result.kind !== "applied") return;
+    expect(result.state.entities["goblin-1"]?.vitals.hp).toBe(30 - 6 - 4);
+  });
+});
+
+describe("only a per-target d20 expands into per-target keys", () => {
+  /** A homebrew blast whose DAMAGE input is authored `perTarget` — the schema allows it and the
+   *  reducer still reads the plain `damage` id at every damage part. */
+  const scatter: Mechanic = {
+    schema: 1,
+    id: "test:spell:scatter",
+    source: "homebrew",
+    active: [
+      {
+        id: "cast",
+        trigger: { kind: "invocation", economy: "action" },
+        cost: [{ kind: "turn", claim: "action" }],
+        targets: {
+          count: "area",
+          eligibility: { all: [] },
+          area: { kind: "sphere", origin: "origin", radiusFt: 30 },
+        },
+        inputs: [
+          { id: "origin", kind: "position" },
+          { id: "damage", kind: "dice", formula: "1d6", perTarget: true },
+        ],
+        steps: [
+          {
+            id: "burn",
+            kind: "damage",
+            parts: [{ dice: "damage", type: "fire" }],
+            to: "$target",
+          },
+        ],
+      },
+    ],
+  };
+
+  const caster = testEntity({
+    id: "marco",
+    kind: "pc",
+    controllerUid: "p-marco",
+    hp: 25,
+    mechanics: ["test:spell:scatter"],
+    position: { x: 6, y: 0 },
+  });
+
+  const CAST: IntentArgs = {
+    entity: "marco",
+    mechanic: "test:spell:scatter",
+    program: "cast",
+    targets: [],
+    answersSoFar: { origin: { x: 6, y: 0 } },
+  };
+
+  function scatterTable(): FoldedState {
+    const seqOf = seqFactory("dm", 1_000);
+    const folded = fold(
+      {
+        schema: 1,
+        id: "live",
+        host: { kind: "campaign", campaignId: "camp-1" },
+        log: openingActions(
+          "dm",
+          seqOf,
+          [caster, GOBLIN_A, GOBLIN_B],
+          { marco: 18, "goblin-1": 9, "goblin-2": 8 },
+          ["marco", "goblin-1", "goblin-2"],
+          [...PROTOTYPE_MECHANICS, scatter]
+        ),
+        checkpoint: null,
+      },
+      catalogue
+    );
+    expect(folded.rejections).toEqual([]);
+    return folded.state;
+  }
+
+  it("plans ONE damage roll for a per-target `dice` input over two targets", () => {
+    const state = scatterTable();
+    const inputs = plannedInputs(state, CAST);
+    expect(inputs.map((pending) => pending.key)).toEqual(["damage"]);
+    expect(inputs[0]?.target).toBeNull();
+  });
+
+  it("builds an intent the reducer applies, with the roll attributed to the caster", () => {
+    const state = scatterTable();
+    const inputs = plannedInputs(state, CAST);
+    const rolls = rollsFor(inputs, "manual", {
+      by: "p-marco",
+      entity: "marco",
+      faces: { damage: [5] },
+    });
+    if (!Array.isArray(rolls)) throw new Error(`unexpected roll error: ${rolls.code}`);
+    expect(rolls[0]?.roll.roller).toBe("marco");
+
+    const rolled = resolve(
+      state,
+      {
+        ...(rolls[0] as (typeof rolls)[number]),
+        id: "r-1",
+        seq: { ms: 9_000, counter: 0, by: "p-marco" },
+      },
+      catalogue
+    );
+    if (rolled.kind !== "applied") throw new Error("the roll was rejected");
+
+    const result = resolve(
+      rolled.state,
+      {
+        ...intentBody(rolled.state, CAST, { damage: "r-1" }),
+        id: "i-1",
+        seq: { ms: 9_100, counter: 0, by: "p-marco" },
+        by: "p-marco",
+      },
+      catalogue
+    );
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    // Both goblins are inside the sphere and both took the one rolled die.
+    expect(result.state.entities["goblin-1"]?.vitals.hp).toBe(2);
+    expect(result.state.entities["goblin-2"]?.vitals.hp).toBe(2);
   });
 });

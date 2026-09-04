@@ -14,9 +14,14 @@
  * tile that is refused is refused for exactly the reason the fold would record — and the person
  * has not rolled a natural 20 into a rejected action to find out.
  */
-import { preflightIntent } from "@/lib/combat/intent";
+import {
+  answerKeyFor,
+  isPerTargetAnswer,
+  preflightIntent,
+  riderAnswers,
+} from "@/lib/combat/intent";
 import type { Catalogue } from "@/lib/combat/catalogue";
-import type { Input } from "@/lib/combat/mechanic";
+import type { Input, Program } from "@/lib/combat/mechanic";
 import type { ActionId, EntityId, MechanicId, WindowId } from "@/lib/combat/ids";
 import type {
   Answer,
@@ -97,28 +102,53 @@ function probe(state: FoldedState, args: IntentArgs, answers: Answers): IntentAc
 
 /**
  * The rolls the intent needs, in the program's own input order and — for a per-target input —
- * in the resolved target order the reducer derives.
+ * in the resolved target order the reducer derives, followed by the rider answers a mark on a
+ * target adds to an attack.
  *
  * Only `d20` and `dice` inputs: a `position`, `choice` or `table` input is ANSWERED by the
  * person (the map's origin cell, a picker), never rolled, and is expected in `answersSoFar`. An
  * input the caller has already answered is skipped, so re-planning after a partial answer never
  * re-rolls what is settled.
+ *
+ * Both the key rule and the rider derivation come from the reducer itself (`answerKeyFor`,
+ * `riderAnswers`); nothing here re-decides either.
  */
 function inputsFor(
-  program: { readonly inputs?: readonly Input[] },
+  state: FoldedState,
+  entity: EntityId,
+  program: Program,
   targets: readonly EntityId[],
   answers: Answers
 ): PendingInput[] {
   const pending: PendingInput[] = [];
+  const plan = (key: string, input: Input, target: EntityId | null): void => {
+    // Deduplicated by KEY: the reducer reads one answer per mark however many riders it
+    // carries, so two riders on one mark are one roll, not two.
+    if (answers[key] !== undefined) return;
+    if (pending.some((already) => already.key === key)) return;
+    pending.push({ key, input, target });
+  };
+
   for (const input of program.inputs ?? []) {
     if (input.kind !== "d20" && input.kind !== "dice") continue;
-    if (input.perTarget === true) {
+    if (isPerTargetAnswer(program, input.id)) {
       for (const target of targets) {
-        const key = `${input.id}:${target}`;
-        if (answers[key] === undefined) pending.push({ key, input, target });
+        plan(answerKeyFor(program, input.id, target), input, target);
       }
-    } else if (answers[input.id] === undefined) {
-      pending.push({ key: input.id, input, target: null });
+    } else {
+      plan(input.id, input, null);
+    }
+  }
+
+  // A mark's extra damage is a fact of the STATE, not of the attacker's mechanic, so it is
+  // declared by no input — and only an `attack` step ever reads it.
+  if (program.steps.some((step) => step.kind === "attack")) {
+    for (const target of targets) {
+      for (const rider of riderAnswers(state, entity, target)) {
+        // Rolled BY THE ATTACKER (`target: null`): it is the attacker's rider, not the
+        // target's save, and `rollsUsable` attributes it to the acting entity.
+        plan(rider.key, { id: rider.key, kind: "dice", formula: rider.dice }, null);
+      }
     }
   }
   return pending;
@@ -141,7 +171,15 @@ export function planIntent(
     catalogue
   );
   if ("reason" in preflight) return preflight;
-  return { inputs: inputsFor(preflight.program, preflight.targets, args.answersSoFar) };
+  return {
+    inputs: inputsFor(
+      state,
+      args.entity,
+      preflight.program,
+      preflight.targets,
+      args.answersSoFar
+    ),
+  };
 }
 
 /** How a person's dice reach the log: the app draws a seed, or they read real dice. */

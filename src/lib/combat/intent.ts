@@ -23,6 +23,7 @@ import { mustEntity } from "./state";
 import type {
   CheckAction,
   CombatEvent,
+  DamageType,
   Effect,
   Entity,
   FoldedState,
@@ -270,6 +271,80 @@ function deliverDamage(
   return next;
 }
 
+// ── The answer keys the reducer reads ───────────────────────────────────────
+
+/**
+ * Whether `inputId` is answered ONCE PER TARGET.
+ *
+ * The rule is deliberately narrow, and it is the reducer's: only a `d20` input declared
+ * `perTarget` expands, because the `save` step is the only step that reads a per-target key. An
+ * attack roll and every damage part read the plain input id, so a `dice` input carrying
+ * `perTarget` (which the authoring schema and the codec both accept) is still rolled once and
+ * attributed to the acting entity.
+ *
+ * Exported because the CLIENT must derive the same keys when it plans what to roll
+ * (`src/features/play/table/dispatch.ts`): one home for the rule, or a tile rolls dice under
+ * keys the fold never reads and the intent is rejected after the dice are already in the log.
+ */
+export function isPerTargetAnswer(program: Program, inputId: string): boolean {
+  return (program.inputs ?? []).some(
+    (input) => input.id === inputId && input.kind === "d20" && input.perTarget === true
+  );
+}
+
+/** The key an answer to `inputId` is stored under, for `target` (`null` off a target). */
+export function answerKeyFor(
+  program: Program,
+  inputId: string,
+  target: EntityId | null
+): string {
+  return target !== null && isPerTargetAnswer(program, inputId)
+    ? `${inputId}:${target}`
+    : inputId;
+}
+
+/** One extra damage answer an attack owes a mark: the key it is read under, the dice it rolls
+ *  and the type it deals. */
+export interface RiderAnswer {
+  readonly key: string;
+  readonly dice: string;
+  readonly type: DamageType;
+}
+
+/**
+ * The rider answers an ATTACK by `entity` against `target` must carry: every weapon-hit or
+ * any-hit rider of every mark `entity` holds on `target` (Hunter's Mark and its kin).
+ *
+ * These answers are required by the `attack` step but declared by NO program input — the mark is
+ * a fact of the state, not of the attacker's mechanic — so a client that plans its rolls from
+ * `program.inputs` alone rolls the attack, rolls the damage, appends both, and is then rejected
+ * with `missing-answer`. Exported for exactly that reason: the client plans from this same
+ * derivation (`src/features/play/table/dispatch.ts`).
+ *
+ * The key is per MARK, not per rider (`rider:${effectId}`), which is the reducer's own contract:
+ * several hit riders on one mark are answered by one roll, applied once per rider with each
+ * rider's own damage type.
+ */
+export function riderAnswers(
+  state: FoldedState,
+  entity: EntityId,
+  target: EntityId
+): RiderAnswer[] {
+  const answers: RiderAnswer[] = [];
+  for (const relation of state.relations) {
+    if (relation.kind !== "mark" || relation.by !== entity || relation.on !== target) {
+      continue;
+    }
+    const mark = state.effects[relation.effect];
+    if (!mark || mark.payload.kind !== "mark") continue;
+    for (const rider of mark.payload.riders) {
+      if (rider.on !== "weapon-hit" && rider.on !== "any-hit") continue;
+      answers.push({ key: `rider:${mark.id}`, dice: rider.dice, type: rider.type });
+    }
+  }
+  return answers;
+}
+
 // ── The program runner ──────────────────────────────────────────────────────
 
 interface RunOutcome {
@@ -368,23 +443,10 @@ function runSteps(
           if (amount === null) return { reason: "missing-answer", input: part.dice };
           packets.push({ amount, type: part.type });
         }
-        for (const relation of next.relations) {
-          if (
-            relation.kind !== "mark" ||
-            relation.by !== action.entity ||
-            relation.on !== target
-          ) {
-            continue;
-          }
-          const mark = next.effects[relation.effect];
-          if (!mark || mark.payload.kind !== "mark") continue;
-          for (const rider of mark.payload.riders) {
-            if (rider.on !== "weapon-hit" && rider.on !== "any-hit") continue;
-            const key = `rider:${mark.id}`;
-            const amount = answerNumber(state, action.answers, key);
-            if (amount === null) return { reason: "missing-answer", input: key };
-            packets.push({ amount, type: rider.type });
-          }
+        for (const rider of riderAnswers(next, action.entity, target)) {
+          const amount = answerNumber(state, action.answers, rider.key);
+          if (amount === null) return { reason: "missing-answer", input: rider.key };
+          packets.push({ amount, type: rider.type });
         }
         const hpBefore = mustEntity(next, target).vitals.hp;
         next = deliverDamage(next, target, packets, action.id, events);
@@ -393,10 +455,7 @@ function runSteps(
       }
       case "save": {
         if (target === null) return { reason: "invalid-target", entity: "" };
-        const perTarget = program.inputs?.some(
-          (i) => i.id === step.roll && i.kind === "d20" && i.perTarget === true
-        );
-        const key = perTarget ? `${step.roll}:${target}` : step.roll;
+        const key = answerKeyFor(program, step.roll, target);
         const face = answerNumber(state, action.answers, key);
         if (face === null) return { reason: "missing-answer", input: key };
         const dc =
