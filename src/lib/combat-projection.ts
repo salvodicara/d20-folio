@@ -35,19 +35,29 @@
  *    (`SrdSpellData.areaShape` — an Emanation, a Wall, several shapes at once);
  *  - a rolled heal: `heal.amount` is an `Expr`, which has no dice (a FLAT heal — the Heal
  *    spell's 70 — does automate);
- *  - a row that also applies, ends or cures a condition, or that re-applies on a cadence:
- *    the emitted program would deliver less than the row promises, so all of it stays the
- *    table's.
+ *  - a row that promises more than the program would deliver — `promisesMore` names each
+ *    class: a condition the save inflicts, a `while-active` grant the use establishes,
+ *    damage on a miss, a one-roll bonus, a resolution gate, a target shape the vocabulary
+ *    cannot say, or an effect that re-applies on a cadence.
  *
- * Conditional on-hit riders (Sneak Attack, Divine Smite, a Psi Warrior die) are NOT part of
- * the emitted attack: they are player-elected, once-per-turn or resource-gated, and the
- * vocabulary cannot gate on that. The automated part is the base attack and its typed
- * weapon damage, exactly as design §2 D4 specifies; the rider stays the table's to declare.
+ * Two residuals are deliberately NOT degrades, because each is a PLAYER'S ELECTION at the
+ * table rather than a consequence the program itself produces:
+ *
+ *  - conditional on-hit riders (Sneak Attack, Divine Smite, a Psi Warrior die) are
+ *    once-per-turn, resource-gated or creature-type-gated, and the vocabulary cannot gate on
+ *    that. The automated part is the base attack and its typed weapon damage, exactly as
+ *    design §2 D4 specifies; the rider stays the table's to declare;
+ *  - a condition the caster ENDS (the Heal spell's Blinded/Deafened) is a separate benefit
+ *    the DM drawer adjudicates; refusing the heal over it would automate less, not more.
+ *
+ * The Versatile grip is NOT a residual: it is expressed as a `choice` input plus a `when`
+ * predicate, so a longsword swung in two hands logs its own die (`attackProgram`).
  */
 import type { CharacterDoc } from "@/types/character";
 import type { AbilityCode, SrdSpellData } from "@/data/types";
 import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 import { getSpellById } from "@/data/spells";
+import { slotUsageKey } from "@/lib/cast-options";
 import { getEquipment } from "@/data/equipment";
 import { primaryClassId, totalLevel } from "@/lib/classes";
 import {
@@ -226,10 +236,42 @@ function areaSpec(shape: NonNullable<SrdSpellData["areaShape"]>): AreaShapeSpec 
 }
 
 /**
+ * Which creatures a program may pick. The vocabulary says exactly two things: ONE target
+ * matching an eligibility predicate, or an AREA that derives its own. So a row is
+ * expressible only when it names one hostile-or-any target; an ally-only or self-only row,
+ * a multi-target row, a creature-type restriction, an `excludeSelf` and a per-upcast target
+ * growth are all shapes a single `$target` would misstate — a self-only heal aimed at
+ * anyone visible, a three-target Bane cast on one creature.
+ */
+function expressibleTargeting(row: RawResolvedAction): boolean {
+  const targeting = row.summary.targeting;
+  if (!targeting) return true;
+  if (targeting.affinity !== "enemy" && targeting.affinity !== "any") return false;
+  if (targeting.maxTargets !== undefined && targeting.maxTargets !== 1) return false;
+  return !(
+    targeting.excludeSelf ||
+    targeting.creatureTypes ||
+    targeting.maxTargetsPerUpcast ||
+    targeting.sharedAmount
+  );
+}
+
+/**
  * `true` when the program's OWN resolution would produce a consequence the vocabulary
- * cannot express, so the whole row stays adjudicated rather than half-applied: a condition
- * the save inflicts, an effect that re-applies on a cadence, or one that does not resolve
- * at cast at all.
+ * cannot express, so the whole row stays adjudicated rather than half-applied. Each class:
+ *
+ *  - a condition the save inflicts (`conditionApplication`);
+ *  - an effect that re-applies on a cadence (`recurrence`, `recurringUse`) or does not
+ *    resolve at cast at all (`resolveOnCast: false`);
+ *  - a standing state the use establishes — a `while-active` grant on the caster
+ *    (`activatesKey`, `maintainsActiveKey`) or on the target (`standingEffect`: Vicious
+ *    Mockery's Disadvantage on the next attack roll). `effect-start` carries no grant, so
+ *    automating the damage alone would quietly drop the point of the spell;
+ *  - damage on a MISS (`damageOnMiss`) — the `attack` step applies damage on a hit only;
+ *  - a flat bonus that must land on exactly ONE damage roll (`oneRollDamageBonus`);
+ *  - a resolution gate that overrides the row's apparent attack/save shape
+ *    (`damageResolution` — a smite whose damage lands before its rider's save);
+ *  - a target shape `expressibleTargeting` rejects.
  *
  * A condition the caster ENDS (the Heal spell's Blinded/Deafened, a Lay-on-Hands cure) is
  * deliberately NOT here: it is a separate benefit the table adjudicates in the DM drawer,
@@ -241,7 +283,14 @@ function promisesMore(row: RawResolvedAction): boolean {
     summary.conditionApplication ||
     summary.recurrence ||
     summary.recurringUse ||
-    summary.resolveOnCast === false
+    summary.resolveOnCast === false ||
+    row.activatesKey ||
+    row.maintainsActiveKey ||
+    row.standingEffect ||
+    summary.damageOnMiss ||
+    summary.oneRollDamageBonus !== undefined ||
+    summary.damageResolution ||
+    !expressibleTargeting(row)
   );
 }
 
@@ -262,31 +311,65 @@ function singleDamage(row: RawResolvedAction): { input: Input; part: DamagePart 
   };
 }
 
+/** The two grips a Versatile weapon offers, as stable label ids the presenter renders as a
+ *  choice on the tile. One-handed is the DEFAULT: the `when` gates only the two-handed
+ *  step, so a swing with no grip answer deals the printed one-handed damage. */
+const GRIP_ONE_HANDED = "grip:one-handed";
+const GRIP_TWO_HANDED = "grip:two-handed";
+
 function attackProgram(row: RawResolvedAction, costs: Cost[]): Program | null {
   const bonus = row.summary.attackBonus;
   const damage = singleDamage(row);
   if (bonus === undefined || !damage) return null;
-  const step: Step = {
-    id: "hit",
-    kind: "attack",
-    roll: "roll",
-    bonus,
-    damage: [damage.part],
-  };
+  // A Versatile weapon is TWO printed damage dice behind one attack roll. It is expressed,
+  // not dropped: a `choice` input picks the grip and a `when` predicate selects the step,
+  // so a longsword swung in two hands logs its own 1d10 instead of the sheet's 1d8. A
+  // versatile formula the dice grammar cannot roll leaves the whole row to the table.
+  const versatile = row.summary.versatileDamage;
+  const twoHanded = versatile === undefined ? null : rollable(versatile);
+  if (versatile !== undefined && !twoHanded) return null;
+  const steps: Step[] = [
+    {
+      id: "hit",
+      kind: "attack",
+      roll: "roll",
+      bonus,
+      damage: [damage.part],
+      ...(twoHanded
+        ? { when: { not: { answer: "grip", equals: GRIP_TWO_HANDED } } }
+        : {}),
+    },
+  ];
+  const inputs: Input[] = [{ id: "roll", kind: "d20", for: "attack" }, damage.input];
+  if (twoHanded) {
+    inputs.push(
+      { id: "grip", kind: "choice", options: [GRIP_ONE_HANDED, GRIP_TWO_HANDED] },
+      { id: "damage-versatile", kind: "dice", formula: twoHanded }
+    );
+    steps.push({
+      id: "hit-versatile",
+      kind: "attack",
+      when: { answer: "grip", equals: GRIP_TWO_HANDED },
+      roll: "roll",
+      bonus,
+      damage: [{ dice: "damage-versatile", type: damage.part.type }],
+    });
+  }
   return {
     id: row.id,
     trigger: { kind: "invocation", economy: row.type },
     cost: costs,
     targets: oneTarget(isMelee(row) ? ADJACENT_TARGET : VISIBLE_TARGET),
-    inputs: [{ id: "roll", kind: "d20", for: "attack" }, damage.input],
-    steps: [step],
+    inputs,
+    steps,
   };
 }
 
 function saveProgram(
   row: RawResolvedAction,
   costs: Cost[],
-  spell: SrdSpellData | null
+  spell: SrdSpellData | null,
+  spellSaveDc: number | null
 ): Program | null {
   const ability = abilityOf(row.summary.saveAbility);
   const damage = singleDamage(row);
@@ -312,9 +395,12 @@ function saveProgram(
       kind: "save",
       roll: "save",
       ability,
-      // The DC is the caster's, carried on the entity (`stats.spellSaveDc`), so a build
-      // change moves every save at once instead of freezing a stale number per spell.
-      dc: "spell",
+      // `"spell"` resolves to the entity's `stats.spellSaveDc` — the PRIMARY caster DC —
+      // so it may only be used when the row's own DC is that same number. A second class's
+      // spell (a Wizard/Cleric's Sacred Flame), an item's `castOverrides.saveDC` and a
+      // species- or feat-granted spell on a martial each print a different DC, and a
+      // non-caster has none at all: those carry the row's number, the one on the sheet.
+      dc: row.summary.saveDC === spellSaveDc ? "spell" : row.summary.saveDC,
       onSuccess: row.summary.damageOnSave === "half" ? "half" : "negate",
     },
     { id: "harm", kind: "damage", parts: [damage.part], to: "$target" },
@@ -377,13 +463,17 @@ function sourceOf(row: RawResolvedAction): Mechanic["source"] {
   return "custom" in row.name ? "homebrew" : "srd";
 }
 
-function mechanicFor(row: RawResolvedAction, characterId: string): Mechanic {
+function mechanicFor(
+  row: RawResolvedAction,
+  characterId: string,
+  spellSaveDc: number | null
+): Mechanic {
   const spell = row.spellId ? (getSpellById(row.spellId) ?? null) : null;
   const costs = costsFor(row, spell);
   const program = promisesMore(row)
     ? manualProgram(row, costs)
     : (attackProgram(row, costs) ??
-      saveProgram(row, costs, spell) ??
+      saveProgram(row, costs, spell, spellSaveDc) ??
       healProgram(row, costs) ??
       manualProgram(row, costs));
   return {
@@ -410,7 +500,11 @@ function slotResources(doc: CharacterDoc): Record<string, Resource> {
     // The reducer's own keys (`intent.ts`): a Pact Magic slot is a separate pool at the
     // same level, so it can never be spent as a standard slot or vice versa.
     const key = slot.pactMagic ? `pact-${slot.level}` : `slot-${slot.level}`;
-    const used = doc.session.spellSlots[String(slot.level)]?.used ?? 0;
+    // The USAGE counter has its own key (`slotUsageKey`, the one seam every read and write
+    // of `session.spellSlots` routes through): a Pact slot counts under `pact-<level>`, a
+    // normal one under the bare level. Keying both by level would seat a Sorlock with a
+    // full Pact pool after spending a shared slot, and vice versa.
+    const used = doc.session.spellSlots[slotUsageKey(slot)]?.used ?? 0;
     out[key] = {
       current: Math.max(0, slot.total - used),
       max: slot.total,
@@ -513,7 +607,7 @@ export function projectCharacter(
 
   const mechanics = resolveActions(doc, "combat")
     .filter((row) => !CORE_COVERED_ROWS.has(row.id))
-    .map((row) => mechanicFor(row, seat.characterId));
+    .map((row) => mechanicFor(row, seat.characterId, spellSaveDc));
   const built = buildCatalogue(mechanics);
 
   const hp = session.hp.current;

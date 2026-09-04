@@ -20,11 +20,49 @@ import {
 } from "@/lib/aggregate-character";
 import { effectiveProficiencyBonus } from "@/lib/compute";
 import { totalLevel } from "@/lib/classes";
+import type { CharacterDoc } from "@/types/character";
 
 const seat = { uid: "player-1", characterId: "lyra", buildRevision: 4 } as const;
 
 function projected(): ReturnType<typeof projectCharacter> {
   return projectCharacter(MOCK_CHARACTER, seat);
+}
+
+/** A single-class Cleric 9 (WIS 18) with Sacred Flame — a single-target save cantrip whose
+ *  DC IS the caster's own, and the corpus's simplest automatable save row. */
+function clericDoc(): CharacterDoc {
+  return makeCharacterDoc({
+    classes: [{ classId: "cleric", level: 9 }],
+    abilityScores: { STR: 10, DEX: 12, CON: 14, INT: 10, WIS: 18, CHA: 10 },
+    spellcasting: {
+      ability: "WIS",
+      preparedCaster: true,
+      preparedMax: 13,
+      saveDCOverride: null,
+      attackBonusOverride: null,
+    },
+    spellSlots: [{ level: 1, total: 4 }],
+    spells: [{ srdId: "sacred-flame", prepared: true }],
+  });
+}
+
+/** A Cleric 11 carrying the named prepared spells — enough slots to reach level 6/9 rows. */
+function healerDoc(spellIds: readonly string[]): CharacterDoc {
+  return makeCharacterDoc({
+    classes: [{ classId: "cleric", level: 11 }],
+    spellcasting: {
+      ability: "WIS",
+      preparedCaster: true,
+      preparedMax: 14,
+      saveDCOverride: null,
+      attackBonusOverride: null,
+    },
+    spellSlots: [
+      { level: 6, total: 1 },
+      { level: 9, total: 1 },
+    ],
+    spells: spellIds.map((srdId) => ({ srdId, prepared: true })),
+  });
 }
 
 function programOf(mechanics: readonly Mechanic[], rowId: string): Program {
@@ -172,7 +210,10 @@ describe("projectCharacter — resources", () => {
     });
   });
 
-  it("keeps a Pact Magic pool separate from the standard slot of the same level", () => {
+  it("reads each pool through its own usage key, so a shared slot never drains a pact one", () => {
+    // The Sorlock shape: a normal L1 pool and a Pact L1 pool. `session.spellSlots` counts
+    // the normal pool under the bare level and the pact pool under `pact-1`, so one
+    // shared-slot expenditure must leave Pact Magic untouched.
     const doc = makeCharacterDoc(
       {
         spellSlots: [
@@ -184,7 +225,21 @@ describe("projectCharacter — resources", () => {
     );
     const { entity } = projectCharacter(doc, seat);
     expect(entity.resources["slot-1"]).toEqual({ current: 3, max: 4, recharge: "long" });
-    expect(entity.resources["pact-1"]).toEqual({ current: 1, max: 2, recharge: "short" });
+    expect(entity.resources["pact-1"]).toEqual({ current: 2, max: 2, recharge: "short" });
+  });
+
+  it("seats a Warlock who spent both Pact slots with an empty pool", () => {
+    const doc = makeCharacterDoc(
+      {
+        classes: [{ classId: "warlock", level: 3 }],
+        spellSlots: [{ level: 2, total: 2, pactMagic: true }],
+      },
+      { spellSlots: { "pact-2": { used: 2 } } }
+    );
+    const { entity } = projectCharacter(doc, seat);
+    expect(entity.resources["pact-2"]).toEqual({ current: 0, max: 2, recharge: "short" });
+    // The bare level is the NORMAL pool's key: it must not conjure a second pool.
+    expect(entity.resources["slot-2"]).toBeUndefined();
   });
 
   it("carries every tracker by its own id, with its recharge", () => {
@@ -315,29 +370,77 @@ describe("projectCharacter — the action adapter", () => {
     expect(programOf(mechanics, "unarmed-strike").steps[0]?.kind).toBe("manual-table");
   });
 
-  it("turns a single-target save spell into save + damage against the caster's DC", () => {
-    const program = programOf(projected().mechanics, "spell-vicious-mockery");
+  it("turns a single-target save spell into save + damage against the caster's own DC", () => {
+    // A single-class Cleric's Sacred Flame prints the caster's own DC, so the step may
+    // carry `"spell"` — the entity's `stats.spellSaveDc`, refreshed by every `sync`.
+    const doc = clericDoc();
+    const { entity, mechanics } = projectCharacter(doc, seat);
+    const program = programOf(mechanics, "spell-sacred-flame");
     expect(program.targets?.count).toBe(1);
     expect(program.steps).toEqual([
       {
         id: "resist",
         kind: "save",
         roll: "save",
-        ability: "WIS",
+        ability: "DEX",
         dc: "spell",
         onSuccess: "negate",
       },
       {
         id: "harm",
         kind: "damage",
-        parts: [{ dice: "damage", type: "psychic" }],
+        parts: [{ dice: "damage", type: "radiant" }],
         to: "$target",
       },
     ]);
     expect(program.inputs).toEqual([
-      { id: "save", kind: "d20", for: "save", ability: "WIS", perTarget: true },
-      { id: "damage", kind: "dice", formula: "2d6" },
+      { id: "save", kind: "d20", for: "save", ability: "DEX", perTarget: true },
+      // The cantrip's damage is the row's, already scaled to the character's level.
+      { id: "damage", kind: "dice", formula: "2d8" },
     ]);
+    expect(entity.stats.spellSaveDc).toBe(16); // 8 + PB 4 + WIS 4
+  });
+
+  it("carries a second class's own DC as a number, never the primary caster's", () => {
+    // A Wizard 5 / Cleric 5 casts by INT; Sacred Flame is the Cleric's and is governed by
+    // WIS. `"spell"` would resolve to the INT DC and make every save six points too hard.
+    const doc = makeCharacterDoc({
+      classes: [
+        { classId: "wizard", level: 5 },
+        { classId: "cleric", level: 5 },
+      ],
+      abilityScores: { STR: 10, DEX: 12, CON: 12, INT: 18, WIS: 8, CHA: 10 },
+      spellcasting: {
+        ability: "INT",
+        preparedCaster: true,
+        preparedMax: 8,
+        saveDCOverride: null,
+        attackBonusOverride: null,
+      },
+      spellSlots: [{ level: 1, total: 4 }],
+      spells: [{ srdId: "sacred-flame", prepared: true }],
+    });
+    const { entity, mechanics } = projectCharacter(doc, seat);
+    const step = programOf(mechanics, "spell-sacred-flame").steps[0];
+    const row = resolveActions(doc, "combat").find((r) => r.id === "spell-sacred-flame");
+    expect(entity.stats.spellSaveDc).toBe(16); // 8 + PB 4 + INT 4
+    expect(step).toMatchObject({ kind: "save", dc: row?.summary.saveDC });
+    expect(step).toMatchObject({ dc: 11 }); // 8 + PB 4 + WIS -1
+  });
+
+  it("gives a non-caster's granted spell a real DC, never a zero", () => {
+    // A martial with a feat-pinned spell is a complete casting source with NO class
+    // spellcasting block: `stats.spellSaveDc` is null, so `"spell"` would resolve to 0 and
+    // every target would auto-succeed.
+    const doc = makeCharacterDoc({
+      classes: [{ classId: "fighter", level: 5 }],
+      abilityScores: { STR: 16, DEX: 14, CON: 14, INT: 10, WIS: 16, CHA: 8 },
+      spells: [{ srdId: "sacred-flame", prepared: true, spellAbilityOverride: "WIS" }],
+    });
+    const { entity, mechanics } = projectCharacter(doc, seat);
+    expect(entity.stats.spellSaveDc).toBeNull();
+    const step = programOf(mechanics, "spell-sacred-flame").steps[0];
+    expect(step).toMatchObject({ kind: "save", dc: 14 }); // 8 + PB 3 + WIS 3
   });
 
   it("turns a typed area into the shape the reducer derives cells from", () => {
@@ -410,19 +513,7 @@ describe("projectCharacter — the action adapter", () => {
   });
 
   it("applies a flat heal, and leaves a rolled one to the table", () => {
-    const doc = makeCharacterDoc({
-      classes: [{ classId: "cleric", level: 11 }],
-      spellcasting: {
-        ability: "WIS",
-        preparedCaster: true,
-        preparedMax: 12,
-        saveDCOverride: null,
-        attackBonusOverride: null,
-      },
-      spellSlots: [{ level: 6, total: 1 }],
-      spells: [{ srdId: "heal", prepared: true }],
-    });
-    const program = projectCharacter(doc, seat).mechanics.find(
+    const program = projectCharacter(healerDoc(["heal"]), seat).mechanics.find(
       (m) => m.id === "pc:lyra:spell-heal"
     )?.active?.[0];
     expect(program?.steps).toEqual([
@@ -432,6 +523,81 @@ describe("projectCharacter — the action adapter", () => {
     expect(programOf(projected().mechanics, "spell-healing-word").steps[0]?.kind).toBe(
       "manual-table"
     );
+  });
+
+  it("adjudicates a row that establishes a standing state, rather than dropping it", () => {
+    const { mechanics } = projected();
+    // Vicious Mockery is a save-damage cantrip whose POINT is the Disadvantage it hangs on
+    // the target until its next attack roll — a `while-active` grant the vocabulary's
+    // `effect-start` cannot carry. Automating save + damage alone would drop it silently.
+    expect(programOf(mechanics, "spell-vicious-mockery").steps).toEqual([
+      { id: "resolve", kind: "manual-table", label: "srd:spell:vicious-mockery:name" },
+    ]);
+    // Action Surge lights a `while-active` key on the caster; same rule.
+    expect(programOf(mechanics, "fighter-action-surge-free").steps[0]?.kind).toBe(
+      "manual-table"
+    );
+  });
+
+  it("adjudicates a target shape the vocabulary cannot say", () => {
+    const { mechanics } = projected();
+    // Bane names three enemies plus one per upcast; one `$target` would misstate it.
+    expect(programOf(mechanics, "spell-bane").steps[0]?.kind).toBe("manual-table");
+    // An ally-or-self row would otherwise be aimable at anyone visible.
+    expect(programOf(mechanics, "fighter-second-wind-bonus").steps[0]?.kind).toBe(
+      "manual-table"
+    );
+  });
+
+  it("expresses a Versatile weapon's second grip instead of dropping it", () => {
+    const { mechanics } = projected();
+    const program = programOf(mechanics, "weapon-quarterstaff");
+    const row = resolveActions(MOCK_CHARACTER, "combat").find(
+      (r) => r.id === "weapon-quarterstaff"
+    );
+    expect(row?.summary.versatileDamage).toBeDefined();
+    expect(program.inputs).toEqual([
+      { id: "roll", kind: "d20", for: "attack" },
+      { id: "damage", kind: "dice", formula: row?.summary.damage },
+      { id: "grip", kind: "choice", options: ["grip:one-handed", "grip:two-handed"] },
+      { id: "damage-versatile", kind: "dice", formula: row?.summary.versatileDamage },
+    ]);
+    // One-handed is the default: only the two-handed step is gated on the answer, so a
+    // swing with no grip picked still deals the printed one-handed damage.
+    expect(program.steps).toEqual([
+      {
+        id: "hit",
+        kind: "attack",
+        roll: "roll",
+        bonus: row?.summary.attackBonus,
+        damage: [{ dice: "damage", type: row?.summary.damageType }],
+        when: { not: { answer: "grip", equals: "grip:two-handed" } },
+      },
+      {
+        id: "hit-versatile",
+        kind: "attack",
+        when: { answer: "grip", equals: "grip:two-handed" },
+        roll: "roll",
+        bonus: row?.summary.attackBonus,
+        damage: [{ dice: "damage-versatile", type: row?.summary.damageType }],
+      },
+    ]);
+    // A non-versatile weapon keeps the single ungated step.
+    expect(programOf(mechanics, "weapon-rapier").steps).toHaveLength(1);
+    expect(programOf(mechanics, "weapon-rapier").steps[0]?.when).toBeUndefined();
+  });
+
+  it("adjudicates a flat heal whose targeting the vocabulary cannot say", () => {
+    // The Heal spell names no target shape, so it stays a `heal` program; Mass Heal divides
+    // one pool among allies, which a single `$target` would misstate.
+    const doc = healerDoc(["heal", "mass-heal"]);
+    const { mechanics } = projectCharacter(doc, seat);
+    const program = mechanics.find((m) => m.id === "pc:lyra:spell-heal")?.active?.[0];
+    expect(program?.steps).toEqual([
+      { id: "mend", kind: "heal", amount: 70, to: "$target" },
+    ]);
+    const mass = mechanics.find((m) => m.id === "pc:lyra:spell-mass-heal")?.active?.[0];
+    expect(mass?.steps[0]?.kind).toBe("manual-table");
   });
 
   it("adjudicates a row that also applies a condition, rather than applying half of it", () => {
