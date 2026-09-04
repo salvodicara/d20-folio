@@ -316,7 +316,7 @@ reducer handler in the stage that first needs it.
 | Triggers    | `invocation` (action, bonus, reaction); `event: entity-left-reach` (opportunity attack)                                                             | other events (`attack-declared`, `cast-declared`, `hp-zero`, …)   |
 | Costs       | `turn` claims (action, bonus, reaction, attack, free), `slot` (with upcast), `resource`, `concentration`                                            | `recharge`, `legendary`                                           |
 | Inputs      | `d20` (attack, save, check, concentration), `dice`, `choice`, `table`, `position`                                                                   | `integer`                                                         |
-| Steps       | `attack`, `save`, `damage`, `heal`, `effect-start`, `condition`, `move-mark`, `turn-claim`, `negate`, `manual-table`, `move`                        | `summon`, `transform`, `aura`, `ready`                            |
+| Steps       | `attack`, `save`, `damage`, `heal`, `effect-start`, `condition`, `move-mark`, `turn-claim`, `negate`, `manual-table`, `move`, `dash` (stage 6)      | `summon`, `transform`, `aura`, `ready`                            |
 | Lifetimes   | `manual`, `turn-edge`, `rounds`, `seconds`, `rest`                                                                                                  | `day-phase`                                                       |
 | Adapter     | monster stat blocks → `Mechanic` for `attack` entries and damage-carrying `save` entries; every other entry (Multiattack included) → `manual-table` | structured Multiattack, Recharge, Legendary Actions, lair bonuses |
 
@@ -334,3 +334,19 @@ Stage 3 also added area targeting (`TargetSpec.count: "area"`, an `AreaShapeSpec
 damage choices, `narrative` entries (Multiattack included, since the corpus carries no structured
 attack count for it) and `spellcasting` all degrade to `manual-table`. `traits`, `reactions`,
 `legendaryActions` and `recharge`/`legendary` costs stay `later`.
+
+Stage 6 added the **`dash` step** — the one vocabulary addition of that stage. It adds the acting
+entity's speed to `TurnLedger.movementExtra`, which the movement budget reads as speed + extra and
+the fresh ledger zeroes at turn start, so a Dash is an ordinary costed programme
+(`core:dash`, `src/data/combat/core-catalogue.ts`) rather than a special case in the reducer. Its
+four siblings — Dodge, Disengage, Help, Hide — are authored in the same file as `manual-table`,
+because advantage, disadvantage and stealth are not in this tier and a half-built version would
+teach a wrong rule.
+
+Stage 6 also gave **area specs a typed source**. An `AreaShapeSpec` inside a mechanic is authored
+data, and for a projected spell it is projected from `SrdSpellData.areaShape`
+(`{ kind: "sphere" | "cube" | "cone" | "line" | "cylinder"; sizeFt: number; widthFt? }`) — the
+printed area as structured data, on the public SRD rows and the private pack's in the same motion
+(rule 28). A spell whose printed area is not one of the five shapes (a wall, a bounded volume, a
+re-aimed hazard) declares none and degrades to `manual-table`, loudly in the coverage report,
+never silently: the degrade is a stated bound of the tier, not a missing field.

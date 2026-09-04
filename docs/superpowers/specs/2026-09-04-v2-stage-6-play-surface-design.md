@@ -80,9 +80,20 @@ are not modelled by the stage-3 vocabulary, so they are adjudicated, never half-
 
 `Entity.origin.monster.srdId` stays "a catalogue reference, never a copy" for what it names — the
 stat block the drawer shows and the compendium link — while the executable programs are the
-projection's, refreshed by `sync` exactly as `stats` is. Measured cost: a PC with two weapons and
-six automated spells carries ≈ 400 nodes; an ogre ≈ 60; Sara's ambush ≈ 1,200 in the checkpoint —
-well under the 50,000-node budget stage 4 measured at 34,200 for 1,000 intents.
+projection's, refreshed by `sync` exactly as `stats` is.
+
+**Measured cost (2026-09-04, tasks 1–2; the estimate this paragraph first carried was ≈ 400 nodes
+per PC and is superseded).** A projected PC carries ≈ 1,200 JSON nodes, not ≈ 400: the honest
+degrade of D4 emits about 31 `manual-table` programs per sheet, and those — not the seven or
+eight automated ones — dominate the count. Six PCs are ≈ 7,250 nodes. The ceiling test
+(`codec.test.ts`, "a six-PC party, seated and checkpointed, parses alongside 1,000 intents")
+measures **44,032 of the codec's 50,000-node budget**, about 88 %: ≈ 34,000 of it is the 1,000
+intents the rules' log cap allows, the party's definitions are counted twice (once in the seat
+ops, once in `checkpoint.state.mechanics`), and the rest is the populated checkpoint. It fits,
+and compaction fires at 200 actions, so the realistic document is far smaller — but the dominant
+term is the log cap, not the mechanics, and the assertion carries the measured number so a fatter
+projection fails the test rather than quarantining a live document. Compacting on node count (or
+lowering the rules' log cap) is the recorded remedy if either half grows.
 
 Mechanic ids are instance-scoped so two PCs' longswords never collide:
 `pc:<characterId>:<actionId>` (the sheet's stable action id: `weapon-<instanceId>`,
@@ -100,10 +111,18 @@ Mechanic ids are instance-scoped so two PCs' longswords never collide:
   outside the kernel so `src/lib/combat` never imports the sheet's engine): stats from the same
   functions the sheet uses (`effectiveAC`, `effectiveMaxHp`, speed, `effectiveProficiencyBonus`,
   ability modifiers, `savingThrowBonus`, `effectiveSpellSaveDc`, `effectiveSpellAttackBonus`,
-  `attacksPerAction`, `deriveDamageDefenses`), vitals from `doc.session` (HP, temp, death saves,
-  exhaustion, `life` derived), resources = spell slots (`slot:<level>`) and trackers, `origin:
-{ kind: "character", … buildRevision }`, `reveal.token: true`, and the mechanics of §D4.
+  `attacksPerAction`, the typed defense sets), vitals from `doc.session` (HP, temp, death saves,
+  exhaustion, `life` derived), resources = spell slots and trackers, a character `origin` carrying
+  the uid, the character id and the `buildRevision`, `reveal.token: true`, and the mechanics of §D4.
   `reveal.token` has a production default from here on (the stage-5 handoff's open seam).
+  **As built (2026-09-04):** the slot resource keys are the reducer's own, `slot-<n>` and
+  `pact-<n>` (`intent.ts`, read through `slotUsageKey`), not this section's first sketch
+  `slot:<level>` — a Pact Magic pool stays a separate pool from the standard one at the same
+  level, and the projection must key what the reducer spends. Two pure helpers moved down out of
+  `src/lib/views` so the projection could reuse the sheet's formulas rather than fork them:
+  `applySetOverride` / `deriveDefenseKind` to `src/lib/defense-sets.ts`, and
+  `mergeSaveProficiencies` to `src/lib/compute.ts` (`src/lib/**` outside `lib/views` may not
+  import `lib/views`; the guard's own remedy is to move the shared code down).
 
 ### D4 — the PC mechanics adapter, bounded to the stage-3 vocabulary
 
@@ -113,8 +132,8 @@ rows, override-first, one source of numbers — and emits one `Mechanic` per row
 | Row                                                                      | Program                                                                                 |
 | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
 | weapon attack (melee or ranged, `attackBonus`, `damage`)                 | `attack` step with the fixed bonus, typed damage; `cost: turn attack`; 1 target         |
-| spell attack with damage (Fire Bolt, Guiding Bolt)                       | `attack` step; `slot` cost for levelled spells (`upcast: true` when it scales)          |
-| save spell with damage, single target (Toll the Dead)                    | `save` step (`dc: "spell"`) + `damage`; per-target `d20` input                          |
+| spell attack with damage (Fire Bolt, Guiding Bolt)                       | `attack` step; `slot` cost for levelled spells, always `upcast: true` (see below)       |
+| save spell with damage, single target (Toll the Dead)                    | `save` step (`dc`, see below) + `damage`; per-target `d20` input                        |
 | save spell with damage and a typed `areaShape` (Fireball, Burning Hands) | `targets: { count: "area", area }` + `save` + `damage`                                  |
 | heal spell (`heal` summary)                                              | `heal` step                                                                             |
 | anything else the sheet lists as an action                               | `manual-table` with the row's label: it spends the economy and logs, the DM adjudicates |
@@ -131,6 +150,45 @@ already folds fighting styles, magic bonuses and overrides into them, and `sync`
 The consequence is stated: a `stats.abilities` override inside the encounter does not move a
 projected attack bonus; the DM overrides the outcome instead (rule 41, "modify any automatic
 outcome in place"). Coverage (`coverage.ts`) reports the automated / manual split per character.
+
+**As built (2026-09-04), three amendments this section did not anticipate.**
+
+- **The save DC is the ROW's, not always the caster's.** A `save` step carries the row's own
+  printed DC as a numeric `Expr` and keeps the symbolic `"spell"` only when that number equals
+  the projected `stats.spellSaveDc`. The sketch's unconditional `dc: "spell"` was wrong for two
+  reachable sheets: a multiclass caster whose second class prints a lower DC than the primary
+  one, and a feat-granted cantrip on a character whose `stats.spellSaveDc` is `null` — where
+  `"spell"` would have resolved to 0 and every target would have auto-succeeded.
+- **What "anything else" means, named.** A row degrades to `manual-table` when it promises more
+  than the stage-3 vocabulary can express, and the classes are enumerated on the module
+  (`promisesMore`): a damage amount the kernel's dice grammar cannot roll (a flat amount, a
+  multiplied formula); more than one damage instance, more than one simultaneous type, or a
+  secondary damage component; an area whose printed shape is not one of the five; a rolled heal
+  (a heal amount is an `Expr`, which has no dice); a row that also activates or maintains a keyed
+  effect, carries a standing effect, deals damage on a miss, adds a one-roll damage bonus, gates
+  its damage behind its own resolution rule, re-applies on a cadence, or does not resolve at
+  cast; and a targeting shape richer than one enemy-or-any target (an ally or self affinity,
+  several targets, self-exclusion, a creature-type limit, per-upcast growth). Two deliberate
+  NON-degrades: a player-elected on-hit rider (a sneak-attack or smite die) is not part of the
+  emitted attack, because the vocabulary cannot gate on "once per turn, if the player chooses";
+  and a condition the caster ENDS does not block automation (the flat heal applies, the cure is
+  the DM's), while a condition the save INFLICTS does.
+- **Every projected slot cost is `upcast: true`.** The first sketch set it only for a spell whose
+  dice scale, which made the reducer refuse the ordinary case the SRD allows: any spell may be
+  cast from a higher slot, and a caster out of 1st-level slots casting a non-scaling 1st-level
+  spell with a 2nd is playing correctly, not cheating. A Pact Magic caster, whose pool sits at one
+  level only, could otherwise never cast a non-scaling spell at all. Nothing is lost by allowing
+  it: a projected programme's numbers are already fixed, so the cast level feeds only provenance
+  (the effect's `byLevel` lifetime and the log line), never a damage figure.
+- **The tile need not name the slot pool.** `planIntent` chooses `standard` or `pact` from the
+  seated entity's own resources when the intent does not say — the pool that holds a slot at, or
+  above, the cost's level. The rule has one home and the reducer still judges the payment; the
+  alternative was every caller of every hotbar tile knowing which pool a Warlock spends.
+- **A versatile weapon is expressed, not degraded.** The row emits a `choice` input
+  (`grip:one-handed` / `grip:two-handed`) and a second `attack` step gated on it. One-handed is
+  the default — only the two-handed step carries the gate — so a swing with no grip chosen deals
+  the printed one-handed damage. The two label ids need chrome i18n keys and a tile choice on the
+  surface (task 4); without them the tile silently takes the one-handed default.
 
 ### D5 — one live table per campaign
 
@@ -181,6 +239,17 @@ long before quarantine. `compact` now prunes `rolls`: at compaction, every roll 
 neither still unspent nor spent by an intent held open in `declared` is dropped from the
 checkpoint's state (the safe pruning stage 4 named). A property test extends §8's generator with
 rolls and asserts the fold is unchanged by the pruning.
+
+**As built (2026-09-04) — what is pruned is the `rolls` RECORD, never the `spent` ledger.**
+Dropping both would have made a checkpoint forget that a roll was already consumed, so an offline
+client re-sending the same intent with a fresh action id would have been ACCEPTED after the
+checkpoint and REJECTED before it — the two clients diverging on the same log. The fat part (a
+roll record, ≈ 15 nodes) is dropped; the verdict (`spent[id]`, two ids, ≈ 4 nodes) is kept,
+because it is the "one roll, one verdict" ledger of ADR-0010. `rollsUsable` therefore reads
+`state.spent[id]` BEFORE looking for the record, so the guard does not depend on which side of a
+checkpoint a client folds from. The residue is that `spent` is monotonic for the encounter's
+lifetime — about one node per settled roll, against the ~12 % headroom the ceiling test measures;
+it is the second reason "compact on node count" is the recorded remedy.
 
 ### D9 — the surface, on a proposal branch
 
@@ -241,22 +310,78 @@ production's are done by the agent through `gcloud` in the staging task; then `f
 - `joinTable` (stage 4) with the projected entity and mechanics; `leaveTable` gains the
   write-back of §5.
 
+**As built (2026-09-04) — `src/features/play/table/{table-store,use-table,dispatch}.ts`.** The
+interfaces below are what task 4 codes against; each deviation from this section's sketch is
+recorded on the function it belongs to.
+
+- **`TableState.connect()` opens the listener and returns its teardown.** The store does NOT
+  subscribe when it is created. Subscribing in the constructor made a StrictMode remount
+  unrecoverable: React keeps `useMemo` state across the double mount, so the first cleanup left a
+  permanently stopped store. `use-table.ts` creates in `useMemo` and connects in `useEffect`, and
+  it is the ONE file that binds the singletons (`db`, `Date.now`, the seq clock, the catalogue);
+  `table-store.ts` imports Firestore types only. `LIVE_ENCOUNTER_ID = "live"` and
+  `liveTableRef(db, campaignId)` address D5's document. A `missing` snapshot clears the fold; a
+  `quarantined` or errored one keeps the last fold, because one unreadable snapshot is not proof
+  the table changed.
+- **The tile's three pure builders.** `planIntent` takes the folded state, the catalogue and the
+  tile's arguments, and returns either the inputs the intent still needs or the reducer's own
+  rejection. `rollsFor` turns those inputs into rolls or a roll error, through `src/lib/dice.ts`,
+  the one randomness seam. `intentBody` takes the state (`basedOn = state.revision`), the
+  arguments and the roll ids, and returns the intent action's body. A `PendingInput` carries `target: EntityId | null` beside its key
+  and input, so `rollsFor` knows who rolls without re-parsing a composed key. `planIntent` plans a
+  `dice` input only when a step that reads it can actually run — no gate, or a gate whose leaves
+  are all answer predicates and that holds under the answers so far — so a versatile weapon rolls
+  ONE damage die, not one per grip with the unread one still marked spent and still shown in the
+  shared log. It also chooses the slot pool (`standard` or `pact`) from the entity's resources
+  when the intent does not name one.
+- **No roll is spent to learn a rejection, and no client re-implements a reducer rule.** Rather
+  than mirroring the reducer's pre-roll checks, three derivations were EXTRACTED from the reducer
+  and are now shared by both sides: `preflightIntent(state, action, catalogue)` (the pre-roll
+  block `applyIntent` already ran), `riderAnswers(state, entity, target)` (the mark/rider walk
+  the attack step already did — one answer per mark, however many riders it carries) and
+  `answerKeyFor(program, inputId, target)` with `isPerTargetAnswer` (only a `d20` input declared
+  `perTarget` gets a per-target key). Each has one home; the client calls it.
+- **`buildLogLines(args)`** takes one args object carrying the catalogue and the campaign's
+  `dmUid`, and returns structured `LogLine[]` — it resolves no display name, because the UI owns
+  that fact. An undone action renders no line: a `LogLine` has no struck-through state, and the
+  `undo` action's own line already records that the table changed its mind.
+
 ## 5. The lease write-back while D1 holds
 
-`leaveTable` takes `personal` as a discriminated union:
+`leaveTable` takes `personal` as ONE shape while D1 holds:
 
 ```ts
-type PersonalWriteBack =
-  | { kind: "encounter"; encounter: Encounter | null } // stage 4's contract, item 8's path
-  | { kind: "document"; data: Record<string, unknown> }; // this stage: the projected CombatState
+type PersonalWriteBack = { kind: "document"; data: LegacyCombatStateWrite };
 ```
 
-For `document`, the batch `set`s the personal ref to `data` verbatim. The caller builds `data`
+The union this section first proposed also carried stage 4's `encounter` variant (an `Encounter`
+or `null` written to the personal ref), and it is **deleted, not deprecated** (rule 10, and the owner's
+standing "no dead weight"): D1 forbids writing the personal document as an `Encounter` in this
+stage, `personalEncounterRef` is an alias of the live `CombatState`, and a variant nothing calls
+was one mistaken argument away from writing an `Encounter` over a live character's play session —
+after which `parseCombatState` would refuse that document forever. It returns at item 8, with the
+sheet, the personal `Encounter` and its migration.
+
+The batch `set`s the personal ref to `data` verbatim. The caller builds `data`
 with `projectCombatState(previous: CombatState, entity: Entity)`: the trio (HP current and temp,
 conditions from the entity's condition effects, death saves) written over the previous document,
 everything else (`playState`, `round`, `recentActions`, …) preserved. The old sheet therefore
 shows the fight's outcome as it does today. This variant dies with the sheet at item 8; the
 fate is named in `docs/PROGRAM_STATUS.md` and on the type.
+
+**As built (2026-09-04) — `data` is branded, and only one encoder can mint it.** The sketch's
+`Record<string, unknown>` would have let a caller hand the lease a hand-rolled payload that
+skipped the play-state codec, and the write is a whole-document overwrite, so that payload would
+have destroyed `playState`. The type is therefore `LegacyCombatStateWrite` — a branded record
+with exactly one cast, inside `src/lib/combat-state-writeback.ts` — and the only way to obtain
+one is `encodeLegacyWriteBack(previous, entity, effects)`, which composes `projectCombatState`
+with the sanctioned `combatStateWriteData` (moved to that pure home and re-exported from
+`combat-state-io.ts`, which cannot be imported here because it binds the app's `db` singleton at
+module scope). A hand-built payload is now a compile error. `previous` MUST be a fresh parse of
+the live document, for the same reason: the write replaces the document, so anything the caller
+did not read is lost. The rules lane proves the round trip end to end — the trio written,
+`playState`/`round`/`initiativeRoll` untouched, and the stored document accepted by
+`parseCombatState`, the app's own read edge.
 
 ## 6. Tests
 
@@ -278,6 +403,33 @@ fate is named in `docs/PROGRAM_STATUS.md` and on the type.
   the HP editor appends `override vitals.hp`.
 - Screenshot lane: `tests/visual/play.spec.ts` captures `/_play` across theme × locale × viewport
   × role (DM, player); the artefacts are the owner's gate (rule 25), never pixel-asserted.
+
+**As built (2026-09-04), tasks 1–3.** The first three bullets landed, with these differences; the
+component and screenshot lanes belong to task 4 and are not on `v2`.
+
+- Unit: `tests/unit/combat/monster-entity.test.ts`, `tests/unit/combat-projection.test.ts`,
+  `tests/unit/spell-area-shape.guard.test.ts`, `tests/unit/table-store.test.ts`,
+  `tests/unit/table-dispatch.test.ts`, `tests/unit/combat-state-writeback.test.ts`,
+  `tests/unit/encounter-log-view.test.ts`, plus new blocks in `resolve.table.test.ts`,
+  `resolve.move.test.ts`, `mechanic.test.ts`, `checkpoint.test.ts`, `codec.test.ts`,
+  `codec.property.test.ts` and `coverage.guard.test.ts`. Four of them are fast-lane (no DOM), so
+  the whole client half of the stage costs the gate nothing.
+- The six team fixtures are projected **pack-side**
+  (`content-pack/tests/unit/team-combat-projection.pack.test.ts`, with the twin
+  `spell-area-shape.pack.test.ts`), because the fixtures are private; the public suite projects
+  the public mock character instead, so the SRD-only composition proves the same code.
+- The presenter's test uses the real merged catalogues and a translator that THROWS on a missing
+  key or interpolation, and a `covering<U>()` helper makes every union member (rejection reason,
+  table op, relation kind, receipt outcome) a compile error until it is listed — so a new union
+  member cannot ship without its EN and IT line.
+- `pc-projection.json` is **generated from `projectCharacter`**, not hand-copied, and carries a
+  `generated` field saying so; the unit suite deep-equals the projection's output against the
+  JSON, so the replay cannot drift from the adapter it is supposed to prove.
+- The codec property test grew a SECOND, playable generator: the adversarial one rejects almost
+  every action it emits, so folding it would prove nothing about compaction. The playable one
+  produces tables that apply, compacts each at a random cut, and asserts the fold is unchanged on
+  `entities`, `clock`, `effects`, `windows`, `mechanics`, `relations` and `revision`, with two
+  counters proving the corpus really exercises both sides of the pruning.
 
 ## 7. Out of stage 6
 

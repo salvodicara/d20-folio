@@ -101,9 +101,15 @@ interface Encounter {
 }
 ```
 
-Everything under `entities`, `relations`, `effects`, `windows`, `clock` and (from stage 5) `map`
-is the **folded state**: derived by folding `log` from the last checkpoint. It is persisted only
-inside `checkpoint` for compaction and boot speed; the log is the truth.
+Everything under `entities`, `relations`, `effects`, `windows`, `clock`, (from stage 5) `map` and
+(from stage 6) `mechanics` is the **folded state**: derived by folding `log` from the last
+checkpoint. It is persisted only inside `checkpoint` for compaction and boot speed; the log is
+the truth.
+
+`FoldedState.mechanics: Readonly<Record<MechanicId, Mechanic>>` (stage 6, initial `{}`,
+checkpointed) is the table's own executable vocabulary: the definitions the three seat ops carry
+(§3.1, §4). It is what makes the fold identical on a client that never loaded the bestiary and on
+one running the public build against a private monster.
 
 `map` (stage 5, `2026-09-04-v2-stage-5-minimum-map-design.md`) is
 `{ background: MapBackground | null; fog: { covered: boolean; revealed: MapRect[] } }`: the
@@ -141,6 +147,9 @@ interface Entity {
   resources: Record<ResourceId, { current: number; max: number; recharge: RechargeRule }>;
   concentration: EffectId | null;
   turn: TurnLedger; // action/bonus/reaction/attacks/movement/free claims, reset at turn start
+  //   — `movementExtra` (stage 6) is the movement a `dash` step
+  //   granted this turn; the budget is speed + extra, and the
+  //   fresh ledger zeroes it at turn start
   overrides: Record<OverridePath, { value: unknown; reason: string; by: string }>;
   reveal: { block: boolean; hp: boolean; token: boolean }; // player-facing visibility; token:false = hidden token (stage 5)
 }
@@ -268,10 +277,10 @@ type Action =
         | "begin-turns"
         | "end-turn"
         | "end"
-        | "join" // the lease (§5.2) — built in stage 4
+        | "join" // the lease (§5.2) — built in stage 4; carries `mechanics` from stage 6
         | "leave" // the lease (§5.2) — built in stage 4
-        | "sync" // the lease (§5.2) — built in stage 4: write the entity back
-        | "add-entity"
+        | "sync" // the lease (§5.2) — built in stage 4: write the entity back; carries `mechanics`
+        | "add-entity" // carries `mechanics` from stage 6
         | "remove-entity"
         | "rest"
         | "day-phase" // later
@@ -311,6 +320,15 @@ type Action =
 type Seq = { ms: number; counter: number; by: uid }; // hybrid logical clock; total order (ms, counter, by)
 type Answer = number | string | boolean | number[] | { roll: ActionId }; // a `d20`/`dice` input is answered by a roll's id
 ```
+
+**Seating an entity carries its mechanics (stage 6).** `add-entity`, `join` and `sync` each take
+`mechanics: readonly Mechanic[]` — required, `[]` for an entity with nothing of its own, so there
+is no optional field to forget. The fold conforms each definition and rejects the WHOLE op with
+`invalid-table-op` if any is malformed; `add-entity` and `join` merge them into
+`FoldedState.mechanics`, `sync` replaces the entity's set, and `remove-entity` / `leave` / `sync`
+drop an id no other seated entity still lists (two ogres share one definition, so the drop is
+conditional on the roster, never unconditional). §4 says why the definitions travel in the log
+rather than being resolved from local data.
 
 A roll is appended before the intent that consumes it; the fold rejects a roll whose faces do
 not reproduce from its seed (`invalid-roll`), records every accepted roll in `state.rolls`, and
@@ -438,6 +456,33 @@ Content ids never reach the engine: a mark is `{ kind: "mark", by: source }`, a 
 `vs: { mark: "self" }`, an aura references `members-of: "self"`. The `"marked" | "cursed" | "vowed"`
 union is deleted with the legacy grants that carry it.
 
+**Mechanics ride the log (stage 6).** A catalogue resolved from each client's local data cannot
+make the fold identical, in three ways: a private mechanic is `unknown-mechanic` on the public
+build while the DM runs the monster that owns it; a lazily loaded bestiary makes the fold depend
+on load order; and a PC's numbers come from a build document only its owner and co-members may
+read. So the three seat ops carry the entity's definitions as data (§3.1), the fold keeps them in
+`FoldedState.mechanics`, and `programOf(state, catalogue, …)` looks in the state FIRST and in the
+static catalogue second. Ids are instance-scoped (`pc:<characterId>:<actionId>`,
+`monster:<entityId>:<actionId>`) so two PCs' longswords never collide. The precedence shadows
+completely — a carried definition with no programmes hides a static one that has them — which is
+why no projection may emit an id in the `core:` namespace.
+
+**The static catalogue shrinks to `core:*`** (`src/data/combat/core-catalogue.ts`): the ordinary
+actions every creature has. `core:move`; `core:dash`, whose `dash` step adds the entity's speed
+to `TurnLedger.movementExtra` so the movement budget and the ruler's "needs a Dash" tone follow
+the rules; and `core:dodge`, `core:disengage`, `core:help`, `core:hide` as `manual-table`
+programmes that claim the action and log it — advantage, disadvantage and stealth are not in the
+stage-3 vocabulary, so they are adjudicated, never half-built.
+
+**One structural vocabulary.** `conformMechanic` runs the codec's own `mechanicSchema` FIRST
+(exported as `parseMechanicValue`) and only then its semantic rules. The hand-rolled structural
+pass it used to carry was a second, weaker vocabulary: a definition the codec would quarantine
+could pass fold-time conformance, and the two could drift. What the codec quarantines, the
+fold-time check now rejects, pinned by a test that asserts exactly that on six malformed shapes.
+The price is that a structural rejection reports no JSON path (`invalid-mechanic-shape`); the
+semantic rules keep theirs. `conformMechanic` returns the schema's canonicalized, deep-frozen
+clone, so `FoldedState.mechanics` holds exactly what the codec writes back.
+
 ## 5. Persistence, topology and authorization
 
 ### 5.1 Documents and owners
@@ -479,6 +524,19 @@ encounter, writes the entity back into its personal aggregate as a `table:sync` 
 `lease`. An offline owner simply syncs later; nobody else ever writes the owner's documents. A DM acting on
 an offline PC appends to the encounter log; the PC's owner folds it on reconnect (§7 hard cases).
 
+**Stage 6 interlude — the personal document is not an `Encounter` yet.** While the old character
+sheet lives (stage-6 design D1), `users/{uid}/characters/{id}/combat/state` stays a `CombatState`
+carrying the character's whole play session, so `leaveTable` writes the fight's outcome BACK into
+that document instead of storing an `Encounter` there: `personal` is `{ kind: "document"; data }`
+with a branded payload only `encodeLegacyWriteBack` can mint (HP, temp HP, conditions and death
+saves projected from the entity over a FRESH parse of the live document, everything else
+preserved). Writing the personal `Encounter` is not merely unused in this stage but
+**unrepresentable**: the `encounter` variant is deleted until item 8, because
+`personalEncounterRef` aliases the live `CombatState` and one mistaken argument would leave a real
+character's document unreadable to `parseCombatState` forever, with no repair path. The shape, the
+brand and this paragraph die together at item 8, when the personal `Encounter`, its migration and
+the rebuilt sheet land together.
+
 The personal write-back is `table:sync`'s only intended use, but the fold accepts a `table:sync`
 in ANY host — `FoldedState` carries no `host`, so the reducer cannot tell a campaign encounter
 from a personal one — and it is an unconditional whole-entity upsert. That is deliberate under the
@@ -512,7 +570,14 @@ be narrowed later without a signature change.
   is folded together with **every** `undo` in the log, the tail's included, so an undo that sits
   after the boundary and targets an action before it is honoured rather than reverted. The residue
   is that redo across a checkpoint is impossible — an undo-of-undo appended after compaction cannot
-  restore a target the checkpoint already skipped. Accepted; the grace window is the knob.
+  restore a target the checkpoint already skipped. Accepted; the grace window is the knob. From
+  stage 6, `compact` also prunes the checkpoint's `rolls`: a roll RECORD (the fat part, ≈ 15
+  nodes) is dropped when its spender is not an intent still held open in `declared`. The `spent`
+  ledger is NEVER pruned — it is ADR-0010's "one roll, one verdict", so forgetting it would let an
+  offline client's re-sent intent be accepted after the checkpoint and rejected before it, the two
+  clients diverging on one log. `rollsUsable` therefore consults `spent` before it looks for the
+  record. The residue is that `spent` grows monotonically for the encounter's lifetime, about one
+  node per settled roll.
 - Writing the compaction: `checkpointEncounter` is a Firestore transaction whose precondition is
   the **stored** `checkpoint.through` (`null` when there is none), so two clients cannot compact
   the same head twice. It merges every stored action after the new checkpoint that the caller did

@@ -139,12 +139,25 @@ carrying pre-migration shapes or obsolete residue. Plan and receipt:
    `log-only` seam closed), `reveal.token` for hidden tokens, `planDrop` and `mapView`
    (`src/lib/combat/map.ts`), the codec with the §8 property test, a new golden replay, the Storage
    seam (`storage.rules`, `src/lib/map-io.ts`) and the contended-append proof in the rules lane.
-   The SVG surface (`MapCanvas`, a DEV route for review) waits on the owner's screenshot verdict
-   on the proposal branch `v2-stage5-map-surface`. Receipt: `docs/PROGRAM_STATUS.md` → "`v2` —
-   stage 5".
+   The SVG surface (`MapCanvas`, a DEV route for review) waits on the owner's screenshot verdict.
+   **Update (2026-09-04):** that surface now rides the stage-6 proposal branch
+   `v2-stage6-play-surface` (`origin/v2-stage5-map-surface` rebased onto `v2`), so the map and the
+   play chrome around it are ONE verdict rather than two. Receipt: `docs/PROGRAM_STATUS.md` →
+   "`v2` — stage 5".
 6. **One play surface.** Dossier 14 as approved in direction: initiative strip, map, hotbar of
    the selected entity, log with undo, DM drawer with hidden/fog/HP editor. Old `PlayTab`,
    `CombatResolver`, `TurnEconomyProvider` stay unreferenced until the surface works, then die.
+   **Status (2026-09-04): engine and client integrated on `v2`; surface pending the screenshot
+   verdict.** Design: `2026-09-04-v2-stage-6-play-surface-design.md`; plan:
+   `2026-09-04-v2-stage-6-play-surface.md` (5 tasks). Tasks 1–3 are on `v2`: every entity's
+   executable mechanics carried in the log on the seat ops with the static catalogue reduced to
+   `core:*`, the `dash` step, bounded rolls at compaction, the monster and character projections
+   with the PC mechanics adapter and `SrdSpellData.areaShape`, and the client half — the table
+   store over `campaigns/{id}/encounters/live`, the tile's pure intent/roll/answer builders, the
+   lease's legacy `combat/state` write-back through a branded encoder, and the log presenter in EN
+   and IT. Task 4, the screen itself, is built on the proposal branch `v2-stage6-play-surface`
+   (which carries stage 5's map, so the owner gives one verdict) and is NOT integrated. Receipt:
+   `docs/PROGRAM_STATUS.md` → "`v2` — stage 6".
 7. **Cuts.** What still reads something at stage 6 dies here: the mechanics kernel and its 47
    test files, the old play surfaces and their render tests, `cost-engine`, `dice-formula` /
    `integer-expression` / `d20-test`, the dev scaffolding routes, `POSITIONING.md`, the atlas
