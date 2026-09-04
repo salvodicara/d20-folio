@@ -132,6 +132,16 @@ carrying pre-migration shapes or obsolete residue. Plan and receipt:
 5. **Minimum map.** Background upload (compressed, per-campaign quota), square grid with scale,
    tokens bound to entity ids, drag with a Foundry-style ruler, rectangle fog, hidden tokens.
    No scenes, layers, drawing, pointer, walls, vision or lighting yet.
+   **Status (2026-09-04): engine closed on `v2`; surface pending the screenshot verdict.** Design:
+   `2026-09-04-v2-stage-5-minimum-map-design.md`; plan: `2026-09-04-v2-stage-5-minimum-map.md`.
+   The map lives on the encounter document: `FoldedState.map` (background reference, rectangle
+   fog) set by the `map`/`fog` table ops, `override position` as the placement path (the
+   `log-only` seam closed), `reveal.token` for hidden tokens, `planDrop` and `mapView`
+   (`src/lib/combat/map.ts`), the codec with the §8 property test, a new golden replay, the Storage
+   seam (`storage.rules`, `src/lib/map-io.ts`) and the contended-append proof in the rules lane.
+   The SVG surface (`MapCanvas`, a DEV route for review) waits on the owner's screenshot verdict
+   on the proposal branch `v2-stage5-map-surface`. Receipt: `docs/PROGRAM_STATUS.md` → "`v2` —
+   stage 5".
 6. **One play surface.** Dossier 14 as approved in direction: initiative strip, map, hotbar of
    the selected entity, log with undo, DM drawer with hidden/fog/HP editor. Old `PlayTab`,
    `CombatResolver`, `TurnEconomyProvider` stay unreferenced until the surface works, then die.

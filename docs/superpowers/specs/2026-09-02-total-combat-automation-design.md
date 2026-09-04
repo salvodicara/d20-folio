@@ -101,9 +101,17 @@ interface Encounter {
 }
 ```
 
-Everything under `entities`, `relations`, `effects`, `windows` and `clock` is the **folded
-state**: derived by folding `log` from the last checkpoint. It is persisted only inside
-`checkpoint` for compaction and boot speed; the log is the truth.
+Everything under `entities`, `relations`, `effects`, `windows`, `clock` and (from stage 5) `map`
+is the **folded state**: derived by folding `log` from the last checkpoint. It is persisted only
+inside `checkpoint` for compaction and boot speed; the log is the truth.
+
+`map` (stage 5, `2026-09-04-v2-stage-5-minimum-map-design.md`) is
+`{ background: MapBackground | null; fog: { covered: boolean; revealed: MapRect[] } }`: the
+background image's Storage path, token URL, size and grid (cell side in image px, origin
+offset), and rectangle fog in grid cells with one representation — when `covered`, everything is
+hidden except `revealed`. Both are set by `table` ops (`map`, `fog`); positions are
+`Entity.position`; a hidden token is `Entity.reveal.token === false`. Nothing ephemeral (the
+in-flight ruler, the cursor, a rectangle being drawn) is persisted.
 
 ### 2.2 Entities
 
@@ -134,7 +142,7 @@ interface Entity {
   concentration: EffectId | null;
   turn: TurnLedger; // action/bonus/reaction/attacks/movement/free claims, reset at turn start
   overrides: Record<OverridePath, { value: unknown; reason: string; by: string }>;
-  reveal: { block: boolean; hp: boolean }; // player-facing visibility for non-PC entities
+  reveal: { block: boolean; hp: boolean; token: boolean }; // player-facing visibility; token:false = hidden token (stage 5)
 }
 ```
 
@@ -269,7 +277,9 @@ type Action =
         | "day-phase" // later
         | "set-initiative"
         | "reorder" // later
-        | "settings";
+        | "settings"
+        | "map" // stage 5: the background reference (`MapBackground | null`)
+        | "fog"; // stage 5: `{ kind: "cover", covered } | { kind: "reveal" | "hide", rect }`
       payload;
     }
   | {
@@ -310,6 +320,13 @@ golden replay feed recorded faces.
 
 The client never writes state. It appends actions. `seq` is a hybrid logical clock so that
 actions from different clients, arriving in any order, fold in one deterministic total order.
+
+`OverridePath` is open (`string`); the paths the reducer patches DIRECTLY rather than layering at
+read time are `vitals.hp`, `vitals.life` (stage 4), and — from stage 5 — `position` (`{x, y}` or
+`null`: a placement that recomputes `adjacent`/`range`, opens no opportunity-attack window and
+spends no movement, which is how a `log-only` table moves tokens) and `reveal.token` /
+`reveal.block` / `reveal.hp` (booleans). Every other path is recorded and read by the derived-stat
+computation (`stats.ac`, `stats.speed`, …).
 
 There is no `checkpoint` **action** (decision 9 of stage 4). A checkpoint is the document field
 `Encounter.checkpoint` the fold already consumes; a log-level marker would carry the same
@@ -437,6 +454,7 @@ union is deleted with the legacy grants that carry it.
 | `campaigns/{id}/encounters/{eid}`                                  | **any member** (append to `log`, `arrayUnion` only); DM/admin (checkpoint, settings, delete)                                      | members, admin                    | the shared `Encounter`                                                                                     |
 | `campaigns/{id}/dmNotes/*`, `notes/*`, `chronicle/*`, `sessions/*` | as today, enumerated explicitly                                                                                                   |                                   | no `{subcol}` wildcard                                                                                     |
 | `bug_reports/{id}`, `admin_audit/{id}`                             | unchanged                                                                                                                         |                                   |                                                                                                            |
+| Storage `campaigns/{id}/maps/{mapId}.jpeg`                         | DM/admin (create, update, delete)                                                                                                 | members, admin (read + list)      | the map background (stage 5): compressed JPEG ≤ 8 MiB; the encounter log carries its reference             |
 
 Deleted: `memberDetails[uid].character` (snapshot cache), `memberDetails[uid].role`, the embedded
 `encounter`, `encounterInit`, `encounterSkipped`, `memberEffects`, `effectOps`, `world`,
@@ -566,6 +584,15 @@ claim), and `attachMemberCharacter` treats a claim on a campaign it can no longe
 `permission-denied`, never any error — as stale. The old campaign play surfaces are therefore
 rule-denied on `v2`; the client code that writes those fields dies at stage 6 with the surfaces
 that host it.
+
+**Storage (stage 5).** `storage.rules` gains one block, `campaigns/{campaignId}/maps/{fileName}`,
+built on the same cross-service `firestore.get` the admin rule already uses: the campaign's `dmUid`
+or the admin may create, update and delete (image content type, ≤ 8 MiB); any campaign member or the
+admin may read — which covers `list`, the per-campaign quota's source of truth. The 100 MiB
+per-campaign quota is enforced by the adapter (`src/lib/map-io.ts`) from Storage's own metadata,
+a client-side courtesy stated as such: rules cannot sum a prefix, and the £1 kill-switch is the
+backstop. Display uses the token URL stored in the `map` action, so a member's `<img>` never
+evaluates a rule.
 
 ### 5.5 Codec totality
 

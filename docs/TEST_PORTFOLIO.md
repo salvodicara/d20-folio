@@ -20,20 +20,20 @@ screen by the screenshot gate, a live-data invariant by unit and rules tests.
 
 ## Lanes and counts (2026-09-03, after the architecture reset)
 
-| Lane                 | Files                              | Notes                                                                                                                 |
-| -------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| unit fast (`node`)   | 462 root `.test.ts` (60 guards)    | pure logic, codecs, guards; `tests/lanes.ts` lists the 13 DOM-bound `.ts` that run in the slow lane                   |
-| unit slow (`jsdom`)  | 194 root `.test.tsx` + 13 `.ts`    | render tests of the old surfaces; shrink as the new surfaces replace them                                             |
-| combat engine        | 21 files under `tests/unit/combat` | the engine's proofs, the dice module, positions/areas and the golden replays (`replays/*.json`)                       |
-| pack unit (composed) | 177                                | `content-pack/tests/unit`, pack branch `v2`                                                                           |
-| rules (emulator)     | 4 files, 119 cases                 | `firestore-rules` 91, `storage-rules` 12, `encounter-io` 12 (the adapter), `encounter-two-clients` 4 (the stage gate) |
-| Functions            | 7                                  | standalone npm package                                                                                                |
-| accessibility sweep  | 2 specs, 432 registrations         | `tests/e2e/a11y*.spec.ts` over `tests/e2e/surfaces.ts`                                                                |
-| screenshot lane      | 2 specs                            | `tests/visual`, own config, artifacts under `artifacts/visual-review/`                                                |
+| Lane                 | Files                              | Notes                                                                                                                                                                                 |
+| -------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| unit fast (`node`)   | 465 root `.test.ts` (60 guards)    | pure logic, codecs, guards; `tests/lanes.ts` lists the 13 DOM-bound `.ts` that run in the slow lane                                                                                   |
+| unit slow (`jsdom`)  | 194 root `.test.tsx` + 13 `.ts`    | render tests of the old surfaces; shrink as the new surfaces replace them                                                                                                             |
+| combat engine        | 24 files under `tests/unit/combat` | the engine's proofs, the dice module, positions/areas, the map (fog, drop policy, viewer projection), the §8 codec round-trip property test and the golden replays (`replays/*.json`) |
+| pack unit (composed) | 177                                | `content-pack/tests/unit`, pack branch `v2`                                                                                                                                           |
+| rules (emulator)     | 5 files, 130 cases                 | `firestore-rules` 91, `storage-rules` 19, `encounter-io` 13 (the adapter, contended appends included), `map-io` 3 (the Storage adapter), `encounter-two-clients` 4 (the stage gate)   |
+| Functions            | 7                                  | standalone npm package                                                                                                                                                                |
+| accessibility sweep  | 2 specs, 432 registrations         | `tests/e2e/a11y*.spec.ts` over `tests/e2e/surfaces.ts`                                                                                                                                |
+| screenshot lane      | 2 specs                            | `tests/visual`, own config, artifacts under `artifacts/visual-review/`                                                                                                                |
 
-Count them with `find tests/unit -name '*.test.ts' | wc -l` (462), `find tests/unit -name '*.test.tsx' | wc -l`
+Count them with `find tests/unit -name '*.test.ts' | wc -l` (465), `find tests/unit -name '*.test.tsx' | wc -l`
 (194), `find tests/unit -name '*.guard.test.ts*' | wc -l` (60), `grep -c "^\s*it(" tests/rules/*.test.ts`
-(91 + 12 + 12 + 4) and `pnpm exec playwright test --list | tail -n 1` (432).
+(91 + 19 + 13 + 3 + 4) and `pnpm exec playwright test --list | tail -n 1` (432).
 
 ## Golden replays
 
@@ -58,6 +58,13 @@ the log itself, not a pre-log seed (stage 2 closed that gap). Format: `{ name, d
 seq, stamped ms 5000 plus the index), expect: { applied, rejections [{ action, rejection }],
 state { "dotted.path": value } } }`; `applied` counts the replay's own log, skipping undone
 actions and undos.
+
+Stage 5 added `map-fog-and-hidden.json` (the minimum map: a reveal before cover rejected, the
+background, fog cover/reveal/hide, a hidden wolf placed by the DM, revealed, moving in its turn) and
+the **§8 codec round-trip property test** (`tests/unit/combat/codec.property.test.ts`): a seeded
+generator over every action kind and table op, populated checkpoints and unknown keys, 300 cases,
+write → parse → write is the identity, plus two negative properties. The generator is a 30-line
+PRNG in the test, not a dependency.
 
 ## Deletion ledger
 

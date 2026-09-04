@@ -248,7 +248,7 @@ thin I/O facade over it; the round-trip regression lives in `tests/unit/characte
 ### Portrait pipeline (Storage ⇄ export)
 
 One portrait file per character — `users/{uid}/portraits/{charId}.jpeg` (`src/lib/storage.ts`),
-canvas-compressed on upload, immutable Cache-Control; cropping is metadata-only (`portraitCrop`,
+canvas-compressed on upload (`src/lib/image-compress.ts`), immutable Cache-Control; cropping is metadata-only (`portraitCrop`,
 CSS crop at render) so a re-crop never re-uploads. **Display** (`PortraitImg`) renders the download
 URL as a plain no-cors `<img>`, cached offline by the Workbox runtime cache. The crop is a
 **uniform cover-fit**: `cropToCssStyle` (`src/lib/portrait-crop.ts`) over-sizes the image so the crop
@@ -2501,7 +2501,16 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
   transaction, delete, the seq clock) and `src/lib/combat-lease.ts` (`joinTable`, `leaveTable`,
   `readLease`) are the ONLY writers of the encounter document and of the character's `lease` marker;
   compaction itself is pure (`src/lib/combat/checkpoint.ts`) and so is the codec
-  (`src/lib/combat/codec.ts`).
+  (`src/lib/combat/codec.ts`). The map's persisted facts (stage 5) are log actions folded into
+  `FoldedState.map` (`src/lib/combat/map.ts`: rectangle fog, the drop policy `planDrop`, the viewer
+  projection `mapView`); the background IMAGE lives in Storage under
+  `campaigns/{campaignId}/maps/{mapId}.jpeg` — DM/admin write, member read and list
+  (`storage.rules`, cross-service membership lookup, 8 MiB and `image/*` ceilings) — through
+  `src/lib/map-io.ts`, the Storage twin of `combat-io` (explicit `FirebaseStorage`, never the app
+  singleton; pinned by `tests/unit/combat-io-boundary.guard.test.ts`): upload returns the
+  `MapBackground` reference the `map` table op carries, usage is summed from Storage metadata
+  against a 100 MiB per-campaign courtesy quota, delete is idempotent. Client-side compression is
+  the pure `src/lib/image-compress.ts` (shared with portraits and banners).
 
 - **The encounter is a pure-REFERENCE read model (no PC stat copy).** `campaign.encounter` carries PC
   combatants as bare references — `EncounterPc = { kind, id, memberUid, characterId, hidden? }` (no
