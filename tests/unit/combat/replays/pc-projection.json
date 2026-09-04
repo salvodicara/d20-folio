@@ -1,62 +1,8 @@
 {
   "name": "a projected PC — Marco's longsword and Fireball fold from the definitions the log carries, with nothing in the static catalogue",
+  "generated": "The `mechanics` below are `projectCharacter`'s OWN output for a Wizard 5 with a longsword and Fireball prepared — never hand-authored. `tests/unit/combat-projection.test.ts` deep-equals the projection against them, so this end-to-end proof cannot drift away from the adapter.",
   "dm": "dm",
   "mechanics": [
-    {
-      "schema": 1,
-      "id": "pc:marco:weapon-longsword",
-      "source": "srd",
-      "label": "srd:equipment:longsword:name",
-      "active": [
-        {
-          "id": "weapon-longsword",
-          "trigger": {
-            "kind": "invocation",
-            "economy": "action"
-          },
-          "cost": [
-            {
-              "kind": "turn",
-              "claim": "attack"
-            }
-          ],
-          "targets": {
-            "count": 1,
-            "eligibility": {
-              "relation": "adjacent",
-              "between": ["$self", "$target"],
-              "value": true
-            }
-          },
-          "inputs": [
-            {
-              "id": "roll",
-              "kind": "d20",
-              "for": "attack"
-            },
-            {
-              "id": "damage",
-              "kind": "dice",
-              "formula": "1d8+3"
-            }
-          ],
-          "steps": [
-            {
-              "id": "hit",
-              "kind": "attack",
-              "roll": "roll",
-              "bonus": 5,
-              "damage": [
-                {
-                  "dice": "damage",
-                  "type": "slashing"
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
     {
       "schema": 1,
       "id": "pc:marco:spell-fireball",
@@ -128,6 +74,93 @@
                 }
               ],
               "to": "$target"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "schema": 1,
+      "id": "pc:marco:weapon-longsword",
+      "source": "srd",
+      "label": "srd:equipment:longsword:name",
+      "active": [
+        {
+          "id": "weapon-longsword",
+          "trigger": {
+            "kind": "invocation",
+            "economy": "action"
+          },
+          "cost": [
+            {
+              "kind": "turn",
+              "claim": "attack"
+            }
+          ],
+          "targets": {
+            "count": 1,
+            "eligibility": {
+              "relation": "adjacent",
+              "between": ["$self", "$target"],
+              "value": true
+            }
+          },
+          "inputs": [
+            {
+              "id": "roll",
+              "kind": "d20",
+              "for": "attack"
+            },
+            {
+              "id": "damage",
+              "kind": "dice",
+              "formula": "1d8+3"
+            },
+            {
+              "id": "grip",
+              "kind": "choice",
+              "options": ["grip:one-handed", "grip:two-handed"]
+            },
+            {
+              "id": "damage-versatile",
+              "kind": "dice",
+              "formula": "1d10+3"
+            }
+          ],
+          "steps": [
+            {
+              "id": "hit",
+              "kind": "attack",
+              "roll": "roll",
+              "bonus": 3,
+              "damage": [
+                {
+                  "dice": "damage",
+                  "type": "slashing"
+                }
+              ],
+              "when": {
+                "not": {
+                  "answer": "grip",
+                  "equals": "grip:two-handed"
+                }
+              }
+            },
+            {
+              "id": "hit-versatile",
+              "kind": "attack",
+              "when": {
+                "answer": "grip",
+                "equals": "grip:two-handed"
+              },
+              "roll": "roll",
+              "bonus": 3,
+              "damage": [
+                {
+                  "dice": "damage-versatile",
+                  "type": "slashing"
+                }
+              ]
             }
           ]
         }

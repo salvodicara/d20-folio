@@ -18,6 +18,9 @@ type LogEntry = Omit<Action, "seq"> & { readonly by: string };
 
 interface Replay {
   readonly name: string;
+  /** Present when the replay's `mechanics` are a PROJECTION's output rather than hand
+   *  data: says what generated them and which suite proves they are still current. */
+  readonly generated?: string;
   readonly dm: string;
   /**
    * Executable definitions this replay's entities CARRY into the log (stage 6 §2 D2) on top

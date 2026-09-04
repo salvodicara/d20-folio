@@ -6,6 +6,8 @@
  * Public SRD only, so this suite is identical in both build modes; the six live-team
  * sheets are pack-private and are pinned by the pack's own projection contract.
  */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { makeCharacterDoc } from "./_helpers";
@@ -640,5 +642,43 @@ describe("projectCharacter — coverage", () => {
     const adjudicated = steps.filter((row) => row.status === "table");
     expect(adjudicated.length).toBeGreaterThan(0);
     expect(steps.length).toBeGreaterThan(adjudicated.length);
+  });
+});
+
+describe("projectCharacter — the golden replay folds THIS projection", () => {
+  /** Marco as `tests/unit/combat/replays/pc-projection.json` seats him: a Wizard 5 with a
+   *  longsword and Fireball prepared. The replay's `mechanics` are this projection's own
+   *  output, so the end-to-end fold cannot drift away from the adapter — change the adapter
+   *  and this assertion fails until the replay is regenerated from it. */
+  function marcoDoc(): CharacterDoc {
+    return makeCharacterDoc({
+      classes: [{ classId: "wizard", level: 5 }],
+      abilityScores: { STR: 16, DEX: 14, CON: 14, INT: 18, WIS: 12, CHA: 10 },
+      spellcasting: {
+        ability: "INT",
+        preparedCaster: true,
+        preparedMax: 8,
+        saveDCOverride: null,
+        attackBonusOverride: null,
+      },
+      spellSlots: [{ level: 3, total: 1 }],
+      spells: [{ srdId: "fireball", prepared: true }],
+      weapons: [{ srdId: "longsword", quantity: 1 }],
+    });
+  }
+
+  it("emits exactly the weapon and area mechanics the replay carries", () => {
+    const replay = JSON.parse(
+      readFileSync(join(__dirname, "combat", "replays", "pc-projection.json"), "utf8")
+    ) as { mechanics: readonly Mechanic[]; generated: string };
+    expect(replay.generated).toContain("projectCharacter");
+    const { mechanics } = projectCharacter(marcoDoc(), {
+      uid: "p-marco",
+      characterId: "marco",
+      buildRevision: 1,
+    });
+    const carried = new Set(replay.mechanics.map((m) => m.id));
+    expect(carried.size).toBe(replay.mechanics.length);
+    expect(mechanics.filter((m) => carried.has(m.id))).toEqual([...replay.mechanics]);
   });
 });
