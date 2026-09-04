@@ -174,6 +174,17 @@ test.describe("the states a URL cannot reach", () => {
     await page.getByTestId("pl-drawer-open").click();
     const edit = page.locator('[data-testid^="pl-edit-"]').first();
     await expect(edit).toBeVisible();
+    // Two frames: the control on its line, then what it opens. The editor covers the line it
+    // was launched from, so one frame alone cannot show both.
+    //
+    // The label frame filters to "Ferite" first: the wounding line is the newest of two dozen
+    // and would otherwise sit below the fold, and the filter is the same fix — it keeps what
+    // wounded somebody rather than what settled a verdict.
+    await page.getByTestId("pl-filter-wounds").click();
+    await expect(edit).toBeVisible();
+    await shot(page, "state-drawer-modifica-label");
+    await page.getByTestId("pl-filter-all").click();
+    await edit.scrollIntoViewIfNeeded();
     await edit.click();
     await expect(page.getByTestId("pl-hp-editor")).toBeVisible();
     await shot(page, "state-drawer-modifica");

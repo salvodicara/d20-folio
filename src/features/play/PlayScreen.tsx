@@ -396,21 +396,28 @@ export function PlayScreen(props: PlayScreenProps) {
    * focused owner: a person who has just clicked the map, a tile or nothing at all still
    * expects Space to end their turn.
    *
-   * A key that arrives on a CONTROL belongs to the control, and Space is the sharpest case: a
-   * native button activates on Space, so stealing it would mean a keyboard user who tabs to a
-   * hotbar tile and presses Space ends their turn instead of using the tile. So every focusable
-   * thing — a field, a button, a link, anything with a `role` that behaves like one, anything
-   * carrying a tabindex — keeps its own keys, and the shortcut fires only when the key lands on
-   * the screen itself: the root, the map, a label, a panel.
+   * Two different exclusions, because the two kinds of shortcut collide with different things.
+   *
+   * **Space** is consumed by controls: a native button activates on it, so stealing it would
+   * mean a keyboard user who tabs to a hotbar tile and presses Space ends their turn instead of
+   * using the tile. Every focusable thing therefore keeps Space to itself, and the turn ends
+   * only when the key lands on the screen — the root, the map, a label, a panel.
+   *
+   * **A letter** is consumed by nothing but a text field. Excluding buttons from it too would
+   * be worse than useless: Chromium focuses a button on click, so ONE mouse click on the rail —
+   * or on a tile, or a drawer tab — would silently kill V/H/R/A/F until the person clicked
+   * something inert, which is precisely when a tool shortcut is most wanted.
    */
   useEffect(() => {
-    /** Whether the key belongs to the thing under it rather than to the screen. */
+    /** The key is being TYPED: it belongs to the field whatever else it might mean. */
+    const isTyping = (target: EventTarget | null): boolean =>
+      target instanceof HTMLElement &&
+      (target.isContentEditable || target.closest("input, textarea, select") !== null);
+
+    /** The key would ACTIVATE the thing under it — the Space exclusion, and only that one. */
     const isControl = (target: EventTarget | null): boolean => {
       if (!(target instanceof HTMLElement)) return false;
-      if (target.isContentEditable) return true;
-      if (target.closest("input, textarea, select, button, a[href], [tabindex]")) {
-        return true;
-      }
+      if (target.closest("button, a[href], [tabindex]") !== null) return true;
       // Radix triggers and our own switches are buttons already, but a future one may be a
       // div with a role; the role is what says "this activates".
       return (
@@ -419,9 +426,10 @@ export function PlayScreen(props: PlayScreenProps) {
         ) !== null
       );
     };
+
     const onKey = (event: KeyboardEvent): void => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
-      if (isControl(event.target)) return;
+      if (isTyping(event.target)) return;
       const tool = TOOL_KEYS[event.key.toLowerCase()];
       if (tool !== undefined) {
         if (tool === "add" || tool === "fog-reveal" ? dmRef.current : true) {
@@ -430,7 +438,7 @@ export function PlayScreen(props: PlayScreenProps) {
         }
         return;
       }
-      if (event.code === "Space" && canEndTurnRef.current) {
+      if (event.code === "Space" && !isControl(event.target) && canEndTurnRef.current) {
         event.preventDefault();
         void dispatchRef.current?.({ kind: "table", table: { op: "end-turn" } });
       }

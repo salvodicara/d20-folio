@@ -379,6 +379,32 @@ describe("the keyboard the tooltips promise", () => {
     expect(screen.getByTestId("pl-tool-ruler").getAttribute("aria-pressed")).toBe("true");
   });
 
+  it("a letter still works while a button holds focus", () => {
+    mount({ uid: DM, dm: true, characterId: null });
+    // Chromium focuses a button on click, so ONE mouse click on the rail must not kill the
+    // tool shortcuts — which is exactly when they are most wanted.
+    const rail = screen.getByTestId("pl-tool-select");
+    fireEvent.keyDown(rail, { key: "r" });
+    expect(screen.getByTestId("pl-tool-ruler").getAttribute("aria-pressed")).toBe("true");
+    fireEvent.keyDown(screen.getByTestId("pl-tool-ruler"), { key: "h" });
+    expect(screen.getByTestId("pl-tool-pan").getAttribute("aria-pressed")).toBe("true");
+    // A hotbar tile and a drawer tab focus the same way.
+    fireEvent.keyDown(screen.getByTestId("pl-tab-items"), { key: "v" });
+    expect(screen.getByTestId("pl-tool-select").getAttribute("aria-pressed")).toBe(
+      "true"
+    );
+  });
+
+  it("a letter typed into a field is still the field's", () => {
+    mount({ uid: DM, dm: true, characterId: null });
+    fireEvent.click(screen.getByTestId("pl-drawer-open"));
+    fireEvent.click(screen.getByTestId("pl-hp-pill"));
+    fireEvent.keyDown(screen.getByTestId("pl-hp-amount"), { key: "r" });
+    expect(screen.getByTestId("pl-tool-ruler").getAttribute("aria-pressed")).toBe(
+      "false"
+    );
+  });
+
   it("a DM-only hotkey does nothing for a player", () => {
     mount({ uid: PLAYER, dm: false, characterId: "lyra" });
     fireEvent.keyDown(window, { key: "f" });
