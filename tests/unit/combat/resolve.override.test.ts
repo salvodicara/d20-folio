@@ -214,4 +214,20 @@ describe("override — an HP override to zero has damage's tail (stage 4)", () =
     if (result.kind !== "applied") return;
     expect(result.receipt.events).toEqual([]);
   });
+
+  it("an override of vitals.life to dead ends concentration too, with no hp-zero (HP may be above 0)", () => {
+    const state = concentrating(20);
+    const result = resolve(state, override("vitals.life", "dead"), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(result.state.effects["effect-1"]).toBeUndefined();
+    expect(mustEntity(result.state, "hero").concentration).toBeNull();
+    expect(result.receipt.events).toEqual([
+      { kind: "effect-ended", effect: "effect-1" },
+      { kind: "concentration-ended", entity: "hero", effect: "effect-1" },
+    ]);
+    expect(result.receipt.events).not.toContainEqual(
+      expect.objectContaining({ kind: "hp-zero" })
+    );
+  });
 });

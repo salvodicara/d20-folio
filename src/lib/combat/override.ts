@@ -107,6 +107,15 @@ export function applyOverride(state: FoldedState, action: OverrideAction): StepR
     events.push({ kind: "hp-zero", entity: action.entity });
     next = settleZeroHp(next, action.entity, events);
   }
+  // A DM override that declares the entity dead outright (`vitals.life` → "dead") ends held
+  // concentration the same way, even though HP may still be above 0 — so no `hp-zero` here.
+  if (
+    action.path === "vitals.life" &&
+    entity.vitals.life !== "dead" &&
+    patched.vitals.life === "dead"
+  ) {
+    next = settleZeroHp(next, action.entity, events);
+  }
   return {
     kind: "applied",
     state: next,

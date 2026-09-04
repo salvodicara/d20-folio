@@ -40,6 +40,44 @@ function withEntity(state: FoldedState, entity: Entity): FoldedState {
   return { ...state, entities: { ...state.entities, [entity.id]: entity } };
 }
 
+/** `add-entity`/`join` body: registers the entity, and appends it to the turn order while
+ *  turns are running (a lease-joining PC seats itself at the foot of the current order). */
+function addEntity(state: FoldedState, entity: Entity): FoldedState {
+  const next = withEntity(state, entity);
+  if (next.clock.phase === "turns") {
+    return { ...next, clock: { ...next.clock, order: [...next.clock.order, entity.id] } };
+  }
+  return next;
+}
+
+/** `remove-entity`/`leave` body: ends effects it sourced or received, prunes it from the turn
+ *  order and repairs the current pointer, and drops relations that named it. */
+function removeEntity(
+  state: FoldedState,
+  id: EntityId,
+  events: CombatEvent[]
+): FoldedState {
+  const sourced = Object.values(state.effects)
+    .filter((effect) => effect.source.entity === id || effect.target === id)
+    .map((effect) => effect.id);
+  const ended = endEffects(state, sourced);
+  events.push(...ended.events);
+  const entities = Object.fromEntries(
+    Object.entries(ended.state.entities).filter(([entityId]) => entityId !== id)
+  );
+  const order = ended.state.clock.order.filter((entityId) => entityId !== id);
+  let clock = { ...ended.state.clock, order };
+  if (clock.current === id) {
+    const index = state.clock.order.indexOf(id);
+    const following = order[index % Math.max(order.length, 1)] ?? null;
+    clock = { ...clock, current: following };
+  }
+  const relations = ended.state.relations.filter(
+    (relation) => !Object.values(relation).includes(id)
+  );
+  return { ...ended.state, entities, clock, relations };
+}
+
 /** The start of `entity`'s turn: ledger reset and turn-edge(start) expiries. */
 function startTurn(
   state: FoldedState,
@@ -127,47 +165,32 @@ export function applyTable(state: FoldedState, op: TableOp): TableResult {
     case "add-entity": {
       if (state.entities[op.entity.id])
         return reject(`add-entity: duplicate id ${op.entity.id}`);
-      const next = withEntity(state, op.entity);
-      if (state.clock.phase === "turns") {
-        return {
-          kind: "applied",
-          state: {
-            ...next,
-            clock: { ...next.clock, order: [...next.clock.order, op.entity.id] },
-          },
-          events,
-        };
-      }
-      return { kind: "applied", state: next, events };
+      return { kind: "applied", state: addEntity(state, op.entity), events };
     }
     case "remove-entity": {
-      const entity = state.entities[op.entity];
-      if (!entity) return reject(`remove-entity: unknown ${op.entity}`);
-      const sourced = Object.values(state.effects)
-        .filter(
-          (effect) => effect.source.entity === op.entity || effect.target === op.entity
-        )
-        .map((effect) => effect.id);
-      const ended = endEffects(state, sourced);
-      events.push(...ended.events);
-      const entities = Object.fromEntries(
-        Object.entries(ended.state.entities).filter(([id]) => id !== op.entity)
-      );
-      const order = ended.state.clock.order.filter((id) => id !== op.entity);
-      let clock = { ...ended.state.clock, order };
-      if (clock.current === op.entity) {
-        const index = state.clock.order.indexOf(op.entity);
-        const following = order[index % Math.max(order.length, 1)] ?? null;
-        clock = { ...clock, current: following };
-      }
-      const relations = ended.state.relations.filter(
-        (relation) => !Object.values(relation).includes(op.entity)
-      );
-      return {
-        kind: "applied",
-        state: { ...ended.state, entities, clock, relations },
-        events,
-      };
+      if (!state.entities[op.entity])
+        return reject(`remove-entity: unknown ${op.entity}`);
+      return { kind: "applied", state: removeEntity(state, op.entity, events), events };
+    }
+    case "join": {
+      // Appended by the joining PC's own owner client (`docs/superpowers/plans/2026-09-04-v2-
+      // stage-4-shared-encounter`): `add-entity` semantics — duplicate id rejected, appended to
+      // the turn order while turns are running.
+      if (state.entities[op.entity.id])
+        return reject(`join: duplicate id ${op.entity.id}`);
+      return { kind: "applied", state: addEntity(state, op.entity), events };
+    }
+    case "leave": {
+      // `remove-entity` semantics: effects it sourced or received end, relations are pruned,
+      // the order and current pointer are repaired.
+      if (!state.entities[op.entity]) return reject(`leave: unknown ${op.entity}`);
+      return { kind: "applied", state: removeEntity(state, op.entity, events), events };
+    }
+    case "sync": {
+      // The owner's client writes the folded entity back into the personal aggregate: an
+      // upsert — replaces an existing entity of the same id wholesale, inserts otherwise. The
+      // turn order is untouched (sync never changes who is seated or in what order).
+      return { kind: "applied", state: withEntity(state, op.entity), events };
     }
     case "set-initiative": {
       if (!state.entities[op.entity])

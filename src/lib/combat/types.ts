@@ -322,6 +322,9 @@ export type TableOp =
   | { readonly op: "start"; readonly epoch: number }
   | { readonly op: "add-entity"; readonly entity: Entity }
   | { readonly op: "remove-entity"; readonly entity: EntityId }
+  | { readonly op: "join"; readonly entity: Entity }
+  | { readonly op: "leave"; readonly entity: EntityId }
+  | { readonly op: "sync"; readonly entity: Entity }
   | { readonly op: "set-initiative"; readonly entity: EntityId; readonly value: number }
   | { readonly op: "begin-turns"; readonly order: readonly EntityId[] }
   | { readonly op: "end-turn" }

@@ -168,4 +168,112 @@ describe("resolve — table operations and the clock", () => {
       }
     });
   });
+
+  describe("table — join, leave, sync (the encounter lease)", () => {
+    const seq6 = seqFactory("dm");
+
+    it("join adds an entity, appending it to the turn order while turns are running", () => {
+      const state = applyAll(
+        emptyState(),
+        openingActions("dm", seq6, [ranger, goblin], { ranger: 15, "monster-1": 15 }, [
+          "monster-1",
+          "ranger",
+        ])
+      );
+      const newcomer = testEntity({
+        id: "pc-2",
+        kind: "pc",
+        controllerUid: "p2",
+        hp: 12,
+      });
+      const result = resolve(
+        state,
+        tableAction("p2", seq6(), { op: "join", entity: newcomer }),
+        catalogue
+      );
+      expect(result.kind).toBe("applied");
+      if (result.kind !== "applied") return;
+      expect(result.state.entities["pc-2"]).toEqual(newcomer);
+      expect(result.state.clock.order).toEqual(["monster-1", "ranger", "pc-2"]);
+      expect(result.receipt.summary).toEqual(["table:join"]);
+    });
+
+    it("rejects a second join with the same id as invalid-table-op", () => {
+      const state = applyAll(emptyState(), [
+        tableAction("dm", seq6(), { op: "start", epoch: 1 }),
+        tableAction("dm", seq6(), { op: "join", entity: ranger }),
+      ]);
+      const result = resolve(
+        state,
+        tableAction("dm", seq6(), { op: "join", entity: ranger }),
+        catalogue
+      );
+      expect(result.kind).toBe("rejected");
+      if (result.kind !== "rejected") return;
+      expect(result.rejection.reason).toBe("invalid-table-op");
+    });
+
+    it("leave removes the entity and ends an effect it sourced", () => {
+      let state = applyAll(emptyState(), [
+        tableAction("dm", seq6(), { op: "start", epoch: 1 }),
+        tableAction("dm", seq6(), { op: "join", entity: ranger }),
+      ]);
+      const effect: Effect = {
+        id: "effect-4",
+        source: { entity: "ranger", mechanic: "test", action: "x", castLevel: null },
+        target: "ranger",
+        payload: { kind: "standing", facts: {} },
+        lifetime: { kind: "manual" },
+        concentration: false,
+      };
+      state = { ...state, effects: { [effect.id]: effect } };
+      const result = resolve(
+        state,
+        tableAction("dm", seq6(), { op: "leave", entity: "ranger" }),
+        catalogue
+      );
+      expect(result.kind).toBe("applied");
+      if (result.kind !== "applied") return;
+      expect(result.state.entities["ranger"]).toBeUndefined();
+      expect(result.state.effects["effect-4"]).toBeUndefined();
+      expect(result.receipt.summary).toEqual(["table:leave"]);
+    });
+
+    it("sync upserts the entity — replaces an existing one wholesale, order untouched", () => {
+      const state = applyAll(
+        emptyState(),
+        openingActions("dm", seq6, [ranger, goblin], { ranger: 15, "monster-1": 15 }, [
+          "monster-1",
+          "ranger",
+        ])
+      );
+      const synced = { ...ranger, vitals: { ...ranger.vitals, hp: 3 } };
+      const result = resolve(
+        state,
+        tableAction("p1", seq6(), { op: "sync", entity: synced }),
+        catalogue
+      );
+      expect(result.kind).toBe("applied");
+      if (result.kind !== "applied") return;
+      expect(result.state.entities["ranger"]).toEqual(synced);
+      expect(result.state.clock.order).toEqual(["monster-1", "ranger"]);
+      expect(result.receipt.summary).toEqual(["table:sync"]);
+    });
+
+    it("sync inserts the entity when absent, leaving the order untouched", () => {
+      const state = applyAll(emptyState(), [
+        tableAction("dm", seq6(), { op: "start", epoch: 1 }),
+      ]);
+      const newcomer = testEntity({ id: "pc-3", kind: "pc", hp: 8 });
+      const result = resolve(
+        state,
+        tableAction("p3", seq6(), { op: "sync", entity: newcomer }),
+        catalogue
+      );
+      expect(result.kind).toBe("applied");
+      if (result.kind !== "applied") return;
+      expect(result.state.entities["pc-3"]).toEqual(newcomer);
+      expect(result.state.clock.order).toEqual([]);
+    });
+  });
 });
