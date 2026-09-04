@@ -865,7 +865,14 @@ creates (the API refuses with an empty client id). **Owner action pending:** Fir
 `d20-folio-staging` → Authentication → Sign-in method → Google → Enable → Save. Production was
 never touched.
 
-**Gates on `v2` at the close.** Gates: filled by the controller.
+**Gates on `v2` at the close** (sequential from the `v2` worktree, at `29534e3e` after the fix
+wave and the docs): `just ci` 5 min 8 s (845 files / 19,090 tests, Functions 7 files / 129 tests, plus
+typecheck, lint and the build); `pnpm test:rules` 25 s (5 files / 134 cases on the emulator);
+`pnpm build` + `pnpm test:budget` 34 s (6 budget cases); `just ci-srd-only` 2 min 40 s (666 files /
+13,510 tests, 2 skipped — run because `src/lib/combat`, `src/data` and `src/lib/combat-projection.ts`
+are public modules, and green with the pack pinned to the empty stub). Stage 5 closed at
+4 min 47 s / 23 s / 33 s / 2 min 6 s; the combined `v2` gate is about 8 min 47 s, under the
+15-minute target.
 
 **What the gate proves, exactly.** The table folds identically on every client from the log alone:
 carried mechanics resolved with no local catalogue, the compaction property (fold unchanged by

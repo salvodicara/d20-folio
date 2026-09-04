@@ -37,7 +37,9 @@ Count them with `find tests/unit -name '*.test.ts' | wc -l` (465), `find tests/u
 
 ### Stage 6 additions (2026-09-04, tasks 1–3)
 
-Counts: filled by the controller from the integration gate.
+Counts at the integration gate (`v2` `29534e3e`, 2026-09-04): composed unit suite 845 files /
+19,090 tests; rules lane 5 files / 134 cases (the write-back case joins `encounter-two-clients`);
+SRD-only unit suite 666 files / 13,510 tests + 2 skipped; Functions 7 files / 129 tests; budget 6 cases.
 
 The engine and client halves of the play surface. Every new root file is in the FAST lane — no
 DOM, no `renderHook` — so the whole stage costs the gate no jsdom time; the two files that reach
