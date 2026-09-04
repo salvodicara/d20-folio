@@ -20,6 +20,7 @@ import type {
   Action,
   Answers,
   Encounter,
+  Entity,
   FoldedState,
   IntentAction,
   Rejection,
@@ -91,6 +92,47 @@ function table(
     checkpoint: null,
   };
   return fold(encounter, catalogue).state;
+}
+
+/**
+ * A PC seated as a real `table:join` would seat it: `projectCharacter`'s own entity carrying its
+ * own definitions, which `programOf` reads BEFORE the static catalogue. Every other creature is
+ * declared adjacent, because melee eligibility is a relation the table declares rather than a
+ * distance the plan measures (visibility defaults to true and needs no declaration).
+ */
+function seatProjected(doc: CharacterDoc, others: readonly Entity[] = []): FoldedState {
+  const { entity, mechanics } = projectCharacter(doc, {
+    uid: "p-caster",
+    characterId: "caster",
+    buildRevision: 1,
+  });
+  const seqOf = seqFactory("dm", 1_000);
+  const order = ["caster", ...others.map((other) => other.id)];
+  const initiative = Object.fromEntries(order.map((id, index) => [id, 20 - index]));
+  const relations: Action[] = others.map((other) => ({
+    kind: "declare",
+    id: `near-${other.id}`,
+    seq: seqOf(),
+    by: "dm",
+    relation: { kind: "adjacent", a: "caster", b: other.id },
+    remove: false,
+    mover: null,
+  }));
+  const folded = fold(
+    {
+      schema: 1,
+      id: "live",
+      host: { kind: "campaign", campaignId: "camp-1" },
+      log: [
+        ...openingActions("dm", seqOf, [entity, ...others], initiative, order, mechanics),
+        ...relations,
+      ],
+      checkpoint: null,
+    },
+    catalogue
+  );
+  expect(folded.rejections).toEqual([]);
+  return folded.state;
 }
 
 const SHOT: IntentArgs = {
@@ -739,29 +781,6 @@ describe("planIntent pays a levelled cast from a pool the caster actually has", 
     });
   }
 
-  /** The caster seated as a real `table:join` would seat it: its projected entity, carrying its
-   *  own definitions, which `programOf` reads before the static catalogue. */
-  function seated(doc: CharacterDoc): FoldedState {
-    const { entity, mechanics } = projectCharacter(doc, {
-      uid: "p-caster",
-      characterId: "caster",
-      buildRevision: 1,
-    });
-    const seqOf = seqFactory("dm", 1_000);
-    const folded = fold(
-      {
-        schema: 1,
-        id: "live",
-        host: { kind: "campaign", campaignId: "camp-1" },
-        log: openingActions("dm", seqOf, [entity], { caster: 18 }, ["caster"], mechanics),
-        checkpoint: null,
-      },
-      catalogue
-    );
-    expect(folded.rejections).toEqual([]);
-    return folded.state;
-  }
-
   /** The intent the tile would append, once the (zero) rolls are in. */
   function cast(state: FoldedState): IntentBody {
     expect(plannedInputs(state, MISSILE)).toEqual([]);
@@ -786,7 +805,7 @@ describe("planIntent pays a levelled cast from a pool the caster actually has", 
   }
 
   it("spends a Warlock's Pact slot, at the only level that pool has", () => {
-    const state = seated(
+    const state = seatProjected(
       casterDoc("warlock", "CHA", [{ level: 2, total: 1, pactMagic: true }])
     );
     const body = cast(state);
@@ -797,7 +816,7 @@ describe("planIntent pays a levelled cast from a pool the caster actually has", 
   });
 
   it("prefers a Sorlock's standard slot at the printed level over its Pact slot", () => {
-    const state = seated(
+    const state = seatProjected(
       casterDoc("sorcerer", "CHA", [
         { level: 1, total: 2 },
         { level: 1, total: 1, pactMagic: true },
@@ -813,7 +832,7 @@ describe("planIntent pays a levelled cast from a pool the caster actually has", 
   it("reaches for the lowest higher slot when the printed level is spent", () => {
     // A Wizard out of 1st-level slots casting a NON-scaling 1st-level spell: legal by the SRD,
     // and only reachable because every projected slot cost is upcastable.
-    const state = seated(casterDoc("wizard", "INT", [{ level: 2, total: 2 }]));
+    const state = seatProjected(casterDoc("wizard", "INT", [{ level: 2, total: 2 }]));
     const body = cast(state);
     expect(body.payment).toEqual([{ kind: "slot", level: 2, pool: "standard" }]);
     const next = applied(state, body);
@@ -821,10 +840,112 @@ describe("planIntent pays a levelled cast from a pool the caster actually has", 
   });
 
   it("leaves an entity with no slot at all to the reducer's own rejection", () => {
-    const state = seated(casterDoc("wizard", "INT", []));
+    const state = seatProjected(casterDoc("wizard", "INT", []));
     expect(rejectionOf(state, MISSILE)).toEqual({
       reason: "unaffordable",
       cost: "slot:1",
     });
+  });
+});
+
+// ── A Versatile grip rolls ONE damage die (design §2 D4) ───────────────────
+
+/**
+ * The projected Versatile weapon declares BOTH damage dice — `damage` and `damage-versatile` —
+ * and gates each attack step on the `grip` choice. Planning both would append a damage roll
+ * nobody ever reads to the shared log on every single swing, so `planIntent` plans an input only
+ * while some step that reads it can still run.
+ */
+describe("planIntent plans only the damage the grip will actually read", () => {
+  const FOE = testEntity({ id: "goblin-1", hp: 30, position: { x: 1, y: 0 } });
+
+  const SWING: IntentArgs = {
+    entity: "caster",
+    mechanic: "pc:caster:weapon-quarterstaff",
+    program: "weapon-quarterstaff",
+    targets: ["goblin-1"],
+    answersSoFar: {},
+  };
+
+  /** A quarterstaff: 1d6 in one hand, 1d8 in two — the whole Versatile vocabulary. */
+  function staffTable(): FoldedState {
+    return seatProjected(
+      makeCharacterDoc({
+        classes: [{ classId: "wizard", level: 5 }],
+        abilityScores: { STR: 16, DEX: 12, CON: 14, INT: 16, WIS: 12, CHA: 10 },
+        weapons: [{ srdId: "quarterstaff", quantity: 1 }],
+      }),
+      [FOE]
+    );
+  }
+
+  /** Roll the plan, append it, and return the state the applied intent produced. */
+  function swing(state: FoldedState, args: IntentArgs, damageKey: string): FoldedState {
+    const inputs = plannedInputs(state, args);
+    const rolls = rollsFor(inputs, "manual", {
+      by: "p-caster",
+      entity: "caster",
+      faces: { roll: [19], [damageKey]: [5] },
+    });
+    if (!Array.isArray(rolls)) throw new Error(`unexpected roll error: ${rolls.code}`);
+
+    let next = state;
+    const ids = inputs.map((_pending, index) => `r-${index}`);
+    rolls.forEach((pending, index) => {
+      const result = resolve(
+        next,
+        {
+          ...pending,
+          id: ids[index] as string,
+          seq: { ms: 9_000 + index, counter: 0, by: "p-caster" },
+        },
+        catalogue
+      );
+      if (result.kind !== "applied") throw new Error("the roll was rejected");
+      next = result.state;
+    });
+
+    const rollIds = Object.fromEntries(
+      inputs.map((pending, index) => [pending.key, ids[index] as string])
+    );
+    const result = resolve(
+      next,
+      {
+        ...intentBody(next, catalogue, args, rollIds),
+        id: "i-1",
+        seq: { ms: 9_100, counter: 0, by: "p-caster" },
+        by: "p-caster",
+      },
+      catalogue
+    );
+    if (result.kind !== "applied") {
+      throw new Error(`the intent was rejected: ${JSON.stringify(result)}`);
+    }
+    return result.state;
+  }
+
+  it("plans the one-handed die when nobody has touched the grip", () => {
+    const state = staffTable();
+    expect(plannedInputs(state, SWING).map((pending) => pending.key)).toEqual([
+      "roll",
+      "damage",
+    ]);
+    // The face rolled plus the projected +3 the sheet already folded into the formula.
+    expect(swing(state, SWING, "damage").entities["goblin-1"]?.vitals.hp).toBe(30 - 8);
+  });
+
+  it("plans the versatile die, and ONLY it, once the grip is two-handed", () => {
+    const state = staffTable();
+    const args: IntentArgs = {
+      ...SWING,
+      answersSoFar: { grip: "grip:two-handed" },
+    };
+    expect(plannedInputs(state, args).map((pending) => pending.key)).toEqual([
+      "roll",
+      "damage-versatile",
+    ]);
+    expect(swing(state, args, "damage-versatile").entities["goblin-1"]?.vitals.hp).toBe(
+      30 - 8
+    );
   });
 });

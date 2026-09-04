@@ -21,7 +21,8 @@ import {
   riderAnswers,
 } from "@/lib/combat/intent";
 import { programOf, type Catalogue } from "@/lib/combat/catalogue";
-import type { Cost, Input, Program } from "@/lib/combat/mechanic";
+import { evalPredicate } from "@/lib/combat/predicates";
+import type { Cost, Input, Predicate, Program, Step } from "@/lib/combat/mechanic";
 import type { ActionId, EntityId, MechanicId, WindowId } from "@/lib/combat/ids";
 import type {
   Answer,
@@ -168,11 +169,81 @@ function probe(
  * Only `d20` and `dice` inputs: a `position`, `choice` or `table` input is ANSWERED by the
  * person (the map's origin cell, a picker), never rolled, and is expected in `answersSoFar`. An
  * input the caller has already answered is skipped, so re-planning after a partial answer never
- * re-rolls what is settled.
+ * re-rolls what is settled — and so is an input whose every reader is ruled out by a `when` the
+ * answers already decide (`inputIsLive`).
  *
  * Both the key rule and the rider derivation come from the reducer itself (`answerKeyFor`,
  * `riderAnswers`); nothing here re-decides either.
  */
+/** Does this step ROLL this input — is it one of the dice or the d20 the step reads? No other
+ *  step kind reads a rolled input: an effect's riders carry their formula verbatim. */
+function readsInput(step: Step, inputId: string): boolean {
+  switch (step.kind) {
+    case "attack":
+      return step.roll === inputId || step.damage.some((part) => part.dice === inputId);
+    case "save":
+      return step.roll === inputId;
+    case "damage":
+      return step.parts.some((part) => part.dice === inputId);
+    default:
+      return false;
+  }
+}
+
+/** Is every leaf of this predicate an `answer` test — decidable from what the person has
+ *  already chosen, without folding anything? */
+function answersOnly(predicate: Predicate): boolean {
+  if ("all" in predicate) return predicate.all.every(answersOnly);
+  if ("any" in predicate) return predicate.any.every(answersOnly);
+  if ("not" in predicate) return answersOnly(predicate.not);
+  return "answer" in predicate;
+}
+
+/**
+ * Could this step still run, given what is answered so far?
+ *
+ * `true` unless the step's `when` is decidable NOW and false: a `when` over the outcome, a
+ * relation or an entity's hp depends on state the plan cannot know before the dice land, and the
+ * rule is never to under-roll. The predicate is judged by the reducer's OWN evaluator, so a
+ * grip the plan reads and a grip the fold reads can never disagree.
+ */
+function stepPossible(
+  state: FoldedState,
+  entity: EntityId,
+  step: Step,
+  answers: Answers
+): boolean {
+  if (!step.when) return true;
+  if (!answersOnly(step.when)) return true;
+  return evalPredicate(step.when, state, {
+    self: entity,
+    target: null,
+    eventEntity: null,
+    outcome: null,
+    answers,
+  });
+}
+
+/**
+ * Is this input still live — does any step that reads it still stand a chance of running?
+ *
+ * This is what keeps a Versatile weapon to ONE damage die: the projected program declares both
+ * `damage` and `damage-versatile`, each read by an attack step gated on the `grip` choice, so
+ * the grip the person picked decides which die is rolled. An input no step reads at all is
+ * planned regardless — never under-roll for want of a reader.
+ */
+function inputIsLive(
+  state: FoldedState,
+  entity: EntityId,
+  program: Program,
+  inputId: string,
+  answers: Answers
+): boolean {
+  const readers = program.steps.filter((step) => readsInput(step, inputId));
+  if (readers.length === 0) return true;
+  return readers.some((step) => stepPossible(state, entity, step, answers));
+}
+
 function inputsFor(
   state: FoldedState,
   entity: EntityId,
@@ -191,6 +262,7 @@ function inputsFor(
 
   for (const input of program.inputs ?? []) {
     if (input.kind !== "d20" && input.kind !== "dice") continue;
+    if (!inputIsLive(state, entity, program, input.id, answers)) continue;
     if (isPerTargetAnswer(program, input.id)) {
       for (const target of targets) {
         plan(answerKeyFor(program, input.id, target), input, target);
