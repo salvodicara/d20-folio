@@ -169,13 +169,6 @@
   background: radial-gradient(90% 80% at 50% 45%, transparent 60%, rgb(80 60 20 / 18%));
 }
 
-/* Every floating panel sits above the ground and never catches a pointer meant for the map,
-   except on its own controls (which re-enable it). */
-.pl-float {
-  position: absolute;
-  z-index: 2;
-}
-
 /* ── The panel: gold hairline + 12px bracket corners (component rule 7) ───── */
 
 .pl-panel {
@@ -229,6 +222,14 @@
   right: -1px;
   border-width: 0 1.5px 1.5px;
   border-radius: 0 0 6px;
+}
+
+/* Every floating panel is anchored to an edge of the stage. It is declared AFTER `.pl-panel`
+   on purpose: both are single-class selectors, so the later `position` wins — a floating panel
+   that is also a framed panel must position from the stage, not from itself. */
+.pl-float {
+  position: absolute;
+  z-index: 2;
 }
 
 /* Section title: centred between two fading hairlines (component rule 7). */
@@ -641,21 +642,16 @@
 
 .pl-target__name {
   font: 700 16px/1.2 var(--font-title);
-  color: var(--play-ink);
+  color: var(--map-label-ink);
   text-shadow:
     0 1px 3px #000,
     0 0 10px #000;
 }
 
-[data-theme="light"] .pl-target__name,
-[data-theme="light"] .pl-target__bar b {
-  text-shadow: 0 1px 3px rgb(255 255 255 / 90%);
-}
-
 .pl-target__name small {
   margin-left: 6px;
   font: 400 12px/1 var(--font-body);
-  color: var(--play-ink-2);
+  color: var(--map-label-muted);
 }
 
 .pl-target__bar {
@@ -800,17 +796,13 @@
   overflow: hidden;
   font-size: 13px;
   line-height: 1.45;
-  color: var(--play-ink-2);
+  /* Fixed light ink with a dark halo in BOTH themes: this text floats over the map IMAGE, not
+     over a themed surface, and the map is dark whichever theme the app is in. */
+  color: var(--map-label-muted);
   text-shadow:
     0 1px 3px #000,
     0 0 6px #000;
   pointer-events: none;
-}
-
-[data-theme="light"] .pl-log {
-  text-shadow:
-    0 1px 3px rgb(255 255 255 / 95%),
-    0 0 6px rgb(255 255 255 / 80%);
 }
 
 .pl-log p {
@@ -818,17 +810,17 @@
 }
 
 .pl-log p:last-child {
-  color: var(--play-ink);
+  color: var(--map-label-ink);
 }
 
 .pl-log__author {
   margin-left: 6px;
   font-size: 11px;
-  color: var(--play-mute);
+  opacity: 0.7;
 }
 
 .pl-log p[data-kind="rejected"] {
-  color: var(--play-danger);
+  color: #f0a19a;
 }
 
 /* ── The roll panel (rule 31) ─────────────────────────────────────────────── */
@@ -1444,6 +1436,7 @@
 .pl-dmtab {
   top: 50%;
   right: 0;
+  width: 40px;
   transform: translateY(-50%);
   display: flex;
   flex-direction: column;
@@ -2016,15 +2009,15 @@
 .pl-dev {
   position: fixed;
   z-index: 10;
-  top: 0;
+  bottom: 0;
   left: 0;
   display: flex;
   gap: 8px;
   align-items: center;
   padding: 4px 10px;
-  border-bottom-right-radius: 6px;
+  border-top-right-radius: 6px;
   border: 1px solid var(--play-hair-2);
-  border-top: 0;
+  border-bottom: 0;
   border-left: 0;
   background: var(--play-well);
   font: 400 12px/1 var(--font-body);

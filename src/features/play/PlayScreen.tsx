@@ -497,13 +497,22 @@ export function PlayScreen(props: PlayScreenProps) {
   const verdictLine = spentBy
     ? (lines.find((line) => line.id === spentBy) ?? null)
     : null;
+  // The panel is titled by WHAT was rolled for, not by the die: the intent that spent the roll
+  // names the mechanic, and that is the sentence a person is looking for.
+  const spentAction = spentBy
+    ? (sortBySeq(
+        table.snapshot.kind === "encounter" ? table.snapshot.encounter.log : []
+      ).find((action) => action.id === spentBy) ?? null)
+    : null;
+  const rollTitle =
+    spentAction && spentAction.kind === "intent" ? labels(spentAction.mechanic) : null;
   const roll: RollView | null =
     rollAction && rollAction.kind === "roll"
       ? {
           id: rollAction.id,
-          title: t(`play.log.purpose.${rollAction.roll.purpose}`),
+          title: rollTitle ?? t(`play.log.purpose.${rollAction.roll.purpose}`),
           who: rollAction.roll.roller ? nameOf(rollAction.roll.roller) : authorOf("dm"),
-          formula: rollAction.roll.formula,
+          formula: `${t(`play.log.purpose.${rollAction.roll.purpose}`)} · ${rollAction.roll.formula}`,
           faces: rollAction.roll.hidden && !viewer.dm ? null : [...rollAction.roll.faces],
           total: rollAction.roll.hidden && !viewer.dm ? null : rollAction.roll.total,
           dc: null,

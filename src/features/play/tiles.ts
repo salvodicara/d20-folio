@@ -185,7 +185,16 @@ export function hotbarTiles(
         // Warlock's tile castable without the bar knowing about Pact Magic.
       };
       const planned = planIntent(state, catalogue, args);
-      const rejection = "reason" in planned ? planned : null;
+      const refused = "reason" in planned ? planned : null;
+      // Two rejections are not reasons to grey a tile: they are what tapping it is FOR. A
+      // missing answer is the roll it has not made, and an illegal target is the target it has
+      // not been given — the probe deliberately carries none.
+      const rejection =
+        refused === null ||
+        refused.reason === "missing-answer" ||
+        refused.reason === "invalid-target"
+          ? null
+          : refused;
       tiles.push({
         key: `${id}#${program.id}`,
         mechanic: id,
@@ -198,10 +207,8 @@ export function hotbarTiles(
         damageType: damage,
         targets: program.targets,
         uses: pool ? { current: pool.current, max: pool.max } : null,
-        // A missing answer is not a reason to grey a tile: the whole point of tapping it is to
-        // supply the targets and the rolls it is missing.
-        usable: rejection === null || rejection.reason === "missing-answer",
-        rejection: rejection?.reason === "missing-answer" ? null : rejection,
+        usable: rejection === null,
+        rejection,
       });
     }
   }
