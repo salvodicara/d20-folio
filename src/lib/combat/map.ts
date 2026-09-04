@@ -29,6 +29,14 @@ function isPositiveInt(value: unknown): value is number {
   return Number.isInteger(value) && (value as number) > 0;
 }
 
+/** A grid cell with integer coordinates within `MAP_COORD_LIMIT` — the shape an `override` of
+ *  `position` must carry. */
+export function isMapCell(value: unknown): value is Position {
+  if (typeof value !== "object" || value === null) return false;
+  const cell = value as Record<string, unknown>;
+  return isCoord(cell.x) && isCoord(cell.y);
+}
+
 /** Integer cells, `w,h ≥ 1`, every coordinate within `MAP_COORD_LIMIT`. Tested, never asserted:
  *  a persisted action may carry any JSON. */
 export function isMapRect(value: unknown): value is MapRect {

@@ -46,18 +46,17 @@ export function openLeftReachWindow(
 }
 
 /** Recomputes `adjacent`/`range` between `mover` (already repositioned in `state`) and every
- *  other positioned entity, opening an opportunity-attack window for any pair that was
- *  `adjacent` and no longer is. `engaged` is untouched — it stays a purely declared, sticky fact
- *  (design doc §2.3): a table's melee lock, not a raw-distance projection. */
-export function repositionRelations(
+ *  other positioned entity, and reports which entities' reach the mover has just left. Opens no
+ *  window: a placement (`override position`) is forced movement with no opportunity attack, so it
+ *  calls this alone; the `move` step opens the windows through `repositionRelations`. A mover
+ *  whose position is now `null` simply loses its derived relations. `engaged` is untouched — it
+ *  stays a purely declared, sticky fact (design doc §2.3): a table's melee lock, not a
+ *  raw-distance projection. */
+export function recomputeRelations(
   state: FoldedState,
-  mover: EntityId,
-  events: CombatEvent[],
-  causedBy: string,
-  catalogue: Catalogue
-): FoldedState {
+  mover: EntityId
+): { readonly state: FoldedState; readonly left: readonly EntityId[] } {
   const at = mustEntity(state, mover).position;
-  if (at === null) return state;
   const wasAdjacentTo = new Set(
     state.relations
       .filter(
@@ -70,18 +69,32 @@ export function repositionRelations(
     (r) =>
       !((r.kind === "adjacent" || r.kind === "range") && (r.a === mover || r.b === mover))
   );
-  let next: FoldedState = { ...state, relations };
+  if (at === null) return { state: { ...state, relations }, left: [] };
+  const left: EntityId[] = [];
   for (const other of Object.values(state.entities)) {
     if (other.id === mover || other.position === null) continue;
     const feet = distanceFt(at, other.position);
-    const added: Relation[] = [];
-    if (feet <= REACH_FT) added.push({ kind: "adjacent", a: mover, b: other.id });
+    if (feet <= REACH_FT) relations.push({ kind: "adjacent", a: mover, b: other.id });
     const band = rangeBand(feet);
-    if (band !== "out") added.push({ kind: "range", a: mover, b: other.id, band });
-    next = { ...next, relations: [...next.relations, ...added] };
-    if (feet > REACH_FT && wasAdjacentTo.has(other.id)) {
-      next = openLeftReachWindow(next, events, mover, other.id, causedBy, catalogue);
-    }
+    if (band !== "out") relations.push({ kind: "range", a: mover, b: other.id, band });
+    if (feet > REACH_FT && wasAdjacentTo.has(other.id)) left.push(other.id);
+  }
+  return { state: { ...state, relations }, left };
+}
+
+/** `recomputeRelations`, then an opportunity-attack window for every reach the mover left —
+ *  the `move` step's path (a real departure). */
+export function repositionRelations(
+  state: FoldedState,
+  mover: EntityId,
+  events: CombatEvent[],
+  causedBy: string,
+  catalogue: Catalogue
+): FoldedState {
+  const recomputed = recomputeRelations(state, mover);
+  let next = recomputed.state;
+  for (const from of recomputed.left) {
+    next = openLeftReachWindow(next, events, mover, from, causedBy, catalogue);
   }
   return next;
 }

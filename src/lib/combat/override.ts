@@ -5,6 +5,8 @@
 import { endEffects } from "./effects";
 import type { EntityId } from "./ids";
 import type { StepResult } from "./intent";
+import { isMapCell } from "./map";
+import { recomputeRelations } from "./reposition";
 import type {
   CombatEvent,
   Entity,
@@ -82,6 +84,21 @@ export function patchDirectOverride(
   if (path === "vitals.life" && typeof value === "string" && isLifeState(value)) {
     return { ...entity, vitals: { ...entity.vitals, life: value } };
   }
+  // A placement (stage 5): the DM putting a token on the map, a controller placing their own
+  // before turns begin, or any move on a `log-only` table. `null` takes the token off the map.
+  // The movement budget is neither consulted nor spent — this is not the `move` step.
+  if (path === "position") {
+    if (value === null) return { ...entity, position: null };
+    if (isMapCell(value)) return { ...entity, position: { x: value.x, y: value.y } };
+    return entity;
+  }
+  if (
+    (path === "reveal.token" || path === "reveal.block" || path === "reveal.hp") &&
+    typeof value === "boolean"
+  ) {
+    const flag = path.slice("reveal.".length) as keyof Entity["reveal"];
+    return { ...entity, reveal: { ...entity.reveal, [flag]: value } };
+  }
   return entity;
 }
 
@@ -101,6 +118,9 @@ export function applyOverride(state: FoldedState, action: OverrideAction): StepR
     entities: { ...state.entities, [action.entity]: patched },
   };
   const events: CombatEvent[] = [];
+  // A placement recomputes the derived `adjacent`/`range` facts and opens NO opportunity-attack
+  // window: forced movement, not a departure (design addendum §4).
+  if (action.path === "position") next = recomputeRelations(next, action.entity).state;
   // A DM override that drops HP from above zero to zero means the same thing as a hit that
   // does it (deliverDamage): no damage-taken (there was none), but the same 0-HP tail.
   if (action.path === "vitals.hp" && entity.vitals.hp > 0 && patched.vitals.hp === 0) {

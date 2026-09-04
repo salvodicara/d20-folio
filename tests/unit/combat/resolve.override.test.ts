@@ -3,7 +3,7 @@ import { mustEntity } from "@/lib/combat/state";
 import { buildCatalogue } from "@/lib/combat/catalogue";
 import { initialState } from "@/lib/combat/fold";
 import { resolve } from "@/lib/combat/resolve";
-import type { Action, Effect, FoldedState } from "@/lib/combat/types";
+import type { Action, Effect, FoldedState, OverrideAction } from "@/lib/combat/types";
 import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
 import { testEntity } from "./__helpers__/entities";
 import { nextActionId, openingActions, seqFactory } from "./__helpers__/state";
@@ -229,5 +229,152 @@ describe("override — an HP override to zero has damage's tail (stage 4)", () =
     expect(result.receipt.events).not.toContainEqual(
       expect.objectContaining({ kind: "hp-zero" })
     );
+  });
+});
+
+describe("override — position and reveal.* are direct-patch paths (stage 5)", () => {
+  const seqP = seqFactory("dm");
+  function table(): FoldedState {
+    let state = initialState();
+    const hero = testEntity({
+      id: "hero",
+      kind: "pc",
+      controllerUid: "p1",
+      hp: 30,
+      mechanics: ["core:move"],
+      position: { x: 0, y: 0 },
+    });
+    const goblin = testEntity({
+      id: "goblin",
+      kind: "monster",
+      hp: 7,
+      mechanics: ["core:move"],
+      position: { x: 1, y: 0 },
+    });
+    for (const action of openingActions(
+      "dm",
+      seqP,
+      [hero, goblin],
+      { hero: 10, goblin: 5 },
+      ["hero", "goblin"]
+    )) {
+      const result = resolve(state, action, catalogue);
+      if (result.kind === "rejected") throw new Error(JSON.stringify(result.rejection));
+      state = result.state;
+    }
+    // The opening seats them adjacent by position but no relation exists until something moves.
+    const placed = resolve(state, place("goblin", { x: 1, y: 0 }), catalogue);
+    if (placed.kind !== "applied") throw new Error("placement failed");
+    return placed.state;
+  }
+  function place(entity: string, value: unknown, by = "dm"): OverrideAction {
+    return {
+      kind: "override",
+      id: nextActionId("o"),
+      seq: seqP(),
+      by,
+      entity,
+      path: "position",
+      value,
+      reason: "placed",
+    };
+  }
+  const derived = (state: FoldedState, of: string) =>
+    state.relations.filter(
+      (r) => (r.kind === "adjacent" || r.kind === "range") && (r.a === of || r.b === of)
+    );
+
+  it("a placement sets the position, derives adjacent/range, and leaves the movement budget alone", () => {
+    const state = table();
+    expect(derived(state, "goblin")).toEqual([
+      { kind: "adjacent", a: "goblin", b: "hero" },
+      { kind: "range", a: "goblin", b: "hero", band: "reach" },
+    ]);
+    expect(mustEntity(state, "goblin").turn.movementUsed).toBe(0);
+    expect(mustEntity(state, "goblin").overrides.position).toEqual({
+      value: { x: 1, y: 0 },
+      reason: "placed",
+      by: "dm",
+    });
+  });
+
+  it("a placement that leaves reach recomputes the facts but opens no opportunity-attack window", () => {
+    const before = table();
+    const result = resolve(before, place("goblin", { x: 8, y: 0 }), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(mustEntity(result.state, "goblin").position).toEqual({ x: 8, y: 0 });
+    expect(derived(result.state, "goblin")).toEqual([
+      { kind: "range", a: "goblin", b: "hero", band: "far" },
+    ]);
+    expect(result.state.windows).toEqual([]);
+    expect(result.receipt.events).toEqual([]);
+  });
+
+  it("a null placement takes the token off the map and drops its derived facts", () => {
+    const result = resolve(table(), place("goblin", null), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(mustEntity(result.state, "goblin").position).toBeNull();
+    expect(derived(result.state, "goblin")).toEqual([]);
+  });
+
+  it("a malformed placement is recorded but patches nothing", () => {
+    const result = resolve(table(), place("goblin", { x: 0.5, y: "no" }), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(mustEntity(result.state, "goblin").position).toEqual({ x: 1, y: 0 });
+    expect(mustEntity(result.state, "goblin").overrides.position?.value).toEqual({
+      x: 0.5,
+      y: "no",
+    });
+  });
+
+  it("a placement applies on a log-only table — the seam that lets a log-only table move tokens", () => {
+    const logOnly = resolve(
+      table(),
+      {
+        kind: "table",
+        id: nextActionId("t"),
+        seq: seqP(),
+        by: "dm",
+        table: { op: "settings", revealMonsterHp: false, automation: "log-only" },
+      },
+      catalogue
+    );
+    if (logOnly.kind !== "applied") throw new Error("settings failed");
+    const result = resolve(logOnly.state, place("hero", { x: 3, y: 3 }, "p1"), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(mustEntity(result.state, "hero").position).toEqual({ x: 3, y: 3 });
+  });
+
+  it("reveal.token / reveal.block / reveal.hp patch the flag; a non-boolean is recorded only", () => {
+    let state = table();
+    for (const [path, value] of [
+      ["reveal.token", false],
+      ["reveal.block", true],
+      ["reveal.hp", true],
+    ] as const) {
+      const result = resolve(
+        state,
+        { ...place("goblin", value), path, reason: "DM" },
+        catalogue
+      );
+      if (result.kind !== "applied") throw new Error("reveal override failed");
+      state = result.state;
+    }
+    expect(mustEntity(state, "goblin").reveal).toEqual({
+      block: true,
+      hp: true,
+      token: false,
+    });
+    const bad = resolve(
+      state,
+      { ...place("goblin", "yes"), path: "reveal.token", reason: "DM" },
+      catalogue
+    );
+    if (bad.kind !== "applied") throw new Error("reveal override failed");
+    expect(mustEntity(bad.state, "goblin").reveal.token).toBe(false);
   });
 });
