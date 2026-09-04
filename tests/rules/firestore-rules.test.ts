@@ -261,7 +261,7 @@ describe("firestore.rules — /campaigns access", () => {
     await assertFails(updateDoc(doc(db, "campaigns", "camp1"), { members: ["member"] }));
   });
 
-  it("the DM may manage the roster; only the DM may delete", async () => {
+  it("the DM may manage the roster; only the DM and the admin may delete", async () => {
     const dm = testEnv.authenticatedContext("dm").firestore();
     await assertSucceeds(
       updateDoc(doc(dm, "campaigns", "camp1"), {
@@ -273,8 +273,24 @@ describe("firestore.rules — /campaigns access", () => {
         },
       })
     );
-    const member = testEnv.authenticatedContext("member").firestore();
-    await assertFails(deleteDoc(doc(member, "campaigns", "camp1")));
+    // A plain member (and a non-member) may never delete the table.
+    for (const uid of ["member", "outsider"]) {
+      await assertFails(
+        deleteDoc(
+          doc(testEnv.authenticatedContext(uid).firestore(), "campaigns", "camp1")
+        )
+      );
+    }
+    // Admin-supreme: the admin deletes a campaign it is not a member of.
+    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertSucceeds(deleteDoc(doc(admin, "campaigns", "camp1")));
+    // …and so does the DM (re-seeded out of band, since the admin just deleted it).
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(
+        doc(ctx.firestore(), "campaigns", "camp1"),
+        campaignDoc(["dm", "member"])
+      );
+    });
     await assertSucceeds(deleteDoc(doc(dm, "campaigns", "camp1")));
   });
 
@@ -1096,6 +1112,28 @@ describe("firestore.rules — sanitized public character projection", () => {
     expect(parent.data()).not.toHaveProperty("attachedCampaignId");
     expect(parent.data()?.updatedAt).toEqual(SOURCE_UPDATED_AT);
   });
+
+  it("admin-supreme STOPS at a PUBLISHED character: the projection is owner-only", async () => {
+    // The one limit on admin-supreme, and it is structural rather than a special case:
+    // a parent write on a shared character must produce the EXACT projection in the same
+    // commit, and `public/sheet` is owner-only — so the admin can neither re-publish nor
+    // revoke on the owner's behalf. An unshared character stays fully admin-writable.
+    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertFails(
+      updateDoc(doc(admin, ...SHARED_PARENT), {
+        build: { ...BUILD, name: "Renamed" },
+        revision: 4,
+      })
+    );
+    await assertFails(deleteDoc(doc(admin, ...SHARED_PARENT)));
+    await assertFails(setDoc(doc(admin, ...PUBLIC_SHEET), publicSheet()));
+    await assertSucceeds(
+      updateDoc(doc(admin, ...PRIVATE_PARENT), {
+        build: { name: "Fixed" },
+        revision: 4,
+      })
+    );
+  });
 });
 
 describe("firestore.rules — combat/state: the owner's document", () => {
@@ -1649,6 +1687,48 @@ describe("firestore.rules — campaign encounter documents (append-only log)", (
       updateDoc(doc(db, ...encounterPath), {
         checkpoint: { through: { ms: 1, counter: 0, by: "member" }, state: {} },
       })
+    );
+  });
+
+  it("the log is APPEND-ONLY, not merely longer: a rewritten prefix is denied", async () => {
+    // The size check alone would let a member rewrite every stored entry as long as the
+    // list ended up one longer — a silent rewrite of the DM's and the peers' history.
+    // The stored log must remain a PREFIX of the written one.
+    const db = testEnv.authenticatedContext("member").firestore();
+    // The seeded first entry, rewritten: same id + seq slot, different author and body.
+    const forged = {
+      kind: "table",
+      id: "t-1",
+      seq: { ms: 1, counter: 0, by: "dm" },
+      by: "member",
+      table: { op: "end", epoch: 9 },
+    };
+    await assertFails(
+      updateDoc(doc(db, ...encounterPath), { log: [forged, memberAction] })
+    );
+    // Reordering the same entries while growing is a rewrite too.
+    await assertFails(
+      updateDoc(doc(db, ...encounterPath), {
+        log: [memberAction, ...seedEncounter.log],
+      })
+    );
+    // The honest append — the stored entry untouched, one row added — still lands.
+    await assertSucceeds(
+      updateDoc(doc(db, ...encounterPath), {
+        log: [...seedEncounter.log, memberAction],
+      })
+    );
+  });
+
+  it("a member may NOT create an encounter document; the DM may", async () => {
+    const fresh = ["campaigns", "camp1", "encounters", "enc-new"] as const;
+    const member = testEnv.authenticatedContext("member").firestore();
+    await assertFails(
+      setDoc(doc(member, ...fresh), { ...seedEncounter, id: "enc-new", log: [] })
+    );
+    const dm = testEnv.authenticatedContext("dm").firestore();
+    await assertSucceeds(
+      setDoc(doc(dm, ...fresh), { ...seedEncounter, id: "enc-new", log: [] })
     );
   });
 

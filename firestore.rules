@@ -432,7 +432,7 @@ service cloud.firestore {
 
     // Campaign subcollections (chronicle, sessions, the REVEALED `notes`) — members
     // of the parent only. (The DM "View Sheet" feature reads the member's real
-    // character doc via the `dmReaders` ACL above — there is no longer a denormalized
+    // character doc through the live roster grant above — there is no denormalized
     // full-sheet copy subcollection to gate here.) EXCLUDES `dmNotes`: those are the
     // hidden-note collection gated DM-only ABOVE, and Firestore OR-combines matching
     // rules, so without this exclusion the broad member grant here would defeat the
@@ -464,9 +464,15 @@ service cloud.firestore {
           && request.resource.data.log is list
           && request.resource.data.log.size() <= 2000;
       }
+      // APPEND-ONLY, not merely LONGER. A size comparison alone would let a member
+      // rewrite every stored entry as long as the list ended up one row longer — a
+      // silent rewrite of the DM's and the peers' history that the fold would trust.
+      // The stored log must remain a PREFIX of the written one, so existing rows are
+      // byte-frozen (lists compare by deep equality) and only the tail may grow.
       function logOnlyGrew() {
         return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['log'])
-          && request.resource.data.log.size() > resource.data.log.size();
+          && request.resource.data.log.size() > resource.data.log.size()
+          && request.resource.data.log[0:resource.data.log.size()] == resource.data.log;
       }
       allow read: if isAdmin() || encounterMember();
       allow create: if (isAdmin() || encounterDm()) && validEncounterShape();
