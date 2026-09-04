@@ -50,6 +50,24 @@
       "status": "automated"
     },
     {
+      "mechanic": "srd:spell:fireball",
+      "program": "cast",
+      "step": "*",
+      "status": "automated"
+    },
+    {
+      "mechanic": "srd:spell:fireball",
+      "program": "cast",
+      "step": "burn",
+      "status": "physical-input"
+    },
+    {
+      "mechanic": "srd:spell:fireball",
+      "program": "cast",
+      "step": "scorch",
+      "status": "physical-input"
+    },
+    {
       "mechanic": "srd:spell:hunters-mark",
       "program": "cast",
       "step": "*",

@@ -212,6 +212,52 @@ export const giggle: Mechanic = {
   ],
 };
 
+/** Fireball, at its base 3rd-level cast: a 20-ft-radius sphere, DEX save for half, 8d6 fire.
+ *  No upcast scaling for stage 3 (Marco's story is a beginner's first, base-level cast) — an
+ *  upcast Fireball needs `Input.dice.formula` to grow a `byLevel` variant, deliberately out of
+ *  scope until a story needs it. */
+export const fireball: Mechanic = {
+  schema: 1,
+  id: "srd:spell:fireball",
+  source: "srd",
+  active: [
+    {
+      id: "cast",
+      trigger: { kind: "invocation", economy: "action" },
+      cost: [
+        { kind: "turn", claim: "action" },
+        { kind: "slot", level: 3 },
+      ],
+      targets: {
+        count: "area",
+        eligibility: { all: [] },
+        area: { kind: "sphere", origin: "origin", radiusFt: 20 },
+      },
+      inputs: [
+        { id: "origin", kind: "position" },
+        { id: "save", kind: "d20", for: "save", ability: "DEX", perTarget: true },
+        { id: "damage", kind: "dice", formula: "8d6" },
+      ],
+      steps: [
+        {
+          id: "burn",
+          kind: "save",
+          roll: "save",
+          ability: "DEX",
+          dc: "spell",
+          onSuccess: "half",
+        },
+        {
+          id: "scorch",
+          kind: "damage",
+          parts: [{ dice: "damage", type: "fire" }],
+          to: "$target",
+        },
+      ],
+    },
+  ],
+};
+
 /** A shortsword: a finesse melee attack plus the opportunity attack every melee wielder has. */
 export const shortsword: Mechanic = {
   schema: 1,
@@ -290,5 +336,6 @@ export const PROTOTYPE_MECHANICS: readonly Mechanic[] = [
   huntersMark,
   shield,
   giggle,
+  fireball,
   move,
 ];

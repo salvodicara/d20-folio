@@ -40,10 +40,12 @@ const ranger = testEntity({
     "srd:spell:hunters-mark",
     "srd:spell:shield",
     "proto:spell:giggle",
+    "srd:spell:fireball",
   ],
   resources: {
     "slot-1": { current: 2, max: 2, recharge: "long" },
     "slot-2": { current: 1, max: 1, recharge: "long" },
+    "slot-3": { current: 1, max: 1, recharge: "long" },
   },
 });
 const goblin = testEntity({
@@ -354,5 +356,33 @@ describe("resolve — intents", () => {
     expect(after.checks).toEqual([]); // the pending check is bookkeeping: always cleared
     expect(mustEntity(after, "ranger").concentration).toBe(markId); // the break is the verdict: withheld
     expect(after.effects[markId]).toBeDefined();
+  });
+
+  it("Fireball: a DEX save halves the blast, the caster outside it is untouched, a 3rd-level slot is spent", () => {
+    const base = opened();
+    const state = {
+      ...base,
+      entities: {
+        ...base.entities,
+        "monster-1": { ...mustEntity(base, "monster-1"), position: { x: 1, y: 0 } },
+      },
+    };
+    const result = resolve(
+      state,
+      intent("p1", "ranger", "srd:spell:fireball", "cast", {
+        answers: {
+          origin: { x: 1, y: 0 },
+          "save:monster-1": 13, // 13 + DEX save 0 = 13 ≥ DC 13 → half
+          damage: 8,
+        },
+      }),
+      catalogue
+    );
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(mustEntity(result.state, "monster-1").vitals.hp).toBe(3); // 7 − floor(8 / 2)
+    expect(mustEntity(result.state, "ranger").vitals.hp).toBe(20); // outside: no save asked, no damage
+    expect(mustEntity(result.state, "ranger").resources["slot-3"]?.current).toBe(0);
+    expect(result.receipt.paid).toEqual(["turn:action", "slot:3"]);
   });
 });

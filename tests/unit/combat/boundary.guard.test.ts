@@ -55,7 +55,10 @@ describe("payment — a costed program cannot apply without paying", () => {
     ac: 15,
     abilities: { DEX: 3 },
     mechanics: PROTOTYPE_MECHANICS.map((m) => m.id),
-    resources: { "slot-1": { current: 9, max: 9, recharge: "long" } },
+    resources: {
+      "slot-1": { current: 9, max: 9, recharge: "long" },
+      "slot-3": { current: 1, max: 1, recharge: "long" },
+    },
   });
   const foe = testEntity({
     id: "monster-1",
@@ -97,6 +100,9 @@ describe("payment — a costed program cannot apply without paying", () => {
           program.cost.length === 0
         )
           continue;
+        // Each program pays whatever slot level it actually costs (a fixed level 1 would
+        // reject a higher-level, non-upcastable cast such as Fireball's level 3).
+        const slotCost = program.cost.find((c) => c.kind === "slot");
         const action: Action = {
           kind: "intent",
           id: nextActionId("g"),
@@ -106,8 +112,10 @@ describe("payment — a costed program cannot apply without paying", () => {
           mechanic: mechanic.id,
           program: program.id,
           targets: program.targets ? ["monster-1"] : [],
-          answers: { roll: 15, damage: 3, "save:monster-1": 1 },
-          payment: [{ kind: "slot", level: 1, pool: "standard" }],
+          answers: { roll: 15, damage: 3, "save:monster-1": 1, origin: { x: 0, y: 0 } },
+          payment: [
+            { kind: "slot", level: slotCost ? slotCost.level : 1, pool: "standard" },
+          ],
           window: null,
           basedOn: 0,
         };
