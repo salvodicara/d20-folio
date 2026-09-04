@@ -10,6 +10,7 @@ import { fold } from "@/lib/combat/fold";
 import { resolve } from "@/lib/combat/resolve";
 import type { Action, Encounter, FoldedState, Rejection } from "@/lib/combat/types";
 import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
+import type { Mechanic } from "@/lib/combat/mechanic";
 import { testEntity } from "./__helpers__/entities";
 import { emptyState, openingActions, seqFactory } from "./__helpers__/state";
 
@@ -18,6 +19,13 @@ type LogEntry = Omit<Action, "seq"> & { readonly by: string };
 interface Replay {
   readonly name: string;
   readonly dm: string;
+  /**
+   * Executable definitions this replay's entities CARRY into the log (stage 6 §2 D2) on top
+   * of the prototype catalogue — a projected PC's own weapons and spells, which no static
+   * catalogue ships. The opening seeds each entity with the definitions whose ids it lists,
+   * and the fold resolves them from `state.mechanics`, exactly as a real table does.
+   */
+  readonly mechanics?: readonly Mechanic[];
   readonly entities: readonly Parameters<typeof testEntity>[0][];
   readonly initiative: Readonly<Record<string, number>>;
   readonly order: readonly string[];
@@ -61,7 +69,8 @@ describe("golden replays", () => {
         seq,
         replay.entities.map((entity) => testEntity(entity)),
         replay.initiative,
-        replay.order
+        replay.order,
+        [...PROTOTYPE_MECHANICS, ...(replay.mechanics ?? [])]
       );
       for (const action of opening) {
         const result = resolve(state, action, catalogue);

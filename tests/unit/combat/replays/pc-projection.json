@@ -1,0 +1,376 @@
+{
+  "name": "a projected PC — Marco's longsword and Fireball fold from the definitions the log carries, with nothing in the static catalogue",
+  "dm": "dm",
+  "mechanics": [
+    {
+      "schema": 1,
+      "id": "pc:marco:weapon-longsword",
+      "source": "srd",
+      "label": "srd:equipment:longsword:name",
+      "active": [
+        {
+          "id": "weapon-longsword",
+          "trigger": {
+            "kind": "invocation",
+            "economy": "action"
+          },
+          "cost": [
+            {
+              "kind": "turn",
+              "claim": "attack"
+            }
+          ],
+          "targets": {
+            "count": 1,
+            "eligibility": {
+              "relation": "adjacent",
+              "between": ["$self", "$target"],
+              "value": true
+            }
+          },
+          "inputs": [
+            {
+              "id": "roll",
+              "kind": "d20",
+              "for": "attack"
+            },
+            {
+              "id": "damage",
+              "kind": "dice",
+              "formula": "1d8+3"
+            }
+          ],
+          "steps": [
+            {
+              "id": "hit",
+              "kind": "attack",
+              "roll": "roll",
+              "bonus": 5,
+              "damage": [
+                {
+                  "dice": "damage",
+                  "type": "slashing"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "schema": 1,
+      "id": "pc:marco:spell-fireball",
+      "source": "srd",
+      "label": "srd:spell:fireball:name",
+      "active": [
+        {
+          "id": "spell-fireball",
+          "trigger": {
+            "kind": "invocation",
+            "economy": "action"
+          },
+          "cost": [
+            {
+              "kind": "turn",
+              "claim": "action"
+            },
+            {
+              "kind": "slot",
+              "level": 3,
+              "upcast": true
+            }
+          ],
+          "targets": {
+            "count": "area",
+            "eligibility": {
+              "all": []
+            },
+            "area": {
+              "kind": "sphere",
+              "origin": "origin",
+              "radiusFt": 20
+            }
+          },
+          "inputs": [
+            {
+              "id": "origin",
+              "kind": "position"
+            },
+            {
+              "id": "save",
+              "kind": "d20",
+              "for": "save",
+              "ability": "DEX",
+              "perTarget": true
+            },
+            {
+              "id": "damage",
+              "kind": "dice",
+              "formula": "8d6"
+            }
+          ],
+          "steps": [
+            {
+              "id": "resist",
+              "kind": "save",
+              "roll": "save",
+              "ability": "DEX",
+              "dc": "spell",
+              "onSuccess": "half"
+            },
+            {
+              "id": "harm",
+              "kind": "damage",
+              "parts": [
+                {
+                  "dice": "damage",
+                  "type": "fire"
+                }
+              ],
+              "to": "$target"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "id": "marco",
+      "kind": "pc",
+      "controllerUid": "p-marco",
+      "hp": 25,
+      "ac": 15,
+      "abilities": {
+        "DEX": 2
+      },
+      "mechanics": ["pc:marco:weapon-longsword", "pc:marco:spell-fireball"],
+      "resources": {
+        "slot-3": {
+          "current": 1,
+          "max": 1,
+          "recharge": "long"
+        }
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "goblin-1",
+      "kind": "monster",
+      "controllerUid": "dm",
+      "hp": 20,
+      "ac": 15,
+      "saves": {
+        "DEX": 2
+      },
+      "position": {
+        "x": 1,
+        "y": 0
+      }
+    },
+    {
+      "id": "goblin-2",
+      "kind": "monster",
+      "controllerUid": "dm",
+      "hp": 20,
+      "ac": 15,
+      "saves": {
+        "DEX": 2
+      },
+      "position": {
+        "x": 2,
+        "y": 0
+      }
+    }
+  ],
+  "initiative": {
+    "marco": 18,
+    "goblin-1": 12,
+    "goblin-2": 11
+  },
+  "order": ["marco", "goblin-1", "goblin-2"],
+  "log": [
+    {
+      "id": "reach",
+      "by": "dm",
+      "kind": "declare",
+      "relation": {
+        "kind": "adjacent",
+        "a": "marco",
+        "b": "goblin-1"
+      },
+      "remove": false,
+      "mover": null
+    },
+    {
+      "id": "r-attack",
+      "by": "p-marco",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d20",
+        "faces": [14],
+        "total": 14,
+        "seed": null,
+        "source": "manual",
+        "hidden": false,
+        "roller": "marco",
+        "purpose": "attack",
+        "label": null
+      }
+    },
+    {
+      "id": "r-swing",
+      "by": "p-marco",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d8+3",
+        "faces": [5],
+        "total": 8,
+        "seed": null,
+        "source": "manual",
+        "hidden": false,
+        "roller": "marco",
+        "purpose": "damage",
+        "label": null
+      }
+    },
+    {
+      "id": "swing",
+      "by": "p-marco",
+      "kind": "intent",
+      "entity": "marco",
+      "mechanic": "pc:marco:weapon-longsword",
+      "program": "weapon-longsword",
+      "targets": ["goblin-1"],
+      "answers": {
+        "roll": {
+          "roll": "r-attack"
+        },
+        "damage": {
+          "roll": "r-swing"
+        }
+      },
+      "payment": [],
+      "window": null,
+      "basedOn": 0
+    },
+    {
+      "id": "end-marco",
+      "by": "dm",
+      "kind": "table",
+      "table": {
+        "op": "end-turn"
+      }
+    },
+    {
+      "id": "end-goblin-1",
+      "by": "dm",
+      "kind": "table",
+      "table": {
+        "op": "end-turn"
+      }
+    },
+    {
+      "id": "end-goblin-2",
+      "by": "dm",
+      "kind": "table",
+      "table": {
+        "op": "end-turn"
+      }
+    },
+    {
+      "id": "r-save-1",
+      "by": "dm",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d20",
+        "faces": [5],
+        "total": 5,
+        "seed": null,
+        "source": "manual",
+        "hidden": false,
+        "roller": "goblin-1",
+        "purpose": "save",
+        "label": null
+      }
+    },
+    {
+      "id": "r-save-2",
+      "by": "dm",
+      "kind": "roll",
+      "roll": {
+        "formula": "1d20",
+        "faces": [15],
+        "total": 15,
+        "seed": null,
+        "source": "manual",
+        "hidden": false,
+        "roller": "goblin-2",
+        "purpose": "save",
+        "label": null
+      }
+    },
+    {
+      "id": "r-burn",
+      "by": "p-marco",
+      "kind": "roll",
+      "roll": {
+        "formula": "8d6",
+        "faces": [2, 2, 2, 2, 2, 2, 2, 2],
+        "total": 16,
+        "seed": null,
+        "source": "manual",
+        "hidden": false,
+        "roller": "marco",
+        "purpose": "damage",
+        "label": null
+      }
+    },
+    {
+      "id": "cast-fireball",
+      "by": "p-marco",
+      "kind": "intent",
+      "entity": "marco",
+      "mechanic": "pc:marco:spell-fireball",
+      "program": "spell-fireball",
+      "targets": [],
+      "answers": {
+        "origin": {
+          "x": 5,
+          "y": 0
+        },
+        "save:goblin-1": {
+          "roll": "r-save-1"
+        },
+        "save:goblin-2": {
+          "roll": "r-save-2"
+        },
+        "damage": {
+          "roll": "r-burn"
+        }
+      },
+      "payment": [],
+      "window": null,
+      "basedOn": 0
+    }
+  ],
+  "expect": {
+    "applied": 11,
+    "rejections": [],
+    "state": {
+      "mechanics.pc:marco:weapon-longsword.source": "srd",
+      "mechanics.pc:marco:spell-fireball.label": "srd:spell:fireball:name",
+      "clock.round": 2,
+      "entities.marco.turn.action": 1,
+      "entities.marco.turn.attacksUsed": 0,
+      "entities.marco.resources.slot-3.current": 0,
+      "entities.goblin-1.vitals.hp": 0,
+      "entities.goblin-1.vitals.life": "dead",
+      "entities.goblin-2.vitals.hp": 12,
+      "entities.goblin-2.vitals.life": "alive"
+    }
+  }
+}
