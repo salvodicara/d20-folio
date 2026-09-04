@@ -40,6 +40,7 @@ export function emptyState(): FoldedState {
     nextOrdinal: 1,
     revision: 0,
     settings: { revealMonsterHp: false, automation: "full-auto" },
+    map: { background: null, fog: { covered: false, revealed: [] } },
   };
 }
 

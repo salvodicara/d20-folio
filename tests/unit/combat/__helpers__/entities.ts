@@ -30,6 +30,8 @@ export function testEntity(opts: {
   mechanics?: string[];
   resources?: Entity["resources"];
   position?: Position | null;
+  /** `reveal.token: false` — a token players do not see. */
+  hidden?: boolean;
 }): Entity {
   const maxHp = opts.maxHp ?? (opts.hp !== undefined && opts.hp > 0 ? opts.hp : 10);
   return {
@@ -72,7 +74,7 @@ export function testEntity(opts: {
       claims: [],
     },
     overrides: {},
-    reveal: { block: false, hp: false },
+    reveal: { block: false, hp: false, token: !opts.hidden },
     position: opts.position ?? null,
     mechanics: opts.mechanics ?? [],
   };

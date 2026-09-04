@@ -247,6 +247,18 @@ function populatedFoldedState(): FoldedState {
     nextOrdinal: 5,
     revision: 7,
     settings: { revealMonsterHp: false, automation: "log-only" },
+    map: {
+      background: {
+        path: "campaigns/c1/maps/m1.jpeg",
+        url: "https://example.test/m1.jpeg?token=x",
+        width: 3000,
+        height: 2000,
+        cellPx: 100,
+        origin: { x: 0, y: 0 },
+        bytes: 1_234_567,
+      },
+      fog: { covered: true, revealed: [{ x: 0, y: 0, w: 4, h: 3 }] },
+    },
   };
 }
 
@@ -371,6 +383,21 @@ describe("parseEncounter / encounterWriteData — every table op kind round-trip
     { op: "end" },
     { op: "rest", rest: "short" },
     { op: "settings", revealMonsterHp: true, automation: "propose-and-confirm" },
+    {
+      op: "map",
+      background: {
+        path: "campaigns/c1/maps/m1.jpeg",
+        url: "https://example.test/m1.jpeg?token=x",
+        width: 3000,
+        height: 2000,
+        cellPx: 100,
+        origin: { x: -12, y: 4 },
+        bytes: 1_234_567,
+      },
+    },
+    { op: "fog", change: { kind: "cover", covered: true } },
+    { op: "fog", change: { kind: "reveal", rect: { x: 0, y: 0, w: 4, h: 3 } } },
+    { op: "fog", change: { kind: "hide", rect: { x: 1, y: 1, w: 1, h: 1 } } },
   ];
 
   it.each(ops.map((table) => [String(table.op), table] as const))(

@@ -339,7 +339,7 @@ const entitySchema = objectSchema({
   concentration: nullableStringSchema,
   turn: turnLedgerSchema,
   overrides: recordSchema("string", overrideEntrySchema),
-  reveal: objectSchema({ block: booleanSchema, hp: booleanSchema }),
+  reveal: objectSchema({ block: booleanSchema, hp: booleanSchema, token: booleanSchema }),
   position: nullablePositionSchema,
   mechanics: arraySchema(stringSchema),
 });
@@ -568,6 +568,41 @@ const rollRecordSchema = objectSchema({
   label: nullableStringSchema,
 });
 
+// ── The map ──────────────────────────────────────────────────────────────────
+
+const mapRectSchema = objectSchema({
+  x: numberSchema,
+  y: numberSchema,
+  w: numberSchema,
+  h: numberSchema,
+});
+
+const mapBackgroundSchema = objectSchema({
+  path: stringSchema,
+  url: stringSchema,
+  width: numberSchema,
+  height: numberSchema,
+  cellPx: numberSchema,
+  origin: objectSchema({ x: numberSchema, y: numberSchema }),
+  bytes: numberSchema,
+});
+
+const nullableMapBackgroundSchema = unionSchema([
+  mapBackgroundSchema,
+  literalSchema(null),
+]);
+
+const mapStateSchema = objectSchema({
+  background: nullableMapBackgroundSchema,
+  fog: objectSchema({ covered: booleanSchema, revealed: arraySchema(mapRectSchema) }),
+});
+
+const fogChangeSchema = discriminatedUnionSchema("kind", {
+  cover: objectSchema({ kind: literalSchema("cover"), covered: booleanSchema }),
+  reveal: objectSchema({ kind: literalSchema("reveal"), rect: mapRectSchema }),
+  hide: objectSchema({ kind: literalSchema("hide"), rect: mapRectSchema }),
+});
+
 // ── Table ops ────────────────────────────────────────────────────────────────
 
 const tableOpSchema = discriminatedUnionSchema("op", {
@@ -597,6 +632,11 @@ const tableOpSchema = discriminatedUnionSchema("op", {
     revealMonsterHp: booleanSchema,
     automation: automationSchema,
   }),
+  map: objectSchema({
+    op: literalSchema("map"),
+    background: nullableMapBackgroundSchema,
+  }),
+  fog: objectSchema({ op: literalSchema("fog"), change: fogChangeSchema }),
 });
 
 // ── Actions ──────────────────────────────────────────────────────────────────
@@ -683,6 +723,7 @@ const foldedStateSchema = objectSchema({
     revealMonsterHp: booleanSchema,
     automation: foldedAutomationSchema,
   }),
+  map: mapStateSchema,
 });
 
 const hostSchema = discriminatedUnionSchema("kind", {

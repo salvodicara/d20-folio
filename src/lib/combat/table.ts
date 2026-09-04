@@ -5,6 +5,7 @@
  */
 import { assertNever, type EntityId } from "./ids";
 import { dueAt, endEffects } from "./effects";
+import { hideRect, isMapBackground, isMapRect, revealRect } from "./map";
 import { mustEntity } from "./state";
 import type {
   CombatEvent,
@@ -288,6 +289,52 @@ export function applyTable(state: FoldedState, op: TableOp): TableResult {
         },
         events,
       };
+    }
+    case "map": {
+      // The background and its grid (design addendum §4). Replacing it leaves fog and positions
+      // alone: the DM realigns and re-uploads without losing the table.
+      if (op.background !== null && !isMapBackground(op.background))
+        return reject("map: malformed background");
+      return {
+        kind: "applied",
+        state: { ...state, map: { ...state.map, background: op.background } },
+        events,
+      };
+    }
+    case "fog": {
+      const change = op.change;
+      const fog = state.map.fog;
+      switch (change.kind) {
+        case "cover":
+          return {
+            kind: "applied",
+            state: {
+              ...state,
+              map: { ...state.map, fog: { covered: change.covered, revealed: [] } },
+            },
+            events,
+          };
+        case "reveal":
+        case "hide": {
+          // One representation only: covered-except-revealed. On an uncovered map there is
+          // nothing to reveal and no list to subtract from (design addendum §4).
+          if (!fog.covered) return reject(`fog: ${change.kind} while fog is off`);
+          if (!isMapRect(change.rect))
+            return reject(`fog: malformed ${change.kind} rectangle`);
+          const revealed =
+            change.kind === "reveal"
+              ? revealRect(fog.revealed, change.rect)
+              : hideRect(fog.revealed, change.rect);
+          if (revealed === null) return reject("fog: rectangle budget exhausted");
+          return {
+            kind: "applied",
+            state: { ...state, map: { ...state.map, fog: { covered: true, revealed } } },
+            events,
+          };
+        }
+        default:
+          return assertNever(change, "fog change");
+      }
     }
     default:
       return assertNever(op, "table op");

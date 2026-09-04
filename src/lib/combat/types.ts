@@ -68,6 +68,40 @@ export interface Position {
   readonly y: number;
 }
 
+// ── The map (stage 5 — docs/superpowers/specs/2026-09-04-v2-stage-5-minimum-map-design.md) ──
+
+/** An axis-aligned rectangle of grid cells: `x,y` is the top-left cell, `w,h ≥ 1`. Cells, not
+ *  pixels, so the same numbers feed the reducer's geometry and the fog membership test. */
+export interface MapRect {
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+}
+
+/** The background image and the grid aligned to it. The image lives in Storage; the document
+ *  carries its path (delete, quota), its token download URL (display) and the grid mapping. */
+export interface MapBackground {
+  readonly path: string; // Storage object path: campaigns/{campaignId}/maps/{mapId}.jpeg
+  readonly url: string; // the download URL, as `bannerUrl` already is on the campaign
+  readonly width: number; // stored image size in px
+  readonly height: number;
+  readonly cellPx: number; // grid cell side in image px
+  readonly origin: { readonly x: number; readonly y: number }; // image-px offset of cell (0,0)
+  readonly bytes: number; // stored size, for the per-campaign quota bar
+}
+
+/** Fog has ONE representation: when `covered`, everything is hidden except `revealed`. */
+export interface MapState {
+  readonly background: MapBackground | null;
+  readonly fog: { readonly covered: boolean; readonly revealed: readonly MapRect[] };
+}
+
+export type FogChange =
+  | { readonly kind: "cover"; readonly covered: boolean }
+  | { readonly kind: "reveal"; readonly rect: MapRect }
+  | { readonly kind: "hide"; readonly rect: MapRect };
+
 export interface DerivedStats {
   readonly ac: number;
   readonly maxHp: number;
@@ -134,7 +168,13 @@ export interface Entity {
       { readonly value: unknown; readonly reason: string; readonly by: string }
     >
   >;
-  readonly reveal: { readonly block: boolean; readonly hp: boolean };
+  /** What players may see of this entity; `token: false` is a hidden token (DM and controller
+   *  still see it — concealment is by presenter, `map.ts` `mapView`). */
+  readonly reveal: {
+    readonly block: boolean;
+    readonly hp: boolean;
+    readonly token: boolean;
+  };
   readonly position: Position | null; // null = no map; relations stay purely declared
   readonly mechanics: readonly MechanicId[]; // what this entity can invoke (weapons, spells, features, monster actions)
 }
@@ -334,7 +374,9 @@ export type TableOp =
       readonly op: "settings";
       readonly revealMonsterHp: boolean;
       readonly automation: Automation;
-    };
+    }
+  | { readonly op: "map"; readonly background: MapBackground | null }
+  | { readonly op: "fog"; readonly change: FogChange };
 
 interface ActionBase {
   readonly id: ActionId;
@@ -408,6 +450,7 @@ export interface FoldedState {
     readonly revealMonsterHp: boolean;
     readonly automation: Exclude<Automation, "propose-and-confirm">;
   };
+  readonly map: MapState;
 }
 
 export interface Encounter {

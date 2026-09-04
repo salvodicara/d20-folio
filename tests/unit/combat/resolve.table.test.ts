@@ -277,3 +277,121 @@ describe("resolve — table operations and the clock", () => {
     });
   });
 });
+
+describe("resolve — the map and fog table ops (stage 5)", () => {
+  const BACKGROUND = {
+    path: "campaigns/c1/maps/m1.jpeg",
+    url: "https://example.test/m1.jpeg?token=x",
+    width: 3000,
+    height: 2000,
+    cellPx: 100,
+    origin: { x: 0, y: 0 },
+    bytes: 1_234_567,
+  };
+  const rect = (x: number, y: number, w: number, h: number) => ({ x, y, w, h });
+  const fogOp = (
+    change:
+      | { kind: "cover"; covered: boolean }
+      | { kind: "reveal"; rect: ReturnType<typeof rect> }
+      | { kind: "hide"; rect: ReturnType<typeof rect> }
+  ) => tableAction("dm", seqFactory("dm")(), { op: "fog", change });
+
+  it("map sets, replaces and clears the background without touching fog or positions", () => {
+    const seqM = seqFactory("dm");
+    const ranger = testEntity({ id: "ranger", kind: "pc", position: { x: 2, y: 2 } });
+    let state = applyAll(emptyState(), [
+      tableAction("dm", seqM(), { op: "start", epoch: 1 }),
+      tableAction("dm", seqM(), { op: "add-entity", entity: ranger }),
+      tableAction("dm", seqM(), { op: "fog", change: { kind: "cover", covered: true } }),
+      tableAction("dm", seqM(), {
+        op: "fog",
+        change: { kind: "reveal", rect: rect(0, 0, 4, 4) },
+      }),
+      tableAction("dm", seqM(), { op: "map", background: BACKGROUND }),
+    ]);
+    expect(state.map.background).toEqual(BACKGROUND);
+    expect(state.map.fog).toEqual({ covered: true, revealed: [rect(0, 0, 4, 4)] });
+    expect(mustEntity(state, "ranger").position).toEqual({ x: 2, y: 2 });
+    state = applyAll(state, [
+      tableAction("dm", seqM(), { op: "map", background: { ...BACKGROUND, cellPx: 50 } }),
+    ]);
+    expect(state.map.background?.cellPx).toBe(50);
+    state = applyAll(state, [tableAction("dm", seqM(), { op: "map", background: null })]);
+    expect(state.map.background).toBeNull();
+    expect(state.map.fog.revealed).toEqual([rect(0, 0, 4, 4)]);
+  });
+
+  it("map rejects a malformed background", () => {
+    const result = resolve(
+      emptyState(),
+      tableAction("dm", seqFactory("dm")(), {
+        op: "map",
+        background: { ...BACKGROUND, cellPx: Number.NaN },
+      }),
+      catalogue
+    );
+    expect(result).toEqual({
+      kind: "rejected",
+      rejection: { reason: "invalid-table-op", detail: "map: malformed background" },
+    });
+  });
+
+  it("fog: cover on/off resets the revealed list; reveal appends; hide subtracts", () => {
+    let state = applyAll(emptyState(), [
+      fogOp({ kind: "cover", covered: true }),
+      fogOp({ kind: "reveal", rect: rect(0, 0, 4, 4) }),
+      fogOp({ kind: "reveal", rect: rect(10, 10, 2, 2) }),
+    ]);
+    expect(state.map.fog).toEqual({
+      covered: true,
+      revealed: [rect(0, 0, 4, 4), rect(10, 10, 2, 2)],
+    });
+    state = applyAll(state, [fogOp({ kind: "hide", rect: rect(0, 0, 4, 2) })]);
+    expect(state.map.fog.revealed).toEqual([rect(0, 2, 4, 2), rect(10, 10, 2, 2)]);
+    state = applyAll(state, [fogOp({ kind: "cover", covered: false })]);
+    expect(state.map.fog).toEqual({ covered: false, revealed: [] });
+    state = applyAll(state, [fogOp({ kind: "cover", covered: true })]);
+    expect(state.map.fog).toEqual({ covered: true, revealed: [] });
+  });
+
+  it("fog: reveal and hide are rejected while fog is off, and a malformed rectangle is rejected", () => {
+    const off = resolve(
+      emptyState(),
+      fogOp({ kind: "reveal", rect: rect(0, 0, 1, 1) }),
+      catalogue
+    );
+    expect(off).toEqual({
+      kind: "rejected",
+      rejection: { reason: "invalid-table-op", detail: "fog: reveal while fog is off" },
+    });
+    const covered = applyAll(emptyState(), [fogOp({ kind: "cover", covered: true })]);
+    const bad = resolve(
+      covered,
+      fogOp({ kind: "hide", rect: rect(0, 0, 0, 1) }),
+      catalogue
+    );
+    expect(bad).toEqual({
+      kind: "rejected",
+      rejection: { reason: "invalid-table-op", detail: "fog: malformed hide rectangle" },
+    });
+  });
+
+  it("fog: the rectangle budget is a rejection, not a silent drop", () => {
+    let state = applyAll(emptyState(), [fogOp({ kind: "cover", covered: true })]);
+    for (let i = 0; i < 256; i += 1) {
+      state = applyAll(state, [fogOp({ kind: "reveal", rect: rect(i * 3, 0, 1, 1) })]);
+    }
+    const over = resolve(
+      state,
+      fogOp({ kind: "reveal", rect: rect(-5, 0, 1, 1) }),
+      catalogue
+    );
+    expect(over).toEqual({
+      kind: "rejected",
+      rejection: {
+        reason: "invalid-table-op",
+        detail: "fog: rectangle budget exhausted",
+      },
+    });
+  });
+});
