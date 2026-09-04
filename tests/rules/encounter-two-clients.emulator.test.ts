@@ -440,10 +440,26 @@ async function compactAndVerify(table: Table): Promise<void> {
     () => table.clients.every(compacted),
     "the compacted document on every client"
   );
+  // Everything the table PLAYS survives the checkpoint unchanged. `rolls`/`spent` are the one
+  // deliberate exception (stage 6 design §2 D8): compaction drops the rolls whose intents have
+  // settled, so the document stays bounded over a long session. They are checked separately
+  // below rather than excused.
   for (const client of table.clients) {
-    expect(client.view().state, `${client.uid} across the checkpoint`).toEqual(
-      before.get(client.uid)
-    );
+    const was = before.get(client.uid);
+    if (was === undefined) throw new Error(`no pre-compaction fold for ${client.uid}`);
+    const { rolls, spent, ...rest } = client.view().state;
+    const { rolls: wasRolls, spent: wasSpent, ...wasRest } = was;
+    expect(rest, `${client.uid} across the checkpoint`).toEqual(wasRest);
+    // Nothing is invented, and every roll still held is one nobody has spent yet or one a
+    // window still needs.
+    expect(Object.keys(rolls).length).toBeLessThanOrEqual(Object.keys(wasRolls).length);
+    expect(Object.keys(spent).length).toBeLessThanOrEqual(Object.keys(wasSpent).length);
+    for (const [id, record] of Object.entries(rolls)) {
+      expect(record, `${client.uid}: roll ${id}`).toEqual(wasRolls[id]);
+      const by = spent[id];
+      if (by !== undefined)
+        expect(rest.declared[by], `${client.uid}: ${id}`).toBeDefined();
+    }
   }
   const stored = await storedEncounter();
   expect(stored.log).toHaveLength(0);
