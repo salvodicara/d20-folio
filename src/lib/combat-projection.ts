@@ -196,14 +196,15 @@ function turnClaim(row: RawResolvedAction): Cost {
   return { kind: "turn", claim: row.type };
 }
 
-function costsFor(row: RawResolvedAction, spell: SrdSpellData | null): Cost[] {
+function costsFor(row: RawResolvedAction): Cost[] {
   const costs: Cost[] = [turnClaim(row)];
   if (row.costsSlot && row.slotLevel !== undefined) {
-    costs.push({
-      kind: "slot",
-      level: row.slotLevel,
-      ...(spell?.damageDicePerUpcast ? { upcast: true } : {}),
-    });
+    // ALWAYS upcastable: the SRD lets every spell be cast from a slot of its own level or
+    // higher, and only some of them scale with it. A projected program's numbers are fixed —
+    // `castLevel` feeds nothing but `byLevel` and the effect's provenance — so refusing the
+    // higher slot here would strand a Wizard out of 1st-level slots, and a Warlock (whose
+    // whole pool sits at one level) out of every non-scaling spell it knows.
+    costs.push({ kind: "slot", level: row.slotLevel, upcast: true });
   }
   if (row.costTracker) {
     costs.push({ kind: "resource", id: row.costTracker, amount: row.trackerCost ?? 1 });
@@ -469,7 +470,7 @@ function mechanicFor(
   spellSaveDc: number | null
 ): Mechanic {
   const spell = row.spellId ? (getSpellById(row.spellId) ?? null) : null;
-  const costs = costsFor(row, spell);
+  const costs = costsFor(row);
   const program = promisesMore(row)
     ? manualProgram(row, costs)
     : (attackProgram(row, costs) ??

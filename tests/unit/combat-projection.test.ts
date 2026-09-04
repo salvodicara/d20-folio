@@ -489,7 +489,10 @@ describe("projectCharacter — the action adapter", () => {
     ]);
   });
 
-  it("marks a slot cost as upcastable only when the spell's damage scales", () => {
+  it("marks EVERY slot cost upcastable, scaling or not", () => {
+    // The SRD lets any spell be cast from a higher slot; only some scale with it. A cost that
+    // refused the higher slot would strand a caster out of slots at the printed level — and a
+    // Warlock, whose whole pool sits at one level, out of every non-scaling spell it knows.
     const { mechanics } = projected();
     expect(programOf(mechanics, "spell-thunderwave").cost).toContainEqual({
       kind: "slot",
@@ -499,6 +502,7 @@ describe("projectCharacter — the action adapter", () => {
     expect(programOf(mechanics, "spell-hypnotic-pattern").cost).toContainEqual({
       kind: "slot",
       level: 3,
+      upcast: true,
     });
   });
 
