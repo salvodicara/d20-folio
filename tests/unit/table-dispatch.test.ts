@@ -29,8 +29,12 @@ import {
   planIntent,
   rollsFor,
   type IntentArgs,
+  type IntentBody,
   type PendingInput,
 } from "@/features/play/table/dispatch";
+import { projectCharacter } from "@/lib/combat-projection";
+import type { CharacterDoc } from "@/types/character";
+import { makeCharacterDoc } from "./_helpers";
 import { testEntity } from "@tests/unit/combat/__helpers__/entities";
 import { openingActions, seqFactory } from "@tests/unit/combat/__helpers__/state";
 
@@ -376,7 +380,7 @@ describe("rollsFor", () => {
 describe("intentBody", () => {
   it("answers every planned input with its roll and keeps the answers already given", () => {
     const state = table();
-    const body = intentBody(state, FIREBALL, {
+    const body = intentBody(state, catalogue, FIREBALL, {
       "save:goblin-1": "r-1",
       "save:goblin-2": "r-2",
       damage: "r-3",
@@ -401,7 +405,14 @@ describe("intentBody", () => {
 
   it("carries no payment when nothing was upcast, and the window when it is a reaction", () => {
     const state = table();
-    const body = intentBody(state, { ...SHOT, window: "window-3" }, { roll: "r-1" });
+    const body = intentBody(
+      state,
+      catalogue,
+      { ...SHOT, window: "window-3" },
+      {
+        roll: "r-1",
+      }
+    );
     expect(body.payment).toEqual([]);
     expect(body.window).toBe("window-3");
     expect(body.answers).toEqual({ roll: { roll: "r-1" } });
@@ -430,7 +441,7 @@ describe("intentBody", () => {
       next = result.state;
     });
 
-    const body = intentBody(next, SHOT, { roll: "r-1", damage: "r-2" });
+    const body = intentBody(next, catalogue, SHOT, { roll: "r-1", damage: "r-2" });
     const result = resolve(
       next,
       {
@@ -553,7 +564,7 @@ describe("planIntent plans the answers the reducer requires but no input declare
     const result = resolve(
       next,
       {
-        ...intentBody(next, SHOT, rollIds),
+        ...intentBody(next, catalogue, SHOT, rollIds),
         id: "i-1",
         seq: { ms: 9_100, counter: 0, by: "p-marco" },
         by: "p-marco",
@@ -672,7 +683,7 @@ describe("only a per-target d20 expands into per-target keys", () => {
     const result = resolve(
       rolled.state,
       {
-        ...intentBody(rolled.state, CAST, { damage: "r-1" }),
+        ...intentBody(rolled.state, catalogue, CAST, { damage: "r-1" }),
         id: "i-1",
         seq: { ms: 9_100, counter: 0, by: "p-marco" },
         by: "p-marco",
@@ -684,5 +695,136 @@ describe("only a per-target d20 expands into per-target keys", () => {
     // Both goblins are inside the sphere and both took the one rolled die.
     expect(result.state.entities["goblin-1"]?.vitals.hp).toBe(2);
     expect(result.state.entities["goblin-2"]?.vitals.hp).toBe(2);
+  });
+});
+
+// ── Which slot a levelled cast is actually paid from (design §2 D7) ─────────
+
+/**
+ * The pool a tile spends when the person names no level. The reducer's default is the STANDARD
+ * pool at the printed level (`payCosts`), which a Warlock does not own: Pact Magic is a separate
+ * pool whose slots all sit at one level. So `paymentOf` reads the caster's own resources — and
+ * a caster is seated here from its OWN sheet, through `projectCharacter`, so the slot keys under
+ * test are the ones a live PC actually joins with.
+ */
+describe("planIntent pays a levelled cast from a pool the caster actually has", () => {
+  /** Magic Missile: 1st level, and its damage does NOT scale — the case a cost that refused the
+   *  higher slot would strand. Projected as an adjudicated row, so it plans no dice at all and
+   *  the payment is the whole verdict. */
+  const MISSILE: IntentArgs = {
+    entity: "caster",
+    mechanic: "pc:caster:spell-magic-missile",
+    program: "spell-magic-missile",
+    targets: [],
+    answersSoFar: {},
+  };
+
+  function casterDoc(
+    classId: string,
+    ability: "INT" | "CHA",
+    spellSlots: CharacterDoc["character"]["spellSlots"]
+  ): CharacterDoc {
+    return makeCharacterDoc({
+      classes: [{ classId, level: 5 }],
+      abilityScores: { STR: 10, DEX: 14, CON: 14, INT: 16, WIS: 12, CHA: 16 },
+      spellcasting: {
+        ability,
+        preparedCaster: true,
+        preparedMax: 6,
+        saveDCOverride: null,
+        attackBonusOverride: null,
+      },
+      spellSlots,
+      spells: [{ srdId: "magic-missile", prepared: true }],
+    });
+  }
+
+  /** The caster seated as a real `table:join` would seat it: its projected entity, carrying its
+   *  own definitions, which `programOf` reads before the static catalogue. */
+  function seated(doc: CharacterDoc): FoldedState {
+    const { entity, mechanics } = projectCharacter(doc, {
+      uid: "p-caster",
+      characterId: "caster",
+      buildRevision: 1,
+    });
+    const seqOf = seqFactory("dm", 1_000);
+    const folded = fold(
+      {
+        schema: 1,
+        id: "live",
+        host: { kind: "campaign", campaignId: "camp-1" },
+        log: openingActions("dm", seqOf, [entity], { caster: 18 }, ["caster"], mechanics),
+        checkpoint: null,
+      },
+      catalogue
+    );
+    expect(folded.rejections).toEqual([]);
+    return folded.state;
+  }
+
+  /** The intent the tile would append, once the (zero) rolls are in. */
+  function cast(state: FoldedState): IntentBody {
+    expect(plannedInputs(state, MISSILE)).toEqual([]);
+    return intentBody(state, catalogue, MISSILE, {});
+  }
+
+  function applied(state: FoldedState, body: IntentBody): FoldedState {
+    const result = resolve(
+      state,
+      {
+        ...body,
+        id: "i-1",
+        seq: { ms: 9_100, counter: 0, by: "p-caster" },
+        by: "p-caster",
+      },
+      catalogue
+    );
+    if (result.kind !== "applied") {
+      throw new Error(`the intent was rejected: ${JSON.stringify(result)}`);
+    }
+    return result.state;
+  }
+
+  it("spends a Warlock's Pact slot, at the only level that pool has", () => {
+    const state = seated(
+      casterDoc("warlock", "CHA", [{ level: 2, total: 1, pactMagic: true }])
+    );
+    const body = cast(state);
+    expect(body.payment).toEqual([{ kind: "slot", level: 2, pool: "pact" }]);
+    // …and the reducer, which is the judge, agrees: the Pact slot is the one that is spent.
+    const next = applied(state, body);
+    expect(next.entities.caster?.resources["pact-2"]?.current).toBe(0);
+  });
+
+  it("prefers a Sorlock's standard slot at the printed level over its Pact slot", () => {
+    const state = seated(
+      casterDoc("sorcerer", "CHA", [
+        { level: 1, total: 2 },
+        { level: 1, total: 1, pactMagic: true },
+      ])
+    );
+    const body = cast(state);
+    expect(body.payment).toEqual([{ kind: "slot", level: 1, pool: "standard" }]);
+    const next = applied(state, body);
+    expect(next.entities.caster?.resources["slot-1"]?.current).toBe(1);
+    expect(next.entities.caster?.resources["pact-1"]?.current).toBe(1);
+  });
+
+  it("reaches for the lowest higher slot when the printed level is spent", () => {
+    // A Wizard out of 1st-level slots casting a NON-scaling 1st-level spell: legal by the SRD,
+    // and only reachable because every projected slot cost is upcastable.
+    const state = seated(casterDoc("wizard", "INT", [{ level: 2, total: 2 }]));
+    const body = cast(state);
+    expect(body.payment).toEqual([{ kind: "slot", level: 2, pool: "standard" }]);
+    const next = applied(state, body);
+    expect(next.entities.caster?.resources["slot-2"]?.current).toBe(1);
+  });
+
+  it("leaves an entity with no slot at all to the reducer's own rejection", () => {
+    const state = seated(casterDoc("wizard", "INT", []));
+    expect(rejectionOf(state, MISSILE)).toEqual({
+      reason: "unaffordable",
+      cost: "slot:1",
+    });
   });
 });

@@ -20,8 +20,8 @@ import {
   preflightIntent,
   riderAnswers,
 } from "@/lib/combat/intent";
-import type { Catalogue } from "@/lib/combat/catalogue";
-import type { Input, Program } from "@/lib/combat/mechanic";
+import { programOf, type Catalogue } from "@/lib/combat/catalogue";
+import type { Cost, Input, Program } from "@/lib/combat/mechanic";
 import type { ActionId, EntityId, MechanicId, WindowId } from "@/lib/combat/ids";
 import type {
   Answer,
@@ -73,15 +73,75 @@ export interface PlannedIntent {
   readonly inputs: readonly PendingInput[];
 }
 
-/** The slot payment an upcast declares; `[]` when the program pays no slot of its own. */
-function paymentOf(args: IntentArgs): readonly PaymentChoice[] {
-  return args.castLevel === undefined
-    ? []
-    : [{ kind: "slot", level: args.castLevel, pool: args.pool ?? "standard" }];
+type SlotCost = Extract<Cost, { readonly kind: "slot" }>;
+
+/**
+ * Which slot a levelled cast is paid from when the surface named none.
+ *
+ * The reducer defaults an unnamed payment to the STANDARD pool at the cost's own level
+ * (`payCosts`, `src/lib/combat/intent.ts`), which is a slot a Warlock does not have: its Pact
+ * Magic slots are a separate pool (`pact-<n>`), and they all sit at one level. So the choice is
+ * made HERE, from the acting entity's own resources: the cost's level first, then — when the
+ * cost admits an upcast — the lowest level above it that still holds a slot; the standard pool
+ * before the Pact pool at each level, so a Sorlock spends the shared slot it has more of.
+ *
+ * A guess, not a verdict: the reducer still judges the payment it is handed, and an entity with
+ * no slot at all is left to be rejected as `unaffordable` for the level it was printed with.
+ */
+function slotChoice(
+  state: FoldedState,
+  entity: EntityId,
+  cost: SlotCost
+): PaymentChoice | null {
+  const resources = state.entities[entity]?.resources ?? {};
+  const levels = new Set<number>();
+  for (const key of Object.keys(resources)) {
+    const match = /^(?:slot|pact)-(\d+)$/.exec(key);
+    if (match?.[1] !== undefined) levels.add(Number(match[1]));
+  }
+  const reachable = [...levels]
+    .filter(
+      (level) => level === cost.level || (cost.upcast === true && level > cost.level)
+    )
+    .sort((a, b) => a - b);
+  for (const level of reachable) {
+    for (const pool of ["standard", "pact"] as const) {
+      const slot = resources[pool === "pact" ? `pact-${level}` : `slot-${level}`];
+      if (slot && slot.current > 0) return { kind: "slot", level, pool };
+    }
+  }
+  return null;
+}
+
+/**
+ * The slot payment this intent declares; `[]` when the program pays no slot of its own.
+ *
+ * An explicit `castLevel` — the person deliberately upcasting — wins over everything. Otherwise
+ * the pool and level are derived from the entity's resources (see {@link slotChoice}), because
+ * a hotbar tile that says nothing must still be castable by a Warlock.
+ */
+function paymentOf(
+  state: FoldedState,
+  catalogue: Catalogue,
+  args: IntentArgs
+): readonly PaymentChoice[] {
+  if (args.castLevel !== undefined) {
+    return [{ kind: "slot", level: args.castLevel, pool: args.pool ?? "standard" }];
+  }
+  const program = programOf(state, catalogue, args.mechanic, args.program);
+  const cost = program?.cost?.find((c): c is SlotCost => c.kind === "slot");
+  if (!cost) return [];
+  const choice = slotChoice(state, args.entity, cost);
+  return choice ? [choice] : [];
 }
 
 /** `args` as the action the reducer would judge, with whatever is answered so far. */
-function probe(state: FoldedState, args: IntentArgs, answers: Answers): IntentAction {
+function probe(
+  state: FoldedState,
+  catalogue: Catalogue,
+  args: IntentArgs,
+  answers: Answers
+): IntentAction {
   return {
     kind: "intent",
     // The preflight reads neither the identity nor the stamp; the store mints both when the
@@ -94,7 +154,7 @@ function probe(state: FoldedState, args: IntentArgs, answers: Answers): IntentAc
     program: args.program,
     targets: args.targets,
     answers,
-    payment: paymentOf(args),
+    payment: paymentOf(state, catalogue, args),
     window: args.window ?? null,
     basedOn: state.revision,
   };
@@ -167,7 +227,7 @@ export function planIntent(
 ): PlannedIntent | Rejection {
   const preflight = preflightIntent(
     state,
-    probe(state, args, args.answersSoFar),
+    probe(state, catalogue, args, args.answersSoFar),
     catalogue
   );
   if ("reason" in preflight) return preflight;
@@ -254,6 +314,7 @@ export function rollsFor(
  */
 export function intentBody(
   state: FoldedState,
+  catalogue: Catalogue,
   args: IntentArgs,
   rollIds: Readonly<Record<string, ActionId>>
 ): IntentBody {
@@ -266,7 +327,7 @@ export function intentBody(
     program: args.program,
     targets: args.targets,
     answers,
-    payment: paymentOf(args),
+    payment: paymentOf(state, catalogue, args),
     window: args.window ?? null,
     basedOn: state.revision,
   };
