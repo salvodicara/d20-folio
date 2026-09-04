@@ -5,6 +5,7 @@ import {
   type Program,
   type Step,
 } from "@/lib/combat/mechanic";
+import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
 
 const castProgram: Program = {
   id: "cast",
@@ -46,6 +47,11 @@ function withCast(patch: Partial<Program>): unknown {
   return { ...huntersMark, active: [{ ...castProgram, ...patch }] };
 }
 
+/** Structure is decided by the codec's `mechanicSchema` — one closed vocabulary, so a rejected
+ *  definition never becomes a quarantined document. It reports no path (`exact-schema` does not
+ *  produce one); the SEMANTIC rules below still do. */
+const SHAPE_FAILURE = { ok: false, rule: "invalid-mechanic-shape", path: "" };
+
 describe("conformMechanic — the authoring contract", () => {
   it("accepts a well-formed data-only mechanic", () => {
     const result = conformMechanic(huntersMark);
@@ -61,7 +67,7 @@ describe("conformMechanic — the authoring contract", () => {
       conformMechanic(
         withCast({ steps: [{ id: "x", kind: "teleport" } as unknown as Step] })
       )
-    ).toEqual({ ok: false, rule: "unknown-step-kind", path: "active[0].steps[0].kind" });
+    ).toEqual(SHAPE_FAILURE);
   });
 
   it("rejects a `when` that references an input the program never asks, with a path", () => {
@@ -75,9 +81,38 @@ describe("conformMechanic — the authoring contract", () => {
     });
   });
 
-  it("rejects an unknown top-level key with its path", () => {
-    const result = conformMechanic({ ...huntersMark, bogus: 1 });
-    expect(result).toEqual({ ok: false, rule: "unknown-key", path: "bogus" });
+  it("rejects an unknown top-level key", () => {
+    expect(conformMechanic({ ...huntersMark, bogus: 1 })).toEqual(SHAPE_FAILURE);
+  });
+
+  it("rejects a structurally invalid trigger, cost, input and area — the codec's vocabulary", () => {
+    // Everything here used to pass `conformMechanic` and then quarantine the WHOLE encounter
+    // on parse, which `checkpointEncounter` refuses to repair. The two checks now agree: a bad
+    // definition rejects its own seat op and nothing else (review finding 3).
+    expect(conformMechanic(withCast({ trigger: {} as never }))).toEqual(SHAPE_FAILURE);
+    expect(
+      conformMechanic(withCast({ trigger: { kind: "telepathy" } as never }))
+    ).toEqual(SHAPE_FAILURE);
+    expect(conformMechanic(withCast({ cost: [{ kind: "mana" } as never] }))).toEqual(
+      SHAPE_FAILURE
+    );
+    expect(
+      conformMechanic(withCast({ inputs: [{ id: "x", kind: "tarot" } as never] }))
+    ).toEqual(SHAPE_FAILURE);
+    expect(conformMechanic({ ...huntersMark, source: "not-a-source" as never })).toEqual(
+      SHAPE_FAILURE
+    );
+    expect(conformMechanic({ ...huntersMark, schema: 2 as never })).toEqual(
+      SHAPE_FAILURE
+    );
+    expect(conformMechanic("not an object")).toEqual(SHAPE_FAILURE);
+  });
+
+  it("conforms every mechanic the prototype catalogue ships", () => {
+    const rejected = PROTOTYPE_MECHANICS.filter(
+      (mechanic) => !conformMechanic(mechanic).ok
+    ).map((mechanic) => mechanic.id);
+    expect(rejected).toEqual([]);
   });
 
   it("rejects a reaction-costed program on an invocation trigger that is not a reaction", () => {

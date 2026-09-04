@@ -10,7 +10,7 @@ import { buildCatalogue } from "@/lib/combat/catalogue";
 import { encounterWriteData, parseEncounter } from "@/lib/combat/codec";
 import { fold } from "@/lib/combat/fold";
 import type { Action, Encounter, FoldedState } from "@/lib/combat/types";
-import type { Mechanic } from "@/lib/combat/mechanic";
+import { conformMechanic, type Mechanic } from "@/lib/combat/mechanic";
 import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
 import { emptyState, firstOf, openingActions, seqFactory } from "./__helpers__/state";
 import { testEntity } from "./__helpers__/entities";
@@ -560,6 +560,45 @@ describe("parseEncounter — carried mechanics are closed-world (stage 6 §2 D2)
       ok: false,
       reason: "malformed",
     });
+  });
+
+  it("what the codec quarantines, the fold-time check rejects — one vocabulary", () => {
+    // The dangerous asymmetry (review finding 3): a definition `conformMechanic` waved through
+    // but `mechanicSchema` refuses would be WRITTEN, then quarantine the encounter on every
+    // client including the writer — and `checkpointEncounter` refuses to repair a quarantined
+    // document, so the table would be dead with no way back.
+    const malformed: readonly unknown[] = [
+      { ...CARRIED, active: [{ id: "cast", trigger: {}, steps: [] }] },
+      { ...CARRIED, active: [{ id: "cast", trigger: { kind: "telepathy" }, steps: [] }] },
+      {
+        ...CARRIED,
+        active: [
+          {
+            id: "cast",
+            trigger: { kind: "invocation", economy: "action" },
+            cost: [{ kind: "mana", level: 1 }],
+            steps: [],
+          },
+        ],
+      },
+      {
+        ...CARRIED,
+        active: [
+          {
+            id: "cast",
+            trigger: { kind: "invocation", economy: "action" },
+            steps: [{ id: "warp", kind: "teleport", to: "$target" }],
+          },
+        ],
+      },
+      { ...CARRIED, source: "not-a-source" },
+      { ...CARRIED, bogus: true },
+    ];
+    for (const value of malformed) {
+      const label = JSON.stringify(value).slice(0, 80);
+      expect(conformMechanic(value).ok, `conformMechanic: ${label}`).toBe(false);
+      expect(parseEncounter(documentWith([value])).ok, `codec: ${label}`).toBe(false);
+    }
   });
 
   it("quarantines the document for an unknown key inside a program", () => {

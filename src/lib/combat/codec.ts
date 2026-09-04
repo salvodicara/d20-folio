@@ -46,7 +46,7 @@ import {
 } from "@/lib/exact-schema";
 import { stripUndefined } from "@/lib/strip-undefined";
 import { ROLL_PURPOSES } from "./dice";
-import type { Expr, Predicate } from "./mechanic";
+import type { Expr, Mechanic, Predicate } from "./mechanic";
 import type { Encounter } from "./types";
 
 // ── The `json` custom conformer ─────────────────────────────────────────────
@@ -995,6 +995,35 @@ const mechanicSchema = objectSchema(
 );
 
 const mechanicsSchema = arraySchema(mechanicSchema);
+
+const MECHANIC_CONTEXT: ExactSchemaContext<
+  Record<never, never>,
+  { readonly expr: Expr; readonly predicate: Predicate }
+> = {
+  customs: {},
+  refs: { expr: exprSchema, predicate: predicateSchema },
+};
+
+const conformMechanicShape = exactConformer(mechanicSchema, MECHANIC_CONTEXT);
+
+/**
+ * The ONE structural vocabulary for a mechanic (review finding 3).
+ *
+ * `conformMechanic` (`mechanic.ts`) runs this before its semantic rules, so a definition the
+ * persisted document would quarantine is rejected at fold time instead — the seat op carrying
+ * it fails, the encounter survives. Without the shared check a projection emitting, say,
+ * `trigger: {}` would pass the fold, be written, and then quarantine the document on EVERY
+ * client including the writer, with `checkpointEncounter` refusing to repair a quarantined
+ * document: a dead table with no way back.
+ *
+ * Returns the canonicalized, deep-frozen clone (`exact-schema` sorts record keys and freezes),
+ * so what lands in `FoldedState.mechanics` is already the shape the codec will write back and a
+ * pre- and post-compaction fold stay deep-equal. `null` is the only failure signal `exact-schema`
+ * gives — it reports no path, which is why the caller's rule carries none either.
+ */
+export function parseMechanicValue(value: unknown): Mechanic | null {
+  return conformMechanicShape(value);
+}
 
 // ── Table ops ────────────────────────────────────────────────────────────────
 

@@ -5,6 +5,7 @@
  * `conformMechanic` is the only entry: a closed-world structural check followed by semantic
  * rules, each failure carrying the JSON path and a rule id. Never a bare `null`.
  */
+import { parseMechanicValue } from "./codec";
 import type { LabelId, MechanicId } from "./ids";
 import type { Ability, ConditionId, DamageType, Rider } from "./types";
 
@@ -206,43 +207,14 @@ export type Conformance =
   | { readonly ok: true; readonly mechanic: Mechanic }
   | { readonly ok: false; readonly rule: string; readonly path: string };
 
-// ── Structural check (closed keys, closed enums) ────────────────────────────
-
-const MECHANIC_KEYS = new Set(["schema", "id", "source", "label", "active"]);
-const PROGRAM_KEYS = new Set(["id", "trigger", "cost", "targets", "inputs", "steps"]);
-const SOURCES = new Set(["srd", "pack", "homebrew", "monster"]);
-const STEP_KINDS = new Set([
-  "attack",
-  "save",
-  "damage",
-  "heal",
-  "effect-start",
-  "condition",
-  "move-mark",
-  "turn-claim",
-  "negate",
-  "manual-table",
-  "move",
-  "dash",
-]);
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+// ── Structural check ────────────────────────────────────────────────────────
+//
+// Structure is `codec.ts`'s `mechanicSchema` and nothing else: ONE closed vocabulary, so a
+// definition this check accepts can never be one the persisted document quarantines. See
+// `parseMechanicValue`'s note for why that asymmetry was fatal.
 
 function fail(rule: string, path: string): Conformance {
   return { ok: false, rule, path };
-}
-
-function unknownKeys(
-  value: Record<string, unknown>,
-  allowed: Set<string>,
-  path: string
-): Conformance | null {
-  for (const key of Object.keys(value)) {
-    if (!allowed.has(key)) return fail("unknown-key", path ? `${path}.${key}` : key);
-  }
-  return null;
 }
 
 // ── Semantic rules ──────────────────────────────────────────────────────────
@@ -290,7 +262,6 @@ function checkProgram(program: Program, path: string): Conformance | null {
   }
   for (const [i, step] of program.steps.entries()) {
     const stepPath = `${path}.steps[${i}]`;
-    if (!STEP_KINDS.has(step.kind)) return fail("unknown-step-kind", `${stepPath}.kind`);
     if (step.when) {
       const referenced = new Set<string>();
       answersReferenced(step.when, referenced);
@@ -318,28 +289,25 @@ function checkProgram(program: Program, path: string): Conformance | null {
   return null;
 }
 
+/**
+ * The one entry: the codec's structural schema first, then the semantic rules the schema cannot
+ * express (a reaction cost on a non-reaction trigger, a step naming an input the program never
+ * declares, an area without its position input…).
+ *
+ * The structural half reports no path — `exact-schema` does not produce one — so it fails as
+ * `invalid-mechanic-shape` at the root. The semantic half keeps its precise rule and path,
+ * which is what a table's own authoring mistakes actually look like.
+ *
+ * The returned mechanic is the schema's canonicalized, deep-frozen CLONE, not the value passed
+ * in: `FoldedState.mechanics` then holds exactly what the codec would write back.
+ */
 export function conformMechanic(value: unknown): Conformance {
-  if (!isRecord(value)) return fail("not-an-object", "");
-  const top = unknownKeys(value, MECHANIC_KEYS, "");
-  if (top) return top;
-  if (value.schema !== 1) return fail("unsupported-schema", "schema");
-  if (typeof value.id !== "string" || value.id.length === 0)
-    return fail("invalid-id", "id");
-  if (typeof value.source !== "string" || !SOURCES.has(value.source))
-    return fail("invalid-source", "source");
-  if (value.active !== undefined) {
-    if (!Array.isArray(value.active)) return fail("invalid-active", "active");
-    for (const [i, program] of value.active.entries()) {
-      const path = `active[${i}]`;
-      if (!isRecord(program)) return fail("invalid-program", path);
-      const keys = unknownKeys(program, PROGRAM_KEYS, path);
-      if (keys) return keys;
-      if (typeof program.id !== "string") return fail("invalid-program-id", `${path}.id`);
-      if (!isRecord(program.trigger)) return fail("invalid-trigger", `${path}.trigger`);
-      if (!Array.isArray(program.steps)) return fail("invalid-steps", `${path}.steps`);
-      const semantic = checkProgram(program as unknown as Program, path);
-      if (semantic) return semantic;
-    }
+  const mechanic = parseMechanicValue(value);
+  if (mechanic === null) return fail("invalid-mechanic-shape", "");
+  if (mechanic.id.length === 0) return fail("invalid-id", "id");
+  for (const [i, program] of (mechanic.active ?? []).entries()) {
+    const semantic = checkProgram(program, `active[${i}]`);
+    if (semantic) return semantic;
   }
-  return { ok: true, mechanic: value as unknown as Mechanic };
+  return { ok: true, mechanic };
 }
