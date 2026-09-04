@@ -1457,6 +1457,12 @@
   transform: translateX(-50%);
 }
 
+/* The tabs hang half over the bar, so they need a ground of their own: on parchment a pill in
+   the panel's own cream would dissolve into the bar it overlaps. */
+.pl-bartabs button {
+  background: var(--play-well);
+}
+
 .pl-empty-line {
   display: grid;
   place-items: center;
