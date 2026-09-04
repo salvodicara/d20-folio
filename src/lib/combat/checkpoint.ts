@@ -125,19 +125,24 @@ export function compact(
 }
 
 /**
- * The checkpoint's `rolls`/`spent` are bounded here (stage 6 design §2 D8).
+ * The checkpoint's `rolls` are bounded here (stage 6 design §2 D8).
  *
  * `rolls` grows for as long as the table plays and nothing ever removed an entry, so a long
- * session's checkpoint carried every die anyone had ever rolled. A roll is still LOAD-BEARING in
+ * session's checkpoint carried every die anyone had ever rolled — and a `RollRecord` is the fat
+ * part (a formula, a faces array, a seed, a purpose…). A record is still LOAD-BEARING in
  * exactly two cases: nobody has answered with it yet (a player who rolled ahead must still be
  * able to spend it), or the action that spent it is an intent a reaction window still holds open
  * in `declared` — resolving that window re-runs the programme over the same answers. Everything
  * else has already been folded into the state the checkpoint carries, and the log entry that
  * recorded it is what the presenter reads for history.
  *
- * `spent` is pruned with `rolls`, so the pair stays consistent: an id no longer in `rolls`
- * cannot be re-spent (`rollsUsable` skips a roll the state does not hold), and one still in
- * `rolls` keeps its guard.
+ * `spent` is deliberately NOT pruned. It is the "one roll, one verdict" ledger (ADR-0010): two
+ * ids, ~4 JSON nodes an entry, against a `RollRecord`'s ~15. Forgetting an entry would let an
+ * intent re-sent with the same roll id — the ordinary offline retry, where the append timed out
+ * and the retry carries a fresh action id — APPLY on a client folding from the checkpoint while
+ * it is rejected on one still inside the grace window, and `revision` (what `basedOn` compares)
+ * would diverge. `rollsUsable` (`resolve.ts`) therefore consults `spent` BEFORE it looks for the
+ * record, so the guard survives the record's removal.
  */
 function pruneRolls(state: FoldedState): FoldedState {
   const doomed = Object.keys(state.rolls).filter((id) => {
@@ -150,9 +155,6 @@ function pruneRolls(state: FoldedState): FoldedState {
     ...state,
     rolls: Object.fromEntries(
       Object.entries(state.rolls).filter(([id]) => !gone.has(id))
-    ),
-    spent: Object.fromEntries(
-      Object.entries(state.spent).filter(([id]) => !gone.has(id))
     ),
   };
 }

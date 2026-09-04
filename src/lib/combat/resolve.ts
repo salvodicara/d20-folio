@@ -42,7 +42,8 @@ function referencedRolls(answers: Answers): string[] {
 /**
  * A roll is consumed by at most one action, and by the entity it was rolled for (ADR-0010):
  * a second action answering with the same roll is rejected, so one natural 20 never yields
- * two verdicts. A roll the state does not hold yet falls through to `missing-answer`. A roll
+ * two verdicts — and that verdict outlives compaction, which drops the record but keeps the
+ * `spent` entry. A roll the state does not hold yet falls through to `missing-answer`. A roll
  * referenced under a per-target answer key (`${input}:${target}`, e.g. a Fireball save keyed
  * `save:goblin-1`) may also be attributed to that target: the target's own save roll answers
  * its own key even though the acting entity is the caster.
@@ -63,11 +64,15 @@ function rollsUsable(
       continue;
     }
     const id = value.roll;
-    const record = state.rolls[id];
-    if (!record) continue;
+    // `spent` FIRST, before the record is even looked for: compaction drops a settled roll's
+    // RECORD but keeps its `spent` entry (`checkpoint.ts` `pruneRolls`), so a roll consumed
+    // before a checkpoint must still read as consumed after one. Reading the record first would
+    // make the guard depend on which side of the checkpoint the client is folding from.
     const by = state.spent[id];
     if (by !== undefined && by !== action.id)
       return { reason: "roll-consumed", roll: id, by };
+    const record = state.rolls[id];
+    if (!record) continue;
     const at = key.indexOf(":");
     const perTarget = at > 0 ? key.slice(at + 1) : null;
     const usable =

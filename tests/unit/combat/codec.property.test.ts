@@ -984,21 +984,33 @@ describe("compaction — the fold is unchanged by the checkpoint, rolls pruned (
       const compacted = compact(encounter, catalogue, cut.seq);
       const before = fold(encounter, catalogue).state;
       const after = fold(compacted, catalogue).state;
+      // `revision` and `relations` are in the list on purpose: an action that flips from
+      // rejected to applied across the checkpoint changes `revision` (what `basedOn` compares)
+      // long before it changes anything visible, so this is the assertion that would catch it.
       for (const key of [
         "entities",
         "clock",
         "effects",
         "windows",
         "mechanics",
+        "relations",
+        "revision",
       ] as const) {
         expect(after[key], `seed ${seed}: ${key}`).toEqual(before[key]);
       }
-      // The pruning is real: a checkpoint never keeps a roll whose consumer has settled.
+      // The pruning is real: a checkpoint never keeps the RECORD of a roll whose consumer has
+      // settled — while `spent` keeps every verdict, compacted or not.
       const state = compacted.checkpoint?.state;
       if (state === undefined) throw new Error(`seed ${seed}: no checkpoint`);
-      for (const [id, by] of Object.entries(state.spent)) {
-        expect(state.declared[by], `seed ${seed}: roll ${id}`).toBeDefined();
+      for (const id of Object.keys(state.rolls)) {
+        const by = state.spent[id];
+        if (by !== undefined) {
+          expect(state.declared[by], `seed ${seed}: roll ${id}`).toBeDefined();
+        }
       }
+      expect(state.spent, `seed ${seed}: spent survives compaction`).toEqual(
+        fold({ ...encounter, log: headOf(encounter, cut.seq) }, catalogue).state.spent
+      );
       const head = fold({ ...encounter, log: headOf(encounter, cut.seq) }, catalogue);
       pruned += Object.keys(head.state.rolls).length - Object.keys(state.rolls).length;
       kept += Object.keys(state.rolls).length;

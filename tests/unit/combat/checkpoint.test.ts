@@ -552,7 +552,42 @@ describe("combat/checkpoint — bounded rolls (stage 6 §2 D8)", () => {
     const state = compacted.checkpoint?.state;
     if (state === undefined) throw new Error("expected a checkpoint");
     expect(Object.keys(state.rolls).sort()).toEqual(["roll-ahead", "roll-held"]);
-    expect(Object.keys(state.spent)).toEqual(["roll-held"]);
+    // `spent` is NOT pruned: it is the "one roll, one verdict" ledger, four nodes per entry,
+    // and forgetting it would let a re-sent intent spend a roll a second time.
+    expect(Object.keys(state.spent).sort()).toEqual(["roll-held", "roll-settled"]);
+  });
+
+  it("a roll stays consumed across the checkpoint — a re-sent intent is still rejected", () => {
+    // The offline-first retry: a client's append times out, the retry lands with a FRESH action
+    // id and the same `answers` after the DM has checkpointed. "One roll, one verdict"
+    // (ADR-0010) must not depend on which side of the checkpoint the reader is on.
+    const e = encounter();
+    const through = at(sortBySeq(e.log), e.log.length - 1).seq;
+    const compacted = compact(e, catalogue, through);
+    const retry: Action = {
+      kind: "intent",
+      id: "i-retry",
+      seq: { ms: 900_000, counter: 0, by: "p1" },
+      by: "p1",
+      entity: "ranger",
+      mechanic: "srd:weapon:shortsword",
+      program: "attack",
+      targets: ["monster-1"],
+      answers: { roll: { roll: "roll-settled" }, damage: 4 },
+      payment: [],
+      window: null,
+      basedOn: 0,
+    };
+    const expected = {
+      action: "i-retry",
+      rejection: { reason: "roll-consumed", roll: "roll-settled", by: "i-settled" },
+    };
+    const uncompacted = fold({ ...e, log: [...e.log, retry] }, catalogue);
+    const across = fold({ ...compacted, log: [...compacted.log, retry] }, catalogue);
+    expect(uncompacted.rejections).toContainEqual(expected);
+    expect(across.rejections).toContainEqual(expected);
+    expect(across.state.entities).toEqual(uncompacted.state.entities);
+    expect(across.state.revision).toBe(uncompacted.state.revision);
   });
 
   it("pruning never changes what the document folds to", () => {
