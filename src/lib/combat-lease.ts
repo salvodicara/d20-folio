@@ -115,17 +115,34 @@ export async function joinTable(args: {
 }
 
 /**
- * `table:leave`: append the leave action to the campaign encounter, fold the entity back into
- * the owner's personal aggregate as a `table:sync` action, and clear the lease — in one batch.
+ * What the leaving client writes back into its OWN personal document at
+ * `users/{uid}/characters/{characterId}/combat/state`.
  *
- * `personal === null` means the personal document DOES NOT EXIST, so the sync is written as the
- * first action of a fresh personal `Encounter` (`set`, not `update`). That is the whole
- * contract, and it is narrow on purpose: the path aliases the live `CombatState` document
- * today's cockpit owns (see `personalEncounterRef` in `combat-io.ts`), so a document that did
- * NOT parse is not `null` — it is a legacy `CombatState`, and passing `null` for it would
- * overwrite a live play session. A quarantined or legacy document goes through the stage-6
- * cutover (snapshot → dry-run → idempotent apply → verify) instead; a caller must never pass
- * `null` for one.
+ * Two shapes, because the document has two lives (stage 6 design §5, D1):
+ *
+ * - `encounter` — the personal aggregate as an `Encounter`. `encounter: null` means the document
+ *   DOES NOT EXIST, so the sync is written as the first action of a fresh one (`set`, not
+ *   `update`). That branch is narrow on purpose: the path ALIASES the live `CombatState` the old
+ *   cockpit owns (see `personalEncounterRef` in `combat-io.ts`), so a document that did not parse
+ *   is not "missing" — it is a legacy `CombatState`, and passing `null` for it would overwrite a
+ *   live play session.
+ * - `document` — **the stage-6 variant, and its named fate: it dies with the old sheet at item
+ *   8.** While D1 holds, the personal document stays a `CombatState` carrying the character's
+ *   whole play session, so leaving a table writes the projected document (built by
+ *   `projectCombatState`, `combat-state-writeback.ts`) VERBATIM — no sync action, no `Encounter`
+ *   envelope. Item 8 replaces this variant with the `encounter` one and its migration.
+ */
+export type PersonalWriteBack =
+  | { readonly kind: "encounter"; readonly encounter: Encounter | null }
+  | { readonly kind: "document"; readonly data: Record<string, unknown> };
+
+/**
+ * `table:leave`: append the leave action to the campaign encounter, write the entity back into
+ * the owner's personal document, and clear the lease — in one batch.
+ *
+ * The write-back's shape is `personal`'s (see {@link PersonalWriteBack}). `sync` is the envelope
+ * of the `table:sync` action the `encounter` variant appends; the `document` variant carries the
+ * fight's outcome in `data` itself and never mints one.
  */
 export async function leaveTable(args: {
   readonly db: Firestore;
@@ -139,7 +156,7 @@ export async function leaveTable(args: {
   readonly mechanics: readonly Mechanic[];
   readonly leave: { readonly id: string; readonly seq: Seq };
   readonly sync: { readonly id: string; readonly seq: Seq };
-  readonly personal: Encounter | null;
+  readonly personal: PersonalWriteBack;
 }): Promise<void> {
   const {
     db,
@@ -175,7 +192,9 @@ export async function leaveTable(args: {
   });
 
   const personalRef = personalEncounterRef(db, uid, characterId);
-  if (personal === null) {
+  if (personal.kind === "document") {
+    batch.set(personalRef, personal.data);
+  } else if (personal.encounter === null) {
     const fresh: Encounter = {
       schema: 1,
       id: "personal",

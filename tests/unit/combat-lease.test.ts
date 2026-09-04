@@ -1,26 +1,52 @@
 /**
  * `readLease` — shape-tolerant reader of the character parent doc's `lease` field
- * (design §5.2). `readLease` itself is pure, but `@/lib/combat-lease` also exports the
- * `joinTable`/`leaveTable` batch writers (proven end to end by the emulator suite, task 8) and
- * transitively imports `./combat-io`, so the module graph reaches `firebase/firestore` at
- * import time. Mock it here — never move `readLease` to another module to dodge this — so this
- * file stays Firebase-free in CI (tests/unit/pure-modules-guard.test.ts).
+ * (design §5.2) — and `leaveTable`'s WRITE-BACK routing (stage 6 design §5): which of the two
+ * personal shapes the batch writes, and with which verb.
+ *
+ * `readLease` itself is pure, but `@/lib/combat-lease` also exports the `joinTable`/`leaveTable`
+ * batch writers (proven end to end by the emulator suite) and transitively imports
+ * `./combat-io`, so the module graph reaches `firebase/firestore` at import time. Mock it here —
+ * never move `readLease` to another module to dodge this — so this file stays Firebase-free in
+ * CI (tests/unit/pure-modules-guard.test.ts).
+ *
+ * The `firebase/firestore` fake is a RECORDER, not a stub: `doc(...)` returns the joined path,
+ * `writeBatch` a batch that appends every call to a list. That is enough to assert the one thing
+ * a unit can assert about a write seam — WHICH document is written, with which verb and payload
+ * — while the emulator lane proves the same batch against the real rules.
  */
 import { describe, expect, it, vi } from "vitest";
 
+/** Every `set`/`update` the batch under test recorded, in order. */
+interface Write {
+  readonly verb: "set" | "update";
+  readonly path: string;
+  readonly data: unknown;
+}
+const writes: Write[] = [];
+let committed = 0;
+
 vi.mock("firebase/firestore", () => ({
-  arrayUnion: vi.fn(),
-  deleteField: vi.fn(),
+  arrayUnion: vi.fn((...values: unknown[]) => ({ arrayUnion: values })),
+  deleteField: vi.fn(() => ({ deleteField: true })),
   deleteDoc: vi.fn(),
-  doc: vi.fn(),
+  doc: vi.fn((_db: unknown, ...segments: string[]) => segments.join("/")),
   onSnapshot: vi.fn(),
   runTransaction: vi.fn(),
   setDoc: vi.fn(),
   updateDoc: vi.fn(),
-  writeBatch: vi.fn(),
+  writeBatch: vi.fn(() => ({
+    set: (path: string, data: unknown) => writes.push({ verb: "set", path, data }),
+    update: (path: string, data: unknown) => writes.push({ verb: "update", path, data }),
+    commit: () => {
+      committed += 1;
+      return Promise.resolve();
+    },
+  })),
 }));
 
-import { readLease } from "@/lib/combat-lease";
+import { leaveTable, readLease, type PersonalWriteBack } from "@/lib/combat-lease";
+import type { Encounter } from "@/lib/combat/types";
+import { testEntity } from "@tests/unit/combat/__helpers__/entities";
 
 describe("readLease", () => {
   it("reads a well-formed lease", () => {
@@ -88,5 +114,91 @@ describe("readLease", () => {
     expect(
       readLease({ lease: { campaignId: "camp-1", encounterId: "enc-1", epoch: 0 } })
     ).toEqual({ campaignId: "camp-1", encounterId: "enc-1", epoch: 0 });
+  });
+});
+
+// ── `leaveTable`'s personal write-back (stage 6 design §5) ──────────────────
+
+const ENTITY = testEntity({ id: "pc-marco", kind: "pc", hp: 12 });
+
+async function leave(personal: PersonalWriteBack): Promise<void> {
+  writes.length = 0;
+  committed = 0;
+  await leaveTable({
+    db: {} as never,
+    uid: "u1",
+    characterId: "c1",
+    campaignId: "camp-1",
+    encounterId: "enc-1",
+    entity: ENTITY,
+    mechanics: [],
+    leave: { id: "leave-1", seq: { ms: 1, counter: 0, by: "u1" } },
+    sync: { id: "sync-1", seq: { ms: 2, counter: 0, by: "u1" } },
+    personal,
+  });
+}
+
+const PERSONAL = "users/u1/characters/c1/combat/state";
+const CHARACTER = "users/u1/characters/c1";
+const ENCOUNTER = "campaigns/camp-1/encounters/enc-1";
+
+function writeTo(path: string): Write {
+  const write = writes.find((candidate) => candidate.path === path);
+  if (write === undefined) {
+    throw new Error(`no write to ${path} (got ${writes.map((w) => w.path).join(", ")})`);
+  }
+  return write;
+}
+
+describe("leaveTable's personal write-back", () => {
+  it("always appends the leave action and clears the lease, whichever shape is written back", async () => {
+    await leave({ kind: "document", data: { hp: { current: 12, temp: 0 } } });
+    expect(writeTo(ENCOUNTER).verb).toBe("update");
+    expect(writeTo(CHARACTER).data).toEqual({ lease: { deleteField: true } });
+    expect(committed).toBe(1);
+  });
+
+  it("sets the personal document VERBATIM for the `document` variant", async () => {
+    const data = {
+      hp: { current: 12, temp: 3 },
+      conditions: ["prone"],
+      deathSaves: { successes: 0, failures: 1 },
+      round: 4,
+      playState: { version: 1, state: { exhaustion: 2 } },
+    };
+    await leave({ kind: "document", data });
+    const write = writeTo(PERSONAL);
+    expect(write.verb).toBe("set");
+    expect(write.data).toEqual(data);
+  });
+
+  it("never writes a sync action for the `document` variant", async () => {
+    await leave({ kind: "document", data: { round: 1 } });
+    expect(JSON.stringify(writeTo(PERSONAL).data)).not.toContain("sync-1");
+  });
+
+  it("sets a fresh personal Encounter when the `encounter` variant carries none", async () => {
+    await leave({ kind: "encounter", encounter: null });
+    const write = writeTo(PERSONAL);
+    expect(write.verb).toBe("set");
+    const data = write.data as { host: unknown; log: { id: string }[] };
+    expect(data.host).toEqual({ kind: "personal", uid: "u1", characterId: "c1" });
+    expect(data.log.map((action) => action.id)).toEqual(["sync-1"]);
+  });
+
+  it("appends the sync action to an existing personal Encounter", async () => {
+    const existing: Encounter = {
+      schema: 1,
+      id: "personal",
+      host: { kind: "personal", uid: "u1", characterId: "c1" },
+      log: [],
+      checkpoint: null,
+    };
+    await leave({ kind: "encounter", encounter: existing });
+    const write = writeTo(PERSONAL);
+    expect(write.verb).toBe("update");
+    expect(write.data).toEqual({
+      log: { arrayUnion: [expect.objectContaining({ id: "sync-1" })] },
+    });
   });
 });

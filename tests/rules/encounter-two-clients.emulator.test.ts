@@ -72,6 +72,8 @@ import {
   subscribeEncounter,
 } from "@/lib/combat-io";
 import { joinTable, leaveTable, readLease } from "@/lib/combat-lease";
+import { projectCombatState } from "@/lib/combat-state-writeback";
+import type { CombatState } from "@/types/combat-state";
 import { testEntity } from "@tests/unit/combat/__helpers__/entities";
 import {
   firstOf,
@@ -266,6 +268,21 @@ const LEASE_MECHANICS: readonly Mechanic[] = PROTOTYPE_MECHANICS.filter((mechani
   LEASE_ENTITY.mechanics.includes(mechanic.id)
 );
 const LEASE_EPOCH = 7;
+
+/**
+ * The LEGACY personal document the stage-6 write-back lands on (design §5, D1): the combat trio
+ * the two models share, plus the play session only the old sheet understands. `playState` is the
+ * field the assertion is really about — the write-back must never cost a player their slots.
+ */
+const PREVIOUS_COMBAT_STATE: CombatState = {
+  hp: { current: 25, temp: 0 },
+  conditions: ["poisoned"],
+  initiativeRoll: 12,
+  deathSaves: { successes: 0, failures: 0 },
+  round: 3,
+  recentActions: [],
+  playState: { version: 1, state: { exhaustion: 1 } },
+};
 
 /**
  * Seat every author at the table, open the encounter as the DM, optionally lease a PC in, then
@@ -639,7 +656,7 @@ describe("the stage gate — Marco's first turn on two clients", () => {
       mechanics: LEASE_MECHANICS,
       leave: { id: "lease-leave", seq: { ms: 90_000, counter: 0, by: "p-marco" } },
       sync: { id: "lease-sync", seq: { ms: 90_001, counter: 0, by: "p-marco" } },
-      personal: null,
+      personal: { kind: "encounter", encounter: null },
     });
     await waitFor(
       () =>
@@ -666,6 +683,84 @@ describe("the stage gate — Marco's first turn on two clients", () => {
       throw new Error(`expected a table:sync, got ${JSON.stringify(sync)}`);
     }
     expect(sync.table.entity).toEqual(folded);
+
+    const character = await getDoc(
+      doc(marco.db, "users", "p-marco", "characters", CHARACTER)
+    );
+    expect(readLease(character.data())).toBeNull();
+  });
+
+  /**
+   * Stage 6's write-back while D1 holds: the personal document is a LEGACY `CombatState`
+   * carrying the character's whole play session, so leaving the table writes the projected
+   * document over it — the fight's HP, temp HP, conditions and death saves, and not one field
+   * of `playState` lost. This whole variant dies with the old sheet at item 8.
+   */
+  it("writes the fight's outcome onto a legacy CombatState document when the write-back is a document", async () => {
+    const marco = table.client("p-marco");
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(
+        doc(
+          ctx.firestore(),
+          "users",
+          "p-marco",
+          "characters",
+          CHARACTER,
+          "combat",
+          "state"
+        ),
+        PREVIOUS_COMBAT_STATE
+      );
+    });
+
+    // The DM's last word lands on the leased PC before it goes home, so the document under test
+    // carries a number the fight produced rather than the one the join carried in.
+    await appendAction(table.dm.ref, override("x-hp", 22_000, "dm", LEASE_ENTITY.id, 4));
+    await converge(
+      table.clients,
+      table.baseApplied + 1,
+      "the DM's override on the leased PC"
+    );
+
+    const state = table.dm.view().state;
+    const folded = entityOf(state, LEASE_ENTITY.id);
+    await leaveTable({
+      db: marco.db,
+      uid: "p-marco",
+      characterId: CHARACTER,
+      campaignId: CAMPAIGN,
+      encounterId: ENCOUNTER,
+      entity: folded,
+      mechanics: LEASE_MECHANICS,
+      leave: { id: "lease-leave", seq: { ms: 90_000, counter: 0, by: "p-marco" } },
+      sync: { id: "lease-sync", seq: { ms: 90_001, counter: 0, by: "p-marco" } },
+      personal: {
+        kind: "document",
+        data: projectCombatState(
+          PREVIOUS_COMBAT_STATE,
+          folded,
+          Object.values(state.effects)
+        ) as unknown as Record<string, unknown>,
+      },
+    });
+    await waitFor(
+      () =>
+        table.clients.every(
+          (c) =>
+            c.latest() !== null && c.view().state.entities[LEASE_ENTITY.id] === undefined
+        ),
+      "the leased PC to leave every client's fold"
+    );
+
+    const personal = await getDoc(personalEncounterRef(marco.db, "p-marco", CHARACTER));
+    expect(personal.data()).toEqual({
+      ...PREVIOUS_COMBAT_STATE,
+      hp: { current: 4, temp: folded.vitals.tempHp?.amount ?? 0 },
+      conditions: [],
+      deathSaves: folded.vitals.deathSaves,
+    });
+    // It is still a `CombatState`, not an `Encounter`: D1's whole point.
+    expect(parseEncounter(personal.data()).ok).toBe(false);
 
     const character = await getDoc(
       doc(marco.db, "users", "p-marco", "characters", CHARACTER)
