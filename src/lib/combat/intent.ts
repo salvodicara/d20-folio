@@ -286,16 +286,21 @@ function deliverDamage(
   return next;
 }
 
-/** A numeric answer, given directly or as the total of an accepted `roll` action. */
+/** A numeric answer, given directly or as the total of an accepted `roll` action. Total like
+ *  `answerPosition`: a persisted log may carry a malformed answer (`null` included, whose
+ *  `typeof` is `"object"`), and this helper reports it missing rather than throwing. */
 function answerNumber(
   state: FoldedState,
   answers: IntentAction["answers"],
   key: string
 ): number | null {
-  const value = answers[key];
+  // `unknown`, not `Answer`: a persisted log may carry an answer the union does not describe.
+  const value: unknown = answers[key];
   if (typeof value === "number") return value;
-  if (typeof value === "object" && "roll" in value) {
-    return state.rolls[value.roll]?.total ?? null;
+  if (typeof value === "object" && value !== null && "roll" in value) {
+    return typeof value.roll === "string"
+      ? (state.rolls[value.roll]?.total ?? null)
+      : null;
   }
   return null;
 }
@@ -842,7 +847,11 @@ export function applyIntent(
         position: e.position,
       }));
       const targets = program.targets;
-      effectiveTargets = areaMembership(resolved.shape, candidates).filter((target) => {
+      // Sorted before filtering: membership follows `Object.values(state.entities)`, whose key
+      // enumeration order must never decide the fold order — every client folds the same log and
+      // has to derive the same per-target sequence.
+      const derived = [...areaMembership(resolved.shape, candidates)].sort();
+      effectiveTargets = derived.filter((target) => {
         const ctx: EvalContext = {
           self: action.entity,
           target,
@@ -900,14 +909,9 @@ export function applyIntent(
       declared: action.id,
     };
     const declaredEntry = { ...effectiveAction, payment: [] };
-    // Opening a window is bookkeeping, not a verdict, so it always lands; only the cost
-    // (ledger/resources, carried by `paidState` vs the original `state`) is gated (ADR-0011).
-    const withheld: FoldedState = {
-      ...state,
-      nextOrdinal: paidState.nextOrdinal + 1,
-      windows: [...state.windows, window],
-      declared: { ...state.declared, [action.id]: declaredEntry },
-    };
+    // A log-only table withholds the declaration itself — the reactor's reaction would be
+    // withheld too, and a window declared unpaid must never resolve into an unpaid outcome after
+    // a level switch — so nothing lands: no window, no `declared` entry, no cost (ADR-0011).
     const appliedState: FoldedState = {
       ...paidState,
       nextOrdinal: paidState.nextOrdinal + 1,
@@ -916,7 +920,7 @@ export function applyIntent(
     };
     return {
       kind: "applied",
-      state: commitAt(state.settings.automation, withheld, appliedState),
+      state: commitAt(state.settings.automation, state, appliedState),
       receipt: {
         action: action.id,
         outcome: "applied",
@@ -984,21 +988,14 @@ export function applyResolve(
   const remaining = Object.fromEntries(
     Object.entries(closed.declared).filter(([id]) => id !== declared.id)
   );
-  const run = runProgram(
-    { ...closed, declared: remaining },
-    program,
-    declared,
-    null,
-    events,
-    {
-      catalogue,
-      hold: false,
-      eventEntity: null,
-    }
-  );
+  const base: FoldedState = { ...closed, declared: remaining };
+  const run = runProgram(base, program, declared, null, events, {
+    catalogue,
+    hold: false,
+    eventEntity: null,
+  });
   if ("reason" in run) return rejected(run);
   if (run.kind === "held") return rejected({ reason: "no-window", window: window.id });
-  const base: FoldedState = { ...closed, declared: remaining };
   const receipt: Receipt = {
     action: action.id,
     outcome: receiptOutcome(run.created.length, run.dealt, run.tried),
@@ -1120,32 +1117,44 @@ export function applyDeclare(
 
 const LIFE_STATES = new Set<LifeState>(["alive", "dying", "stable", "dead"]);
 
+/** Widened to `ReadonlySet<string>` so an arbitrary persisted string is *tested*, not asserted
+ *  into the union before the test; the predicate is the only narrowing. */
+function isLifeState(value: string): value is LifeState {
+  return (LIFE_STATES as ReadonlySet<string>).has(value);
+}
+
 /** Paths that are persisted facts, not read-time-derived stats (like `stats.ac`): an override
  *  here directly corrects the fact, the same way a later `declare` replaces a relation, rather
  *  than layering on top of a formula consulted at read time. An HP override above zero revives
  *  a dying/stable creature exactly as `applyHealing` does; `dead` stays dead until the DM
- *  overrides `vitals.life` explicitly. HP is clamped at 0; no upper bound. */
+ *  overrides `vitals.life` explicitly. HP is clamped at 0; no upper bound. Dropping a creature
+ *  to 0 by hand means the same thing as dropping it there by damage, so it takes `applyDamage`'s
+ *  0-HP rule — `dying` for a PC, `dead` for everything else — and leaves the death saves alone;
+ *  a creature already at 0 is not re-downed. */
 function patchDirectOverride(entity: Entity, path: string, value: unknown): Entity {
   if (path === "vitals.hp" && typeof value === "number" && Number.isFinite(value)) {
     const { life, deathSaves } = entity.vitals;
     const hp = Math.max(0, value);
     const revived = hp > 0 && (life === "dying" || life === "stable");
+    const downed = hp === 0 && entity.vitals.hp > 0;
     return {
       ...entity,
       vitals: {
         ...entity.vitals,
         hp,
-        life: revived ? "alive" : life,
+        life: revived
+          ? "alive"
+          : downed
+            ? entity.kind === "pc"
+              ? "dying"
+              : "dead"
+            : life,
         deathSaves: revived ? { successes: 0, failures: 0 } : deathSaves,
       },
     };
   }
-  if (
-    path === "vitals.life" &&
-    typeof value === "string" &&
-    LIFE_STATES.has(value as LifeState)
-  ) {
-    return { ...entity, vitals: { ...entity.vitals, life: value as LifeState } };
+  if (path === "vitals.life" && typeof value === "string" && isLifeState(value)) {
+    return { ...entity, vitals: { ...entity.vitals, life: value } };
   }
   return entity;
 }

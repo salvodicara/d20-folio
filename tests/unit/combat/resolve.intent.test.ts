@@ -385,4 +385,20 @@ describe("resolve — intents", () => {
     expect(mustEntity(result.state, "ranger").resources["slot-3"]?.current).toBe(0);
     expect(result.receipt.paid).toEqual(["turn:action", "slot:3"]);
   });
+
+  it("a null answer is reported missing, not thrown on — the reducer stays total over a malformed log", () => {
+    const state = opened();
+    const result = resolve(
+      state,
+      intent("p1", "ranger", "srd:weapon:longbow", "attack", {
+        targets: ["monster-1"],
+        // `typeof null === "object"`: without the null guard this would throw on `"roll" in value`.
+        answers: { roll: null as unknown as number, damage: 5 },
+      }),
+      catalogue
+    );
+    expect(result.kind).toBe("rejected");
+    if (result.kind !== "rejected") return;
+    expect(result.rejection).toEqual({ reason: "missing-answer", input: "roll" });
+  });
 });

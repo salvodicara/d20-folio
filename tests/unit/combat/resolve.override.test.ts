@@ -53,8 +53,37 @@ describe("override — direct-patch paths actually change the fact, not just the
     expect(result.kind).toBe("applied");
     if (result.kind !== "applied") return;
     expect(mustEntity(result.state, "hero").vitals.hp).toBe(0);
-    expect(mustEntity(result.state, "hero").vitals.life).toBe("alive");
+    expect(mustEntity(result.state, "hero").vitals.life).toBe("dying"); // a PC dropped by hand
     expect(mustEntity(result.state, "hero").overrides["vitals.hp"]?.value).toBe(-5);
+  });
+
+  it("vitals.hp to zero downs a PC exactly as damage would: dying, death saves untouched", () => {
+    const state = opened({ deathSaves: { successes: 1, failures: 1 } });
+    const result = resolve(state, override("vitals.hp", 0), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(mustEntity(result.state, "hero").vitals).toMatchObject({
+      hp: 0,
+      life: "dying",
+      deathSaves: { successes: 1, failures: 1 },
+    });
+  });
+
+  it("vitals.hp to zero kills a monster outright, the way applyDamage does", () => {
+    const state = opened({ kind: "monster" });
+    const result = resolve(state, override("vitals.hp", 0), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(mustEntity(result.state, "hero").vitals.hp).toBe(0);
+    expect(mustEntity(result.state, "hero").vitals.life).toBe("dead");
+  });
+
+  it("vitals.hp to zero on a creature already at zero leaves its life state alone", () => {
+    const state = opened({ hp: 0, life: "stable" });
+    const result = resolve(state, override("vitals.hp", 0), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(mustEntity(result.state, "hero").vitals.life).toBe("stable");
   });
 
   it("vitals.life: the DM's last word on death — dying can be overridden to stable", () => {
@@ -92,6 +121,16 @@ describe("override — direct-patch paths actually change the fact, not just the
     if (result.kind !== "applied") return;
     expect(mustEntity(result.state, "hero").vitals.life).toBe("dead");
     expect(mustEntity(result.state, "hero").vitals.hp).toBe(5);
+  });
+
+  it("vitals.life: a string outside the whitelist is recorded but never becomes a life state", () => {
+    const result = resolve(opened(), override("vitals.life", "zombie"), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(mustEntity(result.state, "hero").vitals.life).toBe("alive"); // unchanged
+    expect(mustEntity(result.state, "hero").overrides["vitals.life"]?.value).toBe(
+      "zombie"
+    );
   });
 
   it("a malformed override (wrong type) is still recorded but never corrupts the live field", () => {

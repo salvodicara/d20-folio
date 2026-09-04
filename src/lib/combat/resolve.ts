@@ -28,10 +28,18 @@ function applied(state: FoldedState, receipt: Receipt): Resolution {
   return { kind: "applied", state: { ...state, revision: state.revision + 1 }, receipt };
 }
 
-/** The roll ids an action answers with. */
+/** The roll ids an action answers with. Total over a malformed persisted answer (`null`
+ *  included, whose `typeof` is `"object"`): a bad answer is simply not a roll reference, and the
+ *  step that needs it rejects with `missing-answer` further down. */
 function referencedRolls(answers: Answers): string[] {
-  return Object.values(answers).flatMap((value) =>
-    typeof value === "object" && "roll" in value ? [value.roll] : []
+  // `unknown`, not `Answer`: a persisted log may carry an answer the union does not describe.
+  return Object.values<unknown>(answers).flatMap((value) =>
+    typeof value === "object" &&
+    value !== null &&
+    "roll" in value &&
+    typeof value.roll === "string"
+      ? [value.roll]
+      : []
   );
 }
 

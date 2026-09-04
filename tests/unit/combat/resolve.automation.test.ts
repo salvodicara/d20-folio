@@ -102,7 +102,7 @@ describe("automation — log-only computes the verdict but applies nothing (ADR-
     expect(mustEntity(result.state, "hero").turn.attacksUsed).toBe(1);
   });
 
-  it("at log-only, an attack that opens a reaction window withholds the cost too", () => {
+  it("at log-only, an attack that would open a reaction window commits nothing at all", () => {
     const shieldedFoe = testEntity({
       id: "monster-1",
       kind: "monster",
@@ -131,8 +131,15 @@ describe("automation — log-only computes the verdict but applies nothing (ADR-
     if (result.kind !== "applied") return;
     expect(mustEntity(result.state, "hero").turn.attacksUsed).toBe(0);
     expect(mustEntity(result.state, "hero").turn.action).toBe(0);
-    expect(result.state.windows).toHaveLength(1);
-    expect(result.state.declared[held.id]).toBeDefined();
+    // The declaration itself is withheld: a window declared unpaid must never resolve into an
+    // unpaid outcome after a level switch, and the reactor's reaction would be withheld too.
+    expect(result.state.windows).toEqual([]);
+    expect(result.state.declared).toEqual({});
+    expect(result.state.nextOrdinal).toBe(state.nextOrdinal);
+    expect(result.state.revision).toBe(state.revision + 1); // the action is still logged
+    expect(result.receipt.events).toEqual([
+      { kind: "attack-declared", attacker: "hero", target: "monster-1", action: held.id },
+    ]);
   });
 
   it("at log-only, a real departure from reach does not open the run-internal opportunity window", () => {

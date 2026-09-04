@@ -257,7 +257,11 @@ export function applyTable(state: FoldedState, op: TableOp): TableResult {
         kind: "applied",
         state: {
           ...state,
-          settings: { revealMonsterHp: op.revealMonsterHp, automation: op.automation },
+          settings: {
+            ...state.settings,
+            revealMonsterHp: op.revealMonsterHp,
+            automation: op.automation,
+          },
         },
         events,
       };
