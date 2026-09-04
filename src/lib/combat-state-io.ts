@@ -106,6 +106,21 @@ function parsedCombatState(data: unknown): CombatState {
   return result.state;
 }
 
+/** What a snapshot's metadata says about WHERE it came from. */
+export interface CombatStateMeta {
+  /** A LOCAL optimistic echo, not yet acknowledged by the server. */
+  readonly hasPendingWrites: boolean;
+  /**
+   * The snapshot was served from the offline cache, so it may be older than the document.
+   *
+   * Firestore's FIRST delivery is normally the cache, which is exactly right for painting a
+   * screen and exactly wrong for a read whose result is about to be written back over the
+   * document (`leaveTable`'s whole-document overwrite). A caller that reads to WRITE must wait
+   * for `fromCache === false`; a caller that reads to RENDER should not.
+   */
+  readonly fromCache: boolean;
+}
+
 /**
  * Subscribe to the live `combat/state` subdoc. `cb(null)` when the doc is ABSENT — the
  * child is the SOLE play owner, so every caller on the Firestore path treats that as an
@@ -115,7 +130,7 @@ function parsedCombatState(data: unknown): CombatState {
 export function subscribeCombatState(
   uid: string,
   charId: string,
-  cb: (state: CombatState | null, meta: { hasPendingWrites: boolean }) => void,
+  cb: (state: CombatState | null, meta: CombatStateMeta) => void,
   onError?: (err: Error) => void
 ): () => void {
   if (devBypassEnabled()) {
@@ -123,8 +138,10 @@ export function subscribeCombatState(
       DEV_COMBAT_COLLECTION,
       devCombatId(uid, charId),
       (state) => {
+        // The dev replica IS the document: there is no server behind it and no cache in
+        // front of it, so every delivery is authoritative.
         if (!state) {
-          cb(null, { hasPendingWrites: false });
+          cb(null, { hasPendingWrites: false, fromCache: false });
           return;
         }
         const parsed = parseCombatState(state);
@@ -133,7 +150,7 @@ export function subscribeCombatState(
           onError?.(new TypeError(`Invalid combat state: ${parsed.reason}`));
           return;
         }
-        cb(parsed.state, { hasPendingWrites: false });
+        cb(parsed.state, { hasPendingWrites: false, fromCache: false });
       }
     );
   }
@@ -147,7 +164,10 @@ export function subscribeCombatState(
       // SERVER-originated update (false) — the own-sheet undo stack's remote fence
       // reads it so a snapshot-leg undo never clobbers another writer's edit.
       if (!snap.exists()) {
-        cb(null, { hasPendingWrites: snap.metadata.hasPendingWrites });
+        cb(null, {
+          hasPendingWrites: snap.metadata.hasPendingWrites,
+          fromCache: snap.metadata.fromCache,
+        });
         return;
       }
       const parsed = parseCombatState(snap.data());
@@ -156,7 +176,10 @@ export function subscribeCombatState(
         onError?.(new TypeError(`Invalid combat state: ${parsed.reason}`));
         return;
       }
-      cb(parsed.state, { hasPendingWrites: snap.metadata.hasPendingWrites });
+      cb(parsed.state, {
+        hasPendingWrites: snap.metadata.hasPendingWrites,
+        fromCache: snap.metadata.fromCache,
+      });
     },
     (err) => onError?.(err)
   );

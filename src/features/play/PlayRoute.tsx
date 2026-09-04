@@ -31,6 +31,7 @@ import { createSeqClock, createEncounter, newActionId } from "@/lib/combat-io";
 import { joinTable, leaveTable } from "@/lib/combat-lease";
 import { encodeLegacyWriteBack } from "@/lib/combat-state-writeback";
 import { subscribeCombatState } from "@/lib/combat-state-io";
+import { readServerCombatState } from "./table/personal-state";
 import { projectCharacter } from "@/lib/combat-projection";
 import { projectMonster } from "@/lib/combat/monster-entity";
 import { db } from "@/lib/firebase";
@@ -42,7 +43,6 @@ import { useCampaignSubscription } from "@/features/campaigns/useCampaignSubscri
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useAuthStore } from "@/stores/authStore";
-import type { CombatState } from "@/types/combat-state";
 import type { MonsterStatBlock } from "@/data/types";
 import type { Entity } from "@/lib/combat/types";
 import type { EntityId } from "@/lib/combat/ids";
@@ -53,24 +53,6 @@ import { useTable } from "./table/use-table";
 import type { CreatureOption } from "./AddCreature";
 
 const { catalogue } = buildCatalogue(CORE_MECHANICS);
-
-/** The live document read once, so the write-back is projected onto what is actually there. */
-function readCombatState(uid: string, characterId: string): Promise<CombatState | null> {
-  return new Promise((resolve, reject) => {
-    const stop = subscribeCombatState(
-      uid,
-      characterId,
-      (state) => {
-        stop();
-        resolve(state);
-      },
-      (error) => {
-        stop();
-        reject(error);
-      }
-    );
-  });
-}
 
 /**
  * The composed bestiary, resolved ONCE for the DM.
@@ -230,25 +212,27 @@ export function PlayRoute() {
       if (!characterId || !state) return;
       const entity = state.entities[entityId];
       if (!entity) return;
-      void readCombatState(uid, characterId).then((previous) => {
-        // No live document means the sheet's own integrity failure, not a fresh character:
-        // leaving would overwrite nothing with something. The table op is skipped rather
-        // than half-applied.
-        if (!previous) return;
-        return leaveTable({
-          db,
-          uid,
-          characterId,
-          campaignId,
-          encounterId: LIVE_ENCOUNTER_ID,
-          entity,
-          leave: { id: newActionId(), seq: seq() },
-          personal: {
-            kind: "document",
-            data: encodeLegacyWriteBack(previous, entity, Object.values(state.effects)),
-          },
-        });
-      });
+      void readServerCombatState(subscribeCombatState, uid, characterId).then(
+        (previous) => {
+          // No live document means the sheet's own integrity failure, not a fresh character:
+          // leaving would overwrite nothing with something. The table op is skipped rather
+          // than half-applied.
+          if (!previous) return;
+          return leaveTable({
+            db,
+            uid,
+            characterId,
+            campaignId,
+            encounterId: LIVE_ENCOUNTER_ID,
+            entity,
+            leave: { id: newActionId(), seq: seq() },
+            personal: {
+              kind: "document",
+              data: encodeLegacyWriteBack(previous, entity, Object.values(state.effects)),
+            },
+          });
+        }
+      );
     },
     [characterId, state, uid, campaignId, seq]
   );
