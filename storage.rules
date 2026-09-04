@@ -50,11 +50,15 @@ service firebase.storage {
       function isCampaignDm() {
         return request.auth != null && request.auth.uid == campaign().dmUid;
       }
-      allow read: if isAdmin() || isCampaignMember();
-      allow create, update: if (isAdmin() || isCampaignDm())
+      // The campaign predicate comes FIRST on purpose: a rules evaluation may touch at most
+      // two Firestore documents, and `isAdmin()` errors (never `false`) for a uid with no
+      // `users/{uid}` document — so the common case short-circuits after one read, and a DM
+      // whose profile document is missing is not locked out of the maps.
+      allow read: if isCampaignMember() || isAdmin();
+      allow create, update: if (isCampaignDm() || isAdmin())
         && request.resource.size <= 8 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
-      allow delete: if isAdmin() || isCampaignDm();
+      allow delete: if isCampaignDm() || isAdmin();
     }
 
     // Bug-report screenshots (OWN-37). The owner of the report uploads its own

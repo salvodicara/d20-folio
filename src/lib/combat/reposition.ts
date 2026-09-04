@@ -71,7 +71,13 @@ export function recomputeRelations(
   );
   if (at === null) return { state: { ...state, relations }, left: [] };
   const left: EntityId[] = [];
-  for (const other of Object.values(state.entities)) {
+  // Sorted by id, not enumeration order: a live fold holds insertion-ordered entity keys while a
+  // checkpoint parsed by `exact-schema` holds them canonically sorted, and "a compacted document
+  // folds to exactly the state the uncompacted one folds to" must hold for `relations` too.
+  const others = Object.values(state.entities).sort((a, b) =>
+    a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+  );
+  for (const other of others) {
     if (other.id === mover || other.position === null) continue;
     const feet = distanceFt(at, other.position);
     if (feet <= REACH_FT) relations.push({ kind: "adjacent", a: mover, b: other.id });

@@ -22,7 +22,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { doc, setDoc } from "firebase/firestore";
+import { deleteDoc, doc, setDoc } from "firebase/firestore";
 import { deleteObject, getBytes, listAll, ref, uploadBytes } from "firebase/storage";
 
 const PROJECT_ID = "demo-d20folio";
@@ -267,6 +267,41 @@ describe("storage rules — map backgrounds (campaigns/{campaignId}/maps/*)", ()
       uploadBytes(ref(storage, `campaigns/${CAMPAIGN}/maps/notes.txt`), PNG_BYTES, {
         contentType: "text/plain",
       })
+    );
+  });
+
+  it("a DM whose users/{uid} document is missing can still upload (the campaign predicate is evaluated first)", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await deleteDoc(doc(ctx.firestore(), "users", DM_UID));
+    });
+    const storage = testEnv.authenticatedContext(DM_UID).storage();
+    await assertSucceeds(
+      uploadBytes(ref(storage, `campaigns/${CAMPAIGN}/maps/m4.jpeg`), PNG_BYTES, JPEG)
+    );
+    await assertSucceeds(getBytes(ref(storage, MAP_PATH)));
+  });
+
+  it("the DM of another campaign is a non-member here: no read, no write", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "campaigns", "camp-other"), {
+        name: "Other",
+        createdBy: OUTSIDER_UID,
+        dmUid: OUTSIDER_UID,
+        members: [OUTSIDER_UID],
+        memberDetails: {},
+        status: "active",
+        inviteCode: "camp-other",
+        treasury: { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 },
+        treasuryLog: [],
+      });
+    });
+    const storage = testEnv.authenticatedContext(OUTSIDER_UID).storage();
+    await assertFails(getBytes(ref(storage, MAP_PATH)));
+    await assertFails(
+      uploadBytes(ref(storage, `campaigns/${CAMPAIGN}/maps/m5.jpeg`), PNG_BYTES, JPEG)
+    );
+    await assertSucceeds(
+      uploadBytes(ref(storage, "campaigns/camp-other/maps/m1.jpeg"), PNG_BYTES, JPEG)
     );
   });
 

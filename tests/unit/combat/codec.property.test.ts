@@ -486,6 +486,42 @@ describe("codec — round-trip property over generated encounters (§8)", () => 
     }
   });
 
+  it("a generated map background or fog change with one nested key removed quarantines the document", () => {
+    let checked = 0;
+    for (let seed = 1; seed <= 400 && checked < 20; seed += 1) {
+      const g = gen(seed);
+      const encounter = genEncounter(g);
+      const written = encounterWriteData(encounter) as {
+        log: {
+          kind: string;
+          table?: {
+            op: string;
+            background?: Record<string, unknown> | null;
+            change?: Record<string, unknown>;
+          };
+        }[];
+      };
+      const entry = written.log.find(
+        (action) =>
+          action.kind === "table" &&
+          ((action.table?.op === "map" && action.table.background) ||
+            action.table?.op === "fog")
+      );
+      if (!entry?.table) continue;
+      const target = entry.table.background ?? entry.table.change;
+      if (!target) continue;
+      const key = g.pick(Object.keys(target));
+      const without = Object.fromEntries(
+        Object.entries(target).filter(([name]) => name !== key)
+      );
+      if (entry.table.background) entry.table.background = without;
+      else entry.table.change = without;
+      expect(parseEncounter(written).ok, `seed ${seed}: without ${key}`).toBe(false);
+      checked += 1;
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
   it("a generated log entry with its `kind` corrupted quarantines the document", () => {
     let checked = 0;
     for (let seed = 1; seed <= 60 && checked < 20; seed += 1) {

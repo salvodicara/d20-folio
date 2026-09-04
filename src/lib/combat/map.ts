@@ -32,6 +32,10 @@ export const MAP_COORD_LIMIT = 10_000;
 /** The smallest grid a background may declare, in image pixels per cell. */
 export const MIN_CELL_PX = 8;
 
+/** The largest image side (and cell side) a background may declare — four times the upload
+ *  compressor's longest side, so no persisted number can size the surface into the billions. */
+export const MAX_IMAGE_PX = 16_384;
+
 function isCoord(value: unknown): value is number {
   return Number.isInteger(value) && Math.abs(value as number) <= MAP_COORD_LIMIT;
 }
@@ -63,30 +67,48 @@ export function isMapRect(value: unknown): value is MapRect {
   );
 }
 
-/** A background whose numbers make sense: finite positive integers, a cell of at least
- *  `MIN_CELL_PX`, an image at least one cell wide and tall, a non-negative size. The origin may be
- *  negative (the grid's first line can sit off the image's edge) but must be integer. */
-export function isMapBackground(value: unknown): value is MapBackground {
+/** The grid half of a background: integer image size and cell side within
+ *  [`MIN_CELL_PX`, `MAX_IMAGE_PX`], an image at least one cell wide and tall, an integer origin
+ *  (which may be negative — the grid's first line can sit off the image's edge). The upload
+ *  adapter checks this BEFORE sending a byte, so a grid the reducer would reject never lands in
+ *  Storage as an orphan. */
+export function isMapGrid(
+  value: unknown
+): value is Pick<MapBackground, "width" | "height" | "cellPx" | "origin"> {
   if (typeof value !== "object" || value === null) return false;
-  const bg = value as Record<string, unknown>;
-  const origin = bg.origin as Record<string, unknown> | null | undefined;
+  const grid = value as Record<string, unknown>;
+  const origin = grid.origin as Record<string, unknown> | null | undefined;
+  return (
+    isPositiveInt(grid.cellPx) &&
+    grid.cellPx >= MIN_CELL_PX &&
+    grid.cellPx <= MAX_IMAGE_PX &&
+    isPositiveInt(grid.width) &&
+    isPositiveInt(grid.height) &&
+    grid.width <= MAX_IMAGE_PX &&
+    grid.height <= MAX_IMAGE_PX &&
+    grid.width >= grid.cellPx &&
+    grid.height >= grid.cellPx &&
+    typeof origin === "object" &&
+    origin !== null &&
+    Number.isInteger(origin.x) &&
+    Number.isInteger(origin.y) &&
+    Math.abs(origin.x as number) <= MAX_IMAGE_PX &&
+    Math.abs(origin.y as number) <= MAX_IMAGE_PX
+  );
+}
+
+/** A background whose numbers make sense: a valid grid (`isMapGrid`), non-empty path and URL,
+ *  a non-negative size. */
+export function isMapBackground(value: unknown): value is MapBackground {
+  if (!isMapGrid(value)) return false;
+  const bg = value as unknown as Record<string, unknown>;
   return (
     typeof bg.path === "string" &&
     bg.path.length > 0 &&
     typeof bg.url === "string" &&
     bg.url.length > 0 &&
-    isPositiveInt(bg.cellPx) &&
-    bg.cellPx >= MIN_CELL_PX &&
-    isPositiveInt(bg.width) &&
-    isPositiveInt(bg.height) &&
-    bg.width >= bg.cellPx &&
-    bg.height >= bg.cellPx &&
     Number.isInteger(bg.bytes) &&
-    (bg.bytes as number) >= 0 &&
-    typeof origin === "object" &&
-    origin !== null &&
-    Number.isInteger(origin.x) &&
-    Number.isInteger(origin.y)
+    (bg.bytes as number) >= 0
   );
 }
 
@@ -186,13 +208,21 @@ export type DropPlan =
       readonly reason: "unknown" | "control" | "turn" | "movement";
     };
 
-/** Movement left this turn: `stats.speed` (or its `stats.speed` override, the same seam the
- *  `move` step reads) minus what the turn already spent. Never negative. */
-export function remainingMovement(entity: Entity): number {
+/** The mechanic the `move` step belongs to (`src/data/combat/prototype-catalogue.ts`). */
+export const MOVE_MECHANIC = "core:move";
+
+/** This turn's movement budget: `stats.speed`, or its `stats.speed` override — the same seam the
+ *  `move` step reads. */
+export function movementBudget(entity: Entity): number {
   const speedOverride = entity.overrides["stats.speed"];
-  const budget =
-    typeof speedOverride?.value === "number" ? speedOverride.value : entity.stats.speed;
-  return Math.max(0, budget - entity.turn.movementUsed);
+  return typeof speedOverride?.value === "number"
+    ? speedOverride.value
+    : entity.stats.speed;
+}
+
+/** Movement left this turn (the ruler's number). Never negative. */
+export function remainingMovement(entity: Entity): number {
+  return Math.max(0, movementBudget(entity) - entity.turn.movementUsed);
 }
 
 /**
@@ -220,11 +250,19 @@ export function planDrop(
   const turns = state.clock.phase === "turns";
   const itsTurn = turns && state.clock.current === entity.id;
   const feet = entity.position === null ? 0 : distanceFt(entity.position, args.to);
+  // The SAME test the `move` step applies (`intent.ts`): what the turn already spent plus this
+  // distance against the budget — not "distance ≤ remaining", which differs when a speed
+  // override drops the budget below what was already spent. A first placement costs nothing
+  // there too. An entity without `core:move` cannot invoke the step at all, so it never plans a
+  // `move` (the DM places it; its controller is refused as over budget).
+  const affordable =
+    entity.position === null || entity.turn.movementUsed + feet <= movementBudget(entity);
   if (
     controls &&
     itsTurn &&
     state.settings.automation !== "log-only" &&
-    feet <= remainingMovement(entity)
+    entity.mechanics.includes(MOVE_MECHANIC) &&
+    affordable
   ) {
     return { kind: "move", to: args.to, feet };
   }

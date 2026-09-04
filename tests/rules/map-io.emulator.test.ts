@@ -15,7 +15,7 @@ import {
   type RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
 import { doc, setDoc } from "firebase/firestore";
-import { getMetadata, ref, type FirebaseStorage } from "firebase/storage";
+import { getDownloadURL, getMetadata, ref, type FirebaseStorage } from "firebase/storage";
 import {
   MapUploadRefused,
   campaignMapUsage,
@@ -109,6 +109,24 @@ describe("map-io — upload, usage, refusal, delete", () => {
     expect(meta.contentType).toBe("image/jpeg");
     expect(meta.size).toBe(64);
     expect(meta.cacheControl).toContain("immutable");
+    // A member may resolve the download URL (the read rule covers getDownloadURL).
+    const member = storageFor("member");
+    await expect(getDownloadURL(ref(member, background.path))).resolves.toContain(
+      encodeURIComponent(background.path)
+    );
+  });
+
+  it("refuses a grid the reducer would reject before sending a byte", async () => {
+    const storage = storageFor("dm");
+    await expect(
+      uploadMapBackground(storage, {
+        campaignId: CAMPAIGN,
+        blob: blobOf(64),
+        ...GRID,
+        cellPx: 7,
+      })
+    ).rejects.toMatchObject({ refusal: { kind: "malformed-grid" } });
+    expect(await campaignMapUsage(storage, CAMPAIGN)).toEqual({ bytes: 0, files: 0 });
   });
 
   it("sums the campaign's usage from Storage metadata, and a delete brings it back down", async () => {

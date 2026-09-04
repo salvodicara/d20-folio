@@ -118,6 +118,7 @@
       "value": true,
       "reason": "it leaps out"
     },
+    { "id": "u-r2", "by": "dm", "kind": "undo", "of": "f-r2", "reason": "wrong room" },
     { "id": "end-1", "by": "dm", "kind": "table", "table": { "op": "end-turn" } },
     { "id": "end-2", "by": "dm", "kind": "table", "table": { "op": "end-turn" } },
     {
@@ -135,7 +136,7 @@
     }
   ],
   "expect": {
-    "applied": 11,
+    "applied": 10,
     "rejections": [
       {
         "action": "f-early",
@@ -153,8 +154,7 @@
           { "x": 0, "y": 0, "w": 4, "h": 1 },
           { "x": 0, "y": 3, "w": 4, "h": 1 },
           { "x": 0, "y": 1, "w": 1, "h": 2 },
-          { "x": 3, "y": 1, "w": 1, "h": 2 },
-          { "x": 6, "y": 0, "w": 2, "h": 2 }
+          { "x": 3, "y": 1, "w": 1, "h": 2 }
         ]
       },
       "entities.wolf.position": { "x": 5, "y": 0 },

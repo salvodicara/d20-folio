@@ -27,6 +27,7 @@ import {
   uploadBytes,
   type FirebaseStorage,
 } from "firebase/storage";
+import { isMapGrid } from "./combat/map";
 import type { MapBackground } from "./combat/types";
 
 /** Longest side after compression: a 40 × 30-cell map at 100 px per cell. */
@@ -78,6 +79,7 @@ export async function campaignMapUsage(
 }
 
 export type MapUploadRefusal =
+  | { readonly kind: "malformed-grid" }
   | { readonly kind: "too-large"; readonly bytes: number; readonly limit: number }
   | {
       readonly kind: "over-quota";
@@ -104,7 +106,9 @@ export interface MapUploadArgs {
   readonly height: number;
   readonly cellPx: number;
   readonly origin: { readonly x: number; readonly y: number };
-  /** Test seams; the app uses the defaults. */
+  /** Test seams; the app uses the defaults. `mapId` in particular: the object is cached as
+   *  `immutable` for a year, so reusing an id would serve the OLD image — the app always mints
+   *  a fresh one. */
   readonly mapId?: string;
   readonly maxBytes?: number;
   readonly quotaBytes?: number;
@@ -112,14 +116,21 @@ export interface MapUploadArgs {
 
 /**
  * Upload a compressed background and return the reference the `map` table op carries. Refuses
- * (without uploading) a blob over `maxBytes`, or one that would push the campaign's maps over
- * `quotaBytes` — the quota read happens first, so a refused upload costs one listing and no
- * bytes.
+ * (without uploading) a grid the reducer would reject (`isMapGrid` — so no orphan lands in
+ * Storage for a `map` op that then fails), a blob over `maxBytes`, or one that would push the
+ * campaign's maps over `quotaBytes` — the quota read happens first, so a refused upload costs
+ * one listing and no bytes.
+ *
+ * Residues, stated: the quota is check-then-act, so two uploads racing each other can overshoot
+ * it by one file (a courtesy, not a fence); and the reducer never deletes Storage objects — a
+ * `map: null`, a replacement or an `undo` of a `map` op leaves the object in place (the
+ * surface owns `deleteMapBackground`, and an undo after a delete yields a dead URL).
  */
 export async function uploadMapBackground(
   storage: FirebaseStorage,
   args: MapUploadArgs
 ): Promise<MapBackground> {
+  if (!isMapGrid(args)) throw new MapUploadRefused({ kind: "malformed-grid" });
   const limit = args.maxBytes ?? MAP_MAX_BYTES;
   if (args.blob.size > limit) {
     throw new MapUploadRefused({ kind: "too-large", bytes: args.blob.size, limit });

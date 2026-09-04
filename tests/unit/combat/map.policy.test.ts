@@ -176,6 +176,86 @@ describe("planDrop — which action a dropped token becomes (design addendum §5
     });
   });
 
+  it("row 2 applies the move step's own budget test: a speed override below what the turn spent refuses even a same-cell drop", () => {
+    const { state, seq } = table();
+    const walked = run(state, [
+      {
+        kind: "intent",
+        id: nextActionId("i"),
+        seq: seq(),
+        by: "p1",
+        entity: "hero",
+        mechanic: "core:move",
+        program: "move",
+        targets: [],
+        answers: { to: { x: 4, y: 0 } },
+        payment: [],
+        window: null,
+        basedOn: 0,
+      },
+      {
+        kind: "override",
+        id: nextActionId("o"),
+        seq: seq(),
+        by: "dm",
+        entity: "hero",
+        path: "stats.speed",
+        value: 10,
+        reason: "slowed",
+      },
+    ]);
+    expect(mustEntity(walked, "hero").turn.movementUsed).toBe(20);
+    expect(planDrop(walked, { entity: "hero", to: { x: 4, y: 0 }, actor: P1 })).toEqual({
+      kind: "refused",
+      reason: "movement",
+    });
+    // …and the reducer agrees: the same drop as a move intent is unaffordable.
+    const result = resolve(
+      walked,
+      {
+        kind: "intent",
+        id: nextActionId("i"),
+        seq: seq(),
+        by: "p1",
+        entity: "hero",
+        mechanic: "core:move",
+        program: "move",
+        targets: [],
+        answers: { to: { x: 4, y: 0 } },
+        payment: [],
+        window: null,
+        basedOn: 0,
+      },
+      catalogue
+    );
+    expect(result).toEqual({
+      kind: "rejected",
+      rejection: { reason: "unaffordable", cost: "turn:movement" },
+    });
+  });
+
+  it("an entity without core:move never plans a move: its controller is refused, the DM places", () => {
+    const seq = seqFactory("dm");
+    const statue = testEntity({
+      id: "statue",
+      kind: "pc",
+      controllerUid: "p1",
+      position: { x: 0, y: 0 },
+    });
+    const state = run(
+      emptyState(),
+      openingActions("dm", seq, [statue], { statue: 1 }, ["statue"])
+    );
+    expect(planDrop(state, { entity: "statue", to: { x: 1, y: 0 }, actor: P1 })).toEqual({
+      kind: "refused",
+      reason: "movement",
+    });
+    expect(planDrop(state, { entity: "statue", to: { x: 1, y: 0 }, actor: DM })).toEqual({
+      kind: "place",
+      to: { x: 1, y: 0 },
+    });
+  });
+
   it("a first placement costs nothing", () => {
     const seq = seqFactory("dm");
     const hero = testEntity({
@@ -260,6 +340,27 @@ describe("mapView — what each viewer sees (design addendum §6)", () => {
       }),
     ]);
     expect(mapView(revealed, P1).tokens.find((t) => t.id === "goblin")?.hp).toBe(7);
+  });
+
+  it("the HP bar ratio is clamped to [0, 1] and a player-controlled monster is the player's own", () => {
+    const seq = seqFactory("dm");
+    const pet = testEntity({
+      id: "pet",
+      kind: "monster",
+      controllerUid: "p1",
+      hp: 15,
+      maxHp: 10,
+      position: { x: 0, y: 0 },
+      hidden: true,
+    });
+    const state = run(
+      emptyState(),
+      openingActions("dm", seq, [pet], { pet: 1 }, ["pet"])
+    );
+    const [token] = mapView(state, P1).tokens;
+    expect(token?.hpRatio).toBe(1);
+    expect(token?.hp).toBe(15);
+    expect(mapView(state, P2).tokens).toEqual([]);
   });
 
   it("a player always sees their own token, hidden or under fog", () => {

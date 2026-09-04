@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   FOG_RECT_CAP,
+  MAX_IMAGE_PX,
   cellUnderFog,
   hideRect,
   isMapBackground,
+  isMapGrid,
   isMapRect,
   rectContains,
   rectIntersects,
@@ -71,6 +73,58 @@ describe("map — rectangle validators", () => {
     expect(isMapBackground({ ...BACKGROUND, path: "" })).toBe(false);
     expect(isMapBackground({ ...BACKGROUND, url: "" })).toBe(false);
     expect(isMapBackground(null)).toBe(false);
+  });
+
+  it("bounds the image and cell sizes above as well as below", () => {
+    expect(
+      isMapGrid({ width: MAX_IMAGE_PX, height: 100, cellPx: 100, origin: { x: 0, y: 0 } })
+    ).toBe(true);
+    expect(
+      isMapGrid({
+        width: MAX_IMAGE_PX + 1,
+        height: 100,
+        cellPx: 100,
+        origin: { x: 0, y: 0 },
+      })
+    ).toBe(false);
+    expect(
+      isMapGrid({ width: 1e15, height: 1e15, cellPx: 1e14, origin: { x: 0, y: 0 } })
+    ).toBe(false);
+    expect(
+      isMapGrid({
+        width: 100,
+        height: 100,
+        cellPx: 100,
+        origin: { x: -MAX_IMAGE_PX - 1, y: 0 },
+      })
+    ).toBe(false);
+    expect(isMapBackground({ ...BACKGROUND, width: MAX_IMAGE_PX + 1 })).toBe(false);
+  });
+});
+
+describe("map — subtractRect against a cell-set oracle over 2,000 seeded cases", () => {
+  it("always equals the set difference, in at most four valid, pairwise-disjoint pieces", () => {
+    let seed = 12345;
+    const next = () => {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      return seed;
+    };
+    const int = (min: number, max: number) => min + (next() % (max - min + 1));
+    for (let i = 0; i < 2_000; i += 1) {
+      const a = r(int(-5, 5), int(-5, 5), int(1, 6), int(1, 6));
+      const b = r(int(-5, 5), int(-5, 5), int(1, 6), int(1, 6));
+      const pieces = subtractRect(a, b);
+      expect(pieces.length).toBeLessThanOrEqual(4);
+      const expected = cells([a]);
+      for (const cell of cells([b])) expected.delete(cell);
+      expect(cells(pieces)).toEqual(expected);
+      let total = 0;
+      for (const piece of pieces) {
+        expect(isMapRect(piece)).toBe(true);
+        total += piece.w * piece.h;
+      }
+      expect(total).toBe(expected.size); // disjoint: the areas add up to the set's size
+    }
   });
 });
 
