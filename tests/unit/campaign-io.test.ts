@@ -2945,21 +2945,11 @@ describe("campaign-io — session subcollection writes (#49/#50)", () => {
         u3: { characterId: null },
       },
     };
-    getDocMock.mockResolvedValueOnce({ exists: () => true, data: () => campaignData });
     const update = vi.fn<(ref: unknown, data: Record<string, unknown>) => void>();
     const remove = vi.fn<(ref: unknown) => void>();
     runTransactionMock.mockImplementation(async (_db, fn) =>
       fn({
-        get: (ref: { __doc?: unknown[] }) => {
-          const path = ref.__doc?.slice(1);
-          if (path?.[0] === "campaigns") {
-            return Promise.resolve({ exists: () => true, data: () => campaignData });
-          }
-          return Promise.resolve({
-            exists: () => true,
-            data: () => ({ attachedCampaignId: "camp1" }),
-          });
-        },
+        get: () => Promise.resolve({ exists: () => true, data: () => campaignData }),
         update,
         delete: remove,
       })
@@ -2975,14 +2965,12 @@ describe("campaign-io — session subcollection writes (#49/#50)", () => {
       .mockResolvedValueOnce({ docs: [{ id: "n1", data: () => ({}) }] })
       .mockResolvedValueOnce({ docs: [{ id: "h1", data: () => ({}) }] });
     await deleteCampaign("camp1");
-    // The four unbounded child rows are removed first. Chronicle + campaign are
-    // the two final transaction deletes, alongside both reciprocal claims.
+    // The four unbounded child rows are removed first. Chronicle + campaign are the
+    // two final transaction deletes — and §5.2 means NOTHING else: the members'
+    // reciprocal `attachedCampaignId` claims live in THEIR documents and are never
+    // written from here (the attach seam proves a claim on a dead campaign stale).
     expect(deleteDocMock).toHaveBeenCalledTimes(4);
-    expect(update).toHaveBeenCalledTimes(2);
-    expect(update.mock.calls.map((call) => call[1])).toEqual([
-      { attachedCampaignId: { __deleteField: true } },
-      { attachedCampaignId: { __deleteField: true } },
-    ]);
+    expect(update).not.toHaveBeenCalled();
     expect(remove).toHaveBeenCalledTimes(2);
     expect(remove.mock.calls.map((call) => call[0])).toEqual([
       { __doc: [{ __db: true }, "campaigns", "camp1", "chronicle", "main"] },
@@ -3153,7 +3141,10 @@ describe("campaign-io — roster management (remove member + lock joins)", () =>
     expect(docMock).toHaveBeenCalledWith({ __db: true }, "campaigns", "c1");
   });
 
-  it("atomically clears the removed hero's reciprocal campaign attachment", async () => {
+  it("NEVER writes the removed hero's character document (§5.2)", async () => {
+    // The DM's cross-user detach is gone: removing a member writes the CAMPAIGN doc
+    // and nothing else. The departing hero's `attachedCampaignId` is left behind as a
+    // pointer whose roster row no longer exists — the attach seam proves it stale.
     const update = vi.fn();
     runTransactionMock.mockImplementation(async (_db, fn) =>
       fn({
@@ -3169,7 +3160,7 @@ describe("campaign-io — roster management (remove member + lock joins)", () =>
 
     await removeMember("c1", "u2");
 
-    expect(update).toHaveBeenCalledTimes(2);
+    expect(update).toHaveBeenCalledTimes(1);
     expect(update.mock.calls[0]?.[0]).toEqual({
       __doc: [{ __db: true }, "campaigns", "c1"],
     });
@@ -3177,12 +3168,12 @@ describe("campaign-io — roster management (remove member + lock joins)", () =>
       members: { __arrayRemove: ["u2"] },
       "memberDetails.u2": { __deleteField: true },
     });
-    expect(update.mock.calls[1]?.[0]).toEqual({
-      __doc: [{ __db: true }, "users", "u2", "characters", "char-2"],
-    });
-    expect(update.mock.calls[1]?.[1]).toEqual({
-      attachedCampaignId: { __deleteField: true },
-    });
+    expect(
+      update.mock.calls.some((call) => {
+        const ref = call[0] as { __doc?: unknown[] };
+        return ref.__doc?.[1] === "users";
+      })
+    ).toBe(false);
   });
 
   it("B03 — removeMember PRUNES the removed member's pc-<uid> combatant from a running encounter", async () => {
@@ -3303,6 +3294,54 @@ describe("campaign-io — attachMemberCharacter atomic D9 claim (B07)", () => {
 
     expect(outcome).toBe("conflict");
     // Nothing is written — neither the campaign membership nor a competing claim.
+    expect(updates).toHaveLength(0);
+  });
+
+  it("OVERWRITES a claim whose campaign is unreadable or gone (the stale-claim probe)", async () => {
+    // §5.2 — nobody clears another user's claim any more, so a removed player's hero
+    // keeps pointing at a campaign they can no longer read. The pre-transaction probe
+    // (character doc, then the claimed campaign) proves the claim dead and the attach
+    // proceeds; the D9 conflict is reserved for a LIVE roster row.
+    type Snap = { exists: () => boolean; data?: () => unknown };
+    const claimedCampaigns: Array<() => Promise<Snap>> = [
+      // The player was removed from campB: the read is denied.
+      () => Promise.reject(new Error("permission-denied")),
+      // campB was deleted outright.
+      () => Promise.resolve({ exists: () => false }),
+      // campB is readable, but its roster no longer names this hero.
+      () =>
+        Promise.resolve({
+          exists: () => true,
+          data: () => ({ memberDetails: { u1: { characterId: "char-other" } } }),
+        }),
+    ];
+    for (const claimedCampaign of claimedCampaigns) {
+      getDocMock
+        .mockResolvedValueOnce({
+          exists: () => true,
+          data: () => ({ attachedCampaignId: "campB" }),
+        })
+        .mockImplementationOnce(claimedCampaign);
+      const { updates } = runAttachWith({ attachedCampaignId: "campB" });
+      const outcome = await attachMemberCharacter("campA", "u1", null, "char-1", null);
+      expect(outcome).toBe("attached");
+      expect(updates.find(charWrite)?.data.attachedCampaignId).toBe("campA");
+    }
+  });
+
+  it("KEEPS the conflict when the claimed campaign's roster still names the hero", async () => {
+    getDocMock
+      .mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ attachedCampaignId: "campB" }),
+      })
+      .mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ memberDetails: { u1: { characterId: "char-1" } } }),
+      });
+    const { updates } = runAttachWith({ attachedCampaignId: "campB" });
+    const outcome = await attachMemberCharacter("campA", "u1", null, "char-1", null);
+    expect(outcome).toBe("conflict");
     expect(updates).toHaveLength(0);
   });
 

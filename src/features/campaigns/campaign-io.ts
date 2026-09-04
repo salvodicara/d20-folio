@@ -171,9 +171,6 @@ const INVITE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const INVITE_LENGTH = 14;
 /** Keeps the append-only effect ledger comfortably below Firestore's 1 MiB document cap. */
 const MAX_COMBAT_EFFECT_OPS = 512;
-/** Final campaign deletion owns one campaign + one chronicle write, leaving the
- * remaining Firestore transaction budget for reciprocal character detaches. */
-const MAX_ATOMIC_CAMPAIGN_DETACHES = 498;
 const DEV_CAMPAIGN_COLLECTION = "campaign";
 
 function readDevCampaign(campaignId: string): CampaignDoc {
@@ -437,6 +434,32 @@ export async function setMemberCharacter(
 export type AttachOutcome = "attached" | "conflict";
 
 /**
+ * §5.2 — probe a character's FOREIGN `attachedCampaignId` claim and return it when it is
+ * provably STALE (so {@link attachMemberCharacter} may overwrite it), else `null`.
+ *
+ * A claim naming this campaign, or no claim at all, is not foreign and is never probed.
+ * A foreign claim is dead when the campaign it names cannot be read (`permission-denied`
+ * — the player is no longer a member) or does not exist (deleted), and equally when the
+ * campaign IS readable but its roster does not name this exact character. Only a live
+ * roster row keeps the one-campaign conflict.
+ */
+async function proveClaimStale(
+  uid: string,
+  characterId: string,
+  campaignId: string
+): Promise<string | null> {
+  const character = await getDoc(memberCharacterDoc(uid, characterId)).catch(() => null);
+  if (character === null || !character.exists()) return null;
+  const claimed = nonEmptyString(character.data().attachedCampaignId);
+  if (claimed === null || claimed === campaignId) return null;
+  const claimedCampaign = await getDoc(campaignDoc(claimed)).catch(() => null);
+  if (claimedCampaign === null || !claimedCampaign.exists()) return claimed;
+  const details = (claimedCampaign.data() as Partial<CampaignDoc>).memberDetails;
+  const rosterCharacterId = nonEmptyString(details?.[uid]?.characterId);
+  return rosterCharacterId === characterId ? null : claimed;
+}
+
+/**
  * D9 ATTACH SEAM (B07) — atomically CLAIM the character for THIS campaign and write the
  * member's `characterId` + denormalized `character` snapshot, closing the two-device
  * TOCTOU race that let one hero attach to TWO campaigns at once.
@@ -458,6 +481,16 @@ export type AttachOutcome = "attached" | "conflict";
  * is owner-only per `firestore.rules`; the campaign write touches only the caller's own
  * `memberDetails` entry — both permitted for the attaching member. No-op ("attached")
  * under dev bypass (the caller updates the store optimistically).
+ *
+ * STALE CLAIMS (§5.2). Now that no membership operation writes another user's documents,
+ * a claim can outlive its campaign: the player was removed, or the campaign was deleted,
+ * and nobody but the owner may clear the pointer. So a claim naming a DIFFERENT campaign
+ * is PROBED before the transaction ({@link claimedCampaignIsStale}) — a `permission-denied`
+ * or a missing campaign, or a readable campaign whose roster does not name this exact
+ * character, proves the claim dead and the attach overwrites it. Only a live roster row
+ * keeps the D9 conflict. The probe runs OUTSIDE the transaction because a transaction may
+ * not read a document the caller cannot read, and its verdict is applied only when the
+ * transaction's FRESH claim is still the very value the probe examined.
  */
 export async function attachMemberCharacter(
   campaignId: string,
@@ -468,6 +501,9 @@ export async function attachMemberCharacter(
 ): Promise<AttachOutcome> {
   if (devBypassEnabled()) return "attached";
   const campaignRef = campaignDoc(campaignId);
+  const staleClaim = nextCharacterId
+    ? await proveClaimStale(uid, nextCharacterId, campaignId)
+    : null;
   return runTransaction(db, async (txn) => {
     // Gate the character being attached against a claim by a DIFFERENT campaign. The
     // FRESH read inside the txn is what makes the race un-winnable twice — ALL reads
@@ -476,7 +512,10 @@ export async function attachMemberCharacter(
       const charRef = memberCharacterDoc(uid, nextCharacterId);
       const charSnap = await txn.get(charRef);
       const claimed = charSnap.data()?.attachedCampaignId as string | undefined;
-      if (attachViolatesOneCampaign(claimed, campaignId)) return "conflict";
+      // The probe's verdict applies only to the exact value it examined: if the claim
+      // moved between the probe and this fresh read, the fresh claim gates on its own.
+      const gated = staleClaim !== null && claimed === staleClaim ? null : claimed;
+      if (attachViolatesOneCampaign(gated, campaignId)) return "conflict";
       txn.update(charRef, { attachedCampaignId: campaignId });
     }
     // A swap/detach releases the PREVIOUS character's claim so it can attach elsewhere.
@@ -517,13 +556,14 @@ export async function yieldDmRole(
 }
 
 /**
- * Remove a member from the campaign (DM-only — `firestore.rules` gives the DM/admin an
- * unconstrained roster write): drop the uid from `members` (`arrayRemove`), delete their
- * whole `memberDetails` entry (`deleteField`), clear the removed hero's reciprocal
- * `attachedCampaignId`, AND — B03 — splice their `pc-<uid>` combatant out of any
- * RUNNING encounter. The reciprocal detach is in this SAME transaction so rules can
- * prove the DM removed that exact member before permitting the otherwise owner-only
- * character write; a removed hero is never stranded behind a stale attachment.
+ * Remove a member from the campaign (DM-only — `firestore.rules` gives the DM/admin a
+ * roster write): drop the uid from `members` (`arrayRemove`), delete their whole
+ * `memberDetails` entry (`deleteField`), AND — B03 — splice their `pc-<uid>` combatant
+ * out of any RUNNING encounter. It writes the CAMPAIGN DOCUMENT ONLY: §5.2 — a
+ * membership operation never writes another user's documents, so the departing hero's
+ * reciprocal `attachedCampaignId` is NOT cleared here. That claim is a pointer, not a
+ * grant: the roster row that made it meaningful is gone, so the attach seam proves it
+ * stale and overwrites it, and the owner's own client clears it.
  *
  * A removed member's PC combatant is NOT harmless: while gathering it counts toward the
  * Begin-turns total forever (an orphan that can never roll → the gate locks with no UI to
@@ -546,7 +586,6 @@ export async function removeMember(campaignId: string, uid: string): Promise<voi
     const snap = await txn.get(ref);
     const campaign = snap.data() as CampaignDoc | undefined;
     const encounter = storedEncounter(campaign?.encounter);
-    const characterId = nonEmptyString(campaign?.memberDetails[uid]?.characterId);
     const update: Record<string, unknown> = {
       members: arrayRemove(uid),
       [`memberDetails.${uid}`]: deleteField(),
@@ -560,11 +599,6 @@ export async function removeMember(campaignId: string, uid: string): Promise<voi
       update["encounter.order"] = pruned.order ?? [];
     }
     txn.update(ref, update);
-    if (characterId !== null) {
-      txn.update(doc(db, "users", uid, "characters", characterId), {
-        attachedCampaignId: deleteField(),
-      });
-    }
   });
 }
 
@@ -3321,44 +3355,20 @@ export function subscribeToSharedCampaigns(
 
 /**
  * Delete a campaign and cascade its subcollections (DM-only — `firestore.rules`
- * `allow delete: if isDm()`). Firestore does not cascade, so unbounded child
- * collections are removed first. The final transaction fresh-reads the roster,
- * clears every still-reciprocal character claim, and deletes the chronicle + parent
- * together. A failed final commit therefore leaves the campaign addressable and all
- * attachment claims retryable; it can never delete the authorization aggregate while
- * stranding its members behind stale `attachedCampaignId` indexes.
+ * `allow delete: if isDm() || isAdmin()`). Firestore does not cascade, so unbounded
+ * child collections are removed first, then one transaction deletes the chronicle and
+ * the parent together.
+ *
+ * It writes CAMPAIGN-OWNED DOCUMENTS ONLY: §5.2 — a membership operation never writes
+ * another user's documents, so the members' reciprocal `attachedCampaignId` claims are
+ * NOT cleared here. A claim is a pointer, not a grant: with the campaign gone the
+ * attach seam proves it stale and overwrites it, and each owner's own client clears it.
+ * The roster therefore no longer bounds the deletion, and a failed commit still leaves
+ * the campaign addressable and the whole operation retryable.
  */
 export async function deleteCampaign(campaignId: string): Promise<void> {
   if (devBypassEnabled()) return;
   const campaignRef = campaignDoc(campaignId);
-  const attachedCharacters = (
-    data: Record<string, unknown> | undefined
-  ): Array<{ uid: string; characterId: string; ref: ReturnType<typeof doc> }> => {
-    const details = data?.memberDetails;
-    if (typeof details !== "object" || details === null || Array.isArray(details)) {
-      return [];
-    }
-    const seen = new Set<string>();
-    return Object.entries(details).flatMap(([uid, raw]) => {
-      if (uid.length === 0 || typeof raw !== "object" || raw === null) return [];
-      const characterId = nonEmptyString((raw as Record<string, unknown>).characterId);
-      const key = characterId === null ? "" : `${uid}\u0000${characterId}`;
-      if (characterId === null || seen.has(key)) return [];
-      seen.add(key);
-      return [
-        { uid, characterId, ref: doc(db, "users", uid, "characters", characterId) },
-      ];
-    });
-  };
-
-  // Refuse an unrepresentable final atomic closure before deleting any children.
-  const preflight = await getDoc(campaignRef);
-  const preflightAttachments = preflight.exists()
-    ? attachedCharacters(preflight.data())
-    : [];
-  if (preflightAttachments.length > MAX_ATOMIC_CAMPAIGN_DETACHES) {
-    throw new RangeError("Campaign roster exceeds the atomic deletion boundary");
-  }
   // Cascade the custom banner in Storage too — it's addressed by path, not a
   // parent relationship, so deleting the campaign doc alone would leak the file.
   // Idempotent (ignores "not-found" when the campaign used the default art),
@@ -3375,18 +3385,6 @@ export async function deleteCampaign(campaignId: string): Promise<void> {
   await runTransaction(db, async (txn) => {
     const campaignSnap = await txn.get(campaignRef);
     if (!campaignSnap.exists()) return;
-    const attachments = attachedCharacters(campaignSnap.data());
-    if (attachments.length > MAX_ATOMIC_CAMPAIGN_DETACHES) {
-      throw new RangeError("Campaign roster exceeds the atomic deletion boundary");
-    }
-    // Firestore transactions require every read before the first write.
-    const characterSnaps = await Promise.all(attachments.map(({ ref }) => txn.get(ref)));
-    attachments.forEach(({ ref }, index) => {
-      const snap = characterSnaps[index];
-      if (snap && snap.exists() && snap.data().attachedCampaignId === campaignId) {
-        txn.update(ref, { attachedCampaignId: deleteField() });
-      }
-    });
     txn.delete(chronicleDoc(campaignId));
     txn.delete(campaignRef);
   });
