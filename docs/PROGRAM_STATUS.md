@@ -642,6 +642,19 @@ the emulator only (the documentation is silent).
 - The plan was executed **autonomously** under the owner-approved handoff scope; owner-facing
   questions (Blaze on staging, the surface's verdict) went to the closing message.
 
+**Deferred (the surface).** A temp-HP correction is two independently undoable overrides; an
+emptied "temp" field cannot zero the pool; the condition select clips its label at the drawer's
+width; the `[tabindex]` guard is broader than a focusable control (latent); the condition id set is
+written four times without an exhaustiveness link; `overrides["condition"]` is a colliding audit
+key and a `sync` discards a `stats.maxHp` correction; the shell-less play routes have no Suspense
+fallback of their own; dead `.map-dev*` CSS in `map.css`; design fidelity for the polish pass — the
+map does not fill the window on the fixture, duplicate targets while aiming, a native `title` on
+the strip cells, the area caption overlapping a label; rule 32's DM-specific hotbar tabs (Azioni ·
+Tratti · all of that kind · Note DM) need a stat block on the client; Passive and Mie tabs render
+an honest empty line; both play routes are exempt from the visual census with written reasons;
+`scripts/worktree/bootstrap-worktree.sh` does not provide `.env.local`, without which a worktree's
+visual lane renders the error page; the free roll's formula field has no live validation.
+
 **Deferred, with the measurement.** Bounded `rolls` in the checkpoint (stage 6, with the
 compaction wiring; the safe pruning — drop at compaction every roll whose spender is not a
 still-open `declared` intent — is known); a per-map scale and measurement type; token footprints
@@ -728,11 +741,33 @@ has not yet seen.
   reducer rule was re-implemented client-side: `preflightIntent`, `riderAnswers`,
   `isPerTargetAnswer` and `answerKeyFor` were EXTRACTED from the reducer and are shared, which is
   why the 888 pre-existing kernel tests passed unchanged through both edits.
-- **Not integrated: task 4, the screen.** It is built on the proposal branch
-  `v2-stage6-play-surface` (`origin/v2-stage5-map-surface` rebased onto `v2` at `5519c5b9`), so
-  the owner gives ONE screenshot verdict on the map and the play chrome together.
+- **Task 4 — the screen (integrated at `fa858c80`).** `src/features/play/`: `PlayScreen` over
+  stage 5's `MapCanvas` (now with portraits, selection and the area preview) — scene header,
+  initiative strip, target block, view controls with the DM's player-view eye, tool rail
+  (select · pan · ruler · add · fog for the DM) with the advertised hotkeys bound, the hotbar
+  (portrait with HP pill and level, weapon tiles, the economy pill and slot diamonds, tiles by
+  group, the pill tabs, dice and reaction medallions, the End turn ring), the roll panel (app or
+  manual dice, one field per die, the free roll from the medallion), the reaction card, the prose
+  log, the DM drawer (Registro with filters, Annulla and Modifica; Nascosti; Nebbia; Regole with
+  the automation level and the dice mode; Scene and Note honestly empty), the HP editor (component
+  18, temp HP first with the 0-HP tail, a `condition` override path added to the kernel), the token
+  pill and the creature dock; the live route `/campaigns/:campaignId/play` (one table per campaign,
+  the seat verbs with the server-confirmed write-back and honest failure notices), the DEV harness
+  `/_play` on the ambush fixture, the screenshot lane `tests/visual/play.spec.ts` (27 captures
+  across 1440 × 900 / 1024 × 768 × dark / light × IT / EN × DM / player plus the state frames),
+  the approved palette and recipes as tokens in `play.css`, the licensed icon sprite. The owner saw
+  the curated matrix twice (before and after his two corrections — the framed panels' bracket
+  corners and the HUD's mirrored clusters) and ruled: in direction, the visual details are reviewed
+  once the work is finished; grid snapping stays (Foundry/Roll20/Owlbear do the same), free
+  placement is a later option.
 
-**Review.** Each task got an independent review of its own diff, and each needed one fix round:
+**Review.** Each task got an independent review of its own diff, and each needed at least one fix
+round. Task 4's review found one Critical (the write-back's base could be a cached snapshot) and
+eight Important (Modifica on the wrong line and creature, a colliding monster ordinal, the seated
+projection's identity, invisible strip health bars, advertised hotkeys unbound, an illegible active
+tab on parchment, dead player controls, the "Ferite" filter) plus two minors the controller
+upgraded (DM damage ignoring temp HP; a DM removing a seated PC), fixed in three scoped rounds
+(the third for letter hotkeys dying under a focused button). The earlier tasks:
 task 1 four Important and five Minor, task 2 two Critical and four Important, task 3 three
 Important and seven Minor. All were closed in a single round each and re-reviewed clean. The two
 Criticals are worth naming because both were silent-wrong-number defects a type could not catch:
@@ -813,6 +848,19 @@ and that no client write in the range reaches another user's document.
   aborted one of its gate runs. Reviewers are read-only; a gate result taken while a tree is being
   written to is not evidence.
 
+**Deferred (the surface).** A temp-HP correction is two independently undoable overrides; an
+emptied "temp" field cannot zero the pool; the condition select clips its label at the drawer's
+width; the `[tabindex]` guard is broader than a focusable control (latent); the condition id set is
+written four times without an exhaustiveness link; `overrides["condition"]` is a colliding audit
+key and a `sync` discards a `stats.maxHp` correction; the shell-less play routes have no Suspense
+fallback of their own; dead `.map-dev*` CSS in `map.css`; design fidelity for the polish pass — the
+map does not fill the window on the fixture, duplicate targets while aiming, a native `title` on
+the strip cells, the area caption overlapping a label; rule 32's DM-specific hotbar tabs (Azioni ·
+Tratti · all of that kind · Note DM) need a stat block on the client; Passive and Mie tabs render
+an honest empty line; both play routes are exempt from the visual census with written reasons;
+`scripts/worktree/bootstrap-worktree.sh` does not provide `.env.local`, without which a worktree's
+visual lane renders the error page; the free roll's formula field has no live validation.
+
 **Deferred, with the measurement.**
 
 - **Budget and diagnostics (task 1).** `spent` is monotonic for an encounter's lifetime (about one
@@ -855,7 +903,10 @@ and that no client write in the range reaches another user's document.
   `checkpointThrough`'s single-client liveness cliff, the adapters' import-guard regex scope, and
   the lease write against a shared character untested on the emulator.
 
-**Staging.** The stage-5 blocker is cleared. The owner's billing account is linked to
+**Staging.** Hosting is deployed at https://d20-folio-staging.web.app (built with `vite build --mode
+staging`, `firebase deploy --only hosting -P staging`, 2026-09-04, under the owner's standing
+permission for staging); the `/view` and `/join` rewrites point at Functions that do not exist on
+staging and are not needed for the combat gate. The stage-5 blocker is cleared. The owner's billing account is linked to
 `d20-folio-staging` (Blaze); the default bucket `d20-folio-staging.firebasestorage.app` exists in
 `europe-west1`, created through the Firebase Storage API because `gcloud` cannot create a bucket
 with that name; a £1 budget with 50 % and 100 % alerts mirrors production's; and
@@ -874,6 +925,13 @@ are public modules, and green with the pack pinned to the empty stub). Stage 5 c
 4 min 47 s / 23 s / 33 s / 2 min 6 s; the combined `v2` gate is about 8 min 47 s, under the
 15-minute target.
 
+**Gates on the surface** (from its worktree at `eb35f049`, the final three fixes re-gated with the
+focused lane at `1bb7353b` and `fa858c80`): `just ci` 4 min 55 s (850 files / 19,163 tests,
+Functions 7 / 129); `pnpm build` + `pnpm test:budget` 32 s (precache ceiling raised 9525 → 9781
+KiB for the one lazy play chunk pair, entry and eager closure untouched); `just ci-srd-only`
+2 min 45 s (671 files / 13,583 tests, 2 skipped); `pnpm test:rules` 25 s (5 / 134); the visual
+lane 27 captures; `play-screen.test.tsx` 33 cases.
+
 **What the gate proves, exactly.** The table folds identically on every client from the log alone:
 carried mechanics resolved with no local catalogue, the compaction property (fold unchanged by
 pruning, on a generator of tables that actually apply), the six-PC node ceiling as a number, a
@@ -887,11 +945,11 @@ screenshot lanes of design §6 belong to task 4, and the surface is proved by th
 with the sheet), `propose-and-confirm`, scenes and the drawing/pointer/text/layer tools, structured
 Multiattack, Recharge and Legendary Actions, token footprints (`Entity` still carries no size),
 monster token portraits beyond the tinted initial, the phone second screen, the old surfaces'
-deletion (stage 7), `memberDetails[uid].character` / `.role` — plus the surface's own integration,
-which happens after the owner's screenshot verdict and not before.
+deletion (stage 7), `memberDetails[uid].character` / `.role`.
 
-Next: the owner's screenshot verdict on `v2-stage6-play-surface` (map and play chrome together),
-the whole-branch review's findings, then stage 7's cuts.
+Next: the group's first combat on staging (the stage 5–6 gate — needs the Google provider enabled
+on staging and the campaign seeded), the polish pass from the owner's visual review, then stage
+7's cuts, from `docs/superpowers/plans/2026-09-04-v2-next-session-handoff.md`.
 
 ## Owner confirmations, recorded ahead of their stage (2026-09-03)
 

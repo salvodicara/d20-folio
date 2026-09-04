@@ -35,7 +35,7 @@ Count them with `find tests/unit -name '*.test.ts' | wc -l` (465), `find tests/u
 (194), `find tests/unit -name '*.guard.test.ts*' | wc -l` (60), `grep -c "^\s*it(" tests/rules/*.test.ts`
 (91 + 21 + 13 + 4 + 4) and `pnpm exec playwright test --list | tail -n 1` (432).
 
-### Stage 6 additions (2026-09-04, tasks 1–3)
+### Stage 6 additions (2026-09-04, tasks 1–4)
 
 Counts at the integration gate (`v2` `29534e3e`, 2026-09-04): composed unit suite 845 files /
 19,090 tests; rules lane 5 files / 134 cases (the write-back case joins `encounter-two-clients`);
@@ -52,6 +52,16 @@ fast-lane meta test green.
 | combat engine        | the golden replay `replays/pc-projection.json` (generated from the projection, not hand-copied), plus new blocks in `resolve.table.test.ts` (carried mechanics), `resolve.move.test.ts` (`dash`), `mechanic.test.ts`, `checkpoint.test.ts` (roll pruning), `codec.test.ts` (the node-budget ceiling), `codec.property.test.ts`, `coverage.guard.test.ts` |
 | rules (emulator)     | one case in `encounter-two-clients.emulator.test.ts`: the lease's `document` write-back against a seeded `combat/state` — the trio written, `playState` untouched, and the stored document still accepted by `parseCombatState`                                                                                                                          |
 | pack unit (composed) | `content-pack/tests/unit/team-combat-projection.pack.test.ts` (the six team fixtures projected; the coverage split printed, never asserted to a number) and `content-pack/tests/unit/spell-area-shape.pack.test.ts` (the twin area-shape guard)                                                                                                          |
+
+The surface (task 4) adds, in the SLOW lane, `tests/unit/play-screen.test.tsx` (33 cases: who sees
+what for DM / player / spectator, tile → target → rolls → intent through a fake store, the drawer's
+undo and Modifica, the HP editor's overrides, the hotkeys both ways, the seat verbs' failure
+notices), `tests/unit/map-canvas.test.tsx` (stage 5's semantics) and, in the fast lane,
+`tests/unit/play-personal-state.test.ts` (the server-confirmed read with its timeout) and
+`tests/unit/map-geometry.test.ts`; the screenshot lane gains `tests/visual/play.spec.ts` (27
+captures on the `/_play` harness, own config `playwright.visual.config.ts`, artefacts written
+outside the repository — the owner's gate, never pixel-asserted; one geometry assertion pins the
+HUD's mirrored clusters).
 
 Two of these are locks rather than ordinary tests. `encounter-log-view.test.ts` runs the REAL
 merged catalogues through a translator that throws on a missing key or interpolation, and a

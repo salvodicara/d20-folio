@@ -147,16 +147,19 @@ carrying pre-migration shapes or obsolete residue. Plan and receipt:
 6. **One play surface.** Dossier 14 as approved in direction: initiative strip, map, hotbar of
    the selected entity, log with undo, DM drawer with hidden/fog/HP editor. Old `PlayTab`,
    `CombatResolver`, `TurnEconomyProvider` stay unreferenced until the surface works, then die.
-   **Status (2026-09-04): engine and client integrated on `v2`; surface pending the screenshot
-   verdict.** Design: `2026-09-04-v2-stage-6-play-surface-design.md`; plan:
+   **Status (2026-09-04): closed on `v2` in code; the stage 5–6 gate (the group's first combat on
+   staging) is still to be played.** Design: `2026-09-04-v2-stage-6-play-surface-design.md`; plan:
    `2026-09-04-v2-stage-6-play-surface.md` (5 tasks). Tasks 1–3 are on `v2`: every entity's
    executable mechanics carried in the log on the seat ops with the static catalogue reduced to
    `core:*`, the `dash` step, bounded rolls at compaction, the monster and character projections
    with the PC mechanics adapter and `SrdSpellData.areaShape`, and the client half — the table
    store over `campaigns/{id}/encounters/live`, the tile's pure intent/roll/answer builders, the
    lease's legacy `combat/state` write-back through a branded encoder, and the log presenter in EN
-   and IT. Task 4, the screen itself, is built on the proposal branch `v2-stage6-play-surface`
-   (which carries stage 5's map, so the owner gives one verdict) and is NOT integrated. Receipt:
+   and IT. Task 4, the screen itself (`src/features/play/`, the route
+   `/campaigns/:campaignId/play`, the DEV harness `/_play`, the screenshot lane), carried stage 5's
+   map surface with it and was integrated on `v2` at `fa858c80` after the owner saw the curated
+   captures and ruled "in direction, the visual details are reviewed once the work is finished";
+   the old surfaces die in stage 7. Receipt:
    `docs/PROGRAM_STATUS.md` → "`v2` — stage 6".
 7. **Cuts.** What still reads something at stage 6 dies here: the mechanics kernel and its 47
    test files, the old play surfaces and their render tests, `cost-engine`, `dice-formula` /
