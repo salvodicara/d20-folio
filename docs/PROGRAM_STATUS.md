@@ -495,7 +495,18 @@ rules reject it as a log that did not grow; there is no contended-retry test for
 clock (a rules-lane addition for stage 5); the two-client test helper carries a
 `@firebase/rules-unit-testing` compatibility type cast; and a `v2` campaign that still carries a
 legacy embedded encounter keeps an orphan `pc-<uid>` combatant row after `removeMember` until
-stage 6, because the field is deliberately un-writable. Closed by this commit: the task-6 note
+stage 6, because the field is deliberately un-writable. The stage-4 re-review found four more:
+`FoldedState.rolls` is never pruned, so a checkpoint's folded state grows by roughly 11 nodes per
+accepted roll and the codec's 1,000-entry rules cap assumes a small checkpoint — measured at 1,000
+realistic intents plus a populated checkpoint, the log sits near 34,200 of the 50,000-node budget,
+and a bounded `rolls` decision belongs to stage 5/6; with `nowMs` far behind every stamp already in
+the log, `checkpointThrough` returns `null` on that client until its own clock catches up — a
+liveness cliff on the one client attempting to compact, resolved by any correctly-clocked peer
+appending or compacting instead, so the stage-6 wiring must not make a single client the only
+compactor; the adapters' import guard's regex sees only `from "…"` specifiers, so a bare
+side-effect import or a dynamic `import()` would pass it unnoticed; and `ReactionWindow.eligible`
+is now sorted, a property of persisted data rather than an implementation detail, noted on the
+type. Closed by this commit: the task-6 note
 that `docs/CHARACTER_SCHEMA.md` described the lease without reconciling the spec's old `attached`
 name, and stage 3's note that the stage-2 and stage-3 sections ended with the same `Next` line.
 

@@ -287,7 +287,7 @@ export type CombatEvent =
 export interface ReactionWindow {
   readonly id: WindowId;
   readonly event: CombatEvent;
-  readonly eligible: readonly EntityId[];
+  readonly eligible: readonly EntityId[]; // sorted by entity id — compaction canonicalises persisted arrays, and `subscribersFor` already produces it sorted
   readonly declared: ActionId; // the action held open by this window
 }
 

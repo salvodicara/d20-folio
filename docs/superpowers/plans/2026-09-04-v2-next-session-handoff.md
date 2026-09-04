@@ -113,6 +113,15 @@ Bring the owner a recommendation with the trade-off in one paragraph, not the qu
 - **The §8 codec round-trip PROPERTY test is still unwritten.** The codec has example-based
   round-trips only. If stage 5 adds a persisted map shape, it inherits that gap — write the
   property test for whatever new codec it introduces rather than repeating the omission.
+- **`FoldedState.rolls` is unbounded.** It is never pruned, so a checkpoint's folded state grows
+  by roughly 11 nodes per accepted roll; the codec's 1,000-entry rules cap on the stored log
+  assumes a small checkpoint (1,000 realistic intents plus a populated checkpoint measures near
+  34,200 of the 50,000-node budget today). A bounded-`rolls` decision belongs here or at stage 6,
+  before a heavier map or automation payload pushes a real table over the budget.
+- **`checkpointThrough` has a single-client liveness cliff.** With `nowMs` far behind every stamp
+  already in the log, it returns `null` on that one client until its own clock catches up — any
+  correctly-clocked peer still compacts, but the wiring stage 5/6 adds must not make a single
+  client the only one that can.
 
 ## Owner confirmations to honour
 
