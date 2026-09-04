@@ -8,6 +8,11 @@
  * reproduced by hand, which is exactly why it is pinned here.
  */
 import { describe, expect, it, vi } from "vitest";
+
+// The module under test imports only a TYPE from `combat-state-io` (erased at runtime), but the
+// guard reads import specifiers, and the specifier is enough to pull the Firebase singleton into
+// a CI run that has no env.
+vi.mock("@/lib/firebase", () => ({}));
 import {
   isServerConfirmed,
   readServerCombatState,
