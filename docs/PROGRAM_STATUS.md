@@ -286,12 +286,14 @@ which is redundant — one of them should go when stage 4 rewrites the frontier.
 the adapter silently dropping `recharge` on structured entries — is not listed here because it
 changes behaviour at the table and is recorded under "Out of stage 3" instead.
 
-**Gates on `v2` at the close:** `just ci` 4 min 38 s (828 files / 18,695 tests, Functions 129, plus
-typecheck, lint and the build); `pnpm test:rules` 15.2 s (113 cases on the emulator); `vite build` +
-`pnpm test:budget` 4.8 s (6 budget cases); `just ci-srd-only` 2 min 24 s (651 files / 13,125 tests,
-2 skipped — run because `src/lib/combat` and `src/data/combat` are public/SRD modules, and green
-with the pack pinned to the empty stub). Stage 2's baseline was 4 min 26 s / 15.3 s / ~2 s /
-2 min 13 s; the combined `v2` gate is 7 min 22 s, well under the 15-minute target.
+**Gates on `v2` at the close** (re-run after the final fix wave, all green): `just ci` 4 min 36 s
+(828 files / 18,710 tests, Functions 129, plus typecheck, lint and the build); `pnpm test:rules`
+15.1 s (113 cases on the emulator); `vite build` + `pnpm test:budget` 5 s (6 budget cases);
+`just ci-srd-only` 2 min 19 s (651 files / 13,140 tests, 2 skipped — run because `src/lib/combat`
+and `src/data/combat` are public/SRD modules, and green with the pack pinned to the empty stub).
+Stage 2's baseline was 4 min 26 s / 15.3 s / ~2 s / 2 min 13 s; the combined `v2` gate is
+7 min 15 s, well under the 15-minute target. `just ci` is what caught the two test-typing defects
+the vitest run transpiled past, which is the reason the strict build stays in the gate.
 
 **What the replays prove, exactly.** Marco's and Sara's replays are reducer-level acceptance: they
 prove the **nouns** of the two stories at the engine layer, not the surfaces that will present
