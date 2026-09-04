@@ -20,7 +20,7 @@ import {
 } from "@/lib/combat/checkpoint";
 import { fold } from "@/lib/combat/fold";
 import { sortBySeq, type Seq } from "@/lib/combat/ids";
-import type { Action, Encounter, Relation } from "@/lib/combat/types";
+import type { Action, Encounter, IntentAction, Relation } from "@/lib/combat/types";
 import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
 import { testEntity } from "./__helpers__/entities";
 import {
@@ -467,7 +467,7 @@ describe("combat/checkpoint — bounded rolls (stage 6 §2 D8)", () => {
       mechanic,
       program,
       targets: [...targets],
-      answers: answers as Action extends { answers: infer A } ? A : never,
+      answers: answers as IntentAction["answers"],
       payment: [],
       window: null,
       basedOn: 0,

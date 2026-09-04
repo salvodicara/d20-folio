@@ -450,15 +450,29 @@ async function compactAndVerify(table: Table): Promise<void> {
     const { rolls, spent, ...rest } = client.view().state;
     const { rolls: wasRolls, spent: wasSpent, ...wasRest } = was;
     expect(rest, `${client.uid} across the checkpoint`).toEqual(wasRest);
-    // Nothing is invented, and every roll still held is one nobody has spent yet or one a
-    // window still needs.
-    expect(Object.keys(rolls).length).toBeLessThanOrEqual(Object.keys(wasRolls).length);
-    expect(Object.keys(spent).length).toBeLessThanOrEqual(Object.keys(wasSpent).length);
+
+    // `spent` is the "one roll, one verdict" ledger and survives compaction WHOLE, so a roll
+    // consumed before the checkpoint still reads as consumed after it.
+    expect(spent, `${client.uid}: the roll ledger`).toEqual(wasSpent);
+
+    // The pruning is real and EXACT: every record whose consumer has settled is gone, every
+    // other record is byte-identical. Derived rather than hard-coded, and asserted to be
+    // non-empty, so this cannot pass by pruning nothing.
+    const settled = Object.keys(wasRolls).filter((id) => {
+      const by = wasSpent[id];
+      return by !== undefined && wasRest.declared[by] === undefined;
+    });
+    expect(
+      settled.length,
+      `${client.uid}: the lane settles at least one roll`
+    ).toBeGreaterThan(0);
+    expect(Object.keys(rolls).length, `${client.uid}: records dropped`).toBe(
+      Object.keys(wasRolls).length - settled.length
+    );
+    for (const id of settled)
+      expect(rolls[id], `${client.uid}: ${id} dropped`).toBeUndefined();
     for (const [id, record] of Object.entries(rolls)) {
       expect(record, `${client.uid}: roll ${id}`).toEqual(wasRolls[id]);
-      const by = spent[id];
-      if (by !== undefined)
-        expect(rest.declared[by], `${client.uid}: ${id}`).toBeDefined();
     }
   }
   const stored = await storedEncounter();

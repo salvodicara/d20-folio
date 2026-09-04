@@ -1,7 +1,8 @@
 /**
- * Boundary guards for the pure combat engine: no React, Firebase, Zustand, i18n, feature or
- * component imports; no clock; no RNG. Payment cannot be bypassed: every costed program that
- * applies reports what it paid.
+ * Boundary guards for the pure combat engine and the data it executes (`src/lib/combat`,
+ * `src/data/combat`): no React, Firebase, Zustand, i18n, feature or component imports; no
+ * clock; no RNG. Payment cannot be bypassed: every costed program that applies reports what it
+ * paid.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve as resolvePath } from "node:path";
@@ -14,7 +15,15 @@ import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
 import { testEntity } from "./__helpers__/entities";
 import { nextActionId, openingActions, seqFactory } from "./__helpers__/state";
 
-const MODULE_DIR = resolvePath(process.cwd(), "src/lib/combat");
+/**
+ * The pure engine AND the data it executes. `src/data/combat` is scanned too: those modules are
+ * DATA — a mechanic is typed values, never behaviour — so a React, Firebase or clock import
+ * there would smuggle exactly what the kernel forbids in through the catalogue.
+ */
+const MODULE_DIRS = [
+  resolvePath(process.cwd(), "src/lib/combat"),
+  resolvePath(process.cwd(), "src/data/combat"),
+];
 const FORBIDDEN = [
   /from\s+["']react/,
   /from\s+["']firebase/,
@@ -33,14 +42,20 @@ const FORBIDDEN = [
 describe("boundary — src/lib/combat is pure", () => {
   it("imports nothing from the UI, persistence, i18n, clock or RNG", () => {
     const offenders: string[] = [];
-    for (const file of readdirSync(MODULE_DIR)) {
-      if (!file.endsWith(".ts")) continue;
-      const text = readFileSync(resolvePath(MODULE_DIR, file), "utf8");
-      for (const pattern of FORBIDDEN) {
-        if (pattern.test(text)) offenders.push(`${file}: ${pattern.source}`);
+    let scanned = 0;
+    for (const dir of MODULE_DIRS) {
+      for (const file of readdirSync(dir)) {
+        if (!file.endsWith(".ts")) continue;
+        scanned += 1;
+        const text = readFileSync(resolvePath(dir, file), "utf8");
+        for (const pattern of FORBIDDEN) {
+          if (pattern.test(text)) offenders.push(`${dir}/${file}: ${pattern.source}`);
+        }
       }
     }
     expect(offenders).toEqual([]);
+    // A mistyped directory would scan nothing and pass silently.
+    expect(scanned).toBeGreaterThan(MODULE_DIRS.length);
   });
 });
 

@@ -57,6 +57,15 @@ function stepStatus(program: Program, step: Step): CoverageStatus {
 function programStatus(program: Program): CoverageStatus {
   if (program.trigger.kind === "event")
     return program.trigger.window ? "window" : "automated";
+  // A program whose every step is a ruling automates nothing: it spends the economy and writes
+  // a log line, and the table decides the rest (`core:dodge` and friends). Summarising it as
+  // `automated` because its trigger is an ordinary invocation overstates the product.
+  if (
+    program.steps.length > 0 &&
+    program.steps.every((step) => step.kind === "manual-table")
+  ) {
+    return "table";
+  }
   return "automated";
 }
 

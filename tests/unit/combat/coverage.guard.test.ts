@@ -28,6 +28,22 @@ describe("coverage — derived from the catalogue", () => {
     expect(rows.every((row: CoverageRow) => row.status !== "unsupported")).toBe(true);
   });
 
+  it("a program the table has to adjudicate summarises as `table`, never `automated`", () => {
+    // `core:dodge` and friends spend the action and log a line; advantage, disadvantage and
+    // stealth are outside the stage-3 vocabulary, so the DM rules. The program row must say so
+    // — a coverage record that calls them automated overstates the product.
+    const byId = new Map(
+      rows.map((row) => [`${row.mechanic}/${row.program}/${row.step}`, row])
+    );
+    for (const id of ["core:dodge", "core:disengage", "core:help", "core:hide"]) {
+      expect(byId.get(`${id}/use/*`)?.status, id).toBe("table");
+      expect(byId.get(`${id}/use/use`)?.status, id).toBe("table");
+    }
+    // A program with real automation is unaffected.
+    expect(byId.get("core:dash/dash/*")?.status).toBe("automated");
+    expect(byId.get("srd:spell:fireball/cast/*")?.status).toBe("automated");
+  });
+
   it("the committed coverage record equals the regenerated one", () => {
     const generated = JSON.stringify({ schema: 1, rows }, null, 2) + "\n";
     if (process.env.WRITE_COMBAT_COVERAGE === "1") writeFileSync(OUTPUT, generated);
