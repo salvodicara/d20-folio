@@ -200,8 +200,15 @@ reason it outranked the plan text:
 - Area shapes get their own `area-input-declared` conformance rule, matching the existing
   `move-input-declared`: the authoring spec promises authoring mistakes surface at load, not at
   the table.
-- A held reaction window at `log-only` withholds its payment too — the plan's contract "applies
-  nothing" outranks its own "held branch unchanged" parenthetical.
+- **A held reaction window at `log-only` commits nothing at all** — no window, no `declared` entry,
+  no ordinal, no payment. This **reverses** the ruling taken in task 1's round 1 ("withholds its
+  payment, but the window and the declaration still land, because opening a window is bookkeeping,
+  not a verdict"). The branch review showed that half-measure is not a coherent state: the window
+  survives an unpaid declaration, so a table that switches back to `full-auto` before resolving it
+  gets the outcome without the cost, and the reaction the window invites would itself be withheld,
+  leaving a window nobody can act on. A declaration is not bookkeeping about the log — it is the
+  first half of an outcome, and `log-only` withholds outcomes whole. The receipt is unchanged and
+  still records that the attack would be held.
 - Windows opened _inside_ a withheld run (a `log-only` `move` leaving reach) are withheld with the
   run: the departure never committed, so a reaction to it would be incoherent. Only the held
   branch's own window opens at `log-only`.
@@ -221,29 +228,63 @@ reason it outranked the plan text:
   the same round rather than deferred: the override value became 17, so a leaked `log-only` hit
   (30 − 12 = 18) could not be mistaken for the expected result, and `rolls.r-ogre-atk.hidden: true`
   is now asserted.
+- The authoring spec's §6 **Adapter** row was rewritten to describe shipped behaviour ( `attack`
+  entries and damage-carrying `save` entries automate; every other entry, Multiattack included,
+  degrades to `manual-table`) instead of the plan's "Multiattack and single attacks". A tier table
+  states what the engine does, not what the plan hoped it would do.
 
-**Deferred minors** (raised by task reviews, triaged as non-blocking and recorded rather than
-fixed): the table settings op replaces the settings object instead of spreading it; a duplicated
-`{ ...closed, declared: remaining }` in `applyResolve`; a test that calls `opened()` inside an
-assertion; no test pinning that a roll answered by a `log-only` intent still lands in `state.spent`;
-an HP override to 0 on an alive creature leaves `life: "alive"` (hp-0-but-alive) — document or
-couple; no test for the `LIFE_STATES` whitelist rejecting a bad string, and its `as LifeState`
-cast; the impossible-state guard for an area count without a shape reports `unknown-mechanic`, and
-conformance checks `=== undefined` where the runtime checks truthiness (a discriminated
-`TargetSpec` would remove both); missing area tests (a caster inside their own blast, the
-eligibility filter actually excluding someone, cone/line without `aim`); area tests call `cast()`
-before `opened()`; the `const targets = program.targets` narrowing alias would read better as
-`targetSpec`, and area targeting added ~120 lines to `intent.ts`, which is now past 1,000 and
-trending toward a catch-all (`areaShapeFrom` is a candidate for `position.ts`); the boundary guard
-derives the slot level from the first `slot` cost only; the adapter's degrade paths (damage choice,
-`onSuccess: "special"`, melee-or-ranged, spellcasting) are untested beyond `narrative`; duplicate
-monster entry ids yield shadowed programs with no uniqueness rule in `conformMechanic`; the
-adapter's `damageParts` parameter is typed through `MonsterAttackEntry["damage"]` although it also
-serves save entries (`readonly MonsterDamage[]` would say what it means), and `labelFor(block,
-entry)` / `manualProgram(entry, block)` take the same pair in opposite order; and the adapter's
-end-to-end test injects `relations` directly instead of through the log. One further minor — the
-adapter silently dropping `recharge` on structured entries — is not listed here because it changes
-behaviour at the table and is recorded under "Out of stage 3" instead.
+The final whole-branch review added five more, applied in the closing fix wave:
+
+- **An HP override to zero is coupled to the life state.** Dropping a creature to 0 by hand means
+  the same thing as dropping it there by damage, so `patchDirectOverride` now takes `applyDamage`'s
+  0-HP rule — `dying` for a PC, `dead` for anything else — leaving death saves untouched and not
+  re-downing a creature already at 0. This closes the deferred "hp-0-but-alive" minor by coupling
+  rather than by documenting: an impossible state the DM could reach in one click is a defect, not
+  a nuance.
+- **`answerNumber` is total.** `typeof null === "object"`, so a persisted `null` answer threw on
+  `"roll" in value` instead of rejecting. Both it and `resolve.ts`'s `referencedRolls` (which the
+  new test proved had the same hole, and is reached first) now read the answer as `unknown` and
+  report `missing-answer`. The reducer's totality over a malformed log is a contract, not a hope.
+- **The missing area tests were written, not cut.** Cube, cone and line membership, a caster inside
+  their own blast, an eligibility predicate that excludes one, and a cone missing its aim are all
+  pinned; each shape's probe pair differs only in the property that shape governs, so a geometry
+  regression cannot hide behind a distance check.
+- **Area targets are sorted before the eligibility filter.** Membership follows
+  `Object.values(state.entities)`, and object-key enumeration order must never decide the order in
+  which a fold applies per-target steps — every client folds the same log and must derive the same
+  sequence. No replay expectation changed; the goblin ids were already in order, which is exactly
+  why the hazard was invisible.
+- **The authoring spec's §6 Costs and Inputs rows were read off the shipped unions**, not off the
+  spec's own §1.2/§1.3 sketch: Costs gained `concentration` and the explicit `turn` claims; Inputs
+  now list `d20`/`dice`/`choice`/`table`/`position`, and `damage-type` and `declare` left the table
+  entirely because neither is a real planned `Input` kind (see the note under §6).
+
+**Closed by the final fix wave** (raised as deferred minors by the task reviews, then fixed rather
+than carried): the table settings op now spreads `state.settings`; `applyResolve` builds
+`{ ...closed, declared: remaining }` once as `base`; a roll answered by a `log-only` intent is
+pinned as consumed; the hp-0-but-alive state is coupled away; the `LIFE_STATES` whitelist has a
+test and narrows through a predicate instead of an `as LifeState` cast; the missing area tests
+(caster inside their own blast, an eligibility predicate excluding someone, cone/line membership,
+a cone without `aim`) are written; the area tests no longer build the action before the state; and
+two of the adapter's degrade paths (a use-time damage choice, `onSuccess: "special"`) are covered.
+The prototype catalogue's hand-copied Ogre gained a drift guard against `src/data/monsters/n-p.ts`
+(imported dynamically inside the test, so the lazy-only bundle guard stays green).
+
+**Deferred minors still open** (triaged as non-blocking and recorded rather than fixed): a test
+that calls `opened()` inside an assertion; the impossible-state guard for an area count without a
+shape reports `unknown-mechanic`, and conformance checks `=== undefined` where the runtime checks
+truthiness (a discriminated `TargetSpec` would remove both); the `const targets = program.targets`
+narrowing alias would read better as `targetSpec`; the boundary guard derives the slot level from
+the first `slot` cost only; the adapter's remaining degrade paths (melee-or-ranged, spellcasting)
+are untested; duplicate monster entry ids yield shadowed programs with no uniqueness rule in
+`conformMechanic`; the adapter's `damageParts` parameter is typed through
+`MonsterAttackEntry["damage"]` although it also serves save entries (`readonly MonsterDamage[]`
+would say what it means), and `labelFor(block, entry)` / `manualProgram(entry, block)` take the
+same pair in opposite order; the adapter's end-to-end test injects `relations` directly instead of
+through the log; and this ledger's stage-2 and stage-3 sections both end with the same `Next` line,
+which is redundant — one of them should go when stage 4 rewrites the frontier. One further minor —
+the adapter silently dropping `recharge` on structured entries — is not listed here because it
+changes behaviour at the table and is recorded under "Out of stage 3" instead.
 
 **Gates on `v2` at the close:** `just ci` 4 min 38 s (828 files / 18,695 tests, Functions 129, plus
 typecheck, lint and the build); `pnpm test:rules` 15.2 s (113 cases on the emulator); `vite build` +
@@ -252,10 +293,18 @@ typecheck, lint and the build); `pnpm test:rules` 15.2 s (113 cases on the emula
 with the pack pinned to the empty stub). Stage 2's baseline was 4 min 26 s / 15.3 s / ~2 s /
 2 min 13 s; the combined `v2` gate is 7 min 22 s, well under the 15-minute target.
 
+**What the replays prove, exactly.** Marco's and Sara's replays are reducer-level acceptance: they
+prove the **nouns** of the two stories at the engine layer, not the surfaces that will present
+them. Sara's replay proves hidden rolls (stored with `hidden: true`, not suppressed), the monster's
+action through the adapted ogre, an overridden result, the group's own homebrew weapon and the
+automation-level switch. Tokens and fog are, at this stage, entity `position`s and declared
+`visible` relations — there is no map, no token and no fog of war until stage 5, and no shared
+document until stage 4.
+
 **Out of stage 3.** `propose-and-confirm` automation (stage 6); upcast Fireball damage scaling
 (needs `Input.dice.formula` to grow a `byLevel` variant); monster `traits`, `reactions`,
 `legendaryActions` and `recharge`/`legendary` costs; death saves at turn start; any literal
-map, fog or token UI (stage 5). Plus four seams this stage deliberately left open:
+map, fog or token UI (stage 5). Plus six seams this stage deliberately left open:
 
 - **Per-target save-roll attribution.** `rollsUsable` binds a roll to the intent's entity, so a
   target's save inside a caster's intent is logged with `roller: null`. Stage 4 decides whether the
@@ -266,6 +315,17 @@ map, fog or token UI (stage 5). Plus four seams this stage deliberately left ope
 - **Effect-only monster saves are DM-adjudicated** until conditions-on-save are authored.
 - **`recharge` on structured monster entries is dropped** by the adapter, so such an entry is
   currently invokable every turn; the recharge task owns this.
+- **An `override` emits no `CombatEvent`.** The same outcome reached by damage and by the DM's hand
+  is not the same event stream: a DM-inflicted death fires no `hp-zero` subscriber, ends no
+  concentration and clears no marks, while `deliverDamage` does all three. That is defensible while
+  the DM is the one deciding — nothing should fire behind their back — but it is a real asymmetry
+  and it must be a decision, not an oversight, once overrides reach a surface with subscribers
+  behind it.
+- **`intent.ts` (~1,200 lines) is the meeting point of everything** — payment, lifetimes, AC
+  derivation, damage delivery, answer reading, area binding, the step runner, concentration, the
+  automation gate, repositioning, overrides and checks. It is coherent but it is now the file every
+  new capability touches. Splitting it (`answers.ts`, `override.ts`, `reposition.ts`) is stage 4's
+  first task, before stage 4's own code lands on top of it.
 
 Next: stage 4 (the shared encounter document), from
 `docs/superpowers/plans/2026-09-04-v2-next-session-handoff.md`.

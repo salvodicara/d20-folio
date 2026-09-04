@@ -156,8 +156,9 @@ describe("area targeting — the reducer derives targets from positions, never t
   });
 
   it("rejects with missing-answer when the origin position wasn't answered", () => {
+    const state = opened();
     const blind = { ...cast(), answers: { damage: 7 } };
-    const result = resolve(opened(), blind, catalogue);
+    const result = resolve(state, blind, catalogue);
     expect(result.kind).toBe("rejected");
     if (result.kind !== "rejected") return;
     expect(result.rejection).toEqual({ reason: "missing-answer", input: "origin" });

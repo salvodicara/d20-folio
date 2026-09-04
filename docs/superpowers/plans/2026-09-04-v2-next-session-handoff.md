@@ -81,6 +81,13 @@ its codec (§5.5 totality rules apply: one `exact-schema`, unknown top-level key
 lease actions (`table:join`, `table:leave`, `table:sync`, `table:end`), compaction, and the reduced
 `firestore.rules` with `pnpm test:rules` proving them.
 
+**Open with the `intent.ts` split, before any stage-4 code lands on top of it.** That file is now
+~1,200 lines and is the meeting point of payment, lifetimes, AC derivation, damage delivery, answer
+reading, area binding, the step runner, concentration, the automation gate, repositioning,
+overrides and checks — every new capability touches it. Split it into `answers.ts`, `override.ts`
+and `reposition.ts` (behaviour-preserving, the existing tests are the proof) as task one; the
+stage-4 adapter then has somewhere to attach.
+
 The stage-1 plan's gate for stages 1–4 is the bar: **both golden replays pass on the emulator with
 two clients (DM and player) folding the same log; an override and an undo from each side.** Stage 3
 met only the pure-reducer half of it.
@@ -100,6 +107,17 @@ met only the pure-reducer half of it.
   `log-only` table cannot move tokens through the reducer until position becomes a direct-patch
   override path. That is a stage-6 concern, but stage 4 should not design around the current
   behaviour as if it were permanent.
+- **At `log-only`, nothing about a declaration commits.** The final branch review reversed the
+  earlier ruling here: a held attack at `log-only` now leaves no window, no `declared` entry, no
+  ordinal and no payment — only the receipt reports what would have happened. A declaration is the
+  first half of an outcome, so it is withheld whole; otherwise a switch back to `full-auto` would
+  resolve an unpaid window into a paid outcome, and the reaction the window invites would itself be
+  withheld. In a shared document this matters twice over: the other clients see the same log and
+  must reach the same conclusion about whether a window exists.
+- **An `override` emits no `CombatEvent`**, so a DM-inflicted death fires no `hp-zero` subscriber,
+  ends no concentration and clears no marks — unlike the identical outcome reached through damage.
+  Stage 4 puts overrides in front of other people's clients; decide there whether that asymmetry
+  survives.
 
 ## Owner confirmations to honour in this stage (verbatim from `docs/PROGRAM_STATUS.md`, 2026-09-03)
 

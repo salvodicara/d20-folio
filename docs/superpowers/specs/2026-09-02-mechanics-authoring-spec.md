@@ -314,11 +314,18 @@ reducer handler in the stage that first needs it.
 | Kind family | Stage 3 (Marco's first turn, Sara's ogre ambush)                                                                                                    | Later                                                             |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | Triggers    | `invocation` (action, bonus, reaction); `event: entity-left-reach` (opportunity attack)                                                             | other events (`attack-declared`, `cast-declared`, `hp-zero`, …)   |
-| Costs       | `turn` claims, `slot` (with upcast), `resource`                                                                                                     | `recharge`, `legendary`                                           |
-| Inputs      | `d20` (attack, save, initiative, concentration), `dice`, `choice`, `damage-type`, `declare`                                                         | `integer`, `table` rulings                                        |
+| Costs       | `turn` claims (action, bonus, reaction, attack, free), `slot` (with upcast), `resource`, `concentration`                                            | `recharge`, `legendary`                                           |
+| Inputs      | `d20` (attack, save, check, concentration), `dice`, `choice`, `table`, `position`                                                                   | `integer`                                                         |
 | Steps       | `attack`, `save`, `damage`, `heal`, `effect-start`, `condition`, `move-mark`, `turn-claim`, `negate`, `manual-table`, `move`                        | `summon`, `transform`, `aura`, `ready`                            |
 | Lifetimes   | `manual`, `turn-edge`, `rounds`, `seconds`, `rest`                                                                                                  | `day-phase`                                                       |
 | Adapter     | monster stat blocks → `Mechanic` for `attack` entries and damage-carrying `save` entries; every other entry (Multiattack included) → `manual-table` | structured Multiattack, Recharge, Legendary Actions, lair bonuses |
+
+The Costs and Inputs rows are read off the shipped unions in `src/lib/combat/mechanic.ts`, not off
+§1.2/§1.3's sketch. Two `Input` kinds that sketch names are **not** planned kinds, so they appear in
+neither column: `damage-type` is what `choice` already is (a use-time pick from a closed option
+list), and `declare` is an `Action` the table appends, never an answer inside an intent. `integer`
+stays `later` — a bounded numeric answer that is not a die (how many creatures, how many feet) has
+no substitute today, and the first mechanic that needs one adds the kind.
 
 Stage 3 also added area targeting (`TargetSpec.count: "area"`, an `AreaShapeSpec` parametrized by
 `position`-kind inputs, resolved against stage 2's `areaMembership`) and the monster adapter
