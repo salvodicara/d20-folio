@@ -3,7 +3,7 @@ import { mustEntity } from "@/lib/combat/state";
 import { buildCatalogue } from "@/lib/combat/catalogue";
 import { initialState } from "@/lib/combat/fold";
 import { resolve } from "@/lib/combat/resolve";
-import type { Action, FoldedState } from "@/lib/combat/types";
+import type { Action, Effect, FoldedState } from "@/lib/combat/types";
 import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
 import { testEntity } from "./__helpers__/entities";
 import { nextActionId, openingActions, seqFactory } from "./__helpers__/state";
@@ -151,5 +151,67 @@ describe("override — direct-patch paths actually change the fact, not just the
     // overrides["stats.ac"] at read time (unchanged behavior, proven by resolve.intent.test.ts).
     expect(mustEntity(result.state, "hero").stats.ac).toBe(12); // testEntity default, unpatched
     expect(mustEntity(result.state, "hero").overrides["stats.ac"]?.value).toBe(99);
+  });
+});
+
+describe("override — an HP override to zero has damage's tail (stage 4)", () => {
+  function concentrating(hp: number): FoldedState {
+    const state = opened({ hp });
+    const effect: Effect = {
+      id: "effect-1",
+      source: { entity: "hero", mechanic: "test", action: "x", castLevel: null },
+      target: "hero",
+      payload: { kind: "standing", facts: {} },
+      lifetime: { kind: "manual" },
+      concentration: true,
+    };
+    return {
+      ...state,
+      effects: { [effect.id]: effect },
+      entities: {
+        ...state.entities,
+        hero: { ...mustEntity(state, "hero"), concentration: effect.id },
+      },
+    };
+  }
+
+  it("an override that drops HP from above zero to zero ends concentration, not damage-taken", () => {
+    const state = concentrating(10);
+    const result = resolve(state, override("vitals.hp", 0), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(result.receipt.events).toEqual([
+      { kind: "hp-zero", entity: "hero" },
+      { kind: "effect-ended", effect: "effect-1" },
+      { kind: "concentration-ended", entity: "hero", effect: "effect-1" },
+    ]);
+    expect(mustEntity(result.state, "hero").concentration).toBeNull();
+    expect(result.state.effects["effect-1"]).toBeUndefined();
+  });
+
+  it("an override from zero back to a positive HP (revival) emits no events", () => {
+    const state = concentrating(0);
+    const dying = {
+      ...state,
+      entities: {
+        ...state.entities,
+        hero: {
+          ...mustEntity(state, "hero"),
+          vitals: { ...mustEntity(state, "hero").vitals, life: "dying" as const },
+        },
+      },
+    };
+    const result = resolve(dying, override("vitals.hp", 12), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(result.receipt.events).toEqual([]);
+  });
+
+  it("an override between two positive HP values emits no events", () => {
+    const state = concentrating(20);
+    const result = resolve(state, override("vitals.hp", 10), catalogue);
+    expect(result.kind).toBe("applied");
+    if (result.kind !== "applied") return;
+    expect(result.receipt.events).toEqual([]);
   });
 });

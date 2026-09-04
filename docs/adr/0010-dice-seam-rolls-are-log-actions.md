@@ -95,3 +95,15 @@ roll is seen by everyone at the table — and a hidden roll is not shown to the 
 still written in the log. The pattern is the one the leading products share (Foundry's GM roll,
 Roll20's `/gmroll`, D&D Beyond's secret rolls in the Game Log): public by default, hidden means
 the DM and the roller see the faces, the record is always kept.
+
+## Amendment (2026-09-04, stage 4)
+
+- A roll's `roller` binding (`roll-roller-mismatch` above) now also accepts a target's own roll
+  for that target's slot: when an intent answers a `d20` input per target (e.g. a Fireball save,
+  keyed `${input}:${target}`), a roll made for that target satisfies the mismatch check even
+  though the acting entity is the caster — the save is the target's fact, not the caster's, and
+  the shared log now attributes it to whoever actually rolled it. A roll under a plain (non
+  per-target) key still binds only to the acting entity, as before.
+- This does not change the accepted risk above: a hidden roll's faces still sit in the one shared
+  log every client folds (Alternative 2, still rejected) — attribution changes who a roll may
+  answer for, not who can read it.

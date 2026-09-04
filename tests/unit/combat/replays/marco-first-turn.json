@@ -68,7 +68,7 @@
         "seed": null,
         "source": "manual",
         "hidden": false,
-        "roller": null,
+        "roller": "goblin-1",
         "purpose": "save",
         "label": null
       }
@@ -84,7 +84,7 @@
         "seed": null,
         "source": "manual",
         "hidden": false,
-        "roller": null,
+        "roller": "goblin-2",
         "purpose": "save",
         "label": null
       }
@@ -100,7 +100,7 @@
         "seed": null,
         "source": "manual",
         "hidden": false,
-        "roller": null,
+        "roller": "goblin-3",
         "purpose": "save",
         "label": null
       }

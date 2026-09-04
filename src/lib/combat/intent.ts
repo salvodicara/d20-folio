@@ -14,6 +14,7 @@ import { assertNever, type EffectId, type EntityId } from "./ids";
 import type { Catalogue } from "./catalogue";
 import { programOf } from "./catalogue";
 import type { LifetimeSpec, Program, Step } from "./mechanic";
+import { settleZeroHp } from "./override";
 import { areaMembership, distanceFt } from "./position";
 import { bind, evalExpr, evalPredicate, type EvalContext } from "./predicates";
 import { repositionRelations } from "./reposition";
@@ -264,14 +265,7 @@ function deliverDamage(
       nextOrdinal: next.nextOrdinal + 1,
     };
   }
-  if (result.hpZero || result.entity.vitals.life === "dead") {
-    const held = result.entity.concentration;
-    if (held !== null) {
-      const ended = endEffects(next, [held]);
-      next = ended.state;
-      events.push(...ended.events);
-    }
-  }
+  next = settleZeroHp(next, target, events);
   return next;
 }
 

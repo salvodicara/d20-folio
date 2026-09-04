@@ -2,11 +2,39 @@
  * DM overrides: a persisted fact correction (`applyOverride`), plus the direct-override patch
  * for the paths that are persisted facts rather than read-time-derived stats.
  */
+import { endEffects } from "./effects";
+import type { EntityId } from "./ids";
 import type { StepResult } from "./intent";
-import type { Entity, FoldedState, LifeState, OverrideAction, Rejection } from "./types";
+import type {
+  CombatEvent,
+  Entity,
+  FoldedState,
+  LifeState,
+  OverrideAction,
+  Rejection,
+} from "./types";
 
 function rejected(rejection: Rejection): StepResult {
   return { kind: "rejected", rejection };
+}
+
+/** Ends the entity's held concentration when it is at 0 HP or dead — the same tail a
+ *  0-HP-crossing hit has (`deliverDamage`), shared here so a DM's direct HP override to 0
+ *  produces it too. Idempotent: an entity with no held concentration, or above 0 HP and
+ *  alive, is left alone. Pushes `endEffects`' events onto the caller's `events` accumulator. */
+export function settleZeroHp(
+  state: FoldedState,
+  entity: EntityId,
+  events: CombatEvent[]
+): FoldedState {
+  const current = state.entities[entity];
+  if (!current) return state;
+  if (current.vitals.hp > 0 && current.vitals.life !== "dead") return state;
+  const held = current.concentration;
+  if (held === null) return state;
+  const ended = endEffects(state, [held]);
+  events.push(...ended.events);
+  return ended.state;
 }
 
 const LIFE_STATES = new Set<LifeState>(["alive", "dying", "stable", "dead"]);
@@ -68,14 +96,25 @@ export function applyOverride(state: FoldedState, action: OverrideAction): StepR
     },
   };
   const patched = patchDirectOverride(recorded, action.path, action.value);
+  let next: FoldedState = {
+    ...state,
+    entities: { ...state.entities, [action.entity]: patched },
+  };
+  const events: CombatEvent[] = [];
+  // A DM override that drops HP from above zero to zero means the same thing as a hit that
+  // does it (deliverDamage): no damage-taken (there was none), but the same 0-HP tail.
+  if (action.path === "vitals.hp" && entity.vitals.hp > 0 && patched.vitals.hp === 0) {
+    events.push({ kind: "hp-zero", entity: action.entity });
+    next = settleZeroHp(next, action.entity, events);
+  }
   return {
     kind: "applied",
-    state: { ...state, entities: { ...state.entities, [action.entity]: patched } },
+    state: next,
     receipt: {
       action: action.id,
       outcome: "applied",
       paid: [],
-      events: [],
+      events,
       summary: ["override"],
     },
   };

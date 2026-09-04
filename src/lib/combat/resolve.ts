@@ -42,20 +42,39 @@ function referencedRolls(answers: Answers): string[] {
 /**
  * A roll is consumed by at most one action, and by the entity it was rolled for (ADR-0010):
  * a second action answering with the same roll is rejected, so one natural 20 never yields
- * two verdicts. A roll the state does not hold yet falls through to `missing-answer`.
+ * two verdicts. A roll the state does not hold yet falls through to `missing-answer`. A roll
+ * referenced under a per-target answer key (`${input}:${target}`, e.g. a Fireball save keyed
+ * `save:goblin-1`) may also be attributed to that target: the target's own save roll answers
+ * its own key even though the acting entity is the caster.
  */
 function rollsUsable(
   state: FoldedState,
   action: { readonly id: string; readonly answers: Answers },
   entity: EntityId | null
 ): Rejection | null {
-  for (const id of referencedRolls(action.answers)) {
+  // `unknown`, not `Answer`: a persisted log may carry an answer the union does not describe.
+  for (const [key, value] of Object.entries<unknown>(action.answers)) {
+    if (
+      typeof value !== "object" ||
+      value === null ||
+      !("roll" in value) ||
+      typeof value.roll !== "string"
+    ) {
+      continue;
+    }
+    const id = value.roll;
     const record = state.rolls[id];
     if (!record) continue;
     const by = state.spent[id];
     if (by !== undefined && by !== action.id)
       return { reason: "roll-consumed", roll: id, by };
-    if (entity !== null && record.roller !== null && record.roller !== entity) {
+    const at = key.indexOf(":");
+    const perTarget = at > 0 ? key.slice(at + 1) : null;
+    const usable =
+      record.roller === null ||
+      record.roller === entity ||
+      (perTarget !== null && record.roller === perTarget);
+    if (entity !== null && !usable) {
       return { reason: "roll-roller-mismatch", roll: id, entity };
     }
   }

@@ -8,7 +8,13 @@ import {
 } from "@/lib/combat/dice";
 import { fold } from "@/lib/combat/fold";
 import { resolve } from "@/lib/combat/resolve";
-import type { Action, Encounter, FoldedState, Relation } from "@/lib/combat/types";
+import type {
+  Action,
+  Answers,
+  Encounter,
+  FoldedState,
+  Relation,
+} from "@/lib/combat/types";
 import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
 import { testEntity } from "./__helpers__/entities";
 import { emptyState, openingActions, seqFactory } from "./__helpers__/state";
@@ -225,5 +231,119 @@ describe("intents consume rolls by id", () => {
       { action: "i1", rejection: { reason: "missing-answer", input: "roll" } },
     ]);
     expect(result.state.entities["monster-1"]?.vitals.hp).toBe(7);
+  });
+});
+
+describe("a per-target save binds to the target it was rolled for (stage 4)", () => {
+  const wizard = testEntity({
+    id: "wizard",
+    kind: "pc",
+    controllerUid: "p1",
+    hp: 20,
+    ac: 15,
+    abilities: { DEX: 3 },
+    mechanics: ["srd:spell:fireball"],
+    resources: { "slot-3": { current: 1, max: 1, recharge: "long" } },
+    position: { x: 0, y: 0 },
+  });
+  const blastGoblin = testEntity({
+    id: "goblin-1",
+    kind: "monster",
+    controllerUid: "dm",
+    hp: 7,
+    ac: 15,
+    saves: { DEX: 2 },
+    position: { x: 5, y: 0 }, // 25 ft from the wizard: out of the wizard's own 20-ft blast
+  });
+  function fireballOpening(): Action[] {
+    return openingActions(
+      "dm",
+      seq,
+      [wizard, blastGoblin],
+      { wizard: 20, "goblin-1": 10 },
+      ["wizard", "goblin-1"]
+    );
+  }
+  function fireball(id: string, answers: Answers): Action {
+    return {
+      kind: "intent",
+      id,
+      seq: seq(),
+      by: "p1",
+      entity: "wizard",
+      mechanic: "srd:spell:fireball",
+      program: "cast",
+      targets: [],
+      answers: { origin: { x: 5, y: 0 }, ...answers },
+      payment: [],
+      window: null,
+      basedOn: 0,
+    };
+  }
+
+  it("a save answered under its own target's key (save:goblin-1) is accepted", () => {
+    const state = run([
+      ...fireballOpening(),
+      rollAction("r-save", "dm", {
+        ...manual("1d20", [5], 5, "save"),
+        roller: "goblin-1",
+      }),
+      rollAction("r-damage", "p1", {
+        ...manual("8d6", [1, 1, 1, 1, 1, 1, 1, 1], 8, "damage"),
+        roller: "wizard",
+      }),
+      fireball("i1", {
+        "save:goblin-1": { roll: "r-save" },
+        damage: { roll: "r-damage" },
+      }),
+    ]);
+    expect(state.entities["goblin-1"]?.vitals.hp).toBeLessThan(7); // the fold actually applied
+  });
+
+  it("the same roll answered under a different target's key is rejected", () => {
+    const state = run([
+      ...fireballOpening(),
+      rollAction("r-save", "dm", {
+        ...manual("1d20", [5], 5, "save"),
+        roller: "goblin-1",
+      }),
+      rollAction("r-damage", "p1", {
+        ...manual("8d6", [1, 1, 1, 1, 1, 1, 1, 1], 8, "damage"),
+        roller: "wizard",
+      }),
+    ]);
+    const result = resolve(
+      state,
+      fireball("i1", {
+        "save:goblin-2": { roll: "r-save" },
+        damage: { roll: "r-damage" },
+      }),
+      catalogue
+    );
+    expect(result.kind === "rejected" && result.rejection).toEqual({
+      reason: "roll-roller-mismatch",
+      roll: "r-save",
+      entity: "wizard",
+    });
+  });
+
+  it("a roll made for a target cannot answer a plain (non-per-target) key", () => {
+    const state = run([
+      ...fireballOpening(),
+      rollAction("r-save", "dm", {
+        ...manual("1d20", [5], 5, "save"),
+        roller: "goblin-1",
+      }),
+    ]);
+    const result = resolve(
+      state,
+      fireball("i1", { "damage-0": { roll: "r-save" } }),
+      catalogue
+    );
+    expect(result.kind === "rejected" && result.rejection).toEqual({
+      reason: "roll-roller-mismatch",
+      roll: "r-save",
+      entity: "wizard",
+    });
   });
 });
