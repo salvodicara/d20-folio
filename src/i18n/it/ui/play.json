@@ -186,7 +186,12 @@
     },
     "dice": {
       "title": "Dadi",
-      "tip": "Passa dal lancio dell'app all'inserimento dei tuoi dadi veri."
+      "tip": "Passa dal lancio dell'app all'inserimento dei tuoi dadi veri.",
+      "formula": "Formula",
+      "throw": "Tira",
+      "modeApp": "Tira l'app",
+      "modeManual": "Leggo i miei dadi",
+      "appHint": "I dadi li tira l'app"
     },
     "reaction": {
       "title": "Reazioni aperte",
@@ -294,7 +299,8 @@
       "hideTip": "I giocatori smettono di vedere questa pedina; tu la vedi tratteggiata.",
       "removeTip": "Togli {{name}} dal tavolo.",
       "leave": "Alzati dal tavolo",
-      "leaveTip": "Togli il tuo personaggio dal combattimento; l'esito torna sulla scheda."
+      "leaveTip": "Togli il tuo personaggio dal combattimento; l'esito torna sulla scheda.",
+      "removeSeated": "{{name}} è il personaggio di un giocatore: solo il suo giocatore può alzarsi dal tavolo, ed è questo che riporta l'esito del combattimento sulla scheda."
     },
     "add": {
       "search": "Cerca nel bestiario",

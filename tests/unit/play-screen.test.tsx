@@ -23,7 +23,14 @@ import { buildCatalogue } from "@/lib/combat/catalogue";
 import { CORE_MECHANICS } from "@/data/combat/core-catalogue";
 import { fold } from "@/lib/combat/fold";
 import type { TableState } from "@/features/play/table/table-store";
-import type { Action, Encounter, Entity } from "@/lib/combat/types";
+import {
+  filterLines,
+  manualVitals,
+  nextMonsterOrdinal,
+  seatableCharacter,
+} from "@/features/play/model";
+import type { LogLine } from "@/lib/views/encounter-log-view";
+import type { Action, Encounter, Entity, FoldedState } from "@/lib/combat/types";
 import type { Mechanic } from "@/lib/combat/mechanic";
 import type { ActionId } from "@/lib/combat/ids";
 import { testEntity } from "./combat/__helpers__/entities";
@@ -79,6 +86,9 @@ function fixtureLog(): Action[] {
       position: { x: 1, y: 1 },
     }),
     label: "custom:Lyra",
+    // A SEATED character, as `projectCharacter` emits it: the origin is what tells the DM's
+    // pill that only its player may take it off the table.
+    origin: { kind: "character", uid: PLAYER, characterId: "lyra", buildRevision: 1 },
   };
   const ogre: Entity = {
     ...testEntity({
@@ -110,9 +120,20 @@ interface Fake {
   rerender(): void;
 }
 
-/** A `TableState` over an in-memory log, re-folded on every append. */
-function fakeTable(uid: string, dm: boolean, log: Action[]): TableState {
-  const seq = seqFactory(uid);
+/**
+ * A `TableState` over an in-memory log, re-folded on every append.
+ *
+ * `seq` is the MOUNT's clock, not a fresh one per instance: a restarted clock stamps a later
+ * action before the opening ops, `sortBySeq` folds it first, and the reducer rejects it as
+ * `unknown-entity` — a green "the action was appended" assertion over a table that never
+ * changed.
+ */
+function fakeTable(
+  uid: string,
+  dm: boolean,
+  log: Action[],
+  seq: () => Action["seq"]
+): TableState {
   const encounter: Encounter = {
     schema: 1,
     id: "live",
@@ -152,8 +173,10 @@ function mount(opts: {
   log?: Action[];
 }): Fake {
   const log = opts.log ?? fixtureLog();
+  // Continues past the fixture's own stamps, so everything this test appends folds after it.
+  const seq = seqFactory(opts.uid, 9_000);
   const props = () => ({
-    table: fakeTable(opts.uid, opts.dm, log),
+    table: fakeTable(opts.uid, opts.dm, log, seq),
     catalogue,
     viewer: {
       uid: opts.uid,
@@ -318,6 +341,101 @@ describe("the DM drawer", () => {
   });
 });
 
+describe("the keyboard the tooltips promise", () => {
+  it("Space ends the turn when it is the viewer's, and never otherwise", () => {
+    const fake = mount({ uid: PLAYER, dm: false, characterId: "lyra" });
+    fireEvent.keyDown(window, { code: "Space" });
+    expect(fake.log.at(-1)?.kind === "table" && fake.log.at(-1)?.kind).toBe("table");
+    const ended = fake.log.at(-1);
+    expect(ended?.kind === "table" && ended.table.op).toBe("end-turn");
+  });
+
+  it("Space in a text field belongs to the field", () => {
+    const fake = mount({ uid: DM, dm: true, characterId: null });
+    fireEvent.click(screen.getByTestId("pl-drawer-open"));
+    fireEvent.click(screen.getByTestId("pl-hp-pill"));
+    const before = fake.log.length;
+    fireEvent.keyDown(screen.getByTestId("pl-hp-amount"), { code: "Space" });
+    expect(fake.log.length).toBe(before);
+  });
+
+  it("a rail hotkey selects its tool", () => {
+    mount({ uid: DM, dm: true, characterId: null });
+    fireEvent.keyDown(window, { key: "r" });
+    expect(screen.getByTestId("pl-tool-ruler").getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("a DM-only hotkey does nothing for a player", () => {
+    mount({ uid: PLAYER, dm: false, characterId: "lyra" });
+    fireEvent.keyDown(window, { key: "f" });
+    expect(screen.queryByTestId("pl-tool-fog-reveal")).toBeNull();
+    expect(screen.getByTestId("pl-tool-select").getAttribute("aria-pressed")).toBe(
+      "true"
+    );
+  });
+});
+
+describe("the dice medallion", () => {
+  it("opens a free roll rather than flipping a setting", () => {
+    mount({ uid: PLAYER, dm: false, characterId: "lyra" });
+    fireEvent.click(screen.getByTestId("pl-dice"));
+    expect(screen.getByTestId("pl-roll-free")).toBeTruthy();
+  });
+
+  it("submitting the free roll appends a roll action", async () => {
+    const fake = mount({ uid: PLAYER, dm: false, characterId: "lyra" });
+    const before = fake.log.length;
+    fireEvent.click(screen.getByTestId("pl-dice"));
+    fireEvent.change(screen.getByTestId("pl-free-formula"), {
+      target: { value: "2d6+1" },
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("pl-free-roll"));
+      await Promise.resolve();
+    });
+    const appended = fake.log.slice(before);
+    expect(appended).toHaveLength(1);
+    const rolled = appended[0];
+    if (rolled?.kind !== "roll") throw new Error("expected a roll");
+    expect(rolled.roll.formula).toBe("2d6+1");
+    expect(rolled.roll.purpose).toBe("free");
+    expect(rolled.roll.roller).toBe("lyra");
+  });
+
+  it("in manual mode it takes the faces the person read", async () => {
+    const fake = mount({ uid: PLAYER, dm: false, characterId: "lyra" });
+    fireEvent.click(screen.getByTestId("pl-dice"));
+    fireEvent.click(screen.getByTestId("pl-roll-mode"));
+    fireEvent.change(screen.getByTestId("pl-free-formula"), {
+      target: { value: "1d20" },
+    });
+    fireEvent.change(screen.getByTestId("pl-free-face-0"), { target: { value: "17" } });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("pl-free-roll"));
+      await Promise.resolve();
+    });
+    const rolled = fake.log.at(-1);
+    if (rolled?.kind !== "roll") throw new Error("expected a roll");
+    expect(rolled.roll.faces).toEqual([17]);
+    expect(rolled.roll.source).toBe("manual");
+  });
+});
+
+describe("a player's own panels", () => {
+  it("the HP pill opens the editor as a floating panel, on their own creature", () => {
+    mount({ uid: PLAYER, dm: false, characterId: "lyra" });
+    fireEvent.click(screen.getByTestId("pl-hp-pill"));
+    const floating = screen.getByTestId("pl-hp-float");
+    expect(within(floating).getByTestId("pl-hp-editor")).toBeTruthy();
+    expect(floating.textContent).toContain("Lyra");
+  });
+
+  it("the reaction medallion is dark when there is nothing to answer", () => {
+    mount({ uid: PLAYER, dm: false, characterId: "lyra" });
+    expect(screen.getByTestId("pl-reaction-medal").hasAttribute("disabled")).toBe(true);
+  });
+});
+
 describe("the HP editor", () => {
   it("damage becomes the total the reducer's own HP path takes", () => {
     const fake = mount({ uid: DM, dm: true, characterId: null });
@@ -330,6 +448,53 @@ describe("the HP editor", () => {
     if (last?.kind !== "override") throw new Error("expected an override");
     expect(last.path).toBe("vitals.hp");
     expect(last.value).toBe(25);
+  });
+
+  it("damage takes temporary hit points first, exactly as an automated hit does", () => {
+    const fake = mount({ uid: DM, dm: true, characterId: null });
+    fireEvent.click(screen.getByTestId("pl-drawer-open"));
+    fireEvent.click(screen.getByTestId("pl-hp-pill"));
+    fireEvent.change(screen.getByTestId("pl-hp-temp"), { target: { value: "5" } });
+    fireEvent.click(screen.getByTestId("pl-hp-apply"));
+    // Re-fold: the second correction has to see the pool the first one granted.
+    fake.rerender();
+    // Now 5 temp HP on 38: 13 damage eats the pool and takes 8 real hit points.
+    fireEvent.click(screen.getByTestId("pl-hp-pill"));
+    fireEvent.change(screen.getByTestId("pl-hp-amount"), { target: { value: "13" } });
+    fireEvent.click(screen.getByTestId("pl-hp-apply"));
+    const overrides = fake.log
+      .filter((action) => action.kind === "override")
+      .map((action) => [action.path, action.value] as const);
+    expect(overrides).toContainEqual(["vitals.hp", 30]);
+    expect(overrides.filter(([path]) => path === "vitals.tempHp").at(-1)?.[1]).toBe(0);
+  });
+
+  it("a log line's Modifica edits the creature THAT line wounded", async () => {
+    // Manual dice, so the blow LANDS: a random miss would make this assertion vacuous, and the
+    // point is which creature the correction opens on, not whether the attack hit.
+    localStorage.setItem("d20-dice-mode", "manual");
+    const fake = mount({ uid: DM, dm: true, characterId: null });
+    fireEvent.click(screen.getByTestId(`pl-tile-${RAPIER.id}#attack`));
+    fireEvent.click(screen.getByTestId("pl-cell-ogre"));
+    const faces = screen
+      .getByTestId("pl-roll-manual")
+      .querySelectorAll<HTMLInputElement>('input[type="number"]');
+    fireEvent.change(faces[0] as Element, { target: { value: "20" } });
+    fireEvent.change(faces[1] as Element, { target: { value: "8" } });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("pl-roll-apply"));
+      await Promise.resolve();
+    });
+    fake.rerender();
+
+    fireEvent.click(screen.getByTestId("pl-drawer-open"));
+    const drawer = screen.getByTestId("pl-drawer");
+    const edit = drawer.querySelector<HTMLButtonElement>('[data-testid^="pl-edit-"]');
+    expect(edit, "a landed blow offers Modifica on its own line").toBeTruthy();
+    fireEvent.click(edit as HTMLButtonElement);
+    // The ogre took the damage; nothing was selected on the map, and the old wiring would have
+    // edited the selection or nothing at all.
+    expect(screen.getByTestId("pl-hp-editor").textContent).toContain("Ogre");
   });
 
   it("temporary hit points and a condition ride their own override paths", () => {
@@ -346,5 +511,99 @@ describe("the HP editor", () => {
       .map((action) => action.path);
     expect(paths).toContain("vitals.tempHp");
     expect(paths).toContain("condition");
+  });
+});
+
+describe("the ordinal a new creature takes", () => {
+  it("is the lowest free one, so a removal frees its number", () => {
+    const state = (ids: readonly string[]): FoldedState =>
+      ({
+        entities: Object.fromEntries(
+          ids.map((id) => [
+            id,
+            { id, origin: { kind: "monster", srdId: "ogre" } } as unknown as Entity,
+          ])
+        ),
+      }) as unknown as FoldedState;
+    expect(nextMonsterOrdinal(state([]), "ogre")).toBe(1);
+    expect(nextMonsterOrdinal(state(["ogre-1"]), "ogre")).toBe(2);
+    // add, add, remove the first, add → 1 again, not the colliding 2.
+    expect(nextMonsterOrdinal(state(["ogre-2"]), "ogre")).toBe(1);
+    expect(nextMonsterOrdinal(state(["ogre-1", "ogre-2"]), "ogre")).toBe(3);
+    // Another creature's seats never move this one's numbering.
+    expect(nextMonsterOrdinal(state(["ogre-1"]), "goblin")).toBe(1);
+  });
+});
+
+describe("manual damage takes the same order as an automated hit", () => {
+  const wounded = (hp: number, temp: number): Entity =>
+    ({
+      vitals: { hp, tempHp: temp > 0 ? { amount: temp, source: null } : null },
+    }) as unknown as Entity;
+
+  it("temporary hit points absorb first, then hit points", () => {
+    expect(manualVitals(wounded(38, 5), "damage", 13)).toEqual({ hp: 30, tempHp: 0 });
+    expect(manualVitals(wounded(38, 20), "damage", 13)).toEqual({ hp: 38, tempHp: 7 });
+    expect(manualVitals(wounded(4, 0), "damage", 13)).toEqual({ hp: 0, tempHp: 0 });
+  });
+
+  it("healing never touches the temporary pool", () => {
+    expect(manualVitals(wounded(30, 5), "heal", 8)).toEqual({ hp: 38, tempHp: 5 });
+  });
+});
+
+describe("the Registro's filters", () => {
+  const line = (over: Partial<LogLine>): LogLine => ({
+    id: "x",
+    at: { ms: 0, counter: 0, by: "dm" },
+    author: "dm",
+    kind: "action",
+    text: "",
+    undoable: true,
+    hidden: false,
+    verdict: null,
+    subject: null,
+    wounded: false,
+    ...over,
+  });
+
+  it("'Ferite' keeps what wounded somebody, not what settled a verdict", () => {
+    const missed = line({ id: "miss", verdict: "miss" });
+    const savedAgainst = line({ id: "save", wounded: true, subject: "ogre" });
+    const hit = line({ id: "hit", verdict: "hit", wounded: true, subject: "ogre" });
+    const moved = line({ id: "move" });
+    const kept = filterLines([missed, savedAgainst, hit, moved], "wounds").map(
+      (l) => l.id
+    );
+    // A miss settles a verdict and wounds nobody; a save-based spell wounds and settles none.
+    expect(kept).toEqual(["save", "hit"]);
+  });
+});
+
+describe("the token pill's ownership scope", () => {
+  it("refuses to remove a seated character, and says why", () => {
+    mount({ uid: DM, dm: true, characterId: null });
+    fireEvent.click(screen.getByTestId("pl-cell-lyra"));
+    const remove = screen.getByTestId("pl-pill-remove");
+    // Lyra is a player's own character: only their "Alzati" carries the fight home.
+    expect(remove.hasAttribute("disabled")).toBe(true);
+  });
+
+  it("removes a monster, which has nothing to write back", () => {
+    const fake = mount({ uid: DM, dm: true, characterId: null });
+    fireEvent.click(screen.getByTestId("pl-cell-ogre"));
+    fireEvent.click(screen.getByTestId("pl-pill-remove"));
+    const last = fake.log.at(-1);
+    expect(last?.kind === "table" && last.table.op).toBe("remove-entity");
+  });
+});
+
+describe("taking a seat", () => {
+  it("refuses the document the store is still holding from another sheet", () => {
+    expect(seatableCharacter({ id: "lyra" }, "lyra")).toBe(true);
+    // Arrived from Thorin's sheet: the store has not swapped yet.
+    expect(seatableCharacter({ id: "thorin" }, "lyra")).toBe(false);
+    expect(seatableCharacter(null, "lyra")).toBe(false);
+    expect(seatableCharacter({ id: "lyra" }, null)).toBe(false);
   });
 });

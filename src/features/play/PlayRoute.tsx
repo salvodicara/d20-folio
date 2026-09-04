@@ -48,6 +48,7 @@ import type { Entity } from "@/lib/combat/types";
 import type { EntityId } from "@/lib/combat/ids";
 import { PlayScreen } from "./PlayScreen";
 import { monsterLabelId } from "./labels";
+import { nextMonsterOrdinal, seatableCharacter } from "./model";
 import { LIVE_ENCOUNTER_ID, liveTableRef } from "./table/table-store";
 import { useTable } from "./table/use-table";
 import type { CreatureOption } from "./AddCreature";
@@ -188,7 +189,11 @@ export function PlayRoute() {
   }, [campaignId]);
 
   const sit = useCallback(() => {
+    // The store still holds the PREVIOUS character while a new subscription lands, so arriving
+    // from another sheet would seat A's numbers under B's id. The seat is refused — and not
+    // even offered — until the hydrated document is the one this member is entitled to.
     if (!characterDoc || !characterId || !state) return;
+    if (!seatableCharacter(characterDoc, characterId)) return;
     const { entity, mechanics } = projectCharacter(characterDoc, {
       uid,
       characterId,
@@ -243,11 +248,9 @@ export function PlayRoute() {
       const block = blocks.find((one) => one.id === option.id);
       if (!block) return;
       // Two ogres are told apart by an ordinal, not by a random id: the label the log prints
-      // has to mean something at the table.
-      const already = Object.values(state.entities).filter(
-        (entity) => entity.origin.kind === "monster" && entity.origin.srdId === block.id
-      ).length;
-      const ordinal = already + 1;
+      // has to mean something at the table. The LOWEST free one, so a removal frees its number
+      // instead of leaving a hole the next add collides with.
+      const ordinal = nextMonsterOrdinal(state, block.id);
       const { entity, mechanics } = projectMonster(block, {
         id: `${block.id}-${ordinal}`,
         label: monsterLabelId(block.id, ordinal),
@@ -276,7 +279,7 @@ export function PlayRoute() {
       creaturesLoading={bestiaryLoading}
       onAddCreature={addCreature}
       onOpenTable={dm ? openTable : undefined}
-      onSit={characterId && characterDoc ? sit : undefined}
+      onSit={seatableCharacter(characterDoc, characterId) ? sit : undefined}
       onStand={stand}
     />
   );

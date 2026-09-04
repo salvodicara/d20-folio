@@ -478,9 +478,12 @@
   cursor: pointer;
 }
 
+/* The active pill needs an OPAQUE ground of its own: the bar tabs straddle the panel's edge,
+   so a translucent fill lets the parchment/dark boundary cut straight through the word. */
 .pl-tabs button[aria-selected="true"] {
   border-color: var(--play-gold-line);
-  background: rgb(201 163 90 / 14%);
+  background:
+    linear-gradient(rgb(201 163 90 / 20%), rgb(201 163 90 / 20%)), var(--play-well);
   color: var(--play-gold-2);
 }
 
@@ -611,7 +614,10 @@
   opacity: 0.45;
 }
 
+/* `display` is load-bearing: a bare <span> stays inline, its height is ignored, and the health
+   bar every cell must carry (rule 33) collapses to a sliver. */
 .pl-cell__hp {
+  display: block;
   height: 4px;
   margin-top: 4px;
   overflow: hidden;
@@ -630,6 +636,7 @@
 }
 
 .pl-cell__name {
+  display: block;
   margin-top: 4px;
   font: 600 11px/1.1 var(--font-body);
   color: var(--play-cyan);
@@ -2159,4 +2166,20 @@
   height: 24px;
   margin: 0 4px;
   background: var(--play-hair-2);
+}
+
+/* The HP editor when nothing is docked to hold it — a player's own, or the DM's with the
+   drawer closed. The same component as the drawer's, in a floating frame. */
+.pl-hpfloat {
+  right: 16px;
+  bottom: 172px;
+  width: 340px;
+  padding: 12px 14px;
+}
+
+.pl-hpfloat .pl-hpedit {
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background: none;
 }

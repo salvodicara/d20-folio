@@ -120,14 +120,15 @@ test("the HUD's two clusters share one horizontal centre", async ({ page }) => {
     return box.y + box.height / 2;
   };
   const [portrait, ring, bar] = await Promise.all([
-    centreY("pl-hp-pill"),
+    centreY("pl-portrait"),
     centreY("pl-end-turn"),
     centreY("pl-hotbar-bar"),
   ]);
-  // The HP pill hangs below the portrait's ring, so it is measured against the ring rather
-  // than the portrait's own box; both are centred on the bar.
+  // The portrait's own ring against the End turn ring: the correction is about those two
+  // circles, so the assertion is about those two circles. The HP pill hangs below the portrait
+  // and would have tolerated any drift.
+  expect(Math.abs(portrait - ring)).toBeLessThanOrEqual(2);
   expect(Math.abs(ring - bar)).toBeLessThanOrEqual(2);
-  expect(portrait).toBeGreaterThan(bar - 80);
 });
 
 test.describe("the states a URL cannot reach", () => {

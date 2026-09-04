@@ -186,7 +186,12 @@
     },
     "dice": {
       "title": "Dice",
-      "tip": "Switch between the app rolling and typing the faces of your own dice."
+      "tip": "Switch between the app rolling and typing the faces of your own dice.",
+      "formula": "Formula",
+      "throw": "Roll",
+      "modeApp": "The app rolls",
+      "modeManual": "I read my dice",
+      "appHint": "The app draws the dice"
     },
     "reaction": {
       "title": "Open reactions",
@@ -294,7 +299,8 @@
       "hideTip": "The players stop seeing this token; you keep it dashed.",
       "removeTip": "Take {{name}} off the table.",
       "leave": "Leave the table",
-      "leaveTip": "Take your character out of the fight; the outcome is written back to the sheet."
+      "leaveTip": "Take your character out of the fight; the outcome is written back to the sheet.",
+      "removeSeated": "{{name}} is a player's character: only its player can leave the table, which is what carries the fight's outcome back to the sheet."
     },
     "add": {
       "search": "Search the bestiary",

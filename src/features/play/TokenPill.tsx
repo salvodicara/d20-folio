@@ -22,6 +22,12 @@ export interface TokenPillProps {
   readonly dm: boolean;
   /** The viewer controls this creature and may leave the table with it. */
   readonly mine: boolean;
+  /**
+   * The creature is a player's own character (origin `character`), so the DM cannot take it off
+   * the table: `remove-entity` writes nothing back to the personal `combat/state`, and the
+   * fight's HP would be lost. Only its owner's "Alzati" (`leaveTable`) carries the outcome home.
+   */
+  readonly seatedCharacter: boolean;
   readonly onInitiative: (entity: EntityId, value: number) => void;
   readonly onHidden: (entity: EntityId, hidden: boolean) => void;
   readonly onRemove: (entity: EntityId) => void;
@@ -37,6 +43,7 @@ export function TokenPill(props: TokenPillProps) {
     hidden,
     dm,
     mine,
+    seatedCharacter,
     onInitiative,
     onHidden,
     onRemove,
@@ -89,12 +96,20 @@ export function TokenPill(props: TokenPillProps) {
               <PlayIcon id={hidden ? "i-eye-off" : "i-eye"} />
             </button>
           </PlayTip>
-          <PlayTip label={t("common.remove")} hint={t("play.pill.removeTip", { name })}>
+          <PlayTip
+            label={t("common.remove")}
+            hint={
+              seatedCharacter
+                ? t("play.pill.removeSeated", { name })
+                : t("play.pill.removeTip", { name })
+            }
+          >
             <button
               type="button"
               className="pl-icon-btn"
               aria-label={t("common.remove")}
               data-testid="pl-pill-remove"
+              disabled={seatedCharacter}
               onClick={() => onRemove(entity)}
             >
               <PlayIcon id="i-trash" />

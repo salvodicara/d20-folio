@@ -27,7 +27,7 @@ import { mapView } from "@/lib/combat/map";
 import { areaShapeFrom } from "@/lib/combat/answers";
 import { areaMembership } from "@/lib/combat/position";
 import { sortBySeq } from "@/lib/combat/ids";
-import type { ActionId, EntityId } from "@/lib/combat/ids";
+import type { ActionId, EntityId, WindowId } from "@/lib/combat/ids";
 import type { Catalogue } from "@/lib/combat/catalogue";
 import type { ConditionId, Entity, Position, Rejection } from "@/lib/combat/types";
 import { useLocale } from "@/hooks/useLocale";
@@ -42,7 +42,7 @@ import { PlayIcon, PlaySprite } from "./PlayIcon";
 import { PlayTip } from "./PlayTip";
 import { ProseLog } from "./ProseLog";
 import { ReactionCard, type ReactionOffer } from "./ReactionCard";
-import { RollPanel, type ManualPrompt, type RollView } from "./RollPanel";
+import { RollPanel, type RollView } from "./RollPanel";
 import { SceneHeader } from "./SceneHeader";
 import { TargetBlock, type TargetView } from "./TargetBlock";
 import { TokenPill } from "./TokenPill";
@@ -61,8 +61,15 @@ import {
 } from "./model";
 import { groupTiles, hotbarTiles, reactionTiles, type HotbarTile } from "./tiles";
 import { mapToolFor, type PlayTool } from "./tools";
-import { intentBody, planIntent, rollsFor, type IntentArgs } from "./table/dispatch";
-import type { HpEdit } from "./HpEditor";
+import {
+  freeRoll,
+  intentBody,
+  planIntent,
+  rollsFor,
+  type IntentArgs,
+  type PendingInput,
+} from "./table/dispatch";
+import { HpEditor, type HpEdit } from "./HpEditor";
 import type { TableState } from "./table/table-store";
 import "./play.css";
 import "./map/map.css";
@@ -127,10 +134,21 @@ type Aiming =
       readonly kind: "faces";
       readonly tile: HotbarTile;
       readonly args: IntentArgs;
-      readonly prompt: ManualPrompt;
-    };
+      readonly inputs: readonly PendingInput[];
+    }
+  /** The dice medallion's own roll: no mechanic, no target, just dice and the log. */
+  | { readonly kind: "free" };
 
 const ALLY_KINDS = new Set(["pc", "companion", "summon"]);
+
+/** The rail's hotkeys, exactly as the tooltips print them (`ToolRail`'s `RAIL`). */
+const TOOL_KEYS: Readonly<Record<string, PlayTool>> = {
+  v: "select",
+  h: "pan",
+  r: "ruler",
+  a: "add",
+  f: "fog-reveal",
+};
 
 export function PlayScreen(props: PlayScreenProps) {
   const { t } = useTranslation();
@@ -164,13 +182,21 @@ export function PlayScreen(props: PlayScreenProps) {
   const [drawer, setDrawer] = useState(false);
   const [drawerTab, setDrawerTab] = useState<DrawerTab>("log");
   const [logFilter, setLogFilter] = useState<LogFilter>("all");
-  const [editingLine, setEditingLine] = useState<ActionId | null>(null);
+  /** The creature the HP editor is open on — the ONLY thing that decides what it edits. A log
+   *  line opens it on the creature the line wounded; the HP pill opens it on the viewer's own. */
   const [hpFor, setHpFor] = useState<EntityId | null>(null);
+  /** The reaction window the viewer has waved away; the card is shown for any other. */
+  const [dismissedWindow, setDismissedWindow] = useState<WindowId | null>(null);
   const [fogOpacity, setFogOpacity] = useState(0.6);
   const [hiddenRolls, setHiddenRolls] = useState(true);
   const [diceMode, setDiceMode] = useState<DiceMode>(storedDiceMode);
   const [notice, setNotice] = useState<string | null>(null);
   const viewportRef = useRef<MapViewportApi | null>(null);
+  /** What the key handler needs to know NOW. It is bound once and must not re-bind on every
+   *  turn, so the three facts that change under it are read through refs. */
+  const canEndTurnRef = useRef(false);
+  const dmRef = useRef(viewer.dm);
+  const dispatchRef = useRef<TableState["dispatch"] | null>(null);
   const onViewport = useCallback((api: MapViewportApi) => {
     viewportRef.current = api;
   }, []);
@@ -313,17 +339,80 @@ export function PlayScreen(props: PlayScreenProps) {
         return;
       }
       if (diceMode === "manual" && planned.inputs.length > 0) {
-        setAiming({
-          kind: "faces",
-          tile,
-          args,
-          prompt: { title: labels(tile.label), inputs: planned.inputs },
-        });
+        setAiming({ kind: "faces", tile, args, inputs: planned.inputs });
         return;
       }
       await commit(args);
     },
-    [state, catalogue, diceMode, labels, commit, fail]
+    [state, catalogue, diceMode, commit, fail]
+  );
+
+  // The three facts the key handler reads, refreshed every render: it is bound once, so it
+  // cannot close over them.
+  useEffect(() => {
+    dmRef.current = viewer.dm;
+    dispatchRef.current = dispatch;
+    canEndTurnRef.current =
+      state !== null &&
+      state.clock.phase === "turns" &&
+      seated !== null &&
+      state.clock.current === seated.id;
+  });
+
+  /**
+   * The shortcuts the tooltips advertise (rule 39: no hotkey text inside a button, so the
+   * tooltip is where they are promised — and a promise on a screen is a contract).
+   *
+   * Bound on `window` rather than on the root element because the play surface has no single
+   * focused owner: a person who has just clicked the map, a tile or nothing at all still
+   * expects Space to end their turn. A key that arrives while a field has focus belongs to the
+   * field, so those are let through untouched.
+   */
+  useEffect(() => {
+    const typing = (target: EventTarget | null): boolean =>
+      target instanceof HTMLElement &&
+      (target.isContentEditable ||
+        ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (typing(event.target)) return;
+      const tool = TOOL_KEYS[event.key.toLowerCase()];
+      if (tool !== undefined) {
+        if (tool === "add" || tool === "fog-reveal" ? dmRef.current : true) {
+          event.preventDefault();
+          setTool(tool);
+        }
+        return;
+      }
+      if (event.code === "Space" && canEndTurnRef.current) {
+        event.preventDefault();
+        void dispatchRef.current?.({ kind: "table", table: { op: "end-turn" } });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  /**
+   * The dice medallion's roll: one `roll` action and nothing else. It is a log entry like any
+   * other — same seam, same provenance — so the table sees it and the DM can undo it.
+   */
+  const throwFree = useCallback(
+    async (formula: string, faces: readonly number[] | null) => {
+      const built = freeRoll(formula, faces === null ? "app" : "manual", {
+        by: viewer.uid,
+        entity: seatedId,
+        hidden: viewer.dm && hiddenRolls,
+        ...(faces === null ? {} : { faces }),
+      });
+      if ("code" in built) {
+        setNotice(t(`play.roll.error.${built.code}`));
+        return;
+      }
+      await dispatch({ kind: "roll", roll: built.roll });
+      setAiming({ kind: "none" });
+    },
+    [dispatch, viewer.uid, viewer.dm, seatedId, hiddenRolls, t]
   );
 
   /** Arm a tile, or fire it straight away when it needs nothing aimed. */
@@ -404,7 +493,6 @@ export function PlayScreen(props: PlayScreenProps) {
           reason: edit.reason,
         });
       }
-      setEditingLine(null);
       setHpFor(null);
     },
     [dispatch]
@@ -568,9 +656,10 @@ export function PlayScreen(props: PlayScreenProps) {
         }
       : null;
 
-  const hpEntity = hpFor === null ? null : (state.entities[hpFor] ?? null);
-  const editEntity =
-    hpEntity ?? (selectedEntity !== null && editingLine !== null ? selectedEntity : null);
+  /** Waved away for THIS window only: the next one opens the card again by itself. */
+  const reactionShown = offer !== null && offer.window !== dismissedWindow;
+
+  const editEntity = hpFor === null ? null : (state.entities[hpFor] ?? null);
   const editConditions: ConditionId[] = editEntity
     ? Object.values(state.effects)
         .filter(
@@ -786,18 +875,37 @@ export function PlayScreen(props: PlayScreenProps) {
           <RollPanel
             // Keyed by what it is asking about: a new prompt is a new panel, so the faces the
             // person typed for the last one are never carried into the next.
-            key={aiming.kind === "faces" ? aiming.tile.key : (roll?.id ?? "none")}
-            roll={aiming.kind === "faces" ? null : roll}
-            prompt={aiming.kind === "faces" ? aiming.prompt : null}
+            key={
+              aiming.kind === "faces"
+                ? aiming.tile.key
+                : aiming.kind === "free"
+                  ? "free"
+                  : (roll?.id ?? "none")
+            }
+            roll={aiming.kind === "faces" || aiming.kind === "free" ? null : roll}
+            prompt={
+              aiming.kind === "faces"
+                ? {
+                    kind: "inputs",
+                    title: labels(aiming.tile.label),
+                    inputs: aiming.inputs,
+                  }
+                : aiming.kind === "free"
+                  ? { kind: "free", title: t("play.dice.title") }
+                  : null
+            }
             onManual={(faces) => {
               if (aiming.kind === "faces") void commit(aiming.args, faces);
             }}
+            onFree={(formula, faces) => void throwFree(formula, faces)}
+            mode={diceMode}
+            onMode={setDiceMode}
             onCancel={() => setAiming({ kind: "none" })}
             onUndo={(action) => void table.undo(action, null)}
           />
 
           <ReactionCard
-            offer={offer}
+            offer={reactionShown ? offer : null}
             onReact={(taken) => {
               if (!eligibleEntity || !reactionTile) return;
               void commit({
@@ -811,6 +919,27 @@ export function PlayScreen(props: PlayScreenProps) {
             }}
             onPass={(passed) => void dispatch({ kind: "resolve", window: passed.window })}
           />
+
+          {/* The HP editor floats for anyone without the drawer to hold it (a player, or the
+              DM with the drawer closed): the SAME component, so the two places can never drift
+              into two editors. */}
+          {editEntity && !(viewer.dm && drawer) ? (
+            <section
+              className="pl-float pl-hpfloat pl-panel pl-panel--framed"
+              data-testid="pl-hp-float"
+            >
+              <span className="pl-brackets" />
+              <HpEditor
+                key={editEntity.id}
+                entity={editEntity}
+                name={nameOf(editEntity.id)}
+                conditions={editConditions}
+                conditionName={(id) => conditionName(id, language)}
+                onApply={(edits) => applyHp(editEntity.id, edits)}
+                onClose={() => setHpFor(null)}
+              />
+            </section>
+          ) : null}
 
           {!drawer ? <ProseLog lines={lines} authorOf={authorOf} /> : null}
 
@@ -834,6 +963,7 @@ export function PlayScreen(props: PlayScreenProps) {
                 hidden={!selectedEntity.reveal.token}
                 dm={viewer.dm}
                 mine={mine(selectedEntity) && !viewer.dm}
+                seatedCharacter={selectedEntity.origin.kind === "character"}
                 onInitiative={(entity, value) =>
                   void dispatch({
                     kind: "table",
@@ -906,13 +1036,22 @@ export function PlayScreen(props: PlayScreenProps) {
                 void dispatch({ kind: "table", table: { op: "end-turn" } })
               }
               canEndTurn={inTurns && acting}
-              onDice={() => setDiceMode(diceMode === "app" ? "manual" : "app")}
-              onReaction={() => setDrawer(true)}
-              openWindows={state.windows.length}
+              onDice={() => setAiming({ kind: "free" })}
+              onReaction={() => {
+                if (!offer) return;
+                setDismissedWindow(reactionShown ? offer.window : null);
+              }}
+              // What the VIEWER may answer, not what the table holds: a medallion enabled for a
+              // window this person cannot act on would be a lit button that does nothing.
+              openWindows={offer ? 1 : 0}
               onHp={() => {
                 setHpFor(seated.id);
-                setDrawer(true);
-                setDrawerTab("log");
+                // The DM's editor lives in the drawer's Registro, beside the line that caused
+                // the correction; everyone else gets it as a floating panel.
+                if (viewer.dm) {
+                  setDrawer(true);
+                  setDrawerTab("log");
+                }
               }}
             />
           ) : !viewer.dm && viewer.characterId && onSit ? (
@@ -959,19 +1098,9 @@ export function PlayScreen(props: PlayScreenProps) {
             onFilter={setLogFilter}
             authorOf={authorOf}
             onUndo={(action) => void table.undo(action, null)}
-            editing={
-              editEntity && (editingLine !== null || hpFor !== null)
-                ? { line: editingLine ?? "", entity: editEntity }
-                : null
-            }
-            onEdit={(line) => {
-              setEditingLine(line.id);
-              if (selected) setHpFor(selected);
-            }}
-            onEditClose={() => {
-              setEditingLine(null);
-              setHpFor(null);
-            }}
+            editing={editEntity ? { entity: editEntity } : null}
+            onEdit={(line) => setHpFor(line.subject)}
+            onEditClose={() => setHpFor(null)}
             editName={editEntity ? nameOf(editEntity.id) : ""}
             editConditions={editConditions}
             conditionName={(id) => conditionName(id, language)}
@@ -1031,6 +1160,8 @@ export function PlayScreen(props: PlayScreenProps) {
                 },
               })
             }
+            diceMode={diceMode}
+            onDiceMode={setDiceMode}
             round={state.clock.round}
             lineCount={lines.length}
           />

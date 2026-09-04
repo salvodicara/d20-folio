@@ -21,6 +21,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PlayIcon } from "./PlayIcon";
+import { manualVitals } from "./model";
 import type { ConditionId, Entity } from "@/lib/combat/types";
 
 /** The closed condition set, in the order a DM scans for one. */
@@ -74,23 +75,33 @@ export function HpEditor({
   const [condition, setCondition] = useState("");
 
   const delta = Number(amount);
-  const next =
-    Number.isFinite(delta) && amount !== ""
-      ? Math.max(0, entity.vitals.hp + (verb === "damage" ? -delta : delta))
-      : entity.vitals.hp;
+  const moved = amount !== "" && Number.isFinite(delta) && delta !== 0;
+  const currentTemp = entity.vitals.tempHp?.amount ?? 0;
+  const result = moved
+    ? manualVitals(entity, verb, delta)
+    : { hp: entity.vitals.hp, tempHp: currentTemp };
+  const next = result.hp;
 
   function apply() {
     const edits: HpEdit[] = [];
     const reason = t("play.hp.reason");
-    if (amount !== "" && Number.isFinite(delta) && delta !== 0) {
-      edits.push({ path: "vitals.hp", value: next, reason });
+    if (moved && result.hp !== entity.vitals.hp) {
+      edits.push({ path: "vitals.hp", value: result.hp, reason });
     }
-    const temporary = Number(temp);
-    if (Number.isFinite(temporary) && temporary !== (entity.vitals.tempHp?.amount ?? 0)) {
+    // The typed field wins over what the damage consumed: a DM who wrote a temp number meant
+    // that number. Otherwise the pool is whatever the damage left.
+    const typedTemp = Number(temp);
+    const temporary =
+      temp !== "" && Number.isFinite(typedTemp) && typedTemp !== currentTemp
+        ? typedTemp
+        : result.tempHp;
+    if (temporary !== currentTemp) {
       edits.push({ path: "vitals.tempHp", value: temporary, reason });
     }
     const maximum = Number(max);
-    if (Number.isFinite(maximum) && maximum !== entity.stats.maxHp) {
+    // An emptied field is not a maximum of zero: skip it rather than flooring the creature's
+    // maximum to 1 in the kernel.
+    if (max !== "" && Number.isFinite(maximum) && maximum !== entity.stats.maxHp) {
       edits.push({ path: "stats.maxHp", value: maximum, reason });
     }
     if (condition !== "") {

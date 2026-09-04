@@ -169,7 +169,10 @@ export function Hotbar(props: HotbarProps) {
         {dmControlled ? (
           <span className="pl-portrait__tag">{t("play.hotbar.dmControlled")}</span>
         ) : null}
-        <div className={cn("pl-portrait", dmControlled && "pl-portrait--foe")}>
+        <div
+          className={cn("pl-portrait", dmControlled && "pl-portrait--foe")}
+          data-testid="pl-portrait"
+        >
           <div className="pl-portrait__face">
             {portrait ? <img src={portrait} alt="" /> : initials(name)}
           </div>

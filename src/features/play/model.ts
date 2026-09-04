@@ -56,7 +56,9 @@ export function filterLines(
     case "rolls":
       return lines.filter((line) => line.kind === "roll");
     case "wounds":
-      return lines.filter((line) => line.verdict !== null);
+      // The wound, NOT the verdict: an attack that misses settles a verdict and wounds
+      // nobody, and a save-based spell wounds without ever settling one.
+      return lines.filter((line) => line.wounded);
     case "dm":
       return lines.filter((line) => line.author === "dm" || line.hidden);
     case "rejected":
@@ -146,3 +148,69 @@ export const CONDITION_ICON: Readonly<Record<ConditionId, string>> = {
   stunned: "i-stunned",
   unconscious: "i-unconscious",
 };
+
+/**
+ * The ordinal a newly added creature of this `srdId` takes: the LOWEST not already seated.
+ *
+ * Counting the live ones and adding 1 collides after a removal — add ogre-1, add ogre-2, remove
+ * ogre-1, add → ogre-2, and `add-entity` refuses a duplicate id, so the DM's tap produces
+ * nothing but a refused line in the log.
+ */
+export function nextMonsterOrdinal(state: FoldedState, srdId: string): number {
+  const taken = new Set<number>();
+  for (const entity of Object.values(state.entities)) {
+    if (entity.origin.kind !== "monster" || entity.origin.srdId !== srdId) continue;
+    const suffix = entity.id.slice(srdId.length + 1);
+    const ordinal = Number(suffix);
+    if (Number.isInteger(ordinal) && ordinal > 0) taken.add(ordinal);
+  }
+  let ordinal = 1;
+  while (taken.has(ordinal)) ordinal += 1;
+  return ordinal;
+}
+
+/** The two numbers a manual damage or heal leaves behind. */
+export interface ManualVitals {
+  readonly hp: number;
+  readonly tempHp: number;
+}
+
+/**
+ * The DM's damage and healing take the SAME order as the automated ones (`applyDamage`):
+ * temporary hit points absorb first, then hit points, and the reducer's own 0-HP tail comes
+ * with the resulting `vitals.hp` override.
+ *
+ * Subtracting straight from `vitals.hp` — what the editor did before — made "13 damage" mean
+ * something different at the table depending on who applied it, which is the one thing the DM's
+ * correction must never do: it is the same hit, entered by hand.
+ *
+ * Healing never touches the temporary pool (it is not hit points), and neither is clamped at the
+ * maximum: the override path has no upper bound by design, because the DM's word is final.
+ */
+export function manualVitals(
+  entity: Entity,
+  verb: "damage" | "heal",
+  amount: number
+): ManualVitals {
+  const tempHp = entity.vitals.tempHp?.amount ?? 0;
+  if (verb === "heal") return { hp: entity.vitals.hp + amount, tempHp };
+  const absorbed = Math.min(tempHp, amount);
+  return {
+    hp: Math.max(0, entity.vitals.hp - (amount - absorbed)),
+    tempHp: tempHp - absorbed,
+  };
+}
+
+/**
+ * Whether the hydrated character document is the one this member may seat.
+ *
+ * The character store holds ONE document at a time, and it still holds the previous one while a
+ * new subscription lands. Seating without this check projects A's numbers under B's id — the
+ * table would carry a hero who does not exist, with somebody else's hit points.
+ */
+export function seatableCharacter(
+  doc: { readonly id: string } | null,
+  characterId: string | null
+): boolean {
+  return doc !== null && characterId !== null && doc.id === characterId;
+}

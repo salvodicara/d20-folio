@@ -43,11 +43,20 @@ export interface RollView {
   readonly undoable: boolean;
 }
 
-/** The faces the person still owes, one field each. */
-export interface ManualPrompt {
-  readonly title: string;
-  readonly inputs: readonly PendingInput[];
-}
+/**
+ * What the panel is ASKING for.
+ *
+ * `inputs` — the dice an intent still owes, one field each, in manual mode.
+ * `free`   — the dice medallion's own roll: a formula the person types, for the things the
+ *            rules do not model. Both end in a `roll` action on the same log.
+ */
+export type RollPrompt =
+  | {
+      readonly kind: "inputs";
+      readonly title: string;
+      readonly inputs: readonly PendingInput[];
+    }
+  | { readonly kind: "free"; readonly title: string };
 
 const VERDICT_TONE: Readonly<Record<Outcome, "ok" | "ko" | "crit">> = {
   hit: "ok",
@@ -71,9 +80,13 @@ function Die({ value, hidden }: { value: string; hidden: boolean }) {
 
 export interface RollPanelProps {
   readonly roll: RollView | null;
-  /** Present in manual mode: the fields to fill before the intent can be appended. */
-  readonly prompt: ManualPrompt | null;
+  readonly prompt: RollPrompt | null;
   readonly onManual: (faces: Readonly<Record<string, readonly number[]>>) => void;
+  /** The free roll: the formula, and the faces when the person is reading real dice. */
+  readonly onFree: (formula: string, faces: readonly number[] | null) => void;
+  /** The person's dice mode, switchable here — the medallion's job is the roll itself. */
+  readonly mode: "app" | "manual";
+  readonly onMode: (mode: "app" | "manual") => void;
   readonly onCancel: () => void;
   readonly onUndo: (action: ActionId) => void;
 }
@@ -85,9 +98,115 @@ function diceCount(formula: string): number {
   return Math.max(1, Number(match[1] || 1));
 }
 
-export function RollPanel({ roll, prompt, onManual, onCancel, onUndo }: RollPanelProps) {
+export function RollPanel({
+  roll,
+  prompt,
+  onManual,
+  onFree,
+  mode,
+  onMode,
+  onCancel,
+  onUndo,
+}: RollPanelProps) {
   const { t } = useTranslation();
   const [entered, setEntered] = useState<Record<string, string[]>>({});
+  const [formula, setFormula] = useState("1d20");
+  const [freeFaces, setFreeFaces] = useState<string[]>([]);
+
+  /** The mode switch lives wherever the panel is ASKING for something: the medallion's own job
+   *  is the roll, so the choice between "the app rolls" and "I read my dice" sits here. */
+  const modeSwitch = (
+    <button
+      type="button"
+      className="pl-ghost"
+      data-testid="pl-roll-mode"
+      onClick={() => onMode(mode === "app" ? "manual" : "app")}
+    >
+      {t(mode === "app" ? "play.dice.modeApp" : "play.dice.modeManual")}
+    </button>
+  );
+
+  if (prompt?.kind === "free") {
+    const need = diceCount(formula);
+    const ready =
+      mode === "app" ||
+      (freeFaces.length === need &&
+        freeFaces.every((value) => value !== "" && Number(value) > 0));
+    return (
+      <section
+        className="pl-float pl-roll pl-panel pl-panel--framed"
+        data-testid="pl-roll-free"
+      >
+        <span className="pl-brackets" />
+        <div className="pl-roll__head">
+          <span className="pl-roll__title">{prompt.title}</span>
+          <span className="pl-roll__who">
+            {t(mode === "app" ? "play.dice.appHint" : "play.roll.manualHint")}
+          </span>
+        </div>
+        <div className="pl-roll__orn" />
+        <div className="pl-faces">
+          <label className="pl-face">
+            <input
+              type="text"
+              value={formula}
+              aria-label={t("play.dice.formula")}
+              data-testid="pl-free-formula"
+              onChange={(event) => {
+                setFormula(event.target.value);
+                setFreeFaces([]);
+              }}
+            />
+            <span>{t("play.dice.formula")}</span>
+          </label>
+          {mode === "manual"
+            ? Array.from({ length: need }, (_, index) => (
+                <label className="pl-face" key={index}>
+                  <input
+                    type="number"
+                    min={1}
+                    inputMode="numeric"
+                    value={freeFaces[index] ?? ""}
+                    aria-label={t("play.roll.faceAria", { formula })}
+                    data-testid={`pl-free-face-${index}`}
+                    onChange={(event) =>
+                      setFreeFaces((current) => {
+                        const values = [...current];
+                        values[index] = event.target.value;
+                        return values;
+                      })
+                    }
+                  />
+                  <span>{formula}</span>
+                </label>
+              ))
+            : null}
+        </div>
+        <div className="pl-roll__foot">
+          {modeSwitch}
+          <span>
+            <button type="button" className="pl-ghost" onClick={onCancel}>
+              {t("common.cancel")}
+            </button>
+            <button
+              type="button"
+              className="pl-ghost"
+              disabled={!ready}
+              data-testid="pl-free-roll"
+              onClick={() =>
+                onFree(
+                  formula,
+                  mode === "manual" ? freeFaces.map((value) => Number(value)) : null
+                )
+              }
+            >
+              {t("play.dice.throw")}
+            </button>
+          </span>
+        </div>
+      </section>
+    );
+  }
 
   if (prompt) {
     const complete = prompt.inputs.every((input) => {
@@ -135,6 +254,7 @@ export function RollPanel({ roll, prompt, onManual, onCancel, onUndo }: RollPane
           })}
         </div>
         <div className="pl-roll__foot">
+          {modeSwitch}
           <button type="button" className="pl-ghost" onClick={onCancel}>
             {t("common.cancel")}
           </button>

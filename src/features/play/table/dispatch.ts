@@ -377,6 +377,51 @@ export function rollsFor(
 }
 
 /**
+ * A roll nobody's mechanic asked for: the dice medallion's free roll.
+ *
+ * Everything the table rolls goes through the same seam and lands in the same log (ADR-0010),
+ * including the one a person throws to settle something the rules do not model. `purpose` is
+ * `"free"` — the vocabulary already has the word — and the roller is the person's own creature
+ * when they have one, so the line reads "Lyra rolls" rather than "somebody rolls".
+ */
+export interface FreeRollContext {
+  readonly by: string;
+  /** The person's own creature, or `null` for a spectator: the log names a roller or nobody. */
+  readonly entity: EntityId | null;
+  readonly hidden?: boolean;
+  /** `manual` only: the faces read off the physical dice, in formula order. */
+  readonly faces?: readonly number[];
+  readonly seedSource?: SeedSource;
+}
+
+export function freeRoll(
+  formula: string,
+  mode: RollMode,
+  context: FreeRollContext
+): PendingRoll | RollError {
+  return roll(
+    formula,
+    mode === "app"
+      ? {
+          by: context.by,
+          roller: context.entity,
+          reason: "free",
+          hidden: context.hidden ?? false,
+          mode: "app",
+        }
+      : {
+          by: context.by,
+          roller: context.entity,
+          reason: "free",
+          hidden: context.hidden ?? false,
+          mode: "manual",
+          faces: context.faces ?? [],
+        },
+    context.seedSource
+  );
+}
+
+/**
  * The intent itself: every planned input answered by the id of the `roll` action that settled
  * it, on top of the answers the person gave, `basedOn` the revision this was decided against.
  *

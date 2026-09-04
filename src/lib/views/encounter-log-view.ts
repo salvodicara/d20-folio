@@ -60,6 +60,23 @@ export interface LogLine {
    * fold this presenter already performs; asking a component for it would mean folding twice.
    */
   readonly verdict: Outcome | null;
+  /**
+   * The creature this line is ABOUT, when it is about one: whoever took the damage, or dropped.
+   *
+   * It is what the drawer's "Modifica" opens the HP editor on. Derived here for the same reason
+   * `verdict` is — the events that name the subject live on the receipt, which exists only
+   * during this fold — and it is deliberately the WOUNDED creature rather than the acting one,
+   * because the correction a DM reaches for on a log line is always to the number that moved.
+   */
+  readonly subject: EntityId | null;
+  /**
+   * This line records a creature losing hit points (`damage-taken`) or dropping (`hp-zero`) —
+   * the drawer's "Ferite" filter, and the gate on offering "Modifica".
+   *
+   * NOT `verdict !== null`: an attack that misses settles a verdict and wounds nobody, and a
+   * save-based spell wounds without ever settling one.
+   */
+  readonly wounded: boolean;
 }
 
 export interface LogViewArgs {
@@ -215,6 +232,20 @@ export function buildLogLines(args: LogViewArgs): LogLine[] {
     return outcome;
   };
 
+  /** The creature a receipt's events wound, and whether they wound anybody at all. The LAST
+   *  such event wins, for the same reason the last verdict does: it is the one the DM is
+   *  looking at when the line lands. */
+  const woundOf = (
+    events: readonly CombatEvent[]
+  ): { readonly subject: EntityId | null; readonly wounded: boolean } => {
+    let subject: EntityId | null = null;
+    for (const event of events) {
+      if (event.kind === "damage-taken" || event.kind === "hp-zero")
+        subject = event.entity;
+    }
+    return { subject, wounded: subject !== null };
+  };
+
   /** The three engine consequences worth a sentence of their own; every other event is
    *  already implied by the action's own line. */
   const consequenceText = (event: CombatEvent): string | null => {
@@ -234,6 +265,7 @@ export function buildLogLines(args: LogViewArgs): LogLine[] {
   const consequences = (action: Action, receipt: Receipt): LogLine[] =>
     receipt.events.flatMap((event, index) => {
       const text = consequenceText(event);
+      const wound = woundOf([event]);
       return text === null
         ? []
         : [
@@ -246,6 +278,8 @@ export function buildLogLines(args: LogViewArgs): LogLine[] {
               undoable: false,
               hidden: false,
               verdict: null,
+              subject: wound.subject,
+              wounded: wound.wounded,
             },
           ];
     });
@@ -256,7 +290,15 @@ export function buildLogLines(args: LogViewArgs): LogLine[] {
     if (skip.has(action.id)) continue;
     const author = authorOf(action.by);
     const undoable = (viewer.dm || action.by === viewer.uid) && !skip.has(action.id);
-    const base = { id: action.id, at: action.seq, author, undoable, verdict: null };
+    const base = {
+      id: action.id,
+      at: action.seq,
+      author,
+      undoable,
+      verdict: null,
+      subject: null,
+      wounded: false,
+    };
 
     if (action.kind === "undo") {
       lines.push({
@@ -309,12 +351,15 @@ export function buildLogLines(args: LogViewArgs): LogLine[] {
       continue;
     }
 
+    const wound = woundOf(receipt.events);
     lines.push({
       ...base,
       kind: "action",
       hidden: false,
       text: summaryText(action, receipt),
       verdict: verdictOf(receipt),
+      subject: wound.subject,
+      wounded: wound.wounded,
     });
     lines.push(...consequences(action, receipt));
   }

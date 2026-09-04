@@ -60,8 +60,8 @@ export interface DmDrawerProps {
   readonly onFilter: (filter: LogFilter) => void;
   readonly authorOf: (author: LogLine["author"]) => string;
   readonly onUndo: (action: ActionId) => void;
-  /** The line the DM is correcting, and the creature its edit lands on. */
-  readonly editing: { readonly line: ActionId; readonly entity: Entity } | null;
+  /** The creature the HP editor is open on — the line's subject, or the viewer's own. */
+  readonly editing: { readonly entity: Entity } | null;
   readonly onEdit: (line: LogLine) => void;
   readonly onEditClose: () => void;
   readonly editName: string;
@@ -84,6 +84,10 @@ export interface DmDrawerProps {
 
   readonly automation: Exclude<Automation, "propose-and-confirm">;
   readonly onAutomation: (value: Exclude<Automation, "propose-and-confirm">) => void;
+  /** The DM's own dice mode — a per-person choice, so it sits beside the table's rules
+   *  rather than on the medallion, whose job is the roll itself. */
+  readonly diceMode: "app" | "manual";
+  readonly onDiceMode: (mode: "app" | "manual") => void;
 
   readonly round: number;
   readonly lineCount: number;
@@ -144,6 +148,8 @@ export function DmDrawer(props: DmDrawerProps) {
     onFogOpacity,
     automation,
     onAutomation,
+    diceMode,
+    onDiceMode,
     round,
     lineCount,
   } = props;
@@ -227,8 +233,15 @@ export function DmDrawer(props: DmDrawerProps) {
                   <li key={line.id} data-kind={line.kind}>
                     <span className="pl-register__who">{authorOf(line.author)}</span>
                     <span className="pl-register__text">{line.text}</span>
-                    {line.verdict !== null ? (
-                      <button type="button" onClick={() => onEdit(line)}>
+                    {/* Offered on every line that MOVED a creature's hit points — an attack
+                        that hit, a save-based spell, a consequence — and it edits that
+                        creature, never whatever token happens to be selected. */}
+                    {line.wounded ? (
+                      <button
+                        type="button"
+                        onClick={() => onEdit(line)}
+                        data-testid={`pl-edit-${line.id}`}
+                      >
                         {t("play.drawer.edit")}
                       </button>
                     ) : null}
@@ -378,6 +391,21 @@ export function DmDrawer(props: DmDrawerProps) {
               </button>
             ))}
             <p className="pl-note">{t("play.rules.note")}</p>
+            <div className="pl-sec">
+              <span>{t("play.dice.title")}</span>
+            </div>
+            <div className="pl-switch-row">
+              <span className="pl-switch-row__name">
+                {t("play.dice.modeManual")}
+                <small>{t("play.dice.tip")}</small>
+              </span>
+              <Switch
+                on={diceMode === "manual"}
+                label={t("play.dice.modeManual")}
+                onChange={(on) => onDiceMode(on ? "manual" : "app")}
+                testId="pl-dice-mode"
+              />
+            </div>
           </>
         ) : null}
 
