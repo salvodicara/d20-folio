@@ -200,7 +200,12 @@ describe("area targeting — the reducer derives targets from positions, never t
   // Each pair differs only in the property its shape is supposed to test: the cube's boundary
   // (both probes at the same y), the cone's angle (both probes 10 ft from the origin), the line's
   // width (both probes 15 ft along the aim).
-  it.each([
+  it.each<{
+    mechanic: string;
+    within: Position;
+    beyond: Position;
+    aim: Position | null;
+  }>([
     { mechanic: "test:cube", within: { x: 1, y: 1 }, beyond: { x: 3, y: 0 }, aim: null },
     {
       mechanic: "test:cone",
@@ -216,7 +221,7 @@ describe("area targeting — the reducer derives targets from positions, never t
     },
   ])("$mechanic burns the probe inside its shape and spares the one outside", (shape) => {
     const state = opened(null, [probe("in", shape.within), probe("out", shape.beyond)]);
-    const answers = shape.aim === null ? {} : { aim: shape.aim };
+    const answers: Answers = shape.aim === null ? {} : { aim: shape.aim };
     const result = resolve(state, cast(shape.mechanic, answers), catalogue);
     expect(result.kind).toBe("applied");
     if (result.kind !== "applied") return;

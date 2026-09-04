@@ -51,7 +51,7 @@ function opened(): FoldedState {
   return { ...state, relations: visible };
 }
 
-function attack(): Action {
+function attack(): Extract<Action, { kind: "intent" }> {
   return {
     kind: "intent",
     id: nextActionId("a"),
