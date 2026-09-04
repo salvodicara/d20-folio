@@ -34,6 +34,7 @@ import { encounterRef, personalEncounterRef } from "./combat-io";
 import { encounterWriteData } from "./combat/codec";
 import type { Seq } from "./combat/ids";
 import type { Mechanic } from "./combat/mechanic";
+import type { LegacyCombatStateWrite } from "./combat-state-writeback";
 import type { Action, Encounter, Entity } from "./combat/types";
 import { stripUndefined } from "./strip-undefined";
 
@@ -128,13 +129,23 @@ export async function joinTable(args: {
  *   live play session.
  * - `document` — **the stage-6 variant, and its named fate: it dies with the old sheet at item
  *   8.** While D1 holds, the personal document stays a `CombatState` carrying the character's
- *   whole play session, so leaving a table writes the projected document (built by
- *   `projectCombatState`, `combat-state-writeback.ts`) VERBATIM — no sync action, no `Encounter`
- *   envelope. Item 8 replaces this variant with the `encounter` one and its migration.
+ *   whole play session, so leaving a table writes the projected document VERBATIM — no sync
+ *   action, no `Encounter` envelope. Item 8 replaces this variant with the `encounter` one and
+ *   its migration.
+ *
+ *   `data` is a {@link LegacyCombatStateWrite}, which ONLY `encodeLegacyWriteBack`
+ *   (`combat-state-writeback.ts`) can produce: this document has one sanctioned encoder, which
+ *   refuses a state without a valid v1 `playState` instead of writing one `parseCombatState`
+ *   would refuse forever, and which stamps `updatedAt` like every other writer. The type is what
+ *   stops a caller hand-rolling the object past that guard.
+ *
+ *   The write is a whole-document OVERWRITE — this document's established contract, its payload
+ *   always being complete — so the `previous` state the encoder projected onto MUST be a fresh
+ *   parse of the live document; anything written after that read is lost, not merged.
  */
 export type PersonalWriteBack =
   | { readonly kind: "encounter"; readonly encounter: Encounter | null }
-  | { readonly kind: "document"; readonly data: Record<string, unknown> };
+  | { readonly kind: "document"; readonly data: LegacyCombatStateWrite };
 
 /**
  * `table:leave`: append the leave action to the campaign encounter, write the entity back into

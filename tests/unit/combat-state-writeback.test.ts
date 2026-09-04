@@ -7,8 +7,16 @@
  * `playState` above all — is preserved byte for byte. A regression here silently discards a
  * player's spell slots, trackers and inventory the moment they leave a table.
  */
-import { describe, expect, it } from "vitest";
-import { projectCombatState } from "@/lib/combat-state-writeback";
+import { describe, expect, it, vi } from "vitest";
+
+// The module reaches `firebase/firestore` for the `updatedAt` sentinel alone. Mocked so this
+// file stays Firebase-free in CI (tests/unit/pure-modules-guard.test.ts) and so the stamp is a
+// value the assertions can name.
+vi.mock("firebase/firestore", () => ({
+  serverTimestamp: vi.fn(() => "SERVER_TIMESTAMP"),
+}));
+
+import { encodeLegacyWriteBack, projectCombatState } from "@/lib/combat-state-writeback";
 import type { CombatState } from "@/types/combat-state";
 import type { Effect, EffectPayload, Entity } from "@/lib/combat/types";
 import { testEntity } from "@tests/unit/combat/__helpers__/entities";
@@ -105,5 +113,33 @@ describe("projectCombatState", () => {
     const snapshot = structuredClone(before);
     projectCombatState(before, pc, [condition("e1", "pc-marco", "prone")]);
     expect(before).toEqual(snapshot);
+  });
+});
+
+describe("encodeLegacyWriteBack", () => {
+  it("projects and then encodes through the document's one sanctioned encoder", () => {
+    const data = encodeLegacyWriteBack(previous(), pc, [
+      condition("e1", "pc-marco", "prone"),
+    ]);
+    expect(data).toMatchObject({
+      hp: { current: 17, temp: 4 },
+      conditions: ["prone"],
+      deathSaves: { successes: 2, failures: 1 },
+      round: 4,
+      playState: { version: 1, state: { exhaustion: 2 } },
+      // The stamp every other writer of this document emits.
+      updatedAt: "SERVER_TIMESTAMP",
+    });
+  });
+
+  it("refuses a state the read edge would then refuse forever, rather than writing it", () => {
+    const { playState: _playState, ...orphan } = previous();
+    void _playState;
+    expect(() => encodeLegacyWriteBack(orphan as CombatState, pc, [])).toThrow(
+      "Invalid combat play state: missing"
+    );
+    expect(() =>
+      encodeLegacyWriteBack({ ...previous(), playState: { version: 2 } as never }, pc, [])
+    ).toThrow(/Invalid combat play state/);
   });
 });

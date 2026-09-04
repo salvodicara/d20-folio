@@ -72,7 +72,8 @@ import {
   subscribeEncounter,
 } from "@/lib/combat-io";
 import { joinTable, leaveTable, readLease } from "@/lib/combat-lease";
-import { projectCombatState } from "@/lib/combat-state-writeback";
+import { encodeLegacyWriteBack } from "@/lib/combat-state-writeback";
+import { parseCombatState } from "@/lib/combat-state-codec";
 import type { CombatState } from "@/types/combat-state";
 import { testEntity } from "@tests/unit/combat/__helpers__/entities";
 import {
@@ -734,13 +735,15 @@ describe("the stage gate — Marco's first turn on two clients", () => {
       mechanics: LEASE_MECHANICS,
       leave: { id: "lease-leave", seq: { ms: 90_000, counter: 0, by: "p-marco" } },
       sync: { id: "lease-sync", seq: { ms: 90_001, counter: 0, by: "p-marco" } },
+      // The ONE sanctioned encoder — no cast, no hand-rolled payload: the type of
+      // `PersonalWriteBack.document.data` admits nothing else.
       personal: {
         kind: "document",
-        data: projectCombatState(
+        data: encodeLegacyWriteBack(
           PREVIOUS_COMBAT_STATE,
           folded,
           Object.values(state.effects)
-        ) as unknown as Record<string, unknown>,
+        ),
       },
     });
     await waitFor(
@@ -753,14 +756,23 @@ describe("the stage gate — Marco's first turn on two clients", () => {
     );
 
     const personal = await getDoc(personalEncounterRef(marco.db, "p-marco", CHARACTER));
-    expect(personal.data()).toEqual({
-      ...PREVIOUS_COMBAT_STATE,
+    const stored = personal.data();
+    expect(stored).toMatchObject({
+      // The fight's outcome…
       hp: { current: 4, temp: folded.vitals.tempHp?.amount ?? 0 },
       conditions: [],
-      deathSaves: folded.vitals.deathSaves,
+      deathSaves: { ...folded.vitals.deathSaves },
+      // …and everything the encounter does not own, untouched.
+      round: PREVIOUS_COMBAT_STATE.round,
+      initiativeRoll: PREVIOUS_COMBAT_STATE.initiativeRoll,
+      playState: PREVIOUS_COMBAT_STATE.playState,
     });
-    // It is still a `CombatState`, not an `Encounter`: D1's whole point.
-    expect(parseEncounter(personal.data()).ok).toBe(false);
+    // The stamp the encoder adds, resolved by the server.
+    expect(stored?.updatedAt).toBeDefined();
+    // Still a `CombatState`, not an `Encounter` (D1's whole point), and one the app's own read
+    // edge accepts — the guarantee a hand-rolled payload could not give.
+    expect(parseEncounter(stored).ok).toBe(false);
+    expect(parseCombatState(stored).ok).toBe(true);
 
     const character = await getDoc(
       doc(marco.db, "users", "p-marco", "characters", CHARACTER)

@@ -27,6 +27,7 @@ let committed = 0;
 
 vi.mock("firebase/firestore", () => ({
   arrayUnion: vi.fn((...values: unknown[]) => ({ arrayUnion: values })),
+  serverTimestamp: vi.fn(() => "SERVER_TIMESTAMP"),
   deleteField: vi.fn(() => ({ deleteField: true })),
   deleteDoc: vi.fn(),
   doc: vi.fn((_db: unknown, ...segments: string[]) => segments.join("/")),
@@ -45,7 +46,9 @@ vi.mock("firebase/firestore", () => ({
 }));
 
 import { leaveTable, readLease, type PersonalWriteBack } from "@/lib/combat-lease";
+import { encodeLegacyWriteBack } from "@/lib/combat-state-writeback";
 import type { Encounter } from "@/lib/combat/types";
+import type { CombatState } from "@/types/combat-state";
 import { testEntity } from "@tests/unit/combat/__helpers__/entities";
 
 describe("readLease", () => {
@@ -119,7 +122,24 @@ describe("readLease", () => {
 
 // ── `leaveTable`'s personal write-back (stage 6 design §5) ──────────────────
 
-const ENTITY = testEntity({ id: "pc-marco", kind: "pc", hp: 12 });
+const ENTITY = testEntity({ id: "pc-marco", kind: "pc", hp: 12, tempHp: 3 });
+
+/** A live legacy document: the combat trio the encounter owns, plus the play session it does
+ *  not. `playState` is what the sanctioned encoder refuses to write without. */
+const PREVIOUS: CombatState = {
+  hp: { current: 25, temp: 0 },
+  conditions: ["poisoned"],
+  initiativeRoll: 12,
+  deathSaves: { successes: 0, failures: 0 },
+  round: 4,
+  recentActions: [],
+  playState: { version: 1, state: { exhaustion: 2 } },
+};
+
+/** The only way to build a `document` write-back: project, then encode. */
+function writeBack(previous: CombatState = PREVIOUS): PersonalWriteBack {
+  return { kind: "document", data: encodeLegacyWriteBack(previous, ENTITY, []) };
+}
 
 async function leave(personal: PersonalWriteBack): Promise<void> {
   writes.length = 0;
@@ -152,28 +172,40 @@ function writeTo(path: string): Write {
 
 describe("leaveTable's personal write-back", () => {
   it("always appends the leave action and clears the lease, whichever shape is written back", async () => {
-    await leave({ kind: "document", data: { hp: { current: 12, temp: 0 } } });
+    await leave(writeBack());
     expect(writeTo(ENCOUNTER).verb).toBe("update");
     expect(writeTo(CHARACTER).data).toEqual({ lease: { deleteField: true } });
     expect(committed).toBe(1);
   });
 
-  it("sets the personal document VERBATIM for the `document` variant", async () => {
-    const data = {
-      hp: { current: 12, temp: 3 },
-      conditions: ["prone"],
-      deathSaves: { successes: 0, failures: 1 },
-      round: 4,
-      playState: { version: 1, state: { exhaustion: 2 } },
-    };
-    await leave({ kind: "document", data });
+  it("sets the ENCODED document VERBATIM for the `document` variant", async () => {
+    const personal = writeBack();
+    await leave(personal);
     const write = writeTo(PERSONAL);
     expect(write.verb).toBe("set");
-    expect(write.data).toEqual(data);
+    expect(write.data).toBe(personal.kind === "document" ? personal.data : null);
+    // What the encoder guarantees and a hand-rolled object would not: the fight's trio, the
+    // play session preserved, and the stamp every other writer emits.
+    expect(write.data).toMatchObject({
+      hp: { current: 12, temp: 3 },
+      conditions: [],
+      deathSaves: { successes: 0, failures: 0 },
+      round: 4,
+      playState: { version: 1, state: { exhaustion: 2 } },
+      updatedAt: "SERVER_TIMESTAMP",
+    });
+  });
+
+  it("cannot be built at all from a document the read edge would refuse forever", () => {
+    const { playState: _playState, ...orphan } = PREVIOUS;
+    void _playState;
+    expect(() => writeBack(orphan as CombatState)).toThrow(
+      "Invalid combat play state: missing"
+    );
   });
 
   it("never writes a sync action for the `document` variant", async () => {
-    await leave({ kind: "document", data: { round: 1 } });
+    await leave(writeBack());
     expect(JSON.stringify(writeTo(PERSONAL).data)).not.toContain("sync-1");
   });
 

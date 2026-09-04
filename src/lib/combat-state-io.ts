@@ -7,8 +7,9 @@
  * stay aligned by construction. See `src/types/combat-state.ts`.
  *
  * Thin + always-eager-safe: a tiny JSON subdoc, no lazy codec, no SRD. The pure
- * model + conversions live in `src/lib/combat-state.ts`; THIS module is the only
- * combat-state seam that touches `firebase/firestore`.
+ * model + conversions live in `src/lib/combat-state.ts`, and the sanctioned write ENCODER in
+ * `src/lib/combat-state-writeback.ts` (re-exported below); THIS module is the only combat-state
+ * seam that binds the app's Firestore INSTANCE.
  *
  * OFFLINE-FIRST WRITES. Every mutation persists through {@link writeCombatState} — a plain
  * `setDoc` (OVERWRITE, no `merge`) of the FULL CombatState. `setDoc` is
@@ -47,7 +48,7 @@
  * replica (`dev-document-store`): optimistic echoes, reload survival, and cross-tab
  * snapshots stay testable without touching Firebase.
  */
-import { doc, onSnapshot, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { DEV_BYPASS_AUTH as IMPORTED_DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
@@ -57,13 +58,22 @@ import {
 } from "@/lib/dev-document-store";
 import type { CombatState } from "@/types/combat-state";
 import { parseCombatState } from "@/lib/combat-state-codec";
-import { parsePersistedPlayStateV1 } from "@/lib/session-state-codec";
+import { combatStateWriteData } from "@/lib/combat-state-writeback";
 import { diagnosticsLog } from "@/lib/diagnostics";
 
 // The stored-shape DECODER now lives in the pure `combat-state-codec.ts`, so the
 // one-off admin migrations can reuse the exact same parser without pulling Firebase.
 // Re-exported here unchanged: this module stays the app's single combat-state seam.
 export { parseCombatState, type CombatStateParseResult } from "@/lib/combat-state-codec";
+
+// The sanctioned write ENCODER lives in the pure-enough `combat-state-writeback.ts` (its only
+// Firebase dependency is the `serverTimestamp` sentinel), so the table lease and the rules lane
+// can reach it without this module's `db` singleton. Re-exported here unchanged: this module
+// stays the app's single combat-state IO seam.
+export {
+  combatStateWriteData,
+  type LegacyCombatStateWrite,
+} from "@/lib/combat-state-writeback";
 
 const DEV_COMBAT_COLLECTION = "combat-state";
 
@@ -88,49 +98,6 @@ function combatStateForDevWrite(state: CombatState): CombatState {
   const { updatedAt: _updatedAt, ...canonical } = combatStateWriteData(state);
   void _updatedAt;
   return canonical as unknown as CombatState;
-}
-
-/** The COMPLETE persisted shape, stamped server-side. One source so the two write
- *  paths can't drift.
- *
- *  The write seam is as CLOSED as the read seam: the child is the sole play owner, so a
- *  payload without a valid v1 `playState` is refused HERE rather than persisted into a
- *  document {@link parseCombatState} would then refuse forever (the character could not
- *  be opened again). Seed a fresh child from {@link defaultCombatState}, which carries
- *  the empty v1 owner. */
-export function combatStateWriteData(state: CombatState): Record<string, unknown> {
-  if (state.playState === undefined) {
-    throw new TypeError("Invalid combat play state: missing");
-  }
-  const playState = parsePersistedPlayStateV1(state.playState);
-  if (!playState.ok) {
-    throw new TypeError(`Invalid combat play state: ${playState.reason}`);
-  }
-  return {
-    hp: { current: state.hp.current, temp: state.hp.temp },
-    conditions: state.conditions,
-    bardicInspirationDie: state.bardicInspirationDie ?? "",
-    ...(state.heroicInspiration !== undefined
-      ? { heroicInspiration: state.heroicInspiration }
-      : {}),
-    initiativeRoll: state.initiativeRoll,
-    deathSaves: {
-      successes: state.deathSaves.successes,
-      failures: state.deathSaves.failures,
-    },
-    round: state.round,
-    recentActions: state.recentActions,
-    ...(state.activeEffects?.length ? { activeEffects: state.activeEffects } : {}),
-    ...(state.appliedEncounterEffects
-      ? { appliedEncounterEffects: state.appliedEncounterEffects }
-      : {}),
-    ...(state.turnEconomy ? { turnEconomy: state.turnEconomy } : {}),
-    ...(state.pendingConcentrationSaves?.length
-      ? { pendingConcentrationSaves: state.pendingConcentrationSaves }
-      : {}),
-    playState: playState.value,
-    updatedAt: serverTimestamp(),
-  };
 }
 
 function parsedCombatState(data: unknown): CombatState {
