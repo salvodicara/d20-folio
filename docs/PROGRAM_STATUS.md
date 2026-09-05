@@ -653,7 +653,10 @@ the strip cells, the area caption overlapping a label; rule 32's DM-specific hot
 Tratti · all of that kind · Note DM) need a stat block on the client; Passive and Mie tabs render
 an honest empty line; both play routes are exempt from the visual census with written reasons;
 `scripts/worktree/bootstrap-worktree.sh` does not provide `.env.local`, without which a worktree's
-visual lane renders the error page; the free roll's formula field has no live validation.
+visual lane renders the error page; the free roll's formula field has no live validation. From the owner's verdict on the final captures
+(2026-09-05, images only): keep the current-turn token treatment (cyan ring and glow); restyle the HP
+editor's native number stepper and the native condition select as folio controls (no bare browser
+widget on the play screen or in the drawer); make the menus and dropdowns more attractive.
 
 **Deferred, with the measurement.** Bounded `rolls` in the checkpoint (stage 6, with the
 compaction wiring; the safe pruning — drop at compaction every roll whose spender is not a
@@ -859,7 +862,10 @@ the strip cells, the area caption overlapping a label; rule 32's DM-specific hot
 Tratti · all of that kind · Note DM) need a stat block on the client; Passive and Mie tabs render
 an honest empty line; both play routes are exempt from the visual census with written reasons;
 `scripts/worktree/bootstrap-worktree.sh` does not provide `.env.local`, without which a worktree's
-visual lane renders the error page; the free roll's formula field has no live validation.
+visual lane renders the error page; the free roll's formula field has no live validation. From the owner's verdict on the final captures
+(2026-09-05, images only): keep the current-turn token treatment (cyan ring and glow); restyle the HP
+editor's native number stepper and the native condition select as folio controls (no bare browser
+widget on the play screen or in the drawer); make the menus and dropdowns more attractive.
 
 **Deferred, with the measurement.**
 
