@@ -1,7 +1,7 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // P02 authenticated assets. Owner portraits remain owner-only until a
+    // P02 authenticated assets. Portraits remain owner/admin-only until a
     // recipient copy is explicitly granted; no inherited bearer-URL consumers.
     function folioActive() { return request.auth != null && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.status != 'blocked'; }
     function folioImage() { return request.resource.size <= 5 * 1024 * 1024 && request.resource.contentType.matches('image/(png|jpeg|webp)'); }
@@ -18,8 +18,8 @@ service firebase.storage {
     }
     match /folioAccounts/{uid}/offers/{id}/{file} {
       function offer() { return firestore.get(/databases/(default)/documents/folioAccounts/$(uid)/offers/$(id)).data; }
-      allow get, list: if folioActive() && (request.auth.uid == uid || (offer().recipientUid == request.auth.uid && !offer().revoked));
-      allow create: if folioActive() && request.auth.uid == uid && !offer().revoked && folioImage();
+      allow get, list: if folioActive() && (request.auth.uid == uid || isAdmin() || (offer().recipientUid == request.auth.uid && !offer().revoked));
+      allow create: if resource == null && folioActive() && (request.auth.uid == uid || isAdmin()) && !offer().revoked && folioImage();
       // An addressed source and its artwork are immutable; revocation changes ACL.
     }
     // Admin is DATA-DRIVEN — the SAME `/users/{uid}.role == "admin"` field the

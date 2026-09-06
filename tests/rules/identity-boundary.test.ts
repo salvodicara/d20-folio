@@ -55,10 +55,154 @@ const rp = (id = "one", camp = "camp") =>
   "folioCampaigns/" + camp + "/roster/owner~" + id;
 const db = (uid: string) => env.authenticatedContext(uid).firestore();
 beforeAll(async () => {
+  const projectId = process.env.IDENTITY_RULES_PROJECT_ID ?? "demo-d20folio";
+  if (!["demo-d20folio", "demo-d20folio-admin-review"].includes(projectId))
+    throw new Error("identity tests require an explicit demo project");
   env = await initializeTestEnvironment({
-    projectId: "demo-d20folio",
+    projectId,
     firestore: { rules: readFileSync("firestore.rules", "utf8") },
     storage: { rules: readFileSync("storage.rules", "utf8") },
+  });
+});
+describe("administrator matrix", () => {
+  it("supports validated owner account access and character enumeration without assignment authority", async () => {
+    const admin = db("admin");
+    await assertSucceeds(
+      setDoc(doc(admin, "folioAccounts/owner"), {
+        schema: 1,
+        displayName: "Owner",
+        locale: "en",
+      })
+    );
+    await assertSucceeds(getDoc(doc(admin, "folioAccounts/owner")));
+    await assertSucceeds(getDocs(collection(admin, "folioAccounts")));
+    await assertSucceeds(updateDoc(doc(admin, "folioAccounts/owner"), { locale: "it" }));
+    await assertFails(updateDoc(doc(admin, "folioAccounts/owner"), { role: "admin" }));
+    await assertSucceeds(getDocs(collection(admin, "folioAccounts/owner/characters")));
+    await assertSucceeds(setDoc(doc(admin, cp("three")), character("three")));
+    await assertFails(
+      updateDoc(doc(admin, cp()), { revision: 1, currentAssignment: null })
+    );
+  });
+  it("supports immutable addressed offer administration and artwork while preserving source versions", async () => {
+    const admin = db("admin"),
+      path = "folioAccounts/owner/offers/gift";
+    await assertSucceeds(
+      setDoc(doc(admin, path), {
+        schema: 1,
+        senderUid: "owner",
+        recipientUid: "member",
+        sourceId: "book",
+        sourceVersion: 1,
+        revoked: false,
+      })
+    );
+    await assertSucceeds(getDoc(doc(admin, path)));
+    await assertSucceeds(getDocs(collection(admin, "folioAccounts/owner/offers")));
+    await assertFails(updateDoc(doc(admin, path), { sourceVersion: 2 }));
+    const art = ref(env.authenticatedContext("admin").storage(), path + "/art.png");
+    await assertSucceeds(
+      uploadBytes(art, new Uint8Array([1]), { contentType: "image/png" })
+    );
+    await assertSucceeds(getBytes(art));
+    await assertSucceeds(listAll(ref(env.authenticatedContext("admin").storage(), path)));
+    await assertFails(
+      uploadBytes(art, new Uint8Array([2]), { contentType: "image/png" })
+    );
+    await assertFails(
+      uploadBytes(
+        ref(env.authenticatedContext("owner").storage(), path + "/art.png"),
+        new Uint8Array([3]),
+        { contentType: "image/png" }
+      )
+    );
+    await assertSucceeds(updateDoc(doc(admin, path), { revoked: true }));
+    await assertSucceeds(getBytes(art));
+    await assertFails(getDoc(doc(db("member"), path)));
+  });
+  it("admin campaign controls preserve revision, DM membership and reciprocal invitation constraints", async () => {
+    const admin = db("admin");
+    const batch = writeBatch(admin);
+    batch.update(doc(admin, "folioCampaigns/camp"), {
+      name: "Renamed",
+      joinOpen: false,
+      revision: 1,
+    });
+    batch.set(doc(admin, "folioInvites/camp"), {
+      id: "camp",
+      name: "Renamed",
+      joinOpen: false,
+    });
+    await assertSucceeds(batch.commit());
+    await assertSucceeds(
+      updateDoc(doc(admin, "folioCampaigns/camp"), {
+        members: ["dm", "owner"],
+        revision: 2,
+      })
+    );
+    await assertFails(
+      updateDoc(doc(admin, "folioCampaigns/camp"), { members: ["owner"], revision: 3 })
+    );
+    await assertFails(
+      updateDoc(doc(admin, "folioCampaigns/camp"), { revision: 2, joinOpen: true })
+    );
+    await assertFails(
+      setDoc(doc(admin, "folioInvites/camp"), {
+        id: "camp",
+        name: "Forged",
+        joinOpen: true,
+      })
+    );
+  });
+  it("repository DM operations honor trusted administrator authority without making the admin a member", async () => {
+    const { repo } = repository("admin");
+    await repo.setJoinOpen("camp", false);
+    await repo.revokeMember("camp", "owner");
+    const result = (await getDoc(doc(db("admin"), "folioCampaigns/camp"))).data();
+    expect(result?.members).toEqual(["dm", "member"]);
+    expect(result?.joinOpen).toBe(false);
+  });
+  it("blocked administrator has none of the expanded account, campaign, offer or artwork rights", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "folioAccounts/owner"), {
+        schema: 1,
+        displayName: "Owner",
+        locale: "en",
+      });
+      await setDoc(doc(ctx.firestore(), "folioAccounts/owner/offers/gift"), {
+        schema: 1,
+        senderUid: "owner",
+        recipientUid: "member",
+        sourceId: "book",
+        sourceVersion: 1,
+        revoked: false,
+      });
+      await uploadBytes(
+        ref(ctx.storage(), "folioAccounts/owner/offers/gift/art.png"),
+        new Uint8Array([1]),
+        { contentType: "image/png" }
+      );
+      await updateDoc(doc(ctx.firestore(), "users/admin"), { status: "blocked" });
+    });
+    const admin = db("admin");
+    await assertFails(getDoc(doc(admin, "folioAccounts/owner")));
+    await assertFails(updateDoc(doc(admin, "folioAccounts/owner"), { locale: "it" }));
+    await assertFails(getDocs(collection(admin, "folioAccounts/owner/characters")));
+    await assertFails(getDocs(collection(admin, "folioAccounts/owner/offers")));
+    await assertFails(
+      updateDoc(doc(admin, "folioAccounts/owner/offers/gift"), { revoked: true })
+    );
+    await assertFails(
+      updateDoc(doc(admin, "folioCampaigns/camp"), { members: ["dm"], revision: 1 })
+    );
+    await assertFails(
+      getBytes(
+        ref(
+          env.authenticatedContext("admin").storage(),
+          "folioAccounts/owner/offers/gift/art.png"
+        )
+      )
+    );
   });
 });
 afterAll(async () => {

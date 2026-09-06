@@ -6,7 +6,8 @@ service cloud.firestore {
     function folioUser() { return isNotBlocked(); }
     function folioCampaign(id) { return get(/databases/$(database)/documents/folioCampaigns/$(id)).data; }
     function folioMember(id) { return folioUser() && !folioCampaign(id).archived && request.auth.uid in folioCampaign(id).members; }
-    function folioDm(id) { return folioMember(id) && folioCampaign(id).dmUid == request.auth.uid; }
+    function folioDm(id) { return folioUser() && (isAdmin() || (folioMember(id) && folioCampaign(id).dmUid == request.auth.uid)); }
+    function folioOwnerAccess(uid) { return folioUser() && (request.auth.uid == uid || isAdmin()); }
     function folioId(id) { return id is string && id.matches('^[A-Za-z0-9_-]{1,128}$'); }
     function folioClaim(a) { return a == null || (a is map && a.keys().hasOnly(['campaignId','assignmentId','version']) && folioId(a.campaignId) && folioId(a.assignmentId) && a.version is int && a.version > 0); }
     function folioReadCharacter(uid, id, c) {
@@ -17,8 +18,9 @@ service cloud.firestore {
              == { 'ownerUid':uid, 'characterId':id, 'assignmentId':a.assignmentId, 'version':a.version }));
     }
     match /folioAccounts/{uid} {
-      allow get: if folioUser() && request.auth.uid == uid;
-      allow create, update: if folioUser() && request.auth.uid == uid
+      allow get: if folioOwnerAccess(uid);
+      allow list: if folioUser() && isAdmin();
+      allow create, update: if folioOwnerAccess(uid)
         && request.resource.data.keys().hasOnly(['schema','displayName','locale'])
         && request.resource.data.schema == 1 && request.resource.data.displayName is string
         && request.resource.data.displayName.size() <= 120 && request.resource.data.locale in ['en','it'];
@@ -47,8 +49,9 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/folioCampaigns/$(a.campaignId)/roster/$(uid + '~' + id)).data
           == {'ownerUid':uid,'characterId':id,'assignmentId':a.assignmentId,'version':a.version}; }
       allow get: if folioReadCharacter(uid,id,resource.data);
-      allow list: if owner();
-      allow create: if owner() && shape(request.resource.data) && request.resource.data.revision == 0 && request.resource.data.currentAssignment == null;
+      allow list: if folioOwnerAccess(uid);
+      allow create: if folioOwnerAccess(uid) && shape(request.resource.data) && request.resource.data.revision == 0 && request.resource.data.currentAssignment == null;
+      // Assignment authority is explicitly owner-only, including administrator clients.
       allow update: if owner() && shape(request.resource.data)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revision','currentAssignment'])
         && request.resource.data.revision == resource.data.revision + 1
@@ -106,16 +109,16 @@ service cloud.firestore {
     }
     match /folioInvites/{id} {
       allow get: if folioUser();
-      allow create, update: if folioUser() && getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.dmUid == request.auth.uid
+      allow create, update: if folioUser() && (isAdmin() || getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.dmUid == request.auth.uid)
         && request.resource.data == {'id':id,'name':getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.name,
           'joinOpen':getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.joinOpen && !getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.archived};
     }
     match /folioAccounts/{uid}/offers/{id} {
-      allow get, list: if folioUser() && (request.auth.uid == uid || (resource.data.recipientUid == request.auth.uid && !resource.data.revoked));
-      allow create: if folioUser() && request.auth.uid == uid && request.resource.data.keys().hasOnly(['schema','senderUid','recipientUid','sourceId','sourceVersion','revoked'])
+      allow get, list: if folioUser() && (request.auth.uid == uid || isAdmin() || (resource.data.recipientUid == request.auth.uid && !resource.data.revoked));
+      allow create: if folioOwnerAccess(uid) && request.resource.data.keys().hasOnly(['schema','senderUid','recipientUid','sourceId','sourceVersion','revoked'])
         && request.resource.data.schema == 1 && request.resource.data.senderUid == uid && folioId(request.resource.data.recipientUid)
         && folioId(request.resource.data.sourceId) && request.resource.data.sourceVersion is int && request.resource.data.sourceVersion > 0 && request.resource.data.revoked == false;
-      allow update: if folioUser() && request.auth.uid == uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revoked']) && request.resource.data.revoked == true;
+      allow update: if folioOwnerAccess(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revoked']) && request.resource.data.revoked == true;
     }
     match /folioAccounts/{uid}/receipts/{id} {
       function source() {return getAfter(/databases/$(database)/documents/folioAccounts/$(request.resource.data.senderUid)/offers/$(request.resource.data.offerId)).data;}

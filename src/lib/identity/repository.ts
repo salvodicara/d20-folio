@@ -447,7 +447,14 @@ export function createIdentityRepository(db: Firestore, session: SessionControll
           const target = doc(db, camp(id));
           const snapshot = await tx.get(target);
           const c = parseCampaign(snapshot.data());
-          if (c.dmUid !== uid()) throw new Error("not-dm");
+          if (c.dmUid !== uid()) {
+            const authority = await tx.get(doc(db, "users/" + uid()));
+            if (
+              authority.data()?.role !== "admin" ||
+              authority.data()?.status === "blocked"
+            )
+              throw new Error("not-dm");
+          }
           check();
           tx.update(target, { joinOpen, revision: c.revision + 1 });
           tx.set(doc(db, "folioInvites/" + id), {
@@ -491,7 +498,15 @@ export function createIdentityRepository(db: Firestore, session: SessionControll
           const target = doc(db, camp(id));
           const snapshot = await tx.get(target);
           const c = parseCampaign(snapshot.data());
-          if (c.dmUid !== uid() || memberUid === c.dmUid) throw new Error("not-dm");
+          if (memberUid === c.dmUid) throw new Error("not-dm");
+          if (c.dmUid !== uid()) {
+            const authority = await tx.get(doc(db, "users/" + uid()));
+            if (
+              authority.data()?.role !== "admin" ||
+              authority.data()?.status === "blocked"
+            )
+              throw new Error("not-dm");
+          }
           check();
           tx.update(target, {
             members: c.members.filter((m) => m !== memberUid),
