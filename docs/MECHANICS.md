@@ -1,5 +1,41 @@
 # Mechanics taxonomy
 
+## Owner rectification — 6 September 2026
+
+[../PRODUCT.md](../PRODUCT.md) owns the binding new-application decision: Astra's approved full-lab
+0.9.3 is the experience reference; existing code, engines and screenshots impose no reuse
+or compatibility requirement. No legacy combat bridge. Choose architecture for one authority
+per fact, explicit responsibilities and verifiable transitions. Preserve separate production
+and recoverable input migration, D&D 2024 and all transferable BG3 behavior/depth.
+Visual comparison is approved Astra mock → actual new V2 runtime. The withdrawn old visual
+request and current implementation/review/gates are recorded only in [PROGRAM_STATUS.md](PROGRAM_STATUS.md).
+Every downstream plan, review and complete successor prompt carries the full Product decision.
+
+## Reconciled program contract — 2026-09-06
+
+This map describes the existing Grant engine and its current seams. The target is the
+[combat specification](superpowers/specs/2026-09-02-total-combat-automation-design.md) and the
+[authoring specification](superpowers/specs/2026-09-02-mechanics-authoring-spec.md), with live
+execution status in [Program status](PROGRAM_STATUS.md). A target primitive, a kind accepted by
+the current schema, an implemented handler and a verified scenario are four different claims.
+In particular `negate` is currently admitted but a no-op, `cast-declared` is absent, and there is
+no temp-HP step in the current Step union. These are code observations, not reproduced runtime
+Counterspell/temp-HP bugs.
+
+P01 reconciles Counterspell 2024 (countered casting economy spent, countered slot unspent on failed
+CON save) and temporary HP (choose old/new, including a lower new value; no stacking) in the target
+spec and expectations only. **P14a** introduces the first targeted red/green regressions and minimal
+functional correction before P14b automation. No universal refund policy follows from Counterspell.
+
+The approved lab's RULES-EXCEPTION-CATALOG E01–E22 is the full contract family set. Its eight
+ordered implementation outcomes are preserved in Program status; **P05** owns editor vocabulary,
+schema and conformance, never engine execution. **P14a/b/c** retain one identity/receipt for costs,
+targets, rolls, consequences, reactions and causal undo. An unsupported path preserves authored
+data and remains explicit; contextual manual resolution applies declared costs/consequences on
+those same facts. Neither a number field nor a `manual-table` step proves family automation.
+Existing deterministic evaluation, bilingual stable identifiers, and public SRD/private-pack
+partition remain in force. See [Design implementation depth](../DESIGN.md#implementation-depth).
+
 > **The conceptual model for every mechanic the d20-folio engine models.** Audience: any agent
 > (human or AI) extending the schema or the SRD data. **The per-kind detail is co-located TSDoc in
 > `src/lib/grants.ts`** (each arm of the `Grant` union documents its payload + evaluator merge rule) —

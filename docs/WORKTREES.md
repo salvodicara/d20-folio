@@ -1,3 +1,35 @@
+# V2 topic worktrees — current destination adapter
+
+PRODUCT owns the branch decision: `main` is the continuing production app and production fixes;
+V2 grows separately from fresh `origin/v2`. A V2 task never uses the legacy `wt-new`/`wt-rm`
+recipes below: they hardcode `origin/main`. Keep those recipes scoped to production-fix tasks.
+Every V2 task gets a separate `codex/` branch/worktree under `~/Workspace/Codex`; a clean
+long-lived V2 checkout may be a read-only invoker, never the task's edit destination.
+
+1. Read current instructions and Program Status; inventory tasks, worktrees/status and ownership.
+   Fetch `origin main v2`; prove invoker is clean and HEAD equals fresh `origin/v2`. Record the
+   fresh physical path, refs, timestamp and destination before creating work.
+2. From that verified V2 invoker, run `git worktree add -b codex/<task> <absolute-destination>
+origin/v2` (one shell line). Refuse an existing branch/path; never restore or reuse another
+   task's checkout. Run `scripts/worktree/bootstrap-worktree.sh` in the new destination under
+   the pinned toolchain. Set TMPDIR to a task-owned path under Workspace/Codex.
+3. Link only the verified V2 private twin read-only for composed validation. Do not copy production
+   credentials to a preview. Use synthetic DEV profiles or a separately authorized staging fixture
+   environment. Verify the physical pack target and preserve all private edits.
+4. Reconcile owned documents and behavior, review, run relevant gates and deliver visual evidence.
+   P01 permits documents, its sole execution status and a changeset; no functional code, real-data
+   writes, migration, deployment or integration. Retain its candidate/evidence for handoff.
+5. For a future task explicitly authorized to integrate V2, fetch and rebase on fresh `origin/v2`,
+   revalidate changes, run `just ci` (the current hook only special-cases main), and the applicable
+   SRD/rules/visual gates. Push explicit `HEAD:v2`, never a bare push or `HEAD:main`. Verify remote
+   ancestry/SHA before removing only the task's clean worktree. Never remove the long-lived V2 or
+   production checkout. Integration never authorizes staging or production deployment.
+
+The complete V2, verified player-data migration, P29/P30 acceptance/recovery and explicit owner
+switch approval precede production retirement. P11b only changes V2's personal-state seam.
+
+## Historical production-fix adapter
+
 # Parallel work — worktrees, branches off `main`, agent merges
 
 > **The repo standard for every change** (golden rule 11, `docs/GOLDEN_RULES.md`). Each task gets

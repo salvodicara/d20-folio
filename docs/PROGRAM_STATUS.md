@@ -1,5 +1,78 @@
 # Program Status
 
+## Current frontier — P02 new application, direction recovery (2026-09-06)
+
+Owner: Astra. P02 is OPEN. P03 must not start. This section is the sole current
+execution record; the ledger below is retained history of the previous program.
+
+Fresh preflight on 2026-09-06: clean long-lived V2 invoker and origin/v2 both
+`24d9fbf6ae23e4e6844d70e9cf7152bb0e389ba2` after `git fetch origin main v2`.
+Origin/main remains `9b06b75313d7ee353c4072a20397c3092707648e`.
+New isolated worktree `/Users/salvatoredicara/Workspace/Codex/d20-folio-p02-new-application`,
+branch `codex/p02-new-application-20260906`, created from fresh origin/v2.
+Pinned bootstrap completed. Shared checkout retains its pre-existing `.playwright-cli/`.
+P01 and prior P02 candidates and private pack are preserved. Private V2 HEAD observed
+`b6073dd0d15bcf2dc980b1e00c531b7a5330da8e`, clean; pack entry is its nested content-pack.
+Previous P02 task was idle in the task inventory. Parent Astra owns documents, new UI,
+entrypoint and integrated verification. Worker identity_data owns src/lib/identity, identity
+unit/rules tests and new ACL blocks in its isolated worktree
+`/Users/salvatoredicara/Workspace/Codex/d20-folio-p02-identity-data`.
+Read-only p02_contract_audit reviews current documents and data boundaries.
+
+### Binding correction
+
+The old P02 visual/interaction approval request is WITHDRAWN. Its 28 screenshots,
+tests and technical review are diagnostic history, not acceptance of the new V2.
+The binding reference is Astra's approved full-lab 0.9.3, owner receipt REVIEW passage 29.
+Initial freeze verification returned exit 1 for the five known owner-edited documents;
+all other 518 frozen files matched. New documentary corrections have original backups
+and before/after hashes under `d20-folio-p02-new-evidence/direction-reset`.
+No mock application or image change and no new approval is implied.
+
+V2 is a new application with no mandatory old engine, layout, store, route or bridge.
+Production remains separate; input-data migration must be recoverable. Product and
+Design now propagate the full current owner decision and required BG3 fidelity.
+
+### Ordered P02 outcomes and evidence
+
+1. Direction/documents and mock mapping corrected. Independent D1–D6 review closed.
+   No previous P02 code imported. New runtime is the screenshot approval subject.
+2. Data commits incorporated locally as `b1e34b38`, `025c4e34`, `0630656f`.
+   Independent data/security R1–R8 and UI U1–U6 reviews closed on actual new source/tests.
+   Parent is sole remaining writer; data/UI worker contributions are complete.
+3. Full repository rules gate: 6 files / 167 tests pass, explicit demo-d20folio, exit 0.
+   Includes owner/member/DM/admin/anonymous/wildcard/assets, races, release and six-copy
+   original recovery. No production data or migration. P04/P24 materialization is future.
+4. New runtime browser flows pass two-PC assignment, active/inspection distinction,
+   account switch, invite/cancel, locale switching, DM inspection/privacy/notes, second-session
+   revocation and rejoin, and mounted-owner offline read with assignment denial.
+   Keyboard focus restoration failed then passed. Full EN/IT 1440/1280/390 account/roster/
+   invite matrix has no horizontal overflow or exposed keys. DM campaign/inspection/lower
+   details recaptured settled. Fresh browser console has only DevTools INFO.
+5. `just ci` passes 857 app files / 19,208 tests plus 7 Functions files / 129 tests,
+   typecheck/lint/build/PWA. `just ci-srd-only` passes 678 files / 13,628 tests, 2 intentional
+   pack-composed skips, typecheck/build/PWA. Format/i18n and 84 local links pass. Full CI
+   delivery replica after participant-name presentation change also passed with the same
+   counts and exit 0 (ci-delivery.log). No remaining technical review blocker.
+6. Independent visual review closes header, invite and portrait findings against Astra 0.9.3.
+   The **new P02 owner visual gate remains PENDING**. Curated real screenshot comparisons
+   and complete HANDOFF/successor prompt are prepared under d20-folio-p02-new-evidence.
+   P02 remains OPEN; no P03, remote integration, deploy or live migration.
+
+Fresh final `git fetch origin main v2` again confirmed origin/main and origin/v2 unchanged
+at the SHAs above. Private/checkouts are preserved. Keep the isolated candidate until the
+new visual owner verdict; do not delete pending work or push main.
+
+P01 commit `908dfbd19356015ee6f8308a06042c9ce429d393` is the documentary prerequisite
+material; it is not a new integration receipt. Previous candidate
+`ece29779688e8bd42f572d9591f227564e2738b1` remains separate and unaccepted.
+No integration, deploy, real migration or P03 execution occurred in this session.
+The P01 errorBoundary Italian baseline issue remains assigned to P27c unless needed here.
+
+## Retained historical ledger
+
+# Program Status
+
 The execution ledger of the new app on the long-lived branch `v2`. Update it whenever a stage
 opens or closes, a gate is run, an owner gate opens, or an integration SHA changes. It does not
 own product/release status (`PROGRESS.md`), release history (`CHANGELOG.md`) or the test

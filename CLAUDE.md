@@ -1,5 +1,16 @@
 # d20 Folio — agent briefing
 
+## Owner rectification — 6 September 2026
+
+[PRODUCT.md](PRODUCT.md) owns the binding new-application decision: Astra's approved full-lab
+0.9.3 is the experience reference; existing code, engines and screenshots impose no reuse
+or compatibility requirement. No legacy combat bridge. Choose architecture for one authority
+per fact, explicit responsibilities and verifiable transitions. Preserve separate production
+and recoverable input migration, D&D 2024 and all transferable BG3 behavior/depth.
+Visual comparison is approved Astra mock → actual new V2 runtime. The withdrawn old visual
+request and current implementation/review/gates are recorded only in [docs/PROGRAM_STATUS.md](docs/PROGRAM_STATUS.md).
+Every downstream plan, review and complete successor prompt carries the full Product decision.
+
 This file is the short, cross-harness router. `AGENTS.md` is a symlink to it, so every instruction
 here must work in both Claude Code and Codex. Read only the documents relevant to the task; do not
 load the whole documentation set by default.
@@ -67,6 +78,16 @@ proposal until integrated.
 - **Secrets:** never print, commit, or store them in agent memory. Use `.env.local`, CI secrets, and
   Secret Manager.
 
+## Current P01–P30 routing
+
+Read PRODUCT's 2026-09-06 direction and DESIGN's current V2 contract: BG3 behavioral fidelity,
+complete desktop, relevant phone consultation/updates, dark EN/IT, contextual freedom and the
+explicit implementation-depth obligations. Production stays available until completed V2,
+verified player-data migration and an owner-authorized switch. docs/PROGRAM_STATUS.md owns the
+active block and references the P00-approved program; earlier stage/S/B programs are history,
+not the next assignment. Each session delivers actual evidence and one complete recursive next
+prompt; a missing gate continues the same block/outcome. No automatic next-block execution.
+
 ## Architecture in one breath
 
 > **Direction (2026-09-03):** the new app grows on the long-lived branch `v2` under
@@ -110,8 +131,9 @@ TDD → systematic debugging as needed → review → verification before comple
 adapters below override generic command examples, not the lifecycle:
 
 - Every repo change uses an isolated worktree. `just wt-new` and `just wt-rm` run from a clean
-  worktree whose HEAD has just been proven equal to fresh `origin/main` (the new app's work runs in
-  the long-lived `v2` worktree); never run a stale worktree recipe from the shared checkout. The
+  worktree whose HEAD has just been proven equal to fresh `origin/main`; those legacy adapters
+  are production-fix tools. V2 uses the isolated topic-worktree procedure in WORKTREES, never
+  edits in another task's long-lived checkout. The
   shared checkout stays untouched and is never recipe authority merely because it is on local
   `main`. Full flow: [Worktrees](docs/WORKTREES.md).
 - Small Conventional Commits; the owner is the sole commit author, with no co-author/footer/trailer.
@@ -121,8 +143,10 @@ adapters below override generic command examples, not the lifecycle:
 - Non-visual work may integrate after review and green gates. Visual work waits for approved,
   curated before/after screenshots across the affected theme/locale/viewport matrix, delivered as
   actual chat images viewable on the owner's phone rather than local file paths.
-- Finish by rebasing on fresh `origin/main`, pushing explicit `HEAD:main`, confirming the SHA, and
-  removing the worktree. No PR flow. Never deploy as part of integration.
+- Use the destination-specific procedure in [Worktrees](docs/WORKTREES.md): V2 tasks branch from
+  fresh `origin/v2`, production fixes from fresh `origin/main`. Never send V2 work to `main`.
+  Integration is separate from task execution; the current P01 mandate excludes all integration.
+  No PR flow or implicit deployment; retain unintegrated work and its evidence.
 
 ## Tool routing
 

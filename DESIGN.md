@@ -1,4 +1,6 @@
 ---
+# Retained runtime-baseline tokens, not the current V2 target.
+# See Current V2 design contract below for the approved dark-only design.
 name: d20 Folio
 description: Tactical Codex — a coherent premium companion for D&D 2024, designed across every surface, state and breakpoint.
 colors:
@@ -144,14 +146,15 @@ components:
 
 # Design System: d20 Folio
 
-> **This is the single, comprehensive design + UX system of record.** It folds in and supersedes
+> **This is the design + UX system of record. The current V2 contract below supersedes the
+> retained implementation catalogue wherever they differ.** It folds in and supersedes
 > all the redesign-era working docs (the old design-system, craft-doctrine, audit, asset-spec, and
 > `UI_UX_*` briefs — now pruned; redesign journey in git history). The token
 > _values_ are owner-locked in `src/index.css` +
 > `src/styles/folio.css` — **on any disagreement between this prose and the CSS, the CSS is
-> authoritative.** This doc documents structure, usage rules, the craft discipline, and the identity
-> guard; it never re-derives values. Validate every UI surface against it; on conflict with the
-> Product Constitution (`docs/PRODUCT_CONSTITUTION.md`), stop and ask.
+> evidence of currently rendered values, not authority over the approved V2 target.** Resolve
+> contradictions from current owner decisions and update the owner of the fact; ask only about
+> a concrete unresolved product conflict.
 >
 > **Reader's map.** §1–6 = the target visual design system (north star, color, type, elevation,
 > components, do/don't). §7 = the per-surface craft laws. §8 = the coherence guard. §9 = motion.
@@ -159,6 +162,116 @@ components:
 > contract. §14 = audit and verification. §16 onward documents shipped construction that is pending
 > reconciliation during the Tactical Codex cutover; it is evidence, not target authority, and is
 > deleted when the corresponding surface migrates.
+
+## P02 implemented surface and reference
+
+The new identity surface uses approved Astra full-lab 0.9.3 account, roster and invitation
+compositions: 68px global header, 38px desktop gutters, Cinzel titles, Alegreya section
+headings, system UI controls, dark blue-black canvas, pale gold identity and cyan action/focus.
+The local mark is the approved laboratory d20-mark-v3 geometry; no third-party game artwork
+or mock font binaries are redistributed. Runtime fonts use the existing licensed packages.
+The Lyra portrait used in emulator evidence is laboratory-generated demonstration art, seeded
+only into local synthetic Storage, not included in the application distribution. Missing or
+unauthorized portraits have a visible fallback.
+
+Account preferences, multiple owned PCs/memberships, invite reading/joining, campaign creation,
+invitation availability, assignment/release, participant removal, private notes, authorized
+inspection and recoverable copy import are actual P02 consumers. The fuller account utilities,
+character creation/growth, four-domain search/routing, gameplay editing and library operations
+remain their assigned later blocks; disabled future domains are not presented as functional.
+The comparison matrix is dark EN/IT at 1440×900 and 1280×800, plus relevant 390×844 phone flows.
+Only actual runtime images and the identified approved reference may support its visual gate;
+PROGRAM_STATUS records the evidence and verdict, not this design contract.
+
+## Owner rectification — 6 September 2026
+
+[PRODUCT.md](PRODUCT.md) owns the binding new-application decision: Astra's approved full-lab
+0.9.3 is the experience reference; existing code, engines and screenshots impose no reuse
+or compatibility requirement. No legacy combat bridge. Choose architecture for one authority
+per fact, explicit responsibilities and verifiable transitions. Preserve separate production
+and recoverable input migration, D&D 2024 and all transferable BG3 behavior/depth.
+Visual comparison is approved Astra mock → actual new V2 runtime. The withdrawn old visual
+request and current implementation/review/gates are recorded only in [docs/PROGRAM_STATUS.md](docs/PROGRAM_STATUS.md).
+Every downstream plan, review and complete successor prompt carries the full Product decision.
+
+## Current V2 design contract — 2026-09-06
+
+The approved reference is the immersive-v2 full laboratory, candidate
+`d20-folio-html-0.9.3-2026-09-06`. Its identity/evidence and owner verdict are recorded in
+[Program Status](docs/PROGRAM_STATUS.md). The YAML and numbered construction catalogue below
+retain baseline implementation recipes, including historical light/mobile targets. They are
+reference material, not authorization to restore light parity, phone combat, the old palette or
+old information architecture. The following contract owns the target; CSS shows current output.
+
+Only dark, EN/IT. Complete desktop at 1440×900 and 1280×800; phone 390×844 for consultation and
+relevant updates, not forced desktop HUD/map parity. Printing uses readable paper. Choose
+React/TypeScript and custom Radix primitives only where they serve the new contract; the lab's wrapper composition
+and demonstration handlers are not a runtime architecture.
+
+BG3 behavior must be reproduced in full for combat and transferable interactions, with Folio's
+identity: observe its real sequence, organization and feedback before building each surface,
+then compare actual gestures and images. D&D 2024 and physical input remain binding. Generic
+forms are not an acceptable substitute. Raise only concrete conflicts with accepted product
+requirements; no new backend, costs or animated 3D world is implied.
+
+Campaign / Character / Library / At the table are the four permanent domains; account is global.
+Navigation, “Go to…”, scoped Back/Forward, picker return, scroll/filters/selection/drafts remain
+coherent. DM group overview and full authorized sheet inspection never silently switch actor,
+control, lease or balances. Browse/select/use are distinct; viewing a weapon or “Use at the
+table” navigation does not spend resources. One canonical command supports contextual entries
+and shortcuts. Essential HP, resources, costs, warnings, consequences and correction stay visible;
+secondary configuration uses progressive disclosure. “Resolve at the table” applies explicit
+consequences to the same facts and receipt, without an extra ledger.
+
+Lab reference values: background `#0b1419`, text `#efe8d9`, gold `#d8bd87`, cyan `#a6e4ee`,
+secondary `#bbcacd`, panel `#132128`; Cinzel identity, Alegreya narrative/titles, system UI for
+commands/data. These are reference tokens to translate with visual proof, not a P01 CSS change.
+No decorative inventory glow. HP green/yellow/red agrees across ring and bars with number/text;
+action green circle, bonus orange triangle, reaction purple star, slots blue squares. Cost is
+also named accessibly and in detail; do not invent permanent cost badges on every artwork tile.
+HUD slot banks read the sheet's same resources with source/reset distinctions. Portrait crops,
+missing images, long Italian names, keyboard/focus and reduced motion need actual captures.
+
+DM map tools retain the observed Owlbear organization with contextual properties; geometry is
+uniform top-down and movement, targeting and areas are distinct. Phone has compact named search,
+no redundant Back or keyboard-help control; browser history remains usable. Each keyboard
+command has a visible equivalent; character shortcuts can be disabled and do not fire in editors.
+Calendar starts with complete session proposals, person-scoped votes, comparison and confirmation;
+Google/ICS export follows the confirmed occurrence, without implicit OAuth or external sends.
+
+### Implementation depth
+
+These obligations must appear in full in the relevant downstream prompts:
+
+- **P10:** a complete creation wizard with actual origin/class, proficiency, ability, equipment and
+  magic choices; explain prerequisites/dependencies, show consequences, preserve draft on returning
+  to steps, provide comparison/summary and confirmation. Free text serves voluntary exceptions;
+  the lab's sample choices do not delimit the catalogue.
+- **P11a:** derive growth choices from character/class/level, including subclass, multiclass,
+  feats/abilities, features and magic when granted. Show before/after, dependent choices needing
+  revision, cancel/resume and confirmation. A generic growth form does not satisfy this.
+- **P14a–c:** action, targets, roll, costs, consequences, reactions and causal correction share facts
+  and the same receipt. Preserve D&D 2024; do not silently import BG3 rule variants.
+- **P15:** shared animated 3D digital dice with legible faces/results/modifiers, equally accessible
+  physical/manual input and reduced motion. Animation presents the authoritative result without
+  rerolling. Action → target → range/conditions → roll → consequences/reactions → undo is continuous.
+  Explain normal/long/out-of-range and applicable advantage/disadvantage with explicit manual
+  decision where permitted.
+- **P17a–P18:** P15 prepares the range contract/presenter and no-map path; P18 proves shared-map
+  distances, range indicators, targets and areas using authoritative scale. Distinguish movement,
+  range and area; P15 alone cannot close integrated geometry. No circular P15/P18 dependency.
+- **P28/P29:** prove creation → growth → encounter → normal/long/out-of-range attack → digital or
+  physical dice → consequences/reactions → undo, plus the remaining cross-cutting coverage. Use
+  real runtime branches and screenshots, not page/test counts.
+
+New visual details need images and owner judgment within their implementation block. Preserve
+approved patterns; the owner need not specify every control. Execution order belongs to the
+program linked from Program Status; a missing exit keeps the same block/outcome.
+
+## Retained baseline construction catalogue
+
+All numbered sections below describe earlier construction. Their historical approval statements
+refer only to their named revisions; they do not override the current V2 contract above.
 
 ## 1. Overview
 

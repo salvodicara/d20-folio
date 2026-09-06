@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { SessionController } from "@/lib/identity/session";
 import { scopedAsset } from "@/lib/identity/assets";
+vi.mock("firebase/storage");
 describe("authenticated bytes lifecycle", () => {
   it("does not publish bytes that arrive after revocation", async () => {
     const s = new SessionController();

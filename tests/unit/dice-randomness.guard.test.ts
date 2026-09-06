@@ -14,6 +14,8 @@ const CALL = /\b(?:Math\.random|crypto\.getRandomValues|crypto\.randomUUID)\s*\(
 
 /** Every production file that calls a random source, with the reason it may. */
 const ALLOWED: Readonly<Record<string, string>> = {
+  "src/lib/identity/repository.ts":
+    "campaign and assignment identities only; never dice results",
   "src/lib/dice.ts": "the dice seam (ADR-0010)",
   "src/lib/quickbuild-random.ts": "character-generation seed, never a roll of the game",
   "src/features/campaigns/campaign-io.ts": "invite-code token",

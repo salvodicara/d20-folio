@@ -1,5 +1,16 @@
 # d20 Folio — repository invariants
 
+## Owner rectification — 6 September 2026
+
+[../PRODUCT.md](../PRODUCT.md) owns the binding new-application decision: Astra's approved full-lab
+0.9.3 is the experience reference; existing code, engines and screenshots impose no reuse
+or compatibility requirement. No legacy combat bridge. Choose architecture for one authority
+per fact, explicit responsibilities and verifiable transitions. Preserve separate production
+and recoverable input migration, D&D 2024 and all transferable BG3 behavior/depth.
+Visual comparison is approved Astra mock → actual new V2 runtime. The withdrawn old visual
+request and current implementation/review/gates are recorded only in [PROGRAM_STATUS.md](PROGRAM_STATUS.md).
+Every downstream plan, review and complete successor prompt carries the full Product decision.
+
 This document owns durable cross-cutting product, engineering, safety, and delivery constraints.
 It is not a second development methodology: Superpowers owns the generic lifecycle, while this file
 adapts that lifecycle to d20 Folio.
@@ -67,7 +78,7 @@ the new durable decision or kept explicitly one-off.
 9. **Bilingual by construction.** Every user-visible string ships in both EN and IT through i18n.
    Never use `defaultValue`, hardcoded UI prose, empty IT, or byte-identical untranslated English.
 10. **Migrate forward, then remove the old world.** Prefer one current shape over permanent legacy
-    branches. Live migrations use dry-run → snapshot → idempotent apply → complete verification;
+    branches. Live migrations use snapshot → dry-run → idempotent apply → complete verification;
     remove spent scripts and obsolete code only after verified coverage.
 
 <!-- Rule 28 keeps its durable identifier outside the thematic sequence. -->
@@ -78,11 +89,13 @@ the new durable decision or kept explicitly one-off.
 
 ### Process and delivery
 
-11. **One worktree per task; no PR flow.** Branch from fresh `origin/main` with `just wt-new` (or, for
-    the new app, from the long-lived new-app branch named in `PRODUCT.md` §Steering); never
-    edit/commit/switch the shared checkout. After review and green gates, rebase, push explicit
-    `HEAD:main`, confirm the SHA, and remove the worktree. The owner remains sole commit author; no
-    co-author/footer/trailer.
+11. **One worktree per task; no PR flow.** Create an isolated topic worktree from fresh
+    `origin/v2` for V2 work or fresh `origin/main` for an authorized production fix, following
+    the destination-specific adapter in WORKTREES. Never use the shared or long-lived checkout
+    as the task's edit destination. When integration is authorized, rebase on the fresh destination,
+    complete review and gates, push explicit `HEAD:v2` or `HEAD:main` as applicable, confirm the
+    remote SHA, then clean up. P01 excludes integration and retains its candidate. The owner is
+    the sole commit author; no co-author/footer/trailer.
 12. **Review before integration.** Use Superpowers' requesting/receiving-code-review workflow for
     correctness and requirement coverage, plus ponytail-review when the diff risks unnecessary
     complexity. Address or reason about every actionable finding, then re-verify the final diff.
@@ -111,7 +124,8 @@ the new durable decision or kept explicitly one-off.
 
 19. **Impeccable owns UI/UX craft.** Apply `impeccable` with `PRODUCT.md`, the Product Constitution,
     and `DESIGN.md`. Show only what is necessary and all that is necessary; design complete states,
-    desktop/mobile, dark/light, accessibility, motion, and reusable tokens/primitives.
+    the device/locale/theme scope in PRODUCT (complete desktop, relevant phone updates, dark
+    EN/IT), accessibility, motion, and reusable tokens/primitives.
 20. **Frictionless, industry-standard interaction.** Automate what the app knows, constrain inputs so
     invalid states are unreachable, edit visible facts in place, make the natural next action obvious,
     and support beginners without slowing experts.
@@ -121,7 +135,7 @@ the new durable decision or kept explicitly one-off.
 25. **Every visual change is owner-approved before integration.** Send curated before/after Chromium
     screenshots cropped to the affected region, covering the locale/theme/viewport combinations that
     materially differ. Deliver the actual images through the shared chat so they are viewable on the
-    owner's phone; a local path or written report is not delivery. Wait for approval before `main`;
+    owner's phone; a local path or written report is not delivery. Wait for approval before integration;
     deployment remains a separate gate.
 26. **Discover ambiguous product intent before implementation.** Use Superpowers brainstorming and,
     when a real interview is needed, grill-me. For contested UI choices, Impeccable decides from the
@@ -139,15 +153,15 @@ the new durable decision or kept explicitly one-off.
     real reference beside our rendition, then rules.
 31. **Steering wins.** `PRODUCT.md` §Steering is the top of the authority stack. A document, plan,
     test or memory that contradicts it is fixed or deleted in the same change that notices it, never
-    left to pull the next agent back to an old direction. The three acceptance stories decide scope:
-    a feature that serves none of them is superfluous.
+    left to pull the next agent back to an old direction. The approved Astra mock and current Product/AGENT-PROGRAM contracts determine V2 scope;
+    historical acceptance stories are examples, never a capability ceiling.
 32. **Every roll is logged and reviewable.** Dice roll in-app by default (shared 3D animation;
     owner-ratified 2026-09-03, reversing the original "no dice" rule) or are entered from physical
     dice; the DM may roll hidden. Every roll carries its formula, result, roller and source in the
     encounter log; deterministic and rolled effects apply automatically with undo and correction.
-33. **Deploys are owner-gated; safe migrations are autonomous.** Never deploy without explicit
-    per-change permission. Forward live-data migrations may run autonomously only under rule 10's
-    snapshot/verify protocol. Destructive non-migration operations require explicit approval. Rules
+33. **Deploys and real migrations are owner-gated.** Never deploy without explicit
+    per-change permission. For the current V2 program only migration on recoverable copies is authorized; real-data
+    migration requires explicit authorization recorded for that change. Destructive non-migration operations require explicit approval. Rules
     changes ship emulator tests; live-user fixtures remain green.
 34. **Dependencies are vetted; secrets stay out.** Prefer existing/platform capabilities. Before a new
     runtime dependency, verify necessity, maintenance, size, license, and security. Keep secrets only in
@@ -171,7 +185,8 @@ the new durable decision or kept explicitly one-off.
 - **D7 — Fixtures:** `MOCK_CHARACTER` is the only production mock; dev scenarios and six team files are
   verification fixtures, never production data.
 - **D8 — Sync:** auto-save persists character and session together and prevents server echo loops.
-- **D9 — Campaign/combat ownership:** a character belongs to at most one campaign; mutable HP,
+- **D9 — Campaign/combat ownership:** an account has many memberships and may have multiple
+  characters in one campaign; each character belongs to at most one current campaign. Mutable HP,
   conditions, initiative, and death saves have the single model home documented in Architecture.
 - **D10 — React purity:** no time/RNG/ref reads during render or synchronous effect-driven state loops;
   the React Compiler remains disabled unless a new measured decision replaces that choice.

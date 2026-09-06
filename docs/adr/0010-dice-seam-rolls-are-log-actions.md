@@ -107,3 +107,11 @@ the DM and the roller see the faces, the record is always kept.
 - This does not change the accepted risk above: a hidden roll's faces still sit in the one shared
   log every client folds (Alternative 2, still rejected) — attribution changes who a roll may
   answer for, not who can read it.
+
+## P01 clarification (2026-09-06)
+
+P15 must deliver animated shared 3D dice with readable faces/modifiers, physical input and
+reduced-motion alternatives, following observed BG3 interactions adapted to Folio/D&D 2024.
+It prepares the attack contract and play without a map; P18 completes authoritative integrated
+range/geometry proof without making P15 depend on P18. Hidden faces in the shared Encounter
+remain member-readable by raw API; narrative secrets use the separate `dmNotes` ACL.

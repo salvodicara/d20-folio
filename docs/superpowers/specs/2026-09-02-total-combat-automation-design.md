@@ -1,5 +1,30 @@
 # Total combat automation — target architecture
 
+> Current owner rectification (2026-09-06): V2 is a new application; the approved Astra
+> full-lab 0.9.3 is the experience reference. Existing code, engines and historical
+> screenshots impose no reuse or compatibility requirement. No legacy combat bridge.
+> Product/Design own the current intent; PROGRAM_STATUS owns P02, which remains open.
+> Historical stages below are not execution instructions or new acceptance evidence.
+
+## P01 reconciliation — 2026-09-06
+
+The current P01–P30 program and evidence live in [Program status](../../PROGRAM_STATUS.md).
+Historical stages and broad sketches below are not claims of completed runtime behavior or a
+ceiling on approved BG3 interaction depth ([Design](../../../DESIGN.md#implementation-depth)).
+Personal Encounter §5.2 is still target architecture: current personal storage is legacy
+`CombatState`; P03 owns command identity/version/lease/revocation and P11b owns its cutover with
+zero dual-write before P30. See [Architecture](../../ARCHITECTURE.md) for verified current seams.
+The full three-mode policy remains required; propose-and-confirm is not implemented in the
+current fold (ADR-0011). Narrative secrets remain outside the member-readable Encounter.
+
+**Rules expectations corrected, no functional change:** §3.4/scenario 3 now match
+[Counterspell 2024, official spell text](https://www.dndbeyond.com/spells/2619072-counterspell);
+scenario 10 matches [Temporary Hit Points, 2024 basic rules](https://www.dndbeyond.com/sources/dnd/br-2024/playing-the-game#TemporaryHitPoints).
+Read on 2026-09-06, above user comments. P14a owns the first red/green regression and minimum
+correction before P14b; P01 has not reproduced either as a runtime bug. `negate` is currently a
+no-op and `cast-declared`/a temp-HP step are absent; do not cite these target scenarios as tests.
+The E01–E22 family contracts and eight ordered outcomes are retained in Program status.
+
 **Date:** 2026-09-02 · **Status:** reconciled to `PRODUCT.md` §Steering on 2026-09-03 (owner
 approved the core direction in chat on 2026-09-02; the steering of 2026-09-03 bounds it) ·
 **Owner of this fact:** this document owns the engine target for stages 1–4 of the
@@ -415,7 +440,8 @@ Programs with `trigger.kind = "event"` subscribe by data. Two delivery modes:
   triggering action in state `declared`. Eligible controllers append intents with `window: id`;
   the actor (or any client, under trust) appends `resolve`. Resolution recomputes the declared
   action with the window's effects applied (Shield's +5 AC changes hit to miss; Counterspell
-  negates the cast before payment of the countered spell's effects while its slot stays spent).
+  on a failed CON save prevents the countered spell's effects: its casting action, bonus action
+  or reaction is spent, but its spell slot is not expended; Counterspell's own cost remains spent).
   A window with no eligible entity never opens, so the common case stays one tap.
 
 Recharge is an input request at the monster's turn start (`d6` per spent recharge action);
@@ -714,7 +740,8 @@ ranged` over the weapon, and a `turn-claim` step keyed `sneak-attack` on the **r
    `cost: reaction + slot`, step `effect-start standing ac +5 until turn-edge start self`; on
    `resolve` the attack recomputes against the new AC. Counterspell: `event cast-declared within
 range 60 & visible`, `cost: reaction + slot`, `save` input (CON) then `negate` step; the countered
-   cast resolves as negated: its slot is spent, no effect, receipt `negated`.
+   cast resolves as negated on a failed CON save: no effect, its casting action/bonus action/reaction
+   spent, its slot not expended, receipt `negated`. Counterspell’s own reaction/slot are not refunded.
 4. **Readied actions** — `ready` effect holding an intent and a declared trigger; the trigger
    event opens a window for that entity only; the released intent spends the reaction; readied
    spells hold concentration from the ready.
@@ -737,7 +764,10 @@ range 60 & visible`, `cost: reaction + slot`, `save` input (CON) then `negate` s
    dismisses them (`entity-end`), removing their relations and effects.
 9. **Conditions with sources** — two effects, one projected condition; ending one leaves the
    other; exhaustion is a level on vitals with the 2024 −2×level / −5 ft×level derivations.
-10. **Temp HP** — single slot, max wins, source recorded, distinct expiry from the source effect.
+10. **Temp HP** — one retained pool, no stacking: the player chooses the existing or new pool,
+    including a lower new value. Preserve the chosen source and applicable duration; do not assume
+    that ending the source automatically removes its temporary HP. The default duration is until
+    depleted or a Long Rest; apply any specific source rule explicitly.
 11. **Damage ordering** — one `applyDamage(entity, packets[])` in the reducer, per component
     type; chosen types are answers; order as SRD (adjustments → resistance → vulnerability).
 12. **Death** — `hp-zero` sets `dying`; death saves are `d20` inputs at turn start; 20 → 1 HP; 1 →

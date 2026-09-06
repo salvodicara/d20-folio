@@ -83,3 +83,10 @@ a migration. Four points the implementation settled:
   cannot talk itself into discarding a live claim.
 
 Status accepted.
+
+## P01 clarification (2026-09-06)
+
+The accepted trust boundary covers raw faces, HP, tokens and fog in the shared Encounter,
+readable by authorized members; presenter concealment is not an ACL. Narrative `dmNotes` remain
+outside it with DM/admin access (`firestore.rules`). This clarification creates no new privacy
+or cost decision and does not authorize moving narrative secrets into a shared aggregate.

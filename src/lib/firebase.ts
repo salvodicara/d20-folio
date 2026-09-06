@@ -73,7 +73,7 @@ export const functions = getFunctions(app, "europe-west1");
 
 // Connect to emulators in development
 if (useEmulators) {
-  connectAuthEmulator(auth, "http://localhost:9099");
+  connectAuthEmulator(auth, "http://localhost:9099", { disableWarnings: true });
   connectFirestoreEmulator(db, "localhost", 8080);
   connectStorageEmulator(storage, "localhost", 9199);
   connectFunctionsEmulator(functions, "localhost", 5001);

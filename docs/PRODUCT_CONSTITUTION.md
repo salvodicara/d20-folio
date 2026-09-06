@@ -1,5 +1,16 @@
 # D20 Folio — Product Constitution
 
+## Owner rectification — 6 September 2026
+
+[../PRODUCT.md](../PRODUCT.md) owns the binding new-application decision: Astra's approved full-lab
+0.9.3 is the experience reference; existing code, engines and screenshots impose no reuse
+or compatibility requirement. No legacy combat bridge. Choose architecture for one authority
+per fact, explicit responsibilities and verifiable transitions. Preserve separate production
+and recoverable input migration, D&D 2024 and all transferable BG3 behavior/depth.
+Visual comparison is approved Astra mock → actual new V2 runtime. The withdrawn old visual
+request and current implementation/review/gates are recorded only in [PROGRAM_STATUS.md](PROGRAM_STATUS.md).
+Every downstream plan, review and complete successor prompt carries the full Product decision.
+
 > **The supreme governance document for the D20 Folio product experience.**
 > This is the "permanent project rules file" mandated by the owner. All design,
 > product, and engineering work — by humans or AI agents — must be validated
@@ -8,7 +19,7 @@
 |               |                                                                                                                                                                                                                                                                             |
 | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Status**    | Active — authoritative                                                                                                                                                                                                                                                      |
-| **Version**   | 2.2                                                                                                                                                                                                                                                                         |
+| **Version**   | 2.3                                                                                                                                                                                                                                                                         |
 | **Ratified**  | 2026-08-25                                                                                                                                                                                                                                                                  |
 | **Owner**     | Salvatore Di Cara (sole owner; 100% AI-developed project)                                                                                                                                                                                                                   |
 | **Authority** | Owns durable product/UX/design intent and the listed engineering principles. It works with the repository invariants in `docs/GOLDEN_RULES.md`; conflicts are reconciled through that document's evidence-based authority model, not by assuming either file is infallible. |
@@ -33,11 +44,11 @@
 ## 1. Product Vision
 
 **Users:** D&D 2024 players, from first-timers to veterans — creating, managing, and playing
-characters digitally. Bilingual (EN + IT), offline-first PWA. Desktop and mobile expose the complete
-product: desktop is the primary play surface (the owner's group plays online, each on their own
-computer with voice chat; the physical table is the extension) and optimizes simultaneous context
-and encounter management; mobile optimizes one-handed play as a second screen, fast input, reading
-and review. Neither is a reduced edition of the other. Beginner-friendly (no manual required) yet expert-capable (hints ignorable).
+characters digitally. Bilingual (EN + IT), offline-first PWA. Desktop/laptop offers the whole
+product, including live play, preparation and authoring. The group primarily plays online with
+external voice; the physical table remains supported. Phone serves quick/offline consultation,
+sheet, compendium, sessions, notes and relevant updates, without required touch combat or full
+desktop HUD/map parity. Shared/TV view remains desktop. Beginner-friendly and expert-capable.
 
 **Purpose (steering, owner 2026-09-03; the full steering lives in `PRODUCT.md` and outranks this
 document where they differ):** a digital table where the app does the math and the rules the way
@@ -89,6 +100,21 @@ The app should feel: **magical · immersive · premium · alive · cohesive.**
 used during real tabletop sessions.
 
 ---
+
+## Reconciled intent — 2026-09-06
+
+[PRODUCT.md](../PRODUCT.md), “Reconciled owner direction”, owns the latest exact product scope:
+full BG3 behavioral fidelity for combat and transferable interactions, Folio identity, D&D 2024,
+physical dice, contextual freedom, four domains, multi-character membership, and complete
+permission-scoped DM inspection distinct from the active actor. These refine the older benchmark
+wording above. Only dark EN/IT is required; retained light-theme implementation is not a V2 gate.
+[DESIGN.md](../DESIGN.md), “Implementation depth”, makes the complete creation/growth wizards,
+linked receipts/reactions/undo, shared animated 3D dice and integrated range/geometry obligatory.
+Generic lab forms do not limit the target. No animated 3D world follows from the dice requirement.
+
+Production remains usable until the complete V2 and player-data migration are verified and the
+owner authorizes switching. Neither documentation, a staging build nor internal V2 cutover is
+permission to replace production.
 
 ## 2. Critical Gameplay Principles
 
@@ -194,13 +220,12 @@ care about most. Every picker in the product — wizard or cockpit — obeys fou
 2. **Detail on SELECTED only.** No per-row info affordances (ⓘ buttons, hover previews) in a
    pool list — reading happens on the row itself. The deeper full read view (the shared
    compendium detail) is offered only on an already-picked row.
-3. **Never state met preconditions.** Surface only what blocks or what asks. An option whose
-   prerequisites the character does not meet is **filtered out of the offered pool, never greyed
-   out** (RAW-illegal options are not options); a satisfied prerequisite is never announced.
-   Homebrew overrides live in the cockpit, not in the on-rails wizards. **When filtering hides an
-   entire CATEGORY a user would expect (e.g. most classes in the multiclass fork), the absence
-   carries a one-line cause** — quiet, in the surface's register, the per-option detail behind
-   progressive disclosure; the hidden options stay filtered, never greyed.
+3. **Explain unmet prerequisites; preserve explicit exceptions.** The normal guided pool filters
+   unmet prerequisites and explains an absent expected category without announcing every satisfied
+   rule. Creation and growth also expose an explicit exception path with source, author, chosen
+   consequences and confirmation; a bonus feat does not require authoring a homebrew item. An
+   exception does not create an automatic extra DM-approval queue or bypass permissions. The DM's
+   arbitration and the campaign's three application policies remain distinct.
 4. **Cascades expand under their visible cause.** When a choice spawns follow-up choices (a feat
    that asks for a skill, a spell), the follow-ups expand inline beneath the choice that caused
    them, visibly attributed to it — never on a detached page or modal.
@@ -256,17 +281,16 @@ purposes.**
 
 **Desktop** is optimized for: active gameplay · combat · management · multitasking · preparation.
 
-**Mobile** is optimized for: one-handed active play as a second screen (sheet, hotbar, dice) ·
-fast table facts and physical-roll input ·
-character actions · reading abilities and spells · campaign coordination · lore browsing · quick
-updates · between-session usage.
+**Mobile** is optimized for quick/offline consultation, sheet, compendium, sessions, notes,
+campaign coordination and relevant updates. It is not required to reproduce desktop combat,
+hotbar, map or TV controls; do not introduce artificial restrictions on useful phone updates.
 
 Mobile should feel **equally premium and intentional.**
 
 **Do NOT simply collapse desktop layouts onto mobile. Design mobile experiences
 deliberately.**
 
-> Shorthand: **complete capability, purpose-built composition.**
+> Shorthand: **complete desktop product; intentional phone consultation and updates.**
 
 ---
 
@@ -374,6 +398,11 @@ vision.**
 and long-term maintainability.
 
 ---
+
+Amendment 2.3 (2026-09-06): reconciles the owner-approved P00 direction and P01 continuity
+clarification: device scope, dark-only EN/IT, BG3 behavioral fidelity and implementation depth,
+explicit prerequisite exceptions, and production retained until verified owner-authorized switch.
+This is documentation of accepted decisions; no runtime or data migration is attested.
 
 ## Amendments
 

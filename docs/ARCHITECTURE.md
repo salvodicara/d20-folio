@@ -1,5 +1,98 @@
 # d20-folio architecture
 
+## P02 current new-application boundary (2026-09-06)
+
+The candidate entrypoint mounts `IdentityApp` inside `IdentityBoundary`. It does not import
+or initialize the legacy App/router, gameplay stores, combat persistence or write-back.
+Firebase SDK configuration, bundled fonts, i18n catalogues and DOM/chunk resilience are
+platform utilities retained on evidence; they do not establish a gameplay dependency.
+The legacy module inventory below describes retained source and production history, not
+an instruction to reconnect those modules to the new runtime.
+
+`src/lib/identity` owns the new account, campaign, character, assignment, session and copy
+migration contracts. `src/features/identity` consumes them as account, personal roster,
+invitation, campaign roster and immutable sheet inspection. Its read-only presenter resolves
+localized reference definitions and displays the imported authorized build/resources. It
+never evaluates or writes game effects; P03/P05/P11/P14 own their respective later contracts.
+Inspection does not select an active PC. There is no command actor or command outbox yet.
+
+Auth events, including reauthentication with the same UID, bound a session lifetime. Campaign
+and active-PC changes advance its generation; unsubscribe, private object-URL disposal and
+late-result fences share that generation. A permission denial clears the affected context;
+the UI rebinds the still-authorized own workspace once, and blocked accounts remain empty.
+Owner-scoped cached views remain available offline. Foreign inspection and membership need
+current server authority. Online transactions alone acknowledge assignment changes. An
+inflight authorized request can finish in its original scope, but cannot populate a new one.
+
+Authenticated Storage `getBytes` is the actual portrait consumer; no download-token URL is
+used by this runtime. Other players receive a portrait fallback in P02. Narrative notes are
+literal private Firestore documents, with functioning owner/DM editors. Storage ACLs also
+cover private/DM attachments, but attachment upload/editor UX is not implemented in P02.
+Previously received bytes or legacy bearer URLs are not claimed retrospectively revoked.
+
+The path/model/privacy matrix is owned by CHARACTER_SCHEMA; PROGRAM_STATUS alone records
+verification and integration. Full scope and exclusions are in the P02 specification.
+
+## Owner rectification — 6 September 2026
+
+[../PRODUCT.md](../PRODUCT.md) owns the binding new-application decision: Astra's approved full-lab
+0.9.3 is the experience reference; existing code, engines and screenshots impose no reuse
+or compatibility requirement. No legacy combat bridge. Choose architecture for one authority
+per fact, explicit responsibilities and verifiable transitions. Preserve separate production
+and recoverable input migration, D&D 2024 and all transferable BG3 behavior/depth.
+Visual comparison is approved Astra mock → actual new V2 runtime. The withdrawn old visual
+request and current implementation/review/gates are recorded only in [PROGRAM_STATUS.md](PROGRAM_STATUS.md).
+Every downstream plan, review and complete successor prompt carries the full Product decision.
+
+## V2 reconciliation — 2026-09-06
+
+The current program is P01–P30 in the approved HTML lab's `docs/AGENT-PROGRAM.md`,
+tracked only in [Program status](PROGRAM_STATUS.md). Historical stage numbers below describe
+the existing implementation; they do not select the next work block. Product intent is owned by
+[Product](../PRODUCT.md), with interaction depth in [Design](../DESIGN.md#implementation-depth).
+Production stays in service on its separate Firebase project while V2 is developed on `v2` and
+staging. Completion, verified player migration and explicit owner permission precede any switch.
+
+### Current seams and target responsibilities
+
+Evidence at V2 `24d9fbf6ae23e4e6844d70e9cf7152bb0e389ba2`:
+
+- React/TypeScript/Radix, the existing Grant engine and the entity-generic Encounter reducer
+  are existing code to evaluate, not mandatory foundations. No new gameplay server or paid service is implied.
+- `table-store.ts` creates a new action id/seq at append. `combat-io.ts` uses `arrayUnion` for
+  whole actions; this does not deduplicate repeated user commands with different ids. `basedOn`
+  is not a command-level compare-and-set fence. Checkpoint CAS is a separate existing protection.
+  **P03** owns stable command identity, version/lease checks and membership/revocation invalidation;
+  **P14a/b/c** own the same identity and receipt through resolution, application and causal undo.
+- `combat-lease.ts` batches join/leave writes atomically. Its personal-state server read and
+  subsequent whole-document write are separate: atomic batching does not establish a version
+  fence for that earlier read. [Character schema](CHARACTER_SCHEMA.md) describes the current
+  legacy `CombatState`. **P11b** owns the personal Encounter cutover, removal of legacy readers
+  and writers and zero dual-write before P30, following snapshot → dry-run → idempotent apply →
+  verify against all six fixtures. P01 performs none of those writes or migrations.
+- `campaign-io.ts` atomically claims `attachedCampaignId`; `memberDetails[uid]` currently holds
+  one `characterId`. Target roster membership is account-level with several owned PCs;
+  membership, attachments, encounter entity/controller and the currently operated PC are distinct.
+  Authorized DM inspection reads the complete relevant character independently of the active PC.
+- Current `LibraryEntry` is a five-kind union (`spell`, `feature`, `equipment`, `weapon`,
+  `monster`) with id/savedAt, without the target provenance/version lifecycle. **Custom IS
+  library** extends to the eleven families in Product. A character receives its own copy with
+  provenance/version; updates are deliberate. Sharing is offer → recipient acceptance and
+  materialization → receipt; revoking access prevents future acquisition without erasing a
+  previously granted copy. No sender writes to another user's character or library subtree.
+- The shared Encounter exposes its raw log/state to authorized members: hidden faces, HP,
+  tokens and fog are concealed by the presenter, not private from raw document reads. This is
+  the accepted table-trust boundary (ADR-0005/0010). Narrative `dmNotes` remain outside that
+  aggregate under DM/admin ACL; do not move secrets into it or imply new privacy guarantees.
+- Three automation levels are the target. The current fold accepts full-auto/log-only and
+  rejects propose-and-confirm; ADR-0011 records this implementation gap. Contextual manual
+  resolution records costs, consequences and correction on the same facts/receipt, retaining
+  visible unsupported paths rather than claiming universal automation.
+
+The four domains and returns with preserved state are the Product/Design navigation contract,
+not four independent copies of character or combat facts. Offline operation, zero-cost safeguards,
+SRD/private-pack partition, save/recovery and the six fixtures remain required.
+
 > **Read this first if you're new to the codebase.** Audience: human developers and AI
 > agents extending the app. It explains what's pioneering about the system (the declarative
 > Grant pipeline) and where to put new code so it lives next to similar code.
@@ -2880,14 +2973,11 @@ with no subdoc would read full HP and lose its wound. Migrate the data first, ve
 
 #### One campaign per character (invariant)
 
-A character attaches to **at most one campaign**. Enforced at the attach seam: before writing an
-attachment, `Party.attachMyCharacter` runs the membership-scoped `listSharedCampaigns(uid)` and REJECTS
-(friendly toast, no write) when the hero is already attached to ANY OTHER campaign — a swap WITHIN the
-same campaign and a detach are always allowed. The same predicate
-(`memberDetails[uid].characterId === charId`) is what the migration's `--check` mode and
-`refresh-attached-sheets` use. Firestore rules can't cheaply enforce a cross-campaign uniqueness (no
-queries in rules), so this is an app-layer guard plus the verify report; a member still only writes their
-own `memberDetails` entry.
+A character currently attaches to **at most one campaign** through the atomic
+`attachMemberCharacter` transaction in `src/features/campaigns/campaign-io.ts`: the character's
+`attachedCampaignId` is the claim and the campaign's `memberDetails[uid]` holds the attachment.
+This supersedes the historical query-only guard description. P03 reconciles this seam with the
+target multi-PC roster, stable identities and invalidation; no stored shape changes in P01.
 
 #### The account-level homebrew library (`users/{uid}/library/index`)
 
@@ -3488,11 +3578,12 @@ RESORT: it skips a press a layer above already claimed via `preventDefault` — 
 (`useEditModeShortcut`, route-scoped to the cockpit; inert while focus is in an input or on a read-only
 member-sheet viewer, so the keyboard can never enter edit on someone else's sheet).
 
-**Campaign membership lives ENTIRELY on the campaign doc** — the character document carries NO campaign
-reference. A hero is attached by `campaigns/{id}.memberDetails[uid].characterId` (+ a lite
-`MemberCharacterSnapshot` at `.character`), keyed by character id, so a character can be attached to more
-than one campaign at once. `PERSONAL_CAMPAIGN_ID` is a purely VIRTUAL UI sentinel for the "in no shared
-campaign" state — never persisted.
+**Membership and character attachment are distinct.** Membership lives on the campaign;
+`memberDetails[uid].characterId` and its lite `.character` snapshot currently select one PC per
+member. The character document also carries `attachedCampaignId`, the atomic one-campaign claim
+and access root. It is not keyed by character id and does not permit concurrent multi-campaign
+attachment. The multi-PC target is specified above. `PERSONAL_CAMPAIGN_ID` remains a virtual UI
+sentinel for the personal context, never persisted.
 
 **Member-entry writes are attachment-safe (the join-clobber invariant).** A member's `memberDetails[uid]`
 entry holds two unrelated concerns: IDENTITY (displayName · photoURL · role) and the

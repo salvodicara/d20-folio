@@ -1,5 +1,35 @@
 # Product
 
+## Owner rectification — new V2 application, 6 September 2026
+
+V2 is a completely new application. The binding experience reference is Astra's approved
+full-lab mock `d20-folio-html-0.9.3-2026-09-06`, with the owner receipt in the external
+REVIEW journal, passage 29. The existing application, earlier Claude implementations and
+their screenshots are diagnostic history, never the design baseline or a result to approve.
+The previous P02 request to approve its 28 legacy screenshots is withdrawn. Those tests
+and that bounded review prove only their examined candidate, not new V2 conformity or P02 closure.
+
+Astra has technical and architectural discretion: build, replace or reuse only to satisfy
+the new domain and approved experience. One authority per fact, explicit responsibilities
+and dependencies, verifiable transitions, no duplicated state or alternative old paths.
+No legacy combat bridge. Production continues independently; legacy data is solely input
+for recoverable migration: snapshot → dry-run → idempotent apply → verify/recover.
+No production change, real migration, deployment, new cost or external send is authorized.
+
+Reproduce all transferable BG3 behavior, especially combat, interactions, organization and
+feedback, in Folio's approved experience. Adopt useful capabilities from D&D Beyond, Roll20
+and relevant tools. D&D 2024 governs rules; no automatic BG3 rule variants. The mock guides
+composition and behavior without limiting functional depth. Preserve all downstream depth
+obligations. Every plan, delegation, review and full successor prompt propagates this decision.
+
+Visual acceptance compares the identified approved Astra mock with actual new V2 runtime:
+dark IT/EN, 1440×900 and 1280×800, 390×844 where pertinent, full Italian names, keyboard/focus,
+crop and fallback. Do not reconstruct the old product baseline to satisfy a withdrawn gate.
+P02 remains open until its conforming implementation, fresh behavioral proofs, actual review
+and pertinent owner visual/interaction verdict exist. P03 is not authorized by this rectification.
+The sole execution owner is docs/PROGRAM_STATUS.md in the current candidate; historical reports
+remain unchanged and their earlier approval/completion claims must be read in their original scope.
+
 ## Register
 
 product
@@ -28,7 +58,7 @@ in a shared calendar, NPCs, places, loot and party gold, handouts and images, ho
 group already does today plus the jobs D&D communities most often reach external tools for. The
 list of jobs is kept in the Jobs table below and grows from evidence, never from guesses.
 
-**What it is not.** No 3D and no character animation (maps and tokens, Owlbear-level). No AI
+**What it is not.** No animated 3D world and no character animation (maps and tokens, Owlbear-level). No AI
 narrator or assistant. No chat and no voice (Discord or the table; the app keeps only the game
 log). D&D 2024 only; existing 2014 characters migrate.
 
@@ -95,18 +125,63 @@ text chat, music, map authoring, art generation, AI recaps).
 | 18  | Dice with a shared, trusted log (in-app 3D or real dice entered)                                              | everyone     | during         | dice, bots, VTT rollers             |
 | 19  | Loot and treasure generation                                                                                  | DM           | before         | donjon, generators                  |
 
-**Open decision.** The name: "d20 Folio" says "sheet" more than "table"; keep it, decide before any
-public release.
+**Identity.** The owner confirmed the name d20 Folio and the D20 mark on 2026-09-05.
+A specific new SVG or illustration corpus still needs its own visual/provenance evidence.
+
+## Reconciled owner direction — 2026-09-06
+
+Combat and every transferable interaction must reproduce Baldur's Gate 3's behavior in full,
+with Folio's visual identity. This is a behavioral requirement, not color, atmosphere or loose
+similarity: HUD/hotbar, actions/Bonus Actions/reactions, targeting, range/areas, movement,
+resources, dice, consequences, and transferable character/inventory/growth paths. Before each
+surface, observe the corresponding BG3 sequence, organization and feedback; demonstrate the
+Folio counterpart through actual gestures and visual comparisons. D&D 2024, player freedom and
+the physical-dice alternative remain binding. A concrete incompatibility is resolved with the
+owner using that example; never silently cut the product or ask for another general reference
+interview. No new 3D world, backend, cost or privacy policy follows by implication.
+
+The approved HTML lab supplies composition and interaction references, not a ceiling on depth.
+The binding implementation obligations and their scenarios are in [DESIGN.md](DESIGN.md),
+“Implementation depth”; execution order and evidence are owned by
+[Program Status](docs/PROGRAM_STATUS.md). Only dark, in IT and EN, is the new-app theme target;
+light paper for printing is not a second application theme.
+
+Four permanent domains organize the product: Campaign, Character, Library and At the table.
+Account is a global utility. Back/Forward and return from a detail/picker preserve valid scoped
+filters, scroll, selection and drafts. Campaign membership, character assignment, inspected
+character and active command actor are separate. An account can own many characters and join
+many campaigns, including multiple characters in one campaign; one character has at most one
+current campaign. DM inspection exposes the complete authorized sheet without changing the
+active actor, lease, control or balances, and without exposing private notes.
+
+Automatic resolution and contextual “Resolve at the table” share facts, costs, consequences,
+receipts and correction. Unsupported mechanics remain preserved and usable through explicit
+manual consequences, not notes pretending to apply changes. Exceptions are available in creation,
+growth and play without an extra automatic DM-approval queue. The three campaign automation
+levels remain separate application policies, and the DM retains final arbitration. Rule freedom
+never bypasses account/content permissions.
+
+Custom IS the library: custom content autosaves for reuse across eleven families — weapons,
+equipment/items, spells, features, monsters, subclasses, campaign rules, species, feats,
+backgrounds and classes. A granted copy retains provenance/version; revocation stops future
+access and updates, not an already granted copy. Browsing is not a grant. Architecture owns the
+recipient-materialization protocol and its access boundaries.
+
+**Production continuity, reaffirmed by the owner in P01.** The group must keep playing with the
+current production app while V2 develops separately against the dedicated staging project.
+Production is not changed by V2 work. Switch and retirement of the old experience happen only
+when V2 is fully complete, the players' data have been migrated and verified under the recovery
+protocol, and the owner explicitly authorizes the switch. P11b's V2 internal state transition
+does not retire production. P30 does not itself authorize deployment.
 
 ## Users
 
 D&D 2024 players, from first-timers to veterans, creating, managing, and playing characters
 digitally — bilingual (EN + IT), offline-first PWA. The owner's group plays online, each on their
-own computer with voice chat; the physical table is the extension. Desktop and mobile expose the
-complete product: desktop is the primary play surface (map, hotbar, dice, encounter management,
-dense preparation); mobile is the second screen and the between-session device (sheet, hotbar,
-dice, fast input, reading and review). Neither is a
-reduced edition of the other. Beginner-friendly (no manual required) yet expert-capable (hints
+own computer with voice chat; the physical table is the extension. Desktop/laptop exposes the complete product (map, hotbar, dice, encounters, preparation,
+authoring and character management). Phone serves quick/offline consultation, sheet, compendium,
+sessions, notes and relevant updates. Touch combat and full desktop HUD/map parity are not
+requirements; the shared/TV view remains a desktop capability. Beginner-friendly (no manual required) yet expert-capable (hints
 ignorable). Friends of the owner are live users with real characters — this is not a hypothetical
 audience.
 
@@ -165,10 +240,10 @@ improves without it.
    exposed in the UI. An override-able value is not "done" until the default auto-computes.
 4. **Choosing is sacred (the Picker Doctrine).** Read-then-choose (browsing never commits), detail on
    SELECTED only (no per-row info affordances), never state met preconditions (unmet options are
-   filtered out, not greyed), cascading choices expand under their visible cause.
-5. **Capability parity, purpose-built composition.** Desktop and mobile expose the same product
-   capabilities through deliberately different compositions — mobile is never a collapsed desktop
-   layout and desktop is never a stretched phone layout.
+   filtered in the guided path; an explicit exception remains available), cascading choices expand
+   under their visible cause.
+5. **Purpose-built device scope.** Desktop offers the complete product; phone supports consultation
+   and relevant updates with an equally intentional composition, without a forced combat HUD.
 6. **Consistency over novelty; reusable systems over one-off screens.** A small number of highly
    reusable UI patterns used everywhere; a bespoke restyle of an existing job is a defect.
 7. **No truncation.** Identity text is never mid-string ellipsized — swap to a shorter true form at a
@@ -177,7 +252,7 @@ improves without it.
 ## Accessibility & Inclusion
 
 WCAG AA is the floor, enforced by a self-enforcing gate (`tests/e2e/a11y.spec.ts`) across every
-surface in both dark and light themes — the app is axe-clean, re-checked after any token change.
+surface in the supported dark theme, in EN and IT — the app is axe-clean, re-checked after any token change.
 Every interactive component ships default/hover/focus/active/disabled (+ loading/error where
 relevant) states with a visible keyboard focus ring. All animation respects `prefers-reduced-motion`
 via a single OS-driven kill-switch (no in-app animations toggle). Bilingual EN + IT for every

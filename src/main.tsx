@@ -28,34 +28,13 @@ import "./index.css";
 // surface ever paints a raw key. The inline boot-splash in index.html stays
 // visible until then.
 import { i18nReady } from "./i18n";
-// Initialize save store (connects save status callbacks)
-import "./stores/saveStore";
+
 import { installDomResilience } from "./lib/dom-resilience";
 import { recoverFromChunkPreloadError, CHUNK_RELOAD_FLAG } from "./lib/chunk-recovery";
 import { installErrorLog } from "./features/report/error-log";
-import { installDiagnostics } from "./lib/diagnostics-io";
-import { App } from "./App";
-import { DEV_BYPASS_AUTH as IMPORTED_DEV_BYPASS_AUTH } from "./lib/dev-bypass";
 
-function devBypassEnabled(): boolean {
-  return import.meta.env.PROD ? false : IMPORTED_DEV_BYPASS_AUTH;
-}
-
-// Dev-only escape hatch: append `?reset-dev=1` to any preview URL to discard the
-// persisted local replicas and reseed from today's fixtures. Remove only that param so
-// route/scenario query state survives. Keep the local-replica implementation behind a
-// dynamic import: it is dev-only and must not inflate production's eager entry chunk.
-const devResetReady =
-  devBypassEnabled() &&
-  new URLSearchParams(window.location.search).get("reset-dev") === "1"
-    ? import("./lib/dev-document-store").then(({ clearDevDocuments }) => {
-        clearDevDocuments();
-        const cleanUrl = new URL(window.location.href);
-        cleanUrl.searchParams.delete("reset-dev");
-        window.history.replaceState(null, "", cleanUrl);
-      })
-    : Promise.resolve();
-
+import { IdentityApp } from "./features/identity/IdentityApp";
+import { IdentityBoundary } from "./features/identity/IdentityBoundary";
 // DOM-boundary resilience adapters (issue #24): tolerant removeChild/insertBefore
 // wrappers so external DOM mutation (browser auto-translate, grammar/password
 // extensions) can never crash a React commit. MUST install BEFORE the first
@@ -81,11 +60,6 @@ window.addEventListener("vite:preloadError", (event) => {
 // network); chains the original console.error so devtools behavior is unchanged.
 installErrorLog();
 
-// The diagnostics reporter (ADR-0008): correlation-id context + the IndexedDB
-// breadcrumb ring + the bounded automatic Firestore reporter on error-level
-// events. Never throws (private-mode crypto/localStorage denials fall back).
-installDiagnostics();
-
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("Root element not found");
 
@@ -93,10 +67,12 @@ if (!rootEl) throw new Error("Root element not found");
  *  route loads (see the comment at the clear below). */
 const CHUNK_RELOAD_LATCH_CLEAR_MS = 15_000;
 
-void Promise.all([i18nReady, devResetReady]).then(() => {
+void Promise.all([i18nReady]).then(() => {
   createRoot(rootEl).render(
     <StrictMode>
-      <App />
+      <IdentityBoundary>
+        <IdentityApp />
+      </IdentityBoundary>
     </StrictMode>
   );
 

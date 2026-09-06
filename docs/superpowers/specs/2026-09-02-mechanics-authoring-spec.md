@@ -1,5 +1,11 @@
 # Mechanics authoring specification (v1)
 
+> Current owner rectification (2026-09-06): V2 is a new application; the approved Astra
+> full-lab 0.9.3 is the experience reference. Existing code, engines and historical
+> screenshots impose no reuse or compatibility requirement. No legacy combat bridge.
+> Product/Design own the current intent; PROGRAM_STATUS owns P02, which remains open.
+> Historical stages below are not execution instructions or new acceptance evidence.
+
 **Date:** 2026-09-02 · **Status:** v1, bounded on 2026-09-03 to the stage-3 tier (§6) ·
 **Owner of this fact:** this document until folded into `docs/MECHANICS.md` (stage 7). Companion of the
 [target architecture](2026-09-02-total-combat-automation-design.md). This is the contract that
@@ -307,9 +313,23 @@ adapter is the only place that understands `MonsterEntry`; its output is ordinar
 
 ## 6. Vocabulary tiers (2026-09-03)
 
-Bounded to what the acceptance stories need (`PRODUCT.md` §Steering; design §4/§7). A `later`
-kind is declared in the closed unions, conforms as `unsupported` with a path, and gains its
-reducer handler in the stage that first needs it.
+The table records the historical tier boundary, not the approved product ceiling. At V2
+`24d9fbf`, a `later` kind is generally **absent** from the closed union in
+`src/lib/combat/mechanic.ts`; the exact codec rejects it. It is not an admitted unsupported
+variant merely because this specification names it. Current accepted steps are `attack`, `save`,
+`damage`, `heal`, `effect-start`, `condition`, `move-mark`, `turn-claim`, `negate`, `manual-table`,
+`move`, `dash`; `negate` is admitted but currently a no-op. Summon/transform/aura/ready and
+`temp-hp` are absent from the current Step union, as is `cast-declared` from EventSelector.
+Temporary HP does exist in `vitals.tempHp`, damage absorption and the `temp-hp` EffectPayload;
+what is missing here is the granting step and the 2024 keep/replace choice, not all temporary-HP
+handling. Distinguish target, schema acceptance, handler execution and scenario verification in
+coverage and editor feedback.
+
+P05 owns the E01–E22 editor vocabulary/schema/conformance contract, preserving unsupported
+authored data with path-specific feedback; it does not implement the engine. P14a owns the first
+Counterspell/temp-HP red/green regression, P14b the eight ordered family outcomes, P14c causal
+correction on the same identity/receipt. [Program status](../../PROGRAM_STATUS.md) selects the
+next outcome. No kind or family is certified by this documentary reconciliation.
 
 | Kind family | Stage 3 (Marco's first turn, Sara's ogre ambush)                                                                                                    | Later                                                             |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |

@@ -1,9 +1,38 @@
 # Contributing
 
+## Owner rectification — 6 September 2026
+
+[../PRODUCT.md](../PRODUCT.md) owns the binding new-application decision: Astra's approved full-lab
+0.9.3 is the experience reference; existing code, engines and screenshots impose no reuse
+or compatibility requirement. No legacy combat bridge. Choose architecture for one authority
+per fact, explicit responsibilities and verifiable transitions. Preserve separate production
+and recoverable input migration, D&D 2024 and all transferable BG3 behavior/depth.
+Visual comparison is approved Astra mock → actual new V2 runtime. The withdrawn old visual
+request and current implementation/review/gates are recorded only in [PROGRAM_STATUS.md](PROGRAM_STATUS.md).
+Every downstream plan, review and complete successor prompt carries the full Product decision.
+
 > Day-to-day workflow for humans and AI agents. The pre-commit + pre-push hooks enforce
 > almost everything below — they're not friction, they're the contract.
 
 ---
+
+## V2 development scope
+
+For new-app work use [WORKTREES](WORKTREES.md), “V2 topic worktrees”, and the current
+[Program Status](PROGRAM_STATUS.md). `main` remains production fixes only; V2 work never pushes
+there. The production-era lane tables and old capture recipes below describe retained history,
+not V2 commands to execute blindly. The current V2 tools are package.json, justfile,
+playwright.config.ts and playwright.visual.config.ts; inspect them before naming a gate.
+P01 is documentary reconciliation and synthetic runtime baseline only: no integration, deployment
+or real-data migration. The sole full local integration gate is `just ci`; add SRD-only when the
+pack seam changes and emulator tests when rules change. Do not assume topic/V2 pushes run main's
+pre-push gate. Browser capture uses the assigned dark IT/EN device/role scope; old light or phone
+combat matrices do not redefine the product. All task files, caches and outputs resolve under
+Workspace/Codex. Never run historical fixture-export recipes that write to Documents.
+
+The user must keep playing on production until V2 is complete, player-data migration is verified,
+and the owner authorizes the switch. [PRODUCT](../PRODUCT.md) owns this continuity requirement;
+[RELEASE](RELEASE.md) owns deployment procedure, never implicit authorization.
 
 ## First-time setup
 
@@ -582,7 +611,8 @@ hint rather than letting an unverified rules change through — no Homebrew JDK 
   not a quality metric.
 - **Bilingual.** Every user-visible string is EN + IT. Italian never empty (golden rule 9).
 - **No `--no-verify`.** Ever. If a hook fails, fix the issue in the same commit.
-- **No dice rolling.** `Math.random()` is banned. Show formulas; the player rolls externally.
+- **V2 dice:** digital by default through `src/lib/dice.ts`, with physical input, logged formula,
+  faces and provenance (ADR-0010). The old external-only rule belongs to production history.
 - **Override-first.** Every derived value can be manually overridden.
 - **Small commits; sparse milestone pushes.** Each commit is one coherent step with its
   `.changeset/*.md`; a topic branch may reach `origin` at genuine recoverable milestones, while
@@ -634,7 +664,8 @@ round focused.
 
 ## What this repo doesn't accept
 
-- **Math.random() anywhere.** Use deterministic formulas.
+- **Randomness outside the approved V2 dice seam.** Core mechanics stay deterministic; digital
+  faces are supplied through the logged dice contract, never generated during render.
 - **Verbatim copying of non-SRD prose.** The public data layer (`src/data` +
   `src/i18n/*/srd`) carries ONLY SRD 5.2.1 content and every entry is tagged
   `source: "SRD"` (guard-enforced by `content-pack-partition.guard.test.ts`).

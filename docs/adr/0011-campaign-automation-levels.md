@@ -52,3 +52,11 @@ the level only changes what happens after the verdict).
 
 - A table at `log-only` forgetting to apply consequences → the receipt shows what would have
   changed and the DM drawer offers it as one tap (stage 6).
+
+## P01 clarification (2026-09-06)
+
+The three-level decision remains the target. At V2 `24d9fbf`, `FoldedState` admits only
+`full-auto`/`log-only`, and `table:settings` rejects `propose-and-confirm`; the old promise that
+stage 6 builds it is not completion evidence. P14a/b/c own stable identity/receipt, application
+policy and causal undo. Manual contextual outcomes use the same facts and costs; all three
+modes must preserve those receipts and correction rather than introduce parallel state.

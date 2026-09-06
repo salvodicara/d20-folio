@@ -7,6 +7,7 @@ import {
   SessionController,
 } from "@/lib/identity";
 import type { Firestore } from "firebase/firestore";
+vi.mock("firebase/firestore");
 const original =
   '{"schema":3,"build":{"name":"One","race":"elf","classes":[{"classId":"wizard","level":1}]},"state":{}}';
 describe("untrusted identity and asynchronous import scope", () => {

@@ -1,5 +1,59 @@
 # The Locked Character Document Schema (v3)
 
+## P02 new identity documents (2026-09-06)
+
+This section owns the new application's identity/persistence boundary. The schema-3 and
+legacy gameplay inventory below remains the recoverable migration source; it is not the
+new runtime's mutable store. The executable contract is `src/lib/identity/model.ts`.
+
+| Path                                                       | Fact and authority                                                                                                                                         |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `users/{uid}`                                              | Existing trusted status/admin authority; clients cannot grant their role.                                                                                  |
+| `folioAccounts/{uid}`                                      | Schema 1 displayName and EN/IT locale; no duplicated membership list.                                                                                      |
+| `folioAccounts/{uid}/characters/{id}`                      | Stable owner/id, display identity, revision, nullable currentAssignment, authorized build/state sheet and path-only portrait.                              |
+| `folioCampaigns/{id}`                                      | Schema 1 name, explicit members, dmUid, revision, archived and joinOpen.                                                                                   |
+| `folioCampaigns/{id}/roster/{ownerUid}~{characterId}`      | Reciprocal reference: ownerUid, characterId, assignmentId, version. No second assignment authority or copied sheet.                                        |
+| Character `private/notes` and `private/import`             | Owner-private narrative and immutable original import bytes, accessible to the trusted administrator under the accepted matrix.                            |
+| Character `history/{revision}`                             | Deterministic API transition record, separate from current assignment. It never grants access and is not an exhaustive audit against direct owner writes.  |
+| Campaign `dmNotes/main`                                    | Narrative text accessible to DM/admin, never a shared Encounter field.                                                                                     |
+| `folioInvites/{campaignId}`                                | Only id, name and joinOpen, avoiding disclosure of campaign membership before joining.                                                                     |
+| Account `offers/{id}` and `receipts/{senderUid}~{offerId}` | Immutable addressed source/version offer and recipient-owned stable receipt. Future revocation denies new acceptance; P04/P24 own payload materialization. |
+
+A current assignment is null or `{campaignId, assignmentId, version}`. Only the character
+owner changes it. Commit rules require target membership, exact reciprocal roster and a
+new revision; a still-live old claim cannot be displaced. The owner may release after
+revocation and recover a stale claim even if its old roster or campaign is absent. Recovery
+uses commit-time campaign authority, never a remembered permission error or transport failure.
+Two PCs from the same account retain distinct refs and can join the same campaign.
+
+Authorized sheet reads require owner/admin authority or live shared campaign membership plus
+reciprocal assignment. Private personal notes/import/history are excluded from that read.
+DM inspection is immutable to the inspector and never hydrates an editable character store.
+Unknown paths deny by default; Storage has separately tested exact owner/private, DM narrative
+and addressed offer asset paths, with blocked-account denial before role privileges.
+Trusted admin support can read receipts, but acceptance remains an explicit act of the
+addressed recipient; an administrator cannot fabricate that consent. Assignment mutations
+also remain owner-only. Campaign participant labels use authorized character names, with a
+localized participant ordinal when unavailable; private account profiles are not shared.
+
+Copy import accepts supplied schema-3 JSON, projects an explicit grammar of known authorized
+mechanical fields and archives the exact original text privately. A SHA-256 copy ID makes
+repeat apply idempotent; a conflicting existing copy is never overwritten. Unknown/private
+fields, old world/item-resource transition internals and unsupported custom overrides remain
+recoverable original data, not falsely declared converted game behavior. This is not P11b
+join→play migration and performs no live-data migration or legacy dual-write.
+
+## Owner rectification — 6 September 2026
+
+[../PRODUCT.md](../PRODUCT.md) owns the binding new-application decision: Astra's approved full-lab
+0.9.3 is the experience reference; existing code, engines and screenshots impose no reuse
+or compatibility requirement. No legacy combat bridge. Choose architecture for one authority
+per fact, explicit responsibilities and verifiable transitions. Preserve separate production
+and recoverable input migration, D&D 2024 and all transferable BG3 behavior/depth.
+Visual comparison is approved Astra mock → actual new V2 runtime. The withdrawn old visual
+request and current implementation/review/gates are recorded only in [PROGRAM_STATUS.md](PROGRAM_STATUS.md).
+Every downstream plan, review and complete successor prompt carries the full Product decision.
+
 > Owner-locked 2026-06-08; bumped to **v3** for the R4 multiclass model (2026-06-09).
 > The **single source of truth** for what a stored / exported character document contains.
 > Designed to be **minimal** (only choices, customs, overrides), **id-based** (never display
@@ -93,10 +147,11 @@ portable export still carries it inline:
   //   which campaign ENCOUNTER (if any) currently owns this PC's
   //   live combat facts — distinct from `attachedCampaignId` (the
   //   standing one-campaign claim). Owner-written only: set by the
-  //   owner's client on `table:join`, cleared on `table:leave`/
-  //   `table:sync` (`src/lib/combat-lease.ts`). NOT in the
-  //   export/codec; absent = not leased, the personal aggregate is
-  //   authoritative for this PC's combat facts.
+  //   owner's client on `table:join`; `leaveTable` batches the
+  //   `table:leave`, legacy personal write-back and lease clear
+  //   (`src/lib/combat-lease.ts`). NOT in the export/codec.
+  //   Absent = not leased; personal facts currently remain in
+  //   legacy CombatState, not a personal Encounter.
   "cache": {
     // SRD-FREE roster/party projection (a derived snapshot the
     "name": "…",
@@ -128,23 +183,20 @@ state }` through the codec (lazy SRD). See `docs/ARCHITECTURE.md` → "Unified p
 read/write seams. The persistence layer reads ONLY the unified shape — there is no transitional
 read-shim (the migration converted every live main doc + snapshot; golden rule 10).
 
-**Stage 6 of `v2` changes NO stored character shape.** The per-character `combat/state` subdoc is
-still a `CombatState` (the trio plus the whole `playState` session), because the old sheet still
-reads and writes all of it; the personal `Encounter` and its migration wait for the sheet's rebuild
-(target spec §5.2, stage-6 design D1). What stage 6 adds is a WRITE PATH, not a field: when a PC
-leaves a campaign table, `leaveTable` writes the fight's outcome back into that same document — HP
-current and temp, conditions and death saves projected from the entity, every other field of the
-previous document (`playState` above all) preserved. Two invariants make that overwrite safe and
-are enforced by the type, not by convention: the payload is a branded value only
-`encodeLegacyWriteBack` (`src/lib/combat-state-writeback.ts`) can produce, so it always goes
-through the same `combatStateWriteData` encoder every other writer of this document uses; and the
-`previous` state it is built from MUST be a fresh parse of the live document, because the write
-replaces the document whole. Writing this document as an `Encounter` instead is not merely unused
-in this stage but unrepresentable — that variant of the lease's write-back is deleted until item 8
-— because the alternative left one mistaken argument between a live character and a document
-`parseCombatState` would refuse forever, with no repair path. The rules lane proves the result
-still parses with the strict `parseCombatState` the app reads it back with. The write path dies
-with the old sheet.
+**Current V2 storage baseline (2026-09-06).** The per-character `combat/state` subdoc
+is still a `CombatState` (trio plus whole `playState`), consumed by the old sheet. `leaveTable`
+projects HP/temp HP, conditions and death saves from the entity and preserves other fields through
+`encodeLegacyWriteBack` and the shared `combatStateWriteData` encoder. The previous state is read
+from the server, but that read and the later whole-document write are separate: branding proves
+shape, not freshness at commit. A batch makes leave/write-back/lease clear atomic, not a CAS on
+the previous personal state. P03 owns version/lease fencing and revocation invalidation.
+
+**P11b owns the personal Encounter cutover** described by target spec §5.2: rebuild the personal
+read/write seam, migrate with snapshot → dry-run → idempotent apply → verify, validate six fixtures
+and remove legacy readers/writers with zero dual-write before P30. This is a required outcome,
+not a deferral to the retired stage-8 program. P01 changes only documents; no schema migration or
+real-data access is implicit. Production remains available until complete V2 acceptance, verified
+player migration and explicit owner switch authorization.
 
 The one data-shape addition of the stage is on SRD CONTENT, not on the character:
 `SrdSpellData.areaShape` (`src/data/types.ts`) types a damage-dealing area spell's printed shape.
