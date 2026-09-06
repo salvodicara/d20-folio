@@ -298,12 +298,15 @@ export function createIdentityRepository(db: Firestore, session: SessionControll
           if (
             a.schema !== 1 ||
             typeof a.displayName !== "string" ||
-            typeof a.locale !== "string" ||
-            !["en", "it"].includes(a.locale) ||
+            (a.locale !== "en" && a.locale !== "it") ||
             Object.keys(a).length !== 3
           )
             throw new Error("invalid-account");
-          return frozen(a as FolioAccount);
+          return frozen<FolioAccount>({
+            schema: 1,
+            displayName: a.displayName,
+            locale: a.locale,
+          });
         },
         null,
         next,
