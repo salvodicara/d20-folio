@@ -2,6 +2,130 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // New Folio identity boundary. No legacy wildcard grants match these paths.
+    function folioUser() { return isNotBlocked(); }
+    function folioCampaign(id) { return get(/databases/$(database)/documents/folioCampaigns/$(id)).data; }
+    function folioMember(id) { return folioUser() && !folioCampaign(id).archived && request.auth.uid in folioCampaign(id).members; }
+    function folioDm(id) { return folioMember(id) && folioCampaign(id).dmUid == request.auth.uid; }
+    function folioId(id) { return id is string && id.matches('^[A-Za-z0-9_-]{1,128}$'); }
+    function folioClaim(a) { return a == null || (a is map && a.keys().hasOnly(['campaignId','assignmentId','version']) && folioId(a.campaignId) && folioId(a.assignmentId) && a.version is int && a.version > 0); }
+    function folioReadCharacter(uid, id, c) {
+      let a = c.currentAssignment;
+      return folioUser() && (request.auth.uid == uid || isAdmin() ||
+        (a != null && folioMember(a.campaignId) && uid in folioCampaign(a.campaignId).members
+          && get(/databases/$(database)/documents/folioCampaigns/$(a.campaignId)/roster/$(uid + '~' + id)).data
+             == { 'ownerUid':uid, 'characterId':id, 'assignmentId':a.assignmentId, 'version':a.version }));
+    }
+    match /folioAccounts/{uid} {
+      allow get: if folioUser() && request.auth.uid == uid;
+      allow create, update: if folioUser() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['schema','displayName','locale'])
+        && request.resource.data.schema == 1 && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 120 && request.resource.data.locale in ['en','it'];
+    }
+    match /folioAccounts/{uid}/characters/{id} {
+      function owner() { return folioUser() && request.auth.uid == uid; }
+      function shape(c) { return c.keys().hasOnly(['schema','ownerUid','id','name','speciesId','classId','level','revision','currentAssignment','sheet','portraitPath'])
+        && c.schema == 1 && c.ownerUid == uid && c.id == id && folioId(id) && folioId(uid)
+        && c.name is string && c.name.size() > 0 && c.name.size() <= 200
+        && c.speciesId is string && c.classId is string && c.level is int && c.level >= 1 && c.level <= 20
+        && c.revision is int && c.revision >= 0 && folioClaim(c.currentAssignment)
+        && c.sheet is map && c.sheet.keys().hasOnly(['build','state']) && c.sheet.build is map && c.sheet.state is map
+        && !c.sheet.build.keys().hasAny(['notes','lore','unknown','player','quote'])
+        && !c.sheet.state.keys().hasAny(['notes','unknown','log'])
+        && (c.portraitPath == null || (c.portraitPath is string && c.portraitPath.matches('folioAccounts/' + uid + '/characters/' + id + '/portraits/[A-Za-z0-9_.-]+'))); }
+      function reciprocal(a) { return a == null ||
+        (!getAfter(/databases/$(database)/documents/folioCampaigns/$(a.campaignId)).data.archived
+        && uid in getAfter(/databases/$(database)/documents/folioCampaigns/$(a.campaignId)).data.members
+        && getAfter(/databases/$(database)/documents/folioCampaigns/$(a.campaignId)/roster/$(uid + '~' + id)).data
+          == {'ownerUid':uid,'characterId':id,'assignmentId':a.assignmentId,'version':a.version}); }
+      function oldClaimLive(a) { return a != null
+        && exists(/databases/$(database)/documents/folioCampaigns/$(a.campaignId))
+        && !getAfter(/databases/$(database)/documents/folioCampaigns/$(a.campaignId)).data.archived
+        && uid in getAfter(/databases/$(database)/documents/folioCampaigns/$(a.campaignId)).data.members
+        && exists(/databases/$(database)/documents/folioCampaigns/$(a.campaignId)/roster/$(uid + '~' + id))
+        && get(/databases/$(database)/documents/folioCampaigns/$(a.campaignId)/roster/$(uid + '~' + id)).data
+          == {'ownerUid':uid,'characterId':id,'assignmentId':a.assignmentId,'version':a.version}; }
+      allow get: if folioReadCharacter(uid,id,resource.data);
+      allow list: if owner();
+      allow create: if owner() && shape(request.resource.data) && request.resource.data.revision == 0 && request.resource.data.currentAssignment == null;
+      allow update: if owner() && shape(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revision','currentAssignment'])
+        && request.resource.data.revision == resource.data.revision + 1
+        && (request.resource.data.currentAssignment == null ||
+          (reciprocal(request.resource.data.currentAssignment)
+          && request.resource.data.currentAssignment.version == request.resource.data.revision
+          && !oldClaimLive(resource.data.currentAssignment)));
+      // P02 has no destructive character deletion or shared sheet editor.
+      match /private/{document} {
+        allow read: if folioUser() && (owner() || isAdmin()) && document in ['notes','import'];
+        allow create: if folioUser() && (owner() || isAdmin()) && ((document == 'notes' && request.resource.data.keys().hasOnly(['text']) && request.resource.data.text is string && request.resource.data.text.size() <= 100000)
+          || (document == 'import' && request.resource.data.keys().hasOnly(['schema','original','sourceSchema']) && request.resource.data.schema == 1 && request.resource.data.sourceSchema == 3 && request.resource.data.original is string && request.resource.data.original.size() <= 750000));
+        allow update: if folioUser() && (owner() || isAdmin()) && document == 'notes' && request.resource.data.keys().hasOnly(['text']) && request.resource.data.text is string && request.resource.data.text.size() <= 100000;
+      }
+      match /history/{entry} {
+        allow read: if folioUser() && (owner() || isAdmin());
+        allow create: if owner() && request.resource.data.keys().hasOnly(['previous','next','revision'])
+          && entry == string(request.resource.data.revision)
+          && request.resource.data.revision == get(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(id)).data.revision + 1
+          && request.resource.data.revision == getAfter(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(id)).data.revision
+          && request.resource.data.previous == get(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(id)).data.currentAssignment
+          && request.resource.data.next == getAfter(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(id)).data.currentAssignment;
+      }
+    }
+    match /folioCampaigns/{id} {
+      function valid(c) { return c.keys().hasOnly(['schema','id','name','dmUid','members','revision','archived','joinOpen'])
+        && c.schema == 1 && c.id == id && folioId(id) && folioId(c.dmUid) && c.name is string && c.name.size() > 0 && c.name.size() <= 200
+        && c.members is list && c.members.size() <= 100 && c.members.toSet().size() == c.members.size() && c.dmUid in c.members
+        && c.archived is bool && c.joinOpen is bool && c.revision is int && c.revision >= 0; }
+      function inviteAgrees(c) { return getAfter(/databases/$(database)/documents/folioInvites/$(id)).data == {'id':id,'name':c.name,'joinOpen':c.joinOpen && !c.archived}; }
+      function selfChange() { let old=resource.data; let next=request.resource.data;
+        return next.diff(old).affectedKeys().hasOnly(['members','revision']) && request.auth.uid != old.dmUid
+          && ((old.joinOpen && !old.archived && !(request.auth.uid in old.members) && next.members.toSet() == old.members.toSet().union([request.auth.uid].toSet()))
+          || (request.auth.uid in old.members && next.members.toSet() == old.members.toSet().difference([request.auth.uid].toSet()))); }
+      allow get, list: if folioUser() && (request.auth.uid in resource.data.members || isAdmin());
+      allow create: if folioUser() && valid(request.resource.data) && request.resource.data.dmUid == request.auth.uid
+        && request.resource.data.members == [request.auth.uid] && request.resource.data.revision == 0 && inviteAgrees(request.resource.data);
+      allow update: if folioUser() && valid(request.resource.data) && request.resource.data.revision == resource.data.revision + 1
+        && ((folioDm(id) && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members','dmUid','revision']) || inviteAgrees(request.resource.data))) || selfChange());
+      match /roster/{row} {
+        function rowOwner() { return folioUser() && row.matches(request.auth.uid + '~[A-Za-z0-9_-]{1,128}'); }
+        function reciprocalRow(r) { let c=getAfter(/databases/$(database)/documents/folioAccounts/$(r.ownerUid)/characters/$(r.characterId)).data;
+          return r.keys().hasOnly(['ownerUid','characterId','assignmentId','version']) && row == r.ownerUid + '~' + r.characterId
+            && r.ownerUid == request.auth.uid && folioMember(id) && c.currentAssignment == {'campaignId':id,'assignmentId':r.assignmentId,'version':r.version}; }
+        allow read: if folioMember(id) || (folioUser() && isAdmin());
+        allow get: if rowOwner();
+        allow create, update: if rowOwner() && reciprocalRow(request.resource.data);
+        allow delete: if rowOwner() && (getAfter(/databases/$(database)/documents/folioAccounts/$(resource.data.ownerUid)/characters/$(resource.data.characterId)).data.currentAssignment == null
+          || getAfter(/databases/$(database)/documents/folioAccounts/$(resource.data.ownerUid)/characters/$(resource.data.characterId)).data.currentAssignment.campaignId != id);
+      }
+      match /dmNotes/{document} {
+        allow read: if folioUser() && (folioDm(id) || isAdmin()) && document == 'main';
+        allow create, update: if folioUser() && (folioDm(id) || isAdmin()) && document == 'main' && request.resource.data.keys().hasOnly(['text']) && request.resource.data.text is string && request.resource.data.text.size() <= 100000;
+      }
+    }
+    match /folioInvites/{id} {
+      allow get: if folioUser();
+      allow create, update: if folioUser() && getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.dmUid == request.auth.uid
+        && request.resource.data == {'id':id,'name':getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.name,
+          'joinOpen':getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.joinOpen && !getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.archived};
+    }
+    match /folioAccounts/{uid}/offers/{id} {
+      allow get, list: if folioUser() && (request.auth.uid == uid || (resource.data.recipientUid == request.auth.uid && !resource.data.revoked));
+      allow create: if folioUser() && request.auth.uid == uid && request.resource.data.keys().hasOnly(['schema','senderUid','recipientUid','sourceId','sourceVersion','revoked'])
+        && request.resource.data.schema == 1 && request.resource.data.senderUid == uid && folioId(request.resource.data.recipientUid)
+        && folioId(request.resource.data.sourceId) && request.resource.data.sourceVersion is int && request.resource.data.sourceVersion > 0 && request.resource.data.revoked == false;
+      allow update: if folioUser() && request.auth.uid == uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revoked']) && request.resource.data.revoked == true;
+    }
+    match /folioAccounts/{uid}/receipts/{id} {
+      function source() {return getAfter(/databases/$(database)/documents/folioAccounts/$(request.resource.data.senderUid)/offers/$(request.resource.data.offerId)).data;}
+      allow read: if folioUser() && (request.auth.uid == uid || isAdmin());
+      allow create: if folioUser() && request.auth.uid == uid && request.resource.data.keys().hasOnly(['senderUid','offerId','sourceId','sourceVersion'])
+        && folioId(request.resource.data.senderUid) && folioId(request.resource.data.offerId)
+        && id == request.resource.data.senderUid + '~' + request.resource.data.offerId
+        && source().recipientUid == uid && !source().revoked && source().sourceId == request.resource.data.sourceId && source().sourceVersion == request.resource.data.sourceVersion;
+    }
+
     // Helper: is the request from an authenticated user?
     function isAuth() {
       return request.auth != null;

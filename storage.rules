@@ -1,6 +1,27 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // P02 authenticated assets. Owner portraits remain owner-only until a
+    // recipient copy is explicitly granted; no inherited bearer-URL consumers.
+    function folioActive() { return request.auth != null && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.status != 'blocked'; }
+    function folioImage() { return request.resource.size <= 5 * 1024 * 1024 && request.resource.contentType.matches('image/(png|jpeg|webp)'); }
+    match /folioAccounts/{uid}/characters/{id}/{kind}/{file} {
+      allow get, list: if folioActive() && (request.auth.uid == uid || isAdmin()) && kind in ['private','portraits'];
+      allow create, update: if folioActive() && (request.auth.uid == uid || isAdmin()) && kind in ['private','portraits'] && folioImage();
+      allow delete: if folioActive() && (request.auth.uid == uid || isAdmin()) && kind in ['private','portraits'];
+    }
+    match /folioCampaigns/{id}/dmNotes/{file} {
+      function dm() { let c=firestore.get(/databases/(default)/documents/folioCampaigns/$(id)).data;
+        return folioActive() && (isAdmin() || (c.dmUid == request.auth.uid && request.auth.uid in c.members && !c.archived)); }
+      allow get, list, delete: if dm();
+      allow create, update: if dm() && folioImage();
+    }
+    match /folioAccounts/{uid}/offers/{id}/{file} {
+      function offer() { return firestore.get(/databases/(default)/documents/folioAccounts/$(uid)/offers/$(id)).data; }
+      allow get, list: if folioActive() && (request.auth.uid == uid || (offer().recipientUid == request.auth.uid && !offer().revoked));
+      allow create: if folioActive() && request.auth.uid == uid && !offer().revoked && folioImage();
+      // An addressed source and its artwork are immutable; revocation changes ACL.
+    }
     // Admin is DATA-DRIVEN — the SAME `/users/{uid}.role == "admin"` field the
     // client gate (`useIsAdmin`) and `firestore.rules` (`isAdmin()`) read, via
     // the cross-service Firestore lookup, so no uid is ever hardcoded here and
