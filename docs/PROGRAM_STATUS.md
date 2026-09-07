@@ -48,6 +48,30 @@ V2 integration decision/receipt; no integration, deploy or next block is authori
 screenshot verdict. Preserve the candidate. Send a successor prompt only after the current
 work is truly finished, including its outstanding gates; do not attach one to interim delivery.
 
+### Integration preflight — 7 September 2026
+
+Astra resumed clean candidate `1159e42211043a6dc9480c4e5ec6d56119c1afcf` after the owner's
+confirmation of screenshot approval. Fresh fetch: origin/v2 remains
+`24d9fbf6ae23e4e6844d70e9cf7152bb0e389ba2`, origin/main remains
+`9b06b75313d7ee353c4072a20397c3092707648e`; the candidate is six commits ahead of V2,
+with no divergence. The approval commit changes only documentation and its changeset.
+All 102 image hashes and 19 captured runtime source hashes match the delivered evidence.
+No implementation or visual change, new review, or screenshot recapture was needed.
+
+Fresh pre-integration `just ci` on that candidate exited 0: 858 app files/19,215 tests,
+7 Functions files/129 tests, typecheck/lint/build/PWA. Rules exited 0: 6 files/168 tests,
+using the same Vitest rules command under a dedicated loopback demo-d20folio Firestore/Storage
+cluster (18080/19199, hub 14400), which shut down after verification. No skips.
+The existing emulator on 8080 was preserved. Pack/SRD seam unchanged; ci-srd-only was not
+rerun. Existing browser, migration and independent review receipts retain their stated scope.
+Commands, logs and provenance verification are in external
+`d20-folio-p02-new-evidence/integration-preflight-20260907`.
+
+P02 remains OPEN only for explicit V2 integration authorization and the resulting remote
+receipt. The concrete target is `HEAD:v2`, after checking fresh ancestry again; no main push,
+deployment or P03 execution. Preserve this candidate until the decision. This receipt adds
+only documentation; it does not change the approved runtime or grant integration permission.
+
 ### Binding correction
 
 The old P02 visual/interaction approval request is WITHDRAWN. Its 28 screenshots,
