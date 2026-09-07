@@ -1,3 +1,5 @@
+import { LibraryWorkspace } from "@/features/library/LibraryWorkspace";
+import { createLibraryRepository } from "@/lib/library/repository";
 import { SharedAssignment } from "./SharedAssignment";
 import { SharedNotes } from "./SharedNotes";
 import { createSharedRepository } from "@/lib/shared/repository";
@@ -137,6 +139,7 @@ function AuthenticatedIdentity({ user }: { user: User }) {
   const repository = useMemo(() => createIdentityRepository(db, session), [session]);
   const shared = useMemo(() => createSharedRepository(db, session), [session]);
   const [epoch, setEpoch] = useState(0);
+  const library = useMemo(() => createLibraryRepository(db, session), [session]);
   const [viewGeneration, setViewGeneration] = useState(0);
   const [page, setPage] = useState<IdentityPage>("account");
   const [account, setAccount] = useState<FolioAccount | null>(null);
@@ -467,6 +470,37 @@ function AuthenticatedIdentity({ user }: { user: User }) {
         }
       }}
       onSaveProfile={(displayName) => run(() => repository.saveAccount({ displayName }))}
+      library={
+        loading || !account ? (
+          <p role="status">{t("identity.loading")}</p>
+        ) : (
+          <LibraryWorkspace
+            key={epoch}
+            repository={library}
+            session={session}
+            campaigns={campaigns}
+            campaignId={scope.campaignId}
+            onCampaignChange={(id) => transition(id, scope.activeCharacterId)}
+            recipients={Object.entries(
+              roster.reduce<Record<string, string[]>>(
+                (result, row) => {
+                  const name =
+                    row.ownerUid === user.uid
+                      ? characters.find((c) => c.id === row.characterId)?.name
+                      : rosterNames[row.ownerUid + "/" + row.characterId];
+                  if (name) (result[row.ownerUid] ??= []).push(name);
+                  return result;
+                },
+                Object.fromEntries(
+                  campaigns
+                    .filter((c) => c.id === scope.campaignId)
+                    .map((c) => [c.dmUid, [t("identity.dm")]])
+                )
+              )
+            ).map(([uid, names]) => ({ uid, name: names.join(" · ") }))}
+          />
+        )
+      }
       privateNoteEditor={
         inspectionRef?.ownerUid === user.uid ? (
           <SharedNotes

@@ -177,7 +177,7 @@ unauthorized portraits have a visible fallback.
 Account preferences, multiple owned PCs/memberships, invite reading/joining, campaign creation,
 invitation availability, assignment/release, participant removal, private notes, authorized
 inspection and recoverable copy import are actual P02 consumers. The fuller account utilities,
-character creation/growth, four-domain search/routing, gameplay editing and library operations
+character creation/growth, four-domain search/routing, gameplay editing
 remain their assigned later blocks; disabled future domains are not presented as functional.
 The comparison matrix is dark EN/IT at 1440×900 and 1280×800, plus relevant 390×844 phone flows.
 Only actual runtime images and the identified approved reference may support its visual gate;
@@ -190,6 +190,25 @@ prepares a new explicit save. Offline text editing never claims remote success. 
 changed context retains an invalidated draft without replay. Status is adjacent to the
 action, announced through a live region and localized in EN/IT. Long comparison text wraps
 and scrolls within the editor. No extra shell, technical IDs or motion/shortcut switches.
+
+P04 makes Library a live fourth-domain destination inside the same shell. Custom creations
+and Sharing & copies use the approved Astra shelf, family marks, warm typographic hierarchy,
+dark surfaces and cyan actions. All eleven families share the common metadata editor; richer
+mechanics authoring stays in P05–08 and the catalog in P13. The list includes local-only drafts
+and restores filtering/selection. Campaign choice establishes the authorized participant list
+before the sharing dialog; DM identity comes from the campaign and player labels from its roster.
+Received/sent rows, copy provenance and accept/revoke dialogs identify their counterparty. When
+an authorized character label is unavailable, the account identifier remains visible to
+distinguish offers; resolving it never reads a private profile. New-copy wording is distinct
+from selected-copy update wording. Phone controls are at least 44 px and closing a dialog
+restores its originating focus when that element still exists.
+
+Autosave saves a draft, never publishes it. Record version shows the comparison and explicitly
+creates an immutable stable version. Offers always identify that stable version, recipients
+explicitly keep or update one copy, and revocation describes preservation of copies already
+accepted. Unknown operation outcomes expose Check save inside the active dialog. Recovery of
+incompatible content is visible and downloadable without hiding healthy entries. No attachments,
+quantity transfer, simulated editor mechanics, extra account controls or alternate custom store.
 
 ## Owner rectification — 6 September 2026
 
@@ -233,7 +252,7 @@ Preferences persist in the account (rather than the mock's browser-only simulati
 is one digital/physical field; the future P15 consumer is stated explicitly. Search covers the
 available P02 sections, owned characters and memberships; help lists only implemented commands.
 
-Declared scope differences from the mock: no fake live-presence dot, unavailable table/library
+Declared scope differences from the mock: no fake live-presence dot, unavailable table
 controls, no reminder toggle without notification delivery, no simulated backup/offline/support
 controls. The actual recovery link leads to owned character original-copy recovery. P23 owns
 notification delivery, P27b full account backups/recovery, P27c offline-management/support and

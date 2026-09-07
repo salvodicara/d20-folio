@@ -1,0 +1,22 @@
+const shared: Record<string, string> = {
+  library: "identity.library",
+  search: "common.search",
+  all: "common.allF",
+  name: "common.name",
+  retry: "identity.operationCheck",
+  refresh: "common.refresh",
+  close: "common.close",
+  cancel: "common.cancel",
+  share: "common.share",
+  campaign: "campaigns.rubric",
+  chooseCampaign: "identity.chooseCampaign",
+  "families.weapon": "equipment.weapons",
+  "families.equipment": "equipment.title",
+  "families.spell": "nav.spells",
+  "families.feature": "nav.features",
+  "families.monster": "compendium.monsters",
+  "families.species": "create.stepRace",
+  "families.feat": "feats.feats",
+  "families.class": "identity.sheet.classes",
+};
+export const libraryKey = (key: string): string => shared[key] ?? `libraryV2.${key}`;

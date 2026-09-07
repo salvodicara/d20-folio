@@ -18,6 +18,10 @@ const ALLOWED: Readonly<Record<string, string>> = {
     "campaign and assignment identities only; never dice results",
   "src/lib/shared/repository.ts":
     "stable note and assignment intent identities, retained across retries; never dice results",
+  "src/features/library/LibraryWorkspace.tsx":
+    "new draft entry identities only; never dice results",
+  "src/lib/library/repository.ts":
+    "stable library operation and addressed offer identities, retained across retries; never dice results",
   "src/lib/dice.ts": "the dice seam (ADR-0010)",
   "src/lib/quickbuild-random.ts": "character-generation seed, never a roll of the game",
   "src/features/campaigns/campaign-io.ts": "invite-code token",

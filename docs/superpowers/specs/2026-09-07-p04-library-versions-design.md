@@ -12,18 +12,21 @@ production writes, deployment, cost, main push or implicit integration permissio
 ## Single library authority
 
 One account-owned library entry contract covers weapon, equipment, spell, feature, monster,
-campaignRule, species, feat, background, class and subclass. Custom content lives here.
-An entry identifies an immutable definition version; versions retain source identity and
+campaign-rule, species, feat, background, class and subclass. Custom content lives here.
+An entry owns an autosaved draft and a separately published stable version; versions retain source identity and
 provenance. Definition fields are name, description, tags and a versioned authoring payload.
 The payload is retained without interpreting prose or claiming engine support. Common codec
 validates schema, family, JSON safety, limits and provenance. Incompatible input returns its
 original serialized data and an error; never silently drops fields or repairs a version.
 Family-specific semantic validation and import/export/print acceptance remain future editors.
 
-The entry head and version are written atomically by an owner save with original base CAS
-and a P03 operation receipt. Revision zero denotes a verified missing entry/new local draft;
+Draft saves write only the entry head; explicit publication writes the head and version
+atomically with original base CAS and a P03 operation receipt. Revision zero denotes a verified missing entry/new local draft;
 loading is distinct from absence. An existing entry is never saved before it is loaded.
-Each change creates an immutable version; historical versions remain inspectable. Copies
+Autosave advances only the draft revision, including incomplete names/descriptions. Explicit
+Record version confirms a preview, snapshots the current draft atomically and advances the
+stable version; unchanged publication is a no-op. Only stable versions can be offered/reused.
+Historical versions remain inspectable. Copies
 are independent entries with pinned source/version and grant receipt. Explicit comparison
 and update create a new local version; source changes never mutate copies or instances.
 An in-use instance references a pinned definition plus separate quantity/remaining charges/
@@ -31,14 +34,15 @@ prepared state. Definition updates preserve these instance fields and require ex
 
 ## Addressed grant
 
-An owner creates an immutable addressed offer with an exact definition snapshot, source
+An owner creates an immutable addressed offer in folioLibraryOffers/{id}, with sender ownership enforced by ACL, with an exact definition snapshot, source
 reference/version and recipient UID. Recipients can discover addressed active offers, inspect
 that snapshot and explicitly accept. Acceptance writes only their own entry/version and
 immutable grant receipt, atomically with the P03 operation receipt. The deterministic grant
 identity prevents duplicate materialization even with competing acceptance intents or a lost
 response. No sender, campaign member, DM or admin accepts for another recipient.
 
-Sender revocation changes only the sender's offer. Acceptance reads current offer authority
+Sender revocation changes only the sender-owned offer. The dedicated top-level collection
+avoids a recursive collection-group read grant over unknown paths. Acceptance reads current offer authority
 and rules inspect its post-commit state. Competing revoke/accept serializes: revocation first
 prevents delivery; acceptance first preserves the copy and receipt. Revocation closes future
 access; received bytes cannot be revoked. No recipient write to sender state. Sender-visible
@@ -58,8 +62,11 @@ fence callbacks and unsent writes including A→B→A; offline drafts remain rec
 
 Private library/version reads are owner/admin under existing blocked-account precedence.
 Campaign membership and DM status grant no library ownership. Addressed offer reads expose
-only offered content; unknown paths deny. Attachments use authenticated SDK access and exact
-ACL paths; copying metadata must not retain a revoked sender asset dependency. No production
+only offered content; unknown paths deny. P04 definitions do not admit attachment references: incompatible imports retain their original
+bytes for recovery. Existing P02 artwork ACL remain tested; unknown library asset paths deny.
+Attachment authoring/materialization belongs to subsequent editors and must copy recipient-owned
+bytes before claiming a complete grant. Received-copy updates require a new addressed offer
+and explicit selection of the one copy; historical provenance never grants source read access. No production
 credentials; acceptance evidence uses explicit demo services and synthetic contents only.
 
 The real library page joins the existing four-domain shell. Preserve reference typography,

@@ -20,6 +20,7 @@ async function mount(
   render(
     <I18nextProvider i18n={i18n}>
       <IdentityWorkspace
+        library={<div>Library contents</div>}
         uid="marco"
         displayName="Marco"
         characters={[
@@ -79,6 +80,22 @@ async function mount(
 
 beforeEach(() => window.history.replaceState(null, "", "/"));
 describe("new identity workspace", () => {
+  it("opens the actual library and restores its destination from browser history", async () => {
+    await mount();
+    fireEvent.click(screen.getByRole("button", { name: "Library" }));
+    expect(window.location.hash).toBe("#library");
+    expect(screen.getByText("Library contents")).toBeTruthy();
+    act(() => {
+      window.history.replaceState(null, "", "#account");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    expect(screen.queryByText("Library contents")).toBeNull();
+    act(() => {
+      window.history.replaceState(null, "", "#library");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    expect(screen.getByText("Library contents")).toBeTruthy();
+  });
   it("does not apply a language whose catalogue finishes after the workspace expires", async () => {
     const { i18n } = await mount();
     let loaded!: () => void;

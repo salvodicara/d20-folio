@@ -21,9 +21,20 @@ import { ensureLocale } from "@/i18n";
 import { srdCatalogues } from "@/i18n/srd-en";
 import { CheckboxField } from "@/components/ui/selection";
 
-export type IdentityPage = AccountSection | "characters" | "invite" | "campaign";
+export type IdentityPage =
+  | AccountSection
+  | "characters"
+  | "invite"
+  | "campaign"
+  | "library";
 type Page = IdentityPage;
-const pages: readonly string[] = [...accountSections, "characters", "invite", "campaign"];
+const pages: readonly string[] = [
+  ...accountSections,
+  "characters",
+  "invite",
+  "campaign",
+  "library",
+];
 function urlPage(fallback: Page): Page {
   const id = window.location.hash.slice(1);
   return pages.includes(id) ? (id as Page) : fallback;
@@ -74,6 +85,7 @@ export interface IdentityWorkspaceProps {
   onSignOut: () => Promise<void>;
   onSaveProfile: (name: string, locale: "en" | "it") => Promise<void>;
   assignmentEditor?: (id: string, onDone: () => void) => ReactNode;
+  library?: ReactNode;
   privateNoteEditor?: ReactNode;
   dmNoteEditor?: ReactNode;
   onImport?: (source: string) => Promise<void>;
@@ -298,7 +310,11 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
           >
             {label("character")}
           </button>
-          <button disabled title={label("notAvailable")}>
+          <button
+            onClick={() => navigate("library")}
+            disabled={!p.library}
+            aria-current={page === "library" ? "page" : undefined}
+          >
             {label("library")}
           </button>
         </nav>
@@ -348,7 +364,7 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
           </button>
         </div>
       </header>
-      {!accountPage && (
+      {!accountPage && page !== "library" && (
         <>
           <div className="identity-context">
             <span>{label("yourSpace")}</span>
@@ -387,7 +403,7 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
         </>
       )}
       <main className={"identity-main" + (accountPage ? " identity-account-main" : "")}>
-        {!accountPage && (
+        {!accountPage && page !== "library" && (
           <div className="identity-page-heading">
             <div>
               <p className="identity-kicker">
@@ -455,6 +471,7 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
             changeLocale={changeLocale}
           />
         )}
+        {page === "library" && p.library}
         {page === "characters" && (
           <>
             <div className="identity-toolbar">
@@ -819,7 +836,15 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
           />
           <p>{label("searchScope")}</p>
           <div className="identity-search-results">
-            {([...accountSections, "characters", "invite", "campaign"] as Page[])
+            {(
+              [
+                ...accountSections,
+                "characters",
+                "invite",
+                "campaign",
+                "library",
+              ] as Page[]
+            )
               .filter((id) =>
                 label(
                   accountSections.includes(id as AccountSection)

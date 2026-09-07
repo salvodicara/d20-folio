@@ -1,17 +1,50 @@
 # Program Status
 
-## Current frontier — P04 in progress (2026-09-07)
+## Current frontier — P04 owner acceptance pending (2026-09-07)
 
 Owner/writer: Astra, isolated codex/p04-library-versions-20260907 at
 /Users/salvatoredicara/Workspace/Codex/d20-folio-p04-library-versions.
-Fresh origin/v2 and clean detached p04-control verified at
-0acb21f4e885d3940e2a3c032cc6e73c62ae7759; origin/main remains 9b06b753.
-Pinned bootstrap completed; verified read-only V2 pack b6073dd0, nested content-pack target.
-P02/P03 remain closed. P04 discovery/spec/plan in progress; no implementation/gate PASS yet.
-Read-only source and repository contract reviewers have no write ownership.
-Shared checkout and other worktrees preserved; pre-existing Firestore PID86001/8080 untouched.
-Only P04 is authorized. Runtime screenshots and per-change V2 integration remain owner gates;
-no deploy, production data, costs, main push or P05. Evidence: external d20-folio-p04-evidence.
+Fresh origin/v2 and clean detached p04-control were verified at
+0acb21f4e885d3940e2a3c032cc6e73c62ae7759; origin/main remains
+9b06b75313d7ee353c4072a20397c3092707648e. Integration SHA is still that V2 baseline.
+Pinned Node24.16.0/pnpm11.2.2 bootstrap completed; read-only V2 pack b6073dd0 is clean,
+with the nested content-pack target verified. Shared checkout and other worktrees are preserved.
+
+P02/P03 remain closed. P04 autonomous implementation and acceptance verification are complete;
+P04 remains OPEN for owner approval of its actual runtime images and explicit per-change V2
+integration, followed by fresh integration and cleanup receipts. P03 approval does not grant
+these verdicts. No successor prompt before actual P04 closure. Only P04 is authorized;
+no deploy, production data, cost, main push or P05.
+
+Final composed just ci exited 0: 865 application files / 19,254 tests, seven Functions files /
+129 tests, typecheck, lint, build and PWA. Full explicit demo rules exited 0: eight files /
+205 tests, including six private fixture COPIES and exact original recovery. No full-gate
+skips. Public/pack seam unchanged; ci-srd-only was not rerun. Historical diagnostic failures
+and focused red/green evidence remain preserved, not counted as successful final gates.
+
+Actual authenticated two-client browser evidence covers addressed recipient materialization,
+revocation before and after acceptance, explicit comparison/update of a selected copy, offline
+retention with no reconnect replay, competing draft bases and explicit conflict resolution,
+a real successful commit with its response withheld and exact receipt reconciliation with one
+commit, and discovery of never-uploaded drafts. Acceptance/revocation transactional races are
+covered by rules tests; this is not installed-PWA, production or gameplay evidence. A read-only
+synthetic audit resolved all nine recipient grants to immutable versions, provenance and
+operation receipts, including copies retained after revocation.
+
+Independent code reviewers closed operation-kind piggybacking, extra grant forgery, incompatible
+record isolation, draft recovery, account invalidation, stale refresh, StrictMode and ordinary
+effect-cleanup findings. Independent visual review opened all 39 original runtime images, 23
+replacements and four below-fold details against the approved references; no concrete P1/P2
+remains. The current EN/IT dark 1440×900/1280×800/390×844 matrix contains 43 images: 16 unchanged
+originals, 23 replacements and four extra details. Image counts are not test counts. Owner
+screenshot approval remains separate from reviewer acceptance.
+
+Worker p04_data completed its isolated library model/repository/rules ownership; its commits
+are cherry-picked and its topic is clean. Source and repository contract reviewers are read-only.
+Astra owns UI and integration. Owned demo/Vite/mock services and clean task worktrees are retained
+for the owner gate; pre-existing Firestore PID86001/8080 is preserved. Commands, exits, review
+scope, image/source hashes, local candidate SHA and service ownership are recorded externally in
+/Users/salvatoredicara/Workspace/Codex/d20-folio-p04-evidence/HANDOFF.md.
 The older frontiers below retain historical context and do not control this session.
 
 ## Current frontier — P03 closed; P04 selected, not started (2026-09-07)
