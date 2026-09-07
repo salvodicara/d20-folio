@@ -19,7 +19,7 @@ export interface NoteSnapshot {
   revision: number;
   authority: Authority;
 }
-interface Envelope {
+export interface Envelope {
   opId: string;
   uid: string;
   scope: IdentityScope;

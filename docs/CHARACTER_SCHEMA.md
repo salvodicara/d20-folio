@@ -610,3 +610,13 @@ the only write mode). What it guarantees:
    initiative/death saves) lives in the `combat/state` subdoc, not the parent `state` — hydrated at load,
    defaulting to full HP only when the subdoc is genuinely absent (a fresh/undamaged character).
 4. Screenshot parity (EN+IT) for the 6 team sheets + the multiclass mock. Full gate green.
+
+### P04 library definition and instance boundary
+
+The new library common schema is independent of character persistence. Eleven definition
+families share metadata and a schema-versioned JSON authoring payload in `src/lib/library/model.ts`.
+Draft revisions and immutable stable versions are separate. Received definitions pin source,
+version and addressed grant provenance. `LibraryInstance` keeps quantity, remaining charges
+and prepared state separate from its pinned definition; explicit reference replacement preserves
+these values. The codec retains original incompatible serialized input and rejects attachments;
+asset materialization is outside P04. Full family editors remain P05–P08.
