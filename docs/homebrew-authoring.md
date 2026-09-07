@@ -50,3 +50,8 @@ and spell range distance and area size. Fractional distances are supported (the 
 weapon reach initializes to 1.5 m); the form, reader and portable JSON share the same units.
 Levels, durations, ability scores, resource counts and other discrete fields remain integers.
 Existing stored distances are never rescaled or migrated implicitly.
+
+Character-instance add/update intents and commits both reject invalid conformance at the
+repository boundary, including structurally valid but unconfigured P04 snapshots. Unknown
+unsupported authoring remains preservable. Existing copies may still edit their personal
+state even when the old definition is invalid; this does not execute or replace its mechanics.

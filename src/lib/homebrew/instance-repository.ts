@@ -20,6 +20,7 @@ import type { SessionController } from "../identity/session";
 import { libraryPath, type LibraryVersion } from "../library/model";
 import { serializeLibraryRecovery } from "../library/recovery";
 import { equal, receiptPath } from "../shared/model";
+import { conformDefinition } from "./conformance";
 import {
   DEFAULT_INSTANCE_STATE,
   instancePath,
@@ -34,6 +35,12 @@ import {
   type InstanceRepository,
   type InstanceState,
 } from "./instances";
+function requireReusable(snapshot: LibraryVersion) {
+  if (
+    conformDefinition(snapshot.definition).some((issue) => issue.severity === "invalid")
+  )
+    throw new Error("invalid-operation");
+}
 export function createInstanceRepository(
   db: Firestore,
   session: SessionController
@@ -114,6 +121,7 @@ export function createInstanceRepository(
     parseCharacter(character);
     identityId(id);
     parseInstanceVersion(snapshot);
+    if (kind !== "homebrew-state") requireReusable(snapshot);
     parseInstanceState(state);
     const ref = { ownerUid: character.ownerUid, id: character.id };
     if (character.ownerUid !== uid() || snapshot.ownerUid !== uid())
@@ -220,6 +228,7 @@ export function createInstanceRepository(
       identityId(op.opId);
       instancePath(op.character, op.targetId);
       parseInstanceVersion(op.snapshot);
+      if (op.kind !== "homebrew-state") requireReusable(op.snapshot);
       parseInstanceState(op.state);
       if (op.character.ownerUid !== op.uid || op.snapshot.ownerUid !== op.uid)
         throw new Error("permission-denied");
