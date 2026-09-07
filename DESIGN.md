@@ -333,6 +333,20 @@ New visual details need images and owner judgment within their implementation bl
 approved patterns; the owner need not specify every control. Execution order belongs to the
 program linked from Program Status; a missing exit keeps the same block/outcome.
 
+### Base homebrew authoring
+
+The four base families share the V2 library shelf and saved-draft status. Family-specific
+fields are grouped in two columns on desktop and one on phone; labelled inputs and the
+canonical Checkbox preserve keyboard and focus behavior. Ordered effects, source metadata
+and explicit unsupported declarations follow the ordinary fields. The same typed reader
+serves previews, recipient offers, persisted character copies and paper output.
+
+A recorded version is distinct from autosave. Character reuse and version replacement require
+explicit comparison and confirmation, with quantity, preparation and remaining uses shown as
+instance state. Imports preserve the exact original and display validation before confirmation.
+Print output uses white paper, omits application controls and disables page artwork/pseudo-elements
+only while the homebrew print portal exists; it retains source and version information.
+
 ## Retained baseline construction catalogue
 
 All numbered sections below describe earlier construction. Their historical approval statements

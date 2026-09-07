@@ -436,6 +436,14 @@
   }
 }
 @media print {
+  html:has(.homebrew-print),
+  body:has(.homebrew-print) {
+    background: white !important;
+  }
+  body:has(.homebrew-print)::before,
+  body:has(.homebrew-print)::after {
+    display: none !important;
+  }
   body:has(.homebrew-print) > :not(.homebrew-print) {
     display: none !important;
   }

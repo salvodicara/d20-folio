@@ -88,7 +88,7 @@ P04 offer→recipient acceptance→library materialization remains the only shar
 ## Experience and portable documents
 
 Retain shelf/selection and shell r2, narrow shelf plus spacious two-column family fields,
-single-column phone, native labelled controls, progressive optional details, inline validation.
+single-column phone, labelled inputs and canonical Checkbox, grouped family details, inline validation.
 Use the existing loaded-draft autosave state; show local/offline/pending/unknown/conflict and
 preserve edits. Reuse chooses a character and stable version, compares existing copies, then
 explicitly materializes. Sheet shows the same typed reader, source/version and instance state.
