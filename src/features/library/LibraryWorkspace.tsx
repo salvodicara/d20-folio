@@ -288,12 +288,12 @@ export function LibraryWorkspace({
         <h1>{label(tab === "creations" ? "heading" : "sharingTitle")}</h1>
         <p>{label(tab === "creations" ? "intro" : "sharingIntro")}</p>
         {tab === "creations" && (
-          <button onClick={() => setImporting(true)}>{hb("import")}</button>
-        )}
-        {tab === "creations" && (
-          <button className="identity-primary" onClick={() => setCreate(true)}>
-            {label("create")}
-          </button>
+          <div className="identity-actions">
+            <button className="identity-primary" onClick={() => setCreate(true)}>
+              {label("create")}
+            </button>
+            <button onClick={() => setImporting(true)}>{hb("import")}</button>
+          </div>
         )}
       </header>
       <label className="library-campaign">

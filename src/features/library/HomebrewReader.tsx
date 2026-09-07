@@ -34,6 +34,16 @@ export function HomebrewReader({
       </div>
     );
   const fields = baseFields(definition.family);
+  const diagnostics = conformDefinition(definition);
+  const retainedFields = Object.fromEntries(
+    Object.entries(data).filter(
+      ([key, value]) =>
+        !fields.some((field) => field.key === key) &&
+        !["effects", "authoringVersion"].includes(key) &&
+        !(key === "unsupported" && Array.isArray(value) && value.length === 0)
+    )
+  );
+
   return (
     <article className="homebrew-reader">
       <h3>{definition.name}</h3>
@@ -78,31 +88,16 @@ export function HomebrewReader({
           )}
         </section>
       )}
-      {Object.keys(data).filter(
-        (k) =>
-          !fields.some((f) => f.key === k) && !["effects", "authoringVersion"].includes(k)
-      ).length > 0 && (
+      {Object.keys(retainedFields).length > 0 && (
         <details open={printable}>
           <summary>{label("preservedFields")}</summary>
-          <pre>
-            {JSON.stringify(
-              Object.fromEntries(
-                Object.entries(data).filter(
-                  ([k]) =>
-                    !fields.some((f) => f.key === k) &&
-                    !["effects", "authoringVersion"].includes(k)
-                )
-              ),
-              null,
-              2
-            )}
-          </pre>
+          <pre>{JSON.stringify(retainedFields, null, 2)}</pre>
         </details>
       )}
-      {conformDefinition(definition).length > 0 && (
+      {diagnostics.length > 0 && (
         <div role="status">
           <h4>{label("checkContent")}</h4>
-          {conformDefinition(definition).map((d, i) => (
+          {diagnostics.map((d, i) => (
             <p key={i}>{label("diagnostics." + d.code)}</p>
           ))}
         </div>

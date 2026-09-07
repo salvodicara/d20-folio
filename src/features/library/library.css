@@ -70,7 +70,7 @@
 }
 .library-workbench {
   display: grid;
-  grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(190px, 0.28fr) minmax(0, 1fr);
   gap: 42px;
 }
 .library-shelf {
@@ -322,10 +322,6 @@
   }
 }
 
-/* P05 family authoring follows the approved narrow shelf / readable workbench. */
-.library-workbench {
-  grid-template-columns: minmax(190px, 0.28fr) minmax(0, 1fr);
-}
 .homebrew-group {
   border: 0;
   margin: 32px 0;

@@ -150,3 +150,25 @@ it.each(["en", "it"] as const)(
       }
   }
 );
+
+it("shows the retained unsupported choice instead of a supported default", async () => {
+  cleanup();
+  const i18n = createInstance();
+  await i18n.init({
+    lng: "en",
+    resources: { en: { common: mergedUi("en") } },
+    defaultNS: "common",
+  });
+  const definition = initializeDefinition("spell");
+  definition.name = "Time tide";
+  definition.payload.data.school = "chronomancy";
+  const view = render(
+    <I18nextProvider i18n={i18n}>
+      <HomebrewFields definition={definition} disabled={false} onChange={() => {}} />
+    </I18nextProvider>
+  );
+  const select = view.container.querySelector<HTMLSelectElement>(
+    '[name="homebrew-school"]'
+  );
+  expect(select?.selectedOptions[0]?.textContent).toContain("chronomancy");
+});

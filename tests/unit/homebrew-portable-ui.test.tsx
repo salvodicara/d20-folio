@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { createInstance } from "i18next";
 import { HomebrewImport } from "@/features/library/HomebrewPortable";
@@ -86,4 +86,44 @@ it("retains exact originals independently and associates a successful import wit
   );
   fireEvent.click(screen.getByRole("button", { name: "Original file 1", hidden: true }));
   expect(screen.getByRole("alert").textContent).toContain("preserved");
+});
+
+it("keeps the latest file selection when an earlier read resolves later", async () => {
+  const { i18n, session } = await setup();
+  let finish: (text: string) => void = () => {};
+  const first = new Promise<string>((resolve) => {
+    finish = resolve;
+  });
+  render(
+    <I18nextProvider i18n={i18n}>
+      <HomebrewImport
+        session={session}
+        onClose={() => {}}
+        onImport={() => Promise.resolve()}
+      />
+    </I18nextProvider>
+  );
+  const input = document.querySelector('input[type="file"]');
+  if (!input) throw Error("input");
+  const definition = initializeDefinition("spell");
+  definition.name = "Second selection";
+  fireEvent.change(input, {
+    target: { files: [{ name: "first.json", text: () => first }] },
+  });
+  fireEvent.change(input, {
+    target: {
+      files: [
+        { name: "second.json", text: () => Promise.resolve(encodePortable(definition)) },
+      ],
+    },
+  });
+  await waitFor(() =>
+    expect(screen.getByRole("heading", { name: "Second selection" })).toBeTruthy()
+  );
+  definition.name = "First selection";
+  await act(async () => {
+    finish(encodePortable(definition));
+    await first;
+  });
+  expect(screen.queryByRole("heading", { name: "First selection" })).toBeNull();
 });

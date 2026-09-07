@@ -42,6 +42,7 @@ export function HomebrewImport({
     close.current = onClose;
   }, [onClose]);
   const live = useRef(true);
+  const selection = useRef(0);
   useEffect(() => {
     live.current = true;
     const stop = session.track(() => {
@@ -73,8 +74,9 @@ export function HomebrewImport({
             const file = e.target.files?.[0];
             if (!file) return;
             const check = session.ticket();
+            const selected = ++selection.current;
             const fail = session.guard(() => {
-              if (live.current) setError(true);
+              if (live.current && selected === selection.current) setError(true);
             });
             setError(false);
             setStored(false);
@@ -82,7 +84,7 @@ export function HomebrewImport({
               .text()
               .then((raw) => {
                 check();
-                if (!live.current) return;
+                if (!live.current || selected !== selection.current) return;
                 const next = crypto.randomUUID();
                 setId(next);
                 setOriginal(raw);
@@ -108,6 +110,7 @@ export function HomebrewImport({
               disabled={busy}
               onClick={() => {
                 try {
+                  selection.current++;
                   setOriginal(sessionStorage.getItem(prefix + file) ?? "");
                   setId(file);
                   setStored(true);

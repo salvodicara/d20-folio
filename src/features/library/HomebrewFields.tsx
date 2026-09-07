@@ -64,6 +64,16 @@ export function HomebrewFields({
             value={typeof value === "string" ? value : ""}
             onChange={(e) => change(e.target.value)}
           >
+            {(typeof value !== "string" || !field.options?.includes(value)) && (
+              <option value={typeof value === "string" ? value : ""}>
+                {label("diagnostics.unsupported-option")} ·{" "}
+                {typeof value === "string"
+                  ? value
+                  : value === undefined
+                    ? "—"
+                    : JSON.stringify(value)}
+              </option>
+            )}
             {field.options?.map((v) => (
               <option key={v} value={v}>
                 {v ? label("options." + v) : "—"}
