@@ -48,6 +48,7 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
     return issues;
   }
   const d = definition.payload.data;
+  if (!definition.name.trim()) add("name", "required");
   if (!BASE_FAMILIES.includes(definition.family as BaseFamily)) {
     add("family", "unsupported-family", "unsupported");
     return issues;
@@ -57,10 +58,11 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
     return issues;
   }
   if (d.authoringVersion !== 1) {
+    for (const key of stateKeys)
+      if (Object.hasOwn(d, key)) add("payload.data." + key, "instance-state");
     add("payload.data.authoringVersion", "unsupported-version", "unsupported");
     return issues;
   }
-  if (!definition.name.trim()) add("name", "required");
   const validate = (
     data: Record<string, JsonValue>,
     descriptors: readonly FieldDescriptor[],

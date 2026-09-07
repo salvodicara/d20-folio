@@ -41,3 +41,6 @@ Verification: `tests/unit/homebrew-authoring.test.ts` covers ordinary, boundary 
 cases for each family, formula limits, unchanged unknown data, effects order, draft/stable
 snapshots and malformed provenance. Integration, runtime visual approval and P14 execution
 acceptance are separate gates owned by the parent P05 program.
+
+Unknown authoring versions still validate the universal nonempty name and template-state
+exclusion. Unsupported version metadata cannot turn a malformed draft into a reusable template.

@@ -294,3 +294,11 @@ describe("portable and authoring adversarial boundaries", () => {
     expect(d).toEqual(before);
   });
 });
+
+it("unknown authoring versions cannot bypass universal draft and template invariants", () => {
+  const d = definition("weapon", { authoringVersion: 2, remainingCharges: 3 });
+  d.name = "";
+  expect(codes(d)).toEqual(
+    expect.arrayContaining(["required", "instance-state", "unsupported-version"])
+  );
+});
