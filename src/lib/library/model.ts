@@ -253,3 +253,9 @@ export function parseEntry(value: unknown): LibraryEntry {
   }
   return frozen(structuredClone(v)) as unknown as LibraryEntry;
 }
+
+export interface LibraryIssue {
+  path: string;
+  original: string;
+  error: "incompatible-library";
+}

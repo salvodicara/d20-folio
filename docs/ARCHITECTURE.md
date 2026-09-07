@@ -3882,3 +3882,13 @@ this phase: a metadata copy cannot atomically materialize Storage bytes with Fir
 Each library write match also pins the operation kind appropriate to that document, and a
 grant receipt pins the exact offered identity. A valid operation cannot authorize unrelated
 heads, offers or extra receipts in the same atomic batch.
+
+Library reads isolate incompatible records instead of allowing one malformed offer to disable
+an entire inbox. `watchIssues` publishes path, reason and recoverable snapshot for each record;
+the UI must expose these issues and their downloads alongside valid records. Issues and
+subscriptions clear with the account epoch. Single reads still fail explicitly, retaining
+recovery, while collection reads keep compatible records available. Recovery exports preserve
+Firestore special types with tagged map/array/scalar representations; they represent the exact
+SDK snapshot values, not unavailable original wire bytes. Rules reject null/boolean tags;
+the common codec remains the complete JSON-shape validator because recursive Firestore payload
+validation is not expressible within the rules execution budget.

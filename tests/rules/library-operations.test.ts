@@ -455,3 +455,140 @@ it("a valid acceptance cannot piggyback an unrelated grant receipt", async () =>
   });
   await assertFails(batch.commit());
 });
+it("isolates one incompatible addressed snapshot while preserving valid inbox records and recoverable types", async () => {
+  const a = await stable(),
+    b = client("recipient");
+  await a.repo.commit(
+    a.repo.offerIntent(
+      await a.repo.readVersion({ ownerUid: "owner", id: "one" }, 1),
+      "recipient"
+    )
+  );
+  const offer = required((await b.repo.listOffers())[0]);
+  const { Timestamp } = await import("firebase/firestore");
+  await env.withSecurityRulesDisabled((c) =>
+    setDoc(doc(c.firestore(), "folioLibraryOffers/malformed"), {
+      ...offer,
+      id: "malformed",
+      definition: {
+        ...offer.definition,
+        tags: [null],
+        payload: { schema: 1, data: { when: new Timestamp(123, 456), value: NaN } },
+      },
+    })
+  );
+  expect(await b.repo.listOffers()).toHaveLength(1);
+  let issues: import("../../src/lib/library/model").LibraryIssue[] = [];
+  const stop = b.repo.watchIssues((value) => {
+    issues = value;
+  });
+  expect(issues).toHaveLength(1);
+  expect(issues[0]?.path).toBe("folioLibraryOffers/malformed");
+  expect(issues[0]?.original).toContain("firestore/timestamp");
+  expect(issues[0]?.original).toContain("NaN");
+  stop();
+});
+it("incompatible issue subscriptions and retained snapshots clear on account invalidation", async () => {
+  const a = client();
+  await env.withSecurityRulesDisabled((c) =>
+    setDoc(doc(c.firestore(), "folioAccounts/owner/library/malformed"), { schema: 9 })
+  );
+  expect(await a.repo.list()).toEqual([]);
+  let issues: import("../../src/lib/library/model").LibraryIssue[] = [];
+  a.repo.watchIssues((value) => {
+    issues = value;
+  });
+  expect(issues).toHaveLength(1);
+  a.session.revoke();
+  a.session.transition({ uid: "recipient", campaignId: null, activeCharacterId: null });
+  const stop = a.repo.watchIssues((value) => {
+    issues = value;
+  });
+  expect(issues).toEqual([]);
+  stop();
+});
+it("raw draft writes cannot publish invalid tag elements into addressed authoring data", async () => {
+  const a = client();
+  await a.repo.load("tags");
+  const valid = { ...blankDefinition("weapon"), name: "Tags" };
+  const op = a.repo.saveIntent(null, valid, "tags");
+  const malformed = { ...valid, tags: [null] };
+  const { writeBatch } = await import("firebase/firestore");
+  const batch = writeBatch(a.db);
+  batch.set(doc(a.db, "folioAccounts/owner/library/tags"), {
+    schema: 1,
+    ownerUid: "owner",
+    id: "tags",
+    revision: 1,
+    draft: malformed,
+    stableVersion: 0,
+    provenance: null,
+    lastOperation: { uid: "owner", opId: op.opId },
+  });
+  batch.set(doc(a.db, "folioAccounts/owner/operations/" + op.opId), {
+    operation: { ...op, definition: malformed },
+    revision: 1,
+  });
+  await assertFails(batch.commit());
+});
+it("live inbox emits record recovery and keeps valid offers, then removes issues when the bad offer is revoked", async () => {
+  const { vi } = await import("vitest");
+  const a = await stable(),
+    b = client("recipient");
+  await a.repo.commit(
+    a.repo.offerIntent(
+      await a.repo.readVersion({ ownerUid: "owner", id: "one" }, 1),
+      "recipient"
+    )
+  );
+  const offer = required((await b.repo.listOffers())[0]);
+  let incoming: import("../../src/lib/library/model").LibraryOffer[] = [];
+  let issues: import("../../src/lib/library/model").LibraryIssue[] = [];
+  const errors: Error[] = [];
+  const stopIssues = b.repo.watchIssues((value) => {
+    issues = value;
+  });
+  const stop = b.repo.watchOffers(
+    (value) => {
+      incoming = value;
+    },
+    (error) => errors.push(error)
+  );
+  await env.withSecurityRulesDisabled((c) =>
+    setDoc(doc(c.firestore(), "folioLibraryOffers/malformed"), {
+      ...offer,
+      id: "malformed",
+      definition: { ...offer.definition, tags: [null] },
+    })
+  );
+  await vi.waitFor(() => expect(issues).toHaveLength(1));
+  expect(incoming).toHaveLength(1);
+  expect(errors).toEqual([]);
+  await env.withSecurityRulesDisabled((c) =>
+    updateDoc(doc(c.firestore(), "folioLibraryOffers/malformed"), { revoked: true })
+  );
+  await vi.waitFor(() => expect(issues).toHaveLength(0));
+  expect(incoming).toHaveLength(1);
+  stop();
+  stopIssues();
+});
+it("single incompatible loads retain recoverable snapshots and version lists isolate bad versions", async () => {
+  const a = await stable();
+  await env.withSecurityRulesDisabled(async (c) => {
+    await setDoc(doc(c.firestore(), "folioAccounts/owner/library/malformed"), {
+      schema: 9,
+    });
+    await setDoc(doc(c.firestore(), "folioAccounts/owner/library/one/versions/2"), {
+      schema: 9,
+    });
+  });
+  let issues: import("../../src/lib/library/model").LibraryIssue[] = [];
+  const stop = a.repo.watchIssues((value) => {
+    issues = value;
+  });
+  await expect(a.repo.load("malformed")).rejects.toThrow("incompatible-library");
+  expect(issues).toHaveLength(1);
+  expect(await a.repo.listVersions("one")).toHaveLength(1);
+  expect(issues).toHaveLength(2);
+  stop();
+});

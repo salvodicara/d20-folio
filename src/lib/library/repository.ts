@@ -1,3 +1,4 @@
+import { serializeLibraryRecovery } from "./recovery";
 import {
   collection,
   doc,
@@ -21,6 +22,7 @@ import {
   offerPath,
   parseDefinition,
   parseEntry,
+  type LibraryIssue,
   type LibraryDefinition,
   type LibraryEntry,
   type LibraryOffer,
@@ -31,6 +33,79 @@ import {
   type GrantReceipt,
 } from "./model";
 export function createLibraryRepository(db: Firestore, session: SessionController) {
+  const issueSources = new Map<string, LibraryIssue[]>();
+  const issueListeners = new Set<(issues: LibraryIssue[]) => void>();
+  let issueEpoch: (() => void) | null = null;
+  function ensureIssues() {
+    if (issueEpoch) {
+      try {
+        issueEpoch();
+        return;
+      } catch {
+        /* Initialize the new account epoch. */
+      }
+    }
+    issueSources.clear();
+    issueListeners.clear();
+    issueEpoch = session.ticket();
+    session.track(() => {
+      issueSources.clear();
+      issueListeners.clear();
+      issueEpoch = null;
+    });
+  }
+  function currentIssues() {
+    return [
+      ...new Map(
+        [...issueSources.values()].flat().map((issue) => [issue.path, issue])
+      ).values(),
+    ];
+  }
+  function single<T>(path: string, value: unknown, parse: (value: unknown) => T): T {
+    ensureIssues();
+    try {
+      const result = parse(value);
+      issueSources.delete("single:" + path);
+      return result;
+    } catch (error) {
+      issueSources.set("single:" + path, [
+        {
+          path,
+          original: serializeLibraryRecovery(value),
+          error: "incompatible-library",
+        },
+      ]);
+      throw error;
+    } finally {
+      const issues = currentIssues();
+      for (const listener of issueListeners) listener(issues);
+    }
+  }
+  function records<T>(
+    source: string,
+    snapshot: QuerySnapshot,
+    parse: (value: unknown) => T
+  ): T[] {
+    ensureIssues();
+    const issues: LibraryIssue[] = [];
+    const values: T[] = [];
+    for (const record of snapshot.docs) {
+      issueSources.delete("single:" + record.ref.path);
+      try {
+        values.push(parse(record.data()));
+      } catch {
+        issues.push({
+          path: record.ref.path,
+          original: serializeLibraryRecovery(record.data()),
+          error: "incompatible-library",
+        });
+      }
+    }
+    issueSources.set(source, issues);
+    const all = currentIssues();
+    for (const listener of issueListeners) listener(all);
+    return values;
+  }
   const intentTickets = new Map<string, () => void>();
   const missing = new Map<string, () => void>();
   const uid = () => {
@@ -114,6 +189,7 @@ export function createLibraryRepository(db: Firestore, session: SessionControlle
     return frozen(structuredClone(r));
   }
   function watch<T>(
+    source: string,
     q: Query,
     parse: (v: unknown) => T,
     onData: (v: T[]) => void,
@@ -124,7 +200,7 @@ export function createLibraryRepository(db: Firestore, session: SessionControlle
       q,
       session.guard((s: QuerySnapshot) => {
         try {
-          onData(s.docs.map((d) => parse(d.data())));
+          onData(records(source, s, parse));
         } catch (e) {
           onError(e as Error);
         }
@@ -134,12 +210,19 @@ export function createLibraryRepository(db: Firestore, session: SessionControlle
     return session.track(stop);
   }
   const api = {
+    watchIssues(onIssues: (issues: LibraryIssue[]) => void) {
+      ensureIssues();
+      const callback = session.guard(onIssues);
+      issueListeners.add(callback);
+      callback(currentIssues());
+      return session.track(() => issueListeners.delete(callback));
+    },
     async list() {
       const done = session.ticket();
       const s = await getDocsFromServer(entries());
       done();
       check();
-      return s.docs.map((d) => parseEntry(d.data()));
+      return records("entries", s, parseEntry);
     },
     async load(id: string) {
       const done = session.ticket();
@@ -151,7 +234,7 @@ export function createLibraryRepository(db: Firestore, session: SessionControlle
         return null;
       }
       missing.delete(uid() + "/" + id);
-      return parseEntry(s.data());
+      return single(s.ref.path, s.data(), parseEntry);
     },
     async readVersion(ref: LibraryRef, version: number) {
       const done = session.ticket();
@@ -162,7 +245,7 @@ export function createLibraryRepository(db: Firestore, session: SessionControlle
       );
       done();
       check();
-      return readVersion(s.data());
+      return single(s.ref.path, s.data(), readVersion);
     },
     async listVersions(id: string) {
       const done = session.ticket();
@@ -171,23 +254,23 @@ export function createLibraryRepository(db: Firestore, session: SessionControlle
       );
       done();
       check();
-      return s.docs
-        .map((d) => readVersion(d.data()))
-        .sort((a, b) => b.version - a.version);
+      return records("versions:" + id, s, readVersion).sort(
+        (a, b) => b.version - a.version
+      );
     },
     async listOffers() {
       const done = session.ticket();
       const s = await getDocsFromServer(offers());
       done();
       check();
-      return s.docs.map((d) => readOffer(d.data()));
+      return records("incoming", s, readOffer);
     },
     async listSentOffers() {
       const done = session.ticket();
       const s = await getDocsFromServer(sent());
       done();
       check();
-      return s.docs.filter((d) => d.data().schema === 2).map((d) => readOffer(d.data()));
+      return records("sent", s, readOffer);
     },
     async readGrant(offer: LibraryOffer) {
       const done = session.ticket();
@@ -204,13 +287,19 @@ export function createLibraryRepository(db: Firestore, session: SessionControlle
       onData: (offers: LibraryOffer[]) => void,
       onError: (e: Error) => void
     ) {
-      return watch(query(sent(), where("schema", "==", 2)), readOffer, onData, onError);
+      return watch(
+        "sent",
+        query(sent(), where("schema", "==", 2)),
+        readOffer,
+        onData,
+        onError
+      );
     },
     watchOffers(onData: (offers: LibraryOffer[]) => void, onError: (e: Error) => void) {
-      return watch(offers(), readOffer, onData, onError);
+      return watch("incoming", offers(), readOffer, onData, onError);
     },
     watchEntries(onData: (entries: LibraryEntry[]) => void, onError: (e: Error) => void) {
-      return watch(entries(), parseEntry, onData, onError);
+      return watch("entries", entries(), parseEntry, onData, onError);
     },
     saveIntent(
       base: LibraryEntry | null,

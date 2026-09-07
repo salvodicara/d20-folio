@@ -196,7 +196,7 @@ service cloud.firestore {
       return d is map && d.keys().hasOnly(['schema','family','name','description','tags','payload'])
         && d.schema == 1 && d.family in ['weapon','equipment','spell','feature','monster','campaign-rule','species','feat','background','class','subclass']
         && d.name is string && d.name.size() <= 200 && d.description is string && d.description.size() <= 100000
-        && d.tags is list && d.tags.size() <= 30 && d.payload is map && d.payload.keys().hasOnly(['schema','data'])
+        && d.tags is list && d.tags.size() <= 30 && !d.tags.hasAny([null,true,false]) && d.payload is map && d.payload.keys().hasOnly(['schema','data'])
         && d.payload.schema == 1 && d.payload.data is map && !d.payload.data.keys().hasAny(['attachments']);
     }
     function libraryHead(uid,id) {return /databases/$(database)/documents/folioAccounts/$(uid)/library/$(id);}
