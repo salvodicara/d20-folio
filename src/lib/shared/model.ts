@@ -64,6 +64,7 @@ export function receiptPath(operation: Pick<Operation, "uid" | "opId">) {
 export function equal(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (!a || !b || typeof a !== "object" || typeof b !== "object") return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
   const x = a as Record<string, unknown>,
     y = b as Record<string, unknown>;
   return (

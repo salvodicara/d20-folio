@@ -16,6 +16,10 @@ localized reference definitions and displays the imported authorized build/resou
 never evaluates or writes game effects; P03/P05/P11/P14 own their respective later contracts.
 Inspection does not select an active PC. There is no gameplay command actor yet.
 
+Shared JSON comparison preserves array-versus-map identity at every nesting level while
+ignoring map insertion order. An unknown payload changing from `[]` to `{}` is a real
+change for snapshot comparison and receipt matching.
+
 `src/lib/shared/model.ts` owns the pure P03 operation/receipt and adapter contract;
 `repository.ts` implements online Firestore CAS and `controller.ts` owns attempt and
 acknowledgement state. Personal/DM notes and assignment/release use one stable opId across
