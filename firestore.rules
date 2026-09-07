@@ -17,6 +17,72 @@ service cloud.firestore {
           && get(/databases/$(database)/documents/folioCampaigns/$(a.campaignId)/roster/$(uid + '~' + id)).data
              == { 'ownerUid':uid, 'characterId':id, 'assignmentId':a.assignmentId, 'version':a.version }));
     }
+    // P03: receipts are immutable and coupled to one exact version transition.
+    function operationReceipt(uid, id) { return getAfter(/databases/$(database)/documents/folioAccounts/$(uid)/operations/$(id)).data; }
+    function noteTransition(path, target) {
+      let next = getAfter(path).data;
+      let r = operationReceipt(next.lastOperation.uid, next.lastOperation.opId);
+      let o = r.operation;
+      return next.keys().hasOnly(['text','revision','lastOperation'])
+        && next.text is string && next.text.size() <= 100000
+        && next.lastOperation.keys().hasOnly(['uid','opId'])
+        && next.lastOperation.uid == request.auth.uid && folioId(next.lastOperation.opId)
+        && !exists(/databases/$(database)/documents/folioAccounts/$(request.auth.uid)/operations/$(next.lastOperation.opId))
+        && o.kind == 'notes' && o.target == target && o.text == next.text
+        && ((exists(path) && o.baseRevision == get(path).data.get('revision',0)) || (!exists(path) && o.baseRevision == 0))
+        && next.revision == o.baseRevision + 1 && r.revision == next.revision;
+    }
+    function personalNoteAuthority(o) {
+      let c = get(/databases/$(database)/documents/folioAccounts/$(o.target.ownerUid)/characters/$(o.target.characterId)).data;
+      let after = getAfter(/databases/$(database)/documents/folioAccounts/$(o.target.ownerUid)/characters/$(o.target.characterId)).data;
+      return folioOwnerAccess(o.target.ownerUid) && o.authority == {'characterRevision':c.revision,'assignment':c.currentAssignment,'campaignRevision':null}
+        && after.revision == c.revision && after.currentAssignment == c.currentAssignment;
+    }
+    function dmNoteAuthority(o) {
+      let c = folioCampaign(o.target.campaignId);
+      return folioDm(o.target.campaignId) && o.scope.campaignId == o.target.campaignId
+        && o.authority == {'characterRevision':null,'assignment':null,'campaignRevision':c.revision}
+        && getAfter(/databases/$(database)/documents/folioCampaigns/$(o.target.campaignId)).data.revision == c.revision;
+    }
+    function assignmentOperation(o, resultRevision) {
+      let path = /databases/$(database)/documents/folioAccounts/$(o.target.ownerUid)/characters/$(o.target.id);
+      let before = get(path).data;
+      let after = getAfter(path).data;
+      let history = getAfter(/databases/$(database)/documents/folioAccounts/$(o.target.ownerUid)/characters/$(o.target.id)/history/$(string(resultRevision))).data;
+      return o.target.ownerUid == request.auth.uid && o.baseRevision == before.revision
+        && o.authority == {'characterRevision':before.revision,'assignment':before.currentAssignment,'campaignRevision':null}
+        && after.revision == resultRevision && history.operationId == o.opId
+        && ((o.campaignId == null && after.currentAssignment == null && o.campaignRevision == null)
+          || (o.campaignId != null && after.currentAssignment == {'campaignId':o.campaignId,'assignmentId':o.opId,'version':resultRevision}
+            && folioCampaign(o.campaignId).revision == o.campaignRevision
+            && getAfter(/databases/$(database)/documents/folioCampaigns/$(o.campaignId)).data.revision == o.campaignRevision));
+    }
+    match /folioAccounts/{uid}/operations/{id} {
+      function readable() { let o=resource.data.operation; return folioUser() && (request.auth.uid == uid || isAdmin())
+        && (o.kind != 'notes' || o.target.kind == 'personal' || folioDm(o.target.campaignId)); }
+      // Missing receipt lookups are necessary for idempotent transactions.
+      allow get: if folioUser() && (request.auth.uid == uid || isAdmin()) && (!exists(/databases/$(database)/documents/folioAccounts/$(uid)/operations/$(id)) || readable());
+      allow create: if folioUser() && request.auth.uid == uid && folioId(id)
+        && request.resource.data.keys().hasOnly(['operation','revision'])
+        && request.resource.data.operation.uid == uid && request.resource.data.operation.opId == id
+        && request.resource.data.operation.scope.uid == uid
+        && request.resource.data.operation.scope.keys().hasOnly(['uid','campaignId','activeCharacterId'])
+        && request.resource.data.operation.baseRevision is int && request.resource.data.operation.baseRevision >= 0
+        && request.resource.data.revision == request.resource.data.operation.baseRevision + 1
+        && validOperation(request.resource.data.operation,request.resource.data.revision);
+      function validOperation(o, revision) {
+        return (o.kind == 'notes'
+          && o.keys().hasOnly(['kind','opId','uid','scope','target','baseRevision','authority','text'])
+          && ((o.target.kind == 'personal'
+            && personalNoteAuthority(o)
+            && getAfter(/databases/$(database)/documents/folioAccounts/$(o.target.ownerUid)/characters/$(o.target.characterId)/private/notes).data.lastOperation == {'uid':o.uid,'opId':o.opId}
+            && noteTransition(/databases/$(database)/documents/folioAccounts/$(o.target.ownerUid)/characters/$(o.target.characterId)/private/notes,o.target))
+            || (o.target.kind == 'dm' && dmNoteAuthority(o)
+              && getAfter(/databases/$(database)/documents/folioCampaigns/$(o.target.campaignId)/dmNotes/main).data.lastOperation == {'uid':o.uid,'opId':o.opId}
+              && noteTransition(/databases/$(database)/documents/folioCampaigns/$(o.target.campaignId)/dmNotes/main,o.target))))
+          || (o.kind == 'assignment' && o.keys().hasOnly(['kind','opId','uid','scope','target','baseRevision','authority','campaignId','campaignRevision']) && assignmentOperation(o,revision));
+      }
+    }
     match /folioAccounts/{uid} {
       allow get: if folioOwnerAccess(uid);
       allow list: if folioUser() && isAdmin();
@@ -56,6 +122,7 @@ service cloud.firestore {
       allow update: if owner() && shape(request.resource.data)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revision','currentAssignment'])
         && request.resource.data.revision == resource.data.revision + 1
+        && operationReceipt(uid,getAfter(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(id)/history/$(string(request.resource.data.revision))).data.operationId).revision == request.resource.data.revision
         && (request.resource.data.currentAssignment == null ||
           (reciprocal(request.resource.data.currentAssignment)
           && request.resource.data.currentAssignment.version == request.resource.data.revision
@@ -63,14 +130,23 @@ service cloud.firestore {
       // P02 has no destructive character deletion or shared sheet editor.
       match /private/{document} {
         allow read: if folioUser() && (owner() || isAdmin()) && document in ['notes','import'];
-        allow create: if folioUser() && (owner() || isAdmin()) && ((document == 'notes' && request.resource.data.keys().hasOnly(['text']) && request.resource.data.text is string && request.resource.data.text.size() <= 100000)
+        // Legacy note initialization is limited to creating a character in this commit.
+        allow create: if folioOwnerAccess(uid) && ((document == 'notes'
+          && ((!exists(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(id))
+            && existsAfter(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(id))
+            && request.resource.data.keys().hasOnly(['text']) && request.resource.data.text is string && request.resource.data.text.size() <= 100000)
+            || noteTransition(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(id)/private/notes,{'kind':'personal','ownerUid':uid,'characterId':id})))
           || (document == 'import' && request.resource.data.keys().hasOnly(['schema','original','sourceSchema']) && request.resource.data.schema == 1 && request.resource.data.sourceSchema == 3 && request.resource.data.original is string && request.resource.data.original.size() <= 750000));
-        allow update: if folioUser() && (owner() || isAdmin()) && document == 'notes' && request.resource.data.keys().hasOnly(['text']) && request.resource.data.text is string && request.resource.data.text.size() <= 100000;
+        allow update: if folioOwnerAccess(uid) && document == 'notes'
+          && noteTransition(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(id)/private/notes,{'kind':'personal','ownerUid':uid,'characterId':id});
       }
       match /history/{entry} {
         allow read: if folioUser() && (owner() || isAdmin());
-        allow create: if owner() && request.resource.data.keys().hasOnly(['previous','next','revision'])
+        allow create: if owner() && request.resource.data.keys().hasOnly(['previous','next','revision','operationId'])
           && entry == string(request.resource.data.revision)
+          && folioId(request.resource.data.operationId)
+          && operationReceipt(uid,request.resource.data.operationId).operation.kind == 'assignment'
+          && operationReceipt(uid,request.resource.data.operationId).operation.target == {'ownerUid':uid,'id':id}
           && request.resource.data.revision == get(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(id)).data.revision + 1
           && request.resource.data.revision == getAfter(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(id)).data.revision
           && request.resource.data.previous == get(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(id)).data.currentAssignment
@@ -105,7 +181,7 @@ service cloud.firestore {
       }
       match /dmNotes/{document} {
         allow read: if folioUser() && (folioDm(id) || isAdmin()) && document == 'main';
-        allow create, update: if folioUser() && (folioDm(id) || isAdmin()) && document == 'main' && request.resource.data.keys().hasOnly(['text']) && request.resource.data.text is string && request.resource.data.text.size() <= 100000;
+        allow create, update: if folioDm(id) && document == 'main' && noteTransition(/databases/$(database)/documents/folioCampaigns/$(id)/dmNotes/main,{'kind':'dm','campaignId':id});
       }
     }
     match /folioInvites/{id} {

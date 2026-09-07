@@ -18,7 +18,14 @@ import {
   disableNetwork,
   enableNetwork,
 } from "firebase/firestore";
-import { getBytes, uploadBytes, ref, listAll } from "firebase/storage";
+import {
+  deleteObject,
+  getBytes,
+  uploadBytes,
+  ref,
+  listAll,
+  type StorageReference,
+} from "firebase/storage";
 import {
   createIdentityRepository,
   SessionController,
@@ -240,7 +247,16 @@ afterAll(async () => {
 });
 beforeEach(async () => {
   await env.clearFirestore();
-  await env.clearStorage();
+  // rules-unit-testing clearStorage lists root items only; nested immutable
+  // artwork survives it and falsely turns a later create into an update.
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    async function clearTree(root: StorageReference): Promise<void> {
+      const { items, prefixes } = await listAll(root);
+      await Promise.all(items.map((item) => deleteObject(item)));
+      await Promise.all(prefixes.map((prefix) => clearTree(prefix)));
+    }
+    await clearTree(ref(ctx.storage()));
+  });
   await env.withSecurityRulesDisabled(async (ctx) => {
     for (const uid of ["owner", "member", "dm", "other", "admin", "blocked"])
       await setDoc(doc(ctx.firestore(), "users", uid), {
@@ -254,20 +270,9 @@ beforeEach(async () => {
   });
 });
 async function attach(id = "one", camp = "camp") {
-  const store = db("owner");
-  const b = writeBatch(store);
-  b.update(doc(store, cp(id)), {
-    revision: 1,
-    currentAssignment: { campaignId: camp, assignmentId: "assignment-" + id, version: 1 },
-  });
-  b.set(doc(store, rp(id, camp)), {
-    ownerUid: "owner",
-    characterId: id,
-    assignmentId: "assignment-" + id,
-    version: 1,
-  });
-  return b.commit();
+  return repository().repo.assign(id, camp);
 }
+
 describe("new identity direct ACL and assignment bypasses", () => {
   it("admits two sibling PCs with reciprocal assignment and DM immutable inspection", async () => {
     await assertSucceeds(attach());
@@ -322,9 +327,7 @@ describe("new identity direct ACL and assignment bypasses", () => {
       revision: 1,
     });
     await assertFails(getDoc(doc(db("member"), cp())));
-    await assertSucceeds(
-      updateDoc(doc(db("owner"), cp()), { revision: 2, currentAssignment: null })
-    );
+    await assertSucceeds(repository().repo.release("one"));
   });
   it("current members read only reciprocal characters; outsider, blocked and anonymous denied", async () => {
     await attach();
@@ -337,13 +340,13 @@ describe("new identity direct ACL and assignment bypasses", () => {
   it("owner private notes/imports and DM narrative are separate literal paths, unknown descendants deny all", async () => {
     await attach();
     const notes = cp() + "/private/notes";
-    await assertSucceeds(setDoc(doc(db("owner"), notes), { text: "private" }));
+    await assertSucceeds(
+      repository().repo.savePrivateNotes({ ownerUid: "owner", id: "one" }, "private")
+    );
     for (const uid of ["member", "dm", "other", "blocked"])
       await assertFails(getDoc(doc(db(uid), notes)));
     await assertSucceeds(getDoc(doc(db("admin"), notes)));
-    await assertSucceeds(
-      setDoc(doc(db("dm"), "folioCampaigns/camp/dmNotes/main"), { text: "DM private" })
-    );
+    await assertSucceeds(repository("dm").repo.saveDmNotes("camp", "DM private"));
     await assertFails(getDoc(doc(db("member"), "folioCampaigns/camp/dmNotes/main")));
     for (const uid of ["owner", "dm", "admin"]) {
       await assertFails(setDoc(doc(db(uid), cp() + "/unknown/x"), { x: 1 }));
@@ -582,13 +585,12 @@ describe("identity revocation, offline and copy evidence", () => {
     await assertFails(batch.commit());
   });
   it("admin has the accepted private-data and DM-note authority; blocked admin has none", async () => {
-    await setDoc(doc(db("owner"), cp() + "/private/notes"), { text: "owner private" });
-    await assertSucceeds(getDoc(doc(db("admin"), cp() + "/private/notes")));
-    await assertSucceeds(
-      setDoc(doc(db("admin"), "folioCampaigns/camp/dmNotes/main"), {
-        text: "administrator",
-      })
+    await repository().repo.savePrivateNotes(
+      { ownerUid: "owner", id: "one" },
+      "owner private"
     );
+    await assertSucceeds(getDoc(doc(db("admin"), cp() + "/private/notes")));
+    await assertSucceeds(repository("admin").repo.saveDmNotes("camp", "administrator"));
     const path = cp() + "/private/a.png";
     await uploadBytes(
       ref(env.authenticatedContext("owner").storage(), path),

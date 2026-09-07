@@ -14,7 +14,26 @@ migration contracts. `src/features/identity` consumes them as account, personal 
 invitation, campaign roster and immutable sheet inspection. Its read-only presenter resolves
 localized reference definitions and displays the imported authorized build/resources. It
 never evaluates or writes game effects; P03/P05/P11/P14 own their respective later contracts.
-Inspection does not select an active PC. There is no command actor or command outbox yet.
+Inspection does not select an active PC. There is no gameplay command actor yet.
+
+`src/lib/shared/model.ts` owns the pure P03 operation/receipt and adapter contract;
+`repository.ts` implements online Firestore CAS and `controller.ts` owns attempt and
+acknowledgement state. Personal/DM notes and assignment/release use one stable opId across
+retry, timeout and receipt lookup. Rules require an immutable receipt and the exact target
+transition in the same transaction, including original revision and authority. Personal
+notes compare the character assignment identity/version; DM notes compare campaign revision.
+Assignment remains owner-only and compares character and target-campaign revisions, with
+the existing reciprocal roster and old-claim recovery constraints. No legacy IO is bridged.
+This assignment epoch is not an Encounter lease: future Encounter consumers must add their
+distinct encounter identity and lease epoch to their own authoritative commit checks.
+
+P03 editors retain drafts and pending envelopes in account-partitioned sessionStorage;
+owner notes also retain their last verified base for offline editing. These bytes confer
+neither ACL nor commit authority. There is no automatic replay or polling. Timeout is an
+unknown result, reconciled through the exact server receipt. Scope/auth changes invalidate
+pending work and fence late callbacks; conflict preserves the draft and requires explicit
+review followed by a new save. DM recovery requires an authorized server read. P27 owns
+full installed-PWA reload and account recovery beyond the current browser session.
 
 Auth events, including reauthentication with the same UID, bound a session lifetime. Campaign
 and active-PC changes advance its generation; unsubscribe, private object-URL disposal and

@@ -26,6 +26,16 @@ This does not alter character schemas or migrate stored player data. P15 consume
 account preference; no gameplay consumer is implemented by P02. Existing profile owner/admin
 ACL remains unchanged; members and DMs cannot read or write another account's preference.
 
+P03 adds immutable `folioAccounts/{uid}/operations/{opId}` receipts containing the exact
+operation envelope and resulting revision. This receipt namespace is separate from offer
+acceptance receipts. Versioned personal/DM notes contain `text`, `revision` and
+`lastOperation: {uid, opId}`. Existing text-only notes read as revision zero; only a new
+character import can initialize that shape. Subsequent writes atomically compare the old
+revision/authority and create a matching receipt. A second receipt cannot reuse another
+operation's target transition. Assignment history additionally records `operationId`,
+linked to the same character's revision and receipt; the assignmentId equals its opId.
+No original import bytes or existing character grammar change, and no bulk migration runs.
+
 A current assignment is null or `{campaignId, assignmentId, version}`. Only the character
 owner changes it. Commit rules require target membership, exact reciprocal roster and a
 new revision; a still-live old claim cannot be displaced. The owner may release after

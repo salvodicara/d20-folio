@@ -1,3 +1,4 @@
+import { createSharedRepository } from "../shared/repository";
 import {
   collection,
   doc,
@@ -19,7 +20,6 @@ import {
 import {
   characterPath,
   identityId,
-  rosterId,
   parseCharacter,
   parseCampaign,
   parseAccount,
@@ -129,63 +129,11 @@ export function createIdentityRepository(db: Firestore, session: SessionControll
       throw new Error("wrong-campaign");
     return c;
   }
+  const shared = createSharedRepository(db, session);
   async function assignment(id: string, campaignId: string | null): Promise<void> {
-    const ownerUid = uid();
-    const path = cp(id);
-    const check = session.ticket();
-    return write(() =>
-      runTransaction(db, async (tx) => {
-        check();
-        const snapshot = await tx.get(doc(db, path));
-        if (!snapshot.exists()) throw new Error("not-found");
-        const current = parseCharacter(snapshot.data());
-        const revision = current.revision + 1;
-        if (campaignId !== null) {
-          const target = await tx.get(doc(db, camp(campaignId)));
-          if (!target.exists()) throw new Error("not-found");
-          const c = parseCampaign(target.data());
-          if (c.archived || !c.members.includes(ownerUid)) throw new Error("not-member");
-          if (current.currentAssignment?.campaignId === campaignId) return;
-        }
-        if (campaignId === null && current.currentAssignment === null) return;
-        const previousRow = current.currentAssignment
-          ? doc(
-              db,
-              camp(current.currentAssignment.campaignId) +
-                "/roster/" +
-                rosterId({ ownerUid, id })
-            )
-          : null;
-        const previousRowExists = previousRow
-          ? (await tx.get(previousRow)).exists()
-          : false;
-        // The rules inspect the previous campaign at COMMIT, including unreadable/reinstated claims.
-        // A denied or unavailable read is never interpreted as revocation by this client.
-        const next =
-          campaignId === null
-            ? null
-            : { campaignId, assignmentId: crypto.randomUUID(), version: revision };
-        check();
-        tx.update(doc(db, path), { currentAssignment: next, revision });
-        if (next)
-          tx.set(
-            doc(db, camp(next.campaignId) + "/roster/" + rosterId({ ownerUid, id })),
-            {
-              ownerUid,
-              characterId: id,
-              assignmentId: next.assignmentId,
-              version: next.version,
-            }
-          );
-        // Owner release remains possible after revocation: deleting this own stale ref is independently authorized.
-        if (previousRow && previousRowExists) tx.delete(previousRow);
-        tx.set(doc(db, path + "/history/" + String(revision)), {
-          previous: current.currentAssignment,
-          next,
-          revision,
-        });
-      })
-    );
+    const operation = await shared.assignmentIntent({ ownerUid: uid(), id }, campaignId);
+    if ((operation.authority.assignment?.campaignId ?? null) === campaignId) return;
+    await shared.commit(operation);
   }
   const api = {
     watchOwnedCharacters(
@@ -536,12 +484,14 @@ export function createIdentityRepository(db: Firestore, session: SessionControll
         true
       );
     },
-    savePrivateNotes(ref: CharacterRef, text: string) {
+    async savePrivateNotes(ref: CharacterRef, text: string) {
       if (ref.ownerUid !== uid()) throw new Error("not-owner");
-      if (text.length > 100000) throw new Error("notes-too-large");
-      return write(() =>
-        setDoc(doc(db, characterPath(ref) + "/private/notes"), { text })
-      );
+      const base = await shared.readNotes({
+        kind: "personal",
+        ownerUid: ref.ownerUid,
+        characterId: ref.id,
+      });
+      await shared.commit(shared.noteIntent(base, text));
     },
     watchDmNotes(
       id: string,
@@ -557,10 +507,9 @@ export function createIdentityRepository(db: Firestore, session: SessionControll
         error
       );
     },
-    saveDmNotes(id: string, text: string) {
-      if (id !== session.scope().campaignId) throw new Error("wrong-campaign");
-      if (text.length > 100000) throw new Error("notes-too-large");
-      return write(() => setDoc(doc(db, camp(id) + "/dmNotes/main"), { text }));
+    async saveDmNotes(id: string, text: string) {
+      const base = await shared.readNotes({ kind: "dm", campaignId: id });
+      await shared.commit(shared.noteIntent(base, text));
     },
     dryRunImport(text: string, id: string) {
       return dryRunMigration(text, { ownerUid: uid(), id });
