@@ -1,6 +1,45 @@
 # Program Status
 
-## Current frontier — P04 integration authorized (2026-09-07)
+## Current frontier — P04 closed; P05 selected, not started (2026-09-07)
+
+Owner: Astra. P04 implementation, independent code/visual review, actual multi-client acceptance
+and owner screenshot/V2 integration verdicts are complete. Fresh fetch found V2 at
+0acb21f4e885d3940e2a3c032cc6e73c62ae7759; rebase was a no-op. Explicit hooked HEAD:v2 push
+succeeded and git ls-remote verified 078ad6384025e3a8eac0524d9ae831d7ffb171e1. Origin/main
+remains 9b06b75313d7ee353c4072a20397c3092707648e. This closure receipt changes documentation
+only; its final remote SHA and owned-worktree cleanup receipt are recorded externally in
+/Users/salvatoredicara/Workspace/Codex/d20-folio-p04-evidence/HANDOFF.md and integration-preflight/RECEIPT.md.
+
+Approved runtime remains 7e56f6801e3f30c9a429e2c017737be55ff58064. Fresh pre-integration
+just ci exited 0: 865 app files / 19,254 tests, seven Functions files / 129 tests, typecheck,
+lint, build and PWA. Full demo rules exited 0: eight files / 205 tests, no skips, including
+six private fixture copies and exact original recovery. Public/pack seam unchanged;
+ci-srd-only was not rerun. 25 source/rules/test hashes and 66 retained image hashes verified
+unchanged; the current matrix has 43 images. Owner approved the shown runtime explicitly.
+
+Optimized-build replay exited 0 through the actual Google sign-in UI and the Auth Emulator
+provider: three fresh browser profiles, six P04 resilience journeys, no uncaught page errors.
+A read-only audit required exactly two recipient grants for explicit accept/update and verified
+their immutable version/provenance/operation receipt. Earlier browser evidence and nine-grant
+audit retain their bounded scope. Initial build harness failures (DEV-login assumption and
+short provider wait) were corrected in the harness, with runtime unchanged and logs preserved.
+This proves local client/SDK/rules paths, not exact production equivalence. FIDELITY.md records
+index/provider/App Check/IAM/hosting/limits/device gaps; staging/release remains separately gated.
+PRODUCT owns the new repeated-runtime-verification requirement; CONTRIBUTING owns its procedure.
+
+Only owned task services and clean P04 worktrees are cleanup candidates after remote verification;
+all unrelated worktrees, shared checkout, private pack and pre-existing Firestore8080 remain
+preserved. Final shutdown and removal outcomes are in the external closing receipt. No deploy,
+production data migration, cost, main push or next-block execution occurred.
+
+AGENT-PROGRAM selects P05 — base homebrew editors as the first incomplete row with P04 closed.
+P05 is NOT STARTED. Its bounded outcome is weapon/equipment/spell/feature authoring,
+vocabulary/schema/conformance, actual sheet reuse with instance/template separation,
+import/export/print and one meaningful mechanical conformance scenario per family. No engine
+execution in editors. P06–08 keep their families. Deliver the full recursive successor prompt
+only after final remote and cleanup receipts are verified; do not execute P05 in this session.
+
+## Historical P04 approval and acceptance (2026-09-07)
 
 Owner/writer: Astra, isolated codex/p04-library-versions-20260907 at
 /Users/salvatoredicara/Workspace/Codex/d20-folio-p04-library-versions.
