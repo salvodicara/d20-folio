@@ -59,7 +59,8 @@ service cloud.firestore {
     }
     match /folioAccounts/{uid}/operations/{id} {
       function readable() { let o=resource.data.operation; return folioUser() && (request.auth.uid == uid || isAdmin())
-        && (o.kind != 'notes' || o.target.kind == 'personal' || folioDm(o.target.campaignId)); }
+        && (o.kind != 'notes' || o.target.kind == 'personal' || folioDm(o.target.campaignId))
+        && (!(o.kind in ['preparation-add','preparation-update','preparation-state','preparation-remove']) || preparationRead(o.campaignId,o.preparationId)); }
       // Missing receipt lookups are necessary for idempotent transactions.
       allow get: if folioUser() && (request.auth.uid == uid || isAdmin()) && (!exists(/databases/$(database)/documents/folioAccounts/$(uid)/operations/$(id)) || readable());
       allow create: if folioUser() && request.auth.uid == uid && folioId(id)
@@ -82,6 +83,7 @@ service cloud.firestore {
               && noteTransition(/databases/$(database)/documents/folioCampaigns/$(o.target.campaignId)/dmNotes/main,o.target))))
           || (o.kind in ['library-save','library-publish','library-offer','library-accept','library-revoke'] && libraryOperation(o))
           || (o.kind in ['homebrew-add','homebrew-update','homebrew-state'] && homebrewOperation(o))
+          || (o.kind in ['preparation-add','preparation-update','preparation-state','preparation-remove'] && preparationOperation(o))
           || (o.kind == 'assignment' && o.keys().hasOnly(['kind','opId','uid','scope','target','baseRevision','authority','campaignId','campaignRevision']) && assignmentOperation(o,revision));
       }
     }
@@ -191,6 +193,141 @@ service cloud.firestore {
       allow create, update: if folioUser() && (isAdmin() || getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.dmUid == request.auth.uid)
         && request.resource.data == {'id':id,'name':getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.name,
           'joinOpen':getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.joinOpen && !getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.archived};
+    }
+    // P06: campaign-owned copies pin actor-owned stable versions; state is separate.
+    function preparationRead(campaignId, preparationId) {
+      return folioUser() && (preparationId == null ? (isAdmin() || folioMember(campaignId)) : folioDm(campaignId));
+    }
+    function preparationTarget(o) {
+      return o.preparationId == null
+        ? /databases/$(database)/documents/folioCampaigns/$(o.campaignId)/rules/$(o.targetId)
+        : /databases/$(database)/documents/folioCampaigns/$(o.campaignId)/preparations/$(o.preparationId)/monsters/$(o.targetId);
+    }
+    function preparationNumber(v) {return v is int && v >= 0 && v <= 9007199254740991;}
+    // Fixed batches keep bounded collection validation below rules compiler depth limits.
+    function preparationResources0(v) {let n=v.size(); return n <= 0 || (
+      (n <= 0 || preparationNumber(v[0]))
+      && (n <= 1 || preparationNumber(v[1]))
+      && (n <= 2 || preparationNumber(v[2]))
+      && (n <= 3 || preparationNumber(v[3]))
+      && (n <= 4 || preparationNumber(v[4]))
+      && (n <= 5 || preparationNumber(v[5]))
+      && (n <= 6 || preparationNumber(v[6]))
+      && (n <= 7 || preparationNumber(v[7])));}
+    function preparationResources8(v) {let n=v.size(); return n <= 8 || (
+      (n <= 8 || preparationNumber(v[8]))
+      && (n <= 9 || preparationNumber(v[9]))
+      && (n <= 10 || preparationNumber(v[10]))
+      && (n <= 11 || preparationNumber(v[11]))
+      && (n <= 12 || preparationNumber(v[12]))
+      && (n <= 13 || preparationNumber(v[13]))
+      && (n <= 14 || preparationNumber(v[14]))
+      && (n <= 15 || preparationNumber(v[15])));}
+    function preparationResources16(v) {let n=v.size(); return n <= 16 || (
+      (n <= 16 || preparationNumber(v[16]))
+      && (n <= 17 || preparationNumber(v[17]))
+      && (n <= 18 || preparationNumber(v[18]))
+      && (n <= 19 || preparationNumber(v[19]))
+      && (n <= 20 || preparationNumber(v[20]))
+      && (n <= 21 || preparationNumber(v[21]))
+      && (n <= 22 || preparationNumber(v[22]))
+      && (n <= 23 || preparationNumber(v[23])));}
+    function preparationResources24(v) {let n=v.size(); return n <= 24 || (
+      (n <= 24 || preparationNumber(v[24]))
+      && (n <= 25 || preparationNumber(v[25]))
+      && (n <= 26 || preparationNumber(v[26]))
+      && (n <= 27 || preparationNumber(v[27]))
+      && (n <= 28 || preparationNumber(v[28]))
+      && (n <= 29 || preparationNumber(v[29]))
+      && (n <= 30 || preparationNumber(v[30]))
+      && (n <= 31 || preparationNumber(v[31])));}
+    function preparationResources(v) {return v.size() <= 32
+      && preparationResources16(v)
+      && preparationResources24(v);}
+    function preparationConditions(v) {return v.size() <= 64 && v.hasOnly([
+  "blinded",
+  "charmed",
+  "deafened",
+  "frightened",
+  "grappled",
+  "incapacitated",
+  "invisible",
+  "paralyzed",
+  "petrified",
+  "poisoned",
+  "prone",
+  "restrained",
+  "stunned",
+  "unconscious",
+  "exhaustion",
+]);}
+    function preparationState(o) {
+      let s=o.state;
+      return s is map && ((o.preparationId == null && o.snapshot.definition.family == 'campaign-rule'
+          && s.keys().hasOnly(['kind','enabled']) && s.kind == 'campaign-rule' && s.enabled is bool)
+        || (folioId(o.preparationId) && o.snapshot.definition.family == 'monster'
+          && s.keys().hasOnly(['kind','label','currentHp','tempHp','conditions','resources'])
+          && s.kind == 'monster' && s.label is string && s.label.size() <= 120
+          && preparationNumber(s.currentHp) && preparationNumber(s.tempHp)
+          && s.conditions is list && preparationConditions(s.conditions)
+          && s.resources is map && (o.kind == 'preparation-update' || preparationResources(s.resources.values()))));
+    }
+    function preparationAuthority(o) {
+      let c=folioCampaign(o.campaignId);
+      return folioUser() && !c.archived && (isAdmin() || (c.dmUid == request.auth.uid && request.auth.uid in c.members)) && o.scope.campaignId == o.campaignId
+        && o.authority == {'characterRevision':null,'assignment':null,'campaignRevision':c.revision}
+        && getAfter(/databases/$(database)/documents/folioCampaigns/$(o.campaignId)).data == c;
+    }
+    function preparationSource(o) {
+      let v=o.snapshot;
+      let p=/databases/$(database)/documents/folioAccounts/$(o.uid)/library/$(v.entryId)/versions/$(string(v.version));
+      return v.ownerUid == o.uid && v.schema == 1 && v.version is int && v.version >= 1
+        && v.definition.family in ['monster','campaign-rule'] && get(p).data == v && getAfter(p).data == v;
+    }
+    function preparationBase(o) {
+      let p=preparationTarget(o);
+      return (o.kind == 'preparation-add' && !exists(p) && o.base == null && o.baseRevision == 0 && preparationSource(o))
+        || (o.base != null && exists(p) && o.base == get(p).data && o.baseRevision == o.base.revision
+          && o.base.id == o.targetId && o.base.campaignId == o.campaignId && o.base.preparationId == o.preparationId
+          && ((o.kind == 'preparation-update' && o.snapshot.entryId == o.base.snapshot.entryId
+              && o.snapshot.ownerUid == o.base.snapshot.ownerUid && o.state == o.base.state && preparationSource(o))
+            || (o.kind == 'preparation-state' && o.snapshot == o.base.snapshot)
+            || (o.kind == 'preparation-remove' && o.snapshot == o.base.snapshot && o.state == o.base.state
+              && o.opId == 'remove_' + o.base.lastOperation.opId)));
+    }
+    function preparationOperation(o) {
+      return o.keys().hasOnly(['kind','opId','uid','scope','baseRevision','authority','campaignId','preparationId','targetId','base','snapshot','state'])
+        && folioId(o.campaignId) && folioId(o.targetId) && o.uid == request.auth.uid
+        && preparationAuthority(o) && preparationBase(o)
+        // Split bounded numeric validation across the two mandatory atomic writes.
+        && (o.kind in ['preparation-remove','preparation-update'] || o.preparationId == null ||
+          (o.state.resources is map && o.state.resources.size() <= 32
+            && preparationResources0(o.state.resources.values()) && preparationResources8(o.state.resources.values())))
+        && (o.kind == 'preparation-remove' ? !existsAfter(preparationTarget(o)) :
+          getAfter(preparationTarget(o)).data.lastOperation == {'uid':o.uid,'opId':o.opId});
+    }
+    function preparationWrite(campaignId,preparationId,id,last,removing) {
+      let r=operationReceipt(request.auth.uid,last.opId);
+      let o=r.operation;
+      return folioUser() && last.uid == request.auth.uid && folioId(last.opId)
+        && !exists(/databases/$(database)/documents/folioAccounts/$(request.auth.uid)/operations/$(last.opId))
+        && o.uid == request.auth.uid && o.opId == last.opId && r.revision == o.baseRevision+1
+        && (removing ? o.kind == 'preparation-remove' : o.kind in ['preparation-add','preparation-update','preparation-state'])
+        && o.campaignId == campaignId && o.preparationId == preparationId && o.targetId == id
+        // The new receipt's create rule validates authority, exact base and source.
+        // This side binds that receipt to the only target it may change.
+        && (removing || (preparationState(o) && request.resource.data == {'schema':1,'id':id,'campaignId':campaignId,'preparationId':preparationId,
+          'revision':o.baseRevision+1,'snapshot':o.snapshot,'state':o.state,'lastOperation':last}));
+    }
+    match /folioCampaigns/{campaignId}/preparations/{preparationId}/monsters/{id} {
+      allow read: if preparationRead(campaignId,preparationId);
+      allow create,update: if preparationWrite(campaignId,preparationId,id,request.resource.data.lastOperation,false);
+      allow delete: if preparationWrite(campaignId,preparationId,id,{'uid':request.auth.uid,'opId':'remove_'+resource.data.lastOperation.opId},true);
+    }
+    match /folioCampaigns/{campaignId}/rules/{id} {
+      allow read: if preparationRead(campaignId,null);
+      allow create,update: if preparationWrite(campaignId,null,id,request.resource.data.lastOperation,false);
+      allow delete: if preparationWrite(campaignId,null,id,{'uid':request.auth.uid,'opId':'remove_'+resource.data.lastOperation.opId},true);
     }
     // P05: one character-owned instance per exact P03 receipt; no admin consent.
     function homebrewPath(o) { return /databases/$(database)/documents/folioAccounts/$(o.character.ownerUid)/characters/$(o.character.id)/homebrew/$(o.targetId); }
