@@ -1,5 +1,14 @@
 # d20-folio architecture
 
+## V2 advanced homebrew boundary
+
+`src/lib/homebrew/advanced.ts` and the authoring model/conformance own typed monster and campaign-rule
+programs, resources and policies. The existing Library owns drafts and immutable versions; Bestiary
+is a filtered version view. `preparation.ts` owns campaign copies and separate state;
+`preparation-repository.ts` addresses exact campaign preparation/rule paths using P03 envelopes and
+receipts. The campaign revision is authority, not an Encounter lease. There is no legacy engine
+adapter. See [authoring](homebrew-authoring.md) and [campaign preparation](homebrew-preparation.md).
+
 ## P02 current new-application boundary (2026-09-06)
 
 The candidate entrypoint mounts `IdentityApp` inside `IdentityBoundary`. It does not import

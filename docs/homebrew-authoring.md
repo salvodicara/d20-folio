@@ -120,3 +120,5 @@ storage readback, then atomically deletes only the head with its exact loaded ba
 receipt. Existing versions, granted copies, prepared copies and offers remain; revoke an offer
 explicitly to stop future delivery. Recovering an archived original imports to a new destination.
 A storage failure prevents deletion. Neither action deletes another account's data.
+
+Declaration, prepared-copy, operation and recovery archive IDs use UUIDs. The repository randomness guard explicitly inventories these identity-only call sites; authoring never generates dice results.

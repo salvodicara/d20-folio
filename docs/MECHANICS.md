@@ -1290,3 +1290,17 @@ representations and consistency checks, not automated attacks, spell resolution,
 Counterspell, temporary-HP replacement or combat adjudication. No prose is interpreted as a rule.
 P14 retains execution and exception-family regression ownership; P05's exact E-family cases and
 unsupported limits are in its [specification](superpowers/specs/2026-09-07-p05-homebrew-base-design.md).
+
+## V2 P06 programs and policies
+
+The same authoring contract extends to monster and campaign-rule declarations. Programs carry typed
+activation, trigger, resolution, targets/effects, resource references and ordered multiattack steps.
+Conformance checks references, cycles and summed per-resource costs, including repetitions and the
+container cost; it never spends a resource or resolves a roll. Typed campaign policies declare fact,
+operation, amount, target and dependencies; activation persists on a campaign-owned copy.
+
+[The P06 specification](superpowers/specs/2026-09-07-p06-monsters-rules-design.md) names E01/E05/E16/E19
+and supported bounds. Unsupported kinds remain explicit and preserved. As required by PRODUCT,
+custom declarations are first-class input to the same future engine as official content, with costs,
+effects, reactions, editable authoritative combat facts and causal correction/undo. P06 authoring and
+preparation verification does not replace the later real custom-combat acceptance.

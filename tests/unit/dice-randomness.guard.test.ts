@@ -14,6 +14,14 @@ const CALL = /\b(?:Math\.random|crypto\.getRandomValues|crypto\.randomUUID)\s*\(
 
 /** Every production file that calls a random source, with the reason it may. */
 const ALLOWED: Readonly<Record<string, string>> = {
+  "src/lib/homebrew/preparation-repository.ts":
+    "stable preparation-copy and operation identities retained across retries; never dice results",
+  "src/features/library/AdvancedFields.tsx":
+    "typed declaration identities only; never dice results",
+  "src/features/library/CampaignHomebrew.tsx":
+    "immutable incompatible-draft archive identity; never dice results",
+  "src/features/library/LibraryEditor.tsx":
+    "immutable source-original archive identity before head removal; never dice results",
   "src/lib/homebrew/instance-repository.ts":
     "stable character-copy and operation identities; never dice results",
   "src/features/library/HomebrewPortable.tsx":

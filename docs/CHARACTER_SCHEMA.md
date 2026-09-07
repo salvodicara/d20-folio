@@ -645,3 +645,12 @@ records are isolated with recoverable originals; raw imports retain their exact 
 account independently of a newly minted destination draft identity. Portable metadata is never
 an ACL grant. See [P05 instance schema](homebrew-instances.md) and
 [portable authoring format](homebrew-authoring.md).
+
+### P06 campaign preparation copies
+
+Monster/rule state belongs to campaign subcollections rather than the character parent or P05
+character instances. `PreparedCopy` schema 1 stores campaign/preparation/id/revision, immutable
+LibraryVersion snapshot, distinct monster or enabled-rule state, and the exact last-operation
+identity. The full path, codec, state bounds, CAS/receipt and recovery contract are owned by
+[homebrew preparation](homebrew-preparation.md). Character imports and legacy schema3 bytes remain
+unchanged; template updates are explicit and preserve prepared state.

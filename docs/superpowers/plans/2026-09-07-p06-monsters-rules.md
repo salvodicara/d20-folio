@@ -71,7 +71,7 @@ this contract; confirm exact types to parent before coding. P05 source validator
 Owner: Astra. Files: src/features/library/HomebrewFields.tsx, HomebrewReader.tsx,
 LibraryEditor.tsx, homebrew-labels.ts, LibraryWorkspace.tsx, new AdvancedFields.tsx;
 new CampaignHomebrew.tsx/PreparationReuse.tsx; IdentityApp/IdentityWorkspace wiring;
-library.css; src/i18n/{en,it}/common.json; focused UI tests.
+library.css; src/i18n/{en,it}/ui/homebrewV2.json; focused UI tests.
 
 - [ ] Red component tests initialize two families, edit nested program/resource/policy, keep unknown
       selects/rows, validate program references before record and retain local draft through reload.
@@ -87,7 +87,7 @@ library.css; src/i18n/{en,it}/common.json; focused UI tests.
 - [ ] Dependencies/conflicting replacements visibly reported from enabled typed rule snapshots;
       no order-based override. Disable/enable with explicit operation; state is not template.
 - [ ] Duplicate uses existing draft controller with a new destination; no source mutation. Library
-      removal needs a narrowly scoped explicit tombstone operation if current store lacks it: retain
+      removal uses a narrowly scoped explicit head-removal operation with an archived original: retain
       versions/grants/recovery, use existing P03 receipt and test both families; never hard-delete copies.
 - [ ] Test EN/IT, original-base retention, ABA, offline no replay, lost response/reload, storage failure.
 - [ ] Reconcile DESIGN, Architecture/Mechanics/schema links; focused green, changeset, commit.

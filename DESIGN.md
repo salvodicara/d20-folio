@@ -3259,3 +3259,13 @@ palette, `?` opens the keyboard reference, and bug/idea reporting opens from the
 the same complete, bilingual form on desktop and mobile. Visual verification must drive these tools
 through their visible localized product path; an English-only shortcut in a harness is not evidence
 that the Italian interaction works.
+
+## V2 P06 authoring and campaign reuse
+
+Monster and campaign-rule editing retain the approved Astra creation workbench and r2 shell.
+Descriptor groups and nested ordered declarations extend its depth. Stable versions feed the
+Bestiary view and explicit campaign reuse; copies show source/version separately from editable
+preparation state. Campaign rules expose activation and dependency conflicts. Unknown data remains
+available in the common reader/print, and source removal archives a recoverable original first.
+The detailed behavior belongs to [homebrew authoring](docs/homebrew-authoring.md) and
+[campaign preparation](docs/homebrew-preparation.md); no combat simulation is embedded in an editor.
