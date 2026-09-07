@@ -1,9 +1,43 @@
 # Program Status
 
-## Current frontier — P02 new application, shell/Account r2 (2026-09-07)
+## Current frontier — P02 closed; P03 selected, not started (2026-09-07)
 
-Owner: Astra. P02 is OPEN. P03 must not start. This section is the sole current
-execution record; the ledger below is retained history of the previous program.
+Owner: Astra. P02 is CLOSED. The owner explicitly authorized the separate V2 integration
+after approving the runtime screenshots: “Okay si, ma come avevo detto io vorrei che ogni
+sessione terminasse solo quando e' davvero finita e con il prompt per la prossima”.
+The session must finish its authorized work and gates before delivering one complete successor
+prompt. That prompt does not execute the next block in this session.
+
+Fresh `git fetch origin main v2` confirmed V2 at
+`24d9fbf6ae23e4e6844d70e9cf7152bb0e389ba2`. `git rebase origin/v2` was a no-op.
+Explicit `git push origin HEAD:v2` succeeded with hooks; `git ls-remote` verified the integrated
+candidate `b5edf2a7faf69631ef296f7a6967313e0088ebd7`. Main remains
+`9b06b75313d7ee353c4072a20397c3092707648e`. This closing receipt changes documentation only;
+its final remote SHA and task-worktree cleanup receipt are recorded in the external HANDOFF.
+
+The integrated runtime remains byte-identical to approved `c7eed6c4`: 102 image hashes and
+19 captured runtime source hashes verified. Fresh pre-integration gates on `1159e422` passed:
+just ci (858 app files/19,215 tests; 7 Functions files/129 tests; typecheck/lint/build/PWA) and
+dedicated demo-d20folio rules (6 files/168 tests), no skips. Subsequent commits only record
+approval, preflight and closure. Pack/SRD seam unchanged; ci-srd-only not rerun. Existing
+browser/migration and independent review receipts retain their original scope, not a new run.
+No unresolved P02 technical, visual or integration gate remains. No deployment or real migration.
+
+P00 A/B/C and P01 documentary completion remain established prerequisites; P01's retained
+candidate is `908dfbd19356015ee6f8308a06042c9ce429d393`, not a separate integration receipt.
+The approved AGENT-PROGRAM selects **P03 — shared state and offline** next because P02 is closed.
+P03 is NOT STARTED. Its bounded outcome is stable opId/intentId across retry, actual scope/lease
+epoch/version comparison, atomic commit and explicit pending/ack/conflict/invalidation on the
+new V2 model, verified with two clients and no duplicate application. `basedOn` is not CAS.
+No legacy adapter, engine or second runtime is mandatory; do not build a bridge. P09 complete
+shell, P15 dice consumption and P27 installed-PWA/services remain with their assigned blocks.
+All binding Product decisions and downstream depth obligations remain unchanged and must appear
+in the complete next-session prompt. Do not execute P03 during P02 closure.
+
+## Historical P02 execution — new application, shell/Account r2 (2026-09-07)
+
+The records below describe their original candidates and gates. The current frontier above
+supersedes their pending/open status and integration restrictions; preserve the evidence history.
 
 Fresh preflight on 2026-09-06: clean long-lived V2 invoker and origin/v2 both
 `24d9fbf6ae23e4e6844d70e9cf7152bb0e389ba2` after `git fetch origin main v2`.

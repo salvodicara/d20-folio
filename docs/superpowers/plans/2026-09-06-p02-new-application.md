@@ -11,6 +11,11 @@ Stack: pinned Node 24.16.0/pnpm 11.2.2, React/TypeScript/Firebase and current te
 
 ## Global constraints
 
+P02 completion and integration are recorded in PROGRAM_STATUS. The owner accepted the r2 runtime
+and subsequently authorized V2 integration; all required exits are satisfied. Historical open
+checkboxes and prohibitions below retain their original scope. P03 is selected for the next
+session only and is not executed by this plan.
+
 V2 is a completely new application. The approved Astra mock 0.9.3 is binding; prior code/tests/
 screenshots are diagnostic only. BG3 transferable behavior and D&D 2024 remain mandatory.
 No legacy combat bridge, production writes, real migrations, deployment or new costs.
