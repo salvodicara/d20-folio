@@ -1,6 +1,43 @@
 # Program Status
 
-## Current frontier — P02 closed; P03 selected, not started (2026-09-07)
+## Current frontier — P03 awaiting owner verdicts (2026-09-07)
+
+Owner: Astra, sole implementation writer in isolated codex/p03-shared-offline-20260907,
+/Users/salvatoredicara/Workspace/Codex/d20-folio-p03-shared-offline, from fresh origin/v2
+7d4c0a14edf0cc0069448dccd0cde4eb82d6ec36. Clean detached p03-control invoker verified.
+P02 remains closed. P03 autonomous implementation and acceptance work are complete; P03
+remains OPEN only for owner approval of its runtime images and explicit per-change V2
+integration permission, followed by the integration/cleanup receipt. P02 permission does
+not authorize this integration. No successor prompt before actual P03 closure.
+
+Runtime candidate 89b386a8 follows core 311cfbbc and UI e3b7dc42. Final pinned Node24.16.0 /
+pnpm11.2.2 just ci passed: 861 app files / 19,228 tests, 7 Functions files / 129 tests,
+typecheck, lint, build and PWA. Full owned demo-cluster rules passed 7 files / 183 tests,
+including six private fixture COPIES, idempotence and exact original recovery. No full-gate
+skips. Public/pack seam unchanged; ci-srd-only not rerun. Historical diagnostic failures are
+preserved externally and do not certify this candidate.
+
+Independent actual-diff review closed receipt forgery, offline recovery, persisted scope
+invalidation, late-ack revision and assignment recovery findings. A final real-browser finding
+was corrected: a departed roster label clears locally without expelling the still-authorized
+DM or dropping its draft; real campaign authority revocation still invalidates the session.
+Focused red/green, consumer regression and full gates verify it. No open concrete code finding.
+
+Actual two-client browser evidence covers competing bases, duplicate submit, real commit with
+lost response, timeout/receipt reconciliation, late response after scope invalidation,
+offline/reconnect and retained drafts, assignment/release, active versus inspected PC, and
+membership revocation before the held commit reaches the server (403, invalidated, no replay).
+Independent visual review examined the new EN/IT dark 1440x900/1280x800/390x844 state matrix
+against approved full-lab0.9.3 and shell/Account r2. Owner visual approval remains separate.
+Assignment epoch is not a future Encounter lease; P27 retains full installed-PWA recovery.
+
+Spec/plan: docs/superpowers/{specs,plans}/2026-09-07-p03-shared-offline\*.md.
+No integration, deploy, real-data migration, cost or P04 authorized. Origin/main remains
+9b06b75313d7ee353c4072a20397c3092707648e. Exact commands, logs, review scope, source/image hashes,
+service ownership and final local SHA are in external d20-folio-p03-evidence/HANDOFF.md and
+provenance.json. Preserve the clean topic until the owner's two verdicts.
+
+## Historical P02 closure — P03 selected, not started (2026-09-07)
 
 Owner: Astra. P02 is CLOSED. The owner explicitly authorized the separate V2 integration
 after approving the runtime screenshots: “Okay si, ma come avevo detto io vorrei che ogni
