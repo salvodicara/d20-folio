@@ -223,8 +223,9 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
       "versatileFormula",
       "versatile-property"
     );
+    const versatileBounds = formulaBounds(d.versatileFormula);
     check(
-      d.propertyVersatile && !formulaBounds(d.versatileFormula),
+      d.propertyVersatile && (!versatileBounds || versatileBounds.min < 0),
       "versatileFormula",
       "versatile-formula"
     );

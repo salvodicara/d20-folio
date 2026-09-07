@@ -15,7 +15,8 @@ are prose only. Conformance is representation/dependency validation, never engin
 The finite formula language accepts nonnegative constants through 100000, or 1–100 dice with
 2–1000 sides followed by an optional +/- constant through 100000. It calculates mathematical
 bounds only. No random draw, eval, scripts, prose parsing, nested programs or effect execution
-exists. Damage/healing and recovery reject negative minima. Effects have an explicit ordered
+exists. Damage/healing (including versatile weapon damage) and recovery reject negative minima;
+a zero minimum remains representable. Effects have an explicit ordered
 kind, formula, damage/condition type, target, resolution gate, duration, stacking declaration
 and source identity. There is a maximum of 32 effects. Stacking and frequency describe intent;
 they do not implement event mechanics, Counterspell or temporary-HP replacement.

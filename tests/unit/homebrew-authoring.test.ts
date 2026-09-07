@@ -328,3 +328,14 @@ it("represents physical distances consistently in meters including fractional sq
   expect(codes(definition("spell", { level: 1.5 }))).toContain("invalid-number");
   expect(codes(definition("feature", { maxUses: 1.5 }))).toContain("invalid-number");
 });
+
+it("rejects versatile damage formulas with a negative minimum while permitting zero", () => {
+  expect(
+    codes(definition("weapon", { propertyVersatile: true, versatileFormula: "1d6-2" }))
+  ).toContain("versatile-formula");
+  expect(
+    conformDefinition(
+      definition("weapon", { propertyVersatile: true, versatileFormula: "1d6-1" })
+    )
+  ).toEqual([]);
+});
