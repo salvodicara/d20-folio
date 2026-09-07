@@ -1,6 +1,6 @@
 # Program Status
 
-## Current frontier — P04 owner acceptance pending (2026-09-07)
+## Current frontier — P04 integration authorized (2026-09-07)
 
 Owner/writer: Astra, isolated codex/p04-library-versions-20260907 at
 /Users/salvatoredicara/Workspace/Codex/d20-folio-p04-library-versions.
@@ -10,11 +10,13 @@ Fresh origin/v2 and clean detached p04-control were verified at
 Pinned Node24.16.0/pnpm11.2.2 bootstrap completed; read-only V2 pack b6073dd0 is clean,
 with the nested content-pack target verified. Shared checkout and other worktrees are preserved.
 
-P02/P03 remain closed. P04 autonomous implementation and acceptance verification are complete;
-P04 remains OPEN for owner approval of its actual runtime images and explicit per-change V2
-integration, followed by fresh integration and cleanup receipts. P03 approval does not grant
-these verdicts. No successor prompt before actual P04 closure. Only P04 is authorized;
-no deploy, production data, cost, main push or P05.
+P02/P03 remain closed. The owner approved the shown P04 runtime and explicit V2 integration:
+“Sì … per me va bene finché continui a implementare i mock … possiamo proseguire.” The same
+message makes a repeatable real-application verification loop fundamental; PRODUCT owns that
+requirement and CONTRIBUTING owns its procedure. P04 is OPEN only for the authorized fresh
+preflight, integration and cleanup receipts. Fresh fetch found V2 unchanged and rebase was a
+no-op. No successor prompt before actual closure, no P05 execution, main push or deploy.
+The optimized-build emulator replay is being added to preflight; no outcome is claimed yet.
 
 Final composed just ci exited 0: 865 application files / 19,254 tests, seven Functions files /
 129 tests, typecheck, lint, build and PWA. Full explicit demo rules exited 0: eight files /

@@ -34,6 +34,55 @@ The user must keep playing on production until V2 is complete, player-data migra
 and the owner authorizes the switch. [PRODUCT](../PRODUCT.md) owns this continuity requirement;
 [RELEASE](RELEASE.md) owns deployment procedure, never implicit authorization.
 
+## V2 runtime verification loop
+
+For each bounded block, apply PRODUCT's runtime verification requirement to the current candidate.
+The loop is: reproduce a real user journey → inspect UI and authoritative data → retain the failure
+→ fix its cause with a focused regression → rerun the affected journey → complete final gates.
+Do not advance with an unexplained console error, failed assertion or unverified stored effect.
+
+1. Identify candidate SHA, rules/configuration hashes, dependency/toolchain versions, private pack
+   target and scenario/role coverage. Use an isolated task directory and synthetic accounts; inspect
+   service ownership and choose unused loopback ports. Never reuse production credentials or clear
+   a cluster owned by another task. Keep a dedicated rules-test cluster if tests reset its database.
+2. Start explicit `demo-` Firebase emulators with the candidate's actual rules. Configure the app
+   with `VITE_USE_EMULATORS=true`, the same demo project and verified Auth/Firestore/Storage ports.
+   Enable and verify any additional emulated service the journey actually uses. Seeding may create
+   fixtures; required user consent and transitions must occur through authenticated application UI.
+3. Use the pinned bootstrap for `just ci` and, after the build completes, serve `dist` with
+   `pnpm exec vite preview --host 127.0.0.1 --port <owned-port> --strictPort`. This exercises optimized
+   application modules rather than only Vite development modules. Use new browser profiles or
+   verify cache/service-worker provenance so old assets cannot certify a new candidate.
+4. Run actual browser interactions as independent owner, recipient, DM or other relevant accounts.
+   Include ordinary/boundary flows, unauthorized access, concurrent edits, offline/reconnect,
+   timeout after a real successful commit, exact receipt recovery, duplicate attempts and revoked
+   authority where relevant. Fault injection may delay/drop a real response; it must not fabricate
+   successful backend responses or skip a required user action. Assert stored results as well as UI.
+5. Preserve scripts, deterministic fixture setup, exact commands/exit codes, screenshots, browser
+   errors and read-only data audits under the stable external evidence directory. Parameterize or
+   record worktree, ports and fixture prerequisites so another clean topic can repeat the run.
+   Capture EN/IT dark desktop/phone states and compare affected states with the approved mock.
+6. Diagnose a failure before editing code. Add a meaningful focused regression where appropriate,
+   rerun it, rebuild if runtime changes, and rerun the failing journey plus affected neighbors.
+   Keep failed attempts as failed evidence. Finish with `just ci`, applicable full demo rules and
+   SRD-only when the seam changes, independent actual review and required owner image approval.
+
+### Fidelity boundaries
+
+An optimized local build plus SDK/emulator traffic proves the tested client/rules/data paths. It
+is not an exact production environment. Firestore emulator transaction behavior differs, composite
+indexes are not enforced there, and some production limits are not enforced. Auth emulation also
+differs from real token/provider behavior. See the official
+[Firestore emulator differences](https://firebase.google.com/docs/emulator-suite/connect_firestore#how_the_cloud_firestore_emulator_differs_from_production)
+and [Auth emulator differences](https://firebase.google.com/docs/emulator-suite/connect_auth#how_the_authentication_emulator_differs_from_production).
+
+Keep a concrete gap list for the block: required indexes, real provider/App Check/IAM, hosting
+headers/routing/HTTPS, deployed service configuration, performance/quotas and installed-PWA/device
+lifecycle as relevant. Check local configuration where possible; the remaining claims require
+separately authorized staging/release verification. A local `vite preview` does not validate Firebase
+Hosting headers. P27 retains installed-PWA recovery and P28–30 retain their acceptance/release gates;
+early local tests neither close them nor defer defects in the current block to them.
+
 ## First-time setup
 
 ```bash

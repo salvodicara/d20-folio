@@ -10,6 +10,20 @@ approved direction. This prioritization does not reduce functional depth, correc
 privacy, data recovery or the verified delivery contract. Execution permissions and receipts
 belong only in docs/PROGRAM_STATUS.md. Propagate this priority in subsequent plans and prompts.
 
+## Owner runtime verification requirement — 7 September 2026
+
+Every implementation block must iterate on the actual current application: exercise its user
+journeys, inspect UI and persisted effects, reproduce failures, fix them, and rerun affected
+scenarios until verified. Include independent authenticated clients and failure/recovery paths
+where shared state is involved. Exercise the optimized build against explicit Firebase demo
+emulators as well as focused tests; simulated success and screenshots alone are insufficient.
+Keep this loop repeatable and carry it into subsequent prompts. The operational procedure belongs
+to docs/CONTRIBUTING.md; execution evidence belongs to docs/PROGRAM_STATUS.md and its handoff.
+
+Aim for production fidelity without claiming exact equivalence. Document emulator and environment
+gaps and verify them in the separately authorized staging/release gates before switching users.
+Local emulator acceptance never authorizes deployment, production writes or new cost.
+
 ## Owner rectification — new V2 application, 6 September 2026
 
 V2 is a completely new application. The binding experience reference is Astra's approved
