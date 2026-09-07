@@ -14,7 +14,8 @@ import {
   type Firestore,
 } from "firebase/firestore";
 import { SessionController } from "../../src/lib/identity/session";
-import { blankDefinition, type LibraryVersion } from "../../src/lib/library/model";
+import type { LibraryVersion } from "../../src/lib/library/model";
+import { initializeDefinition } from "../../src/lib/homebrew/model";
 import { createInstanceRepository } from "../../src/lib/homebrew/instance-repository";
 import {
   materializeInstance,
@@ -43,7 +44,7 @@ const version: LibraryVersion = {
   ownerUid: "owner",
   entryId: "blade",
   version: 1,
-  definition: { ...blankDefinition("weapon"), name: "Blade" },
+  definition: { ...initializeDefinition("weapon"), name: "Blade" },
   provenance: null,
   operationId: "publish",
 };
@@ -381,4 +382,90 @@ it("reload reconciles a persisted exact receipt without authorizing replay", asy
   const missing = a.repo.addIntent(character, version, undefined, "absent");
   expect(await reloaded.repo.reconcile(missing)).toBeNull();
   await expect(reloaded.repo.commit(missing)).rejects.toThrow("stale-session");
+});
+
+it("rejects unconfigured additions and invalid typed updates at the repository boundary", async () => {
+  const a = client();
+  const unconfigured: LibraryVersion = {
+    ...version,
+    definition: { ...version.definition, payload: { schema: 1, data: {} } },
+  };
+  expect(() => a.repo.addIntent(character, unconfigured)).toThrow("invalid-operation");
+  await a.repo.commit(a.repo.addIntent(character, version, undefined, "copy"));
+  const base = required((await a.repo.list(character))[0]);
+  const invalid: LibraryVersion = {
+    ...version,
+    version: 2,
+    definition: {
+      ...version.definition,
+      payload: {
+        schema: 1,
+        data: { ...version.definition.payload.data, damageFormula: "not-a-formula" },
+      },
+    },
+  };
+  expect(() => a.repo.updateIntent(character, base, invalid)).toThrow(
+    "invalid-operation"
+  );
+  expect(await a.repo.list(character)).toEqual([base]);
+});
+it("commits unsupported definitions and personal-state edits of old invalid copies", async () => {
+  const a = client();
+  const unknown: LibraryVersion = {
+    ...version,
+    version: 3,
+    definition: {
+      ...version.definition,
+      payload: {
+        schema: 1,
+        data: { authoringVersion: 2, futureProgram: { rules: ["manual"] } },
+      },
+    },
+  };
+  const old = materializeInstance(
+    character,
+    "old",
+    {
+      ...version,
+      definition: { ...version.definition, payload: { schema: 1, data: {} } },
+    },
+    DEFAULT_INSTANCE_STATE,
+    1,
+    { uid: "owner", opId: "old-add" }
+  );
+  await env.withSecurityRulesDisabled(async (c) => {
+    await setDoc(
+      doc(c.firestore(), "folioAccounts/owner/library/blade/versions/3"),
+      unknown
+    );
+    await setDoc(doc(c.firestore(), instancePath(character, "old")), old);
+  });
+  await a.repo.commit(a.repo.addIntent(character, unknown, undefined, "future"));
+  await a.repo.commit(
+    a.repo.stateIntent(character, old, { ...DEFAULT_INSTANCE_STATE, remainingCharges: 2 })
+  );
+  const saved = await a.repo.list(character);
+  expect(saved.find((i) => i.id === "future")?.snapshot).toEqual(unknown);
+  expect(saved.find((i) => i.id === "old")?.state.remainingCharges).toBe(2);
+  expect(saved.find((i) => i.id === "old")?.snapshot).toEqual(old.snapshot);
+});
+it("rechecks conformance at commit before writing a previously prepared intent", async () => {
+  const a = client(),
+    op = a.repo.addIntent(character, version, undefined, "bad");
+  const unconfigured: LibraryVersion = {
+    ...version,
+    version: 3,
+    definition: { ...version.definition, payload: { schema: 1, data: {} } },
+  };
+  await env.withSecurityRulesDisabled((c) =>
+    setDoc(
+      doc(c.firestore(), "folioAccounts/owner/library/blade/versions/3"),
+      unconfigured
+    )
+  );
+  await expect(a.repo.commit({ ...op, snapshot: unconfigured })).rejects.toThrow(
+    "invalid-operation"
+  );
+  expect(await a.repo.list(character)).toEqual([]);
+  expect((await getDoc(doc(a.db, receiptPath(op)))).exists()).toBe(false);
 });
