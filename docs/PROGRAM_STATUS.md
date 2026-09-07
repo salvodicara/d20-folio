@@ -1,6 +1,34 @@
 # Program Status
 
-## Current frontier — P03 integration authorized (2026-09-07)
+## Current frontier — P03 closed; P04 selected, not started (2026-09-07)
+
+Owner: Astra. P03 is CLOSED: implementation, independent code/visual reviews, actual two-client
+acceptance and owner screenshot/V2 integration verdicts are complete. PRODUCT owns the new
+priority to implement the complete mock and all planned functionality before fine polishing.
+
+Fresh origin/v2 was 7d4c0a14edf0cc0069448dccd0cde4eb82d6ec36; rebase was a no-op. Explicit
+hooked HEAD:v2 push succeeded and git ls-remote verified abc58d483f756aae0b89dc68d1a1b882a17eea0b.
+Origin/main remains 9b06b75313d7ee353c4072a20397c3092707648e. This closure receipt changes only
+documentation and its changeset; its final remote SHA and owned-worktree cleanup receipt are
+recorded in external d20-folio-p03-evidence/HANDOFF.md and integration-preflight/RECEIPT.md.
+
+Pre-integration pinned just ci exited 0: 861 app files / 19,228 tests, 7 Functions files /
+129 tests, typecheck/lint/build/PWA. Dedicated demo-cluster rules exited 0: 7 files / 183 tests,
+including the six fixture copies and exact original recovery. No skips. Runtime remains
+89b386a8b3319ed4b3ff06b0e0585e7f08e5c65f; 20 captured source/test hashes and 51 retained image
+hashes verified. Later commits only record acceptance, owner priority/approval and closure.
+Browser and independent review evidence retains its stated scope. Public/pack seam unchanged;
+ci-srd-only not rerun. Owned runtime/mock/emulators stopped; unrelated Firestore8080 preserved.
+No deploy, production migration, cost, main push or next-block execution occurred.
+
+AGENT-PROGRAM selects P04 — Library and versions as the first incomplete row with P02–03
+closed. P04 is NOT STARTED. Its bounded outcome is the eleven-family library contract,
+loaded autosave, template/instance and version/provenance, recipient-owned offer acceptance
+and materialization with receipt, and revocation that preserves granted copies. P24 reuses
+that contract; P05–08 retain their editors. Deliver the full recursive successor prompt only
+after the final remote and cleanup receipts are verified. Do not execute P04 in this session.
+
+## Historical P03 integration authorization
 
 The owner answered the explicit screenshot-and-V2-integration question: “per me va tutto bene,
 implementa il mockup, tutto quanto” and asked to defer fine details until the whole plan is
