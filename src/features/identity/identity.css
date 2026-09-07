@@ -1358,3 +1358,15 @@
 .identity-dice-preference input {
   color-scheme: light;
 }
+
+.identity-operation-status {
+  color: var(--identity-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.identity-note-comparison {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 220px;
+  overflow: auto;
+}

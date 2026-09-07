@@ -409,6 +409,19 @@
     "closeDialog": "Close the dialog",
     "searchScope": "Search the available sections, your characters and your campaigns.",
     "searchEmpty": "No results. Try another name.",
-    "campaignNavigation": "$t(identity.campaign)"
+    "campaignNavigation": "$t(identity.campaign)",
+    "operationCheck": "Check save",
+    "operationReview": "Review changes",
+    "operationOffline": "Offline. Your draft stays on this device; no remote save is confirmed.",
+    "operationLoadError": "Unable to check the saved version. Reconnect to try again.",
+    "operationpending": "Waiting for confirmation…",
+    "operationunknown": "Save not confirmed. Check before trying again.",
+    "operationacknowledged": "Saved.",
+    "operationconflict": "The saved version changed. Your draft is preserved; review it before saving again.",
+    "operationrejected": "This save was refused. Your draft is preserved.",
+    "operationinvalidated": "The context changed. This request can no longer be sent.",
+    "operationDraft": "Unsaved draft on this device.",
+    "operationLatest": "Latest saved version",
+    "operationEmpty": "No text."
   }
 }

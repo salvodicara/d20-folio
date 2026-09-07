@@ -183,6 +183,14 @@ The comparison matrix is dark EN/IT at 1440×900 and 1280×800, plus relevant 39
 Only actual runtime images and the identified approved reference may support its visual gate;
 PROGRAM_STATUS records the evidence and verdict, not this design contract.
 
+P03 uses those note editors and assignment dialogs to expose real save states. A pending
+save waits for remote confirmation; an unknown result offers Check save using the same
+intent. Conflict retains the draft and presents the latest saved note, then Review changes
+prepares a new explicit save. Offline text editing never claims remote success. Revoked or
+changed context retains an invalidated draft without replay. Status is adjacent to the
+action, announced through a live region and localized in EN/IT. Long comparison text wraps
+and scrolls within the editor. No extra shell, technical IDs or motion/shortcut switches.
+
 ## Owner rectification — 6 September 2026
 
 [PRODUCT.md](PRODUCT.md) owns the binding new-application decision: Astra's approved full-lab

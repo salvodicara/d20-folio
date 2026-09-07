@@ -73,8 +73,9 @@ export interface IdentityWorkspaceProps {
   onRevoke: (campaignId: string, uid: string) => Promise<void>;
   onSignOut: () => Promise<void>;
   onSaveProfile: (name: string, locale: "en" | "it") => Promise<void>;
-  onSaveNotes?: (text: string) => Promise<void>;
-  onSaveDmNotes?: (text: string) => Promise<void>;
+  assignmentEditor?: (id: string, onDone: () => void) => ReactNode;
+  privateNoteEditor?: ReactNode;
+  dmNoteEditor?: ReactNode;
   onImport?: (source: string) => Promise<void>;
   onRecover?: (id: string) => Promise<void>;
   onRetry: () => void;
@@ -103,7 +104,6 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
   } | null>(null);
   const [joinIds, setJoinIds] = useState<string[]>([]);
   const [assignment, setAssignment] = useState<string | null>(null);
-  const [destination, setDestination] = useState("");
   const [newCampaign, setNewCampaign] = useState(false);
   const [campaignName, setCampaignName] = useState("");
   const [revokeUid, setRevokeUid] = useState<string | null>(null);
@@ -520,7 +520,6 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
                       <button
                         onClick={() => {
                           setAssignment(c.id);
-                          setDestination(c.currentAssignment?.campaignId ?? "");
                         }}
                       >
                         {label("manageCampaign")}
@@ -758,15 +757,7 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
                       </li>
                     ))}
                   </ul>
-                  {campaign.dmUid === p.uid && p.onSaveDmNotes && (
-                    <NotesEditor
-                      key={`dm-${campaign.id}`}
-                      value={p.dmNotes ?? ""}
-                      title={label("dmNotes")}
-                      onSave={p.onSaveDmNotes}
-                      busy={p.busy}
-                    />
-                  )}
+                  {campaign.dmUid === p.uid && p.dmNoteEditor}
                 </section>
               </div>
             ) : (
@@ -898,40 +889,7 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
         assignment !== null,
         () => setAssignment(null),
         label("manageCampaign"),
-        <form
-          onSubmit={(event) =>
-            submit(event, async () => {
-              if (assignment) {
-                if (destination) await p.onAssign(assignment, destination);
-                else await p.onRelease(assignment);
-                setAssignment(null);
-              }
-            })
-          }
-        >
-          <p>{label("assignmentIntro")}</p>
-          <label>
-            {label("campaign")}
-            <select value={destination} onChange={(e) => setDestination(e.target.value)}>
-              <option value="">{label("independent")}</option>
-              {p.campaigns
-                .filter((c) => !c.archived)
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-            </select>
-          </label>
-          <div className="identity-actions">
-            <button className="identity-primary" disabled={p.busy}>
-              {label("saveAssignment")}
-            </button>
-            <button type="button" onClick={() => setAssignment(null)}>
-              {label("cancel")}
-            </button>
-          </div>
-        </form>
+        assignment ? p.assignmentEditor?.(assignment, () => setAssignment(null)) : null
       )}
       {modal(
         newCampaign,
@@ -1007,15 +965,7 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
               {label("level", { level: p.inspected.level })}
             </p>
             <IdentitySheet character={p.inspected} />
-            {p.inspected.ownerUid === p.uid && p.onSaveNotes && (
-              <NotesEditor
-                key={`private-${p.inspected.id}`}
-                value={p.privateNotes ?? ""}
-                title={label("privateNotes")}
-                onSave={p.onSaveNotes}
-                busy={p.busy}
-              />
-            )}
+            {p.inspected.ownerUid === p.uid && p.privateNoteEditor}
             <div className="identity-actions">
               <button onClick={p.onClearInspection}>{label("close")}</button>
               {p.inspected.ownerUid === p.uid && p.onRecover && (
@@ -1032,42 +982,5 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
         )
       )}
     </div>
-  );
-}
-
-function NotesEditor({
-  value,
-  title,
-  onSave,
-  busy,
-}: {
-  value: string;
-  title: string;
-  onSave: (text: string) => Promise<void>;
-  busy: boolean;
-}) {
-  const { t } = useTranslation("common");
-  const [draft, setDraft] = useState<string | null>(null);
-  return (
-    <form
-      className="identity-notes"
-      onSubmit={(e) => {
-        e.preventDefault();
-        void onSave(draft ?? value)
-          .then(() => setDraft(null))
-          .catch(() => {});
-      }}
-    >
-      <label>
-        {title}
-        <textarea
-          disabled={busy}
-          value={draft ?? value}
-          maxLength={20000}
-          onChange={(e) => setDraft(e.target.value)}
-        />
-      </label>
-      <button disabled={busy || draft === null}>{t("identity.saveNotes")}</button>
-    </form>
   );
 }

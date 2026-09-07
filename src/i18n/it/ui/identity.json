@@ -409,6 +409,19 @@
     "closeDialog": "Chiudi il dialogo",
     "searchScope": "Cerca nelle sezioni disponibili, nei tuoi personaggi e nelle tue campagne.",
     "searchEmpty": "Nessun risultato. Prova un altro nome.",
-    "campaignNavigation": "La campagna"
+    "campaignNavigation": "La campagna",
+    "operationCheck": "Verifica salvataggio",
+    "operationReview": "Rivedi modifiche",
+    "operationOffline": "Sei offline. La bozza resta su questo dispositivo; nessun salvataggio remoto è confermato.",
+    "operationLoadError": "Non riesco a verificare la versione salvata. Riconnettiti per riprovare.",
+    "operationpending": "In attesa di conferma…",
+    "operationunknown": "Salvataggio non confermato. Verifica prima di riprovare.",
+    "operationacknowledged": "Salvato.",
+    "operationconflict": "La versione salvata è cambiata. La tua bozza è conservata: rivedila prima di salvare.",
+    "operationrejected": "Salvataggio rifiutato. La tua bozza è conservata.",
+    "operationinvalidated": "Il contesto è cambiato. Questa richiesta non può più essere inviata.",
+    "operationDraft": "Bozza non salvata su questo dispositivo.",
+    "operationLatest": "Ultima versione salvata",
+    "operationEmpty": "Nessun testo."
   }
 }

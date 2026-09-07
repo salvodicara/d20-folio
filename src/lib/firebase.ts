@@ -73,8 +73,20 @@ export const functions = getFunctions(app, "europe-west1");
 
 // Connect to emulators in development
 if (useEmulators) {
-  connectAuthEmulator(auth, "http://localhost:9099", { disableWarnings: true });
-  connectFirestoreEmulator(db, "localhost", 8080);
-  connectStorageEmulator(storage, "localhost", 9199);
+  connectAuthEmulator(
+    auth,
+    "http://127.0.0.1:" + String(import.meta.env.VITE_AUTH_EMULATOR_PORT || "9099"),
+    { disableWarnings: true }
+  );
+  connectFirestoreEmulator(
+    db,
+    "127.0.0.1",
+    Number(import.meta.env.VITE_FIRESTORE_EMULATOR_PORT || 8080)
+  );
+  connectStorageEmulator(
+    storage,
+    "127.0.0.1",
+    Number(import.meta.env.VITE_STORAGE_EMULATOR_PORT || 9199)
+  );
   connectFunctionsEmulator(functions, "localhost", 5001);
 }

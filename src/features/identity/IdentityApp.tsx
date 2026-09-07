@@ -1,3 +1,6 @@
+import { SharedAssignment } from "./SharedAssignment";
+import { SharedNotes } from "./SharedNotes";
+import { createSharedRepository } from "@/lib/shared/repository";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   GoogleAuthProvider,
@@ -124,7 +127,7 @@ function IdentityLogin() {
 }
 
 function AuthenticatedIdentity({ user }: { user: User }) {
-  const { i18n } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const appliedLocale = useRef(false);
   const [session] = useState(() => {
     const value = new SessionController();
@@ -132,6 +135,7 @@ function AuthenticatedIdentity({ user }: { user: User }) {
     return value;
   });
   const repository = useMemo(() => createIdentityRepository(db, session), [session]);
+  const shared = useMemo(() => createSharedRepository(db, session), [session]);
   const [epoch, setEpoch] = useState(0);
   const [viewGeneration, setViewGeneration] = useState(0);
   const [page, setPage] = useState<IdentityPage>("account");
@@ -404,6 +408,19 @@ function AuthenticatedIdentity({ user }: { user: User }) {
         setInspectionRef(ref);
       }}
       onClearInspection={clearInspection}
+      assignmentEditor={(id, onDone) => {
+        const character = characters.find((c) => c.id === id);
+        return character ? (
+          <SharedAssignment
+            key={id}
+            character={character}
+            campaigns={campaigns}
+            repository={shared}
+            session={session}
+            onDone={onDone}
+          />
+        ) : null;
+      }}
       onAssign={(id, campaignId) => run(() => repository.assign(id, campaignId))}
       onRelease={(id) => run(() => repository.release(id))}
       onReadInvite={(id) =>
@@ -449,15 +466,33 @@ function AuthenticatedIdentity({ user }: { user: User }) {
         }
       }}
       onSaveProfile={(displayName) => run(() => repository.saveAccount({ displayName }))}
-      onSaveNotes={(text) =>
-        run(async () => {
-          if (inspectionRef) await repository.savePrivateNotes(inspectionRef, text);
-        })
+      privateNoteEditor={
+        inspectionRef?.ownerUid === user.uid ? (
+          <SharedNotes
+            key={inspectionRef.id}
+            repository={shared}
+            session={session}
+            target={{
+              kind: "personal",
+              ownerUid: user.uid,
+              characterId: inspectionRef.id,
+            }}
+            title={t("identity.privateNotes")}
+            value={privateNotes}
+          />
+        ) : null
       }
-      onSaveDmNotes={(text) =>
-        run(async () => {
-          if (scope.campaignId) await repository.saveDmNotes(scope.campaignId, text);
-        })
+      dmNoteEditor={
+        scope.campaignId ? (
+          <SharedNotes
+            key={scope.campaignId}
+            repository={shared}
+            session={session}
+            target={{ kind: "dm", campaignId: scope.campaignId }}
+            title={t("identity.dmNotes")}
+            value={dmNotes}
+          />
+        ) : null
       }
       onImport={(source) =>
         run(async () => {
