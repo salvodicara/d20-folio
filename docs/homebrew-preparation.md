@@ -81,3 +81,5 @@ Version updates preserve current HP, temporary HP, conditions and resource amoun
 HP above the new maximum, resource amounts above a new capacity and resource IDs no longer declared,
 without clamping them. Resource identities share the authoring validator; defaults reject incompatible
 resource rows instead of filtering them out. These are preparation facts, not Encounter execution.
+
+Unit codec/intent tests mock the Firebase SDK; the demo rules suite independently exercises the real SDK and atomic storage boundary.

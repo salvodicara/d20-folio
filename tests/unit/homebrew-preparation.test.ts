@@ -1,6 +1,6 @@
 import { blankAdvancedRow } from "../../src/lib/homebrew/advanced";
 import { initializeDefinition } from "../../src/lib/homebrew/model";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { type LibraryVersion } from "../../src/lib/library/model";
 import {
   defaultPreparedState,
@@ -14,6 +14,8 @@ import { parseInstanceVersion } from "../../src/lib/homebrew/instances";
 import { SessionController } from "../../src/lib/identity/session";
 import { createPreparationRepository } from "../../src/lib/homebrew/preparation-repository";
 import type { Firestore } from "firebase/firestore";
+// These unit checks exercise only codecs and intent construction; real SDK I/O is covered by demo rules tests.
+vi.mock("firebase/firestore");
 const version: LibraryVersion = {
   schema: 1,
   ownerUid: "dm",
