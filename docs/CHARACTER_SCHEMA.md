@@ -620,3 +620,11 @@ version and addressed grant provenance. `LibraryInstance` keeps quantity, remain
 and prepared state separate from its pinned definition; explicit reference replacement preserves
 these values. The codec retains original incompatible serialized input and rejects attachments;
 asset materialization is outside P04. Full family editors remain P05–P08.
+
+The P04 persisted head stores `schema: 1`, owner and entry identities, draft revision,
+`stableVersion`, the complete draft definition, nullable provenance and last operation.
+Immutable versions pin the complete definition and provenance. Addressed offers use schema 2
+in `folioLibraryOffers`; recipient-owned grant receipts use schema 2 at
+`folioAccounts/{uid}/receipts/{senderUid}~{offerId}`. Historical schema-one offers cannot create
+new grants. Private source entry/version reads remain owner/admin only; copies retain their
+own immutable snapshots after revocation.

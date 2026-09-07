@@ -3855,3 +3855,26 @@ Two contracts keep this fast and leak-free under the free-tier NFR:
 
 Each work item gets a `.changeset/*.md` describing its bump (`pnpm changeset`); releases
 are minted via `pnpm changeset:version` + a `vX.Y.Z` git tag.
+
+### P04 account library and addressed copies
+
+`src/lib/library` owns the V2 common definition codec and Firestore repository. Private entry
+heads at `folioAccounts/{uid}/library/{id}` autosave draft revisions through the shared P03
+operation envelope and immutable receipt namespace. Explicit publication atomically records
+an immutable `versions/{number}` snapshot; a matching stable definition creates no duplicate.
+The existing generic OperationController handles unknown outcomes and exact receipt recovery.
+
+Addressed offers live in the dedicated `folioLibraryOffers/{id}` collection. Rules make the
+sender the sole writer and constrain recipient queries to addressed active snapshots. This
+physical location permits discovery without a recursive wildcard read grant. Acceptance
+reads current and post-commit offer authority and atomically writes only the recipient entry,
+version, deterministic grant receipt and P03 receipt. A new addressed offer plus explicit chosen
+existing copy is required to update a received definition. No grant receipt confers ongoing
+source access. Sender revocation changes only the offer; an already accepted copy survives.
+Historical P02 offer documents remain read-only asset authority, not a second runtime protocol.
+
+Session tickets fence async reads, subscriptions and transactions; minted intents retain their
+creation ticket across account A→B→A changes. Repository construction itself does not capture
+an epoch, so React StrictMode effect replay can restore a session safely. No reconnect replay
+or additional write queue is introduced. Common authoring payloads exclude attachments in
+this phase: a metadata copy cannot atomically materialize Storage bytes with Firestore writes.

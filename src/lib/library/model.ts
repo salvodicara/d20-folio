@@ -187,9 +187,8 @@ export function libraryPath(ref: LibraryRef) {
   return "folioAccounts/" + identityId(ref.ownerUid) + "/library/" + libraryId(ref.id);
 }
 export function offerPath(offer: Pick<LibraryOffer, "senderUid" | "id">) {
-  return (
-    "folioAccounts/" + identityId(offer.senderUid) + "/offers/" + identityId(offer.id)
-  );
+  identityId(offer.senderUid);
+  return "folioLibraryOffers/" + identityId(offer.id);
 }
 export function grantId(offer: Pick<LibraryOffer, "senderUid" | "id">) {
   return identityId(offer.senderUid) + "~" + identityId(offer.id);

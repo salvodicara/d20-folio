@@ -124,8 +124,8 @@ describe("administrator matrix", () => {
   it("supports immutable addressed offer administration and artwork while preserving source versions", async () => {
     const admin = db("admin"),
       path = "folioAccounts/owner/offers/gift";
-    await assertSucceeds(
-      setDoc(doc(admin, path), {
+    await env.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), path), {
         schema: 1,
         senderUid: "owner",
         recipientUid: "member",
@@ -153,7 +153,10 @@ describe("administrator matrix", () => {
         { contentType: "image/png" }
       )
     );
-    await assertSucceeds(updateDoc(doc(admin, path), { revoked: true }));
+    await assertFails(updateDoc(doc(admin, path), { revoked: true }));
+    await env.withSecurityRulesDisabled((ctx) =>
+      updateDoc(doc(ctx.firestore(), path), { revoked: true })
+    );
     await assertSucceeds(getBytes(art));
     await assertFails(getDoc(doc(db("member"), path)));
   });
@@ -417,49 +420,30 @@ describe("new identity direct ACL and assignment bypasses", () => {
     });
     await assertFails(getBytes(ref(env.authenticatedContext("dm").storage(), dp)));
   });
-  it("keeps addressed acceptance immutable and requires active exact source version at commit", async () => {
+  it("historical schema-one offers cannot create a new runtime grant", async () => {
     const source = "folioAccounts/owner/offers/gift";
-    await assertSucceeds(
-      setDoc(doc(db("owner"), source), {
-        schema: 1,
-        senderUid: "owner",
-        recipientUid: "member",
-        sourceId: "book",
-        sourceVersion: 2,
-        revoked: false,
-      })
+    const historical = {
+      schema: 1,
+      senderUid: "owner",
+      recipientUid: "member",
+      sourceId: "book",
+      sourceVersion: 2,
+      revoked: false,
+    };
+    await assertFails(setDoc(doc(db("owner"), source), historical));
+    await env.withSecurityRulesDisabled((c) =>
+      setDoc(doc(c.firestore(), source), historical)
     );
     await assertFails(getDoc(doc(db("other"), source)));
-    const receipt = "folioAccounts/member/receipts/owner~gift";
     await assertFails(
-      setDoc(doc(db("owner"), receipt), {
+      setDoc(doc(db("member"), "folioAccounts/member/receipts/owner~gift"), {
         senderUid: "owner",
         offerId: "gift",
         sourceId: "book",
         sourceVersion: 2,
       })
     );
-    await assertFails(
-      setDoc(doc(db("member"), receipt), {
-        senderUid: "owner",
-        offerId: "gift",
-        sourceId: "book",
-        sourceVersion: 1,
-      })
-    );
-    await assertSucceeds(
-      setDoc(doc(db("member"), receipt), {
-        senderUid: "owner",
-        offerId: "gift",
-        sourceId: "book",
-        sourceVersion: 2,
-      })
-    );
-    await assertFails(updateDoc(doc(db("member"), receipt), { sourceVersion: 3 }));
-    await assertSucceeds(updateDoc(doc(db("owner"), source), { revoked: true }));
-    await assertFails(getDoc(doc(db("member"), source)));
-    await assertSucceeds(getDoc(doc(db("member"), receipt)));
-    await assertFails(deleteDoc(doc(db("member"), receipt)));
+    await assertFails(updateDoc(doc(db("owner"), source), { revoked: true }));
   });
 });
 function repository(owner = "owner", campaignId: string | null = "camp") {
@@ -596,14 +580,16 @@ describe("identity revocation, offline and copy evidence", () => {
   it("getAfter source denies atomic revoke plus receipt and receipt IDs cannot be duplicated", async () => {
     const store = db("owner");
     const source = "folioAccounts/owner/offers/self";
-    await setDoc(doc(store, source), {
-      schema: 1,
-      senderUid: "owner",
-      recipientUid: "owner",
-      sourceId: "book",
-      sourceVersion: 1,
-      revoked: false,
-    });
+    await env.withSecurityRulesDisabled((c) =>
+      setDoc(doc(c.firestore(), source), {
+        schema: 1,
+        senderUid: "owner",
+        recipientUid: "owner",
+        sourceId: "book",
+        sourceVersion: 1,
+        revoked: false,
+      })
+    );
     const receipt = {
       senderUid: "owner",
       offerId: "self",
