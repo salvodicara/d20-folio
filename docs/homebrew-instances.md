@@ -46,3 +46,30 @@ Verification: focused parser tests and demo Firestore adversarial tests in
 `tests/rules/folio-homebrew.rules.test.ts`; P02/P03/P04 rules regressions run on the
 same owned demo cluster. Runtime UI acceptance and combined release gates belong
 to the integrating P05 task; these module tests do not claim deployment acceptance.
+
+## Sheet draft lifecycle
+
+`HomebrewSheet` retains a manual state's original instance snapshot and loaded
+character authority from the first edit. Session storage keys include the signed-in
+account, character owner, character ID and instance ID; two characters may reuse
+an instance ID without sharing drafts or operation recovery. A watch update never
+silently replaces a dirty draft's base. The sheet compares original/current/local
+state and requires explicit review of the latest instance and authority before
+issuing a fresh intent. A conflict response also requires that review even when a
+new watch snapshot has not arrived. The repository remains responsible for the
+final exact CAS check.
+
+Template comparison captures its own instance and character base. Checking or
+confirming an update is disabled while a manual draft is dirty, and confirmation
+is disabled if the compared base changes. Acknowledgment clears only the matching
+submitted state draft; template acknowledgment cannot erase another state edit.
+Reloaded unknown receipts preserve drafts until explicit reconciliation succeeds.
+Zero-capacity mismatches remain visible; quantity is always numeric, with zero
+representing an emptied quantity field, while remaining charges may be null.
+
+Malformed instance originals are offered only for the current character. Listener
+success/error callbacks and async version-lookup success/catch handlers are fenced
+by the session epoch and mount lifetime. Cleanup releases subscriptions without
+running invalidation UI work during normal unmount or StrictMode effect replay.
+`tests/unit/homebrew-sheet.test.tsx` exercises these concurrent UI lifecycles with
+mock repositories and the real operation controller/hook.
