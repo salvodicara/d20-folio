@@ -23,11 +23,11 @@ Files: src/lib/homebrew/model.ts, conformance.ts, portable.ts; tests/unit/homebr
 Interfaces: BaseFamily, field specifications, initializeDefinition(family),
 conformDefinition(definition) -> diagnostics; decode/encode portable document with exact original.
 
-- [ ] Write failing ordinary/boundary/composition cases per four families and unknown roundtrip.
-- [ ] Run bootstrap --run pnpm test --run tests/unit/homebrew-authoring.test.ts; retain red log.
-- [ ] Implement discriminated family types and finite effect primitives, strict dependency checks.
-- [ ] Verify no description parsing, no instance state in templates, source/version retention.
-- [ ] Green focused tests; reconcile MECHANICS and CHARACTER_SCHEMA, changeset, commit.
+- [x] Write failing ordinary/boundary/composition cases per four families and unknown roundtrip.
+- [x] Run bootstrap --run pnpm test --run tests/unit/homebrew-authoring.test.ts; retain red log.
+- [x] Implement discriminated family types and finite effect primitives, strict dependency checks.
+- [x] Verify no description parsing, no instance state in templates, source/version retention.
+- [x] Green focused tests; reconcile MECHANICS and CHARACTER_SCHEMA, changeset, commit.
 
 ## Task 2 — Character instance persistence
 
@@ -36,46 +36,61 @@ tests/unit/homebrew-instances.test.ts; tests/rules/folio-homebrew.rules.test.ts.
 Interfaces: HomebrewInstance with version snapshot and separate state; InstanceOperation extends
 Envelope; createInstanceRepository(db,session) exposes list/watch, intent, commit, reconcile.
 
-- [ ] Failing tests: add immutable version, update retains state, stale character/instance denied.
-- [ ] Rules tests: owner only mutations, DM/member current shared read, revoke/blocked/admin denies,
+- [x] Failing tests: add immutable version, update retains state, stale character/instance denied.
+- [x] Rules tests: owner only mutations, DM/member current shared read, revoke/blocked/admin denies,
       forged source/snapshot/receipt and piggyback denied; same opId delivers one mutation.
-- [ ] Implement atomic CAS/receipt, read recovery, scope ticket invalidation and exact version lookup.
-- [ ] Run focused unit/rules on owned demo cluster, preserve failures, green, document and commit.
+- [x] Implement atomic CAS/receipt, read recovery, scope ticket invalidation and exact version lookup.
+- [x] Run focused unit/rules on owned demo cluster, preserve failures, green, document and commit.
 
 ## Task 3 — Family editors, readable preview and portable UI
 
 Files: src/features/library/LibraryEditor.tsx, LibraryWorkspace.tsx, LibraryComparison.tsx;
 new HomebrewFields/Reader/Portable components; library.css; common EN/IT; focused UI tests.
 
-- [ ] Add failing tests for four family fields and saving actual typed edits through draft controller.
-- [ ] Implement family fields matching specific mock images; meaningful inline dependencies.
-- [ ] Add import preview/confirmation, exact-original recovery and same-store draft initialization.
-- [ ] Add source/version-aware export and paper rendering using shared reader; localized comparison.
-- [ ] Test actual save/reload, unknown preservation, no premature publish and conflict draft retention.
-- [ ] Reconcile DESIGN, focused green, changeset and commit.
+- [x] Add failing tests for four family fields and saving actual typed edits through draft controller.
+- [x] Implement family fields matching specific mock images; meaningful inline dependencies.
+- [x] Add import preview/confirmation, exact-original recovery and same-store draft initialization.
+- [x] Add source/version-aware export and paper rendering using shared reader; localized comparison.
+- [x] Test actual save/reload, unknown preservation, no premature publish and conflict draft retention.
+- [x] Reconcile DESIGN, focused green, changeset and commit.
 
 ## Task 4 — Reuse in real sheet
 
 Files: src/features/identity/IdentityApp.tsx, IdentityWorkspace.tsx, new HomebrewSheet/Reuse UI.
 
-- [ ] Add failing tests proving selected stable version materializes, selection alone does not write.
-- [ ] Wire owner character selection, version compare and explicit commit through OperationController.
-- [ ] Render persisted authorized instances in sheet; instance state edits and explicit update preserve state.
-- [ ] Test two PCs, DM read-only, scope A→B→A, unknown receipt recovery, offline no replay.
-- [ ] Green tests, schema/architecture documentation, changeset and commit.
+- [x] Add failing tests proving selected stable version materializes, selection alone does not write.
+- [x] Wire owner character selection, version compare and explicit commit through OperationController.
+- [x] Render persisted authorized instances in sheet; instance state edits and explicit update preserve state.
+- [x] Test two PCs, DM read-only, scope A→B→A, unknown receipt recovery, offline no replay.
+- [x] Green tests, schema/architecture documentation, changeset and commit.
 
 ## Task 5 — Actual optimized runtime acceptance
 
 External: d20-folio-p05-evidence/{HANDOFF.md,REPLAY.md,FIDELITY.md, scripts, logs, images, manifests}.
 
-- [ ] Build current candidate with explicit demo config; independent fresh browser profiles use real login.
-- [ ] Per family UI create/edit/reload/publish/reuse/update/import/export/print; audit all typed fields.
-- [ ] Per family sender offer, recipient accept and revoke pre/post; inspect exact grants/opreceipts.
-- [ ] Exercise concurrent edits, retry/duplicate, dropped real ack, offline/reconnect and invalidation.
-- [ ] Reproduce failures, add regression, fix, rebuild and rerun affected scenarios; retain failures.
-- [ ] Inspect printed output and real EN/IT1440/1280/390 editor/reuse/recovery images against mock.
-- [ ] Independent code and visual review; correct findings, run just ci/full rules/six fixtures;
+- [x] Build current candidate with explicit demo config; independent fresh browser profiles use real login.
+- [x] Per family UI create/edit/reload/publish/reuse/update/import/export/print; audit all typed fields.
+- [x] Per family sender offer, recipient accept and revoke pre/post; inspect exact grants/opreceipts.
+- [x] Exercise concurrent edits, retry/duplicate, dropped real ack, offline/reconnect and invalidation.
+- [x] Reproduce failures, add regression, fix, rebuild and rerun affected scenarios; retain failures.
+- [x] Inspect printed output and real EN/IT1440/1280/390 editor/reuse/recovery images against mock.
+- [x] Independent code and visual review; correct findings, run just ci/full rules/six fixtures;
       ci-srd-only if seam touched. Record exact commands/counts/skips/hash and fidelity gaps.
 - [ ] Deliver curated actual images for owner verdict only after autonomous work complete.
 - [ ] Upon explicit integration approval fetch/rebase/gate/push HEAD:v2, verify SHA and safe cleanup.
 - [ ] Close P05 only with all exits; then deliver one complete recursive successor prompt; do not start it.
+
+## Verification receipt
+
+Implementation and independent code/visual review are complete through runtime 5e60ac40.
+Full composed `just ci` exited 0: 871 app files / 19,326 tests; seven Functions files /
+129 tests; typecheck, lint, optimized build and PWA. Full demo rules exited 0: nine files /
+219 tests, no skips, including all six private fixture copies and exact-original recovery.
+The public/private seam is unchanged; `ci-srd-only` was not rerun.
+
+Evidence lives externally in `/Users/salvatoredicara/Workspace/Codex/d20-folio-p05-evidence`:
+HANDOFF.md, REPLAY.md, FIDELITY.md, final-source-review.md, final-print-review.md, gate logs,
+actual browser scripts, backend audits, source/image/build manifests and preserved failed outputs.
+The final print review closed the last-page artwork defect. Final bounded optimized runtime
+retested negative versatile validation, valid draft restoration and bilingual exact-file recovery.
+Frontier, active services and remaining owner/integration gates belong only to PROGRAM_STATUS.

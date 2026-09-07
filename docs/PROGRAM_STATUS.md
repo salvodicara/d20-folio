@@ -1,22 +1,40 @@
 # Program Status
 
-## Current frontier — P05 implementation and runtime verification (2026-09-07)
+## Current frontier — P05 owner visual and V2 integration gate (2026-09-07)
 
 Owner/writer: Astra, codex/p05-homebrew-base-20260907, isolated at
-/Users/salvatoredicara/Workspace/Codex/d20-folio-p05-homebrew-base. Clean detached
-p05-control and fresh origin/v2 verified at 4f46b240bf3d584fa7c89c2d46ddb97623be440b;
-origin/main remains 9b06b75313d7ee353c4072a20397c3092707648e. P04 is closed.
-Pinned bootstrap completed; private pack b6073dd0 remains clean and read-only.
-P05 specification and plan were written before implementation. Typed model and character
-instance commits are integrated into this topic; root UI remains under verification. Workers
-p05_authoring_model and p05_sheet_data own disjoint isolated worktrees; p05_source_review owns
-read-only source and runtime diagnosis. Focused tests and independent reviews have driven fixes
-for exact original recovery, immutable metadata, concurrent state drafts and repository conformance.
-Optimized demo runtime is active at preview5180, Auth19099/Firestore18080/Storage19199; mock5189
-is task-owned. Intermittent emulator popup login is being diagnosed before four-family replay.
-Full CI/rules/private-fixture proof, final visual review, owner screenshot approval and explicit
-V2 integration remain open. Evidence is under d20-folio-p05-evidence. Other worktrees and
-pre-existing Firestore8080 are preserved. No P06, main push, deploy or production writes authorized.
+/Users/salvatoredicara/Workspace/Codex/d20-folio-p05-homebrew-base. Runtime candidate
+5e60ac40fd4cb1dc6b7ba771a972d91ae6e7d2c5 is implemented and independently reviewed.
+Source/model and sheet workers completed their disjoint isolated work; their clean worktrees
+and detached p05-control remain owned and reserved for post-approval cleanup.
+
+Full composed just ci exited 0: 871 app files / 19,326 tests, seven Functions files /129 tests,
+typecheck, lint, optimized build and PWA. Full demo rules exited 0: nine files /219 tests, no
+skips, including six private fixture copies and exact recovery. Public/pack seam unchanged;
+ci-srd-only not rerun. Private pack b6073dd0 remains clean and read-only.
+
+Actual optimized browser journeys verified all four typed families, save/reload/versions,
+owner and recipient sheet copies, addressed offers and revocation, explicit updates preserving
+instance state, imports/exports/exact incompatible originals, offline/concurrent drafts and
+unknown after a real committed response with exact receipt recovery. Independent source and
+visual reviewers closed their findings; final print review verified the corrected eight PDFs.
+Final asset index-BD7c_J_n.js includes negative versatile validation and the print artwork fix.
+The 48 editor matrix images plus two shell images retain the prior visually equivalent d020fb89
+screen build; the later print-only CSS and formula validation delta are recorded and hashed.
+Twelve reuse/recovery images and eight PDFs use the final build. Actual images are ready for owner
+verdict; approval has not been inferred from P04 or from passing tests.
+
+P05 remains OPEN only for delivery/owner screenshot approval, explicit P05 V2 integration, fresh
+preflight, remote SHA confirmation and safe owned-worktree/service cleanup. Remote refs checked
+again after verification: v2 remains 4f46b240bf3d584fa7c89c2d46ddb97623be440b; main remains
+9b06b75313d7ee353c4072a20397c3092707648e. No P05 push has occurred.
+
+Evidence and reproducible commands/fidelity gaps: /Users/salvatoredicara/Workspace/Codex/
+d20-folio-p05-evidence/{HANDOFF.md,REPLAY.md,FIDELITY.md,manifests,logs}. Owned preview5180,
+mock5189 and demo Auth19099/Firestore18080/Storage19199 remain active for the approval round.
+Separate rules cluster stopped normally. Preserve unrelated Firestore PID86001/8080, shared
+checkout .playwright-cli and every unrelated worktree. No P06, successor prompt, main push,
+deploy, production write/migration or cost is authorized.
 
 ## Historical P04 closure (2026-09-07)
 
