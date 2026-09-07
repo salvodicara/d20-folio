@@ -93,7 +93,8 @@ export interface LibraryOperation extends Envelope {
     | "library-publish"
     | "library-offer"
     | "library-accept"
-    | "library-revoke";
+    | "library-revoke"
+    | "library-remove";
   entry: LibraryEntry | null;
   definition: LibraryDefinition | null;
   offer: LibraryOffer | null;
@@ -297,6 +298,7 @@ export interface LibraryRepository {
     existing?: LibraryEntry | null
   ): Promise<LibraryOperation>;
   revokeIntent(offer: LibraryOffer): LibraryOperation;
+  removeIntent(entry: LibraryEntry): LibraryOperation;
   reconcile(operation: LibraryOperation): Promise<LibraryReceipt | null>;
   commit(operation: LibraryOperation, check?: () => void): Promise<LibraryReceipt>;
 }

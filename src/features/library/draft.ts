@@ -409,6 +409,21 @@ export class LibraryDraftController {
     });
     this.retain();
   }
+  acceptRemoval(entry: LibraryEntry) {
+    this.check();
+    if (
+      entry.id !== this.id ||
+      (this.state.draft && !equal(this.state.draft, entry.draft))
+    )
+      throw new Error("stale-base");
+    const indexKey = "folio-library-drafts:" + (this.session.scope().uid ?? "");
+    const ids = JSON.parse(this.storage.getItem(indexKey) ?? "[]") as string[];
+    this.storage.removeItem(this.key);
+    this.storage.setItem(indexKey, JSON.stringify(ids.filter((id) => id !== this.id)));
+    this.loadGeneration++;
+    clearTimeout(this.timer);
+    this.publish({ loaded: false, draft: null, base: null, latest: null, dirty: false });
+  }
   dispose() {
     this.disposed = true;
     this.loadGeneration++;

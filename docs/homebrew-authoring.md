@@ -101,3 +101,22 @@ name/source and supplied instance-state exclusions remain checked. Known multiat
 sum each referenced program's resource cost multiplied by its step count, plus any container cost,
 separately for each resource. Totals exceeding template capacity are invalid at the multiattack
 steps path. This is a static feasibility check, not resource consumption or recovery execution.
+
+### P06 editor and recovery surfaces
+
+The monster and campaign-rule forms consume the authoring descriptors, including ordered nested
+program steps/effects, resource declarations, policies and dependencies. Unknown fields remain
+visible in the common reader and every printable view, including collections unknown to the family.
+Resource IDs use 1–128 ASCII letters, digits, underscores or hyphens because the same IDs address
+prepared state. Invalid identities are diagnosed and never silently omitted during materialization.
+
+The Bestiary reads current immutable monster versions from the same Library; it owns no catalogue
+or persistence. Preparing a version and enabling a campaign rule create explicit authorized campaign
+copies as described in `homebrew-preparation.md`. Changing a template never updates these copies.
+
+Duplicate creates a fresh locally retained destination with the entire definition. Removing a saved
+creation first archives its portable original in the account's existing import recovery list, verifies
+storage readback, then atomically deletes only the head with its exact loaded base and immutable P03
+receipt. Existing versions, granted copies, prepared copies and offers remain; revoke an offer
+explicitly to stop future delivery. Recovering an archived original imports to a new destination.
+A storage failure prevents deletion. Neither action deletes another account's data.

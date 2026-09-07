@@ -1,12 +1,13 @@
+import { AdvancedFields } from "./AdvancedFields";
 import { Checkbox } from "@/components/ui/selection";
-import { baseFamily, useHomebrewLabel } from "./homebrew-labels";
+import { authoringFamily, useHomebrewLabel } from "./homebrew-labels";
 import type { LibraryDefinition, JsonValue } from "@/lib/library/model";
 import {
-  baseFields,
+  authoringFields,
   effectFields,
   blankEffect,
   initializeDefinition,
-  type BaseFamily,
+  type AuthoringFamily,
 } from "@/lib/homebrew/model";
 import { conformDefinition } from "@/lib/homebrew/conformance";
 export function HomebrewFields({
@@ -19,7 +20,7 @@ export function HomebrewFields({
   onChange: (payload: LibraryDefinition["payload"]) => void;
 }) {
   const label = useHomebrewLabel();
-  if (!baseFamily(definition.family)) return null;
+  if (!authoringFamily(definition.family)) return null;
   const data = definition.payload.data;
   if (data.authoringVersion !== 1)
     return (
@@ -32,7 +33,7 @@ export function HomebrewFields({
             type="button"
             disabled={disabled}
             onClick={() =>
-              onChange(initializeDefinition(definition.family as BaseFamily).payload)
+              onChange(initializeDefinition(definition.family as AuthoringFamily).payload)
             }
           >
             {label("setup." + definition.family)}
@@ -42,14 +43,14 @@ export function HomebrewFields({
     );
   const edit = (key: string, value: JsonValue) =>
     onChange({ ...definition.payload, data: { ...data, [key]: value } });
-  const fields = baseFields(definition.family);
+  const fields = authoringFields(definition.family);
   const groups = [...new Set(fields.map((f) => f.group))].sort(
     (a, b) =>
       Number(["provenance", "notes"].includes(a)) -
       Number(["provenance", "notes"].includes(b))
   );
   const control = (
-    field: ReturnType<typeof baseFields>[number],
+    field: ReturnType<typeof authoringFields>[number],
     value: JsonValue | undefined,
     change: (v: JsonValue) => void,
     prefix = ""
@@ -127,6 +128,7 @@ export function HomebrewFields({
           </div>
         </fieldset>
       ))}
+      <AdvancedFields definition={definition} disabled={disabled} onChange={onChange} />
       <fieldset disabled={disabled} className="homebrew-group">
         <legend>{label("effects")}</legend>
         <p className="homebrew-hint">{label("effectsHelp")}</p>

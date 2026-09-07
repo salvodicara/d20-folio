@@ -1,3 +1,6 @@
+import { PreparationReuse } from "@/features/library/PreparationReuse";
+import { CampaignHomebrew } from "@/features/library/CampaignHomebrew";
+import { createPreparationRepository } from "@/lib/homebrew/preparation-repository";
 import { HomebrewReuse } from "@/features/library/HomebrewReuse";
 import { HomebrewSheet } from "@/features/library/HomebrewSheet";
 import { createInstanceRepository } from "@/lib/homebrew/instance-repository";
@@ -145,9 +148,12 @@ function AuthenticatedIdentity({ user }: { user: User }) {
   const [epoch, setEpoch] = useState(0);
   const library = useMemo(() => createLibraryRepository(db, session), [session]);
   const instances = useMemo(() => createInstanceRepository(db, session), [session]);
+  const preparations = useMemo(() => createPreparationRepository(db, session), [session]);
+  const [preparationId, setPreparationId] = useState("encounter");
   const [reuse, setReuse] = useState<LibraryVersion | null>(null);
   const [viewGeneration, setViewGeneration] = useState(0);
   const [page, setPage] = useState<IdentityPage>("account");
+  const [isAdmin, setIsAdmin] = useState(false);
   const [account, setAccount] = useState<FolioAccount | null>(null);
   const [characters, setCharacters] = useState<Readonly<FolioCharacter>[]>([]);
   const [campaigns, setCampaigns] = useState<FolioCampaign[]>([]);
@@ -267,6 +273,7 @@ function AuthenticatedIdentity({ user }: { user: User }) {
           }, failed),
           repository.watchMemberships(setCampaigns, failed),
           repository.watchAuthority((authority) => {
+            setIsAdmin(authority?.status === "active" && authority.isAdmin);
             if (authority && authority.status !== "active") {
               session.revoke();
               clearInspection();
@@ -386,6 +393,7 @@ function AuthenticatedIdentity({ user }: { user: User }) {
       window.removeEventListener("offline", offline);
     };
   }, []);
+  const selectedCampaign = campaigns.find((c) => c.id === scope.campaignId);
   return (
     <IdentityWorkspace
       key={user.uid + ":" + String(viewGeneration)}
@@ -507,20 +515,53 @@ function AuthenticatedIdentity({ user }: { user: User }) {
                 )
               ).map(([uid, names]) => ({ uid, name: names.join(" · ") }))}
             />
-            {reuse && (
-              <HomebrewReuse
+            {reuse && ["monster", "campaign-rule"].includes(reuse.definition.family) ? (
+              <PreparationReuse
                 version={reuse}
-                characters={characters}
-                repository={instances}
+                campaign={campaigns.find((c) => c.id === scope.campaignId)}
+                repository={preparations}
                 session={session}
                 onClose={() => setReuse(null)}
-                onOpen={(character) => {
-                  clearInspection();
-                  setInspectionRef(character);
+                onOpen={(id) => {
+                  if (id) setPreparationId(id);
+                  setReuse(null);
+                  window.location.hash = "campaign";
                 }}
               />
+            ) : (
+              reuse && (
+                <HomebrewReuse
+                  version={reuse}
+                  characters={characters}
+                  repository={instances}
+                  session={session}
+                  onClose={() => setReuse(null)}
+                  onOpen={(character) => {
+                    clearInspection();
+                    setInspectionRef(character);
+                  }}
+                />
+              )
             )}
           </>
+        )
+      }
+      campaignHomebrew={
+        selectedCampaign && (
+          <CampaignHomebrew
+            key={epoch}
+            campaign={selectedCampaign}
+            repository={preparations}
+            library={library}
+            session={session}
+            canManage={
+              !campaigns.find((c) => c.id === scope.campaignId)?.archived &&
+              (isAdmin ||
+                campaigns.find((c) => c.id === scope.campaignId)?.dmUid === user.uid)
+            }
+            preparationId={preparationId}
+            onPreparationChange={setPreparationId}
+          />
         )
       }
       homebrewSheet={

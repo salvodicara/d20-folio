@@ -86,6 +86,7 @@ export interface IdentityWorkspaceProps {
   onSaveProfile: (name: string, locale: "en" | "it") => Promise<void>;
   assignmentEditor?: (id: string, onDone: () => void) => ReactNode;
   library?: ReactNode;
+  campaignHomebrew?: ReactNode;
   privateNoteEditor?: ReactNode;
   dmNoteEditor?: ReactNode;
   homebrewSheet?: ReactNode;
@@ -776,6 +777,7 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
                     ))}
                   </ul>
                   {campaign.dmUid === p.uid && p.dmNoteEditor}
+                  {p.campaignHomebrew}
                 </section>
               </div>
             ) : (

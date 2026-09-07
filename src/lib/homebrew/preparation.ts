@@ -5,7 +5,7 @@ import {
   parseEntry,
   type LibraryVersion,
 } from "../library/model";
-import { CONDITIONS } from "./model";
+import { CONDITIONS, validResourceId } from "./model";
 import type { Envelope } from "../shared/model";
 export type PreparedState =
   | {
@@ -125,9 +125,7 @@ export function parsePreparedState(value: unknown): PreparedState {
       s.conditions.length > 64 ||
       s.conditions.some((c) => !(CONDITIONS as readonly unknown[]).includes(c)) ||
       Object.keys(r).length > 32 ||
-      Object.entries(r).some(
-        ([k, v]) => !k.match(/^[A-Za-z0-9_-]{1,128}$/) || !integer(v)
-      )
+      Object.entries(r).some(([k, v]) => !validResourceId(k) || !integer(v))
     )
       throw new Error("incompatible-preparation");
   }
@@ -232,6 +230,7 @@ export function defaultPreparedState(version: LibraryVersion): PreparedState {
     return frozen({ kind: "campaign-rule", enabled: false });
   const d = version.definition.payload.data,
     resources: Record<string, number> = {};
+  if (!Array.isArray(d.resources)) throw new Error("incompatible-preparation");
   if (Array.isArray(d.resources))
     for (const row of d.resources) {
       if (
@@ -240,7 +239,7 @@ export function defaultPreparedState(version: LibraryVersion): PreparedState {
         !Array.isArray(row) &&
         typeof row.id === "string" &&
         integer(row.capacity) &&
-        /^[A-Za-z0-9_-]{1,128}$/.test(row.id)
+        validResourceId(row.id)
       )
         Object.defineProperty(resources, row.id, {
           value: row.capacity,
@@ -248,6 +247,7 @@ export function defaultPreparedState(version: LibraryVersion): PreparedState {
           writable: true,
           configurable: true,
         });
+      else throw new Error("incompatible-preparation");
     }
   return parsePreparedState({
     kind: "monster",

@@ -1,7 +1,9 @@
+import { advancedCollections } from "@/lib/homebrew/advanced";
+import { AdvancedReader } from "./AdvancedFields";
 import type { LibraryDefinition, JsonValue } from "@/lib/library/model";
 import { conformDefinition } from "@/lib/homebrew/conformance";
-import { baseFields, effectFields } from "@/lib/homebrew/model";
-import { baseFamily, useHomebrewLabel } from "./homebrew-labels";
+import { authoringFields, effectFields } from "@/lib/homebrew/model";
+import { authoringFamily, useHomebrewLabel } from "./homebrew-labels";
 export function HomebrewReader({
   definition,
   printable = false,
@@ -25,7 +27,7 @@ export function HomebrewReader({
           : v == null
             ? "—"
             : JSON.stringify(v);
-  if (!baseFamily(definition.family) || data.authoringVersion !== 1)
+  if (!authoringFamily(definition.family) || data.authoringVersion !== 1)
     return (
       <div className="homebrew-reader">
         <p>{definition.description}</p>
@@ -33,13 +35,14 @@ export function HomebrewReader({
         <pre>{JSON.stringify(data, null, 2)}</pre>
       </div>
     );
-  const fields = baseFields(definition.family);
+  const fields = authoringFields(definition.family);
   const diagnostics = conformDefinition(definition);
+  const collectionKeys = advancedCollections(definition.family).map((c) => c.key);
   const retainedFields = Object.fromEntries(
     Object.entries(data).filter(
       ([key, value]) =>
         !fields.some((field) => field.key === key) &&
-        !["effects", "authoringVersion"].includes(key) &&
+        !["effects", "authoringVersion", ...collectionKeys].includes(key) &&
         !(key === "unsupported" && Array.isArray(value) && value.length === 0)
     )
   );
@@ -63,6 +66,7 @@ export function HomebrewReader({
           </dl>
         </section>
       ))}
+      <AdvancedReader definition={definition} printable={printable} />
       {!Array.isArray(data.effects) && (
         <details open={printable}>
           <summary>{label("preservedFields")}</summary>

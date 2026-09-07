@@ -592,3 +592,50 @@ it("single incompatible loads retain recoverable snapshots and version lists iso
   expect(issues).toHaveLength(2);
   stop();
 });
+
+it.each(["monster", "campaign-rule"] as const)(
+  "removes the addressed %s head and retains its immutable version and exact receipt",
+  async (family) => {
+    const a = client();
+    await a.repo.load("removed");
+    await a.repo.commit(
+      a.repo.saveIntent(
+        null,
+        { ...blankDefinition(family), name: "Retained original" },
+        "removed"
+      )
+    );
+    let head = required(await a.repo.load("removed"));
+    await a.repo.commit(required(await a.repo.publishIntent(head, head.draft)));
+    head = required(await a.repo.load("removed"));
+    const version = await a.repo.readVersion({ ownerUid: "owner", id: "removed" }, 1);
+    const op = a.repo.removeIntent(head);
+    const receipt = await a.repo.commit(op);
+    expect(await a.repo.load("removed")).toBeNull();
+    expect(await a.repo.readVersion({ ownerUid: "owner", id: "removed" }, 1)).toEqual(
+      version
+    );
+    expect(await a.repo.commit(op)).toEqual(receipt);
+    expect((await a.repo.reconcile(op))?.operation.entry).toEqual(head);
+  }
+);
+it("source removal rejects stale bases, receipt-only claims, unreceipted deletes and peer writes", async () => {
+  const { deleteDoc, writeBatch } = await import("firebase/firestore");
+  const a = await stable();
+  const head = required(await a.repo.load("one"));
+  const op = a.repo.removeIntent(head);
+  const receipt = { operation: op, revision: head.revision + 1 };
+  const path = "folioAccounts/owner/library/one";
+  await assertFails(deleteDoc(doc(a.db, path)));
+  await assertFails(
+    setDoc(doc(a.db, "folioAccounts/owner/operations/" + op.opId), receipt)
+  );
+  const peer = client("recipient");
+  const batch = writeBatch(peer.db);
+  batch.delete(doc(peer.db, path));
+  batch.set(doc(peer.db, "folioAccounts/owner/operations/" + op.opId), receipt);
+  await assertFails(batch.commit());
+  await a.repo.commit(a.repo.saveIntent(head, { ...head.draft, name: "Newer edit" }));
+  await expect(a.repo.commit(op)).rejects.toThrow();
+  expect((await a.repo.load("one"))?.draft.name).toBe("Newer edit");
+});

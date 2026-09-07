@@ -14,7 +14,7 @@ export function useLibraryOperation<
   },
   session: SessionController,
   key: string,
-  onAck: () => void | Promise<void>
+  onAck: (operation: O) => void | Promise<void>
 ) {
   const storageKey = "folio-library-operation:" + (session.scope().uid ?? "") + ":" + key;
   const [state, setState] = useState<OperationState<O, R> | null>(() => {
@@ -79,26 +79,27 @@ export function useLibraryOperation<
       return;
     }
     const c = new OperationController(envelope, repository);
-    controller.current = c;
     try {
-      sessionStorage.setItem(
-        storageKey,
-        JSON.stringify({ envelope, invalidated: false })
-      );
+      const original = JSON.stringify({ envelope, invalidated: false });
+      sessionStorage.setItem(storageKey, original);
+      if (sessionStorage.getItem(storageKey) !== original) throw new Error("storage");
     } catch {
       setError(true);
+      return;
     }
+    controller.current = c;
     detach.current = c.subscribe(() => {
       if (!live.current) return;
       setState(c.state);
       if (c.state.status === "acknowledged") {
-        try {
-          sessionStorage.removeItem(storageKey);
-        } catch {
-          setError(true);
-        }
+        const check = session.ticket();
         void Promise.resolve()
-          .then(() => ack.current())
+          .then(async () => {
+            check();
+            if (!live.current) return;
+            await ack.current(c.state.envelope);
+            sessionStorage.removeItem(storageKey);
+          })
           .catch(() => {
             if (live.current) setError(true);
           });

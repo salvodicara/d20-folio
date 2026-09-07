@@ -430,3 +430,7 @@ export function authoringFields(family: AuthoringFamily): readonly FieldDescript
     ? baseFields(family as BaseFamily)
     : [...common, ...advancedFields(family)];
 }
+
+/** Resource identities also address the separate prepared-state map. */
+export const validResourceId = (value: unknown): value is string =>
+  typeof value === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(value);

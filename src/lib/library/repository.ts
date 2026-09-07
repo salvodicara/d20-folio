@@ -169,7 +169,10 @@ export function createLibraryRepository(
     baseRevision = entry?.revision ?? 0
   ): LibraryOperation {
     check();
-    const opId = crypto.randomUUID();
+    const opId =
+      kind === "library-remove" && entry
+        ? "remove_" + entry.lastOperation.opId
+        : crypto.randomUUID();
     intentTickets.set(opId, session.ticket());
     return frozen(
       structuredClone({
@@ -214,6 +217,11 @@ export function createLibraryRepository(
     return session.track(stop);
   }
   const api = {
+    removeIntent(entry: LibraryEntry) {
+      parseEntry(entry);
+      if (entry.ownerUid !== uid()) throw new Error("permission-denied");
+      return envelope("library-remove", entry, null, null, entry.id);
+    },
     watchIssues(onIssues: (issues: LibraryIssue[]) => void) {
       ensureIssues();
       const callback = session.guard(onIssues);
@@ -428,7 +436,27 @@ export function createLibraryRepository(
             return receipt(oldReceipt.data(), op);
           }
           const lastOperation = { uid: op.uid, opId: op.opId };
-          if (op.kind === "library-offer" || op.kind === "library-revoke") {
+          if (op.kind === "library-remove") {
+            const ref = doc(db, libraryPath({ ownerUid: op.uid, id: op.targetId }));
+            const current = await tx.get(ref);
+            if (
+              !op.entry ||
+              op.definition !== null ||
+              op.offer !== null ||
+              op.opId !== "remove_" + op.entry.lastOperation.opId ||
+              op.entry.ownerUid !== op.uid ||
+              op.entry.id !== op.targetId
+            )
+              throw new Error("invalid-operation");
+            if (
+              !current.exists() ||
+              !equal(current.data(), op.entry) ||
+              op.baseRevision !== op.entry.revision
+            )
+              throw new Error("stale-base");
+            fence();
+            tx.delete(ref);
+          } else if (op.kind === "library-offer" || op.kind === "library-revoke") {
             const offer = op.offer;
             if (!offer || offer.senderUid !== op.uid)
               throw new Error("invalid-operation");

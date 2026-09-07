@@ -81,7 +81,7 @@ service cloud.firestore {
             || (o.target.kind == 'dm' && dmNoteAuthority(o)
               && getAfter(/databases/$(database)/documents/folioCampaigns/$(o.target.campaignId)/dmNotes/main).data.lastOperation == {'uid':o.uid,'opId':o.opId}
               && noteTransition(/databases/$(database)/documents/folioCampaigns/$(o.target.campaignId)/dmNotes/main,o.target))))
-          || (o.kind in ['library-save','library-publish','library-offer','library-accept','library-revoke'] && libraryOperation(o))
+          || (o.kind in ['library-save','library-publish','library-offer','library-accept','library-revoke','library-remove'] && libraryOperation(o))
           || (o.kind in ['homebrew-add','homebrew-update','homebrew-state'] && homebrewOperation(o))
           || (o.kind in ['preparation-add','preparation-update','preparation-state','preparation-remove'] && preparationOperation(o))
           || (o.kind == 'assignment' && o.keys().hasOnly(['kind','opId','uid','scope','target','baseRevision','authority','campaignId','campaignRevision']) && assignmentOperation(o,revision));
@@ -433,12 +433,18 @@ service cloud.firestore {
         || (o.kind == 'library-revoke' && get(p).data == o.offer && o.offer.revision == o.baseRevision && !o.offer.revoked && n.revoked
           && n.diff(o.offer).affectedKeys().hasOnly(['revoked','revision','lastOperation'])));
     }
+    function libraryRemoveTransition(o) {
+      return o.entry != null && libraryBase(o) && o.entry.id == o.targetId && o.entry.ownerUid == o.uid
+        && o.definition == null && o.offer == null && o.opId == 'remove_'+o.entry.lastOperation.opId
+        && !existsAfter(libraryHead(o.uid,o.targetId));
+    }
     function libraryOperation(o) {
       return o.keys().hasOnly(['kind','opId','uid','scope','baseRevision','authority','entry','definition','offer','targetId'])
         && o.authority == {'characterRevision':null,'assignment':null,'campaignRevision':null}
         && o.targetId is string && o.targetId.matches('^[A-Za-z0-9_~-]{1,260}$')
         && ((o.kind in ['library-save','library-publish','library-accept'] && libraryEntryTransition(o))
-          || (o.kind in ['library-offer','library-revoke'] && libraryOfferTransition(o)));
+          || (o.kind in ['library-offer','library-revoke'] && libraryOfferTransition(o))
+          || (o.kind == 'library-remove' && libraryRemoveTransition(o)));
     }
     function libraryWrite(uid,last) {
       let r=operationReceipt(uid,last.opId);
@@ -450,6 +456,9 @@ service cloud.firestore {
       allow get,list: if folioOwnerAccess(uid);
       allow create,update: if libraryWrite(uid,request.resource.data.lastOperation) && operationReceipt(uid,request.resource.data.lastOperation.opId).operation.targetId == id
         && operationReceipt(uid,request.resource.data.lastOperation.opId).operation.kind in ['library-save','library-publish','library-accept'];
+      allow delete: if libraryWrite(uid,{'uid':uid,'opId':'remove_'+resource.data.lastOperation.opId})
+        && operationReceipt(uid,'remove_'+resource.data.lastOperation.opId).operation.targetId == id
+        && operationReceipt(uid,'remove_'+resource.data.lastOperation.opId).operation.kind == 'library-remove';
       match /versions/{version} {
         allow get,list: if folioOwnerAccess(uid);
         allow create: if libraryWrite(uid,{'uid':uid,'opId':request.resource.data.operationId})

@@ -67,3 +67,17 @@ access, forged sources, detached receipts, sibling writes, stale bases/campaign 
 maximum state bounds, malformed recovery, restored-envelope reconciliation and offline
 non-replay. Production/provider/AppCheck/IAM/index/transaction-limit/device acceptance
 remains a separately authorized release concern.
+
+## Editor recovery and capacity comparison
+
+The campaign view retains the loaded copy and campaign revision with each local state draft. A
+refresh never replaces that base; changed remote state requires explicit review. Pending operations
+are stored and read back before submission. Unknown outcomes after reload use the exact envelope
+and receipt; acknowledgment removes only the matching sent draft. Incompatible local records are
+archived with verified readback before a fresh draft is allowed. The current DM/admin can remove
+copies from earlier source owners; only the source owner can read a newer private library version.
+
+Version updates preserve current HP, temporary HP, conditions and resource amounts. The UI reports
+HP above the new maximum, resource amounts above a new capacity and resource IDs no longer declared,
+without clamping them. Resource identities share the authoring validator; defaults reject incompatible
+resource rows instead of filtering them out. These are preparation facts, not Encounter execution.

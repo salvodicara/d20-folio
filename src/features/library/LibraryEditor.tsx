@@ -1,8 +1,14 @@
+import { encodePortable } from "@/lib/homebrew/portable";
 import { HomebrewFields } from "./HomebrewFields";
-import { baseFamily, useHomebrewLabel } from "./homebrew-labels";
+import { authoringFamily, useHomebrewLabel } from "./homebrew-labels";
 import { HomebrewReader } from "./HomebrewReader";
 import { HomebrewExport } from "./HomebrewPortable";
-import { downloadText, readImportOriginal } from "./homebrew-files";
+import {
+  downloadText,
+  readImportOriginal,
+  importOriginalKey,
+  storeOriginalMetadata,
+} from "./homebrew-files";
 import { conformDefinition } from "@/lib/homebrew/conformance";
 import { libraryKey } from "./labels";
 import { useEffect, useState, useSyncExternalStore } from "react";
@@ -23,6 +29,8 @@ interface EditorProps {
   sourceName?: string;
   onShare: (version: LibraryVersion) => void;
   onReuse?: (version: LibraryVersion) => void;
+  onDuplicate?: (definition: LibraryEntry["draft"]) => Promise<void>;
+  onRemoved?: () => void;
 }
 export function LibraryEditor(props: EditorProps) {
   const [editor, setEditor] = useState<LibraryDraftController | null>(null);
@@ -56,6 +64,8 @@ function EditorBody({
   revision,
   onShare,
   onReuse,
+  onDuplicate,
+  onRemoved,
   sourceName,
   editor,
 }: EditorProps & { editor: LibraryDraftController }) {
@@ -63,17 +73,28 @@ function EditorBody({
   const label = (key: string) => t(libraryKey(key));
   const homebrewLabel = useHomebrewLabel();
   const state = useSyncExternalStore(editor.subscribe, editor.snapshot);
-  const [dialog, setDialog] = useState<"record" | "versions" | null>(null),
+  const [dialog, setDialog] = useState<"record" | "versions" | "remove" | null>(null),
     [versions, setVersions] = useState<LibraryVersion[]>([]),
     [chosen, setChosen] = useState(0),
     [error, setError] = useState<string | null>(null);
-  const op = useLibraryOperation(repository, session, "publish:" + id, async () => {
-    const check = session.ticket();
-    const entry = await repository.load(id);
-    check();
-    if (entry) editor.acceptBase(entry);
-    setDialog(null);
-  });
+  const op = useLibraryOperation(
+    repository,
+    session,
+    "publish:" + id,
+    async (operation) => {
+      if (operation.kind === "library-remove" && operation.entry) {
+        editor.acceptRemoval(operation.entry);
+        onRemoved?.();
+        setDialog(null);
+        return;
+      }
+      const check = session.ticket();
+      const entry = await repository.load(id);
+      check();
+      if (entry) editor.acceptBase(entry);
+      setDialog(null);
+    }
+  );
   useEffect(() => {
     if (revision) void editor.load();
   }, [editor, revision]);
@@ -267,7 +288,7 @@ function EditorBody({
             locked ||
             !state.online ||
             !draft.name.trim() ||
-            (baseFamily(family) &&
+            (authoringFamily(family) &&
               conformDefinition(draft).some((d) => d.severity === "invalid"))
           }
           onClick={() => void showVersions("record")}
@@ -289,6 +310,20 @@ function EditorBody({
       </div>
       <div className="identity-actions">
         <HomebrewExport definition={draft} />
+        {onDuplicate && (
+          <button
+            disabled={locked}
+            onClick={() => void onDuplicate(draft).catch(() => setError("requestFailed"))}
+          >
+            {homebrewLabel("duplicateCreation")}
+          </button>
+        )}
+        <button
+          disabled={!state.base || state.dirty || locked || !state.online}
+          onClick={() => setDialog("remove")}
+        >
+          {homebrewLabel("removeCreation")}
+        </button>
         <button
           type="button"
           onClick={() => {
@@ -303,7 +338,7 @@ function EditorBody({
         >
           {homebrewLabel("recoverOriginal")}
         </button>
-        {onReuse && baseFamily(family) && (
+        {onReuse && authoringFamily(family) && (
           <button
             disabled={!state.base?.stableVersion || op.busy || !state.online}
             onClick={() => void share(true)}
@@ -323,7 +358,7 @@ function EditorBody({
           {t("libraryV2.sourceVersion", { version: state.base.provenance.sourceVersion })}
         </p>
       )}
-      {!baseFamily(family) && Object.keys(draft.payload.data).length > 0 && (
+      {!authoringFamily(family) && Object.keys(draft.payload.data).length > 0 && (
         <details>
           <summary>{label("payload")}</summary>
           <pre>{JSON.stringify(draft.payload.data, null, 2)}</pre>
@@ -332,13 +367,48 @@ function EditorBody({
       {!dialog && feedback}
       {dialog && (
         <LibraryDialog
-          title={label(dialog === "record" ? "recordTitle" : "versions")}
+          title={
+            dialog === "remove"
+              ? homebrewLabel("removeCreation")
+              : label(dialog === "record" ? "recordTitle" : "versions")
+          }
           description={label("recordHelp")}
           onClose={() => {
             if (!op.busy) setDialog(null);
           }}
         >
           {feedback}
+          {dialog === "remove" && (
+            <>
+              <p>{homebrewLabel("removeCreationHelp")}</p>
+              <button
+                className="identity-primary"
+                disabled={op.busy || state.dirty || !state.base}
+                onClick={() =>
+                  void op.run(() =>
+                    state.base
+                      ? (() => {
+                          const uid = session.scope().uid ?? "";
+                          const recoveryId = crypto.randomUUID();
+                          const raw = encodePortable(state.base.draft);
+                          const key = importOriginalKey(uid, recoveryId);
+                          sessionStorage.setItem(key, raw);
+                          if (sessionStorage.getItem(key) !== raw) throw Error("storage");
+                          storeOriginalMetadata(
+                            uid,
+                            recoveryId,
+                            state.base.draft.name + ".json"
+                          );
+                          return repository.removeIntent(state.base);
+                        })()
+                      : null
+                  )
+                }
+              >
+                {homebrewLabel("confirmRemoveCreation")}
+              </button>
+            </>
+          )}
           {dialog === "versions" && versions.length > 0 && (
             <label>
               {label("compare")}

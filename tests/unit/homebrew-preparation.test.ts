@@ -166,3 +166,18 @@ it("does not allow a live ticket to retarget its captured operation", async () =
     "intent-mismatch"
   );
 });
+it("rejects resource identities that cannot address prepared state instead of silently dropping them", async () => {
+  const { conformDefinition } = await import("../../src/lib/homebrew/conformance");
+  const bad = structuredClone(version);
+  const resources = bad.definition.payload.data.resources as Record<
+    string,
+    string | number
+  >[];
+  const resource = resources[0];
+  if (!resource) throw Error("missing fixture");
+  resource.id = "legendary actions";
+  expect(conformDefinition(bad.definition)).toContainEqual(
+    expect.objectContaining({ severity: "invalid", code: "resource-id" })
+  );
+  expect(() => defaultPreparedState(bad)).toThrow();
+});

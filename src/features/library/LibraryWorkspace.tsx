@@ -1,7 +1,8 @@
+import { Bestiary } from "./Bestiary";
 import { HomebrewImport } from "./HomebrewPortable";
 import { associateImportOriginal } from "./homebrew-files";
 import { HomebrewReader } from "./HomebrewReader";
-import { baseFamily, useHomebrewLabel } from "./homebrew-labels";
+import { authoringFamily, useHomebrewLabel } from "./homebrew-labels";
 import { LibraryDraftController } from "./draft";
 import { libraryKey } from "./labels";
 import { useEffect, useState } from "react";
@@ -71,8 +72,8 @@ export function LibraryWorkspace({
       return {};
     }
   });
-  const [tab, setTab] = useState<"creations" | "sharing">(
-      view.tab === "sharing" ? "sharing" : "creations"
+  const [tab, setTab] = useState<"creations" | "sharing" | "bestiary">(
+      view.tab === "sharing" || view.tab === "bestiary" ? view.tab : "creations"
     ),
     [query, setQuery] = useState<string>(
       typeof view.query === "string" ? view.query : ""
@@ -212,7 +213,7 @@ export function LibraryWorkspace({
       )
     : [];
   const update = eligible.find((entry) => entry.id === destination);
-  const changeTab = (next: "creations" | "sharing") => {
+  const changeTab = (next: "creations" | "sharing" | "bestiary") => {
     setTab(next);
     setRead(null);
     setShare(null);
@@ -235,7 +236,7 @@ export function LibraryWorkspace({
       <div className="library-breadcrumb">
         <span>{label("library")}</span>
         <span aria-hidden="true">/</span>
-        <strong>{label(tab)}</strong>
+        <strong>{tab === "bestiary" ? hb("bestiary") : label(tab)}</strong>
       </div>
       <nav className="library-tabs" aria-label={label("library")}>
         <button
@@ -251,6 +252,13 @@ export function LibraryWorkspace({
         >
           <span aria-hidden="true">♧</span>
           <span>{label("sharing")}</span>
+        </button>
+        <button
+          aria-current={tab === "bestiary" ? "page" : undefined}
+          onClick={() => changeTab("bestiary")}
+        >
+          <span aria-hidden="true">♜</span>
+          <span>{hb("bestiary")}</span>
         </button>
       </nav>
       {importing && (
@@ -285,8 +293,16 @@ export function LibraryWorkspace({
       )}
       <header className="library-heading">
         <p className="library-eyebrow">{label("library")}</p>
-        <h1>{label(tab === "creations" ? "heading" : "sharingTitle")}</h1>
-        <p>{label(tab === "creations" ? "intro" : "sharingIntro")}</p>
+        <h1>
+          {tab === "bestiary"
+            ? hb("bestiary")
+            : label(tab === "creations" ? "heading" : "sharingTitle")}
+        </h1>
+        <p>
+          {tab === "bestiary"
+            ? hb("bestiaryHelp")
+            : label(tab === "creations" ? "intro" : "sharingIntro")}
+        </p>
         {tab === "creations" && (
           <div className="identity-actions">
             <button className="identity-primary" onClick={() => setCreate(true)}>
@@ -332,7 +348,14 @@ export function LibraryWorkspace({
       ))}
       {loadError && <p role="alert">{label("loadError")}</p>}
       {!(share || read || revoke) && feedback}
-      {tab === "creations" ? (
+      {tab === "bestiary" ? (
+        <Bestiary
+          entries={entries}
+          repository={repository}
+          session={session}
+          onReuse={onReuse}
+        />
+      ) : tab === "creations" ? (
         <>
           <div className="library-filters">
             <label>
@@ -404,6 +427,30 @@ export function LibraryWorkspace({
                       : undefined
                   }
                   onReuse={onReuse}
+                  onRemoved={() => setSelected(null)}
+                  onDuplicate={async (definition) => {
+                    const id = crypto.randomUUID();
+                    const check = session.ticket();
+                    const controller = new LibraryDraftController(
+                      repository,
+                      session,
+                      id,
+                      definition.family,
+                      sessionStorage
+                    );
+                    try {
+                      await controller.load();
+                      check();
+                      if (!controller.state.loaded) throw Error("unavailable");
+                      controller.edit(structuredClone(definition));
+                      if (controller.state.storageFailed) throw Error("storage");
+                      setSelected({ id, family: definition.family });
+                      setQuery("");
+                      setFamily("all");
+                    } finally {
+                      controller.dispose();
+                    }
+                  }}
                   onShare={(v) => {
                     setRecipient("");
                     setShare(v);
@@ -587,7 +634,7 @@ export function LibraryWorkspace({
           {feedback}
           <h3>{read.definition.name}</h3>
           <p>{t("libraryV2.from", { name: participantName(read.senderUid) })}</p>
-          {baseFamily(read.definition.family) ? (
+          {authoringFamily(read.definition.family) ? (
             <HomebrewReader definition={read.definition} />
           ) : (
             <p className="library-description">{read.definition.description}</p>

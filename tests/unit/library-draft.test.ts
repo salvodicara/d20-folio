@@ -260,3 +260,21 @@ it("ignores an older publication refresh after a newer autosave is acknowledged"
   expect(x.editor.state.draft?.description).toBe("Saved newer revision");
   x.editor.dispose();
 });
+it("retires the local source draft after acknowledged removal even after a missing-head reload", async () => {
+  const x = setup();
+  const first = x.editor.load();
+  x.finish();
+  await first;
+  x.editor.dispose();
+  const y = setup();
+  for (const [k, v] of x.storage) y.storage.set(k, v);
+  const reload = y.editor.load();
+  y.finish(null);
+  await reload;
+  expect(localLibraryDrafts(y.store, "owner")).toHaveLength(1);
+  const { parseEntry } = await import("@/lib/library/model");
+  y.editor.acceptRemoval(parseEntry(x.saved));
+  y.editor.dispose();
+  expect(localLibraryDrafts(y.store, "owner")).toEqual([]);
+  expect(y.storage.has("folio-library:owner:one")).toBe(false);
+});

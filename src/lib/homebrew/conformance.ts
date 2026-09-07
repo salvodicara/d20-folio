@@ -6,6 +6,7 @@ import {
 } from "../library/model";
 import {
   AUTHORING_FAMILIES,
+  validResourceId,
   authoringFields,
   effectFields,
   type AuthoringFamily,
@@ -672,6 +673,7 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
             }
           }
           if (c.kind === "resource") {
+            if (!validResourceId(v.id)) add(path + "id", "resource-id");
             const bounds = formulaBounds(v.recoveryFormula);
             if (
               (v.recoveryKind === "none" && v.recoveryBoundary !== "none") ||

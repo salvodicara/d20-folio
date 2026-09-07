@@ -486,3 +486,35 @@
     display: block;
   }
 }
+
+.campaign-homebrew {
+  margin-top: 32px;
+  border-top: 1px solid var(--identity-line);
+  padding-top: 24px;
+  min-width: 0;
+}
+.prepared-copy {
+  border-block-start: 1px solid var(--identity-line);
+  padding: 24px 0;
+  min-width: 0;
+}
+.prepared-copy h4 {
+  font:
+    500 24px "Alegreya Variable",
+    serif;
+  color: #d9bc83;
+  margin: 0 0 12px;
+}
+.prepared-copy pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.homebrew-collection .homebrew-collection {
+  padding-inline: 16px;
+  border-inline-start: 1px solid var(--identity-line);
+}
+.homebrew-effect > summary {
+  min-height: 44px;
+  cursor: pointer;
+  color: #d9bc83;
+}

@@ -1,9 +1,10 @@
+import { advancedRowFields } from "@/lib/homebrew/advanced";
 import { libraryKey } from "./labels";
 import { useTranslation } from "react-i18next";
 import { equal } from "@/lib/shared/model";
 import type { LibraryDefinition, JsonValue } from "@/lib/library/model";
-import { baseFields, effectFields } from "@/lib/homebrew/model";
-import { baseFamily, useHomebrewLabel } from "./homebrew-labels";
+import { authoringFields, effectFields } from "@/lib/homebrew/model";
+import { authoringFamily, useHomebrewLabel } from "./homebrew-labels";
 export function LibraryComparison({
   before,
   after,
@@ -30,12 +31,26 @@ export function LibraryComparison({
       });
   if (!equal(before.payload, after.payload)) {
     if (
-      baseFamily(after.family) &&
+      authoringFamily(after.family) &&
       before.family === after.family &&
       before.payload.data.authoringVersion === 1 &&
       after.payload.data.authoringVersion === 1
     ) {
-      const descriptors = [...baseFields(after.family), ...effectFields()];
+      const descriptors = [
+        ...authoringFields(after.family),
+        ...effectFields(),
+        ...(
+          [
+            "resource",
+            "program",
+            "step",
+            "policy",
+            "dependency",
+            "defense",
+            "skill",
+          ] as const
+        ).flatMap(advancedRowFields),
+      ];
       const visit = (
         a: JsonValue | undefined,
         b: JsonValue | undefined,
