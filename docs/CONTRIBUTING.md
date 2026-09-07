@@ -54,7 +54,8 @@ Do not advance with an unexplained console error, failed assertion or unverified
    application modules rather than only Vite development modules. Use new browser profiles or
    verify cache/service-worker provenance so old assets cannot certify a new candidate.
 4. Run actual browser interactions as independent owner, recipient, DM or other relevant accounts.
-   Include ordinary/boundary flows, unauthorized access, concurrent edits, offline/reconnect,
+   Use the build’s actual sign-in UI and emulated provider; a DEV-only login shortcut cannot
+   certify its release path. Include ordinary/boundary flows, unauthorized access, concurrent edits, offline/reconnect,
    timeout after a real successful commit, exact receipt recovery, duplicate attempts and revoked
    authority where relevant. Fault injection may delay/drop a real response; it must not fabricate
    successful backend responses or skip a required user action. Assert stored results as well as UI.

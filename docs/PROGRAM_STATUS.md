@@ -16,7 +16,12 @@ message makes a repeatable real-application verification loop fundamental; PRODU
 requirement and CONTRIBUTING owns its procedure. P04 is OPEN only for the authorized fresh
 preflight, integration and cleanup receipts. Fresh fetch found V2 unchanged and rebase was a
 no-op. No successor prompt before actual closure, no P05 execution, main push or deploy.
-The optimized-build emulator replay is being added to preflight; no outcome is claimed yet.
+Fresh pre-integration just ci and full demo rules exited 0 with the same counts below. The
+optimized build replay exited 0: three fresh browser profiles, the actual Google sign-in button
+through Auth Emulator, all six P04 resilience scenarios and no uncaught page errors. The first
+harness attempt assumed a DEV-only email form; the next timed out waiting for the provider popup.
+Both failures remain recorded; the corrected harness awaited actual authentication. Runtime
+code stayed unchanged. Independent doc review accepted the bounded verification-loop contract.
 
 Final composed just ci exited 0: 865 application files / 19,254 tests, seven Functions files /
 129 tests, typecheck, lint, build and PWA. Full explicit demo rules exited 0: eight files /
