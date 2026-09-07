@@ -194,6 +194,39 @@ Visual comparison is approved Astra mock → actual new V2 runtime. The withdraw
 request and current implementation/review/gates are recorded only in [docs/PROGRAM_STATUS.md](docs/PROGRAM_STATUS.md).
 Every downstream plan, review and complete successor prompt carries the full Product decision.
 
+## Rettifica owner — shell e impostazioni, 7 settembre 2026
+
+L’owner ha accolto la direzione generale della revisione shell/Account e richiesto queste correzioni, delegando la scelta del controllo lingua:
+
+- Account sotto Marco; ricerca globale visibile su desktop, lente su telefono; pulsante ? per guida/scorciatoie. Quattro ambiti principali e gerarchia dei menu coerenti con il mock.
+- Nessun interruttore per disattivare scorciatoie o animazioni. Le scorciatoie restano disponibili con le normali protezioni mentre si scrive e nei dialoghi; le animazioni fanno parte dell’esperienza. Non reintrodurre questi controlli nelle impostazioni o nella guida. Non confondere l’assenza del controllo prodotto con la rimozione arbitraria delle tutele di sistema/browser già presenti.
+- Decisione delegata ad Astra: cambio lingua diretto IT ↔ EN, senza dialogo/menu; il bottone indica la lingua di destinazione, con etichetta accessibile esplicita.
+- Preferenze orientate al gioco: dadi Digitali / Fisici, descrizioni brevi; scelta iniziale personale modificabile anche al tavolo. Non inventare altre opzioni per riempire la pagina. Impostazioni condivise della campagna separate dalle preferenze personali.
+- La navigazione Account persiste passando tra Profilo, Preferenze, Notifiche, Privacy, Copie e recupero, Dati offline e Assistenza. Su telefono persiste il selettore di sezione. Niente uscita implicita dal contenitore, titoli vaghi o pulsanti con paragrafi.
+- Preservare font, palette, asset e collocazione delle icone fuori dal delta concordato. Nessun restyling arbitrario.
+
+Il delta è nella copia /Users/salvatoredicara/Workspace/Codex/d20-design-dialogue/shell-review-20260907, revisione r2 (README e qa-r2.log). Il full-lab approvato 0.9.3 resta intatto nelle sue superfici. L’accoglimento della direzione con correzioni non certifica pixel mai mostrati né il runtime React. La sessione successiva implementa il riallineamento P02 e presenta il runtime; non deve chiedere nuovamente di concordare queste scelte. Il mock conserva simulazioni locali, non è la fonte di implementazione backend né la prova di P15.
+
+## P02 r2 runtime mapping — 7 September 2026
+
+Phone search/help/locale touch targets are at least 44×44 px, applying the existing
+touch-min contract while retaining the approved glyphs, hierarchy and palette.
+
+The shell follows the authorized r2 header and Account composition: actual name / Account,
+four text-only domains, visible desktop search / phone magnifier, `?`, destination EN/IT.
+All seven Account destinations keep one sidebar or phone selector and native browser history.
+Profile remains private; shared participants are identified through authorized character labels.
+Preferences persist in the account (rather than the mock's browser-only simulation). Dice mode
+is one digital/physical field; the future P15 consumer is stated explicitly. Search covers the
+available P02 sections, owned characters and memberships; help lists only implemented commands.
+
+Declared scope differences from the mock: no fake live-presence dot, unavailable table/library
+controls, no reminder toggle without notification delivery, no simulated backup/offline/support
+controls. The actual recovery link leads to owned character original-copy recovery. P23 owns
+notification delivery, P27b full account backups/recovery, P27c offline-management/support and
+P09 the full cross-domain shell. Owner approval of actual runtime images is tracked only in
+PROGRAM_STATUS; direction approval is not a runtime verdict.
+
 ## Current V2 design contract — 2026-09-06
 
 The approved reference is the immersive-v2 full laboratory, candidate
@@ -235,7 +268,7 @@ missing images, long Italian names, keyboard/focus and reduced motion need actua
 DM map tools retain the observed Owlbear organization with contextual properties; geometry is
 uniform top-down and movement, targeting and areas are distinct. Phone has compact named search,
 no redundant Back or keyboard-help control; browser history remains usable. Each keyboard
-command has a visible equivalent; character shortcuts can be disabled and do not fire in editors.
+command has a visible equivalent; shortcuts do not fire in editors or other dialogs and have no product disable switch.
 Calendar starts with complete session proposals, person-scoped votes, comparison and confirmation;
 Google/ICS export follows the confirmed occurrence, without implicit OAuth or external sends.
 

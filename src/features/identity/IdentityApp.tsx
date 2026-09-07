@@ -20,7 +20,7 @@ import {
   type RosterEntry,
 } from "@/lib/identity";
 import { ensureLocale } from "@/i18n";
-import { IdentityWorkspace } from "./IdentityWorkspace";
+import { IdentityWorkspace, type IdentityPage } from "./IdentityWorkspace";
 
 export function IdentityApp() {
   const [principal, setPrincipal] = useState<{
@@ -134,9 +134,7 @@ function AuthenticatedIdentity({ user }: { user: User }) {
   const repository = useMemo(() => createIdentityRepository(db, session), [session]);
   const [epoch, setEpoch] = useState(0);
   const [viewGeneration, setViewGeneration] = useState(0);
-  const [page, setPage] = useState<"account" | "characters" | "invite" | "campaign">(
-    "account"
-  );
+  const [page, setPage] = useState<IdentityPage>("account");
   const [account, setAccount] = useState<FolioAccount | null>(null);
   const [characters, setCharacters] = useState<Readonly<FolioCharacter>[]>([]);
   const [campaigns, setCampaigns] = useState<FolioCampaign[]>([]);
@@ -383,11 +381,14 @@ function AuthenticatedIdentity({ user }: { user: User }) {
       displayName={
         account?.displayName ?? user.displayName ?? user.email?.split("@")[0] ?? ""
       }
+      diceMode={account?.diceMode ?? "digital"}
+      onSaveDiceMode={(diceMode) => run(() => repository.saveAccount({ diceMode }))}
+      onSaveLocale={(locale) => run(() => repository.saveAccount({ locale }))}
       characters={characters}
       campaigns={campaigns}
       roster={roster}
       rosterNames={rosterNames}
-      loading={loading}
+      loading={loading || (!account && !error)}
       busy={busy}
       error={error}
       activeId={scope.activeCharacterId}
@@ -447,9 +448,7 @@ function AuthenticatedIdentity({ user }: { user: User }) {
           failed(cause);
         }
       }}
-      onSaveProfile={(displayName, locale) =>
-        run(() => repository.saveAccount({ displayName, locale }))
-      }
+      onSaveProfile={(displayName) => run(() => repository.saveAccount({ displayName }))}
       onSaveNotes={(text) =>
         run(async () => {
           if (inspectionRef) await repository.savePrivateNotes(inspectionRef, text);

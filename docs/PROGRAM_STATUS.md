@@ -1,6 +1,6 @@
 # Program Status
 
-## Current frontier — P02 new application, direction recovery (2026-09-06)
+## Current frontier — P02 new application, shell/Account r2 (2026-09-07)
 
 Owner: Astra. P02 is OPEN. P03 must not start. This section is the sole current
 execution record; the ledger below is retained history of the previous program.
@@ -19,6 +19,30 @@ unit/rules tests and new ACL blocks in its isolated worktree
 `/Users/salvatoredicara/Workspace/Codex/d20-folio-p02-identity-data`.
 Read-only p02_contract_audit reviews current documents and data boundaries.
 
+### Resumed shell correction — 7 September 2026
+
+Astra resumed the existing dirty candidate at `78802a30e653e0d3fe050ad3841e4cbdbf515441`.
+Fresh fetch confirms origin/v2 `24d9fbf6ae23e4e6844d70e9cf7152bb0e389ba2` and origin/main
+`9b06b75313d7ee353c4072a20397c3092707648e`. The preceding P02 task is idle; historical workers
+are not active writers. Inherited diff is preserved in external evidence `r2/inherited.patch`.
+The r2 shell/Account implementation is present in the candidate: stable seven-section Account,
+private dice/locale patch seam, direct destination-language switch, guarded search/help and one
+browser history. P09/P15/P23/P27b/P27c consumers/services remain future work.
+Independent code review C1–C3 is closed with scoped rereviews; source audit verified future owners.
+Fresh browser shell checks: 186 pass across EN/IT 1440/1280/390; actual identity/revoke/offline
+journeys pass. Rules: 168 pass on the owned unified loopback demo-d20folio cluster.
+Independent visual review is PASS for the reviewed scope, with four findings closed; owner
+approval remains separate. Final composed `just ci` is PASS: 858 app files/19,215 tests,
+7 Functions files/129 tests, typecheck/lint/build/PWA. No current skips. The seam pack is
+unchanged, so ci-srd-only was not rerun; its old receipt is historical. Focused 17, migration 4
+(including all six copies), i18n, formatting and 13 local links pass. Exact receipts, 84 runtime
+and 18 mock images, source hashes and the complete successor prompt are packaged externally
+in d20-folio-p02-new-evidence/r2 and its parent HANDOFF. This local commit records the correction;
+its exact SHA is in external r2/final-commit.txt. Integration refs remain unchanged. Historical CI/SRD/visual records below do not certify this correction. P02 remains OPEN.
+Astra is sole implementation writer; reviewers are read-only. No integration SHA has changed.
+The remaining owner gate is approval of the corrected runtime images, after all technical gates.
+No integration, deploy or next block is authorized. Keep this worktree for the pending verdict.
+
 ### Binding correction
 
 The old P02 visual/interaction approval request is WITHDRAWN. Its 28 screenshots,
@@ -33,7 +57,32 @@ V2 is a new application with no mandatory old engine, layout, store, route or br
 Production remains separate; input-data migration must be recoverable. Product and
 Design now propagate the full current owner decision and required BG3 fidelity.
 
-### Ordered P02 outcomes and evidence
+### Historical pre-implementation handoff — 2026-09-07 (superseded above)
+
+This subsection supersedes the visual-acceptance and clean-worktree assertions below.
+The owner rejected the P02 runtime chrome/icon deviations. strict-chrome-review.md
+supersedes the earlier visual review; no runtime approval was received. The owner then
+accepted the revised mock direction subject to explicit corrections recorded in DESIGN.md:
+no motion/shortcut toggles, direct language switch, persistent Account navigation and
+physical/digital dice preference. The external shell-review-20260907 r2 applies these
+instructions; browser QA passes 39 checks, desktop/mobile screenshots are real mock captures.
+These are not new runtime tests or an owner approval of React.
+
+Candidate HEAD remains 78802a30e653e0d3fe050ad3841e4cbdbf515441. Uncommitted initial
+chrome corrections remain in IdentityWorkspace.tsx, identity.css, EN/IT identity locales,
+identity-workspace.test.tsx and three SVG assets. This handoff updates DESIGN and this
+record; it does not implement the latest mock in React. Do not reset this work or assume
+HEAD alone contains it. Earlier CI/rules/SRD passes apply to the committed candidate;
+rerun appropriate gates after the next implementation. No fresh remote integration SHA,
+push, deploy, P03 or real-data migration in this correction turn.
+
+Next owner: Astra in the next task, sole writer after checking the worktree inventory.
+Next outcome: implement the agreed shell/Account delta in the new P02 runtime, preserve
+identity/privacy contracts, complete review and gates, then deliver fresh runtime images.
+P02 remains OPEN; the runtime visual gate is unfulfilled, not waiting for a verdict on
+old images. Full current prompt and correction handoff are in d20-folio-p02-new-evidence.
+
+### Historical 6 September outcomes and evidence (previous commit only)
 
 1. Direction/documents and mock mapping corrected. Independent D1–D6 review closed.
    No previous P02 code imported. New runtime is the screenshot approval subject.

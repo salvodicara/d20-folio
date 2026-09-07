@@ -21,9 +21,10 @@ service cloud.firestore {
       allow get: if folioOwnerAccess(uid);
       allow list: if folioUser() && isAdmin();
       allow create, update: if folioOwnerAccess(uid)
-        && request.resource.data.keys().hasOnly(['schema','displayName','locale'])
+        && request.resource.data.keys().hasOnly(['schema','displayName','locale','diceMode'])
         && request.resource.data.schema == 1 && request.resource.data.displayName is string
-        && request.resource.data.displayName.size() <= 120 && request.resource.data.locale in ['en','it'];
+        && request.resource.data.displayName.size() <= 120 && request.resource.data.locale in ['en','it']
+        && (!('diceMode' in request.resource.data) || request.resource.data.diceMode in ['digital','physical']);
     }
     match /folioAccounts/{uid}/characters/{id} {
       function owner() { return folioUser() && request.auth.uid == uid; }

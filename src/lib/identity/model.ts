@@ -40,10 +40,32 @@ export interface RosterEntry {
   assignmentId: string;
   version: number;
 }
+export type DiceMode = "digital" | "physical";
 export interface FolioAccount {
   schema: 1;
   displayName: string;
   locale: "en" | "it";
+  diceMode?: DiceMode;
+}
+export function parseAccount(value: unknown): Readonly<FolioAccount> {
+  const a = object(value);
+  if (
+    a.schema !== 1 ||
+    typeof a.displayName !== "string" ||
+    a.displayName.length > 120 ||
+    (a.locale !== "en" && a.locale !== "it") ||
+    ("diceMode" in a && a.diceMode !== "digital" && a.diceMode !== "physical") ||
+    Object.keys(a).some(
+      (key) => !["schema", "displayName", "locale", "diceMode"].includes(key)
+    )
+  )
+    throw new Error("invalid-account");
+  return frozen({
+    schema: 1,
+    displayName: a.displayName,
+    locale: a.locale,
+    diceMode: a.diceMode ?? "digital",
+  } as FolioAccount);
 }
 export function identityId(value: string): string {
   if (!/^[A-Za-z0-9_-]{1,128}$/.test(value)) throw new Error("invalid-id");

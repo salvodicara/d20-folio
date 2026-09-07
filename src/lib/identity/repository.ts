@@ -22,7 +22,7 @@ import {
   rosterId,
   parseCharacter,
   parseCampaign,
-  object,
+  parseAccount,
   frozen,
   type CharacterRef,
   type FolioCharacter,
@@ -294,19 +294,7 @@ export function createIdentityRepository(db: Firestore, session: SessionControll
         doc(db, "folioAccounts/" + uid()),
         (rows) => {
           if (!rows[0]) return null;
-          const a = object(rows[0]);
-          if (
-            a.schema !== 1 ||
-            typeof a.displayName !== "string" ||
-            (a.locale !== "en" && a.locale !== "it") ||
-            Object.keys(a).length !== 3
-          )
-            throw new Error("invalid-account");
-          return frozen<FolioAccount>({
-            schema: 1,
-            displayName: a.displayName,
-            locale: a.locale,
-          });
+          return parseAccount(rows[0]);
         },
         null,
         next,
@@ -379,13 +367,21 @@ export function createIdentityRepository(db: Firestore, session: SessionControll
         }
       }
     },
-    async saveAccount(account: Omit<FolioAccount, "schema">) {
+    async saveAccount(account: Partial<Omit<FolioAccount, "schema">>) {
       const owner = uid(),
         check = session.ticket();
       if (
-        typeof account.displayName !== "string" ||
-        account.displayName.length > 120 ||
-        !["en", "it"].includes(account.locale)
+        !Object.keys(account).length ||
+        Object.keys(account).some(
+          (key) => !["displayName", "locale", "diceMode"].includes(key)
+        ) ||
+        ("displayName" in account &&
+          (typeof account.displayName !== "string" ||
+            account.displayName.length > 120)) ||
+        ("locale" in account && account.locale !== "en" && account.locale !== "it") ||
+        ("diceMode" in account &&
+          account.diceMode !== "digital" &&
+          account.diceMode !== "physical")
       )
         throw new Error("invalid-account");
       await write(() =>
@@ -398,7 +394,11 @@ export function createIdentityRepository(db: Firestore, session: SessionControll
       );
       check();
       return write(() =>
-        setDoc(doc(db, "folioAccounts/" + owner), { schema: 1, ...account })
+        setDoc(
+          doc(db, "folioAccounts/" + owner),
+          { schema: 1, ...account },
+          { merge: true }
+        )
       );
     },
     async getInvite(campaignId: string): Promise<FolioInvite | null> {

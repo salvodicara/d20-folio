@@ -6,6 +6,7 @@ import type { IdentityWorkspaceProps } from "@/features/identity/IdentityWorkspa
 import type { SessionController } from "@/lib/identity";
 
 const harness = vi.hoisted(() => ({
+  i18n: { changeLanguage: vi.fn().mockResolvedValue(undefined) },
   authListeners: new Set<(user: User | null) => void>(),
   repositories: [] as {
     session: SessionController;
@@ -32,7 +33,12 @@ vi.mock("firebase/auth", () => ({
   signOut: vi.fn(),
 }));
 vi.mock("@/lib/firebase", () => ({ auth: {}, db: {}, storage: {} }));
-vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+    i18n: harness.i18n,
+  }),
+}));
 vi.mock("@/lib/identity", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/identity")>();
   return {
@@ -131,6 +137,7 @@ vi.mock("@/features/identity/IdentityWorkspace", () => ({
         {JSON.stringify({
           uid: props.uid,
           loading: props.loading,
+          diceMode: props.diceMode,
           characters: props.characters,
           campaignId: props.campaignId,
           inspected: props.inspected,
@@ -211,7 +218,15 @@ describe("IdentityApp consumer session boundaries", () => {
     expect(state().loading).toBe(true);
     await bootstrap();
     await emit("characters", [character("alice")]);
+    expect(state().loading).toBe(true);
+    await emit("account", {
+      schema: 1,
+      displayName: "Alice",
+      locale: "en",
+      diceMode: "physical",
+    });
     expect(state().loading).toBe(false);
+    expect(state().diceMode).toBe("physical");
     expect(state().characters[0]?.ownerUid).toBe("alice");
     expect(
       current().watches.filter((w) => w.kind === "characters" && !w.stopped)

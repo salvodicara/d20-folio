@@ -2,9 +2,9 @@
 .identity-dialog {
   --identity-bg: #0b1419;
   --identity-panel: #132128;
-  --identity-text: #efe8d9;
-  --identity-muted: #bbcacd;
-  --identity-line: #31424a;
+  --identity-text: #eee9dd;
+  --identity-muted: #c0c6c2;
+  --identity-line: #d9bc8333;
   --identity-accent: #a6e4ee;
   box-sizing: border-box;
   color: var(--identity-text);
@@ -90,6 +90,7 @@
 .identity-app textarea:focus-visible {
   outline: 2px solid var(--identity-accent);
   outline-offset: 3px;
+  box-shadow: none;
 }
 .identity-app .identity-primary,
 .identity-dialog .identity-primary {
@@ -141,9 +142,8 @@
   border: 0;
   background: transparent;
 }
-.identity-header button[aria-current="page"] {
-  background: #1c3039;
-  color: var(--identity-accent);
+.identity-header nav button[aria-current="page"] {
+  border-bottom: 1px solid var(--identity-text);
 }
 .identity-context {
   min-height: 64px;
@@ -827,4 +827,534 @@
 .identity-app .cb-field-label {
   display: block;
   cursor: pointer;
+}
+
+.identity-subnav button img,
+.identity-back img {
+  width: 18px;
+  height: 18px;
+}
+.identity-subnav .identity-more-sections {
+  margin-left: auto;
+  color: #d8bd87;
+}
+.identity-back {
+  margin-left: auto;
+}
+.identity-section-links {
+  display: grid;
+  gap: 12px;
+}
+.identity-context > span:first-child {
+  color: #d8bd87;
+}
+.identity-app .identity-primary {
+  border: 1px solid #76b8c4;
+  background: linear-gradient(180deg, #28535f, #16353f);
+  color: #f0faff;
+  min-height: 48px;
+  padding: 13px 20px;
+  box-shadow:
+    inset 0 0 0 3px #101f2780,
+    0 0 24px #4aa6c32b;
+  font-weight: 550;
+}
+
+/* Owner-approved r2 Account composition; identity tokens remain shared with P02. */
+.identity-app button,
+.identity-dialog button,
+.identity-button {
+  border-radius: 2px;
+}
+.identity-header {
+  height: 78px;
+  padding: 0 32px;
+  gap: 28px;
+  background: #081116;
+  border-bottom-color: #776747;
+}
+.identity-header .identity-brand {
+  font-size: 23px;
+  min-width: 0;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.identity-header nav {
+  gap: 22px;
+  flex-shrink: 0;
+  margin-inline: 0;
+  height: 100%;
+}
+.identity-header nav button {
+  height: 100%;
+  padding: 0 6px;
+  border-radius: 0;
+  font: 14px system-ui;
+}
+/* Keep the reference's live-status slot empty until the table exists. */
+.identity-header nav .identity-table-navigation {
+  padding-right: 24px;
+}
+.identity-global {
+  gap: 12px;
+  margin-left: 0;
+}
+.identity-global .identity-finder {
+  width: 210px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid #687b80;
+  background: #ffffff04;
+  justify-content: flex-start;
+  color: var(--identity-muted);
+  font-size: 12px;
+}
+.identity-finder kbd {
+  margin-left: auto;
+  font: 10px system-ui;
+  opacity: 0.7;
+}
+.identity-global .identity-help {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--identity-line);
+  font-size: 18px;
+}
+.identity-global .identity-locale {
+  min-width: 52px;
+  min-height: 40px;
+}
+.identity-global .identity-account-button {
+  margin-left: 3px;
+  padding: 0 0 0 14px;
+  border-left: 1px solid var(--identity-line);
+}
+.identity-account-name strong {
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.identity-account-name small {
+  font-size: 11px;
+}
+.identity-app .identity-account-main {
+  padding: 64px 38px 70px;
+}
+.identity-settings-layout {
+  display: grid;
+  grid-template-columns: 224px minmax(0, 760px);
+  gap: 64px;
+  max-width: 1130px;
+  margin: 0 auto;
+}
+.identity-settings-layout > div:first-child {
+  border-right: 1px solid var(--identity-line);
+  padding-right: 24px;
+}
+.identity-settings-sidebar h2 {
+  font:
+    22px "Cinzel Variable",
+    serif;
+  margin: 0 0 28px;
+  color: #dfc48a;
+}
+.identity-settings-sidebar button {
+  width: 100%;
+  text-align: left;
+  justify-content: flex-start;
+  min-height: 44px;
+  background: transparent;
+  border: 0;
+  padding: 11px 12px;
+  color: var(--identity-muted);
+  font-size: 14px;
+}
+.identity-settings-sidebar button[aria-current="page"] {
+  background: #a6e4ee0c;
+  color: var(--identity-accent);
+  box-shadow: inset 2px 0 var(--identity-accent);
+  font-weight: 600;
+}
+.identity-settings-group {
+  margin-bottom: 26px;
+}
+.identity-settings-group > span {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #dfc48a;
+  padding: 0 12px 10px;
+}
+.identity-settings-support {
+  border-top: 1px solid var(--identity-line);
+  padding-top: 16px;
+  margin-bottom: 32px;
+}
+.identity-campaign-settings p {
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0 12px 5px;
+}
+.identity-campaign-settings button {
+  color: #dfc48a;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  padding-inline: 12px;
+}
+.identity-settings-heading {
+  margin: 0 0 30px;
+}
+.identity-settings-heading > p {
+  font: 11px system-ui;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--identity-muted);
+  margin: 0 0 8px;
+}
+.identity-settings-heading h1 {
+  font:
+    34px "Cinzel Variable",
+    serif;
+  margin: 0;
+}
+.identity-settings-section {
+  border: 1px solid var(--identity-line);
+  background: linear-gradient(120deg, #142229, #0c171c);
+  padding: 24px 28px;
+  margin-bottom: 24px;
+}
+.identity-settings-section h2 {
+  font:
+    25px "Alegreya Variable",
+    serif;
+  color: #dfc48a;
+  margin: 0 0 16px;
+}
+.identity-settings-section h3 {
+  font:
+    20px "Alegreya Variable",
+    serif;
+  color: #dfc48a;
+  margin-top: 24px;
+}
+.identity-settings-section p {
+  font: 13px/1.6 system-ui;
+}
+.identity-settings-section form,
+.identity-settings-section > label {
+  max-width: 420px;
+}
+.identity-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 20px 0 4px;
+  border-top: 1px solid var(--identity-line);
+}
+.identity-setting-row label {
+  color: var(--identity-text);
+  font-weight: 500;
+}
+.identity-setting-row select {
+  width: auto;
+  min-width: 150px;
+  min-height: 44px;
+  border-color: #7d7259;
+}
+.identity-app .identity-field-help {
+  font: 13px/1.6 system-ui;
+  color: var(--identity-muted);
+  margin: 7px 0 0;
+}
+.identity-profile-summary {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 24px 0 28px;
+}
+.identity-profile-summary .identity-avatar {
+  width: 56px;
+  height: 56px;
+  font-size: 26px;
+}
+.identity-profile-summary strong {
+  font-size: 17px;
+}
+.identity-profile-summary p {
+  margin: 7px 0 0;
+}
+.identity-settings-section .identity-actions {
+  margin-top: 30px;
+}
+.identity-settings-section .identity-primary {
+  min-height: 44px;
+  padding: 11px 18px;
+}
+.identity-dice-preference {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.identity-dice-preference legend {
+  font: 500 14px system-ui;
+  margin: 5px 0 18px;
+}
+.identity-app .identity-dice-preference > label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 0;
+  border-top: 1px solid var(--identity-line);
+  cursor: pointer;
+  color: var(--identity-text);
+}
+.identity-dice-preference input {
+  appearance: auto;
+  accent-color: var(--identity-accent);
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  margin: 0;
+  padding: 0;
+  flex: none;
+}
+.identity-dice-preference strong {
+  display: block;
+  font: 500 14px system-ui;
+}
+.identity-dice-preference small {
+  display: block;
+  font: 13px/1.6 system-ui;
+  color: var(--identity-muted);
+  margin-top: 5px;
+}
+.identity-dice-preference .identity-field-help {
+  margin-top: 16px;
+}
+.identity-mobile-settings {
+  display: none !important;
+}
+.identity-search-results {
+  display: grid;
+  gap: 4px;
+  max-height: 55dvh;
+  overflow: auto;
+}
+.identity-search-results button {
+  justify-content: flex-start;
+  text-align: left;
+}
+.identity-shortcuts dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--identity-line);
+}
+.identity-shortcuts dd {
+  margin: 0;
+}
+@media (max-width: 1250px) {
+  .identity-header {
+    gap: 18px;
+    padding-inline: 22px;
+  }
+  .identity-header nav {
+    gap: 12px;
+  }
+  .identity-global .identity-finder {
+    width: 175px;
+  }
+  .identity-header .identity-brand {
+    font-size: 20px;
+  }
+  .identity-global {
+    gap: 8px;
+  }
+  .identity-settings-layout {
+    gap: 40px;
+  }
+}
+@media (max-width: 1050px) {
+  .identity-header {
+    height: auto;
+    min-height: 112px;
+    flex-wrap: wrap;
+    padding: 14px 22px 0;
+    gap: 8px;
+  }
+  .identity-header nav {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    height: 44px;
+    gap: 30px;
+  }
+  .identity-global {
+    margin-left: auto;
+  }
+  .identity-settings-layout {
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: 28px;
+  }
+  .identity-settings-section {
+    padding: 22px;
+  }
+  .identity-settings-layout > div:first-child {
+    padding-right: 16px;
+  }
+}
+@media (max-width: 700px) {
+  .identity-header {
+    padding: 10px 16px 0;
+    gap: 4px;
+    min-height: 112px;
+  }
+  .identity-header .identity-brand {
+    font-size: 16px;
+    gap: 7px;
+  }
+  .identity-mark {
+    width: 26px;
+    height: 26px;
+  }
+  .identity-global {
+    gap: 4px;
+  }
+  .identity-global .identity-finder {
+    width: 44px;
+    min-height: 44px;
+    padding: 8px;
+    justify-content: center;
+    border: 0;
+  }
+  .identity-finder span,
+  .identity-finder kbd {
+    display: none;
+  }
+  .identity-global .identity-help {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 5px;
+  }
+  .identity-global .identity-locale {
+    font-size: 12px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 5px;
+  }
+  .identity-global .identity-account-button {
+    padding: 0 0 0 7px;
+    margin: 0;
+  }
+  .identity-account-button .identity-avatar,
+  .identity-profile-summary .identity-avatar {
+    display: none;
+  }
+  .identity-account-name {
+    display: flex;
+    max-width: 55px;
+    font-size: 11px;
+  }
+  .identity-account-name strong {
+    max-width: 55px;
+  }
+  .identity-account-name small {
+    font-size: 10px;
+  }
+  .identity-header nav {
+    gap: 0;
+    justify-content: space-between;
+    overflow: visible;
+    margin-top: 6px;
+    height: 42px;
+  }
+  .identity-header nav button {
+    font-size: 11px;
+    padding-inline: 3px;
+    white-space: nowrap;
+  }
+  .identity-header nav .identity-table-navigation {
+    padding-right: 3px;
+  }
+  .identity-app .identity-account-main {
+    padding: 32px 16px 40px;
+  }
+  .identity-settings-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  .identity-settings-layout > div:first-child {
+    border: 0;
+    padding: 0;
+  }
+  .identity-settings-sidebar h2 {
+    font-size: 23px;
+    margin: 0 0 18px;
+  }
+  .identity-settings-sidebar nav,
+  .identity-campaign-settings {
+    display: none;
+  }
+  .identity-app .identity-mobile-settings {
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    gap: 18px;
+    font: 12px system-ui;
+  }
+  .identity-mobile-settings select {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px;
+    border-color: #7d7259;
+    font: 14px system-ui;
+  }
+  .identity-settings-heading {
+    margin: 0 0 20px;
+  }
+  .identity-settings-heading > p {
+    display: none;
+  }
+  .identity-settings-heading h1 {
+    font-size: 27px;
+  }
+  .identity-settings-section {
+    padding: 20px;
+    margin-bottom: 18px;
+  }
+  .identity-settings-section h2 {
+    font-size: 23px;
+  }
+  .identity-setting-row {
+    gap: 20px;
+  }
+  .identity-setting-row select {
+    min-width: 122px;
+  }
+  .identity-app .identity-field-help {
+    font-size: 12px;
+  }
+  .identity-settings-menu nav {
+    display: block;
+  }
+}
+
+.identity-header {
+  justify-content: space-between;
+}
+.identity-settings-sidebar button {
+  font: 14px system-ui;
+}
+.identity-dice-preference input {
+  color-scheme: light;
 }

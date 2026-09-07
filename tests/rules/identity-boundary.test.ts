@@ -64,6 +64,36 @@ beforeAll(async () => {
     storage: { rules: readFileSync("storage.rules", "utf8") },
   });
 });
+describe("personal preference persistence", () => {
+  it("updates dice and profile independently and keeps account data private", async () => {
+    const store = db("owner") as unknown as Firestore;
+    const session = new SessionController();
+    session.transition({ uid: "owner", campaignId: null, activeCharacterId: null });
+    const repo = createIdentityRepository(store, session);
+    await repo.saveAccount({ displayName: "Marco", locale: "it" });
+    await repo.saveAccount({ diceMode: "physical" });
+    await repo.saveAccount({ displayName: "Marco updated" });
+    await repo.saveAccount({ locale: "en" });
+    expect((await getDoc(doc(store, "folioAccounts/owner"))).data()).toEqual({
+      schema: 1,
+      displayName: "Marco updated",
+      locale: "en",
+      diceMode: "physical",
+    });
+    await assertFails(
+      updateDoc(doc(store, "folioAccounts/owner"), { diceMode: "other" })
+    );
+    for (const uid of ["member", "dm"]) {
+      await assertFails(getDoc(doc(db(uid), "folioAccounts/owner")));
+      await assertFails(
+        updateDoc(doc(db(uid), "folioAccounts/owner"), { diceMode: "digital" })
+      );
+    }
+    await assertFails(
+      getDoc(doc(env.unauthenticatedContext().firestore(), "folioAccounts/owner"))
+    );
+  });
+});
 describe("administrator matrix", () => {
   it("supports validated owner account access and character enumeration without assignment authority", async () => {
     const admin = db("admin");

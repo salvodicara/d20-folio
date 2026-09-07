@@ -9,7 +9,7 @@ new runtime's mutable store. The executable contract is `src/lib/identity/model.
 | Path                                                       | Fact and authority                                                                                                                                         |
 | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `users/{uid}`                                              | Existing trusted status/admin authority; clients cannot grant their role.                                                                                  |
-| `folioAccounts/{uid}`                                      | Schema 1 displayName and EN/IT locale; no duplicated membership list.                                                                                      |
+| `folioAccounts/{uid}`                                      | Schema 1 displayName, EN/IT locale and optional diceMode (digital/physical); no duplicated membership list.                                                |
 | `folioAccounts/{uid}/characters/{id}`                      | Stable owner/id, display identity, revision, nullable currentAssignment, authorized build/state sheet and path-only portrait.                              |
 | `folioCampaigns/{id}`                                      | Schema 1 name, explicit members, dmUid, revision, archived and joinOpen.                                                                                   |
 | `folioCampaigns/{id}/roster/{ownerUid}~{characterId}`      | Reciprocal reference: ownerUid, characterId, assignmentId, version. No second assignment authority or copied sheet.                                        |
@@ -18,6 +18,13 @@ new runtime's mutable store. The executable contract is `src/lib/identity/model.
 | Campaign `dmNotes/main`                                    | Narrative text accessible to DM/admin, never a shared Encounter field.                                                                                     |
 | `folioInvites/{campaignId}`                                | Only id, name and joinOpen, avoiding disclosure of campaign membership before joining.                                                                     |
 | Account `offers/{id}` and `receipts/{senderUid}~{offerId}` | Immutable addressed source/version offer and recipient-owned stable receipt. Future revocation denies new acceptance; P04/P24 own payload materialization. |
+
+Personal dice preference is `folioAccounts/{uid}.diceMode`, optional for existing schema-1
+accounts and decoded as `digital` when absent. Only `digital`/`physical` are accepted. Profile,
+locale and dice updates merge only the changed fields, preserving concurrent unrelated changes.
+This does not alter character schemas or migrate stored player data. P15 consumes this single
+account preference; no gameplay consumer is implemented by P02. Existing profile owner/admin
+ACL remains unchanged; members and DMs cannot read or write another account's preference.
 
 A current assignment is null or `{campaignId, assignmentId, version}`. Only the character
 owner changes it. Commit rules require target membership, exact reciprocal roster and a

@@ -30,6 +30,20 @@ literal private Firestore documents, with functioning owner/DM editors. Storage 
 cover private/DM attachments, but attachment upload/editor UX is not implemented in P02.
 Previously received bytes or legacy bearer URLs are not claimed retrospectively revoked.
 
+P02's minimal shell uses browser history for its available destinations. All seven Account
+sections share one desktop sidebar and phone selector. Search uses only available destinations,
+loaded owned characters and authorized memberships. Help documents search, help and Escape;
+editing, composition, repeated keypresses and existing dialogs suppress accelerators. Language
+catalogue loading and account updates are fenced before the visible locale commit. No product
+switch disables motion or shortcuts; browser reduced-motion behavior is retained.
+
+Account persistence accepts narrow profile, locale and dice-mode updates. Existing account
+subscriptions supply the preference, without another listener or localStorage replica. Missing
+legacy schema-1 diceMode decodes to digital. P15 is the future gameplay consumer; P09 owns full
+cross-domain routing/search, P23 real session notification delivery, P27b complete account backup/
+recovery and P27c installed PWA/support/legal/reporting services. Their Account destinations
+remain navigable, with honest availability text and no fake action confirmations.
+
 The path/model/privacy matrix is owned by CHARACTER_SCHEMA; PROGRAM_STATUS alone records
 verification and integration. Full scope and exclusions are in the P02 specification.
 

@@ -1,38 +1,50 @@
 import { useEffect, useRef, useState, type SubmitEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import * as Dialog from "@radix-ui/react-dialog";
-import {
-  BookOpen,
-  ChevronDown,
-  ChevronRight,
-  Dice5,
-  LogOut,
-  Plus,
-  Search,
-  Shield,
-  UserRound,
-  UsersRound,
-  X,
-} from "lucide-react";
+import { Search, Shield, UserRound, UsersRound, X } from "lucide-react";
 import type {
+  DiceMode,
   CharacterRef,
   FolioCharacter,
   FolioCampaign,
   RosterEntry,
 } from "@/lib/identity/model";
 import "./identity.css";
+import { IdentityAccount, AccountNavigation } from "./IdentityAccount";
+import { accountSections, accountLabel, type AccountSection } from "./navigation";
 import { IdentitySheet } from "./IdentitySheet";
 import identityMark from "./assets/d20-mark.svg";
-import { changeLanguage } from "@/i18n";
+import contextUserIcon from "./assets/circle-user-round.svg";
+import contextBackIcon from "./assets/arrow-left.svg";
+import contextListIcon from "./assets/list.svg";
+import { ensureLocale } from "@/i18n";
 import { srdCatalogues } from "@/i18n/srd-en";
 import { CheckboxField } from "@/components/ui/selection";
 
-type Page = "account" | "characters" | "invite" | "campaign";
+export type IdentityPage = AccountSection | "characters" | "invite" | "campaign";
+type Page = IdentityPage;
+const pages: readonly string[] = [...accountSections, "characters", "invite", "campaign"];
+function urlPage(fallback: Page): Page {
+  const id = window.location.hash.slice(1);
+  return pages.includes(id) ? (id as Page) : fallback;
+}
+function historyIndex(): number {
+  const state: unknown = window.history.state;
+  if (state && typeof state === "object" && "folioIndex" in state) {
+    const index = state.folioIndex;
+    if (typeof index === "number" && Number.isSafeInteger(index) && index >= 0)
+      return index;
+  }
+  return 0;
+}
 export interface IdentityWorkspaceProps {
   initialPage?: Page;
   onPageChange?: (page: Page) => void;
   uid: string;
   displayName: string;
+  diceMode?: DiceMode;
+  onSaveDiceMode?: (mode: DiceMode) => Promise<void>;
+  onSaveLocale?: (locale: "en" | "it") => Promise<void>;
   characters: readonly FolioCharacter[];
   campaigns: readonly FolioCampaign[];
   roster: readonly RosterEntry[];
@@ -72,7 +84,12 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
   const { t, i18n } = useTranslation("common");
   const label = (key: string, values?: Record<string, string | number>) =>
     t(`identity.${key}`, values);
-  const [page, setPage] = useState<Page>(p.initialPage ?? "account");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [sectionsOpen, setSectionsOpen] = useState(false);
+  const [page, setPage] = useState<Page>(() => urlPage(p.initialPage ?? "account"));
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [nameDraft, setName] = useState<string | null>(null);
@@ -100,11 +117,85 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
   );
   const campaign = p.campaigns.find((c) => c.id === p.campaignId);
   const navigate = (next: Page) => {
+    if (next !== page) {
+      const index = historyIndex();
+      if (!index) window.history.replaceState({ folioIndex: index }, "");
+      window.history.pushState({ folioIndex: index + 1 }, "", "#" + next);
+    }
+    setSearchOpen(false);
+    setHelpOpen(false);
+    setAccountOpen(false);
+    setSectionsOpen(false);
     requestGeneration.current++;
     setInvite(null);
     p.onClearInspection();
     setPage(next);
     p.onPageChange?.(next);
+  };
+  const { onClearInspection, onPageChange } = p;
+  useEffect(() => {
+    const restore = () => {
+      requestGeneration.current++;
+      setInvite(null);
+      setSectionsOpen(false);
+      setAccountOpen(false);
+      setSearchOpen(false);
+      setHelpOpen(false);
+      setAssignment(null);
+      setNewCampaign(false);
+      setRevokeUid(null);
+      onClearInspection();
+      const next = urlPage("account");
+      setPage(next);
+      onPageChange?.(next);
+    };
+    window.addEventListener("popstate", restore);
+    window.addEventListener("hashchange", restore);
+    return () => {
+      window.removeEventListener("popstate", restore);
+      window.removeEventListener("hashchange", restore);
+    };
+  }, [onClearInspection, onPageChange]);
+  useEffect(() => {
+    const keys = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        event.repeat ||
+        event.isComposing ||
+        (target instanceof HTMLElement &&
+          (target.isContentEditable ||
+            target.closest(
+              'input,textarea,select,[role="textbox"],[role="combobox"]'
+            ))) ||
+        document.querySelector('[role="dialog"]')
+      )
+        return;
+      if (
+        event.key.toLowerCase() === "k" &&
+        (event.ctrlKey || event.metaKey) &&
+        !event.altKey
+      ) {
+        event.preventDefault();
+        setSearchQuery("");
+        setSearchOpen(true);
+      } else if (event.key === "?" && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault();
+        setHelpOpen(true);
+      }
+    };
+    document.addEventListener("keydown", keys);
+    return () => document.removeEventListener("keydown", keys);
+  }, []);
+  const accountPage = accountSections.includes(page as AccountSection);
+  const changeLocale = (locale: "en" | "it") => {
+    const generation = requestGeneration.current;
+    void (async () => {
+      await ensureLocale(locale);
+      if (generation !== requestGeneration.current) return;
+      await p.onSaveLocale?.(locale);
+      if (generation !== requestGeneration.current) return;
+      await i18n.changeLanguage(locale);
+    })().catch(() => {});
   };
   const submit = (event: SubmitEvent, action: () => Promise<void>) => {
     event.preventDefault();
@@ -144,11 +235,18 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
         <Dialog.Overlay className="identity-overlay" />
         <Dialog.Content
           className="identity-dialog"
-          onOpenAutoFocus={() => {
+          onOpenAutoFocus={(event) => {
             dialogReturnFocus.current =
               document.activeElement instanceof HTMLElement
                 ? document.activeElement
                 : null;
+            const search = document.querySelector<HTMLInputElement>(
+              ".identity-search-dialog input"
+            );
+            if (search) {
+              event.preventDefault();
+              search.focus();
+            }
           }}
           onCloseAutoFocus={(event) => {
             if (dialogReturnFocus.current?.isConnected) {
@@ -185,204 +283,177 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
             onClick={() => navigate("campaign")}
             aria-current={page === "campaign" ? "page" : undefined}
           >
-            <UsersRound size={16} />
-            {label("campaign")}
+            {label("campaignNavigation")}
           </button>
-          <button disabled title={label("notAvailable")}>
-            <Dice5 size={16} />
+          <button
+            className="identity-table-navigation"
+            disabled
+            title={label("notAvailable")}
+          >
             {label("atTable")}
           </button>
           <button
             onClick={() => navigate("characters")}
             aria-current={page === "characters" ? "page" : undefined}
           >
-            <UserRound size={16} />
             {label("character")}
           </button>
           <button disabled title={label("notAvailable")}>
-            <BookOpen size={16} />
             {label("library")}
           </button>
         </nav>
         <div className="identity-global">
           <button
-            onClick={() => navigate("account")}
+            className="identity-finder"
+            aria-label={label("searchFolio")}
+            aria-keyshortcuts="Control+k Meta+k"
+            onClick={() => {
+              setSearchQuery("");
+              setSearchOpen(true);
+            }}
+          >
+            <Search size={18} />
+            <span>{label("searchFolioPlaceholder")}</span>
+            <kbd>⌘ K</kbd>
+          </button>
+          <button
+            className="identity-help"
+            aria-label={label("keyboardHelp")}
+            aria-keyshortcuts="?"
+            onClick={() => setHelpOpen(true)}
+          >
+            ?
+          </button>
+          <button
+            className="identity-locale"
+            disabled={p.busy}
+            aria-label={label(
+              profileLocale === "it" ? "switchToEnglish" : "switchToItalian"
+            )}
+            onClick={() => changeLocale(profileLocale === "it" ? "en" : "it")}
+          >
+            {profileLocale === "it" ? "EN" : "IT"}
+          </button>
+          <button
+            className="identity-account-button"
+            onClick={() => setAccountOpen(true)}
             aria-label={label("account")}
-            aria-current={page === "account" ? "page" : undefined}
+            aria-haspopup="dialog"
           >
             <span className="identity-avatar">{p.displayName.slice(0, 1)}</span>
             <span className="identity-account-name">
               <strong>{p.displayName}</strong>
-              <small>{label("yourSpace")}</small>
+              <small>{label("account")}</small>
             </span>
-          </button>
-          <button
-            aria-label={label("changeLanguage")}
-            onClick={() =>
-              void changeLanguage(i18n.language.startsWith("it") ? "en" : "it")
-            }
-          >
-            {i18n.language.startsWith("it") ? "IT" : "EN"}
-            <ChevronDown size={12} />
           </button>
         </div>
       </header>
-      <div className="identity-context">
-        <span>{label("yourSpace")}</span>
-        <ChevronRight size={14} />
-        <strong>{title}</strong>
-        {selected && (
-          <span className="identity-active">
-            {label("activeCharacter")}: {selected.name}
-          </span>
-        )}
-      </div>
-      <nav className="identity-subnav" aria-label={label("accountNavigation")}>
-        {(["account", "characters", "invite"] as const).map((next) => (
-          <button
-            key={next}
-            aria-current={page === next ? "page" : undefined}
-            onClick={() => navigate(next)}
-          >
-            {label(next)}
-          </button>
-        ))}
-      </nav>
-      <main className="identity-main">
-        <div className="identity-page-heading">
-          <div>
-            <p className="identity-kicker">{label("personalSpace")}</p>
-            <h1>
-              {page === "account"
-                ? label("welcome", { name: p.displayName })
-                : page === "invite"
-                  ? label("inviteTitle")
-                  : title}
-            </h1>
-            <p>{label(`${page}Intro`)}</p>
+      {!accountPage && (
+        <>
+          <div className="identity-context">
+            <span>{label("yourSpace")}</span>
+            <span aria-hidden="true">/</span>
+            <strong>{title}</strong>
+            <button
+              className="identity-back"
+              disabled={!historyIndex()}
+              onClick={() => window.history.back()}
+            >
+              <img src={contextBackIcon} alt="" aria-hidden="true" />
+              {label("back")}
+            </button>
+            {selected && (
+              <span className="identity-active">
+                {label("activeCharacter")}: {selected.name}
+              </span>
+            )}
           </div>
-          {page === "characters" && p.onImport && (
-            <label className="identity-button identity-import">
-              <Plus size={16} />
-              {label("importCharacter")}
-              <input
-                type="file"
-                accept=".json,application/json"
-                disabled={p.busy}
-                onChange={(event) => {
-                  const file = event.currentTarget.files?.[0];
-                  const generation = requestGeneration.current;
-                  if (file)
-                    void file
-                      .text()
-                      .then((text) => {
-                        if (generation === requestGeneration.current)
-                          return p.onImport?.(text);
-                        return undefined;
-                      })
-                      .catch(() => {});
-                  event.currentTarget.value = "";
-                }}
-              />
-            </label>
-          )}
-        </div>
+          <nav aria-label={label("accountNavigation")} className="identity-subnav">
+            <button
+              aria-current="page"
+              onClick={() => navigate(page === "characters" ? "characters" : "account")}
+            >
+              <img src={contextUserIcon} alt="" aria-hidden="true" />
+              {label(page === "characters" ? "sheetNavigation" : "yourSpace")}
+            </button>
+            <button
+              className="identity-more-sections"
+              onClick={() => setSectionsOpen(true)}
+            >
+              <img src={contextListIcon} alt="" aria-hidden="true" />
+              {label("moreSections")}
+            </button>
+          </nav>
+        </>
+      )}
+      <main className={"identity-main" + (accountPage ? " identity-account-main" : "")}>
+        {!accountPage && (
+          <div className="identity-page-heading">
+            <div>
+              <p className="identity-kicker">
+                {page === "characters" ? label("yourSpace") : "d20 Folio"}
+              </p>
+              <h1>
+                {page === "account"
+                  ? label("welcome", { name: p.displayName })
+                  : page === "invite"
+                    ? label("inviteTitle")
+                    : title}
+              </h1>
+              <p>{label(`${page}Intro`)}</p>
+            </div>
+            {page === "characters" && p.onImport && (
+              <label className="identity-button identity-import">
+                {label("importCharacter")}
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  disabled={p.busy}
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0];
+                    const generation = requestGeneration.current;
+                    if (file)
+                      void file
+                        .text()
+                        .then((text) => {
+                          if (generation === requestGeneration.current)
+                            return p.onImport?.(text);
+                          return undefined;
+                        })
+                        .catch(() => {});
+                    event.currentTarget.value = "";
+                  }}
+                />
+              </label>
+            )}
+          </div>
+        )}
         {p.error && (
           <div role="alert" className="identity-error">
             <p>{label(i18n.exists("identity." + p.error) ? p.error : "requestFailed")}</p>
             <button onClick={p.onRetry}>{label("retry")}</button>
           </div>
         )}
-        {p.loading && <p role="status">{label("loading")}</p>}
+        {p.loading && (
+          <p role="status" className="identity-loading">
+            {label("loading")}
+          </p>
+        )}
         {p.busy && (
           <p role="status" className="identity-progress">
             {label("saving")}
           </p>
         )}
-        {page === "account" && (
-          <div className="identity-account-grid">
-            <section className="identity-panel">
-              <p className="identity-kicker">{label("profile")}</p>
-              <h2>{label("profile")}</h2>
-              <form
-                onSubmit={(event) =>
-                  submit(event, () => p.onSaveProfile(name, profileLocale))
-                }
-              >
-                <label>
-                  {label("displayName")}
-                  <input
-                    value={name}
-                    maxLength={80}
-                    required
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </label>
-                <label>
-                  {label("language")}
-                  <select
-                    value={profileLocale}
-                    onChange={(e) => {
-                      const locale = e.target.value as "en" | "it";
-
-                      void changeLanguage(locale);
-                    }}
-                  >
-                    <option value="it">Italiano</option>
-                    <option value="en">English</option>
-                  </select>
-                </label>
-                <div className="identity-actions">
-                  <button className="identity-primary" disabled={p.busy}>
-                    {label("saveProfile")}
-                  </button>
-                  <button type="button" onClick={() => void p.onSignOut()}>
-                    <LogOut size={15} />
-                    {label("signOut")}
-                  </button>
-                </div>
-              </form>
-              <div className="identity-rule" />
-              <h3>{label("characters")}</h3>
-              <p>{label("ownedCount", { count: p.characters.length })}</p>
-              <button onClick={() => navigate("characters")}>
-                {label("openCharacters")}
-                <ChevronRight size={15} />
-              </button>
-            </section>
-            <section className="identity-panel">
-              <p className="identity-kicker">{label("memberships")}</p>
-              <h2>{label("yourCampaigns")}</h2>
-              <p>{label("membershipsIntro")}</p>
-              <ul className="identity-list">
-                {p.campaigns.map((c) => (
-                  <li key={c.id}>
-                    <div>
-                      <strong>{c.name}</strong>
-                      <small>{label(c.dmUid === p.uid ? "dm" : "player")}</small>
-                    </div>
-                    <button
-                      onClick={() => {
-                        p.onNavigateCampaign(c.id);
-                        navigate("campaign");
-                      }}
-                      aria-label={label("openCampaign", { name: c.name })}
-                    >
-                      <ChevronRight size={18} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              {!p.campaigns.length && <p>{label("noCampaigns")}</p>}
-              <div className="identity-actions">
-                <button onClick={() => navigate("invite")}>{label("enterInvite")}</button>
-                <button onClick={() => setNewCampaign(true)}>
-                  <Plus size={15} />
-                  {label("createCampaign")}
-                </button>
-              </div>
-            </section>
-          </div>
+        {accountPage && (
+          <IdentityAccount
+            p={p}
+            section={page as AccountSection}
+            navigate={navigate}
+            name={name}
+            setName={setName}
+            locale={profileLocale}
+            changeLocale={changeLocale}
+          />
         )}
         {page === "characters" && (
           <>
@@ -512,7 +583,6 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
               </label>
               <button className="identity-primary" disabled={p.busy}>
                 {label("readInvite")}
-                <ChevronRight size={15} />
               </button>
             </form>
             {invite && (
@@ -590,7 +660,6 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
                 ))}
               </select>
               <button onClick={() => setNewCampaign(true)}>
-                <Plus size={16} />
                 {label("createCampaign")}
               </button>
             </div>
@@ -659,7 +728,6 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
                   </button>
                 </section>
                 <section className="identity-panel">
-                  <p className="identity-kicker">{label("memberships")}</p>
                   <h2>{label("participants")}</h2>
                   <ul className="identity-list">
                     {campaign.members.map((uid, index) => (
@@ -712,6 +780,120 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
           </>
         )}
       </main>
+      {modal(
+        accountOpen,
+        () => setAccountOpen(false),
+        label("account"),
+        <AccountNavigation section={page} navigate={navigate} menu />
+      )}
+      {modal(
+        helpOpen,
+        () => setHelpOpen(false),
+        label("keyboardHelp"),
+        <div className="identity-shortcuts">
+          <p>{label("shortcutIntro")}</p>
+          <dl>
+            <div>
+              <dt>{label("searchFolio")}</dt>
+              <dd>
+                <kbd>Ctrl / ⌘ K</kbd>
+              </dd>
+            </div>
+            <div>
+              <dt>{label("openHelp")}</dt>
+              <dd>
+                <kbd>?</kbd>
+              </dd>
+            </div>
+            <div>
+              <dt>{label("closeDialog")}</dt>
+              <dd>
+                <kbd>Esc</kbd>
+              </dd>
+            </div>
+          </dl>
+        </div>
+      )}
+      {modal(
+        searchOpen,
+        () => setSearchOpen(false),
+        label("searchFolio"),
+        <div className="identity-search-dialog">
+          <input
+            type="search"
+            aria-label={label("searchFolio")}
+            placeholder={label("searchFolioPlaceholder")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <p>{label("searchScope")}</p>
+          <div className="identity-search-results">
+            {([...accountSections, "characters", "invite", "campaign"] as Page[])
+              .filter((id) =>
+                label(
+                  accountSections.includes(id as AccountSection)
+                    ? accountLabel(id as AccountSection)
+                    : id
+                )
+                  .toLocaleLowerCase()
+                  .includes(searchQuery.toLocaleLowerCase())
+              )
+              .map((id) => (
+                <button key={id} onClick={() => navigate(id)}>
+                  {label(
+                    accountSections.includes(id as AccountSection)
+                      ? accountLabel(id as AccountSection)
+                      : id
+                  )}
+                </button>
+              ))}
+            {p.characters
+              .filter((c) =>
+                c.name.toLocaleLowerCase().includes(searchQuery.toLocaleLowerCase())
+              )
+              .map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => {
+                    setSearchOpen(false);
+                    p.onInspect({ ownerUid: c.ownerUid, id: c.id });
+                  }}
+                >
+                  {c.name}
+                </button>
+              ))}
+            {p.campaigns
+              .filter((c) =>
+                c.name.toLocaleLowerCase().includes(searchQuery.toLocaleLowerCase())
+              )
+              .map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => {
+                    p.onNavigateCampaign(c.id);
+                    navigate("campaign");
+                  }}
+                >
+                  {c.name}
+                </button>
+              ))}
+          </div>
+        </div>
+      )}
+      {modal(
+        sectionsOpen,
+        () => setSectionsOpen(false),
+        label("moreSections"),
+        <div className="identity-section-links">
+          {(["account", "characters", "invite", "campaign"] as const).map(
+            (destination) => (
+              <button key={destination} onClick={() => navigate(destination)}>
+                {label(destination)}
+              </button>
+            )
+          )}
+        </div>
+      )}
       {modal(
         assignment !== null,
         () => setAssignment(null),

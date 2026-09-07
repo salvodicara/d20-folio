@@ -12,6 +12,40 @@ The preceding P02 candidate is diagnostic material. Its visual request is withdr
 Technical discretion and implementation are authorized; no further technical design approval
 is needed. Actual new runtime screenshots still require the owner's pertinent verdict.
 
+## Authorized shell/Account correction — 7 September 2026
+
+The approved 0.9.3 mock plus `shell-review-20260907/DECISIONS.md` and r2 screenshots
+supersede the rejected runtime chrome. Account has one stable desktop sidebar and phone
+section selector: Profile, Preferences, Notifications, Privacy, Backups and recovery,
+Offline data, Support. Preserve the reference fonts, palette, assets and icon placement.
+Account is a global utility below the actual account name; four text-only product domains
+remain in the header. Desktop search is visible; phone search is a magnifier; help is `?`.
+Language toggles directly to the named destination EN/IT, with explicit accessible naming.
+No motion/shortcut product switches; keep OS/browser reduced-motion and typing/dialog guards.
+
+P02 search indexes only authorized loaded identities, memberships and real P02 destinations.
+Help documents only implemented commands (search, help, Escape). No simulated services or
+future game commands. Unimplemented Account services preserve their containing navigation
+and explain availability without pretend controls. Privacy explains actual P02 access;
+recovery exposes the already implemented original-copy recovery through owned characters.
+P09 owns the full multi-domain shell/search. P23 owns reminders/notifications; P27b owns
+full Account preferences/export/backups/recovery and P27c installed PWA/offline/support/legal
+services. P02 exposes honest destinations and its existing original-copy recovery only.
+
+Personal dice preference has one account field `diceMode`: `digital` or `physical`, absent
+on existing schema-1 accounts means `digital`. Field-level writes preserve unrelated profile,
+locale and preference changes. It is account-private, guarded by current identity authority;
+no character/campaign migration is needed. P15 consumes this single preference and builds
+shared animated 3D dice with authoritative results and physical entry. Persisting the choice
+is not P15 implementation. Account locale uses the same narrow update seam. Existing cached
+owner views work offline; unacknowledged writes never claim saved success.
+
+URLs and browser Back/Forward identify P02 destinations, including all Account sections.
+Navigation clears incompatible inspection/dialog/invite requests while preserving valid
+roster filters and profile drafts. Auth remounts clear private transient data. No new routing
+bridge or gameplay runtime is introduced. Account display names remain private under P02 ACL;
+do not copy the mock's unsupported promise that companions see the profile name.
+
 ## New boundary
 
 Build a new identity module, not extensions to legacy gameplay. Firebase Auth remains the
@@ -56,7 +90,7 @@ Full library materialization and eleven-family editing remain P04/P24 and their 
 ## Mock mapping and functional boundary
 
 - Account (`account-tools.js`, screen-account-it-dark-1440): profile and current memberships,
-  authenticated sign-in/out, locale, explicit invite entry; remaining account utilities P27.
+  authenticated sign-in/out, locale, explicit invite entry; remaining account utilities P23/P27b/P27c as assigned above.
 - Personal roster (`character-management.js`, screen-roster-it-dark-1440): portrait/identity,
   independent/per-campaign filtering, active selection and manage assignment. Creation wizard
   belongs to P10; imports here serve verified migration, not an invented generic wizard.
