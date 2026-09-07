@@ -217,6 +217,11 @@ Il delta è nella copia /Users/salvatoredicara/Workspace/Codex/d20-design-dialog
 
 ## P02 r2 runtime mapping — 7 September 2026
 
+Owner delivery priority (7 September, after P03 screenshots): implement the complete mock
+and required capabilities first; review fine details once the whole plan is implemented.
+PRODUCT owns this prioritization. Resolve minor visual choices autonomously within the
+approved design instead of repeatedly requesting polish verdicts during each block.
+
 Phone search/help/locale touch targets are at least 44×44 px, applying the existing
 touch-min contract while retaining the approved glyphs, hierarchy and palette.
 

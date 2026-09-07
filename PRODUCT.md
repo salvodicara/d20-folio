@@ -1,5 +1,15 @@
 # Product
 
+## Owner delivery priority — 7 September 2026
+
+Implement the whole approved mock and every required application capability through the
+ordered plan. The owner expects further changes once the complete application can be judged;
+defer fine visual and interaction polishing to that final review rather than repeatedly
+seeking decisions on minor details. Astra resolves implementation details and preserves the
+approved direction. This prioritization does not reduce functional depth, correctness,
+privacy, data recovery or the verified delivery contract. Execution permissions and receipts
+belong only in docs/PROGRAM_STATUS.md. Propagate this priority in subsequent plans and prompts.
+
 ## Owner rectification — new V2 application, 6 September 2026
 
 V2 is a completely new application. The binding experience reference is Astra's approved

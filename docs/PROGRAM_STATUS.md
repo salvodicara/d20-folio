@@ -1,6 +1,16 @@
 # Program Status
 
-## Current frontier — P03 awaiting owner verdicts (2026-09-07)
+## Current frontier — P03 integration authorized (2026-09-07)
+
+The owner answered the explicit screenshot-and-V2-integration question: “per me va tutto bene,
+implementa il mockup, tutto quanto” and asked to defer fine details until the whole plan is
+finished. This approves the shown P03 runtime and authorizes its V2 integration. PRODUCT owns
+the durable priority; it does not start P04 in this session. No deploy, production switch,
+real migration, cost or main push. Fresh fetch confirmed origin/v2 still 7d4c0a14 and main
+9b06b753; rebase was a no-op. Pre-integration verification and push/cleanup are in progress.
+Runtime remains 89b386a8; approval changes only documents. No new screenshot capture needed.
+
+## Historical P03 acceptance — owner verdicts were pending
 
 Owner: Astra, sole implementation writer in isolated codex/p03-shared-offline-20260907,
 /Users/salvatoredicara/Workspace/Codex/d20-folio-p03-shared-offline, from fresh origin/v2
