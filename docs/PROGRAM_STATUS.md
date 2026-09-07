@@ -1,6 +1,29 @@
 # Program Status
 
-## Current frontier — P05 closure receipt (2026-09-07)
+## Current frontier — P06 discovery and design (2026-09-07)
+
+Owner/writer: Astra, codex/p06-monsters-rules-20260907 at
+/Users/salvatoredicara/Workspace/Codex/d20-folio-p06-monsters-rules.
+Fresh origin/v2 and the new clean detached p06-control were verified at
+c039ff2547bef3592d2317f09028065f10a1759a; origin/main remains
+9b06b75313d7ee353c4072a20397c3092707648e. This is the integration baseline, not a P06 result.
+P05 final remote, cleanup and approval receipts were verified; P04/P05 remain closed.
+P06 alone is authorized. No P07, engine execution, production write, deploy or main push.
+
+Pinned Node 24.16.0/pnpm 11.2.2 bootstrap completed. The composed private pack resolves to
+/Users/salvatoredicara/Workspace/d20-folio-content-v2/content-pack at clean b6073dd0 and is read-only.
+Shared checkout, long-lived V2 and all unrelated worktrees are preserved; Firestore PID86001/8080
+is preserved. Read-only reference and contract analyses support Astra's spec/plan; no other writer.
+
+Current outcome: reconcile P06 spec/plan before code. Required exits remain open: typed monster/rule
+editors, actual preparation/activation reuse, real optimized demo acceptance, independent review,
+CI/full rules/seam and six-copy gates, curated screenshots and explicit owner V2 integration verdict.
+PRODUCT's custom automation/editable combat requirement is binding: P06 proves authoring and reuse;
+future engine/play must prove actual custom costs/effects, in-use edits and causal undo.
+Evidence commands, failures, manifests and service receipts belong externally in
+/Users/salvatoredicara/Workspace/Codex/d20-folio-p06-evidence. No successor prompt before closure.
+
+## Historical P05 closure receipt (2026-09-07)
 
 Owner: Astra. P05 implementation, independent code/visual/paper review, actual optimized runtime
 acceptance and owner screenshot/V2 integration verdict are complete. The owner reaffirmed that
