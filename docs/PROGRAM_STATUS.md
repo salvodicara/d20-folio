@@ -1,5 +1,19 @@
 # Program Status
 
+## Current frontier — P04 in progress (2026-09-07)
+
+Owner/writer: Astra, isolated codex/p04-library-versions-20260907 at
+/Users/salvatoredicara/Workspace/Codex/d20-folio-p04-library-versions.
+Fresh origin/v2 and clean detached p04-control verified at
+0acb21f4e885d3940e2a3c032cc6e73c62ae7759; origin/main remains 9b06b753.
+Pinned bootstrap completed; verified read-only V2 pack b6073dd0, nested content-pack target.
+P02/P03 remain closed. P04 discovery/spec/plan in progress; no implementation/gate PASS yet.
+Read-only source and repository contract reviewers have no write ownership.
+Shared checkout and other worktrees preserved; pre-existing Firestore PID86001/8080 untouched.
+Only P04 is authorized. Runtime screenshots and per-change V2 integration remain owner gates;
+no deploy, production data, costs, main push or P05. Evidence: external d20-folio-p04-evidence.
+The older frontiers below retain historical context and do not control this session.
+
 ## Current frontier — P03 closed; P04 selected, not started (2026-09-07)
 
 Owner: Astra. P03 is CLOSED: implementation, independent code/visual reviews, actual two-client
