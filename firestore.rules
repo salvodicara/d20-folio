@@ -81,6 +81,7 @@ service cloud.firestore {
               && getAfter(/databases/$(database)/documents/folioCampaigns/$(o.target.campaignId)/dmNotes/main).data.lastOperation == {'uid':o.uid,'opId':o.opId}
               && noteTransition(/databases/$(database)/documents/folioCampaigns/$(o.target.campaignId)/dmNotes/main,o.target))))
           || (o.kind in ['library-save','library-publish','library-offer','library-accept','library-revoke'] && libraryOperation(o))
+          || (o.kind in ['homebrew-add','homebrew-update','homebrew-state'] && homebrewOperation(o))
           || (o.kind == 'assignment' && o.keys().hasOnly(['kind','opId','uid','scope','target','baseRevision','authority','campaignId','campaignRevision']) && assignmentOperation(o,revision));
       }
     }
@@ -190,6 +191,56 @@ service cloud.firestore {
       allow create, update: if folioUser() && (isAdmin() || getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.dmUid == request.auth.uid)
         && request.resource.data == {'id':id,'name':getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.name,
           'joinOpen':getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.joinOpen && !getAfter(/databases/$(database)/documents/folioCampaigns/$(id)).data.archived};
+    }
+    // P05: one character-owned instance per exact P03 receipt; no admin consent.
+    function homebrewPath(o) { return /databases/$(database)/documents/folioAccounts/$(o.character.ownerUid)/characters/$(o.character.id)/homebrew/$(o.targetId); }
+    function homebrewState(s) {
+      return s is map && s.keys().hasOnly(['quantity','remainingCharges','prepared','equipped','attuned'])
+        && s.quantity is int && s.quantity >= 0 && s.quantity <= 9007199254740991
+        && (s.remainingCharges == null || (s.remainingCharges is int && s.remainingCharges >= 0 && s.remainingCharges <= 9007199254740991))
+        && s.prepared is bool && s.equipped is bool && s.attuned is bool;
+    }
+    function homebrewAuthority(o) {
+      let p=/databases/$(database)/documents/folioAccounts/$(o.character.ownerUid)/characters/$(o.character.id);
+      let c=get(p).data;
+      return o.character.keys().hasOnly(['ownerUid','id']) && o.character.ownerUid == request.auth.uid
+        && folioId(o.character.id) && o.authority == {'characterRevision':c.revision,'assignment':c.currentAssignment,'campaignRevision':null}
+        && getAfter(p).data == c;
+    }
+    function homebrewSource(o) {
+      let v=o.snapshot;
+      let p=/databases/$(database)/documents/folioAccounts/$(o.uid)/library/$(v.entryId)/versions/$(string(v.version));
+      return v.ownerUid == o.uid && v.schema == 1 && v.version is int && v.version >= 1
+        && v.definition.family in ['weapon','equipment','spell','feature']
+        && get(p).data == v && getAfter(p).data == v;
+    }
+    function homebrewBase(o) {
+      let p=homebrewPath(o);
+      return (o.kind == 'homebrew-add' && !exists(p) && o.base == null && o.baseRevision == 0 && homebrewSource(o))
+        || (o.base != null && exists(p) && o.base == get(p).data && o.baseRevision == o.base.revision
+          && ((o.kind == 'homebrew-update' && o.snapshot.entryId == o.base.snapshot.entryId && o.state == o.base.state && homebrewSource(o))
+            || (o.kind == 'homebrew-state' && o.snapshot == o.base.snapshot)));
+    }
+    function homebrewOperation(o) {
+      let n=getAfter(homebrewPath(o)).data;
+      return o.keys().hasOnly(['kind','opId','uid','scope','baseRevision','authority','character','targetId','base','snapshot','state'])
+        && folioId(o.targetId) && o.uid == request.auth.uid && homebrewAuthority(o)
+        && homebrewState(o.state) && homebrewBase(o)
+        && n == {'schema':1,'id':o.targetId,'character':o.character,'revision':o.baseRevision+1,'snapshot':o.snapshot,'state':o.state,'lastOperation':{'uid':o.uid,'opId':o.opId}};
+    }
+    match /folioAccounts/{uid}/characters/{characterId}/homebrew/{instanceId} {
+      allow read: if folioReadCharacter(uid,characterId,get(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(characterId)).data);
+      function validWrite() {
+        let last=request.resource.data.lastOperation;
+        let r=operationReceipt(uid,last.opId);
+        return folioUser() && request.auth.uid == uid && last.uid == uid && folioId(last.opId)
+          && !exists(/databases/$(database)/documents/folioAccounts/$(uid)/operations/$(last.opId))
+          && r.operation.uid == uid && r.operation.opId == last.opId && r.revision == r.operation.baseRevision+1
+          && r.operation.kind in ['homebrew-add','homebrew-update','homebrew-state']
+          && r.operation.character == {'ownerUid':uid,'id':characterId} && r.operation.targetId == instanceId
+          && homebrewOperation(r.operation);
+      }
+      allow create,update: if validWrite();
     }
     // P04: private drafts, immutable published snapshots and recipient-owned grants.
     function libraryDefinition(d) {
