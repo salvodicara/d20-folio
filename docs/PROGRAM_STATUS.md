@@ -1,6 +1,6 @@
 # Program Status
 
-## Current frontier — P05 owner visual and V2 integration gate (2026-09-07)
+## Current frontier — P05 approved, integration preflight (2026-09-07)
 
 Owner/writer: Astra, codex/p05-homebrew-base-20260907, isolated at
 /Users/salvatoredicara/Workspace/Codex/d20-folio-p05-homebrew-base. Runtime candidate
@@ -21,17 +21,20 @@ visual reviewers closed their findings; final print review verified the correcte
 Final asset index-BD7c_J_n.js includes negative versatile validation and the print artwork fix.
 The 48 editor matrix images plus two shell images retain the prior visually equivalent d020fb89
 screen build; the later print-only CSS and formula validation delta are recorded and hashed.
-Twelve reuse/recovery images and eight PDFs use the final build. Actual images are ready for owner
-verdict; approval has not been inferred from P04 or from passing tests.
+Twelve reuse/recovery images and eight PDFs use the final build. The owner has now accepted P05 and V2 integration: “fin tanto che ... le robe custom ...
+devono poter essere automatizzate ... durante il combattimento tutto deve poter essere
+modificabile ... allora va bene”. PRODUCT now explicitly owns that binding automation and
+editable-combat requirement; P05 does not claim future engine acceptance. No new pixels or
+runtime behavior changed after the shown images.
 
-P05 remains OPEN only for delivery/owner screenshot approval, explicit P05 V2 integration, fresh
-preflight, remote SHA confirmation and safe owned-worktree/service cleanup. Remote refs checked
+P05 remains OPEN for the now-authorized fresh preflight, explicit HEAD:v2 integration, remote
+SHA confirmation and safe owned-worktree/service cleanup. The approval round is complete. Remote refs checked
 again after verification: v2 remains 4f46b240bf3d584fa7c89c2d46ddb97623be440b; main remains
 9b06b75313d7ee353c4072a20397c3092707648e. No P05 push has occurred.
 
 Evidence and reproducible commands/fidelity gaps: /Users/salvatoredicara/Workspace/Codex/
 d20-folio-p05-evidence/{HANDOFF.md,REPLAY.md,FIDELITY.md,manifests,logs}. Owned preview5180,
-mock5189 and demo Auth19099/Firestore18080/Storage19199 remain active for the approval round.
+mock5189 and demo Auth19099/Firestore18080/Storage19199 remain active for pre-integration verification.
 Separate rules cluster stopped normally. Preserve unrelated Firestore PID86001/8080, shared
 checkout .playwright-cli and every unrelated worktree. No P06, successor prompt, main push,
 deploy, production write/migration or cost is authorized.

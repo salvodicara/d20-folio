@@ -11,6 +11,17 @@ The owner has authorized autonomous design and implementation within this explic
 minor technical decisions do not reopen product approval. Actual runtime screenshot approval
 and explicit V2 integration remain separate gates. P04 approval is not P05 approval.
 
+## Owner clarification — automation and editable combat
+
+The 7 September owner verdict accepts P05 on the binding objective now explicit in PRODUCT's
+“Homebrew automation and editable combat” contract. Base homebrew must become first-class input
+to the same automation as official content; combat facts and active effects remain editable with
+scope, consequences and causal correction. Unsupported preservation is honest intermediate state,
+not permission to replace required automation with notes or permanently freeze the vocabulary.
+P05 provides authoring/conformance and persisted instances; it does not claim that future combat
+acceptance has passed. Carry the PRODUCT contract and its actual custom-combat acceptance scenario
+into P06–08 and the P14/play handoffs without starting their implementation in this block.
+
 ## Chosen architecture
 
 Extend the P04 definition payload and existing draft controller, repository and immutable

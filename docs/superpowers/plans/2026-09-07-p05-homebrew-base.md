@@ -76,7 +76,7 @@ External: d20-folio-p05-evidence/{HANDOFF.md,REPLAY.md,FIDELITY.md, scripts, log
 - [x] Inspect printed output and real EN/IT1440/1280/390 editor/reuse/recovery images against mock.
 - [x] Independent code and visual review; correct findings, run just ci/full rules/six fixtures;
       ci-srd-only if seam touched. Record exact commands/counts/skips/hash and fidelity gaps.
-- [ ] Deliver curated actual images for owner verdict only after autonomous work complete.
+- [x] Deliver curated actual images for owner verdict only after autonomous work complete.
 - [ ] Upon explicit integration approval fetch/rebase/gate/push HEAD:v2, verify SHA and safe cleanup.
 - [ ] Close P05 only with all exits; then deliver one complete recursive successor prompt; do not start it.
 

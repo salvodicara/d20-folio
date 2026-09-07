@@ -191,6 +191,28 @@ backgrounds and classes. A granted copy retains provenance/version; revocation s
 access and updates, not an already granted copy. Browsing is not a grant. Architecture owns the
 recipient-materialization protocol and its access boundaries.
 
+**Homebrew automation and editable combat, reaffirmed by the owner on 7 September2026.**
+Custom content is a first-class input to the same combat automation as official content, not a
+parallel descriptive catalogue. A supported custom composition must drive actions, targets, costs,
+resources, effects, reactions and consequences through the shared mechanics and receipt model.
+The finite authoring vocabulary is a foundation to extend as required by the product, not a ceiling
+on its ambition. A manual path never excuses a missing deterministic default for modeled mechanics.
+
+During play, the table must be able to change relevant combat values, resources, conditions, active
+effects and results, and to make contextual rulings. Changes operate on authoritative facts with
+visible consequences, provenance and correction/undo; they do not leave a decorative override over
+unchanged underlying data. Permissions and the DM's final arbitration still apply. Changing an
+in-use copy or an encounter effect must not silently rewrite its library template or other copies;
+a template/version change is a separate explicit choice with a visible scope.
+
+When a mechanic cannot yet be modeled, preserve it and identify the unsupported part. The play
+surface must provide explicit manual consequences on the same facts, costs and receipts, without
+pretending to have executed that mechanic or introducing a second runtime. P05–08 author and
+validate these inputs; the later combat blocks must prove their execution and editability. Their
+acceptance must include an actual custom creation used in combat, automated costs/effects,
+mid-combat modification and causal correction/undo, with ordinary, boundary and composition cases.
+Saving, serializing or previewing a custom creation is not that acceptance proof.
+
 **Production continuity, reaffirmed by the owner in P01.** The group must keep playing with the
 current production app while V2 develops separately against the dedicated staging project.
 Production is not changed by V2 work. Switch and retirement of the old experience happen only

@@ -1,7 +1,10 @@
 # Base homebrew authoring vocabulary
 
 P05 extends the P04 `LibraryDefinition.payload.data` in the new V2 app. This document owns
-the representation; execution remains future P14 work. The module imports no legacy engine.
+the representation; execution remains future P14 work. PRODUCT owns the binding requirement
+“Homebrew automation and editable combat”: these declarations must feed the shared combat
+automation, and in-use state/effects must remain explicitly editable with causal correction.
+The current finite vocabulary is extensible; conformance alone is not execution acceptance. The module imports no legacy engine.
 `model.ts` exports discriminated weapon, equipment, spell and feature data, common ordered
 effects, and field descriptors consumed by both editor and reader. Templates contain no
 quantity, remaining charges, prepared, equipped or attuned state.
