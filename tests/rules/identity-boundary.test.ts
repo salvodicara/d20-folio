@@ -473,6 +473,40 @@ function repository(owner = "owner", campaignId: string | null = "camp") {
   };
 }
 describe("identity revocation, offline and copy evidence", () => {
+  it("clears a departed roster label without revoking the DM campaign, then honors real authority revocation", async () => {
+    const owner = repository(),
+      dm = repository("dm");
+    await owner.repo.assign("one", "camp");
+    const ticket = dm.session.ticket();
+    let character: unknown = null;
+    const denied = vi.fn();
+    dm.repo.watchRoster("camp", () => {}, denied);
+    dm.repo.watchCharacter(
+      { ownerUid: "owner", id: "one" },
+      (value) => {
+        character = value;
+      },
+      denied,
+      "resource"
+    );
+    await vi.waitFor(() => expect(character).not.toBeNull());
+    await owner.repo.release("one");
+    await vi.waitFor(() => expect(character).toBeNull());
+    expect(ticket).not.toThrow();
+    expect(dm.session.scope().campaignId).toBe("camp");
+    expect(denied).not.toHaveBeenCalled();
+    await env.withSecurityRulesDisabled((context) =>
+      updateDoc(doc(context.firestore(), "folioCampaigns/camp"), {
+        dmUid: "owner",
+        members: ["owner"],
+        revision: 1,
+      })
+    );
+    await vi.waitFor(() => expect(denied).toHaveBeenCalled());
+    expect(dm.session.scope().campaignId).toBeNull();
+    expect(ticket).toThrow("stale-session");
+    dm.session.revoke();
+  });
   it("does not publish inert roster references after owner membership revocation", async () => {
     const owner = repository(),
       dm = repository("dm");

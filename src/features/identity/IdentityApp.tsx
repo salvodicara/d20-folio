@@ -328,7 +328,8 @@ function AuthenticatedIdentity({ user }: { user: User }) {
                 return next;
               });
           },
-          failed
+          failed,
+          "resource"
         )
       );
     return () => {

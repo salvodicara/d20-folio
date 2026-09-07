@@ -67,7 +67,8 @@ vi.mock("@/lib/identity", async (importOriginal) => {
         kind: string,
         empty: unknown,
         next: (value: unknown) => void,
-        error: (cause: unknown) => void
+        error: (cause: unknown) => void,
+        denialScope = "session"
       ) => {
         const value: Watch = {
           kind,
@@ -77,6 +78,10 @@ vi.mock("@/lib/identity", async (importOriginal) => {
           }),
           deny: session.guard(() => {
             if (value.stopped) return;
+            if (denialScope === "resource") {
+              next(empty);
+              return;
+            }
             session.transition({
               ...session.scope(),
               campaignId: null,
@@ -119,8 +124,9 @@ vi.mock("@/lib/identity", async (importOriginal) => {
         watchCharacter: (
           _ref: unknown,
           next: (v: unknown) => void,
-          error: (e: unknown) => void
-        ) => watch("inspection", null, next, error),
+          error: (e: unknown) => void,
+          denialScope?: string
+        ) => watch("inspection", null, next, error, denialScope),
         watchPrivateNotes: (
           _ref: unknown,
           next: (v: unknown) => void,
@@ -143,6 +149,7 @@ vi.mock("@/features/identity/IdentityWorkspace", () => ({
           inspected: props.inspected,
           privateNotes: props.privateNotes,
           dmNotes: props.dmNotes,
+          rosterNames: props.rosterNames,
           portraits: props.portraits,
           error: props.error,
         })}
@@ -208,6 +215,38 @@ beforeEach(() => {
 });
 
 describe("IdentityApp consumer session boundaries", () => {
+  it("drops an inaccessible roster name without clearing still-authorized DM notes or campaign", async () => {
+    render(<IdentityApp />);
+    await authenticate("dm");
+    await bootstrap();
+    fireEvent.click(screen.getByRole("button", { name: "Open campaign" }));
+    await deliver(() => {});
+    await emit("memberships", [
+      {
+        schema: 1,
+        id: "campaign",
+        name: "Campaign",
+        dmUid: "dm",
+        members: ["dm", "owner"],
+        revision: 0,
+        archived: false,
+        joinOpen: true,
+      },
+    ]);
+    await emit("dmNotes", "Still authorized DM notes");
+    await emit("roster", [
+      { ownerUid: "owner", characterId: "pc", assignmentId: "claim", version: 1 },
+    ]);
+    await emit("inspection", character("owner"));
+    expect(state().rosterNames?.["owner/pc"]).toBe("owner character");
+    const ticket = current().session.ticket();
+    await deliver(() => activeWatch("inspection").deny());
+    expect(state().rosterNames).toEqual({});
+    expect(state().campaignId).toBe("campaign");
+    expect(state().dmNotes).toBe("Still authorized DM notes");
+    expect(state().error).toBeNull();
+    expect(ticket).not.toThrow();
+  });
   it("finishes asynchronous identity bootstrap under StrictMode and subscribes only once", async () => {
     render(
       <StrictMode>

@@ -60,7 +60,8 @@ export function createIdentityRepository(db: Firestore, session: SessionControll
     empty: T,
     next: (value: T) => void,
     error: (error: Error) => void,
-    ownerCache = false
+    ownerCache = false,
+    denialScope: "session" | "resource" = "session"
   ): () => void {
     let live = true;
     const deliver = session.guard((value: T) => {
@@ -70,6 +71,11 @@ export function createIdentityRepository(db: Firestore, session: SessionControll
       if (live) {
         const code = (e as Error & { code?: string }).code;
         if (code === "permission-denied") {
+          if (denialScope === "resource") {
+            // A departed roster label is not a revocation of campaign authority.
+            next(empty);
+            return;
+          }
           session.transition({
             ...session.scope(),
             campaignId: null,
@@ -223,7 +229,8 @@ export function createIdentityRepository(db: Firestore, session: SessionControll
     watchCharacter(
       ref: CharacterRef,
       next: (value: Readonly<FolioCharacter> | null) => void,
-      error: (error: Error) => void
+      error: (error: Error) => void,
+      denialScope: "session" | "resource" = "session"
     ) {
       return watch(
         doc(db, characterPath(ref)),
@@ -231,7 +238,8 @@ export function createIdentityRepository(db: Firestore, session: SessionControll
         null,
         next,
         error,
-        ref.ownerUid === uid()
+        ref.ownerUid === uid(),
+        denialScope
       );
     },
     watchAccount(

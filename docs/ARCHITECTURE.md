@@ -35,6 +35,11 @@ pending work and fence late callbacks; conflict preserves the draft and requires
 review followed by a new save. DM recovery requires an authorized server read. P27 owns
 full installed-PWA reload and account recovery beyond the current browser session.
 
+A roster display-name subscription treats character permission loss as resource-local:
+it drops the name immediately without invalidating still-authorized campaign notes or drafts.
+Campaign/account authority subscriptions and explicit character inspection retain the session
+revocation boundary. Merely displaying a roster label confers no cached foreign access.
+
 Auth events, including reauthentication with the same UID, bound a session lifetime. Campaign
 and active-PC changes advance its generation; unsubscribe, private object-URL disposal and
 late-result fences share that generation. A permission denial clears the affected context;
