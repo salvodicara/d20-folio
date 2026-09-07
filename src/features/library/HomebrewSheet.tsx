@@ -14,9 +14,10 @@ import {
 import { equal } from "@/lib/shared/model";
 import { conformDefinition } from "@/lib/homebrew/conformance";
 import { HomebrewReader } from "./HomebrewReader";
-import { HomebrewExport, downloadText } from "./HomebrewPortable";
+import { HomebrewExport } from "./HomebrewPortable";
+import { downloadText } from "./homebrew-files";
 import { LibraryComparison } from "./LibraryComparison";
-import { useHomebrewLabel } from "./HomebrewFields";
+import { useHomebrewLabel } from "./homebrew-labels";
 import { useLibraryOperation } from "./useLibraryOperation";
 import { useTranslation } from "react-i18next";
 import { libraryKey } from "./labels";
@@ -122,11 +123,11 @@ export function HomebrewSheet(props: Props) {
 function restoreDraft(
   key: string,
   item: HomebrewInstance
-): { draft: StateDraft | null; original: string | null } {
+): { draft: StateDraft | null; original: string | null; unreadable?: boolean } {
   let original: string | null = null;
   try {
     original = sessionStorage.getItem(key);
-    if (!original) return { draft: null, original: null };
+    if (original === null) return { draft: null, original: null };
     const value = JSON.parse(original) as Partial<StateDraft> | null;
     if (value?.schema !== 1) throw Error("incompatible-instance");
     const base = parseInstance(value.base),
@@ -141,8 +142,31 @@ function restoreDraft(
       throw Error("incompatible-instance");
     return { draft: { schema: 1, base, character, state }, original: null };
   } catch {
-    return { draft: null, original };
+    return { draft: null, original, unreadable: original === null };
   }
+}
+type ArchivedOriginal = { key: string; original: string };
+function readOriginals(storageKey: string): ArchivedOriginal[] {
+  const prefix = storageKey + ":original:";
+  const originals: ArchivedOriginal[] = [];
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const key = sessionStorage.key(i);
+    if (key?.startsWith(prefix)) {
+      const original = sessionStorage.getItem(key);
+      if (original !== null) originals.push({ key, original });
+    }
+  }
+  return originals;
+}
+function archiveOriginal(storageKey: string, original: string) {
+  if (readOriginals(storageKey).some((saved) => saved.original === original)) return;
+  // A new address is append-only. Verify durability before replacing the working draft.
+  let key: string;
+  do {
+    key = storageKey + ":original:" + crypto.randomUUID();
+  } while (sessionStorage.getItem(key) !== null);
+  sessionStorage.setItem(key, original);
+  if (sessionStorage.getItem(key) !== original) throw new Error("original-not-preserved");
 }
 function restoredOperation(storageKey: string): InstanceOperation | null {
   try {
@@ -170,6 +194,18 @@ function HomebrewCopy({
     "instance:" + item.character.ownerUid + ":" + item.character.id + ":" + item.id;
   const storageKey = "folio-homebrew-state:" + (session.scope().uid ?? "") + ":" + key;
   const [restored] = useState(() => restoreDraft(storageKey, item));
+  const [archive] = useState(() => {
+    try {
+      return { originals: readOriginals(storageKey), error: false };
+    } catch {
+      return { originals: [] as ArchivedOriginal[], error: true };
+    }
+  });
+  const originals =
+    restored.original !== null &&
+    !archive.originals.some((saved) => saved.original === restored.original)
+      ? [...archive.originals, { key: storageKey, original: restored.original }]
+      : archive.originals;
   const [draft, setDraft] = useState<StateDraft | null>(restored.draft),
     [update, setUpdate] = useState<{
       base: HomebrewInstance;
@@ -202,10 +238,13 @@ function HomebrewCopy({
   const persist = (next: StateDraft | null) => {
     if (!active()) return;
     try {
+      if (restored.unreadable) throw new Error("original-unreadable");
+      if (restored.original !== null) archiveOriginal(storageKey, restored.original);
       if (next) sessionStorage.setItem(storageKey, JSON.stringify(next));
       else sessionStorage.removeItem(storageKey);
     } catch {
       setError(true);
+      return;
     }
     draftRef.current = next;
     setDraft(next);
@@ -272,18 +311,16 @@ function HomebrewCopy({
           {label("version")} {item.snapshot.provenance.sourceVersion}
         </p>
       )}
-      {restored.original && (
-        <section aria-label={label("recoveryUnavailable")}>
+      {originals.map((saved) => (
+        <section key={saved.key} aria-label={label("recoveryUnavailable")}>
           <p role="alert">{label("recoveryUnavailable")}</p>
           <button
-            onClick={() =>
-              downloadText(restored.original ?? "", "homebrew-state-recovery.json")
-            }
+            onClick={() => downloadText(saved.original, "homebrew-state-recovery.json")}
           >
             {label("recoverOriginal")}
           </button>
         </section>
-      )}
+      ))}
       {restored.draft && draft && <p role="status">{label("draftRecovered")}</p>}
       <form
         onSubmit={(e) => {
@@ -392,7 +429,9 @@ function HomebrewCopy({
       {op.state?.status === "unknown" && (
         <button onClick={() => void op.retry()}>{t(libraryKey("retry"))}</button>
       )}
-      {(error || op.error) && <p role="alert">{label("unavailable")}</p>}
+      {(error || restored.unreadable || archive.error || op.error) && (
+        <p role="alert">{label("unavailable")}</p>
+      )}
       {owner && (
         <button
           disabled={op.busy || !!draft || !navigator.onLine}

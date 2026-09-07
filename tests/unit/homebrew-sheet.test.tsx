@@ -17,16 +17,14 @@ import {
   type InstanceReceipt,
   type InstanceRepository,
 } from "@/lib/homebrew/instances";
-vi.mock("@/features/library/HomebrewFields", () => ({
+vi.mock("@/features/library/homebrew-labels", () => ({
   useHomebrewLabel: () => (key: string) => key,
 }));
 vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock("@/lib/homebrew/conformance", () => ({ conformDefinition: () => [] }));
 vi.mock("@/features/library/HomebrewReader", () => ({ HomebrewReader: () => null }));
-vi.mock("@/features/library/HomebrewPortable", () => ({
-  HomebrewExport: () => null,
-  downloadText: vi.fn(),
-}));
+vi.mock("@/features/library/HomebrewPortable", () => ({ HomebrewExport: () => null }));
+vi.mock("@/features/library/homebrew-files", () => ({ downloadText: vi.fn() }));
 vi.mock("@/features/library/LibraryComparison", () => ({
   LibraryComparison: () => null,
 }));
@@ -222,7 +220,7 @@ it("exposes only current-character malformed originals and rejects late watch er
     },
   ]);
   expect(screen.getByText("recoveryUnavailable")).toBeTruthy();
-  const { downloadText } = await import("@/features/library/HomebrewPortable");
+  const { downloadText } = await import("@/features/library/homebrew-files");
   fireEvent.click(
     within(screen.getByRole("region", { name: "recoveryUnavailable" })).getByRole(
       "button",
@@ -328,4 +326,55 @@ it("a template comparison cannot overwrite a newly dirty state or ignore a newer
   a.emit([{ ...item, revision: 2, state: { ...item.state, quantity: 8 } }]);
   expect(screen.getByRole("button", { name: "confirmUpdate" })).toBeDisabled();
   expect(a.repo.updateIntent).not.toHaveBeenCalled();
+});
+const stateStorageKey = "folio-homebrew-state:owner:instance:owner:hero:copy";
+it("archives incompatible originals before replacing a draft and offers every original after reopening", async () => {
+  const original = ' { "schema": 99, "future": [1, 2] }\n';
+  sessionStorage.setItem(stateStorageKey, original);
+  const a = setup();
+  edit("3");
+  a.view.unmount();
+  const b = setup();
+  expect(screen.getByRole("spinbutton", { name: "quantity" })).toHaveValue(3);
+  const { downloadText } = await import("@/features/library/homebrew-files");
+  fireEvent.click(
+    within(screen.getByRole("region", { name: "recoveryUnavailable" })).getByRole(
+      "button",
+      { name: "recoverOriginal" }
+    )
+  );
+  expect(downloadText).toHaveBeenCalledWith(original, "homebrew-state-recovery.json");
+  b.view.unmount();
+  const second = "future bytes without JSON";
+  sessionStorage.setItem(stateStorageKey, second);
+  const c = setup();
+  edit("4");
+  c.view.unmount();
+  setup();
+  const recoveries = screen.getAllByRole("region", { name: "recoveryUnavailable" });
+  expect(recoveries).toHaveLength(2);
+  for (const recovery of recoveries)
+    fireEvent.click(within(recovery).getByRole("button", { name: "recoverOriginal" }));
+  expect(downloadText).toHaveBeenCalledWith(original, "homebrew-state-recovery.json");
+  expect(downloadText).toHaveBeenCalledWith(second, "homebrew-state-recovery.json");
+});
+it("blocks draft replacement when the incompatible original cannot be archived", () => {
+  const original = '{"schema":99,"keep":"exact"}';
+  sessionStorage.setItem(stateStorageKey, original);
+  setup();
+  const nativeSet = Storage.prototype.setItem.bind(sessionStorage);
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (
+    this: Storage,
+    key: string,
+    value: string
+  ) {
+    if (key.startsWith(stateStorageKey + ":original:"))
+      throw new DOMException("full", "QuotaExceededError");
+    nativeSet(key, value);
+  });
+  edit("8");
+  expect(sessionStorage.getItem(stateStorageKey)).toBe(original);
+  expect(screen.getByRole("spinbutton", { name: "quantity" })).toHaveValue(1);
+  expect(screen.getByRole("button", { name: "saveState" })).toBeDisabled();
+  expect(screen.getByText("unavailable")).toBeTruthy();
 });

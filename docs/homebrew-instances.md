@@ -73,3 +73,13 @@ by the session epoch and mount lifetime. Cleanup releases subscriptions without
 running invalidation UI work during normal unmount or StrictMode effect replay.
 `tests/unit/homebrew-sheet.test.tsx` exercises these concurrent UI lifecycles with
 mock repositories and the real operation controller/hook.
+
+Incompatible local state drafts are archived before any working-draft replacement
+or removal. Archive entries have fresh, write-once session-storage addresses under
+the same account/character/instance key and preserve exact original bytes. Existing
+identical originals are reused without rewriting them. The archive write is read
+back before the working draft changes. A failed archive/read/write blocks the
+replacement and leaves the visible state unchanged; an unreadable original cannot
+be silently replaced. Reopening the sheet offers all archived originals, including
+originals from multiple separate incompatible drafts. This is recovery storage,
+not a mutation queue, and it grants no operation authority.
