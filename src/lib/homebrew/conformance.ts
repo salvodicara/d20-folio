@@ -158,7 +158,20 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
           add(path.slice(0, -1), "invalid-effect");
           return;
         }
-        validate(value, effectFields(), path);
+        const descriptors = effectFields();
+        const unknownKind =
+          typeof value.kind === "string" &&
+          !descriptors
+            .find((field) => field.key === "kind")
+            ?.options?.includes(value.kind);
+        validate(
+          value,
+          unknownKind
+            ? descriptors.filter((field) => Object.hasOwn(value, field.key))
+            : descriptors,
+          path
+        );
+        if (unknownKind) return;
         const effectCheck = (condition: unknown, key: string, code: string) => {
           if (condition) add(path + key, code);
         };
@@ -468,9 +481,20 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
             add(path.slice(0, -1), "invalid-row");
             return;
           }
+          const kindField = c.fields.find((field) => field.key === "kind");
+          const unknownKind =
+            kindField?.type === "select" &&
+            typeof v.kind === "string" &&
+            !kindField.options?.includes(v.kind);
           validate(
             v,
-            c.fields,
+            unknownKind
+              ? c.fields.filter(
+                  (field) =>
+                    Object.hasOwn(v, field.key) ||
+                    ["id", "name", "source"].includes(field.key)
+                )
+              : c.fields,
             path,
             c.collections?.map((x) => x.key)
           );
@@ -490,8 +514,10 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
           }
           if (c.fields.some((f) => f.key === "name") && !textValue(v.name).trim())
             add(path + "name", "required");
+          if (c.kind === "program" && !textValue(v.source).trim())
+            add(path + "source", "required");
+          if (unknownKind) return;
           if (c.kind === "program") {
-            if (!textValue(v.source).trim()) add(path + "source", "required");
             validateEffects(v, path, true);
             walk(
               v,
@@ -587,12 +613,63 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
             );
             if (Array.isArray(v.steps))
               v.steps.forEach((step, j) => {
-                if (!step || typeof step !== "object" || Array.isArray(step)) return;
+                if (
+                  !step ||
+                  typeof step !== "object" ||
+                  Array.isArray(step) ||
+                  step.kind !== "program"
+                )
+                  return;
                 const target = rows("programs").find((p) => p.id === step.programId);
                 if (!target) add(path + `steps.${j}.programId`, "missing-program");
                 else if (target.kind === "multiattack")
                   add(path + `steps.${j}.programId`, "nested-multiattack");
               });
+            if (v.kind === "multiattack" && Array.isArray(v.steps)) {
+              // Static declaration sum only: no recovery, draws or execution during validation.
+              const costs = new Map<string, number>();
+              const addCost = (program: Record<string, JsonValue>, count: number) => {
+                if (
+                  typeof program.resourceId === "string" &&
+                  typeof program.resourceCost === "number" &&
+                  Number.isFinite(program.resourceCost) &&
+                  program.resourceCost >= 0
+                )
+                  costs.set(
+                    program.resourceId,
+                    (costs.get(program.resourceId) ?? 0) + program.resourceCost * count
+                  );
+              };
+              addCost(v, 1);
+              for (const step of v.steps) {
+                if (
+                  !step ||
+                  typeof step !== "object" ||
+                  Array.isArray(step) ||
+                  step.kind !== "program" ||
+                  typeof step.count !== "number" ||
+                  !Number.isInteger(step.count) ||
+                  step.count < 1
+                )
+                  continue;
+                const target = rows("programs").find((p) => p.id === step.programId);
+                if (
+                  target &&
+                  kindField?.options?.includes(textValue(target.kind)) &&
+                  target.kind !== "multiattack"
+                )
+                  addCost(target, step.count);
+              }
+              if (
+                rows("resources").some(
+                  (resource) =>
+                    typeof resource.id === "string" &&
+                    typeof resource.capacity === "number" &&
+                    (costs.get(resource.id) ?? 0) > resource.capacity
+                )
+              )
+                add(path + "steps", "multiattack-resource-capacity");
+            }
           }
           if (c.kind === "resource") {
             const bounds = formulaBounds(v.recoveryFormula);

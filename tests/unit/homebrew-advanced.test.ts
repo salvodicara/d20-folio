@@ -59,7 +59,7 @@ const composed = () => {
       kind: "multiattack",
       steps: [
         row("step", { programId: "bite" }),
-        row("step", { programId: "tail", count: 2 }),
+        row("step", { programId: "tail", count: 1 }),
       ],
     }),
   ];
@@ -256,3 +256,73 @@ function at<T>(values: T[], index: number): T {
   if (value === undefined) throw new Error("Missing fixture row");
   return value;
 }
+it("preserves unknown program and step kinds without imposing known fields", () => {
+  const d = composed();
+  const programs = d.payload.data.programs as Record<string, JsonValue>[];
+  at(programs, 0).kind = "future-program";
+  at(programs, 2).steps = [{ kind: "future-step", futureId: "x" }];
+  const original = JSON.stringify(d);
+  expect(conformDefinition(d).filter((x) => x.severity === "invalid")).toEqual([]);
+  expect(conformDefinition(d)).toEqual(
+    expect.arrayContaining([
+      {
+        path: "payload.data.programs.0.kind",
+        code: "unsupported-option",
+        severity: "unsupported",
+      },
+      {
+        path: "payload.data.programs.2.steps.0.kind",
+        code: "unsupported-option",
+        severity: "unsupported",
+      },
+    ])
+  );
+  expect(JSON.stringify(d)).toBe(original);
+});
+it("keeps identity and instance-state safety for unknown programs", () => {
+  const d = monster();
+  d.payload.data.programs = [
+    { kind: "future-program", id: "", name: "Future", source: "custom", remaining: 2 },
+  ];
+  const issues = conformDefinition(d);
+  expect(issues).toContainEqual({
+    path: "payload.data.programs.0.id",
+    code: "required",
+    severity: "invalid",
+  });
+  expect(issues).toContainEqual({
+    path: "payload.data.programs.0.remaining",
+    code: "instance-state",
+    severity: "invalid",
+  });
+  expect(issues.some((x) => x.path.endsWith("activation"))).toBe(false);
+});
+it("rejects summed repeated multiattack costs including the container", () => {
+  const d = composed();
+  const programs = d.payload.data.programs as Record<string, JsonValue>[];
+  at(programs, 2).steps = [row("step", { programId: "tail", count: 2 })];
+  expect(conformDefinition(d)).toContainEqual({
+    path: "payload.data.programs.2.steps",
+    code: "multiattack-resource-capacity",
+    severity: "invalid",
+  });
+  at(programs, 2).steps = [row("step", { programId: "tail", count: 1 })];
+  Object.assign(at(programs, 2), { resourceId: "power", resourceCost: 2 });
+  expect(conformDefinition(d)).toContainEqual({
+    path: "payload.data.programs.2.steps",
+    code: "multiattack-resource-capacity",
+    severity: "invalid",
+  });
+});
+it("preserves an unknown nested effect kind without requiring damage fields", () => {
+  const d = monster();
+  d.payload.data.programs = [
+    { ...attack(), effects: [{ kind: "future-effect", futureValue: 1 }] },
+  ];
+  expect(conformDefinition(d).filter((x) => x.severity === "invalid")).toEqual([]);
+  expect(conformDefinition(d)).toContainEqual({
+    path: "payload.data.programs.0.effects.0.kind",
+    code: "unsupported-option",
+    severity: "unsupported",
+  });
+});

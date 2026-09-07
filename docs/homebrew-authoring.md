@@ -94,3 +94,10 @@ authoritative in-use facts remain editable with causal correction/undo and prove
 a template version never silently changes an in-use copy; preparation state is separate. Future
 play acceptance must demonstrate actual custom automation and edits/undo in ordinary, boundary
 and composition cases rather than substituting manual handling for modeled mechanics.
+
+Unknown program, step and effect kinds retain their payload and receive unsupported diagnostics
+without requiring fields or applying semantics belonging to a known kind. Program identity,
+name/source and supplied instance-state exclusions remain checked. Known multiattack declarations
+sum each referenced program's resource cost multiplied by its step count, plus any container cost,
+separately for each resource. Totals exceeding template capacity are invalid at the multiattack
+steps path. This is a static feasibility check, not resource consumption or recovery execution.
