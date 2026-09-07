@@ -23,6 +23,7 @@ import {
   parseDefinition,
   parseEntry,
   type LibraryIssue,
+  type LibraryRepository,
   type LibraryDefinition,
   type LibraryEntry,
   type LibraryOffer,
@@ -32,7 +33,10 @@ import {
   type LibraryVersion,
   type GrantReceipt,
 } from "./model";
-export function createLibraryRepository(db: Firestore, session: SessionController) {
+export function createLibraryRepository(
+  db: Firestore,
+  session: SessionController
+): LibraryRepository {
   const issueSources = new Map<string, LibraryIssue[]>();
   const issueListeners = new Set<(issues: LibraryIssue[]) => void>();
   let issueEpoch: (() => void) | null = null;
@@ -581,4 +585,4 @@ export function createLibraryRepository(db: Firestore, session: SessionControlle
   };
   return api;
 }
-export type LibraryRepository = ReturnType<typeof createLibraryRepository>;
+export type { LibraryRepository } from "./model";

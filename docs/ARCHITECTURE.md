@@ -3892,3 +3892,7 @@ Firestore special types with tagged map/array/scalar representations; they repre
 SDK snapshot values, not unavailable original wire bytes. Rules reject null/boolean tags;
 the common codec remains the complete JSON-shape validator because recursive Firestore payload
 validation is not expressible within the rules execution budget.
+
+The complete `LibraryRepository` interface belongs to the pure library model. Application
+controllers import that interface directly; the Firebase repository implements it with an
+explicit return annotation. Transport inference must not pull Firebase into pure consumers.

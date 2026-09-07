@@ -259,3 +259,44 @@ export interface LibraryIssue {
   original: string;
   error: "incompatible-library";
 }
+
+/** Pure application boundary; Firebase implements this contract in repository.ts. */
+export interface LibraryRepository {
+  watchIssues(onIssues: (issues: LibraryIssue[]) => void): () => void;
+  list(): Promise<LibraryEntry[]>;
+  load(id: string): Promise<LibraryEntry | null>;
+  readVersion(ref: LibraryRef, version: number): Promise<LibraryVersion>;
+  listVersions(id: string): Promise<LibraryVersion[]>;
+  listOffers(): Promise<LibraryOffer[]>;
+  listSentOffers(): Promise<LibraryOffer[]>;
+  readGrant(offer: LibraryOffer): Promise<GrantReceipt | null>;
+  watchSentOffers(
+    onData: (offers: LibraryOffer[]) => void,
+    onError: (error: Error) => void
+  ): () => void;
+  watchOffers(
+    onData: (offers: LibraryOffer[]) => void,
+    onError: (error: Error) => void
+  ): () => void;
+  watchEntries(
+    onData: (entries: LibraryEntry[]) => void,
+    onError: (error: Error) => void
+  ): () => void;
+  saveIntent(
+    base: LibraryEntry | null,
+    draft: LibraryDefinition,
+    id?: string
+  ): LibraryOperation;
+  publishIntent(
+    base: LibraryEntry,
+    preview: LibraryDefinition
+  ): Promise<LibraryOperation | null>;
+  offerIntent(version: LibraryVersion, recipientUid: string): LibraryOperation;
+  acceptIntent(
+    offer: LibraryOffer,
+    existing?: LibraryEntry | null
+  ): Promise<LibraryOperation>;
+  revokeIntent(offer: LibraryOffer): LibraryOperation;
+  reconcile(operation: LibraryOperation): Promise<LibraryReceipt | null>;
+  commit(operation: LibraryOperation, check?: () => void): Promise<LibraryReceipt>;
+}
