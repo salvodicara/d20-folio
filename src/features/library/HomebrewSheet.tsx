@@ -1,3 +1,4 @@
+import { Checkbox } from "@/components/ui/selection";
 import { useEffect, useRef, useState } from "react";
 import { characterPath, parseCharacter, type FolioCharacter } from "@/lib/identity/model";
 import type { SessionController } from "@/lib/identity/session";
@@ -356,11 +357,12 @@ function HomebrewCopy({
             ))}
             {(["prepared", "equipped", "attuned"] as const).map((k) => (
               <label key={k} className="homebrew-check">
-                <input
+                <Checkbox
                   name={"instance-" + k}
-                  type="checkbox"
+                  data-homebrew-field={"instance-" + k}
+                  aria-label={label(k)}
                   checked={state[k]}
-                  onChange={(e) => edit({ ...state, [k]: e.target.checked })}
+                  onCheckedChange={(checked) => edit({ ...state, [k]: checked === true })}
                 />
                 {label(k)}
               </label>

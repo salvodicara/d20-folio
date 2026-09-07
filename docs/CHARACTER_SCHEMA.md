@@ -628,3 +628,20 @@ in `folioLibraryOffers`; recipient-owned grant receipts use schema 2 at
 `folioAccounts/{uid}/receipts/{senderUid}~{offerId}`. Historical schema-one offers cannot create
 new grants. Private source entry/version reads remain owner/admin only; copies retain their
 own immutable snapshots after revocation.
+
+### P05 persisted homebrew copies
+
+The character parent and imported legacy originals are unchanged. The new `homebrew` character
+subcollection stores `HomebrewInstance` schema 1: character identity, instance identity/revision,
+a complete immutable `LibraryVersion` snapshot, last operation, and separate `InstanceState`.
+The state contains nonnegative integer quantity, nullable remaining charges/uses, and boolean
+prepared/equipped/attuned values. Unknown remaining charges are not implicitly filled to capacity.
+A chosen version update preserves all instance state, including values above a new capacity,
+which the UI flags for an explicit table correction. Source/library access is not required for
+an authorized DM to inspect the character's pinned snapshot.
+
+Local state drafts retain the exact original base and character assignment authority. Incompatible
+records are isolated with recoverable originals; raw imports retain their exact file text per
+account independently of a newly minted destination draft identity. Portable metadata is never
+an ACL grant. See [P05 instance schema](homebrew-instances.md) and
+[portable authoring format](homebrew-authoring.md).

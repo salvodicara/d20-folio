@@ -88,6 +88,7 @@ export interface IdentityWorkspaceProps {
   library?: ReactNode;
   privateNoteEditor?: ReactNode;
   dmNoteEditor?: ReactNode;
+  homebrewSheet?: ReactNode;
   onImport?: (source: string) => Promise<void>;
   onRecover?: (id: string) => Promise<void>;
   onRetry: () => void;
@@ -990,6 +991,7 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
               {label("level", { level: p.inspected.level })}
             </p>
             <IdentitySheet character={p.inspected} />
+            {p.homebrewSheet}
             {p.inspected.ownerUid === p.uid && p.privateNoteEditor}
             <div className="identity-actions">
               <button onClick={p.onClearInspection}>{label("close")}</button>

@@ -1,3 +1,7 @@
+import { HomebrewReuse } from "@/features/library/HomebrewReuse";
+import { HomebrewSheet } from "@/features/library/HomebrewSheet";
+import { createInstanceRepository } from "@/lib/homebrew/instance-repository";
+import type { LibraryVersion } from "@/lib/library/model";
 import { LibraryWorkspace } from "@/features/library/LibraryWorkspace";
 import { createLibraryRepository } from "@/lib/library/repository";
 import { SharedAssignment } from "./SharedAssignment";
@@ -140,6 +144,8 @@ function AuthenticatedIdentity({ user }: { user: User }) {
   const shared = useMemo(() => createSharedRepository(db, session), [session]);
   const [epoch, setEpoch] = useState(0);
   const library = useMemo(() => createLibraryRepository(db, session), [session]);
+  const instances = useMemo(() => createInstanceRepository(db, session), [session]);
+  const [reuse, setReuse] = useState<LibraryVersion | null>(null);
   const [viewGeneration, setViewGeneration] = useState(0);
   const [page, setPage] = useState<IdentityPage>("account");
   const [account, setAccount] = useState<FolioAccount | null>(null);
@@ -474,30 +480,57 @@ function AuthenticatedIdentity({ user }: { user: User }) {
         loading || !account ? (
           <p role="status">{t("identity.loading")}</p>
         ) : (
-          <LibraryWorkspace
-            key={epoch}
-            repository={library}
-            session={session}
-            campaigns={campaigns}
-            campaignId={scope.campaignId}
-            onCampaignChange={(id) => transition(id, scope.activeCharacterId)}
-            recipients={Object.entries(
-              roster.reduce<Record<string, string[]>>(
-                (result, row) => {
-                  const name =
-                    row.ownerUid === user.uid
-                      ? characters.find((c) => c.id === row.characterId)?.name
-                      : rosterNames[row.ownerUid + "/" + row.characterId];
-                  if (name) (result[row.ownerUid] ??= []).push(name);
-                  return result;
-                },
-                Object.fromEntries(
-                  campaigns
-                    .filter((c) => c.id === scope.campaignId)
-                    .map((c) => [c.dmUid, [t("identity.dm")]])
+          <>
+            <LibraryWorkspace
+              key={epoch}
+              repository={library}
+              onReuse={setReuse}
+              session={session}
+              campaigns={campaigns}
+              campaignId={scope.campaignId}
+              onCampaignChange={(id) => transition(id, scope.activeCharacterId)}
+              recipients={Object.entries(
+                roster.reduce<Record<string, string[]>>(
+                  (result, row) => {
+                    const name =
+                      row.ownerUid === user.uid
+                        ? characters.find((c) => c.id === row.characterId)?.name
+                        : rosterNames[row.ownerUid + "/" + row.characterId];
+                    if (name) (result[row.ownerUid] ??= []).push(name);
+                    return result;
+                  },
+                  Object.fromEntries(
+                    campaigns
+                      .filter((c) => c.id === scope.campaignId)
+                      .map((c) => [c.dmUid, [t("identity.dm")]])
+                  )
                 )
-              )
-            ).map(([uid, names]) => ({ uid, name: names.join(" · ") }))}
+              ).map(([uid, names]) => ({ uid, name: names.join(" · ") }))}
+            />
+            {reuse && (
+              <HomebrewReuse
+                version={reuse}
+                characters={characters}
+                repository={instances}
+                session={session}
+                onClose={() => setReuse(null)}
+                onOpen={(character) => {
+                  clearInspection();
+                  setInspectionRef(character);
+                }}
+              />
+            )}
+          </>
+        )
+      }
+      homebrewSheet={
+        inspected && (
+          <HomebrewSheet
+            key={`${epoch}:${inspected.ownerUid}:${inspected.id}`}
+            character={inspected}
+            repository={instances}
+            library={library}
+            session={session}
           />
         )
       }

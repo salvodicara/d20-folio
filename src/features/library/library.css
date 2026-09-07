@@ -321,3 +321,164 @@
     color: var(--identity-muted);
   }
 }
+
+/* P05 family authoring follows the approved narrow shelf / readable workbench. */
+.library-workbench {
+  grid-template-columns: minmax(190px, 0.28fr) minmax(0, 1fr);
+}
+.homebrew-group {
+  border: 0;
+  margin: 32px 0;
+  padding: 0;
+  min-width: 0;
+}
+.homebrew-group legend {
+  font:
+    500 25px/1.3 "Alegreya Variable",
+    serif;
+  color: var(--identity-text);
+  margin-bottom: 22px;
+}
+.homebrew-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px 22px;
+}
+.homebrew-grid label {
+  min-width: 0;
+}
+.identity-app .homebrew-check {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+.identity-app .homebrew-check input {
+  width: 18px;
+  min-height: 18px;
+  flex: none;
+  accent-color: var(--identity-accent);
+}
+.homebrew-hint {
+  font:
+    12px/1.7 system-ui,
+    sans-serif;
+  color: var(--identity-muted);
+}
+.homebrew-effect {
+  border-block: 1px solid var(--identity-line);
+  padding: 18px 0;
+  margin: 20px 0;
+}
+.homebrew-effect summary {
+  cursor: pointer;
+  color: #d9bc83;
+  margin-bottom: 18px;
+}
+.homebrew-effect button {
+  margin-top: 18px;
+}
+.homebrew-validation {
+  background: #d9bc830a;
+  border: 1px solid var(--identity-line);
+  padding: 20px;
+}
+.homebrew-validation li {
+  margin: 10px 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.homebrew-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+}
+.homebrew-facts div {
+  min-width: 0;
+}
+.homebrew-facts dt {
+  font: 12px/1.5 system-ui;
+  color: var(--identity-muted);
+}
+.homebrew-facts dd {
+  margin: 4px 0 0;
+  font: 14px/1.6 system-ui;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.homebrew-reader h4 {
+  font:
+    500 23px "Alegreya Variable",
+    serif;
+  color: #d9bc83;
+  margin: 24px 0 16px;
+}
+.homebrew-reader pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.homebrew-preview {
+  margin-top: 26px;
+  padding-block: 20px;
+  border-block: 1px solid var(--identity-line);
+}
+.homebrew-preview > summary {
+  color: #d9bc83;
+  cursor: pointer;
+}
+@media (max-width: 700px) {
+  .library-workbench,
+  .homebrew-grid,
+  .homebrew-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .homebrew-group {
+    margin: 26px 0;
+  }
+  .homebrew-grid {
+    gap: 20px;
+  }
+}
+@media print {
+  body:has(.homebrew-print) > :not(.homebrew-print) {
+    display: none !important;
+  }
+  body:has(.homebrew-print) .homebrew-print,
+  body:has(.homebrew-print) .homebrew-print * {
+    visibility: visible;
+  }
+  .homebrew-print {
+    position: static;
+    width: 100%;
+    background: white !important;
+    color: #111 !important;
+    padding: 12mm;
+  }
+  .homebrew-print * {
+    color: #111 !important;
+    background: white !important;
+    box-shadow: none !important;
+  }
+  .homebrew-print button {
+    display: none !important;
+  }
+  .homebrew-print .homebrew-facts div {
+    break-inside: avoid;
+  }
+  .homebrew-print h3,
+  .homebrew-print h4 {
+    break-after: avoid;
+  }
+  .homebrew-print details > * {
+    display: block !important;
+  }
+}
+
+.homebrew-print {
+  display: none;
+}
+@media print {
+  .homebrew-print {
+    display: block;
+  }
+}

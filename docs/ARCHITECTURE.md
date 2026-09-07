@@ -3905,3 +3905,20 @@ for receipt reconciliation. Real session invalidation persists across account Aâ
 ordinary effect teardown preserves selection and recoverable drafts. Incompatible local bytes
 are quarantined and downloadable after reopening; storage failures cannot turn an acknowledged
 server operation into an unknown outcome.
+
+### P05 typed homebrew and character copies
+
+`src/lib/homebrew/model.ts` owns the finite weapon/equipment/spell/feature vocabulary;
+`conformance.ts` validates relationships without executing mechanics. Its versioned payload
+travels through the existing P04 head, immutable version, addressed offer and grant protocol.
+The UI edits loaded P04 drafts and renders the same typed fields in comparison, reader and print.
+Unknown fields remain explicit, recoverable data. There is no separate library or engine.
+
+Character copies live at `folioAccounts/{uid}/characters/{id}/homebrew/{instanceId}`.
+`instances.ts` owns their schema and pure repository contract; `instance-repository.ts` performs
+exact base/source comparisons with the existing P03 operation controller and receipt namespace.
+Owner-only writes pin an owned immutable library version. Current authorized character readers,
+including the DM, can read this grammar without accessing the owner's private library.
+Template replacement preserves quantity, remaining charges/uses, prepared, equipped and attuned
+state. State edits retain their original base locally; concurrent changes require explicit review.
+See [authoring](homebrew-authoring.md) and [instances](homebrew-instances.md) for exact bounds.

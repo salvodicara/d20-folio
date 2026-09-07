@@ -1,3 +1,9 @@
+import { HomebrewFields } from "./HomebrewFields";
+import { baseFamily, useHomebrewLabel } from "./homebrew-labels";
+import { HomebrewReader } from "./HomebrewReader";
+import { HomebrewExport } from "./HomebrewPortable";
+import { downloadText, readImportOriginal } from "./homebrew-files";
+import { conformDefinition } from "@/lib/homebrew/conformance";
 import { libraryKey } from "./labels";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,6 +22,7 @@ interface EditorProps {
   revision: number;
   sourceName?: string;
   onShare: (version: LibraryVersion) => void;
+  onReuse?: (version: LibraryVersion) => void;
 }
 export function LibraryEditor(props: EditorProps) {
   const [editor, setEditor] = useState<LibraryDraftController | null>(null);
@@ -48,11 +55,13 @@ function EditorBody({
   session,
   revision,
   onShare,
+  onReuse,
   sourceName,
   editor,
 }: EditorProps & { editor: LibraryDraftController }) {
   const { t } = useTranslation("common");
   const label = (key: string) => t(libraryKey(key));
+  const homebrewLabel = useHomebrewLabel();
   const state = useSyncExternalStore(editor.subscribe, editor.snapshot);
   const [dialog, setDialog] = useState<"record" | "versions" | null>(null),
     [versions, setVersions] = useState<LibraryVersion[]>([]),
@@ -92,7 +101,7 @@ function EditorBody({
       setError("requestFailed");
     }
   }
-  async function share() {
+  async function share(reuse = false) {
     if (!state.base?.stableVersion) return;
     const check = session.ticket();
     try {
@@ -101,7 +110,8 @@ function EditorBody({
         state.base.stableVersion
       );
       check();
-      onShare(v);
+      if (reuse) onReuse?.(v);
+      else onShare(v);
     } catch {
       setError("requestFailed");
     }
@@ -194,7 +204,11 @@ function EditorBody({
             }
           />
         </label>
-        <p>{label("metadataHelp")}</p>
+        <HomebrewFields
+          definition={draft}
+          disabled={locked}
+          onChange={(payload) => editor.edit({ payload })}
+        />
         <div className="identity-actions">
           {state.dirty && !conflict && (
             <button
@@ -248,7 +262,13 @@ function EditorBody({
         <button
           className="identity-primary"
           disabled={
-            !state.base || state.dirty || locked || !state.online || !draft.name.trim()
+            !state.base ||
+            state.dirty ||
+            locked ||
+            !state.online ||
+            !draft.name.trim() ||
+            (baseFamily(family) &&
+              conformDefinition(draft).some((d) => d.severity === "invalid"))
           }
           onClick={() => void showVersions("record")}
         >
@@ -267,6 +287,35 @@ function EditorBody({
           {label("share")}
         </button>
       </div>
+      <div className="identity-actions">
+        <HomebrewExport definition={draft} />
+        <button
+          type="button"
+          onClick={() => {
+            try {
+              const original = readImportOriginal(session.scope().uid ?? "", id);
+              if (original) downloadText(original, "homebrew-original.json");
+            } catch {
+              /* recovery storage unavailable */
+            }
+          }}
+          hidden={!readImportOriginal(session.scope().uid ?? "", id)}
+        >
+          {homebrewLabel("recoverOriginal")}
+        </button>
+        {onReuse && baseFamily(family) && (
+          <button
+            disabled={!state.base?.stableVersion || op.busy || !state.online}
+            onClick={() => void share(true)}
+          >
+            {homebrewLabel("reuse")}
+          </button>
+        )}
+      </div>
+      <details className="homebrew-preview">
+        <summary>{homebrewLabel("preview")}</summary>
+        <HomebrewReader definition={draft} />
+      </details>
       {!state.base?.stableVersion && <p>{label("recordFirst")}</p>}
       {state.base?.provenance && (
         <p className="library-provenance">
@@ -274,7 +323,7 @@ function EditorBody({
           {t("libraryV2.sourceVersion", { version: state.base.provenance.sourceVersion })}
         </p>
       )}
-      {Object.keys(draft.payload.data).length > 0 && (
+      {!baseFamily(family) && Object.keys(draft.payload.data).length > 0 && (
         <details>
           <summary>{label("payload")}</summary>
           <pre>{JSON.stringify(draft.payload.data, null, 2)}</pre>
@@ -311,6 +360,9 @@ function EditorBody({
                 {draft.description || label("noVersions")}
               </p>
             </>
+          )}
+          {version && (
+            <HomebrewExport definition={version.definition} version={version} />
           )}
           {dialog === "record" && (
             <button

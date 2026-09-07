@@ -280,7 +280,9 @@ export class LibraryDraftController {
       } else this.publish({ loadError: true });
     }
   }
-  edit(delta: Partial<Pick<LibraryDefinition, "name" | "description" | "tags">>) {
+  edit(
+    delta: Partial<Pick<LibraryDefinition, "name" | "description" | "tags" | "payload">>
+  ) {
     if (
       !this.state.loaded ||
       !this.state.draft ||

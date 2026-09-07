@@ -1,23 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 import { OperationController, type OperationState } from "@/lib/shared/controller";
 import { equal } from "@/lib/shared/model";
-import type { LibraryOperation, LibraryReceipt } from "@/lib/library/model";
-import type { LibraryRepository } from "@/lib/library/model";
+import type { Envelope } from "@/lib/shared/model";
+
 import type { SessionController } from "@/lib/identity/session";
-export function useLibraryOperation(
-  repository: LibraryRepository,
+export function useLibraryOperation<
+  O extends Envelope,
+  R extends { operation: O; revision: number },
+>(
+  repository: {
+    commit(operation: O, check?: () => void): Promise<R>;
+    reconcile(operation: O): Promise<R | null>;
+  },
   session: SessionController,
   key: string,
   onAck: () => void | Promise<void>
 ) {
   const storageKey = "folio-library-operation:" + (session.scope().uid ?? "") + ":" + key;
-  const [state, setState] = useState<OperationState<
-    LibraryOperation,
-    LibraryReceipt
-  > | null>(() => {
+  const [state, setState] = useState<OperationState<O, R> | null>(() => {
     try {
       const saved = JSON.parse(sessionStorage.getItem(storageKey) ?? "null") as {
-        envelope: LibraryOperation;
+        envelope: O;
         invalidated: boolean;
       } | null;
       return saved?.envelope
@@ -35,9 +38,7 @@ export function useLibraryOperation(
   });
   const [error, setError] = useState(false),
     [preparing, setPreparing] = useState(false);
-  const controller = useRef<OperationController<LibraryOperation, LibraryReceipt> | null>(
-    null
-  );
+  const controller = useRef<OperationController<O, R> | null>(null);
   const detach = useRef(() => {}),
     live = useRef(true),
     ack = useRef(onAck);
@@ -72,7 +73,7 @@ export function useLibraryOperation(
       untrack();
     };
   }, [session, storageKey]);
-  const dispatch = async (envelope: LibraryOperation, retry: boolean) => {
+  const dispatch = async (envelope: O, retry: boolean) => {
     if (controller.current) {
       await controller.current.retry();
       return;
@@ -121,9 +122,7 @@ export function useLibraryOperation(
     preparing,
     busy: preparing || state?.status === "pending" || state?.status === "unknown",
     retry: () => (state ? dispatch(state.envelope, true) : Promise.resolve()),
-    run: async (
-      make: () => LibraryOperation | null | Promise<LibraryOperation | null>
-    ) => {
+    run: async (make: () => O | null | Promise<O | null>) => {
       if (preparing || state?.status === "pending" || state?.status === "unknown") return;
       const check = session.ticket();
       setPreparing(true);

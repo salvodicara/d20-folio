@@ -1,3 +1,8 @@
+import { HomebrewImport } from "./HomebrewPortable";
+import { associateImportOriginal } from "./homebrew-files";
+import { HomebrewReader } from "./HomebrewReader";
+import { baseFamily, useHomebrewLabel } from "./homebrew-labels";
+import { LibraryDraftController } from "./draft";
 import { libraryKey } from "./labels";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -39,6 +44,7 @@ export function LibraryWorkspace({
   campaigns,
   campaignId,
   onCampaignChange,
+  onReuse,
 }: {
   repository: LibraryRepository;
   session: SessionController;
@@ -46,9 +52,12 @@ export function LibraryWorkspace({
   campaigns: readonly FolioCampaign[];
   campaignId: string | null;
   onCampaignChange: (id: string | null) => void;
+  onReuse?: (version: LibraryVersion) => void;
 }) {
   const { t } = useTranslation("common");
   const label = (key: string) => t(libraryKey(key));
+  const hb = useHomebrewLabel();
+  const [importing, setImporting] = useState(false);
   const viewKey = "folio-library-view:" + (session.scope().uid ?? "");
   const [view] = useState(() => {
     try {
@@ -244,10 +253,43 @@ export function LibraryWorkspace({
           <span>{label("sharing")}</span>
         </button>
       </nav>
+      {importing && (
+        <HomebrewImport
+          session={session}
+          onClose={() => setImporting(false)}
+          onImport={async (definition, originalId) => {
+            const id = crypto.randomUUID();
+            associateImportOriginal(session.scope().uid ?? "", id, originalId);
+            const check = session.ticket();
+            const editor = new LibraryDraftController(
+              repository,
+              session,
+              id,
+              definition.family,
+              sessionStorage
+            );
+            try {
+              await editor.load();
+              if (!editor.state.loaded) throw new Error("unavailable");
+              editor.edit(definition);
+              check();
+              if (editor.state.storageFailed) throw new Error("storage-failed");
+              setSelected({ id, family: definition.family });
+              setQuery("");
+              setFamily("all");
+            } finally {
+              editor.dispose();
+            }
+          }}
+        />
+      )}
       <header className="library-heading">
         <p className="library-eyebrow">{label("library")}</p>
         <h1>{label(tab === "creations" ? "heading" : "sharingTitle")}</h1>
         <p>{label(tab === "creations" ? "intro" : "sharingIntro")}</p>
+        {tab === "creations" && (
+          <button onClick={() => setImporting(true)}>{hb("import")}</button>
+        )}
         {tab === "creations" && (
           <button className="identity-primary" onClick={() => setCreate(true)}>
             {label("create")}
@@ -361,6 +403,7 @@ export function LibraryWorkspace({
                       ? participantName(selectedEntry.provenance.source.ownerUid)
                       : undefined
                   }
+                  onReuse={onReuse}
                   onShare={(v) => {
                     setRecipient("");
                     setShare(v);
@@ -544,7 +587,11 @@ export function LibraryWorkspace({
           {feedback}
           <h3>{read.definition.name}</h3>
           <p>{t("libraryV2.from", { name: participantName(read.senderUid) })}</p>
-          <p className="library-description">{read.definition.description}</p>
+          {baseFamily(read.definition.family) ? (
+            <HomebrewReader definition={read.definition} />
+          ) : (
+            <p className="library-description">{read.definition.description}</p>
+          )}
           <p>{t("libraryV2.sourceVersion", { version: read.sourceVersion })}</p>
           {eligible.length > 0 && (
             <label>

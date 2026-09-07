@@ -1274,3 +1274,19 @@ The structural reasons the declarative-grant model is intentionally not the righ
   narrower **cast-level-scaling summon family** — Summon Beast/Fey/etc., Find Steed / Phantom Steed —
   whose stat block scales with the CAST slot level (a per-cast contract the persistent-companion
   model deliberately doesn't own); tracked in `docs/AUTOMATION_BACKLOG.md`.
+
+## V2 P05 authoring boundary
+
+The new base homebrew vocabulary is owned by `src/lib/homebrew/model.ts` and described in
+[homebrew authoring](homebrew-authoring.md). Edition/source/sourceVersion/mechanicId identify
+the declared rule. Finite typed fields cover weapon properties/mastery/formulas/ranges,
+equipment defense/attunement/charges/recovery, spell activation/components/targeting/duration/
+resolution/scaling, and feature activation/prerequisites/uses/frequency. Ordered effects declare
+damage, healing, temporary HP or a condition, with target, gate, duration, source and stacking.
+
+`conformDefinition` reports invalid relationships separately from unsupported declarations.
+`formulaBounds` checks a bounded dice-formula grammar without generating results. These are
+representations and consistency checks, not automated attacks, spell resolution, resource use,
+Counterspell, temporary-HP replacement or combat adjudication. No prose is interpreted as a rule.
+P14 retains execution and exception-family regression ownership; P05's exact E-family cases and
+unsupported limits are in its [specification](superpowers/specs/2026-09-07-p05-homebrew-base-design.md).

@@ -1,6 +1,24 @@
 # Program Status
 
-## Current frontier — P04 closed; P05 selected, not started (2026-09-07)
+## Current frontier — P05 implementation and runtime verification (2026-09-07)
+
+Owner/writer: Astra, codex/p05-homebrew-base-20260907, isolated at
+/Users/salvatoredicara/Workspace/Codex/d20-folio-p05-homebrew-base. Clean detached
+p05-control and fresh origin/v2 verified at 4f46b240bf3d584fa7c89c2d46ddb97623be440b;
+origin/main remains 9b06b75313d7ee353c4072a20397c3092707648e. P04 is closed.
+Pinned bootstrap completed; private pack b6073dd0 remains clean and read-only.
+P05 specification and plan were written before implementation. Typed model and character
+instance commits are integrated into this topic; root UI remains under verification. Workers
+p05_authoring_model and p05_sheet_data own disjoint isolated worktrees; p05_source_review owns
+read-only source and runtime diagnosis. Focused tests and independent reviews have driven fixes
+for exact original recovery, immutable metadata, concurrent state drafts and repository conformance.
+Optimized demo runtime is active at preview5180, Auth19099/Firestore18080/Storage19199; mock5189
+is task-owned. Intermittent emulator popup login is being diagnosed before four-family replay.
+Full CI/rules/private-fixture proof, final visual review, owner screenshot approval and explicit
+V2 integration remain open. Evidence is under d20-folio-p05-evidence. Other worktrees and
+pre-existing Firestore8080 are preserved. No P06, main push, deploy or production writes authorized.
+
+## Historical P04 closure (2026-09-07)
 
 Owner: Astra. P04 implementation, independent code/visual review, actual multi-client acceptance
 and owner screenshot/V2 integration verdicts are complete. Fresh fetch found V2 at
