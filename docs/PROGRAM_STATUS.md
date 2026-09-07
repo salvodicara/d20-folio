@@ -1,43 +1,47 @@
 # Program Status
 
-## Current frontier — P05 approved, integration preflight (2026-09-07)
+## Current frontier — P05 closure receipt (2026-09-07)
 
-Owner/writer: Astra, codex/p05-homebrew-base-20260907, isolated at
-/Users/salvatoredicara/Workspace/Codex/d20-folio-p05-homebrew-base. Runtime candidate
-5e60ac40fd4cb1dc6b7ba771a972d91ae6e7d2c5 is implemented and independently reviewed.
-Source/model and sheet workers completed their disjoint isolated work; their clean worktrees
-and detached p05-control remain owned and reserved for post-approval cleanup.
+Owner: Astra. P05 implementation, independent code/visual/paper review, actual optimized runtime
+acceptance and owner screenshot/V2 integration verdict are complete. The owner reaffirmed that
+custom/homebrew must participate in shared combat automation and combat must remain editable;
+PRODUCT owns the explicit contract, including real custom-combat execution/modification/causal-undo
+acceptance in later engine/play blocks. P05 proves authoring/conformance and persisted copies,
+not future engine execution. No new pixels or runtime code changed after the approved candidate.
 
-Full composed just ci exited 0: 871 app files / 19,326 tests, seven Functions files /129 tests,
-typecheck, lint, optimized build and PWA. Full demo rules exited 0: nine files /219 tests, no
-skips, including six private fixture copies and exact recovery. Public/pack seam unchanged;
-ci-srd-only not rerun. Private pack b6073dd0 remains clean and read-only.
+Fresh fetch found origin/v2 at 4f46b240bf3d584fa7c89c2d46ddb97623be440b; rebase was a no-op.
+Explicit hooked HEAD:v2 push succeeded; ls-remote verified 175203d9b1c9b6bf61070d8c0e499f9043c47ce8.
+Origin/main remains 9b06b75313d7ee353c4072a20397c3092707648e. This closure receipt changes
+only documentation/changeset. Its final remote SHA and removal of the remaining owned task/control
+worktrees are recorded externally in /Users/salvatoredicara/Workspace/Codex/d20-folio-p05-evidence/
+integration-preflight/RECEIPT.md; successor delivery requires those final receipts verified.
 
-Actual optimized browser journeys verified all four typed families, save/reload/versions,
-owner and recipient sheet copies, addressed offers and revocation, explicit updates preserving
-instance state, imports/exports/exact incompatible originals, offline/concurrent drafts and
-unknown after a real committed response with exact receipt recovery. Independent source and
-visual reviewers closed their findings; final print review verified the corrected eight PDFs.
-Final asset index-BD7c_J_n.js includes negative versatile validation and the print artwork fix.
-The 48 editor matrix images plus two shell images retain the prior visually equivalent d020fb89
-screen build; the later print-only CSS and formula validation delta are recorded and hashed.
-Twelve reuse/recovery images and eight PDFs use the final build. The owner has now accepted P05 and V2 integration: “fin tanto che ... le robe custom ...
-devono poter essere automatizzate ... durante il combattimento tutto deve poter essere
-modificabile ... allora va bene”. PRODUCT now explicitly owns that binding automation and
-editable-combat requirement; P05 does not claim future engine acceptance. No new pixels or
-runtime behavior changed after the shown images.
+Approved runtime is 5e60ac40fd4cb1dc6b7ba771a972d91ae6e7d2c5, asset index-BD7c_J_n.js.
+Fresh integration just ci exited0: 871 app files/19,326 tests, seven Functions files/129 tests,
+typecheck, lint, optimized build and PWA. Full demo rules exited0: nine files/219 tests, no skips,
+including six private fixture copies and exact-original recovery. Public/private seam unchanged;
+ci-srd-only not rerun. All32 protected source/rules/test hashes and80 image hashes verified unchanged.
+Private pack b6073dd0 remains clean and read-only. Gates and independent owner-contract review
+are retained in integration-preflight; earlier failures and corrections remain in the evidence root.
 
-P05 remains OPEN for the now-authorized fresh preflight, explicit HEAD:v2 integration, remote
-SHA confirmation and safe owned-worktree/service cleanup. The approval round is complete. Remote refs checked
-again after verification: v2 remains 4f46b240bf3d584fa7c89c2d46ddb97623be440b; main remains
-9b06b75313d7ee353c4072a20397c3092707648e. No P05 push has occurred.
+Four-family browser journeys verified actual login, typed save/reload/versions, owner/recipient
+persistent copies, addressed offer/accept/revocation, chosen version updates preserving state,
+import/export/exact incompatible originals, concurrent/offline drafts and unknown after a real
+committed response recovered by exact receipt. Sixty-two actual screen captures cover the final
+editor/shell/reuse/recovery matrix; eighteen PNGs render eight reviewed PDFs. No engine or exact
+production-equivalence claim: REPLAY.md and FIDELITY.md own the reproducible evidence/limitations.
 
-Evidence and reproducible commands/fidelity gaps: /Users/salvatoredicara/Workspace/Codex/
-d20-folio-p05-evidence/{HANDOFF.md,REPLAY.md,FIDELITY.md,manifests,logs}. Owned preview5180,
-mock5189 and demo Auth19099/Firestore18080/Storage19199 remain active for pre-integration verification.
-Separate rules cluster stopped normally. Preserve unrelated Firestore PID86001/8080, shared
-checkout .playwright-cli and every unrelated worktree. No P06, successor prompt, main push,
-deploy, production write/migration or cost is authorized.
+Owned authoring-model, sheet-data and sheet-data-pack worktrees were removed cleanly after patch
+identity/HEAD equivalence and remote proof; their branches remain. Owned preview5180, mock5189,
+Auth19099/Firestore18080/Storage19199 and hub/log/websocket listeners are stopped. The demo CLI
+reported a Storage shutdown warning; subsequent listener checks confirmed every owned port closed.
+Separate full-rules cluster stopped normally. Preserve unrelated Firestore PID86001/8080, shared
+checkout .playwright-cli, long-lived V2/P01/old P02 topics and every unrelated worktree.
+
+AGENT-PROGRAM selects P06 — monster/campaign-rule editors as the first incomplete row once final
+P05 external cleanup receipts verify. P06 is NOT STARTED. Carry PRODUCT's custom automation and
+editable-combat contract intact into its spec/plan/review and all later successors. No main push,
+deploy, production write/migration, cost, P06 execution or speculative successor before closure.
 
 ## Historical P04 closure (2026-09-07)
 

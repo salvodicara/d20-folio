@@ -77,8 +77,8 @@ External: d20-folio-p05-evidence/{HANDOFF.md,REPLAY.md,FIDELITY.md, scripts, log
 - [x] Independent code and visual review; correct findings, run just ci/full rules/six fixtures;
       ci-srd-only if seam touched. Record exact commands/counts/skips/hash and fidelity gaps.
 - [x] Deliver curated actual images for owner verdict only after autonomous work complete.
-- [ ] Upon explicit integration approval fetch/rebase/gate/push HEAD:v2, verify SHA and safe cleanup.
-- [ ] Close P05 only with all exits; then deliver one complete recursive successor prompt; do not start it.
+- [x] Upon explicit integration approval fetch/rebase/gate/push HEAD:v2, verify SHA and safe cleanup.
+- [x] Close P05 only with all exits; then deliver one complete recursive successor prompt; do not start it.
 
 ## Verification receipt
 
@@ -94,3 +94,6 @@ actual browser scripts, backend audits, source/image/build manifests and preserv
 The final print review closed the last-page artwork defect. Final bounded optimized runtime
 retested negative versatile validation, valid draft restoration and bilingual exact-file recovery.
 Frontier, active services and remaining owner/integration gates belong only to PROGRAM_STATUS.
+
+The final remote and owned-worktree removal receipts are external in integration-preflight/RECEIPT.md;
+completion requires their verified outcome, not this checkbox alone.
