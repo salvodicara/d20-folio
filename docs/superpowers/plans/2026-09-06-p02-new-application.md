@@ -31,7 +31,7 @@ runtime chrome; do not carry their PASS to the current diff. Astra owns this res
 - [x] Review the changed code and real runtime against the pertinent mock; resolve findings.
 - [x] Run fresh just ci, rules, relevant fixture checks and browser EN/IT 1440/1280/390 journeys.
 - [x] Commit with owner-only authorship/changeset, package fresh screenshots and full recursive handoff.
-- [ ] Obtain owner runtime visual verdict. No integration, deploy or P03 is authorized here.
+- [x] Obtain owner runtime visual verdict: approved 7 September for `c7eed6c4`. No integration, deploy or P03 is authorized here.
 
 ## Correction verification — 7 September 2026
 
@@ -43,7 +43,7 @@ Final browser shell 186 checks pass over EN/IT 1440/1280/390; real two-PC/revoke
 Independent code review C1–C3 and subsequent scoped fixes are closed. Actual visual review
 passes after nav geometry, phone avatar, focus wash and 44px target corrections. 84 runtime
 and 18 mock PNGs plus manifests/review/handoff are in external r2 evidence. Owner screenshot
-approval remains pending: no integration, deploy or P03. Historical task checks below apply
+approval received 7 September for `c7eed6c4`; separate integration remains unauthorized. No deploy or P03. Historical task checks below apply
 only to their original candidate; the current checklist above controls this correction.
 
 ## Task 1 — direction and boundary

@@ -40,8 +40,13 @@ and 18 mock images, source hashes and the complete successor prompt are packaged
 in d20-folio-p02-new-evidence/r2 and its parent HANDOFF. This local commit records the correction;
 its exact SHA is in external r2/final-commit.txt. Integration refs remain unchanged. Historical CI/SRD/visual records below do not certify this correction. P02 remains OPEN.
 Astra is sole implementation writer; reviewers are read-only. No integration SHA has changed.
-The remaining owner gate is approval of the corrected runtime images, after all technical gates.
-No integration, deploy or next block is authorized. Keep this worktree for the pending verdict.
+Owner screenshot gate APPROVED on 7 September 2026 for runtime candidate
+`c7eed6c4ad07e2fbc205454ff103cd1cf6cbfaec`. Exact receipt: “Sisi approvo, per favore da ora in
+poi mandami il prompt per la prossima sessione solo quando hai davvero finito”.
+Technical delivery and visual acceptance are complete. P02 remains open only for the separate
+V2 integration decision/receipt; no integration, deploy or next block is authorized by this
+screenshot verdict. Preserve the candidate. Send a successor prompt only after the current
+work is truly finished, including its outstanding gates; do not attach one to interim delivery.
 
 ### Binding correction
 
