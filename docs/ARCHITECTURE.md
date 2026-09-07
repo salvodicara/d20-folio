@@ -3896,3 +3896,12 @@ validation is not expressible within the rules execution budget.
 The complete `LibraryRepository` interface belongs to the pure library model. Application
 controllers import that interface directly; the Firebase repository implements it with an
 explicit return annotation. Transport inference must not pull Firebase into pure consumers.
+
+The library client keeps one account-scoped draft record in sessionStorage. A separate index
+contains only entry identities so never-uploaded drafts remain reachable. Loaded server bases
+and confirmed revisions prevent initial-value writes and stale refresh rollback. Offline
+changes remain local until an explicit retry; unknown outcomes retain the original envelope
+for receipt reconciliation. Real session invalidation persists across account A→B→A, while
+ordinary effect teardown preserves selection and recoverable drafts. Incompatible local bytes
+are quarantined and downloadable after reopening; storage failures cannot turn an acknowledged
+server operation into an unknown outcome.
