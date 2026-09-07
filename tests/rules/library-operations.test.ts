@@ -343,3 +343,115 @@ it("offline intent is retained without a write and an explicit retry uses its or
   const result = await a.repo.commit(op);
   expect(result.operation.opId).toBe(op.opId);
 });
+it("a valid offer operation cannot piggyback a malformed library head with the same target id", async () => {
+  const a = await stable();
+  const op = a.repo.offerIntent(
+    await a.repo.readVersion({ ownerUid: "owner", id: "one" }, 1),
+    "recipient"
+  );
+  const { writeBatch } = await import("firebase/firestore");
+  const batch = writeBatch(a.db);
+  batch.set(doc(a.db, "folioLibraryOffers/" + op.targetId), required(op.offer));
+  batch.set(doc(a.db, "folioAccounts/owner/operations/" + op.opId), {
+    operation: op,
+    revision: 1,
+  });
+  batch.set(doc(a.db, "folioAccounts/owner/library/" + op.targetId), {
+    unexpected: "malformed head",
+    lastOperation: { uid: "owner", opId: op.opId },
+  });
+  await assertFails(batch.commit());
+});
+it("a valid draft operation cannot piggyback an unvalidated offer with the same target id", async () => {
+  const a = client();
+  await a.repo.load("piggyback");
+  const definition = { ...blankDefinition("weapon"), name: "Valid draft" };
+  const op = a.repo.saveIntent(null, definition, "piggyback");
+  const { writeBatch } = await import("firebase/firestore");
+  const batch = writeBatch(a.db);
+  const lastOperation = { uid: "owner", opId: op.opId };
+  batch.set(doc(a.db, "folioAccounts/owner/library/piggyback"), {
+    schema: 1,
+    ownerUid: "owner",
+    id: "piggyback",
+    revision: 1,
+    draft: definition,
+    stableVersion: 0,
+    provenance: null,
+    lastOperation,
+  });
+  batch.set(doc(a.db, "folioAccounts/owner/operations/" + op.opId), {
+    operation: op,
+    revision: 1,
+  });
+  batch.set(doc(a.db, "folioLibraryOffers/piggyback"), {
+    senderUid: "owner",
+    recipientUid: "recipient",
+    definition: { unvalidated: "payload" },
+    lastOperation,
+  });
+  await assertFails(batch.commit());
+});
+it("a valid acceptance cannot piggyback an unrelated grant receipt", async () => {
+  const a = await stable(),
+    b = client("recipient");
+  await a.repo.commit(
+    a.repo.offerIntent(
+      await a.repo.readVersion({ ownerUid: "owner", id: "one" }, 1),
+      "recipient"
+    )
+  );
+  const offer = required((await b.repo.listOffers())[0]);
+  const op = await b.repo.acceptIntent(offer);
+  const provenance = {
+    source: { ownerUid: "owner", id: "one" },
+    sourceVersion: 1,
+    senderUid: "owner",
+    offerId: offer.id,
+    grantId: "owner~" + offer.id,
+  };
+  const lastOperation = { uid: "recipient", opId: op.opId };
+  const { writeBatch } = await import("firebase/firestore");
+  const batch = writeBatch(b.db);
+  batch.set(doc(b.db, "folioAccounts/recipient/library/" + op.targetId), {
+    schema: 1,
+    ownerUid: "recipient",
+    id: op.targetId,
+    revision: 1,
+    draft: offer.definition,
+    stableVersion: 1,
+    provenance,
+    lastOperation,
+  });
+  batch.set(doc(b.db, "folioAccounts/recipient/library/" + op.targetId + "/versions/1"), {
+    schema: 1,
+    ownerUid: "recipient",
+    entryId: op.targetId,
+    version: 1,
+    definition: offer.definition,
+    provenance,
+    operationId: op.opId,
+  });
+  const receipt = {
+    schema: 2,
+    senderUid: "owner",
+    offerId: offer.id,
+    recipientUid: "recipient",
+    sourceId: "one",
+    sourceVersion: 1,
+    entryId: op.targetId,
+    version: 1,
+    operationId: op.opId,
+  };
+  batch.set(doc(b.db, "folioAccounts/recipient/receipts/owner~" + offer.id), receipt);
+  batch.set(doc(b.db, "folioAccounts/recipient/operations/" + op.opId), {
+    operation: op,
+    revision: 1,
+  });
+  batch.set(doc(b.db, "folioAccounts/recipient/receipts/forged~unrelated"), {
+    ...receipt,
+    senderUid: "forged",
+    offerId: "unrelated",
+  });
+  await assertFails(batch.commit());
+});

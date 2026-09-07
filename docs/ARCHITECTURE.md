@@ -3878,3 +3878,7 @@ creation ticket across account A→B→A changes. Repository construction itself
 an epoch, so React StrictMode effect replay can restore a session safely. No reconnect replay
 or additional write queue is introduced. Common authoring payloads exclude attachments in
 this phase: a metadata copy cannot atomically materialize Storage bytes with Firestore writes.
+
+Each library write match also pins the operation kind appropriate to that document, and a
+grant receipt pins the exact offered identity. A valid operation cannot authorize unrelated
+heads, offers or extra receipts in the same atomic batch.

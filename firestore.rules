@@ -260,7 +260,8 @@ service cloud.firestore {
     }
     match /folioAccounts/{uid}/library/{id} {
       allow get,list: if folioOwnerAccess(uid);
-      allow create,update: if libraryWrite(uid,request.resource.data.lastOperation) && operationReceipt(uid,request.resource.data.lastOperation.opId).operation.targetId == id;
+      allow create,update: if libraryWrite(uid,request.resource.data.lastOperation) && operationReceipt(uid,request.resource.data.lastOperation.opId).operation.targetId == id
+        && operationReceipt(uid,request.resource.data.lastOperation.opId).operation.kind in ['library-save','library-publish','library-accept'];
       match /versions/{version} {
         allow get,list: if folioOwnerAccess(uid);
         allow create: if libraryWrite(uid,{'uid':uid,'opId':request.resource.data.operationId})
@@ -273,7 +274,8 @@ service cloud.firestore {
     match /folioLibraryOffers/{id} {
       allow get: if folioUser() && !exists(/databases/$(database)/documents/folioLibraryOffers/$(id));
       allow get,list: if folioUser() && (resource.data.senderUid == request.auth.uid || isAdmin() || (resource.data.recipientUid == request.auth.uid && !resource.data.revoked));
-      allow create,update: if libraryWrite(request.resource.data.senderUid,request.resource.data.lastOperation) && operationReceipt(request.resource.data.senderUid,request.resource.data.lastOperation.opId).operation.targetId == id;
+      allow create,update: if libraryWrite(request.resource.data.senderUid,request.resource.data.lastOperation) && operationReceipt(request.resource.data.senderUid,request.resource.data.lastOperation.opId).operation.targetId == id
+        && operationReceipt(request.resource.data.senderUid,request.resource.data.lastOperation.opId).operation.kind in ['library-offer','library-revoke'];
     }
     // Historical P02 asset authority only. No schema-one workflow remains writable.
     match /folioAccounts/{uid}/offers/{id} {
@@ -285,6 +287,7 @@ service cloud.firestore {
       allow create: if libraryWrite(uid,{'uid':uid,'opId':request.resource.data.operationId})
         && operationReceipt(uid,request.resource.data.operationId).operation.kind == 'library-accept'
         && id == request.resource.data.senderUid+'~'+request.resource.data.offerId
+        && id == operationReceipt(uid,request.resource.data.operationId).operation.offer.senderUid+'~'+operationReceipt(uid,request.resource.data.operationId).operation.offer.id
         && request.resource.data.entryId == operationReceipt(uid,request.resource.data.operationId).operation.targetId;
     }
 
