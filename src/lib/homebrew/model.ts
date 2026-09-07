@@ -399,7 +399,7 @@ export function initializeDefinition(family: BaseFamily): LibraryDefinition {
     Object.assign(d.payload.data, {
       damageFormula: "1d6",
       damageType: "slashing",
-      reach: 5,
+      reach: 1.5,
       attackBonus: 0,
       damageBonus: 0,
     });

@@ -86,7 +86,16 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
           !Number.isFinite(value) ||
           value < (field.min ?? -Infinity) ||
           value > (field.max ?? Infinity) ||
-          (!["weight", "cost", "materialCost"].includes(field.key) &&
+          (![
+            "weight",
+            "cost",
+            "materialCost",
+            "reach",
+            "rangeNormal",
+            "rangeLong",
+            "rangeDistance",
+            "areaSize",
+          ].includes(field.key) &&
             !Number.isInteger(value))
         )
           add(path, "invalid-number");

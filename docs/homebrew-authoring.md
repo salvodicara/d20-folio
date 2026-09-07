@@ -44,3 +44,9 @@ acceptance are separate gates owned by the parent P05 program.
 
 Unknown authoring versions still validate the universal nonempty name and template-state
 exclusion. Unsupported version metadata cannot turn a malformed draft into a reusable template.
+
+All physical distances in this vocabulary use **meters**: weapon reach and normal/long range,
+and spell range distance and area size. Fractional distances are supported (the standard
+weapon reach initializes to 1.5 m); the form, reader and portable JSON share the same units.
+Levels, durations, ability scores, resource counts and other discrete fields remain integers.
+Existing stored distances are never rescaled or migrated implicitly.

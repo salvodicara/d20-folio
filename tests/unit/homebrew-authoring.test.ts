@@ -302,3 +302,29 @@ it("unknown authoring versions cannot bypass universal draft and template invari
     expect.arrayContaining(["required", "instance-state", "unsupported-version"])
   );
 });
+
+it("represents physical distances consistently in meters including fractional squares", () => {
+  expect(initializeDefinition("weapon").payload.data.reach).toBe(1.5);
+  expect(
+    conformDefinition(
+      definition("weapon", {
+        reach: 1.5,
+        propertyThrown: true,
+        rangeNormal: 6.5,
+        rangeLong: 18.5,
+      })
+    )
+  ).toEqual([]);
+  expect(
+    conformDefinition(
+      definition("spell", {
+        rangeKind: "distance",
+        rangeDistance: 18.5,
+        areaShape: "sphere",
+        areaSize: 1.5,
+      })
+    )
+  ).toEqual([]);
+  expect(codes(definition("spell", { level: 1.5 }))).toContain("invalid-number");
+  expect(codes(definition("feature", { maxUses: 1.5 }))).toContain("invalid-number");
+});
