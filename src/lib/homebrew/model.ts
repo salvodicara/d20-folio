@@ -1,6 +1,9 @@
+import { advancedFields, advancedCollections } from "./advanced";
 import { blankDefinition, type LibraryDefinition } from "../library/model";
 export const BASE_FAMILIES = ["weapon", "equipment", "spell", "feature"] as const;
 export type BaseFamily = (typeof BASE_FAMILIES)[number];
+export const AUTHORING_FAMILIES = [...BASE_FAMILIES, "monster", "campaign-rule"] as const;
+export type AuthoringFamily = (typeof AUTHORING_FAMILIES)[number];
 export interface FieldDescriptor {
   key: string;
   type: "text" | "number" | "boolean" | "select" | "formula";
@@ -375,9 +378,9 @@ export type BaseContent =
   | { family: "spell"; data: SpellData }
   | { family: "feature"; data: FeatureData };
 /** Explicit initialization only. Callers must not replace an existing payload implicitly. */
-export function initializeDefinition(family: BaseFamily): LibraryDefinition {
+export function initializeDefinition(family: AuthoringFamily): LibraryDefinition {
   const d = blankDefinition(family);
-  for (const f of fields[family])
+  for (const f of authoringFields(family))
     d.payload.data[f.key] =
       f.type === "boolean"
         ? false
@@ -404,5 +407,26 @@ export function initializeDefinition(family: BaseFamily): LibraryDefinition {
       damageBonus: 0,
     });
   if (family === "spell") Object.assign(d.payload.data, { verbal: true, somatic: true });
+  for (const c of advancedCollections(family)) d.payload.data[c.key] = [];
+  if (family === "monster")
+    Object.assign(d.payload.data, {
+      armorClass: 10,
+      maxHp: 1,
+      hpFormula: "1",
+      initiative: 0,
+      ...Object.fromEntries(
+        ABILITIES.flatMap((a) => [
+          [a, 10],
+          [a + "Save", 0],
+        ])
+      ),
+    });
+  if (family === "campaign-rule") d.payload.data.priority = 0;
   return d;
+}
+
+export function authoringFields(family: AuthoringFamily): readonly FieldDescriptor[] {
+  return BASE_FAMILIES.includes(family as BaseFamily)
+    ? baseFields(family as BaseFamily)
+    : [...common, ...advancedFields(family)];
 }

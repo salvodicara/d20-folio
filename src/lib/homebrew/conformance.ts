@@ -1,13 +1,14 @@
+import { advancedCollections, type AdvancedCollection } from "./advanced";
 import {
   parseDefinition,
   type LibraryDefinition,
   type JsonValue,
 } from "../library/model";
 import {
-  BASE_FAMILIES,
-  baseFields,
+  AUTHORING_FAMILIES,
+  authoringFields,
   effectFields,
-  type BaseFamily,
+  type AuthoringFamily,
   type FieldDescriptor,
 } from "./model";
 export interface AuthoringDiagnostic {
@@ -33,7 +34,18 @@ export function formulaBounds(input: unknown): { min: number; max: number } | nu
   return { min: n + offset, max: n * sides + offset };
 }
 const textValue = (value: unknown): string => (typeof value === "string" ? value : "");
-const stateKeys = ["quantity", "remainingCharges", "prepared", "equipped", "attuned"];
+const stateKeys = [
+  "quantity",
+  "remainingCharges",
+  "prepared",
+  "equipped",
+  "attuned",
+  "currentHp",
+  "temporaryHp",
+  "remaining",
+  "enabled",
+  "conditions",
+];
 export function conformDefinition(definition: LibraryDefinition): AuthoringDiagnostic[] {
   const issues: AuthoringDiagnostic[] = [];
   const add = (
@@ -49,7 +61,7 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
   }
   const d = definition.payload.data;
   if (!definition.name.trim()) add("name", "required");
-  if (!BASE_FAMILIES.includes(definition.family as BaseFamily)) {
+  if (!AUTHORING_FAMILIES.includes(definition.family as AuthoringFamily)) {
     add("family", "unsupported-family", "unsupported");
     return issues;
   }
@@ -95,6 +107,15 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
             "rangeLong",
             "rangeDistance",
             "areaSize",
+            "walkSpeed",
+            "flySpeed",
+            "swimSpeed",
+            "climbSpeed",
+            "burrowSpeed",
+            "darkvision",
+            "blindsight",
+            "tremorsense",
+            "truesight",
           ].includes(field.key) &&
             !Number.isInteger(value))
         )
@@ -109,9 +130,10 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
         add(path, "invalid-formula");
     }
   };
-  validate(d, baseFields(definition.family as BaseFamily), "payload.data.", [
+  validate(d, authoringFields(definition.family as AuthoringFamily), "payload.data.", [
     "effects",
     "unsupported",
+    ...advancedCollections(definition.family as AuthoringFamily).map((c) => c.key),
   ]);
   const check = (condition: unknown, key: string, code: string) => {
     if (condition) add("payload.data." + key, code);
@@ -122,84 +144,87 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
     add("payload.data.unsupported", "invalid-declarations");
   else if (d.unsupported.length)
     add("payload.data.unsupported", "unsupported-declaration", "unsupported");
-  if (!Array.isArray(d.effects) || d.effects.length > 32)
-    add("payload.data.effects", "invalid-effects");
-  else
-    d.effects.forEach((value, index) => {
-      const path = `payload.data.effects.${index}.`;
-      if (!value || typeof value !== "object" || Array.isArray(value)) {
-        add(path.slice(0, -1), "invalid-effect");
-        return;
-      }
-      validate(value, effectFields(), path);
-      const effectCheck = (condition: unknown, key: string, code: string) => {
-        if (condition) add(path + key, code);
-      };
-      const bounds = formulaBounds(value.formula);
-      effectCheck(
-        value.kind !== "condition" && (!bounds || bounds.min < 0),
-        "formula",
-        "effect-formula"
-      );
-      effectCheck(
-        value.kind === "damage" && !value.damageType,
-        "damageType",
-        "damage-type-required"
-      );
-      effectCheck(
-        value.kind !== "damage" && value.damageType !== "",
-        "damageType",
-        "damage-type-unused"
-      );
-      effectCheck(
-        value.kind === "condition" && !value.condition,
-        "condition",
-        "condition-required"
-      );
-      effectCheck(
-        value.kind !== "condition" && value.condition !== "",
-        "condition",
-        "condition-unused"
-      );
-      effectCheck(
-        value.kind === "condition" && value.formula !== "",
-        "formula",
-        "condition-formula"
-      );
-      effectCheck(
-        ["round", "minute", "hour"].includes(textValue(value.durationKind)) &&
-          !(Number(value.durationAmount) > 0),
-        "durationAmount",
-        "duration-required"
-      );
-      effectCheck(
-        ["instant", "until-removed"].includes(textValue(value.durationKind)) &&
-          value.durationAmount !== 0,
-        "durationAmount",
-        "duration-unused"
-      );
-      effectCheck(
-        definition.family === "spell" &&
-          ["failed-save", "successful-save"].includes(textValue(value.gate)) &&
-          d.resolution !== "save",
-        "gate",
-        "save-required"
-      );
-      effectCheck(
-        definition.family === "spell" &&
-          value.gate === "hit" &&
-          d.resolution !== "attack",
-        "gate",
-        "attack-required"
-      );
-      effectCheck(
-        definition.family === "spell" &&
-          value.target === "area" &&
-          d.areaShape === "none",
-        "target",
-        "area-required"
-      );
-    });
+  const validateEffects = (
+    parent: Record<string, JsonValue>,
+    prefix: string,
+    checkResolution: boolean
+  ) => {
+    if (!Array.isArray(parent.effects) || parent.effects.length > 32)
+      add(prefix + "effects", "invalid-effects");
+    else
+      parent.effects.forEach((value, index) => {
+        const path = `${prefix}effects.${index}.`;
+        if (!value || typeof value !== "object" || Array.isArray(value)) {
+          add(path.slice(0, -1), "invalid-effect");
+          return;
+        }
+        validate(value, effectFields(), path);
+        const effectCheck = (condition: unknown, key: string, code: string) => {
+          if (condition) add(path + key, code);
+        };
+        const bounds = formulaBounds(value.formula);
+        effectCheck(
+          value.kind !== "condition" && (!bounds || bounds.min < 0),
+          "formula",
+          "effect-formula"
+        );
+        effectCheck(
+          value.kind === "damage" && !value.damageType,
+          "damageType",
+          "damage-type-required"
+        );
+        effectCheck(
+          value.kind !== "damage" && value.damageType !== "",
+          "damageType",
+          "damage-type-unused"
+        );
+        effectCheck(
+          value.kind === "condition" && !value.condition,
+          "condition",
+          "condition-required"
+        );
+        effectCheck(
+          value.kind !== "condition" && value.condition !== "",
+          "condition",
+          "condition-unused"
+        );
+        effectCheck(
+          value.kind === "condition" && value.formula !== "",
+          "formula",
+          "condition-formula"
+        );
+        effectCheck(
+          ["round", "minute", "hour"].includes(textValue(value.durationKind)) &&
+            !(Number(value.durationAmount) > 0),
+          "durationAmount",
+          "duration-required"
+        );
+        effectCheck(
+          ["instant", "until-removed"].includes(textValue(value.durationKind)) &&
+            value.durationAmount !== 0,
+          "durationAmount",
+          "duration-unused"
+        );
+        effectCheck(
+          checkResolution &&
+            ["failed-save", "successful-save"].includes(textValue(value.gate)) &&
+            parent.resolution !== "save",
+          "gate",
+          "save-required"
+        );
+        effectCheck(
+          checkResolution && value.gate === "hit" && parent.resolution !== "attack",
+          "gate",
+          "attack-required"
+        );
+        effectCheck(
+          checkResolution && value.target === "area" && parent.areaShape === "none",
+          "target",
+          "area-required"
+        );
+      });
+  };
+  validateEffects(d, "payload.data.", definition.family === "spell");
   if (definition.family === "weapon") {
     const bounds = formulaBounds(d.damageFormula);
     check(!bounds || bounds.min < 0, "damageFormula", "damage-formula");
@@ -416,6 +441,216 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
       "prerequisiteAbility",
       "prerequisite-unused"
     );
+  }
+  if (definition.family === "monster" || definition.family === "campaign-rule") {
+    const rows = (key: string): Record<string, JsonValue>[] =>
+      Array.isArray(d[key])
+        ? d[key].filter(
+            (x): x is Record<string, JsonValue> =>
+              !!x && typeof x === "object" && !Array.isArray(x)
+          )
+        : [];
+    const walk = (
+      parent: Record<string, JsonValue>,
+      collections: readonly AdvancedCollection[],
+      prefix: string
+    ) => {
+      for (const c of collections) {
+        const values = parent[c.key];
+        if (!Array.isArray(values) || values.length > c.max) {
+          add(prefix + c.key, "invalid-collection");
+          continue;
+        }
+        const ids = new Set<string>();
+        values.forEach((v, i) => {
+          const path = `${prefix}${c.key}.${i}.`;
+          if (!v || typeof v !== "object" || Array.isArray(v)) {
+            add(path.slice(0, -1), "invalid-row");
+            return;
+          }
+          validate(
+            v,
+            c.fields,
+            path,
+            c.collections?.map((x) => x.key)
+          );
+          const identity =
+            c.kind === "dependency"
+              ? "mechanicId"
+              : c.kind === "skill"
+                ? "skill"
+                : c.fields.some((f) => f.key === "id")
+                  ? "id"
+                  : null;
+          if (identity) {
+            const id = textValue(v[identity]);
+            if (!id.trim()) add(path + identity, "required");
+            else if (ids.has(id)) add(path + identity, "duplicate-id");
+            ids.add(id);
+          }
+          if (c.fields.some((f) => f.key === "name") && !textValue(v.name).trim())
+            add(path + "name", "required");
+          if (c.kind === "program") {
+            if (!textValue(v.source).trim()) add(path + "source", "required");
+            validateEffects(v, path, true);
+            walk(
+              v,
+              (c.collections ?? []).filter((x) => x.key !== "effects"),
+              path
+            );
+            const checkRow = (condition: unknown, key: string, code: string) => {
+              if (condition) add(path + key, code);
+            };
+            checkRow(
+              Number(v.rangeLong) < Number(v.rangeNormal),
+              "rangeLong",
+              "range-order"
+            );
+            checkRow(
+              v.resolution === "attack" &&
+                !(Number(v.reach) > 0 || Number(v.rangeNormal) > 0),
+              "reach",
+              "range-required"
+            );
+            checkRow(
+              v.resolution === "save" &&
+                (v.saveAbility === "none" || !(Number(v.saveDc) > 0)),
+              "saveAbility",
+              "save-required"
+            );
+            checkRow(
+              v.resolution !== "save" && (v.saveAbility !== "none" || v.saveDc !== 0),
+              "saveAbility",
+              "save-unused"
+            );
+            checkRow(
+              v.resolution !== "attack" && v.attackBonus !== 0,
+              "attackBonus",
+              "attack-unused"
+            );
+            checkRow(
+              v.areaShape !== "none" && !(Number(v.areaSize) > 0),
+              "areaSize",
+              "area-required"
+            );
+            checkRow(
+              v.areaShape === "none" && v.areaSize !== 0,
+              "areaSize",
+              "area-unused"
+            );
+            checkRow(
+              v.activation === "reaction" && v.trigger === "none",
+              "trigger",
+              "reaction-trigger"
+            );
+            checkRow(
+              v.kind !== "multiattack" &&
+                v.activation !== (v.kind === "trait" ? "passive" : v.kind),
+              "activation",
+              "activation-kind"
+            );
+            checkRow(
+              v.kind === "multiattack" &&
+                (v.activation !== "action" ||
+                  v.resolution !== "none" ||
+                  !Array.isArray(v.steps) ||
+                  !v.steps.length),
+              "steps",
+              "multiattack-steps"
+            );
+            checkRow(
+              v.kind === "multiattack" && Array.isArray(v.effects) && v.effects.length,
+              "effects",
+              "multiattack-effects"
+            );
+            checkRow(
+              v.kind !== "multiattack" && Array.isArray(v.steps) && v.steps.length,
+              "steps",
+              "steps-unused"
+            );
+            const resource = rows("resources").find((r) => r.id === v.resourceId);
+            checkRow(v.resourceId !== "" && !resource, "resourceId", "missing-resource");
+            checkRow(
+              Number(v.resourceCost) > 0 && !resource,
+              "resourceId",
+              "missing-resource"
+            );
+            checkRow(
+              resource && Number(v.resourceCost) > Number(resource.capacity),
+              "resourceCost",
+              "resource-capacity"
+            );
+            checkRow(
+              v.kind === "legendary" && !(Number(v.resourceCost) > 0),
+              "resourceCost",
+              "legendary-cost"
+            );
+            if (Array.isArray(v.steps))
+              v.steps.forEach((step, j) => {
+                if (!step || typeof step !== "object" || Array.isArray(step)) return;
+                const target = rows("programs").find((p) => p.id === step.programId);
+                if (!target) add(path + `steps.${j}.programId`, "missing-program");
+                else if (target.kind === "multiattack")
+                  add(path + `steps.${j}.programId`, "nested-multiattack");
+              });
+          }
+          if (c.kind === "resource") {
+            const bounds = formulaBounds(v.recoveryFormula);
+            if (
+              (v.recoveryKind === "none" && v.recoveryBoundary !== "none") ||
+              (v.recoveryKind !== "none" && v.recoveryBoundary === "none")
+            )
+              add(path + "recoveryBoundary", "recovery-kind");
+            if (
+              v.recoveryKind === "formula" &&
+              (!bounds || bounds.min < 0 || bounds.max > Number(v.capacity))
+            )
+              add(path + "recoveryFormula", "recovery-formula");
+            if (v.recoveryKind !== "formula" && v.recoveryFormula !== "")
+              add(path + "recoveryFormula", "recovery-formula-unused");
+            if (
+              v.recoveryKind === "recharge" &&
+              (v.recoveryBoundary !== "turn-start" || Number(v.rechargeThreshold) < 1)
+            )
+              add(path + "rechargeThreshold", "invalid-recharge");
+            if (v.recoveryKind !== "recharge" && v.rechargeThreshold !== 0)
+              add(path + "rechargeThreshold", "recharge-unused");
+          }
+          if (c.kind === "policy") {
+            if (
+              v.fact === "resource-capacity" &&
+              !rows("resources").some((r) => r.id === v.resourceId)
+            )
+              add(path + "resourceId", "missing-resource");
+            if (v.fact !== "resource-capacity" && v.resourceId !== "")
+              add(path + "resourceId", "resource-unused");
+            if (v.operation === "set" && Number(v.amount) < 0)
+              add(path + "amount", "negative-set");
+          }
+          if (c.kind === "dependency" && v.mechanicId === d.mechanicId)
+            add(path + "mechanicId", "self-dependency");
+          if (c.kind === "defense") {
+            if (
+              v.kind === "condition-immunity"
+                ? !v.condition || v.damageType !== ""
+                : !v.damageType || v.condition !== ""
+            )
+              add(path + "kind", "defense-target");
+          }
+        });
+      }
+    };
+    walk(d, advancedCollections(definition.family), "payload.data.");
+    if (definition.family === "monster") {
+      const bounds = formulaBounds(d.hpFormula);
+      check(!bounds || bounds.min < 0, "hpFormula", "hp-formula");
+    }
+    if (definition.family === "campaign-rule" && d.application === "typed")
+      check(
+        !rows("policies").length && !rows("programs").length,
+        "application",
+        "typed-declarations-required"
+      );
   }
   return issues;
 }

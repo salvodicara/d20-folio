@@ -59,3 +59,38 @@ Character-instance add/update intents and commits both reject invalid conformanc
 repository boundary, including structurally valid but unconfigured P04 snapshots. Unknown
 unsupported authoring remains preservable. Existing copies may still edit their personal
 state even when the old definition is invalid; this does not execute or replace its mechanics.
+
+## P06 monster and campaign-rule declarations
+
+`AUTHORING_FAMILIES` and `AuthoringFamily` extend initialization/conformance to monsters and
+campaign rules. `BASE_FAMILIES` and `BaseFamily` deliberately retain the four P05 character
+instance families. `authoringFields` exposes shared scalar fields. `advancedCollections` returns
+bounded collection descriptors (`key`, `kind`, `max`, `fields`, optional nested `collections`);
+`advancedRowFields` and `blankAdvancedRow` expose the same vocabulary to editors/readers. Blank
+rows require explicit stable identities/names. Initialization never replaces an existing payload.
+
+Monsters declare AC, maximum HP/formula, fractional CR, initiative, six scores/save bonuses,
+movement and senses in meters, languages, defenses and skill bonuses. Both families declare up to
+32 resources and 32 programs. Programs declare action/trait/bonus/reaction/legendary/lair semantics,
+attack/save parameters, ranges/area, finite event triggers, frequency, resource costs and up to
+32 ordered P05 effects. Multiattack references at most 16 ordered programs, with positive counts;
+nested/self-referencing multiattack is invalid. Resources declare capacity and recovery, including
+an explicit turn-start d6 recharge threshold; templates carry no remaining resource state.
+Campaign rules declare domain, explicit narrative/typed application, replacement identity,
+agreement and priority, typed fact policies and required/conflicting mechanic dependencies.
+Dependencies on other mechanic IDs are resolved by the active campaign reader, not by isolated
+definition conformance. They do not authorize or silently execute replacement.
+
+Validation reports exact nested paths for duplicate IDs, dangling program/resource references,
+cost/capacity and recharge mismatch, negative formula minima, missing save/area requirements,
+and unknown keys/options. All unknown JSON remains untouched through the existing portable codec,
+including the exact imported original text. Invalid data remains draft; unsupported data is
+preserved and diagnosed without claiming execution. `tests/unit/homebrew-advanced.test.ts`
+covers ordinary, boundary and composed attacks/resources/save effects/rules and portable recovery.
+
+This is authoring/conformance, not P14 combat execution. Custom and official mechanics must use
+the same future engine for costs, effects, reactions, consequences and receipts. During combat,
+authoritative in-use facts remain editable with causal correction/undo and provenance. Changing
+a template version never silently changes an in-use copy; preparation state is separate. Future
+play acceptance must demonstrate actual custom automation and edits/undo in ordinary, boundary
+and composition cases rather than substituting manual handling for modeled mechanics.
