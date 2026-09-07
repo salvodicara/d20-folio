@@ -24,7 +24,12 @@ export interface AdvancedCollection {
   fields: readonly FieldDescriptor[];
   collections?: readonly AdvancedCollection[];
 }
-const t = (key: string): FieldDescriptor => ({ key, type: "text", group: "advanced" });
+const textField = (key: string, multiline = false): FieldDescriptor => ({
+  key,
+  type: "text",
+  group: "advanced",
+  multiline,
+});
 const n = (key: string, min = 0, max = 100000): FieldDescriptor => ({
   key,
   type: "number",
@@ -60,7 +65,7 @@ export function advancedFields(family: AuthoringFamily): readonly FieldDescripto
         "plant",
         "undead",
       ]),
-      t("alignment"),
+      textField("alignment"),
       n("armorClass", 0, 40),
       n("maxHp", 1),
       f("hpFormula"),
@@ -78,14 +83,14 @@ export function advancedFields(family: AuthoringFamily): readonly FieldDescripto
         n(m, 0, 1000)
       ),
       n("passivePerception", 0, 50),
-      t("languages"),
+      textField("languages"),
     ];
   if (family === "campaign-rule")
     return [
       s("domain", ["combat", "exploration", "rest", "character"]),
       s("application", ["narrative", "typed"]),
-      t("replacesMechanicId"),
-      t("agreement"),
+      textField("replacesMechanicId"),
+      textField("agreement", true),
       n("priority", -1000, 1000),
     ];
   return [];
@@ -96,8 +101,8 @@ export function advancedRowFields(kind: AdvancedRowKind): readonly FieldDescript
       return effectFields();
     case "resource":
       return [
-        t("id"),
-        t("name"),
+        textField("id"),
+        textField("name"),
         n("capacity", 1, 1000),
         s("recoveryBoundary", ["none", "short-rest", "long-rest", "dawn", "turn-start"]),
         s("recoveryKind", ["none", "full", "formula", "recharge"]),
@@ -106,9 +111,9 @@ export function advancedRowFields(kind: AdvancedRowKind): readonly FieldDescript
       ];
     case "program":
       return [
-        t("id"),
-        t("name"),
-        t("source"),
+        textField("id"),
+        textField("name"),
+        textField("source"),
         s("kind", [
           "action",
           "trait",
@@ -137,7 +142,7 @@ export function advancedRowFields(kind: AdvancedRowKind): readonly FieldDescript
           "spell-cast",
           "save-failed",
         ]),
-        t("triggerNote"),
+        textField("triggerNote", true),
         s("resolution", ["none", "attack", "save"]),
         n("attackBonus", -30, 40),
         s("saveAbility", ["none", ...ABILITIES]),
@@ -155,7 +160,7 @@ export function advancedRowFields(kind: AdvancedRowKind): readonly FieldDescript
           "sphere",
         ]),
         n("areaSize", 0, 10000),
-        t("resourceId"),
+        textField("resourceId"),
         n("resourceCost", 0, 1000),
         s("frequency", [
           "unlimited",
@@ -166,18 +171,18 @@ export function advancedRowFields(kind: AdvancedRowKind): readonly FieldDescript
         b("concentration"),
       ];
     case "step":
-      return [s("kind", ["program"]), t("programId"), n("count", 1, 16)];
+      return [s("kind", ["program"]), textField("programId"), n("count", 1, 16)];
     case "policy":
       return [
-        t("id"),
+        textField("id"),
         s("fact", ["armor-class", "speed", "attack", "save", "dc", "resource-capacity"]),
         s("operation", ["add", "set"]),
         n("amount", -1000, 1000),
         s("target", ["self", "allies", "enemies", "all"]),
-        t("resourceId"),
+        textField("resourceId"),
       ];
     case "dependency":
-      return [t("mechanicId"), s("relation", ["required", "conflicting"])];
+      return [textField("mechanicId"), s("relation", ["required", "conflicting"])];
     case "defense":
       return [
         s("kind", ["resistance", "immunity", "vulnerability", "condition-immunity"]),

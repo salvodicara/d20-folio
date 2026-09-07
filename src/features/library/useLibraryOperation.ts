@@ -98,7 +98,13 @@ export function useLibraryOperation<
             check();
             if (!live.current) return;
             await ack.current(c.state.envelope);
-            sessionStorage.removeItem(storageKey);
+            check();
+            const saved = JSON.parse(sessionStorage.getItem(storageKey) ?? "null") as {
+              envelope?: unknown;
+              invalidated?: boolean;
+            } | null;
+            if (saved && !saved.invalidated && equal(saved.envelope, c.state.envelope))
+              sessionStorage.removeItem(storageKey);
           })
           .catch(() => {
             if (live.current) setError(true);

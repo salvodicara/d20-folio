@@ -49,6 +49,15 @@ it.each(["monster", "campaign-rule"] as const)(
     expect(name).toBeTruthy();
     if (!name) throw Error("missing name");
     fireEvent.change(name, { target: { value: "Winter pulse" } });
+    const note = v.container.querySelector('[name="homebrew-tableNote"]');
+    expect(note?.tagName).toBe("TEXTAREA");
+    if (!note) throw Error("missing note");
+    fireEvent.change(note, {
+      target: { value: "First paragraph.\n\nSecond paragraph." },
+    });
+    expect(JSON.parse(screen.getByTestId("actual").textContent)).toMatchObject({
+      tableNote: "First paragraph.\n\nSecond paragraph.",
+    });
     const data = JSON.parse(screen.getByTestId("actual").textContent) as {
       programs: { name: string }[];
     };

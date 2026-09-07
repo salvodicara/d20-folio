@@ -58,7 +58,7 @@ export function HomebrewReader({
             {fields
               .filter((f) => f.group === group)
               .map((f) => (
-                <div key={f.key}>
+                <div key={f.key} className={f.multiline ? "homebrew-prose" : undefined}>
                   <dt>{label("fields." + f.key)}</dt>
                   <dd>{value(data[f.key], f.options) || "—"}</dd>
                 </div>
@@ -80,7 +80,7 @@ export function HomebrewReader({
             e && typeof e === "object" && !Array.isArray(e) ? (
               <dl key={i} className="homebrew-facts">
                 {effectFields().map((f) => (
-                  <div key={f.key}>
+                  <div key={f.key} className={f.multiline ? "homebrew-prose" : undefined}>
                     <dt>{label("fields." + f.key)}</dt>
                     <dd>{value(e[f.key], f.options) || "—"}</dd>
                   </div>

@@ -27,7 +27,12 @@ export function AdvancedFields({
   ) {
     const name = "homebrew-" + path + "-" + f.key;
     return (
-      <label key={f.key} className={f.type === "boolean" ? "homebrew-check" : ""}>
+      <label
+        key={f.key}
+        className={
+          f.type === "boolean" ? "homebrew-check" : f.multiline ? "homebrew-prose" : ""
+        }
+      >
         <span>{label("fields." + f.key)}</span>
         {f.type === "boolean" ? (
           <Checkbox
@@ -53,6 +58,13 @@ export function AdvancedFields({
               </option>
             ))}
           </select>
+        ) : f.multiline ? (
+          <textarea
+            name={name}
+            rows={4}
+            value={typeof value === "string" ? value : ""}
+            onChange={(e) => change(e.target.value)}
+          />
         ) : (
           <input
             name={name}
@@ -210,7 +222,7 @@ export function AdvancedReader({
             <section key={i}>
               <dl className="homebrew-facts">
                 {c.fields.map((f) => (
-                  <div key={f.key}>
+                  <div key={f.key} className={f.multiline ? "homebrew-prose" : undefined}>
                     <dt>{label("fields." + f.key)}</dt>
                     <dd>{value(r[f.key], f)}</dd>
                   </div>

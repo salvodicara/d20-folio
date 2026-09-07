@@ -57,7 +57,16 @@ export function HomebrewFields({
   ) => {
     const name = "homebrew-" + prefix + field.key;
     return (
-      <label key={name} className={field.type === "boolean" ? "homebrew-check" : ""}>
+      <label
+        key={name}
+        className={
+          field.type === "boolean"
+            ? "homebrew-check"
+            : field.multiline
+              ? "homebrew-prose"
+              : ""
+        }
+      >
         {field.type !== "boolean" && <span>{label("fields." + field.key)}</span>}
         {field.type === "select" ? (
           <select
@@ -93,6 +102,13 @@ export function HomebrewFields({
             />
             <span>{label("fields." + field.key)}</span>
           </>
+        ) : field.multiline ? (
+          <textarea
+            name={name}
+            rows={4}
+            value={typeof value === "string" ? value : ""}
+            onChange={(e) => change(e.target.value)}
+          />
         ) : (
           <input
             name={name}

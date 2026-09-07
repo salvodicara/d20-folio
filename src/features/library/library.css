@@ -435,6 +435,13 @@
     gap: 20px;
   }
 }
+@page homebrew {
+  size: A4;
+  margin: 12mm;
+}
+.homebrew-prose {
+  grid-column: 1 / -1;
+}
 @media print {
   html:has(.homebrew-print),
   body:has(.homebrew-print) {
@@ -456,7 +463,8 @@
     width: 100%;
     background: white !important;
     color: #111 !important;
-    padding: 12mm;
+    page: homebrew;
+    padding: 0;
   }
   .homebrew-print * {
     color: #111 !important;
@@ -468,6 +476,9 @@
   }
   .homebrew-print .homebrew-facts div {
     break-inside: avoid;
+  }
+  .homebrew-print .homebrew-facts .homebrew-prose {
+    break-inside: auto;
   }
   .homebrew-print h3,
   .homebrew-print h4 {

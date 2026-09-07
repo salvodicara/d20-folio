@@ -122,3 +122,7 @@ explicitly to stop future delivery. Recovering an archived original imports to a
 A storage failure prevents deletion. Neither action deletes another account's data.
 
 Declaration, prepared-copy, operation and recovery archive IDs use UUIDs. The repository randomness guard explicitly inventories these identity-only call sites; authoring never generates dice results.
+
+Asynchronous acknowledgment cleanup rechecks the session ticket and the exact stored envelope, so an earlier operation cannot erase a later pending or invalidated operation.
+
+Multiline notes, material descriptions, agreements and trigger explanations use textarea descriptors. Readers preserve line breaks and use full-width prose; named A4 print pages carry 12 mm margins on every continuation page.

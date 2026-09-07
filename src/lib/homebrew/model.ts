@@ -11,11 +11,13 @@ export interface FieldDescriptor {
   min?: number;
   max?: number;
   group: string;
+  multiline?: boolean;
 }
-const text = (key: string, group: string): FieldDescriptor => ({
+const text = (key: string, group: string, multiline = false): FieldDescriptor => ({
   key,
   type: "text",
   group,
+  multiline,
 });
 const number = (key: string, group: string, min = 0, max = 100000): FieldDescriptor => ({
   key,
@@ -97,7 +99,7 @@ const common = [
   text("source", "provenance"),
   text("sourceVersion", "provenance"),
   text("mechanicId", "provenance"),
-  text("tableNote", "notes"),
+  text("tableNote", "notes", true),
 ];
 const physical = [number("weight", "physical"), number("cost", "physical")];
 const fields: Record<BaseFamily, readonly FieldDescriptor[]> = {
@@ -199,7 +201,7 @@ const fields: Record<BaseFamily, readonly FieldDescriptor[]> = {
     bool("verbal", "components"),
     bool("somatic", "components"),
     bool("material", "components"),
-    text("materialDescription", "components"),
+    text("materialDescription", "components", true),
     number("materialCost", "components"),
     bool("materialConsumed", "components"),
     select("resolution", "resolution", ["none", "attack", "save"]),
