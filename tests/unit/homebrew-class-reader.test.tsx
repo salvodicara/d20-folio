@@ -4,7 +4,7 @@ import { createInstance } from "i18next";
 import { I18nextProvider } from "react-i18next";
 import { HomebrewReader } from "@/features/library/HomebrewReader";
 import { HomebrewFields } from "@/features/library/HomebrewFields";
-import { blankDefinition } from "@/lib/library/model";
+import { blankDefinition, type JsonValue } from "@/lib/library/model";
 import { mergedUi } from "./__helpers__/ui-merged";
 afterEach(cleanup);
 it.each(["en", "it"] as const)(
@@ -119,3 +119,69 @@ it("shows the pinned parent by name and version instead of requiring its interna
   expect(screen.getAllByText(/Lantern Keeper ·.*2/)[0]).toBeTruthy();
   expect(screen.getByText("Parent class")).toBeTruthy();
 });
+
+it.each(["en", "it"] as const)(
+  "prints the effective parent contribution once and preserves unsupported originals in %s",
+  async (locale) => {
+    const { initializeDefinition } = await import("@/lib/homebrew/model");
+    const { includeOriginDependency } = await import("@/lib/homebrew/origins");
+    const { blankClassLevel } = await import("@/lib/homebrew/classes");
+    const i18n = createInstance();
+    await i18n.init({
+      lng: locale,
+      resources: { [locale]: { common: mergedUi(locale) } },
+      defaultNS: "common",
+    });
+    const parent = initializeDefinition("class");
+    parent.name = "Keeper";
+    parent.payload.data.spellcasting = {
+      mode: "half",
+      ability: "wisdom",
+      multiclass: { contributes: true, divisor: 2, rounding: "up" },
+    };
+    parent.payload.data.progression = [
+      {
+        ...blankClassLevel(1),
+        spellcasting: {
+          cantrips: 0,
+          known: 0,
+          prepared: 2,
+          slots: [2],
+          pactSlots: 0,
+          pactLevel: 0,
+        },
+      },
+    ] as unknown as JsonValue;
+    const initial = initializeDefinition("subclass");
+    initial.name = "Oath";
+    const inclusion = includeOriginDependency(initial, {
+      schema: 1,
+      ownerUid: "owner",
+      entryId: "keeper",
+      version: 2,
+      operationId: "publish",
+      provenance: null,
+      definition: parent,
+    });
+    const definition = inclusion.definition;
+    definition.payload.data.parentClass = {
+      dependency: inclusion.key,
+      mechanicId: "custom",
+    };
+    const view = (d: typeof definition) => (
+      <I18nextProvider i18n={i18n}>
+        <HomebrewReader definition={d} printable />
+      </I18nextProvider>
+    );
+    const { rerender } = render(view(definition));
+    const composed = screen.getByTestId("class-casting-composition");
+    expect(composed.textContent).toContain("Keeper");
+    expect(composed.textContent).toContain("1/2");
+    expect(composed.textContent.match(/1\/2/g)).toHaveLength(1);
+    expect(composed.querySelectorAll("h5")).toHaveLength(1);
+    definition.payload.data.futureGift = { preserved: "violet dawn" };
+    rerender(view({ ...definition }));
+    expect(screen.queryByTestId("class-casting-composition")).toBeNull();
+    expect(screen.getAllByText(/violet dawn/).length).toBeGreaterThan(0);
+  }
+);

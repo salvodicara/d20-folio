@@ -1,5 +1,6 @@
 import type { JsonValue, LibraryDefinition } from "@/lib/library/model";
 import { originRecord } from "@/lib/homebrew/origins";
+import { composeSubclassCasting } from "@/lib/homebrew/class-composition";
 import { OriginReader } from "./OriginReader";
 import { useHomebrewLabel } from "./homebrew-labels";
 
@@ -51,7 +52,7 @@ export function ClassReader({
       <pre>{JSON.stringify(raw)}</pre>
     );
   };
-  const casting = (raw: unknown) => {
+  const casting = (raw: unknown, effective = false) => {
     const c = originRecord(raw);
     if (!c) return null;
     const contribution = originRecord(c.multiclass);
@@ -60,14 +61,14 @@ export function ClassReader({
         <div>
           <dt>
             {label(
-              definition.family === "subclass"
+              definition.family === "subclass" && !effective
                 ? "classes.localCasting"
                 : "classes.casting"
             )}
           </dt>
           <dd>
             {["none", "full", "half", "third", "pact", "custom"].includes(text(c.mode))
-              ? definition.family === "subclass" && c.mode === "none"
+              ? definition.family === "subclass" && !effective && c.mode === "none"
                 ? label("classes.noSeparateCasting")
                 : label("classes.modes." + text(c.mode))
               : text(c.mode)}
@@ -93,6 +94,8 @@ export function ClassReader({
       </dl>
     );
   };
+  const composition =
+    definition.family === "subclass" ? composeSubclassCasting(definition) : null;
   const named = (key: string, id: unknown) =>
     text(originRecord(rows(data[key]).find((v) => originRecord(v)?.id === id))?.name);
   return (
@@ -148,6 +151,45 @@ export function ClassReader({
         </dl>
         {casting(data.spellcasting)}
       </section>
+      {composition &&
+        (composition.ok ? (
+          <section data-testid="class-casting-composition">
+            <h4>{label("classes.composedCasting")}</h4>
+            <p className="homebrew-hint">{label("classes.composedCastingHelp")}</p>
+            <p>
+              {composition.parent.definition.name} · {label("version")}{" "}
+              {composition.parent.sourceVersion}
+            </p>
+            {casting(composition.policy, true)}
+            {composition.rows.map(({ level, counts }) => (
+              <section className="origin-read-choice" key={level}>
+                <h5>
+                  {label("options.level")} {level}
+                </h5>
+                <dl className="homebrew-facts">
+                  {(
+                    ["cantrips", "prepared", "known", "pactSlots", "pactLevel"] as const
+                  ).map((key) => (
+                    <div key={key}>
+                      <dt>{label("classes." + key)}</dt>
+                      <dd>{counts[key]}</dd>
+                    </div>
+                  ))}
+                  {counts.slots.map((amount, index) => (
+                    <div key={index}>
+                      <dt>
+                        {label("classes.slots")} · {label("options.level")} {index + 1}
+                      </dt>
+                      <dd>{amount}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+            ))}
+          </section>
+        ) : (
+          <p role="status">{label("classes.compositionUnavailable")}</p>
+        ))}
       {definition.family === "class" &&
         ["starting", "multiclass"].map((key) => (
           <section key={key}>
