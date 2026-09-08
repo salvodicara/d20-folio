@@ -178,7 +178,7 @@ within P04's existing JSON depth/size bounds. Reject overflow before publication
 **One root mutation per intent.** OriginBuild.selections is a map keyed by stable selection ID,
 maximum32 roots; nested bundled choices belong to their root and use stable dependency paths.
 Each operation targets exactly one root: insert/replace/version-update/answers/remove. All other
-root entries must be byte-equivalent to the loaded base. A source-changing intent verifies ONE
+root entries must be structurally equal to the loaded base (map order ignored, array order preserved). A source-changing intent verifies ONE
 owned immutable root LibraryVersion; that exact version already contains all child data. The
 aggregate/receipt remains one atomic CAS transition; there are no sequential hidden child commits.
 Rules use a bounded changed-key map check, owner/user read, character before/after, aggregate
@@ -235,3 +235,21 @@ full before/after envelope. Oversized drafts remain recoverable and cannot submi
 Rules enforce root count and bounded nested field shapes; emulator does not prove production
 byte/expression limits, so calculate sizes and record that staging gap separately. Max-bound tests
 cover multibyte text and full original-base/next-snapshot receipt, not only ASCII payloads.
+
+**Flat closure representation and acquisition order.** The dependency bundle is a flat deduplicated
+node table keyed by source owner/entry/version, with ordered reference edges. Each node contains
+its complete authored definition excluding its relocated bundle table, plus source/version and
+provenance metadata; all child declarations are relocated into that same table. This intentional
+composed inclusion preserves semantic content and unknown fields; it is not advertised as a
+byte-identical original child LibraryVersion after reference relocation. The enclosing root
+LibraryVersion is the exact immutable snapshot validated at build commit and shared by P04.
+Keep node identity separate from editable display name. A dependency already present in the table
+is referenced, never recursively recopied. Graph depth8 and P04 serialized JSON depth20 are
+independent checks; cap complete aggregate/operation JSON at4096 nodes and retain complete input
+for recovery on overflow. Count UTF-8 bytes including before/next repetitions in the receipt.
+
+Each root selection has an explicit nonnegative safe-integer acquisition ordinal, unique in its
+aggregate. New insertion appends max+1, replacement/update retains its ordinal; map enumeration
+and lexical UUID ordering never choose prerequisite order. Dependency edges retain authored order.
+Test later unrelated insertion does not alter an earlier acquisition context. Removal preserves
+remaining ordinals rather than renumbering them. Rules compare all unchanged roots structurally.
