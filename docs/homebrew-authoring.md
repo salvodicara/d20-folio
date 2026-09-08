@@ -167,4 +167,4 @@ Library draft autosave now verifies exact local index/record readback before a s
 again after attaching the full envelope. Throwing or silently dropped storage writes block sending
 and retain the editable draft. A recovered unknown envelope is never retired by storage failure;
 its original receipt identity must reconcile before new writes. Successful retention clears the
-storage warning. The shared controller remains the only autosave authority for every family.
+storage warning. The editor heading prioritizes unsaved storage failure over local/saved status. The shared controller remains the only autosave authority for every family.

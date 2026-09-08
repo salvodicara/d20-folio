@@ -177,9 +177,11 @@ function EditorBody({
         </div>
         <span role="status">
           {label(
-            !state.online
-              ? "waiting"
-              : (state.operation?.status ?? (state.dirty ? "local" : "saved"))
+            state.storageFailed
+              ? "storageUnsaved"
+              : !state.online
+                ? "waiting"
+                : (state.operation?.status ?? (state.dirty ? "local" : "saved"))
           )}
         </span>
       </div>

@@ -94,6 +94,7 @@
     "from": "Da {{name}}",
     "to": "A {{name}}",
     "accountIdentity": "Account {{id}}",
-    "acceptHelp": "Conserva nella tua biblioteca una copia indipendente, con fonte e versione. Le modifiche successive all’originale non sostituiranno la tua copia."
+    "acceptHelp": "Conserva nella tua biblioteca una copia indipendente, con fonte e versione. Le modifiche successive all’originale non sostituiranno la tua copia.",
+    "storageUnsaved": "Non salvata — tieni aperta questa pagina"
   }
 }
