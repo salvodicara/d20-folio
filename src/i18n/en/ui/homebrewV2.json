@@ -480,6 +480,7 @@
       "invalid-spellcasting": "Check the spellcasting declaration and level counts.",
       "invalid-subclass-schedule": "Subclass feature levels must be distinct and increasing.",
       "noncasting-progression": "This level grants spells without a spellcasting policy.",
+      "noncasting-parent-augmentation": "This parent class does not cast spells. Define a separate spellcasting policy for the subclass instead of adding spells to the parent policy.",
       "parent-version-mismatch": "The selected class does not match the pinned parent version.",
       "program-unavailable": "A referenced program is not available at this level.",
       "resource-unavailable": "A program costs more than the resources available at this level.",

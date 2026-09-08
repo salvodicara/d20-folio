@@ -480,6 +480,7 @@
       "invalid-spellcasting": "Controlla la dichiarazione di magia e le quantità per livello.",
       "invalid-subclass-schedule": "I livelli dei privilegi di sottoclasse devono essere distinti e crescenti.",
       "noncasting-progression": "Questo livello concede incantesimi senza una modalità di magia.",
+      "noncasting-parent-augmentation": "Questa classe non lancia incantesimi. Definisci una politica di magia separata per la sottoclasse invece di aggiungere incantesimi a quella della classe.",
       "parent-version-mismatch": "La classe selezionata non corrisponde alla versione fissata come appartenenza.",
       "program-unavailable": "Un programma referenziato non è disponibile a questo livello.",
       "resource-unavailable": "Un programma costa più delle risorse disponibili a questo livello.",
