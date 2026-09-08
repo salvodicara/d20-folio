@@ -1,3 +1,5 @@
+import { assertJsonBudget } from "../shared/json-budget";
+import { conformDefinition } from "../homebrew/conformance";
 import { serializeLibraryRecovery } from "./recovery";
 import {
   collection,
@@ -33,6 +35,28 @@ import {
   type LibraryVersion,
   type GrantReceipt,
 } from "./model";
+/** Class mechanics have a model before their guided editor; direct SDK publication uses it too. */
+function validateClassPublication(definition: LibraryDefinition) {
+  if (
+    ["class", "subclass"].includes(definition.family) &&
+    (Object.keys(definition.payload.data).length === 0 ||
+      conformDefinition(definition).some((issue) => issue.severity === "invalid"))
+  )
+    throw new Error("invalid-definition");
+}
+function validateClassOperation(op: LibraryOperation) {
+  if (
+    [op.definition?.family, op.entry?.draft.family, op.offer?.definition.family].some(
+      (family) => family === "class" || family === "subclass"
+    )
+  ) {
+    try {
+      assertJsonBudget({ operation: op, revision: op.baseRevision + 1 }, 600000);
+    } catch {
+      throw new Error("library-operation-too-large");
+    }
+  }
+}
 export function createLibraryRepository(
   db: Firestore,
   session: SessionController
@@ -174,20 +198,20 @@ export function createLibraryRepository(
         ? "remove_" + entry.lastOperation.opId
         : crypto.randomUUID();
     intentTickets.set(opId, session.ticket());
-    return frozen(
-      structuredClone({
-        kind,
-        entry,
-        definition,
-        offer,
-        targetId,
-        baseRevision,
-        uid: uid(),
-        opId,
-        scope: session.scope(),
-        authority: { characterRevision: null, assignment: null, campaignRevision: null },
-      })
-    );
+    const operation: LibraryOperation = {
+      kind,
+      entry,
+      definition,
+      offer,
+      targetId,
+      baseRevision,
+      uid: uid(),
+      opId,
+      scope: session.scope(),
+      authority: { characterRevision: null, assignment: null, campaignRevision: null },
+    };
+    validateClassOperation(operation);
+    return frozen(structuredClone(operation));
   }
   function receipt(value: unknown, op: LibraryOperation): LibraryReceipt {
     const r = value as LibraryReceipt | null;
@@ -334,6 +358,7 @@ export function createLibraryRepository(
       check();
       parseEntry(base);
       parseDefinition(preview);
+      validateClassPublication(preview);
       if (base.ownerUid !== uid()) throw new Error("permission-denied");
       if (!preview.name.trim() || !equal(base.draft, preview))
         throw new Error("invalid-operation");
@@ -422,7 +447,10 @@ export function createLibraryRepository(
       fence();
       identityId(op.opId);
       libraryId(op.targetId);
+      validateClassOperation(op);
       if (op.definition) parseDefinition(op.definition);
+      if (op.kind === "library-publish" && op.definition)
+        validateClassPublication(op.definition);
       try {
         return await runTransaction(db, async (tx) => {
           fence();

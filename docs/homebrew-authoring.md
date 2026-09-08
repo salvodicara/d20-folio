@@ -129,3 +129,14 @@ Multiline notes, material descriptions, agreements and trigger explanations use 
 
 Future authoring versions retain the creation name in the shared reader and printed output,
 alongside the exact preserved payload; unsupported structure never removes its identifying title.
+
+## P08a Library publication boundary
+
+Class/subclass drafts remain preservable, but publication validates their known declarations at
+both intent and commit boundaries. Invalid definitions cannot become newly published stable
+versions through this repository; unknown declarations remain exact and explicitly unsupported.
+The complete class Library receipt (including repeated loaded base and next definition) is limited
+to600000 UTF-8 bytes/4096nodes before cloning or sending. The shared plain-JSON budget walker is
+also used by the unchanged180000-byte origin-build wrapper; that aggregate limit is not a class
+template limit. Definition depth20/200000UTF16 remains unchanged. Oversized operations fail with
+the original draft/base intact; no truncation, automatic replay or new persistence path is added.

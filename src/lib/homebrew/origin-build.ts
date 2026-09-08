@@ -1,3 +1,4 @@
+import { assertJsonBudget } from "../shared/json-budget";
 import {
   frozen,
   identityId,
@@ -116,28 +117,11 @@ export function assertOriginJsonBudget(
   value: unknown,
   maxBytes = ORIGIN_BUILD_MAX_BYTES
 ): void {
-  let nodes = 0;
-  const ancestors = new Set<object>();
-  const walk = (v: unknown, depth: number) => {
-    if (++nodes > ORIGIN_JSON_MAX_NODES || depth > 40) fail();
-    if (v === null || typeof v === "string" || typeof v === "boolean") return;
-    if (typeof v === "number") {
-      if (!Number.isFinite(v)) fail();
-      return;
-    }
-    if (typeof v !== "object" || ancestors.has(v)) fail();
-    ancestors.add(v);
-    if (Array.isArray(v)) v.forEach((x) => walk(x, depth + 1));
-    else
-      for (const [key, x] of Object.entries(record(v))) {
-        if (["__proto__", "prototype", "constructor", "attachments"].includes(key))
-          fail();
-        walk(x, depth + 1);
-      }
-    ancestors.delete(v);
-  };
-  walk(value, 0);
-  if (new TextEncoder().encode(JSON.stringify(value)).byteLength > maxBytes) fail();
+  try {
+    assertJsonBudget(value, maxBytes, ORIGIN_JSON_MAX_NODES);
+  } catch {
+    fail();
+  }
 }
 function parseSnapshot(value: unknown): LibraryVersion {
   const v = record(value);

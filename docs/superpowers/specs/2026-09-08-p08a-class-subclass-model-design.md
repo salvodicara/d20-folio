@@ -56,6 +56,19 @@ progression levels between subclass feature levels. Custom schedules are explici
 not an assertion of official RAW; the standard initializer uses level 3. Optional pair conformance
 compares a selected class version against the pinned parent, never names or a floating latest head.
 
+Starting-class and multiclass-entry grants are separate declarative scopes, each reusing the
+shared prerequisites/benefits/choices. Class saving throws describe starting-class proficiency;
+multiclass entry does not implicitly grant them. Class levels, not total character level, govern
+these rows. Subclass casting explicitly inherits/augments/replaces the pinned parent policy;
+inherit/augment cannot silently add a second multiclass slot contribution. A casting subclass of
+a noncaster supplies its own declared contribution exactly once; this is static authoring meaning.
+
+Level resource capacities are absolute replacements bounded by the declared resource ceiling;
+omitted capacities carry forward, not reset or add. A resource becomes available at its first
+level binding. Program IDs grant availability once; reject duplicate grants and activation before
+required resources exist or have enough declared capacity, including composed costs. Later growth
+will consume this declaration; P08a validates the declaration without changing a character.
+
 The class is independent of subclasses; subclasses point to the parent, avoiding an unavoidable
 parent/child publication cycle. All shared benefit/prerequisite references remain closed. Resource
 and program declarations use the same P06 validators; level bindings require existing stable IDs.
@@ -71,8 +84,9 @@ intent and commit boundaries while drafts and unsupported recovery remain preser
 ## Bounds and acceptance
 
 Shared closure: root plus at most31 definitions, depth8; no nested dependency tables. Existing
-JSON depth20/200000 UTF16 and aggregate180000 UTF8/4096 nodes, complete operation600000 UTF8
-remain unchanged. Class progression max20 rows; shared choices/options/benefits/programs/resources
+JSON depth20/200000 UTF16 remains the template limit. The180000 UTF8/4096-node bound
+remains specific to origin-build aggregates; it is not imposed on class templates. Complete class
+library operation receipts are bounded at600000 UTF8/4096nodes, counting repeated snapshots. Class progression max20 rows; shared choices/options/benefits/programs/resources
 retain32 bounds. Slots max9 levels; counts/capacities explicitly bounded. Cardinality does not
 promise every maximum combination fits byte budgets. Test actual maximum legal compact data and
 multibyte oversize rejection, preserving originals.
