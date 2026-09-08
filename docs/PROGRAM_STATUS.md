@@ -1,6 +1,18 @@
 # Program Status
 
-## Current frontier — P08b verified; P08c next (8 September 2026)
+## Current frontier — P08c active (8 September 2026)
+
+Astra owns codex/p08c-subclass-editor-20260908 in the new isolated P08c subclass-editor
+worktree. Fresh origin/v2/base37bf40f786e61cb6ecdbe6c5ffff82a577ea856b matches P08b closure;
+main9b06b75313d7ee353c4072a20397c3092707648e and all unrelated worktrees remain preserved.
+Clean detached p08c-control invoked this topic. Spec/plan were written before code. Independent
+reference/contract review and external demo-runtime preparation have disjoint report ownership.
+Only P08c is active; P09 and later blocks are not executed. Standing owner delegation authorizes
+reviewed gate-green V2 integration, not production/deploy/real-data migration or new costs.
+Current runtime, visual, print and integration gates are pending; prior P08b proofs do not certify
+P08c. External evidence belongs to Workspace/Codex/d20-folio-p08c-evidence.
+
+## Historical frontier — P08b verified; P08c next (8 September 2026)
 
 Astra completed the guided class editor and progression authoring adapter on existing ClassData.
 P08c is the first incomplete AGENT-PROGRAM row, dependent on P08b; it is not executed here.
