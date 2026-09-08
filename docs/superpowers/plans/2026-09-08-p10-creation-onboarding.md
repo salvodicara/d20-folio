@@ -59,6 +59,7 @@ interface CatalogueSnapshot {
   adapterVersion: number;
   entryId: string;
   definition: LibraryDefinition;
+  sourceData?: JsonValue; // exact selected-source mechanics retained for later normalization
 }
 type DefinitionSnapshot = LibraryVersion | CatalogueSnapshot;
 ```
@@ -170,3 +171,20 @@ Preserve all failed runs and genuine backend receipts. Never reuse a populated P
       Stop only owned services and remove only clean owned worktrees after remote proof.
 - [ ] Deliver exactly one complete successor prompt after all P10 exits; carry all spec global
       contracts and recursive same-block recovery rule. Do not execute P11a or deploy.
+
+Catalogue snapshots may retain bounded optional `sourceData` for the exact selected typed source.
+The adapter verifier binds it together with the normalized definition. This preserves combat
+mechanics that P10 does not execute without injecting unknown fields into strict acquisition data.
+It grants no facts by itself and is not a second engine, an automation result, or permission to
+interpret prose. The future common engine must explicitly normalize and verify those mechanics.
+
+### Independent import persistence slice of Task 3
+
+`import-repository.ts` owns first import and explicit classification revision operations. Import
+intent binds stable SHA256 destination, projected mechanical output and review to one P03 envelope;
+original bytes/private notes stay outside the account receipt and only in private import/notes.
+Live intent tickets retain the original until commit; restored envelopes can reconcile but cannot
+regain send authority. The transaction writes parent/archive/notes/reconciliation/receipt together.
+A separate review operation compares existing character authority and complete reconciliation base,
+never edits original bytes or sheet mechanics. A different intent for an already-created hash must
+open/review the existing copy, not overwrite its classification or invent a matching receipt.

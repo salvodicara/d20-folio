@@ -11,8 +11,15 @@ recovery-only warnings; malformed edition objects remain only in the exact origi
 category acknowledges preservation and leaves mechanical categories unresolved; it does not certify rules
 conversion, execute mechanics or modify imported custom content/overrides.
 
-The pure analysis does not write data. Creation and reconciliation persistence are defined by the
-P10 spec and require their own atomic repository/rules implementation and runtime verification.
+The pure analysis does not write data. The P10 import repository binds the original UTF-8 hash to
+one destination and holds private bytes only in a live session ticket. Initial import writes the
+parent, exact private archive, private notes, reconciliation/import and exact operation receipt
+atomically. The reconciliation record separates sourceSchema3 from declaredEdition and retains
+reviewed/unresolved categories. A later classification correction compares its whole prior record,
+original archive and parent authority, writing only reconciliation and receipt. It never overwrites
+mechanics or the original. Incompatible records reject; acknowledged categories stay unresolved.
+Full operations are bounded to600000 UTF-8 bytes before send. Rules, UI orchestration and actual
+Firebase verification remain required before this repository is exposed in the application.
 
 ## P07 current origins and imported baseline (2026-09-08)
 

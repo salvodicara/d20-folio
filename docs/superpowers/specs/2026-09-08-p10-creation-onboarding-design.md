@@ -249,3 +249,9 @@ reviewed green gates, hooked explicit HEAD:v2, verify remote SHA and remove owne
 Send actual images and exactly one COMPLETE successor prompt containing every inherited owner
 contract and the recursive rule: incomplete results continue this same block; select the next row
 only after all exits/dependencies pass; never execute it in the same task. No PR/main/deploy.
+
+Catalogue snapshots may retain bounded optional `sourceData` for the exact selected typed source.
+The adapter verifier binds it together with the normalized definition. This preserves combat
+mechanics that P10 does not execute without injecting unknown fields into strict acquisition data.
+It grants no facts by itself and is not a second engine, an automation result, or permission to
+interpret prose. The future common engine must explicitly normalize and verify those mechanics.
