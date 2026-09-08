@@ -1,6 +1,23 @@
 # Program Status
 
-## Current frontier — P07 model, persistence and guided editors (2026-09-08)
+## P07 owner delegation and integration preflight — 8 September 2026
+
+The owner accepted implementing the agreed mock and explicitly rejected repeated exhaustive
+per-block screenshot approvals: always deliver screenshots and the final complete prompt, while
+hands-on detailed review waits for the finished app. PRODUCT owns the persistent policy, routed
+through AGENTS/CLAUDE, Golden Rules, Design and worktree/contribution runbooks. This supersedes
+P07’s previous pending owner screenshot/integration gate; it is not a claim that every control was
+personally inspected. P07 runtime6d0368ce22a6213faa9317ae6ee20cf15098ed54 remains unchanged.
+
+Fresh fetch main/v2 and rebase verified on8 September: origin/v2 remains5916356220adb6f5875c7af676f3ddd3bde003a6,
+origin/main9b06b75313d7ee353c4072a20397c3092707648e; rebase no-op. Astra owns final integration
+preflight, hooked explicit HEAD:v2 push, remote proof and clean owned-worktree cleanup. No P08
+execution, deployment or production mutation. Fresh integration just ci exited0:883 app files/19460 tests and7 Functions files/129 tests,
+plus typecheck/lint/build/PWA. Protected40 source/rules/test files,78 images,10 PDFs and268
+optimized build files are unchanged. Independent owner-policy review is closed; explicit push and
+remote proof are next.
+
+## Historical P07 candidate before the owner delegation (2026-09-08)
 
 Owner/writer: Astra, codex/p07-origins-feats-20260908 at
 /Users/salvatoredicara/Workspace/Codex/d20-folio-p07-origins-feats.

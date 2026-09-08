@@ -23,8 +23,8 @@ For new-app work use [WORKTREES](WORKTREES.md), “V2 topic worktrees”, and th
 there. The production-era lane tables and old capture recipes below describe retained history,
 not V2 commands to execute blindly. The current V2 tools are package.json, justfile,
 playwright.config.ts and playwright.visual.config.ts; inspect them before naming a gate.
-P01 is documentary reconciliation and synthetic runtime baseline only: no integration, deployment
-or real-data migration. The sole full local integration gate is `just ci`; add SRD-only when the
+The historical P01 mandate was documentary reconciliation and synthetic runtime baseline only,
+without integration. PROGRAM_STATUS owns the current block and PRODUCT its delivery authority. The sole full local integration gate is `just ci`; add SRD-only when the
 pack seam changes and emulator tests when rules change. Do not assume topic/V2 pushes run main's
 pre-push gate. Browser capture uses the assigned dark IT/EN device/role scope; old light or phone
 combat matrices do not redefine the product. All task files, caches and outputs resolve under
@@ -184,9 +184,12 @@ the findings with technical rigor, and re-run verification on the final diff. Ad
 only what can be deleted, reused, or replaced with a simpler native seam. Review findings are
 evidence, not commands: apply each actionable finding or record the concrete reason it does not fit.
 
-After review, run the relevant gate on the final tree, rebase onto current `origin/main`, and
-integrate from the worktree with `git push origin HEAD:main`. The exact repository adapter remains
-in `docs/WORKTREES.md`; review replaces PR review, never tests or owner visual approval.
+After review, run the relevant gate on the final tree and rebase onto the current destination:
+`origin/v2` for V2, `origin/main` for production fixes. Integrate from the worktree with an explicit
+`HEAD:v2` or `HEAD:main` push matching that destination; never send V2 work to main. The exact repository adapter remains
+in `docs/WORKTREES.md`; review replaces PR review, never tests or screenshot evidence. V2 follows PRODUCT’s8 September
+standing delivery delegation: send actual screenshots and integrate reviewed green approved-mock
+work without repeatedly asking for exhaustive owner approval.
 
 ### The i18n build-time leak-lock (lock 6)
 

@@ -1,5 +1,10 @@
 # V2 topic worktrees — current destination adapter
 
+Owner8 September delegation (PRODUCT) authorizes integration of reviewed, gate-green approved-mock
+V2 work without repeated per-block screenshot approval. Always deliver actual images and the final
+complete successor prompt. This supersedes historical visual-wait wording below for V2 only;
+deployment, production and real-data migration remain separately gated.
+
 PRODUCT owns the branch decision: `main` is the continuing production app and production fixes;
 V2 grows separately from fresh `origin/v2`. A V2 task never uses the legacy `wt-new`/`wt-rm`
 recipes below: they hardcode `origin/main`. Keep those recipes scoped to production-fix tasks.
@@ -17,9 +22,9 @@ origin/v2` (one shell line). Refuse an existing branch/path; never restore or re
    credentials to a preview. Use synthetic DEV profiles or a separately authorized staging fixture
    environment. Verify the physical pack target and preserve all private edits.
 4. Reconcile owned documents and behavior, review, run relevant gates and deliver visual evidence.
-   P01 permits documents, its sole execution status and a changeset; no functional code, real-data
-   writes, migration, deployment or integration. Retain its candidate/evidence for handoff.
-5. For a future task explicitly authorized to integrate V2, fetch and rebase on fresh `origin/v2`,
+   The historical P01 mandate permitted documents and synthetic baseline only, with no integration.
+   Read PROGRAM_STATUS for the current block and PRODUCT for standing delivery authority.
+5. For V2 work covered by PRODUCT’s standing owner delegation, fetch and rebase on fresh `origin/v2`,
    revalidate changes, run `just ci` (the current hook only special-cases main), and the applicable
    SRD/rules/visual gates. Push explicit `HEAD:v2`, never a bare push or `HEAD:main`. Verify remote
    ancestry/SHA before removing only the task's clean worktree. Never remove the long-lived V2 or

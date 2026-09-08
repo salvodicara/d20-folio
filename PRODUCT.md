@@ -213,6 +213,24 @@ acceptance must include an actual custom creation used in combat, automated cost
 mid-combat modification and causal correction/undo, with ordinary, boundary and composition cases.
 Saving, serializing or previewing a custom creation is not that acceptance proof.
 
+## V2 delivery and owner review — 8 September 2026
+
+For implementation of the approved Astra mock and agreed product contracts, the owner gives
+standing authorization to complete reviewed, gate-green work and integrate it into `v2` without
+requesting a fresh exhaustive screenshot approval at every block. Always verify the real runtime
+against the mock and deliver curated actual screenshots in chat, followed by the complete successor
+prompt once the current block and integration are finished. Do not expect the owner to inspect every
+control, repeat this consent, or perform the agent's verification. Detailed hands-on usability review
+will happen when the application is complete and usable. This is delegated implementation acceptance,
+not evidence that the owner audited every pixel or control.
+
+This instruction supersedes earlier per-block V2 screenshot approval waits, including the P07 prompt.
+It preserves independent review, real-runtime evidence, safety and quality gates, full functional
+depth and mock fidelity. Resolve routine design/technical details autonomously. Ask only for a new
+material product decision that is not covered by the agreed direction or for separately gated
+production/deployment, real-data migration, cost or other external authority. Integration into `v2`
+does not authorize deployment or production switching. Carry this policy in every successor prompt.
+
 **Clarity and familiar interaction patterns, reaffirmed by the owner on 8 September 2026.**
 The same depth and contextual control must be understandable throughout the application, including
 homebrew entry forms, character creation/growth, campaign management and play/combat. Users must

@@ -163,6 +163,13 @@ components:
 > reconciliation during the Tactical Codex cutover; it is evidence, not target authority, and is
 > deleted when the corresponding surface migrates.
 
+## V2 screenshot delivery and review
+
+PRODUCT owns the8 September standing delegation: implement the approved mock, independently
+verify fidelity and usability, send curated actual screenshots every block, and close reviewed green
+V2 work without asking the owner to inspect every control again. Preserve complete functionality.
+Detailed owner usability review follows the completed app; never describe it as already performed.
+
 ## P07 guided origins and build review (2026-09-08)
 
 Species, feat and background editors follow their specific Astra0.9.3 surfaces inside the approved
@@ -187,8 +194,9 @@ kept drafts available for later recovery. Source updates never propagate to othe
 The sheet and inspected identity consume one origin subscription and projection. Superseded or
 unattributed imported facts remain under a labelled baseline disclosure, never presented as active
 alongside replacements. Removal previews both restored baseline facts and affected dependent
-selections. P07 screenshots and real optimized journeys require their own owner gate; P06 broad
-interim acceptance does not approve these new pixels. Custom authoring prepares the shared engine;
+selections. P07 supplies current screenshots and real optimized journeys. The owner’s8 September
+standing delivery delegation supersedes repeated per-block screenshot approval waits; detailed
+hands-on review follows completion of the application. Custom authoring prepares the shared engine;
 it does not prove combat automation, editable in-use facts or causal undo.
 
 ## P02 implemented surface and reference

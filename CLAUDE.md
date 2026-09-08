@@ -1,5 +1,13 @@
 # d20 Folio — agent briefing
 
+## V2 delivery delegation — owner, 8 September 2026
+
+Follow PRODUCT’s “V2 delivery and owner review” policy: implement the approved mock, independently
+verify, always send actual screenshots, integrate reviewed green work into `v2`, and deliver the
+complete successor prompt after closure. Do not pause each block for repeated exhaustive screenshot
+approval. Detailed owner usability review comes with the completed application. Deployment, real-data
+migration, production switching and new costs retain their separate explicit gates.
+
 ## Owner rectification — 6 September 2026
 
 [PRODUCT.md](PRODUCT.md) owns the binding new-application decision: Astra's approved full-lab
@@ -74,7 +82,7 @@ proposal until integrated.
 - **Live-user safety:** schema, derived-value, and stored-string changes validate against the six
   team fixtures. Migrations use the snapshot → dry-run → idempotent apply → verify protocol.
 - **Owner gates:** never deploy or publish externally without explicit per-change permission. Any
-  visual change requires the repository's screenshot approval gate before integration.
+  visual change requires runtime screenshot evidence; V2 follows PRODUCT’s standing review delegation.
 - **Secrets:** never print, commit, or store them in agent memory. Use `.env.local`, CI secrets, and
   Secret Manager.
 
@@ -140,12 +148,14 @@ adapters below override generic command examples, not the lifecycle:
   Every commit includes a `.changeset/*.md` and reconciles the document that owns the changed fact.
 - Never use `--no-verify`. The authoritative local gate for integration is `just ci`; use
   `just ci-srd-only` when the licensing seam is affected. Rules changes also run `pnpm test:rules`.
-- Non-visual work may integrate after review and green gates. Visual work waits for approved,
-  curated before/after screenshots across the affected theme/locale/viewport matrix, delivered as
-  actual chat images viewable on the owner's phone rather than local file paths.
+- Non-visual work may integrate after review and green gates. Visual work supplies curated
+  reference/runtime screenshots across the affected theme/locale/viewport matrix as actual chat images.
+  Approved-mock V2 work integrates under the owner’s standing delegation after review and green gates;
+  do not request repeated per-block visual consent.
 - Use the destination-specific procedure in [Worktrees](docs/WORKTREES.md): V2 tasks branch from
   fresh `origin/v2`, production fixes from fresh `origin/main`. Never send V2 work to `main`.
-  Integration is separate from task execution; the current P01 mandate excludes all integration.
+  The historical P01 mandate excluded integration; current scope is owned by PROGRAM_STATUS
+  and PRODUCT’s standing V2 delivery delegation.
   No PR flow or implicit deployment; retain unintegrated work and its evidence.
 
 ## Tool routing

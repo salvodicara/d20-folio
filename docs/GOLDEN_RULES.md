@@ -137,6 +137,10 @@ the new durable decision or kept explicitly one-off.
     materially differ. Deliver the actual images through the shared chat so they are viewable on the
     owner's phone; a local path or written report is not delivery. Wait for approval before integration;
     deployment remains a separate gate.
+    **V2 exception, owner 8 September 2026:** PRODUCT’s standing delivery delegation supersedes
+    the per-block wait for implementation of the approved mock. Agents verify and send the images,
+    integrate reviewed green V2 work, then deliver the complete successor prompt. Detailed owner
+    hands-on review happens on the completed app; do not demand repeated exhaustive approval.
 26. **Discover ambiguous product intent before implementation.** Use Superpowers brainstorming and,
     when a real interview is needed, grill-me. For contested UI choices, Impeccable decides from the
     product/design system; if a meaningful tie remains, show concrete visual alternatives to the owner.
