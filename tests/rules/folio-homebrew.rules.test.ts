@@ -464,7 +464,7 @@ it("rechecks conformance at commit before writing a previously prepared intent",
     )
   );
   await expect(a.repo.commit({ ...op, snapshot: unconfigured })).rejects.toThrow(
-    "invalid-operation"
+    "intent-mismatch"
   );
   expect(await a.repo.list(character)).toEqual([]);
   expect((await getDoc(doc(a.db, receiptPath(op)))).exists()).toBe(false);

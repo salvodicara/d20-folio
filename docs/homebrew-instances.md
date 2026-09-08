@@ -122,3 +122,9 @@ injection authenticates catalogue claims on reads and state operations; absent v
 produces recoverable incompatible data. Existing individual byte shape and addresses
 remain unchanged. Firestore initial creation/state predicates are owned by the P10
 creation/rules integration; the model does not claim emulator acceptance by itself.
+
+Grouped initial item state and supported direct owned-version updates now have rules at
+`loadout/initial`. They retain the existing instance operation and full-group CAS: source map and
+siblings stay exact, only the addressed item advances, and `initial_` IDs cannot be written to
+individual homebrew paths. [Guided creation persistence](character-creation-persistence.md) owns
+the atomic initial-group creation, authorized read matrix and rules/client validation boundary.

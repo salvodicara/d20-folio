@@ -94,6 +94,47 @@ service cloud.firestore {
               && o.base.character == o.character && o.base.sourceHash == o.sourceHash && o.baseRevision == o.base.revision))
           && revision == o.baseRevision + 1));
     }
+    // Guided creation owns five absent documents. Nested semantics are client-validated.
+    function creationParent(o) { return /databases/$(database)/documents/folioAccounts/$(o.uid)/characters/$(o.character.id); }
+    function creationOrigins(o) { return /databases/$(database)/documents/folioAccounts/$(o.uid)/characters/$(o.character.id)/origins/build; }
+    function creationClasses(o) { return /databases/$(database)/documents/folioAccounts/$(o.uid)/characters/$(o.character.id)/classes/build; }
+    function creationLoadout(o) { return /databases/$(database)/documents/folioAccounts/$(o.uid)/characters/$(o.character.id)/loadout/initial; }
+    function creationAggregate(g,o,collection) {
+      return g is map && g.keys().hasOnly(['schema','character','revision','lastOperation',collection])
+        && g.schema == 1 && g.character == o.character && g.revision == 1
+        && g.lastOperation == {'uid':o.uid,'opId':o.opId} && g[collection] is map;
+    }
+    function creationOutput(o) {
+      let c=o.output.character;
+      let l=o.output.loadout;
+      return o.output is map && o.output.keys().hasOnly(['character','origins','classes','loadout'])
+        && c.ownerUid == o.uid && c.id == o.character.id && c.revision == 0 && c.level == 1
+        && c.currentAssignment == null && c.portraitPath == null
+        && c.sheet.build.creation.schema == 1 && c.sheet.build.creation.kind == 'guided'
+        && c.sheet.build.creation.operationId == o.opId
+        && creationAggregate(o.output.origins,o,'selections') && o.output.origins.selections.size() <= 32
+        && creationAggregate(o.output.classes,o,'acquisitions') && o.output.classes.acquisitions.size() == 1
+        && l is map && l.keys().hasOnly(['schema','character','revision','sources','instances','lastOperation'])
+        && l.schema == 1 && l.character == o.character && l.revision == 1
+        && l.lastOperation == {'uid':o.uid,'opId':o.opId} && l.sources is map && l.instances is map;
+    }
+    function creationOperation(o,revision) {
+      return o.kind == 'character-create' && o.keys().hasOnly(['kind','uid','opId','scope','baseRevision','authority','character','output'])
+        && o.uid == request.auth.uid && o.character == {'ownerUid':o.uid,'id':o.character.id} && folioId(o.character.id)
+        && o.baseRevision == 0 && revision == 0 && o.authority == {'characterRevision':null,'assignment':null,'campaignRevision':null}
+        && creationOutput(o)
+        && !exists(creationParent(o)) && !exists(creationOrigins(o)) && !exists(creationClasses(o)) && !exists(creationLoadout(o))
+        && getAfter(creationParent(o)).data == o.output.character && getAfter(creationOrigins(o)).data == o.output.origins
+        && getAfter(creationClasses(o)).data == o.output.classes && getAfter(creationLoadout(o)).data == o.output.loadout;
+    }
+    function creationWitness(uid,id,opId,section) {
+      let r=operationReceipt(uid,opId);
+      return folioUser() && request.auth.uid == uid && folioId(opId)
+        && !exists(/databases/$(database)/documents/folioAccounts/$(uid)/operations/$(opId))
+        && r.operation.uid == uid && r.operation.opId == opId
+        && r.operation.character == {'ownerUid':uid,'id':id} && r.revision == 0
+        && r.operation.kind == 'character-create' && request.resource.data == r.operation.output[section];
+    }
     match /folioAccounts/{uid}/operations/{id} {
       function readable() { let o=resource.data.operation; return folioUser() && (request.auth.uid == uid || isAdmin())
         && (o.kind != 'notes' || o.target.kind == 'personal' || folioDm(o.target.campaignId))
@@ -106,11 +147,12 @@ service cloud.firestore {
         && request.resource.data.operation.scope.uid == uid
         && request.resource.data.operation.scope.keys().hasOnly(['uid','campaignId','activeCharacterId'])
         && request.resource.data.operation.baseRevision is int && request.resource.data.operation.baseRevision >= 0
-        && ((request.resource.data.operation.kind == 'character-import' && request.resource.data.revision == 0)
-          || (request.resource.data.operation.kind != 'character-import' && request.resource.data.revision == request.resource.data.operation.baseRevision + 1))
+        && ((request.resource.data.operation.kind in ['character-import','character-create'] && request.resource.data.revision == 0)
+          || (!(request.resource.data.operation.kind in ['character-import','character-create']) && request.resource.data.revision == request.resource.data.operation.baseRevision + 1))
         && validOperation(request.resource.data.operation,request.resource.data.revision);
       function validOperation(o, revision) {
-        return (o.kind in ['character-import','import-review'] && importOperation(o,revision))
+        return (o.kind == 'character-create' && creationOperation(o,revision))
+          || (o.kind in ['character-import','import-review'] && importOperation(o,revision))
           || (o.kind == 'notes'
           && o.keys().hasOnly(['kind','opId','uid','scope','target','baseRevision','authority','text'])
           && ((o.target.kind == 'personal'
@@ -122,7 +164,7 @@ service cloud.firestore {
               && noteTransition(/databases/$(database)/documents/folioCampaigns/$(o.target.campaignId)/dmNotes/main,o.target))))
           || (o.kind in ['library-save','library-publish','library-offer','library-accept','library-revoke','library-remove'] && libraryOperation(o))
           || (o.kind == 'origin-build' && originOperation(o))
-          || (o.kind in ['homebrew-add','homebrew-update','homebrew-state'] && homebrewOperation(o))
+          || (o.kind in ['homebrew-add','homebrew-update','homebrew-state'] && (o.get('initialBase',null) != null ? initialHomebrewOperation(o) : homebrewOperation(o)))
           || (o.kind in ['preparation-add','preparation-update','preparation-state','preparation-remove'] && preparationOperation(o))
           || (o.kind == 'assignment' && o.keys().hasOnly(['kind','opId','uid','scope','target','baseRevision','authority','campaignId','campaignRevision']) && assignmentOperation(o,revision));
       }
@@ -161,7 +203,10 @@ service cloud.firestore {
           == {'ownerUid':uid,'characterId':id,'assignmentId':a.assignmentId,'version':a.version}; }
       allow get: if folioOwnerAccess(uid) || folioReadCharacter(uid,id,resource.data);
       allow list: if folioOwnerAccess(uid);
-      allow create: if folioOwnerAccess(uid) && shape(request.resource.data) && request.resource.data.revision == 0 && request.resource.data.currentAssignment == null;
+      allow create: if folioOwnerAccess(uid) && shape(request.resource.data) && request.resource.data.revision == 0 && request.resource.data.currentAssignment == null
+        && (!(request.resource.data.sheet.build.get('creation',{}) is map)
+          || request.resource.data.sheet.build.get('creation',{}).get('kind','') != 'guided'
+          || creationWitness(uid,id,request.resource.data.sheet.build.creation.operationId,'character'));
       // Assignment authority is explicitly owner-only, including administrator clients.
       allow update: if owner() && shape(request.resource.data)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revision','currentAssignment'])
@@ -444,7 +489,7 @@ service cloud.firestore {
         && getAfter(originPath(o)).data == {'schema':1,'character':o.character,'revision':o.baseRevision+1,'selections':o.selections,'lastOperation':{'uid':o.uid,'opId':o.opId}};
     }
     match /folioAccounts/{uid}/characters/{characterId}/origins/{buildId} {
-      allow read: if buildId == 'build' && folioReadCharacter(uid,characterId,get(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(characterId)).data);
+      allow read: if buildId == 'build' && (folioOwnerAccess(uid) || folioReadCharacter(uid,characterId,get(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(characterId)).data));
       function originWrite() {
         let last=request.resource.data.lastOperation;
         let r=operationReceipt(uid,last.opId);
@@ -456,7 +501,46 @@ service cloud.firestore {
           && (!(o.targetId in o.selections) || o.base == null || o.targetId in o.base.selections || originPrior(o.base.selections.values(),o.selections[o.targetId].ordinal))
           && request.resource.data == {'schema':1,'character':o.character,'revision':o.baseRevision+1,'selections':o.selections,'lastOperation':last};
       }
+      allow create: if buildId == 'build' && creationWitness(uid,characterId,request.resource.data.lastOperation.opId,'origins');
       allow create,update: if originWrite();
+    }
+    match /folioAccounts/{uid}/characters/{characterId}/classes/{buildId} {
+      allow read: if buildId == 'build' && (folioOwnerAccess(uid) || folioReadCharacter(uid,characterId,get(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(characterId)).data));
+      allow create: if buildId == 'build' && creationWitness(uid,characterId,request.resource.data.lastOperation.opId,'classes');
+    }
+    function initialHomebrewOperation(o) {
+      let p=creationLoadout(o);
+      let n=getAfter(p).data;
+      let b=o.initialBase;
+      let last={'uid':o.uid,'opId':o.opId};
+      return o.kind in ['homebrew-state','homebrew-update']
+        && o.keys().hasOnly(['kind','opId','uid','scope','baseRevision','authority','character','targetId','base','snapshot','state','initialBase'])
+        && folioId(o.targetId) && o.targetId.matches('^initial_.*') && o.uid == request.auth.uid && homebrewAuthority(o)
+        && b != null && b.schema == 1 && b.character == o.character && get(p).data == b && o.baseRevision == b.revision
+        && o.base == b.instances[o.targetId] && o.base.character == o.character && o.base.id == o.targetId
+        && homebrewState(o.state)
+        && ((o.kind == 'homebrew-state' && o.snapshot == o.base.snapshot)
+          || (o.kind == 'homebrew-update' && !('kind' in o.base.snapshot) && !('kind' in o.snapshot)
+            && o.base.snapshot.ownerUid == o.uid && o.snapshot.entryId == o.base.snapshot.entryId
+            && o.state == o.base.state && homebrewSource(o)))
+        && n.keys().hasOnly(['schema','character','revision','sources','instances','lastOperation'])
+        && n.schema == 1 && n.character == o.character && n.revision == b.revision+1 && n.lastOperation == last
+        && n.sources == b.sources && n.instances.keys() == b.instances.keys()
+        && n.instances.diff(b.instances).affectedKeys() == [o.targetId].toSet()
+        && n.instances[o.targetId] == {'schema':1,'id':o.targetId,'character':o.character,'revision':o.base.revision+1,'snapshot':o.snapshot,'state':o.state,'lastOperation':last};
+    }
+    match /folioAccounts/{uid}/characters/{characterId}/loadout/{loadoutId} {
+      allow read: if loadoutId == 'initial' && (folioOwnerAccess(uid) || folioReadCharacter(uid,characterId,get(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(characterId)).data));
+      allow create: if loadoutId == 'initial' && creationWitness(uid,characterId,request.resource.data.lastOperation.opId,'loadout');
+      function initialWrite() {
+        let last=request.resource.data.lastOperation;
+        let r=operationReceipt(uid,last.opId);
+        return loadoutId == 'initial' && folioUser() && request.auth.uid == uid && last.uid == uid && folioId(last.opId)
+          && !exists(/databases/$(database)/documents/folioAccounts/$(uid)/operations/$(last.opId))
+          && r.operation.uid == uid && r.operation.opId == last.opId && r.operation.character == {'ownerUid':uid,'id':characterId}
+          && r.revision == r.operation.baseRevision+1 && initialHomebrewOperation(r.operation);
+      }
+      allow update: if initialWrite();
     }
     // P05: one character-owned instance per exact P03 receipt; no admin consent.
     function homebrewPath(o) { return /databases/$(database)/documents/folioAccounts/$(o.character.ownerUid)/characters/$(o.character.id)/homebrew/$(o.targetId); }
@@ -490,7 +574,7 @@ service cloud.firestore {
     function homebrewOperation(o) {
       let n=getAfter(homebrewPath(o)).data;
       return o.keys().hasOnly(['kind','opId','uid','scope','baseRevision','authority','character','targetId','base','snapshot','state'])
-        && folioId(o.targetId) && o.uid == request.auth.uid && homebrewAuthority(o)
+        && folioId(o.targetId) && !o.targetId.matches('^initial_.*') && o.uid == request.auth.uid && homebrewAuthority(o)
         && homebrewState(o.state) && homebrewBase(o)
         && n == {'schema':1,'id':o.targetId,'character':o.character,'revision':o.baseRevision+1,'snapshot':o.snapshot,'state':o.state,'lastOperation':{'uid':o.uid,'opId':o.opId}};
     }

@@ -708,3 +708,12 @@ LibraryVersion snapshot, distinct monster or enabled-rule state, and the exact l
 identity. The full path, codec, state bounds, CAS/receipt and recovery contract are owned by
 [homebrew preparation](homebrew-preparation.md). Character imports and legacy schema3 bytes remain
 unchanged; template updates are explicit and preserve prepared state.
+
+## P10 guided creation aggregate boundary
+
+A new guided character declares `sheet.build.creation {schema:1, kind:"guided", operationId, ...}`.
+The parent creation marker and its independently owned origins, class and initial-loadout aggregates
+are persisted atomically with one exact receipt. The draft character ID remains stable. Required
+metadata, witness stamping, recovery, rules boundaries and access budgets are owned by
+[Guided creation persistence](character-creation-persistence.md). This adds no migration or rewrite
+of imported characters and does not make the marker a combat-execution claim.
