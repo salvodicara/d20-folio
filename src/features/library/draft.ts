@@ -132,30 +132,38 @@ export class LibraryDraftController {
     for (const listener of this.listeners) listener();
   }
   private retain(invalidated = this.state.invalidated) {
-    if (!this.state.loaded || !this.state.draft || this.protectOriginal) return;
+    if (!this.state.loaded || !this.state.draft || this.protectOriginal) return false;
     try {
       const indexKey = "folio-library-drafts:" + (this.session.scope().uid ?? "");
       const ids = JSON.parse(this.storage.getItem(indexKey) ?? "[]") as string[];
       const indexed = ids.filter((id) => id !== this.id);
       if (!this.state.base) indexed.push(this.id);
-      this.storage.setItem(indexKey, JSON.stringify(indexed));
-      this.storage.setItem(
-        this.key,
-        JSON.stringify({
-          base: this.state.base,
-          draft: this.state.draft,
-          dirty: this.state.dirty,
-          operation:
-            this.state.operation?.status === "acknowledged"
-              ? null
-              : (this.state.operation?.envelope ?? null),
-          invalidated,
-        })
-      );
+      const indexBytes = JSON.stringify(indexed);
+      const bytes = JSON.stringify({
+        base: this.state.base,
+        draft: this.state.draft,
+        dirty: this.state.dirty,
+        operation:
+          this.state.operation?.status === "acknowledged"
+            ? null
+            : (this.state.operation?.envelope ?? null),
+        invalidated,
+      });
+      this.storage.setItem(indexKey, indexBytes);
+      this.storage.setItem(this.key, bytes);
+      if (
+        this.storage.getItem(indexKey) !== indexBytes ||
+        this.storage.getItem(this.key) !== bytes
+      )
+        throw new Error("storage-readback");
+      if (this.state.storageFailed) this.publish({ storageFailed: false });
+      return true;
     } catch {
       this.publish({ storageFailed: true });
+      return false;
     }
   }
+
   async load() {
     const generation = ++this.loadGeneration;
     type Recovery = {
@@ -325,6 +333,7 @@ export class LibraryDraftController {
     } catch {
       return;
     }
+    if (!this.retain()) return;
     if (this.controller) {
       await this.controller.retry();
       return;
@@ -332,7 +341,8 @@ export class LibraryDraftController {
     if (this.state.operation && this.state.operation.status !== "unknown") return;
     const draft = structuredClone(this.state.draft),
       base = this.state.base;
-    const retry = !!this.state.operation;
+    const previousOperation = this.state.operation;
+    const retry = !!previousOperation;
     let envelope: LibraryOperation;
     try {
       envelope =
@@ -365,7 +375,13 @@ export class LibraryDraftController {
       this.retain();
     });
     this.publish({ operation: c.state });
-    this.retain();
+    if (!this.retain()) {
+      // A recovered unknown may already have committed; never retire its receipt identity.
+      this.detach();
+      this.controller = null;
+      this.publish({ operation: previousOperation });
+      return;
+    }
     await (retry ? c.retry() : c.submit());
   }
   review() {

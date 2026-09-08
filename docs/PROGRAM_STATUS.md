@@ -1,6 +1,14 @@
 # Program Status
 
-## Current frontier — P08a integrated; P08b next (8 September 2026)
+## Current frontier — P08b active (8 September 2026)
+
+Astra owns codex/p08b-class-editor-20260908 in Workspace/Codex/d20-folio-p08b-class-editor.
+Fresh base origin/v2 a5b67280291c36be9c1b94dcc802c6ffbca98ef5; main unchanged9b06b753.
+Clean detached p08b-control invoked the topic; shared/unrelated worktrees preserved.
+Spec/plan written before code; reference and contract discovery are independent read-only lanes.
+Only P08b authorized. Standing owner delivery delegation applies; runtime/review/gates pending.
+
+## Historical frontier — P08a integrated; P08b next (8 September 2026)
 
 Astra completed the class/subclass model, conformance/codec, real immutable Library versions and
 minimal EN/IT consultation/print boundary. P08b/c guided editors, advancement and engine execution

@@ -328,7 +328,8 @@
       "campaign-rule": "Set up campaign rule",
       "species": "Set up species",
       "feat": "Set up feat",
-      "background": "Set up background"
+      "background": "Set up background",
+      "class": "Configure class"
     },
     "diagnostics": {
       "invalid-definition": "An included definition cannot be read safely.",
@@ -772,6 +773,46 @@
       },
       "localCasting": "Separate subclass spellcasting",
       "noSeparateCasting": "No separate policy; follow the parent relationship above"
+    },
+    "classEditor": {
+      "identityHelp": "Edit the library template. Existing character copies and recorded versions keep their own content.",
+      "firstSave": "First saving throw proficiency",
+      "secondSave": "Second saving throw proficiency",
+      "subclassHelp": "Choose the class levels that grant subclass features. The subclass editor is a separate step.",
+      "commonAcquisition": "Shared features and included sources",
+      "commonHelp": "Include recorded library versions here, then select their names in any acquisition or level. These common declarations belong to both entry paths.",
+      "startingHelp": "Benefits and choices gained when this is the first class. The two saving throw proficiencies above belong only to this entry.",
+      "multiclassHelp": "Requirements, benefits and choices when adding this class after another class. This edits the template, without changing a character.",
+      "castingHelp": "Declare the casting policy here and the absolute spell counts at each level below. Changing a policy preserves the existing level table for your review.",
+      "castingMode": "Casting progression",
+      "contributionHelp": "Explicit contribution to ordinary multiclass slots. None and Pact Magic do not contribute. Divisor and rounding are authored rules, not automatic RAW certification.",
+      "contributes": "Contributes ordinary slots",
+      "divisor": "Class levels per caster level",
+      "rounding": "Rounding",
+      "level": "Class level",
+      "newLevel": "New class level",
+      "addLevel": "Add level",
+      "orderLevels": "Order by level",
+      "levelName": "Level feature name",
+      "levelAcquisition": "Features, requirements and choices",
+      "levelPrograms": "Actions granted at this level",
+      "programHelp": "Choose actions defined in Advanced mechanics below. Grant each action once; its costs must be affordable from this level onward.",
+      "noPrograms": "Define actions in Advanced mechanics, then select them here by name.",
+      "levelResources": "Resource capacities at this level",
+      "capacityHelp": "A binding makes a resource available and sets its total capacity, replacing the previous capacity. Omitted resources keep their previous capacity. This does not refill remaining uses.",
+      "resource": "Resource",
+      "capacity": "Total capacity",
+      "addCapacity": "Set resource capacity",
+      "noResources": "Define resources in Advanced mechanics, then set their capacity here.",
+      "levelCasting": "Spell counts and slots",
+      "countsHelp": "Absolute totals for this level, including zero. Ordinary slot fields run from spell level 1 to 9; Pact Magic has its own fields. Omitted class levels retain the preceding row.",
+      "slotLevel": "Slots of spell level",
+      "stableIdentity": "Stable reference",
+      "identityNote": "Generated once. Renaming or changing the level preserves this reference and its choices.",
+      "removeLevel": "Remove level row",
+      "missingReference": "Missing reference",
+      "reuseVersion": "Reuse recorded class",
+      "reuseHelp": "Create an independent library draft from the last recorded version. Duplicate copies the current draft. Character class selection belongs to character creation and advancement."
     }
   }
 }

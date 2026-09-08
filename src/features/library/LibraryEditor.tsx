@@ -131,7 +131,8 @@ function EditorBody({
         state.base.stableVersion
       );
       check();
-      if (reuse) onReuse?.(v);
+      if (reuse && family === "class") await onDuplicate?.(v.definition);
+      else if (reuse) onReuse?.(v);
       else onShare(v);
     } catch {
       setError("requestFailed");
@@ -367,10 +368,13 @@ function EditorBody({
             disabled={!state.base?.stableVersion || op.busy || !state.online}
             onClick={() => void share(true)}
           >
-            {homebrewLabel("reuse")}
+            {homebrewLabel(family === "class" ? "classEditor.reuseVersion" : "reuse")}
           </button>
         )}
       </div>
+      {family === "class" && (
+        <p className="homebrew-hint">{homebrewLabel("classEditor.reuseHelp")}</p>
+      )}
       <details className="homebrew-preview">
         <summary>{homebrewLabel("preview")}</summary>
         <HomebrewReader definition={draft} />

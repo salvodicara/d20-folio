@@ -328,7 +328,8 @@
       "campaign-rule": "Configura regola di campagna",
       "species": "Configura specie",
       "feat": "Configura talento",
-      "background": "Configura background"
+      "background": "Configura background",
+      "class": "Configura classe"
     },
     "diagnostics": {
       "invalid-definition": "Una definizione inclusa non può essere letta in modo sicuro.",
@@ -772,6 +773,46 @@
       },
       "localCasting": "Magia distinta della sottoclasse",
       "noSeparateCasting": "Nessuna modalità distinta; segui il rapporto con la classe indicato sopra"
+    },
+    "classEditor": {
+      "identityHelp": "Modifichi il modello della biblioteca. Le copie dei personaggi e le versioni registrate conservano i propri contenuti.",
+      "firstSave": "Prima competenza nei tiri salvezza",
+      "secondSave": "Seconda competenza nei tiri salvezza",
+      "subclassHelp": "Scegli i livelli di classe che concedono privilegi della sottoclasse. La sottoclasse ha un editor separato.",
+      "commonAcquisition": "Privilegi comuni e fonti incluse",
+      "commonHelp": "Includi qui le versioni registrate, poi selezionale per nome nelle acquisizioni e nei livelli. Queste dichiarazioni comuni appartengono a entrambi i percorsi di ingresso.",
+      "startingHelp": "Benefici e scelte ottenuti quando questa è la prima classe. Le due competenze nei tiri salvezza sopra appartengono solo a questo ingresso.",
+      "multiclassHelp": "Prerequisiti, benefici e scelte quando aggiungi questa classe dopo un’altra. Modifichi il modello, senza cambiare un personaggio.",
+      "castingHelp": "Dichiara qui la progressione magica e sotto i conteggi assoluti di ogni livello. Cambiare progressione conserva la tabella esistente, da verificare.",
+      "castingMode": "Progressione magica",
+      "contributionHelp": "Contributo esplicito agli slot ordinari multiclasse. Nessuna magia e Magia del Patto non contribuiscono. Divisore e arrotondamento sono regole dichiarate, non una certificazione automatica delle regole ufficiali.",
+      "contributes": "Contribuisce agli slot ordinari",
+      "divisor": "Livelli di classe per livello da incantatore",
+      "rounding": "Arrotondamento",
+      "level": "Livello di classe",
+      "newLevel": "Nuovo livello di classe",
+      "addLevel": "Aggiungi livello",
+      "orderLevels": "Ordina per livello",
+      "levelName": "Nome del privilegio di livello",
+      "levelAcquisition": "Privilegi, prerequisiti e scelte",
+      "levelPrograms": "Azioni concesse a questo livello",
+      "programHelp": "Scegli le azioni definite sotto in Meccaniche avanzate. Concedi ogni azione una volta; i costi devono essere sostenibili da questo livello in poi.",
+      "noPrograms": "Definisci le azioni in Meccaniche avanzate, poi selezionale qui per nome.",
+      "levelResources": "Capacità delle risorse a questo livello",
+      "capacityHelp": "Un collegamento rende disponibile una risorsa e imposta la capacità totale, sostituendo quella precedente. Le risorse omesse conservano la capacità precedente. Non ricarica gli utilizzi rimasti.",
+      "resource": "Risorsa",
+      "capacity": "Capacità totale",
+      "addCapacity": "Imposta capacità della risorsa",
+      "noResources": "Definisci le risorse in Meccaniche avanzate, poi imposta qui la capacità.",
+      "levelCasting": "Conteggi di incantesimi e slot",
+      "countsHelp": "Totali assoluti per questo livello, incluso lo zero. Gli slot ordinari vanno dal livello di incantesimo 1 al 9; Magia del Patto ha campi separati. I livelli di classe omessi conservano la riga precedente.",
+      "slotLevel": "Slot di livello incantesimo",
+      "stableIdentity": "Riferimento stabile",
+      "identityNote": "Generato una sola volta. Rinominare o cambiare livello conserva questo riferimento e le sue scelte.",
+      "removeLevel": "Rimuovi riga di livello",
+      "missingReference": "Riferimento mancante",
+      "reuseVersion": "Riusa classe registrata",
+      "reuseHelp": "Crea una bozza indipendente nella biblioteca dall’ultima versione registrata. Duplica copia la bozza corrente. La scelta della classe del personaggio appartiene alla creazione e alla crescita."
     }
   }
 }

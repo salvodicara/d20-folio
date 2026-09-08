@@ -170,6 +170,16 @@ verify fidelity and usability, send curated actual screenshots every block, and 
 V2 work without asking the owner to inspect every control again. Preserve complete functionality.
 Detailed owner usability review follows the completed app; never describe it as already performed.
 
+## P08b guided class editor (2026-09-08)
+
+Class identity uses the approved two-column form, with shared/starting/multiclass declarations
+separated by labelled disclosure. Ordered stable level rows retain context and expose named
+features/choices/actions/resources, absolute casting totals and explicit carry-forward help.
+Errors identify the level or resource/action by name. Advanced source IDs are not ordinary input
+prerequisites. Reuse recorded class creates an independent Library draft from the last version;
+Duplicate uses the current draft. Existing copies never change implicitly. Dark EN/IT desktop and
+phone use the same shell r2, tokens and controls. No character advancement is performed here.
+
 ## P07 guided origins and build review (2026-09-08)
 
 Species, feat and background editors follow their specific Astra0.9.3 surfaces inside the approved

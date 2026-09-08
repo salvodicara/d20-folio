@@ -2,8 +2,7 @@
 
 P08a adds `class` and `subclass` to the common authoring vocabulary. The eleven families use
 P04 `LibraryDefinition`/`LibraryVersion`, the portable codec and the existing operation protocol.
-`BaseFamily` remains weapon/equipment/spell/feature. There is no new character store, class editor,
-advancement interpreter, migration, dice execution or combat engine.
+`BaseFamily` remains weapon/equipment/spell/feature. There is no new character store or advancement interpreter, migration, dice execution or combat engine.
 
 `classes.ts` owns `ClassData`, `SubclassData`, `ClassLevel`, `ClassAcquisition`, casting declarations,
 initializers and typed decoding. `decodeClassDefinition(unknown)` returns a discriminated known
@@ -82,3 +81,25 @@ the relevant policies are known. Augment cannot introduce nonzero spell counts o
 noncasting parent: that requires a replacement policy with its own ability. Unmodeled class or
 subclass fields, including `equipment`, remain explicitly unsupported rather than bypassing
 validation through another family's field allowance.
+
+## P08b guided class authoring
+
+ClassFields is the progression authoring adapter over existing ClassData. It edits identity,
+first-class/multiclass/common acquisitions and stable level rows, using scoped OriginFields and
+the same root pinned closure. Adding a level mints an identity once; changing its number/name and
+explicit ordering preserve it and nested choice IDs. It never computes or applies character growth.
+Casting changes preserve row counts for explicit review; capacity bindings replace absolute maxima
+without refilling. Guided AdvancedFields names resource/action references while stable identities
+remain available read-only. Known-field edits preserve unknown data; malformed sections are shown
+and are not initialized over existing content. Common conformance names affected level declarations.
+
+Existing LibraryDraftController supplies all autosave/base/envelope/recovery behavior. Reuse recorded
+class reads the last immutable version into an independent local Library draft; Duplicate uses the
+current draft. Neither routes class templates through the four-family character-item repository.
+Class selection/advancement is P10/P11; the subclass editor remains P08c. Shared reader/print unchanged.
+
+Custom same-engine automation and editable combat remain mandatory future runtime exits: actions,
+targets, costs, resources, effects, reactions, consequences and receipts; in-use authoritative edits
+with provenance/causal undo, separate from template versions with no silent propagation. Modeled
+deterministic mechanics cannot be relegated to manual handling. This editor's save/preview is not
+evidence of those future execution exits.

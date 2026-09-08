@@ -1,5 +1,7 @@
+import { ClassFields } from "./ClassFields";
 import { AdvancedFields } from "./AdvancedFields";
 import { OriginFields, type OriginFieldsProps } from "./OriginFields";
+import { originRecord } from "@/lib/homebrew/origins";
 import { isOriginFamily } from "@/lib/homebrew/origins";
 import { Checkbox } from "@/components/ui/selection";
 import { authoringFamily, useHomebrewLabel } from "./homebrew-labels";
@@ -23,7 +25,7 @@ export function HomebrewFields({
   loadOriginSources?: OriginFieldsProps["loadOriginSources"];
 }) {
   const label = useHomebrewLabel();
-  if (["class", "subclass"].includes(definition.family))
+  if (definition.family === "subclass")
     return <p className="homebrew-hint">{label("classes.importHelp")}</p>;
   if (!authoringFamily(definition.family)) return null;
   const data = definition.payload.data;
@@ -48,6 +50,7 @@ export function HomebrewFields({
     onChange({ ...definition.payload, data: { ...data, [key]: value } });
   const fields = authoringFields(definition.family);
   const origin = isOriginFamily(definition.family);
+  const classEditor = definition.family === "class";
   const groups = [...new Set(fields.map((f) => f.group))].sort(
     (a, b) =>
       Number(["provenance", "notes"].includes(a)) -
@@ -136,6 +139,49 @@ export function HomebrewFields({
   };
   const effects = Array.isArray(data.effects) ? data.effects : [];
   const diagnostics = conformDefinition(definition);
+  const classText = (value: unknown) =>
+    typeof value === "string" || typeof value === "number" ? String(value) : "—";
+  const classLocation = (path: string) => {
+    const parts = path.replace(/^payload.data\./, "").split(".");
+    const group = parts[0] ?? "";
+    if (group === "progression" && parts[1] && Array.isArray(data.progression)) {
+      const row = originRecord(data.progression[Number(parts[1])]);
+      return (
+        label("classEditor.level") +
+        " " +
+        classText(row?.level) +
+        " · " +
+        classText(row?.name)
+      );
+    }
+    if (
+      ["programs", "resources"].includes(group) &&
+      parts[1] &&
+      Array.isArray(data[group])
+    ) {
+      const row = originRecord(data[group][Number(parts[1])]);
+      return (
+        label("collections." + group) +
+        " · " +
+        classText(row?.name ?? Number(parts[1]) + 1)
+      );
+    }
+    return label(
+      [
+        "starting",
+        "multiclass",
+        "progression",
+        "hitDie",
+        "primaryAbilities",
+        "savingThrows",
+        "subclassLevels",
+      ].includes(group)
+        ? "classes." + group
+        : group === "spellcasting"
+          ? "classes.casting"
+          : "checkContent"
+    );
+  };
   return (
     <div className="homebrew-fields">
       {groups.map((group) => {
@@ -148,14 +194,15 @@ export function HomebrewFields({
                   (f) =>
                     f.group === group &&
                     !(
-                      origin && ["originFeat", "tool", "authoringVersion"].includes(f.key)
+                      (origin || classEditor) &&
+                      ["originFeat", "tool", "authoringVersion"].includes(f.key)
                     )
                 )
                 .map((f) => control(f, data[f.key], (v) => edit(f.key, v)))}
             </div>
           </fieldset>
         );
-        return origin && group === "provenance" ? (
+        return (origin || classEditor) && group === "provenance" ? (
           <details key={group} className="origin-advanced">
             <summary>{label("origin.sourceIdentity")}</summary>
             <p className="homebrew-hint">{label("origin.sourceIdentityHelp")}</p>
@@ -165,6 +212,14 @@ export function HomebrewFields({
           <div key={group}>{content}</div>
         );
       })}
+      {classEditor && (
+        <ClassFields
+          definition={definition}
+          disabled={disabled}
+          onChange={onChange}
+          loadOriginSources={loadOriginSources}
+        />
+      )}
       {origin && (
         <OriginFields
           definition={definition}
@@ -173,11 +228,12 @@ export function HomebrewFields({
           loadOriginSources={loadOriginSources}
         />
       )}
-      {origin ? (
+      {origin || classEditor ? (
         <details className="origin-advanced">
           <summary>{label("origin.advancedMechanics")}</summary>
           <p className="homebrew-hint">{label("origin.advancedHelp")}</p>
           <AdvancedFields
+            guided={classEditor}
             definition={definition}
             disabled={disabled}
             onChange={onChange}
@@ -271,11 +327,13 @@ export function HomebrewFields({
             {diagnostics.map((d, i) => (
               <li key={i}>
                 <strong>{label("diagnostics." + d.code)}</strong> ·{" "}
-                {[...fields, ...effectFields()].some(
-                  (f) => f.key === d.path.split(".").at(-1)
-                )
-                  ? label("fields." + (d.path.split(".").at(-1) ?? "definition"))
-                  : label("fieldIssue")}
+                {classEditor
+                  ? classLocation(d.path)
+                  : [...fields, ...effectFields()].some(
+                        (f) => f.key === d.path.split(".").at(-1)
+                      )
+                    ? label("fields." + (d.path.split(".").at(-1) ?? "definition"))
+                    : label("fieldIssue")}
               </li>
             ))}
           </ul>

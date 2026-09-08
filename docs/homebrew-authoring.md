@@ -162,3 +162,9 @@ the creation name (or `homebrew` when unnamed); generated row identities are rea
 inside source-identity disclosure. The descriptor-driven renderer remains shared with
 other families, and all edits preserve unknown sibling fields. This is template authoring,
 not resource spending, character advancement or combat execution.
+
+Library draft autosave now verifies exact local index/record readback before a send or retry and
+again after attaching the full envelope. Throwing or silently dropped storage writes block sending
+and retain the editable draft. A recovered unknown envelope is never retired by storage failure;
+its original receipt identity must reconcile before new writes. Successful retention clears the
+storage warning. The shared controller remains the only autosave authority for every family.

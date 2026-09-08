@@ -278,3 +278,63 @@ it("retires the local source draft after acknowledged removal even after a missi
   expect(localLibraryDrafts(y.store, "owner")).toEqual([]);
   expect(y.storage.has("folio-library:owner:one")).toBe(false);
 });
+
+it.each(["throws", "drops"])(
+  "does not send an autosave until its envelope survives storage %s",
+  async (mode) => {
+    vi.useFakeTimers();
+    const x = setup();
+    const loading = x.editor.load();
+    x.finish();
+    await loading;
+    const original = x.store.setItem;
+    x.store.setItem = (key, value) => {
+      if (key.startsWith("folio-library:owner:")) {
+        if (mode === "throws") throw Error("storage unavailable");
+        return;
+      }
+      original(key, value);
+    };
+    x.editor.edit({ description: "Recovered class declarations" });
+    await vi.advanceTimersByTimeAsync(700);
+    expect(x.writes).toHaveLength(0);
+    expect(x.editor.state.storageFailed).toBe(true);
+    expect(x.editor.state.draft?.description).toBe("Recovered class declarations");
+    x.store.setItem = original;
+    await x.editor.save();
+    expect(x.writes).toHaveLength(1);
+    expect(x.editor.state.storageFailed).toBe(false);
+    x.editor.dispose();
+  }
+);
+
+it("retains a previously sent unknown envelope when the second storage check fails", async () => {
+  vi.useFakeTimers();
+  const x = setup();
+  const loading = x.editor.load();
+  x.finish();
+  await loading;
+  x.editor.setOnline(false);
+  x.editor.edit({ description: "Previously sent" });
+  x.editor.setOnline(true);
+  const envelope = x.repository.saveIntent(
+    x.saved,
+    { ...x.saved.draft, description: "Previously sent" },
+    "one"
+  );
+  x.editor.state.operation = { status: "unknown", envelope: envelope as never };
+  const original = x.store.setItem;
+  let records = 0;
+  x.store.setItem = (key, value) => {
+    if (key.startsWith("folio-library:owner:") && ++records === 2)
+      throw Error("second write fails");
+    original(key, value);
+  };
+  await x.editor.save();
+  expect(x.writes).toHaveLength(0);
+  expect(x.editor.state.operation).toEqual({ status: "unknown", envelope });
+  x.store.setItem = original;
+  await x.editor.save();
+  expect(x.writes).toEqual([envelope]);
+  x.editor.dispose();
+});

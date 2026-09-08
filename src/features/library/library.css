@@ -635,3 +635,64 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Class declarations share the library form rhythm and keep each level addressable. */
+.class-fields {
+  min-width: 0;
+}
+.class-ability-list {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+}
+.class-ability-list legend {
+  margin-bottom: 0.6rem;
+}
+.class-schedule {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.class-level-index {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.2rem;
+  list-style: none;
+  padding: 0;
+}
+.class-level-index a {
+  color: var(--identity-accent, #9cd7df);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.class-level {
+  border-top: 1px solid var(--identity-line);
+  padding: 1.4rem 0;
+  scroll-margin-top: 7rem;
+}
+.class-level > summary {
+  font-family: "Alegreya Variable", serif;
+  font-size: 1.25rem;
+  color: #d9bc83;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+.class-level-actions {
+  align-items: end;
+  margin: 1.2rem 0;
+}
+.class-level-actions label {
+  max-width: 12rem;
+}
+@media (max-width: 640px) {
+  .class-level-actions {
+    align-items: stretch;
+  }
+  .class-level-actions label {
+    max-width: none;
+  }
+}

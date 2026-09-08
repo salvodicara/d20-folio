@@ -239,3 +239,45 @@ it("defaults new guided program provenance and keeps generated identities read-o
     ).readOnly
   ).toBe(true);
 });
+
+it("keeps forward-parent origin choices selectable and future class parent metadata intact", async () => {
+  const d = initializeDefinition("species");
+  d.payload.data.choices = [
+    {
+      id: "child",
+      name: "Child",
+      count: 1,
+      options: [],
+      parent: { choiceId: "parent", optionId: "one" },
+    },
+    { id: "parent", name: "Parent", count: 1, options: [], parent: null },
+  ];
+  await mount(d);
+  expect(
+    within(required(screen.getAllByLabelText("Available after")[0])).getByRole("option", {
+      name: "Parent",
+    })
+  ).toBeTruthy();
+  cleanup();
+  const c = initializeDefinition("class");
+  c.payload.data.choices = [
+    { id: "parent", name: "Parent", count: 1, options: [], parent: null },
+    { id: "another", name: "Another", count: 1, options: [], parent: null },
+    {
+      id: "child",
+      name: "Child",
+      count: 1,
+      options: [],
+      parent: { choiceId: "parent", optionId: "one", future: { opaque: true } },
+    },
+  ];
+  await mount(c);
+  fireEvent.change(required(screen.getAllByLabelText("Available after")[2]), {
+    target: { value: "another" },
+  });
+  expect(actual().choices[2]?.parent).toEqual({
+    choiceId: "another",
+    optionId: "",
+    future: { opaque: true },
+  });
+});

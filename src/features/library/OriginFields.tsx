@@ -546,7 +546,11 @@ export function OriginFields({
           const field = (key: string, v: JsonValue) => patch({ ...value, [key]: v });
           const parent = row(value.parent),
             parentChoice = row(choices.find((v) => row(v)?.id === parent?.choiceId));
-          const others = choices.slice(0, index).filter((v) => row(v)?.id !== value.id);
+          const others = (
+            ["class", "subclass"].includes(definition.family)
+              ? choices.slice(0, index)
+              : choices
+          ).filter((v) => row(v)?.id !== value.id);
           return (
             <fieldset className="origin-choice" key={text(value.id) || index}>
               <legend>
@@ -567,7 +571,10 @@ export function OriginFields({
                   parent?.choiceId ?? "",
                   ["", ...others.map((v) => text(row(v)?.id))],
                   (choiceId) =>
-                    field("parent", choiceId ? { choiceId, optionId: "" } : null),
+                    field(
+                      "parent",
+                      choiceId ? { ...parent, choiceId, optionId: "" } : null
+                    ),
                   (id) =>
                     id
                       ? text(row(choices.find((v) => row(v)?.id === id))?.name) ||
