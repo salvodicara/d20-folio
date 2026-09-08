@@ -1,21 +1,36 @@
 # Program Status
 
-## P07 owner delegation and integration preflight — 8 September 2026
+## Current frontier — P07 integrated; P08a next (8 September 2026)
 
-The owner accepted implementing the agreed mock and explicitly rejected repeated exhaustive
-per-block screenshot approvals: always deliver screenshots and the final complete prompt, while
-hands-on detailed review waits for the finished app. PRODUCT owns the persistent policy, routed
-through AGENTS/CLAUDE, Golden Rules, Design and worktree/contribution runbooks. This supersedes
-P07’s previous pending owner screenshot/integration gate; it is not a claim that every control was
-personally inspected. P07 runtime6d0368ce22a6213faa9317ae6ee20cf15098ed54 remains unchanged.
+Astra completed P07 implementation, source/UI/paper review, real optimized runtime evidence and
+fresh integration gates. The owner’s8 September clarification gives standing approval to implement
+the agreed mock, independently verify, always send screenshots, integrate reviewed green V2 work
+and deliver the complete final prompt. Do not ask for repeated exhaustive screenshot approval.
+Detailed hands-on owner review happens on the finished usable app. PRODUCT owns this policy,
+routed through AGENTS/CLAUDE, Golden Rules, Design and runbooks; no personal pixel-by-pixel
+inspection is claimed. Separate production/deployment, real-data migration and cost gates remain.
 
-Fresh fetch main/v2 and rebase verified on8 September: origin/v2 remains5916356220adb6f5875c7af676f3ddd3bde003a6,
-origin/main9b06b75313d7ee353c4072a20397c3092707648e; rebase no-op. Astra owns final integration
-preflight, hooked explicit HEAD:v2 push, remote proof and clean owned-worktree cleanup. No P08
-execution, deployment or production mutation. Fresh integration just ci exited0:883 app files/19460 tests and7 Functions files/129 tests,
-plus typecheck/lint/build/PWA. Protected40 source/rules/test files,78 images,10 PDFs and268
-optimized build files are unchanged. Independent owner-policy review is closed; explicit push and
-remote proof are next.
+Fresh fetch found origin/v2 at5916356220adb6f5875c7af676f3ddd3bde003a6; rebase was a no-op.
+Fresh integration just ci exited0:883 app files/19460 tests,7 Functions files/129 tests,
+typecheck/strict lint/build/PWA. Runtime6d0368ce22a6213faa9317ae6ee20cf15098ed54 and40 protected
+source/rules/test files,78 images,10 PDFs and268 optimized files stayed unchanged. Full rules250/11
+with zero skips and SRD13879/704 with2 intentional private-loader skips remain applicable by hash.
+Explicit hooked HEAD:v2 push succeeded; remote3ba6061ca1792172223de34b11632a6621e508fc verified.
+Main remains9b06b75313d7ee353c4072a20397c3092707648e. No deploy or production changes.
+
+Model/persistence workers were removed cleanly after exact patch-equivalence proof against remote.
+Owned preview5180/Auth19099/Firestore18080/Storage19199/hub14400/log14500/ws9151 are stopped;
+listener checks preserve unrelated Firestore86001/8080. Shared checkout retains only preexisting
+.playwright-cli, private pack stays clean/read-only b6073dd0. This final closure commit changes only
+documents/changeset; its final remote SHA and clean parent/control removal are recorded externally in
+/Users/salvatoredicara/Workspace/Codex/d20-folio-p07-evidence/integration-preflight/RECEIPT.md before
+successor delivery. Source/runtime evidence and previous failed runs remain independently retained.
+
+AGENT-PROGRAM selects P08a — class/subclass model/schema/codec — as the first incomplete row,
+with P07 dependency complete. P08a is not started here; no P08b/c giant editor, wizard or engine
+execution is included. The complete successor carries standing delivery delegation, full custom
+same-engine automation/editable-combat contract, cross-app clarity, Astra0.9.3+r2/BG3/D&D2024,
+new-application authority, real verification and recursive one-block delivery.
 
 ## Historical P07 candidate before the owner delegation (2026-09-08)
 

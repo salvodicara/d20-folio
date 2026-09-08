@@ -101,8 +101,9 @@ External /Users/salvatoredicara/Workspace/Codex/d20-folio-p07-evidence owns scri
 - [x] Run the complete demo rules suite with no skipped tests.
 - [x] Final just ci and ci-srd-only after the print/no-op changes; verify the unchanged catalogue
       seam and frozen candidate. Final presentation-only followups pass the composed gate.
-- [ ] Present only indispensable P07 owner visual/integration verdict after autonomous work.
-- [ ] With explicit verdict, fresh fetch/rebase/gates/hooked HEAD:v2, remote proof, owned cleanup,
+- [x] Deliver curated actual screenshots; apply the owner’s8 September standing V2 delivery
+      delegation, which supersedes the previous per-block exhaustive approval wait.
+- [x] With standing owner delegation, fresh fetch/rebase/gates/hooked HEAD:v2, remote proof, owned cleanup,
       full handoff and single complete recursive next prompt. Never execute next block.
 
 ## Mandatory preflight refinements
