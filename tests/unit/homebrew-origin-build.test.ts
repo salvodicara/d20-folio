@@ -1,3 +1,5 @@
+// Repository transports are synthetic in this unit lane; production Firebase bootstrap stays isolated.
+vi.mock("@/lib/firebase", () => ({}));
 import { describe, expect, it, vi } from "vitest";
 import type { Firestore } from "firebase/firestore";
 import { SessionController } from "../../src/lib/identity/session";

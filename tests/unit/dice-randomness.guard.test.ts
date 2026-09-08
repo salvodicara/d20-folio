@@ -14,6 +14,14 @@ const CALL = /\b(?:Math\.random|crypto\.getRandomValues|crypto\.randomUUID)\s*\(
 
 /** Every production file that calls a random source, with the reason it may. */
 const ALLOWED: Readonly<Record<string, string>> = {
+  "src/features/library/OriginBuild.tsx":
+    "stable acquired selection identity; never dice results",
+  "src/features/library/OriginFields.tsx":
+    "stable choice and option identities; never dice results",
+  "src/features/library/origin-draft.ts":
+    "append-only draft/original recovery identities; never dice results",
+  "src/lib/homebrew/origin-build-repository.ts":
+    "stable build intent identity retained across retries; never dice results",
   "src/lib/homebrew/preparation-repository.ts":
     "stable preparation-copy and operation identities retained across retries; never dice results",
   "src/features/library/AdvancedFields.tsx":

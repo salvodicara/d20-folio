@@ -23,21 +23,21 @@ Pinned bootstrap --run for commands/hooks. Every commit owner-only with changese
 Owner: isolated authoring worker. Files src/lib/homebrew/origins.ts, origin-build.ts,
 model.ts, advanced.ts, conformance.ts; tests/unit/homebrew-origins.test.ts;
 docs/homebrew-origins.md and changeset. Keep BaseFamily restricted to four.
-Interfaces: originFields/collections feed existing authoring controls/readers;
+Interfaces: originFields and shared advancedCollections feed authoring controls/readers;
 OriginBuild/OriginSelection model described in spec; parseOriginBuild, composeOriginBuild,
 validateOriginSelection expose safe shape, attributable facts and path/code diagnostics.
 Exact exported contract is documented before parallel persistence/UI implementation starts.
 
-- [ ] Write red behavioral tests: three named initialized families conform; named background
+- [x] Write red behavioral tests: three named initialized families conform; named background
       ability distribution +2 strength/+1 wisdom derives exactly those increases; replacing
       parent choice retains answers but excludes inactive child contributions.
-- [ ] Run focused test through bootstrap --run and retain expected failure in evidence.
-- [ ] Implement shared nine-family dispatcher, typed prerequisite/benefit/choice declarations,
+- [x] Run focused test through bootstrap --run and retain expected failure in evidence.
+- [x] Implement shared nine-family dispatcher, typed prerequisite/benefit/choice declarations,
       finite source/version dependencies, ordinary/constrained cascade composition and diagnostics.
-- [ ] Test duplicate/cyclic references, unknown predicate/option/kind/version, invalid counts,
+- [x] Test duplicate/cyclic references, unknown predicate/option/kind/version, invalid counts,
       distinct background abilities, max20 normal path, repeatability and explicit exceptions.
-- [ ] Test portable unknown roundtrip and immutable snapshots using actual codec, no RNG/engine.
-- [ ] Run focused P05/P06/P07 regressions/typecheck; reconcile owner doc; hooked commit.
+- [x] Test portable unknown roundtrip and immutable snapshots using actual codec, no RNG/engine.
+- [x] Run focused P05/P06/P07 regressions/typecheck; reconcile owner doc; hooked commit.
 
 ## Task 2 — Atomic persistent origin build
 
@@ -45,17 +45,18 @@ Owner: isolated persistence worker after model contract. Files origin-build-repo
 firestore.rules; tests/unit/homebrew-origin-build.test.ts and
 tests/rules/folio-origins.rules.test.ts; docs/homebrew-origin-build.md and changeset.
 Consumes OriginBuild/OriginSelection; produces createOriginBuildRepository(db,session), read/watch/
-watchIssues, saveIntent(character,base,selections), commit/reconcile. Envelope kind origin-build;
+watchIssues, saveIntent(character,base,targetId,selectionOrNull), commit/reconcile. Envelope kind origin-build;
 exact character ref/base/selections and original character authority, revision+1 and lastOperation.
 
-- [ ] Red parser/intent tests and real demo ACL/CAS tests, existing P03 controller retained.
-- [ ] Read exact receipt first; compare character and full aggregate; verify new immutable owned
+- [x] Red parser/intent tests and real demo ACL/CAS tests, existing P03 controller retained.
+- [x] Read exact receipt first; compare character and full aggregate; verify new immutable owned
       versions; atomically write only origins/build and matching receipt, one SDK attempt.
-- [ ] Prove detached receipt/sibling/source spoof/admin-consent rejected, authorized reader needs
+- [x] Prove detached receipt/sibling/source spoof/admin-consent rejected, authorized reader needs
       no library access, blocked/revoked/archived scope fails appropriately, duplicate apply once.
-- [ ] Prove stale concurrent saves retain base, lost response exact reconciliation, reload no
-      replay, A→B→A invalidation; unknown originals exposed and archived before replacement.
-- [ ] Green focused unit/full demo rules including six copies/recovery; doc and hooked commit.
+- [x] Prove stale concurrent saves retain base, lost response exact reconciliation, reload no
+      replay and A→B→A invalidation. Malformed remote originals stay recoverable and unavailable;
+      incompatible local drafts require exact archive/read-back before replacement.
+- [x] Green focused unit/full demo rules including six copies/recovery; doc and hooked commit.
 
 ## Task 3 — Guided editors, picker and build reader
 
@@ -64,35 +65,42 @@ HomebrewFields.tsx, HomebrewReader.tsx, LibraryEditor.tsx, homebrew-labels.ts, l
 src/features/identity/IdentityApp.tsx/IdentitySheet.tsx; src/i18n/{en,it}/ui/homebrewV2.json;
 focused tests/unit/homebrew-origin-ui.test.tsx; DESIGN/Architecture/schema owner references.
 
-- [ ] Red actual component tests for named option controls, parent-child preservation, unmet
+- [x] Red actual component tests for named option controls, parent-child preservation, unmet
       requirement explanation/exception and explicit build confirmation; keep actual hook/controller.
-- [ ] Guide species/feat/background fields with selects, counts, named library/prior-choice
+- [x] Guide species/feat/background fields with selects, counts, named library/prior-choice
       references; advanced identity metadata in disclosure. Reuse common programs/resources/effects.
-- [ ] Picker loads owned stable versions, displays detail, retains draft/filter/cause context,
+- [x] Picker loads owned stable versions, displays detail, retains draft/filter/cause context,
       reveals child choices, previews attributable consequences and records explicit exceptions.
-- [ ] Build reader consumes persisted aggregate, compares chosen versions and reconciles obsolete
+- [x] Build reader consumes persisted aggregate, compares chosen versions and reconciles obsolete
       answers without ghost contributions; remove/replace preserves unaffected selections.
-- [ ] Local drafts keep original base; envelope save/readback before send; conflict review and
+- [x] Local drafts keep original base; envelope save/readback before send; conflict review and
       exact unknown reconciliation; prevent stale callback clearing newer drafts/pending state.
-- [ ] Shared portable/print reader includes all typed declarations and unknown originals.
-- [ ] Focused green with EN/IT, offline, lifecycle/storage failures; doc/changeset/hooked commit.
+- [x] Shared portable/print reader includes all typed declarations and unknown originals.
+- [x] Focused green with EN/IT, offline and lifecycle/storage failures; owner docs reconciled.
+- [x] Complete final candidate changeset and hooked commit after autonomous verification.
 
 ## Task 4 — Current optimized runtime and paper
 
 Owner Astra; independent read-only reviewers inspect actual source and artifacts.
 External /Users/salvatoredicara/Workspace/Codex/d20-folio-p07-evidence owns scripts/logs/manifests.
 
-- [ ] Configure explicit synthetic demo Auth19099/Firestore18080/Storage19199, preview5180;
+- [x] Configure explicit synthetic demo Auth19099/Firestore18080/Storage19199, preview5180;
       verify ownership first and preserve preexisting Firestore8080.
-- [ ] Run just ci optimized build. Actual Google-emulator UI login in independent clients;
+- [x] Run an optimized just ci candidate. Actual Google-emulator UI login in independent clients;
       three-family create/edit/version/offer/accept/revoke/reuse and backend receipt audits.
-- [ ] Run ordinary/boundary/composition including background→feat→choice, exceptions and actual
+- [x] Run ordinary/boundary/composition including background→feat→choice, exceptions and actual
       build persistence; concurrent/lost response/unknown reload/offline/ABA/version updates.
-- [ ] Export/import each family typed/unknown/future/incompatible content, recover exact original.
-      Save long and normal PDFs and inspect every page; retain failures and affected reruns.
-- [ ] Capture EN/IT1440/1280/390 current runtime against family mocks; curate actual chat images.
-- [ ] Independent spec/code/ACL/UI/paper review; resolve actual findings and rerun affected paths.
-- [ ] Final just ci/full demo rules/ci-srd-only when seam affected; manifest precise candidate.
+      Completed phases compose across retained runs; failed attempts remain failed evidence.
+- [x] Export/import each family typed/unknown/future/incompatible content and recover exact original.
+- [x] Complete long and six ordinary EN/IT PDFs and independent inspection of every page;
+      retain failures and affected reruns.
+- [x] Capture EN/IT1440/1280/390 current runtime against family mocks; curate reference/current
+      images for the owner verdict.
+- [x] Independent spec/code/ACL/UI source review; resolve findings and rerun affected paths.
+- [x] Complete independent visual/paper artifact review and any affected reruns.
+- [x] Run the complete demo rules suite with no skipped tests.
+- [x] Final just ci and ci-srd-only after the print/no-op changes; verify the unchanged catalogue
+      seam and frozen candidate. Final presentation-only followups pass the composed gate.
 - [ ] Present only indispensable P07 owner visual/integration verdict after autonomous work.
 - [ ] With explicit verdict, fresh fetch/rebase/gates/hooked HEAD:v2, remote proof, owned cleanup,
       full handoff and single complete recursive next prompt. Never execute next block.

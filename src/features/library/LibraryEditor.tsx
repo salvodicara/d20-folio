@@ -229,6 +229,30 @@ function EditorBody({
           definition={draft}
           disabled={locked}
           onChange={(payload) => editor.edit({ payload })}
+          loadOriginSources={async () => {
+            const check = session.ticket();
+            const entries = await repository.list();
+            check();
+            const versions = await Promise.all(
+              entries
+                .filter(
+                  (entry) =>
+                    entry.id !== id &&
+                    entry.stableVersion &&
+                    ["feat", "feature", "spell", "weapon", "equipment"].includes(
+                      entry.draft.family
+                    )
+                )
+                .map((entry) =>
+                  repository.readVersion(
+                    { ownerUid: entry.ownerUid, id: entry.id },
+                    entry.stableVersion
+                  )
+                )
+            );
+            check();
+            return versions;
+          }}
         />
         <div className="identity-actions">
           {state.dirty && !conflict && (

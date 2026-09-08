@@ -129,6 +129,56 @@ export function useLibraryOperation<
     preparing,
     busy: preparing || state?.status === "pending" || state?.status === "unknown",
     retry: () => (state ? dispatch(state.envelope, true) : Promise.resolve()),
+    reviewSettled: async (): Promise<boolean> => {
+      if (!state) return true;
+      if (preparing || !["conflict", "rejected", "invalidated"].includes(state.status))
+        return false;
+      const check = session.ticket();
+      setPreparing(true);
+      try {
+        if (state.status === "invalidated") {
+          const receipt = await repository.reconcile(state.envelope);
+          check();
+          if (!live.current) return false;
+          if (receipt) {
+            await ack.current(state.envelope);
+            check();
+            const saved = JSON.parse(sessionStorage.getItem(storageKey) ?? "null") as {
+              envelope?: unknown;
+            } | null;
+            if (saved && equal(saved.envelope, state.envelope)) {
+              sessionStorage.removeItem(storageKey);
+              if (sessionStorage.getItem(storageKey) !== null) throw Error("storage");
+            }
+            detach.current();
+            controller.current = null;
+            currentState.current = null;
+            setState(null);
+            return false;
+          }
+        }
+        check();
+        const saved = JSON.parse(sessionStorage.getItem(storageKey) ?? "null") as {
+          envelope?: unknown;
+        } | null;
+        if (saved && !equal(saved.envelope, state.envelope))
+          throw Error("newer-operation");
+        if (saved) sessionStorage.removeItem(storageKey);
+        if (sessionStorage.getItem(storageKey) !== null) throw Error("storage");
+        detach.current();
+        controller.current?.invalidate();
+        controller.current = null;
+        currentState.current = null;
+        setState(null);
+        setError(false);
+        return true;
+      } catch {
+        if (live.current) setError(true);
+        return false;
+      } finally {
+        if (live.current) setPreparing(false);
+      }
+    },
     run: async (make: () => O | null | Promise<O | null>) => {
       if (preparing || state?.status === "pending" || state?.status === "unknown") return;
       const check = session.ticket();

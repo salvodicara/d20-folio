@@ -32,6 +32,15 @@ vi.mock("firebase/auth", () => ({
   signInWithPopup: vi.fn(),
   signOut: vi.fn(),
 }));
+vi.mock("@/lib/homebrew/origin-build-repository", () => ({
+  createOriginBuildRepository: () => ({
+    watch: (_ref: unknown, next: (value: null) => void) => {
+      next(null);
+      return () => {};
+    },
+    watchIssues: () => () => {},
+  }),
+}));
 vi.mock("@/lib/firebase", () => ({ auth: {}, db: {}, storage: {} }));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({

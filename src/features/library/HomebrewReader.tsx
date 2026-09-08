@@ -1,5 +1,7 @@
 import { advancedCollections } from "@/lib/homebrew/advanced";
 import { AdvancedReader } from "./AdvancedFields";
+import { OriginReader } from "./OriginReader";
+import { isOriginFamily } from "@/lib/homebrew/origins";
 import type { LibraryDefinition, JsonValue } from "@/lib/library/model";
 import { conformDefinition } from "@/lib/homebrew/conformance";
 import { authoringFields, effectFields } from "@/lib/homebrew/model";
@@ -7,9 +9,13 @@ import { authoringFamily, useHomebrewLabel } from "./homebrew-labels";
 export function HomebrewReader({
   definition,
   printable = false,
+  originBundle,
+  included = false,
 }: {
   definition: LibraryDefinition;
   printable?: boolean;
+  originBundle?: Record<string, JsonValue>;
+  included?: boolean;
 }) {
   const label = useHomebrewLabel();
   const data = definition.payload.data;
@@ -37,13 +43,24 @@ export function HomebrewReader({
       </div>
     );
   const fields = authoringFields(definition.family);
-  const diagnostics = conformDefinition(definition);
+  const diagnostics = included ? [] : conformDefinition(definition);
+  const originContent =
+    isOriginFamily(definition.family) ||
+    (!!originBundle &&
+      ["choices", "benefits", "prerequisites"].some((key) => Object.hasOwn(data, key)));
   const collectionKeys = advancedCollections(definition.family).map((c) => c.key);
   const retainedFields = Object.fromEntries(
     Object.entries(data).filter(
       ([key, value]) =>
         !fields.some((field) => field.key === key) &&
-        !["effects", "authoringVersion", ...collectionKeys].includes(key) &&
+        ![
+          "effects",
+          "authoringVersion",
+          ...collectionKeys,
+          ...(originContent
+            ? ["prerequisites", "benefits", "choices", "dependencies", "equipment"]
+            : []),
+        ].includes(key) &&
         !(key === "unsupported" && Array.isArray(value) && value.length === 0)
     )
   );
@@ -57,17 +74,35 @@ export function HomebrewReader({
           <h4>{label("groups." + group)}</h4>
           <dl className="homebrew-facts">
             {fields
-              .filter((f) => f.group === group)
+              .filter(
+                (f) =>
+                  f.group === group &&
+                  !(isOriginFamily(definition.family) && f.key === "originFeat")
+              )
               .map((f) => (
                 <div key={f.key} className={f.multiline ? "homebrew-prose" : undefined}>
                   <dt>{label("fields." + f.key)}</dt>
-                  <dd>{value(data[f.key], f.options) || "—"}</dd>
+                  <dd>
+                    {isOriginFamily(definition.family) &&
+                    f.key === "tool" &&
+                    typeof data.tool === "string"
+                      ? label("origin.catalog.tool." + data.tool)
+                      : value(data[f.key], f.options) || "—"}
+                  </dd>
                 </div>
               ))}
           </dl>
         </section>
       ))}
       <AdvancedReader definition={definition} printable={printable} />
+      {originContent && (
+        <OriginReader
+          definition={definition}
+          printable={printable}
+          bundle={originBundle}
+          included={included}
+        />
+      )}
       {!Array.isArray(data.effects) && (
         <details open={printable}>
           <summary>{label("preservedFields")}</summary>

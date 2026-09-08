@@ -1,5 +1,34 @@
 # The Locked Character Document Schema (v3)
 
+## P07 current origins and imported baseline (2026-09-08)
+
+`folioAccounts/{uid}/characters/{id}/origins/build` is the single mutable authority for the
+character's selected species, background and feats. `src/lib/homebrew/origin-build.ts` owns its
+schema-1 codec and pure projection; [Origin build persistence](homebrew-origin-build.md) owns the
+operation/rules boundary. Each of at most32 roots pins an immutable library version and its flat
+included closure, stable acquisition ordinal, path-keyed answers and explicit rule exceptions.
+A confirmed operation changes exactly one root and preserves every unrelated root. This is not
+inventory state, character growth, a wizard or an Encounter store.
+
+Inactive/obsolete answers remain stored but contribute no current facts and may be retained on
+explicit confirmation. Changing a pinned source snapshot moves prior exception reasons under
+`inactive-history/`; they cannot authorize any current `root/` requirement. A new version requires
+a new explicit exception decision. Repeatable feat reuse appends an acquisition unless the user
+explicitly reviews an existing root; replacement preserves its ordinal.
+
+The P02 imported build stays sealed. Its `abilities` are base scores; the current projection adds
+unreplaced imported background ASI or the selected replacement background distribution exactly
+once. Missing base scores remain unknown. A selected species replaces imported species-origin
+facts; a selected background replaces imported background-origin facts. Manual tool/language IDs
+remain non-origin facts. Ambiguous imported skills or casting attribution are shown in a labelled
+baseline disclosure and cannot certify a new prerequisite. Removal explicitly previews restoration
+of the corresponding imported origin. Malformed origin aggregates block the current-origin view
+and expose exact recoverable originals rather than falling back silently to the imported baseline.
+
+These schema/projection changes require the six-copy composed migration/recovery lane. No source
+character or private pack is rewritten by the origin editor. Future same-engine custom combat
+execution, in-use modification and causal undo remain separate required runtime proof.
+
 ## P02 new identity documents (2026-09-06)
 
 This section owns the new application's identity/persistence boundary. The schema-3 and

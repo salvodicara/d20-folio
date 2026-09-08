@@ -253,3 +253,33 @@ aggregate. New insertion appends max+1, replacement/update retains its ordinal; 
 and lexical UUID ordering never choose prerequisite order. Dependency edges retain authored order.
 Test later unrelated insertion does not alter an earlier acquisition context. Removal preserves
 remaining ordinals rather than renumbering them. Rules compare all unchanged roots structurally.
+
+## Implemented review resolutions
+
+Inactive/obsolete answers are preserved advisory diagnostics and never contribute facts while
+inactive. Explicit build confirmation may retain them; deletion is optional and deliberate. Other
+invalid/unsupported/unresolved acquisition diagnostics remain blocking. Missing abilities are
+nullable, not invented zeroes. Explicit typed spellcasting policy can certify later casting
+prerequisites; an arbitrary known spell alone cannot. Nonrepeatable identity uses source/edition
+and canonical homebrew provenance, remaining stable across library revisions and granted copies.
+A named acquired-feat prerequisite can pin a bundled dependency to that same identity.
+
+Rules enforce bounded shapes and strict actor/target/source/CAS/receipt coupling; full nested
+answer/exception/D&D validation belongs to the codec within the documented evaluator budget.
+Raw owner SDK writes can corrupt their own authoring values but cannot grant ACL authority;
+subsequent reads preserve incompatible originals and block unsafe use. Legal compact32-root and
+32-definition closure combinations are tested separately from oversized multibyte combinations,
+which reject before send and preserve drafts. Every complete operation and receipt is budgeted.
+
+**Explicit review and converged drafts.** Pending/unknown operation outcomes are never discarded.
+Reviewing a settled outcome retires only its exact persisted envelope with read-back. Invalidated
+operations reconcile first: a matching receipt acknowledges and retires that old operation without
+creating a fresh intent, while a newer envelope remains intact. If reviewed draft selections already
+match the base, confirmation persists the draft, reads the server aggregate under the current session
+ticket, and requires exact equality with that base before closing the exact draft. This no-op creates
+neither an operation nor a receipt; a concurrent server change or read failure preserves recovery.
+
+Changing a source snapshot retains previous exception reasons under the disjoint `inactive-history/`
+namespace, never as consent for a current `root/` rule. Repeated updates do not prefix history again.
+Version loading is fenced by the session, current source snapshot and request generation. Repeatable
+feat reuse appends by default; explicit review edits the selected acquisition and retains its ordinal.

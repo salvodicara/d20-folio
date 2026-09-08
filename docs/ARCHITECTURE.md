@@ -3938,3 +3938,32 @@ including the DM, can read this grammar without accessing the owner's private li
 Template replacement preserves quantity, remaining charges/uses, prepared, equipped and attuned
 state. State edits retain their original base locally; concurrent changes require explicit review.
 See [authoring](homebrew-authoring.md) and [instances](homebrew-instances.md) for exact bounds.
+
+## P07 origin build presentation boundary
+
+`origin-build.ts` is the pure codec/composition/projection seam for species, feats and backgrounds;
+`origin-build-repository.ts` is the single atomic persistence seam. `OriginFields` edits the P04
+payload, while `OriginBuildEditor` retains original base/choices and uses the existing P03
+`useLibraryOperation` envelope/receipt controller. No second queue or runtime is introduced.
+`IdentityApp` owns the inspected character's single origin subscription and passes the same
+projection to the heading, sheet and origin reader. The original imported character remains the
+repository authority input; projected values are never written back as imported scores or identity.
+
+Flat bundled definitions are rendered once through the common reader, with references resolved
+against the same included table. Standard tool/language selectors consume existing public SRD
+catalogue IDs; custom identifiers require an explicit explained route. JSON export/import and
+print retain unknown declarations; these are authoring proofs, not future engine execution proofs.
+
+P07's explicit build review retires only the exact settled operation envelope after local
+read-back. Pending/unknown outcomes cannot be discarded. An invalidated operation is reconciled
+first; an existing receipt finalizes the old acknowledgment, retires only its exact envelope
+after read-back, and resets the settled controller without creating another intent. A newer
+envelope is preserved. If explicit latest-build review converges to unchanged selections, the
+editor first persists its draft and verifies the exact base with a server read under the current
+session ticket. Only that matching result closes the exact draft without an operation or receipt;
+a changed server base or failed read keeps recovery available.
+Version-loading callbacks are fenced by both session and selected source generation. Reusing a
+repeatable feat appends a new acquisition; reviewing an existing target edits only that root.
+A source change retains previous exception reasons under the disjoint `inactive-history/` path
+namespace. These historical exceptions cannot match current `root/` rules and require a new
+explicit decision for the new version; repeated updates do not prefix history again.

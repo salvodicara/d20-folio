@@ -477,6 +477,13 @@
   .homebrew-print .homebrew-facts div {
     break-inside: avoid;
   }
+  .homebrew-print .origin-read-choice,
+  .homebrew-print .origin-read-option {
+    break-inside: avoid;
+  }
+  .homebrew-print h5 {
+    break-after: avoid;
+  }
   .homebrew-print .homebrew-facts .homebrew-prose {
     break-inside: auto;
   }
@@ -528,4 +535,103 @@
   min-height: 44px;
   cursor: pointer;
   color: #d9bc83;
+}
+
+.origin-row,
+.origin-choice,
+.origin-option {
+  min-width: 0;
+  border: 0;
+  border-top: 1px solid var(--identity-line);
+  padding: 20px 0;
+  margin: 18px 0;
+}
+.origin-row > legend,
+.origin-choice > legend,
+.origin-option > legend {
+  font:
+    600 16px/1.5 "Inter Variable",
+    sans-serif;
+  padding-right: 12px;
+  margin: 0;
+}
+.origin-option {
+  padding-left: 20px;
+  border-left: 2px solid var(--identity-line);
+}
+.origin-row > button,
+.origin-option > button {
+  margin-top: 16px;
+}
+.origin-source-picker {
+  display: grid;
+  gap: 16px;
+}
+.origin-source-picker > button {
+  justify-self: start;
+}
+.origin-answer-option {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 14px;
+  align-items: start;
+  padding: 14px 0;
+}
+.identity-app .origin-answer-option input,
+.identity-app .origin-equipment input {
+  width: 18px;
+  min-height: 18px;
+  flex: none;
+  margin-top: 4px;
+  accent-color: var(--identity-accent);
+}
+.origin-answer-option > span {
+  display: grid;
+  gap: 5px;
+}
+.origin-answer-option > span > span {
+  color: var(--identity-muted);
+  font-size: 14px;
+}
+.origin-advanced {
+  border-top: 1px solid var(--identity-line);
+  padding: 22px 0;
+  margin: 24px 0;
+}
+.origin-advanced > summary {
+  cursor: pointer;
+  font:
+    500 24px/1.4 "Alegreya Variable",
+    serif;
+}
+.origin-issue {
+  margin: 18px 0;
+}
+.origin-issue code {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.origin-selected {
+  border-top: 1px solid var(--identity-line);
+  padding: 22px 0;
+}
+.origin-reader h5 {
+  font:
+    600 17px/1.5 "Inter Variable",
+    sans-serif;
+  margin: 20px 0 8px;
+}
+.origin-preserved pre,
+.origin-reader pre {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-size: 12px;
+}
+@media (max-width: 600px) {
+  .origin-option {
+    padding-left: 12px;
+  }
+  .origin-row .homebrew-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

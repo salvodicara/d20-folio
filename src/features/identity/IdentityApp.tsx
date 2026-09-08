@@ -4,6 +4,12 @@ import { createPreparationRepository } from "@/lib/homebrew/preparation-reposito
 import { HomebrewReuse } from "@/features/library/HomebrewReuse";
 import { HomebrewSheet } from "@/features/library/HomebrewSheet";
 import { createInstanceRepository } from "@/lib/homebrew/instance-repository";
+import { createOriginBuildRepository } from "@/lib/homebrew/origin-build-repository";
+import { projectOriginCharacter } from "@/lib/homebrew/origin-build";
+import { isOriginFamily } from "@/lib/homebrew/origins";
+import { OriginBuildPanel } from "@/features/library/OriginBuild";
+import { useOriginBuild } from "@/features/library/useOriginBuild";
+import { OriginReuse } from "@/features/library/OriginReuse";
 import type { LibraryVersion } from "@/lib/library/model";
 import { LibraryWorkspace } from "@/features/library/LibraryWorkspace";
 import { createLibraryRepository } from "@/lib/library/repository";
@@ -148,6 +154,7 @@ function AuthenticatedIdentity({ user }: { user: User }) {
   const [epoch, setEpoch] = useState(0);
   const library = useMemo(() => createLibraryRepository(db, session), [session]);
   const instances = useMemo(() => createInstanceRepository(db, session), [session]);
+  const origins = useMemo(() => createOriginBuildRepository(db, session), [session]);
   const preparations = useMemo(() => createPreparationRepository(db, session), [session]);
   const [preparationId, setPreparationId] = useState("encounter");
   const [reuse, setReuse] = useState<LibraryVersion | null>(null);
@@ -160,6 +167,23 @@ function AuthenticatedIdentity({ user }: { user: User }) {
   const [roster, setRoster] = useState<RosterEntry[]>([]);
   const [rosterNames, setRosterNames] = useState<Record<string, string>>({});
   const [inspected, setInspected] = useState<Readonly<FolioCharacter> | null>(null);
+  const originBuild = useOriginBuild(inspected, origins, session, epoch);
+  const originProjection = useMemo(
+    () =>
+      inspected &&
+      !originBuild.loading &&
+      !originBuild.error &&
+      !originBuild.issues.length
+        ? projectOriginCharacter(inspected, originBuild.base)
+        : undefined,
+    [
+      inspected,
+      originBuild.loading,
+      originBuild.error,
+      originBuild.issues.length,
+      originBuild.base,
+    ]
+  );
   const [inspectionRef, setInspectionRef] = useState<CharacterRef | null>(null);
   const [privateNotes, setPrivateNotes] = useState("");
   const [dmNotes, setDmNotes] = useState("");
@@ -416,6 +440,9 @@ function AuthenticatedIdentity({ user }: { user: User }) {
       activeId={scope.activeCharacterId}
       campaignId={scope.campaignId}
       inspected={inspected}
+      originProjection={originProjection}
+      originLoading={originBuild.loading}
+      originUnavailable={originBuild.error || originBuild.issues.length > 0}
       portraits={portraits}
       privateNotes={privateNotes}
       dmNotes={dmNotes}
@@ -528,6 +555,20 @@ function AuthenticatedIdentity({ user }: { user: User }) {
                   window.location.hash = "campaign";
                 }}
               />
+            ) : reuse && isOriginFamily(reuse.definition.family) ? (
+              <OriginReuse
+                key={epoch}
+                version={reuse}
+                characters={characters}
+                repository={origins}
+                library={library}
+                session={session}
+                onClose={() => setReuse(null)}
+                onOpen={(character) => {
+                  clearInspection();
+                  setInspectionRef(character);
+                }}
+              />
             ) : (
               reuse && (
                 <HomebrewReuse
@@ -566,13 +607,23 @@ function AuthenticatedIdentity({ user }: { user: User }) {
       }
       homebrewSheet={
         inspected && (
-          <HomebrewSheet
-            key={`${epoch}:${inspected.ownerUid}:${inspected.id}`}
-            character={inspected}
-            repository={instances}
-            library={library}
-            session={session}
-          />
+          <>
+            <OriginBuildPanel
+              key={`origin:${epoch}:${inspected.ownerUid}:${inspected.id}`}
+              character={inspected}
+              loaded={originBuild}
+              repository={origins}
+              library={library}
+              session={session}
+            />
+            <HomebrewSheet
+              key={`${epoch}:${inspected.ownerUid}:${inspected.id}`}
+              character={inspected}
+              repository={instances}
+              library={library}
+              session={session}
+            />
+          </>
         )
       }
       privateNoteEditor={

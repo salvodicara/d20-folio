@@ -163,6 +163,34 @@ components:
 > reconciliation during the Tactical Codex cutover; it is evidence, not target authority, and is
 > deleted when the corresponding surface migrates.
 
+## P07 guided origins and build review (2026-09-08)
+
+Species, feat and background editors follow their specific Astra0.9.3 surfaces inside the approved
+r2 shell. Named options, standard tool/language selectors, explicit units, requirement groups and
+parent-option selectors keep internal identities out of ordinary authoring. Source/mechanic
+identity and future action/resource declarations remain available through labelled disclosure.
+Custom proficiency references use an explicit explained custom route; ordinary selections persist
+stable catalogue IDs, never translated display labels.
+
+A recorded library version is read before inclusion; included content carries its full frozen
+closure and is presented with the common structured reader. Character reuse names the target,
+shows requirements and cascading choices, and previews before/after current facts. Conflicts show
+saved versus proposed answers, exceptions and contributions, including on the same source version.
+Inactive/obsolete answers remain visible and noncontributing; explicit confirmation can retain
+history without deleting it. Conditional choices name the parent choice and option that activate
+them. Retained answers identify the choice when resolvable, otherwise show the exact stored path
+and values; each discard action identifies its own answer. Character background help explains the
+pinned feat and equipment entitlement without instructing the player to edit the library source.
+A different requested edit offers resume or keep-and-switch, with
+kept drafts available for later recovery. Source updates never propagate to other copies.
+
+The sheet and inspected identity consume one origin subscription and projection. Superseded or
+unattributed imported facts remain under a labelled baseline disclosure, never presented as active
+alongside replacements. Removal previews both restored baseline facts and affected dependent
+selections. P07 screenshots and real optimized journeys require their own owner gate; P06 broad
+interim acceptance does not approve these new pixels. Custom authoring prepares the shared engine;
+it does not prove combat automation, editable in-use facts or causal undo.
+
 ## P02 implemented surface and reference
 
 The new identity surface uses approved Astra full-lab 0.9.3 account, roster and invitation

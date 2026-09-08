@@ -1,4 +1,6 @@
 import { AdvancedFields } from "./AdvancedFields";
+import { OriginFields, type OriginFieldsProps } from "./OriginFields";
+import { isOriginFamily } from "@/lib/homebrew/origins";
 import { Checkbox } from "@/components/ui/selection";
 import { authoringFamily, useHomebrewLabel } from "./homebrew-labels";
 import type { LibraryDefinition, JsonValue } from "@/lib/library/model";
@@ -14,10 +16,12 @@ export function HomebrewFields({
   definition,
   disabled,
   onChange,
+  loadOriginSources,
 }: {
   definition: LibraryDefinition;
   disabled: boolean;
   onChange: (payload: LibraryDefinition["payload"]) => void;
+  loadOriginSources?: OriginFieldsProps["loadOriginSources"];
 }) {
   const label = useHomebrewLabel();
   if (!authoringFamily(definition.family)) return null;
@@ -44,6 +48,7 @@ export function HomebrewFields({
   const edit = (key: string, value: JsonValue) =>
     onChange({ ...definition.payload, data: { ...data, [key]: value } });
   const fields = authoringFields(definition.family);
+  const origin = isOriginFamily(definition.family);
   const groups = [...new Set(fields.map((f) => f.group))].sort(
     (a, b) =>
       Number(["provenance", "notes"].includes(a)) -
@@ -134,17 +139,54 @@ export function HomebrewFields({
   const diagnostics = conformDefinition(definition);
   return (
     <div className="homebrew-fields">
-      {groups.map((group) => (
-        <fieldset key={group} disabled={disabled} className="homebrew-group">
-          <legend>{label("groups." + group)}</legend>
-          <div className="homebrew-grid">
-            {fields
-              .filter((f) => f.group === group)
-              .map((f) => control(f, data[f.key], (v) => edit(f.key, v)))}
-          </div>
-        </fieldset>
-      ))}
-      <AdvancedFields definition={definition} disabled={disabled} onChange={onChange} />
+      {groups.map((group) => {
+        const content = (
+          <fieldset disabled={disabled} className="homebrew-group">
+            <legend>{label("groups." + group)}</legend>
+            <div className="homebrew-grid">
+              {fields
+                .filter(
+                  (f) =>
+                    f.group === group &&
+                    !(
+                      origin && ["originFeat", "tool", "authoringVersion"].includes(f.key)
+                    )
+                )
+                .map((f) => control(f, data[f.key], (v) => edit(f.key, v)))}
+            </div>
+          </fieldset>
+        );
+        return origin && group === "provenance" ? (
+          <details key={group} className="origin-advanced">
+            <summary>{label("origin.sourceIdentity")}</summary>
+            <p className="homebrew-hint">{label("origin.sourceIdentityHelp")}</p>
+            {content}
+          </details>
+        ) : (
+          <div key={group}>{content}</div>
+        );
+      })}
+      {origin && (
+        <OriginFields
+          definition={definition}
+          disabled={disabled}
+          onChange={onChange}
+          loadOriginSources={loadOriginSources}
+        />
+      )}
+      {origin ? (
+        <details className="origin-advanced">
+          <summary>{label("origin.advancedMechanics")}</summary>
+          <p className="homebrew-hint">{label("origin.advancedHelp")}</p>
+          <AdvancedFields
+            definition={definition}
+            disabled={disabled}
+            onChange={onChange}
+          />
+        </details>
+      ) : (
+        <AdvancedFields definition={definition} disabled={disabled} onChange={onChange} />
+      )}
       <fieldset disabled={disabled} className="homebrew-group">
         <legend>{label("effects")}</legend>
         <p className="homebrew-hint">{label("effectsHelp")}</p>

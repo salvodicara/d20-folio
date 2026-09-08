@@ -1,7 +1,9 @@
+import { homebrewKey } from "@/features/library/homebrew-labels";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { srdCatalogues, type SrdKind } from "@/i18n/srd-en";
 import type { FolioCharacter, Json, JsonObject } from "@/lib/identity/model";
+import type { OriginProjection } from "@/lib/homebrew/origin-build";
 
 const sheetKeys: Readonly<Record<string, string>> = {
   classes: "identity.sheet.classes",
@@ -264,7 +266,13 @@ const record = (value: Json | undefined): JsonObject =>
 const list = (value: Json | undefined): Json[] => (Array.isArray(value) ? value : []);
 
 /** Read-only presentation of the authorized imported facts; no legacy engine or editable store. */
-export function IdentitySheet({ character }: { character: Readonly<FolioCharacter> }) {
+export function IdentitySheet({
+  character,
+  originProjection,
+}: {
+  character: Readonly<FolioCharacter>;
+  originProjection?: OriginProjection;
+}) {
   const { t, i18n } = useTranslation("common");
   const text = (key: string) => t(sheetKeys[key] ?? "identity.sheet.unnamed");
   const catalogues = srdCatalogues(i18n.language.startsWith("it") ? "it" : "en");
@@ -320,7 +328,14 @@ export function IdentitySheet({ character }: { character: Readonly<FolioCharacte
   const details = (value: JsonObject) =>
     Object.keys(value).length > 0 ? present(value) : null;
   const { build, state } = character.sheet;
-  const abilities = record(build.abilities);
+  const abilities = originProjection
+    ? Object.fromEntries(
+        Object.entries(originProjection.abilities).map(([ability, score]) => [
+          ability.slice(0, 3).toUpperCase(),
+          score,
+        ])
+      )
+    : record(build.abilities);
   const hp = record(state.hp);
   const customs = record(build.customs);
   const trackers = record(state.trackers);
@@ -472,11 +487,14 @@ export function IdentitySheet({ character }: { character: Readonly<FolioCharacte
   return (
     <section className="identity-sheet">
       <h3>{t("identity.characterDetails")}</h3>
+      {originProjection && !originProjection.available && (
+        <p role="status">{t("homebrewV2.origin.missingAbilityHelp")}</p>
+      )}
       <dl className="identity-abilities">
         {Object.entries(abilities).map(([key, value]) => (
           <div key={key}>
             <dt>{t(abilitiesKeys[key.toLowerCase()] ?? "identity.sheet.unnamed")}</dt>
-            <dd>{scalar(value)}</dd>
+            <dd>{value === null ? "—" : scalar(value)}</dd>
           </div>
         ))}
       </dl>
@@ -499,7 +517,11 @@ export function IdentitySheet({ character }: { character: Readonly<FolioCharacte
         {typeof build.background === "string" && (
           <div>
             <dt>{text("background")}</dt>
-            <dd>{name("background", build.background)}</dd>
+            <dd>
+              {originProjection?.background.selectionId
+                ? originProjection.background.name
+                : name("background", build.background)}
+            </dd>
           </div>
         )}
         {typeof hp.current === "number" && (
@@ -697,6 +719,31 @@ export function IdentitySheet({ character }: { character: Readonly<FolioCharacte
         {Object.keys(trackers).length > 0 && details({ trackers })}
       </details>
       <p>{t("identity.inspectionScope")}</p>
+      {originProjection &&
+        (originProjection.baseline.superseded.length > 0 ||
+          originProjection.baseline.unresolved.length > 0) && (
+          <details className="identity-sheet-section">
+            <summary>{t("homebrewV2.origin.importedBaseline")}</summary>
+            <p>{t("homebrewV2.origin.baselineHelp")}</p>
+            {(["superseded", "unresolved"] as const).map((status) =>
+              originProjection.baseline[status].length > 0 ? (
+                <section key={status}>
+                  <h4>{t(`homebrewV2.origin.baselineStatus.${status}`)}</h4>
+                  <ul>
+                    {originProjection.baseline[status].map((path) => (
+                      <li key={path}>
+                        {t(
+                          homebrewKey(`origin.baselineFacts.${path.replaceAll(".", "_")}`)
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null
+            )}
+            {details(originProjection.baseline.build)}
+          </details>
+        )}
     </section>
   );
 }

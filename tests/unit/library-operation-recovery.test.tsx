@@ -74,3 +74,37 @@ it("a delayed local acknowledgment cannot erase a newer pending intent", async (
     JSON.parse(sessionStorage.getItem("folio-library-operation:owner:race") ?? "null")
   ).toEqual({ envelope: second, invalidated: false });
 });
+
+it.each([false, true])(
+  "reconciles an invalidated committed receipt and retires only that envelope (newer=%s)",
+  async (newer) => {
+    const session = new SessionController();
+    session.transition({ uid: "owner", campaignId: null, activeCharacterId: null });
+    const envelope = {
+      uid: "owner",
+      opId: "committed",
+      scope: session.scope(),
+      baseRevision: 0,
+      authority: { characterRevision: null, assignment: null, campaignRevision: null },
+    };
+    const key = "folio-library-operation:owner:invalidated-receipt";
+    sessionStorage.setItem(key, JSON.stringify({ envelope, invalidated: true }));
+    const next = { envelope: { ...envelope, opId: "newer" }, invalidated: false };
+    const repository = {
+      commit: vi.fn(() => Promise.resolve({ operation: envelope, revision: 1 })),
+      reconcile: vi.fn(() => Promise.resolve({ operation: envelope, revision: 1 })),
+    };
+    const ack = vi.fn(() => {
+      if (newer) sessionStorage.setItem(key, JSON.stringify(next));
+    });
+    const view = renderHook(() =>
+      useLibraryOperation(repository, session, "invalidated-receipt", ack)
+    );
+    await act(async () => {
+      expect(await view.result.current.reviewSettled()).toBe(false);
+    });
+    expect(ack).toHaveBeenCalledTimes(1);
+    expect(repository.commit).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(key)).toBe(newer ? JSON.stringify(next) : null);
+  }
+);

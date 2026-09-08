@@ -1,6 +1,6 @@
 # Program Status
 
-## Current frontier — P07 discovery and written contract (2026-09-08)
+## Current frontier — P07 model, persistence and guided editors (2026-09-08)
 
 Owner/writer: Astra, codex/p07-origins-feats-20260908 at
 /Users/salvatoredicara/Workspace/Codex/d20-folio-p07-origins-feats.
@@ -17,10 +17,48 @@ Spec and plan were written before application code:
 superpowers/specs/2026-09-08-p07-origins-feats-design.md and
 superpowers/plans/2026-09-08-p07-origins-feats.md. Independent read-only reference discovery
 inspected all three specific mock editors and r2 desktop/phone images, with central E18/E19
-cascades/derivation and relevant E05/E10/E11/E17/E21 declarations. Current frontier is contract
-review and model implementation preparation, not runtime acceptance. No P07 functional tests,
-optimized journeys, paper or new screenshots have passed yet. Owner screenshot and explicit
-P07 V2 integration gates remain open. No integration, deploy or production write authorized.
+cascades/derivation and relevant E05/E10/E11/E17/E21 declarations. Independent contract review
+resolved bundle closure, bounded single-root mutation, candidate-excluded acquisition order, and
+imported/current projection precedence before implementation. Astra owns guided editor/UI work.
+Isolated writers p07-origin-model and p07-origin-persistence own their disjoint Task1 and Task2
+files; exact aggregate/repository interfaces were coordinated before parallel implementation.
+Model and persistence commits are composed into this candidate. Independent model review found
+and corrected import-order, projection/identity and prerequisite-reference defects. Independent
+persistence review found no ACL/CAS blocker and prompted legal full-closure budget evidence. The
+persistence lane's final full demo rules run passed250 tests in11 files with no skips; legal compact
+closure and oversized multibyte operation cases are retained in its evidence. Independent SDK runtime
+verified all three families against the parent demo cluster:41 exact operation receipts,3 grants,
+pinned independent builds, source updates, CAS, revocation and lost committed responses.
+
+The current optimized UI runtime composes successful all-three-family phases in runtime-current.json;
+failed c/d attempts remain explicitly failed. portable-b-results.json completed typed/unknown/future/
+incompatible roundtrip and exact-original recovery. State-a proves each family's version2 update;
+state-c proves offline concurrent comparison; state-d proves committed-response loss and storage
+failure. The subsequent state-f rerun completes those recovery cases and A→B→A invalidation after
+retaining the failed state-e attempt. Parent review corrected settled-operation recovery, repeatable
+acquisitions, late source versions, historical exception consent and server-verified no-op convergence.
+Independent source review closed those findings; no future engine/combat capability is claimed.
+
+The frozen final ci-candidate gate exited0:883 app files/19460 tests,7 Functions files/129 tests,
+typecheck, strict lint and optimized build/PWA. ci-srd-only-final exited0:704 files/13879 pass and2
+intentional private-loader/catalogue skips (both pass composed). The19 full-rules protected files
+remain byte-identical to the250-test/11-file/no-skip run. Final retained-answer regression passed4
+tests; the preceding final-lint attempt remains failed evidence, with its test-only assertions fixed.
+
+Current optimized visual-e captured78 images:66 EN/IT1440/1280/390 matrix plus12 cascade/retained
+answer details. Six ordinary PDFs total18 pages, and four portable unknown/future PDFs total12 pages;
+all30 pages are covered by independent inspection or exact rendered-page equivalence. Independent
+source/UI/paper review has no remaining actionable finding in scope. All three visual findings were
+corrected and reinspected. Final read-only backend audit is exactly unchanged after visual no-op
+reviews. Runtime and artifact hashes, curated reference/current images, commands, failed attempts
+and limits are recorded in the external HANDOFF/FINAL-MANIFEST.
+
+P07 implementation and autonomous verification are ready for the owner screenshot and explicit V2
+integration verdict. These gates remain open; the isolated candidate is not integrated. Demo runtime
+Auth19099, Firestore18080 and Storage19199 plus preview5180 remain available with synthetic P07
+accounts; preexisting8080 is preserved. No integration, deploy, production write or P08/successor
+execution is authorized. After an explicit P07 verdict, fresh integration preflight and owned clean
+worktree cleanup remain required before any recursive successor delivery.
 External evidence: /Users/salvatoredicara/Workspace/Codex/d20-folio-p07-evidence.
 
 ## Historical P06 integration receipt; P07 next (2026-09-08)

@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { srdCatalogues } from "@/i18n/srd-en";
 import {
   AUTHORING_FAMILIES,
   type AuthoringFamily,
@@ -9,6 +10,33 @@ export const baseFamily = (family: string): family is BaseFamily =>
 export const authoringFamily = (family: string): family is AuthoringFamily =>
   AUTHORING_FAMILIES.includes(family as AuthoringFamily);
 const shared: Record<string, string> = {
+  "origin.distance": "homebrewV2.fields.rangeDistance",
+  "origin.benefits.spellcasting": "homebrewV2.options.spellcasting",
+  "origin.requirements.level": "homebrewV2.options.character-level",
+  "origin.ability": "pdf.spellAbility",
+  "origin.benefits.sense": "homebrewV2.origin.sense",
+  "origin.benefits.proficiency": "homebrewV2.origin.proficiency",
+  "origin.requirements.proficiency": "homebrewV2.origin.proficiency",
+  "origin.benefits.reference": "homebrewV2.origin.includedBenefit",
+  "origin.benefits.size": "monster.size",
+  "origin.baselineFacts.size": "monster.size",
+  "origin.benefits.movement": "combat.movement",
+  "origin.categories.skill": "abilities.skill",
+  "origin.categories.tool": "items.kind_tool",
+  "origin.categories.language": "settings.language",
+  "origin.categories.save": "play.log.purpose.save",
+  "origin.goldUnit": "equipment.currencyAbbr.gp",
+  "origin.species": "character.species",
+  "origin.baselineFacts.race": "character.species",
+  "origin.background": "character.background",
+  "origin.baselineFacts.background": "character.background",
+  "origin.baselineFacts.speeds": "identity.sheetFacts.speeds",
+  "origin.baselineFacts.senses": "abilities.sensesLabel",
+  "origin.baselineFacts.bgFeat": "character.backgroundFeat",
+  "origin.baselineFacts.spellcasting": "identity.sheetFacts.spellcasting",
+  "options.epic-boon": "feats.category_epic-boon",
+  "options.fighting-style": "feats.category_fighting-style",
+
   "fields.armorClass": "character.armorClass",
   "fields.maxHp": "identity.sheet.hpMax",
   "fields.passivePerception": "campaignHub.passivePerception",
@@ -166,8 +194,19 @@ const shared: Record<string, string> = {
   "groups.components": "spells.components",
   stateLocal: "homebrewV2.draftState",
 };
-export const homebrewKey = (key: string) => shared[key] ?? `homebrewV2.${key}`;
+export const homebrewKey = (key: string) =>
+  shared[key] ?? `homebrewV2.${key.replace(/^origin\.diagnostics\./, "diagnostics.")}`;
 export function useHomebrewLabel() {
-  const { t } = useTranslation("common");
-  return (key: string) => t(homebrewKey(key));
+  const { t, i18n } = useTranslation("common");
+  return (key: string) => {
+    if (key.startsWith("origin.catalog.")) {
+      const [, , category, ...parts] = key.split(".");
+      const id = parts.join(".");
+      const catalog = srdCatalogues(i18n.language.startsWith("it") ? "it" : "en");
+      const name =
+        category === "tool" ? catalog?.equipment[id]?.name : catalog?.language[id]?.name;
+      return typeof name === "string" ? name : id;
+    }
+    return t(homebrewKey(key));
+  };
 }

@@ -13,6 +13,7 @@ import "./identity.css";
 import { IdentityAccount, AccountNavigation } from "./IdentityAccount";
 import { accountSections, accountLabel, type AccountSection } from "./navigation";
 import { IdentitySheet } from "./IdentitySheet";
+import type { OriginProjection } from "@/lib/homebrew/origin-build";
 import identityMark from "./assets/d20-mark.svg";
 import contextUserIcon from "./assets/circle-user-round.svg";
 import contextBackIcon from "./assets/arrow-left.svg";
@@ -65,6 +66,9 @@ export interface IdentityWorkspaceProps {
   activeId: string | null;
   campaignId: string | null;
   inspected: Readonly<FolioCharacter> | null;
+  originProjection?: OriginProjection;
+  originLoading?: boolean;
+  originUnavailable?: boolean;
   portraits?: Readonly<Record<string, string>>;
   rosterNames?: Readonly<Record<string, string>>;
   privateNotes?: string;
@@ -988,11 +992,24 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
               {label("readOnlyInspection")}
             </p>
             <p>
-              {fieldName(p.inspected.speciesId, "species")} ·{" "}
-              {fieldName(p.inspected.classId, "classes")} ·{" "}
+              {p.originLoading || p.originUnavailable
+                ? "—"
+                : p.originProjection?.species.selectionId
+                  ? p.originProjection.species.name
+                  : fieldName(p.inspected.speciesId, "species")}{" "}
+              · {fieldName(p.inspected.classId, "classes")} ·{" "}
               {label("level", { level: p.inspected.level })}
             </p>
-            <IdentitySheet character={p.inspected} />
+            {p.originLoading ? (
+              <p role="status">{t("homebrewV2.origin.loadingBuild")}</p>
+            ) : p.originUnavailable ? (
+              <p role="alert">{t("homebrewV2.origin.unavailableBuild")}</p>
+            ) : (
+              <IdentitySheet
+                character={p.originProjection?.projectedCharacter ?? p.inspected}
+                originProjection={p.originProjection}
+              />
+            )}
             {p.homebrewSheet}
             {p.inspected.ownerUid === p.uid && p.privateNoteEditor}
             <div className="identity-actions">
