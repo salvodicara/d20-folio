@@ -1,16 +1,56 @@
 # Program Status
 
-## Current frontier — P08c active (8 September 2026)
+## Current frontier — P08c verified; P09 next (8 September 2026)
 
-Astra owns codex/p08c-subclass-editor-20260908 in the new isolated P08c subclass-editor
-worktree. Fresh origin/v2/base37bf40f786e61cb6ecdbe6c5ffff82a577ea856b matches P08b closure;
-main9b06b75313d7ee353c4072a20397c3092707648e and all unrelated worktrees remain preserved.
-Clean detached p08c-control invoked this topic. Spec/plan were written before code. Independent
-reference/contract review and external demo-runtime preparation have disjoint report ownership.
-Only P08c is active; P09 and later blocks are not executed. Standing owner delegation authorizes
-reviewed gate-green V2 integration, not production/deploy/real-data migration or new costs.
-Current runtime, visual, print and integration gates are pending; prior P08b proofs do not certify
-P08c. External evidence belongs to Workspace/Codex/d20-folio-p08c-evidence.
+Astra completed the guided subclass editor over the existing class/subclass model, root pinned
+closure and shared acquisition/resource/program composers. P09 Shell e orientamento is the first
+incomplete AGENT-PROGRAM row, with its P01–04/mock/EXPERIENCE-MAP dependencies satisfied;
+P09 and later blocks are not executed here. Standing owner 8 September delegation authorizes
+reviewed gate-green V2 integration without repeated visual approval. Actual screenshots and a
+complete successor remain mandatory; production/deploy/real-data migration/cost gates remain separate.
+
+Final source 7e7701b3edd7551de8f8a2630f54362780d2afe6; fresh origin/v2 base
+37bf40f786e61cb6ecdbe6c5ffff82a577ea856b. Main remains 9b06b75313d7ee353c4072a20397c3092707648e.
+Independent reference/contract/source/composition/UI/paper reviews are closed. Actual loader exclusion
+and equal-name/candidate provenance findings were fixed with red/green tests and real optimized UI.
+Final candidate identity is visible before confirmation at all tested sizes, separate from pinned parent.
+
+Fresh composed just ci exit 0: 890 app files / 19,549 tests and 7 Functions files / 129 tests,
+zero skips, typecheck/strict lint/build/PWA. Fresh SRD-only exit 0: 711 files / 13,969 passed /
+2 intentional private-loader skips, typecheck/build/PWA. Full demo rules exit 0 at source320ce20c:
+12 files / 261 tests / zero skips, including all six exact fixture copies, apply-twice/recovery and
+join/revoke/release/rejoin. Final rules/model/config/fixture hashes are unchanged and explicitly carry
+that result; no new rules run is claimed. Private pack stays clean/read-only b6073dd0.
+
+Build A source320ce20c, asset index-BLS00You.js: actual independent Google owner/recipient main-c
+14 steps, nine individually named family authoring/record/receipt/roundtrip results (eleven with class
+and subclass), recovery-b 8 steps and portable-a 3 steps. Exact immutable versions, addressed grant,
+revocation and pinned copies verified. Offline/CAS, held real commit acknowledgement → unknown/reload
+→ same receipt 1 send, second-retain preservation, storage 0 sends and A→B→A 0 old sends passed.
+Unknown/future/incompatible originals remain exact. Authoring does not certify character growth/combat.
+
+Final build B changes only candidate-summary presentation/labels plus its test; model/controllers/
+repository/codec/rules/reader/CSS remain identical. Asset index-0ns3PTtk.js has actual Google UI
+candidate selection/confirmation/reload and real EN/IT save receipts, unchanged pinned tuple/closure.
+All 72 final D/E EN/IT dark 1440/1280/390 screenshots were independently opened and reviewed; actual
+curated images sent in chat. Six actual build-A Print PDFs / 42 pages all opened and inspected,
+including complete unknown/future originals. Reader/print and all used PDF labels are unchanged in B.
+1,910 source/test/config and 268 final optimized files remain unchanged; both builds archived externally.
+
+Read-only final server audit verified 14 assertions: source/parent v1/v2, received pinned v1,
+addressed grant/revoked offer, exact recovery receipt/absent invalidated receipt and portable originals.
+Inventory before final candidate confirmations: owner 22 entries / 17 versions / 60 receipts;
+recipient 1 entry / 1 version / 1 receipt / 1 grant; 1 offer. Counts include earlier incomplete synthetic
+attempts. Final candidate confirmations add two audited library-save receipts, revisions 2/3 of the
+reused draft; source and recipient immutable versions remain unchanged. All earlier failed harness,
+red-test and hook artifacts remain distinct. Emulator evidence is not production equivalence.
+
+This documentation-only closure is delivered through fresh fetch/rebase and hooked explicit HEAD:v2.
+The resulting remote SHA and owned clean worktree/service cleanup are recorded in the external
+integration receipt, avoiding a self-referential SHA. Evidence: Workspace/Codex/d20-folio-p08c-evidence/
+HANDOFF.md, REPLAY.md, FIDELITY.md, FINAL-MANIFEST.json and integration-receipt.json. The successor
+is released only after that receipt proves integration and cleanup. Shared checkout, unrelated
+worktrees and preexisting Java86001/8080/9150 remain preserved. No PR/main/deploy.
 
 ## Historical frontier — P08b verified; P08c next (8 September 2026)
 
