@@ -171,3 +171,17 @@ storage warning. The editor heading prioritizes unsaved storage failure over loc
 
 A local retention failure also suppresses the first-version footer that says the draft is saved;
 the unsaved heading and recovery alert remain the authoritative visible status.
+
+## P08c shared subclass selection
+
+`OriginDependencyPicker` optionally filters to recorded class versions for guided subclass
+authoring. The enclosing Library editor loads all immutable class versions, including older ones;
+other family pickers retain their previous latest-version behavior. The parent candidate shows
+its name, recorded version, owner and Library entry identity outside the native select, before
+confirmation, so equal names remain distinguishable on a narrow screen. This candidate is separate
+from the already pinned parent. Choosing it changes the existing root flat closure through
+`includeOriginDependency` and `conformClassPair`; no additional store or grant is created.
+
+The subclass uses the existing scoped acquisition and guided program/resource composers. Default
+root behavior for the other families stays unchanged. IDs and unknown siblings survive edits, and
+the common reader/print exposes combined casting declarations without advancing a character.

@@ -191,3 +191,25 @@ it("initializes an empty subclass draft with a named setup action", async () => 
   expect(actual().payload.data.authoringVersion).toBe(1);
   expect(screen.getByRole("group", { name: "Parent class" })).toBeTruthy();
 });
+
+it("shows the candidate identity outside the select before choosing between equal names", async () => {
+  await editor(initializeDefinition("subclass"), [
+    parent(1, "teacher"),
+    parent(1, "other-owner"),
+  ]);
+  const group = screen.getByRole("group", { name: "Parent class" });
+  fireEvent.click(
+    within(group).getByRole("button", { name: "Browse recorded creations" })
+  );
+  fireEvent.change(await within(group).findByLabelText("Creation and version"), {
+    target: { value: "1" },
+  });
+  const candidate = within(group).getByRole("group", { name: "Selected parent class" });
+  expect(candidate.textContent).toContain("Star keeper");
+  expect(candidate.textContent).toContain("Version 1");
+  expect(candidate.textContent).toContain("other-owner");
+  expect(candidate.textContent).toContain("keeper");
+  expect(actual().payload.data.parentClass).toMatchObject({ dependency: "" });
+  fireEvent.click(within(group).getByRole("button", { name: "Use this parent class" }));
+  expect(conformClassPair(actual(), parent(1, "other-owner"))).toEqual([]);
+});

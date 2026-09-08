@@ -766,6 +766,30 @@ export function OriginDependencyPicker({
               ))}
             </select>
           </label>
+          {family === "class" && selectedSource && (
+            <div role="group" aria-label={label("subclassEditor.selectedParent")}>
+              <p>
+                <strong>{label("subclassEditor.selectedParent")}</strong>
+              </p>
+              <dl className="homebrew-facts">
+                <div>
+                  <dt>{label("origin.libraryVersion")}</dt>
+                  <dd>
+                    {selectedSource.definition.name} · {label("version")}{" "}
+                    {selectedSource.version}
+                  </dd>
+                </div>
+                <div>
+                  <dt>{label("subclassEditor.versionOwner")}</dt>
+                  <dd>{selectedSource.ownerUid}</dd>
+                </div>
+                <div>
+                  <dt>{label("subclassEditor.creationIdentity")}</dt>
+                  <dd>{selectedSource.entryId}</dd>
+                </div>
+              </dl>
+            </div>
+          )}
           <button
             type="button"
             disabled={disabled || selected === ""}

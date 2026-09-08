@@ -831,7 +831,9 @@
       "commonHelp": "Queste dichiarazioni appartengono alla sottoclasse. Usa le righe dei livelli per i privilegi acquisiti ai livelli previsti della classe.",
       "reuseVersion": "Riusa sottoclasse registrata",
       "versionOwner": "Registrata da",
-      "parentError": "Questa classe madre non può essere inclusa. Verifica le regole registrate e le dipendenze conservate, poi scegli una versione compatibile."
+      "parentError": "Questa classe madre non può essere inclusa. Verifica le regole registrate e le dipendenze conservate, poi scegli una versione compatibile.",
+      "selectedParent": "Classe di appartenenza selezionata",
+      "creationIdentity": "Identificativo della creazione in biblioteca"
     }
   }
 }

@@ -831,7 +831,9 @@
       "commonHelp": "These declarations belong to this subclass. Use the level rows below for features acquired at scheduled class levels.",
       "reuseVersion": "Reuse recorded subclass",
       "versionOwner": "Recorded by",
-      "parentError": "This parent cannot be included. Review its recorded rules and the preserved dependency data, then choose a compatible version."
+      "parentError": "This parent cannot be included. Review its recorded rules and the preserved dependency data, then choose a compatible version.",
+      "selectedParent": "Selected parent class",
+      "creationIdentity": "Library creation identifier"
     }
   }
 }
