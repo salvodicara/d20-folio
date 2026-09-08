@@ -304,6 +304,27 @@ command has a visible equivalent; shortcuts do not fire in editors or other dial
 Calendar starts with complete session proposals, person-scoped votes, comparison and confirmation;
 Google/ICS export follows the confirmed occurrence, without implicit OAuth or external sends.
 
+### Understandable interaction across the application
+
+Apply PRODUCT's owner clarity requirement to every surface, including deep homebrew forms and
+in-play controls. Before accepting a flow, inspect its actual EN/IT labels, navigation and feedback:
+
+- A user can identify the current domain, selected subject, editable scope and route back.
+- Labels name user concepts and actions. Internal IDs, schema terms and implementation structure
+  are not unexplained prerequisites; use recognizable choices and contextual explanation.
+- Related fields form meaningful groups. Examples, units, prerequisites and validation explain
+  how to enter a valid value and how to recover without losing work.
+- Familiar controls behave consistently. Selection, preview, saving, publishing and applying a
+  change have legible distinctions and visible results.
+- Consequences and the affected copy/template are understandable before a consequential choice;
+  pending, saved, conflicting and unsupported states explain the available next action.
+- Progressive disclosure exposes advanced capability without concealing essential decisions or
+  removing the table's control. Test orientation and comprehension as well as successful clicks.
+
+This applies the existing approved Astra/r2 identity and patterns; it does not authorize a new
+visual system. Detailed whole-app review remains part of later acceptance, and broad interim owner
+approval must not be recorded as a claim that every control has already been inspected.
+
 ### Implementation depth
 
 These obligations must appear in full in the relevant downstream prompts:

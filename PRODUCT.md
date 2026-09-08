@@ -213,6 +213,25 @@ acceptance must include an actual custom creation used in combat, automated cost
 mid-combat modification and causal correction/undo, with ordinary, boundary and composition cases.
 Saving, serializing or previewing a custom creation is not that acceptance proof.
 
+**Clarity and familiar interaction patterns, reaffirmed by the owner on 8 September 2026.**
+The same depth and contextual control must be understandable throughout the application, including
+homebrew entry forms, character creation/growth, campaign management and play/combat. Users must
+be able to tell where they are, what a term or control means, what they can do, and what a choice
+will change. Use familiar, established interaction patterns and consistent domain language;
+implementation terminology and internal data structures must not become prerequisites for use.
+
+Provide clear labels, coherent grouping, relevant examples/help and visible state/consequences.
+Reveal advanced detail progressively while keeping the full capability available. Preserve context
+and drafts across navigation, explain validation and recovery, and make the next action and return
+path understandable. Clarity must preserve depth, automation, contextual freedom and authoritative
+correction/undo. Do not reduce the product to make a confusing interface appear simpler.
+
+Generalize the owner's observations into durable principles across related surfaces rather than
+applying them only to the screenshot or form that prompted the comment. DESIGN owns their concrete
+interaction application; every downstream plan, review and complete successor prompt carries this
+clarity obligation alongside the custom automation/editable-combat contract. Broad interim owner
+acceptance does not claim a detailed usability audit; later whole-app review still applies.
+
 **Production continuity, reaffirmed by the owner in P01.** The group must keep playing with the
 current production app while V2 develops separately against the dedicated staging project.
 Production is not changed by V2 work. Switch and retirement of the old experience happen only

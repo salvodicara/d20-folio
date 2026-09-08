@@ -1,12 +1,16 @@
 # Program Status
 
-## Current frontier — P06 owner screenshot and V2 integration gate (2026-09-08)
+## Current frontier — P06 authorized integration and closure (2026-09-08)
 
 Owner/writer: Astra, codex/p06-monsters-rules-20260907 at
 /Users/salvatoredicara/Workspace/Codex/d20-folio-p06-monsters-rules.
-P06 autonomous implementation and verification are complete; owner visual acceptance and explicit
-P06 integration permission remain required. No P06 integration, P07, production write, deploy or
-main push has occurred. P04/P05 remain closed. No successor prompt before actual P06 closure.
+P06 autonomous implementation and verification are complete. Responding to the explicit P06
+screenshot/integration question, the owner accepted the current candidate on 8 September (“per il
+momento mi sembra che vada bene”), reaffirmed custom automation and full contextual control, and
+added the cross-application clarity/familiar-patterns requirement now owned by PRODUCT/DESIGN.
+This is broad interim acceptance, with detailed usability review planned after V2 completion; it
+is not a claim that the owner inspected every control. P06 V2 integration is proceeding under
+that verdict. No P06 integration, P07, production write, deploy or main push has yet occurred. P04/P05 remain closed. No successor prompt before actual P06 closure.
 
 Final runtime is 7653f0357cf315188ed511b1593a30d59a8ec48b, optimized asset index-B-KE8w-X.js.
 The final delta from the fully exercised c17 candidate adds only the missing title in the future

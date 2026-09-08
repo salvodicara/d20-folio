@@ -127,3 +127,9 @@ External d20-folio-p06-evidence owns scripts/fixtures/logs/manifests/PDF/screens
 Verification evidence: external P06 HANDOFF/REPLAY retain actual red/green commands and harness
 failures. Task4 final unknown-version PDF title correction passed affected-page reinspection;
 the earlier defective pages are retained and not relabeled as passing. PROGRAM_STATUS owns the current gate status.
+
+Owner steering on8 September: carry PRODUCT clarity/familiar-patterns requirement across every
+form and play surface and all downstream plans/reviews/successor prompts. Preserve full automation,
+contextual control and causal correction. The owner accepted the present candidate broadly while
+reserving detailed whole-app usability inspection for later acceptance. PROGRAM_STATUS owns the
+integration/closure state; this note does not claim that detailed inspection occurred.
