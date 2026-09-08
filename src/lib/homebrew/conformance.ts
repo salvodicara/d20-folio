@@ -1,5 +1,10 @@
+import { isClassFamily, CLASS_DATA_KEYS, conformClassDefinition } from "./classes";
 import { isOriginFamily, conformOriginDefinition } from "./origins";
-import { advancedCollections, type AdvancedCollection } from "./advanced";
+import {
+  advancedCollections,
+  declaredProgramCosts,
+  type AdvancedCollection,
+} from "./advanced";
 import {
   parseDefinition,
   type LibraryDefinition,
@@ -10,7 +15,6 @@ import {
   validResourceId,
   authoringFields,
   effectFields,
-  type AuthoringFamily,
   type FieldDescriptor,
 } from "./model";
 export interface AuthoringDiagnostic {
@@ -66,7 +70,7 @@ export function conformDefinition(
   }
   const d = definition.payload.data;
   if (!definition.name.trim()) add("name", "required");
-  if (!AUTHORING_FAMILIES.includes(definition.family as AuthoringFamily)) {
+  if (!AUTHORING_FAMILIES.includes(definition.family)) {
     add("family", "unsupported-family", "unsupported");
     return issues;
   }
@@ -135,13 +139,14 @@ export function conformDefinition(
         add(path, "invalid-formula");
     }
   };
-  validate(d, authoringFields(definition.family as AuthoringFamily), "payload.data.", [
+  validate(d, authoringFields(definition.family), "payload.data.", [
     "effects",
     "unsupported",
-    ...(isOriginFamily(definition.family)
+    ...(isOriginFamily(definition.family) || isClassFamily(definition.family)
       ? ["prerequisites", "benefits", "choices", "dependencies", "equipment"]
       : []),
-    ...advancedCollections(definition.family as AuthoringFamily).map((c) => c.key),
+    ...(isClassFamily(definition.family) ? CLASS_DATA_KEYS : []),
+    ...advancedCollections(definition.family).map((c) => c.key),
   ]);
   const check = (condition: unknown, key: string, code: string) => {
     if (condition) add("payload.data." + key, code);
@@ -466,7 +471,8 @@ export function conformDefinition(
   if (
     definition.family === "monster" ||
     definition.family === "campaign-rule" ||
-    isOriginFamily(definition.family)
+    isOriginFamily(definition.family) ||
+    isClassFamily(definition.family)
   ) {
     const rows = (key: string): Record<string, JsonValue>[] =>
       Array.isArray(d[key])
@@ -639,39 +645,7 @@ export function conformDefinition(
               });
             if (v.kind === "multiattack" && Array.isArray(v.steps)) {
               // Static declaration sum only: no recovery, draws or execution during validation.
-              const costs = new Map<string, number>();
-              const addCost = (program: Record<string, JsonValue>, count: number) => {
-                if (
-                  typeof program.resourceId === "string" &&
-                  typeof program.resourceCost === "number" &&
-                  Number.isFinite(program.resourceCost) &&
-                  program.resourceCost >= 0
-                )
-                  costs.set(
-                    program.resourceId,
-                    (costs.get(program.resourceId) ?? 0) + program.resourceCost * count
-                  );
-              };
-              addCost(v, 1);
-              for (const step of v.steps) {
-                if (
-                  !step ||
-                  typeof step !== "object" ||
-                  Array.isArray(step) ||
-                  step.kind !== "program" ||
-                  typeof step.count !== "number" ||
-                  !Number.isInteger(step.count) ||
-                  step.count < 1
-                )
-                  continue;
-                const target = rows("programs").find((p) => p.id === step.programId);
-                if (
-                  target &&
-                  kindField?.options?.includes(textValue(target.kind)) &&
-                  target.kind !== "multiattack"
-                )
-                  addCost(target, step.count);
-              }
+              const costs = declaredProgramCosts(v, rows("programs"));
               if (
                 rows("resources").some(
                   (resource) =>
@@ -742,7 +716,12 @@ export function conformDefinition(
         "typed-declarations-required"
       );
   }
-  if (isOriginFamily(definition.family) && !includedNode)
+  if (isClassFamily(definition.family))
+    issues.push(...conformClassDefinition(definition));
+  if (
+    (isOriginFamily(definition.family) || isClassFamily(definition.family)) &&
+    !includedNode
+  )
     issues.push(...conformOriginDefinition(definition));
   return issues;
 }

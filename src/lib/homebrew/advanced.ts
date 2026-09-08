@@ -231,7 +231,17 @@ function collection(key: string, kind: AdvancedRowKind, max = 32): AdvancedColle
 export function advancedCollections(
   family: AuthoringFamily
 ): readonly AdvancedCollection[] {
-  if (!["monster", "campaign-rule", "species", "feat", "background"].includes(family))
+  if (
+    ![
+      "monster",
+      "campaign-rule",
+      "species",
+      "feat",
+      "background",
+      "class",
+      "subclass",
+    ].includes(family)
+  )
     return [];
   return [
     collection("resources", "resource"),
@@ -327,4 +337,46 @@ export interface RulePolicy {
 export interface RuleDependency {
   mechanicId: string;
   relation: "required" | "conflicting";
+}
+
+/** Static costs of one declared program, including its nonnested multiattack steps. */
+export function declaredProgramCosts(
+  program: Record<string, unknown>,
+  programs: readonly Record<string, unknown>[]
+): Map<string, number> {
+  const costs = new Map<string, number>();
+  const add = (p: Record<string, unknown>, count: number) => {
+    if (
+      typeof p.resourceId === "string" &&
+      typeof p.resourceCost === "number" &&
+      Number.isFinite(p.resourceCost) &&
+      p.resourceCost >= 0
+    )
+      costs.set(p.resourceId, (costs.get(p.resourceId) ?? 0) + p.resourceCost * count);
+  };
+  add(program, 1);
+  if (program.kind === "multiattack" && Array.isArray(program.steps)) {
+    for (const step of program.steps) {
+      if (!step || typeof step !== "object" || Array.isArray(step)) continue;
+      const s = step as Record<string, unknown>;
+      if (
+        s.kind !== "program" ||
+        typeof s.count !== "number" ||
+        !Number.isInteger(s.count) ||
+        s.count < 1
+      )
+        continue;
+      const child = programs.find((p) => p.id === s.programId);
+      const kinds =
+        advancedRowFields("program").find((f) => f.key === "kind")?.options ?? [];
+      if (
+        child &&
+        typeof child.kind === "string" &&
+        kinds.includes(child.kind) &&
+        child.kind !== "multiattack"
+      )
+        add(child, s.count);
+    }
+  }
+  return costs;
 }

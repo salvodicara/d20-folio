@@ -1,3 +1,4 @@
+import { initializeClassData, isClassFamily } from "./classes";
 import { originFields, initializeOriginData, isOriginFamily } from "./origins";
 import { advancedFields, advancedCollections } from "./advanced";
 import { blankDefinition, type LibraryDefinition } from "../library/model";
@@ -9,6 +10,8 @@ export const AUTHORING_FAMILIES = [
   "monster",
   "campaign-rule",
   ...ORIGIN_FAMILIES,
+  "class",
+  "subclass",
 ] as const;
 export type AuthoringFamily = (typeof AUTHORING_FAMILIES)[number];
 export interface FieldDescriptor {
@@ -289,7 +292,7 @@ export function blankEffect(): TypedEffect {
     sourceId: "",
   };
 }
-interface CommonData {
+export interface CommonData {
   authoringVersion: 1;
   edition: "2024";
   source: string;
@@ -432,6 +435,7 @@ export function initializeDefinition(family: AuthoringFamily): LibraryDefinition
     });
   if (family === "campaign-rule") d.payload.data.priority = 0;
   if (isOriginFamily(family)) Object.assign(d.payload.data, initializeOriginData(family));
+  if (isClassFamily(family)) Object.assign(d.payload.data, initializeClassData(family));
   return d;
 }
 

@@ -1,3 +1,4 @@
+import { isClassFamily } from "./classes";
 import {
   ABILITIES,
   ORIGIN_FAMILIES,
@@ -352,79 +353,135 @@ export function conformOriginDefinition(
       }
       known(v, fields, path);
     };
-    if (isOriginFamily(node.family) || Object.hasOwn(d, "prerequisites"))
-      list(d.prerequisites, prefix + "prerequisites").forEach((p, i) =>
-        prerequisite(p, prefix + "prerequisites." + String(i), reference)
-      );
-    if (isOriginFamily(node.family) || Object.hasOwn(d, "benefits"))
-      list(d.benefits, prefix + "benefits").forEach((b, i) =>
-        benefit(b, prefix + "benefits." + String(i))
-      );
-    const choices =
-      isOriginFamily(node.family) || Object.hasOwn(d, "choices")
-        ? list(d.choices, prefix + "choices")
-        : [];
-    const choiceMap = new Map<string, Record<string, unknown>>();
-    choices.forEach((value, i) => {
-      const path = prefix + "choices." + String(i);
-      const v = originRecord(value);
-      if (!v) {
-        add(path, "invalid-choice");
-        return;
-      }
-      known(v, ["id", "name", "count", "options", "parent"], path);
-      if (!id(v.id) || choiceMap.has(String(v.id)))
-        add(path + ".id", "duplicate-or-invalid-id");
-      choiceMap.set(String(v.id), v);
-      if (!nonempty(v.name)) add(path + ".name", "required");
-      const options = list(v.options, path + ".options");
-      if (!integer(v.count, 1, options.length)) add(path + ".count", "invalid-count");
-      const ids = new Set();
-      options.forEach((value, j) => {
-        const p = path + ".options." + String(j);
-        const o = originRecord(value);
-        if (!o) {
-          add(p, "invalid-option");
+    const declarations = (
+      scope: Record<string, unknown>,
+      prefix: string,
+      required: boolean
+    ) => {
+      if (required || Object.hasOwn(scope, "prerequisites"))
+        list(scope.prerequisites, prefix + "prerequisites").forEach((p, i) =>
+          prerequisite(p, prefix + "prerequisites." + String(i), reference)
+        );
+      if (required || Object.hasOwn(scope, "benefits"))
+        list(scope.benefits, prefix + "benefits").forEach((b, i) =>
+          benefit(b, prefix + "benefits." + String(i))
+        );
+      const choices =
+        required || Object.hasOwn(scope, "choices")
+          ? list(scope.choices, prefix + "choices")
+          : [];
+      const choiceMap = new Map<string, Record<string, unknown>>();
+      choices.forEach((value, i) => {
+        const path = prefix + "choices." + String(i);
+        const v = originRecord(value);
+        if (!v) {
+          add(path, "invalid-choice");
           return;
         }
-        known(o, ["id", "name", "benefits"], p);
-        if (!id(o.id) || ids.has(o.id)) add(p + ".id", "duplicate-or-invalid-id");
-        ids.add(o.id);
-        if (!nonempty(o.name)) add(p + ".name", "required");
-        list(o.benefits, p + ".benefits").forEach((b, k) =>
-          benefit(b, p + ".benefits." + String(k))
-        );
+        known(v, ["id", "name", "count", "options", "parent"], path);
+        if (!id(v.id) || choiceMap.has(String(v.id)))
+          add(path + ".id", "duplicate-or-invalid-id");
+        choiceMap.set(String(v.id), v);
+        if (!nonempty(v.name)) add(path + ".name", "required");
+        const options = list(v.options, path + ".options");
+        if (!integer(v.count, 1, options.length)) add(path + ".count", "invalid-count");
+        const ids = new Set();
+        options.forEach((value, j) => {
+          const p = path + ".options." + String(j);
+          const o = originRecord(value);
+          if (!o) {
+            add(p, "invalid-option");
+            return;
+          }
+          known(o, ["id", "name", "benefits"], p);
+          if (!id(o.id) || ids.has(o.id)) add(p + ".id", "duplicate-or-invalid-id");
+          ids.add(o.id);
+          if (!nonempty(o.name)) add(p + ".name", "required");
+          list(o.benefits, p + ".benefits").forEach((b, k) =>
+            benefit(b, p + ".benefits." + String(k))
+          );
+        });
       });
-    });
-    choices.forEach((value, i) => {
-      const v = originRecord(value);
-      if (!v || v.parent === null) return;
-      const p = originRecord(v.parent);
-      const path = prefix + "choices." + String(i) + ".parent";
-      if (!p) {
-        add(path, "invalid-parent");
-        return;
-      }
-      known(p, ["choiceId", "optionId"], path);
-      const parent = choiceMap.get(String(p.choiceId));
-      if (
-        !parent ||
-        !Array.isArray(parent.options) ||
-        !parent.options.some((o) => originRecord(o)?.id === p.optionId)
-      )
-        add(path, "missing-parent");
-      const visited = new Set([v.id]);
-      let current: Record<string, unknown> | undefined = v;
-      while (current && current.parent !== null) {
-        const parentId = originRecord(current.parent)?.choiceId;
-        if (visited.has(parentId)) {
-          add(path, "choice-cycle");
-          break;
+      choices.forEach((value, i) => {
+        const v = originRecord(value);
+        if (!v || v.parent === null) return;
+        const p = originRecord(v.parent);
+        const path = prefix + "choices." + String(i) + ".parent";
+        if (!p) {
+          add(path, "invalid-parent");
+          return;
         }
-        visited.add(parentId);
-        current = choiceMap.get(String(parentId));
+        known(p, ["choiceId", "optionId"], path);
+        const parent = choiceMap.get(String(p.choiceId));
+        if (
+          isClassFamily(node.family) &&
+          choices.findIndex((x) => originRecord(x)?.id === p.choiceId) >= i
+        )
+          add(path, "parent-choice-order");
+        if (
+          !parent ||
+          !Array.isArray(parent.options) ||
+          !parent.options.some((o) => originRecord(o)?.id === p.optionId)
+        )
+          add(path, "missing-parent");
+        const visited = new Set([v.id]);
+        let current: Record<string, unknown> | undefined = v;
+        while (current && current.parent !== null) {
+          const parentId = originRecord(current.parent)?.choiceId;
+          if (visited.has(parentId)) {
+            add(path, "choice-cycle");
+            break;
+          }
+          visited.add(parentId);
+          current = choiceMap.get(String(parentId));
+        }
+      });
+    };
+    declarations(d, prefix, isOriginFamily(node.family) || isClassFamily(node.family));
+    if (isClassFamily(node.family)) {
+      if (node.family === "class")
+        for (const key of ["starting", "multiclass"]) {
+          const scope = originRecord(d[key]);
+          if (!scope) add(prefix + key, "invalid-acquisition");
+          else {
+            known(scope, ["prerequisites", "benefits", "choices"], prefix + key);
+            declarations(scope, prefix + key + ".", true);
+          }
+        }
+      if (Array.isArray(d.progression))
+        d.progression.forEach((value, i) => {
+          const row = originRecord(value);
+          if (row) declarations(row, prefix + "progression." + String(i) + ".", true);
+        });
+      if (node.family === "subclass") {
+        const parent = originRecord(d.parentClass);
+        reference(parent?.dependency, prefix + "parentClass.dependency", ["class"]);
+        const dep = originRecord(table[String(parent?.dependency)]);
+        const parentDefinition = originRecord(dep?.definition);
+        const parentData = originRecord(originRecord(parentDefinition?.payload)?.data);
+        if (parentData) {
+          if (parentData.mechanicId !== parent?.mechanicId)
+            add(prefix + "parentClass.mechanicId", "parent-mechanic-mismatch");
+          const schedule = Array.isArray(parentData.subclassLevels)
+            ? parentData.subclassLevels
+            : [];
+          const rows = Array.isArray(d.progression) ? d.progression : [];
+          if (originRecord(rows[0])?.level !== schedule[0])
+            add(prefix + "progression", "subclass-start-level");
+          for (const [i, value] of rows.entries()) {
+            const row = originRecord(value);
+            if (
+              row &&
+              [row.benefits, row.choices, row.programIds, row.resourceCapacities].some(
+                (v) => Array.isArray(v) && v.length > 0
+              ) &&
+              !schedule.includes(row.level)
+            )
+              add(prefix + "progression." + String(i), "subclass-feature-schedule");
+          }
+        }
       }
-    });
+    }
     if (node.family === "background") {
       if (new Set([d.ability1, d.ability2, d.ability3]).size !== 3)
         add(prefix + "ability1", "distinct-abilities");
