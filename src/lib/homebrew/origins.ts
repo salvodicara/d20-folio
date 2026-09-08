@@ -1,3 +1,13 @@
+import { conformCataloguePool, type CataloguePool } from "./choice-pools";
+import {
+  isCatalogueSnapshot,
+  parseDefinitionSnapshot,
+  sourceIdentity,
+  type CatalogueSnapshot,
+  type DefinitionSnapshot,
+  type DefinitionDependency,
+  type CanonicalSource,
+} from "./sources";
 import { isClassFamily } from "./classes";
 import {
   ABILITIES,
@@ -14,7 +24,6 @@ import {
   type LibraryDefinition,
   type LibraryVersion,
   type LibraryRef,
-  type Provenance,
   type JsonValue,
 } from "../library/model";
 import { conformDefinition, type AuthoringDiagnostic } from "./conformance";
@@ -53,6 +62,19 @@ export type OriginPrerequisite =
   | { kind: "feat"; mechanicId: string; dependency?: string }
   | { kind: "spellcasting" };
 export type OriginBenefit =
+  | { kind: "expertise"; category: "skill" | "tool"; id: string }
+  | { kind: "training"; category: "armor" | "weapon"; id: string }
+  | { kind: "mastery"; id: string }
+  | {
+      kind: "spell";
+      id: string;
+      ability: Ability;
+      policy: "known" | "prepared" | "spellbook" | "free-cast";
+      uses?: number;
+      rest?: "short" | "long";
+    }
+  | { kind: "equipment"; dependency: string; quantity: number }
+  | { kind: "gold"; amount: number }
   | { kind: "spellcasting"; ability: Ability; policy: "ability" }
   | { kind: "ability"; ability: Ability; amount: number }
   | { kind: "size"; size: "tiny" | "small" | "medium" | "large" | "huge" | "gargantuan" }
@@ -71,14 +93,10 @@ export interface OriginChoice {
   name: string;
   count: number;
   options: OriginOption[];
+  pool?: CataloguePool;
   parent: { choiceId: string; optionId: string } | null;
 }
-export interface OriginDependency {
-  source: LibraryRef;
-  sourceVersion: number;
-  provenance: Provenance | null;
-  definition: LibraryDefinition;
-}
+export type OriginDependency = DefinitionDependency;
 export interface OriginDeclarations {
   prerequisites: OriginPrerequisite[];
   benefits: OriginBenefit[];
@@ -160,8 +178,11 @@ export const blankOriginChoice = (): OriginChoice => ({
 });
 /** JSON tuple identity avoids delimiter collisions; path segments use encodeURIComponent. */
 export const dependencyKey = (
-  version: Pick<LibraryVersion, "ownerUid" | "entryId" | "version">
-): string => JSON.stringify([version.ownerUid, version.entryId, version.version]);
+  version: Pick<LibraryVersion, "ownerUid" | "entryId" | "version"> | CatalogueSnapshot
+): string =>
+  "kind" in version
+    ? sourceIdentity(version)
+    : JSON.stringify([version.ownerUid, version.entryId, version.version]);
 export const originNodePath = (parent: string, key: string): string =>
   parent + "/" + encodeURIComponent(key);
 export const originRecord = (v: unknown): Record<string, unknown> | null =>
@@ -301,6 +322,49 @@ export function conformOriginDefinition(
       }
       let fields = ["kind"];
       switch (v.kind) {
+        case "expertise":
+          fields.push("category", "id");
+          if (!token(v.category, ["skill", "tool"]))
+            add(path + ".category", "unsupported-option", "unsupported");
+          proficiency(v, path);
+          break;
+        case "training":
+          fields.push("category", "id");
+          if (!token(v.category, ["armor", "weapon"]))
+            add(path + ".category", "unsupported-option", "unsupported");
+          if (!nonempty(v.id)) add(path + ".id", "required");
+          break;
+        case "mastery":
+          fields.push("id");
+          if (!nonempty(v.id)) add(path + ".id", "required");
+          break;
+        case "spell":
+          fields.push("id", "ability", "policy", "uses", "rest");
+          if (!nonempty(v.id)) add(path + ".id", "required");
+          if (!token(v.ability, ABILITIES))
+            add(path + ".ability", "unsupported-option", "unsupported");
+          if (!token(v.policy, ["known", "prepared", "spellbook", "free-cast"]))
+            add(path + ".policy", "unsupported-policy", "unsupported");
+          if (Object.hasOwn(v, "uses") && !integer(v.uses, 1, 100))
+            add(path + ".uses", "invalid-number");
+          if (Object.hasOwn(v, "rest") && !token(v.rest, ["short", "long"]))
+            add(path + ".rest", "unsupported-policy", "unsupported");
+          break;
+        case "equipment":
+          fields.push("dependency", "quantity");
+          reference(v.dependency, path + ".dependency", ["equipment", "weapon"]);
+          if (!integer(v.quantity, 1, 100000)) add(path + ".quantity", "invalid-number");
+          break;
+        case "gold":
+          fields.push("amount");
+          if (
+            typeof v.amount !== "number" ||
+            !Number.isFinite(v.amount) ||
+            v.amount < 0 ||
+            v.amount > 100000
+          )
+            add(path + ".amount", "invalid-number");
+          break;
         case "ability":
           fields.push("ability", "amount");
           if (!token(v.ability, ABILITIES))
@@ -378,13 +442,18 @@ export function conformOriginDefinition(
           add(path, "invalid-choice");
           return;
         }
-        known(v, ["id", "name", "count", "options", "parent"], path);
+        known(v, ["id", "name", "count", "options", "parent", "pool"], path);
         if (!id(v.id) || choiceMap.has(String(v.id)))
           add(path + ".id", "duplicate-or-invalid-id");
         choiceMap.set(String(v.id), v);
         if (!nonempty(v.name)) add(path + ".name", "required");
         const options = list(v.options, path + ".options");
-        if (!integer(v.count, 1, options.length)) add(path + ".count", "invalid-count");
+        if (Object.hasOwn(v, "pool")) {
+          issues.push(...conformCataloguePool(v.pool, path + ".pool"));
+          if (options.length) add(path + ".options", "mixed-choice-pool");
+        }
+        if (!integer(v.count, 1, Object.hasOwn(v, "pool") ? 32 : options.length))
+          add(path + ".count", "invalid-count");
         const ids = new Set();
         options.forEach((value, j) => {
           const p = path + ".options." + String(j);
@@ -421,7 +490,8 @@ export function conformOriginDefinition(
         if (
           !parent ||
           !Array.isArray(parent.options) ||
-          !parent.options.some((o) => originRecord(o)?.id === p.optionId)
+          (!Object.hasOwn(parent, "pool") &&
+            !parent.options.some((o) => originRecord(o)?.id === p.optionId))
         )
           add(path, "missing-parent");
         const visited = new Set([v.id]);
@@ -439,6 +509,32 @@ export function conformOriginDefinition(
     };
     declarations(d, prefix, isOriginFamily(node.family) || isClassFamily(node.family));
     if (isClassFamily(node.family)) {
+      if (Object.hasOwn(d, "startingEquipment")) {
+        const equipment = originRecord(d.startingEquipment);
+        if (!equipment) add(prefix + "startingEquipment", "invalid-equipment");
+        else {
+          known(equipment, ["gold", "items"], prefix + "startingEquipment");
+          if (
+            typeof equipment.gold !== "number" ||
+            !Number.isFinite(equipment.gold) ||
+            equipment.gold < 0 ||
+            equipment.gold > 100000
+          )
+            add(prefix + "startingEquipment.gold", "invalid-number");
+          list(equipment.items, prefix + "startingEquipment.items").forEach((item, i) => {
+            const value = originRecord(item),
+              path = prefix + "startingEquipment.items." + String(i);
+            if (!value) {
+              add(path, "invalid-equipment");
+              return;
+            }
+            known(value, ["dependency", "quantity"], path);
+            reference(value.dependency, path + ".dependency", ["equipment", "weapon"]);
+            if (!integer(value.quantity, 1, 100000))
+              add(path + ".quantity", "invalid-number");
+          });
+        }
+      }
       if (node.family === "class")
         for (const key of ["starting", "multiclass"]) {
           const scope = originRecord(d[key]);
@@ -520,6 +616,20 @@ export function conformOriginDefinition(
   for (const [key, value] of Object.entries(table)) {
     const path = "payload.data.dependencies." + key;
     const v = originRecord(value);
+    if (v?.kind === "catalogue") {
+      try {
+        const snapshot = parseDefinitionSnapshot(v);
+        if (sourceIdentity(snapshot) !== key) add(path, "dependency-identity");
+        if (Object.hasOwn(snapshot.definition.payload.data, "dependencies"))
+          add(path, "nested-dependencies");
+        for (const issue of conformDefinition(snapshot.definition, true))
+          issues.push({ ...issue, path: path + ".definition." + issue.path });
+        checkNode(snapshot.definition, key, path + ".definition.payload.data.");
+      } catch {
+        add(path, "invalid-dependency");
+      }
+      continue;
+    }
     const source = originRecord(v?.source);
     if (
       !v ||
@@ -589,7 +699,7 @@ export function conformOriginDefinition(
 /** Explicit authoring inclusion. Stable root publication later validates the complete closure. */
 export function includeOriginDependency(
   definition: LibraryDefinition,
-  version: LibraryVersion
+  version: DefinitionSnapshot
 ): { definition: LibraryDefinition; key: string } {
   const result = structuredClone(definition);
   const key = dependencyKey(version);
@@ -602,12 +712,14 @@ export function includeOriginDependency(
       throw new Error("conflicting-dependency");
     table[childKey] = child;
   }
-  const node: OriginDependency = {
-    source: { ownerUid: version.ownerUid, id: version.entryId },
-    sourceVersion: version.version,
-    provenance: version.provenance,
-    definition: copied,
-  };
+  const node: OriginDependency = isCatalogueSnapshot(version)
+    ? { ...version, definition: copied }
+    : {
+        source: { ownerUid: version.ownerUid, id: version.entryId },
+        sourceVersion: version.version,
+        provenance: version.provenance,
+        definition: copied,
+      };
   if (Object.hasOwn(table, key) && !equal(table[key], node))
     throw new Error("conflicting-dependency");
   table[key] = node;
@@ -636,8 +748,10 @@ export function includeOriginDependency(
  */
 export function originFeatIdentity(
   definition: LibraryDefinition,
-  canonicalSource: LibraryRef
+  canonicalSource: CanonicalSource
 ): string {
+  if ("kind" in canonicalSource)
+    return JSON.stringify(["catalogue", canonicalSource.catalogue, canonicalSource.id]);
   const d = definition.payload.data;
   return typeof d.mechanicId === "string" && d.mechanicId !== "custom"
     ? JSON.stringify([

@@ -1,3 +1,5 @@
+import { isLibrarySnapshot } from "@/lib/homebrew/sources";
+import { isBundledSnapshot, instanceVersionLabel } from "@/lib/homebrew/instances";
 import { Checkbox } from "@/components/ui/selection";
 import { useEffect, useRef, useState } from "react";
 import { characterPath, parseCharacter, type FolioCharacter } from "@/lib/identity/model";
@@ -303,15 +305,18 @@ function HomebrewCopy({
   return (
     <details className="homebrew-preview" open>
       <summary>
-        {item.snapshot.definition.name} · {label("version")} {item.snapshot.version}
+        {item.snapshot.definition.name} · {label("version")}{" "}
+        {instanceVersionLabel(item.snapshot)}
       </summary>
       <HomebrewReader definition={item.snapshot.definition} />
-      {item.snapshot.provenance && (
-        <p>
-          {label("source")} · {item.snapshot.provenance.source.ownerUid} ·{" "}
-          {label("version")} {item.snapshot.provenance.sourceVersion}
-        </p>
-      )}
+      {!isBundledSnapshot(item.snapshot) &&
+        isLibrarySnapshot(item.snapshot) &&
+        item.snapshot.provenance && (
+          <p>
+            {label("source")} · {item.snapshot.provenance.source.ownerUid} ·{" "}
+            {label("version")} {item.snapshot.provenance.sourceVersion}
+          </p>
+        )}
       {originals.map((saved) => (
         <section key={saved.key} aria-label={label("recoveryUnavailable")}>
           <p role="alert">{label("recoveryUnavailable")}</p>
@@ -434,22 +439,28 @@ function HomebrewCopy({
       {(error || restored.unreadable || archive.error || op.error) && (
         <p role="alert">{label("unavailable")}</p>
       )}
-      {owner && (
+      {owner && !isBundledSnapshot(item.snapshot) && isLibrarySnapshot(item.snapshot) && (
         <button
           disabled={op.busy || !!draft || !navigator.onLine}
           onClick={() => {
-            if (!active()) return;
+            if (
+              !active() ||
+              isBundledSnapshot(item.snapshot) ||
+              !isLibrarySnapshot(item.snapshot)
+            )
+              return;
+            const snapshot = item.snapshot;
             const check = session.ticket();
             const base = item;
             const authority = character;
             setError(false);
             void library
-              .load(item.snapshot.entryId)
+              .load(snapshot.entryId)
               .then(async (entry) => {
                 if (!active() || !validTicket(check)) return;
                 if (!entry?.stableVersion) throw Error("missing");
                 const v = await library.readVersion(
-                  { ownerUid: item.snapshot.ownerUid, id: entry.id },
+                  { ownerUid: snapshot.ownerUid, id: entry.id },
                   entry.stableVersion
                 );
                 if (active() && validTicket(check))
@@ -477,7 +488,7 @@ function HomebrewCopy({
               !equal(update.base, item) ||
               update.character.revision !== character.revision ||
               !equal(update.character.currentAssignment, character.currentAssignment) ||
-              update.version.version === item.snapshot.version ||
+              String(update.version.version) === instanceVersionLabel(item.snapshot) ||
               conformDefinition(update.version.definition).some(
                 (d) => d.severity === "invalid"
               )
@@ -500,7 +511,14 @@ function HomebrewCopy({
         </section>
       )}
       <div className="identity-actions">
-        <HomebrewExport definition={item.snapshot.definition} version={item.snapshot} />
+        <HomebrewExport
+          definition={item.snapshot.definition}
+          version={
+            !isBundledSnapshot(item.snapshot) && isLibrarySnapshot(item.snapshot)
+              ? item.snapshot
+              : undefined
+          }
+        />
         <button
           onClick={() =>
             downloadText(JSON.stringify(item, null, 2), "homebrew-instance.json")

@@ -125,3 +125,15 @@ The shared Library controller still owns loaded base, revision, envelope and rec
 Unknown/future/incompatible originals remain intact and unsupported; no editor change interprets
 prose or claims deterministic combat execution. P10/P11 own character application, and later play
 blocks must still prove same-engine custom automation, authoritative in-use edits and causal undo.
+
+## Starting acquisition source vocabulary
+
+Classes share [explicit sources and pools](homebrew-sources.md) with origins. ClassData
+optionally declares `startingEquipment: {gold, items: [{dependency, quantity}]}` using
+its exact flat included weapon/equipment closure. Existing acquisitions and inline
+choices retain their shape. Shared benefits model expertise, training, mastery, spells,
+quantity entitlements and gold; spell policies distinguish known/prepared/spellbook and
+free-cast ability/rest uses. This is build composition, not automatic inventory spending.
+`conformClassPair` and `composeSubclassCasting` accept either an authentic Library parent
+or an explicit pinned catalogue parent. Parent source, revision/release/adapter, included
+definition and flat child closure must agree exactly; custom parent behavior is unchanged.

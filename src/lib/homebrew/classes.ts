@@ -1,3 +1,4 @@
+import { isCatalogueSnapshot, sourceIdentity, type DefinitionSnapshot } from "./sources";
 import { ABILITIES, validResourceId, type CommonData } from "./model";
 import { conformDefinition, type AuthoringDiagnostic } from "./conformance";
 import {
@@ -16,7 +17,6 @@ import {
 import {
   parseDefinition,
   type LibraryDefinition,
-  type LibraryVersion,
   type JsonValue,
 } from "../library/model";
 import { equal } from "../shared/model";
@@ -56,6 +56,7 @@ interface ProgressionData extends CommonData, OriginDeclarations {
   programs: ActionProgram[];
 }
 export interface ClassData extends ProgressionData {
+  startingEquipment?: { gold: number; items: { dependency: string; quantity: number }[] };
   hitDie: 6 | 8 | 10 | 12;
   primaryAbilities: Ability[];
   savingThrows: [Ability, Ability];
@@ -68,6 +69,7 @@ export interface SubclassData extends ProgressionData {
   castingRelationship: "inherit" | "augment" | "replace";
 }
 export const CLASS_DATA_KEYS = [
+  "startingEquipment",
   "levelBasis",
   "progression",
   "spellcasting",
@@ -451,7 +453,7 @@ export function decodeClassDefinition(original: unknown): ClassDecodeResult {
 /** Exact owned stable parent; names and a floating library head never establish compatibility. */
 export function conformClassPair(
   subclass: LibraryDefinition,
-  parent: LibraryVersion
+  parent: DefinitionSnapshot
 ): AuthoringDiagnostic[] {
   const issues = conformDefinition(subclass);
   if (subclass.family !== "subclass" || parent.definition.family !== "class")
@@ -468,6 +470,21 @@ export function conformClassPair(
   const children = originRecord(childDefinition.payload.data.dependencies) ?? {};
   const table = originRecord(subclass.payload.data.dependencies) ?? {};
   delete childDefinition.payload.data.dependencies;
+  if (isCatalogueSnapshot(parent)) {
+    if (
+      !dep ||
+      dep.kind !== "catalogue" ||
+      sourceIdentity(dep as unknown as DefinitionSnapshot) !== sourceIdentity(parent) ||
+      !equal(dep, { ...parent, definition: childDefinition }) ||
+      Object.entries(children).some(([key, value]) => !equal(table[key], value))
+    )
+      issues.push({
+        path: "parentClass",
+        code: "parent-version-mismatch",
+        severity: "invalid",
+      });
+    return issues;
+  }
   const direct =
     source?.ownerUid === parent.ownerUid &&
     source.id === parent.entryId &&

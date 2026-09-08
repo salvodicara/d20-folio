@@ -1,4 +1,5 @@
-import type { LibraryDefinition, LibraryVersion } from "../library/model";
+import type { DefinitionSnapshot } from "./sources";
+import type { LibraryDefinition } from "../library/model";
 import type { AuthoringDiagnostic } from "./conformance";
 import {
   blankClassLevel,
@@ -25,7 +26,7 @@ export type SubclassCastingComposition =
 /** Static pinned declarations only: no character levels, slot calculator or authority transfer. */
 export function composeSubclassCasting(
   definition: LibraryDefinition,
-  selectedParent?: LibraryVersion
+  selectedParent?: DefinitionSnapshot
 ): SubclassCastingComposition {
   const decoded = decodeClassDefinition(definition);
   if (!decoded.ok) return { ok: false, original: definition, issues: decoded.issues };

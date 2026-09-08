@@ -2,15 +2,15 @@
 
 The new V2 boundary stores copies at
 `folioAccounts/{ownerUid}/characters/{characterId}/homebrew/{instanceId}`.
-Each copy has its own revision, the complete immutable owned `LibraryVersion` as
-`snapshot`, and separate `state` (`quantity`, `remainingCharges`, `prepared`,
+Each individually addressed copy has its own revision, the complete immutable owned
+`LibraryVersion` as `snapshot`, and separate `state` (`quantity`, `remainingCharges`, `prepared`,
 `equipped`, `attuned`). Snapshot includes original provenance; an authorized sheet
 reader does not need access to the owner's private library. A template update is
 explicit and retains state exactly, even when remaining charges exceed the new
 capacity. Presentation reports such mismatch; persistence neither clamps nor refills.
 Manual state edits preserve the snapshot and execute no mechanics.
 
-`createInstanceRepository(db, session)` implements `InstanceRepository` from
+`createInstanceRepository(db, session, verifyCatalogue?)` implements `InstanceRepository` from
 `src/lib/homebrew/instances.ts`. `addIntent`, `updateIntent`, and `stateIntent`
 produce frozen P03-compatible envelopes, consumed by the existing operation
 controller via `commit`/`reconcile`. There is no second queue or engine.
@@ -83,3 +83,42 @@ replacement and leaves the visible state unchanged; an unreadable original canno
 be silently replaced. Reopening the sheet offers all archived originals, including
 originals from multiple separate incompatible drafts. This is recovery storage,
 not a mutation queue, and it grants no operation authority.
+
+## Initial creation loadout
+
+`folioAccounts/{ownerUid}/characters/{characterId}/loadout/initial` groups the initial
+items/spells in one schema1 document: `character`, `revision`, `sources`, `instances`,
+`lastOperation`. Each item is the same HomebrewInstance with a reserved `initial_` ID;
+individually addressed additions reject that namespace. General list/watch combines
+both addresses, waits for both subscriptions before emitting and isolates recoverable
+malformed records. Each item has exactly one address; no parent equipment/spell array
+or individual duplicate is written.
+
+`InstanceSnapshot` accepts an explicit DefinitionSnapshot or bundled snapshot
+`{kind:"bundled",schema:1,sourceKey,dependencyPath,definition}`. `sources` stores each
+originating DefinitionSnapshot once under its complete `sourceIdentity` key. The
+bundle path is the exact key in that root's flat dependencies map. Decoder equality
+binds the included definition to that map. It never reads a current character origin,
+private child Library entry, offer or grant. A received root therefore retains acquired
+private gear/spells after original offer revocation or later origin replacement.
+Initial creation must compare this map and every selected item to its authenticated
+selected source closure; a self-consistent raw map alone is not source authorization.
+
+`stateIntent` for an initial item captures the whole group last loaded by list/watch,
+requires its target to equal the supplied item, and freezes it as optional
+`InstanceOperation.initialBase`. `baseRevision` and receipt revision refer to the group;
+the changed item also advances its own revision. Commit CAS compares the exact whole
+initialBase, source map and siblings included. It updates just the target state/revision
+and lastOperation plus group revision/lastOperation, preserving all other bytes. One
+P03 receipt records the exact operation. Direct owned LibraryVersion copies retain exact owned source updates at either address;
+the grouped source-update operation also carries initialBase, preserves item state and
+all siblings/sources, and reads the exact new owned immutable version. Catalogue/bundled
+grouped copies support state edits but do not manufacture an owned version to update.
+No source permission check or origin pointer is needed for a state-only operation.
+
+The initial loadout uses180000 UTF8/4096 nodes; the full state operation (base, selected
+item snapshot and next intent) uses600000 UTF8/4096 nodes. Explicit source verifier
+injection authenticates catalogue claims on reads and state operations; absent verification
+produces recoverable incompatible data. Existing individual byte shape and addresses
+remain unchanged. Firestore initial creation/state predicates are owned by the P10
+creation/rules integration; the model does not claim emulator acceptance by itself.

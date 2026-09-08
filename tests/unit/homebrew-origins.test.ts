@@ -542,7 +542,7 @@ it("namespaces feat mechanic identity by authoring source without using revision
   expect(composeOriginBuild(character, b).valid).toBe(true);
   second.payload.data.source = "synthetic-book-a";
   second.payload.data.sourceVersion = "2";
-  b.selections.later.snapshot.version = 2;
+  (b.selections.later.snapshot as LibraryVersion).version = 2;
   expect(
     composeOriginBuild(character, b).diagnostics.some(
       (i) => i.code === "nonrepeatable-feat"
@@ -561,7 +561,7 @@ it("keeps independent homebrew authors distinct and deduplicates canonical accep
     offerId: "offer",
     grantId: author + "~offer",
   });
-  chosen(b).snapshot.provenance = provenance("author-a");
+  (chosen(b).snapshot as LibraryVersion).provenance = provenance("author-a");
   b.selections.later = {
     id: "later",
     ordinal: 1,
@@ -570,7 +570,7 @@ it("keeps independent homebrew authors distinct and deduplicates canonical accep
     exceptions: [],
   };
   expect(composeOriginBuild(character, b).valid).toBe(true);
-  b.selections.later.snapshot.provenance = provenance("author-a");
+  (b.selections.later.snapshot as LibraryVersion).provenance = provenance("author-a");
   expect(
     composeOriginBuild(character, b).diagnostics.some(
       (i) => i.code === "nonrepeatable-feat"

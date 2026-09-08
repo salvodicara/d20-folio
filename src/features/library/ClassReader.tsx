@@ -1,3 +1,4 @@
+import { isCatalogueSnapshot } from "@/lib/homebrew/sources";
 import type { JsonValue, LibraryDefinition } from "@/lib/library/model";
 import { originRecord } from "@/lib/homebrew/origins";
 import { composeSubclassCasting } from "@/lib/homebrew/class-composition";
@@ -158,7 +159,9 @@ export function ClassReader({
             <p className="homebrew-hint">{label("classes.composedCastingHelp")}</p>
             <p>
               {composition.parent.definition.name} · {label("version")}{" "}
-              {composition.parent.sourceVersion}
+              {isCatalogueSnapshot(composition.parent)
+                ? composition.parent.release
+                : composition.parent.sourceVersion}
             </p>
             {casting(composition.policy, true)}
             {composition.rows.map(({ level, counts }) => (

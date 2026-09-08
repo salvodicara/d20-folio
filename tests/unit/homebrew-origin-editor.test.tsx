@@ -267,7 +267,7 @@ it("ignores a version result from the previously restored source after switching
     invalidated: false,
   };
   sessionStorage.setItem(key + ":parked:summer", JSON.stringify(next));
-  const { props } = await setup(old.snapshot);
+  const { props } = await setup(old.snapshot as LibraryVersion);
   let finish!: (v: LibraryVersion[]) => void;
   vi.spyOn(props.library, "listVersions").mockImplementation(
     () =>
@@ -280,7 +280,7 @@ it("ignores a version result from the previously restored source after switching
   fireEvent.click(screen.getByText("Other saved drafts"));
   fireEvent.click(screen.getByRole("button", { name: /Resume saved draft: Summer Kin/ }));
   await act(async () => {
-    finish([old.snapshot]);
+    finish([old.snapshot as LibraryVersion]);
     await Promise.resolve();
   });
   expect(screen.queryByRole("combobox", { name: "Creation and version" })).toBeNull();

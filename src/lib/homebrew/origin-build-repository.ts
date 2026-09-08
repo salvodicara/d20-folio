@@ -1,3 +1,5 @@
+import { isLibrarySnapshot } from "./sources";
+import type { ChoiceResolutionContext } from "./choice-pools";
 import {
   doc,
   getDocFromServer,
@@ -76,7 +78,8 @@ export function assertOriginBuildBudget(value: unknown, bytes = 180000) {
 }
 export function createOriginBuildRepository(
   db: Firestore,
-  session: SessionController
+  session: SessionController,
+  context: ChoiceResolutionContext = {}
 ): OriginBuildRepository {
   const tickets = new Map<
     string,
@@ -127,7 +130,9 @@ export function createOriginBuildRepository(
     ensureIssues();
     const path = originBuildPath(character);
     try {
-      const value = snapshot.exists() ? parseOriginBuild(snapshot.data()) : null;
+      const value = snapshot.exists()
+        ? parseOriginBuild(snapshot.data(), context.verifyCatalogue ?? (() => false))
+        : null;
       if (
         value &&
         !equal(value.character, { ownerUid: character.ownerUid, id: character.id })
@@ -155,7 +160,7 @@ export function createOriginBuildRepository(
       lastOperation: { uid: op.uid, opId: op.opId },
     };
     assertOriginBuildBudget(value);
-    return parseOriginBuild(value);
+    return parseOriginBuild(value, context.verifyCatalogue ?? (() => false));
   }
   function receipt(value: unknown, op: OriginBuildOperation): OriginBuildReceipt {
     const r = value as OriginBuildReceipt | null;
@@ -206,7 +211,7 @@ export function createOriginBuildRepository(
       const ref = { ownerUid: character.ownerUid, id: character.id };
       if (ref.ownerUid !== uid()) throw new Error("permission-denied");
       if (base) {
-        parseOriginBuild(base);
+        parseOriginBuild(base, context.verifyCatalogue ?? (() => false));
         if (!equal(base.character, ref)) throw new Error("invalid-operation");
       }
       const previous = base?.selections[targetId];
@@ -223,9 +228,12 @@ export function createOriginBuildRepository(
           throw new Error("invalid-operation");
         if (
           !equal(previous?.snapshot, selection.snapshot) &&
-          selection.snapshot.ownerUid !== uid()
+          (!isLibrarySnapshot(selection.snapshot) ||
+            selection.snapshot.ownerUid !== uid())
         )
           throw new Error("permission-denied");
+        if (!equal(previous?.resolvedChoices ?? {}, selection.resolvedChoices ?? {}))
+          throw new Error("invalid-operation");
       } else if (!previous) throw new Error("invalid-operation");
       const selections = selection
         ? { ...base?.selections, [targetId]: selection }
@@ -259,7 +267,7 @@ export function createOriginBuildRepository(
       );
       const next = nextBuild(op);
       assertOriginBuildBudget(op, 600000);
-      if (validateOriginSelection(character, next).length > 0)
+      if (validateOriginSelection(character, next, context).length > 0)
         throw new Error("invalid-origin-selection");
       tickets.set(op.opId, { fence: session.ticket(), operation: op });
       session.track(() => tickets.delete(op.opId));
@@ -326,6 +334,7 @@ export function createOriginBuildRepository(
               !equal(op.base?.selections[op.targetId]?.snapshot, selection.snapshot)
             ) {
               const v = selection.snapshot;
+              if (!isLibrarySnapshot(v)) throw new Error("invalid-operation");
               const source = await tx.get(
                 doc(
                   db,

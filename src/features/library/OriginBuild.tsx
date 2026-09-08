@@ -1,3 +1,4 @@
+import { isLibrarySnapshot, sourceVersionLabel } from "@/lib/homebrew/sources";
 import { useEffect, useRef, useState } from "react";
 import { type FolioCharacter } from "@/lib/identity/model";
 import type { SessionController } from "@/lib/identity/session";
@@ -75,7 +76,7 @@ export function OriginBuildPanel(props: Props) {
         <article className="origin-selected" key={selection.id}>
           <h4>
             {selection.snapshot.definition.name} · {label("version")}{" "}
-            {selection.snapshot.version}
+            {sourceVersionLabel(selection.snapshot)}
           </h4>
           <p>
             {label("origin.acquiredOrder")}: {selection.ordinal + 1}
@@ -105,7 +106,9 @@ export function OriginBuildPanel(props: Props) {
           </details>
           <HomebrewExport
             definition={selection.snapshot.definition}
-            version={selection.snapshot}
+            version={
+              isLibrarySnapshot(selection.snapshot) ? selection.snapshot : undefined
+            }
           />
           {owner && (
             <button onClick={() => setEditing(selection.id)}>
@@ -157,6 +160,7 @@ export function OriginBuildEditor({
             version.definition.family === "feat"
               ? version.definition.payload.data.repeatable !== true &&
                 s.snapshot.entryId === version.entryId &&
+                isLibrarySnapshot(s.snapshot) &&
                 s.snapshot.ownerUid === version.ownerUid
               : s.snapshot.definition.family === version.definition.family
           )
@@ -288,7 +292,7 @@ export function OriginBuildEditor({
   const latestSelection = loaded.base?.selections[draft.targetId];
   async function loadVersions() {
     const snapshot = draftRef.current.selection?.snapshot;
-    if (!snapshot) return;
+    if (!snapshot || !isLibrarySnapshot(snapshot)) return;
     const check = session.ticket();
     const generation = ++versionGeneration.current;
     setVersionError(false);
@@ -412,7 +416,7 @@ export function OriginBuildEditor({
         <>
           <h3>
             {draft.selection.snapshot.definition.name} · {label("version")}{" "}
-            {draft.selection.snapshot.version}
+            {sourceVersionLabel(draft.selection.snapshot)}
           </h3>
           {before && (
             <LibraryComparison
@@ -427,45 +431,49 @@ export function OriginBuildEditor({
             disabled={locked}
             onChange={(selection) => change({ ...draftRef.current, selection })}
           />
-          <details>
-            <summary>{label("origin.changeVersion")}</summary>
-            <p>{label("origin.versionHelp")}</p>
-            <button disabled={locked} onClick={() => void loadVersions()}>
-              {label("origin.loadVersions")}
-            </button>
-            {versions.length > 0 && (
-              <label>
-                {label("origin.libraryVersion")}
-                <select
-                  value={draft.selection.snapshot.version}
-                  disabled={locked}
-                  onChange={(e) => {
-                    const snapshot = versions.find(
-                      (v) =>
-                        v.version === Number(e.target.value) &&
-                        v.ownerUid === draftRef.current.selection?.snapshot.ownerUid &&
-                        v.entryId === draftRef.current.selection.snapshot.entryId
-                    );
-                    if (snapshot && draftRef.current.selection)
-                      change({
-                        ...draftRef.current,
-                        selection: replaceOriginSnapshot(
-                          draftRef.current.selection,
-                          snapshot
-                        ),
-                      });
-                  }}
-                >
-                  {versions.map((v) => (
-                    <option value={v.version} key={v.version}>
-                      {label("version")} {v.version}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            {versionError && <p role="alert">{label("origin.versionUnavailable")}</p>}
-          </details>
+          {isLibrarySnapshot(draft.selection.snapshot) && (
+            <details>
+              <summary>{label("origin.changeVersion")}</summary>
+              <p>{label("origin.versionHelp")}</p>
+              <button disabled={locked} onClick={() => void loadVersions()}>
+                {label("origin.loadVersions")}
+              </button>
+              {versions.length > 0 && (
+                <label>
+                  {label("origin.libraryVersion")}
+                  <select
+                    value={sourceVersionLabel(draft.selection.snapshot)}
+                    disabled={locked}
+                    onChange={(e) => {
+                      const snapshot = versions.find(
+                        (v) =>
+                          v.version === Number(e.target.value) &&
+                          draftRef.current.selection &&
+                          isLibrarySnapshot(draftRef.current.selection.snapshot) &&
+                          v.ownerUid === draftRef.current.selection.snapshot.ownerUid &&
+                          v.entryId === draftRef.current.selection.snapshot.entryId
+                      );
+                      if (snapshot && draftRef.current.selection)
+                        change({
+                          ...draftRef.current,
+                          selection: replaceOriginSnapshot(
+                            draftRef.current.selection,
+                            snapshot
+                          ),
+                        });
+                    }}
+                  >
+                    {versions.map((v) => (
+                      <option value={v.version} key={v.version}>
+                        {label("version")} {v.version}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {versionError && <p role="alert">{label("origin.versionUnavailable")}</p>}
+            </details>
+          )}
           {before && (
             <button
               disabled={locked}

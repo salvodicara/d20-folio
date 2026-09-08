@@ -1,3 +1,5 @@
+import { assertJsonBudget } from "../shared/json-budget";
+import { isLibrarySnapshot, type CatalogueVerifier } from "./sources";
 import {
   collection,
   doc,
@@ -7,6 +9,7 @@ import {
   runTransaction,
   type Firestore,
   type QuerySnapshot,
+  type DocumentSnapshot,
 } from "firebase/firestore";
 import {
   characterPath,
@@ -23,6 +26,14 @@ import { equal, receiptPath } from "../shared/model";
 import { conformDefinition } from "./conformance";
 import {
   DEFAULT_INSTANCE_STATE,
+  isInitialInstanceId,
+  isBundledSnapshot,
+  initialLoadoutPath,
+  parseInitialLoadout,
+  parseInitialSnapshot,
+  updateInitialLoadoutInstance,
+  type InstanceSnapshot,
+  type InitialLoadout,
   instancePath,
   materializeInstance,
   parseInstance,
@@ -43,9 +54,11 @@ function requireReusable(snapshot: LibraryVersion) {
 }
 export function createInstanceRepository(
   db: Firestore,
-  session: SessionController
+  session: SessionController,
+  verifyCatalogue?: CatalogueVerifier
 ): InstanceRepository {
-  const tickets = new Map<string, () => void>();
+  const tickets = new Map<string, { fence: () => void; operation: InstanceOperation }>();
+  const initialBases = new Map<string, InitialLoadout>();
   const sources = new Map<string, InstanceIssue[]>();
   const listeners = new Set<(issues: InstanceIssue[]) => void>();
   const uid = () => {
@@ -62,7 +75,8 @@ export function createInstanceRepository(
     if (op) {
       const ticket = tickets.get(op.opId);
       if (!ticket) throw new Error("stale-session");
-      ticket();
+      ticket.fence();
+      if (!equal(ticket.operation, op)) throw new Error("intent-mismatch");
       if (op.uid !== uid() || !equal(op.scope, session.scope()))
         throw new Error("stale-session");
     }
@@ -76,10 +90,12 @@ export function createInstanceRepository(
       /* New scope. */
     }
     sources.clear();
+    initialBases.clear();
     listeners.clear();
     epoch = session.ticket();
     session.track(() => {
       sources.clear();
+      initialBases.clear();
       listeners.clear();
       epoch = null;
     });
@@ -90,7 +106,7 @@ export function createInstanceRepository(
       values: HomebrewInstance[] = [];
     for (const d of s.docs) {
       try {
-        const i = parseInstance(d.data());
+        const i = parseInstance(d.data(), undefined, verifyCatalogue ?? (() => false));
         if (
           !equal(i.character, { ownerUid: character.ownerUid, id: character.id }) ||
           i.id !== d.id
@@ -105,7 +121,35 @@ export function createInstanceRepository(
         });
       }
     }
-    sources.set(characterPath(character), issues);
+    sources.set(characterPath(character) + "/homebrew", issues);
+    for (const listener of listeners) listener([...sources.values()].flat());
+    return values;
+  }
+  function initialRecords(
+    character: CharacterRef,
+    snapshot: DocumentSnapshot
+  ): HomebrewInstance[] {
+    ensureIssues();
+    const path = initialLoadoutPath(character);
+    const issues: InstanceIssue[] = [];
+    let values: HomebrewInstance[] = [];
+    initialBases.delete(path);
+    if (snapshot.exists()) {
+      try {
+        const group = parseInitialLoadout(snapshot.data(), verifyCatalogue);
+        if (!equal(group.character, { ownerUid: character.ownerUid, id: character.id }))
+          throw new Error("incompatible-instance");
+        initialBases.set(path, group);
+        values = Object.values(group.instances);
+      } catch {
+        issues.push({
+          path,
+          original: serializeLibraryRecovery(snapshot.data()),
+          error: "incompatible-instance",
+        });
+      }
+    }
+    sources.set(path, issues);
     for (const listener of listeners) listener([...sources.values()].flat());
     return values;
   }
@@ -113,30 +157,56 @@ export function createInstanceRepository(
     kind: InstanceOperation["kind"],
     character: FolioCharacter,
     base: HomebrewInstance | null,
-    snapshot: LibraryVersion,
+    snapshot: InstanceSnapshot,
     state: InstanceState,
     id: string
   ) {
     check();
     parseCharacter(character);
     identityId(id);
-    parseInstanceVersion(snapshot);
-    if (kind !== "homebrew-state") requireReusable(snapshot);
+    const grouped = isInitialInstanceId(id);
+    const initialBase = grouped
+      ? initialBases.get(initialLoadoutPath(character))
+      : undefined;
+    if (grouped) {
+      if (
+        kind === "homebrew-add" ||
+        !initialBase ||
+        !equal(initialBase.instances[id], base)
+      )
+        throw new Error("invalid-operation");
+      parseInitialSnapshot(snapshot, initialBase.sources, verifyCatalogue);
+    } else parseInstanceVersion(snapshot, verifyCatalogue ?? (() => false));
+    if (kind !== "homebrew-state") {
+      if (isBundledSnapshot(snapshot) || !isLibrarySnapshot(snapshot))
+        throw new Error("invalid-operation");
+      requireReusable(snapshot);
+    }
     parseInstanceState(state);
     const ref = { ownerUid: character.ownerUid, id: character.id };
-    if (character.ownerUid !== uid() || snapshot.ownerUid !== uid())
+    if (
+      character.ownerUid !== uid() ||
+      (!isBundledSnapshot(snapshot) &&
+        isLibrarySnapshot(snapshot) &&
+        snapshot.ownerUid !== uid())
+    )
       throw new Error("permission-denied");
     if (base) {
-      parseInstance(base);
+      parseInstance(base, initialBase?.sources, verifyCatalogue);
       if (!equal(base.character, ref) || base.id !== id)
         throw new Error("invalid-operation");
-      if (kind === "homebrew-update" && base.snapshot.entryId !== snapshot.entryId)
+      if (
+        kind === "homebrew-update" &&
+        (isBundledSnapshot(base.snapshot) ||
+          isBundledSnapshot(snapshot) ||
+          !isLibrarySnapshot(base.snapshot) ||
+          !isLibrarySnapshot(snapshot) ||
+          base.snapshot.entryId !== snapshot.entryId)
+      )
         throw new Error("invalid-operation");
     }
     const opId = crypto.randomUUID();
-    tickets.set(opId, session.ticket());
-    session.track(() => tickets.delete(opId));
-    return frozen(
+    const operation = frozen(
       structuredClone({
         kind,
         character: ref,
@@ -147,7 +217,8 @@ export function createInstanceRepository(
         opId,
         uid: uid(),
         scope: session.scope(),
-        baseRevision: base?.revision ?? 0,
+        baseRevision: initialBase?.revision ?? base?.revision ?? 0,
+        ...(initialBase ? { initialBase } : {}),
         authority: {
           characterRevision: character.revision,
           assignment: character.currentAssignment,
@@ -155,6 +226,10 @@ export function createInstanceRepository(
         },
       })
     ) as InstanceOperation;
+    assertJsonBudget(operation, 600000, 4096);
+    tickets.set(opId, { fence: session.ticket(), operation });
+    session.track(() => tickets.delete(opId));
+    return operation;
   }
   function receipt(value: unknown, op: InstanceOperation) {
     const r = value as InstanceReceipt | null;
@@ -173,27 +248,48 @@ export function createInstanceRepository(
     async list(character) {
       check();
       const done = session.ticket();
-      const s = await getDocsFromServer(
-        collection(db, characterPath(character) + "/homebrew")
-      );
+      const [individual, grouped] = await Promise.all([
+        getDocsFromServer(collection(db, characterPath(character) + "/homebrew")),
+        getDocFromServer(doc(db, initialLoadoutPath(character))),
+      ]);
       done();
-      return records(character, s);
+      return [...records(character, individual), ...initialRecords(character, grouped)];
     },
     watch(character, onData, onError) {
       check();
-      return session.track(
-        onSnapshot(
-          collection(db, characterPath(character) + "/homebrew"),
-          session.guard((s: QuerySnapshot) => {
-            try {
-              onData(records(character, s));
-            } catch (e) {
-              onError(e as Error);
-            }
-          }),
-          session.guard(onError)
-        )
+      let individual: HomebrewInstance[] | null = null;
+      let grouped: HomebrewInstance[] | null = null;
+      const emit = () => {
+        if (individual && grouped) onData([...individual, ...grouped]);
+      };
+      const stopIndividual = onSnapshot(
+        collection(db, characterPath(character) + "/homebrew"),
+        session.guard((snapshot: QuerySnapshot) => {
+          try {
+            individual = records(character, snapshot);
+            emit();
+          } catch (error) {
+            onError(error as Error);
+          }
+        }),
+        session.guard(onError)
       );
+      const stopGrouped = onSnapshot(
+        doc(db, initialLoadoutPath(character)),
+        session.guard((snapshot: DocumentSnapshot) => {
+          try {
+            grouped = initialRecords(character, snapshot);
+            emit();
+          } catch (error) {
+            onError(error as Error);
+          }
+        }),
+        session.guard(onError)
+      );
+      return session.track(() => {
+        stopIndividual();
+        stopGrouped();
+      });
     },
     addIntent: (c, v, s = DEFAULT_INSTANCE_STATE, id = crypto.randomUUID()) =>
       intent("homebrew-add", c, null, v, s, id),
@@ -226,22 +322,48 @@ export function createInstanceRepository(
       };
       fence();
       identityId(op.opId);
-      instancePath(op.character, op.targetId);
-      parseInstanceVersion(op.snapshot);
-      if (op.kind !== "homebrew-state") requireReusable(op.snapshot);
+      const grouped = isInitialInstanceId(op.targetId);
+      if (grouped) {
+        if (
+          op.kind === "homebrew-add" ||
+          !op.initialBase ||
+          !equal(op.initialBase.instances[op.targetId], op.base) ||
+          !equal(op.initialBase.character, op.character)
+        )
+          throw new Error("invalid-operation");
+        parseInitialLoadout(op.initialBase, verifyCatalogue);
+        parseInitialSnapshot(op.snapshot, op.initialBase.sources, verifyCatalogue);
+      } else {
+        instancePath(op.character, op.targetId);
+        if (op.initialBase) throw new Error("invalid-operation");
+        parseInstanceVersion(op.snapshot, verifyCatalogue ?? (() => false));
+      }
+      if (op.kind !== "homebrew-state") {
+        if (isBundledSnapshot(op.snapshot) || !isLibrarySnapshot(op.snapshot))
+          throw new Error("invalid-operation");
+        requireReusable(op.snapshot);
+      }
       parseInstanceState(op.state);
-      if (op.character.ownerUid !== op.uid || op.snapshot.ownerUid !== op.uid)
+      if (
+        op.character.ownerUid !== op.uid ||
+        (!isBundledSnapshot(op.snapshot) &&
+          isLibrarySnapshot(op.snapshot) &&
+          op.snapshot.ownerUid !== op.uid)
+      )
         throw new Error("permission-denied");
       if (
         op.kind === "homebrew-add"
           ? op.base !== null || op.baseRevision !== 0
-          : !op.base || op.baseRevision !== op.base.revision
+          : !op.base || op.baseRevision !== (op.initialBase?.revision ?? op.base.revision)
       )
         throw new Error("invalid-operation");
       if (
         op.kind === "homebrew-update" &&
         (!equal(op.state, op.base?.state) ||
-          op.snapshot.entryId !== op.base?.snapshot.entryId)
+          isBundledSnapshot(op.snapshot) ||
+          !op.base ||
+          isBundledSnapshot(op.base.snapshot) ||
+          op.snapshot.entryId !== op.base.snapshot.entryId)
       )
         throw new Error("invalid-operation");
       if (op.kind === "homebrew-state" && !equal(op.snapshot, op.base?.snapshot))
@@ -269,11 +391,18 @@ export function createInstanceRepository(
             })
           )
             throw new Error("stale-base");
-          const ref = doc(db, instancePath(op.character, op.targetId));
+          const ref = doc(
+            db,
+            grouped
+              ? initialLoadoutPath(op.character)
+              : instancePath(op.character, op.targetId)
+          );
           const current = await tx.get(ref);
-          if (!equal(current.exists() ? current.data() : null, op.base))
+          if (!equal(current.exists() ? current.data() : null, op.initialBase ?? op.base))
             throw new Error("stale-base");
           if (op.kind !== "homebrew-state") {
+            if (isBundledSnapshot(op.snapshot) || !isLibrarySnapshot(op.snapshot))
+              throw new Error("invalid-operation");
             const source = await tx.get(
               doc(
                 db,
@@ -285,14 +414,23 @@ export function createInstanceRepository(
             if (!source.exists() || !equal(source.data(), op.snapshot))
               throw new Error("invalid-operation");
           }
-          const next = materializeInstance(
-            op.character,
-            op.targetId,
-            op.snapshot,
-            op.state,
-            op.baseRevision + 1,
-            { uid: op.uid, opId: op.opId }
-          );
+          const next = op.initialBase
+            ? updateInitialLoadoutInstance(
+                op.initialBase,
+                op.targetId,
+                op.snapshot,
+                op.state,
+                { uid: op.uid, opId: op.opId },
+                verifyCatalogue
+              )
+            : materializeInstance(
+                op.character,
+                op.targetId,
+                op.snapshot,
+                op.state,
+                op.baseRevision + 1,
+                { uid: op.uid, opId: op.opId }
+              );
           const r = { operation: op, revision: next.revision };
           fence();
           tx.set(ref, next);

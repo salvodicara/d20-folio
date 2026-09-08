@@ -94,3 +94,16 @@ receipt budget, and persist/read the legal closure alongside31 valid acquired ro
 Compact maxima fit; larger individually valid multibyte drafts may exceed the shared
 aggregate budget when combined. That path rejects before send and preserves the full
 base and selected draft. Cardinality limits never promise every size combination fits.
+
+## Creation source and choice context
+
+Selections optionally retain `resolvedChoices: Record<path, DefinitionSnapshot[]>`
+alongside path answers. Existing records omit it unchanged. Root and selected catalogue
+snapshots use [explicit sources](homebrew-sources.md), with injected exact adapter
+verification. `composeOriginBuild`, `validateOriginSelection`, `projectOriginCharacter`
+and `createOriginBuildRepository` accept optional ChoiceResolutionContext. Ordinary
+single-root source changes still require an exact owned LibraryVersion and do not mint
+new catalogue sources or change resolvedChoices; new catalogue selection belongs to the
+atomic creation operation. Unchanged snapshots and retained answers remain recoverable.
+Attributed inherited class facts survive origin projection independently of ambiguous
+imported baseline values, without introducing stored class-derived fields in the parent.

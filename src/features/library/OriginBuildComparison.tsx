@@ -1,3 +1,4 @@
+import { sourceVersionLabel } from "@/lib/homebrew/sources";
 import { useTranslation } from "react-i18next";
 import { projectOriginCharacter, type OriginBuild } from "@/lib/homebrew/origin-build";
 import type { FolioCharacter } from "@/lib/identity/model";
@@ -68,7 +69,7 @@ export function OriginBuildComparison({
                   <section key={selection.id}>
                     <h5>
                       {selection.snapshot.definition.name} · {label("version")}{" "}
-                      {selection.snapshot.version}
+                      {sourceVersionLabel(selection.snapshot)}
                     </h5>
                     <ul>
                       {projection.activeChoices

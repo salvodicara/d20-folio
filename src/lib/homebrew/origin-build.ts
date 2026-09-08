@@ -1,3 +1,5 @@
+import { equal } from "../shared/model";
+import { resolveCatalogueChoice, type ChoiceResolutionContext } from "./choice-pools";
 import { assertJsonBudget } from "../shared/json-budget";
 import {
   frozen,
@@ -6,9 +8,20 @@ import {
   type FolioCharacter,
   type JsonObject,
 } from "../identity/model";
-import { libraryPath, parseDefinition, type LibraryVersion } from "../library/model";
+import type { LibraryVersion } from "../library/model";
+import {
+  parseDefinitionSnapshot,
+  snapshotSource,
+  canonicalSource as canonicalSourceOf,
+  dependencySource,
+  canonicalDependencySource,
+  type DefinitionSnapshot,
+  type DefinitionSource,
+  type CanonicalSource,
+  type CatalogueVerifier,
+} from "./sources";
 import { conformDefinition } from "./conformance";
-import { ABILITIES } from "./model";
+import { ABILITIES, initializeDefinition } from "./model";
 import {
   isOriginFamily,
   originFeatIdentity,
@@ -32,7 +45,8 @@ export interface OriginException {
 export interface OriginSelection {
   id: string;
   ordinal: number;
-  snapshot: LibraryVersion;
+  snapshot: DefinitionSnapshot;
+  resolvedChoices?: Record<string, DefinitionSnapshot[]>;
   answers: Record<string, string[]>;
   exceptions: OriginException[];
 }
@@ -52,7 +66,7 @@ export interface OriginDiagnostic {
 export interface OriginFact {
   selectionId: string;
   path: string;
-  source: { ownerUid: string; id: string; version: number };
+  source: DefinitionSource;
   benefit: OriginBenefit;
 }
 export interface ActiveOriginChoice {
@@ -123,47 +137,10 @@ export function assertOriginJsonBudget(
     fail();
   }
 }
-function parseSnapshot(value: unknown): LibraryVersion {
-  const v = record(value);
-  keys(v, [
-    "schema",
-    "ownerUid",
-    "entryId",
-    "version",
-    "definition",
-    "provenance",
-    "operationId",
-  ]);
-  if (
-    v.schema !== 1 ||
-    !safeInt(v.version, 1) ||
-    typeof v.ownerUid !== "string" ||
-    typeof v.entryId !== "string" ||
-    typeof v.operationId !== "string"
-  )
-    fail();
-  libraryPath({ ownerUid: v.ownerUid, id: v.entryId });
-  identityId(v.operationId);
-  parseDefinition(v.definition);
-  if (v.provenance !== null) {
-    const p = record(v.provenance);
-    keys(p, ["source", "sourceVersion", "senderUid", "offerId", "grantId"]);
-    const source = record(p.source);
-    keys(source, ["ownerUid", "id"]);
-    libraryPath(source as unknown as { ownerUid: string; id: string });
-    if (
-      !safeInt(p.sourceVersion, 1) ||
-      typeof p.senderUid !== "string" ||
-      typeof p.offerId !== "string" ||
-      p.grantId !== p.senderUid + "~" + p.offerId
-    )
-      fail();
-    identityId(p.senderUid);
-    identityId(p.offerId);
-  }
-  return v as unknown as LibraryVersion;
-}
-export function parseOriginBuild(value: unknown): OriginBuild {
+export function parseOriginBuild(
+  value: unknown,
+  verifyCatalogue?: CatalogueVerifier
+): OriginBuild {
   try {
     assertOriginJsonBudget(value);
     const v = record(value);
@@ -186,10 +163,31 @@ export function parseOriginBuild(value: unknown): OriginBuild {
     for (const [id, value] of Object.entries(selections)) {
       identityId(id);
       const s = record(value);
-      keys(s, ["id", "ordinal", "snapshot", "answers", "exceptions"]);
+      keys(s, [
+        "id",
+        "ordinal",
+        "snapshot",
+        "answers",
+        "exceptions",
+        ...(Object.hasOwn(s, "resolvedChoices") ? ["resolvedChoices"] : []),
+      ]);
+      if (Object.hasOwn(s, "resolvedChoices")) {
+        for (const [path, snapshots] of Object.entries(record(s.resolvedChoices))) {
+          if (
+            !path.startsWith("root/") ||
+            path.length > 8192 ||
+            !Array.isArray(snapshots) ||
+            snapshots.length > 32
+          )
+            fail();
+          snapshots.forEach((snapshot) =>
+            parseDefinitionSnapshot(snapshot, verifyCatalogue)
+          );
+        }
+      }
       if (s.id !== id || !safeInt(s.ordinal) || ordinals.has(Number(s.ordinal))) fail();
       ordinals.add(Number(s.ordinal));
-      const snapshot = parseSnapshot(s.snapshot);
+      const snapshot = parseDefinitionSnapshot(s.snapshot, verifyCatalogue);
       if (!isOriginFamily(snapshot.definition.family)) fail();
       const answers = record(s.answers);
       if (Object.keys(answers).length > 1024) fail();
@@ -267,9 +265,104 @@ function baselineProofs(character: FolioCharacter, replaced: boolean): Set<strin
         proofs.add("save:" + (ABILITIES.find((a) => upper[a] === id) ?? id));
   return proofs;
 }
+/** Context is attributed output from another validated build owner, never imported unqualified data. */
+function inheritedFacts(
+  context: ChoiceResolutionContext,
+  selections: OriginSelection[],
+  diagnostics: OriginDiagnostic[]
+): OriginFact[] {
+  const accepted = new Map<string, OriginFact>();
+  const conflicts = new Set<string>();
+  try {
+    assertOriginJsonBudget(context.inheritedFacts ?? []);
+  } catch {
+    diagnostics.push({
+      path: "inheritedFacts",
+      code: "invalid-inherited-fact",
+      severity: "invalid",
+    });
+    return [];
+  }
+  for (const fact of context.inheritedFacts ?? []) {
+    if (!originRecord(fact)) {
+      diagnostics.push({
+        path: "inheritedFacts",
+        code: "invalid-inherited-fact",
+        severity: "invalid",
+      });
+      continue;
+    }
+    if (selections.some((selection) => selection.id === fact.selectionId)) continue;
+    const source = originRecord(fact.source);
+    const expected =
+      source?.kind === "catalogue"
+        ? ["kind", "catalogue", "release", "adapterVersion", "id"]
+        : ["ownerUid", "id", "version"];
+    const validSource =
+      source &&
+      Object.keys(source).length === expected.length &&
+      expected.every((key) => Object.hasOwn(source, key)) &&
+      typeof source.id === "string" &&
+      !!source.id &&
+      (source.kind === "catalogue"
+        ? typeof source.catalogue === "string" &&
+          typeof source.release === "string" &&
+          safeInt(source.adapterVersion, 1)
+        : typeof source.ownerUid === "string" && safeInt(source.version, 1));
+    const definition = initializeDefinition("feat");
+    definition.name = "Inherited fact";
+    definition.payload.data.benefits = [fact.benefit];
+    if (
+      Object.keys(fact).some(
+        (key) => !["selectionId", "path", "source", "benefit"].includes(key)
+      ) ||
+      typeof fact.selectionId !== "string" ||
+      !fact.selectionId ||
+      typeof fact.path !== "string" ||
+      !fact.path ||
+      !validSource ||
+      conformDefinition(definition).length
+    ) {
+      diagnostics.push({
+        path: fact.path,
+        code: "invalid-inherited-fact",
+        severity: "invalid",
+      });
+      continue;
+    }
+    const key = JSON.stringify([
+      fact.selectionId,
+      fact.path,
+      "kind" in fact.source
+        ? [
+            fact.source.kind,
+            fact.source.catalogue,
+            fact.source.release,
+            fact.source.adapterVersion,
+            fact.source.id,
+          ]
+        : [fact.source.ownerUid, fact.source.id, fact.source.version],
+    ]);
+    const previous = accepted.get(key);
+    if (previous && !equal(previous.benefit, fact.benefit)) {
+      conflicts.add(key);
+      diagnostics.push({
+        selectionId: fact.selectionId,
+        path: fact.path,
+        code: "conflicting-inherited-fact",
+        severity: "invalid",
+      });
+    }
+    accepted.set(key, structuredClone(fact));
+  }
+  return [...accepted.entries()]
+    .filter(([key]) => !conflicts.has(key))
+    .map(([, fact]) => fact);
+}
 export function composeOriginBuild(
   character: FolioCharacter,
-  build: OriginBuild | null
+  build: OriginBuild | null,
+  context: ChoiceResolutionContext = {}
 ): OriginComposition {
   const result: OriginComposition = {
     entitlements: [],
@@ -281,7 +374,7 @@ export function composeOriginBuild(
   let parsed: OriginBuild | null = null;
   if (build !== null) {
     try {
-      parsed = parseOriginBuild(build);
+      parsed = parseOriginBuild(build, context.verifyCatalogue ?? (() => false));
     } catch {
       result.diagnostics.push({
         path: "build",
@@ -324,6 +417,15 @@ export function composeOriginBuild(
     !(replacedBackground || replacedSpecies) &&
     (character.sheet.build.spellcasting === true ||
       !!(spellcasting && Object.keys(spellcasting).length));
+  result.facts.push(...inheritedFacts(context, selections, result.diagnostics));
+  for (const { benefit } of result.facts) {
+    if (benefit.kind === "proficiency" || benefit.kind === "expertise")
+      proofs.add(benefit.category + ":" + benefit.id);
+    if (benefit.kind === "spellcasting" || benefit.kind === "spell")
+      hasSpellcasting = true;
+    if (benefit.kind === "ability" && abilities[benefit.ability] !== null)
+      abilities[benefit.ability] = (abilities[benefit.ability] ?? 0) + benefit.amount;
+  }
   for (const selection of selections) {
     const add = (
       path: string,
@@ -360,11 +462,15 @@ export function composeOriginBuild(
     const dependencies = originRecord(definition.payload.data.dependencies) ?? {};
     const visited = new Set<string>();
     const usedAnswers = new Set<string>();
-    const evaluate = (p: OriginPrerequisite, path: string): boolean => {
+    const evaluate = (
+      p: OriginPrerequisite,
+      path: string,
+      table = dependencies
+    ): boolean => {
       switch (p.kind) {
         case "all":
           return p.requirements
-            .map((r, i) => evaluate(r, path + ".requirements." + String(i)))
+            .map((r, i) => evaluate(r, path + ".requirements." + String(i), table))
             .every(Boolean);
         case "any": {
           if (exception(path, "prerequisite-any")) return true;
@@ -375,7 +481,8 @@ export function composeOriginBuild(
             if (
               evaluate(
                 p.requirements[i] as OriginPrerequisite,
-                path + ".requirements." + String(i)
+                path + ".requirements." + String(i),
+                table
               )
             ) {
               result.diagnostics.splice(before);
@@ -406,7 +513,7 @@ export function composeOriginBuild(
           );
         case "feat": {
           if (p.dependency !== undefined) {
-            const dependency = dependencies[p.dependency] as OriginDependency | undefined;
+            const dependency = table[p.dependency] as OriginDependency | undefined;
             if (!dependency) {
               add(path, "missing-reference");
               return false;
@@ -415,7 +522,7 @@ export function composeOriginBuild(
               acquired.has(
                 originFeatIdentity(
                   dependency.definition,
-                  dependency.provenance?.source ?? dependency.source
+                  canonicalDependencySource(dependency)
                 )
               ),
               path,
@@ -442,7 +549,8 @@ export function composeOriginBuild(
       path: string,
       source: OriginFact["source"],
       depth: number,
-      canonicalSource: { ownerUid: string; id: string } = source
+      canonicalSource: CanonicalSource = source,
+      table = dependencies
     ): void => {
       if (depth > 8) {
         add(path, "dependency-depth");
@@ -454,7 +562,7 @@ export function composeOriginBuild(
         ? d.prerequisites
         : []) as unknown as OriginPrerequisite[];
       const eligible = prereqs
-        .map((p, i) => evaluate(p, path + "/prerequisites/" + String(i)))
+        .map((p, i) => evaluate(p, path + "/prerequisites/" + String(i), table))
         .every(Boolean);
       const repeatable =
         node.family !== "feat" || d.repeatable === true || !acquired.has(identity);
@@ -470,7 +578,15 @@ export function composeOriginBuild(
           childReferences.push({ key: benefit.dependency, path: benefitPath });
           return;
         }
-        if (benefit.kind === "spellcasting") hasSpellcasting = true;
+        if (
+          benefit.kind === "expertise" &&
+          !proofs.has(benefit.category + ":" + benefit.id)
+        ) {
+          add(benefitPath, "expertise-proficiency", "unresolved");
+          return;
+        }
+        if (benefit.kind === "spellcasting" || benefit.kind === "spell")
+          hasSpellcasting = true;
         if (benefit.kind === "ability") {
           if (abilities[benefit.ability] === null) {
             add(benefitPath, "ability-context", "unresolved");
@@ -486,7 +602,7 @@ export function composeOriginBuild(
             return;
           abilities[benefit.ability] = (abilities[benefit.ability] ?? 0) + benefit.amount;
         }
-        if (benefit.kind === "proficiency")
+        if (benefit.kind === "proficiency" || benefit.kind === "expertise")
           proofs.add(benefit.category + ":" + benefit.id);
         result.facts.push({
           selectionId: selection.id,
@@ -574,13 +690,39 @@ export function composeOriginBuild(
       const choices = (Array.isArray(d.choices)
         ? d.choices
         : []) as unknown as OriginChoice[];
+      const poolResults = new Map(
+        choices
+          .filter(
+            (
+              choice
+            ): choice is OriginChoice & { pool: NonNullable<OriginChoice["pool"]> } =>
+              choice.pool !== undefined
+          )
+          .map((choice) => {
+            const choicePath = originNodePath(path, choice.id);
+            return [
+              choice.id,
+              resolveCatalogueChoice(
+                choice.pool,
+                selection.answers[choicePath] ?? [],
+                selection.resolvedChoices?.[choicePath] ?? [],
+                context
+              ),
+            ] as const;
+          })
+      );
+      const expandedChoices = choices.map((choice) =>
+        choice.pool
+          ? { ...choice, options: poolResults.get(choice.id)?.options ?? [] }
+          : choice
+      );
       const status = new Map<string, boolean>();
       const active = (choice: OriginChoice, ancestors = new Set<string>()): boolean => {
         if (status.has(choice.id)) return status.get(choice.id) ?? false;
         if (ancestors.has(choice.id)) return false;
         const parent = choice.parent;
         const parentChoice = parent
-          ? choices.find((c) => c.id === parent.choiceId)
+          ? expandedChoices.find((c) => c.id === parent.choiceId)
           : undefined;
         const value =
           !parent ||
@@ -597,7 +739,7 @@ export function composeOriginBuild(
         status.set(choice.id, value);
         return value;
       };
-      for (const choice of choices) {
+      for (const choice of expandedChoices) {
         const choicePath = originNodePath(path, choice.id);
         usedAnswers.add(choicePath);
         const selected = selection.answers[choicePath] ?? [];
@@ -613,12 +755,42 @@ export function composeOriginBuild(
           if (selected.length) add(choicePath, "inactive-answer", "unresolved");
           continue;
         }
+        const poolResult = poolResults.get(choice.id);
+        if (poolResult?.error) {
+          add(choicePath, poolResult.error);
+          continue;
+        }
+        if (!choice.pool && (selection.resolvedChoices?.[choicePath]?.length ?? 0) > 0) {
+          add(choicePath, "pool-snapshot-mismatch");
+          continue;
+        }
         if (
           selected.length !== choice.count ||
           selected.some((id) => !choice.options.some((o) => o.id === id))
         ) {
           add(choicePath, "choice-answer");
           continue;
+        }
+        for (const selectedSnapshot of poolResult?.selectedSnapshots ?? []) {
+          const childIssues = conformDefinition(selectedSnapshot.definition);
+          if (childIssues.length) {
+            childIssues.forEach((issue) =>
+              add(
+                choicePath + "/" + selectedSnapshot.entryId + "/" + issue.path,
+                issue.code,
+                issue.severity
+              )
+            );
+            continue;
+          }
+          resolve(
+            selectedSnapshot.definition,
+            originNodePath(choicePath, selectedSnapshot.entryId),
+            snapshotSource(selectedSnapshot),
+            depth + 1,
+            canonicalSourceOf(selectedSnapshot),
+            originRecord(selectedSnapshot.definition.payload.data.dependencies) ?? {}
+          );
         }
         for (const option of choice.options)
           if (selected.includes(option.id))
@@ -627,7 +799,7 @@ export function composeOriginBuild(
             );
       }
       for (const child of childReferences) {
-        const dependency = dependencies[child.key] as OriginDependency | undefined;
+        const dependency = table[child.key] as OriginDependency | undefined;
         const childPath = originNodePath(path, child.key);
         if (!dependency) {
           add(child.path, "missing-reference");
@@ -640,23 +812,23 @@ export function composeOriginBuild(
         resolve(
           dependency.definition,
           childPath,
-          { ...dependency.source, version: dependency.sourceVersion },
+          dependencySource(dependency),
           depth + 1,
-          dependency.provenance?.source ?? dependency.source
+          canonicalDependencySource(dependency),
+          table
         );
       }
     };
     resolve(
       definition,
       "root",
-      {
-        ownerUid: selection.snapshot.ownerUid,
-        id: selection.snapshot.entryId,
-        version: selection.snapshot.version,
-      },
+      snapshotSource(selection.snapshot),
       0,
-      selection.snapshot.provenance?.source
+      canonicalSourceOf(selection.snapshot)
     );
+    for (const path of Object.keys(selection.resolvedChoices ?? {}))
+      if (!usedAnswers.has(path) && !Object.hasOwn(selection.answers, path))
+        add(path, "obsolete-answer", "unresolved");
     for (const path of Object.keys(selection.answers))
       if (!usedAnswers.has(path)) add(path, "obsolete-answer", "unresolved");
     for (const e of selection.exceptions)
@@ -681,15 +853,19 @@ export const originDiagnosticBlocks = (diagnostic: OriginDiagnostic): boolean =>
   !["inactive-answer", "obsolete-answer"].includes(diagnostic.code);
 export function validateOriginSelection(
   character: FolioCharacter,
-  build: OriginBuild
+  build: OriginBuild,
+  context: ChoiceResolutionContext = {}
 ): OriginDiagnostic[] {
-  return composeOriginBuild(character, build).diagnostics.filter(originDiagnosticBlocks);
+  return composeOriginBuild(character, build, context).diagnostics.filter(
+    originDiagnosticBlocks
+  );
 }
 export function projectOriginCharacter(
   character: FolioCharacter,
-  build: OriginBuild | null
+  build: OriginBuild | null,
+  context: ChoiceResolutionContext = {}
 ): OriginProjection {
-  const composition = composeOriginBuild(character, build);
+  const composition = composeOriginBuild(character, build, context);
   const validAggregate = !composition.diagnostics.some((d) =>
     ["incompatible-origin-build", "character-mismatch"].includes(d.code)
   );
@@ -784,10 +960,11 @@ export function projectOriginCharacter(
       ];
     if (benefit.kind === "spellcasting")
       b.spellcasting = { ability: upper[benefit.ability] };
-    if (benefit.kind === "proficiency") {
+    if (benefit.kind === "proficiency" || benefit.kind === "expertise") {
       if (benefit.category === "skill") {
         const skills = originRecord(b.skills) ?? {};
-        if (skills[benefit.id] !== "expertise") skills[benefit.id] = "proficient";
+        if (benefit.kind === "expertise") skills[benefit.id] = "expertise";
+        else if (skills[benefit.id] !== "expertise") skills[benefit.id] = "proficient";
         b.skills = skills as JsonObject;
       } else {
         const key =

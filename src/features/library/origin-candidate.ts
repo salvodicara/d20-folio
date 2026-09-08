@@ -1,3 +1,4 @@
+import { sourceIdentity } from "@/lib/homebrew/sources";
 import type { OriginBuild, OriginSelection } from "@/lib/homebrew/origin-build";
 import type { FolioCharacter } from "@/lib/identity/model";
 import type { LibraryVersion } from "@/lib/library/model";
@@ -9,11 +10,7 @@ export function replaceOriginSnapshot(
   snapshot: LibraryVersion
 ): OriginSelection {
   if (equal(selection.snapshot, snapshot)) return selection;
-  const source = JSON.stringify([
-    selection.snapshot.ownerUid,
-    selection.snapshot.entryId,
-    selection.snapshot.version,
-  ]);
+  const source = sourceIdentity(selection.snapshot);
   return {
     ...selection,
     snapshot,

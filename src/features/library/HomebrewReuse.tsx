@@ -1,3 +1,4 @@
+import { instanceVersionLabel, isBundledSnapshot } from "@/lib/homebrew/instances";
 import { useEffect, useState, useRef } from "react";
 import type { FolioCharacter } from "@/lib/identity/model";
 import type { SessionController } from "@/lib/identity/session";
@@ -66,7 +67,13 @@ export function HomebrewReuse({
       .then((items) => {
         check();
         if (live)
-          setCopies(items.filter((item) => item.snapshot.entryId === version.entryId));
+          setCopies(
+            items.filter(
+              (item) =>
+                !isBundledSnapshot(item.snapshot) &&
+                item.snapshot.entryId === version.entryId
+            )
+          );
       })
       .catch(
         session.guard(() => {
@@ -116,7 +123,8 @@ export function HomebrewReuse({
             <details key={copy.id}>
               <summary>
                 {copy.snapshot.definition.name} · {label("version")}{" "}
-                {copy.snapshot.version} · {label("quantity")} {copy.state.quantity}
+                {instanceVersionLabel(copy.snapshot)} · {label("quantity")}{" "}
+                {copy.state.quantity}
               </summary>
               <LibraryComparison
                 before={copy.snapshot.definition}

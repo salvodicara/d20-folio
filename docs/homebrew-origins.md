@@ -84,3 +84,15 @@ canonical provenance on received copies. An unrelated default `custom` feat cann
 requirement. A missing/wrong-family dependency or mismatched companion mechanic ID blocks the
 declaration. Existing explicit named mechanic-only selectors remain supported; the unqualified
 legacy selector `custom` is preserved as unsupported and must be replaced by a pinned reference.
+
+## Catalogue source and acquisition extension
+
+[Definition sources](homebrew-sources.md) owns the explicit CatalogueSnapshot union,
+flat catalogue dependencies, query pools and injected semantic verification. No fake
+owner/publish/grant metadata is generated for official content. Existing Library
+closure and inline-choice formats remain unchanged. OriginBenefit additionally models
+expertise (skill/tool), armor/weapon training, weapon mastery, attributed spell selections
+(known/prepared/spellbook/free-cast with ability and optional rest/uses), equipment
+quantities and gold. Unknown policies remain intact with blocking diagnostics. Expertise
+requires an existing proficiency proof; a declaration cannot grant its own qualification.
+These build facts do not execute encounter mechanics or spend equipment entitlements.
