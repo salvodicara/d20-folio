@@ -1,6 +1,19 @@
 # Program Status
 
-## Current frontier — P07 integrated; P08a next (8 September 2026)
+## Current frontier — P08a in progress (8 September 2026)
+
+Owner/writer Astra; topic codex/p08a-class-subclass-model-20260908 at
+/Users/salvatoredicara/Workspace/Codex/d20-folio-p08a-class-subclass-model.
+Fresh origin/v2 c58f76ed11c2d6876984ea01f1394d192ec1de50; main unchanged9b06b753.
+Clean detached p08a-control at that ref invoked the isolated topic. P07 dependency is closed.
+Only P08a model/schema/conformance/codec/version exits are authorized; P08b/c not started.
+Spec/plan written before code. Read-only independent reference/contract discovery runs alongside
+Astra; no other writer yet. Bootstrap complete, verified private pack b6073dd0 read-only.
+Evidence: /Users/salvatoredicara/Workspace/Codex/d20-folio-p08a-evidence. Prior unrelated
+Firestore86001/8080 preserved. Runtime/review/gates/integration remain incomplete.
+Standing PRODUCT delegation applies; actual images and complete successor required at closure.
+
+## Historical frontier — P07 integrated; P08a next (8 September 2026)
 
 Astra completed P07 implementation, source/UI/paper review, real optimized runtime evidence and
 fresh integration gates. The owner’s8 September clarification gives standing approval to implement
