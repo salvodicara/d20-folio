@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { afterAll, beforeAll, beforeEach, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import {
   assertFails,
   initializeTestEnvironment,
@@ -9,6 +9,7 @@ import { doc, getDoc, setDoc, updateDoc, type Firestore } from "firebase/firesto
 import { SessionController } from "../../src/lib/identity/session";
 import { createLibraryRepository } from "../../src/lib/library/repository";
 import { serializeLibraryRecovery } from "../../src/lib/library/recovery";
+import { OperationController } from "../../src/lib/shared/controller";
 import type { LibraryDefinition, LibraryVersion } from "../../src/lib/library/model";
 import { initializeDefinition } from "../../src/lib/homebrew/model";
 import { blankClassLevel } from "../../src/lib/homebrew/classes";
@@ -383,4 +384,47 @@ it("bounds both repeated class snapshots in acceptance before creating a recipie
   expect(JSON.stringify(oversized)).toBe(original);
   expect(await b.repo.list()).toEqual([]);
   expect(await a.repo.readGrant(offer)).toBeNull();
+});
+
+it("reconciles a real committed class write after a withheld acknowledgement without resending", async () => {
+  const a = client();
+  await publish(a, "lantern", classDefinition());
+  const base = required(await a.repo.load("lantern"));
+  const operation = a.repo.saveIntent(base, {
+    ...base.draft,
+    name: "Committed before response loss",
+  });
+  let release = () => {},
+    sends = 0;
+  const response = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const controller = new OperationController(
+    operation,
+    {
+      commit: async (envelope, check) => {
+        sends++;
+        const receipt = await a.repo.commit(envelope, check);
+        await response;
+        return receipt;
+      },
+      reconcile: (envelope) => a.repo.reconcile(envelope),
+    },
+    { timeoutMs: 20 }
+  );
+  try {
+    void controller.submit();
+    await vi.waitFor(async () =>
+      expect((await client().repo.load("lantern"))?.draft.name).toBe(
+        "Committed before response loss"
+      )
+    );
+    await vi.waitFor(() => expect(controller.state.status).toBe("unknown"));
+    await controller.retry();
+    expect(controller.state.status).toBe("acknowledged");
+    expect(sends).toBe(1);
+    expect((await a.repo.load("lantern"))?.revision).toBe(base.revision + 1);
+  } finally {
+    release();
+  }
 });

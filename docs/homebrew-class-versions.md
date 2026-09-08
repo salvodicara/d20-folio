@@ -15,7 +15,8 @@ does not require later permission to read the author's private parent class.
 - Acceptance retries return the same receipt and materialize one copy; source revocation closes
   future access while the recipient's previously granted closure remains readable and conformant.
 - Stale saves fail, preserve the winner and do not produce a receipt. Exact successful envelopes
-  reconcile even after later writes.
+  reconcile even after later writes. A real committed class save with its acknowledgement withheld
+  enters unknown, reconciles its receipt and confirms the result with one SDK send.
 - Wrong-parent subclasses remain recoverable drafts but cannot publish, including a modified
   publication envelope at the commit boundary.
 - Unknown fields and future authoring versions preserve exact structured data in stored drafts;
@@ -23,7 +24,8 @@ does not require later permission to read the author's private parent class.
   portable wrapper retains its exact original without pretending to decode it.
 - Twenty level rows roundtrip without truncation. Oversized definitions and conformant multibyte
   definitions whose complete operation exceeds its budget fail before persistence and retain
-  their original input.
+  their original input. Acceptance independently bounds the repeated offer and definition before
+  producing an operation, without creating a copy or grant.
 
 The definition's existing JSON depth and UTF16 limit and the complete class operation's UTF8/node
 budget are separate constraints. The 180000 UTF8 origin-build aggregate limit continues to apply
