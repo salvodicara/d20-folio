@@ -275,6 +275,8 @@ describe("IdentityApp consumer session boundaries", () => {
       locale: "en",
       diceMode: "physical",
     });
+    expect(state().loading).toBe(true);
+    await emit("memberships", []);
     expect(state().loading).toBe(false);
     expect(state().diceMode).toBe("physical");
     expect(state().characters[0]?.ownerUid).toBe("alice");
@@ -396,4 +398,46 @@ it("does not present the previous campaign under an inaccessible campaign URL", 
     window.dispatchEvent(new PopStateEvent("popstate"));
   });
   expect(state().campaignId).toBeNull();
+});
+
+it("releases an open foreign sheet when its owner leaves the authorized campaign", async () => {
+  render(<IdentityApp />);
+  await authenticate("dm");
+  await bootstrap();
+  fireEvent.click(screen.getByRole("button", { name: "Open campaign" }));
+  await deliver(() => {});
+  const campaign = {
+    schema: 1,
+    id: "campaign",
+    name: "Campaign",
+    dmUid: "dm",
+    members: ["dm", "owner"],
+    revision: 0,
+    archived: false,
+    joinOpen: true,
+  };
+  await emit("memberships", [campaign]);
+  await emit("dmNotes", "Still authorized notes");
+  await deliver(() => {
+    window.history.pushState(
+      null,
+      "",
+      "#campaign?campaign=campaign&owner=owner&character=pc"
+    );
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
+  const previous = activeWatch("inspection");
+  const sheet = {
+    ...character("owner"),
+    currentAssignment: { campaignId: "campaign", assignmentId: "join", version: 1 },
+  };
+  await deliver(() => previous.emit(sheet));
+  expect(state().inspected?.ownerUid).toBe("owner");
+  await emit("memberships", [{ ...campaign, members: ["dm"], revision: 1 }]);
+  expect(state().inspected).toBeNull();
+  expect(state().campaignId).toBe("campaign");
+  expect(state().dmNotes).toBe("Still authorized notes");
+  expect(previous.stopped).toBe(true);
+  await deliver(() => previous.emit(sheet));
+  expect(state().inspected).toBeNull();
 });

@@ -8,6 +8,9 @@ its Library consumers. Account generation and SessionController invalidation del
 query/scroll/focus/history provenance; history never grants access or stores a draft. Shareable
 filters and requested detail identities are URL inputs resolved by authorized repositories.
 Inspected characters remain separate from the active character and any future Encounter actor.
+An open foreign sheet is keyed by the already-observed campaign membership revision: revocation
+releases its subscription and fences late snapshots without clearing still-authorized DM notes.
+The shell waits for both character and membership reads before presenting an empty workspace.
 
 Four permanent destinations follow approved r2 order: Campaign, At the table, Character, Library.
 The destination registry supplies localized discovery and guarded go-to shortcuts. At the table

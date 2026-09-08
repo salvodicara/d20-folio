@@ -521,7 +521,7 @@ function Workspace({ p }: { p: IdentityWorkspaceProps }) {
             {label("saving")}
           </p>
         )}
-        {accountPage && (
+        {accountPage && !p.loading && (
           <IdentityAccount
             p={p}
             section={page as AccountSection}
@@ -543,7 +543,7 @@ function Workspace({ p }: { p: IdentityWorkspaceProps }) {
             </button>
           </section>
         )}
-        {page === "characters" && (
+        {page === "characters" && !p.loading && (
           <>
             <div className="identity-toolbar">
               <div className="identity-filters">
@@ -633,7 +633,7 @@ function Workspace({ p }: { p: IdentityWorkspaceProps }) {
                 </article>
               ))}
             </div>
-            {!p.loading && !filtered.length && (
+            {!filtered.length && (
               <div className="identity-empty">
                 <UserRound size={32} />
                 <h2>{label("noCharacters")}</h2>
@@ -733,7 +733,7 @@ function Workspace({ p }: { p: IdentityWorkspaceProps }) {
             )}
           </section>
         )}
-        {page === "campaign" && (
+        {page === "campaign" && !p.loading && (
           <>
             <div className="identity-toolbar">
               <select

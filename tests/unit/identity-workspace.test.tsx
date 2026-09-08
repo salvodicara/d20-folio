@@ -208,8 +208,10 @@ describe("P09 orientation", () => {
     window.history.replaceState(null, "", "#not-a-route");
     await mount();
     expect(screen.getByRole("heading", { name: "Destination unavailable" })).toBeTruthy();
+    expect(document.body.textContent).not.toContain("identity.unavailableIntro");
     fireEvent.click(screen.getByRole("button", { name: "Character" }));
     fireEvent.click(screen.getByRole("button", { name: "At the table" }));
+    expect(document.body.textContent).not.toContain("identity.tableIntro");
     expect(
       screen.getByText(
         "Live play is not available yet. Your characters and library are available from the navigation above."

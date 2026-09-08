@@ -429,7 +429,7 @@
     "destinationUnavailable": "Questo link non identifica una destinazione disponibile. Apri un ambito dalla navigazione in alto.",
     "customCreations": "Creazioni personali",
     "sharingCopies": "Condivisioni e copie",
-    "bestiary": "Bestiario",
+    "bestiary": "$t(campaignHub.encounterBestiaryTab)",
     "currentLocation": "Sei qui",
     "showAllFunctions": "Mostra tutte le funzioni",
     "navigationOnly": "I comandi Vai a cambiano solo pagina. Non selezionano chi agisce e non spendono risorse.",
@@ -457,6 +457,8 @@
       "support": "support assistenza help aiuto"
     },
     "campaignUnavailable": "Questa campagna non è disponibile per il tuo account. Scegli una delle tue campagne per continuare.",
-    "contentUnavailable": "Questo contenuto non è disponibile. Torna alle tue creazioni o crea esplicitamente un nuovo contenuto."
+    "contentUnavailable": "Questo contenuto non è disponibile. Torna alle tue creazioni o crea esplicitamente un nuovo contenuto.",
+    "tableIntro": "Lo spazio condiviso per giocare insieme.",
+    "unavailableIntro": "Scegli una destinazione disponibile per continuare."
   }
 }

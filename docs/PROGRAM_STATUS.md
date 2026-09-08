@@ -11,8 +11,9 @@ Spec/plan: docs/superpowers/{specs,plans}/2026-09-08-p09-shell-orientation\*.md.
 Independent reference/contract reviewers own external evidence only; root owns implementation.
 Implementation is present in the candidate. Independent source review has driven fixes for
 route/context isolation, missing entries and late authoring callbacks. Current focused verification:
-5 files, 41 tests passed. Optimized Google/demo journeys are running with failed harness attempts
-preserved separately; no runtime closure is claimed. Final code/UI review, gates, integration and
+7 files, 47 tests passed. Optimized build E completed the 14-step Library path and eight recovery paths; source F fixes
+a subsequently reproduced open-sheet revocation gap and loading/translation findings. Fresh F
+revocation, orientation and screenshots are in progress. Failed attempts remain preserved. Final code/UI review, gates, integration and
 cleanup remain open.
 No P10, main/production/deploy/real-data migration/cost. Evidence under Workspace/Codex/d20-folio-p09-evidence.
 

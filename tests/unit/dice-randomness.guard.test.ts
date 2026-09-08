@@ -14,6 +14,8 @@ const CALL = /\b(?:Math\.random|crypto\.getRandomValues|crypto\.randomUUID)\s*\(
 
 /** Every production file that calls a random source, with the reason it may. */
 const ALLOWED: Readonly<Record<string, string>> = {
+  "src/features/identity/navigation.ts":
+    "scoped browser-history lifetime identity only; never dice results",
   "src/features/library/ClassFields.tsx":
     "stable class level identities; never dice results",
   "src/features/library/OriginBuild.tsx":

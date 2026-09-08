@@ -429,7 +429,7 @@
     "destinationUnavailable": "This link does not identify an available destination. Open a section from the navigation above.",
     "customCreations": "Custom creations",
     "sharingCopies": "Sharing & copies",
-    "bestiary": "Bestiary",
+    "bestiary": "$t(campaignHub.encounterBestiaryTab)",
     "currentLocation": "You are here",
     "showAllFunctions": "Show all functions",
     "navigationOnly": "Go-to commands only navigate. They never select a command actor or spend resources.",
@@ -457,6 +457,8 @@
       "support": "support assistenza help aiuto"
     },
     "campaignUnavailable": "This campaign is unavailable to your account. Choose one of your campaigns to continue.",
-    "contentUnavailable": "This content is unavailable. Return to your creations or create a new entry explicitly."
+    "contentUnavailable": "This content is unavailable. Return to your creations or create a new entry explicitly.",
+    "tableIntro": "Your shared space for playing together.",
+    "unavailableIntro": "Choose an available destination to continue."
   }
 }

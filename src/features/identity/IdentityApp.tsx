@@ -168,15 +168,39 @@ function AuthenticatedIdentity({ user }: { user: User }) {
   const [account, setAccount] = useState<FolioAccount | null>(null);
   const [characters, setCharacters] = useState<Readonly<FolioCharacter>[]>([]);
   const [campaigns, setCampaigns] = useState<FolioCampaign[]>([]);
+  const [membershipsReady, setMembershipsReady] = useState(false);
   const [roster, setRoster] = useState<RosterEntry[]>([]);
   const [rosterNames, setRosterNames] = useState<Record<string, string>>({});
   const [inspectedSnapshot, setInspected] = useState<{
+    lookup: string;
     key: string;
     character: Readonly<FolioCharacter> | null;
   } | null>(null);
-  const inspectionKey = `${route.owner}/${route.character}`;
+  const inspectionLookup = `${route.owner}/${route.character}`;
+  const previousInspection =
+    inspectedSnapshot?.lookup === inspectionLookup ? inspectedSnapshot.character : null;
+  const foreignInspection = !!route.owner && route.owner !== user.uid;
+  const inspectionCampaignId = foreignInspection
+    ? (previousInspection?.currentAssignment?.campaignId ?? route.campaign)
+    : undefined;
+  const inspectionCampaign = campaigns.find(
+    (campaign) => campaign.id === inspectionCampaignId
+  );
+  // Existing membership revision releases foreign views immediately and fences late snapshots.
+  const inspectionKey = `${inspectionLookup}:${inspectionCampaignId ? `${inspectionCampaignId}:${inspectionCampaign?.revision ?? "pending"}` : "personal"}`;
+  const inspectionWithdrawn = !!(
+    foreignInspection &&
+    !isAdmin &&
+    membershipsReady &&
+    inspectionCampaignId &&
+    (!inspectionCampaign ||
+      inspectionCampaign.archived ||
+      !inspectionCampaign.members.includes(route.owner ?? ""))
+  );
   const inspected =
-    inspectedSnapshot?.key === inspectionKey ? inspectedSnapshot.character : null;
+    !inspectionWithdrawn && inspectedSnapshot?.key === inspectionKey
+      ? inspectedSnapshot.character
+      : null;
   const originBuild = useOriginBuild(inspected, origins, session, epoch);
   const originProjection = useMemo(
     () =>
@@ -245,6 +269,7 @@ function AuthenticatedIdentity({ user }: { user: User }) {
       setBusy(false);
       setError(null);
       setLoading(true);
+      setMembershipsReady(false);
       setEpoch((v) => v + 1);
       setViewGeneration((v) => v + 1);
     },
@@ -290,6 +315,7 @@ function AuthenticatedIdentity({ user }: { user: User }) {
         setBusy(false);
         setError("accessRevoked");
         setLoading(false);
+        setMembershipsReady(true);
         setViewGeneration((v) => v + 1);
         if (selectedCampaignRef.current) {
           selectedCampaignRef.current = null;
@@ -356,6 +382,7 @@ function AuthenticatedIdentity({ user }: { user: User }) {
           repository.watchMemberships((value) => {
             availableCampaigns.current = value;
             setCampaigns(value);
+            setMembershipsReady(true);
             synchronizeCampaign();
           }, failed),
           repository.watchAuthority((authority) => {
@@ -396,24 +423,26 @@ function AuthenticatedIdentity({ user }: { user: User }) {
   useEffect(() => {
     return () => session.revoke();
   }, [session]);
+  const isCurrentCampaignDm =
+    campaigns.find((campaign) => campaign.id === scope.campaignId)?.dmUid === user.uid;
   useEffect(() => {
     const campaignId = session.scope().campaignId;
     if (!campaignId) return;
     const stops = [repository.watchRoster(campaignId, setRoster, failed)];
-    if (campaigns.find((c) => c.id === campaignId)?.dmUid === user.uid)
+    if (isCurrentCampaignDm)
       stops.push(repository.watchDmNotes(campaignId, setDmNotes, failed));
     return () => stops.forEach((stop) => stop());
-  }, [repository, session, epoch, campaigns, failed, user.uid]);
+  }, [repository, session, epoch, isCurrentCampaignDm, failed]);
   useEffect(() => {
-    if (!inspectionRef) return;
+    if (!inspectionRef || inspectionWithdrawn) return;
+    let live = true;
     const stops = [
       repository.watchCharacter(
         inspectionRef,
-        (character) =>
-          setInspected({
-            key: `${inspectionRef.ownerUid}/${inspectionRef.id}`,
-            character,
-          }),
+        (character) => {
+          if (live)
+            setInspected({ lookup: inspectionLookup, key: inspectionKey, character });
+        },
         failed
       ),
     ];
@@ -429,8 +458,20 @@ function AuthenticatedIdentity({ user }: { user: User }) {
           failed
         )
       );
-    return () => stops.forEach((stop) => stop());
-  }, [repository, inspectionRef, failed, user.uid, epoch]);
+    return () => {
+      live = false;
+      stops.forEach((stop) => stop());
+    };
+  }, [
+    repository,
+    inspectionRef,
+    inspectionLookup,
+    inspectionKey,
+    inspectionWithdrawn,
+    failed,
+    user.uid,
+    epoch,
+  ]);
   useEffect(() => {
     let live = true;
     const stops = roster
@@ -535,14 +576,17 @@ function AuthenticatedIdentity({ user }: { user: User }) {
       campaigns={campaigns}
       roster={roster}
       rosterNames={rosterNames}
-      loading={loading || (!account && !error)}
+      loading={loading || !membershipsReady || (!account && !error)}
       busy={busy}
       error={error}
       activeId={scope.activeCharacterId}
       campaignId={scope.campaignId}
       inspected={inspected}
       inspectionLoading={
-        !!inspectionRef && !error && inspectedSnapshot?.key !== inspectionKey
+        !!inspectionRef &&
+        !inspectionWithdrawn &&
+        !error &&
+        inspectedSnapshot?.key !== inspectionKey
       }
       originProjection={originProjection}
       originLoading={originBuild.loading}
@@ -613,7 +657,7 @@ function AuthenticatedIdentity({ user }: { user: User }) {
       }}
       onSaveProfile={(displayName) => run(() => repository.saveAccount({ displayName }))}
       library={
-        loading || !account ? (
+        loading || !membershipsReady || !account ? (
           <p role="status">{t("identity.loading")}</p>
         ) : (
           <>
