@@ -199,9 +199,13 @@ export function createSharedRepository(
         });
       } catch (error) {
         check();
-        // Rules may reject a racing duplicate before the SDK retries its transaction.
+        // A racing duplicate may see the updated target after reading an absent receipt,
+        // or rules may reject it before the SDK retries. Neither proves a conflict.
         // Only an exact, currently readable remote receipt can turn that into ack.
-        if ((error as { code?: string }).code === "permission-denied") {
+        if (
+          (error as { code?: string }).code === "permission-denied" ||
+          (error instanceof Error && error.message === "stale-base")
+        ) {
           const receipt = await api.reconcile(op);
           check();
           if (receipt) return receipt;

@@ -43,7 +43,10 @@ distinct encounter identity and lease epoch to their own authoritative commit ch
 P03 editors retain drafts and pending envelopes in account-partitioned sessionStorage;
 owner notes also retain their last verified base for offline editing. These bytes confer
 neither ACL nor commit authority. There is no automatic replay or polling. Timeout is an
-unknown result, reconciled through the exact server receipt. Scope/auth changes invalidate
+unknown result, reconciled through the exact server receipt. A concurrent duplicate
+may observe an absent receipt followed by an advanced target and report stale-base;
+only an exact currently readable receipt can acknowledge that same operation. An
+absent or mismatching receipt never bypasses another operation's stale CAS. Scope/auth changes invalidate
 pending work and fence late callbacks; conflict preserves the draft and requires explicit
 review followed by a new save. DM recovery requires an authorized server read. P27 owns
 full installed-PWA reload and account recovery beyond the current browser session.

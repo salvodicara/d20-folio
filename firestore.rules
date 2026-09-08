@@ -82,6 +82,7 @@ service cloud.firestore {
               && getAfter(/databases/$(database)/documents/folioCampaigns/$(o.target.campaignId)/dmNotes/main).data.lastOperation == {'uid':o.uid,'opId':o.opId}
               && noteTransition(/databases/$(database)/documents/folioCampaigns/$(o.target.campaignId)/dmNotes/main,o.target))))
           || (o.kind in ['library-save','library-publish','library-offer','library-accept','library-revoke','library-remove'] && libraryOperation(o))
+          || (o.kind == 'origin-build' && originOperation(o))
           || (o.kind in ['homebrew-add','homebrew-update','homebrew-state'] && homebrewOperation(o))
           || (o.kind in ['preparation-add','preparation-update','preparation-state','preparation-remove'] && preparationOperation(o))
           || (o.kind == 'assignment' && o.keys().hasOnly(['kind','opId','uid','scope','target','baseRevision','authority','campaignId','campaignRevision']) && assignmentOperation(o,revision));
@@ -328,6 +329,85 @@ service cloud.firestore {
       allow read: if preparationRead(campaignId,null);
       allow create,update: if preparationWrite(campaignId,null,id,request.resource.data.lastOperation,false);
       allow delete: if preparationWrite(campaignId,null,id,{'uid':request.auth.uid,'opId':'remove_'+resource.data.lastOperation.opId},true);
+    }
+    // P07: one changed root, exact immutable bundle, aggregate CAS and one receipt.
+    function originPath(o) { return /databases/$(database)/documents/folioAccounts/$(o.character.ownerUid)/characters/$(o.character.id)/origins/build; }
+    function originSource(o) {
+      let v=o.selections[o.targetId].snapshot;
+      let p=/databases/$(database)/documents/folioAccounts/$(o.uid)/library/$(v.entryId)/versions/$(string(v.version));
+      return v.ownerUid == o.uid && v.schema == 1 && v.version is int && v.version >= 1
+        && v.definition.family in ['species','feat','background'] && get(p).data == v && getAfter(p).data == v;
+    }
+    function originPrior0(v,ordinal) {let n=v.size(); return n <= 0 || ((n <= 0 || (v[0].ordinal < ordinal))
+      && (n <= 1 || (v[1].ordinal < ordinal))
+      && (n <= 2 || (v[2].ordinal < ordinal))
+      && (n <= 3 || (v[3].ordinal < ordinal))
+      && (n <= 4 || (v[4].ordinal < ordinal))
+      && (n <= 5 || (v[5].ordinal < ordinal))
+      && (n <= 6 || (v[6].ordinal < ordinal))
+      && (n <= 7 || (v[7].ordinal < ordinal)));}
+    function originPrior8(v,ordinal) {let n=v.size(); return n <= 8 || ((n <= 8 || (v[8].ordinal < ordinal))
+      && (n <= 9 || (v[9].ordinal < ordinal))
+      && (n <= 10 || (v[10].ordinal < ordinal))
+      && (n <= 11 || (v[11].ordinal < ordinal))
+      && (n <= 12 || (v[12].ordinal < ordinal))
+      && (n <= 13 || (v[13].ordinal < ordinal))
+      && (n <= 14 || (v[14].ordinal < ordinal))
+      && (n <= 15 || (v[15].ordinal < ordinal)));}
+    function originPrior16(v,ordinal) {let n=v.size(); return n <= 16 || ((n <= 16 || (v[16].ordinal < ordinal))
+      && (n <= 17 || (v[17].ordinal < ordinal))
+      && (n <= 18 || (v[18].ordinal < ordinal))
+      && (n <= 19 || (v[19].ordinal < ordinal))
+      && (n <= 20 || (v[20].ordinal < ordinal))
+      && (n <= 21 || (v[21].ordinal < ordinal))
+      && (n <= 22 || (v[22].ordinal < ordinal))
+      && (n <= 23 || (v[23].ordinal < ordinal)));}
+    function originPrior24(v,ordinal) {let n=v.size(); return n <= 24 || ((n <= 24 || (v[24].ordinal < ordinal))
+      && (n <= 25 || (v[25].ordinal < ordinal))
+      && (n <= 26 || (v[26].ordinal < ordinal))
+      && (n <= 27 || (v[27].ordinal < ordinal))
+      && (n <= 28 || (v[28].ordinal < ordinal))
+      && (n <= 29 || (v[29].ordinal < ordinal))
+      && (n <= 30 || (v[30].ordinal < ordinal))
+      && (n <= 31 || (v[31].ordinal < ordinal)));}
+    function originPrior(v,ordinal) { return v.size() <= 32 && originPrior0(v,ordinal) && originPrior8(v,ordinal) && originPrior16(v,ordinal) && originPrior24(v,ordinal);}
+    function originSelection(o,b) {
+      let s=o.selections[o.targetId];
+      return s is map && s.keys().hasOnly(['id','ordinal','snapshot','answers','exceptions']) && s.id == o.targetId
+        && preparationNumber(s.ordinal) && s.answers is map && s.answers.size() <= 1024
+        && s.exceptions is list && s.exceptions.size() <= 128
+        && (o.targetId in b ? s.ordinal == b[o.targetId].ordinal : (b.size() == 0 ? s.ordinal == 0 && o.predecessorId == null : (folioId(o.predecessorId) && s.ordinal == b[o.predecessorId].ordinal + 1)))
+        && (o.targetId in b && s.snapshot == b[o.targetId].snapshot || originSource(o));
+    }
+    function originBase(o) {
+      let p=originPath(o);
+      return (o.base == null && !exists(p) && o.baseRevision == 0)
+        || (o.base != null && exists(p) && get(p).data == o.base && o.baseRevision == o.base.revision
+          && o.base.schema == 1 && o.base.character == o.character);
+    }
+    function originOperation(o) {
+      let b=o.base == null ? {} : o.base.selections;
+      return o.keys().hasOnly(['kind','opId','uid','scope','baseRevision','authority','character','targetId','base','selections','predecessorId'])
+        && folioId(o.targetId) && o.uid == request.auth.uid && homebrewAuthority(o) && originBase(o)
+        && o.selections is map && o.selections.size() <= 32
+        && o.selections.diff(b).affectedKeys() == [o.targetId].toSet()
+        && (!(o.targetId in o.selections) ? o.targetId in b : originSelection(o,b))
+        && getAfter(originPath(o)).data == {'schema':1,'character':o.character,'revision':o.baseRevision+1,'selections':o.selections,'lastOperation':{'uid':o.uid,'opId':o.opId}};
+    }
+    match /folioAccounts/{uid}/characters/{characterId}/origins/{buildId} {
+      allow read: if buildId == 'build' && folioReadCharacter(uid,characterId,get(/databases/$(database)/documents/folioAccounts/$(uid)/characters/$(characterId)).data);
+      function originWrite() {
+        let last=request.resource.data.lastOperation;
+        let r=operationReceipt(uid,last.opId);
+        let o=r.operation;
+        return buildId == 'build' && folioUser() && request.auth.uid == uid && last.uid == uid && folioId(last.opId)
+          && !exists(/databases/$(database)/documents/folioAccounts/$(uid)/operations/$(last.opId))
+          && o.kind == 'origin-build' && o.uid == uid && o.opId == last.opId
+          && o.character == {'ownerUid':uid,'id':characterId} && r.revision == o.baseRevision+1
+          && (!(o.targetId in o.selections) || o.base == null || o.targetId in o.base.selections || originPrior(o.base.selections.values(),o.selections[o.targetId].ordinal))
+          && request.resource.data == {'schema':1,'character':o.character,'revision':o.baseRevision+1,'selections':o.selections,'lastOperation':last};
+      }
+      allow create,update: if originWrite();
     }
     // P05: one character-owned instance per exact P03 receipt; no admin consent.
     function homebrewPath(o) { return /databases/$(database)/documents/folioAccounts/$(o.character.ownerUid)/characters/$(o.character.id)/homebrew/$(o.targetId); }
