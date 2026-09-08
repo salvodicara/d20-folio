@@ -107,3 +107,19 @@ new catalogue sources or change resolvedChoices; new catalogue selection belongs
 atomic creation operation. Unchanged snapshots and retained answers remain recoverable.
 Attributed inherited class facts survive origin projection independently of ambiguous
 imported baseline values, without introducing stored class-derived fields in the parent.
+
+## Shared class and origin acquisition
+
+`composeAcquisitionBuilds(character, originBuild, classBuild, context)` keeps the separate origin
+and class aggregate owners while returning one attributed composition. `composeOriginBuild` remains
+its origin-only wrapper. Initial class root/starting/progression frames use stable paths and class
+level1. Root prerequisites precede its own facts. Class saving throws, declared casting, training
+and foundation choices precede origins; dependent class choices follow origins, allowing expertise
+to use background skills. Frame eligibility remains fixed through these phases. Obsolete answers
+are diagnosed only after deferred choices. No retry loop or synthetic class-as-origin is used.
+
+`OriginComposition.selectedEquipment` contains `{selectionId, path, snapshot, quantity}` for pool
+selected items. The exact snapshot is the materialization source; it is not a fictitious root
+closure dependency. The evaluator itself performs no inventory writes or currency spending.
+Independent selected closures retain separate dependency traversal and local casting choices even
+when their local dependency keys coincide. Source snapshots remain immutable.

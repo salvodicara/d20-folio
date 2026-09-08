@@ -6,12 +6,14 @@ import type { OriginOption } from "./origins";
 import type { CatalogueVerifier, DefinitionSnapshot } from "./sources";
 
 export type CataloguePoolQuery =
+  | { kind: "invocation"; maximumClassLevel: number; ids?: string[] }
   | {
       kind: "spell";
       classSpellLists?: string[];
       minimumLevel: number;
       maximumLevel: number;
       ritualOnly?: boolean;
+      acquiredPolicy?: "spellbook";
       schools?: string[];
       ids?: string[];
     }
@@ -23,7 +25,14 @@ export type CataloguePoolQuery =
       ids?: string[];
       proficientOnly?: boolean;
     }
-  | { kind: "equipment"; categories?: string[]; ids?: string[] }
+  | {
+      kind: "equipment";
+      proficiencySource?: string;
+      categories?: string[];
+      ids?: string[];
+      toolCategories?: string[];
+      proficientOnly?: boolean;
+    }
   | {
       kind: "mastery";
       ids?: string[];
@@ -45,7 +54,10 @@ export interface ResolvedPoolOption {
 export interface ChoiceResolutionContext {
   inheritedFacts?: readonly OriginFact[];
   verifyCatalogue?: CatalogueVerifier;
-  resolvePool?: (pool: CataloguePool) => readonly ResolvedPoolOption[];
+  resolvePool?: (
+    pool: CataloguePool,
+    facts: readonly OriginFact[]
+  ) => readonly ResolvedPoolOption[];
 }
 export function conformCataloguePool(
   value: unknown,
@@ -81,12 +93,20 @@ export function conformCataloguePool(
       "minimumLevel",
       "maximumLevel",
       "ritualOnly",
+      "acquiredPolicy",
       "schools",
       "ids",
     ],
     feat: ["categories", "classScope", "ids"],
+    invocation: ["maximumClassLevel", "ids"],
     proficiency: ["categories", "toolCategories", "ids", "proficientOnly"],
-    equipment: ["categories", "ids"],
+    equipment: [
+      "categories",
+      "ids",
+      "toolCategories",
+      "proficientOnly",
+      "proficiencySource",
+    ],
     mastery: ["ids", "categories", "properties", "proficientOnly"],
   };
   const allowed = fields[String(q.kind)];
@@ -111,6 +131,13 @@ export function conformCataloguePool(
     )
       add(path + ".query." + k, "invalid-pool");
   if (
+    q.kind === "invocation" &&
+    (!Number.isInteger(q.maximumClassLevel) ||
+      Number(q.maximumClassLevel) < 1 ||
+      Number(q.maximumClassLevel) > 20)
+  )
+    add(path + ".query.maximumClassLevel", "invalid-number");
+  if (
     q.kind === "spell" &&
     (![q.minimumLevel, q.maximumLevel].every(
       (n) => Number.isInteger(n) && Number(n) >= 0 && Number(n) <= 9
@@ -125,6 +152,15 @@ export function conformCataloguePool(
       q.categories.some((c) => !["skill", "tool", "language"].includes(String(c))))
   )
     add(path + ".query.categories", "invalid-pool");
+  if (
+    Object.hasOwn(q, "proficiencySource") &&
+    (typeof q.proficiencySource !== "string" ||
+      !q.proficiencySource.trim() ||
+      q.proficiencySource.length > 200)
+  )
+    add(path + ".query.proficiencySource", "invalid-pool");
+  if (Object.hasOwn(q, "acquiredPolicy") && q.acquiredPolicy !== "spellbook")
+    add(path + ".query.acquiredPolicy", "invalid-pool");
   for (const k of ["ritualOnly", "proficientOnly"])
     if (Object.hasOwn(q, k) && typeof q[k] !== "boolean")
       add(path + ".query." + k, "invalid-pool");
@@ -141,7 +177,8 @@ export function resolveCatalogueChoice(
   pool: CataloguePool,
   selected: readonly string[],
   snapshots: readonly DefinitionSnapshot[],
-  context: ChoiceResolutionContext
+  context: ChoiceResolutionContext,
+  facts: readonly OriginFact[] = context.inheritedFacts ?? []
 ): {
   options: OriginOption[];
   selectedSnapshots: DefinitionSnapshot[];
@@ -149,12 +186,14 @@ export function resolveCatalogueChoice(
 } {
   if (!context.resolvePool || conformCataloguePool(pool, "pool").length)
     return { options: [], selectedSnapshots: [], error: "unavailable-pool" };
-  const candidates = context.resolvePool(pool);
+  const candidates = context.resolvePool(pool, facts);
   const ids = new Set(candidates.map(({ option }) => option.id));
   if (ids.size !== candidates.length)
     return { options: [], selectedSnapshots: [], error: "invalid-pool" };
   const chosen = selected.map((id) => candidates.find(({ option }) => option.id === id));
-  const requiresSnapshot = ["feat", "spell", "equipment"].includes(pool.query.kind);
+  const requiresSnapshot = ["feat", "spell", "equipment", "invocation"].includes(
+    pool.query.kind
+  );
   if (
     new Set(selected).size !== selected.length ||
     selected.length > 32 ||
@@ -187,6 +226,8 @@ export function resolveCatalogueChoice(
         (pool.query.kind === "spell" || pool.query.kind === "feat") &&
         snapshot.definition.family !== pool.query.kind
       )
+        throw new Error("pool-family-mismatch");
+      if (pool.query.kind === "invocation" && snapshot.definition.family !== "feature")
         throw new Error("pool-family-mismatch");
       if (
         pool.query.kind === "equipment" &&

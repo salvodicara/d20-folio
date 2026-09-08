@@ -2,6 +2,8 @@ import { assertJsonBudget } from "../shared/json-budget";
 import { equal } from "../shared/model";
 import {
   parseDefinitionSnapshot,
+  isCatalogueSnapshot,
+  conformAcquisitionSnapshot,
   isLibrarySnapshot,
   sourceIdentity,
   sourceVersionLabel,
@@ -238,13 +240,30 @@ export function parseInitialSnapshot(
       throw new Error("incompatible-instance");
     const source = sources[v.sourceKey];
     if (!source) throw new Error("incompatible-instance");
+    parseDefinitionSnapshot(source, verifyCatalogue ?? (() => false));
     const dependencies = object(source.definition.payload.data.dependencies);
     const dependency = object(dependencies[v.dependencyPath]);
     if (!equal(dependency.definition, v.definition))
       throw new Error("incompatible-instance");
     parseDefinition(v.definition);
+    if (dependency.kind === "catalogue") {
+      const child = parseDefinitionSnapshot(
+        dependency,
+        verifyCatalogue ?? (() => false),
+        true
+      );
+      if (conformAcquisitionSnapshot(child, verifyCatalogue, true).length)
+        throw new Error("incompatible-instance");
+    }
     snapshot = frozen(structuredClone(v)) as unknown as BundledSnapshot;
-  } else snapshot = parseDefinitionSnapshot(v, verifyCatalogue ?? (() => false));
+  } else {
+    snapshot = parseDefinitionSnapshot(v, verifyCatalogue ?? (() => false));
+    if (
+      isCatalogueSnapshot(snapshot) &&
+      conformAcquisitionSnapshot(snapshot, verifyCatalogue).length
+    )
+      throw new Error("incompatible-instance");
+  }
   if (!["weapon", "equipment", "spell", "feature"].includes(snapshot.definition.family))
     throw new Error("incompatible-instance");
   return snapshot;

@@ -146,3 +146,10 @@ acquisition with ordinal0 and classLevel1; its immutable snapshot must be a clas
 acquisition parser retains stable answer paths, selected snapshots and attributed exceptions without
 converting the class to an origin or inventing source metadata. Class progression/multiclass changes
 remain outside P10. This parser is a persistence boundary, not proof that choices are complete.
+
+Initial composition now uses the shared `composeAcquisitionBuilds` evaluator described in
+[origin build composition](homebrew-origin-build.md#shared-class-and-origin-acquisition).
+Class-owned core facts and foundation choices precede origin acquisition; choices explicitly marked
+dependent follow it. The class level, rather than an imported character level, governs the initial
+class frames and their prerequisites. This is acquisition and initial-state input, not progression
+or combat execution.

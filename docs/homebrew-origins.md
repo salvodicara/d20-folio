@@ -96,3 +96,31 @@ expertise (skill/tool), armor/weapon training, weapon mastery, attributed spell 
 quantities and gold. Unknown policies remain intact with blocking diagnostics. Expertise
 requires an existing proficiency proof; a declaration cannot grant its own qualification.
 These build facts do not execute encounter mechanics or spend equipment entitlements.
+
+## Shared acquisition declarations
+
+A choice may declare `phase: "foundation" | "dependent"` (default foundation). Its optional
+`selectedGrant` emits an entitlement using the selected canonical option ID: spell with an ability
+and an array of known/prepared/spellbook or free-cast (uses/rest) entitlements; expertise with skill
+or tool category; equipment with quantity; or mastery. Spell, equipment and invocation pools retain
+exact selected snapshots. Selected invocation definitions use the existing feature family and may
+carry optional prerequisites, benefits, choices and dependencies. This does not invent feat identity.
+
+Spell ability is an ability token, explicit `"none"`, or `{choice: string}`. A
+`{kind: "casting-ability", id, ability}` benefit binds that choice ID within the current acquired
+node; multiple traits normalized into one root may share it. Independent roots and included nodes
+remain separate. Pending spells resolve after their local choice; missing/conflicting answers are
+unresolved. Selecting an ability or acquiring a spell never proves a Spellcasting prerequisite.
+
+Backgrounds may replace fixed tool, originFeat and equipment/equipmentGold fields with
+`toolChoice`, `originFeatChoice` and `equipmentChoice`, respectively, each naming an existing choice
+of the corresponding role. Fixed and selected modes are mutually exclusive. Inline equipment
+packages grant existing dependency quantities and gold; selected equipment emits an exact source
+entitlement. Background ASI still applies one three-point allocation. Species may replace fixed
+size with `sizeChoice`, naming a single-pick inline choice with one size benefit per option.
+
+Additional attributed creation facts are hp-per-level (amount), movement-bonus (mode/meters),
+movement-equals-walk (non-walk mode/multiplier), and armor-class (base, ability array, condition
+always/no-armor/no-armor-no-shield, optional shieldBonus). Armor class is a candidate formula,
+not a flat bonus. These declarations neither execute conditional/active combat effects nor parse
+legacy Grant data. Creation consumers explicitly derive initial state from these facts.

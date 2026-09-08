@@ -1,3 +1,9 @@
+import {
+  parseDefinitionSnapshot,
+  isCatalogueSnapshot,
+  type DefinitionSnapshot,
+  type CatalogueVerifier,
+} from "./sources";
 import { isClassFamily, CLASS_DATA_KEYS, conformClassDefinition } from "./classes";
 import { isOriginFamily, conformOriginDefinition } from "./origins";
 import {
@@ -52,9 +58,68 @@ const stateKeys = [
   "enabled",
   "conditions",
 ];
+function validateFields(
+  data: Record<string, JsonValue>,
+  descriptors: readonly FieldDescriptor[],
+  prefix: string,
+  extras: string[],
+  add: (path: string, code: string, severity?: AuthoringDiagnostic["severity"]) => void,
+  presentOnly = false
+) {
+  const known = new Set([...descriptors.map((x) => x.key), ...extras]);
+  for (const key of Object.keys(data))
+    if (!known.has(key))
+      add(
+        prefix + key,
+        stateKeys.includes(key) ? "instance-state" : "unsupported-field",
+        stateKeys.includes(key) ? "invalid" : "unsupported"
+      );
+  for (const field of descriptors) {
+    if (presentOnly && !Object.hasOwn(data, field.key)) continue;
+    const value = data[field.key],
+      path = prefix + field.key;
+    if (field.type === "number") {
+      if (
+        typeof value !== "number" ||
+        !Number.isFinite(value) ||
+        value < (field.min ?? -Infinity) ||
+        value > (field.max ?? Infinity) ||
+        (![
+          "weight",
+          "cost",
+          "materialCost",
+          "reach",
+          "rangeNormal",
+          "rangeLong",
+          "rangeDistance",
+          "areaSize",
+          "walkSpeed",
+          "flySpeed",
+          "swimSpeed",
+          "climbSpeed",
+          "burrowSpeed",
+          "darkvision",
+          "blindsight",
+          "tremorsense",
+          "truesight",
+        ].includes(field.key) &&
+          !Number.isInteger(value))
+      )
+        add(path, "invalid-number");
+    } else if (field.type === "boolean") {
+      if (typeof value !== "boolean") add(path, "invalid-boolean");
+    } else if (typeof value !== "string") add(path, "invalid-text");
+    else if (value.length > 10000) add(path, "text-too-long");
+    else if (field.type === "select" && !field.options?.includes(value))
+      add(path, "unsupported-option", "unsupported");
+    else if (field.type === "formula" && value !== "" && !formulaBounds(value))
+      add(path, "invalid-formula");
+  }
+}
 export function conformDefinition(
   definition: LibraryDefinition,
-  includedNode = false
+  includedNode = false,
+  verifyCatalogue?: CatalogueVerifier
 ): AuthoringDiagnostic[] {
   const issues: AuthoringDiagnostic[] = [];
   const add = (
@@ -89,66 +154,40 @@ export function conformDefinition(
     descriptors: readonly FieldDescriptor[],
     prefix: string,
     extras: string[] = []
-  ) => {
-    const known = new Set([...descriptors.map((x) => x.key), ...extras]);
-    for (const key of Object.keys(data))
-      if (!known.has(key))
-        add(
-          prefix + key,
-          stateKeys.includes(key) ? "instance-state" : "unsupported-field",
-          stateKeys.includes(key) ? "invalid" : "unsupported"
-        );
-    for (const field of descriptors) {
-      const value = data[field.key],
-        path = prefix + field.key;
-      if (field.type === "number") {
-        if (
-          typeof value !== "number" ||
-          !Number.isFinite(value) ||
-          value < (field.min ?? -Infinity) ||
-          value > (field.max ?? Infinity) ||
-          (![
-            "weight",
-            "cost",
-            "materialCost",
-            "reach",
-            "rangeNormal",
-            "rangeLong",
-            "rangeDistance",
-            "areaSize",
-            "walkSpeed",
-            "flySpeed",
-            "swimSpeed",
-            "climbSpeed",
-            "burrowSpeed",
-            "darkvision",
-            "blindsight",
-            "tremorsense",
-            "truesight",
-          ].includes(field.key) &&
-            !Number.isInteger(value))
-        )
-          add(path, "invalid-number");
-      } else if (field.type === "boolean") {
-        if (typeof value !== "boolean") add(path, "invalid-boolean");
-      } else if (typeof value !== "string") add(path, "invalid-text");
-      else if (value.length > 10000) add(path, "text-too-long");
-      else if (field.type === "select" && !field.options?.includes(value))
-        add(path, "unsupported-option", "unsupported");
-      else if (field.type === "formula" && value !== "" && !formulaBounds(value))
-        add(path, "invalid-formula");
-    }
-  };
-  validate(d, authoringFields(definition.family), "payload.data.", [
-    "effects",
-    "unsupported",
-    ...(isOriginFamily(definition.family) || isClassFamily(definition.family)
-      ? ["prerequisites", "benefits", "choices", "dependencies"]
-      : []),
-    ...(isOriginFamily(definition.family) ? ["equipment"] : []),
-    ...(isClassFamily(definition.family) ? CLASS_DATA_KEYS : []),
-    ...advancedCollections(definition.family).map((c) => c.key),
-  ]);
+  ) => validateFields(data, descriptors, prefix, extras, add);
+  const alternateFields =
+    definition.family === "background"
+      ? [
+          ...(d.toolChoice !== undefined ? ["tool"] : []),
+          ...(d.originFeatChoice !== undefined ? ["originFeat"] : []),
+          ...(d.equipmentChoice !== undefined ? ["equipmentGold"] : []),
+        ]
+      : definition.family === "species" && d.sizeChoice !== undefined
+        ? ["size"]
+        : [];
+  validate(
+    d,
+    authoringFields(definition.family).filter(
+      (field) => !alternateFields.includes(field.key)
+    ),
+    "payload.data.",
+    [
+      ...(definition.family === "background"
+        ? ["toolChoice", "originFeatChoice", "equipmentChoice"]
+        : []),
+      ...(definition.family === "species" ? ["sizeChoice"] : []),
+      "effects",
+      "unsupported",
+      ...(isOriginFamily(definition.family) ||
+      isClassFamily(definition.family) ||
+      definition.family === "feature"
+        ? ["prerequisites", "benefits", "choices", "dependencies"]
+        : []),
+      ...(isOriginFamily(definition.family) ? ["equipment"] : []),
+      ...(isClassFamily(definition.family) ? CLASS_DATA_KEYS : []),
+      ...advancedCollections(definition.family).map((c) => c.key),
+    ]
+  );
   const check = (condition: unknown, key: string, code: string) => {
     if (condition) add("payload.data." + key, code);
   };
@@ -720,9 +759,303 @@ export function conformDefinition(
   if (isClassFamily(definition.family))
     issues.push(...conformClassDefinition(definition));
   if (
-    (isOriginFamily(definition.family) || isClassFamily(definition.family)) &&
+    (isOriginFamily(definition.family) ||
+      isClassFamily(definition.family) ||
+      (definition.family === "feature" &&
+        ["prerequisites", "benefits", "choices", "dependencies"].some((key) =>
+          Object.hasOwn(d, key)
+        ))) &&
     !includedNode
   )
-    issues.push(...conformOriginDefinition(definition));
+    issues.push(...conformOriginDefinition(definition, verifyCatalogue));
   return issues;
+}
+
+/** Same authoring vocabulary, inspected without asserting absent catalogue combat fields. */
+function conformCatalogueAcquisitionLeaf(
+  definition: LibraryDefinition,
+  verifyCatalogue: CatalogueVerifier,
+  includedNode = false
+): AuthoringDiagnostic[] {
+  const issues: AuthoringDiagnostic[] = [];
+  const add = (
+    path: string,
+    code: string,
+    severity: AuthoringDiagnostic["severity"] = "invalid"
+  ) => issues.push({ path, code, severity });
+  try {
+    parseDefinition(definition);
+  } catch {
+    add("definition", "invalid-definition");
+    return issues;
+  }
+  if (!definition.name.trim()) add("name", "required");
+  const d = definition.payload.data;
+  const required = [
+    "authoringVersion",
+    "edition",
+    "source",
+    "sourceVersion",
+    "mechanicId",
+    ...(definition.family === "spell"
+      ? ["level", "school"]
+      : definition.family === "weapon"
+        ? ["category", "mode"]
+        : definition.family === "equipment"
+          ? ["category"]
+          : ["acquisitionLevel"]),
+  ];
+  for (const key of required)
+    if (!Object.hasOwn(d, key)) add("payload.data." + key, "required");
+  for (const key of ["source", "sourceVersion", "mechanicId"])
+    if (typeof d[key] !== "string" || !d[key].trim())
+      add("payload.data." + key, "required");
+  const acquisition =
+    definition.family === "feature"
+      ? ["prerequisites", "benefits", "choices", "dependencies"]
+      : [];
+  validateFields(
+    d,
+    authoringFields(definition.family),
+    "payload.data.",
+    ["effects", "unsupported", ...acquisition],
+    add,
+    true
+  );
+  if (Object.hasOwn(d, "unsupported")) {
+    if (
+      !Array.isArray(d.unsupported) ||
+      d.unsupported.some((value) => typeof value !== "string")
+    )
+      add("payload.data.unsupported", "invalid-declarations");
+    else if (d.unsupported.length)
+      add("payload.data.unsupported", "unsupported-declaration", "unsupported");
+  }
+  if (Object.hasOwn(d, "effects")) {
+    if (!Array.isArray(d.effects) || d.effects.length > 32)
+      add("payload.data.effects", "invalid-effects");
+    else
+      d.effects.forEach((effect, index) => {
+        const prefix = "payload.data.effects." + String(index);
+        if (!effect || typeof effect !== "object" || Array.isArray(effect)) {
+          add(prefix, "invalid-effect");
+          return;
+        }
+        validateFields(effect, effectFields(), prefix + ".", [], add);
+        if (
+          effect.kind !== "condition" &&
+          (!formulaBounds(effect.formula) ||
+            (formulaBounds(effect.formula)?.min ?? -1) < 0)
+        )
+          add(prefix + ".formula", "effect-formula");
+        if (effect.kind === "damage" && !effect.damageType)
+          add(prefix + ".damageType", "damage-type-required");
+        if (effect.kind === "condition" && !effect.condition)
+          add(prefix + ".condition", "condition-required");
+        if (effect.kind !== "damage" && effect.damageType !== "")
+          add(prefix + ".damageType", "damage-type-unused");
+        if (effect.kind !== "condition" && effect.condition !== "")
+          add(prefix + ".condition", "condition-unused");
+        if (effect.kind === "condition" && effect.formula !== "")
+          add(prefix + ".formula", "condition-formula");
+        if (
+          ["round", "minute", "hour"].includes(textValue(effect.durationKind))
+            ? !(Number(effect.durationAmount) > 0)
+            : effect.durationAmount !== 0
+        )
+          add(prefix + ".durationAmount", "duration-policy");
+        if (
+          d.resolution !== undefined &&
+          ["failed-save", "successful-save"].includes(textValue(effect.gate)) &&
+          d.resolution !== "save"
+        )
+          add(prefix + ".gate", "save-required");
+        if (
+          d.resolution !== undefined &&
+          effect.gate === "hit" &&
+          d.resolution !== "attack"
+        )
+          add(prefix + ".gate", "attack-required");
+        if (d.areaShape === "none" && effect.target === "area")
+          add(prefix + ".target", "area-required");
+      });
+  }
+  // A relationship is checked only when all its inputs are present. Omission is unknown.
+  const relation = (keys: string[], invalid: boolean, code: string) => {
+    if (keys.every((key) => Object.hasOwn(d, key)) && invalid)
+      add("payload.data." + (keys[keys.length - 1] ?? ""), code);
+  };
+  relation(
+    ["rangeNormal", "rangeLong"],
+    Number(d.rangeLong) < Number(d.rangeNormal),
+    "range-order"
+  );
+  relation(
+    ["rangeKind", "rangeDistance"],
+    d.rangeKind === "distance" ? !(Number(d.rangeDistance) > 0) : d.rangeDistance !== 0,
+    "range-policy"
+  );
+  relation(
+    ["durationKind", "durationAmount"],
+    ["round", "minute", "hour"].includes(textValue(d.durationKind))
+      ? !(Number(d.durationAmount) > 0)
+      : d.durationAmount !== 0,
+    "duration-policy"
+  );
+  relation(
+    ["concentration", "durationKind"],
+    d.concentration === true && d.durationKind === "instant",
+    "concentration-duration"
+  );
+  relation(
+    ["areaShape", "areaSize"],
+    d.areaShape === "none" ? d.areaSize !== 0 : !(Number(d.areaSize) > 0),
+    "area-policy"
+  );
+  relation(
+    ["resolution", "saveAbility"],
+    d.resolution === "save" ? d.saveAbility === "none" : d.saveAbility !== "none",
+    "save-policy"
+  );
+  relation(
+    ["dcPolicy", "fixedDc"],
+    d.dcPolicy === "fixed" ? !(Number(d.fixedDc) > 0) : d.fixedDc !== 0,
+    "dc-policy"
+  );
+  relation(
+    ["category", "armorBase"],
+    d.category === "armor" ? !(Number(d.armorBase) > 0) : d.armorBase !== 0,
+    "armor-category"
+  );
+  relation(
+    ["category", "shieldBonus"],
+    d.category === "shield" ? !(Number(d.shieldBonus) > 0) : d.shieldBonus !== 0,
+    "shield-category"
+  );
+  relation(
+    ["armorDex", "armorDexCap"],
+    d.armorDex !== "capped" && d.armorDexCap !== 0,
+    "dex-cap-policy"
+  );
+  relation(
+    ["propertyVersatile", "propertyTwoHanded"],
+    d.propertyVersatile === true && d.propertyTwoHanded === true,
+    "versatile-two-handed"
+  );
+  relation(
+    ["mode", "reach"],
+    d.mode === "melee" && !(Number(d.reach) > 0),
+    "reach-required"
+  );
+  relation(
+    ["mode", "rangeNormal"],
+    d.mode === "ranged" && !(Number(d.rangeNormal) > 0),
+    "range-required"
+  );
+  for (const property of ["propertyThrown", "propertyAmmunition"])
+    relation(
+      [property, "rangeNormal"],
+      d[property] === true && !(Number(d.rangeNormal) > 0),
+      "range-required"
+    );
+  relation(
+    ["mode", "propertyThrown", "propertyAmmunition", "rangeNormal", "rangeLong"],
+    d.mode === "melee" &&
+      !d.propertyThrown &&
+      !d.propertyAmmunition &&
+      (d.rangeNormal !== 0 || d.rangeLong !== 0),
+    "range-unused"
+  );
+  relation(
+    ["propertyVersatile", "versatileFormula"],
+    d.propertyVersatile === true
+      ? !formulaBounds(d.versatileFormula) ||
+          (formulaBounds(d.versatileFormula)?.min ?? -1) < 0
+      : d.versatileFormula !== "",
+    "versatile-formula"
+  );
+  for (const key of ["armorDex", "armorDexCap"])
+    relation(
+      ["category", key],
+      d.category !== "armor" && d[key] !== (key === "armorDex" ? "none" : 0),
+      "armor-category"
+    );
+  const capacityKey = definition.family === "equipment" ? "maxCharges" : "maxUses";
+  relation(
+    ["recoveryKind", capacityKey],
+    d.recoveryKind !== "none" && !(Number(d[capacityKey]) > 0),
+    "recovery-resource"
+  );
+  relation(
+    ["recoveryKind", "recoveryBoundary"],
+    d.recoveryKind === "none"
+      ? d.recoveryBoundary !== "none"
+      : d.recoveryBoundary === "none",
+    "recovery-kind"
+  );
+  relation(
+    ["recoveryKind", "recoveryFormula"],
+    d.recoveryKind === "formula"
+      ? !formulaBounds(d.recoveryFormula) ||
+          (formulaBounds(d.recoveryFormula)?.min ?? -1) < 0
+      : d.recoveryFormula !== "",
+    "recovery-formula"
+  );
+  relation(
+    ["recoveryKind", "recoveryFormula", capacityKey],
+    d.recoveryKind === "formula" &&
+      (formulaBounds(d.recoveryFormula)?.max ?? 0) > Number(d[capacityKey]),
+    "recovery-capacity"
+  );
+  relation(
+    ["activation", "reactionCondition"],
+    d.activation === "reaction" && !textValue(d.reactionCondition).trim(),
+    "reaction-condition"
+  );
+  relation(
+    ["activation", "activationTime"],
+    d.activation === "time" && !textValue(d.activationTime).trim(),
+    "activation-time"
+  );
+  for (const key of ["materialConsumed", "materialCost", "materialDescription"])
+    relation(
+      ["material", key],
+      d.material === false &&
+        d[key] !== (key === "materialConsumed" ? false : key === "materialCost" ? 0 : ""),
+      "material-required"
+    );
+  relation(
+    ["material", "materialDescription"],
+    d.material === true && !textValue(d.materialDescription).trim(),
+    "material-description"
+  );
+  if (
+    d.damageFormula !== undefined &&
+    (!formulaBounds(d.damageFormula) || (formulaBounds(d.damageFormula)?.min ?? -1) < 0)
+  )
+    add("payload.data.damageFormula", "damage-formula");
+  if (
+    definition.family === "feature" &&
+    !includedNode &&
+    acquisition.some((key) => Object.hasOwn(d, key))
+  )
+    issues.push(...conformOriginDefinition(definition, verifyCatalogue));
+  return issues;
+}
+
+/** Exact adapter authentication is the only entrance to catalogue acquisition conformance. */
+export function conformAcquisitionSnapshot(
+  snapshot: DefinitionSnapshot,
+  verifyCatalogue: CatalogueVerifier = () => false,
+  includedNode = false
+): AuthoringDiagnostic[] {
+  try {
+    parseDefinitionSnapshot(snapshot, verifyCatalogue, includedNode);
+  } catch {
+    return [{ path: "snapshot", code: "incompatible-source", severity: "invalid" }];
+  }
+  return isCatalogueSnapshot(snapshot) &&
+    ["spell", "equipment", "weapon", "feature"].includes(snapshot.definition.family)
+    ? conformCatalogueAcquisitionLeaf(snapshot.definition, verifyCatalogue, includedNode)
+    : conformDefinition(snapshot.definition, includedNode, verifyCatalogue);
 }

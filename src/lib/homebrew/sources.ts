@@ -1,3 +1,4 @@
+export { conformAcquisitionSnapshot } from "./conformance";
 import { assertJsonBudget } from "../shared/json-budget";
 import { frozen, identityId, object } from "../identity/model";
 import {

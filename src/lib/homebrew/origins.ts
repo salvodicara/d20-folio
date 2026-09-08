@@ -7,6 +7,8 @@ import {
   type DefinitionSnapshot,
   type DefinitionDependency,
   type CanonicalSource,
+  type CatalogueVerifier,
+  conformAcquisitionSnapshot,
 } from "./sources";
 import { isClassFamily } from "./classes";
 import {
@@ -61,14 +63,38 @@ export type OriginPrerequisite =
   | { kind: "proficiency"; category: ProficiencyCategory; id: string }
   | { kind: "feat"; mechanicId: string; dependency?: string }
   | { kind: "spellcasting" };
+export type SpellAbility = Ability | "none" | { choice: string };
+export type SpellEntitlement =
+  | { policy: "known" | "prepared" | "spellbook" }
+  | { policy: "free-cast"; uses: number; rest: "short" | "long" };
+export type SelectedAcquisitionGrant =
+  | { kind: "spell"; ability: SpellAbility; entitlements: SpellEntitlement[] }
+  | { kind: "expertise"; category: "skill" | "tool" }
+  | { kind: "equipment"; quantity: number }
+  | { kind: "mastery" };
 export type OriginBenefit =
+  | { kind: "hp-per-level"; amount: number }
+  | { kind: "movement-bonus"; mode: (typeof MOVEMENT_MODES)[number]; meters: number }
+  | {
+      kind: "movement-equals-walk";
+      mode: "fly" | "swim" | "climb" | "burrow";
+      multiplier: number;
+    }
+  | {
+      kind: "armor-class";
+      base: number;
+      abilities: Ability[];
+      condition: "always" | "no-armor" | "no-armor-no-shield";
+      shieldBonus?: number;
+    }
+  | { kind: "casting-ability"; id: string; ability: Ability }
   | { kind: "expertise"; category: "skill" | "tool"; id: string }
   | { kind: "training"; category: "armor" | "weapon"; id: string }
   | { kind: "mastery"; id: string }
   | {
       kind: "spell";
       id: string;
-      ability: Ability;
+      ability: SpellAbility;
       policy: "known" | "prepared" | "spellbook" | "free-cast";
       uses?: number;
       rest?: "short" | "long";
@@ -94,6 +120,8 @@ export interface OriginChoice {
   count: number;
   options: OriginOption[];
   pool?: CataloguePool;
+  phase?: "foundation" | "dependent";
+  selectedGrant?: SelectedAcquisitionGrant;
   parent: { choiceId: string; optionId: string } | null;
 }
 export type OriginDependency = DefinitionDependency;
@@ -198,7 +226,8 @@ const id = (v: unknown) => typeof v === "string" && /^[A-Za-z0-9_-]{1,128}$/.tes
 
 /** Includes unknown declarations verbatim; diagnostics never rewrite authored input. */
 export function conformOriginDefinition(
-  definition: LibraryDefinition
+  definition: LibraryDefinition,
+  verifyCatalogue?: CatalogueVerifier
 ): AuthoringDiagnostic[] {
   const issues: AuthoringDiagnostic[] = [];
   const add = (
@@ -290,7 +319,9 @@ export function conformOriginDefinition(
     known(v, fields, path);
   };
   const root = definition.payload.data;
-  const dependencies = originRecord(root.dependencies);
+  const dependencies =
+    originRecord(root.dependencies) ??
+    (definition.family === "feature" && root.dependencies === undefined ? {} : null);
   if (!dependencies || Object.keys(dependencies).length > 31)
     add("payload.data.dependencies", "invalid-dependencies");
   const table = dependencies ?? {};
@@ -322,6 +353,54 @@ export function conformOriginDefinition(
       }
       let fields = ["kind"];
       switch (v.kind) {
+        case "hp-per-level":
+          fields.push("amount");
+          if (!integer(v.amount, 1, 100)) add(path + ".amount", "invalid-number");
+          break;
+        case "movement-bonus":
+          fields.push("mode", "meters");
+          if (!token(v.mode, MOVEMENT_MODES))
+            add(path + ".mode", "unsupported-option", "unsupported");
+          if (
+            typeof v.meters !== "number" ||
+            !Number.isFinite(v.meters) ||
+            Math.abs(v.meters) > 1000
+          )
+            add(path + ".meters", "invalid-number");
+          break;
+        case "movement-equals-walk":
+          fields.push("mode", "multiplier");
+          if (!token(v.mode, ["fly", "swim", "climb", "burrow"]))
+            add(path + ".mode", "unsupported-option", "unsupported");
+          if (
+            typeof v.multiplier !== "number" ||
+            !Number.isFinite(v.multiplier) ||
+            v.multiplier <= 0 ||
+            v.multiplier > 10
+          )
+            add(path + ".multiplier", "invalid-number");
+          break;
+        case "armor-class":
+          fields.push("base", "abilities", "condition", "shieldBonus");
+          if (!integer(v.base, 0, 30)) add(path + ".base", "invalid-number");
+          if (
+            !Array.isArray(v.abilities) ||
+            v.abilities.length > 2 ||
+            new Set(v.abilities).size !== v.abilities.length ||
+            v.abilities.some((ability) => !token(ability, ABILITIES))
+          )
+            add(path + ".abilities", "invalid-collection");
+          if (!token(v.condition, ["always", "no-armor", "no-armor-no-shield"]))
+            add(path + ".condition", "unsupported-option", "unsupported");
+          if (v.shieldBonus !== undefined && !integer(v.shieldBonus, 0, 10))
+            add(path + ".shieldBonus", "invalid-number");
+          break;
+        case "casting-ability":
+          fields.push("id", "ability");
+          if (!id(v.id)) add(path + ".id", "required");
+          if (!token(v.ability, ABILITIES))
+            add(path + ".ability", "unsupported-option", "unsupported");
+          break;
         case "expertise":
           fields.push("category", "id");
           if (!token(v.category, ["skill", "tool"]))
@@ -338,10 +417,18 @@ export function conformOriginDefinition(
           fields.push("id");
           if (!nonempty(v.id)) add(path + ".id", "required");
           break;
-        case "spell":
+        case "spell": {
           fields.push("id", "ability", "policy", "uses", "rest");
           if (!nonempty(v.id)) add(path + ".id", "required");
-          if (!token(v.ability, ABILITIES))
+          const choiceAbility = originRecord(v.ability);
+          if (
+            !token(v.ability, [...ABILITIES, "none"]) &&
+            !(
+              choiceAbility &&
+              Object.keys(choiceAbility).length === 1 &&
+              id(choiceAbility.choice)
+            )
+          )
             add(path + ".ability", "unsupported-option", "unsupported");
           if (!token(v.policy, ["known", "prepared", "spellbook", "free-cast"]))
             add(path + ".policy", "unsupported-policy", "unsupported");
@@ -350,6 +437,7 @@ export function conformOriginDefinition(
           if (Object.hasOwn(v, "rest") && !token(v.rest, ["short", "long"]))
             add(path + ".rest", "unsupported-policy", "unsupported");
           break;
+        }
         case "equipment":
           fields.push("dependency", "quantity");
           reference(v.dependency, path + ".dependency", ["equipment", "weapon"]);
@@ -442,7 +530,75 @@ export function conformOriginDefinition(
           add(path, "invalid-choice");
           return;
         }
-        known(v, ["id", "name", "count", "options", "parent", "pool"], path);
+        known(
+          v,
+          ["id", "name", "count", "options", "parent", "pool", "phase", "selectedGrant"],
+          path
+        );
+        if (v.phase !== undefined && !token(v.phase, ["foundation", "dependent"]))
+          add(path + ".phase", "unsupported-option", "unsupported");
+        if (v.selectedGrant !== undefined) {
+          const grant = originRecord(v.selectedGrant),
+            query = originRecord(originRecord(v.pool)?.query);
+          if (!grant || !query) add(path + ".selectedGrant", "invalid-selected-grant");
+          else {
+            const p = path + ".selectedGrant";
+            if (grant.kind === "spell") {
+              known(grant, ["kind", "ability", "entitlements"], p);
+              if (query.kind !== "spell") add(p, "incompatible-selected-grant");
+              const entitlements = list(grant.entitlements, p + ".entitlements", 4);
+              if (
+                !entitlements.length ||
+                new Set(entitlements.map((entry) => originRecord(entry)?.policy)).size !==
+                  entitlements.length
+              )
+                add(p, "invalid-selected-grant");
+              entitlements.forEach((entry, index) => {
+                const permission = originRecord(entry);
+                if (!permission) {
+                  add(p, "invalid-selected-grant");
+                  return;
+                }
+                known(
+                  permission,
+                  permission.policy === "free-cast"
+                    ? ["policy", "uses", "rest"]
+                    : ["policy"],
+                  p
+                );
+                if (
+                  permission.policy === "free-cast" &&
+                  (!integer(permission.uses, 1, 100) ||
+                    !token(permission.rest, ["short", "long"]))
+                )
+                  add(p, "invalid-selected-grant");
+                benefit(
+                  {
+                    kind: "spell",
+                    id: "selected",
+                    ability: grant.ability,
+                    ...permission,
+                  },
+                  p + ".entitlements." + String(index)
+                );
+              });
+            } else if (grant.kind === "expertise") {
+              known(grant, ["kind", "category"], p);
+              if (
+                query.kind !== "proficiency" ||
+                !token(grant.category, ["skill", "tool"])
+              )
+                add(p, "incompatible-selected-grant");
+            } else if (grant.kind === "equipment") {
+              known(grant, ["kind", "quantity"], p);
+              if (query.kind !== "equipment" || !integer(grant.quantity, 1, 100000))
+                add(p, "incompatible-selected-grant");
+            } else if (grant.kind === "mastery") {
+              known(grant, ["kind"], p);
+              if (query.kind !== "mastery") add(p, "incompatible-selected-grant");
+            } else add(p, "unsupported-selected-grant", "unsupported");
+          }
+        }
         if (!id(v.id) || choiceMap.has(String(v.id)))
           add(path + ".id", "duplicate-or-invalid-id");
         choiceMap.set(String(v.id), v);
@@ -482,6 +638,8 @@ export function conformOriginDefinition(
         }
         known(p, ["choiceId", "optionId"], path);
         const parent = choiceMap.get(String(p.choiceId));
+        if (parent?.phase === "dependent" && v.phase !== "dependent")
+          add(path, "parent-choice-phase");
         if (
           isClassFamily(node.family) &&
           choices.findIndex((x) => originRecord(x)?.id === p.choiceId) >= i
@@ -593,11 +751,89 @@ export function conformOriginDefinition(
         }
       }
     }
+    if (node.family === "species" && d.sizeChoice !== undefined) {
+      const choice = Array.isArray(d.choices)
+        ? originRecord(
+            d.choices.find((value) => originRecord(value)?.id === d.sizeChoice)
+          )
+        : null;
+      if (!id(d.sizeChoice) || !choice) add(prefix + "sizeChoice", "missing-choice");
+      if (Object.hasOwn(d, "size")) add(prefix + "sizeChoice", "mixed-acquisition-mode");
+      if (
+        choice &&
+        (choice.count !== 1 ||
+          !Array.isArray(choice.options) ||
+          !choice.options.length ||
+          choice.options.some((value) => {
+            const benefits = originRecord(value)?.benefits;
+            return (
+              !Array.isArray(benefits) ||
+              benefits.filter((benefit) => originRecord(benefit)?.kind === "size")
+                .length !== 1
+            );
+          }))
+      )
+        add(prefix + "sizeChoice", "choice-acquisition-role");
+    }
     if (node.family === "background") {
       if (new Set([d.ability1, d.ability2, d.ability3]).size !== 3)
         add(prefix + "ability1", "distinct-abilities");
       if (d.skill1 === d.skill2) add(prefix + "skill2", "distinct-skills");
-      if (d.originFeat !== "") {
+      const choices = Array.isArray(d.choices) ? d.choices : [];
+      for (const [choiceKey, fixedKeys] of [
+        ["toolChoice", ["tool"]],
+        ["originFeatChoice", ["originFeat"]],
+        ["equipmentChoice", ["equipment", "equipmentGold"]],
+      ] as const) {
+        if (d[choiceKey] === undefined) continue;
+        if (
+          !id(d[choiceKey]) ||
+          !choices.some((choice) => originRecord(choice)?.id === d[choiceKey])
+        )
+          add(prefix + choiceKey, "missing-choice");
+        if (fixedKeys.some((key) => Object.hasOwn(d, key)))
+          add(prefix + choiceKey, "mixed-acquisition-mode");
+        const choice = originRecord(
+          choices.find((value) => originRecord(value)?.id === d[choiceKey])
+        );
+        if (choice) {
+          const query = originRecord(originRecord(choice.pool)?.query);
+          const options = Array.isArray(choice.options) ? choice.options : [];
+          const matchesBenefit = (value: unknown): boolean => {
+            const benefit = originRecord(value);
+            if (choiceKey === "toolChoice")
+              return benefit?.kind === "proficiency" && benefit.category === "tool";
+            if (choiceKey === "equipmentChoice")
+              return benefit?.kind === "equipment" || benefit?.kind === "gold";
+            const dependency = originRecord(table[String(benefit?.dependency)]);
+            const child = originRecord(dependency?.definition);
+            return (
+              benefit?.kind === "reference" &&
+              child?.family === "feat" &&
+              originRecord(originRecord(child.payload)?.data)?.category === "origin"
+            );
+          };
+          const roleValid = query
+            ? choiceKey === "toolChoice"
+              ? query.kind === "proficiency" &&
+                Array.isArray(query.categories) &&
+                query.categories.includes("tool")
+              : choiceKey === "originFeatChoice"
+                ? query.kind === "feat" &&
+                  Array.isArray(query.categories) &&
+                  query.categories.length === 1 &&
+                  query.categories[0] === "origin"
+                : query.kind === "equipment" &&
+                  originRecord(choice.selectedGrant)?.kind === "equipment"
+            : options.length > 0 &&
+              options.every((value) => {
+                const benefits = originRecord(value)?.benefits;
+                return Array.isArray(benefits) && benefits.some(matchesBenefit);
+              });
+          if (!roleValid) add(prefix + choiceKey, "choice-acquisition-role");
+        }
+      }
+      if (d.originFeatChoice === undefined && d.originFeat !== "") {
         reference(d.originFeat, prefix + "originFeat", ["feat"]);
         const child = originRecord(
           originRecord(table[typeof d.originFeat === "string" ? d.originFeat : ""])
@@ -607,9 +843,10 @@ export function conformOriginDefinition(
         if (data && data.category !== "origin")
           add(prefix + "originFeat", "origin-feat-category");
       }
-      list(d.equipment, prefix + "equipment").forEach((r, i) =>
-        reference(r, prefix + "equipment." + String(i), ["equipment", "weapon"])
-      );
+      if (d.equipmentChoice === undefined)
+        list(d.equipment, prefix + "equipment").forEach((r, i) =>
+          reference(r, prefix + "equipment." + String(i), ["equipment", "weapon"])
+        );
     }
   };
   checkNode(definition, "root", "payload.data.");
@@ -622,7 +859,9 @@ export function conformOriginDefinition(
         if (sourceIdentity(snapshot) !== key) add(path, "dependency-identity");
         if (Object.hasOwn(snapshot.definition.payload.data, "dependencies"))
           add(path, "nested-dependencies");
-        for (const issue of conformDefinition(snapshot.definition, true))
+        for (const issue of verifyCatalogue
+          ? conformAcquisitionSnapshot(snapshot, verifyCatalogue, true)
+          : conformDefinition(snapshot.definition, true))
           issues.push({ ...issue, path: path + ".definition." + issue.path });
         checkNode(snapshot.definition, key, path + ".definition.payload.data.");
       } catch {

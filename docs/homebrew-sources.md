@@ -59,3 +59,22 @@ belongs in lazy query resolution; selected closure and repeated operation snapsh
 still count toward persistence limits. Client semantic verification is distinct from
 Firestore structural/ACL verification; neither these codecs nor preview tests prove
 future custom combat execution, in-use correction, costs or causal undo.
+
+## Authenticated acquisition inspection
+
+`conformAcquisitionSnapshot(snapshot, verifyCatalogue?, includedNode?)` defaults to rejecting
+catalogue claims. After exact adapter authentication, catalogue spell, equipment, weapon and
+feature definitions can omit unavailable combat fields. Required common data is authoringVersion1,
+edition2024, source, sourceVersion and mechanicId; spells additionally require level and school,
+equipment category, weapons category and mode, and features acquisitionLevel. Present fields use
+the shared authoring descriptors and applicable cross-field constraints; unsupported declarations
+still diagnose. No absent-field inventory or invented range, duration, charges or activation is
+stored. Ordinary Library definitions retain full authoring conformance. Instance decoding retains
+these authenticated partial snapshots, including exact sourceData; this does not certify execution.
+
+Pools additionally support invocation features with maximumClassLevel and optional IDs. Equipment
+queries can declare toolCategories, proficientOnly and optional proficiencySource (the pinned
+source entry ID constraining eligible proficiency facts); spell queries can declare
+`acquiredPolicy: "spellbook"`. The trusted resolver receives current attributed facts on every
+choice resolution via `resolvePool(pool, facts)`, so preparation can filter an earlier spellbook
+selection. These are filter declarations; selected entitlements remain separate from eligibility.
