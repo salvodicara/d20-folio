@@ -168,3 +168,6 @@ again after attaching the full envelope. Throwing or silently dropped storage wr
 and retain the editable draft. A recovered unknown envelope is never retired by storage failure;
 its original receipt identity must reconcile before new writes. Successful retention clears the
 storage warning. The editor heading prioritizes unsaved storage failure over local/saved status. The shared controller remains the only autosave authority for every family.
+
+A local retention failure also suppresses the first-version footer that says the draft is saved;
+the unsaved heading and recovery alert remain the authoritative visible status.

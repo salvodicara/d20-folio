@@ -95,6 +95,6 @@
     "to": "To {{name}}",
     "accountIdentity": "Account {{id}}",
     "acceptHelp": "Keep an independent copy in your library, with its source and version. Later changes to the original will not replace your copy.",
-    "storageUnsaved": "Not saved — keep this page open"
+    "storageUnsaved": "Not saved. Keep this page open"
   }
 }

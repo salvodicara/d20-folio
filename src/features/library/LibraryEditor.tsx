@@ -381,7 +381,9 @@ function EditorBody({
         <summary>{homebrewLabel("preview")}</summary>
         <HomebrewReader definition={draft} />
       </details>
-      {!state.base?.stableVersion && <p>{label("recordFirst")}</p>}
+      {!state.base?.stableVersion && !state.storageFailed && (
+        <p>{label("recordFirst")}</p>
+      )}
       {state.base?.provenance && (
         <p className="library-provenance">
           {label("copy")} · {t("libraryV2.from", { name: sourceName })} ·{" "}
