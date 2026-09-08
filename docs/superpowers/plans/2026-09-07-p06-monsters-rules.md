@@ -30,17 +30,17 @@ blankAdvancedRow(kind) creates explicit defaults, never overwrites unknown origi
 Typed action programs share ordered TypedEffect and stable references; conformance validates
 known structure and path-specific unsupported without executing it. Export field schemas for UI.
 
-- [ ] Red tests for default named monster/rule, attack+multiattack/resource/recharge, typed rule.
+- [x] Red tests for default named monster/rule, attack+multiattack/resource/recharge, typed rule.
       `expect(conformDefinition(monster)).toEqual([])`; change one referenced program ID and expect
       invalid diagnostic at the precise step, keeping original JSON unchanged.
-- [ ] Run `bootstrap-worktree.sh --run pnpm test --run tests/unit/homebrew-advanced.test.ts` and
+- [x] Run `bootstrap-worktree.sh --run pnpm test --run tests/unit/homebrew-advanced.test.ts` and
       retain actual expected failures externally.
-- [ ] Implement six-family dispatcher, finite nested row descriptors/defaults and cross-field checks.
-- [ ] Add boundary tests: zero/fractional CR, negative formula, duplicate IDs, absent resource,
+- [x] Implement six-family dispatcher, finite nested row descriptors/defaults and cross-field checks.
+- [x] Add boundary tests: zero/fractional CR, negative formula, duplicate IDs, absent resource,
       cost/capacity/recharge, unknown nested option/version, multiattack cycle, policy dependency.
-- [ ] Portable roundtrip test: `decodePortable(encodePortable(definition))` retains nested unknown
+- [x] Portable roundtrip test: `decodePortable(encodePortable(definition))` retains nested unknown
       fields and original text; keep current codec API names verified from portable.ts.
-- [ ] Green focused P05+P06, typecheck; reconcile authoring owner, changeset, hooked commit.
+- [x] Green focused P05+P06, typecheck; reconcile authoring owner, changeset, hooked commit.
 
 ## Task 2 — Campaign persistence and adversarial authorization
 
@@ -55,16 +55,16 @@ removeIntent(campaign,base), commit/reconcile. Export defaultPreparedState(versi
 Intent extends Envelope with kind, target/base/snapshot/state/preparationId. Parent UI consumes
 this contract; confirm exact types to parent before coding. P05 source validator stays restricted.
 
-- [ ] Red codec tests for family/state separation, exact base/source, unknown recovery isolation.
-- [ ] Red real demo rules tests owner DM/admin vs member/anonymous/blocked, archive/revoke,
+- [x] Red codec tests for family/state separation, exact base/source, unknown recovery isolation.
+- [x] Red real demo rules tests owner DM/admin vs member/anonymous/blocked, archive/revoke,
       stale campaign/base, forged source, detached receipt, sibling piggyback, duplicate/retry.
-- [ ] Implement atomic target+receipt; direct source actor ownership, current auth/scope/campaign
+- [x] Implement atomic target+receipt; direct source actor ownership, current auth/scope/campaign
       CAS and getAfter checks, existing receipt returned exactly, no automatic retry/replay.
-- [ ] Test version update preserves state over new capacity, two copies isolated, rule toggles,
+- [x] Test version update preserves state over new capacity, two copies isolated, rule toggles,
       response recovery after later update, ABA, malformed records and original recovery.
-- [ ] Remove only addressed copy with receipt; never source version/grant. Rules receipt reading
+- [x] Remove only addressed copy with receipt; never source version/grant. Rules receipt reading
       rechecks current campaign privacy. Separate full preparation family validation from P05.
-- [ ] Focused unit/rules green; record commands/red/green; document and hooked commit.
+- [x] Focused unit/rules green; record commands/red/green; document and hooked commit.
 
 ## Task 3 — Editors, reader and real reuse surfaces
 
@@ -73,53 +73,57 @@ LibraryEditor.tsx, homebrew-labels.ts, LibraryWorkspace.tsx, new AdvancedFields.
 new CampaignHomebrew.tsx/PreparationReuse.tsx; IdentityApp/IdentityWorkspace wiring;
 library.css; src/i18n/{en,it}/ui/homebrewV2.json; focused UI tests.
 
-- [ ] Red component tests initialize two families, edit nested program/resource/policy, keep unknown
+- [x] Red component tests initialize two families, edit nested program/resource/policy, keep unknown
       selects/rows, validate program references before record and retain local draft through reload.
-- [ ] Extend recognized authoring family without extending P05 character state. AdvancedFields
+- [x] Extend recognized authoring family without extending P05 character state. AdvancedFields
       uses shared descriptors with stable row identities, ordered action steps/effects and controls.
-- [ ] Shared reader renders all typed collections in editor/offers/copies/print; raw preserved
+- [x] Shared reader renders all typed collections in editor/offers/copies/print; raw preserved
       unknown data stays discoverable and print-visible. Existing portable exact recovery reused.
-- [ ] Bestiary derives stable library versions. Reuse branches monster/rule to explicit campaign
+- [x] Bestiary derives stable library versions. Reuse branches monster/rule to explicit campaign
       target/preparation, displays source/conformance and persists via useLibraryOperation.
-- [ ] CampaignHomebrew reads real copies, member sees rule status, DM sees prepared creatures,
+- [x] CampaignHomebrew reads real copies, member sees rule status, DM sees prepared creatures,
       state draft with original base, conflict review, exact unknown reconciliation, update compare
       preserving state, addressed remove. Reuse opens exact destination; no play execution.
-- [ ] Dependencies/conflicting replacements visibly reported from enabled typed rule snapshots;
+- [x] Dependencies/conflicting replacements visibly reported from enabled typed rule snapshots;
       no order-based override. Disable/enable with explicit operation; state is not template.
-- [ ] Duplicate uses existing draft controller with a new destination; no source mutation. Library
+- [x] Duplicate uses existing draft controller with a new destination; no source mutation. Library
       removal uses a narrowly scoped explicit head-removal operation with an archived original: retain
       versions/grants/recovery, use existing P03 receipt and test both families; never hard-delete copies.
-- [ ] Test EN/IT, original-base retention, ABA, offline no replay, lost response/reload, storage failure.
-- [ ] Reconcile DESIGN, Architecture/Mechanics/schema links; focused green, changeset, commit.
+- [x] Test EN/IT, original-base retention, ABA, offline no replay, lost response/reload, storage failure.
+- [x] Reconcile DESIGN, Architecture/Mechanics/schema links; focused green, changeset, commit.
 
 ## Task 4 — Actual runtime verification loop
 
 External d20-folio-p06-evidence owns scripts/fixtures/logs/manifests/PDF/screenshots and HANDOFF.
 
-- [ ] Explicit demo optimized build, owned Auth19099/Firestore18080/Storage19199, loopback preview5180
+- [x] Explicit demo optimized build, owned Auth19099/Firestore18080/Storage19199, loopback preview5180
       and mock5189; preserve Java86001/8080. Real Google UI sign-in through provider, independent users.
-- [ ] For BOTH families: create/edit/autosave/reload, version1, share pre-revoke block and post-accept
+- [x] For BOTH families: create/edit/autosave/reload, version1, share pre-revoke block and post-accept
       preserve, explicit recipient acceptance, exactly one grant/version/receipt, real own reuse.
-- [ ] Ordinary/boundary/composition programs and rules, modify state, source stable2, compare/update
+- [x] Ordinary/boundary/composition programs and rules, modify state, source stable2, compare/update
       owner copy preserving state, recipient remains stable1; audit backend final facts/receipts.
-- [ ] Concurrent drafts/two clients, stale-base review, offline/reconnect, same intent duplicate,
+- [x] Concurrent drafts/two clients, stale-base review, offline/reconnect, same intent duplicate,
       actual committed response withheld then unknown after reload and exact receipt; ABA/revocation.
-- [ ] Both families import/export typed and unknown, exact incompatible original after reload;
+- [x] Both families import/export typed and unknown, exact incompatible original after reload;
       print ordinary/long EN/IT and inspect every PDF page. Store hashes and failed attempts.
-- [ ] Actual EN/IT1440×900/1280×800/390×844 screenshots against specific mocks; inspect all relevant
+- [x] Actual EN/IT1440×900/1280×800/390×844 screenshots against specific mocks; inspect all relevant
       states and fix/rebuild/replay affected flow. Review references retain old shell as superseded r2.
 
 ## Task 5 — Review, gates and owner delivery
 
-- [ ] Independent source/spec and actual image/paper reviews. Correct defects with regression tests,
+- [x] Independent source/spec and actual image/paper reviews. Correct defects with regression tests,
       rerun affected acceptance; no reenlistment of historical reviewers. Ponytail for risky complexity.
-- [ ] `bootstrap-worktree.sh --run just ci`; full demo rules including six private copy fixtures and
+- [x] `bootstrap-worktree.sh --run just ci`; full demo rules including six private copy fixtures and
       exact recovery; `just ci-srd-only` because catalog/adapters touched. Preserve exit/count/skip logs.
-- [ ] Hash final source/build/image evidence, review manifests; record concrete emulator fidelity gaps
+- [x] Hash final source/build/image evidence, review manifests; record concrete emulator fidelity gaps
       (indexes/limits/provider/AppCheck/IAM/HTTPS/devices/installed PWA) without fake production equivalence.
-- [ ] Update only PROGRAM_STATUS for frontier/owner/gates/integration SHA. Deliver curated actual chat
+- [x] Update only PROGRAM_STATUS for frontier/owner/gates/integration SHA. Deliver curated actual chat
       images visible on phone and ask only indispensable owner screenshot/P06 integration verdict.
 - [ ] After authorization fresh fetch/rebase and applicable gates, hooked explicit HEAD:v2, verify
       remote SHA; stop owned services and remove only clean owned worktrees after equivalence proof.
 - [ ] Only complete exits allow full recursive successor prompt, all inherited contracts/sources/gates;
       no interim next prompt and no execution P07. Incomplete test/review/gate continues same P06 outcome.
+
+Verification evidence: external P06 HANDOFF/REPLAY retain actual red/green commands and harness
+failures. Task4 final unknown-version PDF title correction passed affected-page reinspection;
+the earlier defective pages are retained and not relabeled as passing. PROGRAM_STATUS owns the current gate status.

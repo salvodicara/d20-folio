@@ -1,29 +1,51 @@
 # Program Status
 
-## Current frontier — P06 implementation and runtime verification (2026-09-08)
+## Current frontier — P06 owner screenshot and V2 integration gate (2026-09-08)
 
 Owner/writer: Astra, codex/p06-monsters-rules-20260907 at
 /Users/salvatoredicara/Workspace/Codex/d20-folio-p06-monsters-rules.
-Fresh origin/v2 and the new clean detached p06-control were verified at
-c039ff2547bef3592d2317f09028065f10a1759a; origin/main remains
-9b06b75313d7ee353c4072a20397c3092707648e. This is the integration baseline, not a P06 result.
-P05 final remote, cleanup and approval receipts were verified; P04/P05 remain closed.
-P06 alone is authorized. No P07, engine execution, production write, deploy or main push.
+P06 autonomous implementation and verification are complete; owner visual acceptance and explicit
+P06 integration permission remain required. No P06 integration, P07, production write, deploy or
+main push has occurred. P04/P05 remain closed. No successor prompt before actual P06 closure.
 
-Pinned Node 24.16.0/pnpm 11.2.2 bootstrap completed. The composed private pack resolves to
-/Users/salvatoredicara/Workspace/d20-folio-content-v2/content-pack at clean b6073dd0 and is read-only.
-Shared checkout, long-lived V2 and all unrelated worktrees are preserved; Firestore PID86001/8080
-is preserved. Authoring and persistence subtasks completed in disjoint isolated worktrees; their
-commits are composed locally. Astra owns the UI and current corrections; independent reviewers are read-only.
+Final runtime is 7653f0357cf315188ed511b1593a30d59a8ec48b, optimized asset index-B-KE8w-X.js.
+The final delta from the fully exercised c17 candidate adds only the missing title in the future
+version reader; affected PDFs were reprinted and every page reinspected. Independent source review
+has no unresolved actionable finding; independent visual review records only minor spacing/label
+polish observations. Sixty matrix/shell captures plus two corrected recovery-reader captures and
+ten final PDFs/65 inspected pages are hashed in the external evidence. Owner consent to earlier
+P05 or mock direction does not approve these new P06 pixels.
 
-Current outcome: spec/plan committed before implementation; typed authoring and atomic campaign
-preparation are composed. UI and review regressions are under focused verification. Required exits
-remain open: real optimized demo acceptance, final independent review,
-CI/full rules/seam and six-copy gates, curated screenshots and explicit owner V2 integration verdict.
-PRODUCT's custom automation/editable combat requirement is binding: P06 proves authoring and reuse;
-future engine/play must prove actual custom costs/effects, in-use edits and causal undo.
-Evidence commands, failures, manifests and service receipts belong externally in
-/Users/salvatoredicara/Workspace/Codex/d20-folio-p06-evidence. No successor prompt before closure.
+Final just ci exits0:877 app files/19383 tests,7 Functions files/129 tests, typecheck/lint/build/PWA.
+Final ci-srd-only exits0:698 files/13803 passed,2 intentional private-loader tests skipped because
+that lane disables the private composition; those tests pass composed. Full demo rules exits0:
+10 files/230 tests with no skip, including six private fixture copies and exact recovery. Rules
+are unchanged by the final title correction. Real optimized Google-emulator login, both-family
+creation/version/reuse/directed sharing/revocation, chosen version updates preserving copy state,
+concurrent/offline review, actual lost committed response/reload/receipt, A→B→A pre-send invalidation,
+import/duplicate/remove/unknown/version/original recovery all have actual UI and backend evidence.
+Failed attempts remain failed in the evidence; screenshot/page counts are not test counts.
+
+Fresh origin/v2 remains c039ff2547bef3592d2317f09028065f10a1759a and origin/main remains
+9b06b75313d7ee353c4072a20397c3092707648e. The new p06-control is clean/detached at the V2 base.
+Authoring/persistence work was composed from disjoint isolated worktrees. Shared checkout retains
+only its pre-existing .playwright-cli; private pack is clean b6073dd0 and read-only at
+/Users/salvatoredicara/Workspace/d20-folio-content-v2/content-pack. Unrelated Firestore PID86001/8080
+is preserved. Owned preview5180/mock5189/demo19099/18080/19199 remain available for this gate;
+only clean owned worktrees/services will be removed after authorized integration and proof.
+
+PRODUCT's binding contract remains: custom is first-class input to the SAME future engine for
+actions, targets, costs, resources, effects, reactions and consequences with provenance/receipts.
+Relevant in-use values, conditions, effects and results must be editable on the same authoritative
+facts with coherent consequences and causal correction/undo, separately from library templates.
+P06 proves authoring/conformance and persistent preparation/activation, not combat execution.
+Future engine/play must prove actual custom automated costs/effects, in-use edits and causal undo;
+unsupported data stays preserved and explicit, never disguised by a decorative override/manual excuse.
+
+Evidence, commands, failures, skip explanations, reviews, hashes and concrete staging/release gaps:
+/Users/salvatoredicara/Workspace/Codex/d20-folio-p06-evidence/{HANDOFF,REPLAY,FIDELITY}.md.
+After the owner's P06 verdict: fresh fetch/rebase, pertinent green gates, hooked explicit HEAD:v2,
+verify remote SHA and clean owned-worktree cleanup. No PR/main/deploy flow.
 
 ## Historical P05 closure receipt (2026-09-07)
 
