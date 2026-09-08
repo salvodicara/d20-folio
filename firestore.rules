@@ -57,6 +57,43 @@ service cloud.firestore {
             && folioCampaign(o.campaignId).revision == o.campaignRevision
             && getAfter(/databases/$(database)/documents/folioCampaigns/$(o.campaignId)).data.revision == o.campaignRevision));
     }
+    // P10 import comparison is an explicit owner operation, separate from rules conversion.
+    function importReviewShape(r) {
+      let categories = ['origins','classes','abilities','equipment','spells','custom','overrides','state','unrecognized'];
+      return r is map && r.keys().hasOnly(['declaredEdition','reviewed','unresolved'])
+        && r.declaredEdition is string && r.declaredEdition in ['2014','2024','unknown']
+        && r.reviewed is list && r.unresolved is list
+        && r.reviewed.size() == r.reviewed.toSet().size() && r.unresolved.size() == r.unresolved.toSet().size()
+        && r.unresolved.hasOnly(categories) && r.reviewed.hasOnly(r.unresolved);
+    }
+    function importOperation(o, revision) {
+      let path = /databases/$(database)/documents/folioAccounts/$(o.uid)/characters/$(o.character.id);
+      let reviewPath = /databases/$(database)/documents/folioAccounts/$(o.uid)/characters/$(o.character.id)/reconciliation/import;
+      let archivePath = /databases/$(database)/documents/folioAccounts/$(o.uid)/characters/$(o.character.id)/private/import;
+      let notesPath = /databases/$(database)/documents/folioAccounts/$(o.uid)/characters/$(o.character.id)/private/notes;
+      let next = getAfter(reviewPath).data;
+      return o.character == {'ownerUid':o.uid,'id':o.character.id} && folioId(o.character.id)
+        && o.sourceHash is string && o.sourceHash.matches('^[a-f0-9]{64}$')
+        && importReviewShape(o.review)
+        && next == {'schema':1,'character':o.character,'sourceHash':o.sourceHash,'sourceSchema':3,
+          'declaredEdition':o.review.declaredEdition,'reviewed':o.review.reviewed,'unresolved':o.review.unresolved,
+          'revision':revision,'lastOperation':{'uid':o.uid,'opId':o.opId}}
+        && ((o.kind == 'character-import'
+          && o.keys().hasOnly(['kind','uid','opId','scope','baseRevision','authority','character','sourceHash','output','review'])
+          && o.character.id == 'import-' + o.sourceHash && o.baseRevision == 0 && revision == 0
+          && o.authority == {'characterRevision':null,'assignment':null,'campaignRevision':null}
+          && !exists(path) && !exists(reviewPath) && !exists(archivePath) && !exists(notesPath)
+          && getAfter(path).data == o.output && existsAfter(archivePath) && existsAfter(notesPath))
+        || (o.kind == 'import-review'
+          && o.keys().hasOnly(['kind','uid','opId','scope','baseRevision','authority','character','sourceHash','review','base'])
+          && exists(path) && exists(archivePath)
+          && getAfter(path).data == get(path).data && getAfter(archivePath).data == get(archivePath).data
+          && o.authority == {'characterRevision':get(path).data.revision,'assignment':get(path).data.currentAssignment,'campaignRevision':null}
+          && ((o.base == null && !exists(reviewPath) && o.baseRevision == 0)
+            || (o.base != null && exists(reviewPath) && get(reviewPath).data == o.base
+              && o.base.character == o.character && o.base.sourceHash == o.sourceHash && o.baseRevision == o.base.revision))
+          && revision == o.baseRevision + 1));
+    }
     match /folioAccounts/{uid}/operations/{id} {
       function readable() { let o=resource.data.operation; return folioUser() && (request.auth.uid == uid || isAdmin())
         && (o.kind != 'notes' || o.target.kind == 'personal' || folioDm(o.target.campaignId))
@@ -69,10 +106,12 @@ service cloud.firestore {
         && request.resource.data.operation.scope.uid == uid
         && request.resource.data.operation.scope.keys().hasOnly(['uid','campaignId','activeCharacterId'])
         && request.resource.data.operation.baseRevision is int && request.resource.data.operation.baseRevision >= 0
-        && request.resource.data.revision == request.resource.data.operation.baseRevision + 1
+        && ((request.resource.data.operation.kind == 'character-import' && request.resource.data.revision == 0)
+          || (request.resource.data.operation.kind != 'character-import' && request.resource.data.revision == request.resource.data.operation.baseRevision + 1))
         && validOperation(request.resource.data.operation,request.resource.data.revision);
       function validOperation(o, revision) {
-        return (o.kind == 'notes'
+        return (o.kind in ['character-import','import-review'] && importOperation(o,revision))
+          || (o.kind == 'notes'
           && o.keys().hasOnly(['kind','opId','uid','scope','target','baseRevision','authority','text'])
           && ((o.target.kind == 'personal'
             && personalNoteAuthority(o)
@@ -120,7 +159,7 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/folioCampaigns/$(a.campaignId)/roster/$(uid + '~' + id))
         && get(/databases/$(database)/documents/folioCampaigns/$(a.campaignId)/roster/$(uid + '~' + id)).data
           == {'ownerUid':uid,'characterId':id,'assignmentId':a.assignmentId,'version':a.version}; }
-      allow get: if folioReadCharacter(uid,id,resource.data);
+      allow get: if folioOwnerAccess(uid) || folioReadCharacter(uid,id,resource.data);
       allow list: if folioOwnerAccess(uid);
       allow create: if folioOwnerAccess(uid) && shape(request.resource.data) && request.resource.data.revision == 0 && request.resource.data.currentAssignment == null;
       // Assignment authority is explicitly owner-only, including administrator clients.
@@ -133,6 +172,16 @@ service cloud.firestore {
           && request.resource.data.currentAssignment.version == request.resource.data.revision
           && !oldClaimLive(resource.data.currentAssignment)));
       // P02 has no destructive character deletion or shared sheet editor.
+      match /reconciliation/{document} {
+        allow get: if folioOwnerAccess(uid) && document == 'import';
+        allow create, update: if folioUser() && owner() && document == 'import'
+          && request.resource.data.lastOperation.uid == uid
+          && folioId(request.resource.data.lastOperation.opId)
+          && !exists(/databases/$(database)/documents/folioAccounts/$(uid)/operations/$(request.resource.data.lastOperation.opId))
+          && operationReceipt(uid,request.resource.data.lastOperation.opId).operation.character == {'ownerUid':uid,'id':id}
+          && operationReceipt(uid,request.resource.data.lastOperation.opId).revision == request.resource.data.revision
+          && importOperation(operationReceipt(uid,request.resource.data.lastOperation.opId).operation,request.resource.data.revision);
+      }
       match /private/{document} {
         allow read: if folioUser() && (owner() || isAdmin()) && document in ['notes','import'];
         // Legacy note initialization is limited to creating a character in this commit.

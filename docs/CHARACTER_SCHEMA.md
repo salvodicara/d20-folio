@@ -18,8 +18,12 @@ atomically. The reconciliation record separates sourceSchema3 from declaredEditi
 reviewed/unresolved categories. A later classification correction compares its whole prior record,
 original archive and parent authority, writing only reconciliation and receipt. It never overwrites
 mechanics or the original. Incompatible records reject; acknowledged categories stay unresolved.
-Full operations are bounded to600000 UTF-8 bytes before send. Rules, UI orchestration and actual
-Firebase verification remain required before this repository is exposed in the application.
+Full operations are bounded to600000 UTF-8 bytes before send. Owner-only reconciliation writes
+are coupled to their exact character path and receipt; owner/admin can read the comparison record.
+The original hash is verified by the repository against exact bytes, not computed by Firestore rules.
+Focused emulator tests cover both operations, cross-character receipt misuse, blocked/foreign writes,
+CAS and all six exact original copies applied twice. UI orchestration and the full P10 runtime/gates
+remain required before this repository is exposed in the application.
 
 ## P07 current origins and imported baseline (2026-09-08)
 

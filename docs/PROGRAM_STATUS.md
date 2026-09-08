@@ -18,8 +18,13 @@ External evidence and temporary files belong to `Workspace/Codex/d20-folio-p10-e
 P10 specification and plan committed at `5f3657b3` before product code, after independent
 architecture review. Current work: shared snapshot/pool/initial-loadout foundation in isolated
 `codex/p10-sources-20260908` at `Workspace/Codex/d20-folio-p10-sources`, plus independently reviewed import analysis and an import transaction repository in the primary
-topic. The foundation candidate ad9220af is under independent review before composition.
-Five-document character creation, UI orchestration, draft recovery and rules remain to implement.
+topic. The foundation candidate ad9220af plus corrective8e716d02 passed independent review and were
+composed into the primary topic at069cea77/84f244ca. Import repository1d3379b5 passed scoped
+review and23 focused tests; its rules slice now passes41 focused emulator tests including six
+original-copy recovery cases. These are bounded slice receipts, not final P10 certification.
+Five-document character creation, UI orchestration, draft recovery and creation/grouped-item rules
+remain to implement. A separate paired metadata topic is active under the task's external private
+charter, from verified fresh public/private V2 bases; shared pack remains unchanged and read-only.
 The first focused import analysis/migration tests pass, including six exact fixture originals;
 this is not a full P10 runtime or final gate.
 All P10 runtime, independent review, screenshot, six-fixture, rules, SRD-only and final composed
