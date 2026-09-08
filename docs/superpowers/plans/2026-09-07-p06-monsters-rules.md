@@ -119,9 +119,11 @@ External d20-folio-p06-evidence owns scripts/fixtures/logs/manifests/PDF/screens
       (indexes/limits/provider/AppCheck/IAM/HTTPS/devices/installed PWA) without fake production equivalence.
 - [x] Update only PROGRAM_STATUS for frontier/owner/gates/integration SHA. Deliver curated actual chat
       images visible on phone and ask only indispensable owner screenshot/P06 integration verdict.
-- [ ] After authorization fresh fetch/rebase and applicable gates, hooked explicit HEAD:v2, verify
-      remote SHA; stop owned services and remove only clean owned worktrees after equivalence proof.
-- [ ] Only complete exits allow full recursive successor prompt, all inherited contracts/sources/gates;
+- [x] After authorization fresh fetch/rebase and applicable gates, hooked explicit HEAD:v2 and
+      verified remote SHA. Owned services and worker cleanup are verified; final parent/control
+      removal follows the documentation-only closure push and is evidenced in the external receipt.
+- [x] Require complete exits and final external cleanup receipt before delivering the full recursive
+      successor prompt, all inherited contracts/sources/gates;
       no interim next prompt and no execution P07. Incomplete test/review/gate continues same P06 outcome.
 
 Verification evidence: external P06 HANDOFF/REPLAY retain actual red/green commands and harness

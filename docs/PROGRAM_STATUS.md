@@ -1,6 +1,6 @@
 # Program Status
 
-## Current frontier — P06 authorized integration and closure (2026-09-08)
+## Current frontier — P06 integration receipt; P07 next (2026-09-08)
 
 Owner/writer: Astra, codex/p06-monsters-rules-20260907 at
 /Users/salvatoredicara/Workspace/Codex/d20-folio-p06-monsters-rules.
@@ -9,8 +9,15 @@ screenshot/integration question, the owner accepted the current candidate on 8 S
 momento mi sembra che vada bene”), reaffirmed custom automation and full contextual control, and
 added the cross-application clarity/familiar-patterns requirement now owned by PRODUCT/DESIGN.
 This is broad interim acceptance, with detailed usability review planned after V2 completion; it
-is not a claim that the owner inspected every control. P06 V2 integration is proceeding under
-that verdict. No P06 integration, P07, production write, deploy or main push has yet occurred. P04/P05 remain closed. No successor prompt before actual P06 closure.
+is not a claim that the owner inspected every control. Fresh fetch found the same V2 base; rebase
+was a no-op. Fresh integration just ci exited0 with877appfiles/19383tests and7Functionsfiles/129tests,
+plus typecheck/lint/build/PWA. Explicit hooked HEAD:v2 push succeeded; ls-remote verified
+999b3fad7de3cac436db9026566e8176c82b2744. Main remains unchanged. No P07, production write or deploy.
+
+This closure commit changes only documents/changeset. Its final remote SHA and remaining clean
+parent/control worktree cleanup are recorded externally in integration-preflight/RECEIPT.md;
+successor delivery requires those final receipts verified. AGENT-PROGRAM selects P07 as the first
+incomplete row in order with P04/P05 dependencies complete. P07 has not started in this task.
 
 Final runtime is 7653f0357cf315188ed511b1593a30d59a8ec48b, optimized asset index-B-KE8w-X.js.
 The final delta from the fully exercised c17 candidate adds only the missing title in the future
@@ -30,13 +37,16 @@ concurrent/offline review, actual lost committed response/reload/receipt, A→B�
 import/duplicate/remove/unknown/version/original recovery all have actual UI and backend evidence.
 Failed attempts remain failed in the evidence; screenshot/page counts are not test counts.
 
-Fresh origin/v2 remains c039ff2547bef3592d2317f09028065f10a1759a and origin/main remains
-9b06b75313d7ee353c4072a20397c3092707648e. The new p06-control is clean/detached at the V2 base.
+Integration baseline was c039ff2547bef3592d2317f09028065f10a1759a; origin/main remains
+9b06b75313d7ee353c4072a20397c3092707648e. The p06-control was advanced clean/detached to verified
+origin/v2 999b3fad before worker cleanup.
 Authoring/persistence work was composed from disjoint isolated worktrees. Shared checkout retains
 only its pre-existing .playwright-cli; private pack is clean b6073dd0 and read-only at
 /Users/salvatoredicara/Workspace/d20-folio-content-v2/content-pack. Unrelated Firestore PID86001/8080
-is preserved. Owned preview5180/mock5189/demo19099/18080/19199 remain available for this gate;
-only clean owned worktrees/services will be removed after authorized integration and proof.
+is preserved. Owned preview5180/mock5189/demo19099/18080/19199 and hub/log/websocket are stopped;
+listener checks confirm owned ports closed. Authoring/persistence workers were removed cleanly
+from the fresh V2 control after patch-equivalence proof; branches remain. Final parent/control
+cleanup and remote proof are recorded in the external closure receipt before successor delivery.
 
 PRODUCT's binding contract remains: custom is first-class input to the SAME future engine for
 actions, targets, costs, resources, effects, reactions and consequences with provenance/receipts.
@@ -48,8 +58,9 @@ unsupported data stays preserved and explicit, never disguised by a decorative o
 
 Evidence, commands, failures, skip explanations, reviews, hashes and concrete staging/release gaps:
 /Users/salvatoredicara/Workspace/Codex/d20-folio-p06-evidence/{HANDOFF,REPLAY,FIDELITY}.md.
-After the owner's P06 verdict: fresh fetch/rebase, pertinent green gates, hooked explicit HEAD:v2,
-verify remote SHA and clean owned-worktree cleanup. No PR/main/deploy flow.
+The owner's verdict and all runtime/code/paper evidence remain distinct from later detailed
+whole-app usability review. Carry the clarity/familiar-patterns and custom automation/editable
+combat requirements in full into P07 and every later successor. No PR/main/deploy flow.
 
 ## Historical P05 closure receipt (2026-09-07)
 
