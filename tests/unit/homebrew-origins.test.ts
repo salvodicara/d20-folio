@@ -511,3 +511,69 @@ it("loads the pure build boundary before the authoring model in a fresh module g
     await import("../../src/lib/homebrew/origin-build");
   expect(compose(character, null).valid).toBe(true);
 });
+
+it("preserves a faster unreplaced species speed when a standalone feat grants movement", () => {
+  const c = structuredClone(character);
+  c.sheet.build.speed = 12;
+  const d = named("feat");
+  d.payload.data.benefits = [{ kind: "movement", mode: "walk", meters: 9 }];
+  expect(projectOriginCharacter(c, build(d)).projectedCharacter.sheet.build.speed).toBe(
+    12
+  );
+  d.payload.data.benefits = [{ kind: "movement", mode: "walk", meters: 15 }];
+  expect(projectOriginCharacter(c, build(d)).projectedCharacter.sheet.build.speed).toBe(
+    15
+  );
+});
+it("namespaces feat mechanic identity by authoring source without using revision as a new feat", () => {
+  const first = named("feat");
+  first.payload.data.source = "synthetic-book-a";
+  first.payload.data.mechanicId = "shared-local-id";
+  const second = structuredClone(first);
+  second.payload.data.source = "synthetic-book-b";
+  const b = build(first);
+  b.selections.later = {
+    id: "later",
+    ordinal: 1,
+    snapshot: version(second, "other"),
+    answers: {},
+    exceptions: [],
+  };
+  expect(composeOriginBuild(character, b).valid).toBe(true);
+  second.payload.data.source = "synthetic-book-a";
+  second.payload.data.sourceVersion = "2";
+  b.selections.later.snapshot.version = 2;
+  expect(
+    composeOriginBuild(character, b).diagnostics.some(
+      (i) => i.code === "nonrepeatable-feat"
+    )
+  ).toBe(true);
+});
+
+it("keeps independent homebrew authors distinct and deduplicates canonical accepted copies", () => {
+  const d = named("feat");
+  d.payload.data.mechanicId = "local-id";
+  const b = build(d);
+  const provenance = (author: string) => ({
+    source: { ownerUid: author, id: "original" },
+    sourceVersion: 1,
+    senderUid: author,
+    offerId: "offer",
+    grantId: author + "~offer",
+  });
+  chosen(b).snapshot.provenance = provenance("author-a");
+  b.selections.later = {
+    id: "later",
+    ordinal: 1,
+    snapshot: { ...version(d, "other-copy"), provenance: provenance("author-b") },
+    answers: {},
+    exceptions: [],
+  };
+  expect(composeOriginBuild(character, b).valid).toBe(true);
+  b.selections.later.snapshot.provenance = provenance("author-a");
+  expect(
+    composeOriginBuild(character, b).diagnostics.some(
+      (i) => i.code === "nonrepeatable-feat"
+    )
+  ).toBe(true);
+});

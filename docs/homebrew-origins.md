@@ -44,7 +44,11 @@ feat. Composition returns selected gold/reference entitlements; it never transfe
 Composition evaluates roots in explicit ordinal order, then children in authored reference order.
 Repeated references within one root share one bundled grant; intentional repeatable acquisitions
 use distinct root selections. Nonrepeatability follows declared mechanic identity or canonical
-source provenance across accepted copies. Explicit spellcasting benefits declare their casting
+source provenance across accepted copies. A declared mechanic uses its edition and source
+namespace; generic `homebrew` additionally uses the canonical author owner. The fallback `custom`
+identity uses canonical owner/entry provenance. Both authoring `sourceVersion` and immutable
+`LibraryVersion.version` identify revisions of the same feat, not separate repeatable acquisitions.
+An unchanged source namespace/local mechanic ID remains the same feat across those revisions. Explicit spellcasting benefits declare their casting
 ability and supported `ability` policy; a spell reference alone never certifies spellcasting.
 A candidate sees prior accepted roots and its parent's already-resolved benefits; it never sees
 its own benefits or later roots when checking acquisition. Missing or ambiguous imported proof
@@ -61,7 +65,8 @@ current species/background identity, imported baseline/superseded/unresolved det
 remains chosen base scores as required by the character schema. Consumers use the projection's
 current names and facts rather than resolving a custom entry ID as a catalog ID. Replacing a
 background suppresses imported `asi.background` and selected old origin feat fields; removing the
-replacement restores that baseline. A standalone feat preserves unrelated baseline origins.
+replacement restores that baseline. A standalone feat preserves unrelated baseline origins, including faster imported walking speed
+when merging a movement grant. A species replacement instead starts from its new movement facts.
 Unqualified imported skills cannot prove an origin-sensitive acquisition after replacement;
 manual tool/language IDs remain explicit supplied facts. Corrupt aggregates produce
 `available: false`, never silently certified baseline data. The input character and recovery sheet

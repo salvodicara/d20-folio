@@ -442,7 +442,13 @@ export function composeOriginBuild(
       const d = node.payload.data;
       const identity =
         typeof d.mechanicId === "string" && d.mechanicId !== "custom"
-          ? "mechanic:" + d.mechanicId
+          ? JSON.stringify([
+              "mechanic",
+              d.edition,
+              d.source,
+              d.source === "homebrew" ? canonicalSource.ownerUid : null,
+              d.mechanicId,
+            ])
           : JSON.stringify([canonicalSource.ownerUid, canonicalSource.id]);
       const prereqs = (Array.isArray(d.prerequisites)
         ? d.prerequisites
@@ -749,7 +755,13 @@ export function projectOriginCharacter(
   for (const { benefit } of composition.facts) {
     if (benefit.kind === "movement") {
       const speeds = originRecord(b.speeds) ?? {};
-      speeds[benefit.mode] = Math.max(Number(speeds[benefit.mode] ?? 0), benefit.meters);
+      const importedWalk =
+        benefit.mode === "walk" && typeof b.speed === "number" ? b.speed : 0;
+      speeds[benefit.mode] = Math.max(
+        Number(speeds[benefit.mode] ?? 0),
+        importedWalk,
+        benefit.meters
+      );
       b.speeds = speeds as JsonObject;
       if (benefit.mode === "walk") b.speed = speeds.walk as number;
     }
