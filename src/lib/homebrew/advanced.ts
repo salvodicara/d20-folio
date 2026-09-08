@@ -231,13 +231,16 @@ function collection(key: string, kind: AdvancedRowKind, max = 32): AdvancedColle
 export function advancedCollections(
   family: AuthoringFamily
 ): readonly AdvancedCollection[] {
-  if (family !== "monster" && family !== "campaign-rule") return [];
+  if (!["monster", "campaign-rule", "species", "feat", "background"].includes(family))
+    return [];
   return [
     collection("resources", "resource"),
     collection("programs", "program"),
     ...(family === "monster"
       ? [collection("defenses", "defense"), collection("skills", "skill")]
-      : [collection("policies", "policy"), collection("dependencies", "dependency")]),
+      : family === "campaign-rule"
+        ? [collection("policies", "policy"), collection("dependencies", "dependency")]
+        : []),
   ];
 }
 export function blankAdvancedRow(kind: AdvancedRowKind): Record<string, JsonValue> {

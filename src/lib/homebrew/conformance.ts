@@ -1,3 +1,4 @@
+import { isOriginFamily, conformOriginDefinition } from "./origins";
 import { advancedCollections, type AdvancedCollection } from "./advanced";
 import {
   parseDefinition,
@@ -47,7 +48,10 @@ const stateKeys = [
   "enabled",
   "conditions",
 ];
-export function conformDefinition(definition: LibraryDefinition): AuthoringDiagnostic[] {
+export function conformDefinition(
+  definition: LibraryDefinition,
+  includedNode = false
+): AuthoringDiagnostic[] {
   const issues: AuthoringDiagnostic[] = [];
   const add = (
     path: string,
@@ -134,6 +138,9 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
   validate(d, authoringFields(definition.family as AuthoringFamily), "payload.data.", [
     "effects",
     "unsupported",
+    ...(isOriginFamily(definition.family)
+      ? ["prerequisites", "benefits", "choices", "dependencies", "equipment"]
+      : []),
     ...advancedCollections(definition.family as AuthoringFamily).map((c) => c.key),
   ]);
   const check = (condition: unknown, key: string, code: string) => {
@@ -456,7 +463,11 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
       "prerequisite-unused"
     );
   }
-  if (definition.family === "monster" || definition.family === "campaign-rule") {
+  if (
+    definition.family === "monster" ||
+    definition.family === "campaign-rule" ||
+    isOriginFamily(definition.family)
+  ) {
     const rows = (key: string): Record<string, JsonValue>[] =>
       Array.isArray(d[key])
         ? d[key].filter(
@@ -731,5 +742,7 @@ export function conformDefinition(definition: LibraryDefinition): AuthoringDiagn
         "typed-declarations-required"
       );
   }
+  if (isOriginFamily(definition.family) && !includedNode)
+    issues.push(...conformOriginDefinition(definition));
   return issues;
 }

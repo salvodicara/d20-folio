@@ -1,8 +1,19 @@
+import {
+  originFields,
+  initializeOriginData,
+  isOriginFamily,
+  ORIGIN_FAMILIES,
+} from "./origins";
 import { advancedFields, advancedCollections } from "./advanced";
 import { blankDefinition, type LibraryDefinition } from "../library/model";
 export const BASE_FAMILIES = ["weapon", "equipment", "spell", "feature"] as const;
 export type BaseFamily = (typeof BASE_FAMILIES)[number];
-export const AUTHORING_FAMILIES = [...BASE_FAMILIES, "monster", "campaign-rule"] as const;
+export const AUTHORING_FAMILIES = [
+  ...BASE_FAMILIES,
+  "monster",
+  "campaign-rule",
+  ...ORIGIN_FAMILIES,
+] as const;
 export type AuthoringFamily = (typeof AUTHORING_FAMILIES)[number];
 export interface FieldDescriptor {
   key: string;
@@ -424,13 +435,14 @@ export function initializeDefinition(family: AuthoringFamily): LibraryDefinition
       ),
     });
   if (family === "campaign-rule") d.payload.data.priority = 0;
+  if (isOriginFamily(family)) Object.assign(d.payload.data, initializeOriginData(family));
   return d;
 }
 
 export function authoringFields(family: AuthoringFamily): readonly FieldDescriptor[] {
   return BASE_FAMILIES.includes(family as BaseFamily)
     ? baseFields(family as BaseFamily)
-    : [...common, ...advancedFields(family)];
+    : [...common, ...advancedFields(family), ...originFields(family)];
 }
 
 /** Resource identities also address the separate prepared-state map. */
