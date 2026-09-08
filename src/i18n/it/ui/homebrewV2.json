@@ -749,20 +749,16 @@
       "multiclass": "Ingresso multiclasse",
       "progression": "Progressione per livello",
       "levelHelp": "I livelli si riferiscono a questa classe. La capacità di una risorsa sostituisce il valore precedente; le risorse non modificate lo conservano. Queste dichiarazioni non modificano un personaggio.",
-      "cantrips": "Trucchetti",
       "prepared": "Incantesimi preparati",
       "known": "Incantesimi conosciuti",
       "pactSlots": "Slot di Magia del Patto",
       "pactLevel": "Livello degli slot di Magia del Patto",
-      "slots": "Slot incantesimo",
       "completeModel": "Dichiarazioni complete della classe",
       "importHelp": "Importa un JSON per aggiungere le meccaniche di una classe o sottoclasse. Puoi consultare livelli e dipendenze in Anteprima; modificare nome o descrizione conserva le meccaniche.",
       "modes": {
-        "none": "Nessuna",
         "full": "Incantatore completo",
         "half": "Mezzo incantatore",
         "third": "Un terzo di incantatore",
-        "pact": "Magia del Patto",
         "custom": "Personalizzata"
       },
       "rounding": {

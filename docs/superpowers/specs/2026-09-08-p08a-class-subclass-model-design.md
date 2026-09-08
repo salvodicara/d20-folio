@@ -96,7 +96,8 @@ primitives/source/version). E05 covers resource declarations; E01–04/E06–09/
 program/effect declarations. Relevant E10/E11/E21 policies remain authoring-only. Every case is
 ordinary, boundary or composition, not a count-only claim.
 
-Ordinary: both families at1/3/5, known typed decode, save/publish/read immutable versions and exact
+Ordinary: class at1/3/5 and subclass at its parent acquisition/feature schedule, including
+interstitial casting-only rows; both families have known typed decode, save/publish/read immutable versions and exact
 portable roundtrip. Boundary: unordered/duplicate/out-of-range levels, missing first row, invalid
 parent/wrong class/version, duplicate IDs, absent/cyclic dependencies/choice parents, unsupported
 kind/field/future version, malformed outer recovery, maximum legal and oversize byte budgets.

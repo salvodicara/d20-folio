@@ -10,6 +10,10 @@ export const baseFamily = (family: string): family is BaseFamily =>
 export const authoringFamily = (family: string): family is AuthoringFamily =>
   AUTHORING_FAMILIES.includes(family as AuthoringFamily);
 const shared: Record<string, string> = {
+  "classes.cantrips": "spells.cantrips",
+  "classes.slots": "play.explain.slots.label",
+  "classes.modes.none": "abilities.none",
+  "classes.modes.pact": "identity.sheet.pactMagic",
   "origin.distance": "homebrewV2.fields.rangeDistance",
   "origin.benefits.spellcasting": "homebrewV2.options.spellcasting",
   "origin.requirements.level": "homebrewV2.options.character-level",

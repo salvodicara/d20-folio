@@ -749,20 +749,16 @@
       "multiclass": "Multiclass entry",
       "progression": "Level progression",
       "levelHelp": "Levels refer to this class. Resource capacities replace the previous value; unchanged resources carry forward. These declarations do not change a character.",
-      "cantrips": "Cantrips",
       "prepared": "Prepared spells",
       "known": "Known spells",
       "pactSlots": "Pact Magic slots",
       "pactLevel": "Pact Magic slot level",
-      "slots": "Spell slots",
       "completeModel": "Complete class declarations",
       "importHelp": "Import JSON to add class or subclass mechanics. You can review their levels and dependencies in Preview; editing the name or description preserves the mechanics.",
       "modes": {
-        "none": "None",
         "full": "Full caster",
         "half": "Half caster",
         "third": "Third caster",
-        "pact": "Pact Magic",
         "custom": "Custom"
       },
       "rounding": {
