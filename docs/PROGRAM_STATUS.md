@@ -1,21 +1,51 @@
 # Program Status
 
-## Current frontier — P09 shell and orientation in progress (8 September 2026)
+## Current frontier — P09 verified; P10 next (8 September 2026)
 
-Owner authorizes P09 only under permanent approved-mock delivery delegation. Astra owns the
-new isolated codex/p09-shell-orientation-20260908 candidate at Workspace/Codex/d20-folio-p09-shell.
-Fresh origin/v2 base c5350f44d49d63dd8508c6b2bda3e87ee7e45c83; main remains
-9b06b75313d7ee353c4072a20397c3092707648e. Clean detached p09-control is the verified invoker.
-P01–04 dependencies and P08c closure verified; no repeated freeze/owner visual gate reopened.
-Spec/plan: docs/superpowers/{specs,plans}/2026-09-08-p09-shell-orientation\*.md.
-Independent reference/contract reviewers own external evidence only; root owns implementation.
-Implementation is present in the candidate. Independent source review has driven fixes for
-route/context isolation, missing entries and late authoring callbacks. Current focused verification:
-7 files, 47 tests passed. Optimized build E completed the 14-step Library path and eight recovery paths; source F fixes
-a subsequently reproduced open-sheet revocation gap and loading/translation findings. Fresh F
-revocation, orientation and screenshots are in progress. Failed attempts remain preserved. Final code/UI review, gates, integration and
-cleanup remain open.
-No P10, main/production/deploy/real-data migration/cost. Evidence under Workspace/Codex/d20-folio-p09-evidence.
+Astra completed P09 shell/orientation only. P10 Creation and onboarding is the first incomplete
+AGENT-PROGRAM row, dependent on completed P07–09; it is not executed in this task. Permanent
+owner8 September delegation permits reviewed approved-mock V2 integration without repeated
+visual approval; actual screenshots and the complete successor remain mandatory. No main change,
+production/deploy, real-data migration, cost or future-block execution is authorized by this closure.
+
+Verified source c0213b6742d254cd34ba0058a9b13e8362a6f249; base origin/v2
+c5350f44d49d63dd8508c6b2bda3e87ee7e45c83. Main remains
+9b06b75313d7ee353c4072a20397c3092707648e. Topic codex/p09-shell-orientation-20260908,
+clean detached control and detached verifier are owned by this task under Workspace/Codex.
+Source/spec/code/UI reviews are closed. The new typed native-history seam unifies Account,
+character inspection, Library creation and Bestiary browsing; P03/domain authority stays intact.
+Received copy IDs use the Library validator. Foreign inspection is released on membership
+revocation, late snapshots are fenced and still-authorized DM notes remain subscribed.
+
+Fresh final just ci exit0:891 app files/19,569 tests and7 Functions files/129 tests, zero skips,
+typecheck/strict lint/optimized build/PWA. Fresh SRD-only exit0:712 files/13,989 passed and2
+intentional private-loader skips, typecheck/build/PWA. Fresh full rules at9fec6d13 exit0:12 files,
+261 tests, zero skip, including six exact original-copy import/apply-twice/recovery cases. Final
+386 rules/model/config/Functions hashes and all six originals are identical; applicability is explicit,
+not a claim of a repeated rules run. Private pack b6073dd0 remains clean and read-only.
+
+Build E index-URozDVjW.js completed14 real Google/UI Library stages and8 recovery stages:
+class/subclass parent closure, versions/copies/revocation, import/originals, offline/CAS/unknown,
+exact receipt1send, storage0send and A→B→A0oldsend/no late route takeover. Build F repeated
+real target-member revocation3/3 after an already-open-sheet defect was reproduced on E.
+Final G index-39HVgSeK.js executes exact filter/query/detail/scroll/focus returns3/3; Bestiary v1/v2
+and return/reload3/3; phone Account/dice and missing-link recovery2/2. E→G source applicability
+and F→G removal of a redundant loading condition are captured separately; no fabricated full G rerun.
+
+96 final G EN/IT dark screenshots1440x900,1280x800,390x844 were actually opened in independent
+review and curated actual images sent in chat. Five unchanged print/export/reader files carry the
+prior paper proof; no new PDF run. Review records a small non-blocking generic breadcrumb title
+for missing Library content and precise viewport/picker coverage limits. No personal owner pixel
+inspection, human usability study, staging/provider/AppCheck/IAM/HTTPS/device/installed-PWA
+certification is claimed. Synthetic recipient ends removed from the demo campaign; originals and
+owner characters are preserved. All failed source/runtime/harness/hook/gate attempts remain distinct.
+
+This documentation-only closure uses fresh fetch/rebase and hooked explicit HEAD:v2. The resulting
+remote SHA and owned clean-worktree/service cleanup are recorded in the external integration receipt,
+avoiding a self-referential SHA. Only release the complete successor after that receipt is complete.
+Evidence: Workspace/Codex/d20-folio-p09-evidence/HANDOFF.md, REPLAY.md, FIDELITY.md,
+FINAL-MANIFEST.json, build-applicability.json, gates/receipt-c0213b67.json and integration-receipt.json.
+Task Observer339 is appended and verified externally;338/337 remain preserved. No deployment.
 
 ## Historical frontier — P08c verified; P09 next (8 September 2026)
 
