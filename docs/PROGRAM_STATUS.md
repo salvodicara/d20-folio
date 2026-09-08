@@ -1,6 +1,30 @@
 # Program Status
 
-## Current frontier — P09 verified; P10 next (8 September 2026)
+## Current frontier — P10 creation and onboarding in discovery (8 September 2026)
+
+Astra owns P10 only, authorized by the current owner handoff and PRODUCT's standing delivery
+delegation. Dependencies P07–09 are integrated at fresh origin/v2
+`d6524012196780f75f28c37931da0427fa62957e`; origin/main remains
+`9b06b75313d7ee353c4072a20397c3092707648e`. No P11a or later block is started.
+
+Owned topic: `codex/p10-creation-onboarding-20260908`, physical worktree
+`/Users/salvatoredicara/Workspace/Codex/d20-folio-p10-creation`. The task's detached control
+`/Users/salvatoredicara/Workspace/Codex/d20-folio-p10-control` was proved clean at the same fresh
+V2 SHA before topic creation. Other worktrees and the shared checkout are preserved.
+Pinned bootstrap completed; the read-only private pack is clean at
+`b6073dd0d15bcf2dc980b1e00c531b7a5330da8e`, linked to its exact `content-pack` subdirectory.
+External evidence and temporary files belong to `Workspace/Codex/d20-folio-p10-evidence`.
+
+Current work: read the approved creation/import experience and domain contracts, then reconcile
+P10 specification and implementation plan before product code. Creation needs one atomic
+character/choice/receipt transition; existing sequential origin saves do not certify that result.
+All P10 runtime, independent review, screenshot, six-fixture, rules, SRD-only and final composed
+gates remain open. P09 evidence is historical applicability only, never a P10 pass.
+Reviewed, verified approved-mock work may integrate into V2 without another exhaustive owner
+visual verdict; actual screenshots and the full successor prompt remain mandatory after closure.
+No deployment, production writes, real migration, new cost or production switch is authorized.
+
+## Historical frontier — P09 verified; P10 next (8 September 2026)
 
 Astra completed P09 shell/orientation only. P10 Creation and onboarding is the first incomplete
 AGENT-PROGRAM row, dependent on completed P07–09; it is not executed in this task. Permanent
