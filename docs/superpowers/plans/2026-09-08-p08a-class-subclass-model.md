@@ -24,13 +24,13 @@ modify model.ts, advanced.ts, origins.ts, conformance.ts and docs/homebrew-class
 Interfaces: initializeDefinition(class|subclass), conformDefinition, shared includeOriginDependency;
 new typed ClassData/SubclassData and decodeClassDefinition, pinned pair validation.
 
-- [ ] Write failing tests with initializeDefinition('class'), named valid progression1/3/5 and a
+- [x] Write failing tests with initializeDefinition('class'), named valid progression1/3/5 and a
       subclass pinned via includeOriginDependency; expect conformDefinition to equal[].
-- [ ] Run pinned pnpm test --run tests/unit/homebrew-classes.test.ts; retain expected missing-family failure.
-- [ ] Implement spec fields and typed discriminants, reuse declarations and closure validation.
-- [ ] Add/run malformed progression, wrong parent/version, choices/references/cycles, resources,
+- [x] Run pinned pnpm test --run tests/unit/homebrew-classes.test.ts; retain expected missing-family failure.
+- [x] Implement spec fields and typed discriminants, reuse declarations and closure validation.
+- [x] Add/run malformed progression, wrong parent/version, choices/references/cycles, resources,
       spellcasting, unknown/future, max closure/levels/bytes and nine-family roundtrip regression cases.
-- [ ] Reconcile owning representation doc and changeset; hooked Conventional Commit, owner sole author.
+- [x] Reconcile owning representation doc and changeset; hooked Conventional Commit, owner sole author.
 
 ## Task 2 — Version boundary and real persistence (Astra)
 
@@ -38,29 +38,29 @@ Files: src/lib/library/repository.ts only if required to enforce class publicati
 tests/unit/homebrew-class-library.test.ts and external runtime-sdk runner.
 Interfaces: existing read/saveIntent/publishIntent/commit/readVersion/reconcile and portable codec.
 
-- [ ] Write failing repository case: invalid class remains draft but publishIntent rejects; an altered
+- [x] Write failing repository case: invalid class remains draft but publishIntent rejects; an altered
       operation cannot bypass commit validation. Unsupported remains exact recoverable content.
-- [ ] Apply minimal class/subclass validation at both boundaries, preserve nine-family behavior.
-- [ ] Use real authenticated SDKs to create/publish/read both families, v2 update with v1 pinned,
+- [x] Apply minimal class/subclass validation at both boundaries, preserve nine-family behavior.
+- [x] Use real authenticated SDKs to create/publish/read both families, v2 update with v1 pinned,
       received version closure independent of source revocation, conflict/unknown receipt/recovery.
-- [ ] Audit server definitions/versions/receipts and six fixture exact recovery, retain actual exits.
+- [x] Audit server definitions/versions/receipts and six fixture exact recovery, retain actual exits.
 
 ## Task 3 — Minimal consultation and optimized UI (Astra)
 
 Files: HomebrewReader.tsx, new ClassReader.tsx if needed, HomebrewFields.tsx to keep model-only families
 out of unfinished generic editing, EN/IT homebrew labels; focused reader test.
 
-- [ ] Test actual reader names/level rows/parent version, shared choices and unknown recovery first.
-- [ ] Implement readable consultation from the typed model, no class/subclass editor or growth flow.
-- [ ] Build optimized demo configuration; use actual Google app/provider login, inspect existing
+- [x] Test actual reader names/level rows/parent version, shared choices and unknown recovery first.
+- [x] Implement readable consultation from the typed model, no class/subclass editor or growth flow.
+- [x] Build optimized demo configuration; use actual Google app/provider login, inspect existing
       Library/version/import/recovery flows for both families and verify server results.
-- [ ] Capture dark EN/IT1440×900/1280×800/390×844 relevant consultation; inspect all generated print pages.
+- [x] Capture dark EN/IT1440×900/1280×800/390×844 relevant consultation; inspect all generated print pages.
 
 ## Task 4 — Review and integration
 
-- [ ] Independent spec/correctness and visual review; reproduce and fix findings with targeted regressions.
-- [ ] Run fresh composed just ci; SRD-only when seam changes; full rules if changed; six fixture recovery.
-- [ ] Hash source/runtime/images and keep failed attempts separate. Update external HANDOFF/REPLAY/manifest.
+- [x] Independent spec/correctness and visual review; reproduce and fix findings with targeted regressions.
+- [x] Run fresh composed just ci; SRD-only when seam changes; full rules if changed; six fixture recovery.
+- [x] Hash source/runtime/images and keep failed attempts separate. Update external HANDOFF/REPLAY/manifest.
 - [ ] Fresh fetch/rebase origin/v2, required final gate, hooked explicit HEAD:v2; verify remote SHA.
 - [ ] Update PROGRAM_STATUS closure, retain all evidence, stop only owned services and remove only clean
       owned worktrees after remote proof. Send actual images and complete P08b successor without executing it.

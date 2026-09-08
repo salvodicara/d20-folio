@@ -1,18 +1,41 @@
 # Program Status
 
-## Current frontier — P08a in progress (8 September 2026)
+## Current frontier — P08a verified; V2 integration pending (8 September 2026)
 
-Owner/writer Astra; topic codex/p08a-class-subclass-model-20260908 at
-/Users/salvatoredicara/Workspace/Codex/d20-folio-p08a-class-subclass-model.
-Fresh origin/v2 c58f76ed11c2d6876984ea01f1394d192ec1de50; main unchanged9b06b753.
-Clean detached p08a-control at that ref invoked the isolated topic. P07 dependency is closed.
-Only P08a model/schema/conformance/codec/version exits are authorized; P08b/c not started.
-Spec/plan written before code. Read-only independent reference/contract discovery runs alongside
-Astra. Independent isolated model-lane and version-proof writers now own disjoint model/test
-paths; Astra owns Library guards, shared JSON-budget extraction and consultation UI. Bootstrap complete, verified private pack b6073dd0 read-only.
-Evidence: /Users/salvatoredicara/Workspace/Codex/d20-folio-p08a-evidence. Prior unrelated
-Firestore86001/8080 preserved. Runtime/review/gates/integration remain incomplete.
-Standing PRODUCT delegation applies; actual images and complete successor required at closure.
+Astra completed the class/subclass model, conformance/codec, real immutable Library versions and
+minimal EN/IT consultation/print boundary. P08b/c guided editors, advancement and engine execution
+were not started. Source candidate42252a1fa269a484e99bfa7d89f41f1d8ad1605a; fresh origin/v2 remains
+c58f76ed11c2d6876984ea01f1394d192ec1de50 and main9b06b75313d7ee353c4072a20397c3092707648e.
+Final fresh fetch/rebase is a no-op. Standing owner delegation authorizes the explicit HEAD:v2 push
+once this verification record is committed; no production deployment or new approval is required.
+
+Independent source/model/persistence/UI/paper reviews are closed. Final composed just ci exited0
+on a clean byte-identical isolated lane:886 app files/19509 tests and7 Functions files/129 tests,
+zero skips, typecheck/strict lint/build/PWA. Final SRD-only exited0:707files/13929pass/2 intentional
+private alias-loader skips. All2349 tracked non-document source/test/config files match this candidate.
+Full demo rules passed261tests/12files/0skip, including six private originals/recovery, with40 protected
+files unchanged. Three actual Auth SDK clients verified15 persisted receipts/1grant, immutable v1/v2,
+pinned delivered closure, revocation/CAS and committed-response-loss reconciliation with one send.
+Those email/password SDK clients are distinct from the actual Google app/provider login proof.
+
+Final optimized Google UIrunb verified both families' import/draft/reload/version/export and exact
+unknown/future/incompatible recovery. Visualrunb captured36 EN/IT dark1440/1280/390 consultation
+images and4 actual Print PDFs/46pages; all were independently inspected. Earlier partial/failed
+artifacts remain separate, including10 inspected earlier PDF pages. Actual images were sent in chat.
+226 protected runtime source files and268 optimized files stayed unchanged; the actual build is
+retained externally. Server library20entries/43operation receipts stayed unchanged across final review;
+these counts include prior synthetic attempts, not only runb writes. All source/visual findings closed.
+
+The first SRD gate timed out a linear large-payload test; binary search preserved all boundary
+assertions and normal timeout, and both full gates passed after that test-only fix. Other failed
+attempts, hook failures and exact red/green evidence remain retained. No result was relabeled green.
+
+Evidence: /Users/salvatoredicara/Workspace/Codex/d20-folio-p08a-evidence, including HANDOFF/REPLAY,
+FIDELITY, source/scope/visual reviews, runtime-current and final gate manifests. Owned preview/demo/
+rules services are stopped, original Firestore86001/8080 preserved; private pack stays clean/read-only
+b6073dd0. Shared checkout keeps only its preexisting .playwright-cli. Owned worktrees remain until
+remote proof and clean removal. Final SHA/cleanup will be recorded in integration-preflight/RECEIPT.md.
+Only after integration/cleanup, deliver the complete P08b successor without executing it.
 
 ## Historical frontier — P07 integrated; P08a next (8 September 2026)
 
