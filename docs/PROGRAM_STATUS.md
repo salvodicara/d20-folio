@@ -1,12 +1,40 @@
 # Program Status
 
-## Current frontier — P08b active (8 September 2026)
+## Current frontier — P08b verified; P08c next (8 September 2026)
 
-Astra owns codex/p08b-class-editor-20260908 in Workspace/Codex/d20-folio-p08b-class-editor.
-Fresh base origin/v2 a5b67280291c36be9c1b94dcc802c6ffbca98ef5; main unchanged9b06b753.
-Clean detached p08b-control invoked the topic; shared/unrelated worktrees preserved.
-Spec/plan written before code; reference and contract discovery are independent read-only lanes.
-Only P08b authorized. Standing owner delivery delegation applies; runtime/review/gates pending.
+Astra completed the guided class editor and progression authoring adapter on existing ClassData.
+P08c is the first incomplete AGENT-PROGRAM row, dependent on P08b; it is not executed here.
+Source candidate f1c08cd7f6e0696dabe1b5b0e32e92af8018e351; fresh origin/v2 base
+a5b67280291c36be9c1b94dcc802c6ffbca98ef5. Main remains9b06b75313d7ee353c4072a20397c3092707648e.
+Independent source/spec and final48image EN/IT dark1440/1280/390 reviews have no material blocker.
+Standing owner8September delivery delegation authorizes this reviewed green V2 integration;
+actual screenshots and one complete successor remain mandatory, without repeated owner verdict.
+
+Final composed just ci exited0:888files/19528app tests and7files/129Functions tests, zero skips,
+typecheck/strict lint/build/PWA. Final SRD-only exited0:709files/13948pass/2intentional private-loader
+skips, typecheck/build/PWA.2381source/test/config files are byte-identical in isolated verifier.
+Full demo rules exited0:261tests/12files/0skip, including six private copies/exact recovery;
+six source originals remain unchanged. No production deployment or write-back occurred.
+
+Actual optimized Google UI main12flows/portable3flows and recovery8steps passed: class1/3/5,
+cascades/resources/actions, autosave/reload, immutable versions/share/revoke/pinned copies,
+reuse/import/export, unknown/future/incompatible recovery, offline/CAS/unknown receipt1send,
+storage0send and A→B→A invalidation. Final build-e status-c proves truthful unsaved heading/footer.
+Main/recovery used build-c; seven presentation/locale files changed afterward while controllers,
+model/repository/codec/rules remained identical. Final status and48images exercise final build-e;
+1878selected runtime files/268optimized files remain unchanged across those final proofs.
+Reader/print implementation unchanged; no new P08b print-page claim. Prior failed runs remain distinct.
+
+Final read-only server inventory: owner17entries/7versions/52receipts; recipient3entries/3versions/
+3receipts/3grants;3offers. Counts include prior failed/partial synthetic attempts. Exact sourcev1/v2,
+recipient pinnedv1 and recovered receipt unchanged; invalidated receipt absent. Owned UI and rules
+services stopped; unrelated Java86001/8080 preserved. Browser/SDK/Admin handles closed.
+
+This documentation-only closure is delivered through fresh fetch/rebase and hooked explicit HEAD:v2.
+The resulting remote SHA and owned-worktree cleanup are recorded in the external integration receipt,
+avoiding a self-referential SHA. Evidence: Workspace/Codex/d20-folio-p08b-evidence/HANDOFF.md,
+REPLAY.md, FIDELITY.md, FINAL-MANIFEST.json and integration-receipt.json. Next-session prompt is
+released only after that receipt proves integration and cleanup; no P08c work in this session.
 
 ## Historical frontier — P08a integrated; P08b next (8 September 2026)
 

@@ -33,5 +33,7 @@ expect(conformDefinition(authored)).toEqual([]);
 expect(decodePortable(encodePortable(authored)).original).toBe(encodePortable(authored));
 ```
 
-Checklist: [ ] shared composers [ ] editor/adapter [ ] optimized runtime [ ] visual review
-[ ] source review [ ] gates [ ] integration [ ] cleanup/complete successor. No P08c execution.
+Checklist: [x] shared composers [x] editor/adapter [x] optimized runtime [x] visual review
+[x] source review [x] gates. Integration and cleanup are the external delivery tail recorded in
+Workspace/Codex/d20-folio-p08b-evidence/integration-receipt.json before releasing the complete
+successor. No P08c execution. PROGRAM_STATUS owns the frontier and current gate facts.
